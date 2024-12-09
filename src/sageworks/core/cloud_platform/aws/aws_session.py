@@ -44,17 +44,19 @@ class AWSSession:
     @property
     def boto3_session(self):
         """Get the AWS Boto3 Session, defaulting to the SageWorks Role if possible."""
+
+        # Check the execution environment and determine if we need to assume the SageWorks Role
+        if running_on_lambda() or running_on_glue() or self.is_sageworks_role():
+            self.log.important(f"Using the default Boto3 session...")
+            return boto3.Session()
+
+        # Okay, so we need to assume the SageWorks Role
         try:
             return self._sageworks_role_boto3_session()
         except Exception as e:
-            self.log.info("Checking Execution Environment...")
-            if running_on_lambda() or running_on_glue() or self.is_sageworks_role():
-                self.log.important(f"Using the default Boto3 session: {e}")
-                return boto3.Session()
-            else:
-                msg = "SageWorks Session Failure: Check AWS_PROFILE and/or Renew SSO Token.."
-                self.log.critical(msg)
-                raise RuntimeError(msg) from e
+            msg = "Failed to Assume SageWorks Role: Check AWS_PROFILE and/or Renew SSO Token.."
+            self.log.critical(msg)
+            raise RuntimeError(msg) from e
 
     def is_sageworks_role(self) -> bool:
         """Helper: Check if the current AWS Identity is the SageWorks Role"""
