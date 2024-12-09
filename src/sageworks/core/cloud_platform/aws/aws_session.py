@@ -47,7 +47,7 @@ class AWSSession:
 
         # Check the execution environment and determine if we need to assume the SageWorks Role
         if running_on_lambda() or running_on_glue() or self.is_sageworks_role():
-            self.log.important(f"Using the default Boto3 session...")
+            self.log.important("Using the default Boto3 session...")
             return boto3.Session()
 
         # Okay, so we need to assume the SageWorks Role
