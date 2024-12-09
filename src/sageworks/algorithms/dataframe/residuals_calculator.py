@@ -42,6 +42,7 @@ class ResidualsCalculator(BaseEstimator, TransformerMixin):
         self.endpoint = endpoint  # Use this endpoint for inference if provided
         self.X = None
         self.y = None
+        super().__init__()
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> BaseEstimator:
         """

@@ -27,6 +27,7 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
         self.q_models = {}
         self.quantiles = quantiles
         self.rmse_model = None
+        super().__init__()
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> BaseEstimator:
         """

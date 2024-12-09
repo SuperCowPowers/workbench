@@ -29,6 +29,7 @@ class TargetGradients(BaseEstimator, TransformerMixin):
         self.knn = KNeighborsRegressor(n_neighbors=self.n_neighbors, algorithm="ball_tree", metric="euclidean")
         self.X = None
         self.y = None
+        super().__init__()
 
     def fit(self, X: pd.DataFrame, y: pd.Series) -> BaseEstimator:
         """
