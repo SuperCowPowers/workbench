@@ -1,5 +1,6 @@
 import json
 import logging
+from importlib.resources import files
 from pathlib import Path
 import plotly.io as pio
 import dash_bootstrap_components as dbc
@@ -36,7 +37,7 @@ class ThemeManager:
 
         # If the theme path is not set, use the default path
         if not config_theme_path:
-            cls._theme_path = Path(__file__).parent.parent / "themes"
+            cls._theme_path = files("sageworks") / "themes"
         else:
             cls._theme_path = Path(config_theme_path)
 
