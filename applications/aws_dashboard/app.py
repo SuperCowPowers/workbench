@@ -1,6 +1,6 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
-from dash import Dash, html, page_container, Input, Output, ClientsideFunction
+from dash import Dash, html, page_container, Input, Output
 import dash_bootstrap_components as dbc
 
 
@@ -56,7 +56,7 @@ app.clientside_callback(
     }
     """,
     Output("trigger_link_click", "children"),  # Updated ID for clarity
-    Input("navigate-link", "children")
+    Input("navigate-link", "children"),
 )
 
 # Spin up the Plugin Manager

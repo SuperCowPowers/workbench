@@ -28,17 +28,10 @@ def main_layout(
         children=[
             # This refreshes the page every 60 seconds
             dcc.Interval(id="main_page_refresh", interval=update_rate, n_intervals=0),
-
             # Hidden link to navigate to subpages
-            html.A(
-                id="navigate-link",
-                href="",
-                target="_blank",
-                style={"display": "none"}
-            ),
+            html.A(id="navigate-link", href="", target="_blank", style={"display": "none"}),
             # Hidden trigger for the link click (to navigate to subpages)
             html.Div(id="trigger_link_click", style={"display": "none"}),
-
             # Top of Main Page Header/Info Section
             dbc.Row(
                 [
