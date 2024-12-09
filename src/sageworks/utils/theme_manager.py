@@ -37,6 +37,7 @@ class ThemeManager:
 
         # If the theme path is not set, use the default path
         if not config_theme_path:
+            cls._log.important("Using default themes path...")
             cls._theme_path = files("sageworks") / "themes"
         else:
             cls._theme_path = Path(config_theme_path)
