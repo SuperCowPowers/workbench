@@ -8,7 +8,7 @@ from sageworks.core.transforms.pandas_transforms import PandasToFeatures
 
 
 # Valid subnormal test
-def test_subnormals(subnormals):
+def validate_subnormals(subnormals):
     """Test IEEE 754 subnormal numbers"""
 
     # Check if the values are valid subnormals
@@ -38,7 +38,7 @@ def test_underflow():
     within_subnormal = [1e-323, 5e-323, 1.5e-323, 2e-323, 4.94e-324]
 
     # We're going to test that are subnormals are really subnormals
-    test_subnormals(within_subnormal)
+    validate_subnormals(within_subnormal)
 
     # Create a test DataFrame with above_subnormal and within_subnormal values
     data = {
