@@ -14,7 +14,7 @@ class ThemeManager:
 
     # Class-level state
     _log = logging.getLogger("sageworks")
-    _themes_dir = None
+    _themes_path = None
     _dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
     _available_themes = {}
     _current_theme_name = None
@@ -32,11 +32,17 @@ class ThemeManager:
     def _initialize(cls):
         """Initialize the ThemeManager's shared state."""
         cm = ConfigManager()
-        theme_path = cm.get_config("SAGEWORKS_THEMES")
-        cls._themes_dir = Path(theme_path) if theme_path else None
+        config_theme_path = cm.get_config("SAGEWORKS_THEMES")
 
-        if not cls._themes_dir or not cls._themes_dir.exists():
-            cls._log.error(f"The themes directory '{cls._themes_dir}' does not exist.")
+        # If the theme path is not set, use the default path
+        if not config_theme_path:
+            cls._theme_path = Path(__file__).parent.parent / "themes"
+        else:
+            cls._theme_path = Path(config_theme_path)
+
+        # Make sure the themes path exists
+        if not cls._theme_path.exists():
+            cls._log.error(f"The themes path '{cls._theme_path}' does not exist.")
 
         cls._load_themes()
         cls.set_theme("default")  # Default theme
@@ -188,11 +194,11 @@ class ThemeManager:
     @classmethod
     def _load_themes(cls):
         """Load available themes."""
-        if not cls._themes_dir:
-            cls._log.warning("No themes directory specified.")
+        if not cls._theme_path:
+            cls._log.warning("No themes path specified...")
             return
 
-        for theme_dir in cls._themes_dir.iterdir():
+        for theme_dir in cls._theme_path.iterdir():
             if theme_dir.is_dir():
                 theme_name = theme_dir.name
 
@@ -213,7 +219,7 @@ class ThemeManager:
                 }
 
         if not cls._available_themes:
-            cls._log.warning(f"No themes found in '{cls._themes_dir}'.")
+            cls._log.warning(f"No themes found in '{cls._theme_path}'...")
 
 
 if __name__ == "__main__":
