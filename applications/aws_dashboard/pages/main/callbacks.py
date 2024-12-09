@@ -57,7 +57,7 @@ def navigate_to_subpage(tables: dict[str, AGTable]):
     """Setup navigation callbacks for all the tables."""
 
     @callback(
-        Output("url", "pathname"),  # Update the URL path
+        [Output("navigate-link", "href"), Output("navigate-link", "children")],
         [Input(f"main_{table_id}", "selectedRows") for table_id in tables.keys()],
         prevent_initial_call=True,
     )
@@ -75,7 +75,8 @@ def navigate_to_subpage(tables: dict[str, AGTable]):
             if f"main_{table_id}" == triggered_table:
                 selected_rows = selected_rows_list[list(tables.keys()).index(table_id)]
                 if selected_rows:  # Check if rows are selected
-                    return f"/{subpage_name}"  # Navigate to the respective subpage
+                    # Construct the target URL for the selected row
+                    return f"/{subpage_name}", "click"  # Update href and trigger click
 
         # No selection made in any table
         raise PreventUpdate

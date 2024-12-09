@@ -1,7 +1,8 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
-from dash import Dash, dcc, html, page_container
+from dash import Dash, html, page_container, Input, Output, ClientsideFunction
 import dash_bootstrap_components as dbc
+
 
 # SageWorks Imports
 from sageworks.utils.plugin_manager import PluginManager
@@ -35,10 +36,27 @@ server = app.server
 # app.layout = html.Div([page_container])
 app.layout = html.Div(
     [
-        dcc.Location(id="url", refresh=True),
         dbc.Container([page_container], fluid=True, className="dbc dbc-ag-grid"),
     ],
     **{"data-bs-theme": tm.data_bs_theme()},
+)
+
+# This bit of code is used for the subpage navigation
+
+
+# Register the client-side callback
+app.clientside_callback(
+    """
+    function(children) {
+        if (children === "click") {
+            const link = document.getElementById("navigate-link");
+            if (link) link.click();  // Trigger the click
+        }
+        return null;  // No UI update
+    }
+    """,
+    Output("trigger_link_click", "children"),  # Updated ID for clarity
+    Input("navigate-link", "children")
 )
 
 # Spin up the Plugin Manager
