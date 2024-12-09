@@ -123,7 +123,7 @@ class GraphPlot(PluginInterface):
             nx.set_node_attributes(self.graph, pos, "pos")
 
         # Use 'id' as default label field if not specified
-        label_field = kwargs.get("label", next(iter(first_node), 'id'))
+        label_field = kwargs.get("label", next(iter(first_node), "id"))
 
         # Add degree attribute if not already present in nodes
         nx.set_node_attributes(self.graph, dict(self.graph.degree()), "degree")
