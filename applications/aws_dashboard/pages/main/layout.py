@@ -28,10 +28,8 @@ def main_layout(
         children=[
             # This refreshes the page every 60 seconds
             dcc.Interval(id="main_page_refresh", interval=update_rate, n_intervals=0),
-
             # URL for subpage navigation (jumping to feature_sets, models, etc.)
             dcc.Location(id="url"),
-
             # Top of Main Page Header/Info Section
             dbc.Row(
                 [

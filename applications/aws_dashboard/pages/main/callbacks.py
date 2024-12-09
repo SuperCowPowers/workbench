@@ -56,7 +56,7 @@ def tables_refresh(main_page: MainPage, tables: dict[str, AGTable]):
 def navigate_to_subpage(tables: dict[str, AGTable]):
 
     @callback(
-        Output("url", "href"),   # Just set the URL directly
+        Output("url", "href"),  # Just set the URL directly
         [Input(f"main_{table_id}", "selectedRows") for table_id in tables.keys()],
         prevent_initial_call=True,
     )

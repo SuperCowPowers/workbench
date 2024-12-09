@@ -1,6 +1,6 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
-from dash import Dash, html, page_container, Input, Output
+from dash import Dash, html, page_container
 import dash_bootstrap_components as dbc
 
 
