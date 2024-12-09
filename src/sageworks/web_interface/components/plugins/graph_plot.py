@@ -196,9 +196,7 @@ class GraphPlot(PluginInterface):
         self.graph_figure = go.Figure(data=edge_traces + [node_trace])
 
         # Fine-tune the plot's layout and aesthetics
-        plotly_theme = "plotly_dark" if self.dark_theme else "plotly"
         self.graph_figure.update_layout(
-            template=plotly_theme,
             margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},  # Set margins and padding
             xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),  # Hide X-axis grid and tick marks
             yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),  # Hide Y-axis grid and tick marks
