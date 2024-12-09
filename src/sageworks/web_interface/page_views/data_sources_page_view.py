@@ -6,6 +6,7 @@ import pandas as pd
 from sageworks.web_interface.page_views.page_view import PageView
 from sageworks.cached.cached_meta import CachedMeta
 from sageworks.cached.cached_data_source import CachedDataSource
+from sageworks.utils.symbols import tag_symbols
 
 
 class DataSourcesPageView(PageView):
@@ -25,6 +26,10 @@ class DataSourcesPageView(PageView):
         """Refresh our list of DataSources from the Cloud Platform"""
         self.log.important("Calling refresh()..")
         self.data_sources_df = self.meta.data_sources()
+
+        # Add Health Symbols to the Model Group Name
+        if "Health" in self.data_sources_df.columns:
+            self.data_sources_df["Health"] = self.data_sources_df["Health"].map(lambda x: tag_symbols(x))
 
     def data_sources(self) -> pd.DataFrame:
         """Get a list of all the DataSources

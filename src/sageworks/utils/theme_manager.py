@@ -105,6 +105,28 @@ class ThemeManager:
                 cls._log.error(f"No color scales found for template '{cls._current_theme_name}'.")
         return []
 
+    @staticmethod
+    def adjust_colorscale_alpha(colorscale, alpha=0.5):
+        """
+        Adjust the alpha value of the first color in the colorscale.
+
+        Args:
+            colorscale (list): The colorscale list with format [[value, color], ...].
+            alpha (float): The new alpha value for the first color (0 to 1).
+
+        Returns:
+            list: The updated colorscale.
+        """
+        updated_colorscale = colorscale.copy()
+
+        if updated_colorscale and "rgba" in updated_colorscale[0][1]:
+            # Parse the existing RGBA value and modify alpha
+            rgba_values = updated_colorscale[0][1].strip("rgba()").split(",")
+            rgba_values[-1] = str(alpha)  # Update the alpha channel
+            updated_colorscale[0][1] = f"rgba({','.join(rgba_values)})"
+
+        return updated_colorscale
+
     @classmethod
     def css_files(cls) -> list[str]:
         """Get the list of CSS files for the current theme."""

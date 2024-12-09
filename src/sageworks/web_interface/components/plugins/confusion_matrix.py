@@ -78,6 +78,8 @@ class ConfusionMatrix(PluginInterface):
         y_labels = [f"{c}:{i}" for i, c in enumerate(df.index)]
 
         # Create the heatmap figure
+        colorscale = self.theme_manager.colorscale()
+        colorscale = self.theme_manager.adjust_colorscale_alpha(colorscale, alpha=0.25)
         fig = go.Figure(
             data=go.Heatmap(
                 z=df,
@@ -85,7 +87,7 @@ class ConfusionMatrix(PluginInterface):
                 y=y_labels,
                 xgap=3,  # Add space between cells
                 ygap=3,
-                colorscale=self.theme_manager.colorscale(),  # Use the current theme's colorscale
+                colorscale=colorscale,  # Use the current theme's colorscale
             )
         )
 
