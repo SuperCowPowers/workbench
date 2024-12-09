@@ -98,19 +98,6 @@ def update_feature_set_sample_rows(page_view: FeatureSetsPageView, samples_table
         # Grab column definitions and row data from our Samples Table
         [column_defs, _, _] = samples_table.update_properties(smart_sample_rows)
 
-        # We need to update our cellStyle to color the outlier groups
-        # FIXME: Revise this to use the AGTable class (this should be a part of column_defs)
-        """
-        style_cells = {}
-        color_column = "outlier_group"
-        if color_column not in smart_sample_rows.columns:
-            style_cells = table.Table().style_data_conditional()
-        else:
-            unique_categories = smart_sample_rows[color_column].unique().tolist()
-            unique_categories = [x for x in unique_categories if x != "sample"]
-            style_cells = table.Table().style_data_conditional(color_column, unique_categories)
-        """
-
         # Update the Violin Plot with the new smart sample rows
         violin_figure = violin_plots.ViolinPlots().update_properties(
             smart_sample_rows,

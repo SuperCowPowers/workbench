@@ -1,7 +1,7 @@
 """Callbacks/Connections for the Main/Front Dashboard Page"""
 
 from datetime import datetime
-from dash import callback, Input, Output, callback_context
+from dash import callback, Input, Output, ctx
 from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
@@ -54,29 +54,23 @@ def tables_refresh(main_page: MainPage, tables: dict[str, AGTable]):
 
 
 def navigate_to_subpage(tables: dict[str, AGTable]):
-    """Setup navigation callbacks for all the tables."""
 
     @callback(
-        [Output("navigate-link", "href"), Output("navigate-link", "children")],
+        Output("url", "href"),   # Just set the URL directly
         [Input(f"main_{table_id}", "selectedRows") for table_id in tables.keys()],
         prevent_initial_call=True,
     )
     def _navigate_to_subpage(*selected_rows_list):
         # Identify which table triggered the callback
-        ctx = callback_context
-        if not ctx.triggered:
+        triggered_id = ctx.triggered_id
+        if triggered_id is None:
             raise PreventUpdate
 
-        # Get the triggering table's ID
-        triggered_table = ctx.triggered[0]["prop_id"].split(".")[0]
-
-        # Map the triggered table ID to its corresponding subpage
         for subpage_name, table_id in zip(tables.keys(), tables.keys()):
-            if f"main_{table_id}" == triggered_table:
+            if f"main_{table_id}" == triggered_id:
                 selected_rows = selected_rows_list[list(tables.keys()).index(table_id)]
-                if selected_rows:  # Check if rows are selected
-                    # Construct the target URL for the selected row
-                    return f"/{subpage_name}", "click"  # Update href and trigger click
+                if selected_rows:
+                    return f"/{subpage_name}"
 
-        # No selection made in any table
+        # No selection made, no navigation
         raise PreventUpdate
