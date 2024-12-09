@@ -7,6 +7,7 @@ import networkx as nx
 # SageWorks Imports
 from sageworks.core.artifacts.graph_core import GraphCore
 from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from sageworks.utils.theme_manager import ThemeManager
 
 
 class GraphPlot(PluginInterface):
@@ -22,6 +23,9 @@ class GraphPlot(PluginInterface):
         self.hover_columns = []
         self.graph = None
         self.graph_figure = None
+
+        # Initialize the Theme Manager
+        self.theme_manager = ThemeManager()
 
         # Call the parent class constructor
         super().__init__()
@@ -119,7 +123,7 @@ class GraphPlot(PluginInterface):
             nx.set_node_attributes(self.graph, pos, "pos")
 
         # Use 'id' as default label field if not specified
-        label_field = kwargs.get("label", "id")
+        label_field = kwargs.get("label", next(iter(first_node), 'id'))
 
         # Add degree attribute if not already present in nodes
         nx.set_node_attributes(self.graph, dict(self.graph.degree()), "degree")
@@ -140,14 +144,6 @@ class GraphPlot(PluginInterface):
             node_degrees.append(data.get("degree", self.graph.degree[node]))
             hover_text.append("<br>".join([f"{key}: {data.get(key, '')}" for key in hover_columns]))
 
-        # Define a custom color scale for the node degrees (blue -> yellow -> red)
-        color_scale = [
-            [0.0, "rgb(64, 64, 160)"],
-            [0.33, "rgb(48, 140, 140)"],
-            [0.67, "rgb(140, 140, 48)"],
-            [1.0, "rgb(160, 64, 64)"],
-        ]
-
         # Create an OpenGL Scattergl plot for nodes using Plotly
         node_trace = go.Scattergl(
             x=x_nodes,
@@ -161,7 +157,7 @@ class GraphPlot(PluginInterface):
             marker=dict(
                 size=20,  # Marker size for nodes
                 color=node_degrees,  # Use node degrees for marker colors
-                colorscale=color_scale,
+                colorscale=self.theme_manager.colorscale(),
                 colorbar=dict(title="Degree"),  # Include a color bar for degrees
                 line=dict(color="Black", width=1),  # Set border color and width for nodes
             ),
@@ -280,4 +276,4 @@ if __name__ == "__main__":
     from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(GraphPlot).run()
+    PluginUnitTest(GraphPlot, theme="dark").run()
