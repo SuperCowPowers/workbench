@@ -10,8 +10,7 @@ def main():
     cm = ConfigManager()
 
     # Show the current SageWorks Config
-    cprint("yellow", "\nSageWorks Config:")
-    cprint("lightblue", f"Path: {cm.site_config_path}")
+    cprint("yellow", f"\n\nSageWorks Config Path: {cm.site_config_path}")
     config = cm.get_all_config()
     for key, value in config.items():
         cprint(["lightpurple", "\t" + key, "lightgreen", value])

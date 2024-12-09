@@ -1,9 +1,8 @@
 """Plugin Page:  A SageWorks Plugin Web Interface"""
 
 import dash
-from dash import register_page, no_update
+from dash import register_page, no_update, Input, Output, State
 import dash_bootstrap_components as dbc
-from dash.dependencies import Input, Output, State
 import logging
 
 # SageWorks Imports

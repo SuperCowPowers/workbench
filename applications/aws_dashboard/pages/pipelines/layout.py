@@ -20,6 +20,7 @@ def pipelines_layout(
     ]
     layout = html.Div(
         children=[
+            dcc.Interval(id="pipelines_refresh", interval=60000),
             dbc.Row(
                 [
                     html.H2("SageWorks: Pipelines"),

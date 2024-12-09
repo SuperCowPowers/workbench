@@ -1,13 +1,8 @@
 import dash
 from dash import html, Output, Input
 import dash_bootstrap_components as dbc
-import plotly.io as pio
-import json
 import logging
 import socket
-
-# Import the Path class from the pathlib module
-from pathlib import Path
 
 
 # SageWorks Imports
@@ -16,17 +11,19 @@ from sageworks.api import DataSource, FeatureSet, Model, Endpoint
 from sageworks.cached.cached_meta import CachedMeta
 from sageworks.api.pipeline import Pipeline
 from sageworks.core.artifacts.graph_core import GraphCore
+from sageworks.utils.theme_manager import ThemeManager
 
 # Setup Logging
 log = logging.getLogger("sageworks")
 
 
 class PluginUnitTest:
-    def __init__(self, plugin_class, input_data=None, auto_update=True, **kwargs):
+    def __init__(self, plugin_class, theme="dark", input_data=None, auto_update=True, **kwargs):
         """A class to unit test a PluginInterface class.
 
         Args:
             plugin_class (PluginInterface): The PluginInterface class to test
+            theme (str): The theme to use for the Dash app (default: "dark")
             input_data (Optional): The input data for this plugin (FeatureSet, Model, Endpoint, or DataFrame)
             auto_update (bool): Whether to automatically update the plugin properties (default: True)
             **kwargs: Additional keyword arguments
@@ -39,33 +36,16 @@ class PluginUnitTest:
         self.input_data = input_data
         self.kwargs = kwargs
 
+        # Set up the Theme Manager
+        tm = ThemeManager()
+        tm.set_theme(theme)
+
         # Instantiate the plugin
         self.plugin = plugin_class()
         self.component = self.plugin.create_component(f"{self.plugin.__class__.__name__.lower()}_test")
 
-        # Create the Dash app
-        assets_dir = str(Path(__file__).parent.parent.parent.parent.parent / "applications/aws_dashboard/assets")
-        log.important(f"Using assets directory: {assets_dir}")
-
-        # List out the files in the assets directory
-        log.important(f"Files in assets directory: {list(Path(assets_dir).iterdir())}")
-
-        # Set the theme to dark
-        USE_DARK_THEME = False
-
-        # Set Plotly template
-        template_file = f"{assets_dir}/darkly_custom.json" if USE_DARK_THEME else f"{assets_dir}/flatly.json"
-        with open(template_file, "r") as f:
-            template = json.load(f)
-
-        pio.templates["custom_template"] = template
-        pio.templates.default = "custom_template"
-
-        # Dynamically set the Bootstrap theme
-        # bootstrap_theme = dbc.themes.DARKLY if USE_DARK_THEME else dbc.themes.FLATLY
-
-        dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-        self.app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc_css], assets_folder=assets_dir)
+        # Load the custom CSS
+        self.app = dash.Dash(__name__, external_stylesheets=tm.css_files())
 
         # Set up the layout
         container = html.Div(self.component, style={"height": "75vh"})
@@ -78,7 +58,13 @@ class PluginUnitTest:
             layout_children.append(html.H4(f"Property: {property}"))
             layout_children.append(html.Div(id=f"test-output-{component_id}-{property}"))
 
-        self.app.layout = html.Div(layout_children, style={"padding": "20px"})
+        # self.app.layout = html.Div(layout_children, style={"padding": "20px"}, className="dbc dbc-ag-grid")
+        self.app.layout = html.Div(
+            [
+                dbc.Container(layout_children, fluid=True, className="dbc dbc-ag-grid"),
+            ],
+            **{"data-bs-theme": tm.data_bs_theme()},
+        )
 
         # Make sure the plugin has a properties attribute (non-empty list of tuples)
         assert hasattr(self.plugin, "properties"), "Plugin must have a 'properties' attribute"

@@ -27,8 +27,9 @@ class ModelsPageView(PageView):
         self.log.important("Calling refresh()..")
         self.models_df = self.meta.models(details=True)
 
-        # Drop the AWS URL column
-        self.models_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
+        # Drop some columns
+        self.models_df.drop(columns=["Ver", "Status", "_aws_url"], inplace=True, errors="ignore")
+
         # Add Health Symbols to the Model Group Name
         if "Health" in self.models_df.columns:
             self.models_df["Health"] = self.models_df["Health"].map(lambda x: tag_symbols(x))

@@ -1,5 +1,4 @@
-from dash import dcc, html
-from dash.dependencies import Input, Output
+from dash import dcc, html, Input, Output
 from dash import Dash, callback
 
 

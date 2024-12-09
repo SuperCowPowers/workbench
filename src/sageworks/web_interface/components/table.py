@@ -10,8 +10,10 @@ from sageworks.web_interface.components.experiments.color_maps import color_map_
 
 # SageWorks Imports
 from sageworks.web_interface.components.component_interface import ComponentInterface
+from sageworks.utils.deprecated_utils import deprecated
 
 
+@deprecated("v0.9.0", stack_trace=True)
 class Table(ComponentInterface):
     """Data Details Markdown Component"""
 
@@ -34,12 +36,6 @@ class Table(ComponentInterface):
         Returns:
             dash_table.DataTable: A Dash DataTable Component
         """
-        # Check for transparency
-        if "transparent" in kwargs and kwargs["transparent"] is False:
-            background_color = "rgb(60, 60, 60)"
-            del kwargs["transparent"]
-        else:
-            background_color = "rgba(60, 60, 60, 0.5)"
 
         # Create the table component
         table = dash_table.DataTable(
@@ -69,13 +65,10 @@ class Table(ComponentInterface):
                 "padding": "5px 5px 5px 5px",
                 "backgroundColor": header_color,
                 "backgroundImage": f"linear-gradient(to bottom, {header_color}, rgba(0, 0, 0, 0.5))",
-                "color": "rgb(200, 200, 200)",
                 "border": "0px",
             },
             style_data={
                 "fontSize": 13,
-                "backgroundColor": background_color,
-                "color": "rgb(200, 200, 200)",
                 "border": "0px",
             },
             style_data_conditional=[{"if": {"column_id": "Health"}, "fontSize": 16, "textAlign": "left"}],

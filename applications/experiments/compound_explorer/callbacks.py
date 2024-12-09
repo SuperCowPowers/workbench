@@ -2,8 +2,7 @@
 
 from datetime import datetime
 import dash
-from dash import Dash, html
-from dash.dependencies import Input, Output, State
+from dash import Dash, html, Input, Output, State
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports

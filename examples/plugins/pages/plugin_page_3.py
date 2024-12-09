@@ -6,7 +6,7 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
-from sageworks.web_interface.components import table
+from sageworks.web_interface.components.plugins.ag_table import AGTable
 from sageworks.web_interface.components.plugins.model_details import ModelDetails
 from sageworks.web_interface.components.model_plot import ModelPlot
 from sageworks.cached.cached_meta import CachedMeta
@@ -14,12 +14,12 @@ from sageworks.cached.cached_model import CachedModel
 
 
 class PluginPage3:
-    """Plugin Page:  A SageWorks Plugin Web Interface"""
+    """Plugin Page:  A SageWorks Plugin Page Interface"""
 
     def __init__(self):
         """Initialize the Plugin Page"""
         self.page_name = "Hello World"
-        self.models_table = table.Table()
+        self.models_table = AGTable()
         self.table_component = None
         self.model_details = ModelDetails()
         self.details_component = None
@@ -33,7 +33,7 @@ class PluginPage3:
 
         # Create a table to display the models
         self.table_component = self.models_table.create_component(
-            "plugin_3_model_table", header_color="rgb(60, 60, 60)", row_select="single", max_height=400
+            "plugin_3_model_table", header_color="rgb(60, 60, 60)", max_height=400
         )
 
         # Create a model details panel and model plot
@@ -49,11 +49,10 @@ class PluginPage3:
         )
 
         # Populate the models table with data
-        models = self.meta.models()
+        models = self.meta.models(details=True)
         models["uuid"] = models["Model Group"]
         models["id"] = range(len(models))
-        self.table_component.columns = self.models_table.column_setup(models)
-        self.table_component.data = models.to_dict("records")
+        [self.table_component.columnDefs, self.table_component.rowData, _] = self.models_table.update_properties(models)
 
         # Register the callbacks
         self.register_app_callbacks(app)
@@ -82,17 +81,16 @@ class PluginPage3:
         @callback(
             Output("plugin_3_model_plot", "figure"),
             Input("plugin_3_model_details-dropdown", "value"),
-            State("plugin_3_model_table", "data"),
-            State("plugin_3_model_table", "derived_viewport_selected_row_ids"),
+            Input("plugin_3_model_table", "selectedRows"),
             prevent_initial_call=True,
         )
-        def generate_model_plot_figure(inference_run, table_data, selected_rows):
+        def generate_model_plot_figure(inference_run, selected_rows):
             # Check for no selected rows
             if not selected_rows or selected_rows[0] is None:
                 return no_update
 
             # Get the selected row data and grab the uuid
-            selected_row_data = table_data[selected_rows[0]]
+            selected_row_data = selected_rows[0]
             model_uuid = selected_row_data["uuid"]
             m = CachedModel(model_uuid)
 
@@ -106,17 +104,16 @@ class PluginPage3:
         @callback(
             # Aggregate plugin outputs
             [Output(component_id, prop) for p in self.plugins for component_id, prop in p.properties],
-            State("plugin_3_model_details-dropdown", "value"),
-            Input("plugin_3_model_table", "derived_viewport_selected_row_ids"),
-            State("plugin_3_model_table", "data"),
+            Input("plugin_3_model_details-dropdown", "value"),
+            Input("plugin_3_model_table", "selectedRows"),
         )
-        def update_all_plugin_properties(inference_run, selected_rows, table_data):
+        def update_all_plugin_properties(inference_run, selected_rows):
             # Check for no selected rows
             if not selected_rows or selected_rows[0] is None:
                 raise PreventUpdate
 
             # Get the selected row data and grab the uuid
-            selected_row_data = table_data[selected_rows[0]]
+            selected_row_data = selected_rows[0]
             object_uuid = selected_row_data["uuid"]
 
             # Create the Model object
@@ -134,14 +131,23 @@ class PluginPage3:
 # Unit Test for your Plugin Page
 if __name__ == "__main__":
     import webbrowser
+    from sageworks.utils.theme_manager import ThemeManager
 
-    # Create our Dash Application
+    # Set up the Theme Manager
+    tm = ThemeManager()
+    tm.set_theme("quartz_dark")
+    css_files = tm.css_files()
+
+    # Create the Dash app
     my_app = dash.Dash(
-        __name__, title="SageWorks Dashboard", use_pages=True, pages_folder="", external_stylesheets=[dbc.themes.DARKLY]
+        __name__, title="SageWorks Dashboard", use_pages=True, external_stylesheets=css_files, pages_folder=""
     )
-
-    # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
-    my_app.layout = html.Div([page_container])
+    my_app.layout = html.Div(
+        [
+            dbc.Container([page_container], fluid=True, className="dbc dbc-ag-grid"),
+        ],
+        **{"data-bs-theme": tm.data_bs_theme()},
+    )
 
     # Create the Plugin Page and call page_setup
     plugin_page = PluginPage3()

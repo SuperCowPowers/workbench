@@ -6,69 +6,43 @@ from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.models_page_view import ModelsPageView
-from sageworks.web_interface.components import table, model_plot
+from sageworks.web_interface.components import model_plot
+from sageworks.web_interface.components.plugins.ag_table import AGTable
 from sageworks.cached.cached_model import CachedModel
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
 
 
-def update_models_table(page_view: ModelsPageView):
+def model_table_refresh(page_view: ModelsPageView, table: AGTable):
     @callback(
-        [Output("models_table", "columns"), Output("models_table", "data")],
+        [Output(component_id, prop) for component_id, prop in table.properties],
         Input("models_refresh", "n_intervals"),
     )
-    def models_update(_n):
+    def _model_table_refresh(_n):
         """Return the table data for the Models Table"""
         page_view.refresh()
         models = page_view.models()
         models["uuid"] = models["Model Group"]
         models["id"] = range(len(models))
-        column_setup_list = table.Table().column_setup(models, markdown_columns=["Model Group"])
-        return [column_setup_list, models.to_dict("records")]
+        return table.update_properties(models)
 
 
-# Highlights the selected row in the table
-def table_row_select(table_name: str):
-    @callback(
-        Output(table_name, "style_data_conditional"),
-        Input(table_name, "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def style_selected_rows(selected_rows):
-        if not selected_rows or selected_rows[0] is None:
-            return no_update
-        row_style = [
-            {
-                "if": {"filter_query": "{{id}}={}".format(i)},
-                "backgroundColor": "rgb(80, 80, 80)",
-            }
-            for i in selected_rows
-        ]
-        # Style for symbols
-        symbol_style = {"if": {"column_id": "Health"}, "fontSize": 16, "textAlign": "left"}
-
-        # Append the symbol style to the row style
-        row_style.append(symbol_style)
-        return row_style
-
-
-# Updates the model plot when the model inference run is changed
+# Updates the model plot when the model inference run dropdown is changed
 def update_model_plot_component():
     @callback(
         Output("model_plot", "figure"),
         Input("model_details-dropdown", "value"),
-        State("models_table", "data"),
-        State("models_table", "derived_viewport_selected_row_ids"),
+        Input("models_table", "selectedRows"),
         prevent_initial_call=True,
     )
-    def generate_model_plot_figure(inference_run, table_data, selected_rows):
+    def generate_model_plot_figure(inference_run, selected_rows):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return no_update
 
         # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
+        selected_row_data = selected_rows[0]
         model_uuid = selected_row_data["uuid"]
         m = CachedModel(model_uuid)
 
@@ -90,16 +64,15 @@ def setup_plugin_callbacks(plugins):
         # Aggregate plugin outputs
         [Output(component_id, prop) for p in plugins for component_id, prop in p.properties],
         State("model_details-dropdown", "value"),
-        Input("models_table", "derived_viewport_selected_row_ids"),
-        State("models_table", "data"),
+        Input("models_table", "selectedRows"),
     )
-    def update_all_plugin_properties(inference_run, selected_rows, table_data):
+    def update_all_plugin_properties(inference_run, selected_rows):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             raise PreventUpdate
 
         # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
+        selected_row_data = selected_rows[0]
         object_uuid = selected_row_data["uuid"]
 
         # Create the Model object

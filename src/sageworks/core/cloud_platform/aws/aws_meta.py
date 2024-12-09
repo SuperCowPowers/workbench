@@ -9,7 +9,6 @@ import pandas as pd
 import awswrangler as wr
 from collections import defaultdict
 
-
 # SageWorks Imports
 from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.config_manager import ConfigManager
@@ -127,7 +126,15 @@ class AWSMeta:
         Returns:
             pd.DataFrame: A summary of the Data Sources deployed in the AWS Platform
         """
-        return self._list_catalog_tables("sageworks")
+        data_sources_df = self._list_catalog_tables("sageworks")
+        data_sources_df["Health"] = ""
+
+        # Make the Health column the second column
+        cols = data_sources_df.columns.tolist()
+        cols.remove("Health")
+        cols.insert(1, "Health")
+        data_sources_df = data_sources_df[cols]
+        return data_sources_df
 
     def views(self, database: str = "sageworks") -> pd.DataFrame:
         """Get a summary of the all the Views, for the given database, in AWS
@@ -169,6 +176,7 @@ class AWSMeta:
                 aws_tags = self.get_aws_tags(fg["FeatureGroupArn"])
                 summary = {
                     "Feature Group": name,
+                    "Health": "",
                     "Owner": aws_tags.get("sageworks_owner", "-"),
                     "Created": datetime_string(feature_set_details.get("CreationTime")),
                     "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),

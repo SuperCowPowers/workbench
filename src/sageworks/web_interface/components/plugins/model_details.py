@@ -5,8 +5,7 @@ from typing import Union
 
 
 # Dash Imports
-from dash import html, callback, dcc
-from dash.dependencies import Input, Output, State
+from dash import html, callback, dcc, Input, Output, State
 
 # SageWorks Imports
 from sageworks.cached.cached_model import CachedModel

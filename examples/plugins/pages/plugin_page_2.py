@@ -5,7 +5,7 @@ from dash import html, page_container, register_page
 import dash_bootstrap_components as dbc
 
 # SageWorks Imports
-from sageworks.web_interface.components import table
+from sageworks.web_interface.components.plugins.ag_table import AGTable
 from sageworks.cached.cached_meta import CachedMeta
 
 
@@ -15,7 +15,7 @@ class PluginPage2:
     def __init__(self):
         """Initialize the Plugin Page"""
         self.page_name = "Hello World"
-        self.models_table = table.Table()
+        self.models_table = AGTable()
         self.table_component = None
         self.meta = CachedMeta()
 
@@ -24,7 +24,7 @@ class PluginPage2:
 
         # Create a table to display the models
         self.table_component = self.models_table.create_component(
-            "my_model_table", header_color="rgb(60, 60, 60)", row_select="single", max_height=400
+            "my_model_table", header_color="rgb(60, 60, 60)", max_height=400
         )
 
         # Register this page with Dash and set up the layout
@@ -36,11 +36,10 @@ class PluginPage2:
         )
 
         # Populate the models table with data
-        models = self.meta.models()
+        models = self.meta.models(details=True)
         models["uuid"] = models["Model Group"]
         models["id"] = range(len(models))
-        self.table_component.columns = self.models_table.column_setup(models)
-        self.table_component.data = models.to_dict("records")
+        [self.table_component.columnDefs, self.table_component.rowData, _] = self.models_table.update_properties(models)
 
     def page_layout(self) -> dash.html.Div:
         """Set up the layout for the page"""
@@ -56,18 +55,23 @@ class PluginPage2:
 # Unit Test for your Plugin Page
 if __name__ == "__main__":
     import webbrowser
+    from sageworks.utils.theme_manager import ThemeManager
 
-    # Create our Dash Application
+    # Set up the Theme Manager
+    tm = ThemeManager()
+    tm.set_theme("quartz_dark")
+    css_files = tm.css_files()
+
+    # Create the Dash app
     my_app = dash.Dash(
-        __name__,
-        title="SageWorks Dashboard",
-        use_pages=True,
-        pages_folder="",
-        external_stylesheets=[dbc.themes.DARKLY],
+        __name__, title="SageWorks Dashboard", use_pages=True, external_stylesheets=css_files, pages_folder=""
     )
-
-    # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
-    my_app.layout = html.Div([page_container])
+    my_app.layout = html.Div(
+        [
+            dbc.Container([page_container], fluid=True, className="dbc dbc-ag-grid"),
+        ],
+        **{"data-bs-theme": tm.data_bs_theme()},
+    )
 
     # Create the Plugin Page and call page_setup
     plugin_page = PluginPage2()

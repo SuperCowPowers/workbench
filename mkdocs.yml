@@ -25,6 +25,7 @@ nav:
     - Cached Endpoint: cached/cached_endpoint.md
   - Theme Support:
     - Overview: themes/index.md
+    - Support Phases (WIP): themes/details.md
   - Blogs: 
     - OverView: blogs/index.md
     - Residual Analysis: blogs/residual_analysis.md 

@@ -19,22 +19,19 @@ class AGTable(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
 
-    def create_component(self, component_id: str) -> AgGrid:
-        """Create a Table Component without any data.
-        Args:
-            component_id (str): The ID of the web component
-        Returns:
-            AgGrid: The Table Component using AG Grid
-        """
+    def create_component(
+        self, component_id: str, header_color: str = "rgb(120, 60, 60)", max_height: int = 800
+    ) -> AgGrid:
+        """Create a Table Component without any data."""
         self.component_id = component_id
+
+        # AG Grid configuration for tighter rows and columns
+        grid_options = {"rowSelection": "single", "rowHeight": 30, "headerHeight": 40}
+
         self.container = AgGrid(
             id=component_id,
-            # className="ag-theme-balham-light",
-            # className="ag-theme-balham-dark",
-            className="ag-custom-dark",
-            columnSize="sizeToFit",
-            dashGridOptions={"rowSelection": "single"},
-            style={"maxHeight": "800px", "overflow": "auto"},
+            dashGridOptions=grid_options,
+            style={"maxHeight": f"{max_height}px", "overflow": "auto"},
         )
 
         # Fill in plugin properties
@@ -49,7 +46,6 @@ class AGTable(PluginInterface):
             (self.component_id, "selectedRows"),
         ]
 
-        # Return the container
         return self.container
 
     def update_properties(self, table_df: pd.DataFrame, **kwargs) -> list:
@@ -64,18 +60,28 @@ class AGTable(PluginInterface):
         """
         log.important(f"Updating Table Plugin with a table dataframe and kwargs: {kwargs}")
 
-        # TEMP: Add Health Symbols to the Model Group Name
+        # Add Health Symbols
         if "Health" in table_df.columns:
             table_df["Health"] = table_df["Health"].map(lambda x: tag_symbols(x))
 
         # Convert the DataFrame to a list of dictionaries for AG Grid
         table_data = table_df.to_dict("records")
 
-        # Define column definitions based on the DataFrame
-        column_defs = [{"headerName": col, "field": col, "filter": "agTextColumnFilter"} for col in table_df.columns]
+        # Okay the Health and Owner columns are always way too big
+        column_defs = [
+            {
+                "headerName": col,
+                "field": col,
+                "resizable": True,
+                "width": 80 if col in ["Health", "Owner", "Ver"] else None,  # Smaller width for specific columns
+                "cellStyle": {"fontSize": "18px"} if col == "Health" else None,  # Larger font for Health column
+            }
+            for col in table_df.columns
+        ]
 
         # Select the first row by default
         selected_rows = table_df.head(1).to_dict("records")
+        print(f"SELECTED ROWS: {selected_rows}")
 
         # Return the column definitions and table data (must match the plugin properties)
         return [column_defs, table_data, selected_rows]
@@ -86,4 +92,4 @@ if __name__ == "__main__":
     from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(AGTable).run()
+    PluginUnitTest(AGTable, theme="quartz").run()

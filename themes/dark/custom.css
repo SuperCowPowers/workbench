@@ -1,0 +1,11 @@
+h1, h2, h3, h4 {
+    color: rgb(220, 220, 220); /* We want the text to dark gray */
+}
+body {
+    color: rgb(180, 180, 180); /* We want the text to dark gray */
+}
+
+/* Custom CSS to style bold text */
+b, strong {
+    color: rgb(120, 120, 240); /* Replace with your desired RGB color */
+}

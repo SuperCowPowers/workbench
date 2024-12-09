@@ -6,12 +6,22 @@ import pandas as pd
 
 # SageWorks Imports
 from sageworks.web_interface.components.component_interface import ComponentInterface
+from sageworks.utils.theme_manager import ThemeManager
 
 
 # This class is basically a specialized version of a Plotly Heatmap
 # For heatmaps see (https://plotly.com/python/heatmaps/)
 class CorrelationMatrix(ComponentInterface):
     """Correlation Matrix Component"""
+
+    def __init__(self):
+        """Initialize the Regression Plot Class"""
+
+        # Initialize the Theme Manager
+        self.theme_manager = ThemeManager()
+
+        # Call the parent class constructor
+        super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
         """Create a Correlation Matrix Component without any data.
@@ -29,17 +39,6 @@ class CorrelationMatrix(ComponentInterface):
         Returns:
             plotly.graph_objs.Figure: A Figure object containing the correlation matrix.
         """
-
-        # A nice color scale for the correlation matrix
-        color_scale = [
-            [0, "rgb(64,64,128)"],
-            [0.15, "rgb(48, 120, 120)"],
-            [0.35, "rgb(40, 40, 40)"],
-            [0.5, "rgb(40, 40, 40)"],
-            [0.65, "rgb(40, 40, 40)"],
-            [0.85, "rgb(120, 120, 48)"],
-            [1.0, "rgb(128, 64, 64)"],
-        ]
 
         # Sanity check the data
         if data_source_details is None:
@@ -69,8 +68,10 @@ class CorrelationMatrix(ComponentInterface):
                 z=df,
                 x=x_labels,
                 y=y_labels,
+                xgap=2,  # Add space between cells
+                ygap=2,
                 name="",
-                colorscale=color_scale,
+                colorscale=self.theme_manager.colorscale("diverging"),
                 zmin=-1,
                 zmax=1,
             )
@@ -78,8 +79,8 @@ class CorrelationMatrix(ComponentInterface):
         fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 0}, height=height)
 
         # Now remap the x and y axis labels (so they don't show the index)
-        fig.update_xaxes(tickvals=x_labels, ticktext=df.columns, tickangle=30)
-        fig.update_yaxes(tickvals=y_labels, ticktext=df.index)
+        fig.update_xaxes(tickvals=x_labels, ticktext=df.columns, tickangle=30, showgrid=False)
+        fig.update_yaxes(tickvals=y_labels, ticktext=df.index, showgrid=False)
 
         # Now we're going to customize the annotations and filter out low values
         label_threshold = 0.3
@@ -134,6 +135,9 @@ if __name__ == "__main__":
     # This class takes in data details and generates a Correlation Matrix
     from sageworks.api.data_source import DataSource
 
+    tm = ThemeManager()
+    tm.set_theme("dark")
+
     ds = DataSource("test_data")
     ds_details = ds.details()
 
@@ -144,7 +148,7 @@ if __name__ == "__main__":
     fig = corr_plot.update_properties(ds_details)
 
     # Apply dark theme
-    fig.update_layout(template="plotly_dark")
+    fig.update_layout()
 
     # Show the figure
     fig.show()

@@ -9,8 +9,6 @@ from sageworks.utils.config_manager import ConfigManager
 
 
 def main_layout(
-    incoming_data: dash_table.DataTable,
-    glue_jobs: dash_table.DataTable,
     data_sources: dash_table.DataTable,
     feature_sets: dash_table.DataTable,
     models: dash_table.DataTable,
@@ -25,10 +23,16 @@ def main_layout(
     # Update rate is in seconds (convert to milliseconds)
     update_rate = update_rate * 1000
 
-    # Just put all the tables in as Rows for Now (do something fancy later)
+    # Define the layout with one table per row
     layout = html.Div(
         children=[
+            # This refreshes the page every 60 seconds
             dcc.Interval(id="main_page_refresh", interval=update_rate, n_intervals=0),
+            # Hidden link to navigate to subpages
+            html.A(id="navigate-link", href="", target="_blank", style={"display": "none"}),
+            # Hidden trigger for the link click (to navigate to subpages)
+            html.Div(id="trigger_link_click", style={"display": "none"}),
+            # Top of Main Page Header/Info Section
             dbc.Row(
                 [
                     html.H2(
@@ -36,7 +40,7 @@ def main_layout(
                             html.A(
                                 "SageWorks Dashboard ",
                                 href="/status",
-                                style={"color": "rgb(200, 200, 200)", "textDecoration": "none"},
+                                style={"textDecoration": "none"},
                             ),
                             html.Span(
                                 f"{sageworks_version}",
@@ -69,18 +73,35 @@ def main_layout(
                     ),
                 ]
             ),
-            dbc.Row(html.H3("Incoming Data"), style={"padding": "20px 0px 0px 0px"}),
-            dbc.Row(incoming_data),
-            dbc.Row(html.H3("Glue Jobs"), style={"padding": "20px 0px 0px 0px"}),
-            dbc.Row(glue_jobs),
-            dbc.Row(html.H3("Data Sources"), style={"padding": "20px 0px 0px 0px"}),
-            dbc.Row(data_sources),
-            dbc.Row(html.H3("Feature Sets"), style={"padding": "20px 0px 0px 0px"}),
-            dbc.Row(feature_sets),
-            dbc.Row(html.H3("Models"), style={"padding": "20px 0px 0px 0px"}),
-            dbc.Row(models),
-            dbc.Row(html.H3("Endpoints"), style={"padding": "20px 0px 0px 0px"}),
-            dbc.Row(endpoints),
+            # Each table in its own row
+            dbc.Row(
+                [
+                    html.H3("Data Sources", style={"textAlign": "left"}),
+                    data_sources,
+                ],
+                style={"padding": "20px 0px"},
+            ),
+            dbc.Row(
+                [
+                    html.H3("Feature Sets", style={"textAlign": "left"}),
+                    feature_sets,
+                ],
+                style={"padding": "20px 0px"},
+            ),
+            dbc.Row(
+                [
+                    html.H3("Models", style={"textAlign": "left"}),
+                    models,
+                ],
+                style={"padding": "20px 0px"},
+            ),
+            dbc.Row(
+                [
+                    html.H3("Endpoints", style={"textAlign": "left"}),
+                    endpoints,
+                ],
+                style={"padding": "20px 0px"},
+            ),
         ],
         style={"margin": "30px"},
     )

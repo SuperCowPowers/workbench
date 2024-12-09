@@ -2,11 +2,13 @@
 
 from dash import dcc, callback, Output, Input, State
 import plotly.graph_objects as go
+import plotly.io as pio
 
 
 # SageWorks Imports
 from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from sageworks.cached.cached_model import CachedModel
+from sageworks.utils.theme_manager import ThemeManager
 
 
 class ConfusionMatrix(PluginInterface):
@@ -19,6 +21,9 @@ class ConfusionMatrix(PluginInterface):
         """Initialize the ConfusionMatrix plugin class"""
         self.component_id = None
         self.current_highlight = None  # Store the currently highlighted cell
+
+        # Initialize the Theme Manager
+        self.theme_manager = ThemeManager()
 
         # Call the parent class constructor
         super().__init__()
@@ -45,78 +50,93 @@ class ConfusionMatrix(PluginInterface):
         return self.container
 
     def update_properties(self, model: CachedModel, **kwargs) -> list:
-        """Create a Confusion Matrix Figure for the numeric columns in the dataframe.
+        """
+        Create a Confusion Matrix Figure for the numeric columns in the dataframe.
 
         Args:
             model (CachedModel): Sageworks instantiated CachedModel object
             **kwargs:
                 - inference_run (str): Inference capture UUID
         Returns:
-            plotly.graph_objs.Figure: A Figure object containing the confusion matrix.
+            list: A list containing the updated Plotly figure.
         """
+        # Retrieve the confusion matrix data
         inference_run = kwargs.get("inference_run", "auto_inference")
         df = model.confusion_matrix(inference_run)
         if df is None:
             return self.display_text("No Data")
 
-        color_scale = [
-            [0, "rgb(64,64,160)"],
-            [0.35, "rgb(48, 140, 140)"],
-            [0.65, "rgb(140, 140, 48)"],
-            [1.0, "rgb(160, 64, 64)"],
-        ]
+        # Use Plotly's default theme-friendly colorscale
+        # from plotly.colors import sequential
+        # color_scale = sequential.Plasma
 
-        # The confusion matrix is displayed in reverse order (so flip the dataframe)
+        # The confusion matrix is displayed in reverse order (flip the dataframe for correct orientation)
         df = df.iloc[::-1]
 
-        # Add the labels to the confusion matrix (we add both the string and the index)
-        # We can use the index to highlight the selected square in a callback
+        # Add labels to the confusion matrix, including the index for highlighting
         x_labels = [f"{c}:{i}" for i, c in enumerate(df.columns)]
         y_labels = [f"{c}:{i}" for i, c in enumerate(df.index)]
 
+        # Create the heatmap figure
+        colorscale = self.theme_manager.colorscale()
+        colorscale = self.theme_manager.adjust_colorscale_alpha(colorscale, alpha=0.25)
         fig = go.Figure(
             data=go.Heatmap(
                 z=df,
                 x=x_labels,
                 y=y_labels,
-                xgap=2,
-                ygap=2,
-                name="",
-                colorscale=color_scale,
-                zmin=0,
+                xgap=3,  # Add space between cells
+                ygap=3,
+                colorscale=colorscale,  # Use the current theme's colorscale
             )
         )
+
+        # Apply theme-based layout updates
         fig.update_layout(
-            margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},
-            height=400,
-            xaxis_title="Predicted",
+            template=pio.templates.default,  # Use the current theme
+            margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},  # Tight margins
+            height=400,  # Fixed height for consistent layout
+            xaxis_title="Predicted",  # Add meaningful axis labels
             yaxis_title="Actual",
         )
 
+        # Configure x-axis with dynamic theming
         fig.update_xaxes(
-            tickvals=x_labels,
-            ticktext=df.columns,
-            tickangle=30,
-            tickfont_size=14,
-            automargin=True,
-            title_standoff=20,
-            title_font={"size": 18, "color": "#9999cc"},
-        )
-        fig.update_yaxes(
-            tickvals=y_labels,
-            ticktext=df.index,
-            tickfont_size=14,
-            automargin=True,
-            title_standoff=20,
-            title_font={"size": 18, "color": "#9999cc"},
+            tickvals=x_labels,  # Position ticks for each label
+            ticktext=df.columns,  # Display readable column names
+            tickangle=30,  # Rotate labels for better readability
+            tickfont_size=14,  # Font size for tick labels
+            automargin=True,  # Automatically manage margins
+            title_standoff=20,  # Add space between axis title and labels
+            title_font={"size": 18},  # Use theme-defined colors
+            showgrid=False,  # Hide gridlines
         )
 
+        # Configure y-axis with dynamic theming
+        fig.update_yaxes(
+            tickvals=y_labels,  # Position ticks for each label
+            ticktext=df.index,  # Display readable row names
+            tickfont_size=14,  # Font size for tick labels
+            automargin=True,  # Automatically manage margins
+            title_standoff=20,  # Add space between axis title and labels
+            title_font={"size": 18},  # Use theme-defined colors
+            showgrid=False,  # Hide gridlines
+        )
+
+        # Add annotations for each cell in the confusion matrix
         for i, row in enumerate(df.index):
             for j, col in enumerate(df.columns):
                 value = df.loc[row, col]
                 text_value = f"{value:.2f}" if isinstance(value, float) else str(value)
-                fig.add_annotation(x=j, y=i, text=text_value, showarrow=False, font_size=16, font_color="#dddddd")
+                fig.add_annotation(
+                    x=j,  # Cell column position
+                    y=i,  # Cell row position
+                    text=text_value,  # Display the value in the cell
+                    showarrow=False,  # No arrows, place directly in the cell
+                    font_size=16,  # Font size for cell values
+                )
 
+        # Return the updated figure wrapped in a list
         return [fig]
 
     def register_internal_callbacks(self):
@@ -167,4 +187,4 @@ if __name__ == "__main__":
 
     # Run the Unit Test on the Plugin
     model = CachedModel("wine-classification")
-    PluginUnitTest(ConfusionMatrix, input_data=model).run()
+    PluginUnitTest(ConfusionMatrix, input_data=model, theme="dark").run()

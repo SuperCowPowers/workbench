@@ -1,15 +1,14 @@
 """Models:  A SageWorks Web Interface to view, and interact with Models"""
 
 from dash import register_page
-import dash
 
 # Local Imports
 from .layout import models_layout
 from . import callbacks
 
 # SageWorks Imports
-from sageworks.web_interface.components import table, model_plot
-from sageworks.web_interface.components.plugins import model_details
+from sageworks.web_interface.components import model_plot
+from sageworks.web_interface.components.plugins import model_details, ag_table
 from sageworks.web_interface.components.plugin_interface import PluginPage
 from sageworks.utils.plugin_manager import PluginManager
 from sageworks.web_interface.page_views.models_page_view import ModelsPageView
@@ -22,9 +21,8 @@ register_page(
 )
 
 # Create a table to display the models
-models_table = table.Table().create_component(
-    "models_table", header_color="rgb(60, 100, 60)", row_select="single", max_height=270
-)
+models_table = ag_table.AGTable()
+models_table_component = models_table.create_component("models_table", header_color="rgb(60, 100, 60)", max_height=270)
 
 # Create a Markdown component to display the model details
 model_details = model_details.ModelDetails()
@@ -35,7 +33,7 @@ model_plot_component = model_plot.ModelPlot().create_component("model_plot")
 
 # Capture our components in a dictionary to send off to the layout
 components = {
-    "models_table": models_table,
+    "models_table": models_table_component,
     "model_details": model_details_component,
     "model_plot": model_plot_component,
 }
@@ -55,15 +53,13 @@ for plugin in plugins:
 # Set up our layout (Dash looks for a var called layout)
 layout = models_layout(**components)
 
-# Grab a view that gives us a summary of the DataSources in SageWorks
+# Grab a view that gives us a summary of the Models in SageWorks
 model_view = ModelsPageView()
 
 # Setup our callbacks/connections
-app = dash.get_app()
-callbacks.update_models_table(model_view)
+callbacks.model_table_refresh(model_view, models_table)
 
 # Callback for the model table
-callbacks.table_row_select("models_table")
 callbacks.update_model_plot_component()
 
 # Set up callbacks for all the plugins

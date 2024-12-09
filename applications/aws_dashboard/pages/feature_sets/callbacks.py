@@ -8,7 +8,8 @@ import logging
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
-from sageworks.web_interface.components import table, data_details_markdown, violin_plots, correlation_matrix
+from sageworks.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
+from sageworks.web_interface.components.plugins.ag_table import AGTable
 
 # Set up logging
 log = logging.getLogger("sageworks")
@@ -18,42 +19,18 @@ log = logging.getLogger("sageworks")
 smart_sample_rows = []
 
 
-def update_feature_sets_table(page_view: FeatureSetsPageView):
+def feature_sets_refresh(page_view: FeatureSetsPageView, fs_table: AGTable):
     @callback(
-        [
-            Output("feature_sets_table", "columns"),
-            Output("feature_sets_table", "data"),
-        ],
+        [Output(component_id, prop) for component_id, prop in fs_table.properties],
         Input("feature_sets_refresh", "n_intervals"),
     )
-    def feature_sets_update(_n):
+    def _feature_sets_refresh(_n):
         """Return the table data for the FeatureSets Table"""
         page_view.refresh()
         feature_sets = page_view.feature_sets()
         feature_sets["uuid"] = feature_sets["Feature Group"]
         feature_sets["id"] = range(len(feature_sets))
-        column_setup_list = table.Table().column_setup(feature_sets, markdown_columns=["Feature Group"])
-        return [column_setup_list, feature_sets.to_dict("records")]
-
-
-# Highlights the selected row in the table
-def table_row_select(table_name: str):
-    @callback(
-        Output(table_name, "style_data_conditional"),
-        Input(table_name, "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def style_selected_rows(selected_rows):
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        row_style = [
-            {
-                "if": {"filter_query": "{{id}}={}".format(i)},
-                "backgroundColor": "rgb(80, 80, 80)",
-            }
-            for i in selected_rows
-        ]
-        return row_style
+        return fs_table.update_properties(feature_sets)
 
 
 # Updates the feature set details and correlation matrix when a new FeatureSet is selected
@@ -64,17 +41,16 @@ def update_feature_set_details(page_view: FeatureSetsPageView):
             Output("feature_set_details", "children"),
             Output("feature_set_correlation_matrix", "figure", allow_duplicate=True),
         ],
-        Input("feature_sets_table", "derived_viewport_selected_row_ids"),
-        State("feature_sets_table", "data"),
+        Input("feature_sets_table", "selectedRows"),
         prevent_initial_call=True,
     )
-    def generate_feature_set_markdown(selected_rows, table_data):
+    def generate_feature_set_markdown(selected_rows):
         # Check for no selected rows
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
         # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
+        selected_row_data = selected_rows[0]
         feature_set_uuid = selected_row_data["uuid"]
         print(f"FeatureSet UUID: {feature_set_uuid}")
 
@@ -92,26 +68,24 @@ def update_feature_set_details(page_view: FeatureSetsPageView):
         return [header, feature_details_markdown, corr_figure]
 
 
-def update_feature_set_sample_rows(page_view: FeatureSetsPageView):
+def update_feature_set_sample_rows(page_view: FeatureSetsPageView, samples_table: AGTable):
     @callback(
         [
             Output("feature_sample_rows_header", "children"),
-            Output("feature_set_sample_rows", "columns"),
-            Output("feature_set_sample_rows", "style_data_conditional"),
-            Output("feature_set_sample_rows", "data", allow_duplicate=True),
+            Output("feature_set_sample_rows", "columnDefs"),
+            Output("feature_set_sample_rows", "rowData"),
             Output("feature_set_violin_plot", "figure", allow_duplicate=True),
         ],
-        Input("feature_sets_table", "derived_viewport_selected_row_ids"),
-        State("feature_sets_table", "data"),
+        Input("feature_sets_table", "selectedRows"),
         prevent_initial_call=True,
     )
-    def smart_sample_rows_update(selected_rows, table_data):
+    def smart_sample_rows_update(selected_rows):
         global smart_sample_rows
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
         # Get the selected row data and grab the uuid
-        selected_row_data = table_data[selected_rows[0]]
+        selected_row_data = selected_rows[0]
         feature_set_uuid = selected_row_data["uuid"]
         print(f"FeatureSet UUID: {feature_set_uuid}")
 
@@ -121,10 +95,13 @@ def update_feature_set_sample_rows(page_view: FeatureSetsPageView):
         # Header Text
         header = f"Sample/Outlier Rows: {feature_set_uuid}"
 
-        # The columns need to be in a special format for the DataTable
-        column_setup_list = table.Table().column_setup(smart_sample_rows)
+        # Grab column definitions and row data from our Samples Table
+        [column_defs, _, _] = samples_table.update_properties(smart_sample_rows)
 
-        # We need to update our style_data_conditional to color the outlier groups
+        # We need to update our cellStyle to color the outlier groups
+        # FIXME: Revise this to use the AGTable class (this should be a part of column_defs)
+        """
+        style_cells = {}
         color_column = "outlier_group"
         if color_column not in smart_sample_rows.columns:
             style_cells = table.Table().style_data_conditional()
@@ -132,6 +109,7 @@ def update_feature_set_sample_rows(page_view: FeatureSetsPageView):
             unique_categories = smart_sample_rows[color_column].unique().tolist()
             unique_categories = [x for x in unique_categories if x != "sample"]
             style_cells = table.Table().style_data_conditional(color_column, unique_categories)
+        """
 
         # Update the Violin Plot with the new smart sample rows
         violin_figure = violin_plots.ViolinPlots().update_properties(
@@ -146,7 +124,7 @@ def update_feature_set_sample_rows(page_view: FeatureSetsPageView):
         )
 
         # Return the header, columns, style_cell, and the data
-        return [header, column_setup_list, style_cells, smart_sample_rows.to_dict("records"), violin_figure]
+        return [header, column_defs, smart_sample_rows.to_dict("records"), violin_figure]
 
 
 #
@@ -245,7 +223,7 @@ def correlation_matrix_selection():
         Input("feature_set_correlation_matrix", "clickData"),
         State("feature_set_correlation_matrix", "figure"),
         State("feature_set_violin_plot", "figure"),
-        State("feature_set_sample_rows", "data"),
+        State("feature_set_sample_rows", "rowData"),
         prevent_initial_call=True,
     )
     def update_figure(click_data, corr_figure, violin_figure, sample_rows):
@@ -273,7 +251,7 @@ def reorder_sample_rows():
     regenerate the figure"""
 
     @callback(
-        Output("feature_set_sample_rows", "data", allow_duplicate=True),
+        Output("feature_set_sample_rows", "rowData", allow_duplicate=True),
         Input("feature_set_violin_plot", "selectedData"),
         prevent_initial_call=True,
     )
