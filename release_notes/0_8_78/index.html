@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.47">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.48">
     
     
       
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-0874" class="md-skip">
+        <a href="#release-0878" class="md-skip">
           Skip to content
         </a>
       
@@ -790,6 +790,27 @@
   
   <span class="md-ellipsis">
     Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../themes/details/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Support Phases (WIP)
   </span>
   
 
@@ -2384,9 +2405,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed-refresh-credentials-hang" class="md-nav__link">
+  <a href="#tbd-stuff" class="md-nav__link">
     <span class="md-ellipsis">
-      Fixed Refresh Credentials 'Hang'
+      TBD Stuff
     </span>
   </a>
   
@@ -3202,9 +3223,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fixed-refresh-credentials-hang" class="md-nav__link">
+  <a href="#tbd-stuff" class="md-nav__link">
     <span class="md-ellipsis">
-      Fixed Refresh Credentials 'Hang'
+      TBD Stuff
     </span>
   </a>
   
@@ -3257,38 +3278,19 @@
                   
 
 
-<h1 id="release-0874">Release 0.8.74</h1>
+<h1 id="release-0878">Release 0.8.78</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
 <p>The SageWorks framework continues to flex to support different real world use cases when operating a set of production machine learning pipelines.</p>
-<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.71</code> to <code>0.8.74</code></p>
+<p><strong>Note:</strong> These release notes cover the changes from <code>0.8.74</code> to <code>0.8.78</code></p>
 <h2 id="general">General</h2>
 <p>This release is an incremental release as part of the road map for <code>v.0.9.0</code>. Please see the full details of the planned changes here: <a href="../../road_maps/0_9_0/">v0.9.0 Roadmap</a>. </p>
 <h3 id="s3-based-plugins">S3 based Plugins</h3>
 <p>We've added the ability to grab Dashboard plugins directly from an S3 bucket. Please see <a href="../../admin/dashboard_s3_plugins/">Dashboard S3 Plugin</a></p>
-<h3 id="fixed-refresh-credentials-hang">Fixed Refresh Credentials 'Hang'</h3>
-<p>The AWS credentials would get automatically refreshed each hour, but after 4 hours we were hitting an AWS 'refresh lock' that would lock up and never come back. That has been fixed, it will now properly give you a log message and throw an exception about needing to renew your <code>aws sso login</code> token/session.</p>
+<h3 id="tbd-stuff">TBD Stuff</h3>
 <h2 id="api-changes">API Changes</h2>
-<p><strong>Plugins</strong>
-The directory that components were stored in was called 
-<code>web_components</code> that has now been changed to just <code>components</code>.</p>
-<p><strong>Web/View Import Changes</strong>
-If you're using one of the existing web view those have been changed to <code>web_interface.page_views</code>.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>from sageworks.web_views.data_source_web_view import DataSourceWebView
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>from sageworks.web_interface.page_views.data_sources_page_view import DataSourcesPageView
-</span></code></pre></div>
-<p>More examples of how imports have changed</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>from sageworks.web_components import table
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>&lt;has been changed to&gt;
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>from sageworks.web_interface.components 
-</span></code></pre></div>
-<p>and</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>from sageworks.web_view.my_view
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>&lt;has been changed to&gt;
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>sageworks.web_interface.page_views.my_view
-</span></code></pre></div>
 <h2 id="specific-code-changes">Specific Code Changes</h2>
 <p><a href="https://github.com/supercowpowers/sageworks/compare/v0.8.74...v0.8.78" target="_blank">Code Diff v0.8.74 --&gt; v0.8.78</a> </p>
 <p>Who doesn't like looking at code! Also +3 points for getting down this far! Here's a cow joke as a reward:</p>
