@@ -56,6 +56,9 @@ layout = models_layout(**components)
 # Grab a view that gives us a summary of the Models in SageWorks
 model_view = ModelsPageView()
 
+# Callback for anything we want to happen on page load
+callbacks.on_page_load()
+
 # Setup our callbacks/connections
 callbacks.model_table_refresh(model_view, models_table)
 

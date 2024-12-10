@@ -60,4 +60,4 @@ callbacks.last_updated()
 callbacks.tables_refresh(main_page_view, tables)
 
 # Set up our subpage navigation
-callbacks.navigate_to_subpage(tables)
+callbacks.navigate_to_subpage()

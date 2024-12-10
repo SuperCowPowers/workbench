@@ -59,6 +59,9 @@ layout = endpoints_layout(**components)
 # Grab a view that gives us a summary of the Endpoints in SageWorks
 endpoints_view = EndpointsPageView()
 
+# Callback for anything we want to happen on page load
+callbacks.on_page_load()
+
 # Setup our callbacks/connections
 callbacks.endpoint_table_refresh(endpoints_view, endpoints_table)
 

@@ -15,6 +15,7 @@ def data_sources_layout(
     layout = html.Div(
         children=[
             dcc.Interval(id="data_sources_refresh", interval=60000),
+            dcc.Store(id="data_sources_page_loaded", data=False),
             dbc.Row(
                 [
                     html.H2("SageWorks: DataSources"),

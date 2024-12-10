@@ -3,14 +3,47 @@
 import logging
 
 import pandas as pd
-from dash import callback, Output, Input
+from dash import callback, Output, Input, State
 from dash.exceptions import PreventUpdate
+from urllib.parse import urlparse, parse_qs
+
 
 # SageWorks Imports
 from sageworks.api.pipeline import Pipeline
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
+
+
+def on_page_load():
+    @callback(
+        Output("pipelines_table", "selectedRows"),
+        Output("pipelines_page_loaded", "data"),
+        Input("url", "href"),
+        Input("pipelines_table", "rowData"),
+        State("pipelines_page_loaded", "data"),
+        prevent_initial_call=True
+    )
+    def _on_page_load(href, row_data, page_already_loaded):
+        if page_already_loaded:
+            raise PreventUpdate
+
+        if not href or not row_data:
+            raise PreventUpdate
+
+        parsed = urlparse(href)
+        if parsed.path != "/pipelines":
+            raise PreventUpdate
+
+        selected_uuid = parse_qs(parsed.query).get("uuid", [None])[0]
+        if not selected_uuid:
+            return [row_data[0]], True
+
+        for row in row_data:
+            if row.get("uuid") == selected_uuid:
+                return [row], True
+
+        raise PreventUpdate
 
 
 def update_pipelines_table(table_object):

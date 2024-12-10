@@ -2,9 +2,11 @@
 
 import dash
 from dash import callback, Input, Output, State
+from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import pandas as pd
 import logging
+from urllib.parse import urlparse, parse_qs
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
@@ -17,6 +19,37 @@ log = logging.getLogger("sageworks")
 
 # Cheese Sauce
 smart_sample_rows = []
+
+
+def on_page_load():
+    @callback(
+        Output("feature_sets_table", "selectedRows"),
+        Output("feature_sets_page_loaded", "data"),
+        Input("url", "href"),
+        Input("feature_sets_table", "rowData"),
+        State("feature_sets_page_loaded", "data"),
+        prevent_initial_call=True
+    )
+    def _on_page_load(href, row_data, page_already_loaded):
+        if page_already_loaded:
+            raise PreventUpdate
+
+        if not href or not row_data:
+            raise PreventUpdate
+
+        parsed = urlparse(href)
+        if parsed.path != "/feature_sets":
+            raise PreventUpdate
+
+        selected_uuid = parse_qs(parsed.query).get("uuid", [None])[0]
+        if not selected_uuid:
+            return [row_data[0]], True
+
+        for row in row_data:
+            if row.get("uuid") == selected_uuid:
+                return [row], True
+
+        raise PreventUpdate
 
 
 def feature_sets_refresh(page_view: FeatureSetsPageView, fs_table: AGTable):

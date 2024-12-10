@@ -52,6 +52,9 @@ layout = feature_sets_layout(**components)
 # Grab a view that gives us a summary of the FeatureSets in SageWorks
 feature_set_view = FeatureSetsPageView()
 
+# Callback for anything we want to happen on page load
+callbacks.on_page_load()
+
 # Periodic update to the feature sets summary table
 callbacks.feature_sets_refresh(feature_set_view, feature_sets_table)
 

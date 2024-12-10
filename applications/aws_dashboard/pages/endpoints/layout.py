@@ -22,6 +22,7 @@ def endpoints_layout(
     layout = html.Div(
         children=[
             dcc.Interval(id="endpoints_refresh", interval=60000),
+            dcc.Store(id="endpoints_page_loaded", data=False),
             dbc.Row(
                 [
                     html.H2("SageWorks: Endpoints"),

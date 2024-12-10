@@ -42,6 +42,9 @@ for plugin in plugins:
 # Set up our layout (Dash looks for a var called layout)
 layout = pipelines_layout(**components)
 
+# Callback for anything we want to happen on page load
+callbacks.on_page_load()
+
 # Setup our callbacks/connections
 app = dash.get_app()
 callbacks.update_pipelines_table(pipeline_table)

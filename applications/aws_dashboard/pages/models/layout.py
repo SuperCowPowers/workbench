@@ -22,6 +22,7 @@ def models_layout(
     layout = html.Div(
         children=[
             dcc.Interval(id="models_refresh", interval=60000),
+            dcc.Store(id="models_page_loaded", data=False),
             dbc.Row(
                 [
                     html.H2("SageWorks: Models"),

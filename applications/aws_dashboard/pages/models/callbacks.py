@@ -3,6 +3,8 @@
 import logging
 from dash import callback, no_update, Input, Output, State
 from dash.exceptions import PreventUpdate
+from urllib.parse import urlparse, parse_qs
+
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.models_page_view import ModelsPageView
@@ -12,6 +14,37 @@ from sageworks.cached.cached_model import CachedModel
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
+
+
+def on_page_load():
+    @callback(
+        Output("models_table", "selectedRows"),
+        Output("models_page_loaded", "data"),
+        Input("url", "href"),
+        Input("models_table", "rowData"),
+        State("models_page_loaded", "data"),
+        prevent_initial_call=True
+    )
+    def _on_page_load(href, row_data, page_already_loaded):
+        if page_already_loaded:
+            raise PreventUpdate
+
+        if not href or not row_data:
+            raise PreventUpdate
+
+        parsed = urlparse(href)
+        if parsed.path != "/models":
+            raise PreventUpdate
+
+        selected_uuid = parse_qs(parsed.query).get("uuid", [None])[0]
+        if not selected_uuid:
+            return [row_data[0]], True
+
+        for row in row_data:
+            if row.get("uuid") == selected_uuid:
+                return [row], True
+
+        raise PreventUpdate
 
 
 def model_table_refresh(page_view: ModelsPageView, table: AGTable):

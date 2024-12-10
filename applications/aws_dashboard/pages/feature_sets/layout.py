@@ -15,6 +15,7 @@ def feature_sets_layout(
     layout = html.Div(
         children=[
             dcc.Interval(id="feature_sets_refresh", interval=60000),
+            dcc.Store(id="feature_sets_page_loaded", data=False),
             dbc.Row(
                 [
                     html.H2("SageWorks: FeatureSets"),

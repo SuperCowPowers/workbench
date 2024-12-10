@@ -24,29 +24,30 @@ smart_sample_rows = []
 def on_page_load():
     @callback(
         Output("data_sources_table", "selectedRows"),
+        Output("data_sources_page_loaded", "data"),
         Input("url", "href"),
-        State("data_sources_table", "rowData"),
+        Input("data_sources_table", "rowData"),
+        State("data_sources_page_loaded", "data"),
         prevent_initial_call=True
     )
-    def _on_page_load(href, row_data):
-        print(f"on_page_load: {href}")
+    def _on_page_load(href, row_data, page_already_loaded):
+        if page_already_loaded:
+            raise PreventUpdate
+
         if not href or not row_data:
             raise PreventUpdate
 
-        # If the URL isn't my page, then don't update
         parsed = urlparse(href)
         if parsed.path != "/data_sources":
             raise PreventUpdate
 
-        # Get the selected UUID from the URL (if not found, then just select the first row)
         selected_uuid = parse_qs(parsed.query).get("uuid", [None])[0]
         if not selected_uuid:
-            return [row_data[0]]
+            return [row_data[0]], True
 
-        # Try to find the matching row
         for row in row_data:
             if row.get("uuid") == selected_uuid:
-                return [row]
+                return [row], True
 
         raise PreventUpdate
 

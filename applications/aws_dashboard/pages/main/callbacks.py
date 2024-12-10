@@ -53,23 +53,48 @@ def tables_refresh(main_page: MainPage, tables: dict[str, AGTable]):
         return all_props
 
 
-def navigate_to_subpage(tables: dict[str, str]):
+# Navigate to the subpages
+def navigate_to_subpage():
     @callback(
-        Output("url", "href"),
-        [Input(f"main_{table_name}", "selectedRows") for table_name in tables.keys()],
+        Output("url", "href", allow_duplicate=True),
+        Input("main_data_sources", "selectedRows"),
         prevent_initial_call=True,
     )
-    def _navigate_to_subpage(*selected_rows_list):
-        # Fixme: Let's circle back to this as some point
-        trigger_table_name = ctx.triggered_id.replace("main_", "")  # Drop the "main_" prefix
+    def navigate_data_sources(selected_rows):
+        if selected_rows:
+            row_uuid = selected_rows[0].get("uuid", 0)
+            return f"/data_sources?uuid={row_uuid}"
+        raise PreventUpdate
 
-        # Loop over each table_id and its selected rows
-        for table_name, selected_rows in zip(tables.keys(), selected_rows_list):
-            print(f"Trigger name: {trigger_table_name} Table Name: {table_name}, Selected Rows: {selected_rows}")
-            if table_name == trigger_table_name and selected_rows:
-                selected_row = selected_rows[0]
-                row_uuid = selected_row.get("uuid", 0)
-                subpage_name = table_name
-                return f"/{subpage_name}?uuid={row_uuid}"
+    @callback(
+        Output("url", "href", allow_duplicate=True),
+        Input("main_feature_sets", "selectedRows"),
+        prevent_initial_call=True,
+    )
+    def navigate_feature_sets(selected_rows):
+        if selected_rows:
+            row_uuid = selected_rows[0].get("uuid", 0)
+            return f"/feature_sets?uuid={row_uuid}"
+        raise PreventUpdate
 
+    @callback(
+        Output("url", "href", allow_duplicate=True),
+        Input("main_models", "selectedRows"),
+        prevent_initial_call=True,
+    )
+    def navigate_models(selected_rows):
+        if selected_rows:
+            row_uuid = selected_rows[0].get("uuid", 0)
+            return f"/models?uuid={row_uuid}"
+        raise PreventUpdate
+
+    @callback(
+        Output("url", "href", allow_duplicate=True),
+        Input("main_endpoints", "selectedRows"),
+        prevent_initial_call=True,
+    )
+    def navigate_predictions(selected_rows):
+        if selected_rows:
+            row_uuid = selected_rows[0].get("uuid", 0)
+            return f"/endpoints?uuid={row_uuid}"
         raise PreventUpdate
