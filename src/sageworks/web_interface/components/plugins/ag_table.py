@@ -30,11 +30,7 @@ class AGTable(PluginInterface):
             "rowSelection": "single",
             "rowHeight": 30,
             "headerHeight": 40,
-            "defaultColDef": {
-                "sortable": True,
-                "filter": True,
-                "resizable": True
-            }
+            "defaultColDef": {"sortable": True, "filter": True, "resizable": True},
         }
 
         self.container = AgGrid(
