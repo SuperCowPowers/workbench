@@ -477,7 +477,7 @@ class EndpointCore(Artifact):
         converted_df = converted_df.convert_dtypes()
 
         # Report on any rows that failed
-        failed_rows = converted_df[converted_df.isna().any(axis=1)]
+        failed_rows = converted_df[converted_df["prediction"].isna()]
         if not failed_rows.empty:
             self.log.warning(f"Rows that failed:\n{failed_rows}")
 
