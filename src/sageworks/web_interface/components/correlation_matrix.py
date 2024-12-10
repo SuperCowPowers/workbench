@@ -46,8 +46,11 @@ class CorrelationMatrix(ComponentInterface):
         if "column_stats" not in data_source_details:
             return self.display_text("No column_stats Found", figure_height=200)
 
+        # Threshold for the correlation matrix (filter out low values)
+        threshold = 0.4
+
         # Convert the data details into a correlation dataframe
-        df = self._corr_df_from_data_details(data_source_details)
+        df = self._corr_df_from_data_details(data_source_details, threshold=threshold)
 
         # If the dataframe is empty then return a message
         if df.empty:
@@ -83,17 +86,16 @@ class CorrelationMatrix(ComponentInterface):
         fig.update_yaxes(tickvals=y_labels, ticktext=df.index, showgrid=False)
 
         # Now we're going to customize the annotations and filter out low values
-        label_threshold = 0.3
         for i, row in enumerate(df.index):
             for j, col in enumerate(df.columns):
                 value = df.loc[row, col]
-                if abs(value) > label_threshold:
+                if abs(value) > threshold:
                     fig.add_annotation(x=j, y=i, text=f"{value:.2f}", showarrow=False)
 
         return fig
 
     @staticmethod
-    def _corr_df_from_data_details(data_details: dict, threshold: float = 0.3) -> pd.DataFrame:
+    def _corr_df_from_data_details(data_details: dict, threshold: float = 0.4) -> pd.DataFrame:
         """Internal: Create a Pandas DataFrame in the form given by df.corr() from DataSource details.
         Args:
             data_details (dict): A dictionary containing DataSource details.
@@ -118,12 +120,12 @@ class CorrelationMatrix(ComponentInterface):
         corr_df = corr_df.loc[:, (corr_df.abs().max() > threshold)]
         corr_df = corr_df[(corr_df.abs().max(axis=1) > threshold)]
 
-        # If the correlation matrix is bigger than 10x10 then we need to filter it down
-        while corr_df.shape[0] > 10 and threshold <= 0.6:
+        # If the correlation matrix is bigger than 12x12 then we need to filter it down
+        while corr_df.shape[0] > 12:
             # Now filter out any correlations below the threshold
             corr_df = corr_df.loc[:, (corr_df.abs().max() > threshold)]
             corr_df = corr_df[(corr_df.abs().max(axis=1) > threshold)]
-            threshold += 0.1
+            threshold += 0.05
 
         # Return the correlation dataframe in the form of df.corr()
         corr_df.sort_index(inplace=True)

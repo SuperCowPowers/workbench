@@ -1,4 +1,4 @@
-"""Plugin Page 1:  A 'Hello World' SageWorks Plugin Page"""
+"""Plugin Page 2:  A 'Hello World' SageWorks Plugin Page"""
 
 import dash
 from dash import html, page_container, register_page
