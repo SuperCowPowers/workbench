@@ -68,9 +68,9 @@ def navigate_to_subpage(tables: dict[str, AGTable]):
 
         for subpage_name, table_id in zip(tables.keys(), tables.keys()):
             if f"main_{table_id}" == triggered_id:
-                selected_rows = selected_rows_list[list(tables.keys()).index(table_id)]
-                if selected_rows:
-                    return f"/{subpage_name}"
+                selected_row = selected_rows_list[list(tables.keys()).index(table_id)][0]
+                row_uuid = selected_row.get("uuid", 0)
+                return f"/{subpage_name}?uuid={row_uuid}"
 
         # No selection made, no navigation
         raise PreventUpdate

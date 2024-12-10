@@ -1,6 +1,6 @@
 """SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
 
-from dash import Dash, html, page_container
+from dash import Dash, html, dcc, page_container
 import dash_bootstrap_components as dbc
 
 
@@ -36,6 +36,8 @@ server = app.server
 # app.layout = html.Div([page_container])
 app.layout = html.Div(
     [
+        # URL for subpage navigation (jumping to feature_sets, models, etc.)
+        dcc.Location(id="url", refresh="callback-nav"),
         dbc.Container([page_container], fluid=True, className="dbc dbc-ag-grid"),
     ],
     **{"data-bs-theme": tm.data_bs_theme()},

@@ -58,6 +58,9 @@ layout = data_sources_layout(**components)
 # Grab a view that gives us a summary of the DataSources in SageWorks
 data_source_view = DataSourcesPageView()
 
+# Callback for anything we want to happen on page load
+callbacks.on_page_load()
+
 # Periodic update to the data sources summary table
 callbacks.data_sources_refresh(data_source_view, data_sources_table)
 
@@ -69,3 +72,4 @@ callbacks.update_data_source_sample_rows(data_source_view, samples_table)
 callbacks.violin_plot_selection()
 callbacks.reorder_sample_rows()
 callbacks.correlation_matrix_selection()
+

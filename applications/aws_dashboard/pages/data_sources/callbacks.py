@@ -2,9 +2,11 @@
 
 import dash
 from dash import callback, Input, Output, State
+from dash.exceptions import PreventUpdate
 import plotly.graph_objects as go
 import pandas as pd
 import logging
+from urllib.parse import urlparse, parse_qs
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.data_sources_page_view import DataSourcesPageView
@@ -17,6 +19,35 @@ log = logging.getLogger("sageworks")
 
 # Cheese Sauce
 smart_sample_rows = []
+
+
+def on_page_load():
+    @callback(
+        Output("data_sources_table", "selectedRows"),
+        Input("url", "href"),
+        State("data_sources_table", "rowData"),
+        prevent_initial_call=True
+    )
+    def _on_page_load(href, row_data):
+        if not href:
+            raise PreventUpdate
+
+        parsed = urlparse(href)
+        if parsed.path != "/data_sources":
+            raise PreventUpdate
+
+        # Get the UUID from the query parameters
+        query_params = parse_qs(parsed.query)
+        selected_uuid = query_params.get("uuid", [None])[0]
+        if selected_uuid is None or row_data is None:
+            raise PreventUpdate
+
+        # Find the row with the matching UUID directly from row_data
+        for row in row_data:
+            if row.get("uuid") == selected_uuid:
+                return [row]
+
+        raise PreventUpdate
 
 
 def data_sources_refresh(page_view: DataSourcesPageView, ds_table: AGTable):
