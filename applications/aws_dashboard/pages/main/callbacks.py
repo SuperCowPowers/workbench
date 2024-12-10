@@ -1,7 +1,7 @@
 """Callbacks/Connections for the Main/Front Dashboard Page"""
 
 from datetime import datetime
-from dash import callback, Input, Output, ctx
+from dash import callback, Input, Output
 from dash.exceptions import PreventUpdate
 
 # SageWorks Imports

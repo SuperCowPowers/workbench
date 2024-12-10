@@ -28,7 +28,7 @@ def on_page_load():
         Input("url", "href"),
         Input("feature_sets_table", "rowData"),
         State("feature_sets_page_loaded", "data"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def _on_page_load(href, row_data, page_already_loaded):
         if page_already_loaded:

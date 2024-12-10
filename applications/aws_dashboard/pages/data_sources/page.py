@@ -72,4 +72,3 @@ callbacks.update_data_source_sample_rows(data_source_view, samples_table)
 callbacks.violin_plot_selection()
 callbacks.reorder_sample_rows()
 callbacks.correlation_matrix_selection()
-
