@@ -28,8 +28,8 @@ class AGTable(PluginInterface):
         # AG Grid configuration for tighter rows and columns
         grid_options = {
             "rowSelection": "single",
-            "rowHeight": 30,
-            "headerHeight": 40,
+            "rowHeight": 25,
+            "headerHeight": 30,
             "defaultColDef": {"sortable": True, "filter": True, "resizable": True},
         }
 
