@@ -37,8 +37,7 @@ class AGTable(PluginInterface):
         # Fill in plugin properties
         self.properties = [
             (self.component_id, "columnDefs"),
-            (self.component_id, "rowData"),
-            (self.component_id, "selectedRows"),
+            (self.component_id, "rowData")
         ]
 
         # Output signals
@@ -79,12 +78,8 @@ class AGTable(PluginInterface):
             for col in table_df.columns
         ]
 
-        # Select the first row by default
-        selected_rows = table_df.head(1).to_dict("records")
-        print(f"SELECTED ROWS: {selected_rows}")
-
         # Return the column definitions and table data (must match the plugin properties)
-        return [column_defs, table_data, selected_rows]
+        return [column_defs, table_data]
 
 
 if __name__ == "__main__":

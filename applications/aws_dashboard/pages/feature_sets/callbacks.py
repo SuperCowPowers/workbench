@@ -96,7 +96,7 @@ def update_feature_set_sample_rows(page_view: FeatureSetsPageView, samples_table
         header = f"Sample/Outlier Rows: {feature_set_uuid}"
 
         # Grab column definitions and row data from our Samples Table
-        [column_defs, _, _] = samples_table.update_properties(smart_sample_rows)
+        [column_defs, _] = samples_table.update_properties(smart_sample_rows)
 
         # Update the Violin Plot with the new smart sample rows
         violin_figure = violin_plots.ViolinPlots().update_properties(

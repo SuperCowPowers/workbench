@@ -39,7 +39,7 @@ class PluginPage2:
         models = self.meta.models(details=True)
         models["uuid"] = models["Model Group"]
         models["id"] = range(len(models))
-        [self.table_component.columnDefs, self.table_component.rowData, _] = self.models_table.update_properties(models)
+        [self.table_component.columnDefs, self.table_component.rowData] = self.models_table.update_properties(models)
 
     def page_layout(self) -> dash.html.Div:
         """Set up the layout for the page"""

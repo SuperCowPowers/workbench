@@ -96,7 +96,7 @@ def update_data_source_sample_rows(page_view: DataSourcesPageView, samples_table
         header = f"Sample/Outlier Rows: {data_source_uuid}"
 
         # Grab column definitions and row data from our Samples Table
-        [column_defs, _, _] = samples_table.update_properties(smart_sample_rows)
+        [column_defs, _] = samples_table.update_properties(smart_sample_rows)
 
         # Update the Violin Plot with the new smart sample rows
         violin_figure = violin_plots.ViolinPlots().update_properties(

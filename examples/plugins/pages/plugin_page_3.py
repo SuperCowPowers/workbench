@@ -52,7 +52,7 @@ class PluginPage3:
         models = self.meta.models(details=True)
         models["uuid"] = models["Model Group"]
         models["id"] = range(len(models))
-        [self.table_component.columnDefs, self.table_component.rowData, _] = self.models_table.update_properties(models)
+        [self.table_component.columnDefs, self.table_component.rowData] = self.models_table.update_properties(models)
 
         # Register the callbacks
         self.register_app_callbacks(app)
