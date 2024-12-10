@@ -26,7 +26,16 @@ class AGTable(PluginInterface):
         self.component_id = component_id
 
         # AG Grid configuration for tighter rows and columns
-        grid_options = {"rowSelection": "single", "rowHeight": 30, "headerHeight": 40}
+        grid_options = {
+            "rowSelection": "single",
+            "rowHeight": 30,
+            "headerHeight": 40,
+            "defaultColDef": {
+                "sortable": True,
+                "filter": True,
+                "resizable": True
+            }
+        }
 
         self.container = AgGrid(
             id=component_id,
@@ -69,7 +78,7 @@ class AGTable(PluginInterface):
                 "headerName": col,
                 "field": col,
                 "resizable": True,
-                "width": 80 if col in ["Health", "Owner", "Ver"] else None,  # Smaller width for specific columns
+                "width": 100 if col in ["Health", "Owner", "Ver"] else None,  # Smaller width for specific columns
                 "cellStyle": {"fontSize": "18px"} if col == "Health" else None,  # Larger font for Health column
             }
             for col in table_df.columns
