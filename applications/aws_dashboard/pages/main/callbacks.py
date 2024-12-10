@@ -53,24 +53,23 @@ def tables_refresh(main_page: MainPage, tables: dict[str, AGTable]):
         return all_props
 
 
-def navigate_to_subpage(tables: dict[str, AGTable]):
-
+def navigate_to_subpage(tables: dict[str, str]):
     @callback(
-        Output("url", "href"),  # Just set the URL directly
-        [Input(f"main_{table_id}", "selectedRows") for table_id in tables.keys()],
+        Output("url", "href"),
+        [Input(f"main_{table_name}", "selectedRows") for table_name in tables.keys()],
         prevent_initial_call=True,
     )
     def _navigate_to_subpage(*selected_rows_list):
-        # Identify which table triggered the callback
-        triggered_id = ctx.triggered_id
-        if triggered_id is None:
-            raise PreventUpdate
+        # Fixme: Let's circle back to this as some point
+        trigger_table_name = ctx.triggered_id.replace("main_", "")  # Drop the "main_" prefix
 
-        for subpage_name, table_id in zip(tables.keys(), tables.keys()):
-            if f"main_{table_id}" == triggered_id:
-                selected_row = selected_rows_list[list(tables.keys()).index(table_id)][0]
+        # Loop over each table_id and its selected rows
+        for table_name, selected_rows in zip(tables.keys(), selected_rows_list):
+            print(f"Trigger name: {trigger_table_name} Table Name: {table_name}, Selected Rows: {selected_rows}")
+            if table_name == trigger_table_name and selected_rows:
+                selected_row = selected_rows[0]
                 row_uuid = selected_row.get("uuid", 0)
+                subpage_name = table_name
                 return f"/{subpage_name}?uuid={row_uuid}"
 
-        # No selection made, no navigation
         raise PreventUpdate
