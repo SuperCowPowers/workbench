@@ -29,20 +29,21 @@ def on_page_load():
         prevent_initial_call=True
     )
     def _on_page_load(href, row_data):
-        if not href:
+        print(f"on_page_load: {href}")
+        if not href or not row_data:
             raise PreventUpdate
 
+        # If the URL isn't my page, then don't update
         parsed = urlparse(href)
         if parsed.path != "/data_sources":
             raise PreventUpdate
 
-        # Get the UUID from the query parameters
-        query_params = parse_qs(parsed.query)
-        selected_uuid = query_params.get("uuid", [None])[0]
-        if selected_uuid is None or row_data is None:
-            raise PreventUpdate
+        # Get the selected UUID from the URL (if not found, then just select the first row)
+        selected_uuid = parse_qs(parsed.query).get("uuid", [None])[0]
+        if not selected_uuid:
+            return [row_data[0]]
 
-        # Find the row with the matching UUID directly from row_data
+        # Try to find the matching row
         for row in row_data:
             if row.get("uuid") == selected_uuid:
                 return [row]
