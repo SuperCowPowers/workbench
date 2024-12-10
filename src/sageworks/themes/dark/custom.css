@@ -1,8 +1,8 @@
 h1, h2, h3, h4 {
-    color: rgb(220, 220, 220); /* We want the text to dark gray */
+    color: rgb(220, 220, 220); /* We want the headers off white */
 }
 body {
-    color: rgb(180, 180, 180); /* We want the text to dark gray */
+    color: rgb(180, 180, 180); /* We want the text dim white */
 }
 
 /* Custom CSS to style bold text */

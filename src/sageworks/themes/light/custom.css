@@ -1,0 +1,13 @@
+h1, h2, h3, h4 {
+    color: rgb(60, 60, 60); /* We want the headers dark gray */
+}
+
+body {
+    color: rgb(80, 80, 80); /* Dark gray text */
+    background: linear-gradient(90deg, rgba(240,240,240,1) 0%, rgba(240,240,240,1) 50%, rgba(147,150,195,1) 100%);
+}
+
+/* Custom CSS to style bold text */
+b, strong {
+    color: rgb(120, 120, 240); /* Replace with your desired RGB color */
+}
