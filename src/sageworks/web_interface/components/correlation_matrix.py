@@ -81,9 +81,11 @@ class CorrelationMatrix(ComponentInterface):
         )
         fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 0}, height=height)
 
-        # Now remap the x and y axis labels (so they don't show the index)
-        fig.update_xaxes(tickvals=x_labels, ticktext=df.columns, tickangle=30, showgrid=False)
-        fig.update_yaxes(tickvals=y_labels, ticktext=df.index, showgrid=False)
+        # Truncate labels to a maximum of 23 characters
+        x_axes_labels = [f"{c[:20]}..." if len(c) > 23 else c for c in df.columns]
+        y_axes_labels = [f"{c[:20]}..." if len(c) > 23 else c for c in df.index]
+        fig.update_xaxes(tickvals=x_labels, ticktext=x_axes_labels, tickangle=30, showgrid=False)
+        fig.update_yaxes(tickvals=y_labels, ticktext=y_axes_labels, showgrid=False)
 
         # Now we're going to customize the annotations and filter out low values
         for i, row in enumerate(df.index):

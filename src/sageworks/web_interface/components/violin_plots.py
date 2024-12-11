@@ -62,8 +62,10 @@ class ViolinPlots(ComponentInterface):
         num_rows, num_columns = self._compute_subplot_layout(num_plots)
         fig = make_subplots(rows=num_rows, cols=num_columns, vertical_spacing=0.07)
         for i, col in enumerate(numeric_columns):
+            # Truncate labels to a maximum of 23 characters
+            label = f"{col[:20]}..." if len(col) > 23 else col
             fig.add_trace(
-                go.Violin(y=df[col], name=col, **figure_args),
+                go.Violin(y=df[col], name=label, **figure_args),
                 row=i // num_columns + 1,
                 col=i % num_columns + 1,
             )

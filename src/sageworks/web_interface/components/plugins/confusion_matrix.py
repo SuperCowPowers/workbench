@@ -94,7 +94,7 @@ class ConfusionMatrix(PluginInterface):
         # Apply theme-based layout updates
         fig.update_layout(
             template=pio.templates.default,  # Use the current theme
-            margin=dict(l=90, r=10, t=15, b=70),  # Custom margins
+            margin=dict(l=100, r=10, t=15, b=80),  # Custom margins
             height=360,  # Fixed height for consistent layout
             xaxis_title="Predicted",  # Add meaningful axis labels
             yaxis_title="Actual",
