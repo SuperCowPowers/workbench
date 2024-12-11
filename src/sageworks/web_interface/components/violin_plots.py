@@ -112,7 +112,7 @@ class ViolinPlots(ComponentInterface):
             int: The height of the aggregate plot.
         """
         # Set the base height
-        base_height = 300
+        base_height = 250
         if num_rows == 1:
             return base_height
         return base_height + num_rows * 80

@@ -65,7 +65,7 @@ class CorrelationMatrix(ComponentInterface):
         y_labels = [f"{c}:{i}" for i, c in enumerate(df.index)]
 
         # Create the heatmap plot with custom settings
-        height = max(400, len(df.index) * 50)
+        height = max(350, len(df.index) * 50)
         fig = go.Figure(
             data=go.Heatmap(
                 z=df,

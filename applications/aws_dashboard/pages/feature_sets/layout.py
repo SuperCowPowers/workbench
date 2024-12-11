@@ -35,7 +35,7 @@ def feature_sets_layout(
             # Column1: Data Source Details, Column2: Violin Plots, Correlation Matrix
             dbc.Row(
                 [
-                    # Column 1: Data Source Details
+                    # Column 1: Feature Set Details
                     dbc.Col(
                         [
                             dbc.Row(
@@ -52,11 +52,8 @@ def feature_sets_layout(
                     # Column 2: Violin Plots (Correlation Matrix + Outliers)
                     dbc.Col(
                         [
-                            dbc.Row(violin_plot),
-                            dbc.Row(
-                                [dbc.Col(correlation_matrix, width=12)],
-                                style={"padding": "0px 0px 0px 0px"},
-                            ),
+                            dbc.Row(violin_plot, style={"padding": "0px 0px 30px 0px"}),
+                            dbc.Row(correlation_matrix, style={"padding": "0px 0px 30px 0px"})
                         ],
                         width=8,
                     ),
