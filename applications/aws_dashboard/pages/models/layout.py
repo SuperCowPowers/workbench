@@ -12,13 +12,7 @@ def models_layout(
     **kwargs: Any,
 ) -> html.Div:
     # Generate rows for each plugin
-    plugin_rows = [
-        dbc.Row(
-            plugin,
-            style={"padding": "0px 0px 20px 0px"}
-        )
-        for component_id, plugin in kwargs.items()
-    ]
+    plugin_rows = [dbc.Row(plugin, style={"padding": "0px 0px 20px 0px"}) for component_id, plugin in kwargs.items()]
     layout = html.Div(
         children=[
             dcc.Interval(id="models_refresh", interval=60000),
