@@ -34,10 +34,16 @@ b, strong {
     background-color: rgba(170, 170, 205, 1.0);
 }
 
+/* There's a one pixel border around the grid that we want to remove */
+.ag-root-wrapper {
+    border: none !important; /* Force removal with !important */
+}
+
+
 /* Box shadow and rounded corners for all AgGrid themes */
 [class*="ag-theme-"] {
     box-shadow: 4px 4px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
-    border-radius: 8px; /* Rounded corners */
+    border-radius: 12px; /* Rounded corners */
     border: 1px solid rgba(0, 0, 0, 0.5);
     margin: 0;
     padding: 0;
@@ -48,7 +54,7 @@ b, strong {
     box-shadow:
         inset 0 0 0 1px rgba(0, 0, 0, 0.5),   /* Simulated border */
         4px 4px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
-    border-radius: 10px; /* Rounded corners */
+    border-radius: 12px; /* Rounded corners */
     margin: 30px; /* Optional: space around the figure */
     padding: 30px; /* Optional: inner padding */
     overflow: hidden; /* Ensure contents fit inside the rounded corners */

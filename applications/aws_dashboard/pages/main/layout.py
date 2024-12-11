@@ -36,7 +36,7 @@ def main_layout(
                             html.A(
                                 "SageWorks Dashboard ",
                                 href="/status",
-                                style={"textDecoration": "none"},
+                                style={"textDecoration": "none", "color": "rgb(80, 80, 80)"},
                             ),
                             html.Span(
                                 f"{sageworks_version}",
