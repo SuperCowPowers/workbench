@@ -121,7 +121,6 @@ class CloudWatchHandler(logging.Handler):
         else:
             return f"laptop/{getpass.getuser()}"
 
-    @staticmethod
     def get_unique_identifier(self, job_name):
         """Get a unique identifier for the log stream."""
 
