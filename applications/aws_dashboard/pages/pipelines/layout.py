@@ -25,7 +25,6 @@ def pipelines_layout(
             dbc.Row(
                 [
                     html.H2("SageWorks: Pipelines"),
-                    dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                     html.Div(id="dev_null", style={"display": "none"}),  # Output for callbacks without outputs
                 ]
             ),

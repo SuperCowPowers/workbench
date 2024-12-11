@@ -74,7 +74,6 @@ class PluginPageExample:
                 dbc.Row(
                     [
                         dash.html.H2("SageWorks: Models"),
-                        dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                     ]
                 ),
                 # A table that lists out all the Models

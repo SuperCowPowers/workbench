@@ -55,7 +55,6 @@ class MyPluginPage:
                 dbc.Row(
                     [
                         dash.html.H2(f"NEW Plugin Page: {cool_stuff.super()}"),
-                        dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                     ]
                 ),
                 # Some Rows for my graphs/plots

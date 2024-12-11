@@ -94,32 +94,32 @@ class ConfusionMatrix(PluginInterface):
         # Apply theme-based layout updates
         fig.update_layout(
             template=pio.templates.default,  # Use the current theme
-            margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},  # Tight margins
-            height=400,  # Fixed height for consistent layout
+            margin=dict(l=90, r=10, t=15, b=70),  # Custom margins
+            height=360,  # Fixed height for consistent layout
             xaxis_title="Predicted",  # Add meaningful axis labels
             yaxis_title="Actual",
         )
 
-        # Configure x-axis with dynamic theming
+        # Configure x-axis
         fig.update_xaxes(
             tickvals=x_labels,  # Position ticks for each label
             ticktext=df.columns,  # Display readable column names
             tickangle=30,  # Rotate labels for better readability
             tickfont_size=14,  # Font size for tick labels
             automargin=True,  # Automatically manage margins
-            title_standoff=20,  # Add space between axis title and labels
-            title_font={"size": 18},  # Use theme-defined colors
+            title_standoff=10,  # Add space between axis title and labels
+            title_font={"size": 18},
             showgrid=False,  # Hide gridlines
         )
 
-        # Configure y-axis with dynamic theming
+        # Configure y-axis
         fig.update_yaxes(
             tickvals=y_labels,  # Position ticks for each label
             ticktext=df.index,  # Display readable row names
             tickfont_size=14,  # Font size for tick labels
             automargin=True,  # Automatically manage margins
-            title_standoff=20,  # Add space between axis title and labels
-            title_font={"size": 18},  # Use theme-defined colors
+            title_standoff=10,  # Add space between axis title and labels
+            title_font={"size": 18},
             showgrid=False,  # Hide gridlines
         )
 

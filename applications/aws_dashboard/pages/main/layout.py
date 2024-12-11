@@ -36,7 +36,10 @@ def main_layout(
                             html.A(
                                 "SageWorks Dashboard ",
                                 href="/status",
-                                style={"textDecoration": "none", "color": "rgb(80, 80, 80)"},
+                                style={
+                                    "textDecoration": "none",  # Remove underline
+                                    "color": "inherit",  # Inherit color from parent
+                                },
                             ),
                             html.Span(
                                 f"{sageworks_version}",

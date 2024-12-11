@@ -720,7 +720,7 @@
         },
         "xaxis": {
             "automargin": true,
-            "gridcolor": "#aaaaaa",
+            "gridcolor": "#bbbbbb",
             "linecolor": "#EBF0F8",
             "ticks": "",
             "title": {
@@ -732,7 +732,7 @@
         },
         "yaxis": {
             "automargin": true,
-            "gridcolor": "#aaaaaa",
+            "gridcolor": "#bbbbbb",
             "linecolor": "#EBF0F8",
             "ticks": "",
             "title": {

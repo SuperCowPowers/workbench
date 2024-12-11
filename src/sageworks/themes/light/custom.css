@@ -42,20 +42,19 @@ b, strong {
 
 /* Box shadow and rounded corners for all AgGrid themes */
 [class*="ag-theme-"] {
-    box-shadow: 4px 4px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
+    box-shadow: 4px 6px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
     border-radius: 12px; /* Rounded corners */
-    border: 1px solid rgba(0, 0, 0, 0.5);
+    border: 0.5px solid rgba(0, 0, 0, 0.5);
     margin: 0;
     padding: 0;
 }
 
 /* Apply styling to all Plotly figures */
 .plotly {
-    box-shadow:
-        inset 0 0 0 1px rgba(0, 0, 0, 0.5),   /* Simulated border */
-        4px 4px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
+    box-shadow: 4px 6px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
     border-radius: 12px; /* Rounded corners */
-    margin: 30px; /* Optional: space around the figure */
-    padding: 30px; /* Optional: inner padding */
+    border: 0.5px solid rgba(0, 0, 0, 0.5);
+    margin: 30px; /* Space around the figure */
+    padding: 30px; /* Inner padding */
     overflow: hidden; /* Ensure contents fit inside the rounded corners */
 }

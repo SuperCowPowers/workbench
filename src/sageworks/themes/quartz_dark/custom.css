@@ -1,0 +1,39 @@
+h1, h2, h3, h4 {
+    color: rgb(40, 40, 40); /* We want the headers dark gray */
+}
+
+body {
+    color: rgb(40, 40, 40); /* Dark gray text */
+}
+
+/* Custom CSS to style bold text */
+b, strong {
+    color: rgb(0, 0, 0);
+}
+
+/* AgGrid custom CSS */
+
+/* There's a one pixel border around the grid that we want to remove */
+.ag-root-wrapper {
+    border: none !important; /* Force removal with !important */
+}
+
+
+/* Box shadow and rounded corners for all AgGrid themes */
+[class*="ag-theme-"] {
+    box-shadow: 4px 6px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
+    border-radius: 12px; /* Rounded corners */
+    border: 0.5px solid rgba(0, 0, 0, 0.5);
+    margin: 0;
+    padding: 0;
+}
+
+/* Apply styling to all Plotly figures */
+.plotly {
+    box-shadow: 4px 6px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
+    border-radius: 12px; /* Rounded corners */
+    border: 0.5px solid rgba(0, 0, 0, 0.5);
+    margin: 30px; /* Space around the figure */
+    padding: 30px; /* Inner padding */
+    overflow: hidden; /* Ensure contents fit inside the rounded corners */
+}

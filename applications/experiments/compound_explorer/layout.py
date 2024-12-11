@@ -38,7 +38,6 @@ def data_sources_layout(
                             "padding": "0px 0px 0px 160px",
                         },
                     ),
-                    dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                 ]
             ),
             dbc.Row(

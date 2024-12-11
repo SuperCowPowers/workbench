@@ -19,7 +19,6 @@ def data_sources_layout(
             dbc.Row(
                 [
                     html.H2("SageWorks: DataSources"),
-                    dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                 ]
             ),
             # A table that lists out all the Data Sources

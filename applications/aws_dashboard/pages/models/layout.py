@@ -26,8 +26,6 @@ def models_layout(
             dbc.Row(
                 [
                     html.H2("SageWorks: Models"),
-                    dbc.Row(style={"padding": "30px 0px 0px 0px"}),
-                    html.Div(id="dev_null", style={"display": "none"}),  # Output for callbacks without outputs
                 ]
             ),
             # A table that lists out all the Models
@@ -36,21 +34,19 @@ def models_layout(
             dbc.Row(
                 [
                     # Column 1: Model Details
-                    dbc.Col(model_details, width=4),
+                    dbc.Col(model_details, width=4, style={"padding": "30px 0px 0px 0px"}),
+
                     # Column 2: Model Plot and Plugins
                     dbc.Col(
                         [
                             dbc.Row(
-                                html.H3("Model Plot", id="model_plot_header"),
-                                style={"padding": "30px 0px 10px 0px"},
+                                html.H3("Performance", id="model_plot_header"),
+                                style={"padding": "30px 0px 0px 0px"},
                             ),
-                            dbc.Row(
-                                model_plot,
-                                style={"padding": "30px 0px 10px 0px"},
-                            ),
+                            dbc.Row(model_plot),
                             dbc.Row(
                                 html.H3("Plugins", id="plugins_header"),
-                                style={"padding": "30px 0px 10px 0px"},
+                                style={"padding": "30px 0px 0px 0px"},
                             ),
                             # Add the dynamically generated Plugin rows
                             *plugin_rows,

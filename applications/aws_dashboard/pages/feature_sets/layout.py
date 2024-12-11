@@ -19,7 +19,6 @@ def feature_sets_layout(
             dbc.Row(
                 [
                     html.H2("SageWorks: FeatureSets"),
-                    dbc.Row(style={"padding": "30px 0px 0px 0px"}),
                 ]
             ),
             # A table that lists out all the Feature Sets
