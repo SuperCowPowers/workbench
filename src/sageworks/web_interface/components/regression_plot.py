@@ -77,9 +77,7 @@ class RegressionPlot(ComponentInterface):
         )
 
         # Just some fine-tuning of the plot
-        fig.update_layout(
-            margin=dict(l=70, r=10, t=15, b=50),  # Custom margins
-            height=360)
+        fig.update_layout(margin=dict(l=70, r=10, t=15, b=50), height=360)  # Custom margins
 
         return fig
 

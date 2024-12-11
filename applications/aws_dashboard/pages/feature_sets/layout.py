@@ -53,7 +53,7 @@ def feature_sets_layout(
                     dbc.Col(
                         [
                             dbc.Row(violin_plot, style={"padding": "0px 0px 30px 0px"}),
-                            dbc.Row(correlation_matrix, style={"padding": "0px 0px 30px 0px"})
+                            dbc.Row(correlation_matrix, style={"padding": "0px 0px 30px 0px"}),
                         ],
                         width=8,
                     ),
