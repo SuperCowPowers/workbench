@@ -28,9 +28,11 @@ class AGTable(PluginInterface):
         # AG Grid configuration for tighter rows and columns
         grid_options = {
             "rowSelection": "single",
+            "suppressCellFocus": True,
             "rowHeight": 25,
             "headerHeight": 30,
             "defaultColDef": {"sortable": True, "filter": True, "resizable": True},
+            "domLayout": "autoHeight",  # Automatically adjust height to fit content
         }
 
         self.container = AgGrid(

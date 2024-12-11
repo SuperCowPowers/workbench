@@ -4,10 +4,52 @@ h1, h2, h3, h4 {
 
 body {
     color: rgb(80, 80, 80); /* Dark gray text */
-    background: linear-gradient(90deg, rgba(240,240,240,1) 0%, rgba(240,240,240,1) 50%, rgba(147,150,195,1) 100%);
+    background: linear-gradient(90deg, rgba(240,240,240,1) 0%, rgba(240,240,240,1) 50%, rgba(150,150,195,1) 100%);
 }
 
 /* Custom CSS to style bold text */
 b, strong {
     color: rgb(120, 120, 240); /* Replace with your desired RGB color */
+}
+
+/* AgGrid custom CSS */
+
+/* Adjust header background color */
+.ag-header {
+    --ag-header-background-color: rgba(150, 150, 195);
+}
+
+/* Adjust cell background */
+.ag-cell {
+    background-color: rgb(240, 240, 240);
+}
+
+/* Alternate row colors */
+.ag-row:nth-child(even) .ag-cell {
+    background-color: rgb(230, 230, 230);
+}
+
+/* Selection color for the entire row */
+.ag-row.ag-row-selected .ag-cell {
+    background-color: rgba(170, 170, 205, 1.0);
+}
+
+/* Box shadow and rounded corners for all AgGrid themes */
+[class*="ag-theme-"] {
+    box-shadow: 4px 4px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
+    border-radius: 8px; /* Rounded corners */
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    margin: 0;
+    padding: 0;
+}
+
+/* Apply styling to all Plotly figures */
+.plotly {
+    box-shadow:
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5),   /* Simulated border */
+        4px 4px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
+    border-radius: 10px; /* Rounded corners */
+    margin: 30px; /* Optional: space around the figure */
+    padding: 30px; /* Optional: inner padding */
+    overflow: hidden; /* Ensure contents fit inside the rounded corners */
 }
