@@ -77,7 +77,9 @@ class RegressionPlot(ComponentInterface):
         )
 
         # Just some fine-tuning of the plot
-        fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10}, height=400)
+        fig.update_layout(
+            margin=dict(l=70, r=10, t=15, b=50),  # Custom margins
+            height=360)
 
         return fig
 
@@ -97,8 +99,6 @@ if __name__ == "__main__":
 
     # Generate the figure
     fig = reg_plot.update_properties(m, my_inference_run)
-
-    # Apply dark theme
     fig.update_layout()
 
     # Show the figure
