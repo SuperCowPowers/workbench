@@ -2,7 +2,7 @@
 
 from dash import Dash, html, dcc, page_container
 import dash_bootstrap_components as dbc
-
+from dash import page_registry
 
 # SageWorks Imports
 from sageworks.utils.plugin_manager import PluginManager
@@ -33,11 +33,12 @@ tm.register_css_route(app)
 server = app.server
 
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
-# app.layout = html.Div([page_container])
+plugin_info_id = "plugin-pages-info"
 app.layout = html.Div(
     [
         # URL for subpage navigation (jumping to feature_sets, models, etc.)
         dcc.Location(id="url", refresh="callback-nav"),
+        dcc.Store(id=plugin_info_id, data={}),
         dbc.Container([page_container], fluid=True, className="dbc dbc-ag-grid"),
     ],
     **{"data-bs-theme": tm.data_bs_theme()},
@@ -52,6 +53,22 @@ plugin_pages = pm.get_pages()
 # Setup each if the plugin pages (call layout and callbacks internally)
 for name, page in plugin_pages.items():
     page.page_setup(app)
+print("Done with Plugin Pages")
+
+# Grab our plugin page info from the page registry and populate our plugin-pages-info store
+dashboard_page_paths = ["/", "/data_sources", "/feature_sets", "/models", "/endpoints",  "/pipelines", "/license", "/status"]
+
+# Pull the plugin pages path and name
+plugin_pages = {}
+for page_id, page_info in page_registry.items():
+    if page_info["path"] not in dashboard_page_paths:
+        plugin_pages[page_info["path"]] = page_info["name"]
+print(plugin_pages)
+
+# Update the plugin-pages-info store
+for component in app.layout.children:
+    if isinstance(component, dcc.Store) and component.id == plugin_info_id:
+        component.data = plugin_pages
 
 
 if __name__ == "__main__":

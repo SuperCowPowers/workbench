@@ -1,7 +1,7 @@
 """Callbacks/Connections for the Main/Front Dashboard Page"""
 
 from datetime import datetime
-from dash import callback, Input, Output
+from dash import callback, Input, Output, html
 from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
@@ -18,6 +18,42 @@ def last_updated():
     def refresh_last_updated_time(_n):
         # A string of the new time (in the local time zone)
         return datetime.now().strftime("Last Updated: %Y-%m-%d (%I:%M %p)")
+
+
+def plugin_page_info():
+    @callback(
+        Output("plugin-pages", "children"),  # Update the entire Div
+        Input("plugin-pages-info", "data"),  # Store holds plugin data
+    )
+    def render_plugin_pages(data):
+        if not data:
+            return html.Div(
+                [
+                    html.H4("Plugin Pages", style={"textAlign": "left"}),
+                    html.A(
+                        "Make some plugins! :)",
+                        href="https://supercowpowers.github.io/sageworks/plugins/",
+                        target="_blank",  # Open link in a new tab
+                        style={
+                            "textDecoration": "none",  # Remove underline
+                            "marginLeft": "20px",  # Add inset
+                        },
+                    ),
+                ]
+            )
+
+        # Generate the list of plugin links
+        plugin_list = html.Ul(
+            [html.Li(html.A(name, href=path)) for path, name in data.items()]
+        )
+
+        # Return the header and list
+        return html.Div(
+            [
+                html.H4("Plugin Pages", style={"textAlign": "left"}),
+                plugin_list,
+            ]
+        )
 
 
 # Update all of the artifact tables

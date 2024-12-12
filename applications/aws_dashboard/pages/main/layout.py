@@ -3,7 +3,7 @@
 from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 
-# Get the SageWorks Version and License ID
+# SageWorks Imports
 import sageworks
 from sageworks.utils.config_manager import ConfigManager
 
@@ -72,13 +72,26 @@ def main_layout(
                     ),
                 ]
             ),
+
+            # Plugin Page Links
+            dbc.Row(
+                html.Div(
+                    [
+                        html.H4("Plugin Pages", id="plugin-pages-header", style={"textAlign": "left"}),
+                        html.Ul([], id="plugin-pages-list")  # Placeholder for the list
+                    ],
+                    id="plugin-pages",
+                ),
+                style={"padding": "20px 0px"}
+            ),
+
             # Each table in its own row
             dbc.Row(
                 [
                     html.H3("Data Sources", style={"textAlign": "left"}),
                     data_sources,
                 ],
-                style={"padding": "20px 0px"},
+                style={"padding": "0px 0px"},
             ),
             dbc.Row(
                 [

@@ -57,6 +57,7 @@ main_page_view = MainPage()
 
 # Set up the callbacks for tables on the main page
 callbacks.last_updated()
+callbacks.plugin_page_info()
 callbacks.tables_refresh(main_page_view, tables)
 
 # Set up our subpage navigation
