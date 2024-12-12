@@ -8,6 +8,7 @@ from flask import send_from_directory
 
 # SageWorks Imports
 from sageworks.utils.config_manager import ConfigManager
+from sageworks.api import ParameterStore
 
 
 class ThemeManager:
@@ -20,7 +21,6 @@ class ThemeManager:
     _available_themes = {}
     _current_theme_name = None
     _current_template = None
-    _theme_set = False
     _default_theme = "dark"
 
     def __new__(cls):
@@ -46,8 +46,12 @@ class ThemeManager:
         if not cls._theme_path.exists():
             cls._log.error(f"The themes path '{cls._theme_path}' does not exist.")
 
+        # Our parameter store
+        cls._ps = ParameterStore()
+
+        # Load the available themes and set the automatic theme
         cls._load_themes()
-        cls.set_theme("default")  # Default theme
+        cls.set_theme("auto")
 
     @classmethod
     def list_themes(cls) -> list[str]:
@@ -58,16 +62,17 @@ class ThemeManager:
     def set_theme(cls, theme_name: str):
         """Set the current theme."""
 
-        # Use "default" theme
-        if theme_name == "default":
-            theme_name = cls._default_theme
-        else:
-            cls._theme_set = True
+        # For 'auto', we try to grab a theme from the Parameter Store
+        # if we can't find one, we'll set the theme to the default
+        if theme_name == "auto":
+            theme_name = cls._ps.get("/sageworks/dashboard/theme", warn=False) or cls._default_theme
 
         # Check if the theme is in our available themes
         if theme_name not in cls._available_themes:
-            cls._log.error(f"Theme '{theme_name}' is not available.")
-            return
+            cls._log.error(f"Theme '{theme_name}' is not available, using default theme.")
+            theme_name = cls._default_theme
+
+        # Grab the theme from the available themes
         theme = cls._available_themes[theme_name]
 
         # Update Plotly template
