@@ -2,7 +2,6 @@
 
 from dash import dcc, callback, Output, Input, State
 import plotly.graph_objects as go
-import plotly.io as pio
 
 
 # SageWorks Imports
