@@ -56,7 +56,16 @@ for name, page in plugin_pages.items():
 print("Done with Plugin Pages")
 
 # Grab our plugin page info from the page registry and populate our plugin-pages-info store
-dashboard_page_paths = ["/", "/data_sources", "/feature_sets", "/models", "/endpoints",  "/pipelines", "/license", "/status"]
+dashboard_page_paths = [
+    "/",
+    "/data_sources",
+    "/feature_sets",
+    "/models",
+    "/endpoints",
+    "/pipelines",
+    "/license",
+    "/status",
+]
 
 # Pull the plugin pages path and name
 plugin_pages = {}

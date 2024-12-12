@@ -43,9 +43,7 @@ def plugin_page_info():
             )
 
         # Generate the list of plugin links
-        plugin_list = html.Ul(
-            [html.Li(html.A(name, href=path)) for path, name in data.items()]
-        )
+        plugin_list = html.Ul([html.Li(html.A(name, href=path)) for path, name in data.items()])
 
         # Return the header and list
         return html.Div(

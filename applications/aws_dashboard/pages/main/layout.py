@@ -72,19 +72,17 @@ def main_layout(
                     ),
                 ]
             ),
-
             # Plugin Page Links
             dbc.Row(
                 html.Div(
                     [
                         html.H4("Plugin Pages", id="plugin-pages-header", style={"textAlign": "left"}),
-                        html.Ul([], id="plugin-pages-list")  # Placeholder for the list
+                        html.Ul([], id="plugin-pages-list"),  # Placeholder for the list
                     ],
                     id="plugin-pages",
                 ),
-                style={"padding": "20px 0px"}
+                style={"padding": "20px 0px"},
             ),
-
             # Each table in its own row
             dbc.Row(
                 [
