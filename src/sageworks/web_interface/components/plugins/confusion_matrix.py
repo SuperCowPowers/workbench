@@ -79,7 +79,7 @@ class ConfusionMatrix(PluginInterface):
 
         # Create the heatmap figure
         colorscale = self.theme_manager.colorscale()
-        colorscale = self.theme_manager.adjust_colorscale_alpha(colorscale, alpha=0.25)
+        colorscale = self.theme_manager.adjust_colorscale_alpha(colorscale, alpha=0.5)
         fig = go.Figure(
             data=go.Heatmap(
                 z=df,
