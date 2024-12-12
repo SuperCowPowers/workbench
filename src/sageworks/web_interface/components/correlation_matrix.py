@@ -81,9 +81,9 @@ class CorrelationMatrix(ComponentInterface):
         )
         fig.update_layout(margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 0}, height=height)
 
-        # Truncate labels to a maximum of 23 characters
-        x_axes_labels = [f"{c[:20]}..." if len(c) > 23 else c for c in df.columns]
-        y_axes_labels = [f"{c[:20]}..." if len(c) > 23 else c for c in df.index]
+        # Truncate labels to a maximum of 24 characters
+        x_axes_labels = [f"{c[:20]}..." if len(c) > 24 else c for c in df.columns]
+        y_axes_labels = [f"{c[:20]}..." if len(c) > 24 else c for c in df.index]
         fig.update_xaxes(tickvals=x_labels, ticktext=x_axes_labels, tickangle=30, showgrid=False)
         fig.update_yaxes(tickvals=y_labels, ticktext=y_axes_labels, showgrid=False)
 
