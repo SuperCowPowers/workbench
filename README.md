@@ -1,6 +1,25 @@
 
 # Recent News
 
+**Themes**
+
+Everyone knows that good data science requires... **Some Awesome Themes!**
+
+<table>
+  <tr>
+    <td><img width="300" alt="dark_theme" src="https://github.com/user-attachments/assets/82ab4eab-0688-4b93-ad8e-9b954564777b"></td>
+    <td><img width="300" alt="light_theme" src="https://github.com/user-attachments/assets/b63a0789-c144-4048-afb6-f03e3d993680"></td>
+  </tr>
+  <tr>
+    <td><img width="300" alt="quartz_theme" src="https://github.com/user-attachments/assets/8a59be19-0c5d-42c6-9922-feafb1a1eecd"></td>
+    <td><img width="300" alt="quartz_dark_theme" src="https://github.com/user-attachments/assets/5b01ec64-8d56-43bf-96c5-7da8ec48f527"></td>
+  </tr>
+</table>
+
+All of the Dashboard pages, subpages, and plugins use our new `ThemeManager()` class. See [SageWorks Themes](https://supercowpowers.github.io/sageworks/themes/), also big thanks to our friends at [Dash Bootstrap Templates](https://github.com/AnnMarieW/dash-bootstrap-templates)
+
+
+
 **SageWorks up on the AWS Marketplace**
 
 Powered by AWS® to accelerate your Machine Learning Pipelines development with our new [Dashboard for ML Pipelines](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo). Getting started with SageWorks is a snap and can be billed through AWS.
