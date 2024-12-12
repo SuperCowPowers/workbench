@@ -31,7 +31,6 @@ b, strong {
 .plotly {
     box-shadow: 4px 6px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
     border-radius: 12px; /* Rounded corners */
-    border: 0.5px solid rgba(0, 0, 0, 0.5);
     margin: 30px; /* Space around the figure */
     padding: 30px; /* Inner padding */
     overflow: hidden; /* Ensure contents fit inside the rounded corners */
