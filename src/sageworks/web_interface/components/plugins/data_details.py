@@ -137,7 +137,7 @@ class DataDetails(PluginInterface):
 
                 # Add correlations if they exist
                 if column_info.get("correlations"):
-                    corr_title = """<span class="lightgreen"><b>Correlated Columns</b></span>"""
+                    corr_title = """<span class="green-text"><b>Correlated Columns</b></span>"""
                     corr_details = expanding_list.replace("<<column_info>>", corr_title)
                     corr_details = f"""<li class="no-bullet">{corr_details}</li>"""
                     corr_list = ""
@@ -215,7 +215,7 @@ class DataDetails(PluginInterface):
         """
 
         # First part of the HTML template is the same for all columns
-        html_template = """<b><<name>></b> <span class="lightblue">(<<full_type>>)</span>:"""
+        html_template = """<b><<name>></b> <span class="blue-text">(<<full_type>>)</span>:"""
 
         # Add min, max, and number of zeros for numeric columns
         numeric_types = [
@@ -237,9 +237,9 @@ class DataDetails(PluginInterface):
             else:
                 html_template += f""" {int(min)} → {int(max)}&nbsp;&nbsp;&nbsp;&nbsp;"""
             if column_info["unique"] == 2 and min == 0 and max == 1:
-                html_template += """ <span class="lightgreen"> Binary</span>"""
+                html_template += """ <span class="green-text"> Binary</span>"""
             elif column_info["num_zeros"] > 0:
-                html_template += """ <span class="lightorange"> Zero: <<num_zeros>></span>"""
+                html_template += """ <span class="orange-text"> Zero: <<num_zeros>></span>"""
 
         # Non-numeric columns get the number of unique values
         else:
@@ -247,7 +247,7 @@ class DataDetails(PluginInterface):
 
         # Do we have any nulls in this column?
         if column_info["nulls"] > 0:
-            html_template += """ <span class="lightred">Null: <<nulls>></span>"""
+            html_template += """ <span class="red-text">Null: <<nulls>></span>"""
 
         # Replace the column name
         html_template = html_template.replace("<<name>>", column_name)
