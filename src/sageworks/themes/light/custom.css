@@ -57,3 +57,24 @@ b, strong {
     padding: 30px; /* Inner padding */
     overflow: hidden; /* Ensure contents fit inside the rounded corners */
 }
+
+/* Some of the HTML/Markdown will use color hints like 'green-text' or 'blue-text' */
+.green-text {
+    color: rgb(40, 100, 40);
+}
+
+.blue-text {
+    color: rgb(70, 70, 160);
+}
+
+.pink-text {
+    color: rgb(200, 100, 200);
+}
+
+.red-text {
+    color: rgb(200, 100, 100);
+}
+
+.orange-text {
+    color: rgb(200, 140, 90);
+}

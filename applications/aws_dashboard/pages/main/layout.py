@@ -47,9 +47,9 @@ def main_layout(
                                     html.A(
                                         "SageWorks Dashboard ",
                                         href="/status",
-                                        className="blue-text",
                                         style={
                                             "textDecoration": "none",
+                                            "color": "inherit",
                                         },
                                     ),
                                     html.Span(

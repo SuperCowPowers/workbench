@@ -7,7 +7,18 @@ body {
 
 /* Custom CSS to style bold text */
 b, strong {
-    color: rgb(220, 180, 255); /* Replace with your desired RGB color */
+    color: rgb(220, 140, 240); /* Replace with your desired RGB color */
+}
+
+/* Links in Quartz are pink and hard to see */
+/* Default link color */
+a {
+    color: rgb(80, 80, 240); /* Change to your preferred color */
+}
+
+/* Hover effect */
+a:hover {
+    color: rgb(100, 100, 255); /* Change hover color */
 }
 
 /* AgGrid custom CSS */
@@ -34,4 +45,25 @@ b, strong {
     margin: 30px; /* Space around the figure */
     padding: 30px; /* Inner padding */
     overflow: hidden; /* Ensure contents fit inside the rounded corners */
+}
+
+/* Some of the HTML/Markdown will use color hints like 'green-text' or 'blue-text' */
+.green-text {
+    color: rgb(140, 255, 140);
+}
+
+.blue-text {
+    color: rgb(170, 170, 255);
+}
+
+.pink-text {
+    color: rgb(240, 140, 240);
+}
+
+.red-text {
+    color: rgb(255, 140, 140);
+}
+
+.orange-text {
+    color: rgb(255, 195, 140);
 }
