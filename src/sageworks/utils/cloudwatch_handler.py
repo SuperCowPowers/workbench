@@ -56,8 +56,11 @@ class CloudWatchHandler(logging.Handler):
         if not self.buffer:
             return  # Nothing to send
 
-        # Sort the buffer by timestamp to ensure chronological order
-        self.buffer.sort(key=lambda event: event["timestamp"])
+        # Ensure logs are sorted and filtered within the last 24 hours
+        now = int(time.time() * 1000)
+        self.buffer = [event for event in self.buffer if now - event["timestamp"] <= 24 * 60 * 60 * 1000]
+        if not self.buffer:
+            return  # All logs are too old to send
 
         log_event = {
             "logGroupName": self.log_group_name,
@@ -71,17 +74,17 @@ class CloudWatchHandler(logging.Handler):
         try:
             response = self.cloudwatch_client.put_log_events(**log_event)
             self.sequence_token = response.get("nextSequenceToken")
-            self.buffer.clear()  # Clear the buffer after successful send
+            self.buffer.clear()  # Clear buffer only after successful send
         except self.cloudwatch_client.exceptions.InvalidSequenceTokenException as e:
-            # Extract token and retry only the put_log_events call
+            # Handle sequence token exception
             self.sequence_token = e.response["Error"]["Message"].split()[-1]
             log_event["sequenceToken"] = self.sequence_token
-            self.cloudwatch_client.put_log_events(**log_event)  # Retry without recursion
+            self.cloudwatch_client.put_log_events(**log_event)
             self.buffer.clear()
         except Exception as e:
             logging.error(f"Failed to send logs to CloudWatch: {e}")
 
-        # Update last sent time after successful send
+        # Update the last sent time
         self.last_sent_time = time.time()
 
     def flush(self):
