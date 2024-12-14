@@ -58,11 +58,8 @@ def plugin_page_info():
 # Update all of the artifact tables
 def tables_refresh(main_page: MainPage, tables: dict[str, AGTable]):
     @callback(
-        [
-            Output(component_id, prop)
-            for t in tables.values()
-            for component_id, prop in t.properties
-        ] + [Output("table_hashes", "data")],  # Add hash updates
+        [Output(component_id, prop) for t in tables.values() for component_id, prop in t.properties]
+        + [Output("table_hashes", "data")],  # Add hash updates
         [
             Input("main_page_refresh", "n_intervals"),
             State("table_hashes", "data"),  # Get current hashes

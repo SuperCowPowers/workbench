@@ -44,7 +44,7 @@ class MainPage(PageView):
         # Drop the AWS URL column and return the dataframe
         s3_data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return s3_data_df
-    
+
     def incoming_data_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
         """Detect changes in the incoming data and return a new DataFrame if changed."""
         return dataframe_delta(self.incoming_data_summary, previous_hash)
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     print("\nEndpoints:")
     df = main_page.endpoints_summary()
     print(df.head())
-    
+
     # Test the Delta Functions
     print("Testing the Delta Functions:")
     print("Models Delta:")
