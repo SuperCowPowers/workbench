@@ -5,8 +5,9 @@ from pandas.errors import ParserError
 import numpy as np
 import json
 from io import StringIO
+import hashlib
 import logging
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Optional
 
 # SageWorks Logger
 log = logging.getLogger("sageworks")
@@ -31,6 +32,44 @@ class DataFrameBuilder:
             A pandas DataFrame containing all the added rows.
         """
         return pd.DataFrame(self.rows)
+
+
+def df_hash(df: pd.DataFrame) -> str:
+    """Calculate a hash for a DataFrame.
+
+    Args:
+        df (pd.DataFrame): DataFrame to hash.
+
+    Returns:
+        str: Hash of the DataFrame.
+    """
+    return hashlib.md5(pd.util.hash_pandas_object(df, index=True).values.tobytes()).hexdigest()
+
+
+def dataframe_delta(func_that_returns_df, previous_hash: Optional[str] = None) -> Tuple[Optional[pd.DataFrame], str]:
+    """Generalized method to compute the delta for any function that returns a DataFrame.
+
+    Args:
+        func_that_returns_df (callable): A function that returns a DataFrame.
+        previous_hash (str): Optional hash of the previous DataFrame for change detection.
+
+    Returns:
+        tuple: (DataFrame, current_hash)
+               - DataFrame is None if there are no changes, otherwise the updated DataFrame.
+               - current_hash is the hash of the current DataFrame.
+    """
+    # Get the current DataFrame
+    df = func_that_returns_df()
+
+    # Compute the hash for the DataFrame
+    current_hash = df_hash(df)
+
+    # Compare hashes
+    if current_hash == previous_hash:
+        return None, current_hash
+
+    # Return the DataFrame and the new hash if changed
+    return df, current_hash
 
 
 def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: list):
@@ -512,6 +551,10 @@ if __name__ == "__main__":
 
     # Show the info dataframe
     print(info_df)
+
+    # Get the hash of the DataFrame
+    hash_value = df_hash(test_df)
+    print(hash_value)
 
     # Get min/max/mean/median/std for numeric columns
     stats_df = numeric_stats(test_df)

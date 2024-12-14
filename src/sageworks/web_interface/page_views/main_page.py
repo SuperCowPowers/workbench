@@ -1,11 +1,14 @@
 """MainPage pulls All the metadata from the Cloud Platform and organizes/summarizes it"""
 
 import pandas as pd
+from typing import Optional, Tuple
+
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.page_view import PageView
 from sageworks.utils.symbols import tag_symbols
 from sageworks.cached.cached_meta import CachedMeta
+from sageworks.utils.pandas_utils import dataframe_delta
 
 
 class MainPage(PageView):
@@ -41,6 +44,10 @@ class MainPage(PageView):
         # Drop the AWS URL column and return the dataframe
         s3_data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return s3_data_df
+    
+    def incoming_data_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
+        """Detect changes in the incoming data and return a new DataFrame if changed."""
+        return dataframe_delta(self.incoming_data_summary, previous_hash)
 
     def glue_jobs_summary(self) -> pd.DataFrame:
         """Get summary data about the AWS Glue Jobs
@@ -63,6 +70,10 @@ class MainPage(PageView):
         glue_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return glue_df
 
+    def glue_jobs_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
+        """Detect changes in the AWS Glue Jobs and return a new DataFrame if changed."""
+        return dataframe_delta(self.glue_jobs_summary, previous_hash)
+
     def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources
 
@@ -84,6 +95,10 @@ class MainPage(PageView):
         data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return data_df
 
+    def data_sources_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
+        """Detect changes in the SageWorks DataSources and return a new DataFrame if changed."""
+        return dataframe_delta(self.data_sources_summary, previous_hash)
+
     def feature_sets_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks FeatureSets
 
@@ -104,6 +119,10 @@ class MainPage(PageView):
         # Drop the AWS URL column and return the dataframe
         feature_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return feature_df
+
+    def feature_sets_delta(self, previous_hash: str = None) -> tuple[Optional[pd.DataFrame], str]:
+        """Detect changes in the SageWorks FeatureSets and return a new DataFrame if changed."""
+        return dataframe_delta(self.feature_sets_summary, previous_hash)
 
     def models_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Models
@@ -131,6 +150,10 @@ class MainPage(PageView):
 
         return model_df
 
+    def models_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
+        """Detect changes in the SageWorks Models and return a new DataFrame if changed."""
+        return dataframe_delta(self.models_summary, previous_hash)
+
     def endpoints_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints
 
@@ -157,33 +180,47 @@ class MainPage(PageView):
 
         return endpoint_df
 
+    def endpoints_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
+        """Detect changes in the SageWorks Endpoints and return a new DataFrame if changed."""
+        return dataframe_delta(self.endpoints_summary, previous_hash)
+
 
 if __name__ == "__main__":
     import time
 
     # Create the class and get the AWS Model Registry details
-    artifact_view = MainPage()
+    main_page = MainPage()
 
     # List all the artifacts in the main page
     print("All Cloud Platform Artifacts:")
     print("Incoming Data:")
-    df = artifact_view.incoming_data_summary()
+    df = main_page.incoming_data_summary()
     print(df.head())
     print("\nGlue Jobs:")
-    df = artifact_view.glue_jobs_summary()
+    df = main_page.glue_jobs_summary()
     print(df.head())
     print("\nData Sources:")
-    df = artifact_view.data_sources_summary()
+    df = main_page.data_sources_summary()
     print(df.head())
     print("\nFeature Sets:")
-    df = artifact_view.feature_sets_summary()
+    df = main_page.feature_sets_summary()
     print(df.head())
     print("\nModels:")
-    df = artifact_view.models_summary()
+    df = main_page.models_summary()
     print(df.head())
     print("\nEndpoints:")
-    df = artifact_view.endpoints_summary()
+    df = main_page.endpoints_summary()
     print(df.head())
+    
+    # Test the Delta Functions
+    print("Testing the Delta Functions:")
+    print("Models Delta:")
+    models, models_hash = main_page.models_delta()
+    print(models)
+    print(models_hash)
+    model, models_hash = main_page.models_delta(models_hash)
+    print(model)
+    print(models_hash)
 
     # Give any broker threads time to finish
     time.sleep(1)

@@ -1,12 +1,13 @@
 """Callbacks/Connections for the Main/Front Dashboard Page"""
 
 from datetime import datetime
-from dash import callback, Input, Output, html
+from dash import callback, Input, Output, State, html, no_update
 from dash.exceptions import PreventUpdate
 
 # SageWorks Imports
 from sageworks.web_interface.page_views.main_page import MainPage
 from sageworks.web_interface.components.plugins.ag_table import AGTable
+from sageworks.utils.pandas_utils import dataframe_delta
 
 
 # Update the last updated time
@@ -56,35 +57,46 @@ def plugin_page_info():
 
 # Update all of the artifact tables
 def tables_refresh(main_page: MainPage, tables: dict[str, AGTable]):
-    # Aggregate all the output properties for all the tables
     @callback(
         [
-            Output(component_id, prop) for t in tables.values() for component_id, prop in t.properties
-        ],  # Aggregate properties
-        Input("main_page_refresh", "n_intervals"),
+            Output(component_id, prop)
+            for t in tables.values()
+            for component_id, prop in t.properties
+        ] + [Output("table_hashes", "data")],  # Add hash updates
+        [
+            Input("main_page_refresh", "n_intervals"),
+            State("table_hashes", "data"),  # Get current hashes
+        ],
     )
-    def _all_tables_update(_n):
-        # Update all the properties for each table
+    def _all_tables_update(_n, current_hashes):
+        # Grab all tables and compute deltas
+        updated_dataframes = {
+            "data_sources": dataframe_delta(main_page.data_sources_summary, current_hashes["data_sources"]),
+            "feature_sets": dataframe_delta(main_page.feature_sets_summary, current_hashes["feature_sets"]),
+            "models": dataframe_delta(main_page.models_summary, current_hashes["models"]),
+            "endpoints": dataframe_delta(main_page.endpoints_summary, current_hashes["endpoints"]),
+        }
+
+        # Check if all DataFrames are None (no changes)
+        if all(df is None for df, _ in updated_dataframes.values()):
+            raise PreventUpdate
+
+        # Initialize list for all updated properties and new hashes
         all_props = []
+        new_hashes = current_hashes.copy()
 
-        # Data Sources
-        data_sources = main_page.data_sources_summary()
-        all_props.extend(tables["data_sources"].update_properties(data_sources))
+        # Update properties for each table
+        for key, (df, hash_value) in updated_dataframes.items():
+            if df is None:
+                # No changes, use no_update for placeholders
+                all_props.extend([no_update] * len(tables[key].properties))
+            else:
+                # Table has changes, update properties
+                all_props.extend(tables[key].update_properties(df))
+                new_hashes[key] = hash_value
 
-        # Feature Sets
-        feature_sets = main_page.feature_sets_summary()
-        all_props.extend(tables["feature_sets"].update_properties(feature_sets))
-
-        # Models
-        models = main_page.models_summary()
-        all_props.extend(tables["models"].update_properties(models))
-
-        # Endpoints
-        endpoints = main_page.endpoints_summary()
-        all_props.extend(tables["endpoints"].update_properties(endpoints))
-
-        # Return all the updated properties
-        return all_props
+        # Return updated properties and the new hash data
+        return all_props + [new_hashes]
 
 
 # Navigate to the subpages
