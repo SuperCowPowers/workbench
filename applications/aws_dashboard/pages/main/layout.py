@@ -40,45 +40,48 @@ def main_layout(
             # Top of Main Page Header/Info Section
             dbc.Row(
                 [
-                    html.H2(
+                    html.Div(
                         [
-                            html.A(
-                                "SageWorks Dashboard ",
-                                href="/status",
-                                style={
-                                    "textDecoration": "none",  # Remove underline
-                                    "color": "inherit",  # Inherit color from parent
-                                },
+                            html.H2(
+                                [
+                                    html.A(
+                                        "SageWorks Dashboard ",
+                                        href="/status",
+                                        className="blue-text",
+                                        style={
+                                            "textDecoration": "none",
+                                        },
+                                    ),
+                                    html.Span(
+                                        f"{sageworks_version}",
+                                        className="orange-text",
+                                        style={"fontSize": 15},
+                                    ),
+                                    html.A(
+                                        f"  [{license_id}]",
+                                        href="/license",
+                                        className="pink-text",
+                                        style={
+                                            "fontSize": 15,
+                                            "textDecoration": "none",
+                                        },
+                                    ),
+                                ],
+                                style={"marginBottom": "0px"},
                             ),
-                            html.Span(
-                                f"{sageworks_version}",
+                            html.Div(
+                                "Last Updated: ",
+                                id="data-last-updated",
+                                className="green-text",
                                 style={
-                                    "color": "rgb(180, 120, 180)",
                                     "fontSize": 15,
+                                    "fontStyle": "italic",
+                                    "fontWeight": "bold",
+                                    "paddingLeft": "200px",
                                 },
-                            ),
-                            html.Span(
-                                html.A(
-                                    f"  [{license_id}]",
-                                    href="/license",
-                                    style={
-                                        "color": "rgb(140, 140, 200)",
-                                        "fontSize": 15,
-                                        "textDecoration": "none",
-                                    },
-                                ),
                             ),
                         ]
-                    ),
-                    html.Div(
-                        "Last Updated: ",
-                        id="data-last-updated",
-                        style={
-                            "color": "rgb(140, 200, 140)",
-                            "fontSize": 15,
-                            "padding": "0px 0px 0px 120px",
-                        },
-                    ),
+                    )
                 ]
             ),
             # Plugin Page Links

@@ -10,6 +10,17 @@ b, strong {
     color: rgb(120, 120, 240); /* Replace with your desired RGB color */
 }
 
+/* Links in Quartz are pink and hard to see */
+/* Default link color */
+a {
+    color: rgb(120, 120, 240); /* Change to your preferred color */
+}
+
+/* Hover effect */
+a:hover {
+    color: rgb(160, 160, 255); /* Change hover color */
+}
+
 /* AgGrid custom CSS */
 
 /* There's a one pixel border around the grid that we want to remove */
@@ -44,6 +55,10 @@ b, strong {
 
 .blue-text {
     color: rgb(140, 140, 255);
+}
+
+.pink-text {
+    color: rgb(240, 140, 240);
 }
 
 .red-text {

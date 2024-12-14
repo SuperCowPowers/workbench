@@ -18,7 +18,7 @@ def last_updated():
     )
     def refresh_last_updated_time(_n):
         # A string of the new time (in the local time zone)
-        return datetime.now().strftime("Last Updated: %Y-%m-%d (%I:%M %p)")
+        return datetime.now().strftime("%Y-%m-%d (%I:%M %p)")
 
 
 def plugin_page_info():

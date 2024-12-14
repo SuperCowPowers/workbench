@@ -6,6 +6,17 @@ body {
     color: rgb(40, 40, 40); /* Dark gray text */
 }
 
+/* Links in Quartz are pink and hard to see */
+/* Default link color */
+a {
+    color: rgb(60, 60, 200); /* Change to your preferred color */
+}
+
+/* Hover effect */
+a:hover {
+    color: rgb(80, 80, 2000); /* Change hover color */
+}
+
 /* Custom CSS to style bold text */
 b, strong {
     color: rgb(0, 0, 0);
