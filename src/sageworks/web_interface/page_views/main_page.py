@@ -21,11 +21,8 @@ class MainPage(PageView):
         """Refresh the data associated with this page view"""
         self.log.info("MainPage Refresh (does nothing)")
 
-    def incoming_data_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
+    def incoming_data_summary(self) -> pd.DataFrame:
         """Get summary data about the AWS Glue Jobs
-
-        Args:
-            add_hyperlinks (bool): Whether to add hyperlinks to the Name column
 
         Returns:
             pd.DataFrame: Summary data about the AWS Glue Jobs
@@ -41,22 +38,12 @@ class MainPage(PageView):
         # Add a UUID column
         s3_data_df["uuid"] = s3_data_df["Name"]
 
-        # Pull the AWS URLs and construct some hyperlinks
-        if add_hyperlinks:
-            hyperlinked_names = []
-            for name, aws_url in zip(s3_data_df["Name"], s3_data_df["_aws_url"]):
-                hyperlinked_names.append(self.hyperlinks(name, "glue_jobs", aws_url))
-            s3_data_df["Name"] = hyperlinked_names
-
         # Drop the AWS URL column and return the dataframe
         s3_data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return s3_data_df
 
-    def glue_jobs_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
+    def glue_jobs_summary(self) -> pd.DataFrame:
         """Get summary data about the AWS Glue Jobs
-
-        Args:
-            add_hyperlinks (bool): Whether to add hyperlinks to the Name column
 
         Returns:
             pd.DataFrame: Summary data about the AWS Glue Jobs
@@ -72,22 +59,12 @@ class MainPage(PageView):
         # Add a UUID column
         glue_df["uuid"] = glue_df["Name"]
 
-        # Pull the AWS URLs and construct some hyperlinks
-        if add_hyperlinks:
-            hyperlinked_names = []
-            for name, aws_url in zip(glue_df["Name"], glue_df["_aws_url"]):
-                hyperlinked_names.append(self.hyperlinks(name, "glue_jobs", aws_url))
-            glue_df["Name"] = hyperlinked_names
-
         # Drop the AWS URL column and return the dataframe
         glue_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return glue_df
 
-    def data_sources_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
+    def data_sources_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks DataSources
-
-        Args:
-            add_hyperlinks (bool): Whether to add hyperlinks to the Name column
 
         Returns:
             pd.DataFrame: Summary data about the SageWorks DataSources
@@ -103,22 +80,12 @@ class MainPage(PageView):
         # Add a UUID column
         data_df["uuid"] = data_df["Name"]
 
-        # Pull the AWS URLs and construct some hyperlinks
-        if add_hyperlinks:
-            hyperlinked_names = []
-            for name, aws_url in zip(data_df["Name"], data_df["_aws_url"]):
-                hyperlinked_names.append(self.hyperlinks(name, "data_sources", aws_url))
-            data_df["Name"] = hyperlinked_names
-
         # Drop the AWS URL column and return the dataframe
         data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return data_df
 
-    def feature_sets_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
+    def feature_sets_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks FeatureSets
-
-        Args:
-            add_hyperlinks (bool): Whether to add hyperlinks to the Feature Group column
 
         Returns:
             pd.DataFrame: Summary data about the SageWorks FeatureSets
@@ -134,22 +101,12 @@ class MainPage(PageView):
         # Add a UUID column
         feature_df["uuid"] = feature_df["Feature Group"]
 
-        # Pull the AWS URLs and construct some hyperlinks
-        if add_hyperlinks:
-            hyperlinked_names = []
-            for group_name, aws_url in zip(feature_df["Feature Group"], feature_df["_aws_url"]):
-                hyperlinked_names.append(self.hyperlinks(group_name, "feature_sets", aws_url))
-            feature_df["Feature Group"] = hyperlinked_names
-
         # Drop the AWS URL column and return the dataframe
         feature_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
         return feature_df
 
-    def models_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
+    def models_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Models
-
-        Args:
-            add_hyperlinks (bool): Whether to add hyperlinks to the Model Group column
 
         Returns:
             pd.DataFrame: Summary data about the SageWorks Models
@@ -164,8 +121,6 @@ class MainPage(PageView):
 
         # Add a UUID column
         model_df["uuid"] = model_df["Model Group"]
-        if add_hyperlinks:
-            model_df["Model Group"] = model_df["Model Group"].map(lambda x: self.hyperlinks(x, "models", ""))
 
         # Drop some columns
         model_df.drop(columns=["Ver", "Status", "_aws_url"], inplace=True, errors="ignore")
@@ -176,11 +131,8 @@ class MainPage(PageView):
 
         return model_df
 
-    def endpoints_summary(self, add_hyperlinks: bool = False) -> pd.DataFrame:
+    def endpoints_summary(self) -> pd.DataFrame:
         """Get summary data about the SageWorks Endpoints
-
-        Args:
-            add_hyperlinks (bool): Whether to add hyperlinks to the Name column
 
         Returns:
             pd.DataFrame: Summary data about the SageWorks Endpoints
@@ -195,8 +147,6 @@ class MainPage(PageView):
 
         # Add a UUID column
         endpoint_df["uuid"] = endpoint_df["Name"]
-        if add_hyperlinks:
-            endpoint_df["Name"] = endpoint_df["Name"].map(lambda x: self.hyperlinks(x, "endpoints", ""))
 
         # Drop the AWS URL column
         endpoint_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
@@ -206,18 +156,6 @@ class MainPage(PageView):
             endpoint_df["Health"] = endpoint_df["Health"].map(lambda x: tag_symbols(x))
 
         return endpoint_df
-
-    @staticmethod
-    def hyperlinks(name, detail_type, aws_url):
-        """Construct a hyperlink for the given name and detail_type"""
-        if detail_type == "glue_jobs":
-            return f"<a href='{aws_url}' target='_blank'>{name}</a>"
-
-        # Other types have both a detail page and a query page
-        link = f"<a href='{detail_type}' target='_blank'>{name}</a>"
-        if aws_url:
-            link += f" [<a href='{aws_url}' target='_blank'>query</a>]"
-        return link
 
 
 if __name__ == "__main__":
