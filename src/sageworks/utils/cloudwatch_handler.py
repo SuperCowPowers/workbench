@@ -56,6 +56,14 @@ class CloudWatchHandler(logging.Handler):
         if not self.buffer:
             return  # Nothing to send
 
+        # Filter out logs older than 24 hours
+        time_delta = 24 * 60 * 60 * 1000  # 24 hours in milliseconds
+        now = int(time.time() * 1000)  # Current time in milliseconds
+        self.buffer = [event for event in self.buffer if now - event["timestamp"] <= time_delta]
+
+        if not self.buffer:
+            return  # After filtering, no valid logs to send
+
         # Sort the buffer by timestamp to ensure chronological order
         self.buffer.sort(key=lambda event: event["timestamp"])
 
