@@ -305,6 +305,56 @@ class AWSMeta:
         # Return the summary as a DataFrame
         return pd.DataFrame(data_summary).convert_dtypes()
 
+    def aws_pipelines(self) -> pd.DataFrame:
+        """Get a summary of the Pipelines deployed in the Cloud Platform.
+
+        Returns:
+            pd.DataFrame: A summary of the Pipelines in the Cloud Platform.
+        """
+        import pandas as pd
+
+        # Initialize the SageMaker client and list all pipelines
+        sagemaker_client = self.boto3_session.client("sagemaker")
+        data_summary = []
+
+        # List all pipelines
+        pipelines = sagemaker_client.list_pipelines()["PipelineSummaries"]
+
+        # Loop through each pipeline to get its executions
+        for pipeline in pipelines:
+            pipeline_name = pipeline["PipelineName"]
+
+            # Use paginator to retrieve all executions for this pipeline
+            paginator = sagemaker_client.get_paginator("list_pipeline_executions")
+            for page in paginator.paginate(PipelineName=pipeline_name):
+                for execution in page["PipelineExecutionSummaries"]:
+                    pipeline_execution_arn = execution["PipelineExecutionArn"]
+
+                    # Get detailed information about the pipeline execution
+                    pipeline_info = sagemaker_client.describe_pipeline_execution(
+                        PipelineExecutionArn=pipeline_execution_arn
+                    )
+
+                    # Retrieve SageWorks metadata from tags
+                    sageworks_meta = self.get_aws_tags(pipeline_execution_arn)
+                    health_tags = sageworks_meta.get("sageworks_health_tags", "")
+
+                    # Compile pipeline summary
+                    summary = {
+                        "Name": pipeline_name,
+                        "ExecutionName": execution["PipelineExecutionDisplayName"],
+                        "Health": health_tags,
+                        "Created": datetime_string(pipeline_info.get("CreationTime")),
+                        "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                        "Input": sageworks_meta.get("sageworks_input", "-"),
+                        "Status": pipeline_info["PipelineExecutionStatus"],
+                        "PipelineArn": pipeline_execution_arn,
+                    }
+                    data_summary.append(summary)
+
+        # Return the summary as a DataFrame
+        return pd.DataFrame(data_summary).convert_dtypes()
+
     @not_found_returns_none
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Describe a single Glue ETL Job in AWS.
@@ -627,6 +677,7 @@ if __name__ == "__main__":
     fs_views = meta.views("sagemaker_featurestore")
     print(fs_views)
 
+    """
     # Get the Feature Sets
     print("\n\n*** Feature Sets ***")
     pprint(meta.feature_sets())
@@ -646,6 +697,11 @@ if __name__ == "__main__":
     # Get the Endpoints
     print("\n\n*** Endpoints ***")
     pprint(meta.endpoints())
+    """
+
+    # Get the Pipelines
+    print("\n\n*** AWS Pipelines ***")
+    pprint(meta.aws_pipelines())
 
     # Test out the specific artifact details methods
     print("\n\n*** Glue Job Details ***")

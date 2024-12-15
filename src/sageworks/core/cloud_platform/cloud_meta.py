@@ -31,6 +31,7 @@ class CloudMeta(AWSMeta):
        meta.models(details=True/False)
        meta.endpoints()
        meta.views()
+       meta.pipelines()
 
        # These are 'describe' methods
        meta.data_source("abalone_data")
@@ -127,6 +128,14 @@ class CloudMeta(AWSMeta):
             pd.DataFrame: A summary of the Endpoints in the Cloud Platform
         """
         return super().endpoints()
+
+    def pipelines(self) -> pd.DataFrame:
+        """Get a summary of the Pipelines deployed in the Cloud Platform
+
+        Returns:
+            pd.DataFrame: A summary of the Pipelines in the Cloud Platform
+        """
+        return super().aws_pipelines()
 
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Get the details of a specific Glue Job
