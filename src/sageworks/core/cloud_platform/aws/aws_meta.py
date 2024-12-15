@@ -636,7 +636,6 @@ class AWSMeta:
 if __name__ == "__main__":
     """Exercise the SageWorks AWSMeta Class"""
     from pprint import pprint
-    import time
 
     # Pandas Display Options
     pd.set_option("display.max_columns", None)

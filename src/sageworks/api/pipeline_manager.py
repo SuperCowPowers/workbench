@@ -1,6 +1,5 @@
 """PipelineManager: Manages SageWorks Pipelines, listing, creating, and saving them."""
 
-import sys
 import logging
 import json
 
