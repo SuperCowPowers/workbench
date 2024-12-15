@@ -5,9 +5,8 @@ import logging
 import json
 
 # SageWorks Imports
-from sageworks.utils.config_manager import ConfigManager
 from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint
+from sageworks.api import DataSource, FeatureSet, Model, Endpoint, ParameterStore
 
 
 class PipelineManager:
@@ -26,24 +25,12 @@ class PipelineManager:
         """Pipeline Init Method"""
         self.log = logging.getLogger("sageworks")
 
-        # Grab our SageWorks Bucket from Config
-        self.cm = ConfigManager()
-        self.sageworks_bucket = self.cm.get_config("SAGEWORKS_BUCKET")
-        if self.sageworks_bucket is None:
-            self.log = logging.getLogger("sageworks")
-            self.log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
-            sys.exit(1)
-
-        # Set the S3 Path for Pipelines
-        self.bucket = self.sageworks_bucket
-        self.prefix = "pipelines/"
-        self.pipelines_s3_path = f"s3://{self.sageworks_bucket}/pipelines/"
+        # We use the ParameterStore for storage of pipelines
+        self.prefix = "/sageworks/pipelines/"
+        self.param_store = ParameterStore()
 
         # Grab a SageWorks Session (this allows us to assume the SageWorks ExecutionRole)
         self.boto3_session = AWSAccountClamp().boto3_session
-
-        # Read all the Pipelines from this S3 path
-        self.s3_client = self.boto3_session.client("s3")
 
     def list_pipelines(self) -> list:
         """List all the Pipelines in the S3 Bucket
@@ -51,24 +38,8 @@ class PipelineManager:
         Returns:
             list: A list of Pipeline names and details
         """
-        # List objects using the S3 client
-        response = self.s3_client.list_objects_v2(Bucket=self.bucket, Prefix=self.prefix)
-
-        # Check if there are objects
-        if "Contents" in response:
-            # Process the list of dictionaries (we only need the filename, the LastModified, and the Size)
-            pipelines = [
-                {
-                    "name": pipeline["Key"].split("/")[-1].replace(".json", ""),
-                    "last_modified": pipeline["LastModified"],
-                    "size": pipeline["Size"],
-                }
-                for pipeline in response["Contents"]
-            ]
-            return pipelines
-        else:
-            self.log.important(f"No pipelines found at {self.pipelines_s3_path}...")
-            return []
+        # List pipelines stored in the parameter store
+        return self.param_store.list(self.prefix)
 
     # Create a new Pipeline from an Endpoint
     def create_from_endpoint(self, endpoint_name: str) -> dict:
@@ -98,19 +69,18 @@ class PipelineManager:
         # Return the Pipeline
         return pipeline
 
-    # Publish a Pipeline to SageWorks
     def publish_pipeline(self, name: str, pipeline: dict):
-        """Save a Pipeline to S3
+        """Publish a Pipeline to Parameter Store
 
         Args:
             name (str): The name of the Pipeline
             pipeline (dict): The Pipeline to save
         """
-        key = f"{self.prefix}{name}.json"
-        self.log.important(f"Saving {name} to S3: {self.bucket}/{key}...")
+        key = f"{self.prefix}/{name}"
+        self.log.important(f"Saving {name} to Parameter Store {self.prefix}...")
 
-        # Save the pipeline as an S3 JSON object
-        self.s3_client.put_object(Body=json.dumps(pipeline, indent=4), Bucket=self.bucket, Key=key)
+        # Save the pipeline to the parameter store
+        self.param_store.upsert(key, json.dumps(pipeline))
 
     def delete_pipeline(self, name: str):
         """Delete a Pipeline from S3
