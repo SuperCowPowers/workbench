@@ -420,28 +420,41 @@ class SageworksCoreStack(Stack):
         )
 
     def pipeline_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for running SageMaker Pipelines.
+        """Create a policy statement for listing, inspecting, and running SageMaker Pipelines.
 
         Returns:
-            iam.PolicyStatement: The policy statement for running SageMaker Pipelines.
+            iam.PolicyStatement: The policy statement for listing, inspecting, and running SageMaker Pipelines.
         """
 
-        # Sagemaker Pipeline Processing Jobs ARN
+        # SageMaker Pipeline ARNs
+        pipeline_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:pipeline/*"
+        execution_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:pipeline-execution/*"
         processing_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:processing-job/*"
 
         return iam.PolicyStatement(
             actions=[
+                # Actions for Pipelines
+                "sagemaker:ListPipelines",
+                "sagemaker:DescribePipeline",
+                "sagemaker:ListPipelineExecutions",
+                "sagemaker:DescribePipelineExecution",
+                "sagemaker:ListPipelineExecutionSteps",
+                "sagemaker:StartPipelineExecution",
                 # Actions for Jobs
                 "sagemaker:CreateProcessingJob",
                 "sagemaker:DescribeProcessingJob",
                 "sagemaker:ListProcessingJobs",
                 "sagemaker:StopProcessingJob",
-                # Additional actions
+                # Tagging
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
                 "sagemaker:DeleteTags",
             ],
-            resources=[processing_resources],
+            resources=[
+                pipeline_resources,
+                execution_resources,
+                processing_resources,
+            ],
         )
 
     def ecr_policy_statement(self) -> iam.PolicyStatement:
