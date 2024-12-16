@@ -2,7 +2,6 @@
 
 import logging
 
-import pandas as pd
 from dash import callback, Output, Input, State
 from dash.exceptions import PreventUpdate
 from urllib.parse import urlparse, parse_qs

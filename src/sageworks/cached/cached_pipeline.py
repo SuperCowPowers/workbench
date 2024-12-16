@@ -1,7 +1,5 @@
 """CachedPipeline: Caches the method results for SageWorks Pipelines"""
 
-from typing import Union
-
 # SageWorks Imports
 from sageworks.api.pipeline import Pipeline
 from sageworks.core.artifacts.cached_artifact_mixin import CachedArtifactMixin

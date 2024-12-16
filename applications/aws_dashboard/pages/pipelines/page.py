@@ -1,7 +1,6 @@
 """Pipelines:  A SageWorks Web Interface to view and interact with Pipelines"""
 
 from dash import register_page
-import dash
 
 # Local Imports
 from .layout import pipelines_layout
@@ -29,8 +28,7 @@ pipeline_details = pipeline_details.PipelineDetails()
 details_component = pipeline_details.create_component("pipeline_details")
 
 # Capture our components in a dictionary to send off to the layout
-components = {"pipelines_table": table_component,
-              "pipeline_details": details_component}
+components = {"pipelines_table": table_component, "pipeline_details": details_component}
 
 # Load any web components plugins of type 'pipeline'
 pm = PluginManager()

@@ -7,7 +7,6 @@ from dash import html, dcc
 
 # SageWorks Imports
 from sageworks.api.pipeline import Pipeline
-from sageworks.utils.markdown_utils import health_tag_markdown
 from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
 # Get the SageWorks logger

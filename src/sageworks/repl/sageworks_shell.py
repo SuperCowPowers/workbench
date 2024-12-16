@@ -1,4 +1,3 @@
-import pandas as pd
 from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
