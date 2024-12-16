@@ -2,7 +2,6 @@
 
 import dash
 from dash import html, page_container, register_page
-import dash_bootstrap_components as dbc
 
 
 class PluginPage1:
@@ -10,7 +9,7 @@ class PluginPage1:
 
     def __init__(self):
         """Initialize the Plugin Page"""
-        self.page_name = "Hello World"
+        self.page_name = "Hello World 1"
 
     def page_setup(self, app: dash.Dash):
         """Required function to set up the page"""

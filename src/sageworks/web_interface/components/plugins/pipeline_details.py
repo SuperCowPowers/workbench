@@ -80,21 +80,37 @@ class PipelineDetails(PluginInterface):
             str: A markdown string
         """
 
-        # Construct the markdown string
+        # Grab the pipeline details and construct the markdown string
         details = self.current_pipeline.details()
+        markdown = self.dict_to_markdown(details)
+        return markdown
+
+    def dict_to_markdown(self, dictionary: dict, indent: int = 0) -> str:
+        """Convert a dictionary to a markdown string with nested list formatting.
+
+        Args:
+            dictionary (dict): A dictionary to convert to markdown.
+            indent (int): The current level of indentation (for nested lists).
+
+        Returns:
+            str: A markdown string.
+        """
         markdown = ""
-        for key, value in details.items():
+        prefix = "  " * indent + "- "  # Use "- " for Markdown nested list items
 
-            # If the value is a list, convert it to a comma-separated string
-            if isinstance(value, list):
-                value = ", ".join(value)
-
-            # If the value is a dictionary, get the name
+        for key, value in dictionary.items():
             if isinstance(value, dict):
-                value = value.get("name", "Unknown")
-
-            # Add to markdown string
-            markdown += f"**{key}:** {value}  \n"
+                # Add the key as a parent item and recurse for nested dictionary
+                markdown += f"{prefix}**{key}:**\n"
+                markdown += self.dict_to_markdown(value, indent + 1)
+            elif isinstance(value, list):
+                # Add the key as a parent item, then each list item
+                markdown += f"{prefix}**{key}:**\n"
+                for item in value:
+                    markdown += f"{'  ' * (indent + 1)}- {item}\n"
+            else:
+                # Add a plain key-value pair
+                markdown += f"{prefix}**{key}:** {value}\n"
 
         return markdown
 
