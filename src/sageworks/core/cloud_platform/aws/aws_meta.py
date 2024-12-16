@@ -34,6 +34,7 @@ class AWSMeta:
 
         # Parameter Store for Pipelines
         from sageworks.api.parameter_store import ParameterStore
+
         self.pipeline_prefix = "/sageworks/pipelines"
         self.param_store = ParameterStore()
 
