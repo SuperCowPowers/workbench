@@ -14,7 +14,7 @@ class PluginPage2:
 
     def __init__(self):
         """Initialize the Plugin Page"""
-        self.page_name = "Hello World"
+        self.page_name = "Hello World 2"
         self.models_table = AGTable()
         self.table_component = None
         self.meta = CachedMeta()
