@@ -24,7 +24,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install SageWorks Dashboard on its own layer
-RUN pip install --no-cache-dir sageworks==0.8.86
+RUN pip install --no-cache-dir sageworks==0.8.87
 
 # Copy the Nginx and Supervisor configuration files
 COPY nginx.conf /etc/nginx/sites-available/default
