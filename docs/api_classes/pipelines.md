@@ -29,8 +29,6 @@ Pipelines store sequences of SageWorks transforms. So if you have a nightly ML w
 }    
 ```
 
-::: sageworks.api.pipeline_manager
-
 ::: sageworks.api.pipeline
 
 
