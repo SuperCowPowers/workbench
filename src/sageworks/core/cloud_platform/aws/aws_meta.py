@@ -15,7 +15,6 @@ from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.utils.datetime_utils import datetime_string
 from sageworks.utils.aws_utils import not_found_returns_none, aws_throttle, aws_tags_to_dict
-from sageworks.api.parameter_store import ParameterStore
 
 
 class AWSMeta:
@@ -34,6 +33,7 @@ class AWSMeta:
         self.cm = ConfigManager()
 
         # Parameter Store for Pipelines
+        from sageworks.api.parameter_store import ParameterStore
         self.pipeline_prefix = "/sageworks/pipelines"
         self.param_store = ParameterStore()
 
