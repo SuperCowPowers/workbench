@@ -7,12 +7,28 @@ Everyone knows that good data science requires... **Some Awesome Themes!**
 
 <table>
   <tr>
-    <td><img width="400" alt="dark_theme" src="https://github.com/user-attachments/assets/82ab4eab-0688-4b93-ad8e-9b954564777b"></td>
-    <td><img width="400" alt="light_theme" src="https://github.com/user-attachments/assets/b63a0789-c144-4048-afb6-f03e3d993680"></td>
+    <td>
+      <a href="https://github.com/user-attachments/assets/82ab4eab-0688-4b93-ad8e-9b954564777b">
+        <img width="400" alt="theme_dark" src="https://github.com/user-attachments/assets/82ab4eab-0688-4b93-ad8e-9b954564777b" />
+      </a>
+    </td>
+    <td>
+      <a href="https://github.com/user-attachments/assets/b63a0789-c144-4048-afb6-f03e3d993680">
+        <img width="400" alt="theme_light" src="https://github.com/user-attachments/assets/b63a0789-c144-4048-afb6-f03e3d993680" />
+      </a>
+    </td>
   </tr>
   <tr>
-    <td><img width="400" alt="quartz_theme" src="https://github.com/user-attachments/assets/8a59be19-0c5d-42c6-9922-feafb1a1eecd"></td>
-    <td><img width="400" alt="quartz_dark_theme" src="https://github.com/user-attachments/assets/5b01ec64-8d56-43bf-96c5-7da8ec48f527"></td>
+    <td>
+      <a href="https://github.com/user-attachments/assets/8a59be19-0c5d-42c6-9922-feafb1a1eecd">
+        <img width="400" alt="theme_quartz" src="https://github.com/user-attachments/assets/8a59be19-0c5d-42c6-9922-feafb1a1eecd" />
+      </a>
+    </td>
+    <td>
+      <a href="https://github.com/user-attachments/assets/5b01ec64-8d56-43bf-96c5-7da8ec48f527">
+        <img width="400" alt="theme_quartz_dark" src="https://github.com/user-attachments/assets/5b01ec64-8d56-43bf-96c5-7da8ec48f527" />
+      </a>
+    </td>
   </tr>
 </table>
 
