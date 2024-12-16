@@ -7,6 +7,7 @@ from dash import html, dcc
 
 # SageWorks Imports
 from sageworks.api.pipeline import Pipeline
+from sageworks.utils.markdown_utils import health_tag_markdown
 from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
 # Get the SageWorks logger
@@ -20,6 +21,14 @@ class PipelineDetails(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.PIPELINE
 
+    def __init__(self):
+        """Initialize the PipelineDetails plugin class"""
+        self.component_id = None
+        self.current_pipeline = None
+
+        # Call the parent class constructor
+        super().__init__()
+
     def create_component(self, component_id: str) -> html.Div:
         """Create a Markdown Component without any data.
         Args:
@@ -27,18 +36,19 @@ class PipelineDetails(PluginInterface):
         Returns:
             html.Div: A Container of Components for the Model Details
         """
+        self.component_id = component_id
         container = html.Div(
-            id=component_id,
+            id=self.component_id,
             children=[
-                html.H3(id=f"{component_id}-header", children="Pipeline: Loading..."),
-                dcc.Markdown(id=f"{component_id}-details"),
+                html.H3(id=f"{self.component_id}-header", children="Pipeline: Loading..."),
+                dcc.Markdown(id=f"{self.component_id}-details"),
             ],
         )
 
         # Fill in plugin properties
         self.properties = [
-            (f"{component_id}-header", "children"),
-            (f"{component_id}-details", "children"),
+            (f"{self.component_id}-header", "children"),
+            (f"{self.component_id}-details", "children"),
         ]
 
         # Return the container
@@ -54,16 +64,40 @@ class PipelineDetails(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        log.important(f"Updating Plugin with Pipeline: {pipeline.name} and kwargs: {kwargs}")
+        log.important(f"Updating Plugin with Pipeline: {pipeline.uuid} and kwargs: {kwargs}")
 
         # Update the header and the details
-        header = f"{pipeline.name}"
-        # pipeline_data = pipeline.get_pipeline_data()
-        details = "**Details:**\n"
-        details += f"**Name:** {pipeline.name}\n"
+        self.current_pipeline = pipeline
+        header = f"{self.current_pipeline.uuid}"
+        details = self.pipeline_details()
 
         # Return the updated property values for the plugin
         return [header, details]
+
+    def pipeline_details(self):
+        """Construct the markdown string for the pipeline details
+
+        Returns:
+            str: A markdown string
+        """
+
+        # Construct the markdown string
+        details = self.current_pipeline.details()
+        markdown = ""
+        for key, value in details.items():
+
+            # If the value is a list, convert it to a comma-separated string
+            if isinstance(value, list):
+                value = ", ".join(value)
+
+            # If the value is a dictionary, get the name
+            if isinstance(value, dict):
+                value = value.get("name", "Unknown")
+
+            # Add to markdown string
+            markdown += f"**{key}:** {value}  \n"
+
+        return markdown
 
 
 if __name__ == "__main__":

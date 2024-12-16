@@ -135,7 +135,7 @@ class CloudMeta(AWSMeta):
         Returns:
             pd.DataFrame: A summary of the Pipelines in the Cloud Platform
         """
-        return super().aws_pipelines()
+        return super().pipelines()
 
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Get the details of a specific Glue Job

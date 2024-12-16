@@ -11,6 +11,7 @@ import pandas as pd
 from sageworks.utils.config_manager import ConfigManager
 from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from sageworks.core.pipelines.pipeline_executor import PipelineExecutor
+from sageworks.api.parameter_store import ParameterStore
 
 
 class Pipeline:
@@ -29,31 +30,36 @@ class Pipeline:
     def __init__(self, name: str):
         """Pipeline Init Method"""
         self.log = logging.getLogger("sageworks")
-        self.name = name
+        self.uuid = name
 
-        # Grab our SageWorks Bucket from Config
-        self.cm = ConfigManager()
-        self.sageworks_bucket = self.cm.get_config("SAGEWORKS_BUCKET")
-        if self.sageworks_bucket is None:
-            self.log = logging.getLogger("sageworks")
-            self.log.critical("Could not find ENV var for SAGEWORKS_BUCKET!")
-            sys.exit(1)
+        # Spin up a Parameter Store for Pipelines
+        self.prefix = "/sageworks/pipelines"
+        self.params = ParameterStore()
+        self.pipeline = self.params.get(f"{self.prefix}/{self.uuid}")
 
-        # Set the S3 Path for this Pipeline
-        self.bucket = self.sageworks_bucket
-        self.key = f"pipelines/{self.name}.json"
-        self.s3_path = f"s3://{self.bucket}/{self.key}"
+    def summary(self, **kwargs) -> dict:
+        """Retrieve the Pipeline Summary.
 
-        # Grab a SageWorks Session (this allows us to assume the SageWorks ExecutionRole)
-        self.boto3_session = AWSAccountClamp().boto3_session
-        self.s3_client = self.boto3_session.client("s3")
+        Returns:
+            dict: A dictionary of details about the Pipeline
+        """
+        return self.pipeline
 
-        # If this S3 Path exists, load the Pipeline
-        if wr.s3.does_object_exist(self.s3_path):
-            self.pipeline = self._get_pipeline()
-        else:
-            self.log.warning(f"Pipeline {self.name} not found at {self.s3_path}")
-            self.pipeline = None
+    def details(self, **kwargs) -> dict:
+        """Retrieve the Pipeline Details.
+
+        Returns:
+            dict: A dictionary of details about the Pipeline
+        """
+        return self.pipeline
+
+    def health_check(self, **kwargs) -> dict:
+        """Retrieve the Pipeline Health Check.
+
+        Returns:
+            dict: A dictionary of health check details for the Pipeline
+        """
+        return {}
 
     def set_input(self, input: Union[str, pd.DataFrame], artifact: str = "data_source"):
         """Set the input for the Pipeline
@@ -105,7 +111,7 @@ class Pipeline:
         """
         # Grab the entire pipeline if not provided (first call)
         if not pipeline:
-            self.log.important(f"Checking Pipeline: {self.name}...")
+            self.log.important(f"Checking Pipeline: {self.uuid}...")
             pipeline = self.pipeline
         for key, value in pipeline.items():
             if isinstance(value, dict):
@@ -118,14 +124,8 @@ class Pipeline:
 
     def delete(self):
         """Pipeline Deletion"""
-        self.log.info(f"Deleting Pipeline: {self.name}...")
-        wr.s3.delete_objects(self.s3_path)
-
-    def _get_pipeline(self) -> dict:
-        """Internal: Get the pipeline as a JSON object from the specified S3 bucket and key."""
-        response = self.s3_client.get_object(Bucket=self.bucket, Key=self.key)
-        json_object = json.loads(response["Body"].read())
-        return json_object
+        self.log.info(f"Deleting Pipeline: {self.uuid}...")
+        self.params.delete(f"{self.prefix}/{self.uuid}")
 
     def __repr__(self) -> str:
         """String representation of this pipeline
@@ -145,10 +145,12 @@ if __name__ == "__main__":
     log = logging.getLogger("sageworks")
 
     # Temp testing
+    """
     my_pipeline = Pipeline("aqsol_pipeline_v1")
     my_pipeline.set_input("s3://sageworks-public-data/comp_chem/aqsol_public_data.csv")
     my_pipeline.execute_partial(["model", "endpoint"])
     exit(0)
+    """
 
     # Retrieve an existing Pipeline
     my_pipeline = Pipeline("abalone_pipeline_v1")
