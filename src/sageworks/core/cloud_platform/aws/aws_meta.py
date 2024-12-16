@@ -8,6 +8,7 @@ from typing import Union
 import pandas as pd
 import awswrangler as wr
 from collections import defaultdict
+from datetime import datetime, timezone
 
 # SageWorks Imports
 from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
@@ -30,6 +31,12 @@ class AWSMeta:
         # Account and Configuration
         self.account_clamp = AWSAccountClamp()
         self.cm = ConfigManager()
+
+        # Parameter Store for Pipelines
+        from sageworks.api.parameter_store import ParameterStore
+
+        self.pipeline_prefix = "/sageworks/pipelines"
+        self.param_store = ParameterStore()
 
         # Storing the size of various metadata for tracking
         self.metadata_sizes = defaultdict(dict)
@@ -305,6 +312,33 @@ class AWSMeta:
         # Return the summary as a DataFrame
         return pd.DataFrame(data_summary).convert_dtypes()
 
+    def pipelines(self) -> pd.DataFrame:
+        """List all the Pipelines in the S3 Bucket
+
+        Returns:
+            pd.DataFrame: A dataframe of Pipelines information
+        """
+        # List pipelines stored in the parameter store
+        pipeline_summaries = []
+        pipeline_list = self.param_store.list(self.pipeline_prefix)
+        for pipeline_name in pipeline_list:
+            pipeline_info = self.param_store.get(pipeline_name)
+
+            # Compile pipeline summary
+            summary = {
+                "Name": pipeline_name.replace(self.pipeline_prefix + "/", ""),
+                "Health": "",
+                "Num Stages": len(pipeline_info),
+                "Tags": pipeline_info.get("tags", "-"),
+                "Modified": datetime_string(datetime.now(timezone.utc)),
+                "Last Run": datetime_string(datetime.now(timezone.utc)),
+                "Status": "Success",  # pipeline_info.get("Status", "-"),
+            }
+            pipeline_summaries.append(summary)
+
+        # Return the summary as a DataFrame
+        return pd.DataFrame(pipeline_summaries).convert_dtypes()
+
     @not_found_returns_none
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Describe a single Glue ETL Job in AWS.
@@ -436,6 +470,18 @@ class AWSMeta:
         # Retrieve SageWorks metadata from AWS tags
         endpoint_details["sageworks_meta"] = self.get_aws_tags(endpoint_details["EndpointArn"])
         return endpoint_details
+
+    @not_found_returns_none
+    def pipeline(self, pipeline_name: str) -> Union[dict, None]:
+        """Describe a single SageWorks Pipeline.
+
+        Args:
+            pipeline_name (str): The name of the pipeline to describe.
+
+        Returns:
+            dict: A detailed description of the pipeline (None if not found).
+        """
+        return self.param_store.get(f"{self.pipeline_prefix}/{pipeline_name}")
 
     # These are helper methods to construct the AWS URL for the Artifacts
     @staticmethod
@@ -575,6 +621,56 @@ class AWSMeta:
 
         return pd.DataFrame(data_summary).convert_dtypes()
 
+    def _aws_pipelines(self) -> pd.DataFrame:
+        """Internal: Get a summary of the Cloud internal Pipelines (not SageWorks Pipelines).
+
+        Returns:
+            pd.DataFrame: A summary of the Cloud internal Pipelines (not SageWorks Pipelines).
+        """
+        import pandas as pd
+
+        # Initialize the SageMaker client and list all pipelines
+        sagemaker_client = self.boto3_session.client("sagemaker")
+        data_summary = []
+
+        # List all pipelines
+        pipelines = sagemaker_client.list_pipelines()["PipelineSummaries"]
+
+        # Loop through each pipeline to get its executions
+        for pipeline in pipelines:
+            pipeline_name = pipeline["PipelineName"]
+
+            # Use paginator to retrieve all executions for this pipeline
+            paginator = sagemaker_client.get_paginator("list_pipeline_executions")
+            for page in paginator.paginate(PipelineName=pipeline_name):
+                for execution in page["PipelineExecutionSummaries"]:
+                    pipeline_execution_arn = execution["PipelineExecutionArn"]
+
+                    # Get detailed information about the pipeline execution
+                    pipeline_info = sagemaker_client.describe_pipeline_execution(
+                        PipelineExecutionArn=pipeline_execution_arn
+                    )
+
+                    # Retrieve SageWorks metadata from tags
+                    sageworks_meta = self.get_aws_tags(pipeline_execution_arn)
+                    health_tags = sageworks_meta.get("sageworks_health_tags", "")
+
+                    # Compile pipeline summary
+                    summary = {
+                        "Name": pipeline_name,
+                        "ExecutionName": execution["PipelineExecutionDisplayName"],
+                        "Health": health_tags,
+                        "Created": datetime_string(pipeline_info.get("CreationTime")),
+                        "Tags": sageworks_meta.get("sageworks_tags", "-"),
+                        "Input": sageworks_meta.get("sageworks_input", "-"),
+                        "Status": pipeline_info["PipelineExecutionStatus"],
+                        "PipelineArn": pipeline_execution_arn,
+                    }
+                    data_summary.append(summary)
+
+        # Return the summary as a DataFrame
+        return pd.DataFrame(data_summary).convert_dtypes()
+
     def close(self):
         """Close the AWSMeta Class"""
         self.log.debug("Closing the AWSMeta Class")
@@ -586,7 +682,6 @@ class AWSMeta:
 if __name__ == "__main__":
     """Exercise the SageWorks AWSMeta Class"""
     from pprint import pprint
-    import time
 
     # Pandas Display Options
     pd.set_option("display.max_columns", None)
@@ -597,6 +692,8 @@ if __name__ == "__main__":
 
     # Test the __repr__ method
     print(meta)
+
+    """
 
     # Get the AWS Account Info
     print("*** AWS Account ***")
@@ -646,6 +743,15 @@ if __name__ == "__main__":
     # Get the Endpoints
     print("\n\n*** Endpoints ***")
     pprint(meta.endpoints())
+    """
+
+    # List Pipelines
+    print("\n\n*** SageWorks Pipelines ***")
+    pprint(meta.pipelines())
+
+    # Get one pipeline
+    print("\n\n*** Pipeline details ***")
+    pprint(meta.pipeline("abalone_pipeline_v1"))
 
     # Test out the specific artifact details methods
     print("\n\n*** Glue Job Details ***")

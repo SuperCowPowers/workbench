@@ -419,29 +419,52 @@ class SageworksCoreStack(Stack):
             resources=["*"],  # ListMonitoringSchedules does not support specific resources
         )
 
-    def pipeline_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for running SageMaker Pipelines.
+    @staticmethod
+    def pipeline_list_policy_statement() -> iam.PolicyStatement:
+        """Create a policy statement for listing SageMaker pipelines.
 
         Returns:
-            iam.PolicyStatement: The policy statement for running SageMaker Pipelines.
+            iam.PolicyStatement: The policy statement for listing SageMaker pipelines.
         """
+        return iam.PolicyStatement(
+            actions=[
+                "sagemaker:ListPipelines",
+            ],
+            resources=["*"],  # Broad permission necessary for listing operations
+        )
 
-        # Sagemaker Pipeline Processing Jobs ARN
+    def pipeline_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for inspecting and running SageMaker Pipelines.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for inspecting and running SageMaker Pipelines.
+        """
+        pipeline_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:pipeline/*"
+        execution_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:pipeline-execution/*"
         processing_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:processing-job/*"
 
         return iam.PolicyStatement(
             actions=[
-                # Actions for Jobs
+                "sagemaker:DescribePipeline",
+                "sagemaker:ListPipelineExecutions",
+                "sagemaker:DescribePipelineExecution",
+                "sagemaker:ListPipelineExecutionSteps",
+                "sagemaker:StartPipelineExecution",
+                # Actions for jobs
                 "sagemaker:CreateProcessingJob",
                 "sagemaker:DescribeProcessingJob",
                 "sagemaker:ListProcessingJobs",
                 "sagemaker:StopProcessingJob",
-                # Additional actions
+                # Tagging
                 "sagemaker:ListTags",
                 "sagemaker:AddTags",
                 "sagemaker:DeleteTags",
             ],
-            resources=[processing_resources],
+            resources=[
+                pipeline_resources,
+                execution_resources,
+                processing_resources,
+            ],
         )
 
     def ecr_policy_statement(self) -> iam.PolicyStatement:
@@ -578,7 +601,6 @@ class SageworksCoreStack(Stack):
             self.model_policy_statement(),
             self.model_training_statement(),
             self.model_training_log_statement(),
-            self.pipeline_policy_statement(),
             self.ecr_policy_statement(),
             self.cloudwatch_policy_statement(),
             self.sagemaker_pass_role_policy_statement(),
@@ -605,6 +627,19 @@ class SageworksCoreStack(Stack):
             id="SageWorksEndpointPolicy",
             statements=policy_statements,
             managed_policy_name="SageWorksEndpointPolicy",
+        )
+
+    def sageworks_pipeline_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the SageWorks Pipelines"""
+        policy_statements = [
+            self.pipeline_list_policy_statement(),
+            self.pipeline_policy_statement(),
+        ]
+        return iam.ManagedPolicy(
+            self,
+            id="SageWorksPipelinePolicy",
+            statements=policy_statements,
+            managed_policy_name="SageWorksPipelinePolicy",
         )
 
     def create_api_execution_role(self) -> iam.Role:
@@ -641,5 +676,6 @@ class SageworksCoreStack(Stack):
         api_execution_role.add_managed_policy(self.sageworks_featureset_policy())
         api_execution_role.add_managed_policy(self.sageworks_model_policy())
         api_execution_role.add_managed_policy(self.sageworks_endpoint_policy())
+        api_execution_role.add_managed_policy(self.sageworks_pipeline_policy())
 
         return api_execution_role

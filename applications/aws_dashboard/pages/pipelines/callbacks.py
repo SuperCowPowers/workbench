@@ -2,14 +2,15 @@
 
 import logging
 
-import pandas as pd
 from dash import callback, Output, Input, State
 from dash.exceptions import PreventUpdate
 from urllib.parse import urlparse, parse_qs
 
 
 # SageWorks Imports
-from sageworks.api.pipeline import Pipeline
+from sageworks.web_interface.page_views.pipelines_page_view import PipelinesPageView
+from sageworks.web_interface.components.plugins.ag_table import AGTable
+from sageworks.cached.cached_pipeline import CachedPipeline
 
 # Get the SageWorks logger
 log = logging.getLogger("sageworks")
@@ -46,17 +47,18 @@ def on_page_load():
         raise PreventUpdate
 
 
-def update_pipelines_table(table_object):
+def pipeline_table_refresh(page_view: PipelinesPageView, table: AGTable):
     @callback(
-        [Output(component_id, prop) for component_id, prop in table_object.properties],
+        [Output(component_id, prop) for component_id, prop in table.properties],
         Input("pipelines_refresh", "n_intervals"),
     )
-    def pipelines_update(_n):
+    def _pipeline_table_refresh(_n):
         """Return the table data for the Pipelines Table"""
-
-        # FIXME: This is a placeholder for the actual data
-        pipelines = pd.DataFrame({"name": ["Pipeline 1", "Pipeline 2", "Pipeline 3"]})
-        return table_object.update_properties(pipelines)
+        page_view.refresh()
+        pipelines = page_view.pipelines()
+        pipelines["uuid"] = pipelines["Name"]
+        pipelines["id"] = range(len(pipelines))
+        return table.update_properties(pipelines)
 
 
 # Set up the plugin callbacks that take a pipeline
@@ -73,10 +75,10 @@ def setup_plugin_callbacks(plugins):
 
         # Get the selected row data and grab the name
         selected_row_data = selected_rows[0]
-        pipeline_name = selected_row_data["name"]
+        pipeline_name = selected_row_data["Name"]
 
         # Create the Endpoint object
-        pipeline = Pipeline(pipeline_name)
+        pipeline = CachedPipeline(pipeline_name)
 
         # Update all the properties for each plugin
         all_props = []

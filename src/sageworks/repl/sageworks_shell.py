@@ -1,4 +1,3 @@
-import pandas as pd
 from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
@@ -261,10 +260,7 @@ class SageWorksShell:
             ).ComputationView
             self.commands["MDQView"] = importlib.import_module("sageworks.core.views.mdq_view").MDQView
             self.commands["PandasToView"] = importlib.import_module("sageworks.core.views.pandas_to_view").PandasToView
-
-            # We're going to include these classes/imports later
-            # self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline
-            # self.commands["PipelineManager"] = tbd
+            self.commands["Pipeline"] = importlib.import_module("sageworks.api.pipeline").Pipeline
 
             # These are 'nice to have' imports
             self.commands["pd"] = importlib.import_module("pandas")
@@ -370,8 +366,7 @@ class SageWorksShell:
         return self.meta.endpoints()
 
     def pipelines(self):
-        logging.error("Pipelines are not yet supported in the SageWorks REPL")
-        return pd.DataFrame()
+        return self.meta.pipelines()
 
     @staticmethod
     def log_debug():

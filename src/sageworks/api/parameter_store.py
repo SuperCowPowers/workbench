@@ -55,15 +55,22 @@ class ParameterStore:
         # Create a Systems Manager (SSM) client for Parameter Store operations
         self.ssm_client = self.boto3_session.client("ssm")
 
-    def list(self) -> list:
-        """List all parameters in the AWS Parameter Store.
+    def list(self, prefix: str = None) -> list:
+        """List all parameters in the AWS Parameter Store, optionally filtering by a prefix.
+
+        Args:
+            prefix (str, optional): A prefix to filter the parameters by. Defaults to None.
 
         Returns:
             list: A list of parameter names and details.
         """
         try:
-            # Set up parameters for our search
+            # Set up parameters for the query
             params = {"MaxResults": 50}
+
+            # If a prefix is provided, add the 'ParameterFilters' for optimization
+            if prefix:
+                params["ParameterFilters"] = [{"Key": "Name", "Option": "BeginsWith", "Values": [prefix]}]
 
             # Initialize the list to collect parameter names
             all_parameters = []
@@ -216,6 +223,14 @@ if __name__ == "__main__":
     # Retrieve the parameter as a dictionary
     retrieved_value = param_store.get("/sageworks/my_data")
     print("Retrieved value:", retrieved_value)
+
+    # List the parameters
+    print("Listing Parameters...")
+    print(param_store.list())
+
+    # List the parameters with a prefix
+    print("Listing Parameters with prefix '/sageworks':")
+    print(param_store.list("/sageworks"))
 
     # Delete the parameters
     param_store.delete("/sageworks/test")
