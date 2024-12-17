@@ -48,6 +48,7 @@ def feature_sets_layout(
                             ),
                         ],
                         width=4,
+                        className="text-break",
                     ),
                     # Column 2: Violin Plots (Correlation Matrix + Outliers)
                     dbc.Col(

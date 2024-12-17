@@ -56,13 +56,14 @@ def data_sources_layout(
                             ),
                         ],
                         width=4,
+                        className="text-break",
                     ),
                     # Column 2: Violin Plots (Correlation Matrix + Outliers)
                     dbc.Col(
                         [
                             dbc.Row(violin_plot),
                             dbc.Row(
-                                [dbc.Col(correlation_matrix, width=12)],
+                                [dbc.Col(correlation_matrix)],
                                 style={"padding": "0px 0px 0px 0px"},
                             ),
                         ],

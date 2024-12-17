@@ -47,6 +47,7 @@ def endpoints_layout(
                             ),
                         ],
                         width=4,
+                        className="text-break",
                     ),
                     # Column 2: Endpoint Metrics and Plugins
                     dbc.Col(

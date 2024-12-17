@@ -12,9 +12,11 @@ def test():
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = "abalone_data"
-    output_uuid = "abalone_data_copy"
+    output_uuid = "abalone_long_tags"
     data_to_data = DataToDataLight(input_uuid, output_uuid)
-    data_to_data.set_output_tags(["abalone", "public"])
+    tags = ['nightly', 'assay:hlm_phase1', 'target:udm_asy_res_intrinsic_clearance_ul_per_min_per_mg_protein',
+            'feature_endpoint:smiles-to-rdkit-mordred', 'training:80']
+    data_to_data.set_output_tags(tags)
     data_to_data.transform()
 
 

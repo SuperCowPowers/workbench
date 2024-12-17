@@ -28,7 +28,8 @@ def models_layout(
             dbc.Row(
                 [
                     # Column 1: Model Details
-                    dbc.Col(model_details, width=4, style={"padding": "30px 0px 0px 0px"}),
+                    dbc.Col(model_details, width=4, style={"padding": "30px 0px 0px 0px"}, className="text-break"),
+
                     # Column 2: Model Plot and Plugins
                     dbc.Col(
                         [

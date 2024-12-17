@@ -46,6 +46,7 @@ def pipelines_layout(
                             ),
                         ],
                         width=4,
+                        className="text-break",
                     ),
                     # Column 2: Pipeline Metrics and Plugins
                     dbc.Col(
