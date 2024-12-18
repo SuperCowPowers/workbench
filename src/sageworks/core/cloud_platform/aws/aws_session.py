@@ -15,35 +15,50 @@ from sageworks.utils.execution_environment import running_on_lambda, running_on_
 
 
 class AWSSession:
-    """AWSSession manages AWS Sessions and SageWorks Role Assumption"""
+    """AWSSession (Singleton) manages AWS Sessions and SageWorks Role Assumption"""
+
+    _instance = None
+    _cached_boto3_session = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(AWSSession, cls).__new__(cls, *args, **kwargs)
+        return cls._instance
 
     def __init__(self):
-        self.log = logging.getLogger("sageworks")
+        if not hasattr(self, "initialized"):  # Prevent reinitialization
+            self.log = logging.getLogger("sageworks")
 
-        # Pull in our config from the config manager
-        self.cm = ConfigManager()
-        self.sageworks_role_name = self.cm.get_config("SAGEWORKS_ROLE")
+            # Pull in our config from the config manager
+            self.cm = ConfigManager()
+            self.sageworks_role_name = self.cm.get_config("SAGEWORKS_ROLE")
 
-        # Grab the AWS Profile from the Config Manager
-        profile = self.cm.get_config("AWS_PROFILE")
-        if profile is not None:
-            os.environ["AWS_PROFILE"] = profile
+            # Grab the AWS Profile from the Config Manager
+            profile = self.cm.get_config("AWS_PROFILE")
+            if profile is not None:
+                os.environ["AWS_PROFILE"] = profile
 
-        # Grab our AWS Account Info
-        try:
-            self.account_id = boto3.client("sts").get_caller_identity()["Account"]
-            self.region = boto3.Session().region_name
-        except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError):
-            msg = "AWS SSO Token Failure: Check AWS_PROFILE and/or Renew SSO Token..."
-            self.log.critical(msg)
-            if is_running_in_ipython():
-                display_error_and_raise(msg)
-            else:
-                sys.exit(1)
+            # Grab our AWS Account Info
+            try:
+                self.account_id = boto3.client("sts").get_caller_identity()["Account"]
+                self.region = boto3.Session().region_name
+            except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError):
+                msg = "AWS SSO Token Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+                self.log.critical(msg)
+                if is_running_in_ipython():
+                    display_error_and_raise(msg)
+                else:
+                    sys.exit(1)
+            self.initialized = True  # Mark as initialized to prevent reinitialization
 
     @property
     def boto3_session(self):
-        """Get the AWS Boto3 Session, defaulting to the SageWorks Role if possible."""
+        if self._cached_boto3_session is None:
+            self._cached_boto3_session = self._create_boto3_session()
+        return self._cached_boto3_session
+
+    def _create_boto3_session(self):
+        """Internal: Get the AWS Boto3 Session, defaulting to the SageWorks Role if possible."""
 
         # Check the execution environment and determine if we need to assume the SageWorks Role
         if running_on_lambda() or running_on_glue() or self.is_sageworks_role():
