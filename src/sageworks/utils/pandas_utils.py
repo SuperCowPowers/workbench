@@ -3,6 +3,7 @@
 import pandas as pd
 from pandas.errors import ParserError
 import numpy as np
+import sys
 import json
 from io import StringIO
 import hashlib
@@ -138,6 +139,30 @@ def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: li
 
             # Display the merged DataFrame
             print(merged_df)
+
+
+def subnormal_check(df):
+    """
+    Identifies and prints rows from the DataFrame containing subnormal floats.
+
+    A subnormal float is smaller than the smallest positive normal float
+    (~2.2e-308) but greater than zero (~5e-324).
+    """
+    # Define the range for subnormal floats
+    min_positive = np.nextafter(0, 1)  # Smallest positive subnormal float (~5e-324)
+    min_normal = sys.float_info.min  # Smallest positive normal float (~2.2e-308)
+
+    # Check for subnormal floats in the DataFrame
+    subnormal_mask = df.map(lambda x: isinstance(x, float) and min_positive <= abs(x) < min_normal)
+
+    # Get rows where any column contains a subnormal float
+    rows_with_subnormal = df[subnormal_mask.any(axis=1)]
+
+    if not rows_with_subnormal.empty:
+        print("Rows containing subnormal floats:")
+        print(rows_with_subnormal)
+    else:
+        print("No subnormal floats found in the DataFrame.")
 
 
 def get_percent_nan(df):
@@ -582,3 +607,8 @@ if __name__ == "__main__":
     my_df2.loc[82, "Age"] = 99
     my_df2["new_column"] = "new_value"
     compare_dataframes(my_df1, my_df2, ["Id", "Name"])
+
+    # Subnormal Check
+    data = {"col1": [5, 0, 1e-310, 5e-325], "col2": [3, 0, 1e-100, -1e-320]}
+    df = pd.DataFrame(data)
+    subnormal_check(df)
