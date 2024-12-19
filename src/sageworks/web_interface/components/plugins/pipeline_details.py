@@ -82,10 +82,44 @@ class PipelineDetails(PluginInterface):
 
         # Grab the pipeline details and construct the markdown string
         details = self.current_pipeline.details()
-        markdown = self.dict_to_markdown(details)
+        markdown = self.pipeline_to_markdown(details)
         return markdown
 
-    def dict_to_markdown(self, dictionary: dict, indent: int = 0) -> str:
+    def pipeline_to_markdown(self, pipeline_details: dict) -> str:
+        """Convert pipeline details to a markdown string with hyperlinks and details.
+
+        Args:
+            pipeline_details (dict): A dictionary of pipeline details.
+
+        Returns:
+            str: A markdown string as a bulleted list.
+        """
+        markdown = ""
+
+        # Each pipeline will have SageWorks Artifact keys (data_source, feature_set, model, etc.)
+        for key, value in pipeline_details.items():
+            uuid = value.get("name")
+            markdown += f"- {self._hyperlink(key, uuid)}\n"
+
+        return markdown
+
+    def _hyperlink(self, artifact_type: str, uuid: str) -> str:
+        """Create a hyperlink for a SageWorks artifact type and name.
+
+        Args:
+            artifact_type (str): The type of SageWorks artifact (e.g., "data_source").
+            uuid (str): The unique identifier for the artifact.
+
+        Returns:
+            str: A markdown hyperlink string.
+        """
+        # Convert underscores to CamelCase for display purposes
+        artifact_type_display = artifact_type.title().replace("_", "")
+
+        # Return the markdown hyperlink string (relative to the root)
+        return f"[{artifact_type_display}({uuid})]({artifact_type}s?uuid={uuid})"
+
+    def _dict_to_markdown(self, dictionary: dict, indent: int = 0) -> str:
         """Convert a dictionary to a markdown string with nested list formatting.
 
         Args:
