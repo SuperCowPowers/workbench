@@ -49,7 +49,7 @@ class AWSDFStore:
 
         # Initialize a Workbench Session and retrieve the S3 bucket from ConfigManager
         config = ConfigManager()
-        self.workbench_bucket = config.get_config("SAGEWORKS_BUCKET")
+        self.workbench_bucket = config.get_config("WORKBENCH_BUCKET")
         self.boto3_session = AWSAccountClamp().boto3_session
         self.s3_client = self.boto3_session.client("s3")
 

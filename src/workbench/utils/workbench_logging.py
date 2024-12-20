@@ -169,9 +169,9 @@ def logging_setup(color_logs=True):
     log.addHandler(stream_handler)
 
     # Setup logging level
-    if os.getenv("SAGEWORKS_DEBUG", "False").lower() == "true":
+    if os.getenv("WORKBENCH_DEBUG", "False").lower() == "true":
         log.setLevel(logging.DEBUG)
-        log.debug("Debugging enabled via SAGEWORKS_DEBUG environment variable.")
+        log.debug("Debugging enabled via WORKBENCH_DEBUG environment variable.")
     else:
         log.setLevel(logging.INFO)
         # Note: Not using the ThrottlingFilter for now
@@ -239,13 +239,13 @@ def exception_log_forward(call_on_exception=None):
 
 
 if __name__ == "__main__":
-    # Uncomment to test the SAGEWORKS_DEBUG env variable
-    # os.environ["SAGEWORKS_DEBUG"] = "True"
+    # Uncomment to test the WORKBENCH_DEBUG env variable
+    # os.environ["WORKBENCH_DEBUG"] = "True"
 
     logging_setup()
     my_log = logging.getLogger("workbench")
     my_log.info("You should see me")
-    my_log.debug("You should see me only if SAGEWORKS_DEBUG is True")
+    my_log.debug("You should see me only if WORKBENCH_DEBUG is True")
     logging.getLogger("workbench").setLevel(logging.WARNING)
     my_log.info("You should NOT see me")
     my_log.warning("You should see this warning")

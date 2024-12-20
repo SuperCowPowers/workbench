@@ -21,19 +21,19 @@ try:
 
     cm = ConfigManager()
     pprint(cm.config)
-    workbench_bucket = cm.get_config("SAGEWORKS_BUCKET")
-    workbench_api_key = cm.get_config("SAGEWORKS_API_KEY")
-    workbench_plugins = cm.get_config("SAGEWORKS_PLUGINS")
-    existing_vpc_id = cm.get_config("SAGEWORKS_VPC_ID")
-    existing_subnet_ids = cm.get_config("SAGEWORKS_SUBNET_IDS")
-    config_ips = cm.get_config("SAGEWORKS_WHITELIST", "")
+    workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
+    workbench_api_key = cm.get_config("WORKBENCH_API_KEY")
+    workbench_plugins = cm.get_config("WORKBENCH_PLUGINS")
+    existing_vpc_id = cm.get_config("WORKBENCH_VPC_ID")
+    existing_subnet_ids = cm.get_config("WORKBENCH_SUBNET_IDS")
+    config_ips = cm.get_config("WORKBENCH_WHITELIST", "")
     whitelist_ips = [ip.strip() for ip in config_ips.split(",") if ip.strip()]
-    config_prefix = cm.get_config("SAGEWORKS_PREFIX_LISTS", "")
+    config_prefix = cm.get_config("WORKBENCH_PREFIX_LISTS", "")
     whitelist_prefix_lists = [ip.strip() for ip in config_prefix.split(",") if ip.strip()]
-    certificate_arn = cm.get_config("SAGEWORKS_CERTIFICATE_ARN")
+    certificate_arn = cm.get_config("WORKBENCH_CERTIFICATE_ARN")
 except ImportError:
     print("Workbench Configuration Manager Not Found...")
-    print("Set the SAGEWORKS_CONFiG Env var and run again...")
+    print("Set the WORKBENCH_CONFiG Env var and run again...")
     raise SystemExit(1)
 
 

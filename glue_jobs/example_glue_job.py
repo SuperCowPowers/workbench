@@ -20,9 +20,9 @@ from workbench.utils.glue_utils import get_resolved_options
 # Convert Glue Job Args to a Dictionary
 glue_args = get_resolved_options(sys.argv)
 
-# Set the SAGEWORKS_BUCKET for the ConfigManager
+# Set the WORKBENCH_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["workbench-bucket"])
+cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 cm.set_config("REDIS_HOST", glue_args["redis-host"])
 
 # Create a new Data Source from an S3 Path

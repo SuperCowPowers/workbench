@@ -17,11 +17,11 @@ Welcome to Workbench!
 Looks like this is your first time using Workbench...
 Let's get you set up...
 AWS_PROFILE: my_aws_profile
-SAGEWORKS_BUCKET: my-company-workbench
+WORKBENCH_BUCKET: my-company-workbench
 [optional] REDIS_HOST(localhost): my-redis.cache.amazon (or leave blank)
 [optional] REDIS_PORT(6379):
 [optional] REDIS_PASSWORD():
-[optional] SAGEWORKS_API_KEY(open_source): my_api_key (or leave blank)
+[optional] WORKBENCH_API_KEY(open_source): my_api_key (or leave blank)
 ```
 **That's It:** You're now all set. This configuration only needs to be **ONCE** :)
 

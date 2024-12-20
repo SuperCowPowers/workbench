@@ -1,6 +1,6 @@
 import os
 
-os.environ.pop("SAGEWORKS_CONFIG", None)
+os.environ.pop("WORKBENCH_CONFIG", None)
 
 try:
     from workbench.api import Meta

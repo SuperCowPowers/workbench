@@ -31,7 +31,7 @@ class AWSSession:
 
             # Pull in our config from the config manager
             self.cm = ConfigManager()
-            self.workbench_role_name = self.cm.get_config("SAGEWORKS_ROLE")
+            self.workbench_role_name = self.cm.get_config("WORKBENCH_ROLE")
 
             # Grab the AWS Profile from the Config Manager
             profile = self.cm.get_config("AWS_PROFILE")

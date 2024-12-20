@@ -57,7 +57,7 @@ class Transform(ABC):
             self.log.error("Workbench Configuration Incomplete...")
             self.log.error("Run the 'workbench' command and follow the prompts...")
             raise FatalConfigError()
-        self.workbench_bucket = cm.get_config("SAGEWORKS_BUCKET")
+        self.workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
         self.data_sources_s3_path = "s3://" + self.workbench_bucket + "/data-sources"
         self.feature_sets_s3_path = "s3://" + self.workbench_bucket + "/feature-sets"
         self.models_s3_path = "s3://" + self.workbench_bucket + "/models"

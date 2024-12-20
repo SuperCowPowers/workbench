@@ -42,7 +42,7 @@ class AWSMeta:
         self.metadata_sizes = defaultdict(dict)
 
         # Fill in AWS Specific Information
-        self.workbench_bucket = self.cm.get_config("SAGEWORKS_BUCKET")
+        self.workbench_bucket = self.cm.get_config("WORKBENCH_BUCKET")
         self.incoming_bucket = "s3://" + self.workbench_bucket + "/incoming-data/"
         self.boto3_session = self.account_clamp.boto3_session
         self.sm_client = self.account_clamp.sagemaker_client()

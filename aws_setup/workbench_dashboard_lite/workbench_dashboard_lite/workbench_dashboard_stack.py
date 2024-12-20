@@ -114,9 +114,9 @@ class WorkbenchDashboardStack(Stack):
             memory_limit_mib=4096,
             environment={
                 "REDIS_HOST": redis_endpoint,
-                "SAGEWORKS_BUCKET": props.workbench_bucket,
-                "SAGEWORKS_API_KEY": props.workbench_api_key,
-                "SAGEWORKS_PLUGINS": props.workbench_plugins,
+                "WORKBENCH_BUCKET": props.workbench_bucket,
+                "WORKBENCH_API_KEY": props.workbench_api_key,
+                "WORKBENCH_PLUGINS": props.workbench_plugins,
             },
             logging=ecs.LogDriver.aws_logs(stream_prefix="WorkbenchDashboard", log_group=log_group),
         )

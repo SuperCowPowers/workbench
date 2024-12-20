@@ -19,6 +19,7 @@ clean-build:
 	find . -name '.coverage' -exec rm -rf {} +
 	find . -name '.cache' -exec rm -rf {} +
 	find . -name '__pycache__' -exec rm -rf {} +
+	find . -name 'cdk.out' -exec rm -rf {} +
 
 clean-pyc:
 	find . -name '*.pyc' -exec rm -rf {} +

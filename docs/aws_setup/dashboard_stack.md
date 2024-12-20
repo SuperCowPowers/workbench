@@ -15,7 +15,7 @@ Please review the [Stack Details](#stack-details) section to understand all the 
 
   ```bash
   cd workbench/aws_setup/workbench_dashboard_full
-  export SAGEWORKS_CONFIG=/full/path/to/config.json
+  export WORKBENCH_CONFIG=/full/path/to/config.json
   pip install -r requirements.txt
   cdk bootstrap
   cdk deploy
@@ -41,7 +41,7 @@ Please review the [Stack Details](#stack-details) section to understand all the 
 
   ```bash
   cd workbench/aws_setup/workbench_dashboard_lite
-  export SAGEWORKS_CONFIG=/full/path/to/config.json
+  export WORKBENCH_CONFIG=/full/path/to/config.json
   pip install -r requirements.txt
   cdk bootstrap
   cdk deploy

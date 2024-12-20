@@ -18,7 +18,7 @@ FROM public.ecr.aws/m6i5k1r2/workbench_dashboard:latest
 
 # Copy the plugin files into the Dashboard plugins dir
 COPY ./workbench_plugins /app/workbench_plugins
-ENV SAGEWORKS_PLUGINS=/app/workbench_plugins
+ENV WORKBENCH_PLUGINS=/app/workbench_plugins
 ```
 
 **Note:** Your plugins directory should looks like this
@@ -91,10 +91,10 @@ Now open up the `app.py` file and change this line to your Docker Image
 dashboard_image = "public.ecr.aws/m6i5k1r2/workbench_dashboard:v0_8_3_amd64"
 ```
 
-Make sure your `SAGEWORKS_CONFIG` is properly set, and run the following commands:
+Make sure your `WORKBENCH_CONFIG` is properly set, and run the following commands:
 
 ```
-export SAGEWORKS_CONFIG=/Users/<user_name>/.workbench/workbench_config.json
+export WORKBENCH_CONFIG=/Users/<user_name>/.workbench/workbench_config.json
 cdk diff
 cdk deploy
 ```
@@ -111,4 +111,4 @@ cdk deploy
 
 
 ### Note on Workbench Configuration
-All Configuration is managed by the CDK Python Script and the `SAGEWORKS_CONFIG` ENV var. If you want to change things like `REDIS_HOST` or `SAGEWORKS_BUCKET` you should do that with a `workbench.config` file and then point the `SAGEWORKS_CONFIG` ENV var to that file.
+All Configuration is managed by the CDK Python Script and the `WORKBENCH_CONFIG` ENV var. If you want to change things like `REDIS_HOST` or `WORKBENCH_BUCKET` you should do that with a `workbench.config` file and then point the `WORKBENCH_CONFIG` ENV var to that file.

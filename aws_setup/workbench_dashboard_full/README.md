@@ -12,9 +12,9 @@ This is the Python CDK for deploying the Workbench Dashboard web service AWS Sta
 - Security Groups: Configured to control access to the ECS tasks and the Redis cluster, with rules based on IP whitelisting and AWS managed prefix lists.
 
 
-## Setting SAGEWORKS_CONFIG before Synth/Diff/Deploy
+## Setting WORKBENCH_CONFIG before Synth/Diff/Deploy
 ```
-export SAGEWORKS_CONFIG=/full/path/to/deploy_config.json
+export WORKBENCH_CONFIG=/full/path/to/deploy_config.json
 ```
 At this point you can now synthesize the CloudFormation template for this code.
 

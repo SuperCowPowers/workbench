@@ -33,7 +33,7 @@ At the bottom of the Lambda page there's an 'Add Layer' button. You can click th
 - Memory: 4096
 - Ephemeral storage: 2048
 
-**Set the SAGEWORKS_BUCKET ENV**
+**Set the WORKBENCH_BUCKET ENV**
 Workbench will need to know what bucket to work out of, so go into the Configuration...Environment Variables... and add one for the Workbench bucket that your are using for AWS Account (dev, prod, etc).
 <img alt="lambda_layer"  padding: 20px; border: 1px solid grey;""
 src="https://github.com/user-attachments/assets/a5afdaff-188f-45ca-bd66-1ab62d7b0b2a">

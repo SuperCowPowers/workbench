@@ -161,7 +161,7 @@ if __name__ == "__main__":
 
     # Grab the API Key from the Workbench ConfigManager
     cm = ConfigManager()
-    api_key = cm.get_config("SAGEWORKS_API_KEY")
+    api_key = cm.get_config("WORKBENCH_API_KEY")
     license_api_key = cm.get_config("LICENSE_API_KEY")
     print(LicenseManager.get_license_id())
 

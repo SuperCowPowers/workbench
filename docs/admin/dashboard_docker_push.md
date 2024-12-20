@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir workbench==0.4.13 <-- change this
 **Note:** For a client specific config file you'll need to copy it locally so that it's within Dockers 'build context'. If you're building the 'vanilla' open source Docker image, then you can use the `open_source_config.json` that's in the directory already.
 
 ```
-docker build --build-arg SAGEWORKS_CONFIG=open_source_config.json -t \
+docker build --build-arg WORKBENCH_CONFIG=open_source_config.json -t \
 workbench_dashboard:v0_4_13_amd64 --platform linux/amd64 .
 ```
 

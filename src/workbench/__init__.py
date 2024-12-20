@@ -41,5 +41,5 @@ except Exception:
 from workbench.utils.workbench_logging import logging_setup
 
 # Check the environment variable to decide whether to set up logging
-if os.getenv("SAGEWORKS_SKIP_LOGGING", "False").lower() != "true":
+if os.getenv("WORKBENCH_SKIP_LOGGING", "False").lower() != "true":
     logging_setup()

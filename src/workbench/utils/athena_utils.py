@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
     # Get our workbench bucket
     cm = ConfigManager()
-    workbench_bucket = cm.get_config("SAGEWORKS_BUCKET")
+    workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
 
     # Setup a temporary S3 prefix for the Athena output
     s3_scratch = f"s3://{workbench_bucket}/temp/athena_output"

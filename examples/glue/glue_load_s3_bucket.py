@@ -9,9 +9,9 @@ from workbench.utils.aws_utils import list_s3_files
 # Convert Glue Job Args to a Dictionary
 glue_args = get_resolved_options(sys.argv)
 
-# Set the SAGEWORKS_BUCKET for the ConfigManager
+# Set the WORKBENCH_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["workbench-bucket"])
+cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 
 # List all the CSV files in the given S3 Path
 input_s3_path = glue_args["input-s3-path"]

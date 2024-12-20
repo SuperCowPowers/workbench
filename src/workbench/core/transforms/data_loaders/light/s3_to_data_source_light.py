@@ -90,9 +90,9 @@ if __name__ == "__main__":
 
     # Grab our Workbench Bucket from ENV
     cm = ConfigManager()
-    workbench_bucket = cm.get_config("SAGEWORKS_BUCKET")
+    workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
     if workbench_bucket is None:
-        print("Could not find ENV var for SAGEWORKS_BUCKET!")
+        print("Could not find ENV var for WORKBENCH_BUCKET!")
         sys.exit(1)
 
     # Create my Data Loader

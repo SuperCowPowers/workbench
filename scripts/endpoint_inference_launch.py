@@ -9,7 +9,7 @@ import boto3
 import sagemaker
 
 # Workbench Imports
-os.environ["SAGEWORKS_SKIP_LOGGING"] = "True"  # For extra speed :p
+os.environ["WORKBENCH_SKIP_LOGGING"] = "True"  # For extra speed :p
 from workbench.utils.fast_inference import fast_inference
 
 

@@ -21,7 +21,7 @@ glue_args = get_resolved_options(sys.argv)
 
 # Set the Workbench Config (needs to be done early)
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["workbench-bucket"])
+cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 cm.set_config("REDIS_HOST", glue_args["redis-host"])
 log = logging.getLogger("workbench")
 

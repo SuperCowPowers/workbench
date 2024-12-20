@@ -13,7 +13,7 @@ account = "507740646243"
 role = f"arn:aws:iam::{account}:role/Workbench-ExecutionRole"
 
 environment = {
-    "SAGEWORKS_BUCKET": "sandbox-workbench-artifacts",
+    "WORKBENCH_BUCKET": "sandbox-workbench-artifacts",
 }
 
 # Define the processor

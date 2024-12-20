@@ -44,9 +44,9 @@ class PluginManager:
 
         # Get the plugin directory from the config
         cm = ConfigManager()
-        self.config_plugin_dir = cm.get_config("SAGEWORKS_PLUGINS")
+        self.config_plugin_dir = cm.get_config("WORKBENCH_PLUGINS")
         if not self.config_plugin_dir:
-            self.log.warning("SAGEWORKS_PLUGINS not set. No plugins will be loaded.")
+            self.log.warning("WORKBENCH_PLUGINS not set. No plugins will be loaded.")
             return
 
         # Load the plugins
@@ -285,7 +285,7 @@ class PluginManager:
         Returns:
             str: String representation of the PluginManager state and contents
         """
-        summary = "SAGEWORKS_PLUGINS: " + self.config_plugin_dir + "\n"
+        summary = "WORKBENCH_PLUGINS: " + self.config_plugin_dir + "\n"
         summary += "Plugins:\n"
         for plugin_type, plugin_dict in self.plugins.items():
             for name, plugin in plugin_dict.items():
@@ -324,7 +324,7 @@ if __name__ == "__main__":
 
     # Test Modified Time by modifying a plugin file
     cm = ConfigManager()
-    plugin_path = cm.get_config("SAGEWORKS_PLUGINS") + "/components/endpoint_turbo.py"
+    plugin_path = cm.get_config("WORKBENCH_PLUGINS") + "/components/endpoint_turbo.py"
     print(manager.plugins_modified())
     # Modify the plugin file modified time to now
     os.utime(plugin_path, None)
@@ -334,7 +334,7 @@ if __name__ == "__main__":
     print("\n\n*** Testing S3 Plugin Loading ***\n\n")
     s3_path = "s3://sandbox-workbench-artifacts/workbench_plugins"
     cm = ConfigManager()
-    cm.set_config("SAGEWORKS_PLUGINS", s3_path)
+    cm.set_config("WORKBENCH_PLUGINS", s3_path)
 
     # Since we're using a singleton, we need to create a new instance
     PluginManager._instance = None

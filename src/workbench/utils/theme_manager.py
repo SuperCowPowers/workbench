@@ -33,7 +33,7 @@ class ThemeManager:
     def _initialize(cls):
         """Initialize the ThemeManager's shared state."""
         cm = ConfigManager()
-        config_theme_path = cm.get_config("SAGEWORKS_THEMES")
+        config_theme_path = cm.get_config("WORKBENCH_THEMES")
 
         # If the theme path is not set, use the default path
         if not config_theme_path:

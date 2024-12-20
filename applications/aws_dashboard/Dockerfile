@@ -34,9 +34,9 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY . /app
 
 # Grab the config file from build args, copy, and set ENV var
-ARG SAGEWORKS_CONFIG
-COPY $SAGEWORKS_CONFIG /app/workbench_config.json
-ENV SAGEWORKS_CONFIG=/app/workbench_config.json
+ARG WORKBENCH_CONFIG
+COPY $WORKBENCH_CONFIG /app/workbench_config.json
+ENV WORKBENCH_CONFIG=/app/workbench_config.json
 
 # Run supervisord
 CMD ["/usr/bin/supervisord"]

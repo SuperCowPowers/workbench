@@ -6,5 +6,5 @@ FROM public.ecr.aws/m6i5k1r2/workbench_dashboard:latest
 
 # Copy the plugin files and set the plugin ENV var
 COPY ./my_plugins /app/workbench_plugins
-ENV SAGEWORKS_PLUGINS=/app/workbench_plugins
+ENV WORKBENCH_PLUGINS=/app/workbench_plugins
 

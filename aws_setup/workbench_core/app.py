@@ -18,13 +18,13 @@ try:
 
     cm = ConfigManager()
     pprint(cm.config)
-    workbench_bucket = cm.get_config("SAGEWORKS_BUCKET")
-    workbench_role_name = cm.get_config("SAGEWORKS_ROLE")
-    sso_group = cm.get_config("SAGEWORKS_SSO_GROUP")
-    additional_buckets = cm.get_config("SAGEWORKS_ADDITIONAL_BUCKETS")
+    workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
+    workbench_role_name = cm.get_config("WORKBENCH_ROLE")
+    sso_group = cm.get_config("WORKBENCH_SSO_GROUP")
+    additional_buckets = cm.get_config("WORKBENCH_ADDITIONAL_BUCKETS")
 except ImportError:
     print("Workbench Configuration Manager Not Found...")
-    print("Set the SAGEWORKS_CONFiG Env var and run again...")
+    print("Set the WORKBENCH_CONFiG Env var and run again...")
     raise SystemExit(1)
 
 

@@ -47,8 +47,8 @@ Workbench pushes and pulls data from AWS, it will use this S3 Bucket for storage
 Do the initial setup/config here: [Getting Started](../getting_started/index.md). After you've done that come back to this section. For Stack Deployment additional things need to be added to your config file. The config file will be located in your home directory `~/.workbench/workbench_config.json`. Edit this file and add addition stuff for the deployment. Specifically there are two additional fields to be added (optional for both)
 
 ```
-"SAGEWORKS_SSO_GROUP": DataScientist (or whatever)
-"SAGEWORKS_ADDITIONAL_BUCKETS": "bucket1, bucket2
+"WORKBENCH_SSO_GROUP": DataScientist (or whatever)
+"WORKBENCH_ADDITIONAL_BUCKETS": "bucket1, bucket2
 ```
 These are optional but are set/used by most Workbench users.
 

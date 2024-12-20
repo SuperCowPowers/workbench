@@ -184,7 +184,7 @@ if __name__ == "__main__":
     from workbench.utils.config_manager import ConfigManager
 
     session = AWSAccountClamp().boto3_session
-    workbench_bucket = ConfigManager().get_config("SAGEWORKS_BUCKET")
+    workbench_bucket = ConfigManager().get_config("WORKBENCH_BUCKET")
 
     # Setup a temporary S3 prefix for the Athena output
     s3_scratch = f"s3://{workbench_bucket}/temp/athena_output"

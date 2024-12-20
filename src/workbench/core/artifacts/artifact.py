@@ -37,7 +37,7 @@ class Artifact(ABC):
     aws_region = aws_account_clamp.region
 
     # Setup Bucket Paths
-    workbench_bucket = cm.get_config("SAGEWORKS_BUCKET")
+    workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
     data_sources_s3_path = f"s3://{workbench_bucket}/data-sources"
     feature_sets_s3_path = f"s3://{workbench_bucket}/feature-sets"
     models_s3_path = f"s3://{workbench_bucket}/models"

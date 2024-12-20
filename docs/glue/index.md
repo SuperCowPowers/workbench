@@ -40,9 +40,9 @@ from workbench.utils.glue_utils import get_resolved_options
 # Convert Glue Job Args to a Dictionary
 glue_args = get_resolved_options(sys.argv)
 
-# Set the SAGEWORKS_BUCKET for the ConfigManager
+# Set the WORKBENCH_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["workbench-bucket"])
+cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 
 # Create a new Data Source from an S3 Path
 source_path = "s3://workbench-public-data/common/abalone.csv"
@@ -68,9 +68,9 @@ from workbench.utils.glue_utils import get_resolved_options, list_s3_files
 # Convert Glue Job Args to a Dictionary
 glue_args = get_resolved_options(sys.argv)
 
-# Set the SAGEWORKS_BUCKET for the ConfigManager
+# Set the WORKBENCH_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["workbench-bucket"])
+cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 
 # List all the CSV files in the given S3 Path
 input_s3_path = glue_args["input-s3-path"]
@@ -98,7 +98,7 @@ The `exception_log_forward` sets up a **context manager** that will trap excepti
 Glue Power without the Pain. Workbench manages the AWS Execution Role, so local API and Glue Jobs will have the same permissions/access. Also using the same Code as your notebooks or scripts makes creating and testing Glue Jobs a breeze.
 
 ```shell
-export SAGEWORKS_CONFIG=<your config>  # Only if not already set up
+export WORKBENCH_CONFIG=<your config>  # Only if not already set up
 python my_glue_job.py --workbench-bucket <your bucket>
 ```
 

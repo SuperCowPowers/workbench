@@ -3,6 +3,7 @@
 import sys
 import logging
 import awswrangler as wr
+from botocore.exceptions import ClientError
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
@@ -26,12 +27,22 @@ class AWSAccountCheck:
             self.log.error("Run the 'workbench' command and follow the prompts...")
             raise FatalConfigError()
 
-        self.workbench_bucket = cm.get_config("SAGEWORKS_BUCKET")
+        self.workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
 
     def ensure_aws_catalog_db(self, catalog_db: str):
         """Ensure that the AWS Data Catalog Database exists"""
         self.log.important(f"Ensuring that the AWS Data Catalog Database {catalog_db} exists...")
-        wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=self.aws_clamp.boto3_session)
+        try:
+            wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=self.aws_clamp.boto3_session)
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'AccessDeniedException':
+                self.log.error(f"Access denied while trying to create/access the catalog database '{catalog_db}'.")
+                self.log.error("Create the database manually in the AWS Glue Console, or run this command:")
+                self.log.error("aws glue create-database --database-input '{\"Name\": \"workbench\"}'")
+                sys.exit(1)
+            else:
+                self.log.error(f"Unexpected error: {e}")
+                sys.exit(1)
 
     def check_s3_bucket_subfolders(self):
         """Check if the Workbench S3 Bucket is set up and has the correct sub-folders"""

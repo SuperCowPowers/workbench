@@ -40,7 +40,7 @@ class AWSAccountClamp:
             self.log.error("Workbench Configuration Incomplete...")
             self.log.error("Run the 'workbench' command and follow the prompts...")
             raise FatalConfigError()
-        self.workbench_bucket_name = self.cm.get_config("SAGEWORKS_BUCKET")
+        self.workbench_bucket_name = self.cm.get_config("WORKBENCH_BUCKET")
         self.aws_session = AWSSession()
         self.boto3_session = self.aws_session.boto3_session
 

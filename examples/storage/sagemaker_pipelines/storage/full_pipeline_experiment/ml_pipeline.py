@@ -13,7 +13,7 @@ role = f"arn:aws:iam::{account}:role/Workbench-ExecutionRole"
 
 # Define the environment variables
 environment = {
-    "SAGEWORKS_BUCKET": "sandbox-workbench-artifacts",
+    "WORKBENCH_BUCKET": "sandbox-workbench-artifacts",
 }
 
 

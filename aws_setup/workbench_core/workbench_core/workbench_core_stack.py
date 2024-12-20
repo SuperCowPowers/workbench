@@ -140,38 +140,22 @@ class WorkbenchCoreStack(Stack):
         )
 
     def glue_catalog_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for permissions related to the Glue Data Catalog.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for Glue Data Catalog access.
-        """
+        """Create a policy statement for Glue Data Catalog-wide permissions."""
         catalog_arn = f"arn:aws:glue:{self.region}:{self.account}:catalog"
 
         return iam.PolicyStatement(
             actions=[
-                # Permissions for catalog/database-level actions
-                "glue:CreateDatabase",
-                "glue:GetDatabase",
+                # Catalog-wide permissions
                 "glue:GetDatabases",
+                "glue:CreateDatabase",
                 "glue:SearchTables",
-                "glue:GetTable",
-                "glue:GetTables",
-                "glue:CreateTable",
-                "glue:UpdateTable",
-                "glue:DeleteTable",
-                "glue:GetPartition",
-                "glue:GetPartitions",
             ],
             resources=[catalog_arn],
         )
 
     def glue_database_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for AWS Glue Data Catalog read and write access, limited to specific databases.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for AWS Glue Data Catalog access.
-        """
-        # Construct ARNs for the specific databases
+        """Create a policy statement for specific Glue databases and tables."""
+        # ARNs for the databases and tables
         workbench_database_arn = f"arn:aws:glue:{self.region}:{self.account}:database/workbench"
         workbench_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/workbench/*"
         sagemaker_featurestore_database_arn = (
@@ -181,24 +165,21 @@ class WorkbenchCoreStack(Stack):
 
         return iam.PolicyStatement(
             actions=[
-                # Permissions for database-level actions, we need to 'get' the database
+                # Database-specific permissions
                 "glue:GetDatabase",
-                # Permissions for table-level actions, focusing on read/write operations
                 "glue:GetTable",
                 "glue:GetTables",
                 "glue:UpdateTable",
                 "glue:CreateTable",
                 "glue:DeleteTable",
-                # Actions for working with data in tables
+                # Partition-specific actions
                 "glue:GetPartition",
                 "glue:GetPartitions",
             ],
             resources=[
                 workbench_database_arn,
-                f"{workbench_database_arn}/*",
                 workbench_table_arn,
                 sagemaker_featurestore_database_arn,
-                f"{sagemaker_featurestore_database_arn}/*",
                 sagemaker_table_arn,
             ],
         )

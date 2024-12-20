@@ -77,8 +77,8 @@ class ConfigManager:
         Returns:
             Any: The value of the configuration key.
         """
-        # Special logic for SAGEWORKS_PLUGINS
-        if key == "SAGEWORKS_PLUGINS":
+        # Special logic for WORKBENCH_PLUGINS
+        if key == "WORKBENCH_PLUGINS":
             plugin_dir = self.config.get(key, default_value)
             if plugin_dir in ["package", "", None]:
                 return os.path.join(os.path.dirname(__file__), "../plugins")
@@ -94,10 +94,10 @@ class ConfigManager:
         Returns:
             Dict[str, Any]: All configuration values.
         """
-        # Grab all config except the SAGEWORKS_API_KEY
-        output = {key: value for key, value in self.config.items() if key != "SAGEWORKS_API_KEY"}
+        # Grab all config except the WORKBENCH_API_KEY
+        output = {key: value for key, value in self.config.items() if key != "WORKBENCH_API_KEY"}
 
-        # Add the SAGEWORKS_API_KEY info
+        # Add the WORKBENCH_API_KEY info
         api_key_info = self.get_api_key_info()
         output["API_KEY_INFO"] = api_key_info
         return output
@@ -114,10 +114,10 @@ class ConfigManager:
     def overwrite_config_with_env(self):
         """Overwrite the configuration with environment variables."""
         overwrites = [
-            "SAGEWORKS_ROLE",
-            "SAGEWORKS_BUCKET",
-            "SAGEWORKS_API_KEY",
-            "SAGEWORKS_PLUGINS",
+            "WORKBENCH_ROLE",
+            "WORKBENCH_BUCKET",
+            "WORKBENCH_API_KEY",
+            "WORKBENCH_PLUGINS",
             "REDIS_HOST",
             "REDIS_PORT",
             "REDIS_PASSWORD",
@@ -136,10 +136,10 @@ class ConfigManager:
         from workbench.api.parameter_store import ParameterStore
 
         overwrites = [
-            "SAGEWORKS_ROLE",
-            "SAGEWORKS_BUCKET",
-            "SAGEWORKS_API_KEY",
-            "SAGEWORKS_PLUGINS",
+            "WORKBENCH_ROLE",
+            "WORKBENCH_BUCKET",
+            "WORKBENCH_API_KEY",
+            "WORKBENCH_PLUGINS",
             "REDIS_HOST",
             "REDIS_PORT",
             "REDIS_PASSWORD"
@@ -193,8 +193,8 @@ class ConfigManager:
                     else:
                         site_config_updates[key] = value
 
-                    # Special logic for SAGEWORKS_API_KEY
-                    if key == "SAGEWORKS_API_KEY" and site_config_updates[key] == default_value:
+                    # Special logic for WORKBENCH_API_KEY
+                    if key == "WORKBENCH_API_KEY" and site_config_updates[key] == default_value:
                         print("Using Open Source API Key...")
                         site_config_updates[key] = self.open_source_api_key()
                 else:
@@ -214,17 +214,17 @@ class ConfigManager:
 
     def config_okay(self) -> bool:
         """Returns True if the configuration is okay."""
-        required_keys = ["SAGEWORKS_ROLE", "SAGEWORKS_BUCKET", "SAGEWORKS_API_KEY"]
+        required_keys = ["WORKBENCH_ROLE", "WORKBENCH_BUCKET", "WORKBENCH_API_KEY"]
         for key in required_keys:
             if key not in self.config:
                 self.log.critical(f"Missing required config: {key}")
                 return False
 
-        # Also make sure that the SAGEWORKS_BUCKET is not the default value
-        if self.config["SAGEWORKS_BUCKET"] == "env-will-overwrite":
+        # Also make sure that the WORKBENCH_BUCKET is not the default value
+        if self.config["WORKBENCH_BUCKET"] == "env-will-overwrite":
             self.overwrite_config_with_env()
-            if self.config["SAGEWORKS_BUCKET"] == "env-will-overwrite":
-                self.log.critical("SAGEWORKS_BUCKET needs to be set with ENV var...")
+            if self.config["WORKBENCH_BUCKET"] == "env-will-overwrite":
+                self.log.critical("WORKBENCH_BUCKET needs to be set with ENV var...")
                 return False
 
         return True
@@ -235,7 +235,7 @@ class ConfigManager:
         Returns:
             Dict[str, Any]: API Key information.
         """
-        api_key = self.get_config("SAGEWORKS_API_KEY")
+        api_key = self.get_config("WORKBENCH_API_KEY")
         api_info = self.license_manager.load_api_license(aws_account_id=None, api_key=api_key)
         return api_info
 
@@ -256,7 +256,7 @@ class ConfigManager:
         Returns:
             bool: True if the license is okay.
         """
-        is_valid = self.license_manager.load_api_license(aws_account_id, self.get_config("SAGEWORKS_API_KEY"))
+        is_valid = self.license_manager.load_api_license(aws_account_id, self.get_config("WORKBENCH_API_KEY"))
         return is_valid
 
     def print_license_info(self):
@@ -285,47 +285,47 @@ class ConfigManager:
         return config_path
 
     def platform_specific_instructions(self):
-        """Provides instructions to the user for setting the SAGEWORKS_CONFIG
+        """Provides instructions to the user for setting the WORKBENCH_CONFIG
         environment variable permanently based on their operating system.
         """
         os_name = platform.system()
 
         if os_name == "Windows":
             instructions = (
-                "\nTo set the SAGEWORKS_CONFIG environment variable permanently on Windows:\n"
+                "\nTo set the WORKBENCH_CONFIG environment variable permanently on Windows:\n"
                 "1. Press Win + R, type 'sysdm.cpl', and press Enter.\n"
                 "2. Go to the 'Advanced' tab and click on 'Environment Variables'.\n"
                 "3. Under 'System variables', click 'New'.\n"
-                "4. Set 'Variable name' to 'SAGEWORKS_CONFIG' and 'Variable value' to '{}'.\n"
+                "4. Set 'Variable name' to 'WORKBENCH_CONFIG' and 'Variable value' to '{}'.\n"
                 "5. Click OK and Apply. You might need to restart your system for changes to take effect."
             ).format(self.site_config_path)
 
         elif os_name in ["Linux", "Darwin"]:  # Darwin is macOS
             shell_files = {"Linux": "~/.bashrc or ~/.profile", "Darwin": "~/.bash_profile, ~/.zshrc, or ~/.zprofile"}
             instructions = (
-                "\nTo set the SAGEWORKS_CONFIG environment variable permanently on {}:\n"
+                "\nTo set the WORKBENCH_CONFIG environment variable permanently on {}:\n"
                 "1. Open {} in a text editor.\n"
                 "2. Add the following line at the end of the file:\n"
-                "   export SAGEWORKS_CONFIG='{}'\n"
+                "   export WORKBENCH_CONFIG='{}'\n"
                 "3. Save the file and restart your terminal for the changes to take effect."
             ).format(os_name, shell_files[os_name], self.site_config_path)
 
         else:
-            instructions = f"OS not recognized. Set the SAGEWORKS_CONFIG ENV var to {self.site_config_path} manually."
+            instructions = f"OS not recognized. Set the WORKBENCH_CONFIG ENV var to {self.site_config_path} manually."
 
         print(instructions)
 
     def _load_config(self) -> Dict[str, Any]:
-        """Internal: Load configuration based on the SAGEWORKS_CONFIG environment variable.
+        """Internal: Load configuration based on the WORKBENCH_CONFIG environment variable.
 
         Returns:
             Dict[str, Any]: Configuration dictionary.
         """
 
         # Load site_config_path from environment variable
-        self.site_config_path = os.environ.get("SAGEWORKS_CONFIG")
+        self.site_config_path = os.environ.get("WORKBENCH_CONFIG")
         if self.site_config_path is None:
-            self.log.warning("SAGEWORKS_CONFIG ENV var not set")
+            self.log.warning("WORKBENCH_CONFIG ENV var not set")
             return self._load_default_config()
 
         # Load site specific configuration file
@@ -351,19 +351,19 @@ class ConfigManager:
         """
         bootstrap_config = {
             "AWS_PROFILE": "change_me",
-            "SAGEWORKS_BUCKET": "change_me",
+            "WORKBENCH_BUCKET": "change_me",
             "REDIS_HOST": "change_me_optional:localhost",
             "REDIS_PORT": "change_me_optional:6379",
             "REDIS_PASSWORD": "change_me_optional:",
-            "SAGEWORKS_ROLE": "Workbench-ExecutionRole",
-            "SAGEWORKS_PLUGINS": "package",
-            "SAGEWORKS_FEATURES": {
+            "WORKBENCH_ROLE": "Workbench-ExecutionRole",
+            "WORKBENCH_PLUGINS": "package",
+            "WORKBENCH_FEATURES": {
                 "plugins": "true",
                 "experimental": "false",
                 "large_meta_data": "false",
                 "enterprise": "false",
             },
-            "SAGEWORKS_API_KEY": "change_me_optional:open_source",
+            "WORKBENCH_API_KEY": "change_me_optional:open_source",
         }
         return bootstrap_config
 
@@ -376,12 +376,12 @@ class ConfigManager:
         self.using_default_config = True
         self.log.warning("Loading default config and pulling ENV vars...")
         config = {
-            "SAGEWORKS_ROLE": "Workbench-ExecutionRole",
-            "SAGEWORKS_PLUGINS": "package",
-            "SAGEWORKS_API_KEY": self.open_source_api_key(),
+            "WORKBENCH_ROLE": "Workbench-ExecutionRole",
+            "WORKBENCH_PLUGINS": "package",
+            "WORKBENCH_API_KEY": self.open_source_api_key(),
         }
         for key, value in os.environ.items():
-            if key.startswith("SAGEWORKS_") or key.startswith("REDIS_") or key == "AWS_PROFILE":
+            if key.startswith("WORKBENCH_") or key.startswith("REDIS_") or key == "AWS_PROFILE":
                 config[key] = value
         return config
 
@@ -391,13 +391,13 @@ if __name__ == "__main__":
     from pprint import pprint
 
     cm = ConfigManager()
-    workbench_role = cm.get_config("SAGEWORKS_ROLE")
-    print(f"SAGEWORKS_ROLE: {workbench_role}")
-    workbench_plugins = cm.get_config("SAGEWORKS_PLUGINS")
-    print(f"SAGEWORKS_PLUGINS: {workbench_plugins}")
+    workbench_role = cm.get_config("WORKBENCH_ROLE")
+    print(f"WORKBENCH_ROLE: {workbench_role}")
+    workbench_plugins = cm.get_config("WORKBENCH_PLUGINS")
+    print(f"WORKBENCH_PLUGINS: {workbench_plugins}")
 
     # License ID
-    print(f"SAGEWORKS_LICENSE_ID: {cm.get_license_id()}")
+    print(f"WORKBENCH_LICENSE_ID: {cm.get_license_id()}")
 
     # API Key Info
     my_api_key_info = cm.get_api_key_info()
@@ -406,12 +406,12 @@ if __name__ == "__main__":
     # All config
     pprint(cm.get_all_config())
 
-    # Unset SAGEWORKS_CONFIG
-    os.environ.pop("SAGEWORKS_CONFIG", None)
+    # Unset WORKBENCH_CONFIG
+    os.environ.pop("WORKBENCH_CONFIG", None)
     ConfigManager._instance = None  # We need to reset the singleton instance for testing
 
-    # Add the SAGEWORKS_BUCKET and REDIS_HOST to the ENV vars
-    os.environ["SAGEWORKS_BUCKET"] = "bucket-from-env"
+    # Add the WORKBENCH_BUCKET and REDIS_HOST to the ENV vars
+    os.environ["WORKBENCH_BUCKET"] = "bucket-from-env"
     cm = ConfigManager()
     pprint(cm.get_all_config())
 
@@ -420,18 +420,18 @@ if __name__ == "__main__":
         return True
 
     ConfigManager._instance = None  # We need to reset the singleton instance for testing
-    os.environ.pop("SAGEWORKS_BUCKET", None)
+    os.environ.pop("WORKBENCH_BUCKET", None)
     cm = ConfigManager()
-    cm.set_config("SAGEWORKS_BUCKET", "bucket-from-set_config")
+    cm.set_config("WORKBENCH_BUCKET", "bucket-from-set_config")
     pprint(cm.get_all_config())
 
     # Test set_config()
-    cm.set_config("SAGEWORKS_BUCKET", "bucket-from-set_config")
+    cm.set_config("WORKBENCH_BUCKET", "bucket-from-set_config")
     cm_new = ConfigManager()
     pprint(cm_new.get_all_config())
 
     # Test ENV var overwrite
-    os.environ["SAGEWORKS_BUCKET"] = "bucket-from-env"
+    os.environ["WORKBENCH_BUCKET"] = "bucket-from-env"
     os.environ["REDIS_HOST"] = "localhost"
     cm = ConfigManager()
     cm.overwrite_config_with_env()
@@ -439,7 +439,7 @@ if __name__ == "__main__":
 
     # Test not having enough config
     ConfigManager._instance = None  # We need to reset the singleton instance for testing
-    os.environ.pop("SAGEWORKS_BUCKET", None)
+    os.environ.pop("WORKBENCH_BUCKET", None)
 
     # This will fail with a FatalConfigError (which is good)
     cm = ConfigManager()

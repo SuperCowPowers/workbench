@@ -5,13 +5,13 @@ from workbench.utils.config_manager import ConfigManager
 def test_config_manager():
     """Exercise the ConfigManager class"""
     cm = ConfigManager()
-    workbench_role = cm.get_config("SAGEWORKS_ROLE")
-    print(f"SAGEWORKS_ROLE: {workbench_role}")
-    workbench_plugins = cm.get_config("SAGEWORKS_PLUGINS")
-    print(f"SAGEWORKS_PLUGINS: {workbench_plugins}")
+    workbench_role = cm.get_config("WORKBENCH_ROLE")
+    print(f"WORKBENCH_ROLE: {workbench_role}")
+    workbench_plugins = cm.get_config("WORKBENCH_PLUGINS")
+    print(f"WORKBENCH_PLUGINS: {workbench_plugins}")
 
     # License ID
-    print(f"SAGEWORKS_LICENSE_ID: {cm.get_license_id()}")
+    print(f"WORKBENCH_LICENSE_ID: {cm.get_license_id()}")
 
     # API Key Info
     my_api_key_info = cm.get_api_key_info()
@@ -28,13 +28,13 @@ def test_running_as_service(monkeypatch):
     # Reset the ConfigManager class
     ConfigManager._instance = None
     cm = ConfigManager()
-    workbench_role = cm.get_config("SAGEWORKS_ROLE")
-    print(f"SAGEWORKS_ROLE: {workbench_role}")
-    workbench_plugins = cm.get_config("SAGEWORKS_PLUGINS")
-    print(f"SAGEWORKS_PLUGINS: {workbench_plugins}")
+    workbench_role = cm.get_config("WORKBENCH_ROLE")
+    print(f"WORKBENCH_ROLE: {workbench_role}")
+    workbench_plugins = cm.get_config("WORKBENCH_PLUGINS")
+    print(f"WORKBENCH_PLUGINS: {workbench_plugins}")
 
     # License ID
-    print(f"SAGEWORKS_LICENSE_ID: {cm.get_license_id()}")
+    print(f"WORKBENCH_LICENSE_ID: {cm.get_license_id()}")
 
     # API Key Info
     my_api_key_info = cm.get_api_key_info()
