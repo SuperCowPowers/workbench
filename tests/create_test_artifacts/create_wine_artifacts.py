@@ -1,4 +1,4 @@
-"""This Script creates the Classification Artifacts in AWS/SageWorks
+"""This Script creates the Classification Artifacts in AWS/Workbench
 
 DataSources:
     - wine_data
@@ -13,13 +13,13 @@ Endpoints:
 import sys
 
 from pathlib import Path
-from sageworks.api import DataSource, FeatureSet, Model, ModelType, Endpoint
+from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 
 
 if __name__ == "__main__":
 
     # Get the path to the dataset in the repository data directory
-    wine_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "wine_dataset.csv"
+    wine_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "wine_dataset.csv"
 
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False

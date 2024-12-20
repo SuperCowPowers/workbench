@@ -1,5 +1,5 @@
 from pprint import pprint
-from sageworks.api import Meta
+from workbench.api import Meta
 
 # Create our Meta Class and get a list of our Endpoints
 meta = Meta()

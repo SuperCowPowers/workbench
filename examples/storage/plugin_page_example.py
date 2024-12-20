@@ -1,22 +1,22 @@
-"""Plugin Page:  A SageWorks Plugin Web Interface"""
+"""Plugin Page:  A Workbench Plugin Web Interface"""
 
 import dash
 from dash import register_page, no_update, Input, Output, State
 import dash_bootstrap_components as dbc
 import logging
 
-# SageWorks Imports
-from sageworks.web_interface.components import table
-from sageworks.utils.plugin_manager import PluginManager
-from sageworks.api.model import Model
+# Workbench Imports
+from workbench.web_interface.components import table
+from workbench.utils.plugin_manager import PluginManager
+from workbench.api.model import Model
 
 
 class PluginPageExample:
-    """Plugin Page:  A SageWorks Plugin Web Interface"""
+    """Plugin Page:  A Workbench Plugin Web Interface"""
 
     def __init__(self):
         """Initialize the Plugin Page"""
-        self.log = logging.getLogger("sageworks")
+        self.log = logging.getLogger("workbench")
         self.app = None
         self.models_table = None
         self.plugin_comps = {}
@@ -48,7 +48,7 @@ class PluginPageExample:
         register_page(
             __name__,
             path="/plugin",
-            name="SageWorks - Plugin",
+            name="Workbench - Plugin",
             layout=self.page_layout(),
         )
 
@@ -73,7 +73,7 @@ class PluginPageExample:
             children=[
                 dbc.Row(
                     [
-                        dash.html.H2("SageWorks: Models"),
+                        dash.html.H2("Workbench: Models"),
                     ]
                 ),
                 # A table that lists out all the Models

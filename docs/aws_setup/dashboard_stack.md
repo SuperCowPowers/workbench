@@ -1,20 +1,20 @@
-# Deploy the SageWorks Dashboard Stack
+# Deploy the Workbench Dashboard Stack
 
 <figure style="float: right; width: 300px;">
-<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4" style="padding-left: 10px; padding-top: -20px; ">
+<img alt="workbench_new_light" src="https://github.com/SuperCowPowers/workbench/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4" style="padding-left: 10px; padding-top: -20px; ">
 </figure>
 
 Deploying the Dashboard Stack is reasonably straight forward, it's the same approach as the [Core Stack](core_stack.md) that you've already deployed.
 
-Please review the [Stack Details](#stack-details) section to understand all the AWS components that are included and utilized in the SageWorks Dashboard Stack.
+Please review the [Stack Details](#stack-details) section to understand all the AWS components that are included and utilized in the Workbench Dashboard Stack.
 
 ## Deploying the Dashboard Stack
 
 !!! note "AWS Stuff"
-    Activate your AWS Account that's used for SageWorks deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)
+    Activate your AWS Account that's used for Workbench deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)
 
   ```bash
-  cd sageworks/aws_setup/sageworks_dashboard_full
+  cd workbench/aws_setup/workbench_dashboard_full
   export SAGEWORKS_CONFIG=/full/path/to/config.json
   pip install -r requirements.txt
   cdk bootstrap
@@ -37,10 +37,10 @@ Please review the [Stack Details](#stack-details) section to understand all the 
 1. **Higher Security**: Utilizes security groups for both the ECS tasks, load balancer, plus VPC private subnets for Redis and the utilization of NAT Gateways.
 
 !!! warning "AWS Costs"
-    Deploying the SageWorks Dashboard does incur some monthly AWS costs. If you're on a tight budget you can deploy the 'lite' version of the Dashboard Stack.
+    Deploying the Workbench Dashboard does incur some monthly AWS costs. If you're on a tight budget you can deploy the 'lite' version of the Dashboard Stack.
 
   ```bash
-  cd sageworks/aws_setup/sageworks_dashboard_lite
+  cd workbench/aws_setup/workbench_dashboard_lite
   export SAGEWORKS_CONFIG=/full/path/to/config.json
   pip install -r requirements.txt
   cdk bootstrap

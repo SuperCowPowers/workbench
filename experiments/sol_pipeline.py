@@ -1,24 +1,24 @@
-"""Create Solubility Models in AWS/SageWorks
+"""Create Solubility Models in AWS/Workbench
 
-We're using Pipelines to create different set of ML Artifacts in SageWorks
+We're using Pipelines to create different set of ML Artifacts in Workbench
 """
 
 import pandas as pd
 import numpy as np
 import logging
 
-from sageworks.api.data_source import DataSource
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model, ModelType
-from sageworks.api.endpoint import Endpoint
+from workbench.api.data_source import DataSource
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model, ModelType
+from workbench.api.endpoint import Endpoint
 
-from sageworks.core.transforms.data_to_features.light.molecular_descriptors import (
+from workbench.core.transforms.data_to_features.light.molecular_descriptors import (
     MolecularDescriptors,
 )
-from sageworks.api.pipeline import Pipeline
-from sageworks.utils.pandas_utils import stratified_split
+from workbench.api.pipeline import Pipeline
+from workbench.utils.pandas_utils import stratified_split
 
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 # Set our pipeline
 pipeline_name = "test_solubility_class_nightly_100_v0"

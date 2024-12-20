@@ -1,4 +1,4 @@
-"""This Script creates the SageWorks Artifacts in AWS needed for the tests
+"""This Script creates the Workbench Artifacts in AWS needed for the tests
 
 DataSources:
     - test_data
@@ -14,18 +14,18 @@ Endpoints:
 
 import sys
 from pathlib import Path
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from sageworks.api.data_source import DataSource
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model, ModelType
-from sageworks.api.endpoint import Endpoint
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.api.data_source import DataSource
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model, ModelType
+from workbench.api.endpoint import Endpoint
 
 
 def redis_check():
     """Check if the Redis Database is available"""
     print("*** Redis Database Check ***")
     try:
-        from sageworks.utils.redis_cache import RedisCache
+        from workbench.utils.redis_cache import RedisCache
 
         RedisCache(prefix="test")
         print("Redis Database Check Success...")
@@ -35,8 +35,8 @@ def redis_check():
 
 if __name__ == "__main__":
     # Get the path to the dataset in the repository data directory
-    test_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "test_data.csv"
-    abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
+    test_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "test_data.csv"
+    abalone_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "abalone.csv"
 
     """Check if the AWS Account is Setup Correctly"""
     print("*** AWS Identity Check ***")

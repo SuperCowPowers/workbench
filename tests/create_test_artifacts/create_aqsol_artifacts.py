@@ -1,4 +1,4 @@
-"""This Script creates the AQSol (Public) Artifacts in AWS/SageWorks
+"""This Script creates the AQSol (Public) Artifacts in AWS/Workbench
 
 DataSources:
     - aqsol_data
@@ -14,20 +14,20 @@ import logging
 import pandas as pd
 import awswrangler as wr
 
-from sageworks.api.data_source import DataSource
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model, ModelType
-from sageworks.api.endpoint import Endpoint
+from workbench.api.data_source import DataSource
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model, ModelType
+from workbench.api.endpoint import Endpoint
 
-from sageworks.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
+from workbench.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
 
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":
 
     # Get the path to the dataset in S3
-    s3_path = "s3://sageworks-public-data/comp_chem/aqsol_public_data.csv"
+    s3_path = "s3://workbench-public-data/comp_chem/aqsol_public_data.csv"
 
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False

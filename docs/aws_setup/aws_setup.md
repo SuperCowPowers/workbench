@@ -1,6 +1,6 @@
 # AWS Setup
 !!!tip inline end "Need AWS Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 ## Get some information
   - Go to your AWS Identity Center in the AWS Console
@@ -87,11 +87,11 @@ aws s3 ls
 2023-03-20 20:06:53 aws-athena-query-results-XXXYYY-us-west-2
 2023-03-30 13:22:28 sagemaker-studio-XXXYYY-dbgyvq8ruka
 2023-03-24 22:05:55 sagemaker-us-west-2-XXXYYY
-2023-04-30 13:43:29 scp-sageworks-artifacts
+2023-04-30 13:43:29 scp-workbench-artifacts
 ```
 
 ## Back to Initial Setup
-If you're doing the initial setup of SageWorks you should now go back and finish that process: [Getting Started](../getting_started/index.md)
+If you're doing the initial setup of Workbench you should now go back and finish that process: [Getting Started](../getting_started/index.md)
 
  
 ## AWS Resources

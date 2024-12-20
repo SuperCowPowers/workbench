@@ -6,10 +6,10 @@ Models:
 
 import logging
 from botocore.exceptions import ClientError
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 # Setup the logger
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 
 # Helper method to create an 'empty' model group

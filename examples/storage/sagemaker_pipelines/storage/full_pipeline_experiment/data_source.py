@@ -1,13 +1,13 @@
-import sageworks
-from sageworks.api.data_source import DataSource
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model, ModelType
+import workbench
+from workbench.api.data_source import DataSource
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model, ModelType
 
 
-print(f"Hello from SageWorks: {sageworks.__version__}")
+print(f"Hello from Workbench: {workbench.__version__}")
 
 # Create the abalone_data DataSource
-ds = DataSource("s3://sageworks-public-data/common/abalone.csv", name="sp_abalone_data")
+ds = DataSource("s3://workbench-public-data/common/abalone.csv", name="sp_abalone_data")
 
 # Now create a FeatureSet
 ds.to_features("sp_abalone_features")

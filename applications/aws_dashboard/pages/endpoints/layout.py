@@ -25,7 +25,7 @@ def endpoints_layout(
             dcc.Store(id="endpoints_page_loaded", data=False),
             dbc.Row(
                 [
-                    html.H2("SageWorks: Endpoints"),
+                    html.H2("Workbench: Endpoints"),
                     html.Div(id="dev_null", style={"display": "none"}),  # Output for callbacks without outputs
                 ]
             ),

@@ -2,8 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from xgboost import XGBRegressor
 
-# SageWorks Imports
-from sageworks.utils.test_data_generator import TestDataGenerator
+# Workbench Imports
+from workbench.utils.test_data_generator import TestDataGenerator
 
 # Get synthetic data
 data_generator = TestDataGenerator()

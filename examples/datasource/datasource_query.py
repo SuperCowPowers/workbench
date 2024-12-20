@@ -1,4 +1,4 @@
-from sageworks.api.data_source import DataSource
+from workbench.api.data_source import DataSource
 import pandas as pd
 
 # Set Pandas output options

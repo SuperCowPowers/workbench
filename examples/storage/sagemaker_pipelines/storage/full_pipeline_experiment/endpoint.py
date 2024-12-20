@@ -1,4 +1,4 @@
-from sageworks.api.model import Model
+from workbench.api.model import Model
 
 # Create the abalone_regression Endpoint
 model = Model("sp-abalone-regression")

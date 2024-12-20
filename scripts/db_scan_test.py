@@ -3,8 +3,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import DBSCAN, HDBSCAN
 from sklearn.cluster import MeanShift
 
-# SageWorks Imports
-from sageworks.api import FeatureSet, Model
+# Workbench Imports
+from workbench.api import FeatureSet, Model
 
 
 # Sample code to run DBSCAN

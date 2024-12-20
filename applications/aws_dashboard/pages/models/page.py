@@ -1,4 +1,4 @@
-"""Models:  A SageWorks Web Interface to view, and interact with Models"""
+"""Models:  A Workbench Web Interface to view, and interact with Models"""
 
 from dash import register_page
 
@@ -6,18 +6,18 @@ from dash import register_page
 from .layout import models_layout
 from . import callbacks
 
-# SageWorks Imports
-from sageworks.web_interface.components import model_plot
-from sageworks.web_interface.components.plugins import model_details, ag_table
-from sageworks.web_interface.components.plugin_interface import PluginPage
-from sageworks.utils.plugin_manager import PluginManager
-from sageworks.web_interface.page_views.models_page_view import ModelsPageView
+# Workbench Imports
+from workbench.web_interface.components import model_plot
+from workbench.web_interface.components.plugins import model_details, ag_table
+from workbench.web_interface.components.plugin_interface import PluginPage
+from workbench.utils.plugin_manager import PluginManager
+from workbench.web_interface.page_views.models_page_view import ModelsPageView
 
 # Register this page with Dash
 register_page(
     __name__,
     path="/models",
-    name="SageWorks - Models",
+    name="Workbench - Models",
 )
 
 # Create a table to display the models
@@ -53,7 +53,7 @@ for plugin in plugins:
 # Set up our layout (Dash looks for a var called layout)
 layout = models_layout(**components)
 
-# Grab a view that gives us a summary of the Models in SageWorks
+# Grab a view that gives us a summary of the Models in Workbench
 model_view = ModelsPageView()
 
 # Callback for anything we want to happen on page load

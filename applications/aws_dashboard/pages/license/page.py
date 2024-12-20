@@ -1,21 +1,21 @@
-"""License:  A SageWorks Web Interface to view License Details"""
+"""License:  A Workbench Web Interface to view License Details"""
 
 from dash import register_page
 from dash import html
 
-# SageWorks Imports
-from sageworks.web_interface.components.plugins import license_details
-from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.license_manager import LicenseManager
+# Workbench Imports
+from workbench.web_interface.components.plugins import license_details
+from workbench.utils.config_manager import ConfigManager
+from workbench.utils.license_manager import LicenseManager
 
 # Register this page with Dash
 register_page(
     __name__,
     path="/license",
-    name="SageWorks - License",
+    name="Workbench - License",
 )
 
-# Grab the API Key from the SageWorks ConfigManager
+# Grab the API Key from the Workbench ConfigManager
 cm = ConfigManager()
 api_key = cm.get_config("SAGEWORKS_API_KEY")
 license_api_key = cm.get_config("LICENSE_API_KEY")
@@ -36,7 +36,7 @@ for (component_id, prop), value in zip(markdown_details.properties, updated_prop
 # Simple layout for the license details
 layout = html.Div(
     children=[
-        html.H2("SageWorks: License"),
+        html.H2("Workbench: License"),
         details_component,
     ],
     style={"padding": "12px 30px 30px 30px"},

@@ -1,8 +1,8 @@
 """Tests for CorrelationMatrix web component"""
 
-# SageWorks Imports
-from sageworks.web_interface.components.correlation_matrix import CorrelationMatrix
-from sageworks.api.data_source import DataSource
+# Workbench Imports
+from workbench.web_interface.components.correlation_matrix import CorrelationMatrix
+from workbench.api.data_source import DataSource
 
 
 def test_correlation_matrix():

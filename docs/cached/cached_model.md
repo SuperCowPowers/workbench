@@ -1,18 +1,18 @@
 # CachedModel
 
 !!! tip inline end "Model Examples"
-    Examples of using the Model Class are in the [Examples](#examples) section at the bottom of this page. AWS Model setup and deployment are quite complicated to do manually but the SageWorks Model Class makes it a breeze!
+    Examples of using the Model Class are in the [Examples](#examples) section at the bottom of this page. AWS Model setup and deployment are quite complicated to do manually but the Workbench Model Class makes it a breeze!
 
-::: sageworks.cached.cached_model
+::: workbench.cached.cached_model
 
 
 ## Examples
-All of the SageWorks Examples are in the Sageworks Repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
+All of the Workbench Examples are in the Workbench Repository under the `examples/` directory. For a full code listing of any example please visit our [Workbench Examples](https://github.com/SuperCowPowers/workbench/blob/main/examples)
 
 **Pull Inference Run**
 
 ```python
-from sageworks.cached.cached_model import CachedModel
+from workbench.cached.cached_model import CachedModel
 
 # Grab a Model
 model = CachedModel("abalone-regression")

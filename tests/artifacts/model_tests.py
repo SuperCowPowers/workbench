@@ -1,7 +1,7 @@
 """Tests for the Model functionality"""
 
-# SageWorks Imports
-from sageworks.core.artifacts.model_core import ModelCore
+# Workbench Imports
+from workbench.core.artifacts.model_core import ModelCore
 
 
 def test():

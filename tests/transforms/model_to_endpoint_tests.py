@@ -3,8 +3,8 @@
 import pytest
 
 # Local Imports
-from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
-from sageworks.api.endpoint import Endpoint
+from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from workbench.api.endpoint import Endpoint
 
 
 # Simple test of the ModelToEndpoint functionality

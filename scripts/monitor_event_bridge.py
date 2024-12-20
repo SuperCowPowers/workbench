@@ -1,8 +1,8 @@
 import json
 import time
 
-# Get the boto3 session from the SageWorks Account Clamp
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+# Get the boto3 session from the Workbench Account Clamp
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 session = AWSAccountClamp().boto3_session
 
@@ -10,7 +10,7 @@ session = AWSAccountClamp().boto3_session
 eventbridge_client = session.client("events")
 
 # Define the event bus name
-event_bus_name = "sageworks"
+event_bus_name = "workbench"
 
 
 # Function to monitor events

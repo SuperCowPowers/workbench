@@ -1,20 +1,20 @@
-# SageWorks CloudWatch
+# Workbench CloudWatch
 
 !!!tip inline end "Need Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
-The SageWorks framework continues to flex to support different real world use cases when operating a set of production machine learning pipelines. As part of this we're including CloudWatch log forwarding/aggregation for any service using the SageWorks API (Dashboard, Glue, Lambda, Notebook, Laptop, etc).
+The Workbench framework continues to flex to support different real world use cases when operating a set of production machine learning pipelines. As part of this we're including CloudWatch log forwarding/aggregation for any service using the Workbench API (Dashboard, Glue, Lambda, Notebook, Laptop, etc).
 
 
 ### Log Groups and Streams
-The SageWorks logging setup includes the addition of a CloudWatch 'Handler' that forwards all log messages to the `SageWorksLogGroup`
+The Workbench logging setup includes the addition of a CloudWatch 'Handler' that forwards all log messages to the `WorkbenchLogGroup`
 
 
 **Individual Streams**
 
-Each process running SageWorks will get a unique individual stream.
+Each process running Workbench will get a unique individual stream.
 
-- **ecs/DashBoard\*** (any logs from SageWorks Dashboard)
+- **ecs/DashBoard\*** (any logs from Workbench Dashboard)
 - **glue/\*** (logs from Glue jobs)
 - **lambda/\*** (logs from Lambda jobs)
 - **docker/\*** (logs from Docker containers)
@@ -24,10 +24,10 @@ Since many jobs are run nightly/often, the stream will also have a date on the e
 
 ### AWS CloudWatch made Easy
 !!!tip inline end "Logs in Easy Mode"
-    The SageWorks `cloud_watch` command line tool gives you access to important logs without the hassle. Automatic display of important event and the context around those events.
+    The Workbench `cloud_watch` command line tool gives you access to important logs without the hassle. Automatic display of important event and the context around those events.
 
 ```
-pip install sageworks
+pip install workbench
 cloud_watch
 ```
 
@@ -63,19 +63,19 @@ cloud_watch --log-level ERROR --stream Dashboard
 
 These options can be used in combination and try out the other options to make the perfect log search :)
 
-<img alt="sageworks cloud_watch" src="https://github.com/user-attachments/assets/820817de-8f32-47e8-98dc-f3d3f415b2ea">
+<img alt="workbench cloud_watch" src="https://github.com/user-attachments/assets/820817de-8f32-47e8-98dc-f3d3f415b2ea">
 
 ### More Information
-Check out our presentation on [SageWorks CloudWatch](https://docs.google.com/presentation/d/1Jtoo7LXWBSF2xCpn9BNLQlnAtN2vIELCzn_-XMu9GAI/edit?usp=sharing)
+Check out our presentation on [Workbench CloudWatch](https://docs.google.com/presentation/d/1Jtoo7LXWBSF2xCpn9BNLQlnAtN2vIELCzn_-XMu9GAI/edit?usp=sharing)
 
 ### Access through AWS Console
-Since we're leveraging AWS functionality you can always use the AWS console to look/investigate the logs. In the AWS console go to **CloudWatch... Log Groups... SageWorksLogGroup**
+Since we're leveraging AWS functionality you can always use the AWS console to look/investigate the logs. In the AWS console go to **CloudWatch... Log Groups... WorkbenchLogGroup**
 
-<img alt="sageworks log group" src="https://github.com/user-attachments/assets/a7778232-08db-4950-952c-dd8de650bae8">
+<img alt="workbench log group" src="https://github.com/user-attachments/assets/a7778232-08db-4950-952c-dd8de650bae8">
 
     
 ## Questions?
 <img align="right" src="../images/scp.png" width="180">
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 

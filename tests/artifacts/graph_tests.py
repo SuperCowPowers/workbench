@@ -1,4 +1,4 @@
-from sageworks.core.artifacts.graph_core import GraphCore
+from workbench.core.artifacts.graph_core import GraphCore
 
 
 def test_general_info():

@@ -3,8 +3,8 @@
 import pytest
 
 # Local imports
-from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
-from sageworks.api.data_source import DataSource
+from workbench.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
+from workbench.api.data_source import DataSource
 
 
 # Simple test of the DataToFeaturesLight functionality

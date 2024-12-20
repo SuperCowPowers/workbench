@@ -2,9 +2,9 @@
 
 import pandas as pd
 
-# SageWorks Imports
-from sageworks.web_interface.page_views.page_view import PageView
-from sageworks.cached.cached_model import CachedModel
+# Workbench Imports
+from workbench.web_interface.page_views.page_view import PageView
+from workbench.cached.cached_model import CachedModel
 
 
 class ModelPluginView(PageView):
@@ -13,7 +13,7 @@ class ModelPluginView(PageView):
         # Call SuperClass Initialization
         super().__init__()
 
-        # We're using the SageWorks Meta class to get information about models
+        # We're using the Workbench Meta class to get information about models
         self.meta = CachedModel()
 
         # Call Refresh
@@ -21,7 +21,7 @@ class ModelPluginView(PageView):
         self.refresh()  # Sets the self.models_df
 
     def refresh(self):
-        """Refresh our data from the SageWorks Meta Class"""
+        """Refresh our data from the Workbench Meta Class"""
 
         # Note: This page is served on an AWS Web server and stays up 24/7.
         #       We want to make sure new models show up when they are created.
@@ -36,7 +36,7 @@ class ModelPluginView(PageView):
         return self.models_df
 
     def models_summary(self) -> pd.DataFrame:
-        """Get summary data about the SageWorks Models"""
+        """Get summary data about the Workbench Models"""
         models = self.meta.models()
         models["uuid"] = models["Model Group"]
         return models

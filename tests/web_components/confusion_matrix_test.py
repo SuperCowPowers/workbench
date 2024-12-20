@@ -1,8 +1,8 @@
 """Tests for confusion_matrix web component"""
 
-# SageWorks Imports
-from sageworks.web_interface.components.plugins.confusion_matrix import ConfusionMatrix
-from sageworks.api.model import Model
+# Workbench Imports
+from workbench.web_interface.components.plugins.confusion_matrix import ConfusionMatrix
+from workbench.api.model import Model
 
 
 def test_confusion_matrix():

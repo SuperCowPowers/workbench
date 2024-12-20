@@ -2,7 +2,7 @@
 !!! tip inline end "API Classes"
     For most users the [API Classes](../../api_classes/overview.md) will provide all the general functionality to create a full AWS ML Pipeline
 
-SageWorks currently has a large set of Transforms that go from one Artifact type to another (e.g. DataSource to FeatureSet). The Transforms will often have **light** and **heavy** versions depending on the scale of data that needs to be transformed.
+Workbench currently has a large set of Transforms that go from one Artifact type to another (e.g. DataSource to FeatureSet). The Transforms will often have **light** and **heavy** versions depending on the scale of data that needs to be transformed.
 
 ## Transform Details
 
@@ -13,4 +13,4 @@ SageWorks currently has a large set of Transforms that go from one Artifact type
 - **[ModelToEndpoint](model_to_endpoint.md):** Manages the provisioning and deployment of a Model Endpoint
 - **[PandasTransforms](pandas_transforms.md):** Pandas DataFrame transforms and helper methods.
 
-![ML Pipeline](../../images/sageworks_concepts.png)
+![ML Pipeline](../../images/workbench_concepts.png)

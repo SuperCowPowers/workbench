@@ -1,4 +1,4 @@
-"""This Script creates the Abalone and AQSol KNN Model Artifacts in AWS/SageWorks
+"""This Script creates the Abalone and AQSol KNN Model Artifacts in AWS/Workbench
 
 Models:
     - abalone-knn-reg
@@ -9,11 +9,11 @@ Endpoints:
 """
 
 import logging
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model, ModelType
-from sageworks.api.endpoint import Endpoint
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model, ModelType
+from workbench.api.endpoint import Endpoint
 
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
 # Overview
 !!! tip inline end "Just Getting Started?"
-    You're in the right place, the SageWorks API Classes are the best way to get started with SageWorks!
+    You're in the right place, the Workbench API Classes are the best way to get started with Workbench!
 
-## Welcome to the SageWorks API Classes
+## Welcome to the Workbench API Classes
 
-These classes provide high-level APIs for the SageWorks package, they enable your team to build full AWS Machine Learning Pipelines. They handle all the details around updating and managing a complex set of AWS Services. Each class provides an essential component of the overall ML Pipline. Simply combine the classes to build production ready, AWS powered, machine learning pipelines. 
+These classes provide high-level APIs for the Workbench package, they enable your team to build full AWS Machine Learning Pipelines. They handle all the details around updating and managing a complex set of AWS Services. Each class provides an essential component of the overall ML Pipline. Simply combine the classes to build production ready, AWS powered, machine learning pipelines. 
 
 - **[DataSource](data_source.md):** Manages AWS Data Catalog and Athena
 - **[FeatureSet](feature_set.md):** Manages AWS Feature Store and Feature Groups
@@ -12,18 +12,18 @@ These classes provide high-level APIs for the SageWorks package, they enable you
 - **[Endpoint](endpoint.md):** Manages the deployment and invocations/inference on AWS Endpoints
 - **[Monitor](monitor.md):** Manages the setup and deployment of AWS Endpoint Monitors
 
-![ML Pipeline](../images/sageworks_concepts.png)
+![ML Pipeline](../images/workbench_concepts.png)
 
 ## Example ML Pipline
 
 ```py title="full_ml_pipeline.py"
-from sageworks.api.data_source import DataSource
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model, ModelType
-from sageworks.api.endpoint import Endpoint
+from workbench.api.data_source import DataSource
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model, ModelType
+from workbench.api.endpoint import Endpoint
 
 # Create the abalone_data DataSource
-ds = DataSource("s3://sageworks-public-data/common/abalone.csv")
+ds = DataSource("s3://workbench-public-data/common/abalone.csv")
 
 # Now create a FeatureSet
 ds.to_features("abalone_features")
@@ -71,8 +71,8 @@ Processing...
 ```
 
 !!! success "Full AWS ML Pipeline Achievement Unlocked!"
-    Bing! You just built and deployed a full AWS Machine Learning Pipeline. You can now use the SageWorks Dashboard web interface to inspect your AWS artifacts. A comprehensive set of Exploratory Data Analysis techniques and Model Performance Metrics are available for your entire team to review, inspect and interact with.
-<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/ed2ed1bd-e2d8-49a1-b350-b2e19e2b7832">
+    Bing! You just built and deployed a full AWS Machine Learning Pipeline. You can now use the Workbench Dashboard web interface to inspect your AWS artifacts. A comprehensive set of Exploratory Data Analysis techniques and Model Performance Metrics are available for your entire team to review, inspect and interact with.
+<img alt="workbench_new_light" src="https://github.com/SuperCowPowers/workbench/assets/4806709/ed2ed1bd-e2d8-49a1-b350-b2e19e2b7832">
 
 !!! note "Examples"
-    All of the SageWorks Examples are in the Sageworks Repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
+    All of the Workbench Examples are in the Workbench Repository under the `examples/` directory. For a full code listing of any example please visit our [Workbench Examples](https://github.com/SuperCowPowers/workbench/blob/main/examples)

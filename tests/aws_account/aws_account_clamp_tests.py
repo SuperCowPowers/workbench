@@ -1,7 +1,7 @@
 """Tests for the AWS Account Clamp"""
 
-# SageWorks Imports
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+# Workbench Imports
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 
 def test():

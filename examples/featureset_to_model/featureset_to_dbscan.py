@@ -1,5 +1,5 @@
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model
 from pprint import pprint
 
 # Grab a FeatureSet

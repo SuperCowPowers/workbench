@@ -1,11 +1,11 @@
-"""Plugin Page 1:  A 'Hello World' SageWorks Plugin Page"""
+"""Plugin Page 1:  A 'Hello World' Workbench Plugin Page"""
 
 import dash
 from dash import html, page_container, register_page
 
 
 class PluginPage1:
-    """Plugin Page:  A SageWorks Plugin Web Interface"""
+    """Plugin Page:  A Workbench Plugin Web Interface"""
 
     def __init__(self):
         """Initialize the Plugin Page"""
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # Create our Dash Application
     my_app = dash.Dash(
         __name__,
-        title="SageWorks Dashboard",
+        title="Workbench Dashboard",
         use_pages=True,
         pages_folder="",
     )

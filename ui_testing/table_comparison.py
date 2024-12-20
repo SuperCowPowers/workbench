@@ -1,6 +1,6 @@
 """A table component testing script
    Note: This is purely slash/hack code to test and compare Table components
-         When the components are finalized, the classes will go into sageworks/components
+         When the components are finalized, the classes will go into workbench/components
 """
 
 import sys
@@ -8,13 +8,13 @@ import pandas as pd
 from dash_ag_grid import AgGrid
 import webbrowser
 
-# SageWorks Imports
+# Workbench Imports
 try:
-    from sageworks.web_interface.components.table import Table
-    from sageworks.utils.symbols import health_icons
+    from workbench.web_interface.components.table import Table
+    from workbench.utils.symbols import health_icons
 except ImportError:
-    print("Please install sageworks")
-    print("pip install sageworks")
+    print("Please install workbench")
+    print("pip install workbench")
     sys.exit(1)
 
 

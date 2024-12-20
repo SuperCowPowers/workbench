@@ -1,14 +1,14 @@
 # AWS Domain and Certificate Instructions
 !!!tip inline end "Need AWS Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 This page tries to give helpful guidance when setting up a new domain and SSL Certificate in your AWS Account.
 
 ## New Domain
-You'll want the SageWorks Dashboard to have a domain for your companies internal use. Customers will typically use a domain like `<company_name>-ml-dashboard.com` but you are free to choose any domain you'd like.
+You'll want the Workbench Dashboard to have a domain for your companies internal use. Customers will typically use a domain like `<company_name>-ml-dashboard.com` but you are free to choose any domain you'd like.
 
 !!!warning "Domains are tied to AWS Accounts" 
-    When you create a new domain in AWS Route 53, that domain is tied to that AWS Account. You can do a cross account setup for domains but it's a bit more tricky. We recommend that each account where SageWorks gets deployed owns the domain for that Dashboard.
+    When you create a new domain in AWS Route 53, that domain is tied to that AWS Account. You can do a cross account setup for domains but it's a bit more tricky. We recommend that each account where Workbench gets deployed owns the domain for that Dashboard.
 
 ### Multiple AWS Accounts
 Many customers will have a dev/stage/prod set of AWS accounts, if that the case then the best practice is to make a domain specific to each account. So for instance:
@@ -108,7 +108,7 @@ After requesting a certificate, it will go through the following states:
 
 - **Inactive**: This state indicates that the certificate is not currently in use.
 
-The certificate status should obviously be in the **Issued** state, if not please contact SageWorks Support Team.
+The certificate status should obviously be in the **Issued** state, if not please contact Workbench Support Team.
 
 ## Retrieving the Certificate ARN
 

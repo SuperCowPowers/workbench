@@ -28,7 +28,7 @@ def data_sources_layout(
             # Page Header and Last Updated Timer
             dbc.Row(
                 [
-                    html.H2("SageWorks: Compounds Explorer (Alpha)"),
+                    html.H2("Workbench: Compounds Explorer (Alpha)"),
                     html.Div(
                         "Last Updated: ",
                         id="last-updated-data-sources",

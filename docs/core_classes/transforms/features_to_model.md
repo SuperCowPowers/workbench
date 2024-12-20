@@ -2,14 +2,14 @@
 !!! tip inline end "API Classes"
     For most users the [API Classes](../../api_classes/overview.md) will provide all the general functionality to create a full AWS ML Pipeline
 
-::: sageworks.core.transforms.features_to_model.features_to_model
+::: workbench.core.transforms.features_to_model.features_to_model
 
 ## Supported Models
-Currently SageWorks supports XGBoost (classifier/regressor), and Scikit Learn models. Those models can be created by just specifying different parameters to the `FeaturesToModel` class. The main issue with the supported models is they are vanilla versions with default parameters, any customization should be done with [Custom Models](#custom-models)
+Currently Workbench supports XGBoost (classifier/regressor), and Scikit Learn models. Those models can be created by just specifying different parameters to the `FeaturesToModel` class. The main issue with the supported models is they are vanilla versions with default parameters, any customization should be done with [Custom Models](#custom-models)
 
 ### XGBoost
 ```python
-from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
+from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 
 # XGBoost Regression Model
 input_uuid = "abalone_features"
@@ -34,7 +34,7 @@ to_model.transform(target_column="class_number_of_rings", description="Abalone Q
 ```
 ### Scikit-Learn
 ```python
-from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
+from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 
 # Scikit-Learn Kmeans Clustering Model
 input_uuid = "wine_features"
@@ -80,10 +80,10 @@ to_model.transform(target_column=None, description="Wine 2D Projection", train_a
 For custom models we recommend the following steps:
 
 !!! warning inline end "Experimental"
-    The SageWorks Custom Models are currently in experimental mode so have fun but expect issues. Requires `sageworks >= 0.8.60`. Feel free to submit issues to [SageWorks Github](https://github.com/SuperCowPowers/sageworks)
+    The Workbench Custom Models are currently in experimental mode so have fun but expect issues. Requires `workbench >= 0.8.60`. Feel free to submit issues to [Workbench Github](https://github.com/SuperCowPowers/workbench)
 
 - Copy the example custom model script into your own directory
-    - See: [Custom Model Script](https://github.com/SuperCowPowers/sageworks/tree/main/src/sageworks/model_scripts/custom_script_example)
+    - See: [Custom Model Script](https://github.com/SuperCowPowers/workbench/tree/main/src/workbench/model_scripts/custom_script_example)
 - Make a requirements.txt and put into the same directory
 - Train/deploy the ^existing^ example
     - This is an important step, don't skip it
@@ -93,8 +93,8 @@ For custom models we recommend the following steps:
 
 ### Training/Deploying Custom Models
 ```python
-from sageworks.api import ModelType
-from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
+from workbench.api import ModelType
+from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 
 # Note this directory should also have a requirements.txt in it
 my_custom_script = "/full/path/to/my/directory/my_custom_script.py"
@@ -110,7 +110,7 @@ to_model.transform(target_column=target_column, description="Custom Model")
 
 ### Custom Models: Create an Endpoint/Run Inference
 ```python
-from sageworks.api import Model, Endpoint
+from workbench.api import Model, Endpoint
 
 model = Model("my-custom-model")
 end = model.to_endpoint()   # Note: This takes a while
@@ -126,4 +126,4 @@ end.inference(df)
 ## Questions?
 <img align="right" src="../../../images/scp.png" width="180">
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8)
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8)

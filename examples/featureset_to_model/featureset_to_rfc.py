@@ -1,4 +1,4 @@
-from sageworks.api.feature_set import FeatureSet
+from workbench.api.feature_set import FeatureSet
 from pprint import pprint
 
 # Grab a FeatureSet

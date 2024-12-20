@@ -1,5 +1,5 @@
-# SageWorks Imports
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+# Workbench Imports
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 boto3_session = AWSAccountClamp().boto3_session
 
@@ -8,7 +8,7 @@ boto3_session = AWSAccountClamp().boto3_session
 glue_client = boto3_session.client("glue")
 
 # Define the database and table names
-database_name = "sageworks"
+database_name = "workbench"
 table_name = "test_table"
 
 # Define the original column names with mixed case

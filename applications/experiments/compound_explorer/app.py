@@ -1,15 +1,15 @@
-"""DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
+"""DataSources:  A Workbench Web Interface to view, interact, and manage Data Sources"""
 
 from dash import Dash
 
-# SageWorks Imports
-from sageworks.web_interface.components import (
+# Workbench Imports
+from workbench.web_interface.components import (
     table,
     compound_details,
     violin_plots,
     scatter_plot,
 )
-from sageworks.web_interface.page_views.data_sources_page_view import DataSourcesPageView
+from workbench.web_interface.page_views.data_sources_page_view import DataSourcesPageView
 
 # Local Imports
 from layout import data_sources_layout
@@ -20,11 +20,11 @@ import callbacks
 
 # Create our Dash app
 app = Dash(
-    title="SageWorks: Compounds Explorer",
+    title="Workbench: Compounds Explorer",
     external_stylesheets=[],
 )
 
-# Grab a view that gives us a summary of the FeatureSets in SageWorks
+# Grab a view that gives us a summary of the FeatureSets in Workbench
 data_source_broker = DataSourcesPageView()
 data_source_rows = data_source_broker.data_sources_summary()
 

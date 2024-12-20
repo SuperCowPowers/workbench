@@ -1,5 +1,5 @@
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import ModelType
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import ModelType
 
 
 # Create the abalone_regression Model

@@ -2,11 +2,11 @@
 
 import logging
 
-# SageWorks Imports
-from sageworks.api import Meta, Endpoint
+# Workbench Imports
+from workbench.api import Meta, Endpoint
 
 # Setup logging
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 # Get all the endpoints
 endpoints = Meta().endpoints()

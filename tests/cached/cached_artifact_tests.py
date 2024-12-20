@@ -2,11 +2,11 @@
 
 from pprint import pprint
 
-# SageWorks Imports
-from sageworks.cached.cached_data_source import CachedDataSource
-from sageworks.cached.cached_feature_set import CachedFeatureSet
-from sageworks.cached.cached_model import CachedModel
-from sageworks.cached.cached_endpoint import CachedEndpoint
+# Workbench Imports
+from workbench.cached.cached_data_source import CachedDataSource
+from workbench.cached.cached_feature_set import CachedFeatureSet
+from workbench.cached.cached_model import CachedModel
+from workbench.cached.cached_endpoint import CachedEndpoint
 
 
 def test_cached_data_source():
@@ -15,7 +15,7 @@ def test_cached_data_source():
     pprint(my_data.summary())
     my_data.details()
     pprint(my_data.health_check())
-    pprint(my_data.sageworks_meta())
+    pprint(my_data.workbench_meta())
 
 
 def test_cached_feature_set():
@@ -24,7 +24,7 @@ def test_cached_feature_set():
     pprint(my_features.summary())
     pprint(my_features.details())
     pprint(my_features.health_check())
-    pprint(my_features.sageworks_meta())
+    pprint(my_features.workbench_meta())
 
 
 def test_cached_model():
@@ -33,7 +33,7 @@ def test_cached_model():
     pprint(my_model.summary())
     pprint(my_model.details())
     pprint(my_model.health_check())
-    pprint(my_model.sageworks_meta())
+    pprint(my_model.workbench_meta())
 
 
 def test_cached_endpoint():
@@ -42,7 +42,7 @@ def test_cached_endpoint():
     pprint(my_endpoint.summary())
     pprint(my_endpoint.details())
     pprint(my_endpoint.health_check())
-    pprint(my_endpoint.sageworks_meta())
+    pprint(my_endpoint.workbench_meta())
 
 
 if __name__ == "__main__":

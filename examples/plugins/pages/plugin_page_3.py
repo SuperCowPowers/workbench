@@ -1,20 +1,20 @@
-"""Plugin Page 3:  A 'Hello World' SageWorks Plugin Page"""
+"""Plugin Page 3:  A 'Hello World' Workbench Plugin Page"""
 
 import dash
 from dash import html, page_container, register_page, callback, Output, Input, State, no_update
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
-# SageWorks Imports
-from sageworks.web_interface.components.plugins.ag_table import AGTable
-from sageworks.web_interface.components.plugins.model_details import ModelDetails
-from sageworks.web_interface.components.model_plot import ModelPlot
-from sageworks.cached.cached_meta import CachedMeta
-from sageworks.cached.cached_model import CachedModel
+# Workbench Imports
+from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.web_interface.components.plugins.model_details import ModelDetails
+from workbench.web_interface.components.model_plot import ModelPlot
+from workbench.cached.cached_meta import CachedMeta
+from workbench.cached.cached_model import CachedModel
 
 
 class PluginPage3:
-    """Plugin Page:  A SageWorks Plugin Page Interface"""
+    """Plugin Page:  A Workbench Plugin Page Interface"""
 
     def __init__(self):
         """Initialize the Plugin Page"""
@@ -131,7 +131,7 @@ class PluginPage3:
 # Unit Test for your Plugin Page
 if __name__ == "__main__":
     import webbrowser
-    from sageworks.utils.theme_manager import ThemeManager
+    from workbench.utils.theme_manager import ThemeManager
 
     # Set up the Theme Manager
     tm = ThemeManager()
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 
     # Create the Dash app
     my_app = dash.Dash(
-        __name__, title="SageWorks Dashboard", use_pages=True, external_stylesheets=css_files, pages_folder=""
+        __name__, title="Workbench Dashboard", use_pages=True, external_stylesheets=css_files, pages_folder=""
     )
     my_app.layout = html.Div(
         [

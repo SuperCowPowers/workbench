@@ -3,16 +3,16 @@
 !!! tip inline end "Meta Examples"
     Examples of using the Meta class are listed at the bottom of this page [Examples](#examples).
     
-::: sageworks.api.meta
+::: workbench.api.meta
 
 
 ## Examples
 These example show how to use the `Meta()` class to pull lists of artifacts from AWS. DataSources, FeatureSets, Models, Endpoints and more. If you're building a web interface plugin, the **Meta** class is a great place to start.
 
-!!!tip "SageWorks REPL"
-    If you'd like to see **exactly** what data/details you get back from the `Meta()` class, you can spin up the SageWorks REPL, use the class and test out all the methods. Try it out! [SageWorks REPL](../repl/index.md)
+!!!tip "Workbench REPL"
+    If you'd like to see **exactly** what data/details you get back from the `Meta()` class, you can spin up the Workbench REPL, use the class and test out all the methods. Try it out! [Workbench REPL](../repl/index.md)
 
-```py title="Using SageWorks REPL"
+```py title="Using Workbench REPL"
 meta = Meta()
 model_df = meta.models()
 model_df
@@ -27,7 +27,7 @@ model_df
 **List the Models in AWS**
 
 ```py title="meta_list_models.py"
-from sageworks.api import Meta
+from workbench.api import Meta
 
 # Create our Meta Class and get a list of our Models
 meta = Meta()
@@ -60,7 +60,7 @@ abalone-regression
 **Getting Model Performance Metrics**
 
 ```py title="meta_model_metrics.py"
-from sageworks.api import Meta
+from workbench.api import Meta
 
 # Create our Meta Class and get a list of our Models
 meta = Meta()
@@ -74,7 +74,7 @@ model_names = model_df["Model Group"].tolist()
 for name in model_names[:5]:
     model_details = meta.model(name)
     print(f"\n\nModel: {name}")
-    performance_metrics = model_details["sageworks_meta"]["sageworks_inference_metrics"]
+    performance_metrics = model_details["workbench_meta"]["workbench_inference_metrics"]
     print(f"\tPerformance Metrics: {performance_metrics}")
 ```
 
@@ -100,7 +100,7 @@ abalone-regression
 
 ```py title="meta_list_endpoints.py"
 from pprint import pprint
-from sageworks.api import Meta
+from workbench.api import Meta
 
 # Create our Meta Class and get a list of our Endpoints
 meta = Meta()
@@ -129,4 +129,4 @@ wine-classification-end
 
 
 !!! note "Not Finding some particular AWS Data?"
-    The SageWorks Meta API Class also has `(details=True)` arguments, so make sure to check those out.
+    The Workbench Meta API Class also has `(details=True)` arguments, so make sure to check those out.

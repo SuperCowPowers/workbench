@@ -1,6 +1,6 @@
-"""Create Solubility Models in AWS/SageWorks
+"""Create Solubility Models in AWS/Workbench
 
-We're using Pipelines to create different set of ML Artifacts in SageWorks
+We're using Pipelines to create different set of ML Artifacts in Workbench
 """
 
 import sys
@@ -8,22 +8,22 @@ import pandas as pd
 import numpy as np
 import logging
 
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint
-from sageworks.api.model import ModelType
-from sageworks.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
-from sageworks.api.pipeline import Pipeline
+from workbench.api import DataSource, FeatureSet, Model, Endpoint
+from workbench.api.model import ModelType
+from workbench.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
+from workbench.api.pipeline import Pipeline
 
-from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.glue_utils import get_resolved_options
+from workbench.utils.config_manager import ConfigManager
+from workbench.utils.glue_utils import get_resolved_options
 
 # Convert Glue Job Args to a Dictionary
 glue_args = get_resolved_options(sys.argv)
 
-# Set the SageWorks Config (needs to be done early)
+# Set the Workbench Config (needs to be done early)
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["sageworks-bucket"])
+cm.set_config("SAGEWORKS_BUCKET", glue_args["workbench-bucket"])
 cm.set_config("REDIS_HOST", glue_args["redis-host"])
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 # Set our pipeline
 pipeline_name = "test_solubility_class_nightly_100_v0"

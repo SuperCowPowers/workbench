@@ -2,11 +2,11 @@
 
 import logging
 
-# SageWorks Imports
-from sageworks.api import Meta, Model
+# Workbench Imports
+from workbench.api import Meta, Model
 
 # Setup logging
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 # Get all the models
 models = Meta().models()

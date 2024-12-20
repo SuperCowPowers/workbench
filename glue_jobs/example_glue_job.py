@@ -3,26 +3,26 @@ import sys
 import numpy as np
 import pandas as pd
 
-# SageWorks Imports
-from sageworks.api.data_source import DataSource
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model, ModelType
-from sageworks.api.endpoint import Endpoint
-from sageworks.core.transforms.data_to_features.light.molecular_descriptors import (
+# Workbench Imports
+from workbench.api.data_source import DataSource
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model, ModelType
+from workbench.api.endpoint import Endpoint
+from workbench.core.transforms.data_to_features.light.molecular_descriptors import (
     MolecularDescriptors,
 )
-from sageworks.core.transforms.pandas_transforms.pandas_to_features import (
+from workbench.core.transforms.pandas_transforms.pandas_to_features import (
     PandasToFeatures,
 )
-from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.glue_utils import get_resolved_options
+from workbench.utils.config_manager import ConfigManager
+from workbench.utils.glue_utils import get_resolved_options
 
 # Convert Glue Job Args to a Dictionary
 glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["sageworks-bucket"])
+cm.set_config("SAGEWORKS_BUCKET", glue_args["workbench-bucket"])
 cm.set_config("REDIS_HOST", glue_args["redis-host"])
 
 # Create a new Data Source from an S3 Path

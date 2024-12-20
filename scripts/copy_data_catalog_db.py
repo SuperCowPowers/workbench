@@ -1,4 +1,4 @@
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 # Initialize a session using your AWS credentials
 aws_account_clamp = AWSAccountClamp()

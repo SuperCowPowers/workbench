@@ -1,9 +1,9 @@
-site_name: SageWorks
+site_name: Workbench
 nav:
   - Welcome: index.md
   - Presentations: presentations/index.md
   - Getting Started: getting_started/index.md
-  - SageWorks REPL: repl/index.md
+  - Workbench REPL: repl/index.md
   - API Classes: 
     - OverView: api_classes/overview.md
     - Meta: api_classes/meta.md
@@ -65,7 +65,7 @@ nav:
       - Graphs: data_algorithms/graphs/overview.md
       - Spark: data_algorithms/spark/overview.md
       - SQL: data_algorithms/sql/overview.md
-  - SageWorks Enterprise: 
+  - Workbench Enterprise:
       - OverView: enterprise/index.md
       - Private SaaS: enterprise/private_saas.md
       - Themes: enterprise/themes.md
@@ -118,7 +118,7 @@ nav:
     - Dashboard with S3 Plugins:  admin/dashboard_s3_plugins.md
     - Dashboard with Docker Plugins:  admin/dashboard_with_plugins.md
     - Storage:
-      - SageWorks Docker for Lambdas:  admin/sageworks_docker_for_lambdas.md
+      - Workbench Docker for Lambdas:  admin/workbench_docker_for_lambdas.md
 
 theme:
   name: material

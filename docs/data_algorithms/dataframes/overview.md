@@ -5,23 +5,23 @@
 
 **Pandas Dataframe Algorithms**
 
-SageWorks has a growing set of algorithms and data processing tools for Pandas Dataframes. In general these algorithm will take a dataframe as input and give you back a dataframe with additional columns.
+Workbench has a growing set of algorithms and data processing tools for Pandas Dataframes. In general these algorithm will take a dataframe as input and give you back a dataframe with additional columns.
 
-::: sageworks.algorithms.dataframe.feature_space_proximity
+::: workbench.algorithms.dataframe.feature_space_proximity
     options:
       show_root_heading: false
 
-::: sageworks.algorithms.dataframe.residuals_calculator
+::: workbench.algorithms.dataframe.residuals_calculator
     options:
       show_root_heading: false
 
-::: sageworks.algorithms.dataframe.dimensionality_reduction
+::: workbench.algorithms.dataframe.dimensionality_reduction
     options:
       show_root_heading: false
 
 ## Questions?
 <img align="right" src="../../../images/scp.png" width="180">
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 

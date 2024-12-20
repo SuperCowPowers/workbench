@@ -1,9 +1,9 @@
 # Deploying S3 Plugins with the Dashboard
 
 !!!tip inline end "Need Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
-Notes and information on how to include S3 based plugins with your SageWorks Dashboard. 
+Notes and information on how to include S3 based plugins with your Workbench Dashboard. 
 
 Deploying your Dashboard plugins via an S3 bucket allows plugin developers to modify and improve plugins without a bunch of Docker builds, ECR, and CDK Deploy.
 
@@ -54,13 +54,13 @@ You can go to the AWS Console, Elastic Container Service, find the cluster, clic
 The cluster will be something like:
 
 ```
-SageworksDashboard-SageworksCluster123456
+WorkbenchDashboard-WorkbenchCluster123456
 ```
 
 and the service will be something like:
 
 ```
-SageworksDashboard-SageworksService789123
+WorkbenchDashboard-WorkbenchService789123
 ```
 
 Anyway, find those two things and run this command below (**Note:** You probably need admin permisions)
@@ -79,4 +79,4 @@ Okay now that the ECS service has restarted (which can take a bit) you can now g
 ## Questions?
 <img align="right" src="../../images/scp.png" width="180">
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 

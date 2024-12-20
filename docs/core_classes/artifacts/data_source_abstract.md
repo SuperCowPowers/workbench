@@ -5,4 +5,4 @@
 
 The DataSource Abstract class is a base/abstract class that defines API implemented by all the child classes (currently just AthenaSource but later RDSSource, FutureThing ).
 
-::: sageworks.core.artifacts.data_source_abstract
+::: workbench.core.artifacts.data_source_abstract

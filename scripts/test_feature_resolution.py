@@ -1,9 +1,9 @@
 """Test Script for the FeatureResolution Class"""
 
 import pandas as pd
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model
-from sageworks.algorithms.dataframe.feature_resolution import FeatureResolution
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model
+from workbench.algorithms.dataframe.feature_resolution import FeatureResolution
 
 # Set some pandas options
 pd.options.display.max_columns = None

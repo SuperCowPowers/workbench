@@ -9,13 +9,13 @@
 
 Docs TBD
 
-::: sageworks.algorithms.graph.light.proximity_graph
+::: workbench.algorithms.graph.light.proximity_graph
     options:
       show_root_heading: false
 
 ## Questions?
 <img align="right" src="../../../images/scp.png" width="180">
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 

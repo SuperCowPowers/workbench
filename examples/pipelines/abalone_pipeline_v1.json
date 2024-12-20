@@ -4,7 +4,7 @@
         "tags": [
             "abalone_data"
         ],
-        "input": "/Users/briford/work/sageworks/data/abalone.csv"
+        "input": "/Users/briford/work/workbench/data/abalone.csv"
     },
     "feature_set": {
         "name": "abalone_features",

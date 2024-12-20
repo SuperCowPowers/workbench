@@ -1,11 +1,11 @@
-"""DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
+"""DataSources:  A Workbench Web Interface to view, interact, and manage Data Sources"""
 
 from dash import register_page
 
-# SageWorks Imports
-from sageworks.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
-from sageworks.web_interface.components.plugins.ag_table import AGTable
-from sageworks.web_interface.page_views.data_sources_page_view import DataSourcesPageView
+# Workbench Imports
+from workbench.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
+from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.web_interface.page_views.data_sources_page_view import DataSourcesPageView
 
 # Local Imports
 from .layout import data_sources_layout
@@ -14,7 +14,7 @@ from . import callbacks
 register_page(
     __name__,
     path="/data_sources",
-    name="SageWorks - Data Sources",
+    name="Workbench - Data Sources",
 )
 
 
@@ -55,7 +55,7 @@ components = {
 # Set up our layout (Dash looks for a var called layout)
 layout = data_sources_layout(**components)
 
-# Grab a view that gives us a summary of the DataSources in SageWorks
+# Grab a view that gives us a summary of the DataSources in Workbench
 data_source_view = DataSourcesPageView()
 
 # Callback for anything we want to happen on page load

@@ -1,8 +1,8 @@
 """Tests for graph_plot web component"""
 
-# SageWorks Imports
-from sageworks.api import FeatureSet
-from sageworks.web_interface.components.plugins.scatter_plot import ScatterPlot
+# Workbench Imports
+from workbench.api import FeatureSet
+from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
 
 
 def test_scatter_plot():

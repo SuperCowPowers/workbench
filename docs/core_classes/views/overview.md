@@ -1,8 +1,8 @@
 # Views
 !!! tip inline end "View Examples"
-    Examples of using the Views classes to extend the functionality of SageWorks Artifacts are in the [Examples](#examples) section at the bottom of this page. 
+    Examples of using the Views classes to extend the functionality of Workbench Artifacts are in the [Examples](#examples) section at the bottom of this page. 
     
-Views are a powerful way to filter and agument your DataSources and FeatureSets. With Views you can subset columns, rows, and even add data to existing SageWorks Artifacts. If you want to compute outliers, runs some statistics or engineer some new features, Views are an easy way to change, modify, and add to DataSources and FeatureSets.
+Views are a powerful way to filter and agument your DataSources and FeatureSets. With Views you can subset columns, rows, and even add data to existing Workbench Artifacts. If you want to compute outliers, runs some statistics or engineer some new features, Views are an easy way to change, modify, and add to DataSources and FeatureSets.
 
 If you're looking to read and pull data from a view please see the [Views](../../api_classes/views.md) documentation.
 
@@ -11,18 +11,18 @@ If you're looking to read and pull data from a view please see the [Views](../..
 
 These classes provide APIs for creating Views for DataSources and FeatureSets.
 
-- **[DisplayView](display_view.md):** The Display View is leveraged by the web views/components and allows fine tuning of the UI for the SageWorks Dashboard.
+- **[DisplayView](display_view.md):** The Display View is leveraged by the web views/components and allows fine tuning of the UI for the Workbench Dashboard.
 - **[ComputationView](computation_view.md):** The Computation View controls which columns have descriptive stats, outliers, and correlation calculations. Typically the computation view is a superset of the display view.
 - **[TrainingView](training_view.md):** The Training View will add a 'training' column to the data for model training, validation, and testing. Each row will have a 1 or 0 indicated whether is was used in the model training.
 - **[MDQView](mdq_view.md):** The Model Data Quality View computes various data quality metrics that include modeling inference results.
 
 ## Examples
-All of the SageWorks Examples are in the Sageworks Repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
+All of the Workbench Examples are in the Workbench Repository under the `examples/` directory. For a full code listing of any example please visit our [Workbench Examples](https://github.com/SuperCowPowers/workbench/blob/main/examples)
 
 **Listing Views**
 
 ```py title="views.py"
-from sageworks.api.data_source import DataSource
+from workbench.api.data_source import DataSource
 
 # Convert the Data Source to a Feature Set
 test_data = DataSource('test_data')
@@ -33,7 +33,7 @@ test_data.views()
 **Getting a Particular View**
 
 ```py title="views.py"
-from sageworks.api.feature_set import FeatureSet
+from workbench.api.feature_set import FeatureSet
 
 fs = FeatureSet('test_features')
 
@@ -50,10 +50,10 @@ df = display_view.pull_dataframe()
 
 **View Queries**
 
-All SageWorks Views are stored in AWS Athena, so any query that you can make with Athena is accessible through the View Query API.
+All Workbench Views are stored in AWS Athena, so any query that you can make with Athena is accessible through the View Query API.
 
 ```py title="view_query.py"
-from sageworks.api.feature_set import FeatureSet
+from workbench.api.feature_set import FeatureSet
 
 # Grab a FeatureSet View
 fs = FeatureSet("abalone_features")
@@ -79,4 +79,4 @@ print(df.head())
 1   I   0.150     0.100   0.025         0.015          0.0045          0.0040         0.0050                      2
 ```
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 

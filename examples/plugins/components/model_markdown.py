@@ -5,12 +5,12 @@ import logging
 # Dash Imports
 from dash import html, dcc
 
-# SageWorks Imports
-from sageworks.api import Model
-from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+# Workbench Imports
+from workbench.api import Model
+from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
-# Get the SageWorks logger
-log = logging.getLogger("sageworks")
+# Get the Workbench logger
+log = logging.getLogger("workbench")
 
 
 class MyModelMarkdown(PluginInterface):
@@ -66,8 +66,8 @@ class MyModelMarkdown(PluginInterface):
         markdown = ""
         for key, value in summary.items():
 
-            # Chop off the "sageworks_" prefix
-            key = key.replace("sageworks_", "")
+            # Chop off the "workbench_" prefix
+            key = key.replace("workbench_", "")
 
             # Add to markdown string
             markdown += f"**{key}:** {value}  \n"
@@ -78,7 +78,7 @@ class MyModelMarkdown(PluginInterface):
 
 # Unit Test for the Plugin
 if __name__ == "__main__":
-    from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
+    from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(MyModelMarkdown).run()

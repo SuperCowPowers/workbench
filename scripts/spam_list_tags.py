@@ -1,7 +1,7 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from sageworks.api import FeatureSet
-from sageworks.utils.aws_utils import list_tags_with_throttle
+from workbench.api import FeatureSet
+from workbench.utils.aws_utils import list_tags_with_throttle
 
 # Set up logging
 log = logging.getLogger()

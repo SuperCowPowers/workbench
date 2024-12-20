@@ -1,7 +1,7 @@
 """Tests for the FeatureSet functionality"""
 
-# SageWorks Imports
-from sageworks.core.artifacts.feature_set_core import FeatureSetCore
+# Workbench Imports
+from workbench.core.artifacts.feature_set_core import FeatureSetCore
 
 
 def test():
@@ -32,7 +32,7 @@ def test():
     pprint(my_features.aws_meta())
 
     # Now delete the AWS artifacts associated with this Feature Set
-    # print('Deleting SageWorks Feature Set...')
+    # print('Deleting Workbench Feature Set...')
     # my_features.delete()
 
 

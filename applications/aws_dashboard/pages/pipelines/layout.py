@@ -24,7 +24,7 @@ def pipelines_layout(
             dcc.Store(id="pipelines_page_loaded", data=False),
             dbc.Row(
                 [
-                    html.H2("SageWorks: Pipelines"),
+                    html.H2("Workbench: Pipelines"),
                     html.Div(id="dev_null", style={"display": "none"}),  # Output for callbacks without outputs
                 ]
             ),

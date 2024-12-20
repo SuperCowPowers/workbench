@@ -1,11 +1,11 @@
 import pytest
-import sageworks  # noqa: F401
+import workbench  # noqa: F401
 import logging
-from sageworks.utils.test_data_generator import TestDataGenerator
-from sageworks.api import DataSource, FeatureSet, Model, Endpoint, ModelType
+from workbench.utils.test_data_generator import TestDataGenerator
+from workbench.api import DataSource, FeatureSet, Model, Endpoint, ModelType
 
 # Set the logging level
-logging.getLogger("sageworks").setLevel(logging.DEBUG)
+logging.getLogger("workbench").setLevel(logging.DEBUG)
 
 
 def create_data_source():

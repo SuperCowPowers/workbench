@@ -1,6 +1,6 @@
 {
     "SAGEWORKS_BUCKET": "env-will-overwrite",
-    "SAGEWORKS_ROLE": "SageWorks-ExecutionRole",
+    "SAGEWORKS_ROLE": "Workbench-ExecutionRole",
     "SAGEWORKS_PLUGINS": "package",
     "SAGEWORKS_FEATURES": {
         "plugins": "true",

@@ -3,10 +3,10 @@
 import pytest
 from pprint import pprint
 
-# SageWorks Imports
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model, ModelType
-from sageworks.api.endpoint import Endpoint
+# Workbench Imports
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model, ModelType
+from workbench.api.endpoint import Endpoint
 
 
 model_reg = Model("abalone-regression")

@@ -1,14 +1,14 @@
-"""Tests for the SageWorks Views functionality"""
+"""Tests for the Workbench Views functionality"""
 
 import numpy as np
 import logging
 
-# SageWorks Imports
-from sageworks.api import DataSource, FeatureSet
-from sageworks.core.views import PandasToView
+# Workbench Imports
+from workbench.api import DataSource, FeatureSet
+from workbench.core.views import PandasToView
 
 # Show debug calls
-logging.getLogger("sageworks").setLevel(logging.DEBUG)
+logging.getLogger("workbench").setLevel(logging.DEBUG)
 
 
 def test_pandas_to_ds_view():

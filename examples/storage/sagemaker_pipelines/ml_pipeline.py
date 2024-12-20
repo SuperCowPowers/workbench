@@ -4,16 +4,16 @@ from sagemaker.processing import Processor
 from sagemaker.workflow.steps import ProcessingStep
 from sagemaker.sklearn.processing import SKLearnProcessor
 
-# Get the Base SageWorks Image URI
+# Get the Base Workbench Image URI
 region = sagemaker.Session().boto_region_name
 image_uri = "507740646243.dkr.ecr.us-west-2.amazonaws.com/sagworks_base:v0_4_29_amd64"
 
 # Get the SageMaker Execution Role
 account = "507740646243"
-role = f"arn:aws:iam::{account}:role/SageWorks-ExecutionRole"
+role = f"arn:aws:iam::{account}:role/Workbench-ExecutionRole"
 
 environment = {
-    "SAGEWORKS_BUCKET": "sandbox-sageworks-artifacts",
+    "SAGEWORKS_BUCKET": "sandbox-workbench-artifacts",
 }
 
 # Define the processor
@@ -45,7 +45,7 @@ processing_step = ProcessingStep(
 
 # Define the pipeline
 pipeline = Pipeline(
-    name="SageWorksMLPipeline",
+    name="WorkbenchMLPipeline",
     steps=[processing_step],
     sagemaker_session=sagemaker.Session(),
 )

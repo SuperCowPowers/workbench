@@ -2,19 +2,19 @@ import sys
 import os
 import awswrangler as wr
 
-# SageWorks Imports
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model, ModelType
-from sageworks.api.endpoint import Endpoint
-from sageworks.utils.config_manager import ConfigManager
-from sageworks.utils.glue_utils import get_resolved_options
+# Workbench Imports
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model, ModelType
+from workbench.api.endpoint import Endpoint
+from workbench.utils.config_manager import ConfigManager
+from workbench.utils.glue_utils import get_resolved_options
 
 # Convert Glue Job Args to a Dictionary
 glue_args = get_resolved_options(sys.argv)
 
 # Set the SAGEWORKS_BUCKET for the ConfigManager
 cm = ConfigManager()
-cm.set_config("SAGEWORKS_BUCKET", glue_args["sageworks-bucket"])
+cm.set_config("SAGEWORKS_BUCKET", glue_args["workbench-bucket"])
 
 # Feature Set Name (Hardcoded)
 fs_name = "solubility_featurized_fs"

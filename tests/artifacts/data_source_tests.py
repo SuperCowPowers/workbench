@@ -1,7 +1,7 @@
 """Tests for the DataSource/AthenaSource functionality"""
 
-# SageWorks Imports
-from sageworks.core.artifacts.athena_source import AthenaSource
+# Workbench Imports
+from workbench.core.artifacts.athena_source import AthenaSource
 
 
 def test():
@@ -14,7 +14,7 @@ def test():
     # Verify that the Athena Data Source exists
     assert my_data.exists()
 
-    # What's my SageWorks UUID
+    # What's my Workbench UUID
     print(f"UUID: {my_data.uuid}")
 
     # What's my AWS ARN
@@ -45,7 +45,7 @@ def test():
     AthenaSource("tEsT_dAtA")  # This will give us some warnings
 
     # Now delete the AWS artifacts associated with this DataSource
-    # print('Deleting SageWorks Data Source...')
+    # print('Deleting Workbench Data Source...')
     # AthenaSource.managed_delete("tEsT_dAtA")
 
 

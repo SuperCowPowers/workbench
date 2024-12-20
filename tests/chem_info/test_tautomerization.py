@@ -1,4 +1,4 @@
-from sageworks.utils.chem_utils import perform_tautomerization
+from workbench.utils.chem_utils import perform_tautomerization
 
 
 def test_tautomerization():

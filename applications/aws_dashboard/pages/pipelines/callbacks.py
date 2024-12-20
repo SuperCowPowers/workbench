@@ -7,13 +7,13 @@ from dash.exceptions import PreventUpdate
 from urllib.parse import urlparse, parse_qs
 
 
-# SageWorks Imports
-from sageworks.web_interface.page_views.pipelines_page_view import PipelinesPageView
-from sageworks.web_interface.components.plugins.ag_table import AGTable
-from sageworks.cached.cached_pipeline import CachedPipeline
+# Workbench Imports
+from workbench.web_interface.page_views.pipelines_page_view import PipelinesPageView
+from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.cached.cached_pipeline import CachedPipeline
 
-# Get the SageWorks logger
-log = logging.getLogger("sageworks")
+# Get the Workbench logger
+log = logging.getLogger("workbench")
 
 
 def on_page_load():

@@ -8,13 +8,13 @@ import pandas as pd
 import logging
 from urllib.parse import urlparse, parse_qs
 
-# SageWorks Imports
-from sageworks.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
-from sageworks.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
-from sageworks.web_interface.components.plugins.ag_table import AGTable
+# Workbench Imports
+from workbench.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
+from workbench.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
+from workbench.web_interface.components.plugins.ag_table import AGTable
 
 # Set up logging
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 
 # Cheese Sauce

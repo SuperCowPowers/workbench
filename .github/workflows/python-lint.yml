@@ -19,9 +19,9 @@ jobs:
 
     - name: Run Black (Code Formatting)
       run: |
-        black --line-length=120 src/sageworks applications tests
+        black --line-length=120 src/workbench applications tests
 
     - name: Run Flake8 (Linting)
       run: |
-        flake8 --exclude '*generated*' src/sageworks applications tests
+        flake8 --exclude '*generated*' src/workbench applications tests
 

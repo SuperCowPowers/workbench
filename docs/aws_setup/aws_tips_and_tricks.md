@@ -1,8 +1,8 @@
 # AWS Tips and Tricks
 !!!tip inline end "Need AWS Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
-This page tries to give helpful guidance when setting up AWS Accounts, Users, and Groups. In general AWS can be a bit tricky to set up the first time. Feel free to use any material in this guide but we're more than happy to help clients get their AWS Setup ready to go for FREE. Below are some guides for setting up a new AWS account for SageWorks and also setting up SSO Users and Groups within AWS.
+This page tries to give helpful guidance when setting up AWS Accounts, Users, and Groups. In general AWS can be a bit tricky to set up the first time. Feel free to use any material in this guide but we're more than happy to help clients get their AWS Setup ready to go for FREE. Below are some guides for setting up a new AWS account for Workbench and also setting up SSO Users and Groups within AWS.
 
 ## New AWS Account (with AWS Organizations: easy)
 - If you already have an AWS Account you can activate the AWS Identity Center/Organization functionality.
@@ -52,7 +52,7 @@ Our standard setup is to have two permission sets with the following policies:
 
 See: [Permission Sets](https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetsconcept.html) for more details and instructions.
 
-Another benefit of creating groups is that you can include that group in 'Trust Policy (assume_role)' for the SageWorks-ExecutionRole (this gets deployed as part of the SageWorks AWS Stack). This means that the management of what SageWorks can do/see/read/write is completely done through the SageWorks-ExecutionRole.
+Another benefit of creating groups is that you can include that group in 'Trust Policy (assume_role)' for the Workbench-ExecutionRole (this gets deployed as part of the Workbench AWS Stack). This means that the management of what Workbench can do/see/read/write is completely done through the Workbench-ExecutionRole.
 
 ## Back to Adding User
 Okay now that we have our groups set up we can go back to our original goal of adding a user. So here's the second panel with the groups and now we can hit 'Next'

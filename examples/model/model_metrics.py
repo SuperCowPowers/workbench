@@ -1,4 +1,4 @@
-from sageworks.api.model import Model
+from workbench.api.model import Model
 
 # Grab the abalone-regression Model
 model = Model("abalone-regression")

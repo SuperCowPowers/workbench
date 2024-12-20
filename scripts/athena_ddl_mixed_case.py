@@ -10,8 +10,8 @@ will be lowercased to castle.
 """
 
 
-# SageWorks Imports
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+# Workbench Imports
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 boto3_session = AWSAccountClamp().boto3_session
 
@@ -21,7 +21,7 @@ glue_client = boto3_session.client("glue")
 athena_client = boto3_session.client("athena")
 
 # Define the database, table name, and S3 path
-database_name = "sageworks"
+database_name = "workbench"
 table_name = "test_table"
 s3_path = "s3://test-bucket/test/"
 

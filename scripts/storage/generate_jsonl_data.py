@@ -6,8 +6,8 @@ import gzip
 import os
 from datetime import datetime, timezone
 
-# SageWorks Imports
-from sageworks.utils.datetime_utils import datetime_to_iso8601
+# Workbench Imports
+from workbench.utils.datetime_utils import datetime_to_iso8601
 
 # Set up S3 client
 s3 = boto3.client("s3")
@@ -51,7 +51,7 @@ for i in range(num_files):
 
     # Upload the file to S3
     s3_file_path = f"incoming-data/jsonl-data/{filename}.gz"
-    s3.upload_file(f"{filename}.gz", "scp-sageworks-artifacts", s3_file_path)
+    s3.upload_file(f"{filename}.gz", "scp-workbench-artifacts", s3_file_path)
 
     # Delete the local copy of the file
     os.remove(filename)

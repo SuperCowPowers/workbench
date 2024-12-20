@@ -1,4 +1,4 @@
-"""This Script creates the SageWorks Artifacts in AWS needed for the tests
+"""This Script creates the Workbench Artifacts in AWS needed for the tests
 
 DataSources:
     - test_data
@@ -15,18 +15,18 @@ Endpoints:
 import sys
 import logging
 from pathlib import Path
-from sageworks.api import DataSource, FeatureSet, Model, ModelType, Endpoint
-from sageworks.utils.test_data_generator import TestDataGenerator
+from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
+from workbench.utils.test_data_generator import TestDataGenerator
 
 # Setup the logger
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":
 
     # Get the path to the dataset in the repository data directory
-    abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
-    karate_graph = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "karate_graph.json"
+    abalone_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "abalone.csv"
+    karate_graph = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "karate_graph.json"
 
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False

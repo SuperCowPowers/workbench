@@ -4,9 +4,9 @@ from dash import dcc
 import plotly.graph_objects as go
 
 
-# SageWorks Imports
-from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from sageworks.api.model import Model
+# Workbench Imports
+from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from workbench.api.model import Model
 
 
 class CrashingPlugin(PluginInterface):

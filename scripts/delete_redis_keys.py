@@ -17,8 +17,8 @@ def delete_keys_by_pattern(redis_host, redis_port, pattern):
 
 
 if __name__ == "__main__":
-    redis_host = "sageworksredis.qo8vb5.0001.use1.cache.amazonaws.com"
+    redis_host = "workbenchredis.qo8vb5.0001.use1.cache.amazonaws.com"
     redis_port = 6379
-    pattern = "sageworks:RowStorage:*"
+    pattern = "workbench:RowStorage:*"
 
     delete_keys_by_pattern(redis_host, redis_port, pattern)

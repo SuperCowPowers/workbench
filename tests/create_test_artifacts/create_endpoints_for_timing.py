@@ -9,10 +9,10 @@ Endpoints:
 import sys
 import logging
 
-# SageWorks imports
-from sageworks.api import Model, Endpoint
+# Workbench imports
+from workbench.api import Model, Endpoint
 
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":

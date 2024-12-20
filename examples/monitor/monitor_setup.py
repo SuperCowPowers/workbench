@@ -1,4 +1,4 @@
-from sageworks.api.monitor import Monitor
+from workbench.api.monitor import Monitor
 
 # Create an Endpoint Monitor Class and perform initial Setup
 endpoint_name = "abalone-regression-end-rt"

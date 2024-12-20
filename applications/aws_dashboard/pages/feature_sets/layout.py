@@ -18,7 +18,7 @@ def feature_sets_layout(
             dcc.Store(id="feature_sets_page_loaded", data=False),
             dbc.Row(
                 [
-                    html.H2("SageWorks: FeatureSets"),
+                    html.H2("Workbench: FeatureSets"),
                 ]
             ),
             # A table that lists out all the Feature Sets

@@ -1,14 +1,14 @@
-"""Tests for the SageWorks Views functionality"""
+"""Tests for the Workbench Views functionality"""
 
 import pytest
 import logging
 
-# SageWorks Imports
-from sageworks.api import DataSource, FeatureSet
-from sageworks.core.views import View
+# Workbench Imports
+from workbench.api import DataSource, FeatureSet
+from workbench.core.views import View
 
 # Show debug calls
-logging.getLogger("sageworks").setLevel(logging.DEBUG)
+logging.getLogger("workbench").setLevel(logging.DEBUG)
 
 
 def test_display_view_ds():

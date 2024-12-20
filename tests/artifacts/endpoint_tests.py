@@ -2,9 +2,9 @@
 
 import pandas as pd
 
-# SageWorks Imports
-from sageworks.core.artifacts.endpoint_core import EndpointCore
-from sageworks.utils.endpoint_utils import fs_evaluation_data
+# Workbench Imports
+from workbench.core.artifacts.endpoint_core import EndpointCore
+from workbench.utils.endpoint_utils import fs_evaluation_data
 
 reg_endpoint = EndpointCore("abalone-regression-end")
 class_endpoint = EndpointCore("wine-classification-end")

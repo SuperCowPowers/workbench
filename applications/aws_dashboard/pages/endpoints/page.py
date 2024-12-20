@@ -1,4 +1,4 @@
-"""Endpoints:  A SageWorks Web Interface to view and interact with Endpoints"""
+"""Endpoints:  A Workbench Web Interface to view and interact with Endpoints"""
 
 from dash import register_page
 
@@ -6,18 +6,18 @@ from dash import register_page
 from .layout import endpoints_layout
 from . import callbacks
 
-# SageWorks Imports
-from sageworks.web_interface.components import endpoint_metric_plots
-from sageworks.web_interface.components.plugins import endpoint_details, ag_table
-from sageworks.web_interface.components.plugin_interface import PluginPage
-from sageworks.web_interface.page_views.endpoints_page_view import EndpointsPageView
-from sageworks.utils.plugin_manager import PluginManager
+# Workbench Imports
+from workbench.web_interface.components import endpoint_metric_plots
+from workbench.web_interface.components.plugins import endpoint_details, ag_table
+from workbench.web_interface.components.plugin_interface import PluginPage
+from workbench.web_interface.page_views.endpoints_page_view import EndpointsPageView
+from workbench.utils.plugin_manager import PluginManager
 
 # Register this page with Dash
 register_page(
     __name__,
     path="/endpoints",
-    name="SageWorks - Endpoints",
+    name="Workbench - Endpoints",
 )
 
 
@@ -56,7 +56,7 @@ for plugin in plugins:
 # Set up our layout (Dash looks for a var called layout)
 layout = endpoints_layout(**components)
 
-# Grab a view that gives us a summary of the Endpoints in SageWorks
+# Grab a view that gives us a summary of the Endpoints in Workbench
 endpoints_view = EndpointsPageView()
 
 # Callback for anything we want to happen on page load

@@ -1,8 +1,8 @@
 """Tests for graph_plot web component"""
 
-# SageWorks Imports
-from sageworks.core.artifacts.graph_core import GraphCore
-from sageworks.web_interface.components.plugins.graph_plot import GraphPlot
+# Workbench Imports
+from workbench.core.artifacts.graph_core import GraphCore
+from workbench.web_interface.components.plugins.graph_plot import GraphPlot
 
 
 def test_graph_plot():

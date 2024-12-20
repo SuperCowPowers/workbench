@@ -1,32 +1,32 @@
-"""AWSAccountCheck runs a bunch of tests/checks to ensure SageWorks AWS Setup"""
+"""AWSAccountCheck runs a bunch of tests/checks to ensure Workbench AWS Setup"""
 
 import sys
 import logging
 import awswrangler as wr
 
-# SageWorks Imports
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.config_manager import ConfigManager, FatalConfigError
+# Workbench Imports
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.utils.config_manager import ConfigManager, FatalConfigError
 
 
 class AWSAccountCheck:
-    """AWSAccountCheck runs a bunch of tests/checks to ensure SageWorks AWS Setup"""
+    """AWSAccountCheck runs a bunch of tests/checks to ensure Workbench AWS Setup"""
 
     def __init__(self):
         """AWSAccountCheck Initialization"""
-        self.log = logging.getLogger("sageworks")
+        self.log = logging.getLogger("workbench")
 
         # Create the AWSAccountClamp Class
         self.aws_clamp = AWSAccountClamp()
 
-        # Grab our SageWorks Bucket
+        # Grab our Workbench Bucket
         cm = ConfigManager()
         if not cm.config_okay():
-            self.log.error("SageWorks Configuration Incomplete...")
-            self.log.error("Run the 'sageworks' command and follow the prompts...")
+            self.log.error("Workbench Configuration Incomplete...")
+            self.log.error("Run the 'workbench' command and follow the prompts...")
             raise FatalConfigError()
 
-        self.sageworks_bucket = cm.get_config("SAGEWORKS_BUCKET")
+        self.workbench_bucket = cm.get_config("SAGEWORKS_BUCKET")
 
     def ensure_aws_catalog_db(self, catalog_db: str):
         """Ensure that the AWS Data Catalog Database exists"""
@@ -34,18 +34,18 @@ class AWSAccountCheck:
         wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=self.aws_clamp.boto3_session)
 
     def check_s3_bucket_subfolders(self):
-        """Check if the SageWorks S3 Bucket is set up and has the correct sub-folders"""
+        """Check if the Workbench S3 Bucket is set up and has the correct sub-folders"""
 
-        self.log.info("*** AWS SageWorks Bucket Check ***")
+        self.log.info("*** AWS Workbench Bucket Check ***")
         s3 = self.aws_clamp.boto3_session.resource("s3")
-        bucket = s3.Bucket(self.sageworks_bucket)
+        bucket = s3.Bucket(self.workbench_bucket)
 
         # Check if the bucket exists
         if bucket.creation_date is None:
-            self.log.critical(f"The {self.sageworks_bucket} bucket does not exist")
+            self.log.critical(f"The {self.workbench_bucket} bucket does not exist")
             sys.exit(1)
         else:
-            self.log.info(f"The {self.sageworks_bucket} bucket exists")
+            self.log.info(f"The {self.workbench_bucket} bucket exists")
 
         # Check if the sub-folders exists
         sub_folders = ["incoming-data", "data-sources", "feature-sets", "athena-queries"]
@@ -73,7 +73,7 @@ class AWSAccountCheck:
         self.aws_clamp.check_s3_access()
         self.log.info("S3 Access Check Success...")
 
-        # Check that the SageWorks S3 Bucket and Sub-folders are created
+        # Check that the Workbench S3 Bucket and Sub-folders are created
         self.check_s3_bucket_subfolders()
 
         self.log.info("*** AWS Sagemaker Session/Client Check ***")
@@ -83,7 +83,7 @@ class AWSAccountCheck:
 
         # Check that the Glue Database exist
         self.log.info("*** AWS Glue Database Check ***")
-        for catalog_db in ["sageworks", "sagemaker_featurestore"]:
+        for catalog_db in ["workbench", "sagemaker_featurestore"]:
             self.ensure_aws_catalog_db(catalog_db)
 
         self.log.info("\n\nAWS Account Clamp: AOK!")

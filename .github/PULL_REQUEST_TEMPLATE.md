@@ -1,9 +1,9 @@
 # Pull Request Checklist
 
-Thank you for contributing to the SuperCowPowers SageWorks project. Please make sure you've completed the following tasks before submitting your pull request:
+Thank you for contributing to the SuperCowPowers Workbench project. Please make sure you've completed the following tasks before submitting your pull request:
 
 #### GENERAL
-- [  ] I've read the [CONTRIBUTING](https://github.com/SuperCowPowers/sageworks/blob/main/CONTRIBUTING.md) document.
+- [  ] I've read the [CONTRIBUTING](https://github.com/SuperCowPowers/workbench/blob/main/CONTRIBUTING.md) document.
 - [  ] I've merged 'main' into my PR branch (like today's main)
 
 #### TESTING (run 'tox' for local testing)
@@ -12,7 +12,7 @@ Thank you for contributing to the SuperCowPowers SageWorks project. Please make 
 - [  ] 100% of the tests passed
 
 #### UI (Web Interface/Components)
-- [  ] I've run sageworks/applications/aws_dashboard/dashboard
+- [  ] I've run workbench/applications/aws_dashboard/dashboard
 - [  ] I've tested the UI and scanned the log output for any issues
 
 #### DOCUMENTATION

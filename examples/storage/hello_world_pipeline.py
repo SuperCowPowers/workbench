@@ -1,4 +1,4 @@
-"""This Script creates a simple AWS ML Pipeline with SageWorks
+"""This Script creates a simple AWS ML Pipeline with Workbench
 
 DataSources:
     - abalone_data
@@ -12,16 +12,16 @@ Endpoints:
 
 import sys
 from pathlib import Path
-from sageworks.core.artifacts.model_core import ModelType
-from sageworks.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
-from sageworks.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
-from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
-from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from workbench.core.artifacts.model_core import ModelType
+from workbench.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
+from workbench.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
+from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
+from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 
 
 if __name__ == "__main__":
     # Get the path to the dataset in the repository data directory
-    abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
+    abalone_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "abalone.csv"
 
     # Create the abalone_data DataSource
     my_loader = CSVToDataSource(abalone_data_path, "abalone_data")

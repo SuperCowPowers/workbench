@@ -2,9 +2,9 @@
 
 import pandas as pd
 
-# SageWorks Imports
-from sageworks.web_interface.page_views.page_view import PageView
-from sageworks.api import Meta
+# Workbench Imports
+from workbench.web_interface.page_views.page_view import PageView
+from workbench.api import Meta
 
 
 class MyViewPlugin(PageView):
@@ -14,7 +14,7 @@ class MyViewPlugin(PageView):
         # Call SuperClass Initialization
         super().__init__()
 
-        # We're using the SageWorks Meta class to get information about models
+        # We're using the Workbench Meta class to get information about models
         self.meta = Meta()
 
     def refresh(self):

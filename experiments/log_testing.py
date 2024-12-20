@@ -1,4 +1,4 @@
-from sageworks.api.feature_set import FeatureSet
+from workbench.api.feature_set import FeatureSet
 import pandas as pd
 import logging
 import sys
@@ -9,7 +9,7 @@ pd.set_option("display.max_rows", None)
 pd.set_option("display.width", 1000)
 
 # Setup Logging
-logger = logging.getLogger("sageworks")
+logger = logging.getLogger("workbench")
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler(sys.stdout))
 

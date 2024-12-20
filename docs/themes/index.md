@@ -1,8 +1,8 @@
-# Theme Support for SageWorks
+# Theme Support for Workbench
 !!!tip inline end "Need Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
-SageWorks interfaces are going to have full support for theming and branding to enable customizations of components, and pages. The theming support will include all of the default pages/components but will also support full theming for plugin components and pages [SageWorks Plugins](../plugins/index.md)
+Workbench interfaces are going to have full support for theming and branding to enable customizations of components, and pages. The theming support will include all of the default pages/components but will also support full theming for plugin components and pages [Workbench Plugins](../plugins/index.md)
 
 # Summary of Theming Mechanisms
 

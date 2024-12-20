@@ -1,7 +1,7 @@
 """Tests for the SHAP Feature Importance functionality"""
 
 # Local Imports
-from sageworks.api import Endpoint
+from workbench.api import Endpoint
 
 
 def test_generate_shap_values_reg():

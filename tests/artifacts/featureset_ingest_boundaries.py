@@ -3,8 +3,8 @@
 import pytest
 import pandas as pd
 import numpy as np
-from sageworks.api import FeatureSet
-from sageworks.core.transforms.pandas_transforms import PandasToFeatures
+from workbench.api import FeatureSet
+from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 
 # Valid subnormal test

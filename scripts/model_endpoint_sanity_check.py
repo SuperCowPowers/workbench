@@ -2,16 +2,16 @@
 
 import logging
 
-# SageWorks Imports
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from sageworks.core.artifacts.model_core import ModelCore
-from sageworks.core.artifacts.endpoint_core import EndpointCore
+# Workbench Imports
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.core.artifacts.model_core import ModelCore
+from workbench.core.artifacts.endpoint_core import EndpointCore
 
 # Get a sagemaker_client from the AWSAccountClamp()
 sagemaker_client = AWSAccountClamp().sagemaker_client()
 
 # Setup logging
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 log.setLevel(logging.INFO)
 
 

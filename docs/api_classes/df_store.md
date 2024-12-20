@@ -1,4 +1,4 @@
-# SageWorks DataFrame Storage
+# Workbench DataFrame Storage
 
 !!! tip inline end "Examples"
     Examples of using the Parameter Storage class are listed at the bottom of this page [Examples](#examples).
@@ -9,17 +9,17 @@ Great question, there's a couple of reasons. The first is that the Parameter Sto
 ## Efficient Storage
 All DataFrames are stored in the Parquet format using 'snappy' storage. Parquet is a columnar storage format that efficiently handles large datasets, and using Snappy compression reduces file size while maintaining fast read/write speeds.
     
-::: sageworks.api.df_store
+::: workbench.api.df_store
 
 
 ## Examples
 These example show how to use the `DFStore()` class to list, add, and get dataframes from AWS Storage.
 
-!!!tip "SageWorks REPL"
-    If you'd like to experiment with listing, adding, and getting dataframe with the `DFStore()` class, you can spin up the SageWorks REPL, use the class and test out all the methods. Try it out! [SageWorks REPL](../repl/index.md)
+!!!tip "Workbench REPL"
+    If you'd like to experiment with listing, adding, and getting dataframe with the `DFStore()` class, you can spin up the Workbench REPL, use the class and test out all the methods. Try it out! [Workbench REPL](../repl/index.md)
 
 ```py title="Using DataFrame Store"
-from sageworks.api.df_store import DFStore
+from workbench.api.df_store import DFStore
 df_store = DFStore()
 
 # List DataFrames

@@ -3,10 +3,10 @@
 import argparse
 import pandas as pd
 
-# SageWorks Imports
-from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model_core import ModelCore
-from sageworks.core.artifacts.endpoint_core import EndpointCore
+# Workbench Imports
+from workbench.core.artifacts.feature_set_core import FeatureSetCore
+from workbench.core.artifacts.model_core import ModelCore
+from workbench.core.artifacts.endpoint_core import EndpointCore
 
 
 def run_inference(endpoint_name):
@@ -33,8 +33,8 @@ def run_inference(endpoint_name):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run inference on a SageWorks Endpoint")
-    parser.add_argument("endpoint_name", type=str, help="Name of the SageWorks Endpoint")
+    parser = argparse.ArgumentParser(description="Run inference on a Workbench Endpoint")
+    parser.add_argument("endpoint_name", type=str, help="Name of the Workbench Endpoint")
     args = parser.parse_args()
 
     run_inference(args.endpoint_name)

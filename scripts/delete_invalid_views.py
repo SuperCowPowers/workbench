@@ -1,5 +1,5 @@
 import awswrangler as wr
-from sageworks.api import Meta
+from workbench.api import Meta
 
 
 def delete_invalid_views(database_scope):
@@ -32,5 +32,5 @@ def delete_invalid_views(database_scope):
 
 
 if __name__ == "__main__":
-    database_scope = ["sageworks", "sagemaker_featurestore"]
+    database_scope = ["workbench", "sagemaker_featurestore"]
     delete_invalid_views(database_scope)

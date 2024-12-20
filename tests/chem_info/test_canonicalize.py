@@ -1,4 +1,4 @@
-from sageworks.utils.chem_utils import canonicalize
+from workbench.utils.chem_utils import canonicalize
 import pandas as pd
 
 

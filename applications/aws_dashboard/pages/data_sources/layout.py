@@ -18,7 +18,7 @@ def data_sources_layout(
             dcc.Store(id="data_sources_page_loaded", data=False),
             dbc.Row(
                 [
-                    html.H2("SageWorks: DataSources"),
+                    html.H2("Workbench: DataSources"),
                 ]
             ),
             # A table that lists out all the Data Sources

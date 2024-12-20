@@ -1,8 +1,8 @@
 import time
-from sageworks.cached.cached_meta import CachedMeta
-from sageworks.cached.cached_model import CachedModel
-from sageworks.api import Model
-from sageworks.utils.sageworks_cache import disable_refresh
+from workbench.cached.cached_meta import CachedMeta
+from workbench.cached.cached_model import CachedModel
+from workbench.api import Model
+from workbench.utils.workbench_cache import disable_refresh
 
 # Instantiate all the Model objects
 models = CachedMeta().models()["Model Group"].tolist()

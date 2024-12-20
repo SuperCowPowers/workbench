@@ -4,10 +4,10 @@ from datetime import datetime
 from dash import callback, Input, Output, State, html, no_update
 from dash.exceptions import PreventUpdate
 
-# SageWorks Imports
-from sageworks.web_interface.page_views.main_page import MainPage
-from sageworks.web_interface.components.plugins.ag_table import AGTable
-from sageworks.utils.pandas_utils import dataframe_delta
+# Workbench Imports
+from workbench.web_interface.page_views.main_page import MainPage
+from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.utils.pandas_utils import dataframe_delta
 
 
 # Update the last updated time
@@ -33,7 +33,7 @@ def plugin_page_info():
                     html.H4("Plugin Pages", style={"textAlign": "left"}),
                     html.A(
                         "Make some plugins! :)",
-                        href="https://supercowpowers.github.io/sageworks/plugins/",
+                        href="https://supercowpowers.github.io/workbench/plugins/",
                         target="_blank",  # Open link in a new tab
                         style={
                             "textDecoration": "none",  # Remove underline

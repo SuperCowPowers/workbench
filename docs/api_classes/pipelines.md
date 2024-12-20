@@ -3,7 +3,7 @@
 !!! tip inline end "Pipeline Examples"
     Examples of using the Pipeline classes are listed at the bottom of this page [Examples](#examples).
     
-Pipelines store sequences of SageWorks transforms. So if you have a nightly ML workflow you can capture that as a Pipeline. Here's an example pipeline:
+Pipelines store sequences of Workbench transforms. So if you have a nightly ML workflow you can capture that as a Pipeline. Here's an example pipeline:
 
 ```py title="nightly_sol_pipeline_v1.json"
 {
@@ -29,17 +29,17 @@ Pipelines store sequences of SageWorks transforms. So if you have a nightly ML w
 }    
 ```
 
-::: sageworks.api.pipeline
+::: workbench.api.pipeline
 
 
 ## Examples
 
 **Make a Pipeline**
 
-Pipelines are just JSON files (see `sageworks/examples/pipelines/`). You can copy one and make changes to fit your objects/use case, or if you have a set of SageWorks artifacts created you can 'backtrack' from the Endpoint and have it create the Pipeline for you.
+Pipelines are just JSON files (see `workbench/examples/pipelines/`). You can copy one and make changes to fit your objects/use case, or if you have a set of Workbench artifacts created you can 'backtrack' from the Endpoint and have it create the Pipeline for you.
 
 ```py title="pipeline_manager.py"
-from sageworks.api.pipeline_manager import PipelineManager
+from workbench.api.pipeline_manager import PipelineManager
 
  # Create a PipelineManager
 my_manager = PipelineManager()
@@ -65,7 +65,7 @@ Listing Pipelines...
 **Pipeline Details**
 
 ```py title="pipeline_details.py"
-from sageworks.api.pipeline import Pipeline
+from workbench.api.pipeline import Pipeline
 
 # Retrieve an existing Pipeline
 my_pipeline = Pipeline("abalone_pipeline_v1")
@@ -84,7 +84,7 @@ pprint(my_pipeline.details())
             "tags": [
                 "abalone_data"
             ],
-            "input": "/Users/briford/work/sageworks/data/abalone.csv"
+            "input": "/Users/briford/work/workbench/data/abalone.csv"
         },
         "feature_set": {
             "name": "abalone_features",
@@ -112,7 +112,7 @@ pprint(my_pipeline.details())
     Executing the Pipeline is obviously the most important reason for creating one. If gives you a reproducible way to capture, inspect, and run the same ML pipeline on different data (nightly).
 
 ```py title="pipeline_execution.py"
-from sageworks.api.pipeline import Pipeline
+from workbench.api.pipeline import Pipeline
 
 # Retrieve an existing Pipeline
 my_pipeline = Pipeline("abalone_pipeline_v1")
@@ -147,7 +147,7 @@ As part of the flexible architecture sometimes DataSources or FeatureSets can be
         self.pipeline["feature_set"]["hold_out_ids"] = id_list
 ```
 
-Running a pipeline creates and deploys a set of SageWorks Artifacts, DataSource, FeatureSet, Model and Endpoint. These artifacts can be viewed in the Sagemaker Console/Notebook interfaces or in the SageWorks Dashboard UI.
+Running a pipeline creates and deploys a set of Workbench Artifacts, DataSource, FeatureSet, Model and Endpoint. These artifacts can be viewed in the Sagemaker Console/Notebook interfaces or in the Workbench Dashboard UI.
 
 !!! note "Not Finding a particular method?"
-    The SageWorks API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [SageWorks Core Classes](../core_classes/overview.md)
+    The Workbench API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [Workbench Core Classes](../core_classes/overview.md)

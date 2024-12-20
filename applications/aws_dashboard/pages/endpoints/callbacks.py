@@ -5,14 +5,14 @@ from dash import callback, no_update, Input, Output, State
 from dash.exceptions import PreventUpdate
 from urllib.parse import urlparse, parse_qs
 
-# SageWorks Imports
-from sageworks.web_interface.page_views.endpoints_page_view import EndpointsPageView
-from sageworks.web_interface.components import endpoint_metric_plots
-from sageworks.web_interface.components.plugins.ag_table import AGTable
-from sageworks.cached.cached_endpoint import CachedEndpoint
+# Workbench Imports
+from workbench.web_interface.page_views.endpoints_page_view import EndpointsPageView
+from workbench.web_interface.components import endpoint_metric_plots
+from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.cached.cached_endpoint import CachedEndpoint
 
-# Get the SageWorks logger
-log = logging.getLogger("sageworks")
+# Get the Workbench logger
+log = logging.getLogger("workbench")
 
 
 def on_page_load():

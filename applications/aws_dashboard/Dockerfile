@@ -19,12 +19,12 @@ RUN pip install --no-cache-dir gunicorn
 # Inform Docker that the container is listening on port 8000
 EXPOSE 8000
 
-# Copy the requirements and install dependencies (except SageWorks)
+# Copy the requirements and install dependencies (except Workbench)
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install SageWorks Dashboard on its own layer
-RUN pip install --no-cache-dir sageworks==0.8.88
+# Install Workbench Dashboard on its own layer
+RUN pip install --no-cache-dir workbench==0.8.88
 
 # Copy the Nginx and Supervisor configuration files
 COPY nginx.conf /etc/nginx/sites-available/default
@@ -35,8 +35,8 @@ COPY . /app
 
 # Grab the config file from build args, copy, and set ENV var
 ARG SAGEWORKS_CONFIG
-COPY $SAGEWORKS_CONFIG /app/sageworks_config.json
-ENV SAGEWORKS_CONFIG=/app/sageworks_config.json
+COPY $SAGEWORKS_CONFIG /app/workbench_config.json
+ENV SAGEWORKS_CONFIG=/app/workbench_config.json
 
 # Run supervisord
 CMD ["/usr/bin/supervisord"]

@@ -11,7 +11,7 @@ MODEL_PACKAGE_GROUP_NAME = "abalone-regression-end"
 ENDPOINT_NAME = f"{MODEL_PACKAGE_GROUP_NAME}-end"
 MEM_SIZE = 4096
 MAX_CONCURRENCY = 10
-ROLE_ARN = "arn:aws:iam::507740646243:role/SageWorks-ExecutionRole"
+ROLE_ARN = "arn:aws:iam::507740646243:role/Workbench-ExecutionRole"
 
 # Get a standard SageMaker session
 session = sagemaker.Session()

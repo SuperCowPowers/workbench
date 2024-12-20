@@ -19,7 +19,7 @@ def models_layout(
             dcc.Store(id="models_page_loaded", data=False),
             dbc.Row(
                 [
-                    html.H2("SageWorks: Models"),
+                    html.H2("Workbench: Models"),
                 ]
             ),
             # A table that lists out all the Models

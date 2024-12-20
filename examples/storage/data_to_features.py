@@ -1,5 +1,5 @@
-from sageworks.core.transforms.pandas_transforms.data_to_pandas import DataToPandas
-from sageworks.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
+from workbench.core.transforms.pandas_transforms.data_to_pandas import DataToPandas
+from workbench.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
 
 # Grab the data from the DataSource
 data_to_pandas = DataToPandas("abalone_data")

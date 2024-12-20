@@ -11,9 +11,9 @@ import re
 import base64
 import logging
 import awswrangler as wr
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 # Initialize your AWS session and Glue client
 aws_account_clamp = AWSAccountClamp()

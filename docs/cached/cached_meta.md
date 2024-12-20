@@ -3,16 +3,16 @@
 !!! tip inline end "CachedMeta Examples"
     Examples of using the CachedMeta class are listed at the bottom of this page [Examples](#examples).
     
-::: sageworks.cached.cached_meta
+::: workbench.cached.cached_meta
 
 
 ## Examples
 These example show how to use the `CachedMeta()` class to pull lists of artifacts from AWS. DataSources, FeatureSets, Models, Endpoints and more. If you're building a web interface plugin, the **CachedMeta** class is a great place to start.
 
-!!!tip "SageWorks REPL"
-    If you'd like to see **exactly** what data/details you get back from the `CachedMeta()` class, you can spin up the SageWorks REPL, use the class and test out all the methods. Try it out! [SageWorks REPL](../repl/index.md)
+!!!tip "Workbench REPL"
+    If you'd like to see **exactly** what data/details you get back from the `CachedMeta()` class, you can spin up the Workbench REPL, use the class and test out all the methods. Try it out! [Workbench REPL](../repl/index.md)
 
-```py title="Using SageWorks REPL"
+```py title="Using Workbench REPL"
 CachedMeta = CachedMeta()
 model_df = CachedMeta.models()
 model_df
@@ -27,7 +27,7 @@ model_df
 **List the Models in AWS**
 
 ```python
-from sageworks.cached.cached_meta import CachedMeta
+from workbench.cached.cached_meta import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Models
 CachedMeta = CachedMeta()
@@ -60,7 +60,7 @@ abalone-regression
 **Getting Model Performance Metrics**
 
 ```python
-from sageworks.cached.cached_meta import CachedMeta
+from workbench.cached.cached_meta import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Models
 CachedMeta = CachedMeta()
@@ -74,7 +74,7 @@ model_names = model_df["Model Group"].tolist()
 for name in model_names[:5]:
     model_details = CachedMeta.model(name)
     print(f"\n\nModel: {name}")
-    performance_metrics = model_details["sageworks_CachedMeta"]["sageworks_inference_metrics"]
+    performance_metrics = model_details["workbench_CachedMeta"]["workbench_inference_metrics"]
     print(f"\tPerformance Metrics: {performance_metrics}")
 ```
 
@@ -100,7 +100,7 @@ abalone-regression
 
 ```python
 from pprint import pprint
-from sageworks.cached.cached_meta import CachedMeta
+from workbench.cached.cached_meta import CachedMeta
 
 # Create our CachedMeta Class and get a list of our Endpoints
 CachedMeta = CachedMeta()
@@ -129,4 +129,4 @@ wine-classification-end
 
 
 !!! note "Not Finding some particular AWS Data?"
-    The SageWorks CachedMeta API Class also has `(details=True)` arguments, so make sure to check those out.
+    The Workbench CachedMeta API Class also has `(details=True)` arguments, so make sure to check those out.

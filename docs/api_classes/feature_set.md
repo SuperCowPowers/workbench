@@ -1,17 +1,17 @@
 # FeatureSet
 !!! tip inline end "FeatureSet Examples"
-    Examples of using the FeatureSet Class are in the [Examples](#examples) section at the bottom of this page. AWS Feature Store and Feature Groups are quite complicated to set up manually but the SageWorks FeatureSet makes it a breeze!
+    Examples of using the FeatureSet Class are in the [Examples](#examples) section at the bottom of this page. AWS Feature Store and Feature Groups are quite complicated to set up manually but the Workbench FeatureSet makes it a breeze!
     
-::: sageworks.api.feature_set
+::: workbench.api.feature_set
 
 
 ## Examples
-All of the SageWorks Examples are in the Sageworks Repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
+All of the Workbench Examples are in the Workbench Repository under the `examples/` directory. For a full code listing of any example please visit our [Workbench Examples](https://github.com/SuperCowPowers/workbench/blob/main/examples)
 
 **Create a FeatureSet from a Datasource**
 
 ```py title="datasource_to_featureset.py"
-from sageworks.api.data_source import DataSource
+from workbench.api.data_source import DataSource
 
 # Convert the Data Source to a Feature Set
 ds = DataSource('test_data')
@@ -22,7 +22,7 @@ print(fs.details())
 **FeatureSet EDA Statistics**
 
 ```py title="featureset_eda.py"
-from sageworks.api.feature_set import FeatureSet
+from workbench.api.feature_set import FeatureSet
 import pandas as pd
 
 # Grab a FeatureSet and pull some of the EDA Stats
@@ -65,10 +65,10 @@ iq_score   -0.295513    0.395378    0.076477   -0.435033    0.033364 -0.655210  
 
 **Query a FeatureSet**
 
-All SageWorks FeatureSet have an 'offline' store that uses AWS Athena, so any query that you can make with Athena is accessible through the FeatureSet API.
+All Workbench FeatureSet have an 'offline' store that uses AWS Athena, so any query that you can make with Athena is accessible through the FeatureSet API.
 
 ```py title="featureset_query.py"
-from sageworks.api.feature_set import FeatureSet
+from workbench.api.feature_set import FeatureSet
 
 # Grab a FeatureSet
 my_features = FeatureSet("abalone_features")
@@ -97,8 +97,8 @@ print(df.head())
 **Create a Model from a FeatureSet**
 
 ```py title="featureset_to_model.py"
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import ModelType
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import ModelType
 from pprint import pprint
 
 # Grab a FeatureSet
@@ -133,7 +133,7 @@ pprint(my_model.details())
 							4   127.881073  113.825005
     ...
  'response_types': ['text/csv'],
- 'sageworks_tags': ['test-model'],
+ 'workbench_tags': ['test-model'],
  'shapley_values': None,
  'size': 0.0,
  'status': 'Completed',
@@ -142,13 +142,13 @@ pprint(my_model.details())
  'version': 1}
 ```
 
-## SageWorks UI
-Whenever a FeatureSet is created SageWorks performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
+## Workbench UI
+Whenever a FeatureSet is created Workbench performs a comprehensive set of Exploratory Data Analysis techniques on your data, pushes the results into AWS, and provides a detailed web visualization of the results.
 
 <figure style="width: 700px;">
-<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/0b4103fe-2c33-4611-86df-ff659fad1a3b">
-<figcaption>SageWorks Dashboard: FeatureSets</figcaption>
+<img alt="workbench_new_light" src="https://github.com/SuperCowPowers/workbench/assets/4806709/0b4103fe-2c33-4611-86df-ff659fad1a3b">
+<figcaption>Workbench Dashboard: FeatureSets</figcaption>
 </figure>
 
 !!! note "Not Finding a particular method?"
-    The SageWorks API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [SageWorks Core Classes](../core_classes/overview.md)
+    The Workbench API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [Workbench Core Classes](../core_classes/overview.md)

@@ -52,7 +52,7 @@ Bootstrap and Dash Bootstrap Components (DBC) provide mechanisms to control them
 - Leverage **CSS variables** (`--bs-*`) for consistent theming across components.
 - Apply **CSS classes** (`className`) for additional customization or integration with custom styles.
 
-# Theming Strategy for SageWorks Dashboard
+# Theming Strategy for Workbench Dashboard
 
 ## **Phase 1: Application Start-Up Theming**
 This focuses on setting a polished, cohesive interface at startup. It ensures:
@@ -120,7 +120,7 @@ Introduce a `set_theme()` method in each component to manage its own updates:
 
 
 ## Storage
-### Theme Support in SageWorks
+### Theme Support in Workbench
 For a Dash/Plotly web applications there are two main concepts that fall under the general umbrella of 'theme support'.
 
 ### CSS for High-Level Theming

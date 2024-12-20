@@ -8,9 +8,9 @@ RUN apt-get update && apt-get upgrade -y && \
     apt-get autoremove -y && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements and install dependencies (except SageWorks)
+# Copy the requirements and install dependencies (except Workbench)
 COPY requirements-no-dash.txt requirements.txt ./
 RUN pip install --no-cache-dir -r requirements-no-dash.txt
 
-# Install SageWorks on its own layer
-RUN pip install --no-cache-dir 'sageworks[ml-tool,chem]'==0.8.88
+# Install Workbench on its own layer
+RUN pip install --no-cache-dir 'workbench[ml-tool,chem]'==0.8.88

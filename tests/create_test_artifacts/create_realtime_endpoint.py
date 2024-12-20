@@ -6,12 +6,12 @@ Endpoints:
 
 import logging
 
-# Sageworks Imports
-from sageworks.api.model import Model
-from sageworks.api.endpoint import Endpoint
+# Workbench Imports
+from workbench.api.model import Model
+from workbench.api.endpoint import Endpoint
 
 # Setup the logger
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 if __name__ == "__main__":
 

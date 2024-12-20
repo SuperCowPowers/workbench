@@ -1,11 +1,11 @@
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model
-from sageworks.api.endpoint import Endpoint
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model
+from workbench.api.endpoint import Endpoint
 
 # Grab an existing Endpoint
 endpoint = Endpoint("abalone-regression-end")
 
-# SageWorks has full ML Pipeline provenance, so we can backtrack the inputs,
+# Workbench has full ML Pipeline provenance, so we can backtrack the inputs,
 # get a DataFrame of data (not used for training) and run inference
 model = Model(endpoint.get_input())
 fs = FeatureSet(model.get_input())

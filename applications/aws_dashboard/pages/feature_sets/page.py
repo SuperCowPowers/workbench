@@ -1,17 +1,17 @@
-"""DataSources:  A SageWorks Web Interface to view, interact, and manage Data Sources"""
+"""DataSources:  A Workbench Web Interface to view, interact, and manage Data Sources"""
 
 from dash import register_page
 
-# SageWorks Imports
-from sageworks.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
-from sageworks.web_interface.components.plugins.ag_table import AGTable
-from sageworks.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
+# Workbench Imports
+from workbench.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
+from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
 
 # Local Imports
 from .layout import feature_sets_layout
 from . import callbacks
 
-register_page(__name__, path="/feature_sets", name="SageWorks - Feature Sets")
+register_page(__name__, path="/feature_sets", name="Workbench - Feature Sets")
 
 # Create a table to display the Feature Sets
 feature_sets_table = AGTable()
@@ -49,7 +49,7 @@ components = {
 # Set up our layout (Dash looks for a var called layout)
 layout = feature_sets_layout(**components)
 
-# Grab a view that gives us a summary of the FeatureSets in SageWorks
+# Grab a view that gives us a summary of the FeatureSets in Workbench
 feature_set_view = FeatureSetsPageView()
 
 # Callback for anything we want to happen on page load

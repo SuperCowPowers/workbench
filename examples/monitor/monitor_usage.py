@@ -1,6 +1,6 @@
 from pprint import pprint
-from sageworks.api.monitor import Monitor
-from sageworks.api.endpoint import Endpoint
+from workbench.api.monitor import Monitor
+from workbench.api.endpoint import Endpoint
 
 # Construct a Monitor Class in one of Two Ways
 mon = Endpoint("abalone-regression-end-rt").get_monitor()

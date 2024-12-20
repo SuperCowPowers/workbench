@@ -1,8 +1,8 @@
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from sageworks.api import DataSource, FeatureSet, Model, ModelType
-from sageworks.api import Meta
-from sageworks.utils.test_data_generator import TestDataGenerator
+from workbench.api import DataSource, FeatureSet, Model, ModelType
+from workbench.api import Meta
+from workbench.utils.test_data_generator import TestDataGenerator
 
 parallel_jobs = 16
 
@@ -14,7 +14,7 @@ expected_artifacts = {
 }
 
 # Set up logging
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 log.setLevel(logging.DEBUG)
 
 

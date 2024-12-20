@@ -3,9 +3,9 @@
 from dash import html, dcc, dash_table
 import dash_bootstrap_components as dbc
 
-# SageWorks Imports
-import sageworks
-from sageworks.utils.config_manager import ConfigManager
+# Workbench Imports
+import workbench
+from workbench.utils.config_manager import ConfigManager
 
 
 def main_layout(
@@ -16,7 +16,7 @@ def main_layout(
     update_rate: int = 60,
 ) -> html.Div:
     """Main Layout for the Dashboard"""
-    sageworks_version = sageworks.__version__.split("+")[0].strip()
+    workbench_version = workbench.__version__.split("+")[0].strip()
     cm = ConfigManager()
     license_id = cm.get_license_id()
 
@@ -45,7 +45,7 @@ def main_layout(
                             html.H2(
                                 [
                                     html.A(
-                                        "SageWorks Dashboard ",
+                                        "Workbench Dashboard ",
                                         href="/status",
                                         style={
                                             "textDecoration": "none",
@@ -53,7 +53,7 @@ def main_layout(
                                         },
                                     ),
                                     html.Span(
-                                        f"{sageworks_version}",
+                                        f"{workbench_version}",
                                         className="orange-text",
                                         style={"fontSize": 15},
                                     ),

@@ -1,13 +1,13 @@
-# SageWorks Base Docker Build and Push
+# Workbench Base Docker Build and Push
 
 Notes and information on how to do the Docker Builds and Push to AWS ECR.
 
-### Update SageWorks Version
+### Update Workbench Version
 ```
 vi Dockerfile
 
-# Install latest Sageworks
-RUN pip install --no-cache-dir 'sageworks[ml-tool,chem]'==0.7.0
+# Install latest Workbench
+RUN pip install --no-cache-dir 'workbench[ml-tool,chem]'==0.7.0
 ```
 
 ### Build the Docker Image
@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir 'sageworks[ml-tool,chem]'==0.7.0
 
 ```
 docker build --build-arg SAGEWORKS_CONFIG=open_source_config.json -t \
-sageworks_base:v0_7_0_amd64 --platform linux/amd64 .
+workbench_base:v0_7_0_amd64 --platform linux/amd64 .
 ```
 
 ### Test the Image Locally
@@ -29,31 +29,31 @@ scp_sandbox_admin | docker login --username AWS \
 ```
 ### Tag/Push the Image to AWS ECR
 ```
-docker tag sageworks_base:v0_7_0_amd64 \
-public.ecr.aws/m6i5k1r2/sageworks_base:v0_7_0_amd64
+docker tag workbench_base:v0_7_0_amd64 \
+public.ecr.aws/m6i5k1r2/workbench_base:v0_7_0_amd64
 ```
 ```
-docker push public.ecr.aws/m6i5k1r2/sageworks_base:v0_7_0_amd64
+docker push public.ecr.aws/m6i5k1r2/workbench_base:v0_7_0_amd64
 ```
 
 ### Update the 'latest' tag
 ```
-docker tag public.ecr.aws/m6i5k1r2/sageworks_base:v0_7_0_amd64 \
-public.ecr.aws/m6i5k1r2/sageworks_base:latest
+docker tag public.ecr.aws/m6i5k1r2/workbench_base:v0_7_0_amd64 \
+public.ecr.aws/m6i5k1r2/workbench_base:latest
 ```
 ```
-docker push public.ecr.aws/m6i5k1r2/sageworks_base:latest
+docker push public.ecr.aws/m6i5k1r2/workbench_base:latest
 ```
 
 ### Update the 'stable' tag
 This is obviously only when you want to mark a version as stable. Meaning that it seems to 'be good and stable (ish)' :)
 
 ```
-docker tag public.ecr.aws/m6i5k1r2/sageworks_base:v0_7_0_amd64 \
-public.ecr.aws/m6i5k1r2/sageworks_base:stable
+docker tag public.ecr.aws/m6i5k1r2/workbench_base:v0_7_0_amd64 \
+public.ecr.aws/m6i5k1r2/workbench_base:stable
 ```
 ```
-docker push public.ecr.aws/m6i5k1r2/sageworks_base:stable
+docker push public.ecr.aws/m6i5k1r2/workbench_base:stable
 ```
 
 ### Test the ECR Image

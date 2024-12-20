@@ -1,4 +1,4 @@
-"""Pipelines:  A SageWorks Web Interface to view and interact with Pipelines"""
+"""Pipelines:  A Workbench Web Interface to view and interact with Pipelines"""
 
 from dash import register_page
 
@@ -6,17 +6,17 @@ from dash import register_page
 from .layout import pipelines_layout
 from . import callbacks
 
-# SageWorks Imports
-from sageworks.web_interface.components.plugins import pipeline_details, ag_table
-from sageworks.web_interface.components.plugin_interface import PluginPage
-from sageworks.web_interface.page_views.pipelines_page_view import PipelinesPageView
-from sageworks.utils.plugin_manager import PluginManager
+# Workbench Imports
+from workbench.web_interface.components.plugins import pipeline_details, ag_table
+from workbench.web_interface.components.plugin_interface import PluginPage
+from workbench.web_interface.page_views.pipelines_page_view import PipelinesPageView
+from workbench.utils.plugin_manager import PluginManager
 
 # Register this page with Dash
 register_page(
     __name__,
     path="/pipelines",
-    name="SageWorks - Pipelines",
+    name="Workbench - Pipelines",
 )
 
 # Create a table to display the pipelines
@@ -42,7 +42,7 @@ for plugin in plugins:
 # Set up our layout (Dash looks for a var called layout)
 layout = pipelines_layout(**components)
 
-# Grab a view that gives us a summary of the Pipelines in SageWorks
+# Grab a view that gives us a summary of the Pipelines in Workbench
 pipelines_view = PipelinesPageView()
 
 # Callback for anything we want to happen on page load

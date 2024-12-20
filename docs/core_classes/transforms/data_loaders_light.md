@@ -4,4 +4,4 @@
 
 These DataLoader Classes are intended to load smaller dataset into AWS. If you have large data please see [DataLoaders Heavy](data_loaders_heavy.md)
 
-::: sageworks.core.transforms.data_loaders.light
+::: workbench.core.transforms.data_loaders.light

@@ -1,21 +1,21 @@
-"""Status:  A SageWorks Web Interface to view Status Details about the SageWorks Dashboard"""
+"""Status:  A Workbench Web Interface to view Status Details about the Workbench Dashboard"""
 
 from dash import register_page
 from dash import html
 
-# SageWorks Imports
-from sageworks.web_interface.components.plugins import dashboard_status
-from sageworks.utils.config_manager import ConfigManager
+# Workbench Imports
+from workbench.web_interface.components.plugins import dashboard_status
+from workbench.utils.config_manager import ConfigManager
 
 
 # Register this page with Dash
 register_page(
     __name__,
     path="/status",
-    name="SageWorks - Dashboard Status",
+    name="Workbench - Dashboard Status",
 )
 
-# Grab the SageWorks ConfigManager
+# Grab the Workbench ConfigManager
 cm = ConfigManager()
 config_details = cm.get_all_config()
 
@@ -34,7 +34,7 @@ for (component_id, prop), value in zip(markdown_details.properties, updated_prop
 # Simple layout for the license details
 layout = html.Div(
     children=[
-        html.H2("SageWorks Dashboard Status"),
+        html.H2("Workbench Dashboard Status"),
         details_component,
     ],
     style={"padding": "12px 30px 30px 30px"},

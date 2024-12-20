@@ -12,20 +12,20 @@ import sys
 import time
 import logging
 from pathlib import Path
-from sageworks.core.artifacts.feature_set_core import FeatureSetCore
-from sageworks.core.artifacts.model_core import ModelCore, ModelType
-from sageworks.core.artifacts.endpoint_core import EndpointCore
-from sageworks.core.transforms.features_to_model.features_to_model import FeaturesToModel
-from sageworks.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
+from workbench.core.artifacts.feature_set_core import FeatureSetCore
+from workbench.core.artifacts.model_core import ModelCore, ModelType
+from workbench.core.artifacts.endpoint_core import EndpointCore
+from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
+from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 
 # Setup the logger
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":
 
     # Get the path to the dataset in the repository data directory
-    abalone_data_path = Path(sys.modules["sageworks"].__file__).parent.parent.parent / "data" / "abalone.csv"
+    abalone_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "abalone.csv"
 
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False

@@ -6,14 +6,14 @@ from dash.exceptions import PreventUpdate
 from urllib.parse import urlparse, parse_qs
 
 
-# SageWorks Imports
-from sageworks.web_interface.page_views.models_page_view import ModelsPageView
-from sageworks.web_interface.components import model_plot
-from sageworks.web_interface.components.plugins.ag_table import AGTable
-from sageworks.cached.cached_model import CachedModel
+# Workbench Imports
+from workbench.web_interface.page_views.models_page_view import ModelsPageView
+from workbench.web_interface.components import model_plot
+from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.cached.cached_model import CachedModel
 
-# Get the SageWorks logger
-log = logging.getLogger("sageworks")
+# Get the Workbench logger
+log = logging.getLogger("workbench")
 
 
 def on_page_load():

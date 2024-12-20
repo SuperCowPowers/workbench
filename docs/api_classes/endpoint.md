@@ -3,7 +3,7 @@
 !!! tip inline end "Endpoint Examples"
     Examples of using the Endpoint class are listed at the bottom of this page [Examples](#examples).
     
-::: sageworks.api.endpoint
+::: workbench.api.endpoint
 
 
 ## Examples
@@ -11,14 +11,14 @@
 **Run Inference on an Endpoint**
 
 ```py title="endpoint_inference.py"
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model
-from sageworks.api.endpoint import Endpoint
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model
+from workbench.api.endpoint import Endpoint
 
 # Grab an existing Endpoint
 endpoint = Endpoint("abalone-regression-end")
 
-# SageWorks has full ML Pipeline provenance, so we can backtrack the inputs,
+# Workbench has full ML Pipeline provenance, so we can backtrack the inputs,
 # get a DataFrame of data (not used for training) and run inference
 model = Model(endpoint.get_input())
 fs = FeatureSet(model.get_input())
@@ -55,10 +55,10 @@ Processing...
 **Endpoint Details**
 
 !!!tip inline end "The details() method"
-    The `detail()` method on the Endpoint class provides a lot of useful information. All of the SageWorks classes have a `details()` method try it out!
+    The `detail()` method on the Endpoint class provides a lot of useful information. All of the Workbench classes have a `details()` method try it out!
 
 ```py title="endpoint_details.py"
-from sageworks.api.endpoint import Endpoint
+from workbench.api.endpoint import Endpoint
 from pprint import pprint
 
 # Get Endpoint and print out it's details
@@ -91,7 +91,7 @@ pprint(endpoint.details())
 497                     13    7.779886
 498                     12   14.718514
 499                     13   10.637320
- 'sageworks_tags': ['abalone', 'regression'],
+ 'workbench_tags': ['abalone', 'regression'],
  'status': 'InService',
  'uuid': 'abalone-regression-end',
  'variant': 'AllTraffic'}
@@ -100,12 +100,12 @@ pprint(endpoint.details())
 **Endpoint Metrics**
 
 ```py title="endpoint_metrics.py"
-from sageworks.api.endpoint import Endpoint
+from workbench.api.endpoint import Endpoint
 
 # Grab an existing Endpoint
 endpoint = Endpoint("abalone-regression-end")
 
-# SageWorks tracks both Model performance and Endpoint Metrics
+# Workbench tracks both Model performance and Endpoint Metrics
 model_metrics = endpoint.details()["model_metrics"]
 endpoint_metrics = endpoint.endpoint_metrics()
 print(model_metrics)
@@ -135,14 +135,14 @@ print(endpoint_metrics)
 ```
 
 
-## SageWorks UI
-Running these few lines of code creates and deploys an AWS Endpoint. The Endpoint artifacts can be viewed in the Sagemaker Console/Notebook interfaces or in the SageWorks Dashboard UI. SageWorks will monitor the endpoint, plot invocations, latencies, and tracks error metrics.
+## Workbench UI
+Running these few lines of code creates and deploys an AWS Endpoint. The Endpoint artifacts can be viewed in the Sagemaker Console/Notebook interfaces or in the Workbench Dashboard UI. Workbench will monitor the endpoint, plot invocations, latencies, and tracks error metrics.
 
 <figure>
-<img alt="sageworks_endpoints" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/b5eab741-2c23-4c5e-9495-15fd3ea8155c">
-<figcaption>SageWorks Dashboard: Endpoints</figcaption>
+<img alt="workbench_endpoints" src="https://github.com/SuperCowPowers/workbench/assets/4806709/b5eab741-2c23-4c5e-9495-15fd3ea8155c">
+<figcaption>Workbench Dashboard: Endpoints</figcaption>
 </figure>
 
 
 !!! note "Not Finding a particular method?"
-    The SageWorks API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [SageWorks Core Classes](../core_classes/overview.md)
+    The Workbench API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [Workbench Core Classes](../core_classes/overview.md)

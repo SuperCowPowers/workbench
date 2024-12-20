@@ -1,10 +1,10 @@
 # AWS Service Limits
 !!!tip inline end "Need Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
-In general SageWorks works well, out of the box, with the standard set of limits for AWS accounts. SageWorks supports throttling, timeouts, and a broad set of AWS error handling routines for general purpose usage.
+In general Workbench works well, out of the box, with the standard set of limits for AWS accounts. Workbench supports throttling, timeouts, and a broad set of AWS error handling routines for general purpose usage.
 
-When using SageWorks for **large scale deployments** there are a set of AWS Service limits that will need to be increased.
+When using Workbench for **large scale deployments** there are a set of AWS Service limits that will need to be increased.
 
 ## ServerLess Endpoints
 There are two serverless endpoint quotas that will need to be adjusted.
@@ -26,6 +26,6 @@ Unfortunately this one is not adjustable through the AWS Service Quota console a
 ## Questions?
 <img align="right" src="../../images/scp.png" width="180">
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 

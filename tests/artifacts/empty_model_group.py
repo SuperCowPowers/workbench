@@ -2,8 +2,8 @@
 
 from pprint import pprint
 
-# SageWorks Imports
-from sageworks.api.model import Model, ModelType
+# Workbench Imports
+from workbench.api.model import Model, ModelType
 
 
 model = Model("empty-model-group")

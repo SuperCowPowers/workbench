@@ -1,5 +1,5 @@
 # Deploying Plugins with the Dashboard
-Notes and information on how to include plugins with your SageWorks Dashboard.
+Notes and information on how to include plugins with your Workbench Dashboard.
 
 - **ECR:** AWS Elastic Container Registry (stores Docker images)
 - **ECS:** AWS Elastic Container Service (uses Docker images)
@@ -13,18 +13,18 @@ Notes and information on how to include plugins with your SageWorks Dashboard.
 If you don't already have a Dockerfile, here's one to get you started, just place this into your repo/directory that has the plugins. 
 
 ```
-# Pull base sageworks dashboard image with specific tag (pick latest or stable)
-FROM public.ecr.aws/m6i5k1r2/sageworks_dashboard:latest
+# Pull base workbench dashboard image with specific tag (pick latest or stable)
+FROM public.ecr.aws/m6i5k1r2/workbench_dashboard:latest
 
 # Copy the plugin files into the Dashboard plugins dir
-COPY ./sageworks_plugins /app/sageworks_plugins
-ENV SAGEWORKS_PLUGINS=/app/sageworks_plugins
+COPY ./workbench_plugins /app/workbench_plugins
+ENV SAGEWORKS_PLUGINS=/app/workbench_plugins
 ```
 
 **Note:** Your plugins directory should looks like this
 
 ```
-sageworks_plugins/
+workbench_plugins/
    pages/
       my_plugin_page.py
       ...
@@ -39,11 +39,11 @@ sageworks_plugins/
 ### Build it
 
 ```
-docker build -t my_sageworks_with_plugins:v1_0 --platform linux/amd64 .
+docker build -t my_workbench_with_plugins:v1_0 --platform linux/amd64 .
 ```
 
 ### Test the Image Locally
-You'll need to use AWS Credentials for this, it's a bit complicated, please contact SageWorks Support [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+You'll need to use AWS Credentials for this, it's a bit complicated, please contact Workbench Support [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 ### Login to your ECR
 Okay.. so after testing locally you're ready to push the Docker image (with Plugins) to the your ECR.
@@ -63,12 +63,12 @@ aws ecr get-login-password --region us-east-1 --profile <aws_profile> \
 
 ### Tag/Push the Image to AWS ECR
 ```
-docker tag my_sageworks_with_plugins:v1_0 \
-<aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/sageworks_with_plugins:v1_0
+docker tag my_workbench_with_plugins:v1_0 \
+<aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/workbench_with_plugins:v1_0
 ```
 ```
 docker push \
-<aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/sageworks_with_plugins:v1_0
+<aws_account_id>.dkr.ecr.us-east-1.amazonaws.com/workbench_with_plugins:v1_0
 ```
 
 ## Deploying Plugin Docker Image to AWS
@@ -79,7 +79,7 @@ Okay now that you have your plugin Docker Image you can deploy to your AWS accou
 This is cheesy but just copy all the CDK files into your repo/directory.
 
 ```
-cp -r sageworks/aws_setup/sageworks_dashboard_full /my/sageworks/stuff/
+cp -r workbench/aws_setup/workbench_dashboard_full /my/workbench/stuff/
 ```
 
 **Change the Docker Image to Deploy**
@@ -88,13 +88,13 @@ Now open up the `app.py` file and change this line to your Docker Image
 
 ```
 # When you want a different docker image change this line
-dashboard_image = "public.ecr.aws/m6i5k1r2/sageworks_dashboard:v0_8_3_amd64"
+dashboard_image = "public.ecr.aws/m6i5k1r2/workbench_dashboard:v0_8_3_amd64"
 ```
 
 Make sure your `SAGEWORKS_CONFIG` is properly set, and run the following commands:
 
 ```
-export SAGEWORKS_CONFIG=/Users/<user_name>/.sageworks/sageworks_config.json
+export SAGEWORKS_CONFIG=/Users/<user_name>/.workbench/workbench_config.json
 cdk diff
 cdk deploy
 ```
@@ -110,5 +110,5 @@ cdk deploy
 
 
 
-### Note on SageWorks Configuration
-All Configuration is managed by the CDK Python Script and the `SAGEWORKS_CONFIG` ENV var. If you want to change things like `REDIS_HOST` or `SAGEWORKS_BUCKET` you should do that with a `sageworks.config` file and then point the `SAGEWORKS_CONFIG` ENV var to that file.
+### Note on Workbench Configuration
+All Configuration is managed by the CDK Python Script and the `SAGEWORKS_CONFIG` ENV var. If you want to change things like `REDIS_HOST` or `SAGEWORKS_BUCKET` you should do that with a `workbench.config` file and then point the `SAGEWORKS_CONFIG` ENV var to that file.

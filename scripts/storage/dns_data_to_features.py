@@ -1,8 +1,8 @@
 """DNS Data To Features: Custom Script
    This is a custom script that knows about DNS data specifics"""
 
-# SageWorks Imports
-from sageworks.core.transforms.data_to_features.heavy.chunk.data_to_features_chunk import (
+# Workbench Imports
+from workbench.core.transforms.data_to_features.heavy.chunk.data_to_features_chunk import (
     DataToFeaturesChunk,
 )
 

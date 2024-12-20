@@ -3,7 +3,7 @@
 !!! tip inline end "Monitor Examples"
     Examples of using the Monitor class are listed at the bottom of this page [Examples](#examples).
     
-::: sageworks.api.monitor
+::: workbench.api.monitor
 
 
 ## Examples
@@ -11,7 +11,7 @@
 **Initial Setup of the Endpoint Monitor**
 
 ```py title="monitor_setup.py"
-from sageworks.api.monitor import Monitor
+from workbench.api.monitor import Monitor
 
 # Create an Endpoint Monitor Class and perform initial Setup
 endpoint_name = "abalone-regression-end-rt"
@@ -30,8 +30,8 @@ mon.create_monitoring_schedule(schedule="hourly")
 **Pulling Information from an Existing Monitor**
 
 ```py title="monitor_usage.py"
-from sageworks.api.monitor import Monitor
-from sageworks.api.endpoint import Endpoint
+from workbench.api.monitor import Monitor
+from workbench.api.endpoint import Endpoint
 
 # Construct a Monitor Class in one of Two Ways
 mon = Endpoint("abalone-regression-end-rt").get_monitor()
@@ -58,14 +58,14 @@ output_df.head()
 ```
 
 
-## SageWorks UI
-Running these few lines of code creates and deploys an AWS Endpoint Monitor. The Monitor status and outputs can be viewed in the Sagemaker Console interfaces or in the SageWorks Dashboard UI. SageWorks will use the monitor to track various metrics including Data Quality, Model Bias, etc...
+## Workbench UI
+Running these few lines of code creates and deploys an AWS Endpoint Monitor. The Monitor status and outputs can be viewed in the Sagemaker Console interfaces or in the Workbench Dashboard UI. Workbench will use the monitor to track various metrics including Data Quality, Model Bias, etc...
 
 <figure>
-<img alt="sageworks_endpoints" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/b5eab741-2c23-4c5e-9495-15fd3ea8155c">
-<figcaption>SageWorks Dashboard: Endpoints</figcaption>
+<img alt="workbench_endpoints" src="https://github.com/SuperCowPowers/workbench/assets/4806709/b5eab741-2c23-4c5e-9495-15fd3ea8155c">
+<figcaption>Workbench Dashboard: Endpoints</figcaption>
 </figure>
 
 
 !!! note "Not Finding a particular method?"
-    The SageWorks API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [SageWorks Core Classes](../core_classes/overview.md)
+    The Workbench API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [Workbench Core Classes](../core_classes/overview.md)

@@ -1,5 +1,5 @@
-from sageworks.api import DFStore
-from sageworks.utils.pandas_utils import compare_dataframes
+from workbench.api import DFStore
+from workbench.utils.pandas_utils import compare_dataframes
 
 # Initialize DFStore and load dataframes
 df_store = DFStore()

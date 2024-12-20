@@ -3,13 +3,13 @@ import os
 import aws_cdk as cdk
 
 # TODO Make sure this import works in new folder structure
-from sageworks_image_update_stack import SageworksImageUpdateStack
+from workbench_image_update_stack import WorkbenchImageUpdateStack
 
 
 app = cdk.App()
-SageworksImageUpdateStack(
+WorkbenchImageUpdateStack(
     app,
-    "SageworksImageUpdate",
+    "WorkbenchImageUpdate",
     # If you don't specify 'env', this stack will be environment-agnostic.
     # Account/Region-dependent features and context lookups will not work,
     # but a single synthesized template can be deployed anywhere.

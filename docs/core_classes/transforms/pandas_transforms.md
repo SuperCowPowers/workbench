@@ -3,7 +3,7 @@
 !!! tip inline end "API Classes"
     The [API Classes](../../api_classes/overview.md) will often provide helpful methods that give you a DataFrame (data_source.query() for instance), so always check out the [API Classes](../../api_classes/overview.md) first.
 
-These Transforms will give you the ultimate in customization and flexibility when creating AWS Machine Learning Pipelines. Grab a Pandas DataFrame from a DataSource or FeatureSet process in whatever way for your use case and simply create another Sageworks DataSource or FeatureSet from the resulting DataFrame.
+These Transforms will give you the ultimate in customization and flexibility when creating AWS Machine Learning Pipelines. Grab a Pandas DataFrame from a DataSource or FeatureSet process in whatever way for your use case and simply create another Workbench DataSource or FeatureSet from the resulting DataFrame.
 
 **Lots of Options:**
 
@@ -16,4 +16,4 @@ These Transforms will give you the ultimate in customization and flexibility whe
 - Get Creative!
 
 
-::: sageworks.core.transforms.pandas_transforms
+::: workbench.core.transforms.pandas_transforms

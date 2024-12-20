@@ -1,18 +1,18 @@
 !!! tip inline end "Visibility and Control"
-    The SageWorks REPL provides AWS ML Pipeline visibility just like the [SageWorks Dashboard](../aws_setup/dashboard_stack.md) but also provides control over the creation, modification, and deletion of artifacts through the Python API.
+    The Workbench REPL provides AWS ML Pipeline visibility just like the [Workbench Dashboard](../aws_setup/dashboard_stack.md) but also provides control over the creation, modification, and deletion of artifacts through the Python API.
 
-The SageWorks REPL is a customized iPython shell. It provides tailored functionality for easy interaction with SageWorks objects and since it's based on iPython developers will feel right at home using autocomplete, history, help, etc. Both easy and powerful, the SageWorks REPL puts control of AWS ML Pipelines at your fingertips.
+The Workbench REPL is a customized iPython shell. It provides tailored functionality for easy interaction with Workbench objects and since it's based on iPython developers will feel right at home using autocomplete, history, help, etc. Both easy and powerful, the Workbench REPL puts control of AWS ML Pipelines at your fingertips.
 
 ### Installation
-`pip install sageworks`
+`pip install workbench`
 
 ### Usage
-Just type `sageworks` at the command line and the SageWorks shell will spin up and provide a command view of your AWS Machine Learning Pipelines.
+Just type `workbench` at the command line and the Workbench shell will spin up and provide a command view of your AWS Machine Learning Pipelines.
 
-At startup the SageWorks shell, will connect to your AWS Account and create a summary of the Machine Learning artifacts currently residing on the account.
+At startup the Workbench shell, will connect to your AWS Account and create a summary of the Machine Learning artifacts currently residing on the account.
 
-<img alt="sageworks_repl" style="float: right; width: 450px; padding-left: 5px;"
-src="https://github.com/SuperCowPowers/sageworks/assets/4806709/10a969ed-3415-4d9f-ad0d-ac23706e6202">
+<img alt="workbench_repl" style="float: right; width: 450px; padding-left: 5px;"
+src="https://github.com/SuperCowPowers/workbench/assets/4806709/10a969ed-3415-4d9f-ad0d-ac23706e6202">
 
 **Available Commands:**
 
@@ -38,10 +38,10 @@ m.details()
 
 ## Additional Resources
 
-- Setting up SageWorks on your AWS Account: [AWS Setup](../aws_setup/core_stack.md)
-- Using SageWorks for ML Pipelines: [SageWorks API Classes](../api_classes/overview.md)
+- Setting up Workbench on your AWS Account: [AWS Setup](../aws_setup/core_stack.md)
+- Using Workbench for ML Pipelines: [Workbench API Classes](../api_classes/overview.md)
 
 <img align="right" src="../images/scp.png" width="180">
 
-- SageWorks Core Classes: [Core Classes](../core_classes/overview.md)
+- Workbench Core Classes: [Core Classes](../core_classes/overview.md)
 - Consulting Available: [SuperCowPowers LLC](https://www.supercowpowers.com)

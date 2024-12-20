@@ -1,10 +1,10 @@
-"""This Script Deletes the SageWorks Artifacts used for the tests"""
+"""This Script Deletes the Workbench Artifacts used for the tests"""
 
 import time
-from sageworks.api.data_source import DataSource
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model
-from sageworks.api.endpoint import Endpoint
+from workbench.api.data_source import DataSource
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model
+from workbench.api.endpoint import Endpoint
 
 
 if __name__ == "__main__":

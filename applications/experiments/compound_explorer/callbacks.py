@@ -5,9 +5,9 @@ import dash
 from dash import Dash, html, Input, Output, State
 import dash_bootstrap_components as dbc
 
-# SageWorks Imports
-from sageworks.web_interface.page_views.data_sources_page_view import DataSourcesPageView
-from sageworks.web_interface.components import (
+# Workbench Imports
+from workbench.web_interface.page_views.data_sources_page_view import DataSourcesPageView
+from workbench.web_interface.components import (
     table,
     compound_details,
     violin_plots,

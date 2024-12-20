@@ -9,10 +9,10 @@ from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
 from sagemaker import Predictor
 
-# SageWorks imports
-from sageworks.api import FeatureSet, Model, Endpoint
+# Workbench imports
+from workbench.api import FeatureSet, Model, Endpoint
 
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 
 def plot_timings(timings):
@@ -20,8 +20,8 @@ def plot_timings(timings):
     x = [1, 10, 100, 1000, 10000]
     plt.figure(figsize=(10, 6))
 
-    plt.plot(x, timings["SageWorks Serverless"], label="SageWorks Serverless", color="blue")
-    plt.plot(x, timings["SageWorks Realtime"], label="SageWorks Realtime", color="green")
+    plt.plot(x, timings["Workbench Serverless"], label="Workbench Serverless", color="blue")
+    plt.plot(x, timings["Workbench Realtime"], label="Workbench Realtime", color="green")
     plt.plot(x, timings["AWS Serverless"], label="AWS Serverless", color="red")
     plt.plot(x, timings["AWS Realtime"], label="AWS Realtime", color="orange")
 
@@ -49,8 +49,8 @@ if __name__ == "__main__":
 
     # Timing results storage
     timings = {
-        "SageWorks Serverless": [],
-        "SageWorks Realtime": [],
+        "Workbench Serverless": [],
+        "Workbench Realtime": [],
         "AWS Serverless": [],
         "AWS Realtime": [],
     }
@@ -58,11 +58,11 @@ if __name__ == "__main__":
     # Get the endpoints
     start_time = time.time()
     serverless = Endpoint("test-timing-serverless")
-    print(f"SageWorks Serverless Endpoint: Construction Time: {time.time() - start_time}")
+    print(f"Workbench Serverless Endpoint: Construction Time: {time.time() - start_time}")
 
     start_time = time.time()
     realtime = Endpoint("test-timing-realtime")
-    print(f"SageWorks Realtime Endpoint: Construction Time: {time.time() - start_time}")
+    print(f"Workbench Realtime Endpoint: Construction Time: {time.time() - start_time}")
 
     # Backtrace the endpoints to get the FeatureSet
     fs = FeatureSet(Model(serverless.get_input()).get_input())
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # Done with the data pull (we're not including data pull as part of the timing)
     #
 
-    # Now we're going to skip any SageWorks code and just use the AWS SDK
+    # Now we're going to skip any Workbench code and just use the AWS SDK
     print("\n*** Timing Inference using JUST the AWS SDK ***")
 
     # Predictor creation
@@ -116,7 +116,7 @@ if __name__ == "__main__":
         timings["AWS Realtime"].append(aws_realtime_time)
         print(f"\tRealtime Inference Time: {aws_realtime_time}")
 
-    print("\n*** Timing Inference using SageWorks API ***")
+    print("\n*** Timing Inference using Workbench API ***")
 
     # Collect inference times on 1, 10, 100, 1000, and 10000 rows
     for i in [1, 10, 100, 1000, 10000]:
@@ -125,13 +125,13 @@ if __name__ == "__main__":
         start_time = time.time()
         serverless.fast_inference(data_sample)
         serverless_time = time.time() - start_time
-        timings["SageWorks Serverless"].append(serverless_time)
+        timings["Workbench Serverless"].append(serverless_time)
         print(f"\tServerless Inference Time: {serverless_time}")
 
         start_time = time.time()
         realtime.fast_inference(data_sample)
         realtime_time = time.time() - start_time
-        timings["SageWorks Realtime"].append(realtime_time)
+        timings["Workbench Realtime"].append(realtime_time)
         print(f"\tRealtime Inference Time: {realtime_time}")
 
     # Plot timings if the flag is set

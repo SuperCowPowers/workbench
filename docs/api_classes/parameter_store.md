@@ -1,29 +1,29 @@
-# SageWorks Parameter Storage
+# Workbench Parameter Storage
 
 !!! tip inline end "Examples"
     Examples of using the Parameter Storage class are listed at the bottom of this page [Examples](#examples).
     
-::: sageworks.api.parameter_store
+::: workbench.api.parameter_store
 
 ## Bypassing the 4k Limit
-AWS Parameter Storage has a 4k limit on values, the SageWorks class bypasses this limit by detecting large values (strings, data, whatever) and compressing those on the fly. The decompressing is also handled automatically, so for larger data simply use the `add()` and `get()` methods and it will all **just work**.
+AWS Parameter Storage has a 4k limit on values, the Workbench class bypasses this limit by detecting large values (strings, data, whatever) and compressing those on the fly. The decompressing is also handled automatically, so for larger data simply use the `add()` and `get()` methods and it will all **just work**.
 
 ## Examples
 These example show how to use the `ParameterStore()` class to list, add, and get parameters from the AWS Parameter Store Service.
 
-!!!tip "SageWorks REPL"
-    If you'd like to experiment with listing, adding, and getting data with the `ParameterStore()` class, you can spin up the SageWorks REPL, use the class and test out all the methods. Try it out! [SageWorks REPL](../repl/index.md)
+!!!tip "Workbench REPL"
+    If you'd like to experiment with listing, adding, and getting data with the `ParameterStore()` class, you can spin up the Workbench REPL, use the class and test out all the methods. Try it out! [Workbench REPL](../repl/index.md)
 
-```py title="Using SageWorks REPL"
+```py title="Using Workbench REPL"
 params = ParameterStore()
 
 # List Parameters
 params.list()
 
-['/sageworks/abalone_info',
- '/sageworks/my_data',
- '/sageworks/test',
- '/sageworks/pipelines/my_pipeline']
+['/workbench/abalone_info',
+ '/workbench/my_data',
+ '/workbench/test',
+ '/workbench/pipelines/my_pipeline']
  
 # Add Key
 params.upsert("key", "value")

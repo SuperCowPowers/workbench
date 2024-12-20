@@ -1,12 +1,12 @@
-"""SageWorks Dashboard: A SageWorks Web Application for viewing and managing SageWorks Artifacts"""
+"""Workbench Dashboard: A Workbench Web Application for viewing and managing Workbench Artifacts"""
 
 from dash import Dash, html, dcc, page_container
 import dash_bootstrap_components as dbc
 from dash import page_registry
 
-# SageWorks Imports
-from sageworks.utils.plugin_manager import PluginManager
-from sageworks.utils.theme_manager import ThemeManager
+# Workbench Imports
+from workbench.utils.plugin_manager import PluginManager
+from workbench.utils.theme_manager import ThemeManager
 
 
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
@@ -21,7 +21,7 @@ print(css_files)
 # Create the Dash app
 app = Dash(
     __name__,
-    title="SageWorks Dashboard",
+    title="Workbench Dashboard",
     use_pages=True,
     external_stylesheets=css_files,
 )

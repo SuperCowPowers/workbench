@@ -1,6 +1,6 @@
-# SageWorks Blogs
+# Workbench Blogs
 !!! tip inline end "Just Getting Started?"
-    The SageWorks Blogs is a great way to see what's possible with SageWorks. Also if you're ready to jump in the [API Classes](../api_classes/overview.md) will give you details on the SageWorks ML Pipeline Classes.
+    The Workbench Blogs is a great way to see what's possible with Workbench. Also if you're ready to jump in the [API Classes](../api_classes/overview.md) will give you details on the Workbench ML Pipeline Classes.
 
 ## Latest Blogs
 
@@ -16,4 +16,4 @@ These blogs are odd corner cases that we stumbled into and discovered some inter
 ## Questions?
 <img align="right" src="../../images/scp.png" width="180">
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 

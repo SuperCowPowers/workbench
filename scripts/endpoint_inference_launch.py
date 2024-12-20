@@ -8,9 +8,9 @@ import logging
 import boto3
 import sagemaker
 
-# SageWorks Imports
+# Workbench Imports
 os.environ["SAGEWORKS_SKIP_LOGGING"] = "True"  # For extra speed :p
-from sageworks.utils.fast_inference import fast_inference
+from workbench.utils.fast_inference import fast_inference
 
 
 # Set up logging
@@ -23,24 +23,24 @@ def get_sagemaker_session() -> sagemaker.Session:
     session = sagemaker.Session()
 
     # Get the SageMaker role
-    role = "SageWorks-ExecutionRole"
+    role = "Workbench-ExecutionRole"
 
     # Attach the role to the session
     boto3.client("sts").assume_role(
         RoleArn=f'arn:aws:iam::{session.boto_session.client("sts").get_caller_identity()["Account"]}:role/{role}',
-        RoleSessionName="SageWorksSession",
+        RoleSessionName="WorkbenchSession",
     )
 
     return session
 
 
 def download_data(endpoint_name: str):
-    """Download the data SageWorks FeatureSet
+    """Download the data Workbench FeatureSet
 
     Args:
         endpoint_name (str): The name of the Endpoint
     """
-    from sageworks.api import FeatureSet, Model, Endpoint
+    from workbench.api import FeatureSet, Model, Endpoint
 
     fs = FeatureSet(Model(Endpoint(endpoint_name).get_input()).get_input())
     df = fs.pull_dataframe()

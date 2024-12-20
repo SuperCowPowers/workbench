@@ -1,19 +1,19 @@
 # Model
 
 !!! tip inline end "Model Examples"
-    Examples of using the Model Class are in the [Examples](#examples) section at the bottom of this page. AWS Model setup and deployment are quite complicated to do manually but the SageWorks Model Class makes it a breeze!
+    Examples of using the Model Class are in the [Examples](#examples) section at the bottom of this page. AWS Model setup and deployment are quite complicated to do manually but the Workbench Model Class makes it a breeze!
 
-::: sageworks.api.model
+::: workbench.api.model
 
 
 ## Examples
-All of the SageWorks Examples are in the Sageworks Repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
+All of the Workbench Examples are in the Workbench Repository under the `examples/` directory. For a full code listing of any example please visit our [Workbench Examples](https://github.com/SuperCowPowers/workbench/blob/main/examples)
 
 **Create a Model from a FeatureSet**
 
 ```py title="featureset_to_model.py"
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import ModelType
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import ModelType
 from pprint import pprint
 
 # Grab a FeatureSet
@@ -48,7 +48,7 @@ pprint(my_model.details())
 							4   127.881073  113.825005
     ...
  'response_types': ['text/csv'],
- 'sageworks_tags': ['test-model'],
+ 'workbench_tags': ['test-model'],
  'shapley_values': None,
  'size': 0.0,
  'status': 'Completed',
@@ -60,7 +60,7 @@ pprint(my_model.details())
 **Use a specific Scikit-Learn Model**
 
 ```py title="featureset_to_knn.py"
-from sageworks.api.feature_set import FeatureSet
+from workbench.api.feature_set import FeatureSet
 from pprint import pprint
 
 # Grab a FeatureSet
@@ -84,7 +84,7 @@ pprint(my_model.details())
 **Another Scikit-Learn Example**
 
 ```py title="featureset_to_rfc.py"
-from sageworks.api.feature_set import FeatureSet
+from workbench.api.feature_set import FeatureSet
 from pprint import pprint
 
 # Grab a FeatureSet
@@ -110,7 +110,7 @@ pprint(my_model.details())
     Serverless endpoints are a great option, they have no AWS charges when not running. A **realtime** endpoint has less latency (no cold start) but AWS charges an hourly fee which can add up quickly!
 
 ```py title="model_to_endpoint.py"
-from sageworks.api.model import Model
+from workbench.api.model import Model
 
 # Grab the abalone regression Model
 model = Model("abalone-regression")
@@ -125,7 +125,7 @@ model.to_endpoint(name="abalone-regression-end",
 **Model Health Check and Metrics**
 
 ```py title="model_metrics.py"
-from sageworks.api.model import Model
+from workbench.api.model import Model
 
 # Grab the abalone-regression Model
 model = Model("abalone-regression")
@@ -168,14 +168,14 @@ Model is Healthy
 499                     13   10.637320
 ```
 
-## SageWorks UI
-Running these few lines of code creates an AWS Model Package Group and an AWS Model Package. These model artifacts can be viewed in the Sagemaker Console/Notebook interfaces or in the SageWorks Dashboard UI.
+## Workbench UI
+Running these few lines of code creates an AWS Model Package Group and an AWS Model Package. These model artifacts can be viewed in the Sagemaker Console/Notebook interfaces or in the Workbench Dashboard UI.
 
 <figure>
-<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/0c5cc2f8-bcc2-406d-a66e-32dcbad0cc25">
-<figcaption>SageWorks Dashboard: Models</figcaption>
+<img alt="workbench_new_light" src="https://github.com/SuperCowPowers/workbench/assets/4806709/0c5cc2f8-bcc2-406d-a66e-32dcbad0cc25">
+<figcaption>Workbench Dashboard: Models</figcaption>
 </figure>
 
 
 !!! note "Not Finding a particular method?"
-    The SageWorks API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [SageWorks Core Classes](../core_classes/overview.md)
+    The Workbench API Classes use the 'Core' Classes Internally, so for an extensive listing of all the methods available please take a deep dive into: [Workbench Core Classes](../core_classes/overview.md)

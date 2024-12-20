@@ -4,16 +4,16 @@ from dash import dcc, html, callback, Input, Output
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 
-# SageWorks Imports
-from sageworks.api import DataSource, FeatureSet
-from sageworks.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from sageworks.web_interface.components.plugins.scatter_plot import ScatterPlot
-from sageworks.web_interface.components.plugin_unit_test import PluginUnitTest
+# Workbench Imports
+from workbench.api import DataSource, FeatureSet
+from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
+from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
 # Run an integration test
 from pprint import pprint
 import numpy as np
-from sageworks.api import Model, Endpoint
+from workbench.api import Model, Endpoint
 
 # Get the endpoint
 end = Endpoint("aqsol-qr-end")

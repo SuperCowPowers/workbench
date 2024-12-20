@@ -4,9 +4,9 @@ import os
 import sys
 import logging
 
-# SageWorks Imports
-from sageworks.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from sageworks.utils.config_manager import ConfigManager
+# Workbench Imports
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.utils.config_manager import ConfigManager
 
 
 class AWSIdentityCheck:
@@ -14,7 +14,7 @@ class AWSIdentityCheck:
 
     def __init__(self):
         """AWSIdentityCheck Initialization"""
-        self.log = logging.getLogger("sageworks")
+        self.log = logging.getLogger("workbench")
 
         # Create the AWSAccountClamp Class
         self.aws_clamp = AWSAccountClamp()
@@ -26,7 +26,7 @@ class AWSIdentityCheck:
         cm = ConfigManager()
         active_profile = cm.get_config("AWS_PROFILE")
         if active_profile:
-            self.log.info(f"SageWorks AWS_PROFILE: {active_profile}")
+            self.log.info(f"Workbench AWS_PROFILE: {active_profile}")
         else:
             self.log.info("No AWS_PROFILE set")
             sys.exit(0)

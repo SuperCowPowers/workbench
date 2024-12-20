@@ -1,7 +1,7 @@
-# SageWorks: FAQ
+# Workbench: FAQ
 
 !!! tip question "Artifact and Column Naming?"
-    You might have noticed that SageWorks has some unintuitive constraints when naming Artifacts and restrictions on column names. All of these restrictions come from AWS. SageWorks uses Glue, Athena, Feature Store, Models and Endpoints, each of these services have their own constraints, SageWorks simply 'reflects' those contraints.
+    You might have noticed that Workbench has some unintuitive constraints when naming Artifacts and restrictions on column names. All of these restrictions come from AWS. Workbench uses Glue, Athena, Feature Store, Models and Endpoints, each of these services have their own constraints, Workbench simply 'reflects' those contraints.
     
 ## Naming: Underscores, Dashes, and Lower Case
 
@@ -21,7 +21,7 @@ For more info see: [Glue Best Practices](https://docs.aws.amazon.com/athena/late
 
 ## DataSource/FeatureSet use '_'  and Model/Endpoint use '-'
 
-You may notice that DataSource and FeatureSet uuid/name examples have underscores but the model and endpoints have dashes. Yes, it’s super annoying to have one convention for DataSources and FeatureSets and another for Models and Endpoints but this is an AWS restriction and not something that SageWorks can control.
+You may notice that DataSource and FeatureSet uuid/name examples have underscores but the model and endpoints have dashes. Yes, it’s super annoying to have one convention for DataSources and FeatureSets and another for Models and Endpoints but this is an AWS restriction and not something that Workbench can control.
 
 **DataSources and FeatureSet:** Underscores. You cannot use a dash because both classes use Athena for Storage and Athena tables names cannot have a dash.
 
@@ -38,6 +38,6 @@ We’ve tried to create a glue table with Mixed Case column names and haven’t 
 
 **Scripts to Reproduce**
 
-- [scripts/athena\_ddl\_mixed_case.py](https://github.com/SuperCowPowers/sageworks/blob/main/scripts/athena_ddl_mixed_case.py)
-- [scripts/glue\_mixed_case.py](https://github.com/SuperCowPowers/sageworks/blob/main/scripts/glue_mixed_case.py)
+- [scripts/athena\_ddl\_mixed_case.py](https://github.com/SuperCowPowers/workbench/blob/main/scripts/athena_ddl_mixed_case.py)
+- [scripts/glue\_mixed_case.py](https://github.com/SuperCowPowers/workbench/blob/main/scripts/glue_mixed_case.py)
 

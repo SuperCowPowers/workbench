@@ -1,11 +1,11 @@
 import awswrangler as wr
-from sageworks.api.data_source import DataSource
+from workbench.api.data_source import DataSource
 from pprint import pprint
 
 
 def column_changes_test():
     # Create a new Data Source from an S3 Path
-    source_path = "s3://sageworks-public-data/common/abalone.csv"
+    source_path = "s3://workbench-public-data/common/abalone.csv"
     df = wr.s3.read_csv(source_path)
     df.rename(columns={"Diameter": "old"}, inplace=True)
     my_data = DataSource(df, "test_columns")

@@ -1,4 +1,4 @@
-"""This Script creates a full AWS ML Pipeline with SageWorks
+"""This Script creates a full AWS ML Pipeline with Workbench
 
 DataSource:
     - abalone_data
@@ -11,17 +11,17 @@ Endpoint:
 """
 
 import logging
-from sageworks.api.data_source import DataSource
-from sageworks.api.feature_set import FeatureSet
-from sageworks.api.model import Model, ModelType
-from sageworks.api.endpoint import Endpoint
+from workbench.api.data_source import DataSource
+from workbench.api.feature_set import FeatureSet
+from workbench.api.model import Model, ModelType
+from workbench.api.endpoint import Endpoint
 
 # Setup the logger
-log = logging.getLogger("sageworks")
+log = logging.getLogger("workbench")
 
 if __name__ == "__main__":
     # Create the abalone_data DataSource
-    ds = DataSource("s3://sageworks-public-data/common/abalone.csv")
+    ds = DataSource("s3://workbench-public-data/common/abalone.csv")
 
     # Now create a FeatureSet
     ds.to_features("abalone_features")

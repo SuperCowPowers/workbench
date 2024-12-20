@@ -1,20 +1,20 @@
 # Views
 !!! tip inline end "View Examples"
-    Examples of using the Views classes to extend the functionality of SageWorks Artifacts are in the [Examples](#examples) section at the bottom of this page. 
+    Examples of using the Views classes to extend the functionality of Workbench Artifacts are in the [Examples](#examples) section at the bottom of this page. 
     
-Views are a powerful way to filter and agument your DataSources and FeatureSets. With Views you can subset columns, rows, and even add data to existing SageWorks Artifacts. If you want to compute outliers, runs some statistics or engineer some new features, Views are an easy way to change, modify, and add to DataSources and FeatureSets.
+Views are a powerful way to filter and agument your DataSources and FeatureSets. With Views you can subset columns, rows, and even add data to existing Workbench Artifacts. If you want to compute outliers, runs some statistics or engineer some new features, Views are an easy way to change, modify, and add to DataSources and FeatureSets.
 
     
-::: sageworks.core.views.view
+::: workbench.core.views.view
 
 
 ## Examples
-All of the SageWorks Examples are in the Sageworks Repository under the `examples/` directory. For a full code listing of any example please visit our [SageWorks Examples](https://github.com/SuperCowPowers/sageworks/blob/main/examples)
+All of the Workbench Examples are in the Workbench Repository under the `examples/` directory. For a full code listing of any example please visit our [Workbench Examples](https://github.com/SuperCowPowers/workbench/blob/main/examples)
 
 **Listing Views**
 
 ```py title="views.py"
-from sageworks.api.data_source import DataSource
+from workbench.api.data_source import DataSource
 
 # Convert the Data Source to a Feature Set
 test_data = DataSource('test_data')
@@ -25,7 +25,7 @@ test_data.views()
 **Getting a Particular View**
 
 ```py title="views.py"
-from sageworks.api.feature_set import FeatureSet
+from workbench.api.feature_set import FeatureSet
 
 fs = FeatureSet('test_features')
 
@@ -42,10 +42,10 @@ df = display_view.pull_dataframe()
 
 **View Queries**
 
-All SageWorks Views are stored in AWS Athena, so any query that you can make with Athena is accessible through the View Query API.
+All Workbench Views are stored in AWS Athena, so any query that you can make with Athena is accessible through the View Query API.
 
 ```py title="view_query.py"
-from sageworks.api.feature_set import FeatureSet
+from workbench.api.feature_set import FeatureSet
 
 # Grab a FeatureSet View
 fs = FeatureSet("abalone_features")
@@ -72,7 +72,7 @@ print(df.head())
 ```
 
 !!! note "Classes to construct View"
-    The SageWorks Classes used to construct viewss are currently in 'Core'. So you can check out the documentation for those classes here: [SageWorks View Creators](../core_classes/views/overview.md)
+    The Workbench Classes used to construct viewss are currently in 'Core'. So you can check out the documentation for those classes here: [Workbench View Creators](../core_classes/views/overview.md)
     
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at [sageworks@supercowpowers.com](mailto:sageworks@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
