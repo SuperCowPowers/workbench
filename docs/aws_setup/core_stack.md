@@ -41,16 +41,24 @@ Linux
 For more information on Linux installs see [Digital Ocean NodeJS](https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04)
 
 ## Create an S3 Bucket for Workbench
-Workbench pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a **NEW** S3 Bucket, we suggest a name like `<company_name>-workbench`
+Workbench pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a **NEW** S3 Bucket, we suggest a name like `<company-name>-workbench`
 
 ## Deploying the Workbench Core Stack
-Do the initial setup/config here: [Getting Started](../getting_started/index.md). After you've done that come back to this section. For Stack Deployment additional things need to be added to your config file. The config file will be located in your home directory `~/.workbench/workbench_config.json`. Edit this file and add addition stuff for the deployment. Specifically there are two additional fields to be added (optional for both)
+This stack has the `Workbench-Execution-Role` and an associated role for AWS Glue Jobs.
+
+You'll need to set some environmental vars before deploying the stack.
 
 ```
-"WORKBENCH_SSO_GROUP": DataScientist (or whatever)
-"WORKBENCH_ADDITIONAL_BUCKETS": "bucket1, bucket2
+export WORKBENCH_BUCKET=name-of-workbench-bucket
+export WORKBENCH_SSO_GROUP=DataScientist (or whatever)
 ```
-These are optional but are set/used by most Workbench users.
+
+**Optional ENV Vars**
+
+```
+export WORKBENCH_ADDITIONAL_BUCKETS=<comma separated list of buckets>
+```
+
 
 !!! note "AWS Stuff"
     Activate your AWS Account that's used for Workbench deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)
@@ -63,16 +71,14 @@ These are optional but are set/used by most Workbench users.
   ```
   
 ### Enable Users to Assume Workbench-ExecutionRole
-Thes guides walk you through setting up access for both SSO users and IAM users to assume the Workbench-ExecutionRole in your AWS account.
+Now that the `Workbench-ExecutionRole` has been deployed via AWS Stack. These guides walk you through setting up access for both SSO users and IAM users to assume the Workbench-ExecutionRole in your AWS account.
 
-- [SSO AssumeRole](sso_assume_role.md)
-- [IAM Assumerole](iam_assume_role.md)
-
-
+- [Set up SSO Users](sso_assume_role.md)
+- [Set up IAM Users](iam_assume_role.md) (not recommend, but contact us we'll help you out)
 
 
 ## AWS Account Setup Check
-After setting up Workbench config/AWS Account you can run this test/checking script. If the results ends with `INFO AWS Account Clamp: AOK!` you're in good shape. If not feel free to contact us on [Discord](https://discord.gg/WHAJuz8sw8) and we'll get it straightened out for you :)
+After deploying the Workbench Core Stack and setting up users to assume that Role, you can run this test/checking script. If the results ends with `INFO AWS Account Clamp: AOK!` you're in good shape. If not feel free to contact us on [Discord](https://discord.gg/WHAJuz8sw8) and we'll get it straightened out for you :)
 
 ```bash
 pip install workbench (if not already installed)

@@ -13,7 +13,8 @@ This guide provides step-by-step instructions to configure AWS SSO users to assu
 
 ### 1. Log in to the AWS SSO Console
 
-- Navigate to the [AWS SSO Console](https://console.aws.amazon.com/singlesignon/).
+- Login to your 'main' organization AWS Account.
+- Go to the IAM Identity Center
 
 ### 2. Find the Relevant Permission Set
 
@@ -22,7 +23,8 @@ This guide provides step-by-step instructions to configure AWS SSO users to assu
 
 ### 3. Edit the Permission Set
 
-1. Select the permission set and click **Edit Permissions**.
+1. Select the permission set
+2. Scroll down to **Inline policy** and click the the Edit button.
 2. Add an **inline policy** with the following content:
 
     ```json
