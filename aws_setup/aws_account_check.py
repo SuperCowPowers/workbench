@@ -35,10 +35,10 @@ class AWSAccountCheck:
         try:
             wr.catalog.create_database(catalog_db, exist_ok=True, boto3_session=self.aws_clamp.boto3_session)
         except ClientError as e:
-            if e.response['Error']['Code'] == 'AccessDeniedException':
+            if e.response["Error"]["Code"] == "AccessDeniedException":
                 self.log.error(f"Access denied while trying to create/access the catalog database '{catalog_db}'.")
                 self.log.error("Create the database manually in the AWS Glue Console, or run this command:")
-                self.log.error("aws glue create-database --database-input '{\"Name\": \"workbench\"}'")
+                self.log.error('aws glue create-database --database-input \'{"Name": "workbench"}\'')
                 sys.exit(1)
             else:
                 self.log.error(f"Unexpected error: {e}")
