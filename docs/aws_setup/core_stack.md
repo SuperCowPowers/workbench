@@ -61,6 +61,15 @@ These are optional but are set/used by most Workbench users.
   cdk bootstrap
   cdk deploy
   ```
+  
+### Enable Users to Assume Workbench-ExecutionRole
+Thes guides walk you through setting up access for both SSO users and IAM users to assume the Workbench-ExecutionRole in your AWS account.
+
+- [SSO AssumeRole](sso_assume_role.md)
+- [IAM Assumerole](iam_assume_role.md)
+
+
+
 
 ## AWS Account Setup Check
 After setting up Workbench config/AWS Account you can run this test/checking script. If the results ends with `INFO AWS Account Clamp: AOK!` you're in good shape. If not feel free to contact us on [Discord](https://discord.gg/WHAJuz8sw8) and we'll get it straightened out for you :)
