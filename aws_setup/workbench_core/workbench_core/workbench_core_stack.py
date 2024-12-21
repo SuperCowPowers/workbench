@@ -153,6 +153,8 @@ class WorkbenchCoreStack(Stack):
                 "glue:GetTables",
                 "glue:GetTable",
                 "glue:CreateTable",
+                "glue:UpdateTable",
+                "glue:DeleteTable",
             ],
             resources=[catalog_arn],
         )
@@ -162,6 +164,8 @@ class WorkbenchCoreStack(Stack):
         # ARNs for the databases and tables
         workbench_database_arn = f"arn:aws:glue:{self.region}:{self.account}:database/workbench"
         workbench_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/workbench/*"
+        sageworks_database_arn = f"arn:aws:glue:{self.region}:{self.account}:database/sageworks"
+        sageworks_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/sageworks/*"
         sagemaker_featurestore_database_arn = (
             f"arn:aws:glue:{self.region}:{self.account}:database/sagemaker_featurestore"
         )
@@ -183,6 +187,8 @@ class WorkbenchCoreStack(Stack):
             resources=[
                 workbench_database_arn,
                 workbench_table_arn,
+                sageworks_database_arn,
+                sageworks_table_arn,
                 sagemaker_featurestore_database_arn,
                 sagemaker_table_arn,
             ],
