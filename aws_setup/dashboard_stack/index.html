@@ -20,7 +20,7 @@
     
     
       
-        <title>Dashboard Setup - SageWorks</title>
+        <title>Dashboard Setup - Workbench</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#deploy-the-sageworks-dashboard-stack" class="md-skip">
+        <a href="#deploy-the-workbench-dashboard-stack" class="md-skip">
           Skip to content
         </a>
       
@@ -90,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            SageWorks
+            Workbench
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -211,13 +211,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    SageWorks
+    Workbench
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -293,7 +293,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks REPL
+    Workbench REPL
   </span>
   
 
@@ -1817,7 +1817,7 @@
             
   
   <span class="md-ellipsis">
-    SageWorks Enterprise
+    Workbench Enterprise
   </span>
   
 
@@ -1827,7 +1827,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
-            SageWorks Enterprise
+            Workbench Enterprise
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3121,11 +3121,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3224,20 +3224,20 @@
                   
 
 
-<h1 id="deploy-the-sageworks-dashboard-stack">Deploy the SageWorks Dashboard Stack</h1>
+<h1 id="deploy-the-workbench-dashboard-stack">Deploy the Workbench Dashboard Stack</h1>
 <figure style="float: right; width: 300px;">
-<img alt="sageworks_new_light" src="https://github.com/SuperCowPowers/sageworks/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4" style="padding-left: 10px; padding-top: -20px; ">
+<img alt="workbench_new_light" src="https://github.com/SuperCowPowers/workbench/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4" style="padding-left: 10px; padding-top: -20px; ">
 </figure>
 
 <p>Deploying the Dashboard Stack is reasonably straight forward, it's the same approach as the <a href="../core_stack/">Core Stack</a> that you've already deployed.</p>
-<p>Please review the <a href="#stack-details">Stack Details</a> section to understand all the AWS components that are included and utilized in the SageWorks Dashboard Stack.</p>
+<p>Please review the <a href="#stack-details">Stack Details</a> section to understand all the AWS components that are included and utilized in the Workbench Dashboard Stack.</p>
 <h2 id="deploying-the-dashboard-stack">Deploying the Dashboard Stack</h2>
 <div class="admonition note">
 <p class="admonition-title">AWS Stuff</p>
-<p>Activate your AWS Account that's used for SageWorks deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)</p>
+<p>Activate your AWS Account that's used for Workbench deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)</p>
 </div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup/sageworks_dashboard_full
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SAGEWORKS_CONFIG</span><span class="o">=</span>/full/path/to/config.json
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>workbench/aws_setup/workbench_dashboard_full
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">WORKBENCH_CONFIG</span><span class="o">=</span>/full/path/to/config.json
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>cdk<span class="w"> </span>bootstrap
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>cdk<span class="w"> </span>deploy
@@ -3261,10 +3261,10 @@
 </ol>
 <div class="admonition warning">
 <p class="admonition-title">AWS Costs</p>
-<p>Deploying the SageWorks Dashboard does incur some monthly AWS costs. If you're on a tight budget you can deploy the 'lite' version of the Dashboard Stack.</p>
+<p>Deploying the Workbench Dashboard does incur some monthly AWS costs. If you're on a tight budget you can deploy the 'lite' version of the Dashboard Stack.</p>
 </div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup/sageworks_dashboard_lite
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">SAGEWORKS_CONFIG</span><span class="o">=</span>/full/path/to/config.json
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>workbench/aws_setup/workbench_dashboard_lite
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">WORKBENCH_CONFIG</span><span class="o">=</span>/full/path/to/config.json
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>cdk<span class="w"> </span>bootstrap
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>cdk<span class="w"> </span>deploy

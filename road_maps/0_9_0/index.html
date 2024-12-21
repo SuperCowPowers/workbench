@@ -20,7 +20,7 @@
     
     
       
-        <title>0.9.0 - SageWorks</title>
+        <title>0.9.0 - Workbench</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            SageWorks
+            Workbench
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -211,13 +211,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    SageWorks
+    Workbench
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -293,7 +293,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks REPL
+    Workbench REPL
   </span>
   
 
@@ -1817,7 +1817,7 @@
             
   
   <span class="md-ellipsis">
-    SageWorks Enterprise
+    Workbench Enterprise
   </span>
   
 
@@ -1827,7 +1827,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
-            SageWorks Enterprise
+            Workbench Enterprise
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3151,11 +3151,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3287,9 +3287,9 @@
 <h1 id="road-map-v090">Road Map v0.9.0</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
-<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
-<p>The SageWorks framework continues to flex to support different real world use cases when operating a set of production machine learning pipelines.</p>
+<p>The Workbench framework continues to flex to support different real world use cases when operating a set of production machine learning pipelines.</p>
 <h2 id="general">General</h2>
 <p><strong>Streamlining</strong></p>
 <p>We've learned a lot from our beta testers!</p>
@@ -3302,19 +3302,19 @@
 <li><a href="https://docs.aws.amazon.com/general/latest/gr/sagemaker.html">Sagemaker Endpoint Quotas</a></li>
 </ul>
 <p><strong>Full Artifact Load or None</strong></p>
-<p>For the SageWorks’ DataSource, FeatureSet, Model, and Endpoint classes the new functionality will ensure that objects are only instantiated when all required data is fully available, returning <strong>None</strong> if the artifact ID is invalid or if the object is only partially constructed in AWS. </p>
+<p>For the Workbench’ DataSource, FeatureSet, Model, and Endpoint classes the new functionality will ensure that objects are only instantiated when all required data is fully available, returning <strong>None</strong> if the artifact ID is invalid or if the object is only partially constructed in AWS. </p>
 <p>By preventing partially constructed objects, this approach reduces runtime errors when accessing incomplete attributes and simplifies error handling for clients, enhancing robustness and reliability. We are looking at Pydantic for formally capturing schema and types (see <a href="https://github.com/pydantic/pydantic">Pydantic</a>).</p>
 <p><strong>Onboarding</strong></p>
-<p>We'll have to balance the 'full artifact or None' with the need to <code>onboard()</code> artifacts created outside of SageWorks. We'll probably have a class method for onboarding, something like:</p>
+<p>We'll have to balance the 'full artifact or None' with the need to <code>onboard()</code> artifacts created outside of Workbench. We'll probably have a class method for onboarding, something like:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>my_model = Model.onboard(&quot;some_random_model&quot;)
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>if my_model is None:
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    &lt;handle failure to onboard&gt;
 </span></code></pre></div>
 <p><strong>Caching</strong></p>
-<p>Caching needs a substantial overhaul. Right now SageWorks over uses caching. We baked it into our AWSServiceBroker and that gets used by everything.</p>
+<p>Caching needs a substantial overhaul. Right now Workbench over uses caching. We baked it into our AWSServiceBroker and that gets used by everything.</p>
 <p>Caching only really makes sense when we can't wait for AWS to respond to requests. The Dashboard and Web Interfaces are the only use case where responsiveness is important. Other use cases like nightly batch processing, scripts or notebooks, will work totally fine waiting for AWS responses.</p>
 <p><strong>Class/API Reductions</strong></p>
-<p>The organic growth of SageWorks was based on user feedback and testing, that organic growth has led to an <strong>abundance</strong> of Classes and API calls. We'll be identifying classes and methods that are 'cruft' from some development push and will be deprecating those.</p>
+<p>The organic growth of Workbench was based on user feedback and testing, that organic growth has led to an <strong>abundance</strong> of Classes and API calls. We'll be identifying classes and methods that are 'cruft' from some development push and will be deprecating those.</p>
 <h2 id="deprecation-warnings">Deprecation Warnings</h2>
 <p>We're starting to put in deprecation warning as we streamline classes and APIs. If you're using a class or method that's going to be deprecated you'll see a log message like this:</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>broker = AWSServiceBroker()
@@ -3353,7 +3353,7 @@
 <p>We're getting rid of caching for individual Artifacts, if you're constructing an artifact object, you probably want detailed information that's 'up to date' and waiting a bit is probably fine. <strong>Note:</strong> We'll still make these instantiations as fast as we can, removing the caching logic will as least simplify the implementations.</p>
 <h2 id="questions">Questions?</h2>
 <p><img align="right" src="../../images/scp.png" width="180"></p>
-<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 
 
 

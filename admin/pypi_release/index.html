@@ -20,7 +20,7 @@
     
     
       
-        <title>PyPI Release - SageWorks</title>
+        <title>PyPI Release - Workbench</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            SageWorks
+            Workbench
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -211,13 +211,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    SageWorks
+    Workbench
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -293,7 +293,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks REPL
+    Workbench REPL
   </span>
   
 
@@ -1817,7 +1817,7 @@
             
   
   <span class="md-ellipsis">
-    SageWorks Enterprise
+    Workbench Enterprise
   </span>
   
 
@@ -1827,7 +1827,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
-            SageWorks Enterprise
+            Workbench Enterprise
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3178,11 +3178,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../workbench_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3364,9 +3364,9 @@ contents</p>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="nv">password</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>pypi-AgENdG...
 </span></code></pre></div>
 <h3 id="tox-background">Tox Background</h3>
-<p>Tox will install the SageMaker Sandbox package into a blank virtualenv and then execute all the tests against the newly installed package. So if everything goes okay, you know the pypi package installed fine and the tests (which puls from the installed <code>sageworks</code> package) also ran okay.</p>
+<p>Tox will install the SageMaker Sandbox package into a blank virtualenv and then execute all the tests against the newly installed package. So if everything goes okay, you know the pypi package installed fine and the tests (which puls from the installed <code>workbench</code> package) also ran okay.</p>
 <h3 id="make-sure-all-tests-pass">Make sure ALL tests pass</h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>sageworks
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>workbench
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>$<span class="w"> </span>tox<span class="w"> </span>
 </span></code></pre></div>
 <p>If ALL the test above pass...</p>
@@ -3382,7 +3382,7 @@ contents</p>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>twine<span class="w"> </span>upload<span class="w"> </span>dist/*<span class="w"> </span>-r<span class="w"> </span>testpypi
 </span></code></pre></div>
 <h3 id="install-the-test-pypi-release">Install the TEST PyPI Release</h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>--index-url<span class="w"> </span>https://test.pypi.org/simple<span class="w"> </span>sageworks
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>--index-url<span class="w"> </span>https://test.pypi.org/simple<span class="w"> </span>workbench
 </span></code></pre></div>
 <h3 id="create-the-real-pypi-release">Create the REAL PyPI Release</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>twine<span class="w"> </span>upload<span class="w"> </span>dist/*<span class="w"> </span>-r<span class="w"> </span>pypi

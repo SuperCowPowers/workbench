@@ -20,7 +20,7 @@
     
     
       
-        <title>Domain/SSL Cert Setup - SageWorks</title>
+        <title>Domain/SSL Cert Setup - Workbench</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            SageWorks
+            Workbench
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -211,13 +211,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    SageWorks
+    Workbench
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -293,7 +293,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks REPL
+    Workbench REPL
   </span>
   
 
@@ -1817,7 +1817,7 @@
             
   
   <span class="md-ellipsis">
-    SageWorks Enterprise
+    Workbench Enterprise
   </span>
   
 
@@ -1827,7 +1827,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
-            SageWorks Enterprise
+            Workbench Enterprise
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3190,11 +3190,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3365,14 +3365,14 @@
 <h1 id="aws-domain-and-certificate-instructions">AWS Domain and Certificate Instructions</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need AWS Help?</p>
-<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
 <p>This page tries to give helpful guidance when setting up a new domain and SSL Certificate in your AWS Account.</p>
 <h2 id="new-domain">New Domain</h2>
-<p>You'll want the SageWorks Dashboard to have a domain for your companies internal use. Customers will typically use a domain like <code>&lt;company_name&gt;-ml-dashboard.com</code> but you are free to choose any domain you'd like.</p>
+<p>You'll want the Workbench Dashboard to have a domain for your companies internal use. Customers will typically use a domain like <code>&lt;company_name&gt;-ml-dashboard.com</code> but you are free to choose any domain you'd like.</p>
 <div class="admonition warning">
 <p class="admonition-title">Domains are tied to AWS Accounts</p>
-<p>When you create a new domain in AWS Route 53, that domain is tied to that AWS Account. You can do a cross account setup for domains but it's a bit more tricky. We recommend that each account where SageWorks gets deployed owns the domain for that Dashboard.</p>
+<p>When you create a new domain in AWS Route 53, that domain is tied to that AWS Account. You can do a cross account setup for domains but it's a bit more tricky. We recommend that each account where Workbench gets deployed owns the domain for that Dashboard.</p>
 </div>
 <h3 id="multiple-aws-accounts">Multiple AWS Accounts</h3>
 <p>Many customers will have a dev/stage/prod set of AWS accounts, if that the case then the best practice is to make a domain specific to each account. So for instance:</p>
@@ -3517,7 +3517,7 @@
 <p><strong>Inactive</strong>: This state indicates that the certificate is not currently in use.</p>
 </li>
 </ul>
-<p>The certificate status should obviously be in the <strong>Issued</strong> state, if not please contact SageWorks Support Team.</p>
+<p>The certificate status should obviously be in the <strong>Issued</strong> state, if not please contact Workbench Support Team.</p>
 <h2 id="retrieving-the-certificate-arn">Retrieving the Certificate ARN</h2>
 <ol>
 <li>

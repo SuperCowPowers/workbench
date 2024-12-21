@@ -20,7 +20,7 @@
     
     
       
-        <title>0.8.11 - SageWorks</title>
+        <title>0.8.11 - Workbench</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            SageWorks
+            Workbench
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -211,13 +211,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    SageWorks
+    Workbench
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -293,7 +293,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks REPL
+    Workbench REPL
   </span>
   
 
@@ -1817,7 +1817,7 @@
             
   
   <span class="md-ellipsis">
-    SageWorks Enterprise
+    Workbench Enterprise
   </span>
   
 
@@ -1827,7 +1827,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
-            SageWorks Enterprise
+            Workbench Enterprise
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3135,11 +3135,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3253,9 +3253,9 @@
 <h1 id="release-0811">Release 0.8.11</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
-<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 </div>
-<p>The SageWorks framework continues to flex to support different real world use cases when operating a set of production machine learning pipelines.</p>
+<p>The Workbench framework continues to flex to support different real world use cases when operating a set of production machine learning pipelines.</p>
 <p><strong>Note:</strong> These release notes cover all the changes from <code>0.8.8</code> to <code>0.8.11</code></p>
 <h3 id="general">General</h3>
 <p>The AWSAccountClamp had too many responsibilities so that class has been split up into two classes and a set of utilities:</p>
@@ -3305,18 +3305,18 @@
 </li>
 </ul>
 <h3 id="glue-job-fixes">Glue Job Fixes</h3>
-<p>For <code>sageworks==0.8.8</code> you needed to be careful about when/where you set your config/ENV vars. With <code>&gt;=0.8.9</code> you can now use the typical setup like this:</p>
+<p>For <code>workbench==0.8.8</code> you needed to be careful about when/where you set your config/ENV vars. With <code>&gt;=0.8.9</code> you can now use the typical setup like this:</p>
 <div class="language-text highlight"><pre><span></span><code>```
-from sageworks.utils.config_manager import ConfigManager
+from workbench.utils.config_manager import ConfigManager
 
-# Set the SageWorks Config
+# Set the Workbench Config
 cm = ConfigManager()
-cm.set_config(&quot;SAGEWORKS_BUCKET&quot;, args_dict[&quot;sageworks-bucket&quot;])
+cm.set_config(&quot;WORKBENCH_BUCKET&quot;, args_dict[&quot;workbench-bucket&quot;])
 cm.set_config(&quot;REDIS_HOST&quot;, args_dict[&quot;redis-host&quot;])
 ```
 </code></pre></div>
 <h3 id="robust-modelnotreadyexception-handling">Robust ModelNotReadyException Handling</h3>
-<p>AWS will 'deep freeze' Serverless Endpoints and if that endpoint hasn't been used for a while it can sometimes take a long time to come up and be ready for inference. SageWorks now properly manages this AWS error condition, it will report the issue, wait 60 seconds, and try again 5 times before raising the exception.</p>
+<p>AWS will 'deep freeze' Serverless Endpoints and if that endpoint hasn't been used for a while it can sometimes take a long time to come up and be ready for inference. Workbench now properly manages this AWS error condition, it will report the issue, wait 60 seconds, and try again 5 times before raising the exception.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>(endpoint_core.py:502) ERROR Endpoint model not ready
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>(endpoint_core.py:503) ERROR Waiting and Retrying...
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>...
@@ -3324,7 +3324,7 @@ cm.set_config(&quot;REDIS_HOST&quot;, args_dict[&quot;redis-host&quot;])
 </span></code></pre></div>
 <h2 id="questions">Questions?</h2>
 <p><img align="right" src="../../../images/scp.png" width="180"></p>
-<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 
 
 

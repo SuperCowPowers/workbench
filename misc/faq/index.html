@@ -20,7 +20,7 @@
     
     
       
-        <title>FAQ - SageWorks</title>
+        <title>FAQ - Workbench</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sageworks-faq" class="md-skip">
+        <a href="#workbench-faq" class="md-skip">
           Skip to content
         </a>
       
@@ -90,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            SageWorks
+            Workbench
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -211,13 +211,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    SageWorks
+    Workbench
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -293,7 +293,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks REPL
+    Workbench REPL
   </span>
   
 
@@ -1817,7 +1817,7 @@
             
   
   <span class="md-ellipsis">
-    SageWorks Enterprise
+    Workbench Enterprise
   </span>
   
 
@@ -1827,7 +1827,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
-            SageWorks Enterprise
+            Workbench Enterprise
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3113,11 +3113,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3210,10 +3210,10 @@
                   
 
 
-<h1 id="sageworks-faq">SageWorks: FAQ</h1>
+<h1 id="workbench-faq">Workbench: FAQ</h1>
 <div class="admonition tip question">
 <p class="admonition-title">Artifact and Column Naming?</p>
-<p>You might have noticed that SageWorks has some unintuitive constraints when naming Artifacts and restrictions on column names. All of these restrictions come from AWS. SageWorks uses Glue, Athena, Feature Store, Models and Endpoints, each of these services have their own constraints, SageWorks simply 'reflects' those contraints.</p>
+<p>You might have noticed that Workbench has some unintuitive constraints when naming Artifacts and restrictions on column names. All of these restrictions come from AWS. Workbench uses Glue, Athena, Feature Store, Models and Endpoints, each of these services have their own constraints, Workbench simply 'reflects' those contraints.</p>
 </div>
 <h2 id="naming-underscores-dashes-and-lower-case">Naming: Underscores, Dashes, and Lower Case</h2>
 <p>Data Sources and Feature Sets must adhere to AWS restrictions on table names and columns names (here is a snippet from the AWS documentation)</p>
@@ -3227,7 +3227,7 @@ A column name cannot be longer than 255 characters.</p>
 </blockquote>
 <p>For more info see: <a href="https://docs.aws.amazon.com/athena/latest/ug/glue-best-practices.html#schema-names">Glue Best Practices</a></p>
 <h2 id="datasourcefeatureset-use-_-and-modelendpoint-use-">DataSource/FeatureSet use '_'  and Model/Endpoint use '-'</h2>
-<p>You may notice that DataSource and FeatureSet uuid/name examples have underscores but the model and endpoints have dashes. Yes, it’s super annoying to have one convention for DataSources and FeatureSets and another for Models and Endpoints but this is an AWS restriction and not something that SageWorks can control.</p>
+<p>You may notice that DataSource and FeatureSet uuid/name examples have underscores but the model and endpoints have dashes. Yes, it’s super annoying to have one convention for DataSources and FeatureSets and another for Models and Endpoints but this is an AWS restriction and not something that Workbench can control.</p>
 <p><strong>DataSources and FeatureSet:</strong> Underscores. You cannot use a dash because both classes use Athena for Storage and Athena tables names cannot have a dash.</p>
 <p><strong>Models and Endpoints:</strong> Dashes. You cannot use an underscores because AWS imposes a restriction on the naming.</p>
 <h2 id="additional-information-on-the-lower-case-issue">Additional information on the lower case issue</h2>
@@ -3239,8 +3239,8 @@ A column name cannot be longer than 255 characters.</p>
 </ul>
 <p><strong>Scripts to Reproduce</strong></p>
 <ul>
-<li><a href="https://github.com/SuperCowPowers/sageworks/blob/main/scripts/athena_ddl_mixed_case.py">scripts/athena_ddl_mixed_case.py</a></li>
-<li><a href="https://github.com/SuperCowPowers/sageworks/blob/main/scripts/glue_mixed_case.py">scripts/glue_mixed_case.py</a></li>
+<li><a href="https://github.com/SuperCowPowers/workbench/blob/main/scripts/athena_ddl_mixed_case.py">scripts/athena_ddl_mixed_case.py</a></li>
+<li><a href="https://github.com/SuperCowPowers/workbench/blob/main/scripts/glue_mixed_case.py">scripts/glue_mixed_case.py</a></li>
 </ul>
 
 

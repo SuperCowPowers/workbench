@@ -20,7 +20,7 @@
     
     
       
-        <title>AWS Admin Initial Setup - SageWorks</title>
+        <title>AWS Admin Initial Setup - Workbench</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sageworks-aws-stack" class="md-skip">
+        <a href="#workbench-aws-stack" class="md-skip">
           Skip to content
         </a>
       
@@ -90,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            SageWorks
+            Workbench
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -211,13 +211,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    SageWorks
+    Workbench
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -293,7 +293,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks REPL
+    Workbench REPL
   </span>
   
 
@@ -1817,7 +1817,7 @@
             
   
   <span class="md-ellipsis">
-    SageWorks Enterprise
+    Workbench Enterprise
   </span>
   
 
@@ -1827,7 +1827,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
-            SageWorks Enterprise
+            Workbench Enterprise
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2134,9 +2134,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#two-main-options-when-using-sageworks" class="md-nav__link">
+  <a href="#two-main-options-when-using-workbench" class="md-nav__link">
     <span class="md-ellipsis">
-      Two main options when using SageWorks
+      Two main options when using Workbench
     </span>
   </a>
   
@@ -2152,38 +2152,53 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#onboarding-sageworks-to-your-aws-account" class="md-nav__link">
+  <a href="#onboarding-workbench-to-your-aws-account" class="md-nav__link">
     <span class="md-ellipsis">
-      Onboarding SageWorks to your AWS Account
+      Onboarding Workbench to your AWS Account
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#sageworks-uses-aws-python-cdk-for-deployments" class="md-nav__link">
+  <a href="#workbench-uses-aws-python-cdk-for-deployments" class="md-nav__link">
     <span class="md-ellipsis">
-      SageWorks uses AWS Python CDK for Deployments
+      Workbench uses AWS Python CDK for Deployments
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#create-an-s3-bucket-for-sageworks" class="md-nav__link">
+  <a href="#create-an-s3-bucket-for-workbench" class="md-nav__link">
     <span class="md-ellipsis">
-      Create an S3 Bucket for SageWorks
+      Create an S3 Bucket for Workbench
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploying-the-sageworks-core-stack" class="md-nav__link">
+  <a href="#deploying-the-workbench-core-stack" class="md-nav__link">
     <span class="md-ellipsis">
-      Deploying the SageWorks Core Stack
+      Deploying the Workbench Core Stack
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Deploying the Workbench Core Stack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enable-users-to-assume-workbench-executionrole" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enable Users to Assume Workbench-ExecutionRole
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3151,11 +3166,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3207,9 +3222,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#two-main-options-when-using-sageworks" class="md-nav__link">
+  <a href="#two-main-options-when-using-workbench" class="md-nav__link">
     <span class="md-ellipsis">
-      Two main options when using SageWorks
+      Two main options when using Workbench
     </span>
   </a>
   
@@ -3225,38 +3240,53 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#onboarding-sageworks-to-your-aws-account" class="md-nav__link">
+  <a href="#onboarding-workbench-to-your-aws-account" class="md-nav__link">
     <span class="md-ellipsis">
-      Onboarding SageWorks to your AWS Account
+      Onboarding Workbench to your AWS Account
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#sageworks-uses-aws-python-cdk-for-deployments" class="md-nav__link">
+  <a href="#workbench-uses-aws-python-cdk-for-deployments" class="md-nav__link">
     <span class="md-ellipsis">
-      SageWorks uses AWS Python CDK for Deployments
+      Workbench uses AWS Python CDK for Deployments
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#create-an-s3-bucket-for-sageworks" class="md-nav__link">
+  <a href="#create-an-s3-bucket-for-workbench" class="md-nav__link">
     <span class="md-ellipsis">
-      Create an S3 Bucket for SageWorks
+      Create an S3 Bucket for Workbench
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#deploying-the-sageworks-core-stack" class="md-nav__link">
+  <a href="#deploying-the-workbench-core-stack" class="md-nav__link">
     <span class="md-ellipsis">
-      Deploying the SageWorks Core Stack
+      Deploying the Workbench Core Stack
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Deploying the Workbench Core Stack">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enable-users-to-assume-workbench-executionrole" class="md-nav__link">
+    <span class="md-ellipsis">
+      Enable Users to Assume Workbench-ExecutionRole
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3284,29 +3314,29 @@
                   
 
 
-<h1 id="sageworks-aws-stack">SageWorks AWS Stack</h1>
-<p>Welcome to the SageWorks AWS Setup Guide. SageWorks is deployed as an AWS <strong>Stack</strong> following the well architected system practices of AWS. </p>
+<h1 id="workbench-aws-stack">Workbench AWS Stack</h1>
+<p>Welcome to the Workbench AWS Setup Guide. Workbench is deployed as an AWS <strong>Stack</strong> following the well architected system practices of AWS. </p>
 <div class="admonition warning">
 <p class="admonition-title">AWS Setup can be a bit complex</p>
-<p>Setting up SageWorks with AWS can be a bit complex, but this only needs to be done ONCE for your entire company. The install uses standard CDK --&gt; AWS Stacks and SageWorks tries to make it straight forward. If you have any troubles at all feel free to contact us a <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> and we're happy to help you with AWS for FREE.</p>
+<p>Setting up Workbench with AWS can be a bit complex, but this only needs to be done ONCE for your entire company. The install uses standard CDK --&gt; AWS Stacks and Workbench tries to make it straight forward. If you have any troubles at all feel free to contact us a <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> and we're happy to help you with AWS for FREE.</p>
 </div>
-<h2 id="two-main-options-when-using-sageworks">Two main options when using SageWorks</h2>
+<h2 id="two-main-options-when-using-workbench">Two main options when using Workbench</h2>
 <ol>
-<li>Spin up a new AWS Account for the SageWorks Stacks (<a href="../aws_tips_and_tricks/">Make a New Account</a>)</li>
-<li>Deploy SageWorks Stacks into your existing AWS Account</li>
+<li>Spin up a new AWS Account for the Workbench Stacks (<a href="../aws_tips_and_tricks/">Make a New Account</a>)</li>
+<li>Deploy Workbench Stacks into your existing AWS Account</li>
 </ol>
 <p>Either of these options are fully supported, but we highly suggest a NEW account as it gives the following benefits:</p>
 <ul>
 <li><strong>AWS Data Isolation:</strong> Data Scientists will feel empowered to play in the sandbox without impacting production services.</li>
-<li><strong>AWS Cost Accounting:</strong> Monitor and Track all those new ML Pipelines that your team creates with SageWorks :)</li>
+<li><strong>AWS Cost Accounting:</strong> Monitor and Track all those new ML Pipelines that your team creates with Workbench :)</li>
 </ul>
 <h2 id="setting-up-users-and-groups">Setting up Users and Groups</h2>
 <p>If your AWS Account already has users and groups set up you can skip this but here's our recommendations on setting up <a href="../aws_tips_and_tricks/">SSO Users and Groups</a></p>
-<h2 id="onboarding-sageworks-to-your-aws-account">Onboarding SageWorks to your AWS Account</h2>
-<p>Pulling down the SageWorks Repo
-  <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git clone https://github.com/SuperCowPowers/sageworks.git
+<h2 id="onboarding-workbench-to-your-aws-account">Onboarding Workbench to your AWS Account</h2>
+<p>Pulling down the Workbench Repo
+  <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git clone https://github.com/SuperCowPowers/workbench.git
 </span></code></pre></div></p>
-<h2 id="sageworks-uses-aws-python-cdk-for-deployments">SageWorks uses AWS Python CDK for Deployments</h2>
+<h2 id="workbench-uses-aws-python-cdk-for-deployments">Workbench uses AWS Python CDK for Deployments</h2>
 <p>If you don't have AWS CDK already installed you can do these steps:</p>
 <p>Mac</p>
 <p><div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>brew install node 
@@ -3317,36 +3347,45 @@ Linux</p>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>sudo npm install -g aws-cdk
 </span></code></pre></div>
 For more information on Linux installs see <a href="https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04">Digital Ocean NodeJS</a></p>
-<h2 id="create-an-s3-bucket-for-sageworks">Create an S3 Bucket for SageWorks</h2>
-<p>SageWorks pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a <strong>NEW</strong> S3 Bucket, we suggest a name like <code>&lt;company_name&gt;-sageworks</code></p>
-<h2 id="deploying-the-sageworks-core-stack">Deploying the SageWorks Core Stack</h2>
-<p>Do the initial setup/config here: <a href="../../getting_started/">Getting Started</a>. After you've done that come back to this section. For Stack Deployment additional things need to be added to your config file. The config file will be located in your home directory <code>~/.sageworks/sageworks_config.json</code>. Edit this file and add addition stuff for the deployment. Specifically there are two additional fields to be added (optional for both)</p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&quot;SAGEWORKS_SSO_GROUP&quot;: DataScientist (or whatever)
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>&quot;SAGEWORKS_ADDITIONAL_BUCKETS&quot;: &quot;bucket1, bucket2
+<h2 id="create-an-s3-bucket-for-workbench">Create an S3 Bucket for Workbench</h2>
+<p>Workbench pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a <strong>NEW</strong> S3 Bucket, we suggest a name like <code>&lt;company-name&gt;-workbench</code></p>
+<h2 id="deploying-the-workbench-core-stack">Deploying the Workbench Core Stack</h2>
+<p>This stack has the <code>Workbench-Execution-Role</code> and an associated role for AWS Glue Jobs.</p>
+<p>You'll need to set some environmental vars before deploying the stack.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>export WORKBENCH_BUCKET=name-of-workbench-bucket
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>export WORKBENCH_SSO_GROUP=DataScientist (or whatever)
 </span></code></pre></div>
-These are optional but are set/used by most SageWorks users.</p>
+<p><strong>Optional ENV Vars</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>export WORKBENCH_ADDITIONAL_BUCKETS=&lt;comma separated list of buckets&gt;
+</span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">AWS Stuff</p>
-<p>Activate your AWS Account that's used for SageWorks deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)</p>
+<p>Activate your AWS Account that's used for Workbench deployment. For this one time install you should use an Admin Account (or an account that had permissions to create/update AWS Stacks)</p>
 </div>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup/sageworks_core
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>cdk<span class="w"> </span>bootstrap
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>cdk<span class="w"> </span>deploy
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">cd</span><span class="w"> </span>workbench/aws_setup/workbench_core
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>cdk<span class="w"> </span>bootstrap
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>cdk<span class="w"> </span>deploy
 </span></code></pre></div>
+<h3 id="enable-users-to-assume-workbench-executionrole">Enable Users to Assume Workbench-ExecutionRole</h3>
+<p>Now that the <code>Workbench-ExecutionRole</code> has been deployed via AWS Stack. These guides walk you through setting up access for both SSO users and IAM users to assume the Workbench-ExecutionRole in your AWS account.</p>
+<ul>
+<li><a href="../sso_assume_role/">Set up SSO Users</a></li>
+<li><a href="../iam_assume_role/">Set up IAM Users</a> (not recommend, but contact us we'll help you out)</li>
+</ul>
 <h2 id="aws-account-setup-check">AWS Account Setup Check</h2>
-<p>After setting up SageWorks config/AWS Account you can run this test/checking script. If the results ends with <code>INFO AWS Account Clamp: AOK!</code> you're in good shape. If not feel free to contact us on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> and we'll get it straightened out for you :)</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span>sageworks<span class="w"> </span><span class="o">(</span><span class="k">if</span><span class="w"> </span>not<span class="w"> </span>already<span class="w"> </span>installed<span class="o">)</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">cd</span><span class="w"> </span>sageworks/aws_setup
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>python<span class="w"> </span>aws_account_check.py
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>&lt;lot<span class="w"> </span>of<span class="w"> </span>print<span class="w"> </span>outs<span class="w"> </span><span class="k">for</span><span class="w"> </span>various<span class="w"> </span>checks&gt;
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>INFO<span class="w"> </span>AWS<span class="w"> </span>Account<span class="w"> </span>Clamp:<span class="w"> </span>AOK!
+<p>After deploying the Workbench Core Stack and setting up users to assume that Role, you can run this test/checking script. If the results ends with <code>INFO AWS Account Clamp: AOK!</code> you're in good shape. If not feel free to contact us on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> and we'll get it straightened out for you :)</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pip<span class="w"> </span>install<span class="w"> </span>workbench<span class="w"> </span><span class="o">(</span><span class="k">if</span><span class="w"> </span>not<span class="w"> </span>already<span class="w"> </span>installed<span class="o">)</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">cd</span><span class="w"> </span>workbench/aws_setup
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>python<span class="w"> </span>aws_account_check.py
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>&lt;lot<span class="w"> </span>of<span class="w"> </span>print<span class="w"> </span>outs<span class="w"> </span><span class="k">for</span><span class="w"> </span>various<span class="w"> </span>checks&gt;
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>INFO<span class="w"> </span>AWS<span class="w"> </span>Account<span class="w"> </span>Clamp:<span class="w"> </span>AOK!
 </span></code></pre></div>
 <div class="admonition success">
 <p class="admonition-title">Success</p>
-<p>Congratulations: SageWorks is now deployed to your AWS Account. Deploying the AWS Stack only needs to be done once. Now that this is complete your developers can simply <code>pip install sageworks</code> and start using the API.</p>
+<p>Congratulations: Workbench is now deployed to your AWS Account. Deploying the AWS Stack only needs to be done once. Now that this is complete your developers can simply <code>pip install workbench</code> and start using the API.</p>
 </div>
-<p>If you ran into any issues with this procedure please contact us via <a href="https://discord.gg/WHAJuz8sw8">Discord</a> or email <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> and the SCP team will provide <strong>free</strong> setup and support for new SageWorks users.</p>
+<p>If you ran into any issues with this procedure please contact us via <a href="https://discord.gg/WHAJuz8sw8">Discord</a> or email <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> and the SCP team will provide <strong>free</strong> setup and support for new Workbench users.</p>
 
 
 

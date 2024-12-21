@@ -20,7 +20,7 @@
     
     
       
-        <title>0.7.8 - SageWorks</title>
+        <title>0.7.8 - Workbench</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            SageWorks
+            Workbench
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -211,13 +211,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    SageWorks
+    Workbench
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -293,7 +293,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks REPL
+    Workbench REPL
   </span>
   
 
@@ -1817,7 +1817,7 @@
             
   
   <span class="md-ellipsis">
-    SageWorks Enterprise
+    Workbench Enterprise
   </span>
   
 
@@ -1827,7 +1827,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
-            SageWorks Enterprise
+            Workbench Enterprise
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3126,11 +3126,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3235,7 +3235,7 @@
 <h1 id="release-078">Release 0.7.8</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
-<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and SageWorks. So please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8</p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8</p>
 </div>
 <p>Since we've recently introduced a <strong>View()</strong> class for DataSources and FeatureSets we needed to rename a few classes/modules.</p>
 <h3 id="featuresets">FeatureSets</h3>
@@ -3249,14 +3249,14 @@
 </span></code></pre></div>
 <h3 id="webplugins">Web/Plugins</h3>
 <p>We've changed the Web/UI View class to 'WebView'. So anywhere where you used to have <strong>view</strong> just replace with <strong>web_view</strong></p>
-<p><div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>from sageworks.views.artifacts_view import ArtifactsView
+<p><div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>from workbench.views.artifacts_view import ArtifactsView
 </span></code></pre></div>
 is now</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>from sageworks.web_interface.page_views.all_artifacts import AllArtifacts
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>from workbench.web_interface.page_views.all_artifacts import AllArtifacts
 </span></code></pre></div>
 <h2 id="questions">Questions?</h2>
 <p><img align="right" src="../../../images/scp.png" width="180"></p>
-<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and SageWorks. Please contact us at <a href="mailto:sageworks@supercowpowers.com">sageworks@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
 
 
 

@@ -18,7 +18,7 @@
     
     
       
-        <title>SageWorks Docker for Lambdas - SageWorks</title>
+        <title>Workbench Docker for Lambdas - Workbench</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sageworks-docker-image-for-lambdas" class="md-skip">
+        <a href="#workbench-docker-image-for-lambdas" class="md-skip">
           Skip to content
         </a>
       
@@ -88,7 +88,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -102,13 +102,13 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            SageWorks
+            Workbench
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              SageWorks Docker for Lambdas
+              Workbench Docker for Lambdas
             
           </span>
         </div>
@@ -209,13 +209,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    SageWorks
+    Workbench
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -291,7 +291,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks REPL
+    Workbench REPL
   </span>
   
 
@@ -1815,7 +1815,7 @@
             
   
   <span class="md-ellipsis">
-    SageWorks Enterprise
+    Workbench Enterprise
   </span>
   
 
@@ -1825,7 +1825,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
-            SageWorks Enterprise
+            Workbench Enterprise
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3061,7 +3061,7 @@
           
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3072,7 +3072,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3356,8 +3356,8 @@
                   
 
 
-<h1 id="sageworks-docker-image-for-lambdas">SageWorks Docker Image for Lambdas</h1>
-<p>Using the SageWorks Docker Image for AWS Lambda Jobs allows your Lambda Jobs to use and create AWS ML Pipeline Artifacts with SageWorks.</p>
+<h1 id="workbench-docker-image-for-lambdas">Workbench Docker Image for Lambdas</h1>
+<p>Using the Workbench Docker Image for AWS Lambda Jobs allows your Lambda Jobs to use and create AWS ML Pipeline Artifacts with Workbench.</p>
 <p>AWS, for some reason, does not allow Public ECRs to be used for Lambda Docker images. So you'll have to copy the Docker image into your private ECR. </p>
 <h2 id="creating-a-private-ecr">Creating a Private ECR</h2>
 <p>You only need to do this if you don't already have a private ECR.</p>
@@ -3365,21 +3365,21 @@
 <ol>
 <li>Open the Amazon ECR console.</li>
 <li>Choose "Create repository".</li>
-<li>For "Repository name", enter <code>sageworks_base</code>.</li>
+<li>For "Repository name", enter <code>workbench_base</code>.</li>
 <li>Ensure "Private" is selected.</li>
 <li>Choose "Create repository".</li>
 </ol>
 <h4 id="command-line-to-create-private-ecr">Command Line to create Private ECR</h4>
 <p>Create the ECR repository using the AWS CLI:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>aws<span class="w"> </span>ecr<span class="w"> </span>create-repository<span class="w"> </span>--repository-name<span class="w"> </span>sageworks_base<span class="w"> </span>--region<span class="w"> </span>&lt;region&gt;
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>aws<span class="w"> </span>ecr<span class="w"> </span>create-repository<span class="w"> </span>--repository-name<span class="w"> </span>workbench_base<span class="w"> </span>--region<span class="w"> </span>&lt;region&gt;
 </span></code></pre></div>
 <h2 id="pulling-docker-image-into-private-ecr">Pulling Docker Image into Private ECR</h2>
-<p><strong>Note: You'll only need to do this when you want to update the SageWorks Docker image</strong></p>
-<p><strong>Pull the SageWorks Public ECR Image</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker pull public.ecr.aws/m6i5k1r2/sageworks_base:latest
+<p><strong>Note: You'll only need to do this when you want to update the Workbench Docker image</strong></p>
+<p><strong>Pull the Workbench Public ECR Image</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>docker pull public.ecr.aws/m6i5k1r2/workbench_base:latest
 </span></code></pre></div>
 <p><strong>Tag the image for your private ECR</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker tag public.ecr.aws/m6i5k1r2/sageworks_base:latest \
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker tag public.ecr.aws/m6i5k1r2/workbench_base:latest \
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>&lt;your-account-id&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com/&lt;private-repo&gt;:latest
 </span></code></pre></div>
 <p><strong>Push the image to your private ECR</strong></p>
@@ -3389,7 +3389,7 @@
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>docker push &lt;account-id&gt;.dkr.ecr.&lt;region&gt;.amazonaws.com/&lt;private-repo&gt;:&lt;tag&gt;
 </span></code></pre></div>
 <h3 id="using-the-docker-image-for-your-lambdas">Using the Docker Image for your Lambdas</h3>
-<p>Okay, now that you have the SageWorks Docker image in your private ECR, here's how you use that image for your Lambda jobs.</p>
+<p>Okay, now that you have the Workbench Docker image in your private ECR, here's how you use that image for your Lambda jobs.</p>
 <h4 id="aws-console">AWS Console</h4>
 <ol>
 <li>Open the AWS Lambda console.</li>

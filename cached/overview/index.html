@@ -20,7 +20,7 @@
     
     
       
-        <title>OverView - SageWorks</title>
+        <title>OverView - Workbench</title>
       
     
     
@@ -90,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="SageWorks" class="md-header__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -104,7 +104,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            SageWorks
+            Workbench
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -211,13 +211,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="SageWorks" class="md-nav__button md-logo" aria-label="SageWorks" data-md-component="logo">
+    <a href="../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    SageWorks
+    Workbench
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -293,7 +293,7 @@
         
   
   <span class="md-ellipsis">
-    SageWorks REPL
+    Workbench REPL
   </span>
   
 
@@ -665,9 +665,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#welcome-to-the-sageworks-cached-classes" class="md-nav__link">
+  <a href="#welcome-to-the-workbench-cached-classes" class="md-nav__link">
     <span class="md-ellipsis">
-      Welcome to the SageWorks Cached Classes
+      Welcome to the Workbench Cached Classes
     </span>
   </a>
   
@@ -1868,7 +1868,7 @@
             
   
   <span class="md-ellipsis">
-    SageWorks Enterprise
+    Workbench Enterprise
   </span>
   
 
@@ -1878,7 +1878,7 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
-            SageWorks Enterprise
+            Workbench Enterprise
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3097,11 +3097,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/sageworks_docker_for_lambdas/" class="md-nav__link">
+      <a href="../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    SageWorks Docker for Lambdas
+    Workbench Docker for Lambdas
   </span>
   
 
@@ -3153,9 +3153,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#welcome-to-the-sageworks-cached-classes" class="md-nav__link">
+  <a href="#welcome-to-the-workbench-cached-classes" class="md-nav__link">
     <span class="md-ellipsis">
-      Welcome to the SageWorks Cached Classes
+      Welcome to the Workbench Cached Classes
     </span>
   </a>
   
@@ -3181,18 +3181,18 @@
 <p class="admonition-title">Caching is Crazy</p>
 <p>Yes, but it's a necessary evil for Web Interfaces. AWS APIs (boto3, Sagemaker) often takes multiple seconds to respond and will often throttle requests if spammed. So for quicker response and less spamming we're using Cached Classes for any Web Interface work.</p>
 </div>
-<h2 id="welcome-to-the-sageworks-cached-classes">Welcome to the SageWorks Cached Classes</h2>
-<p>These classes provide caching for the for the most used SageWorks classes. They transparently handle all the details around retrieving and caching results from the underlying classes.</p>
+<h2 id="welcome-to-the-workbench-cached-classes">Welcome to the Workbench Cached Classes</h2>
+<p>These classes provide caching for the for the most used Workbench classes. They transparently handle all the details around retrieving and caching results from the underlying classes.</p>
 <ul>
 <li><strong><a href="../cached_meta/">CachedMeta</a>:</strong> Manages lists of Artifacts (get all models, endpoints, etc).</li>
-<li><strong><a href="../cached_data_source/">CachedDataSource</a>:</strong> Caches the method results for SageWorks DataSource.</li>
-<li><strong><a href="../cached_feature_set/">CachedFeatureSet</a>:</strong> Caches the method results for SageWorks FeatureSets.</li>
-<li><strong><a href="../cached_model/">CachedModel</a>:</strong> Caches the method results for SageWorks Models.</li>
-<li><strong><a href="../cached_endpoint/">CachedEndpoint</a>:</strong> Caches the method results for SageWorks Endpoints.</li>
+<li><strong><a href="../cached_data_source/">CachedDataSource</a>:</strong> Caches the method results for Workbench DataSource.</li>
+<li><strong><a href="../cached_feature_set/">CachedFeatureSet</a>:</strong> Caches the method results for Workbench FeatureSets.</li>
+<li><strong><a href="../cached_model/">CachedModel</a>:</strong> Caches the method results for Workbench Models.</li>
+<li><strong><a href="../cached_endpoint/">CachedEndpoint</a>:</strong> Caches the method results for Workbench Endpoints.</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Examples</p>
-<p>All of the SageWorks Examples are in the Sageworks Repository under the <code>examples/</code> directory. For a full code listing of any example please visit our <a href="https://github.com/SuperCowPowers/sageworks/blob/main/examples">SageWorks Examples</a></p>
+<p>All of the Workbench Examples are in the Workbench Repository under the <code>examples/</code> directory. For a full code listing of any example please visit our <a href="https://github.com/SuperCowPowers/workbench/blob/main/examples">Workbench Examples</a></p>
 </div>
 
 
