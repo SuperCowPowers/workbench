@@ -59,10 +59,6 @@ def onboard():
 if not ConfigManager().config_okay():
     onboard()
 
-# Delayed Workbench Imports
-from workbench.web_interface.components.plugin_unit_test import PluginUnitTest  # noqa E402
-
-
 # Set the log level to important
 logging.getLogger("workbench").setLevel(IMPORTANT_LEVEL_NUM)
 
@@ -492,7 +488,7 @@ class WorkbenchShell:
             input_data (Optional): Optional input data (e.g., DataSource, FeatureSet, etc.)
             **kwargs: Additional keyword arguments for plugin properties.
         """
-        # Create the PluginUnitTest object
+        from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
         plugin_test = PluginUnitTest(plugin_class, input_data, auto_update=True, **kwargs)
 
         url = "http://127.0.0.1:8050"

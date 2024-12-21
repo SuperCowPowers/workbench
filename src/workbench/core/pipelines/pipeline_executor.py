@@ -5,7 +5,6 @@ import logging
 # Workbench Imports
 from workbench.api import DataSource, FeatureSet, Model, Endpoint
 from workbench.api.model import ModelType
-from workbench.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
 
 
 class PipelineExecutor:
@@ -87,12 +86,12 @@ class PipelineExecutor:
                         # Hard coded: Cheese sauce for now
                         if kwargs["feature_schema"] == "molecular_descriptors_v1":
                             del kwargs["feature_schema"]
-                            self.log.important("Feature Schema: molecular_descriptors_v1")
-                            rdkit_features = MolecularDescriptors(data_input, kwargs["name"])
-                            rdkit_features.set_output_tags(kwargs["tags"])
+                            self.log.error("Feature Schema: molecular_descriptors_v1 not currently implemented")
+                            # rdkit_features = MolecularDescriptors(data_input, kwargs["name"])
+                            # rdkit_features.set_output_tags(kwargs["tags"])
                             # query = f"SELECT id, solubility, smiles FROM {data_input}"
                             # rdkit_features.transform(id_column=kwargs["id_column"], query=query)
-                            rdkit_features.transform(id_column=kwargs["id_column"])
+                            # rdkit_features.transform(id_column=kwargs["id_column"])
                         else:
                             raise RuntimeError(f"Unsupported feature schema: {kwargs['feature_schema']}")
                     else:
