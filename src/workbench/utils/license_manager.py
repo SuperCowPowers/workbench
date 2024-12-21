@@ -149,7 +149,7 @@ class LicenseManager:
     @classmethod
     def contact_license_server(cls) -> requests.Response:
         """Contact the Workbench License Server to verify the license."""
-        server_url = "https://workbench-keyserver.com/decode-key"
+        server_url = "https://sageworks-keyserver.com/decode-key"
         headers = {"Content-Type": "application/json", "x-api-key": cls.license_api_key}
         data = {"api_key": cls.api_key}
         return requests.post(server_url, headers=headers, json=data)
