@@ -147,6 +147,7 @@ class WorkbenchCoreStack(Stack):
             actions=[
                 # Catalog-wide permissions
                 "glue:GetDatabases",
+                "glue:GetDatabase",
                 "glue:CreateDatabase",
                 "glue:SearchTables",
             ],
