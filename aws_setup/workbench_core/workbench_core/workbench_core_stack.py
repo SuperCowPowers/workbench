@@ -150,6 +150,7 @@ class WorkbenchCoreStack(Stack):
                 "glue:GetDatabase",
                 "glue:CreateDatabase",
                 "glue:SearchTables",
+                "glue:GetTables",
             ],
             resources=[catalog_arn],
         )
