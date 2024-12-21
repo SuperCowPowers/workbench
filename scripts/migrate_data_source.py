@@ -35,13 +35,8 @@ def migrate(name):
 if __name__ == "__main__":
     # Argument parsing for the DataSource name
     parser = argparse.ArgumentParser(description="Migrate a DataSource from the old database to the new one.")
-    parser.add_argument(
-        "name", 
-        type=str, 
-        help="The name of the DataSource to migrate"
-    )
+    parser.add_argument("name", type=str, help="The name of the DataSource to migrate")
     args = parser.parse_args()
 
     # Perform the migration
     migrate(args.name)
-
