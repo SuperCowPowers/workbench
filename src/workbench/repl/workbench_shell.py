@@ -489,6 +489,7 @@ class WorkbenchShell:
             **kwargs: Additional keyword arguments for plugin properties.
         """
         from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
+
         plugin_test = PluginUnitTest(plugin_class, input_data, auto_update=True, **kwargs)
 
         url = "http://127.0.0.1:8050"
