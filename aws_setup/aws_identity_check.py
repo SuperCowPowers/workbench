@@ -31,10 +31,15 @@ class AWSIdentityCheck:
             self.log.info("No AWS_PROFILE set")
             sys.exit(0)
 
-        # Now get the current AWS Identity from the AWSAccountClamp Class
-        self.log.info("*** AWS Identity Check ***")
+        # Now get the current Caller/Base AWS Identity from the AWSAccountClamp Class
+        self.log.info("\n\n*** Caller/Base Identity Check ***")
         self.aws_clamp.check_aws_identity()
-        self.log.info("Identity Check Success...")
+        self.log.info("Caller/Base Identity Check Success...")
+
+        # Print out info about the Assume Role
+        self.log.info("\n\n*** AWS Assumed Role Check ***")
+        self.aws_clamp.check_assumed_role()
+        self.log.info("Assumed Role Check Success...")
 
 
 if __name__ == "__main__":

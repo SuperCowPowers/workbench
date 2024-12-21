@@ -44,13 +44,17 @@ class AWSAccountClamp:
         self.aws_session = AWSSession()
         self.boto3_session = self.aws_session.boto3_session
 
-        # Check our AWS Identity
+        # Check our caller/base AWS Identity
         try:
             self.account_id = boto3.client("sts").get_caller_identity()["Account"]
             self.region = boto3.session.Session().region_name
         except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
             self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
             raise FatalConfigError()
+
+        # Check our Assume Role
+        self.log.info("Checking Workbench Assumed Role...")
+        self.aws_session.assumed_role_info()
 
         # Check our Workbench API Key and Load the License
         self.log.info("Checking Workbench API License...")
@@ -61,15 +65,22 @@ class AWSAccountClamp:
         self._initialized = True
 
     def check_aws_identity(self) -> bool:
-        """Check the AWS Identity currently active"""
-        # Check AWS Identity Token
-        sts = boto3.client("sts")
+        """Check the Caller/Base AWS Identity currently active (not the assumed role)"""
+
+        # Using the caller/base boto3 client (not the assumed role session)
         try:
-            identity = sts.get_caller_identity()
-            self.log.info("AWS Account Info:")
-            self.log.info(f"Account: {identity['Account']}")
-            self.log.info(f"Identity ARN: {identity['Arn']}")
-            self.log.info(f"Region: {self.region}")
+            sts = boto3.client("sts")
+            sts.get_caller_identity()
+            return True
+        except (ClientError, UnauthorizedSSOTokenError):
+            msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
+            self.log.critical(msg)
+            raise RuntimeError(msg)
+
+    def check_assumed_role(self) -> bool:
+        """Check the AWS Identity of the Assumed Role"""
+        try:
+            self.aws_session.assumed_role_info()
             return True
         except (ClientError, UnauthorizedSSOTokenError):
             msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
@@ -126,14 +137,18 @@ if __name__ == "__main__":
 
     # Check out that AWS Account Clamp is working AOK
     """Check if the AWS Account is Setup Correctly"""
-    print("*** AWS Identity Check ***")
+    print("\n\n*** AWS Caller/Base Identity Check ***")
     aws_account_clamp.check_aws_identity()
-    print("Identity Check Success...")
+    print("Caller/Base Identity Check Success...")
 
-    print("*** AWS S3 Access Check ***")
+    print("\n\n*** AWS Assumed Role Check ***")
+    aws_account_clamp.check_assumed_role()
+    print("Assumed Role Check Success...")
+
+    print("\n\n*** AWS S3 Access Check ***")
     aws_account_clamp.check_s3_access()
     print("S3 Access Check Success...")
 
-    print("*** AWS Sagemaker Session/Client Check ***")
+    print("\n\n*** AWS Sagemaker Session/Client Check ***")
     sm_client = aws_account_clamp.sagemaker_client()
     print(sm_client.list_feature_groups()["FeatureGroupSummaries"])

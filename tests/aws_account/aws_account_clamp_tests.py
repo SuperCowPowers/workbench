@@ -12,9 +12,12 @@ def test():
 
     # Check out that AWS Account Clamp is working AOK
     """Check if the AWS Account is Setup Correctly"""
-    print("*** AWS Identity Check ***")
+    print("*** AWS Caller/Base Identity Check ***")
     aws_account_clamp.check_aws_identity()
-    print("Identity Check Success...")
+    print("Caller/Base Identity Check Success...")
+
+    print("*** AWS Assumed Role Check ***")
+    aws_account_clamp.check_assumed_role()
 
     print("*** AWS S3 Access Check ***")
     aws_account_clamp.check_s3_access()

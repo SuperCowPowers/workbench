@@ -73,6 +73,21 @@ class AWSSession:
             self.log.critical(msg)
             raise RuntimeError(msg) from e
 
+    def assumed_role_info(self) -> dict:
+        """Get info about the assumed role by querying our internal boto3 session"""
+        sts_client = self.boto3_session.client("sts")
+
+        # Get the caller identity to verify the assumed role
+        identity = sts_client.get_caller_identity()
+        assumed_role_arn = identity["Arn"]
+        account_id = identity["Account"]
+        user_id = identity["UserId"]
+        return {
+            "AssumedRoleArn": assumed_role_arn,
+            "AccountId": account_id,
+            "UserId": user_id,
+        }
+
     def is_workbench_role(self) -> bool:
         """Helper: Check if the current AWS Identity is the Workbench Role"""
         sts_client = boto3.client("sts")
@@ -140,14 +155,6 @@ class AWSSession:
 if __name__ == "__main__":
     """Exercise the AWS Session Class"""
 
+    # Print out info about the assumed role
     my_aws_session = AWSSession()
-    my_boto_session = AWSSession().boto3_session
-    my_sts_client = my_boto_session.client("sts")
-
-    print(f"Account ID: {my_sts_client.get_caller_identity()['Account']}")
-    print(f"Region: {my_boto_session.region_name}")
-    print(f"Identity: {my_sts_client.get_caller_identity()['Arn']}")
-    print(f"Session Token: {my_boto_session.get_credentials().token}")
-    print(f"Session Expiry: {my_boto_session.get_credentials()._expiry_time}")
-    my_aws_session.c_print(f"Assumed Role: {my_boto_session.get_credentials().method}")
-    my_aws_session.c_print("Fake Critical Message", critical=True)
+    my_aws_session.assumed_role_info()
