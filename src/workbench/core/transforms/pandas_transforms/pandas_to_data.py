@@ -25,18 +25,19 @@ class PandasToData(Transform):
         ```
     """
 
-    def __init__(self, output_uuid: str, output_format: str = "parquet"):
+    def __init__(self, output_uuid: str, output_format: str = "parquet", catalog_db: str = "workbench"):
         """PandasToData Initialization
         Args:
             output_uuid (str): The UUID of the DataSource to create
             output_format (str): The file format to store the S3 object data in (default: "parquet")
+            catalog_db (str): The AWS Data Catalog Database to use (default: "workbench")
         """
 
         # Make sure the output_uuid is a valid name/id
         Artifact.is_name_valid(output_uuid)
 
         # Call superclass init
-        super().__init__("DataFrame", output_uuid)
+        super().__init__("DataFrame", output_uuid, catalog_db)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
@@ -90,12 +91,12 @@ class PandasToData(Transform):
         """Pre-Transform: Delete the existing DataSource if it exists"""
         self.delete_existing()
 
-    def transform_impl(self, overwrite: bool = True, **kwargs):
+    def transform_impl(self, overwrite: bool = True):
         """Convert the Pandas DataFrame into Parquet Format in the Workbench S3 Bucket, and
         store the information about the data to the AWS Data Catalog workbench database
 
         Args:
-            overwrite (bool): Overwrite the existing data in the Workbench S3 Bucket
+            overwrite (bool): Overwrite the existing data in the Workbench S3 Bucket (default: True)
         """
         self.log.info(f"DataFrame to Workbench DataSource: {self.output_uuid}...")
 

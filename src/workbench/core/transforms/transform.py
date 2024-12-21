@@ -39,8 +39,14 @@ class Transform(ABC):
     """Transform: Abstract Base Class for all transforms within Workbench. Inherited Classes
     must implement the abstract transform_impl() method"""
 
-    def __init__(self, input_uuid: str, output_uuid: str):
-        """Transform Initialization"""
+    def __init__(self, input_uuid: str, output_uuid: str, catalog_db: str = "workbench"):
+        """Transform Initialization
+
+        Args:
+            input_uuid (str): The UUID of the Input Artifact
+            output_uuid (str): The UUID of the Output Artifact
+            catalog_db (str): The AWS Data Catalog Database to use (default: "workbench")
+        """
 
         self.log = logging.getLogger("workbench")
         self.input_type = None
@@ -49,7 +55,7 @@ class Transform(ABC):
         self.input_uuid = str(input_uuid)  # Occasionally we get a pathlib.Path object
         self.output_uuid = str(output_uuid)  # Occasionally we get a pathlib.Path object
         self.output_meta = {"workbench_input": self.input_uuid}
-        self.data_catalog_db = "workbench"
+        self.data_catalog_db = catalog_db
 
         # Grab our Workbench Bucket
         cm = ConfigManager()
