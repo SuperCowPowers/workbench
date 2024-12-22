@@ -4,7 +4,10 @@ import logging
 import numpy as np
 import pandas as pd
 
-# Third Party Imports
+# Workbench Imports
+from workbench.utils.pandas_utils import impute_values
+
+# Molecular Descriptor Imports
 try:
     from rdkit import Chem
     from rdkit.Chem import Mol, Descriptors, rdFingerprintGenerator, Draw
@@ -142,17 +145,11 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
     rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
 
-    # Report any NaN or Infinite values and drop those rows
-    invalid_rows = rdkit_features_df.isna().any(axis=1) | rdkit_features_df.isin([np.inf, -np.inf]).any(axis=1)
-    if invalid_rows.any():
-        log.warning(f"Rows with NaN/INF found in the RDKit Descriptors DataFrame: {invalid_rows.sum()}")
-        log.warning(f"Invalid rows:\n{rdkit_features_df[invalid_rows]}")
+    # Ensure all columns are numeric, converting invalid values to NaN
+    rdkit_features_df = rdkit_features_df.apply(pd.to_numeric, errors='coerce')
 
-        # Remove the invalid rows
-        rdkit_features_df = rdkit_features_df[~invalid_rows]
-
-    # Convert all the columns to numeric
-    rdkit_features_df = rdkit_features_df.apply(pd.to_numeric)
+    # Impute any NaN or Infinite values
+    rdkit_features_df = impute_values(rdkit_features_df)
 
     # Now compute Mordred Features
     log.info("Computing Mordred Descriptors...")
@@ -162,17 +159,11 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         calc.register(des)
     mordred_df = calc.pandas(molecules, nproc=1)
 
-    # Report any NaN or Infinite values and drop those rows
-    invalid_rows = mordred_df.isna().any(axis=1) | mordred_df.isin([np.inf, -np.inf]).any(axis=1)
-    if invalid_rows.any():
-        log.warning(f"Rows with NaN/INF found in the Mordred Descriptors DataFrame: {invalid_rows.sum()}")
-        log.warning(f"Invalid rows:\n{mordred_df[invalid_rows]}")
+    # Ensure all columns are numeric, converting invalid values to NaN
+    mordred_df = mordred_df.apply(pd.to_numeric, errors='coerce')
 
-        # Remove the invalid rows
-        mordred_df = mordred_df[~invalid_rows]
-
-    # Convert all the columns to numeric
-    mordred_df = mordred_df.apply(pd.to_numeric)
+    # Impute any NaN or Infinite values
+    mordred_df = impute_values(mordred_df)
 
     # Return the DataFrame with the RDKit and Mordred Descriptors added
     output_df = pd.concat([df, rdkit_features_df, mordred_df], axis=1)

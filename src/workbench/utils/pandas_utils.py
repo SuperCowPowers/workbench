@@ -221,52 +221,70 @@ def numeric_stats(df):
     return df.describe().round(2).T.drop("count", axis=1)
 
 
-def drop_nans(
-    input_df: pd.DataFrame, how: str = "all", nan_drop_percent: float = 50, subset: list = None
-) -> pd.DataFrame:
-    """Dropping NaNs in rows and columns. Optionally, focus on specific columns.
+def remove_rows_with_nans(input_df: pd.DataFrame, how: str = "any", subset: list = None) -> pd.DataFrame:
+    """
+    Removes rows with NaN or INF values from the DataFrame.
 
     Args:
         input_df (pd.DataFrame): Input data frame.
-        how (str): 'all' to drop rows where all values are NaN, 'any' to drop rows where any value is NaN.
-        nan_drop_percent (float): Percentage threshold to drop columns with missing values exceeding this rate.
-        subset (list): Specific subset of columns to check for NaNs when dropping rows.
+        how (str): 'any' to drop rows where any value is NaN/INF, 'all' to drop rows where all values are NaN/INF.
+        subset (list): Specific subset of columns to check for NaN/INF.
 
     Returns:
-        pd.DataFrame: DataFrame with NaNs dropped.
+        pd.DataFrame: DataFrame with rows containing NaN/INF removed.
     """
+    log.info("Replacing INF/-INF values with NaN.")
+    input_df = input_df.replace([np.inf, -np.inf], np.nan)
 
-    # Grab input number of rows
     orig_num_rows = len(input_df)
+    log.info(f"Checking for rows with NaN values using '{how}' condition.")
 
-    # First replace any INF/-INF with NaN
-    output_df = input_df.replace([np.inf, -np.inf], np.nan)
+    input_df = input_df.dropna(axis=0, how=how, subset=subset)
+    dropped_rows = orig_num_rows - len(input_df)
 
-    # Drop Columns that have a large percent of NaNs in them
-    column_nan_percent = get_percent_nan(output_df)
-    drop_columns = [name for name, percent in column_nan_percent.items() if percent > nan_drop_percent]
-    output_df = output_df.drop(drop_columns, axis=1)
-
-    # Report on Dropped Columns
-    nan_warn_percent = 0
-    for name, percent in column_nan_percent.items():
-        if percent > nan_warn_percent:
-            log.important(f"Column ({name}) has {percent}% NaN Values")
-        if percent > nan_drop_percent:
-            log.warning(f"Column ({name}) with {percent}% NaN Values!")
-
-    # Conditionally drop rows based on NaNs in specified columns
-    if subset is not None:
-        output_df.dropna(axis=0, how=how, subset=subset, inplace=True)
+    if dropped_rows > 0:
+        log.warning(f"Dropped {dropped_rows} rows with NaN or INF values.")
     else:
-        output_df.dropna(axis=0, how=how, inplace=True)
+        log.info("No rows with NaN or INF values found.")
 
-    if len(output_df) != orig_num_rows:
-        dropped_rows = orig_num_rows - len(output_df)
-        log.important(f"Dropping {dropped_rows} rows that have a NaN in them")
-        output_df.reset_index(drop=True, inplace=True)
+    input_df.reset_index(drop=True, inplace=True)
+    return input_df
 
-    return output_df
+def impute_values(input_df: pd.DataFrame, strategy: str = "mean") -> pd.DataFrame:
+    """
+    Imputes NaN/INF values in the DataFrame using a specified strategy.
+
+    Args:
+        input_df (pd.DataFrame): Input data frame.
+        strategy (str): Imputation strategy. Currently supports 'mean', 'median', or 'zero'.
+
+    Returns:
+        pd.DataFrame: DataFrame with NaN/INF values imputed.
+    """
+    log.info("Replacing INF/-INF values with NaN.")
+    input_df = input_df.replace([np.inf, -np.inf], np.nan)
+
+    log.info(f"Imputing missing values using '{strategy}' strategy.")
+    for col in input_df.columns:
+        if input_df[col].isna().any():
+            # Determine the imputation value
+            if strategy == "mean":
+                fill_value = input_df[col].mean()
+            elif strategy == "median":
+                fill_value = input_df[col].median()
+            elif strategy == "zero":
+                fill_value = 0
+            else:
+                raise ValueError(f"Unsupported imputation strategy: {strategy}")
+
+            # Count the number of NaN values to be replaced
+            num_values = input_df[col].isna().sum()
+
+            # Update the column
+            input_df[col] = input_df[col].fillna(fill_value)
+            log.warning(f"Imputing {col} replacing {num_values} values with {strategy}({fill_value:.2f})")
+
+    return input_df
 
 
 def drop_duplicates(input_df: pd.DataFrame) -> pd.DataFrame:
@@ -586,7 +604,7 @@ if __name__ == "__main__":
     print(stats_df)
 
     # Clean the DataFrame
-    clean_df = drop_nans(test_df)
+    clean_df = remove_rows_with_nans(test_df)
     log.info(clean_df)
 
     # Drop Outliers

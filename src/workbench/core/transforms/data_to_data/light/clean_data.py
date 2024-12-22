@@ -41,7 +41,7 @@ class CleanData(DataToDataLight):
         """
 
         # Drop Rows that have NaNs in them
-        self.output_df = pandas_utils.drop_nans(self.input_df, how=drop_na)
+        self.output_df = pandas_utils.remove_rows_with_nans(self.input_df, how=drop_na)
 
         # Drop Duplicates
         if drop_duplicates:

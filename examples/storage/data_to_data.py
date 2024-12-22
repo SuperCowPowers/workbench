@@ -17,7 +17,7 @@ class DataToDataExample(DataToDataLight):
         input dataframe and produce an output dataframe (of any form)"""
 
         # Drop Rows that have NaNs in them
-        self.output_df = pandas_utils.drop_nans(self.input_df, how=drop_na)
+        self.output_df = pandas_utils.remove_rows_with_nans(self.input_df, how=drop_na)
 
 
 # Simple test of the DataToDataExample functionality

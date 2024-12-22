@@ -4,7 +4,7 @@ from typing import Union
 
 # Workbench Imports
 from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
-from workbench.utils.pandas_utils import drop_nans
+from workbench.utils.pandas_utils import remove_rows_with_nans
 
 
 class ProximityGraph:
@@ -43,7 +43,7 @@ class ProximityGraph:
             nx.Graph: The proximity graph as a NetworkX graph.
         """
         # Drop NaNs from the DataFrame using the provided utility
-        df = drop_nans(df)
+        df = remove_rows_with_nans(df)
 
         # Initialize FeatureSpaceProximity with the input DataFrame and the specified features
         knn_spider = FeatureSpaceProximity(

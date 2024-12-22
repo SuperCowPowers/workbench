@@ -6,7 +6,7 @@ from sklearn.neighbors import KNeighborsRegressor
 from sklearn.preprocessing import StandardScaler
 
 # Workbench Imports
-from workbench.utils.pandas_utils import drop_nans
+from workbench.utils.pandas_utils import remove_rows_with_nans
 
 
 class TargetGradients(BaseEstimator, TransformerMixin):
@@ -45,7 +45,7 @@ class TargetGradients(BaseEstimator, TransformerMixin):
 
         # Drop rows with NaNs (we need to combine X and y, so that rows with NaNs are dropped together)
         df = pd.concat([X, y], axis=1)
-        df = drop_nans(df)
+        df = remove_rows_with_nans(df)
         X = df.drop(columns=[y.name])
         y = df[y.name]
 
@@ -73,7 +73,7 @@ class TargetGradients(BaseEstimator, TransformerMixin):
         """
 
         # Drop rows with NaNs in the DataFrame
-        X = drop_nans(X)
+        X = remove_rows_with_nans(X)
 
         # Standardize the features
         df_norm = pd.DataFrame(self.scalar.fit_transform(X), columns=X.columns, index=X.index)
