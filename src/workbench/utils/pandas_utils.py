@@ -250,6 +250,7 @@ def remove_rows_with_nans(input_df: pd.DataFrame, how: str = "any", subset: list
     input_df.reset_index(drop=True, inplace=True)
     return input_df
 
+
 def impute_values(input_df: pd.DataFrame, strategy: str = "mean") -> pd.DataFrame:
     """
     Imputes NaN/INF values in the DataFrame using a specified strategy.

@@ -146,7 +146,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
 
     # Ensure all columns are numeric, converting invalid values to NaN
-    rdkit_features_df = rdkit_features_df.apply(pd.to_numeric, errors='coerce')
+    rdkit_features_df = rdkit_features_df.apply(pd.to_numeric, errors="coerce")
 
     # Impute any NaN or Infinite values
     rdkit_features_df = impute_values(rdkit_features_df)
@@ -160,7 +160,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     mordred_df = calc.pandas(molecules, nproc=1)
 
     # Ensure all columns are numeric, converting invalid values to NaN
-    mordred_df = mordred_df.apply(pd.to_numeric, errors='coerce')
+    mordred_df = mordred_df.apply(pd.to_numeric, errors="coerce")
 
     # Impute any NaN or Infinite values
     mordred_df = impute_values(mordred_df)
