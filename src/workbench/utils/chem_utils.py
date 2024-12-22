@@ -10,6 +10,11 @@ try:
     from rdkit.Chem import Mol, Descriptors, rdFingerprintGenerator, Draw
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
+    from rdkit import RDLogger
+
+    # Set RDKit logger to only show errors or critical messages
+    lg = RDLogger.logger()
+    lg.setLevel(RDLogger.ERROR)
 
     NO_RDKIT = False
 except ImportError:
@@ -131,17 +136,43 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     all_descriptors = list(set(all_descriptors))
 
     # Super useful Molecular Descriptor Calculator Class
+    log.info("Computing RDKit Descriptors...")
     calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
     column_names = calc.GetDescriptorNames()
     descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
     rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
 
+    # Report any NaN or Infinite values and drop those rows
+    invalid_rows = rdkit_features_df.isna().any(axis=1) | rdkit_features_df.isin([np.inf, -np.inf]).any(axis=1)
+    if invalid_rows.any():
+        log.warning(f"Rows with NaN/INF found in the RDKit Descriptors DataFrame: {invalid_rows.sum()}")
+        log.warning(f"Invalid rows:\n{rdkit_features_df[invalid_rows]}")
+
+        # Remove the invalid rows
+        rdkit_features_df = rdkit_features_df[~invalid_rows]
+
+    # Convert all the columns to numeric
+    rdkit_features_df = rdkit_features_df.apply(pd.to_numeric)
+
     # Now compute Mordred Features
+    log.info("Computing Mordred Descriptors...")
     descriptor_choice = [AcidBase, Aromatic, Polarizability, RotatableBond]
     calc = Calculator()
     for des in descriptor_choice:
         calc.register(des)
     mordred_df = calc.pandas(molecules, nproc=1)
+
+    # Report any NaN or Infinite values and drop those rows
+    invalid_rows = mordred_df.isna().any(axis=1) | mordred_df.isin([np.inf, -np.inf]).any(axis=1)
+    if invalid_rows.any():
+        log.warning(f"Rows with NaN/INF found in the Mordred Descriptors DataFrame: {invalid_rows.sum()}")
+        log.warning(f"Invalid rows:\n{mordred_df[invalid_rows]}")
+
+        # Remove the invalid rows
+        mordred_df = mordred_df[~invalid_rows]
+
+    # Convert all the columns to numeric
+    mordred_df = mordred_df.apply(pd.to_numeric)
 
     # Return the DataFrame with the RDKit and Mordred Descriptors added
     output_df = pd.concat([df, rdkit_features_df, mordred_df], axis=1)
