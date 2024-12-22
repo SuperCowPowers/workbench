@@ -4,9 +4,11 @@
 
 ## Latest Blogs
 
+- **[Molecular Descriptors NaNs for AqSol Data](residual_analysis.md):** In this Blog we'll look at the popular AqSol compound solubility dataset and walk through the the process of computing Molecular Descriptor (RDKit and Mordred) and taking a deep dive on why NaNs are generated on ~8% of the compounds.
+
 - **[AqSol Residual Analysis](residual_analysis.md):** In this Blog we'll look at the popular AqSol compound solubility dataset and walk backward through the ML pipeline by starting with model residuals and backtracking to the features and input data.
 
-## Stupid yet Interesting
+## Corner Cases
 
 These blogs are odd corner cases that we stumbled into and discovered some interesting aspect of Cloud Platforms or ML Pipelines. 
 
