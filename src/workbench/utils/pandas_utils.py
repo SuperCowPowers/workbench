@@ -8,6 +8,7 @@ import json
 from io import StringIO
 import hashlib
 import logging
+from collections import defaultdict
 from typing import Dict, Tuple, List, Optional
 
 # Workbench Logger
@@ -184,14 +185,6 @@ def column_dtypes(df):
     return s
 
 
-def old_examples(df, non_numeric_columns):
-    first_n = [df[c].unique()[:5].tolist() if c in non_numeric_columns else ["-"] for c in df.columns]
-    first_n = [", ".join([str(x) for x in _list]) for _list in first_n]
-    s = pd.Series(first_n, df.columns)
-    s.name = "examples"
-    return s
-
-
 def examples(df):
     first_n = [df[c].unique()[:5].tolist() for c in df.columns]
     first_n = [", ".join([str(x) for x in _list]) for _list in first_n]
@@ -220,6 +213,35 @@ def numeric_stats(df):
     """Simple function to get the numeric stats for a dataframe"""
     return df.describe().round(2).T.drop("count", axis=1)
 
+
+def convert_to_numeric(df, verbose=False) -> pd.DataFrame:
+    """Converts all columns in a DataFrame to numeric, reporting parse errors and coercing invalid values to NaN.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame.
+        verbose (bool): Whether to log failed parsing attempts.
+
+    Returns:
+        pd.DataFrame: DataFrame with columns converted to numeric.
+    """
+
+    # Backup the original DataFrame before conversion
+    original_df = df.copy()
+
+    # Convert to numeric, coercing invalid values to NaN
+    df = df.apply(pd.to_numeric, errors="coerce")
+
+    # If verbose, find locations where values were coerced to NaN and report
+    if verbose:
+        failed_parsing = df.isna() & ~original_df.isna()
+        for column in failed_parsing.columns:
+            if failed_parsing[column].any():
+                failed_rows = original_df.loc[failed_parsing[column], column]
+                for index, value in failed_rows.items():
+                    log.warning(f"Failed to parse value '{value}' in column '{column}' at index {index}.")
+
+    # Return the DataFrame with columns converted to numeric
+    return df
 
 def remove_rows_with_nans(input_df: pd.DataFrame, how: str = "any", subset: list = None) -> pd.DataFrame:
     """
@@ -251,42 +273,104 @@ def remove_rows_with_nans(input_df: pd.DataFrame, how: str = "any", subset: list
     return input_df
 
 
-def impute_values(input_df: pd.DataFrame, strategy: str = "median") -> pd.DataFrame:
+def feature_quality_metrics(input_df: pd.DataFrame, feature_list: list, strategy: str = "median") -> pd.DataFrame:
     """
-    Imputes NaN/INF values in the DataFrame using a specified strategy.
+    Imputes NaN/INF values in the specified feature columns of the DataFrame and tracks feature quality issues.
 
     Args:
         input_df (pd.DataFrame): Input data frame.
+        feature_list (list): List of feature columns to process.
         strategy (str): Imputation strategy. Currently supports 'mean', 'median', or 'zero'.
 
     Returns:
-        pd.DataFrame: DataFrame with NaN/INF values imputed.
-    """
-    log.info("Replacing INF/-INF values with NaN.")
-    input_df = input_df.replace([np.inf, -np.inf], np.nan)
+        pd.DataFrame: DataFrame with NaN/INF values imputed and a 'feature_quality_tags' column.
 
+    Behavior:
+        1. Tracks and tags rows with feature quality issues:
+            - 'parse': Values that failed to parse when converting to numeric.
+            - 'inf': INF/-INF values in the DataFrame.
+            - 'nan': NaN values identified during processing.
+        2. Replaces parse errors and inf values with NaN.
+        3. Imputes all NaN values using the specified strategy ('mean', 'median', or 'zero').
+        4. Logs detailed information about detected and handled feature quality issues.
+    """
+    # Backup the original DataFrame and isolate feature columns for processing
+    process_df = input_df[feature_list].copy()
+
+    # Initialize the feature_quality_tags column as an empty list for all rows
+    feature_quality_tags = [[] for _ in range(len(process_df))]
+
+    # Convert feature columns to numeric, coercing invalid values to NaN
+    process_df = process_df.apply(pd.to_numeric, errors="coerce")
+
+    # Track and tag parsing errors
+    parsing_error_counts = defaultdict(lambda: defaultdict(int))
+
+    # Get indices of failed parsing as a single DataFrame
+    failed_parsing = process_df.isna() & ~input_df[feature_list].isna()
+    failed_indices = failed_parsing.stack()  # Stack to get a Series of True values with multi-index (row, column)
+
+    # Filter to keep only True (failed parsing) entries
+    failed_indices = failed_indices[failed_indices]
+
+    # Process all parsing errors at once
+    for (row, column) in failed_indices.index:
+        value = input_df.at[row, column]
+        feature_quality_tags[row].append("parse")
+        parsing_error_counts[column][str(value)] += 1
+
+    # Report parsing error counts
+    for column, errors in parsing_error_counts.items():
+        for value, count in errors.items():
+            log.important(f"Column '{column}' had {count} occurrences of the parsing error value '{value}'.")
+
+    # Count and log the number of INF/-INF values
+    inf_locations = np.isinf(process_df[feature_list])
+    inf_count = inf_locations.sum().sum()  # Total count across all rows and columns
+
+    if inf_count > 0:
+        for column in process_df.columns:
+            if inf_locations[column].any():
+                inf_rows = process_df.loc[inf_locations[column], column]
+                for index, value in inf_rows.items():
+                    log.important(f"'{value}' found in column '{column}' at index {index}.")
+                    feature_quality_tags[index].append("inf")
+
+        # Replace INF/-INF values with NaN
+        process_df = process_df.replace([np.inf, -np.inf], np.nan)
+
+    # Log and handle NaN values
     log.info(f"Imputing missing values using '{strategy}' strategy.")
-    for col in input_df.columns:
-        if input_df[col].isna().any():
+    for col in process_df.columns:
+        if process_df[col].isna().any():
             # Determine the imputation value
             if strategy == "mean":
-                fill_value = input_df[col].mean()
+                fill_value = process_df[col].mean()
             elif strategy == "median":
-                fill_value = input_df[col].median()
+                fill_value = process_df[col].median()
             elif strategy == "zero":
                 fill_value = 0
             else:
                 raise ValueError(f"Unsupported imputation strategy: {strategy}")
 
             # Count the number of NaN values to be replaced
-            num_values = input_df[col].isna().sum()
+            num_values = process_df[col].isna().sum()
+
+            # Update the feature_quality_tags for NaN values
+            nan_indices = process_df[process_df[col].isna()].index
+            for index in nan_indices:
+                feature_quality_tags[index].append("nan")
 
             # Update the column
-            input_df[col] = input_df[col].fillna(fill_value)
-            log.warning(f"Imputing {col} replacing {num_values} values with {strategy}({fill_value:.2f})")
+            process_df[col] = process_df[col].fillna(fill_value)
+            log.important(f"Imputing {col} replacing {num_values} values with {strategy}({fill_value:.2f})")
 
-    return input_df
+    # Combine processed feature columns with untouched columns and feature_quality_tags
+    untouched_columns = input_df.drop(columns=feature_list)
+    result_df = pd.concat([untouched_columns, process_df], axis=1)
+    result_df["feature_quality_tags"] = feature_quality_tags
 
+    return result_df
 
 def drop_duplicates(input_df: pd.DataFrame) -> pd.DataFrame:
     """Drop duplicate rows from a dataframe
