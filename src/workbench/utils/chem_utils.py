@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 # Workbench Imports
-from workbench.utils.pandas_utils import impute_values
+from workbench.utils.pandas_utils import feature_quality_metrics
 
 # Molecular Descriptor Imports
 try:
@@ -145,12 +145,6 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
     rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
 
-    # Ensure all columns are numeric, converting invalid values to NaN
-    rdkit_features_df = rdkit_features_df.apply(pd.to_numeric, errors="coerce")
-
-    # Impute any NaN or Infinite values
-    rdkit_features_df = impute_values(rdkit_features_df)
-
     # Now compute Mordred Features
     log.info("Computing Mordred Descriptors...")
     descriptor_choice = [AcidBase, Aromatic, Polarizability, RotatableBond]
@@ -159,14 +153,12 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         calc.register(des)
     mordred_df = calc.pandas(molecules, nproc=1)
 
-    # Ensure all columns are numeric, converting invalid values to NaN
-    mordred_df = mordred_df.apply(pd.to_numeric, errors="coerce")
-
-    # Impute any NaN or Infinite values
-    mordred_df = impute_values(mordred_df)
-
-    # Return the DataFrame with the RDKit and Mordred Descriptors added
+    # Combine the DataFrame with the RDKit and Mordred Descriptors added
     output_df = pd.concat([df, rdkit_features_df, mordred_df], axis=1)
+
+    # Compute feature quality metrics
+    feature_list = list(rdkit_features_df.columns) + list(mordred_df.columns)
+    output_df = feature_quality_metrics(output_df, feature_list=feature_list)
 
     # Return the DataFrame with the RDKit and Mordred Descriptors added
     return output_df
@@ -323,6 +315,7 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
+    from workbench.api import DataSource
 
     # Pyridone molecule
     smiles = "C1=CC=NC(=O)C=C1"
@@ -345,6 +338,10 @@ if __name__ == "__main__":
 
     # Compute Molecular Descriptors
     df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles]})
+    df = compute_molecular_descriptors(df)
+    print(df)
+
+    df = DataSource("aqsol_data").pull_dataframe()[:1000]
     df = compute_molecular_descriptors(df)
     print(df)
 

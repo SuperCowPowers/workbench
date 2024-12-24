@@ -276,4 +276,4 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(GraphPlot, theme="dark").run()
+    PluginUnitTest(GraphPlot, theme="light").run()

@@ -46,7 +46,7 @@ class ProximityGraph:
         df = remove_rows_with_nans(df)
 
         # Initialize FeatureSpaceProximity with the input DataFrame and the specified features
-        knn_spider = FeatureSpaceProximity(
+        fsp = FeatureSpaceProximity(
             df,
             features=features,
             id_column=id_column,
@@ -55,7 +55,7 @@ class ProximityGraph:
         )
 
         # Use FeatureSpaceProximity to get all neighbor indices and distances
-        indices, distances = knn_spider.get_neighbor_indices_and_distances()
+        indices, distances = fsp.get_neighbor_indices_and_distances()
 
         # Compute max distance for scaling (to [0, 1])
         max_distance = distances.max()
@@ -122,6 +122,7 @@ if __name__ == "__main__":
     # Load the Abalone FeatureSet
     fs = FeatureSet("abalone_features")
     df = fs.pull_dataframe()[:100]
+    id_column = fs.id_column
 
     # Define the feature columns for the proximity graph
     feature_columns = [
@@ -139,7 +140,7 @@ if __name__ == "__main__":
 
     # Build the proximity graph using the specified features and ID column
     nx_graph = proximity_graph.build_graph(
-        df, features=feature_columns, id_column=fs.id_column, target="class_number_of_rings"
+        df, features=feature_columns, id_column=id_column, target="class_number_of_rings"
     )
 
     # Create a Workbench GraphCore object
@@ -148,24 +149,24 @@ if __name__ == "__main__":
 
     # Plot the full graph
     graph_plot = GraphPlot()
-    properties = graph_plot.update_properties(my_graph, labels="id", hover_text="all")
+    properties = graph_plot.update_properties(my_graph, labels=id_column, hover_text="all")
     properties[0].show()
 
     # Get a neighborhood subgraph for a specific node
-    neighborhood_subgraph = proximity_graph.get_neighborhood(node_id=df["id"].iloc[0], radius=2)
+    neighborhood_subgraph = proximity_graph.get_neighborhood(node_id=df[id_column].iloc[0], radius=2)
 
     # Plot the neighborhood subgraph
-    properties = graph_plot.update_properties(neighborhood_subgraph, labels="id", hover_text="all")
+    properties = graph_plot.update_properties(neighborhood_subgraph, labels=id_column, hover_text="all")
     properties[0].show()
 
     # Compute a shortest path subgraph using two random nodes
-    source_node = df["id"].iloc[0]
-    target_node = df["id"].iloc[-1]
+    source_node = df[id_column].iloc[0]
+    target_node = df[id_column].iloc[-1]
     nx_graph = my_graph.get_nx_graph()
     short_path = set(nx.shortest_path(nx_graph, source=source_node, target=target_node, weight="weight"))
     subgraph = nx_graph.subgraph(short_path)
 
     # Plot the subgraph
     graph_plot = GraphPlot()
-    properties = graph_plot.update_properties(subgraph, labels="id", hover_text="all")
+    properties = graph_plot.update_properties(subgraph, labels=id_column, hover_text="all")
     properties[0].show()

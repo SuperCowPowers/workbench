@@ -60,7 +60,7 @@ if not ConfigManager().config_okay():
     onboard()
 
 # Set the log level to important
-logging.getLogger("workbench").setLevel(IMPORTANT_LEVEL_NUM)
+# logging.getLogger("workbench").setLevel(IMPORTANT_LEVEL_NUM)
 
 
 class CustomPromptStyle(Style):

@@ -12,7 +12,7 @@ from workbench.algorithms.dataframe.residuals_calculator import ResidualsCalcula
 
 
 class MDQView:
-    """MDQView Class: A View that computes various endpoint data quality metrics
+    """MDQView Class: A View that computes various model/feature quality metrics
 
     Common Usage:
         ```python
