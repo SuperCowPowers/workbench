@@ -3,6 +3,7 @@
 import logging
 import numpy as np
 import pandas as pd
+from typing import Optional
 
 # Workbench Imports
 from workbench.utils.pandas_utils import feature_quality_metrics
@@ -106,6 +107,224 @@ def log_to_category(log_series: pd.Series) -> pd.Series:
     return pd.cut(log_series, bins=bins, labels=labels)
 
 
+def remove_disconnected_fragments(mol: Mol) -> Optional[Mol]:
+    """
+    Remove disconnected fragments from a molecule, keeping the largest fragment with at least one heavy atom.
+
+    Args:
+        mol (Mol): RDKit molecule object.
+
+    Returns:
+        Optional[Mol]: The largest fragment with a heavy atom, or None if no such fragment exists.
+    """
+    # Get all fragments as individual molecules
+    fragments = Chem.GetMolFrags(mol, asMols=True)
+
+    # Filter fragments with at least one heavy atom
+    fragments_with_heavy_atoms = [frag for frag in fragments if frag.GetNumHeavyAtoms() > 0]
+
+    # Return the largest fragment with heavy atoms, or None if no valid fragments
+    if fragments_with_heavy_atoms:
+        return max(fragments_with_heavy_atoms, key=lambda frag: frag.GetNumAtoms())
+    else:
+        return None
+
+
+def contains_heavy_metals(mol):
+    """
+    Check if a molecule contains any heavy metals (broad filter).
+
+    Args:
+        mol: RDKit molecule object.
+
+    Returns:
+        bool: True if any heavy metals are detected, False otherwise.
+    """
+    heavy_metals = {"Zn", "Cu", "Fe", "Mn", "Co", "Pb", "Hg", "Cd", "As"}
+    return any(atom.GetSymbol() in heavy_metals for atom in mol.GetAtoms())
+
+
+def contains_toxic_elements(mol):
+    """
+    Check if a molecule contains toxic elements.
+
+    Args:
+        mol: RDKit molecule object.
+
+    Returns:
+        bool: True if toxic elements are detected, False otherwise.
+    """
+    # Elements that are toxic in most contexts
+    always_toxic = {"Pb", "Hg", "Cd", "As", "Be", "Tl", "Sb"}
+
+    # Elements that are context-dependent for toxicity
+    conditional_toxic = {"Se", "Cr"}
+    for atom in mol.GetAtoms():
+        element = atom.GetSymbol()
+        if element in always_toxic:
+            return True
+        if element in conditional_toxic:
+            # Context-dependent checks (e.g., oxidation state or bonding)
+            if element == "Cr" and atom.GetFormalCharge() == 6:  # Chromium (VI)
+                return True
+            if element == "Se" and atom.GetFormalCharge() != 0:  # Selenium (non-neutral forms)
+                return True
+
+    # No toxic elements detected
+    return False
+
+
+def contains_toxic_groups(mol):
+    """
+    Check if a molecule contains known toxic groups.
+
+    Args:
+        mol: RDKit molecule object.
+
+    Returns:
+        bool: True if toxic groups are detected, False otherwise.
+    """
+    toxic_smarts = [
+        "[Cr](=O)(=O)=O",    # Chromium (VI)
+        "[As](=O)(=O)-[OH]", # Arsenic oxide
+        "[Hg]",              # Mercury atom
+        "[Pb]",              # Lead atom
+        "[Se][Se]",          # Diselenide compounds
+        "[Be]",              # Beryllium atom
+        "[Tl+]",             # Thallium ion
+    ]
+    for pattern in toxic_smarts:
+        if mol.HasSubstructMatch(Chem.MolFromSmarts(pattern)):
+            return True
+    return False
+
+
+def contains_metalloenzyme_relevant_metals(mol):
+    """
+    Check if a molecule contains metals relevant to metalloenzymes.
+
+    Args:
+        mol: RDKit molecule object.
+
+    Returns:
+        bool: True if metalloenzyme-relevant metals are detected, False otherwise.
+    """
+    metalloenzyme_metals = {"Zn", "Cu", "Fe", "Mn", "Co"}
+    return any(atom.GetSymbol() in metalloenzyme_metals for atom in mol.GetAtoms())
+
+
+def contains_salts(mol):
+    """
+    Check if a molecule contains common salts or counterions.
+
+    Args:
+        mol: RDKit molecule object.
+
+    Returns:
+        bool: True if salts are detected, False otherwise.
+    """
+    # Define common inorganic salt fragments (SMARTS patterns)
+    salt_patterns = [
+        "[Na+]", "[K+]", "[Cl-]", "[Mg+2]", "[Ca+2]", "[NH4+]", "[SO4--]"
+    ]
+    for pattern in salt_patterns:
+        if mol.HasSubstructMatch(Chem.MolFromSmarts(pattern)):
+            return True
+    return False
+
+
+def is_druglike_compound(mol: Mol) -> bool:
+    """
+    Filter for drug-likeness and QSAR relevance based on Lipinski's Rule of Five.
+    Returns False for molecules unlikely to be orally bioavailable.
+
+    Args:
+        mol: RDKit molecule object.
+
+    Returns:
+        bool: True if the molecule is drug-like, False otherwise.
+    """
+
+    # Rule 1: Molecular Weight (MW) ≤ 500 g/mol
+    mw = Descriptors.MolWt(mol)
+    # Rule 2: LogP (Partition Coefficient) ≤ 5
+    logp = Descriptors.MolLogP(mol)
+    # Rule 3: Hydrogen Bond Donors (HBD) ≤ 5
+    hbd = Descriptors.NumHDonors(mol)
+    # Rule 4: Hydrogen Bond Acceptors (HBA) ≤ 10
+    hba = Descriptors.NumHAcceptors(mol)
+
+    # If any of the rules are violated, the molecule is not drug-like
+    if mw > 500 or logp > 5 or hbd > 5 or hba > 10:
+        return False
+
+    # Many drugs are cyclic or aromatic compounds
+    if mol.GetRingInfo().NumRings() == 0:
+        return False
+
+    # Passes all filters; considered drug-like
+    return True
+
+
+def add_compound_tags(df, mol_column="mol"):
+    """
+    Adds a 'compound_tags' column to a DataFrame, tagging molecules based on their properties.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing molecular data.
+        mol_column (str): Column name containing RDKit molecule objects.
+
+    Returns:
+        pd.DataFrame: Updated DataFrame with a 'compound_tags' column.
+    """
+    # Initialize the compound_tags column
+    df["compound_tags"] = [[] for _ in range(len(df))]
+
+    # Process each molecule in the DataFrame
+    for idx, row in df.iterrows():
+        mol = row[mol_column]
+        tags = []
+
+        # Check for salts
+        if contains_salts(mol):
+            tags.append("salt")
+
+        # Check for fragments (should be done after salt check)
+        fragments = Chem.GetMolFrags(mol, asMols=True)
+        if len(fragments) > 1:
+            tags.append("frag")
+            mol = remove_disconnected_fragments(mol)  # Keep largest fragment
+            if mol is None:  # Handle invalid or empty fragments
+                tags.append("no_heavy_atoms")
+                log.warning(f"No heavy atoms: {row['smiles']}")
+                df.at[idx, "compound_tags"] = tags
+                continue
+
+        # Check for heavy metals
+        if contains_heavy_metals(mol):
+            tags.append("heavy_metals")
+
+        # Check for toxic elements
+        if contains_toxic_elements(mol):
+            tags.append("toxic_element")
+        if contains_toxic_groups(mol):
+            tags.append("toxic_group")
+
+        # Check for metalloenzyme-relevant metals
+        if contains_metalloenzyme_relevant_metals(mol):
+            tags.append("metalloenzyme")
+
+        # Check for drug-likeness
+        if is_druglike_compound(mol):
+            tags.append("druglike")
+
+        # Update tags and molecule
+        df.at[idx, "compound_tags"] = tags
+        df.at[idx, mol_column] = mol  # Update molecule after processing (if needed)
+
+    return df
+
+
 def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     """Compute and add all the Molecular Descriptors
 
@@ -125,7 +344,10 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     log.info("Computing Molecular Descriptors...")
 
     # Conversion to Molecules
-    molecules = [Chem.MolFromSmiles(smile) for smile in df[smiles_column]]
+    df["molecule"] = [Chem.MolFromSmiles(smile) for smile in df[smiles_column]]
+
+    # Add Compound Tags
+    df = add_compound_tags(df, mol_column="molecule")
 
     # Now get all the RDKIT Descriptors
     all_descriptors = [x[0] for x in Descriptors._descList]
@@ -138,11 +360,11 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     # Make sure we don't have duplicates
     all_descriptors = list(set(all_descriptors))
 
-    # Super useful Molecular Descriptor Calculator Class
+    # RDKit Molecular Descriptor Calculator Class
     log.info("Computing RDKit Descriptors...")
     calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
     column_names = calc.GetDescriptorNames()
-    descriptor_values = [calc.CalcDescriptors(m) for m in molecules]
+    descriptor_values = [calc.CalcDescriptors(m) for m in df["molecule"]]
     rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
 
     # Now compute Mordred Features
@@ -151,7 +373,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     calc = Calculator()
     for des in descriptor_choice:
         calc.register(des)
-    mordred_df = calc.pandas(molecules, nproc=1)
+    mordred_df = calc.pandas(df["molecule"], nproc=1)
 
     # Combine the DataFrame with the RDKit and Mordred Descriptors added
     output_df = pd.concat([df, rdkit_features_df, mordred_df], axis=1)
