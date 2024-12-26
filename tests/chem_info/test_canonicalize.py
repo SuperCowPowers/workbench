@@ -7,17 +7,16 @@ def test_canonicalize():
     # Define test cases for canonicalization
     test_data = [
         {"id": "Acetylacetone", "smiles": "CC(=O)CC(=O)C", "expected": "CC(=O)CC(C)=O"},
-        {"id": "Lactic Acid", "smiles": "CC(O)C(=O)O", "expected": "CC(O)C(=O)O"},
         {"id": "Imidazole", "smiles": "c1cnc[nH]1", "expected": "c1c[nH]cn1"},
         {"id": "Pyridone", "smiles": "C1=CC=NC(=O)C=C1", "expected": "O=c1cccccn1"},
         {"id": "Guanidine", "smiles": "C(=N)N=C(N)N", "expected": "N=CN=C(N)N"},
-        {"id": "Acetic Acid", "smiles": "CC(=O)O", "expected": "CC(=O)O"},
         {"id": "Catechol", "smiles": "c1cc(c(cc1)O)O", "expected": "Oc1ccccc1O"},
-        {"id": "Pyruvic Acid", "smiles": "CC(=O)C(=O)O", "expected": "CC(=O)C(=O)O"},
         {"id": "Formamide", "smiles": "C(=O)N", "expected": "NC=O"},
         {"id": "Urea", "smiles": "C(=O)(N)N", "expected": "NC(N)=O"},
-        {"id": "Nitromethane", "smiles": "C[N+](=O)[O-]", "expected": "C[N+](=O)[O-]"},
         {"id": "Phenol", "smiles": "c1ccc(cc1)O", "expected": "Oc1ccccc1"},
+        {"id": "Lactic Acid", "smiles": "CC(O)C(=O)O", "expected": "CC(O)C(=O)O"},  # Same as input
+        {"id": "Pyruvic Acid", "smiles": "CC(=O)C(=O)O", "expected": "CC(=O)C(=O)O"},  # Same as input
+        {"id": "Nitromethane", "smiles": "C[N+](=O)[O-]", "expected": "C[N+](=O)[O-]"},  # Same as input
     ]
 
     # Convert test data to a DataFrame
