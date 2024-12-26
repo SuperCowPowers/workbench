@@ -2,7 +2,7 @@
 In this Blog we'll look at the popular AqSol compound solubility dataset, compute Molecular Descriptors (RDKit and Mordred) and take a deep dive on why NaNs, INFs, and parse errors are generated on about 9% of the compounds.
 
 ### Data
-AqSolDB: A curated reference set of aqueous solubility, created by the Autonomous Energy Materials Discovery [AMD] research group, consists of aqueous solubility values of 9,982 unique compounds curated from 9 different publicly available aqueous solubility datasets. AqSolDB also contains some relevant topological and physico-chemical 2D descriptors. Additionally, AqSolDB contains validated molecular representations of each of the compounds.
+AqSolDB: A curated reference set of aqueous solubility, created by the Autonomous Energy Materials Discovery [AMD] research group, consists of aqueous solubility values of 9,982 unique compounds curated from 9 different publicly available aqueous solubility datasets.
 <https://www.nature.com/articles/s41597-019-0151-1>
 
 **Download from Harvard DataVerse:**
@@ -10,7 +10,12 @@ AqSolDB: A curated reference set of aqueous solubility, created by the Autonomou
 
 ### Python Packages
 
+- [RDKIT](https://github.com/rdkit/rdkit): Open source toolkit for cheminformatics
+- [Mordred Community](https://github.com/JacksonBurns/mordred-community): Community maintained version of the mordred molecular descriptor calculator.
 
+
+### Canonicalization and Tautomerization
+We have another blog on [Canonicalization and Tautomerization](canonicalization_and_tautomerization.md) which covers the importance of getting your compounds into a standardized ...
 
 
 ```
