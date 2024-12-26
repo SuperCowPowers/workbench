@@ -245,24 +245,21 @@ def is_druglike_compound(mol: Mol) -> bool:
         bool: True if the molecule is drug-like, False otherwise.
     """
 
-    # Rule 1: Molecular Weight (MW) ≤ 500 g/mol
+    # Lipinski's Rule of Five
     mw = Descriptors.MolWt(mol)
-    # Rule 2: LogP (Partition Coefficient) ≤ 5
     logp = Descriptors.MolLogP(mol)
-    # Rule 3: Hydrogen Bond Donors (HBD) ≤ 5
     hbd = Descriptors.NumHDonors(mol)
-    # Rule 4: Hydrogen Bond Acceptors (HBA) ≤ 10
     hba = Descriptors.NumHAcceptors(mol)
-
-    # If any of the rules are violated, the molecule is not drug-like
     if mw > 500 or logp > 5 or hbd > 5 or hba > 10:
         return False
 
-    # Many drugs are cyclic or aromatic compounds
+    # Allow exceptions for linear molecules that meet strict RO5 criteria
     if mol.GetRingInfo().NumRings() == 0:
-        return False
+        if mw <= 300 and logp <= 3 and hbd <= 3 and hba <= 3:
+            pass  # Allow small, non-cyclic druglike compounds
+        else:
+            return False
 
-    # Passes all filters; considered drug-like
     return True
 
 
@@ -294,7 +291,7 @@ def add_compound_tags(df, mol_column="mol"):
         if len(fragments) > 1:
             tags.append("frag")
             mol = remove_disconnected_fragments(mol)  # Keep largest fragment
-            if mol is None:  # Handle invalid or empty fragments
+            if mol is None:  # Handle largest fragment with no heavy atoms
                 tags.append("no_heavy_atoms")
                 log.warning(f"No heavy atoms: {row['smiles']}")
                 df.at[idx, "compound_tags"] = tags
@@ -557,6 +554,16 @@ if __name__ == "__main__":
     # Convert log10 to categories
     df["category"] = log_to_category(df["log10"])
     print(df)
+
+    # Test drug-likeness filter
+    druglike_smiles = [
+        "CC(C)=CCC\\C(C)=C/CO",
+	    "CC(C)CCCCCOC(=O)CCS",
+	    "OC(=O)CCCCCCCCC=C",
+	    "CC(C)(C)CCCCCC(=O)OC=C"
+    ]
+    mols = [Chem.MolFromSmiles(smile) for smile in druglike_smiles]
+    druglike = [is_druglike_compound(mol) for mol in mols]
 
     # Compute Molecular Descriptors
     df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles]})

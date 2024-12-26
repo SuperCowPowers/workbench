@@ -298,7 +298,7 @@ def feature_quality_metrics(input_df: pd.DataFrame, feature_list: list, strategy
     process_df = input_df[feature_list].copy()
 
     # Initialize the feature_quality_tags column as an empty list for all rows
-    feature_quality_tags = [[] for _ in range(len(process_df))]
+    feature_quality_tags = [set() for _ in range(len(process_df))]
 
     # Convert feature columns to numeric, coercing invalid values to NaN
     process_df = process_df.apply(pd.to_numeric, errors="coerce")
@@ -316,7 +316,7 @@ def feature_quality_metrics(input_df: pd.DataFrame, feature_list: list, strategy
     # Process all parsing errors at once
     for (row, column) in failed_indices.index:
         value = input_df.at[row, column]
-        feature_quality_tags[row].append("parse")
+        feature_quality_tags[row].add("parse")
         parsing_error_counts[column][str(value)] += 1
 
     # Report parsing error counts
@@ -334,7 +334,7 @@ def feature_quality_metrics(input_df: pd.DataFrame, feature_list: list, strategy
                 inf_rows = process_df.loc[inf_locations[column], column]
                 for index, value in inf_rows.items():
                     log.important(f"'{value}' found in column '{column}' at index {index}.")
-                    feature_quality_tags[index].append("inf")
+                    feature_quality_tags[index].add("inf")
 
         # Replace INF/-INF values with NaN
         process_df = process_df.replace([np.inf, -np.inf], np.nan)
@@ -359,7 +359,7 @@ def feature_quality_metrics(input_df: pd.DataFrame, feature_list: list, strategy
             # Update the feature_quality_tags for NaN values
             nan_indices = process_df[process_df[col].isna()].index
             for index in nan_indices:
-                feature_quality_tags[index].append("nan")
+                feature_quality_tags[index].add("nan")
 
             # Update the column
             process_df[col] = process_df[col].fillna(fill_value)
@@ -368,7 +368,7 @@ def feature_quality_metrics(input_df: pd.DataFrame, feature_list: list, strategy
     # Combine processed feature columns with untouched columns and feature_quality_tags
     untouched_columns = input_df.drop(columns=feature_list)
     result_df = pd.concat([untouched_columns, process_df], axis=1)
-    result_df["feature_quality_tags"] = feature_quality_tags
+    result_df["feature_quality_tags"] = [list(tags) for tags in feature_quality_tags]
 
     return result_df
 
