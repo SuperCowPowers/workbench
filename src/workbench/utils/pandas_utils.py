@@ -243,6 +243,7 @@ def convert_to_numeric(df, verbose=False) -> pd.DataFrame:
     # Return the DataFrame with columns converted to numeric
     return df
 
+
 def remove_rows_with_nans(input_df: pd.DataFrame, how: str = "any", subset: list = None) -> pd.DataFrame:
     """
     Removes rows with NaN or INF values from the DataFrame.
@@ -314,7 +315,7 @@ def feature_quality_metrics(input_df: pd.DataFrame, feature_list: list, strategy
     failed_indices = failed_indices[failed_indices]
 
     # Process all parsing errors at once
-    for (row, column) in failed_indices.index:
+    for row, column in failed_indices.index:
         value = input_df.at[row, column]
         feature_quality_tags[row].add("parse")
         parsing_error_counts[column][str(value)] += 1
@@ -371,6 +372,7 @@ def feature_quality_metrics(input_df: pd.DataFrame, feature_list: list, strategy
     result_df["feature_quality_tags"] = [list(tags) for tags in feature_quality_tags]
 
     return result_df
+
 
 def drop_duplicates(input_df: pd.DataFrame) -> pd.DataFrame:
     """Drop duplicate rows from a dataframe

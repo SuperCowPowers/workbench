@@ -185,13 +185,13 @@ def contains_toxic_groups(mol):
         bool: True if toxic groups are detected, False otherwise.
     """
     toxic_smarts = [
-        "[Cr](=O)(=O)=O",    # Chromium (VI)
-        "[As](=O)(=O)-[OH]", # Arsenic oxide
-        "[Hg]",              # Mercury atom
-        "[Pb]",              # Lead atom
-        "[Se][Se]",          # Diselenide compounds
-        "[Be]",              # Beryllium atom
-        "[Tl+]",             # Thallium ion
+        "[Cr](=O)(=O)=O",  # Chromium (VI)
+        "[As](=O)(=O)-[OH]",  # Arsenic oxide
+        "[Hg]",  # Mercury atom
+        "[Pb]",  # Lead atom
+        "[Se][Se]",  # Diselenide compounds
+        "[Be]",  # Beryllium atom
+        "[Tl+]",  # Thallium ion
     ]
     for pattern in toxic_smarts:
         if mol.HasSubstructMatch(Chem.MolFromSmarts(pattern)):
@@ -224,9 +224,7 @@ def contains_salts(mol):
         bool: True if salts are detected, False otherwise.
     """
     # Define common inorganic salt fragments (SMARTS patterns)
-    salt_patterns = [
-        "[Na+]", "[K+]", "[Cl-]", "[Mg+2]", "[Ca+2]", "[NH4+]", "[SO4--]"
-    ]
+    salt_patterns = ["[Na+]", "[K+]", "[Cl-]", "[Mg+2]", "[Ca+2]", "[NH4+]", "[SO4--]"]
     for pattern in salt_patterns:
         if mol.HasSubstructMatch(Chem.MolFromSmarts(pattern)):
             return True
@@ -556,12 +554,7 @@ if __name__ == "__main__":
     print(df)
 
     # Test drug-likeness filter
-    druglike_smiles = [
-        "CC(C)=CCC\\C(C)=C/CO",
-	    "CC(C)CCCCCOC(=O)CCS",
-	    "OC(=O)CCCCCCCCC=C",
-	    "CC(C)(C)CCCCCC(=O)OC=C"
-    ]
+    druglike_smiles = ["CC(C)=CCC\\C(C)=C/CO", "CC(C)CCCCCOC(=O)CCS", "OC(=O)CCCCCCCCC=C", "CC(C)(C)CCCCCC(=O)OC=C"]
     mols = [Chem.MolFromSmiles(smile) for smile in druglike_smiles]
     druglike = [is_druglike_compound(mol) for mol in mols]
 

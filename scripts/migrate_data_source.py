@@ -16,9 +16,7 @@ def migrate(ds_name):
     # Create the new DataSource (defaults to workbench database)
     print(f"Migrating DataSource {ds_name} to the new database...")
     df_to_data = PandasToData(ds_name)  # Use the same name for the new DataSource
-    df_to_data.set_output_tags(
-        old_ds.get_tags()
-    )  # Transfer tags from the old DataSource
+    df_to_data.set_output_tags(old_ds.get_tags())  # Transfer tags from the old DataSource
     df_to_data.set_input(old_df)  # Pass the data from the old DataSource
     df_to_data.transform()  # Transform and save the new DataSource
 
@@ -58,9 +56,7 @@ def migrate_all():
 
 if __name__ == "__main__":
     # Argument parsing to choose between single or all DataSource migration
-    parser = argparse.ArgumentParser(
-        description="Migrate DataSources from the old database to the new one."
-    )
+    parser = argparse.ArgumentParser(description="Migrate DataSources from the old database to the new one.")
     parser.add_argument(
         "--all",
         action="store_true",
@@ -78,6 +74,4 @@ if __name__ == "__main__":
     elif args.ds_name:
         migrate(args.ds_name)
     else:
-        print(
-            "Please specify --all to migrate all DataSources or --ds_name for a single DataSource."
-        )
+        print("Please specify --all to migrate all DataSources or --ds_name for a single DataSource.")
