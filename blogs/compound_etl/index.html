@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../residual_analysis/">
-      
-      
-        <link rel="next" href="../htg/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +16,7 @@
     
     
       
-        <title>Exploratory Data Analysis(EDA) - Workbench</title>
+        <title>Compound ETL - Workbench</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#exploratory-data-analysis" class="md-skip">
+        <a href="#compound-etl" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Exploratory Data Analysis(EDA)
+              Compound ETL
             
           </span>
         </div>
@@ -831,19 +827,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -857,7 +851,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             Blogs
@@ -910,30 +904,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Exploratory Data Analysis(EDA)
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../eda/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -942,35 +916,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
-    <span class="md-ellipsis">
-      Additional Resources
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3153,9 +3098,114 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
+  <a href="#why-compound-etl" class="md-nav__link">
     <span class="md-ellipsis">
-      Additional Resources
+      Why Compound ETL?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python Packages
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#etl-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      ETL Steps
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ETL Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-check-for-invalid-smiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Check for Invalid SMILES
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-deduplicate" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Deduplicate
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-handle-stereochemistry" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Handle Stereochemistry
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-select-largest-fragment" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Select Largest Fragment
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-canonicalize-molecules" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Canonicalize Molecules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-tautomerize-molecules" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Tautomerize Molecules
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#canonicalization-and-tautomerization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Canonicalization and Tautomerization
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
     </span>
   </a>
   
@@ -3176,26 +3226,48 @@
                   
 
 
-<h1 id="exploratory-data-analysis">Exploratory Data Analysis</h1>
-<div class="admonition tip inline end">
-<p class="admonition-title">Workbench EDA</p>
-<p>The Workbench toolkit a set of plots that show EDA results, it also has a flexible plugin architecture to expand, enhance, or even replace the current set of web components <a href="../../aws_setup/dashboard_stack/">Dashboard</a>.</p>
-</div>
-<p>The Workbench framework has a broad range of Exploratory Data Analysis (EDA) functionality. Each time a DataSource or FeatureSet is created that data is run through a full set of EDA techniques:</p>
+<h1 id="compound-etl">Compound ETL</h1>
+<p><strong><em>From Raw SMILES to ML Pipeline Ready Molecules</em></strong></p>
+<p>In this blog, we'll walk through the essential steps for preparing molecular data for machine learning pipelines. Starting with raw SMILES strings, we'll demonstrate how to clean, standardize, and preprocess molecules, ensuring they are ready for downstream tasks: feature selection, engineering, and modeling.</p>
+<h3 id="why-compound-etl">Why Compound ETL?</h3>
+<p>Raw molecular datasets often contain inconsistencies, salts, and redundant entries. A well-structured ETL (Extract, Transform, Load) pipeline ensures the data is clean, standardized, and reproducible, which is crucial for building reliable ML models. We'll cover the following steps:</p>
+<ol>
+<li>Validating SMILES</li>
+<li>Removing duplicates</li>
+<li>Handling stereochemistry</li>
+<li>Selecting the largest fragment</li>
+<li>Canonicalizing molecules</li>
+<li>Tautomerizing molecules</li>
+</ol>
+<h3 id="data">Data</h3>
+<p><strong>AqSolDB:</strong> A curated reference set of aqueous solubility data, created by the Autonomous Energy Materials Discovery [AMD] research group, consists of aqueous solubility values for 9,982 unique compounds curated from 9 publicly available datasets.<br />
+Source: <a href="https://www.nature.com/articles/s41597-019-0151-1">Nature Scientific Data</a>  </p>
+<p><strong>Download from Harvard DataVerse:</strong><br />
+<a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8">Harvard DataVerse: AqSolDB</a></p>
+<h3 id="python-packages">Python Packages</h3>
 <ul>
-<li>TBD</li>
-<li>TBD2</li>
+<li><strong><a href="https://github.com/rdkit/rdkit">RDKit</a>:</strong> Open-source toolkit for cheminformatics, used for tasks like SMILES validation, fragment selection, and stereochemistry handling.</li>
+<li><strong><a href="https://github.com/JacksonBurns/mordred-community">Mordred Community</a>:</strong> A community-maintained molecular descriptor calculator for feature extraction and engineering.</li>
 </ul>
-<figure style="float: right; width: 400px;">
-<img alt="workbench_new_light" src="https://github.com/SuperCowPowers/workbench/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4">
-<figcaption>Workbench Exploratory Data Analysis</figcaption>
-</figure>
-
-<h2 id="additional-resources">Additional Resources</h2>
-<p><img align="right" src="../../images/scp.png" width="180"></p>
-<ul>
-<li>Consulting Available: <a href="https://www.supercowpowers.com">SuperCowPowers LLC</a></li>
-</ul>
+<h3 id="etl-steps">ETL Steps</h3>
+<p>Here are the core steps of our Compound ETL pipeline:</p>
+<h4 id="1-check-for-invalid-smiles">1. Check for Invalid SMILES</h4>
+<p>Validating the SMILES strings ensures that downstream processing doesn’t fail due to malformed data. This step identifies and filters out invalid or problematic entries.</p>
+<h4 id="2-deduplicate">2. Deduplicate</h4>
+<p>Duplicate molecules can skew analysis and modeling results. Deduplication ensures a clean and minimal dataset.</p>
+<h4 id="3-handle-stereochemistry">3. Handle Stereochemistry</h4>
+<p>Stereochemistry affects molecular properties significantly. This step determines whether to retain or relax stereochemical definitions, depending on the use case.</p>
+<h4 id="4-select-largest-fragment">4. Select Largest Fragment</h4>
+<p>Many compounds contain salts or counterions. This step extracts the largest fragment with at least one heavy atom and retains any other fragments as metadata.</p>
+<h4 id="5-canonicalize-molecules">5. Canonicalize Molecules</h4>
+<p>Canonicalization ensures that each molecule is represented in a unique and consistent format. This step is critical for reproducibility and efficient comparison.</p>
+<h4 id="6-tautomerize-molecules">6. Tautomerize Molecules</h4>
+<p>Tautomerization standardizes different tautomeric forms of a compound into a single representation, reducing redundancy and improving consistency.</p>
+<h3 id="canonicalization-and-tautomerization">Canonicalization and Tautomerization</h3>
+<p>For an in-depth look at why <strong>Canonicalization</strong> and <strong>Tautomerization</strong> are crucial for compound preprocessing, see our blog on <a href="../canonicalization_and_tautomerization/">Canonicalization and Tautomerization</a>. It covers the importance of standardizing molecular representations to ensure robust and reproducible machine learning workflows.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>By following this Compound ETL pipeline, you can transform raw molecular data into a clean, standardized, and ML-ready format. This foundational preprocessing step sets the stage for effective feature engineering, modeling, and analysis.</p>
+<p>Stay tuned for the next blog, where we'll dive into feature engineering for chemical compounds!</p>
 
 
 

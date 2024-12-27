@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../residual_analysis/">
-      
-      
-        <link rel="next" href="../htg/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +16,7 @@
     
     
       
-        <title>Exploratory Data Analysis(EDA) - Workbench</title>
+        <title>Compound Explorer - Workbench</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#exploratory-data-analysis" class="md-skip">
+        <a href="#compound-explorer" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Exploratory Data Analysis(EDA)
+              Compound Explorer
             
           </span>
         </div>
@@ -831,19 +827,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -857,7 +851,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             Blogs
@@ -910,30 +904,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Exploratory Data Analysis(EDA)
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../eda/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -942,35 +916,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
-    <span class="md-ellipsis">
-      Additional Resources
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3153,9 +3098,63 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
+  <a href="#why-compound-explorer" class="md-nav__link">
     <span class="md-ellipsis">
-      Additional Resources
+      Why Compound Explorer?
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workbench-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      Workbench Pipeline
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#interactivity-highlights" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interactivity Highlights:
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python Packages
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#canonicalization-and-tautomerization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Canonicalization and Tautomerization
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
     </span>
   </a>
   
@@ -3176,26 +3175,71 @@
                   
 
 
-<h1 id="exploratory-data-analysis">Exploratory Data Analysis</h1>
-<div class="admonition tip inline end">
-<p class="admonition-title">Workbench EDA</p>
-<p>The Workbench toolkit a set of plots that show EDA results, it also has a flexible plugin architecture to expand, enhance, or even replace the current set of web components <a href="../../aws_setup/dashboard_stack/">Dashboard</a>.</p>
-</div>
-<p>The Workbench framework has a broad range of Exploratory Data Analysis (EDA) functionality. Each time a DataSource or FeatureSet is created that data is run through a full set of EDA techniques:</p>
+<h1 id="compound-explorer">Compound Explorer</h1>
+<p><strong><em>A Workbench based Application</em></strong></p>
+<p>In this blog, we'll walk through the steps we used for taking a 'pile of SMILES' and tranforming them into  compound data for processing and display in the Compound Explorer application. </p>
+<h3 id="why-compound-explorer">Why Compound Explorer?</h3>
+<p>The workbench toolkit has a ton of functionality for constructing end-to-end AWS Machine Learning pipelines. We wanted to construct as application that combined components in the toolkit to create an engaging and informative web application.</p>
+<h3 id="workbench-pipeline">Workbench Pipeline</h3>
+<ol>
+<li><strong>SMILES Processing</strong>:</li>
+<li><strong>Validation</strong>: SMILES are syntactically correct.</li>
+<li><strong>Fragment Selection</strong>: Retain the largest fragment (with at least one heavy atom) of each molecule.</li>
+<li><strong>Canonicalization</strong>: Generate a unique representation for each molecule.</li>
+<li>
+<p><strong>Tautomerization</strong>: Normalize tautomers to standardize inputs.</p>
+</li>
+<li>
+<p><strong>Feature Space Proximity Models</strong>:</p>
+</li>
+<li>
+<p>Build <strong>KNN-based proximity graphs</strong> for:</p>
 <ul>
-<li>TBD</li>
-<li>TBD2</li>
+<li><strong>Descriptor Features</strong>: Using molecular descriptors (RDKit, Mordred).</li>
+<li><strong>Fingerprints</strong>: Using chemical fingerprints for structural similarity (ECFP)</li>
 </ul>
-<figure style="float: right; width: 400px;">
-<img alt="workbench_new_light" src="https://github.com/SuperCowPowers/workbench/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4">
-<figcaption>Workbench Exploratory Data Analysis</figcaption>
-</figure>
-
-<h2 id="additional-resources">Additional Resources</h2>
-<p><img align="right" src="../../images/scp.png" width="180"></p>
+</li>
+<li>
+<p><strong>2D Projections</strong>:</p>
+</li>
+<li><strong>LogP vs pKa</strong>: Provide a chemically intuitive 2D Space.</li>
+<li>
+<p>Projections (t-SNE, UMAP, etc):</p>
 <ul>
-<li>Consulting Available: <a href="https://www.supercowpowers.com">SuperCowPowers LLC</a></li>
+<li><strong>Descriptor Space</strong></li>
+<li><strong>Fingerprint Space</strong></li>
 </ul>
+</li>
+<li>
+<p><strong>Interactive Visualization</strong>:</p>
+</li>
+<li><strong>Hover</strong> displays Molecular drawing    </li>
+<li><strong>5 Closest Neighbors (2 sets)</strong>:<ul>
+<li><strong>Blue Lines</strong>: Descriptor-based neighbors.</li>
+<li><strong>Green Lines</strong>: Fingerprint-based neighbors.</li>
+</ul>
+</li>
+</ol>
+<h3 id="interactivity-highlights">Interactivity Highlights:</h3>
+<ul>
+<li><strong>Neighbor Connections</strong>: Clearly differentiate relationships with color-coded edges.</li>
+<li><strong>Hover Effects</strong>: Enable chemists to interactively explore molecular neighborhoods.</li>
+<li><strong>Projection Linking</strong>: Allow toggling between Descriptor and Fingerprint spaces.</li>
+</ul>
+<h3 id="data">Data</h3>
+<p><strong>AqSolDB:</strong> A curated reference set of aqueous solubility data, created by the Autonomous Energy Materials Discovery [AMD] research group, consists of aqueous solubility values for 9,982 unique compounds curated from 9 publicly available datasets.<br />
+Source: <a href="https://www.nature.com/articles/s41597-019-0151-1">Nature Scientific Data</a>  </p>
+<p><strong>Download from Harvard DataVerse:</strong><br />
+<a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8">Harvard DataVerse: AqSolDB</a></p>
+<h3 id="python-packages">Python Packages</h3>
+<ul>
+<li><strong><a href="https://github.com/rdkit/rdkit">RDKit</a>:</strong> Open-source toolkit for cheminformatics, used for tasks like SMILES validation, fragment selection, and stereochemistry handling.</li>
+<li><strong><a href="https://github.com/JacksonBurns/mordred-community">Mordred Community</a>:</strong> A community-maintained molecular descriptor calculator for feature extraction and engineering.</li>
+</ul>
+<h3 id="canonicalization-and-tautomerization">Canonicalization and Tautomerization</h3>
+<p>For an in-depth look at why <strong>Canonicalization</strong> and <strong>Tautomerization</strong> are crucial for compound preprocessing, see our blog on <a href="../canonicalization_and_tautomerization/">Canonicalization and Tautomerization</a>. It covers the importance of standardizing molecular representations to ensure robust and reproducible machine learning workflows.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Stay tuned for the next blog, where we'll dive into feature engineering for chemical compounds!</p>
 
 
 

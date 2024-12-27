@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../residual_analysis/">
-      
-      
-        <link rel="next" href="../htg/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -20,7 +16,7 @@
     
     
       
-        <title>Exploratory Data Analysis(EDA) - Workbench</title>
+        <title>Molecular Descriptors - Workbench</title>
       
     
     
@@ -74,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#exploratory-data-analysis" class="md-skip">
+        <a href="#molecular-descriptors" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Exploratory Data Analysis(EDA)
+              Molecular Descriptors
             
           </span>
         </div>
@@ -831,19 +827,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
         
           
           <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
@@ -857,7 +851,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             Blogs
@@ -910,30 +904,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Exploratory Data Analysis(EDA)
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../eda/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -942,35 +916,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
-    <span class="md-ellipsis">
-      Additional Resources
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3153,9 +3098,27 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
+  <a href="#data" class="md-nav__link">
     <span class="md-ellipsis">
-      Additional Resources
+      Data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Python Packages
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#canonicalization-and-tautomerization" class="md-nav__link">
+    <span class="md-ellipsis">
+      Canonicalization and Tautomerization
     </span>
   </a>
   
@@ -3176,26 +3139,55 @@
                   
 
 
-<h1 id="exploratory-data-analysis">Exploratory Data Analysis</h1>
-<div class="admonition tip inline end">
-<p class="admonition-title">Workbench EDA</p>
-<p>The Workbench toolkit a set of plots that show EDA results, it also has a flexible plugin architecture to expand, enhance, or even replace the current set of web components <a href="../../aws_setup/dashboard_stack/">Dashboard</a>.</p>
-</div>
-<p>The Workbench framework has a broad range of Exploratory Data Analysis (EDA) functionality. Each time a DataSource or FeatureSet is created that data is run through a full set of EDA techniques:</p>
+<h1 id="molecular-descriptors">Molecular Descriptors</h1>
+<p>In this Blog we'll look at the popular AqSol compound solubility dataset, compute Molecular Descriptors (RDKit and Mordred) and take a deep dive on why NaNs, INFs, and parse errors are generated on about 9% of the compounds.</p>
+<h3 id="data">Data</h3>
+<p>AqSolDB: A curated reference set of aqueous solubility, created by the Autonomous Energy Materials Discovery [AMD] research group, consists of aqueous solubility values of 9,982 unique compounds curated from 9 different publicly available aqueous solubility datasets.
+<a href="https://www.nature.com/articles/s41597-019-0151-1">https://www.nature.com/articles/s41597-019-0151-1</a></p>
+<p><strong>Download from Harvard DataVerse:</strong>
+<a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8">https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8</a></p>
+<h3 id="python-packages">Python Packages</h3>
 <ul>
-<li>TBD</li>
-<li>TBD2</li>
+<li><a href="https://github.com/rdkit/rdkit">RDKIT</a>: Open source toolkit for cheminformatics</li>
+<li><a href="https://github.com/JacksonBurns/mordred-community">Mordred Community</a>: Community maintained version of the mordred molecular descriptor calculator.</li>
 </ul>
-<figure style="float: right; width: 400px;">
-<img alt="workbench_new_light" src="https://github.com/SuperCowPowers/workbench/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4">
-<figcaption>Workbench Exploratory Data Analysis</figcaption>
-</figure>
-
-<h2 id="additional-resources">Additional Resources</h2>
-<p><img align="right" src="../../images/scp.png" width="180"></p>
-<ul>
-<li>Consulting Available: <a href="https://www.supercowpowers.com">SuperCowPowers LLC</a></li>
-</ul>
+<h3 id="canonicalization-and-tautomerization">Canonicalization and Tautomerization</h3>
+<p>We have another blog on <a href="../canonicalization_and_tautomerization/">Canonicalization and Tautomerization</a> which covers the importance of getting your compounds into a standardized ...</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>df = DataSource(&quot;aqsol_data&quot;).pull_dataframe()
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mol_df = compute_molecular_descriptors(df)
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>INFO Computing Molecular Descriptors...
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>INFO Computing RDKit Descriptors...
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>INFO Found 2 INF/-INF values. Replacing them with NaN.
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>INFO INF/-INF value &#39;inf&#39; found in column &#39;MaxAbsPartialCharge&#39; at index 3047.
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>INFO INF/-INF value &#39;inf&#39; found in column &#39;MaxPartialCharge&#39; at index 3047.
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>INFO Imputing missing values using &#39;median&#39; strategy.
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>WARNING Imputing BCUT2D_MRLOW replacing 884 values with median(0.05)
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>WARNING Imputing BCUT2D_LOGPHI replacing 884 values with median(2.20)
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>WARNING Imputing BCUT2D_MWLOW replacing 884 values with median(10.14)
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>WARNING Imputing MaxAbsPartialCharge replacing 102 values with median(0.44)
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>WARNING Imputing BCUT2D_CHGHI replacing 884 values with median(2.14)
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>WARNING Imputing BCUT2D_LOGPLOW replacing 884 values with median(-2.15)
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>WARNING Imputing MaxPartialCharge replacing 102 values with median(0.28)
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>WARNING Imputing MinAbsPartialCharge replacing 101 values with median(0.27)
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>WARNING Imputing MinPartialCharge replacing 101 values with median(-0.41)
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>WARNING Imputing BCUT2D_MWHI replacing 884 values with median(16.55)
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>WARNING Imputing BCUT2D_MRHI replacing 884 values with median(5.93)
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>WARNING Imputing BCUT2D_CHGLO replacing 884 values with median(-2.09)
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>INFO Computing Mordred Descriptors...
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>WARNING Failed to parse value &#39;float division by zero (RotRatio/nBondsO)&#39; in column &#39;RotRatio&#39; at index 38.
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>WARNING Failed to parse value &#39;float division by zero (RotRatio/nBondsO)&#39; in column &#39;RotRatio&#39; at index 71.
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>...
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>WARNING Failed to parse vallue &#39;float division by zero (RotRatio/nBondsO)&#39; in column &#39;RotRatio&#39; at index 5579.
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>INFO Imputing missing values using &#39;median&#39; strategy.
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>WARNING Imputing RotRatio replacing 149 values with median(0.17)
+</span></code></pre></div>
 
 
 
