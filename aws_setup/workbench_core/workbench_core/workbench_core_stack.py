@@ -155,6 +155,7 @@ class WorkbenchCoreStack(Stack):
                 "glue:CreateTable",
                 "glue:UpdateTable",
                 "glue:DeleteTable",
+                "glue:GetPartitions",
             ],
             resources=[catalog_arn],
         )
