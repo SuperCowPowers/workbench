@@ -14,6 +14,7 @@ try:
     from rdkit.Chem import Mol, Descriptors, rdFingerprintGenerator, Draw
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
+    from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
     from rdkit import RDLogger
 
     # Set RDKit logger to only show errors or critical messages
@@ -38,7 +39,7 @@ except ImportError:
 log = logging.getLogger("workbench")
 
 
-def display(smiles: str, width: int = 500, height: int = 500) -> None:
+def show(smiles: str, width: int = 500, height: int = 500) -> None:
     """
     Displays an image of the molecule represented by the given SMILES string.
 
@@ -473,10 +474,31 @@ def custom_tautomer_canonicalization(mol: Mol) -> str:
     """
     tautomer_enumerator = TautomerEnumerator()
     enumerated_tautomers = tautomer_enumerator.Enumerate(mol)
+
+    # Example custom logic: prioritize based on use-case specific criteria
+    selected_tautomer = None
+    highest_score = float("-inf")
+
     for taut in enumerated_tautomers:
-        # FILL IN: Custom logic to select the canonical tautomer can go here
-        #          For now just returning the first one
-        return Chem.MolToSmiles(taut)
+        # Compute custom scoring logic:
+        # 1. Prefer forms with fewer hydrogen bond donors (HBD) if membrane permeability is important
+        # 2. Penalize forms with high molecular weight for better drug-likeness
+        # 3. Incorporate known functional group preferences (e.g., keto > enol for binding)
+
+        hbd = CalcNumHBD(taut)  # Hydrogen Bond Donors
+        mw = CalcExactMolWt(taut)  # Molecular Weight
+        aromatic_rings = taut.GetRingInfo().NumAromaticRings()  # Favor aromaticity
+
+        # Example scoring: balance HBD, MW, and aromaticity
+        score = -hbd - 0.01 * mw + aromatic_rings * 2
+
+        # Update selected tautomer
+        if score > highest_score:
+            highest_score = score
+            selected_tautomer = taut
+
+    # Return the SMILES of the selected tautomer
+    return Chem.MolToSmiles(selected_tautomer)
 
 
 def standard_tautomer_canonicalization(mol: Mol) -> str:
@@ -536,7 +558,7 @@ if __name__ == "__main__":
 
     # Pyridone molecule
     smiles = "C1=CC=NC(=O)C=C1"
-    display(smiles)
+    show(smiles)
 
     # Test the concentration conversion functions
     df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles, smiles], "µM": [500, 50, 5, 1, 0.1, 0]})
