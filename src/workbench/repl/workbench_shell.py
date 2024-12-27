@@ -14,7 +14,6 @@ try:
     import matplotlib.pyplot as plt  # noqa
 
     plt.ion()
-
     HAVE_MATPLOTLIB = True
 except ImportError:
     HAVE_MATPLOTLIB = False
@@ -35,6 +34,16 @@ from workbench.utils.config_manager import ConfigManager
 from workbench.utils.log_utils import silence_logs
 from workbench.api import Meta
 from workbench.cached.cached_meta import CachedMeta
+
+# If we have RDKIT/Mordred let's pull in our cheminformatics utils
+try:
+    import rdkit  # noqa
+    import mordred  # noqa
+    from workbench.utils import chem_utils
+
+    HAVE_CHEM_UTILS = True
+except ImportError:
+    HAVE_CHEM_UTILS = False
 
 
 def onboard():
@@ -151,6 +160,10 @@ class WorkbenchShell:
         self.commands["version"] = lambda: print(version)
         self.commands["cached_meta"] = self.switch_to_cached_meta
         self.commands["direct_meta"] = self.switch_to_direct_meta
+
+        # Add cheminformatics utils if available
+        if HAVE_CHEM_UTILS:
+            self.commands["show"] = chem_utils.show
 
     def start(self):
         """Start the Workbench IPython shell"""
