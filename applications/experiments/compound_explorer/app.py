@@ -1,90 +1,57 @@
-"""DataSources:  A Workbench Web Interface to view, interact, and manage Data Sources"""
+"""Compound Explorer Application"""
 
 from dash import Dash
 
 # Workbench Imports
-from workbench.web_interface.components import (
-    table,
-    compound_details,
-    violin_plots,
-    scatter_plot,
-)
-from workbench.web_interface.page_views.data_sources_page_view import DataSourcesPageView
+from workbench.utils.theme_manager import ThemeManager
+from workbench.web_interface.components.plugins import scatter_plot
 
 # Local Imports
-from layout import data_sources_layout
+from layout import compound_explorer_layout
 import callbacks
 
 
-# FIXME: Put in logic for ThemeManager
+# Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
+#       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 
-# Create our Dash app
+# Set up the Theme Manager
+tm = ThemeManager()
+tm.set_theme("auto")
+css_files = tm.css_files()
+print(css_files)
+
+# Create the Dash app
 app = Dash(
-    title="Workbench: Compounds Explorer",
-    external_stylesheets=[],
+    __name__,
+    title="Compound Explorer",
+    external_stylesheets=css_files,
 )
 
-# Grab a view that gives us a summary of the FeatureSets in Workbench
-data_source_broker = DataSourcesPageView()
-data_source_rows = data_source_broker.data_sources_summary()
+# Register the CSS route in the ThemeManager
+tm.register_css_route(app)
 
-# Create a table to display the data sources
-data_sources_table = table.Table().create_component(
-    "data_sources_table",
-    header_color="rgb(120, 70, 70)",
-    row_select="single",
-)
+# Note: The 'server' object is required for running the app with NGINX/uWSGI
+server = app.server
 
-# Data Source Details
-details = data_source_broker.data_source_details(0)
-data_details = compound_details.create("data_source_details", details)
-
-# Grab outlier rows from the first data source
-outlier_rows = data_source_broker.data_source_outliers(0)
-column_types = details["column_details"] if details is not None else None
-compound_rows = table.Table().create_component(
-    "compound_rows",
-    column_types=column_types,
-    header_color="rgb(80, 80, 80)",
-    row_select="single",
-    max_height="400px",
-)
-
-# Create a box plot of all the numeric columns in the sample rows
-smart_sample_rows = data_source_broker.data_source_smart_sample(0)
-violin = violin_plots.ViolinPlots().create_component("data_source_violin_plot")
-
-# Create the outlier cluster plot
-cluster_plot = scatter_plot.create("compound_scatter_plot", outlier_rows, "Compound Clusters")
+# Create the main Compound plot
+compound_plot = scatter_plot.ScatterPlot()
+compound_plot_component = compound_plot.create_component("compound_scatter_plot")
 
 # Create our components
 components = {
-    "data_sources_table": data_sources_table,
-    "compound_rows": compound_rows,
-    "compound_scatter_plot": cluster_plot,
-    "data_source_details": data_details,
-    "violin_plot": violin,
+    "compound_scatter_plot": compound_plot_component,
 }
 
 # Set up our application layout
-app.layout = data_sources_layout(**components)
+app.layout = compound_explorer_layout(**components)
 
-# Refresh our data timer
-callbacks.refresh_data_timer(app)
+# Set up our application callbacks
+callbacks.scatter_plot_callbacks(compound_plot)
+callbacks.update_compound_diagram()
 
-# Periodic update to the data sources summary table
-callbacks.update_data_sources_table(app, data_source_broker)
-
-# Callbacks for when a data source is selected
-callbacks.table_row_select(app, "data_sources_table")
-callbacks.update_data_source_details(app, data_source_broker)
-callbacks.update_cluster_plot(app, data_source_broker)
-callbacks.update_violin_plots(app, data_source_broker)
-callbacks.update_compound_rows(app, data_source_broker)
-callbacks.update_compound_diagram(app)
 
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="0.0.0.0", port=8082, debug=True)
+    app.run(host="0.0.0.0", port=8000, debug=True)
     # app.run(host="0.0.0.0", port=8082)

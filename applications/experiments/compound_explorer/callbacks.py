@@ -1,159 +1,86 @@
 """Callbacks for the FeatureSets Subpage Web User Interface"""
-
-from datetime import datetime
 import dash
-from dash import Dash, html, Input, Output, State
+from dash import html, Input, Output, callback
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
 # Workbench Imports
-from workbench.web_interface.page_views.data_sources_page_view import DataSourcesPageView
-from workbench.web_interface.components import (
-    table,
-    compound_details,
-    violin_plots,
-    scatter_plot,
-)
+from workbench.api import FeatureSet
+from workbench.web_interface.components.plugins import scatter_plot
+from workbench.utils.chem_utils import img_from_smiles, svg_from_smiles
 
-# FIXME
-from rdkit import Chem
-from rdkit.Chem import Draw
-from rdkit.Chem.Draw.rdMolDraw2D import SetDarkMode
-
-first_m = Chem.MolFromSmiles("O=C1Nc2cccc3cccc1c23")
-dos = Draw.MolDrawOptions()
-SetDarkMode(dos)
-dos.setBackgroundColour((0, 0, 0, 0))
+custom_data_fields = ["id", "molwt", "smiles"]
 
 
-def refresh_data_timer(app: Dash):
-    @app.callback(
-        Output("last-updated-data-sources", "children"),
-        Input("data-sources-updater", "n_intervals"),
+# Set up the scatter plot callbacks
+def scatter_plot_callbacks(scatter_plot: scatter_plot.ScatterPlot):
+
+    # First we'll register internal callbacks for the scatter plot
+    scatter_plot.register_internal_callbacks()
+
+    # Now we'll set up the scatter callbacks
+    @callback(
+        # We can use the properties of the scatter plot to get the output properties
+        [Output(component_id, prop) for component_id, prop in scatter_plot.properties],
+        [Input("update-button", "n_clicks")],
     )
-    def time_updated(_n):
-        return datetime.now().strftime("Last Updated: %Y-%m-%d %H:%M:%S")
+    def _scatter_plot_callbacks(n_clicks):
+        # Check for no selected rows
+        # if not selected_rows or selected_rows[0] is None:
+        #    raise PreventUpdate
+
+        # Get the selected row data and grab the uuid
+        # selected_row_data = selected_rows[0]
+        # object_uuid = selected_row_data["uuid"]
+
+        # Create the FeatureSet object and pull a dataframe
+        df = FeatureSet("aqsol_features").pull_dataframe()
+
+        # Update all the properties for the scatter plot
+        props = scatter_plot.update_properties(df, hover_columns=["id"], custom_data=custom_data_fields)
+
+        # Return the updated properties
+        return props
 
 
-def update_data_sources_table(app: Dash, data_source_broker: DataSourcesPageView):
-    @app.callback(
-        Output("data_sources_table", "data"),
-        Input("data-sources-updater", "n_intervals"),
-    )
-    def data_sources_update(_n):
-        """Return the table data as a dictionary"""
-        data_source_broker.refresh()
-        data_source_rows = data_source_broker.data_sources_summary()
-        data_source_rows["id"] = data_source_rows.index
-        return data_source_rows.to_dict("records")
-
-
-# Highlights the selected row in the table
-def table_row_select(app: Dash, table_name: str):
-    @app.callback(
-        Output(table_name, "style_data_conditional"),
-        Input(table_name, "derived_viewport_selected_row_ids"),
-    )
-    def style_selected_rows(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        row_style = [
-            {
-                "if": {"filter_query": "{{id}} ={}".format(i)},
-                "backgroundColor": "rgb(80, 80, 80)",
-            }
-            for i in selected_rows
-        ]
-        return row_style
-
-
-# Updates the data source details when a row is selected in the summary table
-def update_data_source_details(app: Dash, page_view: DataSourcesPageView):
-    @app.callback(
-        [
-            Output("data_source_details_header", "children"),
-            Output("data_source_details", "children"),
-        ],
-        Input("data_sources_table", "derived_viewport_selected_row_ids"),
-    )
-    def generate_data_source_markdown(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        print("Calling DataSource Details...")
-        data_source_details = page_view.data_source_details(selected_rows[0])
-        data_source_details_markdown = compound_details.create_markdown(data_source_details)
-
-        # Name of the data source for the Header
-        data_source_name = page_view.data_source_name(selected_rows[0])
-        header = f"Dataset: {data_source_name}"
-
-        # Return the details/markdown for these data details
-        return [header, data_source_details_markdown]
-
-
-def update_compound_rows(app: Dash, page_view: DataSourcesPageView):
-    @app.callback(
-        [
-            Output("data_source_rows_header", "children"),
-            Output("compound_rows", "columns"),
-            Output("compound_rows", "data"),
-        ],
-        Input("data_sources_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def sample_rows_update(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        print("Calling DataSource Sample Rows...")
-        sample_rows = page_view.data_source_outliers(selected_rows[0])
-
-        # To select rows we need to set up an (0->N) ID for each row
-        sample_rows["id"] = range(len(sample_rows))
-
-        # Name of the data source
-        data_source_name = page_view.data_source_name(selected_rows[0])
-        header = f"{data_source_name}: compounds"
-
-        # The columns need to be in a special format for the DataTable
-        column_setup_list = table.Table().column_setup(sample_rows)
-
-        # Return the columns and the data
-        return [header, column_setup_list, sample_rows.to_dict("records")]
-
-
-def update_compound_diagram(app: Dash):
-    @app.callback(
+def update_compound_diagram():
+    @callback(
         Output("compound_diagram", "children"),
-        Input("compound_rows", "derived_viewport_selected_rows"),
-        State("compound_rows", "derived_viewport_data"),
-        prevent_initial_call=True,
+        Input("compound_scatter_plot-graph", "hoverData"),
     )
-    def diagram_update(selected_rows, compound_data):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        print("Calling Compound Diagram Update...")
-        compound_name = compound_data[selected_rows[0]].get("name", "Unknown")
-        smiles = compound_data[selected_rows[0]].get("smiles", "Unknown")
-        mol_weight = compound_data[selected_rows[0]].get("molwt", 0.0)
-        print(f"Smiles Data: {smiles}")
-        m = Chem.MolFromSmiles(smiles)
+    def diagram_update(compound_data):
 
-        # Sanity Check the Molecule
-        if m is None:
-            print("**** Molecule is None ****")
+        # Sanity Check the Compound Data
+        print(compound_data)
+        if compound_data is None:
+            raise PreventUpdate
+        custom_data_list = compound_data.get("points")[0].get("customdata")
+        if custom_data_list is None:
+            raise PreventUpdate
+
+        # Put compound data in a dictionary
+        compound_data = dict(zip(custom_data_fields, custom_data_list))
+        id = compound_data["id"]
+        mol_weight = compound_data["molwt"]
+        smiles = compound_data["smiles"]
+        print(f"Smiles Data: {smiles}")
+
+        # Create the Molecule Image
+        img = img_from_smiles(smiles)
+
+        # Sanity Check
+        if img is None:
+            print("**** Could not generate an image ****")
             return dash.no_update
 
         # New 'Children' for the Compound Diagram
         children = [
             dbc.Row(
-                html.H5(compound_name),
+                html.H5(f"Compound: {id}"),
                 style={"padding": "0px 0px 0px 0px"},
             ),
             dbc.Row(
-                html.Img(src=Draw.MolToImage(m, options=dos, size=(300, 300)), style={"height": "300", "width": "300"}),
+                html.Img(src=img),
                 style={"padding": "0px 0px 0px 0px"},
             ),
             dbc.Row(
@@ -164,43 +91,3 @@ def update_compound_diagram(app: Dash):
 
         # Return the children of the Compound Diagram
         return children
-
-
-def update_cluster_plot(app: Dash, page_view: DataSourcesPageView):
-    """Updates the Cluster Plot when a new data source is selected"""
-
-    @app.callback(
-        Output("compound_scatter_plot", "figure"),
-        Input("data_sources_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def generate_new_cluster_plot(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        outlier_rows = page_view.data_source_outliers(selected_rows[0])
-        return scatter_plot.create_figure(outlier_rows)
-
-
-def update_violin_plots(app: Dash, page_view: DataSourcesPageView):
-    """Updates the Violin Plots when a new feature set is selected"""
-
-    @app.callback(
-        Output("data_source_violin_plot", "figure"),
-        Input("data_sources_table", "derived_viewport_selected_row_ids"),
-        prevent_initial_call=True,
-    )
-    def generate_new_violin_plot(selected_rows):
-        print(f"Selected Rows: {selected_rows}")
-        if not selected_rows or selected_rows[0] is None:
-            return dash.no_update
-        smart_sample_rows = page_view.data_source_smart_sample(selected_rows[0])
-        return violin_plots.ViolinPlots().update_properties(
-            smart_sample_rows,
-            figure_args={
-                "box_visible": True,
-                "meanline_visible": True,
-                "showlegend": False,
-                "points": "all",
-            },
-        )
