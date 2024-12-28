@@ -1,6 +1,6 @@
 """FeatureSets Layout: Layout for the FeatureSets page in the Artifact Viewer"""
 
-from dash import html, dcc, dash_table
+from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 # FIXME

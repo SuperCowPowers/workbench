@@ -1,4 +1,3 @@
-from typing import Union
 import pandas as pd
 from dash import dcc, html, callback, Input, Output
 import plotly.graph_objects as go

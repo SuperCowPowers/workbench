@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import pandas as pd
 from typing import Optional
+import base64
 
 # Workbench Imports
 from workbench.utils.pandas_utils import feature_quality_metrics
@@ -63,7 +64,7 @@ def img_from_smiles(smiles: str, width: int = 500, height: int = 500, dark_mode:
     # Convert the SMILES string to an RDKit molecule and generate the image
     mol = Chem.MolFromSmiles(smiles)
     if mol:
-        img = Draw.MolToImage(mol,  options=dos, size=(width, height))
+        img = Draw.MolToImage(mol, options=dos, size=(width, height))
         return img
     else:
         log.warning(f"Invalid SMILES: {smiles}")
@@ -124,7 +125,7 @@ def svg_from_smiles(smiles: str) -> Optional[str]:
         # Note: html.Img(
         #           src=f"data:image/svg+xml;base64,{encoded_svg}",
         #        ),
-        encoded_svg = base64.b64encode(svg.encode('utf-8')).decode()
+        encoded_svg = base64.b64encode(svg.encode("utf-8")).decode()
         return encoded_svg
     else:
         return None

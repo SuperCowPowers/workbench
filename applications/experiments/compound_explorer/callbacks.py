@@ -1,4 +1,5 @@
 """Callbacks for the FeatureSets Subpage Web User Interface"""
+
 import dash
 from dash import html, Input, Output, callback
 from dash.exceptions import PreventUpdate
@@ -7,7 +8,7 @@ import dash_bootstrap_components as dbc
 # Workbench Imports
 from workbench.api import FeatureSet
 from workbench.web_interface.components.plugins import scatter_plot
-from workbench.utils.chem_utils import img_from_smiles, svg_from_smiles
+from workbench.utils.chem_utils import img_from_smiles
 
 custom_data_fields = ["id", "molwt", "smiles"]
 

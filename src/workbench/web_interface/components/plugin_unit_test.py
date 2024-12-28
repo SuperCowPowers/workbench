@@ -8,7 +8,6 @@ import socket
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginInputType
 from workbench.api import DataSource, FeatureSet, Model, Endpoint
-from workbench.cached.cached_meta import CachedMeta
 from workbench.api.pipeline import Pipeline
 from workbench.core.artifacts.graph_core import GraphCore
 from workbench.utils.theme_manager import ThemeManager
@@ -118,7 +117,11 @@ class PluginUnitTest:
             graph = self.input_data if self.input_data is not None else GraphCore("karate_club")
             return self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"], **self.kwargs)
         elif plugin_input_type == PluginInputType.DATAFRAME:
-            model_df = self.input_data if self.input_data is not None else FeatureSet("abalone_features").pull_dataframe()[:1000]
+            model_df = (
+                self.input_data
+                if self.input_data is not None
+                else FeatureSet("abalone_features").pull_dataframe()[:1000]
+            )
             return self.plugin.update_properties(model_df, **self.kwargs)
         else:
             raise ValueError(f"Invalid test type: {plugin_input_type}")
