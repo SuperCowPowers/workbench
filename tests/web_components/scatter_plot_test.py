@@ -15,7 +15,7 @@ def test_scatter_plot():
     plot = ScatterPlot()
 
     # Update the properties (the figure is the first element in the property list)
-    all_properties = plot.update_properties(fs)
+    all_properties = plot.update_properties(fs.pull_dataframe())
     figure = all_properties[0]
     figure.show()
 
