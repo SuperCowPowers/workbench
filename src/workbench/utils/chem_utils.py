@@ -11,7 +11,8 @@ from workbench.utils.pandas_utils import feature_quality_metrics
 # Molecular Descriptor Imports
 try:
     from rdkit import Chem
-    from rdkit.Chem import Mol, Descriptors, rdFingerprintGenerator, Draw
+    from rdkit.Chem import AllChem, Mol, Descriptors, rdFingerprintGenerator, Draw
+    from rdkit.Chem.Draw import rdMolDraw2D
     from rdkit.ML.Descriptors import MoleculeDescriptors
     from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
     from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
@@ -39,6 +40,36 @@ except ImportError:
 log = logging.getLogger("workbench")
 
 
+def img_from_smiles(smiles: str, width: int = 500, height: int = 500, dark_mode: bool = True) -> Optional[str]:
+    """
+    Generate an image of the molecule represented by the given SMILES string.
+
+    Args:
+        smiles (str): A SMILES string representing the molecule.
+        width (int): Width of the image in pixels. Default is 500.
+        height (int): Height of the image in pixels. Default is 500.
+        dark_mode (bool): Use dark mode for the image. Default is True.
+
+    Returns:
+        str: Base64-encoded image of the molecule or None if the SMILES string is invalid.
+    """
+
+    # Set up the drawing options
+    dos = Draw.MolDrawOptions()
+    if dark_mode:
+        rdMolDraw2D.SetDarkMode(dos)
+    dos.setBackgroundColour((0, 0, 0, 0))
+
+    # Convert the SMILES string to an RDKit molecule and generate the image
+    mol = Chem.MolFromSmiles(smiles)
+    if mol:
+        img = Draw.MolToImage(mol,  options=dos, size=(width, height))
+        return img
+    else:
+        log.warning(f"Invalid SMILES: {smiles}")
+        return None
+
+
 def show(smiles: str, width: int = 500, height: int = 500) -> None:
     """
     Displays an image of the molecule represented by the given SMILES string.
@@ -51,12 +82,52 @@ def show(smiles: str, width: int = 500, height: int = 500) -> None:
     Returns:
     None
     """
+    img = img_from_smiles(smiles, width, height)
+    if img:
+        img.show()
+
+
+def svg_from_smiles(smiles: str) -> Optional[str]:
+    """
+    Generate an SVG image of the molecule represented by the given SMILES string.
+
+    Args:
+        smiles (str): A SMILES string representing the molecule.
+
+    Returns:
+        str: SVG image of the molecule or None if the SMILES string is invalid.
+    """
     mol = Chem.MolFromSmiles(smiles)
     if mol:
-        img = Draw.MolToImage(mol, size=(width, height))
-        img.show()
+        # mol = Chem.AddHs(mol)
+
+        # Compute 2D coordinates
+        AllChem.Compute2DCoords(mol)
+
+        # Initialize the SVG drawer with desired dimensions
+        drawer = rdMolDraw2D.MolDraw2DSVG(300, 300)
+
+        # Draw the molecule
+        drawer.DrawMolecule(mol)
+
+        # Finalize the drawing
+        drawer.FinishDrawing()
+
+        # Retrieve the SVG string
+        svg = drawer.GetDrawingText()
+
+        # Clean the SVG string
+        svg_cleaned = svg.replace("<?xml version='1.0' encoding='iso-8859-1'?>", "")
+        svg_cleaned = svg_cleaned.replace("xmlns:rdkit='http://www.rdkit.org/xml'", "")
+
+        # Encode the SVG string
+        # Note: html.Img(
+        #           src=f"data:image/svg+xml;base64,{encoded_svg}",
+        #        ),
+        encoded_svg = base64.b64encode(svg.encode('utf-8')).decode()
+        return encoded_svg
     else:
-        print(f"Invalid SMILES: {smiles}")
+        return None
 
 
 def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
@@ -559,6 +630,10 @@ if __name__ == "__main__":
     # Pyridone molecule
     smiles = "C1=CC=NC(=O)C=C1"
     show(smiles)
+
+    # SVG image of the molecule
+    svg = svg_from_smiles(smiles)
+    print(svg)
 
     # Test the concentration conversion functions
     df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles, smiles], "µM": [500, 50, 5, 1, 0.1, 0]})
