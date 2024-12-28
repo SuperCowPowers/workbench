@@ -58,7 +58,7 @@ class PluginUnitTest:
             layout_children.append(html.H4(f"Property: {property}"))
             layout_children.append(html.Div(id=f"test-output-{component_id}-{property}"))
 
-        # self.app.layout = html.Div(layout_children, style={"padding": "20px"}, className="dbc dbc-ag-grid")
+        # Set the layout
         self.app.layout = html.Div(
             [
                 dbc.Container(layout_children, fluid=True, className="dbc dbc-ag-grid"),
@@ -118,7 +118,7 @@ class PluginUnitTest:
             graph = self.input_data if self.input_data is not None else GraphCore("karate_club")
             return self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"], **self.kwargs)
         elif plugin_input_type == PluginInputType.DATAFRAME:
-            model_df = self.input_data if self.input_data is not None else CachedMeta().models(details=True)
+            model_df = self.input_data if self.input_data is not None else FeatureSet("abalone_features").pull_dataframe()[:1000]
             return self.plugin.update_properties(model_df, **self.kwargs)
         else:
             raise ValueError(f"Invalid test type: {plugin_input_type}")
