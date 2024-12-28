@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 
 # Workbench Imports
-from workbench.api import DataSource, FeatureSet
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
 
@@ -15,7 +14,7 @@ class ScatterPlot(PluginInterface):
 
     # Initialize this Plugin Component Class with required attributes
     auto_load_page = PluginPage.NONE
-    plugin_input_type = PluginInputType.FEATURE_SET
+    plugin_input_type = PluginInputType.DATAFRAME
 
     def __init__(self):
         """Initialize the Scatter Plot Plugin"""
@@ -103,11 +102,11 @@ class ScatterPlot(PluginInterface):
             style={"height": "100%", "display": "flex", "flexDirection": "column"},  # Full viewport height
         )
 
-    def update_properties(self, input_data: Union[DataSource, FeatureSet, pd.DataFrame], **kwargs) -> list:
+    def update_properties(self, input_data: pd.DataFrame, **kwargs) -> list:
         """Update the property values for the plugin component.
 
         Args:
-            input_data (DataSource or FeatureSet or Pandas dataframe): The input data object.
+            input_data (pd.DataFrame): The input data object.
             **kwargs: Additional keyword arguments (plugins can define their own arguments).
                       Note: The current kwargs processed are:
                             - x: The default x-axis column
@@ -115,6 +114,7 @@ class ScatterPlot(PluginInterface):
                             - color: The default color column
                             - dropdown_columns: The columns to use for the x, y, color options
                             - hover_columns: The columns to show when hovering over a point
+                            - custom_data: Custom data that get passed to hoverData callbacks
 
         Returns:
             list: A list of updated property values (figure, x options, y options, color options).
@@ -123,17 +123,15 @@ class ScatterPlot(PluginInterface):
         # Get the limit for the number of rows to plot
         limit = kwargs.get("limit", 10000)
 
-        # Grab the dataframe from the input data object
-        if isinstance(input_data, (DataSource, FeatureSet)):
-            self.df = input_data.view("display").pull_dataframe(limit=limit)
-        elif isinstance(input_data, pd.DataFrame):
+        # Check that we got a dataframe for our input data object
+        if isinstance(input_data, pd.DataFrame):
             if len(input_data) > limit:
                 self.log.warning(f"Input data has {len(input_data)} rows, sampling to {limit} rows.")
                 self.df = input_data.sample(n=limit)
             else:
                 self.df = input_data
         else:
-            raise ValueError("The input data must be a DataSource, FeatureSet, or Pandas DataFrame.")
+            raise ValueError("The input data must be a Pandas DataFrame.")
 
         # AWS Feature Groups will also add these implicit columns, so remove these columns
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
@@ -142,8 +140,9 @@ class ScatterPlot(PluginInterface):
         # Drop any columns with NaNs
         self.df = self.df.dropna(axis=1, how="any")
 
-        # Set the default hover columns
+        # Set the hover columns and custom data
         self.hover_columns = kwargs.get("hover_columns", self.df.columns.tolist()[:10])
+        self.custom_data = kwargs.get("custom_data", [])
 
         # Get numeric columns for default selections
         numeric_columns = self.df.select_dtypes(include="number").columns.tolist()
@@ -192,6 +191,7 @@ class ScatterPlot(PluginInterface):
                     lambda row: "<br>".join([f"{col}: {row[col]}" for col in self.hover_columns]), axis=1
                 ),
                 hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
+                customdata=df[self.custom_data],
                 textfont=dict(family="Arial Black", size=14),  # Set font size
                 marker=dict(
                     size=15,
