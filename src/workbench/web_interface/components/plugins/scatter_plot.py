@@ -166,7 +166,16 @@ class ScatterPlot(PluginInterface):
 
         return [figure, options, options, options, x_default, y_default, color_default, []]
 
-    def create_scatter_plot(self, df, x_col, y_col, color_col, regression_line=False):
+    def create_scatter_plot(
+            self,
+            df: pd.DataFrame,
+            x_col: str,
+            y_col: str,
+            color_col: str,
+            regression_line: bool = False,
+            marker_size: int = 15,
+            line_width: int = 4,
+    ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
         Args:
@@ -175,50 +184,57 @@ class ScatterPlot(PluginInterface):
             y_col (str): The column to use for the y-axis.
             color_col (str): The column to use for the color scale.
             regression_line (bool): Whether to include a regression line.
+            marker_size (int): Size of the markers. Default is 15.
+            line_width (int): Width of the 45-degree line. Default is 4.
 
         Returns:
             go.Figure: A Plotly Figure object.
         """
 
-        # Create an OpenGL Scatter Plot
+        def compute_opacity(value, min_val, max_val):
+            """Normalize and compute opacity based on value."""
+            return 0.25 + 0.74 * (value - min_val) / (max_val - min_val)
+
+        def generate_hover_text(row):
+            """Generate hover text for each data point."""
+            return "<br>".join([f"{col}: {row[col]}" for col in self.hover_columns])
+
+        # Cache min and max for color_col
+        color_min, color_max = df[color_col].min(), df[color_col].max()
+
+        # Create the scatter plot
         figure = go.Figure(
             data=go.Scattergl(
                 x=df[x_col],
                 y=df[y_col],
                 mode="markers",
-                hovertext=df.apply(
-                    lambda row: "<br>".join([f"{col}: {row[col]}" for col in self.hover_columns]), axis=1
-                ),
-                hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
+                hovertext=df.apply(generate_hover_text, axis=1),
+                hovertemplate="%{hovertext}<extra></extra>",
                 customdata=df[self.custom_data],
-                textfont=dict(family="Arial Black", size=14),  # Set font size
                 marker=dict(
-                    size=15,
-                    color=df[color_col],  # Use the selected field for color
+                    size=marker_size,
+                    color=df[color_col],
                     colorscale=self.theme_manager.colorscale(),
                     colorbar=dict(title=color_col),
-                    opacity=df[color_col].apply(
-                        lambda x: 0.25 + 0.74 * (x - df[color_col].min()) / (df[color_col].max() - df[color_col].min())
-                    ),
+                    opacity=df[color_col].apply(lambda x: compute_opacity(x, color_min, color_max)),
                     line=dict(color="Black", width=1),
                 ),
             )
         )
 
-        # Add 45-degree line
+        # Add 45-degree line if enabled
         if regression_line:
-            min_val = min(df[x_col].min(), df[y_col].min())
-            max_val = max(df[x_col].max(), df[y_col].max())
+            axis_min, axis_max = min(df[x_col].min(), df[y_col].min()), max(df[x_col].max(), df[y_col].max())
             figure.add_shape(
                 type="line",
-                line=dict(width=4, color="rgba(0.5, 0.5, 0.5, 0.5)"),
-                x0=min_val,
-                x1=max_val,
-                y0=min_val,
-                y1=max_val,
+                line=dict(width=line_width, color="rgba(128, 128, 128, 0.5)"),
+                x0=axis_min,
+                x1=axis_max,
+                y0=axis_min,
+                y1=axis_max,
             )
 
-        # Update the layout
+        # Update layout
         figure.update_layout(
             margin={"t": 40, "b": 40, "r": 40, "l": 40, "pad": 0},
             xaxis=dict(
@@ -231,9 +247,10 @@ class ScatterPlot(PluginInterface):
                 tickformat=".2f",
                 showgrid=True,
             ),
-            showlegend=False,  # Remove legend
+            showlegend=False,
             dragmode="pan",
         )
+
         return figure
 
     def register_internal_callbacks(self):
