@@ -8,6 +8,7 @@ import base64
 
 # Workbench Imports
 from workbench.utils.pandas_utils import feature_quality_metrics
+from workbench.utils.color_utils import is_dark, rgba_to_tuple
 
 # Molecular Descriptor Imports
 try:
@@ -41,7 +42,7 @@ except ImportError:
 log = logging.getLogger("workbench")
 
 
-def img_from_smiles(smiles: str, width: int = 500, height: int = 500, dark_mode: bool = True) -> Optional[str]:
+def img_from_smiles(smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)") -> Optional[str]:
     """
     Generate an image of the molecule represented by the given SMILES string.
 
@@ -49,17 +50,17 @@ def img_from_smiles(smiles: str, width: int = 500, height: int = 500, dark_mode:
         smiles (str): A SMILES string representing the molecule.
         width (int): Width of the image in pixels. Default is 500.
         height (int): Height of the image in pixels. Default is 500.
-        dark_mode (bool): Use dark mode for the image. Default is True.
+        background (str): Background color of the image. Default is dark grey
 
     Returns:
-        str: Base64-encoded image of the molecule or None if the SMILES string is invalid.
+        str: PIL image of the molecule or None if the SMILES string is invalid.
     """
 
     # Set up the drawing options
     dos = Draw.MolDrawOptions()
-    if dark_mode:
+    if is_dark(background):
         rdMolDraw2D.SetDarkMode(dos)
-    dos.setBackgroundColour((0, 0, 0, 0))
+    dos.setBackgroundColour(rgba_to_tuple(background))
 
     # Convert the SMILES string to an RDKit molecule and generate the image
     mol = Chem.MolFromSmiles(smiles)
@@ -635,6 +636,10 @@ if __name__ == "__main__":
     # SVG image of the molecule
     svg = svg_from_smiles(smiles)
     print(svg)
+
+    # PIL image of the molecule
+    img = img_from_smiles(smiles)
+    print(type(img))
 
     # Test the concentration conversion functions
     df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles, smiles], "µM": [500, 50, 5, 1, 0.1, 0]})
