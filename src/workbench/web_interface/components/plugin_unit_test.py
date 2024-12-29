@@ -1,5 +1,5 @@
 import dash
-from dash import html, Output, Input
+from dash import html, Dash, Output, Input
 import dash_bootstrap_components as dbc
 import logging
 import socket
@@ -38,13 +38,21 @@ class PluginUnitTest:
         # Set up the Theme Manager
         tm = ThemeManager()
         tm.set_theme(theme)
+        css_files = tm.css_files()
+
+        # Create the Dash app with the theme CSS files
+        self.app = Dash(
+            __name__,
+            title="Plugin Unit Test",
+            external_stylesheets=css_files,
+        )
+
+        # Register the CSS route in the ThemeManager
+        tm.register_css_route(self.app)
 
         # Instantiate the plugin
         self.plugin = plugin_class()
         self.component = self.plugin.create_component(f"{self.plugin.__class__.__name__.lower()}_test")
-
-        # Load the custom CSS
-        self.app = dash.Dash(__name__, external_stylesheets=tm.css_files())
 
         # Set up the layout
         container = html.Div(self.component, style={"height": "75vh"})

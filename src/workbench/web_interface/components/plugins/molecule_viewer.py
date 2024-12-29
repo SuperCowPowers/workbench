@@ -38,7 +38,10 @@ class MoleculeViewer(PluginInterface):
             id=self.component_id,
             children=[
                 html.H5(id=f"{self.component_id}-header", children="Compound:"),
-                html.Img(id=f"{self.component_id}-img", src=""),
+                html.Img(id=f"{self.component_id}-img",
+                         className="workbench-container",
+                         style={"padding": "0px"},
+                         ),
             ],
         )
 
@@ -67,7 +70,7 @@ class MoleculeViewer(PluginInterface):
         header_text = f"Compound: {compound_id}"
 
         # Create the Molecule Image
-        img = img_from_smiles(smiles, dark_mode=self.theme_manager.dark_mode())
+        img = img_from_smiles(smiles, background=self.theme_manager.background())
 
         # Return the updated property values for this plugin
         return [header_text, img]
@@ -82,4 +85,4 @@ if __name__ == "__main__":
         "compound_id": "AQSOL-0001",
         "smiles": "CC(C)C1=CC=C(C=C1)C(=O)O",
     }
-    PluginUnitTest(MoleculeViewer, input_data=compound_data, theme="dark").run()
+    PluginUnitTest(MoleculeViewer, input_data=compound_data, theme="quartz").run()
