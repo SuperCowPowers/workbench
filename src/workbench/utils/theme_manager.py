@@ -9,6 +9,7 @@ from flask import send_from_directory
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
 from workbench.api import ParameterStore
+from workbench.utils.color_utils import color_to_rgba
 
 
 class ThemeManager:
@@ -102,6 +103,15 @@ class ThemeManager:
     def current_theme(cls) -> str:
         """Get the name of the current theme."""
         return cls._current_theme_name
+
+    @classmethod
+    def background(cls) -> list[list[float | str]]:
+        """Get the plot background for the current theme."""
+
+        # We have 2 background options (paper_bgcolor and plot_bgcolor)
+        background = cls._current_template["layout"]["paper_bgcolor"]
+        background = cls._current_template["layout"]["plot_bgcolor"]
+        return color_to_rgba(background)
 
     @classmethod
     def colorscale(cls, scale_type: str = "sequential") -> list[list[float | str]]:
