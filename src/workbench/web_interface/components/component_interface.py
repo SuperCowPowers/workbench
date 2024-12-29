@@ -56,6 +56,7 @@ class ComponentInterface(ABC):
         CachedFeatureSet,
         CachedModel,
         CachedEndpoint,
+        str,  # Okay, this is stupid, it pretty much invalidates the whole point of the type hint
     ]
 
     def __init__(self, theme: str = "DARK"):
