@@ -42,7 +42,9 @@ except ImportError:
 log = logging.getLogger("workbench")
 
 
-def img_from_smiles(smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)") -> Optional[str]:
+def img_from_smiles(
+    smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)"
+) -> Optional[str]:
     """
     Generate an image of the molecule represented by the given SMILES string.
 
@@ -73,10 +75,7 @@ def img_from_smiles(smiles: str, width: int = 500, height: int = 500, background
 
 
 def svg_from_smiles(
-    smiles: str,
-    width: int = 500,
-    height: int = 500,
-    background: str = "rgba(64, 64, 64, 1)"
+    smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)"
 ) -> Optional[str]:
     """
     Generate an SVG image of the molecule represented by the given SMILES string.
@@ -102,9 +101,9 @@ def svg_from_smiles(
 
     # Configure drawing options
     options = drawer.drawOptions()
-    options.setBackgroundColour(rgba_to_tuple(background))
     if is_dark(background):
         rdMolDraw2D.SetDarkMode(options)
+    options.setBackgroundColour(rgba_to_tuple(background))
 
     # Draw the molecule
     drawer.DrawMolecule(mol)
@@ -131,6 +130,7 @@ def show(smiles: str, width: int = 500, height: int = 500) -> None:
     img = img_from_smiles(smiles, width, height)
     if img:
         img.show()
+
 
 def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
     """

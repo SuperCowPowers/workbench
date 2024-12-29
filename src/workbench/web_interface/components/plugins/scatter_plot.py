@@ -49,10 +49,7 @@ class ScatterPlot(PluginInterface):
             (f"{component_id}-color-dropdown", "value"),
             (f"{component_id}-regression-line", "value"),
         ]
-        self.signals = [
-            (f"{component_id}-graph", "hoverData"),
-            (f"{component_id}-graph", "clickData")
-        ]
+        self.signals = [(f"{component_id}-graph", "hoverData"), (f"{component_id}-graph", "clickData")]
 
         # Create the Composite Component
         # - A Graph/ScatterPlot Component

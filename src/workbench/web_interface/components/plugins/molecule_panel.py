@@ -4,8 +4,6 @@ from dash import html
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.chem_utils import img_from_smiles
 from workbench.web_interface.components.plugins.molecule_viewer import MoleculeViewer
 
 
@@ -47,12 +45,8 @@ class MoleculePanel(PluginInterface):
         )
 
         # Fill in plugin properties
-        self.properties = [
-            (f"{viewer.component_id}-header", "children")
-            for viewer in self.molecule_viewers
-        ] + [
-            (f"{viewer.component_id}-img", "src")
-            for viewer in self.molecule_viewers
+        self.properties = [(f"{viewer.component_id}-header", "children") for viewer in self.molecule_viewers] + [
+            (f"{viewer.component_id}-img", "src") for viewer in self.molecule_viewers
         ]
 
         return self.container
@@ -72,7 +66,7 @@ class MoleculePanel(PluginInterface):
 
         updated_properties = []
         for viewer, molecule_data in zip(self.molecule_viewers, molecules):
-            updates.extend(
+            updated_properties.extend(
                 viewer.update_properties(
                     compound_id=molecule_data["compound_id"],
                     smiles=molecule_data["smiles"],
@@ -102,6 +96,6 @@ if __name__ == "__main__":
         {
             "compound_id": "AQSOL-0004",
             "smiles": "CC(C)C1=CC=C(C=C1)C(=O)O",
-        }
+        },
     ]
     PluginUnitTest(MoleculePanel, input_data=molecules, theme="dark").run()

@@ -10,13 +10,10 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
         children=[
             # Page Header
             dbc.Row([html.H2("Compound Explorer")]),
-
             # Scatter Plot
             dbc.Row([scatter_plot]),
-
             # Molecule Viewer
             dbc.Row([molecule_view]),
-
             # Scatter Plot and Molecule Viewer
             # dbc.Row(
             #     [
@@ -26,10 +23,8 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
             #         dbc.Col([molecule_view], width=4),
             #     ],
             # ),
-
             # Molecular Viewer for Neighbors
             # dbc.Row([molecule_view, molecule_view, molecule_view, molecule_view]),
-
             # Update Button
             html.Button("Update Plugin", id="update-button"),
         ],

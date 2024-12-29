@@ -5,7 +5,7 @@ from dash import html
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.chem_utils import img_from_smiles, svg_from_smiles
+from workbench.utils.chem_utils import svg_from_smiles
 
 
 class MoleculeViewer(PluginInterface):
@@ -38,10 +38,11 @@ class MoleculeViewer(PluginInterface):
             id=self.component_id,
             children=[
                 html.H5(id=f"{self.component_id}-header", children="Compound:"),
-                html.Img(id=f"{self.component_id}-img",
-                         className="workbench-container",
-                         style={"padding": "0px"},
-                         ),
+                html.Img(
+                    id=f"{self.component_id}-img",
+                    className="workbench-container",
+                    style={"padding": "0px"},
+                ),
             ],
         )
 
