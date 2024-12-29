@@ -19,6 +19,8 @@ class PluginPage(Enum):
     MODEL = "model"
     ENDPOINT = "endpoint"
     PIPELINE = "pipeline"
+    GRAPH = "graph"
+    COMPOUND = "compound"
     CUSTOM = "custom"
     NONE = "none"
 
@@ -33,6 +35,7 @@ class PluginInputType(Enum):
     PIPELINE = "pipeline"
     GRAPH = "graph"
     DATAFRAME = "dataframe"
+    COMPOUND = "compound"
     CUSTOM = "custom"
 
 

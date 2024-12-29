@@ -123,6 +123,13 @@ class PluginUnitTest:
                 else FeatureSet("abalone_features").pull_dataframe()[:1000]
             )
             return self.plugin.update_properties(model_df, **self.kwargs)
+        elif plugin_input_type == PluginInputType.COMPOUND:
+            fake_compound = {
+                "compound_id": "AQSOL-0001",
+                "smiles": "CC(C)C1=CC=C(C=C1)C(=O)O",
+            }
+            compound = self.input_data if self.input_data is not None else fake_compound
+            return self.plugin.update_properties(**compound, **self.kwargs)
         else:
             raise ValueError(f"Invalid test type: {plugin_input_type}")
 

@@ -12,14 +12,11 @@ from workbench.cached.cached_model import CachedModel
 from workbench.utils.markdown_utils import health_tag_markdown
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 
-# Get the Workbench logger
-log = logging.getLogger("workbench")
-
 
 class ModelDetails(PluginInterface):
     """Model Details Composite Component"""
 
-    """Initialize this Plugin Component Class with required attributes"""
+    # Initialize this Plugin Class with required attributes
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.MODEL
 
@@ -39,7 +36,7 @@ class ModelDetails(PluginInterface):
             html.Div: A Container of Components for the Model Details
         """
         self.component_id = component_id
-        container = html.Div(
+        self.container = html.Div(
             id=self.component_id,
             children=[
                 html.H3(id=f"{self.component_id}-header", children="Model: Loading..."),
@@ -61,7 +58,7 @@ class ModelDetails(PluginInterface):
         self.signals = [(f"{self.component_id}-dropdown", "value")]
 
         # Return the container
-        return container
+        return self.container
 
     def update_properties(self, model: CachedModel, **kwargs) -> list:
         """Update the properties for the plugin.
