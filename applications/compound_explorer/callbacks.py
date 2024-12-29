@@ -7,25 +7,23 @@ import dash_bootstrap_components as dbc
 
 # Workbench Imports
 from workbench.api import FeatureSet
-from workbench.web_interface.components.plugins import scatter_plot
+from workbench.web_interface.components.plugins import scatter_plot, molecule_viewer
 from workbench.utils.chem_utils import img_from_smiles
-
-custom_data_fields = ["id", "molwt", "smiles"]
 
 
 # Set up the scatter plot callbacks
-def scatter_plot_callbacks(scatter_plot: scatter_plot.ScatterPlot):
+def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
 
     # First we'll register internal callbacks for the scatter plot
-    scatter_plot.register_internal_callbacks()
+    my_scatter_plot.register_internal_callbacks()
 
     # Now we'll set up the scatter callbacks
     @callback(
         # We can use the properties of the scatter plot to get the output properties
-        [Output(component_id, prop) for component_id, prop in scatter_plot.properties],
+        [Output(component_id, prop) for component_id, prop in my_scatter_plot.properties],
         [Input("update-button", "n_clicks")],
     )
-    def _scatter_plot_callbacks(n_clicks):
+    def _scatter_plot_callbacks(_n_clicks):
         # Check for no selected rows
         # if not selected_rows or selected_rows[0] is None:
         #    raise PreventUpdate
@@ -38,18 +36,18 @@ def scatter_plot_callbacks(scatter_plot: scatter_plot.ScatterPlot):
         df = FeatureSet("aqsol_features").pull_dataframe()
 
         # Update all the properties for the scatter plot
-        props = scatter_plot.update_properties(df, hover_columns=["id"], custom_data=custom_data_fields)
+        props = my_scatter_plot.update_properties(df, hover_columns=["id"], custom_data=["id", "smiles"])
 
         # Return the updated properties
         return props
 
 
-def update_compound_diagram():
+def molecule_view_callbacks(my_molecule_view: molecule_viewer.MoleculeViewer):
     @callback(
-        Output("compound_diagram", "children"),
+        [Output(component_id, prop) for component_id, prop in my_molecule_view.properties],
         Input("compound_scatter_plot-graph", "hoverData"),
     )
-    def diagram_update(compound_data):
+    def _molecule_view_callbacks(compound_data):
 
         # Sanity Check the Compound Data
         print(compound_data)
@@ -60,35 +58,11 @@ def update_compound_diagram():
             raise PreventUpdate
 
         # Put compound data in a dictionary
-        compound_data = dict(zip(custom_data_fields, custom_data_list))
-        id = compound_data["id"]
-        mol_weight = compound_data["molwt"]
-        smiles = compound_data["smiles"]
-        print(f"Smiles Data: {smiles}")
+        compound_data = {
+            "compound_id": custom_data_list[0],
+            "smiles": custom_data_list[1],
+        }
 
-        # Create the Molecule Image
-        img = img_from_smiles(smiles)
-
-        # Sanity Check
-        if img is None:
-            print("**** Could not generate an image ****")
-            return dash.no_update
-
-        # New 'Children' for the Compound Diagram
-        children = [
-            dbc.Row(
-                html.H5(f"Compound: {id}"),
-                style={"padding": "0px 0px 0px 0px"},
-            ),
-            dbc.Row(
-                html.Img(src=img),
-                style={"padding": "0px 0px 0px 0px"},
-            ),
-            dbc.Row(
-                html.H5(f"Molecular Weight: {mol_weight}"),
-                style={"padding": "0px 0px 0px 0px"},
-            ),
-        ]
-
-        # Return the children of the Compound Diagram
-        return children
+        # Update the properties for the molecule viewer
+        props = my_molecule_view.update_properties(**compound_data)
+        return props

@@ -3,18 +3,8 @@
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 
-# FIXME
-from rdkit import Chem
-from rdkit.Chem import Draw
-from rdkit.Chem.Draw.rdMolDraw2D import SetDarkMode
 
-m = Chem.MolFromSmiles("O=C1Nc2cccc3cccc1c23")
-dos = Draw.MolDrawOptions()
-SetDarkMode(dos)
-dos.setBackgroundColour((0, 0, 0, 0))
-
-
-def compound_explorer_layout(compound_scatter_plot: dcc.Graph) -> html.Div:
+def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -> html.Div:
     """Set up the layout for the Compound Explorer Page"""
     layout = html.Div(
         dbc.Container(
@@ -25,7 +15,7 @@ def compound_explorer_layout(compound_scatter_plot: dcc.Graph) -> html.Div:
                 # Page Header and Last Updated Timer
                 dbc.Row(
                     [
-                        html.H2("Compound Explorer (Alpha)"),
+                        html.H2("Compound Explorer"),
                         html.Div(
                             "Last Updated: ",
                             id="last-updated-compound-explorer",
@@ -39,35 +29,11 @@ def compound_explorer_layout(compound_scatter_plot: dcc.Graph) -> html.Div:
                 ),
                 dbc.Row(
                     [
-                        dbc.Col(
-                            [
-                                # Cluster/Scatter Plot
-                                dbc.Row(compound_scatter_plot),
-                            ],
-                            width=8,
-                        ),
-                        # Column 2: Compound Diagram
-                        dbc.Col(
-                            [
-                                dbc.Row(
-                                    html.H5("<compound name>"),
-                                    style={"padding": "0px 0px 0px 0px"},
-                                ),
-                                dbc.Row(
-                                    html.Img(
-                                        src=Draw.MolToImage(m, options=dos, size=(300, 300)),
-                                        style={"height": "300", "width": "300"},
-                                    ),
-                                    style={"padding": "0px 0px 0px 0px"},
-                                ),
-                                dbc.Row(
-                                    html.H5("<compound info>"),
-                                    style={"padding": "0px 0px 0px 0px"},
-                                ),
-                            ],
-                            width=4,
-                            id="compound_diagram",
-                        ),
+                        # Column 1: Scatter Plot
+                        dbc.Col([scatter_plot], width=8),
+
+                        # Column 2: Molecular Viewer
+                        dbc.Col([molecule_view], width=4),
                     ],
                 ),
                 html.Button("Update Plugin", id="update-button"),

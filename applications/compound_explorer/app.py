@@ -4,7 +4,7 @@ from dash import Dash
 
 # Workbench Imports
 from workbench.utils.theme_manager import ThemeManager
-from workbench.web_interface.components.plugins import scatter_plot
+from workbench.web_interface.components.plugins import scatter_plot, molecule_viewer
 
 # Local Imports
 from layout import compound_explorer_layout
@@ -33,21 +33,25 @@ tm.register_css_route(app)
 # Note: The 'server' object is required for running the app with NGINX/uWSGI
 server = app.server
 
-# Create the main Compound plot
-compound_plot = scatter_plot.ScatterPlot()
-compound_plot_component = compound_plot.create_component("compound_scatter_plot")
+# Create the main components for the Compound Explorer
+scatter_plot = scatter_plot.ScatterPlot()
+scatter_plot_component = scatter_plot.create_component("compound_scatter_plot")
+molecule_view = molecule_viewer.MoleculeViewer()
+molecule_view_component = molecule_view.create_component("compound_viewer")
+
 
 # Create our components
 components = {
-    "compound_scatter_plot": compound_plot_component,
+    "scatter_plot": scatter_plot_component,
+    "molecule_view": molecule_view_component,
 }
 
 # Set up our application layout
 app.layout = compound_explorer_layout(**components)
 
 # Set up our application callbacks
-callbacks.scatter_plot_callbacks(compound_plot)
-callbacks.update_compound_diagram()
+callbacks.scatter_plot_callbacks(scatter_plot)
+callbacks.molecule_view_callbacks(molecule_view)
 
 
 if __name__ == "__main__":
