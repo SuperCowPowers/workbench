@@ -7,11 +7,11 @@ from app import app
 
 def start_explorer(debug: bool):
     """Open a browser and start the Dash app"""
-    url = "http://localhost:8000"
+    url = "http://localhost:8001"
     webbrowser.open(url)
 
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="0.0.0.0", port=8000, debug=debug)
+    app.run(host="0.0.0.0", port=8001, debug=debug)
 
 
 if __name__ == "__main__":

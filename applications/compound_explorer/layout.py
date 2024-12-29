@@ -7,43 +7,31 @@ import dash_bootstrap_components as dbc
 def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -> html.Div:
     """Set up the layout for the Compound Explorer Page"""
     layout = html.Div(
-        dbc.Container(
-            fluid=True,
-            className="dbc dbc-ag-grid",
-            style={"margin": "30px"},
-            children=[
-                # Page Header and Last Updated Timer
-                dbc.Row(
-                    [
-                        html.H2("Compound Explorer"),
-                        html.Div(
-                            "Last Updated: ",
-                            id="last-updated-compound-explorer",
-                            style={
-                                "color": "rgb(140, 200, 140)",
-                                "fontSize": 15,
-                                "padding": "0px 0px 0px 160px",
-                            },
-                        ),
-                    ]
-                ),
+        children=[
+            # Page Header
+            dbc.Row([html.H2("Compound Explorer")]),
 
-                # Scatter Plot and Molecule Viewer
-                dbc.Row(
-                    [
-                        # Column 1: Scatter Plot
-                        dbc.Col([scatter_plot], width=8),
-                        # Column 2: Molecular Viewer
-                        dbc.Col([molecule_view], width=4),
-                    ],
-                ),
+            # Scatter Plot
+            dbc.Row([scatter_plot]),
 
-                # Molecular Viewer for Neighbors
-                # dbc.Row([molecule_view, molecule_view, molecule_view, molecule_view]),
+            # Molecule Viewer
+            dbc.Row([molecule_view]),
 
-                # Update Button
-                html.Button("Update Plugin", id="update-button"),
-            ],
-        )
+            # Scatter Plot and Molecule Viewer
+            # dbc.Row(
+            #     [
+            #         # Column 1: Scatter Plot
+            #         dbc.Col([scatter_plot], width=8),
+            #         # Column 2: Molecular Viewer
+            #         dbc.Col([molecule_view], width=4),
+            #     ],
+            # ),
+
+            # Molecular Viewer for Neighbors
+            # dbc.Row([molecule_view, molecule_view, molecule_view, molecule_view]),
+
+            # Update Button
+            html.Button("Update Plugin", id="update-button"),
+        ],
     )
     return layout

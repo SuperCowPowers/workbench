@@ -1,6 +1,7 @@
 """Compound Explorer Application"""
 
-from dash import Dash
+from dash import Dash, html
+import dash_bootstrap_components as dbc
 
 # Workbench Imports
 from workbench.utils.theme_manager import ThemeManager
@@ -47,7 +48,12 @@ components = {
 }
 
 # Set up our application layout
-app.layout = compound_explorer_layout(**components)
+app.layout = html.Div(
+    [
+        dbc.Container(compound_explorer_layout(**components), fluid=True, className="dbc dbc-ag-grid"),
+    ],
+    **{"data-bs-theme": tm.data_bs_theme()},
+)
 
 # Set up our application callbacks
 callbacks.scatter_plot_callbacks(scatter_plot)
@@ -57,5 +63,4 @@ callbacks.molecule_view_callbacks(molecule_view)
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="0.0.0.0", port=8000, debug=True)
-    # app.run(host="0.0.0.0", port=8082)
+    app.run(host="0.0.0.0", port=8001, debug=True)
