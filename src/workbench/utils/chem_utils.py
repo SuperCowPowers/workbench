@@ -72,7 +72,12 @@ def img_from_smiles(smiles: str, width: int = 500, height: int = 500, background
         return None
 
 
-def svg_from_smiles(smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)") -> Optional[str]:
+def svg_from_smiles(
+    smiles: str,
+    width: int = 500,
+    height: int = 500,
+    background: str = "rgba(64, 64, 64, 1)"
+) -> Optional[str]:
     """
     Generate an SVG image of the molecule represented by the given SMILES string.
 
@@ -80,48 +85,35 @@ def svg_from_smiles(smiles: str, width: int = 500, height: int = 500, background
         smiles (str): A SMILES string representing the molecule.
         width (int): Width of the image in pixels. Default is 500.
         height (int): Height of the image in pixels. Default is 500.
-        background (str): Background color of the image. Default is dark grey
+        background (str): Background color of the image. Default is dark grey.
 
     Returns:
-        str: SVG image of the molecule or None if the SMILES string is invalid.
+        Optional[str]: Encoded SVG string of the molecule or None if the SMILES string is invalid.
     """
-    # Set up the drawing options
-    dos = Draw.MolDrawOptions()
-    if is_dark(background):
-        rdMolDraw2D.SetDarkMode(dos)
-    dos.setBackgroundColour(rgba_to_tuple(background))
-
     mol = Chem.MolFromSmiles(smiles)
-    if mol:
-        # mol = Chem.AddHs(mol)
-
-        # Compute 2D coordinates
-        AllChem.Compute2DCoords(mol)
-
-        # Initialize the SVG drawer with desired dimensions
-        drawer = rdMolDraw2D.MolDraw2DSVG(width=width, height=height)
-
-        # Draw the molecule
-        drawer.DrawMolecule(mol)
-
-        # Finalize the drawing
-        drawer.FinishDrawing()
-
-        # Retrieve the SVG string
-        svg = drawer.GetDrawingText()
-
-        # Clean the SVG string
-        svg_cleaned = svg.replace("<?xml version='1.0' encoding='iso-8859-1'?>", "")
-        svg_cleaned = svg_cleaned.replace("xmlns:rdkit='http://www.rdkit.org/xml'", "")
-
-        # Encode the SVG string
-        # Note: html.Img(
-        #           src=f"data:image/svg+xml;base64,{encoded_svg}",
-        #        ),
-        encoded_svg = base64.b64encode(svg.encode("utf-8")).decode()
-        return encoded_svg
-    else:
+    if not mol:
         return None
+
+    # Compute 2D coordinates for the molecule
+    AllChem.Compute2DCoords(mol)
+
+    # Initialize the SVG drawer
+    drawer = rdMolDraw2D.MolDraw2DSVG(width, height)
+
+    # Configure drawing options
+    options = drawer.drawOptions()
+    options.setBackgroundColour(rgba_to_tuple(background))
+    if is_dark(background):
+        rdMolDraw2D.SetDarkMode(options)
+
+    # Draw the molecule
+    drawer.DrawMolecule(mol)
+    drawer.FinishDrawing()
+
+    # Clean and encode the SVG
+    svg = drawer.GetDrawingText()
+    encoded_svg = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
+    return encoded_svg
 
 
 def show(smiles: str, width: int = 500, height: int = 500) -> None:
