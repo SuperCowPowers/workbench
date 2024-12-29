@@ -47,6 +47,15 @@ a:hover {
     overflow: hidden; /* Ensure contents fit inside the rounded corners */
 }
 
+/* Apply styling to all Workbench Containers */
+.workbench-container {
+    box-shadow: 4px 6px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
+    border-radius: 12px; /* Rounded corners */
+    margin: 30px; /* Space around the figure */
+    padding: 30px; /* Inner padding */
+    overflow: hidden; /* Ensure contents fit inside the rounded corners */
+}
+
 /* Some of the HTML/Markdown will use color hints like 'green-text' or 'blue-text' */
 .green-text {
     color: rgb(140, 255, 140);
