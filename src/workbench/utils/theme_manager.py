@@ -89,9 +89,14 @@ class ThemeManager:
         cls._log.info(f"Theme set to '{theme_name}'")
 
     @classmethod
+    def dark_mode(cls) -> bool:
+        """Check if the current theme is a dark mode theme."""
+        return "dark" in cls.current_theme().lower()
+
+    @classmethod
     def data_bs_theme(cls) -> str:
         """Get the current Bootstrap `data-bs-theme` value."""
-        return "dark" if "dark" in cls._current_theme_name.lower() else "light"
+        return "dark" if cls.dark_mode() else "light"
 
     @classmethod
     def current_theme(cls) -> str:
