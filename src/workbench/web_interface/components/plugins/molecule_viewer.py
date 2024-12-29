@@ -5,7 +5,7 @@ from dash import html
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.chem_utils import img_from_smiles
+from workbench.utils.chem_utils import img_from_smiles, svg_from_smiles
 
 
 class MoleculeViewer(PluginInterface):
@@ -70,7 +70,10 @@ class MoleculeViewer(PluginInterface):
         header_text = f"Compound: {compound_id}"
 
         # Create the Molecule Image
-        img = img_from_smiles(smiles, background=self.theme_manager.background())
+        # img = img_from_smiles(smiles, background=self.theme_manager.background())
+        encoded_svg = svg_from_smiles(smiles, background=self.theme_manager.background())
+        # img = f"data:image/svg+xml;utf8,{encoded_svg}"
+        img = f"data:image/svg+xml;base64,{encoded_svg}"
 
         # Return the updated property values for this plugin
         return [header_text, img]

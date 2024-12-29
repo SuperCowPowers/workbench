@@ -72,33 +72,25 @@ def img_from_smiles(smiles: str, width: int = 500, height: int = 500, background
         return None
 
 
-def show(smiles: str, width: int = 500, height: int = 500) -> None:
-    """
-    Displays an image of the molecule represented by the given SMILES string.
-
-    Args:
-        smiles (str): A SMILES string representing the molecule.
-        width (int): Width of the image in pixels. Default is 500.
-        height (int): Height of the image in pixels. Default is 500.
-
-    Returns:
-    None
-    """
-    img = img_from_smiles(smiles, width, height)
-    if img:
-        img.show()
-
-
-def svg_from_smiles(smiles: str) -> Optional[str]:
+def svg_from_smiles(smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)") -> Optional[str]:
     """
     Generate an SVG image of the molecule represented by the given SMILES string.
 
     Args:
         smiles (str): A SMILES string representing the molecule.
+        width (int): Width of the image in pixels. Default is 500.
+        height (int): Height of the image in pixels. Default is 500.
+        background (str): Background color of the image. Default is dark grey
 
     Returns:
         str: SVG image of the molecule or None if the SMILES string is invalid.
     """
+    # Set up the drawing options
+    dos = Draw.MolDrawOptions()
+    if is_dark(background):
+        rdMolDraw2D.SetDarkMode(dos)
+    dos.setBackgroundColour(rgba_to_tuple(background))
+
     mol = Chem.MolFromSmiles(smiles)
     if mol:
         # mol = Chem.AddHs(mol)
@@ -107,7 +99,7 @@ def svg_from_smiles(smiles: str) -> Optional[str]:
         AllChem.Compute2DCoords(mol)
 
         # Initialize the SVG drawer with desired dimensions
-        drawer = rdMolDraw2D.MolDraw2DSVG(300, 300)
+        drawer = rdMolDraw2D.MolDraw2DSVG(width=width, height=height)
 
         # Draw the molecule
         drawer.DrawMolecule(mol)
@@ -131,6 +123,22 @@ def svg_from_smiles(smiles: str) -> Optional[str]:
     else:
         return None
 
+
+def show(smiles: str, width: int = 500, height: int = 500) -> None:
+    """
+    Displays an image of the molecule represented by the given SMILES string.
+
+    Args:
+        smiles (str): A SMILES string representing the molecule.
+        width (int): Width of the image in pixels. Default is 500.
+        height (int): Height of the image in pixels. Default is 500.
+
+    Returns:
+    None
+    """
+    img = img_from_smiles(smiles, width, height)
+    if img:
+        img.show()
 
 def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
     """
