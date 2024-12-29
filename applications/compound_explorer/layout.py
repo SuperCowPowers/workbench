@@ -27,6 +27,8 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
                         ),
                     ]
                 ),
+
+                # Scatter Plot and Molecule Viewer
                 dbc.Row(
                     [
                         # Column 1: Scatter Plot
@@ -35,6 +37,11 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
                         dbc.Col([molecule_view], width=4),
                     ],
                 ),
+
+                # Molecular Viewer for Neighbors
+                # dbc.Row([molecule_view, molecule_view, molecule_view, molecule_view]),
+
+                # Update Button
                 html.Button("Update Plugin", id="update-button"),
             ],
         )
