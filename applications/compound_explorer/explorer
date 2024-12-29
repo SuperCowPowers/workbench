@@ -1,0 +1,24 @@
+#!/usr/bin/env python
+
+import argparse
+import webbrowser
+from app import app
+
+
+def start_explorer(debug: bool):
+    """Open a browser and start the Dash app"""
+    url = "http://localhost:8000"
+    webbrowser.open(url)
+
+    # Note: This 'main' is purely for running/testing locally
+    app.run(host="0.0.0.0", port=8000, debug=debug)
+
+
+if __name__ == "__main__":
+    """Run our web application in TEST mode"""
+    parser = argparse.ArgumentParser(description='Start the Compound Explorer App')
+    parser.add_argument('--debug', action='store_true', help='Run the app in debug mode')
+    args = parser.parse_args()
+
+    start_explorer(args.debug)
+
