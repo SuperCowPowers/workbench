@@ -31,7 +31,6 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
                     [
                         # Column 1: Scatter Plot
                         dbc.Col([scatter_plot], width=8),
-
                         # Column 2: Molecular Viewer
                         dbc.Col([molecule_view], width=4),
                     ],

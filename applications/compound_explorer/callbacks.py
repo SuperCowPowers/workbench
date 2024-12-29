@@ -1,14 +1,12 @@
-"""Callbacks for the FeatureSets Subpage Web User Interface"""
+"""Callbacks for the Compound Explorer Application"""
 
-import dash
-from dash import html, Input, Output, callback
+from dash import Input, Output, callback
 from dash.exceptions import PreventUpdate
-import dash_bootstrap_components as dbc
+
 
 # Workbench Imports
 from workbench.api import FeatureSet
 from workbench.web_interface.components.plugins import scatter_plot, molecule_viewer
-from workbench.utils.chem_utils import img_from_smiles
 
 
 # Set up the scatter plot callbacks
@@ -50,7 +48,7 @@ def molecule_view_callbacks(my_molecule_view: molecule_viewer.MoleculeViewer):
     def _molecule_view_callbacks(compound_data):
 
         # Sanity Check the Compound Data
-        print(compound_data)
+        # print(compound_data)
         if compound_data is None:
             raise PreventUpdate
         custom_data_list = compound_data.get("points")[0].get("customdata")

@@ -1,8 +1,6 @@
 """A Markdown Component for details/information about Models"""
 
-import logging
 from typing import Union
-
 
 # Dash Imports
 from dash import html, callback, dcc, Input, Output, State
@@ -70,7 +68,7 @@ class ModelDetails(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        log.important(f"Updating Plugin with Model: {model.uuid} and kwargs: {kwargs}")
+        self.log.important(f"Updating Plugin with Model: {model.uuid} and kwargs: {kwargs}")
 
         # Update the header and the details
         self.current_model = model

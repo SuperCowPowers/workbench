@@ -1,15 +1,11 @@
 """A molecule viewer plugin component"""
 
-from dash import html, dcc, callback, Output, Input, State
-import plotly.graph_objects as go
-
+from dash import html
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.cached.cached_model import CachedModel
 from workbench.utils.theme_manager import ThemeManager
 from workbench.utils.chem_utils import img_from_smiles
-
 
 
 class MoleculeViewer(PluginInterface):
@@ -54,7 +50,6 @@ class MoleculeViewer(PluginInterface):
         # self.signals = [(f"{self.component_id}-img", "clickData")]
 
         return self.container
-
 
     def update_properties(self, compound_id: str, smiles: str, **kwargs) -> list:
         """Update the properties for the plugin.
