@@ -27,6 +27,15 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
             # dbc.Row([molecule_view, molecule_view, molecule_view, molecule_view]),
             # Update Button
             html.Button("Update Plugin", id="update-button"),
+            dcc.Loading(
+                children=[
+                    dcc.Tooltip(id="hover-tooltip",
+                                background_color="rgba(0,0,0,0)",
+                                border_color="rgba(0,0,0,0)",
+                                direction="top")
+                ],
+                style={"display": "none"},  # This hides the loader entirely
+            ),
         ],
     )
     return layout

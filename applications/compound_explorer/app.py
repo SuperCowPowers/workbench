@@ -17,7 +17,7 @@ import callbacks
 
 # Set up the Theme Manager
 tm = ThemeManager()
-tm.set_theme("auto")
+tm.set_theme("light")
 css_files = tm.css_files()
 print(css_files)
 
