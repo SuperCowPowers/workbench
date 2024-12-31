@@ -31,29 +31,28 @@ a:hover {
 
 /* Box shadow and rounded corners for all AgGrid themes */
 [class*="ag-theme-"] {
-    box-shadow: 4px 6px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
+    box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
     border-radius: 12px; /* Rounded corners */
     border: 0.5px solid rgba(0, 0, 0, 0.5);
     margin: 0;
     padding: 0;
 }
 
-/* Apply styling to all Plotly figures */
-.plotly {
-    box-shadow: 4px 6px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
+/* Apply styling to all Plotly figures and workbench containers */
+.plotly, .workbench-container {
+    box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
     border-radius: 12px; /* Rounded corners */
     margin: 30px; /* Space around the figure */
     padding: 30px; /* Inner padding */
     overflow: hidden; /* Ensure contents fit inside the rounded corners */
 }
 
-/* Apply styling to all Workbench Containers */
-.workbench-container {
-    box-shadow: 4px 6px 5px rgba(0, 0, 0, 0.3); /* Drop shadow */
-    border-radius: 12px; /* Rounded corners */
-    margin: 30px; /* Space around the figure */
-    padding: 30px; /* Inner padding */
+/* Apply styling to custom tooltips */
+.custom-tooltip {
+    box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
+    border-radius: 25px; /* Rounded corners */
     overflow: hidden; /* Ensure contents fit inside the rounded corners */
+    border: 1px solid rgba(40, 40, 40, 1); /* 1-pixel grey */
 }
 
 /* Some of the HTML/Markdown will use color hints like 'green-text' or 'blue-text' */
