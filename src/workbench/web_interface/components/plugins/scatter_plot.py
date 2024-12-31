@@ -65,7 +65,7 @@ class ScatterPlot(PluginInterface):
                     config={"scrollZoom": True},
                     style={"width": "100%", "height": "100%"},
                     # style={"height": "100%", "padding": "0px 0px 0px 10px"},
-                    clear_on_unhover=True
+                    clear_on_unhover=True,
                 ),
                 # Controls: X, Y, Color Dropdowns, and Regression Line Checkbox
                 html.Div(
@@ -172,13 +172,13 @@ class ScatterPlot(PluginInterface):
         return [figure, options, options, options, x_default, y_default, color_default, []]
 
     def create_scatter_plot(
-            self,
-            df: pd.DataFrame,
-            x_col: str,
-            y_col: str,
-            color_col: str,
-            regression_line: bool = False,
-            marker_size: int = 15,
+        self,
+        df: pd.DataFrame,
+        x_col: str,
+        y_col: str,
+        color_col: str,
+        regression_line: bool = False,
+        marker_size: int = 15,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 

@@ -1,7 +1,6 @@
 """Callbacks for the Compound Explorer Application"""
 
 from dash import Input, Output, callback, html, no_update
-from dash.exceptions import PreventUpdate
 
 
 # Workbench Imports
@@ -34,7 +33,9 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
         df = FeatureSet("aqsol_features").pull_dataframe()
 
         # Update all the properties for the scatter plot
-        props = my_scatter_plot.update_properties(df, hover_columns=["id"], custom_data=["id", "smiles"], suppress_hover_display=True)
+        props = my_scatter_plot.update_properties(
+            df, hover_columns=["id"], custom_data=["id", "smiles"], suppress_hover_display=True
+        )
 
         # Return the updated properties
         return props
@@ -42,8 +43,8 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
 
 def molecule_view_callbacks(my_molecule_view: molecule_viewer.MoleculeViewer):
     @callback(
-        [Output(component_id, prop) for component_id, prop in my_molecule_view.properties] +
-        [
+        [Output(component_id, prop) for component_id, prop in my_molecule_view.properties]
+        + [
             Output("hover-tooltip", "show"),
             Output("hover-tooltip", "bbox"),
             Output("hover-tooltip", "children"),
