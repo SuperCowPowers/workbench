@@ -38,6 +38,7 @@ class ConfusionMatrix(PluginInterface):
         self.component_id = component_id
         self.container = dcc.Graph(
             id=component_id,
+            className="workbench-container",
             figure=self.display_text("Waiting for Data..."),
             config={"scrollZoom": False, "doubleClick": "reset"},
         )
@@ -185,4 +186,4 @@ if __name__ == "__main__":
 
     # Run the Unit Test on the Plugin
     model = CachedModel("wine-classification")
-    PluginUnitTest(ConfusionMatrix, input_data=model, theme="quartz").run()
+    PluginUnitTest(ConfusionMatrix, input_data=model, theme="dark").run()

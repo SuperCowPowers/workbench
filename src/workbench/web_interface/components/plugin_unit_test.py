@@ -54,8 +54,11 @@ class PluginUnitTest:
         self.component = self.plugin.create_component(f"{self.plugin.__class__.__name__.lower()}_test")
 
         # Set up the layout
-        container = html.Div(self.component, style={"height": "75vh"})
-        layout_children = [container, html.Button("Update Plugin", id="update-button")]
+        layout_children=[
+                dbc.Row([html.H2("Plugin Unit Test")]),
+                dbc.Row(self.component),
+                html.Button("Update Plugin", id="update-button")
+        ]
 
         # Signal output displays
         layout_children.append(html.H3("Signals:"))
@@ -69,6 +72,7 @@ class PluginUnitTest:
             [
                 dbc.Container(layout_children, fluid=True, className="dbc dbc-ag-grid"),
             ],
+            style={"padding": "0px 40px 0px 0px"},
             **{"data-bs-theme": tm.data_bs_theme()},
         )
 

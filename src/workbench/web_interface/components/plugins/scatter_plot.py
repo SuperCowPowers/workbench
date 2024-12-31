@@ -56,13 +56,15 @@ class ScatterPlot(PluginInterface):
         # - Dropdowns for X, Y, and Color
         # - Checkbox for Regression Line
         return html.Div(
-            [
+            className="workbench-container",
+            children=[
                 # Main Scatter Plot Graph
                 dcc.Graph(
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
-                    style={"width": "100%", "height": "100%"},  # Let the graph fill its container
+                    style={"width": "100%", "height": "100%"},
+                    # style={"height": "100%", "padding": "0px 0px 0px 10px"},
                     clear_on_unhover=True
                 ),
                 # Controls: X, Y, Color Dropdowns, and Regression Line Checkbox

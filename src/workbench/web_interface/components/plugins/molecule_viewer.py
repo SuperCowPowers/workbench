@@ -72,9 +72,7 @@ class MoleculeViewer(PluginInterface):
 
         # Create the Molecule Image
         # img = img_from_smiles(smiles, background=self.theme_manager.background())
-        encoded_svg = svg_from_smiles(smiles, background=self.theme_manager.background())
-        # img = f"data:image/svg+xml;utf8,{encoded_svg}"
-        img = f"data:image/svg+xml;base64,{encoded_svg}"
+        img = svg_from_smiles(smiles, 300, 200, background=self.theme_manager.background())
 
         # Return the updated property values for this plugin
         return [header_text, img]
