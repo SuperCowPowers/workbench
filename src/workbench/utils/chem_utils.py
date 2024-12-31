@@ -89,6 +89,7 @@ def svg_from_smiles(
     Returns:
         Optional[str]: Encoded SVG string of the molecule or None if the SMILES string is invalid.
     """
+    # Convert the SMILES string to an RDKit molecule
     mol = Chem.MolFromSmiles(smiles)
     if not mol:
         return None
@@ -112,7 +113,7 @@ def svg_from_smiles(
     # Clean and encode the SVG
     svg = drawer.GetDrawingText()
     encoded_svg = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
-    return encoded_svg
+    return f"data:image/svg+xml;base64,{encoded_svg}"
 
 
 def show(smiles: str, width: int = 500, height: int = 500) -> None:
