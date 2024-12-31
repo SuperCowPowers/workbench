@@ -63,6 +63,7 @@ class ScatterPlot(PluginInterface):
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
                     style={"width": "100%", "height": "100%"},  # Let the graph fill its container
+                    clear_on_unhover=True
                 ),
                 # Controls: X, Y, Color Dropdowns, and Regression Line Checkbox
                 html.Div(
@@ -113,6 +114,7 @@ class ScatterPlot(PluginInterface):
                             - color: The default color column
                             - dropdown_columns: The columns to use for the x, y, color options
                             - hover_columns: The columns to show when hovering over a point
+                            - suppress_hover_display: Suppress hover display (default: False)
                             - custom_data: Custom data that get passed to hoverData callbacks
 
         Returns:
@@ -141,6 +143,7 @@ class ScatterPlot(PluginInterface):
 
         # Set the hover columns and custom data
         self.hover_columns = kwargs.get("hover_columns", self.df.columns.tolist()[:10])
+        self.suppress_hover_display = kwargs.get("suppress_hover_display", False)
         self.custom_data = kwargs.get("custom_data", [])
 
         # Get numeric columns for default selections
@@ -174,7 +177,6 @@ class ScatterPlot(PluginInterface):
             color_col: str,
             regression_line: bool = False,
             marker_size: int = 15,
-            line_width: int = 4,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
@@ -185,7 +187,6 @@ class ScatterPlot(PluginInterface):
             color_col (str): The column to use for the color scale.
             regression_line (bool): Whether to include a regression line.
             marker_size (int): Size of the markers. Default is 15.
-            line_width (int): Width of the 45-degree line. Default is 4.
 
         Returns:
             go.Figure: A Plotly Figure object.
@@ -202,14 +203,25 @@ class ScatterPlot(PluginInterface):
         # Cache min and max for color_col
         color_min, color_max = df[color_col].min(), df[color_col].max()
 
+        # Generate hover text for all points
+        hovertext = df.apply(generate_hover_text, axis=1)
+        hovertemplate = "%{hovertext}<extra></extra>"
+        hoverinfo = None
+
+        # Suppress the display of hover info
+        if self.suppress_hover_display:
+            hoverinfo = "none" if self.suppress_hover_display else None
+            hovertemplate = None
+
         # Create the scatter plot
         figure = go.Figure(
             data=go.Scattergl(
                 x=df[x_col],
                 y=df[y_col],
                 mode="markers",
-                hovertext=df.apply(generate_hover_text, axis=1),
-                hovertemplate="%{hovertext}<extra></extra>",
+                hoverinfo=hoverinfo,
+                hovertext=hovertext,
+                hovertemplate=hovertemplate,
                 customdata=df[self.custom_data],
                 marker=dict(
                     size=marker_size,
@@ -227,7 +239,7 @@ class ScatterPlot(PluginInterface):
             axis_min, axis_max = min(df[x_col].min(), df[y_col].min()), max(df[x_col].max(), df[y_col].max())
             figure.add_shape(
                 type="line",
-                line=dict(width=line_width, color="rgba(128, 128, 128, 0.5)"),
+                line=dict(width=4, color="rgba(128, 128, 128, 0.5)"),
                 x0=axis_min,
                 x1=axis_max,
                 y0=axis_min,
