@@ -52,6 +52,7 @@ app.layout = html.Div(
     [
         dbc.Container(compound_explorer_layout(**components), fluid=True, className="dbc dbc-ag-grid"),
     ],
+    style={"padding": "0px 40px 0px 0px"},
     **{"data-bs-theme": tm.data_bs_theme()},
 )
 
