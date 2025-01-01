@@ -22,14 +22,18 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
                     # Column 2: Molecular Viewer
                     dbc.Col([molecule_view], width=3),
                 ],
-                style={"height": "75vh"}
+                style={"height": "75vh"},
             ),
             # Molecular Viewer for Neighbors
             # dbc.Row([molecule_view, molecule_view, molecule_view, molecule_view]),
             # Update Button
             html.Button("Update Plugin", id="update-button"),
             dcc.Tooltip(
-                id="hover-tooltip", background_color="rgba(0,0,0,0)", border_color="rgba(0,0,0,0)", direction="top", loading_text="",
+                id="hover-tooltip",
+                background_color="rgba(0,0,0,0)",
+                border_color="rgba(0,0,0,0)",
+                direction="top",
+                loading_text="",
             ),
         ],
     )

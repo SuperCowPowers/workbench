@@ -494,7 +494,9 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=4096) -> pd.Da
     morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=nBits, countSimulation=True)
 
     # Compute Morgan fingerprints (vectorized)
-    fingerprints = df["molecule"].apply(lambda mol: (morgan_generator.GetFingerprint(mol).ToBitString() if mol else pd.NA))
+    fingerprints = df["molecule"].apply(
+        lambda mol: (morgan_generator.GetFingerprint(mol).ToBitString() if mol else pd.NA)
+    )
 
     # Add the fingerprints to the DataFrame
     df["morgan_fingerprint"] = fingerprints
@@ -517,7 +519,9 @@ def project_fingerprints(df: pd.DataFrame, projection: str = "TSNE") -> pd.DataF
         raise ValueError("Input DataFrame must have a fingerprint column")
 
     # Convert the bitstring fingerprint into a NumPy array
-    df["fingerprint_bits"] = df[fingerprint_column].apply(lambda fp: np.array([int(bit) for bit in fp], dtype=np.float32))
+    df["fingerprint_bits"] = df[fingerprint_column].apply(
+        lambda fp: np.array([int(bit) for bit in fp], dtype=np.float32)
+    )
 
     # Create a matrix of fingerprints
     X = np.vstack(df["fingerprint_bits"].values)

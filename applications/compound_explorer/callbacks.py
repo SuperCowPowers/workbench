@@ -36,7 +36,13 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
 
         # Update all the properties for the scatter plot
         props = my_scatter_plot.update_properties(
-            df, hover_columns=["id"], custom_data=["id", "smiles"], suppress_hover_display=True, x="x", y="y", color="solubility"
+            df,
+            hover_columns=["id"],
+            custom_data=["id", "smiles"],
+            suppress_hover_display=True,
+            x="x",
+            y="y",
+            color="solubility",
         )
 
         # Return the updated properties

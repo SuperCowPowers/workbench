@@ -271,8 +271,8 @@ class ScatterPlot(PluginInterface):
             showlegend=False,
             dragmode="pan",
             modebar={
-                'bgcolor': 'rgba(0, 0, 0, 0)',  # Transparent background
-            }
+                "bgcolor": "rgba(0, 0, 0, 0)",  # Transparent background
+            },
         )
 
         return figure
@@ -316,7 +316,7 @@ class ScatterPlot(PluginInterface):
             bbox = hover_data["points"][0]["bbox"]
 
             # Create an SVG with a circle at the center
-            svg = f"""
+            svg = """
             <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" style="overflow: visible;">
                 <!-- Circle for the node -->
                 <circle cx="50" cy="50" r="10" stroke="rgba(255, 255, 255, 1)" stroke-width="3" fill="none" />
@@ -331,15 +331,15 @@ class ScatterPlot(PluginInterface):
             svg_image = html.Img(src=data_uri, style={"width": "100px", "height": "100px"})
 
             # Get the center of the bounding box
-            center_x = (bbox['x0'] + bbox['x1']) / 2
-            center_y = (bbox['y0'] + bbox['y1']) / 2
+            center_x = (bbox["x0"] + bbox["x1"]) / 2
+            center_y = (bbox["y0"] + bbox["y1"]) / 2
 
-            # The tooltip should be centered on the point (note: this is a 'bottom' tooltip, so we adjust the y position)
+            # The tooltip should be centered on the point (note: 'bottom' tooltip, so we adjust y position)
             adjusted_bbox = {
-                'x0': center_x - 50,
-                'x1': center_x + 50,
-                'y0': center_y - 162,
-                'y1': center_y - 62,
+                "x0": center_x - 50,
+                "x1": center_x + 50,
+                "y0": center_y - 162,
+                "y1": center_y - 62,
             }
             # Return the updated values for the overlay
             return True, adjusted_bbox, [svg_image]
