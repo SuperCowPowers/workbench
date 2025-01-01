@@ -1,5 +1,6 @@
+import base64
 import pandas as pd
-from dash import dcc, html, callback, Input, Output
+from dash import dcc, html, callback, Input, Output, no_update
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 
@@ -63,9 +64,15 @@ class ScatterPlot(PluginInterface):
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
-                    style={"width": "100%", "height": "100%"},
-                    # style={"height": "100%", "padding": "0px 0px 0px 10px"},
+                    style={"height": "100%"},
                     clear_on_unhover=True,
+                ),
+                dcc.Tooltip(
+                    id=f"{component_id}-overlay",
+                    background_color="rgba(0,0,0,0)",
+                    border_color="rgba(0,0,0,0)",
+                    direction="bottom",
+                    loading_text="",
                 ),
                 # Controls: X, Y, Color Dropdowns, and Regression Line Checkbox
                 html.Div(
@@ -196,7 +203,7 @@ class ScatterPlot(PluginInterface):
 
         def compute_opacity(value, min_val, max_val):
             """Normalize and compute opacity based on value."""
-            return 0.25 + 0.74 * (value - min_val) / (max_val - min_val)
+            return 0.5 + 0.49 * (value - min_val) / (max_val - min_val)
 
         def generate_hover_text(row):
             """Generate hover text for each data point."""
@@ -231,7 +238,7 @@ class ScatterPlot(PluginInterface):
                     colorscale=self.theme_manager.colorscale(),
                     colorbar=dict(title=color_col),
                     opacity=df[color_col].apply(lambda x: compute_opacity(x, color_min, color_max)),
-                    line=dict(color="Black", width=1),
+                    line=dict(color="rgba(0,0,0,1)", width=1),
                 ),
             )
         )
@@ -250,7 +257,7 @@ class ScatterPlot(PluginInterface):
 
         # Update layout
         figure.update_layout(
-            margin={"t": 40, "b": 40, "r": 40, "l": 40, "pad": 0},
+            margin={"t": 30, "b": 40, "r": 30, "l": 70, "pad": 10},
             xaxis=dict(
                 title=x_col,
                 tickformat=".2f",
@@ -263,6 +270,9 @@ class ScatterPlot(PluginInterface):
             ),
             showlegend=False,
             dragmode="pan",
+            modebar={
+                'bgcolor': 'rgba(0, 0, 0, 0)',  # Transparent background
+            }
         )
 
         return figure
@@ -280,7 +290,7 @@ class ScatterPlot(PluginInterface):
             ],
             prevent_initial_call=True,
         )
-        def update_graph(x_value, y_value, color_value, regression_line):
+        def _update_scatter_plot(x_value, y_value, color_value, regression_line):
             """Update the Scatter Plot Graph based on the dropdown values."""
 
             # Check if the dataframe is not empty and the values are not None
@@ -291,10 +301,53 @@ class ScatterPlot(PluginInterface):
 
             raise PreventUpdate
 
+        @callback(
+            Output(f"{self.component_id}-overlay", "show"),
+            Output(f"{self.component_id}-overlay", "bbox"),
+            Output(f"{self.component_id}-overlay", "children"),
+            Input(f"{self.component_id}-graph", "hoverData"),
+        )
+        def _scatter_overlay(hover_data):
+            if hover_data is None:
+                # Hide the overlay if no hover data
+                return False, no_update, no_update
+
+            # Extract bounding box from hoverData
+            bbox = hover_data["points"][0]["bbox"]
+
+            # Create an SVG with a circle at the center
+            svg = f"""
+            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" style="overflow: visible;">
+                <!-- Circle for the node -->
+                <circle cx="50" cy="50" r="10" stroke="rgba(255, 255, 255, 1)" stroke-width="3" fill="none" />
+            </svg>
+            """
+
+            # Encode the SVG as Base64
+            encoded_svg = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
+            data_uri = f"data:image/svg+xml;base64,{encoded_svg}"
+
+            # Use an img tag for the overlay
+            svg_image = html.Img(src=data_uri, style={"width": "100px", "height": "100px"})
+
+            # Get the center of the bounding box
+            center_x = (bbox['x0'] + bbox['x1']) / 2
+            center_y = (bbox['y0'] + bbox['y1']) / 2
+
+            # The tooltip should be centered on the point (note: this is a 'bottom' tooltip, so we adjust the y position)
+            adjusted_bbox = {
+                'x0': center_x - 50,
+                'x1': center_x + 50,
+                'y0': center_y - 162,
+                'y1': center_y - 62,
+            }
+            # Return the updated values for the overlay
+            return True, adjusted_bbox, [svg_image]
+
 
 if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ScatterPlot, theme="dark").run()
+    PluginUnitTest(ScatterPlot, theme="dark", suppress_hover_display=True).run()
