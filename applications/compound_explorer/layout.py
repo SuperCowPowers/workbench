@@ -11,24 +11,25 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
             # Page Header
             dbc.Row([html.H2("Compound Explorer")]),
             # Scatter Plot
-            dbc.Row([scatter_plot]),
+            # dbc.Row([scatter_plot]),
             # Molecule Viewer
-            dbc.Row([molecule_view]),
+            # dbc.Row([molecule_view]),
             # Scatter Plot and Molecule Viewer
-            # dbc.Row(
-            #     [
-            #         # Column 1: Scatter Plot
-            #         dbc.Col([scatter_plot], width=8),
-            #         # Column 2: Molecular Viewer
-            #         dbc.Col([molecule_view], width=4),
-            #     ],
-            # ),
+            dbc.Row(
+                [
+                    # Column 1: Scatter Plot
+                    dbc.Col([scatter_plot], width=9),
+                    # Column 2: Molecular Viewer
+                    dbc.Col([molecule_view], width=3),
+                ],
+                style={"height": "75vh"}
+            ),
             # Molecular Viewer for Neighbors
             # dbc.Row([molecule_view, molecule_view, molecule_view, molecule_view]),
             # Update Button
             html.Button("Update Plugin", id="update-button"),
             dcc.Tooltip(
-                id="hover-tooltip", background_color="rgba(0,0,0,0)", border_color="rgba(0,0,0,0)", direction="top"
+                id="hover-tooltip", background_color="rgba(0,0,0,0)", border_color="rgba(0,0,0,0)", direction="top", loading_text="",
             ),
         ],
     )

@@ -6,6 +6,7 @@ from dash import Input, Output, callback, html, no_update
 # Workbench Imports
 from workbench.api import FeatureSet
 from workbench.web_interface.components.plugins import scatter_plot, molecule_viewer
+from workbench.utils.chem_utils import compute_morgan_fingerprints, project_fingerprints
 
 
 # Set up the scatter plot callbacks
@@ -21,20 +22,21 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
         [Input("update-button", "n_clicks")],
     )
     def _scatter_plot_callbacks(_n_clicks):
-        # Check for no selected rows
-        # if not selected_rows or selected_rows[0] is None:
-        #    raise PreventUpdate
-
-        # Get the selected row data and grab the uuid
-        # selected_row_data = selected_rows[0]
-        # object_uuid = selected_row_data["uuid"]
 
         # Create the FeatureSet object and pull a dataframe
         df = FeatureSet("aqsol_features").pull_dataframe()
 
+        # Temp
+        df = compute_morgan_fingerprints(df, radius=2)
+        df = project_fingerprints(df, projection="UMAP")
+
+        # Convert compound_tags to string and check for substrings, then convert to 0/1
+        df["toxic"] = df["compound_tags"].astype(str).str.contains("toxic").astype(int)
+        df["druglike"] = df["compound_tags"].astype(str).str.contains("druglike").astype(int)
+
         # Update all the properties for the scatter plot
         props = my_scatter_plot.update_properties(
-            df, hover_columns=["id"], custom_data=["id", "smiles"], suppress_hover_display=True
+            df, hover_columns=["id"], custom_data=["id", "smiles"], suppress_hover_display=True, x="x", y="y", color="solubility"
         )
 
         # Return the updated properties
@@ -72,6 +74,8 @@ def molecule_view_callbacks(my_molecule_view: molecule_viewer.MoleculeViewer):
         # Set up the outputs for the hover tooltip
         show = True
         bbox = hover_data["points"][0]["bbox"]
+        bbox["x0"] += 150
+        bbox["x1"] += 150
         children = [
             html.Img(
                 src=img,
