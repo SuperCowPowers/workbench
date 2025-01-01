@@ -4,7 +4,8 @@ h1, h2, h3, h4 {
 
 body {
     color: rgb(80, 80, 80); /* Dark gray text */
-    background: linear-gradient(90deg, rgba(240,240,240,1) 0%, rgba(240,240,240,1) 50%, rgba(150,150,195,1) 100%);
+    /* background: linear-gradient(90deg, rgba(240,240,240,1) 0%, rgba(240,240,240,1) 50%, rgba(150,150,195,1) 100%);*/
+    background: linear-gradient(90deg, rgba(220,220,220,1) 0%, rgba(220,220,220,1) 50%, rgba(150,150,195,1) 100%);
 }
 
 /* Custom CSS to style bold text */
@@ -51,9 +52,9 @@ b, strong {
 
 /* Apply styling to Workbench containers */
 .workbench-container {
+    background-color: rgba(240, 240, 240, 0.5);
     box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.2);
     border-radius: 12px; /* Rounded corners */
-    margin: 20px; /* Space around the figure */
 }
 
 /* Apply styling to custom tooltips */

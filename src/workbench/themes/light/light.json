@@ -648,7 +648,7 @@
         "mapbox": {
             "style": "light"
         },
-        "paper_bgcolor": "rgba(240, 240, 240, 0.5)",
+        "paper_bgcolor": "rgba(240, 240, 240, 0.0)",
         "plot_bgcolor": "rgba(240, 240, 240, 0.0)",
         "polar": {
             "angularaxis": {
