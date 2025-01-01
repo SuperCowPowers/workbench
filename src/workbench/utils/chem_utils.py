@@ -5,6 +5,13 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 import base64
+from sklearn.manifold import TSNE
+
+# Try importing UMAP
+try:
+    import umap
+except ImportError:
+    umap = None
 
 # Workbench Imports
 from workbench.utils.pandas_utils import feature_quality_metrics
@@ -184,23 +191,20 @@ def log_to_category(log_series: pd.Series) -> pd.Series:
 
 def remove_disconnected_fragments(mol: Mol) -> Optional[Mol]:
     """
-    Remove disconnected fragments from a molecule, keeping the largest fragment with at least one heavy atom.
+    Remove disconnected fragments from a molecule, keeping the fragment with the most heavy atoms.
 
     Args:
         mol (Mol): RDKit molecule object.
 
     Returns:
-        Optional[Mol]: The largest fragment with a heavy atom, or None if no such fragment exists.
+        Optional[Mol]: The fragment with the most heavy atoms, or None if no such fragment exists.
     """
     # Get all fragments as individual molecules
     fragments = Chem.GetMolFrags(mol, asMols=True)
 
-    # Filter fragments with at least one heavy atom
-    fragments_with_heavy_atoms = [frag for frag in fragments if frag.GetNumHeavyAtoms() > 0]
-
-    # Return the largest fragment with heavy atoms, or None if no valid fragments
-    if fragments_with_heavy_atoms:
-        return max(fragments_with_heavy_atoms, key=lambda frag: frag.GetNumAtoms())
+    # Return the fragment with the most heavy atoms, or None if no fragments
+    if fragments:
+        return max(fragments, key=lambda frag: frag.GetNumHeavyAtoms())
     else:
         return None
 
@@ -336,7 +340,7 @@ def is_druglike_compound(mol: Mol) -> bool:
     return True
 
 
-def add_compound_tags(df, mol_column="mol"):
+def add_compound_tags(df, mol_column="molecule"):
     """
     Adds a 'compound_tags' column to a DataFrame, tagging molecules based on their properties.
 
@@ -413,10 +417,10 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     # Compute/add all the Molecular Descriptors
     log.info("Computing Molecular Descriptors...")
 
-    # Conversion to Molecules
+    # Convert SMILES to RDKit molecule objects (vectorized)
     if "molecule" not in df.columns:
         log.info("Converting SMILES to RDKit Molecules...")
-        df["molecule"] = [Chem.MolFromSmiles(smile) for smile in df[smiles_column]]
+        df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
 
     # Add Compound Tags
     df = add_compound_tags(df, mol_column="molecule")
@@ -458,7 +462,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     return output_df
 
 
-def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=2048) -> pd.DataFrame:
+def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=4096) -> pd.DataFrame:
     """Compute and add Morgan fingerprints to the DataFrame.
 
     Args:
@@ -468,6 +472,9 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=2048) -> pd.Da
 
     Returns:
         pd.DataFrame: The input DataFrame with the Morgan fingerprints added as bit strings.
+
+    Note:
+        See: https://greglandrum.github.io/rdkit-blog/posts/2021-07-06-simulating-counts.html
     """
 
     # Check for the SMILES column (case-insensitive)
@@ -476,23 +483,69 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=2048) -> pd.Da
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
     # Convert SMILES to RDKit molecule objects (vectorized)
-    molecules = df[smiles_column].apply(Chem.MolFromSmiles)
+    if "molecule" not in df.columns:
+        log.info("Converting SMILES to RDKit Molecules...")
+        df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
 
-    # Handle invalid molecules
-    invalid_smiles = molecules.isna()
-    if invalid_smiles.any():
-        log.critical(f"Invalid SMILES strings found at indices: {df.index[invalid_smiles].tolist()}")
-        molecules = molecules.dropna()
-        df = df.loc[molecules.index].reset_index(drop=True)
+    # Add Compound Tags
+    df = add_compound_tags(df, mol_column="molecule")
 
     # Create a Morgan fingerprint generator
-    morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=nBits)
+    morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=nBits, countSimulation=True)
 
     # Compute Morgan fingerprints (vectorized)
-    fingerprints = molecules.apply(lambda mol: (morgan_generator.GetFingerprint(mol).ToBitString() if mol else None))
+    fingerprints = df["molecule"].apply(lambda mol: (morgan_generator.GetFingerprint(mol).ToBitString() if mol else pd.NA))
 
     # Add the fingerprints to the DataFrame
     df["morgan_fingerprint"] = fingerprints
+    return df
+
+
+def project_fingerprints(df: pd.DataFrame, projection: str = "TSNE") -> pd.DataFrame:
+    """Project fingerprints onto a 2D plane using dimensionality reduction techniques.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing fingerprint data.
+        projection (str): Dimensionality reduction technique to use (TSNE or UMAP).
+
+    Returns:
+        pd.DataFrame: The input DataFrame with the projected coordinates added as 'x' and 'y' columns.
+    """
+    # Check for the fingerprint column (case-insensitive)
+    fingerprint_column = next((col for col in df.columns if "fingerprint" in col.lower()), None)
+    if fingerprint_column is None:
+        raise ValueError("Input DataFrame must have a fingerprint column")
+
+    # Convert the bitstring fingerprint into a NumPy array
+    df["fingerprint_bits"] = df[fingerprint_column].apply(lambda fp: np.array([int(bit) for bit in fp], dtype=np.float32))
+
+    # Create a matrix of fingerprints
+    X = np.vstack(df["fingerprint_bits"].values)
+
+    # Check for UMAP availability
+    if projection == "UMAP" and umap is None:
+        log.warning("UMAP is not available. Using TSNE instead.")
+        projection = "TSNE"
+
+    # Run the projection
+    if projection == "TSNE":
+        # Run TSNE on the fingerprint matrix
+        tsne = TSNE(n_components=2, perplexity=30, random_state=42)
+        embedding = tsne.fit_transform(X)
+    else:
+        # Run UMAP
+        reducer = umap.UMAP()
+        embedding = reducer.fit_transform(X)
+
+    # Add coordinates to DataFrame
+    df["x"] = embedding[:, 0]
+    df["y"] = embedding[:, 1]
+
+    # Jitter
+    jitter_scale = 0.1
+    df["x"] += np.random.normal(0, jitter_scale, len(df))
+    df["y"] += np.random.normal(0, jitter_scale, len(df))
+
     return df
 
 
@@ -668,11 +721,21 @@ if __name__ == "__main__":
     print(df)
 
     df = DataSource("aqsol_data").pull_dataframe()[:1000]
+
+    # Test compound tags
+    df["molecule"] = df["smiles"].apply(Chem.MolFromSmiles)
+    df = add_compound_tags(df)
+
+    # Compute Molecular Descriptors
     df = compute_molecular_descriptors(df)
     print(df)
 
     # Compute Morgan Fingerprints
     df = compute_morgan_fingerprints(df)
+    print(df)
+
+    # Project Fingerprints
+    df = project_fingerprints(df, projection="UMAP")
     print(df)
 
     # Perform Tautomerization
