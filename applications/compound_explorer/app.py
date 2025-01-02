@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 
 # Workbench Imports
 from workbench.utils.theme_manager import ThemeManager
-from workbench.web_interface.components.plugins import scatter_plot, molecule_viewer
+from workbench.web_interface.components.plugins import scatter_plot, compound_details
 
 # Local Imports
 from layout import compound_explorer_layout
@@ -37,14 +37,14 @@ server = app.server
 # Create the main components for the Compound Explorer
 scatter_plot = scatter_plot.ScatterPlot()
 scatter_plot_component = scatter_plot.create_component("compound_scatter_plot")
-molecule_view = molecule_viewer.MoleculeViewer()
-molecule_view_component = molecule_view.create_component("compound_viewer")
+compound_view = compound_details.CompoundDetails()
+compound_view_component = compound_view.create_component("compound_viewer")
 
 
 # Create our components
 components = {
     "scatter_plot": scatter_plot_component,
-    "molecule_view": molecule_view_component,
+    "molecule_view": compound_view_component,
 }
 
 # Set up our application layout
@@ -52,13 +52,12 @@ app.layout = html.Div(
     [
         dbc.Container(compound_explorer_layout(**components), fluid=True, className="dbc dbc-ag-grid"),
     ],
-    style={"padding": "0px 40px 0px 0px"},
     **{"data-bs-theme": tm.data_bs_theme()},
 )
 
 # Set up our application callbacks
 callbacks.scatter_plot_callbacks(scatter_plot)
-callbacks.molecule_view_callbacks(molecule_view)
+callbacks.molecule_view_callbacks(compound_view)
 
 
 if __name__ == "__main__":

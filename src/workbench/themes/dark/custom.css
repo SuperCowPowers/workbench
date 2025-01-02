@@ -73,3 +73,15 @@ a:hover {
 .orange-text {
     color: rgb(255, 195, 140);
 }
+
+.alert {
+    color: rgb(200, 60, 100);
+}
+
+.warning {
+    color: rgb(200, 140, 90);
+}
+
+.good {
+    color: rgb(40, 100, 40);
+}

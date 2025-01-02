@@ -5,12 +5,12 @@ h1, h2, h3, h4 {
 body {
     color: rgb(80, 80, 80); /* Dark gray text */
     /* background: linear-gradient(90deg, rgba(240,240,240,1) 0%, rgba(240,240,240,1) 50%, rgba(150,150,195,1) 100%);*/
-    background: linear-gradient(90deg, rgba(220,220,220,1) 0%, rgba(220,220,220,1) 50%, rgba(150,150,195,1) 100%);
+    background: linear-gradient(90deg, rgba(200,200,220,1) 0%, rgba(150,150,195,1) 100%);
 }
 
 /* Custom CSS to style bold text */
 b, strong {
-    color: rgb(120, 120, 240); /* Replace with your desired RGB color */
+    color: rgb(40, 40, 40);
 }
 
 /* AgGrid custom CSS */
@@ -80,9 +80,21 @@ b, strong {
 }
 
 .red-text {
-    color: rgb(200, 100, 100);
+    color: rgb(200, 60, 100);
 }
 
 .orange-text {
     color: rgb(200, 140, 90);
+}
+
+.alert {
+    color: rgb(200, 60, 100);
+}
+
+.warning {
+    color: rgb(200, 140, 90);
+}
+
+.good {
+    color: rgb(40, 100, 40);
 }

@@ -18,16 +18,16 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
             dbc.Row(
                 [
                     # Column 1: Scatter Plot
-                    dbc.Col([scatter_plot], width=9),
+                    dbc.Col([scatter_plot], width=8),
                     # Column 2: Molecular Viewer
-                    dbc.Col([molecule_view], width=3),
+                    dbc.Col([molecule_view], width=4, className="text-break"),
                 ],
                 style={"height": "75vh"},
             ),
             # Molecular Viewer for Neighbors
             # dbc.Row([molecule_view, molecule_view, molecule_view, molecule_view]),
             # Update Button
-            html.Button("Update Plugin", id="update-button"),
+            html.Button("Update Plugin", id="update-button", hidden=True),
             dcc.Tooltip(
                 id="hover-tooltip",
                 background_color="rgba(0,0,0,0)",
