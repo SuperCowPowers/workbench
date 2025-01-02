@@ -13,7 +13,7 @@ from dash.development.base_component import Component
 import networkx as nx
 
 # Workbench Imports
-from workbench.api import DataSource, FeatureSet, Model, Endpoint
+from workbench.api import DataSource, FeatureSet, Model, Endpoint, Compound
 from workbench.cached.cached_data_source import CachedDataSource
 from workbench.cached.cached_feature_set import CachedFeatureSet
 from workbench.cached.cached_model import CachedModel
@@ -56,7 +56,7 @@ class ComponentInterface(ABC):
         CachedFeatureSet,
         CachedModel,
         CachedEndpoint,
-        str,  # Okay, this is stupid, it pretty much invalidates the whole point of the type hint
+        Compound,
     ]
 
     def __init__(self, theme: str = "DARK"):
