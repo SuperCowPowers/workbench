@@ -105,7 +105,7 @@ class CompoundDetails(PluginInterface):
                 return re.sub(r"([<>\[\]])", r"\\\1", value)
             elif isinstance(value, list):
                 # Generate styled spans for tags
-                tag_substrings = {"toxic": "alert", "druglike": "good"}
+                tag_substrings = {"toxic": "alert", "heavy": "warning", "frag": "warning", "druglike": "good"}
                 return tag_styling(value, tag_substrings)
             return str(value)  # Convert other types to string
 
@@ -115,7 +115,6 @@ class CompoundDetails(PluginInterface):
             escaped_value = escape_markdown(value)
             markdown += f"**{key}:** {escaped_value}  \n"
 
-        print(markdown)
         return markdown
 
 
