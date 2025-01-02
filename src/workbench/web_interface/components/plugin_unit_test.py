@@ -55,9 +55,9 @@ class PluginUnitTest:
 
         # Set up the layout
         layout_children = [
-            dbc.Row([html.H2("Plugin Unit Test")]),
-            dbc.Row(self.component),
-            html.Button("Update Plugin", id="update-button"),
+            dbc.Row([html.H2("Plugin Unit Test")], style={"marginBottom": "20px"}),
+            dbc.Row(self.component, style={"marginBottom": "20px"}),
+            html.Button("Update Plugin", id="update-button", style={"marginBottom": "20px"}),
         ]
 
         # Signal output displays
@@ -72,7 +72,7 @@ class PluginUnitTest:
             [
                 dbc.Container(layout_children, fluid=True, className="dbc dbc-ag-grid"),
             ],
-            style={"padding": "0px 40px 0px 0px"},
+            style={"margin": "40px"},
             **{"data-bs-theme": tm.data_bs_theme()},
         )
 

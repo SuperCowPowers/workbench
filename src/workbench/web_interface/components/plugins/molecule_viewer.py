@@ -36,11 +36,11 @@ class MoleculeViewer(PluginInterface):
         self.component_id = component_id
         self.container = html.Div(
             id=self.component_id,
+            className="workbench-container",
             children=[
                 html.H5(id=f"{self.component_id}-header", children="Compound:"),
                 html.Img(
                     id=f"{self.component_id}-img",
-                    className="workbench-container",
                     style={"padding": "0px"},
                 ),
             ],
