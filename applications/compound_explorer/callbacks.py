@@ -1,6 +1,8 @@
 """Callbacks for the Compound Explorer Application"""
 
 from dash import Input, Output, callback, html, no_update
+import pandas as pd
+from rdkit.Chem import PandasTools
 
 
 # Workbench Imports
@@ -24,7 +26,28 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
     def _scatter_plot_callbacks(_n_clicks):
 
         # Create the FeatureSet object and pull a dataframe
-        df = FeatureSet("aqsol_features").pull_dataframe()
+        # df = FeatureSet("aqsol_features").pull_dataframe()
+
+        # Load SDF file
+        sdf_file = "/Users/briford/data/workbench/tox21/training/tox21_10k_data_all.sdf"
+
+        # Load SDF file directly into a DataFrame
+        df = PandasTools.LoadSDF(sdf_file, smilesName='smiles', molColName='molecule', includeFingerprints=False)
+        print(df.head())
+        print(f"Loaded {len(df)} compounds from {sdf_file}")
+        print(f"Columns: {df.columns}")
+        df.rename(columns={"ID": "id"}, inplace=True)
+
+        # List of Columns that have 0/1 (or NaN) toxicity values
+        cols = ['NR-AR', 'SR-ARE', 'NR-Aromatase', 'NR-ER-LBD','NR-AhR', 'SR-MMP', 'NR-ER',
+                'NR-PPAR-gamma', 'SR-p53', 'SR-ATAD5', 'NR-AR-LBD']
+
+        # Convert to numeric, coercing errors to NaN
+        df[cols] = df[cols].apply(pd.to_numeric, errors='coerce')
+
+        # Set is_toxic to 1 if any of the toxicity columns has a 1
+        df['is_toxic'] = (df[cols] == 1).any(axis=1).astype(int)
+        print(df['is_toxic'].value_counts(dropna=False))
 
         # Temp
         df = compute_morgan_fingerprints(df, radius=2)
@@ -44,7 +67,7 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
             suppress_hover_display=True,
             x="x",
             y="y",
-            color="solubility",
+            color="is_toxic",
         )
 
         # Return the updated properties

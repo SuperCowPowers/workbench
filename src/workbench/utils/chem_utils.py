@@ -237,13 +237,18 @@ def contains_toxic_elements(mol):
     always_toxic = {"Pb", "Hg", "Cd", "As", "Be", "Tl", "Sb"}
 
     # Elements that are context-dependent for toxicity
-    conditional_toxic = {"Se", "Cr"}
+    conditional_toxic = {"Se", "Cr", "Br", "Cl", "I"}  # Add iodine as context-dependent
     for atom in mol.GetAtoms():
         element = atom.GetSymbol()
         if element in always_toxic:
             return True
         if element in conditional_toxic:
-            # Context-dependent checks (e.g., oxidation state or bonding)
+            # Context-dependent checks
+            if element == "Br" or element == "Cl" or element == "I":
+                halogen_count = sum(1 for a in atom.GetOwningMol().GetAtoms()
+                                    if a.GetSymbol() in {"Br", "Cl", "I"})
+                if halogen_count > 2:  # Adjust threshold for polyhalogenation
+                    return True
             if element == "Cr" and atom.GetFormalCharge() == 6:  # Chromium (VI)
                 return True
             if element == "Se" and atom.GetFormalCharge() != 0:  # Selenium (non-neutral forms)
@@ -271,6 +276,12 @@ def contains_toxic_groups(mol):
         "[Se][Se]",  # Diselenide compounds
         "[Be]",  # Beryllium atom
         "[Tl+]",  # Thallium ion
+        "c1(c(Br)cc(Br)c1)O",  # Halogenated phenols
+        "c1cc(Br)cc(Br)c1",  # Polybrominated benzenes
+        "C#N",  # Cyanides
+        "[N+](=O)[O-]",  # Nitro groups
+        "P(=O)(O)(O)O",  # Phosphate esters
+        "c1ccc2c(c1)ccc3c2ccc4c3cccc4",  # Polycyclic aromatic hydrocarbons (e.g., chrysene)
     ]
     for pattern in toxic_smarts:
         if mol.HasSubstructMatch(Chem.MolFromSmarts(pattern)):
