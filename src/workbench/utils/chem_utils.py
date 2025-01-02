@@ -342,17 +342,17 @@ def is_druglike_compound(mol: Mol) -> bool:
 
 def add_compound_tags(df, mol_column="molecule"):
     """
-    Adds a 'compound_tags' column to a DataFrame, tagging molecules based on their properties.
+    Adds a 'tags' column to a DataFrame, tagging compounds based on their properties.
 
     Args:
         df (pd.DataFrame): Input DataFrame containing molecular data.
         mol_column (str): Column name containing RDKit molecule objects.
 
     Returns:
-        pd.DataFrame: Updated DataFrame with a 'compound_tags' column.
+        pd.DataFrame: Updated DataFrame with a 'tags' column.
     """
-    # Initialize the compound_tags column
-    df["compound_tags"] = [[] for _ in range(len(df))]
+    # Initialize the tags column
+    df["tags"] = [[] for _ in range(len(df))]
 
     # Process each molecule in the DataFrame
     for idx, row in df.iterrows():
@@ -371,7 +371,7 @@ def add_compound_tags(df, mol_column="molecule"):
             if mol is None:  # Handle largest fragment with no heavy atoms
                 tags.append("no_heavy_atoms")
                 log.warning(f"No heavy atoms: {row['smiles']}")
-                df.at[idx, "compound_tags"] = tags
+                df.at[idx, "tags"] = tags
                 continue
 
         # Check for heavy metals
@@ -393,7 +393,7 @@ def add_compound_tags(df, mol_column="molecule"):
             tags.append("druglike")
 
         # Update tags and molecule
-        df.at[idx, "compound_tags"] = tags
+        df.at[idx, "tags"] = tags
         df.at[idx, mol_column] = mol  # Update molecule after processing (if needed)
 
     return df
