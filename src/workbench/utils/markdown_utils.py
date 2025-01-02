@@ -30,6 +30,33 @@ def health_tag_markdown(health_tags: list[str]) -> str:
     return markdown
 
 
+def tag_styling(tags: list, tag_dict: dict) -> str:
+    """Generate a Markdown string with styled spans for tags.
+
+    Args:
+        tags (list): List of tags to style.
+        tag_dict (dict): Dictionary mapping substrings to CSS classes.
+
+    Returns:
+        str: Markdown string with styled spans.
+    """
+    styled_tags = []
+    for tag in tags:
+        # Check for a matching class in the dictionary
+        class_name = next(
+            (class_name for substring, class_name in tag_dict.items() if substring in tag.lower()),
+            None
+        )
+        if class_name:
+            # Add span with the matched class
+            styled_tags.append(f'<span class="{class_name}" style="padding:0" children="{tag}"/>')
+        else:
+            # Add plain tag if no class matches
+            styled_tags.append(tag)
+    # Join styled tags with commas
+    return ", ".join(styled_tags)
+
+
 if __name__ == "__main__":
     """Exercise the Markdown Utilities"""
     from workbench.api.model import Model
