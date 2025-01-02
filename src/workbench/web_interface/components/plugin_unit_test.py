@@ -6,7 +6,7 @@ import socket
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginInputType
-from workbench.api import DataSource, FeatureSet, Model, Endpoint
+from workbench.api import DataSource, FeatureSet, Model, Endpoint, Compound
 from workbench.api.pipeline import Pipeline
 from workbench.core.artifacts.graph_core import GraphCore
 from workbench.utils.theme_manager import ThemeManager
@@ -135,12 +135,10 @@ class PluginUnitTest:
             )
             return self.plugin.update_properties(model_df, **self.kwargs)
         elif plugin_input_type == PluginInputType.COMPOUND:
-            fake_compound = {
-                "compound_id": "AQSOL-0001",
-                "smiles": "CC(C)C1=CC=C(C=C1)C(=O)O",
-            }
+            fake_compound = Compound("AQSOL-0001")
+            fake_compound.smiles = "CC(C)C1=CC=C(C=C1)C(=O)O"
             compound = self.input_data if self.input_data is not None else fake_compound
-            return self.plugin.update_properties(**compound, **self.kwargs)
+            return self.plugin.update_properties(compound, **self.kwargs)
         else:
             raise ValueError(f"Invalid test type: {plugin_input_type}")
 
