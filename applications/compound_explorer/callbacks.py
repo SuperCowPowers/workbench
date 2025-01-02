@@ -28,6 +28,8 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
 
         # Temp
         df = compute_morgan_fingerprints(df, radius=2)
+        df = project_fingerprints(df, projection="TSNE")
+        df.rename(columns={"x": "x_tsne", "y": "y_tsne"}, inplace=True)
         df = project_fingerprints(df, projection="UMAP")
 
         # Convert compound_tags to string and check for substrings, then convert to 0/1

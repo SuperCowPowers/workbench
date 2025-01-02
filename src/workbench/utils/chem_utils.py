@@ -503,7 +503,7 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=4096) -> pd.Da
     return df
 
 
-def project_fingerprints(df: pd.DataFrame, projection: str = "TSNE") -> pd.DataFrame:
+def project_fingerprints(df: pd.DataFrame, projection: str = "UMAP") -> pd.DataFrame:
     """Project fingerprints onto a 2D plane using dimensionality reduction techniques.
 
     Args:
@@ -538,7 +538,7 @@ def project_fingerprints(df: pd.DataFrame, projection: str = "TSNE") -> pd.DataF
         embedding = tsne.fit_transform(X)
     else:
         # Run UMAP
-        reducer = umap.UMAP()
+        reducer = umap.UMAP(densmap=True)
         embedding = reducer.fit_transform(X)
 
     # Add coordinates to DataFrame
