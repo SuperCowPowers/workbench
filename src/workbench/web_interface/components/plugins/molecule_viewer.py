@@ -3,6 +3,7 @@
 from dash import html
 
 # Workbench Imports
+from workbench.api import Compound
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
 from workbench.utils.chem_utils import svg_from_smiles
@@ -36,11 +37,11 @@ class MoleculeViewer(PluginInterface):
         self.component_id = component_id
         self.container = html.Div(
             id=self.component_id,
-            className="workbench-container",
             children=[
                 html.H5(id=f"{self.component_id}-header", children="Compound:"),
                 html.Img(
                     id=f"{self.component_id}-img",
+                    className="workbench-container",
                     style={"padding": "0px"},
                 ),
             ],
@@ -55,12 +56,11 @@ class MoleculeViewer(PluginInterface):
 
         return self.container
 
-    def update_properties(self, compound_id: str, smiles: str, **kwargs) -> list:
+    def update_properties(self, compound: Compound, **kwargs) -> list:
         """Update the properties for the plugin.
 
         Args:
-            compound_id (str): The ID of the compound
-            smiles (str): SMILES representation of the compound
+            compound (Compound): The Compound object
             **kwargs:
                 - width (int): The width of the image
                 - height (int): The height of the image
@@ -73,11 +73,10 @@ class MoleculeViewer(PluginInterface):
         height = kwargs.get("height", 300)
 
         # Header Text
-        header_text = f"Compound: {compound_id}"
+        header_text = f"Compound: {compound.id}"
 
         # Create the Molecule Image
-        # img = img_from_smiles(smiles, background=self.theme_manager.background())
-        img = svg_from_smiles(smiles, width, height, background=self.theme_manager.background())
+        img = svg_from_smiles(compound.smiles, width, height, background=self.theme_manager.background())
 
         # Return the updated property values for this plugin
         return [header_text, img]
@@ -88,8 +87,6 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    compound_data = {
-        "compound_id": "AQSOL-0001",
-        "smiles": "CC(C)C1=CC=C(C=C1)C(=O)O",
-    }
-    PluginUnitTest(MoleculeViewer, input_data=compound_data, theme="light").run()
+    compound = Compound("AQSOL-0001")
+    compound.smiles = "CC(C)C1=CC=C(C=C1)C(=O)O"
+    PluginUnitTest(MoleculeViewer, input_data=compound, theme="light").run()
