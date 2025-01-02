@@ -62,17 +62,22 @@ class MoleculeViewer(PluginInterface):
             compound_id (str): The ID of the compound
             smiles (str): SMILES representation of the compound
             **kwargs:
-                - tbd
+                - width (int): The width of the image
+                - height (int): The height of the image
         Returns:
             list: A list of the updated property values for the plugin
         """
+
+        # Get the width and height of the image
+        width = kwargs.get("width", 450)
+        height = kwargs.get("height", 300)
 
         # Header Text
         header_text = f"Compound: {compound_id}"
 
         # Create the Molecule Image
         # img = img_from_smiles(smiles, background=self.theme_manager.background())
-        img = svg_from_smiles(smiles, 300, 200, background=self.theme_manager.background())
+        img = svg_from_smiles(smiles, width, height, background=self.theme_manager.background())
 
         # Return the updated property values for this plugin
         return [header_text, img]
@@ -87,4 +92,4 @@ if __name__ == "__main__":
         "compound_id": "AQSOL-0001",
         "smiles": "CC(C)C1=CC=C(C=C1)C(=O)O",
     }
-    PluginUnitTest(MoleculeViewer, input_data=compound_data, theme="quartz").run()
+    PluginUnitTest(MoleculeViewer, input_data=compound_data, theme="light").run()
