@@ -1,4 +1,5 @@
 """A compound details plugin component"""
+
 import re
 from dash import html, dcc
 
@@ -101,7 +102,7 @@ class CompoundDetails(PluginInterface):
             """Escape special characters in Markdown strings."""
             if isinstance(value, str):
                 # Escape special Markdown characters using regex
-                return re.sub(r'([<>\[\]])', r'\\\1', value)
+                return re.sub(r"([<>\[\]])", r"\\\1", value)
             elif isinstance(value, list):
                 # Generate styled spans for tags
                 tag_substrings = {"toxic": "alert", "druglike": "good"}

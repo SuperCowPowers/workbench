@@ -43,10 +43,7 @@ def tag_styling(tags: list, tag_dict: dict) -> str:
     styled_tags = []
     for tag in tags:
         # Check for a matching class in the dictionary
-        class_name = next(
-            (class_name for substring, class_name in tag_dict.items() if substring in tag.lower()),
-            None
-        )
+        class_name = next((class_name for substring, class_name in tag_dict.items() if substring in tag.lower()), None)
         if class_name:
             # Add span with the matched class
             styled_tags.append(f'<span class="{class_name}" style="padding:0" children="{tag}"/>')

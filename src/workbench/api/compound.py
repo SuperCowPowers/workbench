@@ -6,7 +6,7 @@ from typing import List, Optional
 @dataclass
 class Compound:
     """Compound: Store details about an individual compound."""
-    
+
     id: str
     smiles: Optional[str] = None
     tags: List[str] = field(default_factory=list)
@@ -28,11 +28,7 @@ class Compound:
         Returns:
             dict: A dictionary of details about the Compound.
         """
-        return {
-            "project": "XYZ",
-            "smiles": self.smiles,
-            "tags": self.tags
-        }
+        return {"project": "XYZ", "smiles": self.smiles, "tags": self.tags}
 
     def __str__(self) -> str:
         """User-friendly string representation."""
