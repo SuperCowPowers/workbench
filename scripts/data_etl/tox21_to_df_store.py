@@ -42,18 +42,18 @@ df["FW"] = pd.to_numeric(df["FW"], errors="coerce")
 
 # Full list of assay columns for toxicity detection (0/1/NaN) for values
 assay_cols = [
-    "NR-AR",          # Nuclear Receptor - Androgen Receptor
-    "SR-HSE",         # Stress Response - Heat Shock Element
-    "SR-ARE",         # Stress Response - Antioxidant Response Element
-    "NR-Aromatase",   # Nuclear Receptor - Aromatase
-    "NR-ER-LBD",      # Nuclear Receptor - Estrogen Receptor (Ligand Binding Domain)
-    "NR-AhR",         # Nuclear Receptor - Aryl Hydrocarbon Receptor
-    "SR-MMP",         # Stress Response - Mitochondrial Membrane Potential
-    "NR-ER",          # Nuclear Receptor - Estrogen Receptor
+    "NR-AR",  # Nuclear Receptor - Androgen Receptor
+    "SR-HSE",  # Stress Response - Heat Shock Element
+    "SR-ARE",  # Stress Response - Antioxidant Response Element
+    "NR-Aromatase",  # Nuclear Receptor - Aromatase
+    "NR-ER-LBD",  # Nuclear Receptor - Estrogen Receptor (Ligand Binding Domain)
+    "NR-AhR",  # Nuclear Receptor - Aryl Hydrocarbon Receptor
+    "SR-MMP",  # Stress Response - Mitochondrial Membrane Potential
+    "NR-ER",  # Nuclear Receptor - Estrogen Receptor
     "NR-PPAR-gamma",  # Nuclear Receptor - Peroxisome Proliferator-Activated Receptor Gamma
-    "SR-p53",         # Stress Response - p53 Tumor Suppressor Protein
-    "SR-ATAD5",       # Stress Response - ATPase Family AAA Domain-Containing Protein 5
-    "NR-AR-LBD",      # Nuclear Receptor - Androgen Receptor (Ligand Binding Domain)
+    "SR-p53",  # Stress Response - p53 Tumor Suppressor Protein
+    "SR-ATAD5",  # Stress Response - ATPase Family AAA Domain-Containing Protein 5
+    "NR-AR-LBD",  # Nuclear Receptor - Androgen Receptor (Ligand Binding Domain)
 ]
 
 # Convert to numeric, coercing errors to NaN

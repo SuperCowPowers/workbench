@@ -1,9 +1,6 @@
 """Callbacks for the Compound Explorer Application"""
 
 from dash import Input, Output, callback, html, no_update
-import pandas as pd
-from rdkit.Chem import PandasTools
-
 
 # Workbench Imports
 from workbench.api import FeatureSet  # noqa: F401
