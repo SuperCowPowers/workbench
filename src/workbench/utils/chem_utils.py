@@ -225,66 +225,54 @@ def contains_heavy_metals(mol):
 
 def contains_toxic_elements(mol):
     """
-    Check if a molecule contains toxic elements.
-
-    Args:
-        mol: RDKit molecule object.
-
-    Returns:
-        bool: True if toxic elements are detected, False otherwise.
+    Check if a molecule contains toxic elements or excessive halogenation.
     """
-    # Elements that are toxic in most contexts
     always_toxic = {"Pb", "Hg", "Cd", "As", "Be", "Tl", "Sb"}
+    conditional_toxic = {"Se", "Cr"}  # Now separate halogen logic below
 
-    # Elements that are context-dependent for toxicity
-    conditional_toxic = {"Se", "Cr", "Br", "Cl", "I"}  # Add iodine as context-dependent
+    halogens = {"F", "Cl", "Br", "I"}
+    halogen_count = sum(atom.GetSymbol() in halogens for atom in mol.GetAtoms())
+
     for atom in mol.GetAtoms():
-        element = atom.GetSymbol()
-        if element in always_toxic:
+        symbol = atom.GetSymbol()
+        if symbol in always_toxic:
             return True
-        if element in conditional_toxic:
-            # Context-dependent checks
-            if element == "Br" or element == "Cl" or element == "I":
-                halogen_count = sum(1 for a in atom.GetOwningMol().GetAtoms()
-                                    if a.GetSymbol() in {"Br", "Cl", "I"})
-                if halogen_count > 2:  # Adjust threshold for polyhalogenation
-                    return True
-            if element == "Cr" and atom.GetFormalCharge() == 6:  # Chromium (VI)
+        if symbol in conditional_toxic:
+            if symbol == "Cr" and atom.GetFormalCharge() == 6:  # Chromium(VI)
                 return True
-            if element == "Se" and atom.GetFormalCharge() != 0:  # Selenium (non-neutral forms)
+            if symbol == "Se" and atom.GetFormalCharge() != 0:  # Charged selenium
                 return True
 
-    # No toxic elements detected
+    # Generic halogen threshold check (e.g., excessive polyhalogenation)
+    if halogen_count > 2:
+        return True
+
     return False
 
 
 def contains_toxic_groups(mol):
     """
-    Check if a molecule contains known toxic groups.
-
-    Args:
-        mol: RDKit molecule object.
-
-    Returns:
-        bool: True if toxic groups are detected, False otherwise.
+    Check if a molecule contains known toxic groups via SMARTS patterns.
     """
     toxic_smarts = [
-        "[Cr](=O)(=O)=O",  # Chromium (VI)
-        "[As](=O)(=O)-[OH]",  # Arsenic oxide
-        "[Hg]",  # Mercury atom
-        "[Pb]",  # Lead atom
-        "[Se][Se]",  # Diselenide compounds
-        "[Be]",  # Beryllium atom
-        "[Tl+]",  # Thallium ion
-        "c1(c(Br)cc(Br)c1)O",  # Halogenated phenols
-        "c1cc(Br)cc(Br)c1",  # Polybrominated benzenes
-        "C#N",  # Cyanides
-        "[N+](=O)[O-]",  # Nitro groups
-        "P(=O)(O)(O)O",  # Phosphate esters
-        "c1ccc2c(c1)ccc3c2ccc4c3cccc4",  # Polycyclic aromatic hydrocarbons (e.g., chrysene)
+        "[Cr](=O)(=O)=O",          # Chromium(VI)
+        "[As](=O)(=O)-[OH]",       # Arsenic oxide
+        "[Hg]",                    # Mercury
+        "[Pb]",                    # Lead
+        "[Se][Se]",               # Diselenide
+        "[Be]",                    # Beryllium
+        "[Tl+]",                   # Thallium ion
+        "c1(c(F)cc(F)c1)F",        # Example polychloro/fluoro phenols
+        "[C](F)(F)F",              # Trifluoromethyl group
+        "C#N",                     # Cyanides
+        "[N+](=O)[O-]",            # Nitro groups
+        "P(=O)(O)(O)O",            # Phosphate esters
+        "c1ccc2c(c1)ccc3c2ccc4c3cccc4",  # Example polycyclic aromatic
     ]
+
     for pattern in toxic_smarts:
-        if mol.HasSubstructMatch(Chem.MolFromSmarts(pattern)):
+        smarts = Chem.MolFromSmarts(pattern)
+        if smarts and mol.HasSubstructMatch(smarts):
             return True
     return False
 
