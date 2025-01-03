@@ -255,18 +255,18 @@ def contains_toxic_groups(mol):
     Check if a molecule contains known toxic groups via SMARTS patterns.
     """
     toxic_smarts = [
-        "[Cr](=O)(=O)=O",          # Chromium(VI)
-        "[As](=O)(=O)-[OH]",       # Arsenic oxide
-        "[Hg]",                    # Mercury
-        "[Pb]",                    # Lead
-        "[Se][Se]",               # Diselenide
-        "[Be]",                    # Beryllium
-        "[Tl+]",                   # Thallium ion
-        "c1(c(F)cc(F)c1)F",        # Example polychloro/fluoro phenols
-        "[C](F)(F)F",              # Trifluoromethyl group
-        "C#N",                     # Cyanides
-        "[N+](=O)[O-]",            # Nitro groups
-        "P(=O)(O)(O)O",            # Phosphate esters
+        "[Cr](=O)(=O)=O",  # Chromium(VI)
+        "[As](=O)(=O)-[OH]",  # Arsenic oxide
+        "[Hg]",  # Mercury
+        "[Pb]",  # Lead
+        "[Se][Se]",  # Diselenide
+        "[Be]",  # Beryllium
+        "[Tl+]",  # Thallium ion
+        "c1(c(F)cc(F)c1)F",  # Example polychloro/fluoro phenols
+        "[C](F)(F)F",  # Trifluoromethyl group
+        "C#N",  # Cyanides
+        "[N+](=O)[O-]",  # Nitro groups
+        "P(=O)(O)(O)O",  # Phosphate esters
         "c1ccc2c(c1)ccc3c2ccc4c3cccc4",  # Example polycyclic aromatic
     ]
 

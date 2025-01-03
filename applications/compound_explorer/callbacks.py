@@ -6,9 +6,9 @@ from rdkit.Chem import PandasTools
 
 
 # Workbench Imports
-from workbench.api import FeatureSet, Compound
+from workbench.api import FeatureSet  # noqa: F401
+from workbench.api import Compound, df_store
 from workbench.web_interface.components.plugins import scatter_plot, compound_details
-from workbench.utils.chem_utils import compute_morgan_fingerprints, project_fingerprints
 
 
 # Set up the scatter plot callbacks
@@ -28,36 +28,11 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
         # Create the FeatureSet object and pull a dataframe
         # df = FeatureSet("aqsol_features").pull_dataframe()
 
-        # Load SDF file
-        sdf_file = "/Users/briford/data/workbench/tox21/training/tox21_10k_data_all.sdf"
+        # Load our preprocessed tox21 training data
+        df = df_store.DFStore().get("/datasets/chem_info/tox21_training")
 
-        # Load SDF file directly into a DataFrame
-        df = PandasTools.LoadSDF(sdf_file, smilesName='smiles', molColName='molecule', includeFingerprints=False)
-        print(df.head())
-        print(f"Loaded {len(df)} compounds from {sdf_file}")
-        print(f"Columns: {df.columns}")
-        df.rename(columns={"ID": "id"}, inplace=True)
-
-        # List of Columns that have 0/1 (or NaN) toxicity values
-        cols = ['NR-AR', 'SR-ARE', 'NR-Aromatase', 'NR-ER-LBD','NR-AhR', 'SR-MMP', 'NR-ER',
-                'NR-PPAR-gamma', 'SR-p53', 'SR-ATAD5', 'NR-AR-LBD']
-
-        # Convert to numeric, coercing errors to NaN
-        df[cols] = df[cols].apply(pd.to_numeric, errors='coerce')
-
-        # Set is_toxic to 1 if any of the toxicity columns has a 1
-        df['is_toxic'] = (df[cols] == 1).any(axis=1).astype(int)
-        print(df['is_toxic'].value_counts(dropna=False))
-
-        # Temp
-        df = compute_morgan_fingerprints(df, radius=2)
-        # df = project_fingerprints(df, projection="TSNE")
-        # df.rename(columns={"x": "x_tsne", "y": "y_tsne"}, inplace=True)
-        df = project_fingerprints(df, projection="UMAP")
-
-        # Convert compound tags to string and check for substrings, then convert to 0/1
-        df["toxic"] = df["tags"].astype(str).str.contains("toxic").astype(int)
-        df["druglike"] = df["tags"].astype(str).str.contains("druglike").astype(int)
+        # Generate the molecules (they can't be serialized)
+        # df['molecule'] = df['smiles'].apply(lambda smiles: Chem.MolFromSmiles(smiles))
 
         # Update all the properties for the scatter plot
         props = my_scatter_plot.update_properties(
