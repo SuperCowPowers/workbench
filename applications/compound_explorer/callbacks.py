@@ -39,7 +39,7 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
             suppress_hover_display=True,
             x="x",
             y="y",
-            color="is_toxic",
+            color="toxic_any",
         )
 
         # Return the updated properties
