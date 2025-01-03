@@ -238,19 +238,19 @@ def halogen_toxicity_score(mol):
 
     # Handle case where no halogens are present
     if halogen_count == 0:
-        return 0, float('inf')  # No halogens, no toxicity from halogenation
+        return 0, float("inf")  # No halogens, no toxicity from halogenation
 
     # Calculate fluorine count
     fluorine_count = sum(1 for atom in mol.GetAtoms() if atom.GetSymbol() == "F")
 
     # Exempt fluorine-dominated compounds
     if fluorine_count / halogen_count > 0.9:  # Fluorine-dominated (>90% halogens are F)
-        return 0, float('inf')  # Exempt
+        return 0, float("inf")  # Exempt
 
     # Exempt highly fluorinated aromatic systems with a single bromine
     aromatic_bromine_count = len(mol.GetSubstructMatches(Chem.MolFromSmarts("c[Br]")))
     if aromatic_bromine_count == 1 and fluorine_count / halogen_count > 0.8:
-        return 0, float('inf')  # Exempt
+        return 0, float("inf")  # Exempt
 
     # Adjust halogen count for specific patterns
     trifluoromethyl_count = len(mol.GetSubstructMatches(Chem.MolFromSmarts("[C](F)(F)F")))
@@ -260,14 +260,17 @@ def halogen_toxicity_score(mol):
     halogen_count += sum(0.2 for atom in mol.GetAtoms() if atom.GetSymbol() in halogens and atom.GetIsAromatic())
 
     # Exempt compounds with stabilizing functional groups
-    if mol.HasSubstructMatch(Chem.MolFromSmarts("C(=O)[OH]")) or \
-       mol.HasSubstructMatch(Chem.MolFromSmarts("S(=O)(=O)[OH]")) or \
-       mol.HasSubstructMatch(Chem.MolFromSmarts("[C,F][O][C,F]")):  # Carboxylic acids, sulfonic acids, ethers
-        return 0, float('inf')  # Exempt
+    if (
+        mol.HasSubstructMatch(Chem.MolFromSmarts("C(=O)[OH]"))
+        or mol.HasSubstructMatch(Chem.MolFromSmarts("S(=O)(=O)[OH]"))
+        or mol.HasSubstructMatch(Chem.MolFromSmarts("[C,F][O][C,F]"))
+    ):  # Carboxylic acids, sulfonic acids, ethers
+        return 0, float("inf")  # Exempt
 
     # Further deprioritize functionalized halogens
-    if mol.HasSubstructMatch(Chem.MolFromSmarts("[Cl,C,F,Br,I][O]")) or \
-       mol.HasSubstructMatch(Chem.MolFromSmarts("[Cl,C,F,Br,I][N](=O)")):
+    if mol.HasSubstructMatch(Chem.MolFromSmarts("[Cl,C,F,Br,I][O]")) or mol.HasSubstructMatch(
+        Chem.MolFromSmarts("[Cl,C,F,Br,I][N](=O)")
+    ):
         halogen_count -= 0.5
 
     # Set threshold for halogen count
@@ -327,8 +330,9 @@ def contains_toxic_elements(mol):
     # - Acidic stabilization: at least one atom with a negative formal charge
     # - Fluorine dominance: at least 90% of halogens are fluorine
     if halogen_count > halogen_threshold:
-        if not any(atom.GetIsAromatic() for atom in mol.GetAtoms()) or \
-           not any(atom.GetFormalCharge() < 0 for atom in mol.GetAtoms()):
+        if not any(atom.GetIsAromatic() for atom in mol.GetAtoms()) or not any(
+            atom.GetFormalCharge() < 0 for atom in mol.GetAtoms()
+        ):
             return True
 
     return False
@@ -367,17 +371,13 @@ def contains_toxic_groups(mol) -> bool:
     phosphorus_count = len(mol.GetSubstructMatches(Chem.MolFromSmarts("P(=O)(O)(O)O")))
     if phosphorus_count > 0:  # Compounds containing phosphate groups
         if not any(
-            mol.HasSubstructMatch(Chem.MolFromSmarts(pattern))
-            for pattern in ["[N+](=O)[O-]", "C#N", "[C](Cl)(Cl)Cl"]
+            mol.HasSubstructMatch(Chem.MolFromSmarts(pattern)) for pattern in ["[N+](=O)[O-]", "C#N", "[C](Cl)(Cl)Cl"]
         ):
             return False  # Exempt
 
     # Exempt sulfur heterocycles unless combined with reactive motifs
     if mol.HasSubstructMatch(Chem.MolFromSmarts("[S]1CC[S]1")):
-        if not any(
-            mol.HasSubstructMatch(Chem.MolFromSmarts(pattern))
-            for pattern in ["[N+](=O)[O-]", "C#N"]
-        ):
+        if not any(mol.HasSubstructMatch(Chem.MolFromSmarts(pattern)) for pattern in ["[N+](=O)[O-]", "C#N"]):
             return False  # Exempt
 
     # Exempt stabilizing functional groups
@@ -390,8 +390,7 @@ def contains_toxic_groups(mol) -> bool:
     trifluoromethyl_count = len(mol.GetSubstructMatches(Chem.MolFromSmarts("[C](F)(F)F")))
     if trifluoromethyl_count > 1:  # More than one trifluoromethyl group
         if not any(
-            mol.HasSubstructMatch(Chem.MolFromSmarts(pattern))
-            for pattern in ["[N+](=O)[O-]", "C#N", "[C](Cl)(Cl)Cl"]
+            mol.HasSubstructMatch(Chem.MolFromSmarts(pattern)) for pattern in ["[N+](=O)[O-]", "C#N", "[C](Cl)(Cl)Cl"]
         ):
             return False  # Exempt
 
