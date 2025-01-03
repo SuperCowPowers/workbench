@@ -339,8 +339,9 @@ def contains_toxic_groups(mol) -> bool:
     Check if a molecule contains known toxic groups via SMARTS patterns.
 
     Exempts compounds with:
-    - Stabilizing functional groups like phenols or carbamates.
+    - Stabilizing functional groups like phenols, carbamates, or sulfur heterocycles.
     - Trifluoromethyl-dominated compounds unless combined with reactive motifs.
+    - Phosphorus-dominated compounds without reactive/toxic groups.
 
     Args:
         mol (rdkit.Chem.Mol): The molecule to evaluate.
@@ -362,7 +363,24 @@ def contains_toxic_groups(mol) -> bool:
         "[C](Cl)(Cl)Cl",  # Reactive trichloromethyl group
     ]
 
-    # Exempt compounds with stabilizing functional groups
+    # Exempt phosphorus-dominated compounds unless combined with reactive motifs
+    phosphorus_count = len(mol.GetSubstructMatches(Chem.MolFromSmarts("P(=O)(O)(O)O")))
+    if phosphorus_count > 0:  # Compounds containing phosphate groups
+        if not any(
+            mol.HasSubstructMatch(Chem.MolFromSmarts(pattern))
+            for pattern in ["[N+](=O)[O-]", "C#N", "[C](Cl)(Cl)Cl"]
+        ):
+            return False  # Exempt
+
+    # Exempt sulfur heterocycles unless combined with reactive motifs
+    if mol.HasSubstructMatch(Chem.MolFromSmarts("[S]1CC[S]1")):
+        if not any(
+            mol.HasSubstructMatch(Chem.MolFromSmarts(pattern))
+            for pattern in ["[N+](=O)[O-]", "C#N"]
+        ):
+            return False  # Exempt
+
+    # Exempt stabilizing functional groups
     if mol.HasSubstructMatch(Chem.MolFromSmarts("c1ccc(O)c(O)c1")):  # Phenols
         return False
     if mol.HasSubstructMatch(Chem.MolFromSmarts("C(=O)O[C]")):  # Carbamates

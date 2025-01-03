@@ -73,6 +73,9 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
     df["toxic_tag"] = df["tags"].astype(str).str.contains("toxic").astype(int)
     df["druglike_tag"] = df["tags"].astype(str).str.contains("druglike").astype(int)
 
+    # Drop the molecule column
+    df.drop(columns=["molecule"], inplace=True)
+
     # Return the prepared DataFrame
     return df
 

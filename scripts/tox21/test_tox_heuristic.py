@@ -57,10 +57,30 @@ probably_true_toxic = {
     'O=[N+]([O-])c1cc([As](=O)(O)O)ccc1O',
     'O=[N+]([O-])c1ccc([As](=O)(O)O)cc1',
     'Cc1c(Cl)c(=O)oc2cc(OP(=O)(OCCCl)OCCCl)ccc12',
+    'CO[C@@]1(NC(=O)CSCC#N)C(=O)N2C(C(=O)[O-])=C(CSc3nnnn3C)CS[C@@H]21.[Na+]',
+    'CC(=O)Oc1ccccc1C(=O)Nc1ncc([N+](=O)[O-])s1',
+    'C[C@@H]1CC(=O)NN=C1c1ccc(NN=C(C#N)C#N)cc1',
+    'C[C@@H]1CC(=O)NN=C1c1ccc(NN=C(C#N)C#N)cc1',
+    'N#C/C(=C1\\SCC(c2ccccc2Cl)S1)n1ccnc1',
+    'C/C1=C2/N=C(/C=C3\\N=C(/C(C)=C4/[C@@H](CCC(N)=O)[C@](C)(CC(N)=O)[C@](C)([C@@H]5N=C1[C@](C)(CCC(=O)NC[C@@H](C)OP(=O)([O-])O[C@H]1[C@@H](O)[C@@H](n6cnc7cc(C)c(C)cc76)O[C@@H]1CO)[C@H]5CC(N)=O)N4[Co+]C#N)[C@@](C)(CC(N)=O)[C@@H]3CCC(N)=O)C(C)(C)[C@@H]2CCC(N)=O',
+    'O=C1CN(N=Cc2ccc(-c3ccc([N+](=O)[O-])cc3)o2)C(=O)[N-]1.[Na+]',
+    'CS(=O)(=O)Nc1ccc([N+](=O)[O-])cc1Oc1ccccc1',
+    'Cc1c(C(N)=O)cc([N+](=O)[O-])cc1[N+](=O)[O-]',
+    'Cc1ncc([N+](=O)[O-])n1CC(O)CCl',
+    'Clc1ccc(C(c2ccc(Cl)cc2)C(Cl)(Cl)Cl)cc1',
+    'Cc1ncc([N+](=O)[O-])n1C',
+    'NC(=O)c1ccc([N+](=O)[O-])cc1Cl',
+    'O=C(NCCO[N+](=O)[O-])c1cccnc1',
+    'O=[N+]([O-])/N=C1\\NCCN1Cc1ccc(Cl)nc1',
 }
 
 # Filter out the probably true toxic molecules
 too_broad = too_broad[~too_broad["smiles"].isin(probably_true_toxic)]
+
+# Filter out ones with known toxic groups
+toxic_patterns = ["[N+](=O)[O-]", "C#N", "[C](Cl)(Cl)Cl"]  # Known toxic SMARTS patterns
+too_broad = too_broad[~too_broad["smiles"].apply(
+    lambda s: any(Chem.MolFromSmiles(s).HasSubstructMatch(Chem.MolFromSmarts(p)) for p in toxic_patterns))]
 
 # Print out the results
 print(too_broad[["toxic_any", "toxic_elements", "toxic_groups"]].value_counts(dropna=False))
@@ -76,3 +96,10 @@ toxic_groups = too_broad[too_broad["toxic_groups"]].copy()
 
 # Print out the results
 print(toxic_groups["smiles"].values)
+
+# Too narrow: See which molecules are not tagged as toxic but ARE toxic (based on the tox21 dataset)
+too_narrow = tox21[(tox21["toxic_tag"] == 0) & (tox21["toxic_any"] == 1)].copy()
+
+# Let's check to see if the too_narrow molecules are still flagged as not toxic
+too_narrow["toxic_elements"] = too_narrow["molecule"].apply(contains_toxic_elements)
+too_narrow["toxic_groups"] = too_narrow["molecule"].apply(contains_toxic_groups)

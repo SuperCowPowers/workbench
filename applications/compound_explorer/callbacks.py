@@ -26,7 +26,7 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
         # df = FeatureSet("aqsol_features").pull_dataframe()
 
         # Load our preprocessed tox21 training data
-        df = df_store.DFStore().get("/datasets/chem_info/tox21_training")
+        df = df_store.DFStore().get("/datasets/chem_info/tox21")
 
         # Generate the molecules (they can't be serialized)
         # df['molecule'] = df['smiles'].apply(lambda smiles: Chem.MolFromSmiles(smiles))
