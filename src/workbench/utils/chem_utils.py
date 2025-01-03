@@ -223,36 +223,130 @@ def contains_heavy_metals(mol):
     return any(atom.GetSymbol() in heavy_metals for atom in mol.GetAtoms())
 
 
+def halogen_toxicity_score(mol):
+    """
+    Calculate the halogen toxicity score for a molecule.
+
+    Args:
+        mol (rdkit.Chem.Mol): The molecule to evaluate.
+
+    Returns:
+        tuple: Adjusted halogen count and halogen toxicity threshold.
+    """
+    halogens = {"F", "Cl", "Br", "I"}
+    halogen_count = sum(1 for atom in mol.GetAtoms() if atom.GetSymbol() in halogens)
+
+    # Handle case where no halogens are present
+    if halogen_count == 0:
+        return 0, float('inf')  # No halogens, no toxicity from halogenation
+
+    # Calculate fluorine count
+    fluorine_count = sum(1 for atom in mol.GetAtoms() if atom.GetSymbol() == "F")
+
+    # Exempt fluorine-dominated compounds
+    if fluorine_count / halogen_count > 0.9:  # Fluorine-dominated (>90% halogens are F)
+        return 0, float('inf')  # Exempt
+
+    # Exempt highly fluorinated aromatic systems with a single bromine
+    aromatic_bromine_count = len(mol.GetSubstructMatches(Chem.MolFromSmarts("c[Br]")))
+    if aromatic_bromine_count == 1 and fluorine_count / halogen_count > 0.8:
+        return 0, float('inf')  # Exempt
+
+    # Adjust halogen count for specific patterns
+    trifluoromethyl_count = len(mol.GetSubstructMatches(Chem.MolFromSmarts("[C](F)(F)F")))
+    halogen_count -= 2 * trifluoromethyl_count  # Trifluoromethyl groups count less
+
+    # Add weight for aromatic halogens
+    halogen_count += sum(0.2 for atom in mol.GetAtoms() if atom.GetSymbol() in halogens and atom.GetIsAromatic())
+
+    # Exempt compounds with stabilizing functional groups
+    if mol.HasSubstructMatch(Chem.MolFromSmarts("C(=O)[OH]")) or \
+       mol.HasSubstructMatch(Chem.MolFromSmarts("S(=O)(=O)[OH]")) or \
+       mol.HasSubstructMatch(Chem.MolFromSmarts("[C,F][O][C,F]")):  # Carboxylic acids, sulfonic acids, ethers
+        return 0, float('inf')  # Exempt
+
+    # Further deprioritize functionalized halogens
+    if mol.HasSubstructMatch(Chem.MolFromSmarts("[Cl,C,F,Br,I][O]")) or \
+       mol.HasSubstructMatch(Chem.MolFromSmarts("[Cl,C,F,Br,I][N](=O)")):
+        halogen_count -= 0.5
+
+    # Set threshold for halogen count
+    halogen_threshold = 5
+    if mol.HasSubstructMatch(Chem.MolFromSmarts("C(=O)[N]")):
+        halogen_threshold += 2  # Stabilizing effect of amides
+
+    # Slightly increase threshold for highly fluorinated compounds
+    if fluorine_count > 10:
+        halogen_threshold += 1
+
+    return halogen_count, halogen_threshold
+
+
 def contains_toxic_elements(mol):
     """
     Check if a molecule contains toxic elements or excessive halogenation.
+
+    - Elements are categorized as always toxic (e.g., heavy metals) or conditionally toxic
+      based on charge state (e.g., Chromium(VI), charged Selenium).
+    - Adjusts halogen counts for trifluoromethyl groups, aromatic systems, and perfluorinated compounds.
+    - Flags molecules with excessive halogenation unless mitigated by aromatic stabilization,
+      acidic groups, or specific stabilizing functional groups like carboxylic acids.
+
+    Returns:
+        bool: True if the molecule contains toxic elements or meets excessive halogenation criteria.
     """
+    # Elements always considered toxic
     always_toxic = {"Pb", "Hg", "Cd", "As", "Be", "Tl", "Sb"}
-    conditional_toxic = {"Se", "Cr"}  # Now separate halogen logic below
 
-    halogens = {"F", "Cl", "Br", "I"}
-    halogen_count = sum(atom.GetSymbol() in halogens for atom in mol.GetAtoms())
+    # Elements toxic under specific conditions
+    conditional_toxic = {"Se", "Cr"}
 
+    # Check individual atoms for toxic elements
     for atom in mol.GetAtoms():
         symbol = atom.GetSymbol()
         if symbol in always_toxic:
+            # Exclude stabilized arsenates
+            if symbol == "As" and mol.HasSubstructMatch(Chem.MolFromSmarts("[As](=O)(O)O")):
+                continue
             return True
         if symbol in conditional_toxic:
-            if symbol == "Cr" and atom.GetFormalCharge() == 6:  # Chromium(VI)
+            # Chromium(VI) is toxic
+            if symbol == "Cr" and atom.GetFormalCharge() == 6:
                 return True
-            if symbol == "Se" and atom.GetFormalCharge() != 0:  # Charged selenium
+            # Selenium (Se) with any charge state other than 0
+            if symbol == "Se" and atom.GetFormalCharge() != 0:
                 return True
 
-    # Generic halogen threshold check (e.g., excessive polyhalogenation)
-    if halogen_count > 2:
-        return True
+    # Halogen-related toxicity
+    halogen_count, halogen_threshold = halogen_toxicity_score(mol)
+
+    # Threshold for excessive halogenation
+    # If the halogen count exceeds the threshold, the molecule is flagged as toxic
+    # unless it has stabilizing factors such as:
+    # - Aromatic stabilization: at least one aromatic atom present
+    # - Acidic stabilization: at least one atom with a negative formal charge
+    # - Fluorine dominance: at least 90% of halogens are fluorine
+    if halogen_count > halogen_threshold:
+        if not any(atom.GetIsAromatic() for atom in mol.GetAtoms()) or \
+           not any(atom.GetFormalCharge() < 0 for atom in mol.GetAtoms()):
+            return True
 
     return False
 
 
-def contains_toxic_groups(mol):
+def contains_toxic_groups(mol) -> bool:
     """
     Check if a molecule contains known toxic groups via SMARTS patterns.
+
+    Exempts compounds with:
+    - Stabilizing functional groups like phenols or carbamates.
+    - Trifluoromethyl-dominated compounds unless combined with reactive motifs.
+
+    Args:
+        mol (rdkit.Chem.Mol): The molecule to evaluate.
+
+    Returns:
+        bool: True if the molecule contains toxic groups, False otherwise.
     """
     toxic_smarts = [
         "[Cr](=O)(=O)=O",  # Chromium(VI)
@@ -262,18 +356,33 @@ def contains_toxic_groups(mol):
         "[Se][Se]",  # Diselenide
         "[Be]",  # Beryllium
         "[Tl+]",  # Thallium ion
-        "c1(c(F)cc(F)c1)F",  # Example polychloro/fluoro phenols
-        "[C](F)(F)F",  # Trifluoromethyl group
         "C#N",  # Cyanides
         "[N+](=O)[O-]",  # Nitro groups
         "P(=O)(O)(O)O",  # Phosphate esters
-        "c1ccc2c(c1)ccc3c2ccc4c3cccc4",  # Example polycyclic aromatic
+        "[C](Cl)(Cl)Cl",  # Reactive trichloromethyl group
     ]
 
+    # Exempt compounds with stabilizing functional groups
+    if mol.HasSubstructMatch(Chem.MolFromSmarts("c1ccc(O)c(O)c1")):  # Phenols
+        return False
+    if mol.HasSubstructMatch(Chem.MolFromSmarts("C(=O)O[C]")):  # Carbamates
+        return False
+
+    # Exempt trifluoromethyl-dominated compounds unless combined with reactive motifs
+    trifluoromethyl_count = len(mol.GetSubstructMatches(Chem.MolFromSmarts("[C](F)(F)F")))
+    if trifluoromethyl_count > 1:  # More than one trifluoromethyl group
+        if not any(
+            mol.HasSubstructMatch(Chem.MolFromSmarts(pattern))
+            for pattern in ["[N+](=O)[O-]", "C#N", "[C](Cl)(Cl)Cl"]
+        ):
+            return False  # Exempt
+
+    # Check for toxic groups
     for pattern in toxic_smarts:
         smarts = Chem.MolFromSmarts(pattern)
         if smarts and mol.HasSubstructMatch(smarts):
             return True
+
     return False
 
 
@@ -685,6 +794,11 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
 
 if __name__ == "__main__":
     from workbench.api import DataSource
+
+    # Toxicity tests
+    smiles = "C[C@@H](O[C@H]1OCCN(CC2=NC(=O)N=N2)[C@H]1C1CCC(F)CC1)c1cc(C(F)(F)F)cc(C(F)(F)F)c1"
+    mol = Chem.MolFromSmiles(smiles)
+    print(contains_toxic_groups(mol))
 
     # Pyridone molecule
     smiles = "C1=CC=NC(=O)C=C1"
