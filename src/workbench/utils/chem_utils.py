@@ -492,12 +492,6 @@ def add_compound_tags(df, mol_column="molecule"):
         fragments = Chem.GetMolFrags(mol, asMols=True)
         if len(fragments) > 1:
             tags.append("frag")
-            mol = remove_disconnected_fragments(mol)  # Keep largest fragment
-            if mol is None:  # Handle largest fragment with no heavy atoms
-                tags.append("no_heavy_atoms")
-                log.warning(f"No heavy atoms: {row['smiles']}")
-                df.at[idx, "tags"] = tags
-                continue
 
         # Check for heavy metals
         if contains_heavy_metals(mol):
@@ -517,9 +511,8 @@ def add_compound_tags(df, mol_column="molecule"):
         if is_druglike_compound(mol):
             tags.append("druglike")
 
-        # Update tags and molecule
+        # Update tags
         df.at[idx, "tags"] = tags
-        df.at[idx, mol_column] = mol  # Update molecule after processing (if needed)
 
     return df
 
@@ -547,8 +540,8 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         log.info("Converting SMILES to RDKit Molecules...")
         df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
 
-    # Add Compound Tags
-    df = add_compound_tags(df, mol_column="molecule")
+    # If we have fragments in our compounds, get the largest fragment before computing descriptors
+    largest_frags = df["molecule"].apply(remove_disconnected_fragments)
 
     # Now get all the RDKIT Descriptors
     all_descriptors = [x[0] for x in Descriptors._descList]
@@ -565,7 +558,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     log.info("Computing RDKit Descriptors...")
     calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
     column_names = calc.GetDescriptorNames()
-    descriptor_values = [calc.CalcDescriptors(m) for m in df["molecule"]]
+    descriptor_values = [calc.CalcDescriptors(m) for m in largest_frags]
     rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
 
     # Now compute Mordred Features
@@ -574,7 +567,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     calc = Calculator()
     for des in descriptor_choice:
         calc.register(des)
-    mordred_df = calc.pandas(df["molecule"], nproc=1)
+    mordred_df = calc.pandas(largest_frags, nproc=1)
 
     # Combine the DataFrame with the RDKit and Mordred Descriptors added
     output_df = pd.concat([df, rdkit_features_df, mordred_df], axis=1)
@@ -612,14 +605,14 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=4096) -> pd.Da
         log.info("Converting SMILES to RDKit Molecules...")
         df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
 
-    # Add Compound Tags
-    df = add_compound_tags(df, mol_column="molecule")
+    # If we have fragments in our compounds, get the largest fragment before computing fingerprints
+    largest_frags = df["molecule"].apply(remove_disconnected_fragments)
 
     # Create a Morgan fingerprint generator
     morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=nBits, countSimulation=True)
 
     # Compute Morgan fingerprints (vectorized)
-    fingerprints = df["molecule"].apply(
+    fingerprints = largest_frags.apply(
         lambda mol: (morgan_generator.GetFingerprint(mol).ToBitString() if mol else pd.NA)
     )
 

@@ -1,9 +1,10 @@
 import pandas as pd
+from rdkit import Chem
 from rdkit.Chem import PandasTools
 
 # Workbench Imports
 from workbench.api.df_store import DFStore
-from workbench.utils.chem_utils import compute_morgan_fingerprints, project_fingerprints
+from workbench.utils.chem_utils import add_compound_tags, compute_morgan_fingerprints, project_fingerprints
 
 
 def prep_sdf_file(filepath: str) -> pd.DataFrame:
@@ -62,6 +63,13 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
     # Set is_toxic to 1 if any of the toxicity columns has a 1
     df["toxic_any"] = (df[assay_cols] == 1).any(axis=1).astype(int)
     print(df["toxic_any"].value_counts(dropna=False))
+
+    # Convert SMILES to RDKit molecule objects (vectorized)
+    if "molecule" not in df.columns:
+        df["molecule"] = df["smiles"].apply(Chem.MolFromSmiles)
+
+    # Add Compound Tags
+    df = add_compound_tags(df, mol_column="molecule")
 
     # Do both TSNE and UMAP projections
     df = compute_morgan_fingerprints(df, radius=2)
