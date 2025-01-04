@@ -1,6 +1,5 @@
 """Chem/RDKIT/Mordred utilities for Workbench"""
 
-import os
 import logging
 import numpy as np
 import pandas as pd
@@ -27,7 +26,6 @@ try:
     from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
     from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
     from rdkit import RDLogger
-    from rdkit import RDPaths
     from rdkit.Chem import FunctionalGroups
 
     # Load functional group hierarchy once during initialization
@@ -354,7 +352,8 @@ def toxic_elements(mol):
 
 # Precalculated SMARTS patterns for toxic functional groups
 toxic_smarts_patterns = [
-    Chem.MolFromSmarts(smarts) for smarts in [
+    Chem.MolFromSmarts(smarts)
+    for smarts in [
         "C(=S)N",  # Dithiocarbamate group
         "P(=O)(O)(O)O",  # Phosphate esters
         "[As](=O)(=O)-[OH]",  # Arsenic oxide
@@ -416,7 +415,7 @@ def toxic_groups(mol) -> bool:
         bool: True if the molecule contains toxic groups, False otherwise.
     """
     # RDKit functional groups to check (limited by RDKit's default hierarchy)
-    toxic_group_names = ['Nitro', 'Azide', 'Alcohol', 'Aldehyde', 'Halogen', 'TerminalAlkyne']
+    toxic_group_names = ["Nitro", "Azide", "Alcohol", "Aldehyde", "Halogen", "TerminalAlkyne"]
 
     for group_name in toxic_group_names:
         group_node = next((node for node in fgroup_hierarchy if node.label == group_name), None)
@@ -878,7 +877,7 @@ if __name__ == "__main__":
     druglike_smiles = ["CC(C)=CCC\\C(C)=C/CO", "CC(C)CCCCCOC(=O)CCS", "OC(=O)CCCCCCCCC=C", "CC(C)(C)CCCCCC(=O)OC=C"]
     mols = [Chem.MolFromSmiles(smile) for smile in druglike_smiles]
     druglike = [is_druglike_compound(mol) for mol in mols]
-    
+
     for smile, is_druglike in zip(druglike_smiles, druglike):
         print(f"SMILES: {smile} -> Drug-like: {is_druglike}")
 
