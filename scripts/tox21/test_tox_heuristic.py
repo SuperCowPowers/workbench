@@ -1,6 +1,6 @@
 from rdkit import Chem
 from workbench.api.df_store import DFStore
-from workbench.utils.chem_utils import contains_toxic_elements, contains_toxic_groups
+from workbench.utils.chem_utils import toxic_elements, toxic_groups
 
 # Grab the tox21 data
 tox21 = DFStore().get("/datasets/chem_info/tox21")
@@ -12,8 +12,55 @@ tox21["molecule"] = tox21["smiles"].apply(lambda smiles: Chem.MolFromSmiles(smil
 too_broad = tox21[(tox21["toxic_tag"] == 1) & (tox21["toxic_any"] == 0)].copy()
 
 # Let's check to see if the too_broad molecules still get flagged as toxic
-too_broad["toxic_elements"] = too_broad["molecule"].apply(contains_toxic_elements)
-too_broad["toxic_groups"] = too_broad["molecule"].apply(contains_toxic_groups)
+too_broad["toxic_elements"] = too_broad["molecule"].apply(toxic_elements)
+too_broad["toxic_groups"] = too_broad["molecule"].apply(toxic_groups)
+
+# Filter out ones with known toxic groups
+toxic_patterns = ["[N+](=O)[O-]", "C#N", "[C](Cl)(Cl)Cl"]  # Known toxic SMARTS patterns
+too_broad = too_broad[
+    ~too_broad["smiles"].apply(
+        lambda s: any(Chem.MolFromSmiles(s).HasSubstructMatch(Chem.MolFromSmarts(p)) for p in toxic_patterns)
+    )
+]
+
+# Print out the results
+print(too_broad[["toxic_any", "toxic_elements", "toxic_groups"]].value_counts(dropna=False))
+
+# Grab the ones marked with toxic elements
+my_toxic_elements = too_broad[too_broad["toxic_elements"]].copy()
+
+# Print out the results
+print("False Positives Elements:")
+print(my_toxic_elements["smiles"].values)
+
+# Grab the ones marked with toxic groups
+my_toxic_groups = too_broad[too_broad["toxic_groups"]].copy()
+
+# Print out the results
+print("False Positives Groups:")
+print(my_toxic_groups["smiles"].values)
+
+# Too narrow: See which molecules are not tagged as toxic but ARE toxic (based on the tox21 dataset)
+too_narrow = tox21[(tox21["toxic_tag"] == 0) & (tox21["toxic_any"] == 1)].copy()
+
+# Let's check to see if the too_narrow molecules are still flagged as not toxic
+too_narrow["toxic_elements"] = too_narrow["molecule"].apply(toxic_elements)
+too_narrow["toxic_groups"] = too_narrow["molecule"].apply(toxic_groups)
+
+
+# Print out the results
+print(too_narrow[["toxic_any", "toxic_elements", "toxic_groups"]].value_counts(dropna=False))
+
+# Grab the ones not flagged by either toxic elements or toxic groups (so two false negatives)
+my_toxic_elements = too_narrow[~too_narrow["toxic_elements"] & ~too_narrow["toxic_groups"]].copy()
+
+# Print out the results
+print(f"False Negatives: {len(my_toxic_elements)}")
+print(list(my_toxic_elements["smiles"].values))
+
+
+# Storage
+"""
 
 # This is a list of probably true toxic molecules
 probably_true_toxic = {
@@ -76,33 +123,4 @@ probably_true_toxic = {
 
 # Filter out the probably true toxic molecules
 too_broad = too_broad[~too_broad["smiles"].isin(probably_true_toxic)]
-
-# Filter out ones with known toxic groups
-toxic_patterns = ["[N+](=O)[O-]", "C#N", "[C](Cl)(Cl)Cl"]  # Known toxic SMARTS patterns
-too_broad = too_broad[
-    ~too_broad["smiles"].apply(
-        lambda s: any(Chem.MolFromSmiles(s).HasSubstructMatch(Chem.MolFromSmarts(p)) for p in toxic_patterns)
-    )
-]
-
-# Print out the results
-print(too_broad[["toxic_any", "toxic_elements", "toxic_groups"]].value_counts(dropna=False))
-
-# Grab the ones marked with toxic elements
-# toxic_elements = too_broad[too_broad["toxic_elements"]].copy()
-
-# Print out the results
-# print(toxic_elements["smiles"].values)
-
-# Grab the ones marked with toxic groups
-toxic_groups = too_broad[too_broad["toxic_groups"]].copy()
-
-# Print out the results
-print(toxic_groups["smiles"].values)
-
-# Too narrow: See which molecules are not tagged as toxic but ARE toxic (based on the tox21 dataset)
-too_narrow = tox21[(tox21["toxic_tag"] == 0) & (tox21["toxic_any"] == 1)].copy()
-
-# Let's check to see if the too_narrow molecules are still flagged as not toxic
-too_narrow["toxic_elements"] = too_narrow["molecule"].apply(contains_toxic_elements)
-too_narrow["toxic_groups"] = too_narrow["molecule"].apply(contains_toxic_groups)
+"""
