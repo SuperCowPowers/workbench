@@ -12,7 +12,7 @@ print(f"Account: {aws_account}")
 print(f"Region: {aws_region}")
 
 # When you want a different docker image change this line
-dashboard_image = "public.ecr.aws/m6i5k1r2/workbench_dashboard:v0_8_88_amd64"
+dashboard_image = "public.ecr.aws/m6i5k1r2/workbench_dashboard:v0_8_90_amd64"
 
 # Workbench Configuration
 try:

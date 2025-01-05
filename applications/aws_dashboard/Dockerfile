@@ -24,7 +24,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Workbench Dashboard on its own layer
-RUN pip install --no-cache-dir workbench==0.8.88
+RUN pip install --no-cache-dir workbench==0.8.90
 
 # Copy the Nginx and Supervisor configuration files
 COPY nginx.conf /etc/nginx/sites-available/default

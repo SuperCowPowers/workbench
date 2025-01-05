@@ -13,4 +13,4 @@ COPY requirements-no-dash.txt requirements.txt ./
 RUN pip install --no-cache-dir -r requirements-no-dash.txt
 
 # Install Workbench on its own layer
-RUN pip install --no-cache-dir 'workbench[ml-tool,chem]'==0.8.88
+RUN pip install --no-cache-dir 'workbench[ml-tool,chem]'==0.8.90
