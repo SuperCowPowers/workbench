@@ -3483,7 +3483,7 @@
 
 <details class="common-usage" open>
   <summary>Common Usage</summary>
-  <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">workbench.core.transforms.features_to_model.features_to_model</span> <span class="kn">import</span> <span class="n">FeaturesToModel</span>
+  <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.core.transforms.features_to_model.features_to_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeaturesToModel</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">to_model</span> <span class="o">=</span> <span class="n">FeaturesToModel</span><span class="p">(</span><span class="n">feature_uuid</span><span class="p">,</span> <span class="n">model_uuid</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="p">)</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">to_model</span><span class="o">.</span><span class="n">set_output_tags</span><span class="p">([</span><span class="s2">&quot;abalone&quot;</span><span class="p">,</span> <span class="s2">&quot;public&quot;</span><span class="p">,</span> <span class="s2">&quot;whatever&quot;</span><span class="p">])</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;class_number_of_rings&quot;</span><span class="p">,</span>
@@ -3766,7 +3766,7 @@
 <span class="normal"><a href="#__codelineno-0-282">282</a></span>
 <span class="normal"><a href="#__codelineno-0-283">283</a></span>
 <span class="normal"><a href="#__codelineno-0-284">284</a></span>
-<span class="normal"><a href="#__codelineno-0-285">285</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="k">class</span> <span class="nc">FeaturesToModel</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
+<span class="normal"><a href="#__codelineno-0-285">285</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="k">class</span><span class="w"> </span><span class="nc">FeaturesToModel</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;FeaturesToModel: Train/Create a Model from a FeatureSet</span>
 </span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18"></a>
 </span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">    Common Usage:</span>
@@ -3779,7 +3779,7 @@
 </span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="sd">        ```</span>
 </span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a>        <span class="bp">self</span><span class="p">,</span>
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>        <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 </span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>        <span class="n">model_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -3818,7 +3818,7 @@
 </span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">class_labels</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>
-</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a>    <span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span>
+</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform_impl</span><span class="p">(</span>
 </span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">target_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">feature_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">train_all_data</span><span class="o">=</span><span class="kc">False</span>
 </span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a>    <span class="p">):</span>
 </span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Generic Features to Model: Note you should create a new class and inherit from</span>
@@ -3992,7 +3992,7 @@
 </span><span id="__span-0-239"><a id="__codelineno-0-239" name="__codelineno-0-239"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">important</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Creating new model </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-240"><a id="__codelineno-0-240" name="__codelineno-0-240"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">create_and_register_model</span><span class="p">()</span>
 </span><span id="__span-0-241"><a id="__codelineno-0-241" name="__codelineno-0-241"></a>
-</span><span id="__span-0-242"><a id="__codelineno-0-242" name="__codelineno-0-242"></a>    <span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="__span-0-242"><a id="__codelineno-0-242" name="__codelineno-0-242"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 </span><span id="__span-0-243"><a id="__codelineno-0-243" name="__codelineno-0-243"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Post-Transform: Calling onboard() on the Model&quot;&quot;&quot;</span>
 </span><span id="__span-0-244"><a id="__codelineno-0-244" name="__codelineno-0-244"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Calling onboard() on the Model...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-245"><a id="__codelineno-0-245" name="__codelineno-0-245"></a>
@@ -4008,7 +4008,7 @@
 </span><span id="__span-0-255"><a id="__codelineno-0-255" name="__codelineno-0-255"></a>        <span class="c1"># Call the Model onboard method</span>
 </span><span id="__span-0-256"><a id="__codelineno-0-256" name="__codelineno-0-256"></a>        <span class="n">output_model</span><span class="o">.</span><span class="n">onboard_with_args</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_column</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_feature_list</span><span class="p">)</span>
 </span><span id="__span-0-257"><a id="__codelineno-0-257" name="__codelineno-0-257"></a>
-</span><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a>    <span class="k">def</span> <span class="nf">create_and_register_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">create_and_register_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="__span-0-259"><a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create and Register the Model&quot;&quot;&quot;</span>
 </span><span id="__span-0-260"><a id="__codelineno-0-260" name="__codelineno-0-260"></a>
 </span><span id="__span-0-261"><a id="__codelineno-0-261" name="__codelineno-0-261"></a>        <span class="c1"># Get the metadata/tags to push into AWS</span>
@@ -4110,7 +4110,7 @@ Args:
 <span class="normal"><a href="#__codelineno-0-63">63</a></span>
 <span class="normal"><a href="#__codelineno-0-64">64</a></span>
 <span class="normal"><a href="#__codelineno-0-65">65</a></span>
-<span class="normal"><a href="#__codelineno-0-66">66</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-66">66</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
 </span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="bp">self</span><span class="p">,</span>
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="n">feature_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
 </span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="n">model_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -4196,7 +4196,7 @@ Args:
 <span class="normal"><a href="#__codelineno-0-282">282</a></span>
 <span class="normal"><a href="#__codelineno-0-283">283</a></span>
 <span class="normal"><a href="#__codelineno-0-284">284</a></span>
-<span class="normal"><a href="#__codelineno-0-285">285</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="k">def</span> <span class="nf">create_and_register_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal"><a href="#__codelineno-0-285">285</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-258"><a id="__codelineno-0-258" name="__codelineno-0-258"></a><span class="k">def</span><span class="w"> </span><span class="nf">create_and_register_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="__span-0-259"><a id="__codelineno-0-259" name="__codelineno-0-259"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create and Register the Model&quot;&quot;&quot;</span>
 </span><span id="__span-0-260"><a id="__codelineno-0-260" name="__codelineno-0-260"></a>
 </span><span id="__span-0-261"><a id="__codelineno-0-261" name="__codelineno-0-261"></a>    <span class="c1"># Get the metadata/tags to push into AWS</span>
@@ -4259,7 +4259,7 @@ Args:
 <span class="normal"><a href="#__codelineno-0-253">253</a></span>
 <span class="normal"><a href="#__codelineno-0-254">254</a></span>
 <span class="normal"><a href="#__codelineno-0-255">255</a></span>
-<span class="normal"><a href="#__codelineno-0-256">256</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-242"><a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="k">def</span> <span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="normal"><a href="#__codelineno-0-256">256</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-242"><a id="__codelineno-0-242" name="__codelineno-0-242"></a><span class="k">def</span><span class="w"> </span><span class="nf">post_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 </span><span id="__span-0-243"><a id="__codelineno-0-243" name="__codelineno-0-243"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Post-Transform: Calling onboard() on the Model&quot;&quot;&quot;</span>
 </span><span id="__span-0-244"><a id="__codelineno-0-244" name="__codelineno-0-244"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Post-Transform: Calling onboard() on the Model...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-245"><a id="__codelineno-0-245" name="__codelineno-0-245"></a>
@@ -4473,7 +4473,7 @@ Args:
 <span class="normal"><a href="#__codelineno-0-237">237</a></span>
 <span class="normal"><a href="#__codelineno-0-238">238</a></span>
 <span class="normal"><a href="#__codelineno-0-239">239</a></span>
-<span class="normal"><a href="#__codelineno-0-240">240</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="k">def</span> <span class="nf">transform_impl</span><span class="p">(</span>
+<span class="normal"><a href="#__codelineno-0-240">240</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="k">def</span><span class="w"> </span><span class="nf">transform_impl</span><span class="p">(</span>
 </span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>    <span class="bp">self</span><span class="p">,</span> <span class="n">target_column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">feature_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">train_all_data</span><span class="o">=</span><span class="kc">False</span>
 </span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="p">):</span>
 </span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Generic Features to Model: Note you should create a new class and inherit from</span>
@@ -4670,7 +4670,7 @@ Args:
 </div><h2 id="supported-models">Supported Models</h2>
 <p>Currently Workbench supports XGBoost (classifier/regressor), and Scikit Learn models. Those models can be created by just specifying different parameters to the <code>FeaturesToModel</code> class. The main issue with the supported models is they are vanilla versions with default parameters, any customization should be done with <a href="#custom-models">Custom Models</a></p>
 <h3 id="xgboost">XGBoost</h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">workbench.core.transforms.features_to_model.features_to_model</span> <span class="kn">import</span> <span class="n">FeaturesToModel</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.core.transforms.features_to_model.features_to_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeaturesToModel</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># XGBoost Regression Model</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">input_uuid</span> <span class="o">=</span> <span class="s2">&quot;abalone_features&quot;</span>
@@ -4694,7 +4694,7 @@ Args:
 </span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="n">to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;class_number_of_rings&quot;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Abalone Quantile Regression&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="scikit-learn">Scikit-Learn</h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">workbench.core.transforms.features_to_model.features_to_model</span> <span class="kn">import</span> <span class="n">FeaturesToModel</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.core.transforms.features_to_model.features_to_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeaturesToModel</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Scikit-Learn Kmeans Clustering Model</span>
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">input_uuid</span> <span class="o">=</span> <span class="s2">&quot;wine_features&quot;</span>
@@ -4756,8 +4756,8 @@ Args:
 <li>Train/deploy your custom script</li>
 </ul>
 <h3 id="trainingdeploying-custom-models">Training/Deploying Custom Models</h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span> <span class="nn">workbench.api</span> <span class="kn">import</span> <span class="n">ModelType</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span> <span class="nn">workbench.core.transforms.features_to_model.features_to_model</span> <span class="kn">import</span> <span class="n">FeaturesToModel</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelType</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.core.transforms.features_to_model.features_to_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeaturesToModel</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Note this directory should also have a requirements.txt in it</span>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">my_custom_script</span> <span class="o">=</span> <span class="s2">&quot;/full/path/to/my/directory/my_custom_script.py&quot;</span>
@@ -4771,7 +4771,7 @@ Args:
 </span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">to_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">target_column</span><span class="o">=</span><span class="n">target_column</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Custom Model&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="custom-models-create-an-endpointrun-inference">Custom Models: Create an Endpoint/Run Inference</h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">workbench.api</span> <span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Endpoint</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">Endpoint</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="s2">&quot;my-custom-model&quot;</span><span class="p">)</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">end</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">()</span>   <span class="c1"># Note: This takes a while</span>

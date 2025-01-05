@@ -3421,7 +3421,7 @@
 <span class="normal"><a href="#__codelineno-0-118">118</a></span>
 <span class="normal"><a href="#__codelineno-0-119">119</a></span>
 <span class="normal"><a href="#__codelineno-0-120">120</a></span>
-<span class="normal"><a href="#__codelineno-0-121">121</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="k">class</span> <span class="nc">MDQView</span><span class="p">:</span>
+<span class="normal"><a href="#__codelineno-0-121">121</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="k">class</span><span class="w"> </span><span class="nc">MDQView</span><span class="p">:</span>
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;MDQView Class: A View that computes various model/feature quality metrics</span>
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16"></a>
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    Common Usage:</span>
@@ -3440,7 +3440,7 @@
 </span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>
 </span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a>    <span class="nd">@classmethod</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="k">def</span> <span class="nf">create</span><span class="p">(</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>        <span class="bp">cls</span><span class="p">,</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>        <span class="n">fs</span><span class="p">:</span> <span class="n">FeatureSet</span><span class="p">,</span>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>        <span class="n">endpoint</span><span class="p">:</span> <span class="n">Endpoint</span><span class="p">,</span>
@@ -3519,7 +3519,7 @@
 </span><span id="__span-0-109"><a id="__codelineno-0-109" name="__codelineno-0-109"></a>        <span class="k">return</span> <span class="n">PandasToView</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">view_name</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">df</span><span class="o">=</span><span class="n">mdq_df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="n">id_column</span><span class="p">)</span>
 </span><span id="__span-0-110"><a id="__codelineno-0-110" name="__codelineno-0-110"></a>
 </span><span id="__span-0-111"><a id="__codelineno-0-111" name="__codelineno-0-111"></a>    <span class="nd">@staticmethod</span>
-</span><span id="__span-0-112"><a id="__codelineno-0-112" name="__codelineno-0-112"></a>    <span class="k">def</span> <span class="nf">calculate_data_quality</span><span class="p">(</span><span class="n">tags</span><span class="p">):</span>
+</span><span id="__span-0-112"><a id="__codelineno-0-112" name="__codelineno-0-112"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_data_quality</span><span class="p">(</span><span class="n">tags</span><span class="p">):</span>
 </span><span id="__span-0-113"><a id="__codelineno-0-113" name="__codelineno-0-113"></a>        <span class="n">score</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># Start with the default score</span>
 </span><span id="__span-0-114"><a id="__codelineno-0-114" name="__codelineno-0-114"></a>        <span class="k">if</span> <span class="s2">&quot;coincident&quot;</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
 </span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a>            <span class="n">score</span> <span class="o">-=</span> <span class="mf">1.0</span>
@@ -3743,7 +3743,7 @@
 <span class="normal"><a href="#__codelineno-0-107">107</a></span>
 <span class="normal"><a href="#__codelineno-0-108">108</a></span>
 <span class="normal"><a href="#__codelineno-0-109">109</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="nd">@classmethod</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="k">def</span> <span class="nf">create</span><span class="p">(</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a><span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span>
 </span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a>    <span class="bp">cls</span><span class="p">,</span>
 </span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a>    <span class="n">fs</span><span class="p">:</span> <span class="n">FeatureSet</span><span class="p">,</span>
 </span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a>    <span class="n">endpoint</span><span class="p">:</span> <span class="n">Endpoint</span><span class="p">,</span>
