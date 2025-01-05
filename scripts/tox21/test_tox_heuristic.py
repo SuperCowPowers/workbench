@@ -29,7 +29,7 @@ smarts_patterns = [
     "[N+](C)(C)C",  # Tertiary ammonium
     "[n+](N)no",  # Nitro heterocycle with amine
     "[CBr]",  # Organobromides with high halogenation
-    "[n+]1cccc(CO)c1"  # Nitroso compound with CO group
+    "[n+]1cccc(CO)c1",  # Nitroso compound with CO group
 ]
 
 # Apply Chem.MolFromSmarts() to each pattern
