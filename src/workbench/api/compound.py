@@ -37,7 +37,9 @@ class Compound:
 
     def __str__(self) -> str:
         """User-friendly string representation."""
-        str_output = f"Compound({self.id})\n  SMILES: {self.smiles}\n  Tags: {', '.join(self.tags) if self.tags else 'None'}"
+        str_output = (
+            f"Compound({self.id})\n  SMILES: {self.smiles}\n  Tags: {', '.join(self.tags) if self.tags else 'None'}"
+        )
         str_output += f"\n  Meta: {self.meta if self.meta else 'None'}"
         return str_output
 

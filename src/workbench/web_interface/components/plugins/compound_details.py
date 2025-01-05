@@ -133,5 +133,5 @@ if __name__ == "__main__":
     compound = Compound("AQSOL-0001")
     compound.smiles = "CC(C)C1=CC=C(C=C1)C(=O)O"
     compound.tags = ["toxic", "primary"]
-    compound.meta = {"toxic_elements": None, "toxic_groups": ['[C;$(C#CH)]','[C;$(C#CH)]']}
+    compound.meta = {"toxic_elements": None, "toxic_groups": ["[C;$(C#CH)]", "[C;$(C#CH)]"]}
     PluginUnitTest(CompoundDetails, input_data=compound, theme="light").run()
