@@ -3,7 +3,7 @@
 import logging
 import numpy as np
 import pandas as pd
-from typing import Optional
+from typing import List, Optional
 import base64
 from sklearn.manifold import TSNE
 
@@ -289,153 +289,89 @@ def halogen_toxicity_score(mol):
     return halogen_count, halogen_threshold
 
 
-def toxic_elements(mol):
+def toxic_elements(mol: Mol) -> Optional[List[str]]:
     """
-    Check if a molecule contains toxic elements or excessive halogenation.
+    Identifies toxic elements or groups in a molecule.
 
-    - Elements are categorized as always toxic (e.g., heavy metals) or conditionally toxic
-      based on charge state (e.g., Chromium(VI), charged Selenium).
-    - Adjusts halogen counts for trifluoromethyl groups, aromatic systems, and perfluorinated compounds.
-    - Flags molecules with excessive halogenation unless mitigated by aromatic stabilization,
-      acidic groups, or specific stabilizing functional groups like carboxylic acids.
+    Args:
+        mol: RDKit molecule object.
 
     Returns:
-        bool: True if the molecule contains toxic elements or meets excessive halogenation criteria.
+        Optional[List[str]]: List of toxic elements if found, otherwise None.
     """
     # Elements always considered toxic
-    always_toxic = {"Pb", "Hg", "Cd", "As", "Be", "Tl", "Sb"}
+    always_toxic = {"Pb", "Hg", "Cd", "As", "Be", "Tl", "Sb"}  # Heavy metals
+    toxic_found = []
 
-    # Check individual atoms for toxic elements
     for atom in mol.GetAtoms():
         symbol = atom.GetSymbol()
+
+        # Check for always toxic elements
         if symbol in always_toxic:
-            # Exclude stabilized arsenates
-            if symbol == "As" and mol.HasSubstructMatch(Chem.MolFromSmarts("[As](=O)(O)O")):
-                continue
-            return True
+            toxic_found.append(symbol)
 
-        # Check for conditionally toxic elements
-        # Chromium(VI) is toxic
-        if symbol == "Cr" and atom.GetFormalCharge() == 6:
-            return True
-        # Flag sulfur or selenium with any charge state other than 0
-        if symbol == "S" and atom.GetFormalCharge() != 0:
-            return True
-        if symbol == "Se" and atom.GetFormalCharge() != 0:
-            return True
-        # Flag positively charged nitrogen
+        # Conditionally toxic nitrogen (positively charged)
         if symbol == "N" and atom.GetFormalCharge() > 0:
-            return True
+            toxic_found.append(symbol)
 
-    # Halogen-related toxicity
-    halogen_count, halogen_threshold = halogen_toxicity_score(mol)
+        # Excessive halogenation
+        if symbol in {"Cl", "Br", "I", "F"}:
+            halogen_count, halogen_threshold = halogen_toxicity_score(mol)
+            if halogen_count > halogen_threshold:
+                toxic_found.append(symbol)
 
-    # Threshold for excessive halogenation
-    # If the halogen count exceeds the threshold, the molecule is flagged as toxic
-    # unless it has stabilizing factors such as:
-    # - Aromatic stabilization: at least one aromatic atom present
-    # - Acidic stabilization: at least one atom with a negative formal charge
-    # - Fluorine dominance: at least 90% of halogens are fluorine
-    if halogen_count > halogen_threshold:
-        # Check for stabilization conditions
-        has_aromatic_stabilization = any(atom.GetIsAromatic() for atom in mol.GetAtoms())
-        has_acidic_stabilization = any(atom.GetFormalCharge() < 0 for atom in mol.GetAtoms())
-        halogens = [atom for atom in mol.GetAtoms() if atom.GetSymbol() in {"F", "Cl", "Br", "I"}]
-        fluorine_dominance = sum(1 for atom in halogens if atom.GetSymbol() == "F") / halogen_count > 0.9
-
-        # Only exempt compounds if all stabilizing factors are present
-        if not (has_aromatic_stabilization and has_acidic_stabilization and fluorine_dominance):
-            return True
-
-    return False
+    return toxic_found if toxic_found else None
 
 
 # Precalculated SMARTS patterns for toxic functional groups
 toxic_smarts_patterns = [
-    Chem.MolFromSmarts(smarts)
-    for smarts in [
-        "C(=S)N",  # Dithiocarbamate group
-        "P(=O)(O)(O)O",  # Phosphate esters
-        "[As](=O)(=O)-[OH]",  # Arsenic oxide
-        "[C](Cl)(Cl)(Cl)",  # Trichloromethyl group
-        "[Cr](=O)(=O)=O",  # Chromium(VI)
-        "[N+](C)(C)(C)(C)",  # Quaternary ammonium
-        "[S]C",  # Thioether group
-        "[Se][Se]",  # Diselenide group
-        "c1c(Cl)c(Cl)c(Cl)c1",  # Trichlorinated aromatic ring
-        "c1cc(O)c(O)c2ccccc2c1",  # Bisphenol-like structures
-        "c[N]",  # Nitroaromatic group
-        "[CX3](=O)[CX4][Cl,Br,F,I]",  # Carbonyl with halogen on adjacent carbon
-        "n1ccnc1",  # Pyrimidine group
-        "n(O)",  # Nitroso group
-        "C(=O)O",  # Carboxylic acid group
-        "C(=O)[O;!H]",  # Ester group
-        "C=C",  # Alkene (simple)
-        "C=C([O])",  # Conjugated alkene with oxygen
-        "[P+](C*)(C*)(C*)(C*)",  # Phosphonium group (flexible)
-        "C(=O)[C]",  # Carbonyl on alkyl groups
-        "C(=O)N",  # Peptide bond
-        "[CX3](=O)C1=CC2=CC3C(C1=O)C2=C3",  # Extended Quinone
-        "[C]=[N]",  # Imines
-        "C(=O)[C]C",  # Carbonyl groups attached to alkyl
-        "[C](=O)N",  # Amides
-        "C(=O)[C@H](C)C",  # Peptide-like structures
-        "[CX3](=O)C1=CC2=CC(C1=O)C2=C",  # Quinone-like with alkylation
-        "Cl[Bi](Cl)",  # Biaryl with Bismuth
-        "COc1cc(C)nc(-n2nc(C)cc2OC)n1",  # Alkylated aromatic with nitro
-        "c1cc(O)c(O)c1",  # Alkylation on aromatic with multiple rings
-        "S(N)(=O)=O",  # Sulfonate group
-        "[CX3](OC)C",  # Alkylated ether group
-        "[N]C",  # Alkylated amines
-        "[S][S]",  # Disulfide group
-        "[Se]",  # Selenium-containing groups
-        "C(C)(C)(C)[N]",  # Tertiary amines
-        "C[OX2]",  # Ethers
-        "C[N]",  # Aliphatic amines
-        "C[N+](C)",  # Quaternary amines
-        "n1cccc2c1cccc2",  # Fused nitrogen-containing aromatic rings
-        "[Sn](Cl)",  # Organotin with chlorine
-        "n1sccc1=O",  # Thiophene derivative with a ketone
-        "[Au](Cl)",  # Gold chloride complex
-        "[Cr](=O)([O-])",  # Chromium(VI) complex with oxygen
-        "[Sn](C)(C)(C)(C)O",  # Generalized organotin with oxygen and alkyl groups
-    ]
+    "C(=S)N",  # Dithiocarbamate group
+    "P(=O)(O)(O)O",  # Phosphate esters
+    "[As](=O)(=O)-[OH]",  # Arsenic oxide
+    "[C](Cl)(Cl)(Cl)",  # Trichloromethyl group
+    "[Cr](=O)(=O)=O",  # Chromium(VI)
+    "[N+](C)(C)(C)(C)",  # Quaternary ammonium
+    "[Se][Se]",  # Diselenide group
+    "c1c(Cl)c(Cl)c(Cl)c1",  # Trichlorinated aromatic ring
+    "[CX3](=O)[CX4][Cl,Br,F,I]",  # Carbonyl with halogen on adjacent carbon
+    "[P+](C*)(C*)(C*)(C*)",  # Phosphonium group (flexible)
+    "NC(=S)c1c(Cl)cccc1Cl",  # Thiocarbamate with chlorobenzene
+    "NC(=S)Nc1ccccc1",  # Thiocarbamate with phenyl group
+    "S=C1NCCN1",  # Thiourea derivative
 ]
 
 
-def toxic_groups(mol) -> bool:
+def toxic_groups(mol: Mol) -> Optional[List[str]]:
     """
-    Check if a molecule contains known toxic functional groups using RDKit's Functional Groups
-    and custom SMARTS patterns.
+    Check if a molecule contains known toxic functional groups using SMARTS patterns.
 
     Args:
         mol (rdkit.Chem.Mol): The molecule to evaluate.
 
     Returns:
-        bool: True if the molecule contains toxic groups, False otherwise.
+        Optional[List[str]]: List of SMARTS patterns for toxic groups if found, otherwise None.
     """
-    # RDKit functional groups to check (limited by RDKit's default hierarchy)
+    toxic_matches = []
+
+    # RDKit functional groups to check
     toxic_group_names = ["Nitro", "Azide", "Alcohol", "Aldehyde", "Halogen", "TerminalAlkyne"]
 
     for group_name in toxic_group_names:
         group_node = next((node for node in fgroup_hierarchy if node.label == group_name), None)
         if group_node:
-            pattern = Chem.MolFromSmarts(group_node.smarts)
-            if mol.HasSubstructMatch(pattern):
-                return True
-        else:
-            log.warning(f"Functional group '{group_name}' not found in the hierarchy")
+            if mol.HasSubstructMatch(Chem.MolFromSmarts(group_node.smarts)):
+                toxic_matches.append(group_node.smarts)
 
     # Custom SMARTS patterns for toxic functional groups
-    for pattern in toxic_smarts_patterns:
-        if mol.HasSubstructMatch(pattern):
-            return True
+    for smarts in toxic_smarts_patterns:
+        if mol.HasSubstructMatch(Chem.MolFromSmarts(smarts)):
+            toxic_matches.append(smarts)
 
     # Exempt stabilizing functional groups
     if mol.HasSubstructMatch(Chem.MolFromSmarts("c1ccc(O)c(O)c1")):  # Phenols
-        return False
+        return None
 
-    return False
+    return toxic_matches if toxic_matches else None
 
 
 def contains_metalloenzyme_relevant_metals(mol):
@@ -852,7 +788,6 @@ if __name__ == "__main__":
 
     # SVG image of the molecule
     svg = svg_from_smiles(smiles)
-    print(svg)
 
     # PIL image of the molecule
     img = img_from_smiles(smiles)
