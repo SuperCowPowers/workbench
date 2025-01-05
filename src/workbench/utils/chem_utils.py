@@ -449,6 +449,7 @@ def add_compound_tags(df, mol_column="molecule"):
     """
     # Initialize the tags column
     df["tags"] = [[] for _ in range(len(df))]
+    df["meta"] = [{} for _ in range(len(df))]
 
     # Process each molecule in the DataFrame
     for idx, row in df.iterrows():
@@ -469,10 +470,16 @@ def add_compound_tags(df, mol_column="molecule"):
             tags.append("heavy_metals")
 
         # Check for toxic elements
-        if toxic_elements(mol):
+        te = toxic_elements(mol)
+        if te:
             tags.append("toxic_element")
-        if toxic_groups(mol):
+            df.at[idx, "meta"]["toxic_elements"] = te
+
+        # Check for toxic groups
+        tg = toxic_groups(mol)
+        if tg:
             tags.append("toxic_group")
+            df.at[idx, "meta"]["toxic_groups"] = tg
 
         # Check for metalloenzyme-relevant metals
         if contains_metalloenzyme_relevant_metals(mol):

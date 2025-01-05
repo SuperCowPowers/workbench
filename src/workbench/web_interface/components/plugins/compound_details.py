@@ -98,22 +98,28 @@ class CompoundDetails(PluginInterface):
                 str: A markdown string
         """
 
-        def escape_markdown(value: str) -> str:
+        def escape_markdown(value) -> str:
             """Escape special characters in Markdown strings."""
-            if isinstance(value, str):
-                # Escape special Markdown characters using regex
-                return re.sub(r"([<>\[\]])", r"\\\1", value)
-            elif isinstance(value, list):
-                # Generate styled spans for tags
-                tag_substrings = {"toxic": "alert", "heavy": "warning", "frag": "warning", "druglike": "good"}
-                return tag_styling(value, tag_substrings)
-            return str(value)  # Convert other types to string
+            return re.sub(r"([<>\[\]])", r"\\\1", str(value))
 
         # Construct the markdown string
         markdown = ""
         for key, value in compound.details().items():
-            escaped_value = escape_markdown(value)
-            markdown += f"**{key}:** {escaped_value}  \n"
+            # Convert tags to styled spans
+            if key == "tags":
+                tag_substrings = {"toxic": "alert", "heavy": "warning", "frag": "warning", "druglike": "good"}
+                markdown += f"**{key}:** {tag_styling(value, tag_substrings)}  \n"
+            # For dictionaries, convert to Markdown
+            elif isinstance(value, dict):
+                for k, v in value.items():
+                    if v is not None:
+                        if isinstance(v, list):
+                            v = ", ".join(v)
+                        escaped_value = escape_markdown(v)
+                        markdown += f"**{k}:** {escaped_value}  \n"
+            else:
+                escaped_value = escape_markdown(value)
+                markdown += f"**{key}:** {escaped_value}  \n"
 
         return markdown
 
@@ -127,4 +133,5 @@ if __name__ == "__main__":
     compound = Compound("AQSOL-0001")
     compound.smiles = "CC(C)C1=CC=C(C=C1)C(=O)O"
     compound.tags = ["toxic", "primary"]
+    compound.meta = {"toxic_elements": None, "toxic_groups": ['[C;$(C#CH)]','[C;$(C#CH)]']}
     PluginUnitTest(CompoundDetails, input_data=compound, theme="light").run()

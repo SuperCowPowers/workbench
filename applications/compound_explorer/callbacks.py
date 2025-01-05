@@ -35,7 +35,7 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
         props = my_scatter_plot.update_properties(
             df,
             hover_columns=["id"],
-            custom_data=["id", "smiles", "tags"],
+            custom_data=["id", "smiles", "tags", "meta"],
             suppress_hover_display=True,
             x="x",
             y="y",
@@ -65,13 +65,15 @@ def molecule_view_callbacks(my_compound_view: compound_details.CompoundDetails):
         if custom_data_list is None:
             return no_update, no_update, no_update, False, no_update, no_update
 
-        # Spin up the compound object
+        # Construct a compound object
         compound_id = custom_data_list[0]
         smiles = custom_data_list[1]
         tags = custom_data_list[2]
+        meta = custom_data_list[3]
         compound = Compound(compound_id)
         compound.smiles = smiles
         compound.tags = tags
+        compound.meta = meta
 
         # Update the properties for the molecule viewer
         [header_text, img, details] = my_compound_view.update_properties(compound)

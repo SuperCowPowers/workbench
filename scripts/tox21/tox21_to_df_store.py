@@ -78,8 +78,8 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
     df = project_fingerprints(df, projection="UMAP")
 
     # Convert compound tags to string and check for substrings, then convert to 0/1
-    df["toxic_tag"] = df["tags"].astype(str).str.contains("toxic").astype(int)
-    df["druglike_tag"] = df["tags"].astype(str).str.contains("druglike").astype(int)
+    # df["toxic_tag"] = df["tags"].astype(str).str.contains("toxic").astype(int)
+    # df["druglike_tag"] = df["tags"].astype(str).str.contains("druglike").astype(int)
 
     # Drop the molecule column
     df.drop(columns=["molecule"], inplace=True)

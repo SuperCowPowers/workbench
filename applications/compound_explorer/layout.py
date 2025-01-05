@@ -18,9 +18,9 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
             dbc.Row(
                 [
                     # Column 1: Scatter Plot
-                    dbc.Col([scatter_plot], width=8),
+                    dbc.Col([scatter_plot], style={"flex": "1"}),
                     # Column 2: Molecular Viewer
-                    dbc.Col([molecule_view], width=4, className="text-break"),
+                    dbc.Col([molecule_view], style={"width": "480px", "flex": "0 0 auto"}, className="text-break"),
                 ],
                 style={"height": "75vh"},
             ),
