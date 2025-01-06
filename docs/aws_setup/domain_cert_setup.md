@@ -76,7 +76,7 @@ You can find the CNAME record names and values in the AWS Certificate Manager (A
     - Click on **Create record**.
 
 1. **Add the First CNAME Record:**
-     - For the **Record name**, enter the name provided by ACM (e.g., `_3e8623442477e9eeec.your-domain.com`).
+     - For the **Record name**, enter the name provided by ACM (e.g., `_3e8623442477e9eeec.your-domain.com`). **Note:** they might already have `your-domain.com` next to this box, if so don't repeat it :)
      - For the **Record type**, select `CNAME`.
      - For the **Value**, enter the value provided by ACM (e.g., `_0908c89646d92.sdgjtdhdhz.acm-validations.aws.`) (include the trailing dot).
      - Leave the default settings for TTL.
@@ -124,7 +124,46 @@ The certificate status should obviously be in the **Issued** state, if not pleas
     - Click on your issued certificate.
     - Copy the **Amazon Resource Name (ARN)** from the certificate details.
 
-You now have the ARN for your certificate, which you can use in your AWS resources such as API Gateway, CloudFront, etc.
+You now have the ARN for your certificate, which you can use in your AWS resources such as API Gateway, LoadBalancer, CloudFront, etc. Specifically for the Workbench-Dashboard Stack you will need to put this into your Workbench Config file when you deploy/update the stack.
+
+```
+"WORKBENCH_ROLE": "Workbench-ExecutionRole",
+"WORKBENCH_CERTIFICATE_ARN": "arn:aws:acm:<region>:<account>:certificate/123-987-456-123-456789012",
+```
+
+### Update Route 53 to Point to New Load Balancer
+If you deploy a new stack (new load balancer), you'll have to set up DNS 'A' records to point to that new load balancer.
+
+
+#### Updating A Record in Route53
+- Go to [Route 53 Console](https://console.aws.amazon.com/route53/)
+- Click **Hosted zones** (on left panel)
+
+#### New A Record(s)
+- Create Record (orange button on right)
+- Leave `subdomain` blank (for first A record)
+- Click the **'Alias'** button (important)
+- Routes traffic to 
+    
+    - Alias to Application and Classic Load Balanacer
+    - AWS Region
+    - Chooser Box (find LB domain)
+  
+- If you have another subdomain like `www.blah.com` then just go through the above steps again.
+
+**Note:** The LB domain should looks something like `dualstack.workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com`
+
+
+
+#### Change A Record
+- Click (or add) **A** records to point to your load balancer internal domain.
+- Leave most of default options
+- For **Route Traffic To**
+    - Alias to Application and Classic Load Balancer
+    - AWS Region
+    - Chooser Box (find LB domain)
+
+**Note:** The LB domain should looks something like `dualstack.workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com`
 
  
 ## AWS Resources
@@ -135,5 +174,24 @@ You now have the ARN for your certificate, which you can use in your AWS resourc
 - [AWS Route 53 Documentation](https://docs.aws.amazon.com/route53/)
 - [AWS API Gateway Documentation](https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html)
 
+### Reference Materials
+
+#### Finding the Load Balancer Internal Domain
+**Note:** This is only for **NEW** A records. When you update an existing A Record, it should already 'find' this for you and present it as an option.
+
+To find the internal domain of your load balancer in AWS:
+
+1.	Go to the AWS Console:
+	- Navigate to [EC2 Console](https://console.aws.amazon.com/route53/) (yes, Load Balancers are under EC2).
+
+2.	Find the Load Balancer:
+	- Under Load Balancing, click on Load Balancers.
+  	- Look for the load balancer associated with your stack.
+3.	Check the DNS Name:
+	 -	Select the load balancer.
+	 - In the Description tab, look for the DNS Name field. This is the internal domain you’re looking for (something like: Workbe-Workb-xyzabc-123456.us-west-2.elb.amazonaws.com).
+	
+4.	Use It for Your A Record:
+	- Copy this DNS name and create the new A record in Route 53 or your DNS provider.
 
 
