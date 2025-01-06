@@ -116,8 +116,9 @@ nav:
     - Base Docker Push:  admin/base_docker_push.md
     - Dashboard Docker Push:  admin/dashboard_docker_push.md
     - Dashboard with S3 Plugins:  admin/dashboard_s3_plugins.md
-    - Dashboard with Docker Plugins:  admin/dashboard_with_plugins.md
+    - Explorer Docker Push:  admin/explorer_docker_push.md
     - Storage:
+      - Dashboard with Docker Plugins:  admin/dashboard_with_plugins.md
       - Workbench Docker for Lambdas:  admin/workbench_docker_for_lambdas.md
 
 theme:
