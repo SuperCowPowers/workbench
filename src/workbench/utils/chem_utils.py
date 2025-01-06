@@ -614,12 +614,17 @@ def project_fingerprints(df: pd.DataFrame, projection: str = "UMAP") -> pd.DataF
         embedding = tsne.fit_transform(X)
     else:
         # Run UMAP
-        reducer = umap.UMAP(densmap=True)
+        # reducer = umap.UMAP(densmap=True)
+        reducer = umap.UMAP(metric="jaccard")
         embedding = reducer.fit_transform(X)
 
     # Add coordinates to DataFrame
     df["x"] = embedding[:, 0]
     df["y"] = embedding[:, 1]
+
+    # If vertices disconnect from the manifold, they are given NaN values (so replace with 0)
+    df["x"] = df["x"].fillna(0)
+    df["y"] = df["y"].fillna(0)
 
     # Jitter
     jitter_scale = 0.1
