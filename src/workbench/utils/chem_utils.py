@@ -330,9 +330,7 @@ def toxic_groups(mol: Chem.Mol) -> Optional[List[str]]:
     toxic_smarts_matches = []
 
     # Use RDKit's functional group definitions
-    toxic_group_names = [
-        "Nitro", "Azide", "Alcohol", "Aldehyde", "Halogen", "TerminalAlkyne"
-    ]
+    toxic_group_names = ["Nitro", "Azide", "Alcohol", "Aldehyde", "Halogen", "TerminalAlkyne"]
     for group_name in toxic_group_names:
         group_node = next(node for node in fgroup_hierarchy if node.label == group_name)
         if mol.HasSubstructMatch(Chem.MolFromSmarts(group_node.smarts)):

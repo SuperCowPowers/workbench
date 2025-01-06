@@ -31,7 +31,7 @@ def scatter_plot_callbacks(my_scatter_plot: scatter_plot.ScatterPlot):
         # Generate the molecules (they can't be serialized)
         # df['molecule'] = df['smiles'].apply(lambda smiles: Chem.MolFromSmiles(smiles))
 
-        # Silly tox colors (count the length of the lists for toxic elements and toxic groups within the meta dictionary)
+        # Silly tox colors (for now)
         num_elements = df["meta"].apply(lambda x: len(x["toxic_elements"]) if x["toxic_elements"] is not None else 0)
         num_groups = df["meta"].apply(lambda x: len(x["toxic_groups"]) if x["toxic_groups"] is not None else 0)
         df["tox_alert"] = num_elements + num_groups + df["toxic_any"]
