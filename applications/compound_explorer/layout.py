@@ -18,11 +18,18 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
             dbc.Row(
                 [
                     # Column 1: Scatter Plot
-                    dbc.Col([scatter_plot], style={"flex": "1"}),
+                    dbc.Col(
+                        [scatter_plot],
+                        style={"flex": "1 1 auto", "min-width": "200px"},  # Shrinks but stays visible
+                    ),
                     # Column 2: Molecular Viewer
-                    dbc.Col([molecule_view], style={"width": "480px", "flex": "0 0 auto"}, className="text-break"),
+                    dbc.Col(
+                        [molecule_view],
+                        style={"width": "480px", "flex": "0 0 auto"},  # Fixed width for right column
+                        className="text-break",
+                    ),
                 ],
-                style={"height": "75vh"},
+                style={"height": "90vh", "display": "flex", "flex-wrap": "nowrap"},  # Prevent wrapping
             ),
             # Molecular Viewer for Neighbors
             # dbc.Row([molecule_view, molecule_view, molecule_view, molecule_view]),
