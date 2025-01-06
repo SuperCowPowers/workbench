@@ -131,7 +131,7 @@ class ScatterPlot(PluginInterface):
         """
 
         # Get the limit for the number of rows to plot
-        limit = kwargs.get("limit", 10000)
+        limit = kwargs.get("limit", 20000)
 
         # Check that we got a dataframe for our input data object
         if isinstance(input_data, pd.DataFrame):

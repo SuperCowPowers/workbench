@@ -71,6 +71,9 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
     # Add Compound Tags
     df = add_compound_tags(df, mol_column="molecule")
 
+    # Now we have a 'tag' column with a list of tags in it, let's add "tox21" to the tags if the compound is toxic
+    df["tags"] = df.apply(lambda row: row["tags"] + ["tox21"] if row["toxic_any"] == 1 else row["tags"], axis=1)
+
     # Do both TSNE and UMAP projections
     df = compute_morgan_fingerprints(df, radius=2)
     df = project_fingerprints(df, projection="TSNE")
