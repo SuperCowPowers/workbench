@@ -128,12 +128,8 @@ class PluginUnitTest:
             graph = self.input_data if self.input_data is not None else GraphCore("karate_club")
             return self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"], **self.kwargs)
         elif plugin_input_type == PluginInputType.DATAFRAME:
-            model_df = (
-                self.input_data
-                if self.input_data is not None
-                else FeatureSet("abalone_features").pull_dataframe()[:1000]
-            )
-            return self.plugin.update_properties(model_df, **self.kwargs)
+            df = self.input_data if self.input_data is not None else FeatureSet("abalone_features").pull_dataframe()[:100]
+            return self.plugin.update_properties(df, **self.kwargs)
         elif plugin_input_type == PluginInputType.COMPOUND:
             fake_compound = Compound("AQSOL-0001")
             fake_compound.smiles = "CC(C)C1=CC=C(C=C1)C(=O)O"

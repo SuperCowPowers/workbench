@@ -59,21 +59,6 @@ class ScatterPlot(PluginInterface):
         return html.Div(
             className="workbench-container",
             children=[
-                # Main Scatter Plot Graph
-                dcc.Graph(
-                    id=f"{component_id}-graph",
-                    figure=self.display_text("Waiting for Data..."),
-                    config={"scrollZoom": True},
-                    style={"height": "100%"},
-                    clear_on_unhover=True,
-                ),
-                dcc.Tooltip(
-                    id=f"{component_id}-overlay",
-                    background_color="rgba(0,0,0,0)",
-                    border_color="rgba(0,0,0,0)",
-                    direction="bottom",
-                    loading_text="",
-                ),
                 # Controls: X, Y, Color Dropdowns, and Regression Line Checkbox
                 html.Div(
                     [
@@ -105,7 +90,22 @@ class ScatterPlot(PluginInterface):
                             style={"margin": "10px"},
                         ),
                     ],
-                    style={"padding": "10px", "display": "flex", "gap": "10px"},
+                    style={"padding": "20px 0px 0px 0px", "display": "flex", "gap": "10px"},
+                ),
+                # Main Scatter Plot Graph
+                dcc.Graph(
+                    id=f"{component_id}-graph",
+                    figure=self.display_text("Waiting for Data..."),
+                    config={"scrollZoom": True},
+                    style={"height": "100%"},
+                    clear_on_unhover=True,
+                ),
+                dcc.Tooltip(
+                    id=f"{component_id}-overlay",
+                    background_color="rgba(0,0,0,0)",
+                    border_color="rgba(0,0,0,0)",
+                    direction="bottom",
+                    loading_text="",
                 ),
             ],
             style={"height": "100%", "display": "flex", "flexDirection": "column"},  # Full viewport height
@@ -236,7 +236,9 @@ class ScatterPlot(PluginInterface):
                     size=marker_size,
                     color=df[color_col],
                     colorscale=self.theme_manager.colorscale(),
-                    colorbar=dict(title=color_col),
+                    colorbar=dict(
+                        title=color_col,
+                        thickness=20),
                     opacity=df[color_col].apply(lambda x: compute_opacity(x, color_min, color_max)),
                     line=dict(color="rgba(0,0,0,1)", width=1),
                 ),
@@ -348,6 +350,14 @@ class ScatterPlot(PluginInterface):
 if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
+    from workbench.api import df_store
+    from workbench.utils.chem_utils import project_fingerprints
+
+    # Load our preprocessed tox21 training data
+    df = df_store.DFStore().get("/datasets/chem_info/tox21")
+
+    # Set up the input data
+    df = project_fingerprints(df, projection="UMAP")
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ScatterPlot, theme="dark", suppress_hover_display=True).run()
+    PluginUnitTest(ScatterPlot, input_data=df, theme="dark", suppress_hover_display=True, x="x", y="y").run()
