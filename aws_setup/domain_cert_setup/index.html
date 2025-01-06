@@ -2266,6 +2266,54 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Retrieving the Certificate ARN">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#update-route-53-to-point-to-new-load-balancer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Update Route 53 to Point to New Load Balancer
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Update Route 53 to Point to New Load Balancer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updating-a-record-in-route53" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating A Record in Route53
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-a-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      New A Record(s)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-a-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      Change A Record
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2274,6 +2322,36 @@
       AWS Resources
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="AWS Resources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reference-materials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reference Materials
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reference Materials">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#finding-the-load-balancer-internal-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Finding the Load Balancer Internal Domain
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3336,6 +3414,54 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Retrieving the Certificate ARN">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#update-route-53-to-point-to-new-load-balancer" class="md-nav__link">
+    <span class="md-ellipsis">
+      Update Route 53 to Point to New Load Balancer
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Update Route 53 to Point to New Load Balancer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#updating-a-record-in-route53" class="md-nav__link">
+    <span class="md-ellipsis">
+      Updating A Record in Route53
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-a-records" class="md-nav__link">
+    <span class="md-ellipsis">
+      New A Record(s)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#change-a-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      Change A Record
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -3344,6 +3470,36 @@
       AWS Resources
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="AWS Resources">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#reference-materials" class="md-nav__link">
+    <span class="md-ellipsis">
+      Reference Materials
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reference Materials">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#finding-the-load-balancer-internal-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      Finding the Load Balancer Internal Domain
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -3472,7 +3628,7 @@
 <li>
 <p><strong>Add the First CNAME Record:</strong></p>
 <ul>
-<li>For the <strong>Record name</strong>, enter the name provided by ACM (e.g., <code>_3e8623442477e9eeec.your-domain.com</code>).</li>
+<li>For the <strong>Record name</strong>, enter the name provided by ACM (e.g., <code>_3e8623442477e9eeec.your-domain.com</code>). <strong>Note:</strong> they might already have <code>your-domain.com</code> next to this box, if so don't repeat it :)</li>
 <li>For the <strong>Record type</strong>, select <code>CNAME</code>.</li>
 <li>For the <strong>Value</strong>, enter the value provided by ACM (e.g., <code>_0908c89646d92.sdgjtdhdhz.acm-validations.aws.</code>) (include the trailing dot).</li>
 <li>Leave the default settings for TTL.</li>
@@ -3542,7 +3698,47 @@
 </ul>
 </li>
 </ol>
-<p>You now have the ARN for your certificate, which you can use in your AWS resources such as API Gateway, CloudFront, etc.</p>
+<p>You now have the ARN for your certificate, which you can use in your AWS resources such as API Gateway, LoadBalancer, CloudFront, etc. Specifically for the Workbench-Dashboard Stack you will need to put this into your Workbench Config file when you deploy/update the stack.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>&quot;WORKBENCH_ROLE&quot;: &quot;Workbench-ExecutionRole&quot;,
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>&quot;WORKBENCH_CERTIFICATE_ARN&quot;: &quot;arn:aws:acm:&lt;region&gt;:&lt;account&gt;:certificate/123-987-456-123-456789012&quot;,
+</span></code></pre></div>
+<h3 id="update-route-53-to-point-to-new-load-balancer">Update Route 53 to Point to New Load Balancer</h3>
+<p>If you deploy a new stack (new load balancer), you'll have to set up DNS 'A' records to point to that new load balancer.</p>
+<h4 id="updating-a-record-in-route53">Updating A Record in Route53</h4>
+<ul>
+<li>Go to <a href="https://console.aws.amazon.com/route53/">Route 53 Console</a></li>
+<li>Click <strong>Hosted zones</strong> (on left panel)</li>
+</ul>
+<h4 id="new-a-records">New A Record(s)</h4>
+<ul>
+<li>Create Record (orange button on right)</li>
+<li>Leave <code>subdomain</code> blank (for first A record)</li>
+<li>Click the <strong>'Alias'</strong> button (important)</li>
+<li>
+<p>Routes traffic to </p>
+<ul>
+<li>Alias to Application and Classic Load Balanacer</li>
+<li>AWS Region</li>
+<li>Chooser Box (find LB domain)</li>
+</ul>
+</li>
+<li>
+<p>If you have another subdomain like <code>www.blah.com</code> then just go through the above steps again.</p>
+</li>
+</ul>
+<p><strong>Note:</strong> The LB domain should looks something like <code>dualstack.workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com</code></p>
+<h4 id="change-a-record">Change A Record</h4>
+<ul>
+<li>Click (or add) <strong>A</strong> records to point to your load balancer internal domain.</li>
+<li>Leave most of default options</li>
+<li>For <strong>Route Traffic To</strong><ul>
+<li>Alias to Application and Classic Load Balancer</li>
+<li>AWS Region</li>
+<li>Chooser Box (find LB domain)</li>
+</ul>
+</li>
+</ul>
+<p><strong>Note:</strong> The LB domain should looks something like <code>dualstack.workbe-workb-xyzabc-123456.us-west-2.elb.amazonaws.com</code></p>
 <h2 id="aws-resources">AWS Resources</h2>
 <ul>
 <li><a href="https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-creating.html">AWS Adding or Changing DNS Records</a></li>
@@ -3552,6 +3748,38 @@
 <li><a href="https://docs.aws.amazon.com/route53/">AWS Route 53 Documentation</a></li>
 <li><a href="https://docs.aws.amazon.com/apigateway/latest/developerguide/welcome.html">AWS API Gateway Documentation</a></li>
 </ul>
+<h3 id="reference-materials">Reference Materials</h3>
+<h4 id="finding-the-load-balancer-internal-domain">Finding the Load Balancer Internal Domain</h4>
+<p><strong>Note:</strong> This is only for <strong>NEW</strong> A records. When you update an existing A Record, it should already 'find' this for you and present it as an option.</p>
+<p>To find the internal domain of your load balancer in AWS:</p>
+<ol>
+<li>
+<p>Go to the AWS Console:</p>
+<ul>
+<li>Navigate to <a href="https://console.aws.amazon.com/route53/">EC2 Console</a> (yes, Load Balancers are under EC2).</li>
+</ul>
+</li>
+<li>
+<p>Find the Load Balancer:</p>
+<ul>
+<li>Under Load Balancing, click on Load Balancers.</li>
+<li>Look for the load balancer associated with your stack.</li>
+</ul>
+</li>
+<li>
+<p>Check the DNS Name:</p>
+<ul>
+<li>Select the load balancer.</li>
+<li>In the Description tab, look for the DNS Name field. This is the internal domain you’re looking for (something like: Workbe-Workb-xyzabc-123456.us-west-2.elb.amazonaws.com).</li>
+</ul>
+</li>
+<li>
+<p>Use It for Your A Record:</p>
+<ul>
+<li>Copy this DNS name and create the new A record in Route 53 or your DNS provider.</li>
+</ul>
+</li>
+</ol>
 
 
 
