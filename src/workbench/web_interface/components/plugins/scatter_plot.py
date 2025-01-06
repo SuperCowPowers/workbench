@@ -236,9 +236,7 @@ class ScatterPlot(PluginInterface):
                     size=marker_size,
                     color=df[color_col],
                     colorscale=self.theme_manager.colorscale(),
-                    colorbar=dict(
-                        title=color_col,
-                        thickness=20),
+                    colorbar=dict(title=color_col, thickness=20),
                     opacity=df[color_col].apply(lambda x: compute_opacity(x, color_min, color_max)),
                     line=dict(color="rgba(0,0,0,1)", width=1),
                 ),
