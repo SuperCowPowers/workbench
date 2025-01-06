@@ -17,7 +17,7 @@ import callbacks
 
 # Set up the Theme Manager
 tm = ThemeManager()
-tm.set_theme("dark")
+tm.set_theme("auto")
 css_files = tm.css_files()
 print(css_files)
 
@@ -63,4 +63,5 @@ callbacks.molecule_view_callbacks(compound_view)
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="0.0.0.0", port=8001, debug=True)
+    # app.run(host="0.0.0.0", port=8001, debug=True)
+    app.run(host="0.0.0.0", port=8000)
