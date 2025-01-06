@@ -291,36 +291,37 @@ def halogen_toxicity_score(mol):
 
 def toxic_elements(mol: Mol) -> Optional[List[str]]:
     """
-    Identifies toxic elements or groups in a molecule.
+    Identifies toxic elements or specific forms of elements in a molecule.
 
     Args:
         mol: RDKit molecule object.
 
     Returns:
-        Optional[List[str]]: List of toxic elements if found, otherwise None.
+        Optional[List[str]]: List of toxic elements or specific forms if found, otherwise None.
     """
-    # Elements always considered toxic
-    always_toxic = {"Pb", "Hg", "Cd", "As", "Be", "Tl", "Sb"}  # Heavy metals
-    toxic_found = []
+    # Always toxic elements (heavy metals and known toxic single elements)
+    always_toxic = {"Pb", "Hg", "Cd", "As", "Be", "Tl", "Sb"}
+    toxic_found = set()
 
     for atom in mol.GetAtoms():
         symbol = atom.GetSymbol()
+        formal_charge = atom.GetFormalCharge()
 
         # Check for always toxic elements
         if symbol in always_toxic:
-            toxic_found.append(symbol)
+            toxic_found.add(symbol)
 
         # Conditionally toxic nitrogen (positively charged)
-        if symbol == "N" and atom.GetFormalCharge() > 0:
-            toxic_found.append(symbol)
+        if symbol == "N" and formal_charge > 0:
+            toxic_found.add("N+")  # Only add positively charged nitrogen
 
-        # Excessive halogenation
+        # Halogen toxicity (logic to be revisited later)
         if symbol in {"Cl", "Br", "I", "F"}:
             halogen_count, halogen_threshold = halogen_toxicity_score(mol)
             if halogen_count > halogen_threshold:
-                toxic_found.append(symbol)
+                toxic_found.add(symbol)
 
-    return toxic_found if toxic_found else None
+    return list(toxic_found) if toxic_found else None
 
 
 # Precalculated SMARTS patterns for toxic functional groups
