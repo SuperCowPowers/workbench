@@ -63,5 +63,5 @@ callbacks.molecule_view_callbacks(compound_view)
 if __name__ == "__main__":
     """Run our web application in TEST mode"""
     # Note: This 'main' is purely for running/testing locally
-    # app.run(host="0.0.0.0", port=8001, debug=True)
+    # app.run(host="0.0.0.0", port=8000, debug=True)
     app.run(host="0.0.0.0", port=8000)

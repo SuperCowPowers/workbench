@@ -11,7 +11,10 @@ def start_explorer(debug: bool):
     webbrowser.open(url)
 
     # Note: This 'main' is purely for running/testing locally
-    app.run(host="0.0.0.0", port=8001, debug=debug)
+    if debug:
+        app.run(host="0.0.0.0", port=8000, debug=True)
+    else:
+        app.run(host="0.0.0.0", port=8000)
 
 
 if __name__ == "__main__":

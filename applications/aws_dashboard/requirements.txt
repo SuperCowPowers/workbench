@@ -22,4 +22,3 @@ rdkit>=2024.3.3
 mordredcommunity>=2.0.6
 networkx>=3.2
 matplotlib>=3.9.2
-
