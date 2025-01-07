@@ -20,10 +20,6 @@ class CompoundExplorerStackProps(StackProps):
         workbench_bucket: str,
         workbench_api_key: str,
         workbench_plugins: str,
-        existing_vpc_id: Optional[str] = None,
-        existing_subnet_ids: Optional[List[str]] = None,
-        whitelist_ips: Optional[List[str]] = None,
-        whitelist_prefix_lists: Optional[List[str]] = None,
         certificate_arn: Optional[str] = None,
         public: bool = False,
     ):
@@ -31,11 +27,7 @@ class CompoundExplorerStackProps(StackProps):
         self.workbench_bucket = workbench_bucket
         self.workbench_api_key = workbench_api_key
         self.workbench_plugins = workbench_plugins
-        self.existing_vpc_id = existing_vpc_id
-        self.existing_subnet_ids = existing_subnet_ids
-        self.whitelist_ips = whitelist_ips
         self.certificate_arn = certificate_arn
-        self.whitelist_prefix_lists = whitelist_prefix_lists
         self.public = public
 
 
@@ -46,14 +38,8 @@ class CompoundExplorerStack(Stack):
         if not props.workbench_bucket:
             raise ValueError("workbench_bucket is a required property")
 
-        # Create a cluster using a EXISTING VPC
-        if props.existing_vpc_id:
-            vpc = ec2.Vpc.from_lookup(self, "ImportedVPC", vpc_id=props.existing_vpc_id)
-            cluster = ecs.Cluster(self, "ExplorerCluster", vpc=vpc)
-
-        # Create a cluster using a NEW VPC
-        else:
-            cluster = ecs.Cluster(self, "ExplorerCluster", vpc=ec2.Vpc(self, "ExplorerVpc", max_azs=2))
+        # Create a ECS cluster using a NEW VPC
+        cluster = ecs.Cluster(self, "ExplorerCluster", vpc=ec2.Vpc(self, "ExplorerVpc", max_azs=2))
 
         # Import the existing Workbench-ExecutionRole
         workbench_execution_role = iam.Role.from_role_arn(
@@ -62,43 +48,6 @@ class CompoundExplorerStack(Stack):
 
         # Setup CloudWatch logs
         log_group = logs.LogGroup(self, "ExplorerLogGroup")
-
-        # Setup Security Group for Redis
-        redis_security_group = ec2.SecurityGroup(self, "RedisSecurityGroup", vpc=cluster.vpc)
-
-        # Allow the ECS task to connect to the Redis cluster
-        redis_security_group.add_ingress_rule(
-            peer=ec2.Peer.ipv4(cluster.vpc.vpc_cidr_block), connection=ec2.Port.tcp(6379)
-        )
-
-        # Adding AWS Managed Prefix Lists to connect to the Redis cluster
-        if props.whitelist_prefix_lists:
-            print(f"Adding Whitelist Prefix Lists: {props.whitelist_prefix_lists}")
-            for pl in props.whitelist_prefix_lists:
-                redis_security_group.add_ingress_rule(ec2.Peer.prefix_list(pl), ec2.Port.tcp(6379))
-
-        # Create the Redis subnet group
-        redis_subnet_group = elasticache.CfnSubnetGroup(
-            self,
-            "RedisSubnetGroup",
-            description="Subnet group for Redis",
-            subnet_ids=[subnet.subnet_id for subnet in cluster.vpc.private_subnets],
-        )
-
-        # Create the Redis cluster
-        redis_cluster = elasticache.CfnCacheCluster(
-            self,
-            "RedisCluster",
-            cache_node_type="cache.t2.micro",
-            engine="redis",
-            num_cache_nodes=1,
-            cluster_name="ExplorerRedis",
-            cache_subnet_group_name=redis_subnet_group.ref,
-            vpc_security_group_ids=[redis_security_group.security_group_id],
-        )
-
-        # Capture the Redis endpoint
-        redis_endpoint = redis_cluster.attr_redis_endpoint_address
 
         # Define the ECS task definition with the Docker image
         task_definition = ecs.FargateTaskDefinition(
@@ -113,7 +62,6 @@ class CompoundExplorerStack(Stack):
             image=ecs.ContainerImage.from_registry(props.dashboard_image),
             memory_limit_mib=4096,
             environment={
-                "REDIS_HOST": redis_endpoint,
                 "WORKBENCH_BUCKET": props.workbench_bucket,
                 "WORKBENCH_API_KEY": props.workbench_api_key,
                 "WORKBENCH_PLUGINS": props.workbench_plugins,
@@ -124,16 +72,6 @@ class CompoundExplorerStack(Stack):
 
         # Create a NEW Security Group for the Load Balancer
         lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
-
-        # Add rules for the whitelist IPs
-        if props.whitelist_ips:
-            for ip in props.whitelist_ips:
-                lb_security_group.add_ingress_rule(ec2.Peer.ipv4(ip), ec2.Port.tcp(443))
-
-        # Adding AWS Managed Prefix Lists
-        if props.whitelist_prefix_lists:
-            for pl in props.whitelist_prefix_lists:
-                lb_security_group.add_ingress_rule(ec2.Peer.prefix_list(pl), ec2.Port.tcp(443))
 
         # Import existing SSL certificate if certificate_arn is provided
         certificate = (
