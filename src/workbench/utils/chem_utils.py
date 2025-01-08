@@ -538,13 +538,14 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     return output_df
 
 
-def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=4096) -> pd.DataFrame:
+def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=4096, counts=True) -> pd.DataFrame:
     """Compute and add Morgan fingerprints to the DataFrame.
 
     Args:
         df (pd.DataFrame): Input DataFrame containing SMILES strings.
         radius (int): Radius for the Morgan fingerprint.
-        nBits (int): Number of bits for the fingerprint.
+        n_bits (int): Number of bits for the fingerprint.
+        counts (bool): Count simulation for the fingerprint.
 
     Returns:
         pd.DataFrame: The input DataFrame with the Morgan fingerprints added as bit strings.
@@ -567,7 +568,7 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=4096) -> pd.Da
     largest_frags = df["molecule"].apply(remove_disconnected_fragments)
 
     # Create a Morgan fingerprint generator
-    morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=nBits, countSimulation=True)
+    morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=n_bits, countSimulation=counts)
 
     # Compute Morgan fingerprints (vectorized)
     fingerprints = largest_frags.apply(
