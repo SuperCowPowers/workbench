@@ -5,7 +5,8 @@ h1, h2, h3, h4 {
 body {
     color: rgb(80, 80, 80); /* Dark gray text */
     /* background: linear-gradient(90deg, rgba(240,240,240,1) 0%, rgba(240,240,240,1) 50%, rgba(150,150,195,1) 100%);*/
-    background: linear-gradient(90deg, rgba(200,200,220,1) 0%, rgba(150,150,195,1) 100%);
+    /* background: linear-gradient(90deg, rgba(200,200,220,1) 0%, rgba(150,150,195,1) 100%); */
+    background: linear-gradient(90deg, rgba(200,200,220,1) 0%, rgba(170,170,210,1) 100%);
 }
 
 /* Custom CSS to style bold text */
@@ -84,7 +85,7 @@ b, strong {
 }
 
 .orange-text {
-    color: rgb(200, 140, 90);
+    color: rgb(160, 80, 0);
 }
 
 .alert {
@@ -92,7 +93,7 @@ b, strong {
 }
 
 .warning {
-    color: rgb(200, 140, 90);
+    color: rgb(160, 80, 0);
 }
 
 .good {
