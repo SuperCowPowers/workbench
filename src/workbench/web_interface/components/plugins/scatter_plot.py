@@ -355,7 +355,7 @@ if __name__ == "__main__":
     df = df_store.DFStore().get("/datasets/chem_info/tox21")
 
     # Set up the input data
-    df = project_fingerprints(df, projection="UMAP")
+    # df = project_fingerprints(df, projection="UMAP")
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(ScatterPlot, input_data=df, theme="dark", suppress_hover_display=True, x="x", y="y").run()
