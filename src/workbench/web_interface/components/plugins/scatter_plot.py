@@ -270,9 +270,8 @@ class ScatterPlot(PluginInterface):
             ),
             showlegend=False,
             dragmode="pan",
-            modebar={
-                "bgcolor": "rgba(0, 0, 0, 0)",  # Transparent background
-            },
+            modebar={"bgcolor": "rgba(0, 0, 0, 0)"},  # Transparent background
+            uirevision="constant",
         )
 
         return figure
