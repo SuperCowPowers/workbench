@@ -12,23 +12,13 @@ class ProximityGraph:
     Build a proximity graph of the nearest neighbors based on feature space.
     """
 
-    def __init__(self, n_neighbors: int = 5):
-        """Initialize the ProximityGraph with the specified parameters.
-
-        Args:
-            n_neighbors (int): Number of neighbors to consider (default: 5)
-        """
-        self.n_neighbors = n_neighbors
-        self.nx_graph = nx.Graph()
-
-    def build_graph(
-        self,
-        df: pd.DataFrame,
-        features: list,
-        id_column: str,
-        target: str,
-        store_features=True,
-    ) -> nx.Graph:
+    def __init__(self,
+                 df: pd.DataFrame,
+                 features: list,
+                 id_column: str,
+                 target: str,
+                 n_neighbors: int = 5,
+                 store_features=True):
         """
         Processes the input DataFrame and builds a proximity graph.
 
@@ -37,12 +27,13 @@ class ProximityGraph:
             features (list): List of feature column names to be used for building the proximity graph.
             id_column (str): Name of the ID column in the DataFrame.
             target (str): Name of the target column in the DataFrame.
+            n_neighbors (int): Number of neighbors to consider for each node (default: 5).
             store_features (bool): Whether to store the features as node attributes (default: True).
-
-        Returns:
-            nx.Graph: The proximity graph as a NetworkX graph.
         """
-        # Drop NaNs from the DataFrame using the provided utility
+        self.n_neighbors = n_neighbors
+        self.nx_graph = nx.Graph()
+
+        # Drop NaNs from the DataFrame
         df = remove_rows_with_nans(df)
 
         # Initialize FeatureSpaceProximity with the input DataFrame and the specified features
@@ -60,9 +51,6 @@ class ProximityGraph:
         # Compute max distance for scaling (to [0, 1])
         max_distance = distances.max()
 
-        # Initialize an empty graph
-        self.nx_graph = nx.Graph()
-
         # Use the ID column for node IDs instead of relying on the DataFrame index
         node_ids = df[id_column].values
 
@@ -71,7 +59,7 @@ class ProximityGraph:
             if store_features:
                 self.nx_graph.add_node(
                     node_id, **df[df[id_column] == node_id].iloc[0].to_dict()
-                )  # Use .iloc[0] for correct node attributes
+                )
             else:
                 self.nx_graph.add_node(node_id)
 
@@ -92,7 +80,13 @@ class ProximityGraph:
                         self.nx_graph.add_edge(src_node, dst_node, weight=weight)
                         one_edge_added = True
 
-        # Return the NetworkX graph
+    def get_graph(self) -> nx.Graph:
+        """
+        Get the NetworkX graph object.
+
+        Returns:
+            nx.Graph: The NetworkX graph object.
+        """
         return self.nx_graph
 
     def get_neighborhood(self, node_id: Union[str, int], radius: int = 1) -> nx.Graph:
@@ -134,13 +128,11 @@ if __name__ == "__main__":
         "shell_weight",
     ]
 
-    # Initialize the ProximityGraph with specified neighbors
-    proximity_graph = ProximityGraph(n_neighbors=5)
+    # Create the ProximityGraph
+    proximity_graph = ProximityGraph(df, features=feature_columns, id_column=id_column, target="class_number_of_rings", n_neighbors=5)
 
-    # Build the proximity graph using the specified features and ID column
-    nx_graph = proximity_graph.build_graph(
-        df, features=feature_columns, id_column=id_column, target="class_number_of_rings"
-    )
+    # Get the NetworkX graph
+    nx_graph = proximity_graph.get_graph()
 
     # Plot the full graph
     graph_plot = GraphPlot()
