@@ -55,7 +55,8 @@ class GraphPlot(PluginInterface):
         # - A Graph Node/Edge Component
         # - Dropdown for Node Labels and Colors
         return html.Div(
-            [
+            className="workbench-container",
+            children=[
                 # Main Scatter Plot Graph
                 dcc.Graph(
                     id=f"{component_id}-graph",
@@ -173,20 +174,28 @@ class GraphPlot(PluginInterface):
             weight = self.graph.edges[edge].get("weight", 0.5)
 
             # Scale the width and alpha of the edge based on the weight
-            width = min(5.0, weight * 4.9 + 0.1)  # Scale edge width to range [0.1, 5.0]
-            alpha = min(1.0, weight * 0.9 + 0.1)  # Scale alpha to range [0.1, 1.0]
+            width = 5  # min(5.0, weight * 4.9 + 0.1)  # Scale edge width to range [0.1, 5.0]
+            alpha = min(1.0, weight * 0.7 + 0.3)  # Scale alpha to range [0.1, 1.0]
 
             # Create individual Scattergl trace for each edge with specific styling
-            edge_traces.append(
+            edge_traces += [
                 go.Scattergl(
                     x=[x0, x1],
                     y=[y0, y1],
                     mode="lines",
-                    line=dict(width=width, color=f"rgba(150, 150, 150, {alpha})"),  # Set edge color and transparency
+                    line=dict(width=width+4, color=f"rgba(0, 0, 0, 0.25)"),  # Set edge color and transparency
+                    showlegend=False,
+                    hoverinfo="skip",  # Skip hover info for edges if not needed
+                ),
+                go.Scattergl(
+                    x=[x0, x1],
+                    y=[y0, y1],
+                    mode="lines",
+                    line=dict(width=width, color=f"rgba(60, 60, 60, 1.0)"),  # Set edge color and transparency
                     showlegend=False,
                     hoverinfo="skip",  # Skip hover info for edges if not needed
                 )
-            )
+            ]
 
         # Create a Plotly figure with the combined node and edge traces
         self.graph_figure = go.Figure(data=edge_traces + [node_trace])
@@ -198,6 +207,8 @@ class GraphPlot(PluginInterface):
             yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),  # Hide Y-axis grid and tick marks
             showlegend=False,  # Remove legend
             dragmode="pan",
+            modebar={"bgcolor": "rgba(0, 0, 0, 0)"},  # Transparent background for modebar
+            uirevision="constant",  # Keep the layout constant for updates
         )
 
         # Get the first node's attributes (all fields should be defined here)
@@ -276,4 +287,4 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(GraphPlot, theme="light").run()
+    PluginUnitTest(GraphPlot, theme="dark").run()
