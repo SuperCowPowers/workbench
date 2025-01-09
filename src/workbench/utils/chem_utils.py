@@ -538,7 +538,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     return output_df
 
 
-def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=4096, counts=True) -> pd.DataFrame:
+def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=True) -> pd.DataFrame:
     """Compute and add Morgan fingerprints to the DataFrame.
 
     Args:
@@ -568,6 +568,8 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=4096, counts=
     largest_frags = df["molecule"].apply(remove_disconnected_fragments)
 
     # Create a Morgan fingerprint generator
+    if counts:
+        n_bits *= 4  # Multiply by 4 to simulate counts
     morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=n_bits, countSimulation=counts)
 
     # Compute Morgan fingerprints (vectorized)
@@ -629,8 +631,8 @@ def project_fingerprints(df: pd.DataFrame, projection: str = "UMAP") -> pd.DataF
 
     # Jitter
     jitter_scale = 0.1
-    df["x"] += np.random.normal(0, jitter_scale, len(df))
-    df["y"] += np.random.normal(0, jitter_scale, len(df))
+    df["x"] += np.random.uniform(0, jitter_scale, len(df))
+    df["y"] += np.random.uniform(0, jitter_scale, len(df))
 
     return df
 
