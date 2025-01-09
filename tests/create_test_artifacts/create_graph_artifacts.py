@@ -7,7 +7,7 @@ Graphs:
 import sys
 import logging
 from pathlib import Path
-from workbench.core.artifacts.graph_core import GraphCore
+from workbench.utils import graph_utils
 
 # Setup the logger
 log = logging.getLogger("workbench")
@@ -21,6 +21,8 @@ if __name__ == "__main__":
     recreate = False
 
     # Create the karate_club Graph
-    if recreate or not GraphCore("karate_club").exists():
-        GraphCore(karate_graph, name="karate_club")
+    if recreate or not graph_utils.exists("karate_club"):
+        karate_graph = graph_utils.load_graph_from_file(karate_graph)
+        karate_graph.name = "karate_club"
+        graph_utils.save(karate_graph)
         log.info("Created karate_club graph")

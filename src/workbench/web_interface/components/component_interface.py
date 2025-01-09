@@ -20,7 +20,6 @@ from workbench.cached.cached_model import CachedModel
 from workbench.cached.cached_endpoint import CachedEndpoint
 
 from workbench.api.pipeline import Pipeline
-from workbench.core.artifacts.graph_core import GraphCore
 
 log = logging.getLogger("workbench")
 
@@ -49,7 +48,6 @@ class ComponentInterface(ABC):
         Model,
         Endpoint,
         Pipeline,
-        GraphCore,
         nx.Graph,
         pd.DataFrame,
         CachedDataSource,

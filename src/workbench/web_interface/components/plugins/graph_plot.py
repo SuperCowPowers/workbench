@@ -5,7 +5,6 @@ from dash.exceptions import PreventUpdate
 import networkx as nx
 
 # Workbench Imports
-from workbench.core.artifacts.graph_core import GraphCore
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
 
@@ -94,11 +93,11 @@ class GraphPlot(PluginInterface):
             style={"height": "100%", "display": "flex", "flexDirection": "column"},  # Full viewport height
         )
 
-    def update_properties(self, input_graph: Union[GraphCore, nx.Graph], **kwargs) -> list:
+    def update_properties(self, input_graph: nx.Graph, **kwargs) -> list:
         """Update the property values for the plugin component.
 
         Args:
-            input_graph (GraphCore or NetworkX Graph): The input graph data object.
+            input_graph (NetworkX Graph): The input graph data object.
             **kwargs: Additional keyword arguments (plugins can define their own arguments).
                       Note: The current kwargs processed are:
                             - label: The default node labels
@@ -111,8 +110,8 @@ class GraphPlot(PluginInterface):
             list: A list of updated properties (figure, label_list, color_list, default_label, default)color).
         """
 
-        # Get the NetworkX graph from GraphCore or use the provided graph directly
-        self.graph = input_graph.get_nx_graph() if hasattr(input_graph, "get_nx_graph") else input_graph
+        # Get the NetworkX graph
+        self.graph = input_graph
 
         # We'll use the first node to look for node attributes
         first_node = self.graph.nodes[next(iter(self.graph.nodes))]

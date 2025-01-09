@@ -116,7 +116,6 @@ class ProximityGraph:
 if __name__ == "__main__":
     """Example usage of the ProximityGraph class"""
     from workbench.api.feature_set import FeatureSet
-    from workbench.core.artifacts.graph_core import GraphCore
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
 
     # Load the Abalone FeatureSet
@@ -143,13 +142,9 @@ if __name__ == "__main__":
         df, features=feature_columns, id_column=id_column, target="class_number_of_rings"
     )
 
-    # Create a Workbench GraphCore object
-    my_graph = GraphCore(nx_graph, "abalone_proximity_graph")
-    print(my_graph.details())
-
     # Plot the full graph
     graph_plot = GraphPlot()
-    properties = graph_plot.update_properties(my_graph, labels=id_column, hover_text="all")
+    properties = graph_plot.update_properties(nx_graph, labels=id_column, hover_text="all")
     properties[0].show()
 
     # Get a neighborhood subgraph for a specific node
@@ -162,7 +157,6 @@ if __name__ == "__main__":
     # Compute a shortest path subgraph using two random nodes
     source_node = df[id_column].iloc[0]
     target_node = df[id_column].iloc[-1]
-    nx_graph = my_graph.get_nx_graph()
     short_path = set(nx.shortest_path(nx_graph, source=source_node, target=target_node, weight="weight"))
     subgraph = nx_graph.subgraph(short_path)
 

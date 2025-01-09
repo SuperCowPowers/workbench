@@ -8,8 +8,8 @@ import socket
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginInputType
 from workbench.api import DataSource, FeatureSet, Model, Endpoint, Compound
 from workbench.api.pipeline import Pipeline
-from workbench.core.artifacts.graph_core import GraphCore
 from workbench.utils.theme_manager import ThemeManager
+from workbench.utils.graph_utils import load_graph
 
 # Setup Logging
 log = logging.getLogger("workbench")
@@ -125,7 +125,7 @@ class PluginUnitTest:
             pipeline = self.input_data if self.input_data is not None else Pipeline("abalone_pipeline_v1")
             return self.plugin.update_properties(pipeline, **self.kwargs)
         elif plugin_input_type == PluginInputType.GRAPH:
-            graph = self.input_data if self.input_data is not None else GraphCore("karate_club")
+            graph = self.input_data if self.input_data is not None else load_graph("karate_club")
             return self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"], **self.kwargs)
         elif plugin_input_type == PluginInputType.DATAFRAME:
             df = (
