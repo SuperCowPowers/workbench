@@ -71,6 +71,61 @@ def rgba_to_tuple(rgba: str) -> tuple[float, float, float, float]:
     return r, g, b, a
 
 
+def adjust_towards_gray(r: float, g: float, b: float, factor: float = 0.5) -> tuple[float, float, float]:
+    """Shift RGB values towards gray."""
+    gray = 0.5  # Middle gray in normalized scale (0–1)
+    r = r + (gray - r) * factor
+    g = g + (gray - g) * factor
+    b = b + (gray - b) * factor
+    return r, g, b
+
+
+# Colorscale interpolation
+def weights_to_colors(weights: list[float], colorscale: list, muted: bool = True) -> list[str]:
+    """
+    Map a list of weights to colors using Plotly's sample_colorscale function and return rgba strings.
+
+    Args:
+        weights (list[float]): A list of weights (0 to 1) to map to colors.
+        colorscale (list): A Plotly-style colorscale.
+        muted (bool): Whether to mute the colors (shift towards gray).
+
+    Returns:
+        list[str]: A list of interpolated colors in rgba format.
+    """
+    from plotly.colors import sample_colorscale
+
+    # Handle normalization of weights
+    min_weight, max_weight = min(weights), max(weights)
+    if min_weight == max_weight:
+        # If all weights are the same, normalize to a single value (e.g., 0)
+        normalized_weights = [0.0] * len(weights)
+    else:
+        # Normalize weights to the range [0, 1]
+        normalized_weights = [(w - min_weight) / (max_weight - min_weight) for w in weights]
+
+    # Sample colors for normalized weights
+    sampled_colors = sample_colorscale(colorscale, normalized_weights, colortype="rgba")
+
+    result_colors = []
+    for rgba in sampled_colors:
+        # Handle RGB or RGBA output
+        if len(rgba) == 3:  # RGB
+            r, g, b = rgba
+            a = 1.0
+        elif len(rgba) == 4:  # RGBA
+            r, g, b, a = rgba
+
+        # Optionally shift colors towards gray
+        if muted:
+            r, g, b = adjust_towards_gray(r, g, b)
+
+        # Convert to rgba string
+        result_colors.append(f"rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {a})")
+
+    return result_colors
+
+
 if __name__ == "__main__":
     """Exercise the Color Utilities"""
 
@@ -87,5 +142,13 @@ if __name__ == "__main__":
     assert color_to_rgba("rgb(255, 255, 255)") == "rgba(255, 255, 255, 1.0)"
     assert color_to_rgba("rgba(0, 0, 0, 0.5)") == "rgba(0, 0, 0, 0.5)"
     assert color_to_rgba("rgba(255, 255, 255, 0.5)") == "rgba(255, 255, 255, 0.5)"
+
+    # Test the weight_to_color function
+    colorscale = [
+        [0.0, "rgb(255, 0, 0)"],
+        [0.5, "rgb(255, 255, 0)"],
+        [1.0, "rgb(0, 255, 0)"],
+    ]
+    assert weight_to_color(0.0, colorscale) == "rgba(255, 0, 0, 1.0)"
 
     print("Color Utilities tests pass.")
