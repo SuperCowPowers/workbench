@@ -27,6 +27,7 @@ def graph_bucket() -> Optional[str]:
         Optional[str]: The S3 bucket name for storing graph
     """
     from workbench.utils.config_manager import ConfigManager
+
     cm = ConfigManager()
     if not cm.config_okay():
         log.error("Workbench ConfigManager not initialized")
@@ -37,6 +38,7 @@ def graph_bucket() -> Optional[str]:
 def s3_client():
     """Return the S3 client for storing/querying graph artifacts"""
     from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+
     aws_account_clamp = AWSAccountClamp()
     boto3_session = aws_account_clamp.boto3_session
     return boto3_session.client("s3")
@@ -44,7 +46,7 @@ def s3_client():
 
 def exists(graph_name: str) -> bool:
     """Check if the graph exists in S3
-    
+
     Args:
         graph_name (str): The name of the graph artifact
     Returns:
@@ -103,7 +105,7 @@ def set_tags(graph, tags: list) -> None:
         tags (list): A list of tags to associate with the graph artifact
     """
     # Store tags as a graph attribute
-    graph.graph['tags'] = tags
+    graph.graph["tags"] = tags
 
 
 def get_tags(graph) -> list:
@@ -115,7 +117,7 @@ def get_tags(graph) -> list:
     Returns:
         list: A list of tags associated with the graph artifact
     """
-    return graph.graph.get('tags', [])
+    return graph.graph.get("tags", [])
 
 
 def arn(graph) -> Optional[str]:
