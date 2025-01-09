@@ -6,6 +6,7 @@ import networkx as nx
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
+from workbench.utils.color_utils import weights_to_colors
 
 
 class GraphPlot(PluginInterface):
@@ -158,23 +159,19 @@ class GraphPlot(PluginInterface):
                 color=node_degrees,  # Use node degrees for marker colors
                 colorscale=self.theme_manager.colorscale(),
                 colorbar=dict(title="Degree"),  # Include a color bar for degrees
-                line=dict(color="Black", width=1),  # Set border color and width for nodes
+                line=dict(color="rgba(0, 0, 0, 0.5)", width=2),  # Set border color and width for nodes
             ),
         )
 
         # Create Scattergl traces for edges in a single loop for efficiency
         edge_traces = []
-        for edge in self.graph.edges():
+        color_scale = self.theme_manager.colorscale()
+        edge_width = 5
+        edge_weights = list(nx.get_edge_attributes(self.graph, "weight").values())
+        edge_colors = weights_to_colors(edge_weights, color_scale)
+        for edge, color in zip(self.graph.edges(), edge_colors):
             x0, y0 = self.graph.nodes[edge[0]]["pos"]
             x1, y1 = self.graph.nodes[edge[1]]["pos"]
-
-            # Check for edge weight and set defaults if not present
-            weight = self.graph.edges[edge].get("weight", 0.5)
-
-            # Scale the width and alpha of the edge based on the weight
-            width = 5  # min(5.0, weight * 4.9 + 0.1)  # Scale edge width to range [0.1, 5.0]
-            alpha = min(1.0, weight * 0.7 + 0.3)  # Scale alpha to range [0.1, 1.0]
-            alpha = 1.0  # Set alpha to 1.0 for now
 
             # Create individual Scattergl trace for each edge with specific styling
             edge_traces += [
@@ -182,7 +179,7 @@ class GraphPlot(PluginInterface):
                     x=[x0, x1],
                     y=[y0, y1],
                     mode="lines",
-                    line=dict(width=width + 4, color="rgba(0, 0, 0, 0.25)"),  # Set edge color and transparency
+                    line=dict(width=edge_width + 2, color="rgba(0, 0, 0, 0.5)"),  # Edge drop shadow
                     showlegend=False,
                     hoverinfo="skip",  # Skip hover info for edges if not needed
                 ),
@@ -190,7 +187,7 @@ class GraphPlot(PluginInterface):
                     x=[x0, x1],
                     y=[y0, y1],
                     mode="lines",
-                    line=dict(width=width, color=f"rgba(60, 60, 60, {alpha})"),  # Set edge color and transparency
+                    line=dict(width=edge_width, color=color),
                     showlegend=False,
                     hoverinfo="skip",  # Skip hover info for edges if not needed
                 ),
