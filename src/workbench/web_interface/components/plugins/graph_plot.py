@@ -1,11 +1,9 @@
-from typing import Union
 from dash import dcc, html, callback, Input, Output
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 import networkx as nx
 
 # Workbench Imports
-from workbench.core.artifacts.graph_core import GraphCore
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
 
@@ -55,7 +53,8 @@ class GraphPlot(PluginInterface):
         # - A Graph Node/Edge Component
         # - Dropdown for Node Labels and Colors
         return html.Div(
-            [
+            className="workbench-container",
+            children=[
                 # Main Scatter Plot Graph
                 dcc.Graph(
                     id=f"{component_id}-graph",
@@ -93,11 +92,11 @@ class GraphPlot(PluginInterface):
             style={"height": "100%", "display": "flex", "flexDirection": "column"},  # Full viewport height
         )
 
-    def update_properties(self, input_graph: Union[GraphCore, nx.Graph], **kwargs) -> list:
+    def update_properties(self, input_graph: nx.Graph, **kwargs) -> list:
         """Update the property values for the plugin component.
 
         Args:
-            input_graph (GraphCore or NetworkX Graph): The input graph data object.
+            input_graph (NetworkX Graph): The input graph data object.
             **kwargs: Additional keyword arguments (plugins can define their own arguments).
                       Note: The current kwargs processed are:
                             - label: The default node labels
@@ -110,8 +109,8 @@ class GraphPlot(PluginInterface):
             list: A list of updated properties (figure, label_list, color_list, default_label, default)color).
         """
 
-        # Get the NetworkX graph from GraphCore or use the provided graph directly
-        self.graph = input_graph.get_nx_graph() if hasattr(input_graph, "get_nx_graph") else input_graph
+        # Get the NetworkX graph
+        self.graph = input_graph
 
         # We'll use the first node to look for node attributes
         first_node = self.graph.nodes[next(iter(self.graph.nodes))]
@@ -173,20 +172,29 @@ class GraphPlot(PluginInterface):
             weight = self.graph.edges[edge].get("weight", 0.5)
 
             # Scale the width and alpha of the edge based on the weight
-            width = min(5.0, weight * 4.9 + 0.1)  # Scale edge width to range [0.1, 5.0]
-            alpha = min(1.0, weight * 0.9 + 0.1)  # Scale alpha to range [0.1, 1.0]
+            width = 5  # min(5.0, weight * 4.9 + 0.1)  # Scale edge width to range [0.1, 5.0]
+            alpha = min(1.0, weight * 0.7 + 0.3)  # Scale alpha to range [0.1, 1.0]
+            alpha = 1.0  # Set alpha to 1.0 for now
 
             # Create individual Scattergl trace for each edge with specific styling
-            edge_traces.append(
+            edge_traces += [
                 go.Scattergl(
                     x=[x0, x1],
                     y=[y0, y1],
                     mode="lines",
-                    line=dict(width=width, color=f"rgba(150, 150, 150, {alpha})"),  # Set edge color and transparency
+                    line=dict(width=width + 4, color="rgba(0, 0, 0, 0.25)"),  # Set edge color and transparency
                     showlegend=False,
                     hoverinfo="skip",  # Skip hover info for edges if not needed
-                )
-            )
+                ),
+                go.Scattergl(
+                    x=[x0, x1],
+                    y=[y0, y1],
+                    mode="lines",
+                    line=dict(width=width, color=f"rgba(60, 60, 60, {alpha})"),  # Set edge color and transparency
+                    showlegend=False,
+                    hoverinfo="skip",  # Skip hover info for edges if not needed
+                ),
+            ]
 
         # Create a Plotly figure with the combined node and edge traces
         self.graph_figure = go.Figure(data=edge_traces + [node_trace])
@@ -198,6 +206,8 @@ class GraphPlot(PluginInterface):
             yaxis=dict(showgrid=False, showticklabels=False, zeroline=False),  # Hide Y-axis grid and tick marks
             showlegend=False,  # Remove legend
             dragmode="pan",
+            modebar={"bgcolor": "rgba(0, 0, 0, 0)"},  # Transparent background for modebar
+            uirevision="constant",  # Keep the layout constant for updates
         )
 
         # Get the first node's attributes (all fields should be defined here)
@@ -276,4 +286,4 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(GraphPlot, theme="light").run()
+    PluginUnitTest(GraphPlot, theme="dark").run()

@@ -270,9 +270,8 @@ class ScatterPlot(PluginInterface):
             ),
             showlegend=False,
             dragmode="pan",
-            modebar={
-                "bgcolor": "rgba(0, 0, 0, 0)",  # Transparent background
-            },
+            modebar={"bgcolor": "rgba(0, 0, 0, 0)"},  # Transparent background
+            uirevision="constant",
         )
 
         return figure
@@ -349,13 +348,9 @@ if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
     from workbench.api import df_store
-    from workbench.utils.chem_utils import project_fingerprints
 
     # Load our preprocessed tox21 training data
     df = df_store.DFStore().get("/datasets/chem_info/tox21")
-
-    # Set up the input data
-    df = project_fingerprints(df, projection="UMAP")
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(ScatterPlot, input_data=df, theme="dark", suppress_hover_display=True, x="x", y="y").run()

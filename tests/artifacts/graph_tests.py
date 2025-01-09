@@ -1,25 +1,22 @@
-from workbench.core.artifacts.graph_core import GraphCore
+from workbench.utils.graph_utils import load_graph, exists, modified, details, get_tags
 
 
 def test_general_info():
     """Simple test of the Endpoint functionality"""
 
-    test_graph = GraphCore("karate-club")
-
     # Call the various methods
+    assert exists("karate_club")
 
-    # Let's do a check/validation of the Graph
-    assert test_graph.exists()
+    test_graph = load_graph("karate_club")
 
-    # Creation/Modification Times
-    print(test_graph.created())
-    print(test_graph.modified())
-
-    # Details
-    print(test_graph.details())
+    # Modification Time
+    print(modified(test_graph))
 
     # Get the tags associated with this Graph
-    print(f"Tags: {test_graph.get_tags()}")
+    print(f"Tags: {get_tags(test_graph)}")
+
+    # Details
+    print(details(test_graph))
 
 
 if __name__ == "__main__":

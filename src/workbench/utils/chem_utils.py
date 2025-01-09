@@ -538,13 +538,14 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     return output_df
 
 
-def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=4096) -> pd.DataFrame:
+def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=True) -> pd.DataFrame:
     """Compute and add Morgan fingerprints to the DataFrame.
 
     Args:
         df (pd.DataFrame): Input DataFrame containing SMILES strings.
         radius (int): Radius for the Morgan fingerprint.
-        nBits (int): Number of bits for the fingerprint.
+        n_bits (int): Number of bits for the fingerprint.
+        counts (bool): Count simulation for the fingerprint.
 
     Returns:
         pd.DataFrame: The input DataFrame with the Morgan fingerprints added as bit strings.
@@ -567,7 +568,9 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, nBits=4096) -> pd.Da
     largest_frags = df["molecule"].apply(remove_disconnected_fragments)
 
     # Create a Morgan fingerprint generator
-    morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=nBits, countSimulation=True)
+    if counts:
+        n_bits *= 4  # Multiply by 4 to simulate counts
+    morgan_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=n_bits, countSimulation=counts)
 
     # Compute Morgan fingerprints (vectorized)
     fingerprints = largest_frags.apply(
@@ -594,10 +597,8 @@ def project_fingerprints(df: pd.DataFrame, projection: str = "UMAP") -> pd.DataF
     if fingerprint_column is None:
         raise ValueError("Input DataFrame must have a fingerprint column")
 
-    # Convert the bitstring fingerprint into a NumPy array
-    df["fingerprint_bits"] = df[fingerprint_column].apply(
-        lambda fp: np.array([int(bit) for bit in fp], dtype=np.float32)
-    )
+    # Convert the bitstring fingerprint into a NumPy array of integers
+    df["fingerprint_bits"] = df[fingerprint_column].apply(lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_))
 
     # Create a matrix of fingerprints
     X = np.vstack(df["fingerprint_bits"].values)
@@ -628,8 +629,8 @@ def project_fingerprints(df: pd.DataFrame, projection: str = "UMAP") -> pd.DataF
 
     # Jitter
     jitter_scale = 0.1
-    df["x"] += np.random.normal(0, jitter_scale, len(df))
-    df["y"] += np.random.normal(0, jitter_scale, len(df))
+    df["x"] += np.random.uniform(0, jitter_scale, len(df))
+    df["y"] += np.random.uniform(0, jitter_scale, len(df))
 
     return df
 
