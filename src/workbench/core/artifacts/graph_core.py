@@ -2,6 +2,7 @@ import os
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Union
 
 # NetworkX import
 try:
@@ -18,21 +19,24 @@ from workbench.utils.json_utils import CustomEncoder
 class GraphCore(Artifact):
     """GraphCore: A class to handle graph artifacts in Workbench"""
 
-    def __init__(self, source: str, name: str = None, tags: list = None):
+    def __init__(self, source: Union[str, nx.Graph], name: str = None):
         """
         Initializes a new GraphCore object.
 
         Args:
             source (str): The source of the graph. S3 path, file path, nx_graph, or an existing Graph object.
             name (str): The name of the graph (must be lowercase). If not specified, a name will be generated.
-            tags (list[str]): A list of tags associated with the graph. If not specified, tags will be generated.
         """
 
         # Check the name
         if name is None:
-            name = Artifact.generate_valid_name(source)
-        else:
-            Artifact.is_name_valid(name, lower_case=False)
+            if isinstance(source, str):
+                name = Artifact.generate_valid_name(source)
+            elif isinstance(source, nx.Graph):
+                name = source.name
+
+        # Ensure the name is valid
+        Artifact.is_name_valid(name, lower_case=False)
 
         # Call our parent class constructor
         super().__init__(name)
@@ -71,8 +75,8 @@ class GraphCore(Artifact):
             self.graph = None
             return
 
-        # Set the tags
-        self.tags = [name] if tags is None else tags
+        # Tags can be set with the set_tags method
+        self.tags = None
 
     def exists(self) -> bool:
         """Check if the graph exists in S3"""
@@ -237,15 +241,31 @@ class GraphCore(Artifact):
 if __name__ == "__main__":
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
     from workbench.core.artifacts.graph_core import GraphCore  # noqa
+    from workbench.utils.graph_utils import create_nxgraph_from_dfs
+    import pandas as pd
 
-    # Create a GraphCore object
-    graph = GraphCore("karate_club")
+    # Create an NetworkX Graph from two dataframes
+    node_df = pd.DataFrame({
+        'node_id': [1, 2, 3],
+        'attribute': ['A', 'B', 'C']
+    })
+    edges_df = pd.DataFrame({
+        'source': [1, 2],
+        'target': [2, 3],
+        'weight': [0.5, 1.5]
+    })
+    nx_graph = create_nxgraph_from_dfs(node_df, edges_df)
+    nx_graph.name = "my_graph"
+    my_graph = GraphCore(nx_graph)
+
+    # Grab an existing graph
+    my_graph = GraphCore("karate_club")
 
     # Print the details
-    print(graph.details())
+    print(my_graph.details())
 
     # Layout the graph using the spring algorithm
-    graph.graph_layout(layout="spring")
+    my_graph.graph_layout(layout="spring")
 
     # Note: You can set the node positions which allows you to use any layout algorithm
     # pos = nx.spring_layout(graph.get_nx_graph())
@@ -253,5 +273,5 @@ if __name__ == "__main__":
 
     # View the graph
     graph_plot = GraphPlot()
-    [figure] = graph_plot.update_properties(graph)
+    [figure, *_] = graph_plot.update_properties(my_graph)
     figure.show()
