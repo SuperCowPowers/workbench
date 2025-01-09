@@ -598,9 +598,7 @@ def project_fingerprints(df: pd.DataFrame, projection: str = "UMAP") -> pd.DataF
         raise ValueError("Input DataFrame must have a fingerprint column")
 
     # Convert the bitstring fingerprint into a NumPy array of integers
-    df["fingerprint_bits"] = df[fingerprint_column].apply(
-        lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
-    )
+    df["fingerprint_bits"] = df[fingerprint_column].apply(lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_))
 
     # Create a matrix of fingerprints
     X = np.vstack(df["fingerprint_bits"].values)

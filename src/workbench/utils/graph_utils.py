@@ -42,17 +42,10 @@ if __name__ == "__main__":
     # Test the graph utility functions
 
     # Example node DataFrame
-    node_df = pd.DataFrame({
-        'node_id': [1, 2, 3],
-        'attribute': ['A', 'B', 'C']
-    })
+    node_df = pd.DataFrame({"node_id": [1, 2, 3], "attribute": ["A", "B", "C"]})
 
     # Example edge DataFrame
-    edges_df = pd.DataFrame({
-        'source': [1, 2],
-        'target': [2, 3],
-        'weight': [0.5, 1.5]
-    })
+    edges_df = pd.DataFrame({"source": [1, 2], "target": [2, 3], "weight": [0.5, 1.5]})
 
     # Create the networkx graph
     G = create_nxgraph_from_dfs(node_df, edges_df)

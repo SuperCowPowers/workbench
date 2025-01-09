@@ -245,15 +245,8 @@ if __name__ == "__main__":
     import pandas as pd
 
     # Create an NetworkX Graph from two dataframes
-    node_df = pd.DataFrame({
-        'node_id': [1, 2, 3],
-        'attribute': ['A', 'B', 'C']
-    })
-    edges_df = pd.DataFrame({
-        'source': [1, 2],
-        'target': [2, 3],
-        'weight': [0.5, 1.5]
-    })
+    node_df = pd.DataFrame({"node_id": [1, 2, 3], "attribute": ["A", "B", "C"]})
+    edges_df = pd.DataFrame({"source": [1, 2], "target": [2, 3], "weight": [0.5, 1.5]})
     nx_graph = create_nxgraph_from_dfs(node_df, edges_df)
     nx_graph.name = "my_graph"
     my_graph = GraphCore(nx_graph)

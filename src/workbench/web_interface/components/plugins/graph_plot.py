@@ -176,6 +176,7 @@ class GraphPlot(PluginInterface):
             # Scale the width and alpha of the edge based on the weight
             width = 5  # min(5.0, weight * 4.9 + 0.1)  # Scale edge width to range [0.1, 5.0]
             alpha = min(1.0, weight * 0.7 + 0.3)  # Scale alpha to range [0.1, 1.0]
+            alpha = 1.0  # Set alpha to 1.0 for now
 
             # Create individual Scattergl trace for each edge with specific styling
             edge_traces += [
@@ -183,7 +184,7 @@ class GraphPlot(PluginInterface):
                     x=[x0, x1],
                     y=[y0, y1],
                     mode="lines",
-                    line=dict(width=width+4, color=f"rgba(0, 0, 0, 0.25)"),  # Set edge color and transparency
+                    line=dict(width=width + 4, color="rgba(0, 0, 0, 0.25)"),  # Set edge color and transparency
                     showlegend=False,
                     hoverinfo="skip",  # Skip hover info for edges if not needed
                 ),
@@ -191,10 +192,10 @@ class GraphPlot(PluginInterface):
                     x=[x0, x1],
                     y=[y0, y1],
                     mode="lines",
-                    line=dict(width=width, color=f"rgba(60, 60, 60, 1.0)"),  # Set edge color and transparency
+                    line=dict(width=width, color=f"rgba(60, 60, 60, {alpha})"),  # Set edge color and transparency
                     showlegend=False,
                     hoverinfo="skip",  # Skip hover info for edges if not needed
-                )
+                ),
             ]
 
         # Create a Plotly figure with the combined node and edge traces
