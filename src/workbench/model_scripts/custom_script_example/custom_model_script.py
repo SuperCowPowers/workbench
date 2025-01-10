@@ -110,17 +110,28 @@ def model_fn(model_dir):
     return joblib.load(os.path.join(model_dir, "scikit_model.joblib"))
 
 
-# Input and output functions (basically convert CSV to DataFrame)
 def input_fn(input_data, content_type):
-    if content_type == "text/csv":
+    """Parse input data and return a DataFrame."""
+    if not input_data:
+        raise ValueError("Empty input data is not supported!")
+
+    if "text/csv" in content_type:
         return pd.read_csv(StringIO(input_data))
-    raise ValueError(f"{content_type} not supported!")
+    elif "application/json" in content_type:
+        return pd.DataFrame(json.loads(input_data))  # Assumes JSON array of records
+    else:
+        raise ValueError(f"{content_type} not supported!")
 
 
 def output_fn(output_df, accept_type):
-    if accept_type == "text/csv":
-        return output_df.to_csv(index=False), "text/csv"
-    raise RuntimeError(f"{accept_type} not supported!")
+    """Supports both CSV and JSON output formats."""
+    if "text/csv" in accept_type:
+        csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
+        return csv_output, "text/csv"
+    elif "application/json" in accept_type:
+        return output_df.to_json(orient="records"), "application/json"  # JSON array of records (NaNs -> null)
+    else:
+        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
 
 # Prediction function
