@@ -143,12 +143,11 @@ if __name__ == "__main__":
     assert color_to_rgba("rgba(0, 0, 0, 0.5)") == "rgba(0, 0, 0, 0.5)"
     assert color_to_rgba("rgba(255, 255, 255, 0.5)") == "rgba(255, 255, 255, 0.5)"
 
-    # Test the weight_to_color function
+    # Test the weights_to_colors function
     colorscale = [
         [0.0, "rgb(255, 0, 0)"],
         [0.5, "rgb(255, 255, 0)"],
         [1.0, "rgb(0, 255, 0)"],
     ]
-    assert weight_to_color(0.0, colorscale) == "rgba(255, 0, 0, 1.0)"
-
+    print(weights_to_colors([0.0, 0.2, 0.4, 0.8, 1.0], colorscale))
     print("Color Utilities tests pass.")

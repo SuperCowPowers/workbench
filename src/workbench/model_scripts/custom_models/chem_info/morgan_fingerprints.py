@@ -12,6 +12,7 @@ import os
 import joblib
 from io import StringIO
 import pandas as pd
+import json
 
 # Local imports
 from chem_utils import compute_morgan_fingerprints
@@ -45,7 +46,7 @@ def input_fn(input_data, content_type):
     """Parse input data and return a DataFrame."""
     if not input_data:
         raise ValueError("Empty input data is not supported!")
-    
+
     # Decode bytes to string if necessary
     if isinstance(input_data, bytes):
         input_data = input_data.decode("utf-8")
