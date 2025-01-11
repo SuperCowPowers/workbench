@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
     # Test the weights_to_colors function
     colorscale = [
-        [0.0, "rgb(255, 0, 0)"],
+        [0.0, "rgba(255, 0, 0, 0.5)"],
         [0.5, "rgb(255, 255, 0)"],
         [1.0, "rgb(0, 255, 0)"],
     ]

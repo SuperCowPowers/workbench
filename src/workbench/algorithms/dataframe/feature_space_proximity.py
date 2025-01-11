@@ -326,7 +326,7 @@ if __name__ == "__main__":
     from workbench.api import Model
 
     model = Model("abalone-regression")
-    model_spider = FeatureSpaceProximity.from_model(model, "id")
+    model_spider = FeatureSpaceProximity.from_model(model)
 
     # Neighbors Test using a single query ID
     single_query_id = 5
