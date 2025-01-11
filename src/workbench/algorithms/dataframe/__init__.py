@@ -4,6 +4,7 @@ These classes provide functionality for Pandas Dataframes
 
 - TBD: TBD
 """
+
 from .proximity import Proximity
 from .features_proximity import FeaturesProximity
 from .fingerprint_proximity import FingerprintProximity

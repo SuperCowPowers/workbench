@@ -15,7 +15,7 @@ class ProximityGraph:
         id_column: str,
         proximity_class: Proximity = FeaturesProximity,
         proximity_kwargs: dict = None,
-        store_features: bool = True
+        store_features: bool = True,
     ):
         """
         Processes the input DataFrame and builds a proximity graph.
@@ -23,7 +23,7 @@ class ProximityGraph:
         Args:
             df (pd.DataFrame): The input DataFrame.
             id_column (str): Name of the ID column in the DataFrame.
-            proximity_class (Proximity): A Proximity class to compute neighbor relationships (default: FeaturesProximity).
+            proximity_class (Proximity): A Proximity class to compute neighbors (default: FeaturesProximity).
             proximity_kwargs (dict): Additional arguments for initializing the proximity class.
             store_features (bool): Whether to store the features as node attributes (default: True).
         """
@@ -92,7 +92,6 @@ class ProximityGraph:
 
 
 if __name__ == "__main__":
-    import numpy as np
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
 
@@ -113,10 +112,7 @@ if __name__ == "__main__":
         "target": "target",
     }
     feature_graph = ProximityGraph(
-        feature_df,
-        id_column="id",
-        proximity_class=FeaturesProximity,
-        proximity_kwargs=feature_proximity_kwargs
+        feature_df, id_column="id", proximity_class=FeaturesProximity, proximity_kwargs=feature_proximity_kwargs
     )
     nx_graph = feature_graph.get_graph()
     print("Edges:", nx_graph.edges(data=True))
@@ -138,7 +134,7 @@ if __name__ == "__main__":
         fingerprint_df,
         id_column="id",
         proximity_class=FingerprintProximity,
-        proximity_kwargs=fingerprint_proximity_kwargs
+        proximity_kwargs=fingerprint_proximity_kwargs,
     )
     nx_graph = fingerprint_graph.get_graph()
     print("Edges:", nx_graph.edges(data=True))
@@ -175,6 +171,7 @@ if __name__ == "__main__":
     # Now a real dataset with fingerprints
     from workbench.api import FeatureSet
     from workbench.utils.chem_utils import compute_morgan_fingerprints
+
     fs = FeatureSet("aqsol_mol_descriptors")
     df = fs.pull_dataframe()
     df = df.sample(100)
@@ -186,7 +183,7 @@ if __name__ == "__main__":
         df,
         id_column=fs.id_column,
         proximity_class=FingerprintProximity,
-        proximity_kwargs = {"fingerprint_column": "morgan_fingerprint"},
+        proximity_kwargs={"fingerprint_column": "morgan_fingerprint"},
     )
     nx_graph = fingerprint_graph.get_graph()
 

@@ -6,7 +6,9 @@ from workbench.algorithms.dataframe.proximity import Proximity
 
 
 class FeaturesProximity(Proximity):
-    def __init__(self, df: pd.DataFrame, id_column: str, features: List[str], target: str = None, n_neighbors: int = 10) -> None:
+    def __init__(
+        self, df: pd.DataFrame, id_column: str, features: List[str], target: str = None, n_neighbors: int = 10
+    ) -> None:
         """
         Initialize the FeaturesProximity class.
 
@@ -87,9 +89,9 @@ if __name__ == "__main__":
     query_neighbors_radius_df = proximity.neighbors(query_id=1, radius=2.0)
     print(query_neighbors_radius_df)
 
-
     # Test 4: From a Workbench model
     from workbench.api import Model
+
     m = Model("abalone-regression")
     proximity = FeaturesProximity.from_model(m)
 
@@ -98,4 +100,3 @@ if __name__ == "__main__":
     single_query_neighbors = proximity.neighbors(single_query_id)
     print("\nNeighbors for Query ID:", single_query_id)
     print(single_query_neighbors)
-
