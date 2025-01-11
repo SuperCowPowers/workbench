@@ -1,46 +1,61 @@
-"""FingerprintProximity: A class for neighbor lookups using KNN on fingerprints."""
-
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from typing import Union, List
-
-# Workbench Imports
 from workbench.algorithms.dataframe.proximity import Proximity
 
 
 class FingerprintProximity(Proximity):
-    def __init__(self, df: pd.DataFrame, fingerprint_column: str, id_column: str, n_neighbors: int = 10) -> None:
+    def __init__(self, df: pd.DataFrame, fingerprint_column: str, id_column: Union[int, str], n_neighbors: int = 10) -> None:
         """
         Initialize the FingerprintProximity class.
 
         Args:
             df (pd.DataFrame): DataFrame containing fingerprints and other features.
             fingerprint_column (str): Name of the column containing fingerprints.
-            id_column (str): Name of the column used as an identifier.
-            neighbors (int): Number of neighbors to compute.
+            id_column (Union[int, str]): Name of the column used as an identifier.
+            n_neighbors (int): Number of neighbors to compute.
         """
-        self.df = df.copy()
         self.fingerprint_column = fingerprint_column
-        self.id_column = id_column
-        self.n_neighbors = n_neighbors
-        self._prepare_data()
+        super().__init__(df, id_column=id_column, n_neighbors=n_neighbors)
 
     def _prepare_data(self) -> None:
         """
-        Prepare the DataFrame by converting fingerprints and setting up the feature matrix.
+        Prepare the DataFrame by converting fingerprints into a binary feature matrix.
         """
-
-        # Convert the bitstring fingerprint into a NumPy array of integers
+        # Convert the fingerprint strings to binary arrays
         self.df["fingerprint_bits"] = self.df[self.fingerprint_column].apply(
             lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
         )
 
-        # Create a matrix of fingerprints
+        # Create the feature matrix and initialize NearestNeighbors
         self.X = np.vstack(self.df["fingerprint_bits"].values)
+        self.nn = NearestNeighbors(metric="jaccard", n_neighbors=self.n_neighbors + 1).fit(self.X)
 
-        # Fit NearestNeighbors
-        self.nn = NearestNeighbors(metric="jaccard", n_neighbors=self.n_neighbors).fit(self.X)
+    def neighbors(
+        self, query_id: Union[int, str], similarity: float = None, include_self: bool = False
+    ) -> pd.DataFrame:
+        """
+        Return neighbors of the given query ID, either by fixed neighbors or above a similarity threshold.
+
+        Args:
+            query_id (Union[int, str]): The ID of the query point.
+            similarity (float): Optional similarity threshold above which neighbors are to be included.
+            include_self (bool): Whether to include the query ID itself in the neighbor results.
+
+        Returns:
+            pd.DataFrame: Filtered DataFrame that includes the query ID, its neighbors, and their similarities.
+        """
+        # Convert similarity to a radius (1 - similarity)
+        radius = 1 - similarity if similarity is not None else None
+        neighbors_df = super().neighbors(query_id=query_id, radius=radius, include_self=include_self)
+
+        # Convert distances to Tanimoto similarities
+        if "distance" in neighbors_df.columns:
+            neighbors_df["similarity"] = 1 - neighbors_df["distance"]
+            neighbors_df = neighbors_df.drop(columns=["distance"])
+
+        return neighbors_df
 
     def all_neighbors(self, include_self: bool = False) -> pd.DataFrame:
         """
@@ -52,85 +67,17 @@ class FingerprintProximity(Proximity):
         Returns:
             pd.DataFrame: A DataFrame of neighbors and their Tanimoto similarities.
         """
-        results = self._get_neighbors(query_idx=None, include_self=include_self)
-        return pd.DataFrame(results)
+        all_neighbors_df = super().all_neighbors(include_self=include_self)
 
-    def neighbors(
-        self, query_id: Union[str, int], similarity: float = None, include_self: bool = False
-    ) -> pd.DataFrame:
-        """
-        Return neighbors of the given query ID, either by fixed neighbors or above a similarity threshold.
+        # Convert distances to Tanimoto similarities
+        if "distance" in all_neighbors_df.columns:
+            all_neighbors_df["similarity"] = 1 - all_neighbors_df["distance"]
+            all_neighbors_df = all_neighbors_df.drop(columns=["distance"])
 
-        Args:
-            query_id (Union[str, int]): The ID of the query point.
-            similarity (float): Optional similarity threshold above which neighbors are to be included.
-            include_self (bool): Whether to include the query ID itself in the neighbor results.
-
-        Returns:
-            pd.DataFrame: Filtered DataFrame that includes the query ID, its neighbors, and their similarities.
-        """
-        # Find the query point index
-        query_idx = self.df.index[self.df[self.id_column] == query_id].tolist()
-        if not query_idx:
-            raise ValueError(f"Query ID {query_id} not found in the DataFrame")
-        query_idx = query_idx[0]
-
-        results = self._get_neighbors(query_idx=query_idx, similarity=similarity, include_self=include_self)
-        return pd.DataFrame(results)
-
-    def _get_neighbors(self, query_idx: int = None, similarity: float = None, include_self: bool = True) -> List[dict]:
-        """
-        Internal: Helper method to compute neighbors for a given query index or all rows.
-
-        Args:
-            query_idx (int): Index of the query point. If None, computes for all rows.
-            similarity (float): Optional similarity threshold above which neighbors are to be included.
-            include_self (bool): Whether to include the query ID itself in the neighbor results.
-
-        Returns:
-            List[dict]: List of dictionaries with neighbor information.
-        """
-        if query_idx is None:  # Handle all_neighbors case
-            distances, indices = self.nn.kneighbors(self.X)
-        elif similarity is not None:  # Radius-based search
-            radius = 1 - similarity
-            distances, indices = self.nn.radius_neighbors([self.X[query_idx]], radius=radius)
-        else:  # Fixed neighbors for a single query
-            distances, indices = self.nn.kneighbors([self.X[query_idx]])
-
-        # Normalize data structure
-        distances, indices = np.array(distances), np.array(indices)
-
-        # Build results
-        results = []
-        if query_idx is None:  # Compute for all rows
-            for idx, (neighbors, dists) in enumerate(zip(indices, distances)):
-                for neighbor_idx, dist in zip(neighbors, dists):
-                    if not include_self and idx == neighbor_idx:
-                        continue
-                    results.append(
-                        {
-                            self.id_column: self.df.iloc[idx][self.id_column],
-                            "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
-                            "similarity": 1 - dist,
-                        }
-                    )
-        else:  # Single query
-            for neighbor_idx, dist in zip(indices[0], distances[0]):
-                if not include_self and neighbor_idx == query_idx:
-                    continue
-                results.append(
-                    {
-                        self.id_column: self.df.iloc[query_idx][self.id_column],
-                        "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
-                        "similarity": 1 - dist,
-                    }
-                )
-
-        return results
+        return all_neighbors_df
 
 
-# Testing the FeatureSpaceProximity class with separate training and test/evaluation dataframes
+# Testing the FingerprintProximity class
 if __name__ == "__main__":
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 1000)
@@ -142,17 +89,20 @@ if __name__ == "__main__":
     }
     df = pd.DataFrame(data)
 
-    # Initialize and compute
-    proximity = FingerprintProximity(df, fingerprint_column="fingerprint", id_column="id", n_neighbors=4)
+    # Initialize the FingerprintProximity class
+    proximity = FingerprintProximity(df, fingerprint_column="fingerprint", id_column="id", n_neighbors=3)
 
-    # Get all neighbors
+    # Test 1: All neighbors
+    print("\n--- Test 1: All Neighbors ---")
     all_neighbors_df = proximity.all_neighbors()
     print(all_neighbors_df)
 
-    # Get neighbors for a specific query
+    # Test 2: Neighbors for a specific query
+    print("\n--- Test 2: Neighbors for Query ID 1 ---")
     query_neighbors_df = proximity.neighbors(query_id=1)
     print(query_neighbors_df)
 
-    # Get neighbors for a specific query
-    query_neighbors_df = proximity.neighbors(query_id=1, similarity=0.5)
-    print(query_neighbors_df)
+    # Test 3: Neighbors for a specific query with similarity threshold
+    print("\n--- Test 3: Neighbors for Query ID 1 with Similarity 0.5 ---")
+    query_neighbors_sim_df = proximity.neighbors(query_id=1, similarity=0.5)
+    print(query_neighbors_sim_df)
