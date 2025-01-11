@@ -1,12 +1,15 @@
-"""FeatureSpaceProximity: A class for neighbor lookups using KNN with optional target information."""
+"""FingerprintProximity: A class for neighbor lookups using KNN on fingerprints."""
 
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from typing import Union, List
 
+# Workbench Imports
+from workbench.algorithms.dataframe.proximity import Proximity
 
-class FingerprintProximity:
+
+class FingerprintProximity(Proximity):
     def __init__(self, df: pd.DataFrame, fingerprint_column: str, id_column: str, n_neighbors: int = 10) -> None:
         """
         Initialize the FingerprintProximity class.
