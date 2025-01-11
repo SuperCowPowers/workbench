@@ -183,7 +183,7 @@ if __name__ == "__main__":
         df,
         id_column=fs.id_column,
         proximity_class=FingerprintProximity,
-        proximity_kwargs={"fingerprint_column": "morgan_fingerprint"},
+        proximity_kwargs={"fingerprint_column": "morgan_fingerprint", "n_neighbors": 2},
     )
     nx_graph = fingerprint_graph.get_graph()
 
