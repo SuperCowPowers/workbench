@@ -1,4 +1,4 @@
-"""FeatureSpaceProximity: A class for neighbor lookups using KNN with optional target information."""
+"""FeatureSpaceProximityDeprecated: A class for neighbor lookups using KNN with optional target information."""
 
 from typing import Union
 import pandas as pd
@@ -8,10 +8,13 @@ from sklearn.preprocessing import StandardScaler
 from pandas.api.types import is_numeric_dtype
 import logging
 
+# Workbench Imports
+from workbench.algorithms.dataframe.proximity import Proximity
 
-class FeatureSpaceProximity:
+
+class FeatureSpaceProximityDeprecated:
     def __init__(self, df: pd.DataFrame, features: list, id_column: str, target: str = None, neighbors: int = 10):
-        """FeatureSpaceProximity: A class for neighbor lookups using KNN with optional target information.
+        """FeatureSpaceProximityDeprecated: A class for neighbor lookups using KNN with optional target information.
 
         Args:
             df: Pandas DataFrame
@@ -28,7 +31,7 @@ class FeatureSpaceProximity:
         self.knn_neighbors = neighbors
 
         # Standardize the feature values and build the KNN model
-        self.log.info("Building KNN model for FeatureSpaceProximity...")
+        self.log.info("Building KNN model for FeatureSpaceProximityDeprecated...")
         self.scaler = StandardScaler().fit(df[features])
         scaled_features = self.scaler.transform(df[features])
         self.knn_model = NearestNeighbors(n_neighbors=neighbors, algorithm="auto").fit(scaled_features)
@@ -46,14 +49,14 @@ class FeatureSpaceProximity:
         self.outliers()
 
     @classmethod
-    def from_model(cls, model) -> "FeatureSpaceProximity":
-        """Create a FeatureSpaceProximity instance from a Workbench model object.
+    def from_model(cls, model) -> "FeatureSpaceProximityDeprecated":
+        """Create a FeatureSpaceProximityDeprecated instance from a Workbench model object.
 
         Args:
             model (Model): A Workbench model object.
 
         Returns:
-            FeatureSpaceProximity: A new instance of the FeatureSpaceProximity class.
+            FeatureSpaceProximityDeprecated: A new instance of the FeatureSpaceProximityDeprecated class.
         """
         from workbench.api import FeatureSet
 
@@ -65,7 +68,7 @@ class FeatureSpaceProximity:
         # Retrieve the training DataFrame from the feature set
         df = fs.view("training").pull_dataframe()
 
-        # Create and return a new instance of FeatureSpaceProximity
+        # Create and return a new instance of FeatureSpaceProximityDeprecated
         return cls(df=df, features=features, id_column=fs.id_column, target=target)
 
     def neighbors(self, query_id: Union[str, int], radius: float = None, include_self: bool = True) -> pd.DataFrame:
@@ -244,7 +247,7 @@ class FeatureSpaceProximity:
             return pd.DataFrame()
 
 
-# Testing the FeatureSpaceProximity class with separate training and test/evaluation dataframes
+# Testing the FeatureSpaceProximityDeprecated class with separate training and test/evaluation dataframes
 if __name__ == "__main__":
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 1000)
@@ -279,7 +282,7 @@ if __name__ == "__main__":
     test_df["class"] = pd.cut(test_df["target"], bins=3, labels=["low", "medium", "high"])
 
     # Test the spider using a Classification target
-    spider = FeatureSpaceProximity(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="class")
+    spider = FeatureSpaceProximityDeprecated(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="class")
 
     # Neighbors Bulk Test
     neighbors = spider.neighbors_bulk(test_df)
@@ -320,13 +323,13 @@ if __name__ == "__main__":
     print("\nNeighbor Distances (Training Data):\n", distances)
 
     # Test the spider using a Regression target
-    spider = FeatureSpaceProximity(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="target")
+    spider = FeatureSpaceProximityDeprecated(training_df, ["feat1", "feat2", "feat3"], id_column="ID", target="target")
 
-    # Create a FeatureSpaceProximity instance from a Workbench model object
+    # Create a FeatureSpaceProximityDeprecated instance from a Workbench model object
     from workbench.api import Model
 
     model = Model("abalone-regression")
-    model_spider = FeatureSpaceProximity.from_model(model)
+    model_spider = FeatureSpaceProximityDeprecated.from_model(model)
 
     # Neighbors Test using a single query ID
     single_query_id = 5
