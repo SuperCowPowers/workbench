@@ -8,9 +8,6 @@ from sklearn.preprocessing import StandardScaler
 from pandas.api.types import is_numeric_dtype
 import logging
 
-# Workbench Imports
-from workbench.algorithms.dataframe.proximity import Proximity
-
 
 class FeatureSpaceProximityDeprecated:
     def __init__(self, df: pd.DataFrame, features: list, id_column: str, target: str = None, neighbors: int = 10):

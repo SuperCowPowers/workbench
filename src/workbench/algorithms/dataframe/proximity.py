@@ -5,7 +5,9 @@ from typing import Union, List
 
 
 class Proximity:
-    def __init__(self, df: pd.DataFrame, id_column: Union[int, str], features: List[str] = None, n_neighbors: int = 10) -> None:
+    def __init__(
+        self, df: pd.DataFrame, id_column: Union[int, str], features: List[str] = None, n_neighbors: int = 10
+    ) -> None:
         """
         Initialize the Proximity class.
 
@@ -26,11 +28,6 @@ class Proximity:
     def _auto_features(self) -> List[str]:
         """Automatically determine feature columns, excluding the ID column."""
         return self.df.select_dtypes(include=[np.number]).columns.difference([self.id_column]).tolist()
-
-    def _prepare_data(self) -> None:
-        """Prepare the data for nearest neighbor computation."""
-        self.X = self.df[self.features].values
-        self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
     def _prepare_data(self) -> None:
         if not self.features:
@@ -54,9 +51,7 @@ class Proximity:
         results = self._get_neighbors(query_idx=None, include_self=include_self)
         return pd.DataFrame(results)
 
-    def neighbors(
-        self, query_id: Union[int, str], radius: float = None, include_self: bool = False
-    ) -> pd.DataFrame:
+    def neighbors(self, query_id: Union[int, str], radius: float = None, include_self: bool = False) -> pd.DataFrame:
         """
         Return neighbors of the given query ID, either by fixed neighbors or within a radius.
 
@@ -103,20 +98,24 @@ class Proximity:
                 for neighbor_idx, dist in zip(neighbors, dists):
                     if not include_self and idx == neighbor_idx:
                         continue
-                    results.append({
-                        self.id_column: self.df.iloc[idx][self.id_column],
-                        "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
-                        "distance": dist,
-                    })
+                    results.append(
+                        {
+                            self.id_column: self.df.iloc[idx][self.id_column],
+                            "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
+                            "distance": dist,
+                        }
+                    )
         else:
             for neighbor_idx, dist in zip(indices[0], distances[0]):
                 if not include_self and neighbor_idx == query_idx:
                     continue
-                results.append({
-                    self.id_column: self.df.iloc[query_idx][self.id_column],
-                    "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
-                    "distance": dist,
-                })
+                results.append(
+                    {
+                        self.id_column: self.df.iloc[query_idx][self.id_column],
+                        "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
+                        "distance": dist,
+                    }
+                )
 
         return results
 
@@ -148,7 +147,6 @@ if __name__ == "__main__":
     prox = Proximity(df, id_column="ID", features=["Feature1"], n_neighbors=2)
     print(prox.all_neighbors())
 
-
     # Create a sample DataFrame
     data = {
         "ID": ["a", "b", "c", "d", "e"],
@@ -160,4 +158,3 @@ if __name__ == "__main__":
     # Test with String Ids
     prox = Proximity(df, id_column="ID", n_neighbors=3)
     print(prox.all_neighbors())
-

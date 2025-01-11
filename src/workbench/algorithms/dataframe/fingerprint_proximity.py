@@ -1,12 +1,14 @@
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
-from typing import Union, List
+from typing import Union
 from workbench.algorithms.dataframe.proximity import Proximity
 
 
 class FingerprintProximity(Proximity):
-    def __init__(self, df: pd.DataFrame, fingerprint_column: str, id_column: Union[int, str], n_neighbors: int = 10) -> None:
+    def __init__(
+        self, df: pd.DataFrame, fingerprint_column: str, id_column: Union[int, str], n_neighbors: int = 10
+    ) -> None:
         """
         Initialize the FingerprintProximity class.
 
