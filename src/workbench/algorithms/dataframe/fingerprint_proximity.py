@@ -1,21 +1,8 @@
 """FeatureSpaceProximity: A class for neighbor lookups using KNN with optional target information."""
 
-from typing import Union
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
-from sklearn.preprocessing import StandardScaler
-from pandas.api.types import is_numeric_dtype
-import logging
-
-from sklearn.neighbors import NearestNeighbors
-import numpy as np
-import pandas as pd
-
-
-from sklearn.neighbors import NearestNeighbors
-import numpy as np
-import pandas as pd
 from typing import Union, List
 
 
@@ -65,7 +52,9 @@ class FingerprintProximity:
         results = self._get_neighbors(query_idx=None, include_self=include_self)
         return pd.DataFrame(results)
 
-    def neighbors(self, query_id: Union[str, int], similarity: float = None, include_self: bool = False) -> pd.DataFrame:
+    def neighbors(
+        self, query_id: Union[str, int], similarity: float = None, include_self: bool = False
+    ) -> pd.DataFrame:
         """
         Return neighbors of the given query ID, either by fixed neighbors or above a similarity threshold.
 
@@ -116,20 +105,24 @@ class FingerprintProximity:
                 for neighbor_idx, dist in zip(neighbors, dists):
                     if not include_self and idx == neighbor_idx:
                         continue
-                    results.append({
-                        self.id_column: self.df.iloc[idx][self.id_column],
-                        "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
-                        "similarity": 1 - dist,
-                    })
+                    results.append(
+                        {
+                            self.id_column: self.df.iloc[idx][self.id_column],
+                            "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
+                            "similarity": 1 - dist,
+                        }
+                    )
         else:  # Single query
             for neighbor_idx, dist in zip(indices[0], distances[0]):
                 if not include_self and neighbor_idx == query_idx:
                     continue
-                results.append({
-                    self.id_column: self.df.iloc[query_idx][self.id_column],
-                    "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
-                    "similarity": 1 - dist,
-                })
+                results.append(
+                    {
+                        self.id_column: self.df.iloc[query_idx][self.id_column],
+                        "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
+                        "similarity": 1 - dist,
+                    }
+                )
 
         return results
 
