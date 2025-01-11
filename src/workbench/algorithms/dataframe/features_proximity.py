@@ -6,7 +6,7 @@ from workbench.algorithms.dataframe.proximity import Proximity
 
 
 class FeaturesProximity(Proximity):
-    def __init__(self, df: pd.DataFrame, id_column: str, features: List[str], n_neighbors: int = 10) -> None:
+    def __init__(self, df: pd.DataFrame, id_column: str, features: List[str], target: str = None, n_neighbors: int = 10) -> None:
         """
         Initialize the FeaturesProximity class.
 
@@ -14,8 +14,10 @@ class FeaturesProximity(Proximity):
             df (pd.DataFrame): DataFrame containing feature data.
             id_column (str): Name of the column used as an identifier.
             features (List[str]): List of feature column names to be used for neighbor computations.
+            target (str): Optional name of the target column.
             n_neighbors (int): Number of neighbors to compute.
         """
+        self.target = target
         if not features:
             raise ValueError("The 'features' list must be defined and contain at least one feature.")
         super().__init__(df, id_column=id_column, features=features, n_neighbors=n_neighbors)
@@ -29,8 +31,30 @@ class FeaturesProximity(Proximity):
         self.X = scaler.fit_transform(self.df[self.features].values)
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
+    @classmethod
+    def from_model(cls, model) -> "FeaturesProximity":
+        """Create a FeaturesProximity instance from a Workbench model object.
 
-# __main__ Tests
+        Args:
+            model (Model): A Workbench model object.
+
+        Returns:
+            FeaturesProximity: A new instance of the FeaturesProximity class.
+        """
+        from workbench.api import FeatureSet
+
+        # Extract necessary attributes from the Workbench model
+        fs = FeatureSet(model.get_input())
+        features = model.features()
+        target = model.target()
+
+        # Retrieve the training DataFrame from the feature set
+        df = fs.view("training").pull_dataframe()
+
+        # Create and return a new instance of FeatureSpaceProximityDeprecated
+        return cls(df=df, id_column=fs.id_column, features=features, target=target)
+
+
 if __name__ == "__main__":
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 1000)
@@ -63,16 +87,15 @@ if __name__ == "__main__":
     query_neighbors_radius_df = proximity.neighbors(query_id=1, radius=2.0)
     print(query_neighbors_radius_df)
 
-    # Test 4: Edge case - Empty features list
-    try:
-        print("\n--- Test 4: Empty Features List ---")
-        FeaturesProximity(df, id_column="id", features=[], n_neighbors=2)
-    except ValueError as e:
-        print(f"Expected error: {e}")
 
-    # Test 5: Invalid feature name
-    try:
-        print("\n--- Test 5: Invalid Feature Name ---")
-        FeaturesProximity(df, id_column="id", features=["NonexistentFeature"], n_neighbors=2)
-    except KeyError as e:
-        print(f"Expected error: {e}")
+    # Test 4: From a Workbench model
+    from workbench.api import Model
+    m = Model("abalone-regression")
+    proximity = FeaturesProximity.from_model(m)
+
+    # Neighbors Test using a single query ID
+    single_query_id = 5
+    single_query_neighbors = proximity.neighbors(single_query_id)
+    print("\nNeighbors for Query ID:", single_query_id)
+    print(single_query_neighbors)
+

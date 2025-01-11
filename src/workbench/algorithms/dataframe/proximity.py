@@ -25,6 +25,10 @@ class Proximity:
         self.features = features or self._auto_features()
         self._prepare_data()
 
+        # Store the min and max distances for normalization
+        self.min_distance = None
+        self.max_distance = None
+
     def _auto_features(self) -> List[str]:
         """Automatically determine feature columns, excluding the ID column."""
         return self.df.select_dtypes(include=[np.number]).columns.difference([self.id_column]).tolist()
@@ -37,6 +41,18 @@ class Proximity:
 
         self.X = self.df[self.features].values
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
+
+    def get_edge_weight(self, row: pd.Series) -> float:
+        """
+
+        Args:
+            row (pd.Series): A row from the all_neighbors DataFrame.
+
+        Returns:
+            float: The computed edge weight.
+        """
+        # Normalized distance-based weight
+        return 1.0 - (row["distance"] - self.min_distance) / (self.max_distance - self.min_distance)
 
     def all_neighbors(self, include_self: bool = False) -> pd.DataFrame:
         """
@@ -91,6 +107,10 @@ class Proximity:
             distances, indices = self.nn.kneighbors([self.X[query_idx]])
 
         distances, indices = np.array(distances), np.array(indices)
+
+        # Store the min and max distances for normalization
+        self.min_distance = distances.min()
+        self.max_distance = distances.max()
 
         results = []
         if query_idx is None:

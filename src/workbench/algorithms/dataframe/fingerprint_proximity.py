@@ -34,6 +34,12 @@ class FingerprintProximity(Proximity):
         self.X = np.vstack(self.df["fingerprint_bits"].values)
         self.nn = NearestNeighbors(metric="jaccard", n_neighbors=self.n_neighbors + 1).fit(self.X)
 
+    def get_edge_weight(self, row: pd.Series) -> float:
+        """
+        Compute edge weight using similarity for fingerprints.
+        """
+        return row["similarity"]
+
     def neighbors(
         self, query_id: Union[int, str], similarity: float = None, include_self: bool = False
     ) -> pd.DataFrame:

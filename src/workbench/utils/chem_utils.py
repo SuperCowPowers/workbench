@@ -559,6 +559,11 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=
     if smiles_column is None:
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
+    # Sanity check the molecule column (sometimes it gets serialized, which doesn't work)
+    if "molecule" in df.columns and df["molecule"].dtype == "string":
+        log.warning("Detected serialized molecules in 'molecule' column. Removing...")
+        del df["molecule"]
+
     # Convert SMILES to RDKit molecule objects (vectorized)
     if "molecule" not in df.columns:
         log.info("Converting SMILES to RDKit Molecules...")

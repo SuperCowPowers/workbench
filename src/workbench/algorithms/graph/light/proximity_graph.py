@@ -1,78 +1,68 @@
-import pandas as pd
 import networkx as nx
+import pandas as pd
 from typing import Union
-
-# Workbench Imports
-from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
-from workbench.utils.pandas_utils import remove_rows_with_nans
+from workbench.algorithms.dataframe import Proximity, FeaturesProximity
 
 
 class ProximityGraph:
     """
-    Build a proximity graph of the nearest neighbors based on feature space.
+    Build a proximity graph of the nearest neighbors using a Proximity class.
     """
 
     def __init__(
-        self, df: pd.DataFrame, features: list, id_column: str, target: str, n_neighbors: int = 5, store_features=True
+        self,
+        df: pd.DataFrame,
+        id_column: str,
+        proximity_class: Proximity = FeaturesProximity,
+        proximity_kwargs: dict = None,
+        store_features: bool = True
     ):
         """
         Processes the input DataFrame and builds a proximity graph.
 
         Args:
-            df (pd.DataFrame): The input DataFrame containing feature columns.
-            features (list): List of feature column names to be used for building the proximity graph.
+            df (pd.DataFrame): The input DataFrame.
             id_column (str): Name of the ID column in the DataFrame.
-            target (str): Name of the target column in the DataFrame.
-            n_neighbors (int): Number of neighbors to consider for each node (default: 5).
+            proximity_class (Proximity): A Proximity class to compute neighbor relationships (default: FeaturesProximity).
+            proximity_kwargs (dict): Additional arguments for initializing the proximity class.
             store_features (bool): Whether to store the features as node attributes (default: True).
         """
-        self.n_neighbors = n_neighbors
+        if id_column not in df.columns:
+            raise ValueError(f"'{id_column}' must be a column in the DataFrame.")
+
         self.nx_graph = nx.Graph()
+        proximity_kwargs = proximity_kwargs or {}
 
-        # Drop NaNs from the DataFrame
-        df = remove_rows_with_nans(df)
+        # Initialize the Proximity class
+        self.proximity = proximity_class(df=df, id_column=id_column, **proximity_kwargs)
 
-        # Initialize FeatureSpaceProximity with the input DataFrame and the specified features
-        fsp = FeatureSpaceProximity(
-            df,
-            features=features,
-            id_column=id_column,
-            target=target,
-            neighbors=self.n_neighbors,
-        )
+        # Build the graph using the Proximity class
+        self._build_graph(df, id_column, store_features)
 
-        # Use FeatureSpaceProximity to get all neighbor indices and distances
-        indices, distances = fsp.get_neighbor_indices_and_distances()
+    def _build_graph(self, df: pd.DataFrame, id_column: str, store_features: bool) -> None:
+        """
+        Build the NetworkX graph using the Proximity class.
 
-        # Compute max distance for scaling (to [0, 1])
-        max_distance = distances.max()
+        Args:
+            df (pd.DataFrame): The input DataFrame.
+            id_column (str): Name of the ID column.
+            store_features (bool): Whether to store features as node attributes.
+        """
+        # Retrieve all neighbors and their distances
+        all_neighbors_df = self.proximity.all_neighbors()
 
-        # Use the ID column for node IDs instead of relying on the DataFrame index
-        node_ids = df[id_column].values
-
-        # Add nodes with their features as attributes using the ID column
-        for node_id in node_ids:
+        # Add nodes with attributes (features)
+        for _, row in df.iterrows():
+            node_id = row[id_column]
             if store_features:
-                self.nx_graph.add_node(node_id, **df[df[id_column] == node_id].iloc[0].to_dict())
+                self.nx_graph.add_node(node_id, **row.to_dict())
             else:
                 self.nx_graph.add_node(node_id)
 
-        # Add edges with weights based on inverse distance
-        for i, neighbors in enumerate(indices):
-            one_edge_added = False
-            for j, neighbor_idx in enumerate(neighbors):
-                if i != neighbor_idx:
-                    # Compute the weight of the edge (inverse of distance)
-                    weight = 1.0 - (distances[i][j] / max_distance)  # Scale to [0, 1]
-
-                    # Map back to the ID column instead of the DataFrame index
-                    src_node = node_ids[i]
-                    dst_node = node_ids[neighbor_idx]
-
-                    # Add the edge to the graph (if the weight is greater than 0.1)
-                    if weight > 0.1 or not one_edge_added:
-                        self.nx_graph.add_edge(src_node, dst_node, weight=weight)
-                        one_edge_added = True
+        # Add edges with weights based on proximity
+        for _, row in all_neighbors_df.iterrows():
+            weight = self.proximity.get_edge_weight(row)
+            self.nx_graph.add_edge(row[id_column], row["neighbor_id"], weight=weight)
 
     def get_graph(self) -> nx.Graph:
         """
@@ -102,53 +92,106 @@ class ProximityGraph:
 
 
 if __name__ == "__main__":
-    """Example usage of the ProximityGraph class"""
-    from workbench.api.feature_set import FeatureSet
+    import numpy as np
+    from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
 
-    # Load the Abalone FeatureSet
-    fs = FeatureSet("abalone_features")
-    df = fs.pull_dataframe()[:100]
-    id_column = fs.id_column
+    # Example DataFrame for FeaturesProximity
+    feature_data = {
+        "id": [1, 2, 3, 4],
+        "Feature1": [0.1, 0.2, 0.3, 0.4],
+        "Feature2": [0.5, 0.4, 0.3, 0.2],
+        "target": [10, 20, 30, 40],
+    }
+    feature_df = pd.DataFrame(feature_data)
 
-    # Define the feature columns for the proximity graph
-    feature_columns = [
-        "length",
-        "diameter",
-        "height",
-        "whole_weight",
-        "shucked_weight",
-        "viscera_weight",
-        "shell_weight",
-    ]
-
-    # Create the ProximityGraph
-    proximity_graph = ProximityGraph(
-        df, features=feature_columns, id_column=id_column, target="class_number_of_rings", n_neighbors=5
+    # Build a graph using FeaturesProximity
+    print("\n--- FeaturesProximity Graph ---")
+    feature_proximity_kwargs = {
+        "features": ["Feature1", "Feature2"],
+        "n_neighbors": 2,
+        "target": "target",
+    }
+    feature_graph = ProximityGraph(
+        feature_df,
+        id_column="id",
+        proximity_class=FeaturesProximity,
+        proximity_kwargs=feature_proximity_kwargs
     )
+    nx_graph = feature_graph.get_graph()
+    print("Edges:", nx_graph.edges(data=True))
 
-    # Get the NetworkX graph
-    nx_graph = proximity_graph.get_graph()
+    # Example DataFrame for FingerprintProximity
+    fingerprint_data = {
+        "id": [1, 2, 3, 4],
+        "fingerprint": ["101010", "111010", "101110", "011100"],
+    }
+    fingerprint_df = pd.DataFrame(fingerprint_data)
+
+    # Build a graph using FingerprintProximity
+    print("\n--- FingerprintProximity Graph ---")
+    fingerprint_proximity_kwargs = {
+        "fingerprint_column": "fingerprint",
+        "n_neighbors": 2,
+    }
+    fingerprint_graph = ProximityGraph(
+        fingerprint_df,
+        id_column="id",
+        proximity_class=FingerprintProximity,
+        proximity_kwargs=fingerprint_proximity_kwargs
+    )
+    nx_graph = fingerprint_graph.get_graph()
+    print("Edges:", nx_graph.edges(data=True))
+
+    # Neighborhood subgraph for FeaturesProximity
+    print("\n--- Neighborhood Subgraph for Node 1 ---")
+    neighborhood_subgraph = feature_graph.get_neighborhood(node_id=1, radius=1)
+    print("Nodes:", neighborhood_subgraph.nodes())
+    print("Edges:", neighborhood_subgraph.edges(data=True))
 
     # Plot the full graph
+    id_column = "id"
     graph_plot = GraphPlot()
     properties = graph_plot.update_properties(nx_graph, labels=id_column, hover_text="all")
     properties[0].show()
 
     # Get a neighborhood subgraph for a specific node
-    neighborhood_subgraph = proximity_graph.get_neighborhood(node_id=df[id_column].iloc[0], radius=2)
+    neighborhood_subgraph = fingerprint_graph.get_neighborhood(node_id=fingerprint_df[id_column].iloc[0], radius=2)
 
     # Plot the neighborhood subgraph
     properties = graph_plot.update_properties(neighborhood_subgraph, labels=id_column, hover_text="all")
     properties[0].show()
 
     # Compute a shortest path subgraph using two random nodes
-    source_node = df[id_column].iloc[0]
-    target_node = df[id_column].iloc[-1]
+    source_node = fingerprint_df[id_column].iloc[0]
+    target_node = fingerprint_df[id_column].iloc[-1]
     short_path = set(nx.shortest_path(nx_graph, source=source_node, target=target_node, weight="weight"))
     subgraph = nx_graph.subgraph(short_path)
 
     # Plot the subgraph
-    graph_plot = GraphPlot()
     properties = graph_plot.update_properties(subgraph, labels=id_column, hover_text="all")
+    properties[0].show()
+
+    # Now a real dataset with fingerprints
+    from workbench.api import FeatureSet
+    from workbench.utils.chem_utils import compute_morgan_fingerprints
+    fs = FeatureSet("aqsol_mol_descriptors")
+    df = fs.pull_dataframe()
+    df = df.sample(100)
+    df = compute_morgan_fingerprints(df)
+
+    # Build a graph using FingerprintProximity
+    print("\n--- FingerprintProximity Graph ---")
+    fingerprint_graph = ProximityGraph(
+        df,
+        id_column=fs.id_column,
+        proximity_class=FingerprintProximity,
+        proximity_kwargs = {"fingerprint_column": "morgan_fingerprint"},
+    )
+    nx_graph = fingerprint_graph.get_graph()
+
+    # Plot the full graph
+    id_column = fs.id_column
+    graph_plot = GraphPlot()
+    properties = graph_plot.update_properties(nx_graph, labels=id_column, hover_text="all")
     properties[0].show()
