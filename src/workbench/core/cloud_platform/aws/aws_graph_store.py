@@ -4,10 +4,9 @@ import networkx as nx
 import json
 import logging
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Union, Optional
 from urllib.parse import urlparse
-import boto3
 import pandas as pd
 
 # Workbench Imports
@@ -220,6 +219,9 @@ if __name__ == "__main__":
     # Display detailed metadata
     print("Graph Store Details:")
     print(graph_store.details())
+
+    # Last modified date
+    print("Last modified:", graph_store.last_modified("test_graph"))
 
     # List all graphs
     print("List all graphs in the store:")

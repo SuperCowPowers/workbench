@@ -1,11 +1,12 @@
 """AWSDFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy"""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Union
 import logging
 import awswrangler as wr
 import pandas as pd
 import re
+from urllib.parse import urlparse
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
@@ -66,24 +67,22 @@ class AWSDFStore:
         return df["location"].tolist()
 
     def last_modified(self, location: str) -> Union[datetime, None]:
-        """Return the last modified date of the object at the specified location.
+        """Return the last modified date of a graph.
 
         Args:
-            location (str): The location of the data to check.
+            location (str): Logical location of the graph.
 
         Returns:
-            Union[datetime, None]: The last modified date as a timezone-aware datetime or None if not found.
+            Union[datetime, None]: Last modified datetime or None if not found.
         """
-        df = self.details()
-        mask = df["location"] == location
+        s3_uri = self._generate_s3_uri(location)
+        bucket, key = self._parse_s3_uri(s3_uri)
 
-        if mask.any():
-            # Extract the modified time and convert to a timezone-aware datetime in UTC
-            time_str = df.loc[mask, "modified"].values[0]
-            time_obj = pd.to_datetime(time_str)
-            return time_obj.to_pydatetime().replace(tzinfo=timezone.utc)
-
-        return None
+        try:
+            response = self.s3_client.head_object(Bucket=bucket, Key=key)
+            return response["LastModified"]
+        except self.s3_client.exceptions.ClientError:
+            return None
 
     def summary(self, include_cache: bool = False) -> pd.DataFrame:
         """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates.
@@ -241,9 +240,14 @@ class AWSDFStore:
     def _generate_s3_uri(self, location: str) -> str:
         """Generate the S3 URI for the given location."""
         s3_path = f"{self.workbench_bucket}/{self.path_prefix}/{location}.parquet"
-        s3_path = re.sub(r"/+", "/", s3_path)  # Collapse slashes
-        s3_uri = f"s3://{s3_path}"
-        return s3_uri
+        return f"s3://{re.sub(r'/+', '/', s3_path)}"
+
+    def _parse_s3_uri(self, s3_uri: str) -> tuple:
+        """Parse an S3 URI into bucket and key."""
+        parsed = urlparse(s3_uri)
+        if parsed.scheme != "s3":
+            raise ValueError(f"Invalid S3 URI: {s3_uri}")
+        return parsed.netloc, parsed.path.lstrip("/")
 
     def __repr__(self):
         """Return a string representation of the AWSDFStore object."""
