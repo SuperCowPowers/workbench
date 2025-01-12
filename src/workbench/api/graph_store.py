@@ -128,7 +128,7 @@ if __name__ == "__main__":
         d["weight"] = 1.0
 
     # Store the graph
-    graph_store.upsert("test_graph", G)
+    graph_store.upsert("test/test_graph", G)
 
     # Get a summary of the graphs
     print("Graph Store Summary:")
@@ -139,19 +139,19 @@ if __name__ == "__main__":
     print(graph_store.details())
 
     # Last modified date
-    print("Last modified:", graph_store.last_modified("test_graph"))
+    print("Last modified:", graph_store.last_modified("test/test_graph"))
 
     # List all graphs
     print("List all graphs in the store:")
     print(graph_store.list())
 
     # Retrieve and display the graph
-    retrieved_graph = graph_store.get("test_graph")
+    retrieved_graph = graph_store.get("test/test_graph")
     print("Retrieved Graph Edges:", retrieved_graph.edges(data=True))
 
     # Check if the graph exists
-    print("Graph exists:", graph_store.check("test_graph"))
+    print("Graph exists:", graph_store.check("test/test_graph"))
 
     # Delete the graph
-    graph_store.delete("test_graph")
-    print("Graph exists after deletion:", graph_store.check("test_graph"))
+    graph_store.delete("test/test_graph")
+    print("Graph exists after deletion:", graph_store.check("test/test_graph"))

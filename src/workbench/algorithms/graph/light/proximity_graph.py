@@ -44,6 +44,7 @@ class ProximityGraph:
         """
         # Retrieve all neighbors and their distances
         id_column = self.proximity.id_column
+        log.info("Retrieving all neighbors...")
         all_neighbors_df = self.proximity.all_neighbors()
 
         # Add nodes with attributes (features)
@@ -174,7 +175,7 @@ if __name__ == "__main__":
 
     fs = FeatureSet("aqsol_mol_descriptors")
     df = fs.pull_dataframe()
-    df = df.sample(100)
+    df = df.sample(1000)
     df = compute_morgan_fingerprints(df)
 
     # Build a graph using FingerprintProximity
