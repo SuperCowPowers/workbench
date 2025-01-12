@@ -74,12 +74,14 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
     # Now we have a 'tag' column with a list of tags in it, let's add "tox21" to the tags if the compound is toxic
     df["tags"] = df.apply(lambda row: row["tags"] + ["tox21"] if row["toxic_any"] == 1 else row["tags"], axis=1)
 
-    # Do both TSNE and UMAP projections
+    # Compute Fingerprints
     df = compute_morgan_fingerprints(df, radius=2)
-    df = project_fingerprints(df, projection="TSNE")
-    df.rename(columns={"x": "x_tsne", "y": "y_tsne"}, inplace=True)
+
+    # Project Fingerprints to 2D space
     df = project_fingerprints(df, projection="UMAP")
 
+    # df = project_fingerprints(df, projection="TSNE")
+    # df.rename(columns={"x": "x_tsne", "y": "y_tsne"}, inplace=True)
     # Convert compound tags to string and check for substrings, then convert to 0/1
     # df["toxic_tag"] = df["tags"].astype(str).str.contains("toxic").astype(int)
     # df["druglike_tag"] = df["tags"].astype(str).str.contains("druglike").astype(int)
