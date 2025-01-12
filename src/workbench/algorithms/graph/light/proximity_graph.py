@@ -118,7 +118,9 @@ if __name__ == "__main__":
 
     # Build a graph using FeaturesProximity
     print("\n--- FeaturesProximity Graph ---")
-    prox = FeaturesProximity(feature_df, id_column="id", features=["Feature1", "Feature2"], n_neighbors=2, target="target")
+    prox = FeaturesProximity(
+        feature_df, id_column="id", features=["Feature1", "Feature2"], n_neighbors=2, target="target"
+    )
     feature_graph = ProximityGraph(prox)
     nx_graph = feature_graph.get_graph()
     print("Edges:", nx_graph.edges(data=True))
@@ -189,5 +191,6 @@ if __name__ == "__main__":
 
     # Save the graph to the GraphStore
     from workbench.api import GraphStore
+
     g_store = GraphStore()
     g_store.upsert("test/fingerprint_graph", nx_graph)
