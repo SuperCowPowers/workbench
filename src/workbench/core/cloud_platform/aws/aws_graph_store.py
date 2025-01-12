@@ -5,29 +5,28 @@ import json
 import logging
 import re
 from datetime import datetime, timezone
-from typing import Union
-import pandas as pd
+from typing import Union, Optional
+from urllib.parse import urlparse
 import boto3
+import pandas as pd
 
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from workbench.utils.aws_utils import not_found_returns_none
 
 
 class AWSGraphStore:
     """AWSGraphStore: Storage of NetworkX Graphs using AWS S3 and JSON serialization."""
 
-    def __init__(self, path_prefix: Union[str, None] = None):
+    def __init__(self, path_prefix: Optional[str] = None):
         """AWSGraphStore Init Method
 
         Args:
-            path_prefix (Union[str, None], optional): Path prefix for storage locations (Defaults to None)
+            path_prefix (Optional[str]): Path prefix for storage locations (Defaults to None)
         """
         self.log = logging.getLogger("workbench")
         self._base_prefix = "graph_store/"
-        self.path_prefix = self._base_prefix + path_prefix if path_prefix else self._base_prefix
-        self.path_prefix = re.sub(r"/+", "/", self.path_prefix)  # Collapse slashes
+        self.path_prefix = self._normalize_path(self._base_prefix + (path_prefix or ""))
 
         # Retrieve bucket name and initialize S3 session
         config = ConfigManager()
@@ -35,24 +34,12 @@ class AWSGraphStore:
         self.boto3_session = AWSAccountClamp().boto3_session
         self.s3_client = self.boto3_session.client("s3")
 
-    def list(self) -> list:
-        """List all graphs in the store."""
-        df = self.details()
-        return df["location"].tolist()
-
-    def last_modified(self, location: str) -> Union[datetime, None]:
-        """Return the last modified date of a graph."""
-        df = self.details()
-        mask = df["location"] == location
-
-        if mask.any():
-            time_str = df.loc[mask, "modified"].values[0]
-            time_obj = pd.to_datetime(time_str)
-            return time_obj.to_pydatetime().replace(tzinfo=timezone.utc)
-        return None
-
     def summary(self) -> pd.DataFrame:
-        """Provide a summary of all graphs in the store."""
+        """Provide a summary of all graphs in the store.
+
+        Returns:
+            pd.DataFrame: Summary DataFrame with location, size, and modified date.
+        """
         df = self.details()
         if df.empty:
             return pd.DataFrame(columns=["location", "size (MB)", "modified"])
@@ -62,7 +49,11 @@ class AWSGraphStore:
         return df[["location", "size (MB)", "modified"]]
 
     def details(self) -> pd.DataFrame:
-        """Return detailed metadata for all stored graphs."""
+        """Return detailed metadata for all stored graphs.
+
+        Returns:
+            pd.DataFrame: DataFrame with details like location, size, and last modified date.
+        """
         try:
             response = self.s3_client.list_objects_v2(Bucket=self.workbench_bucket, Prefix=self.path_prefix)
             if "Contents" not in response:
@@ -83,31 +74,53 @@ class AWSGraphStore:
             return pd.DataFrame(columns=["location", "s3_file", "size", "modified"])
 
     def check(self, location: str) -> bool:
-        """Check if a graph exists."""
+        """Check if a graph exists.
+
+        Args:
+            location (str): Logical location of the graph.
+
+        Returns:
+            bool: True if the graph exists, False otherwise.
+        """
         s3_uri = self._generate_s3_uri(location)
+        bucket, key = self._parse_s3_uri(s3_uri)
+
         try:
-            self.s3_client.head_object(Bucket=self.workbench_bucket, Key=self._parse_s3_uri(s3_uri)[1])
+            self.s3_client.head_object(Bucket=bucket, Key=key)
             return True
         except self.s3_client.exceptions.ClientError:
             return False
 
-    @not_found_returns_none
     def get(self, location: str) -> Union[nx.Graph, None]:
-        """Retrieve a NetworkX graph from AWS S3."""
+        """Retrieve a NetworkX graph from AWS S3.
+
+        Args:
+            location (str): Logical location of the graph.
+
+        Returns:
+            Union[nx.Graph, None]: The retrieved graph or None if not found.
+        """
         s3_uri = self._generate_s3_uri(location)
         bucket, key = self._parse_s3_uri(s3_uri)
 
         try:
             response = self.s3_client.get_object(Bucket=bucket, Key=key)
-            json_data = response["Body"].read().decode("utf-8")
-            graph_json = json.loads(json_data)
+            graph_json = json.loads(response["Body"].read().decode("utf-8"))
             return nx.readwrite.json_graph.node_link_graph(graph_json)
+        except json.JSONDecodeError as e:
+            self.log.error(f"Failed to decode JSON for graph at '{s3_uri}': {e}")
+            raise
         except Exception as e:
             self.log.error(f"Failed to retrieve graph from '{s3_uri}': {e}")
             return None
 
     def upsert(self, location: str, graph: nx.Graph):
-        """Insert or update a NetworkX graph in AWS S3."""
+        """Insert or update a NetworkX graph in AWS S3.
+
+        Args:
+            location (str): Logical location to store the graph.
+            graph (nx.Graph): The NetworkX graph to store.
+        """
         s3_uri = self._generate_s3_uri(location)
         bucket, key = self._parse_s3_uri(s3_uri)
 
@@ -120,8 +133,39 @@ class AWSGraphStore:
             self.log.error(f"Failed to store graph at '{s3_uri}': {e}")
             raise
 
+    def list(self) -> list:
+        """List all graphs in the store.
+
+        Returns:
+            list: A list of all graph locations in the store.
+        """
+        df = self.details()
+        return df["location"].tolist()
+
+    def last_modified(self, location: str) -> Union[datetime, None]:
+        """Return the last modified date of a graph.
+
+        Args:
+            location (str): Logical location of the graph.
+
+        Returns:
+            Union[datetime, None]: Last modified datetime or None if not found.
+        """
+        s3_uri = self._generate_s3_uri(location)
+        bucket, key = self._parse_s3_uri(s3_uri)
+
+        try:
+            response = self.s3_client.head_object(Bucket=bucket, Key=key)
+            return response["LastModified"]
+        except self.s3_client.exceptions.ClientError:
+            return None
+
     def delete(self, location: str):
-        """Delete a NetworkX graph from AWS S3."""
+        """Delete a NetworkX graph from AWS S3.
+
+        Args:
+            location (str): Logical location of the graph to delete.
+        """
         s3_uri = self._generate_s3_uri(location)
         bucket, key = self._parse_s3_uri(s3_uri)
 
@@ -138,11 +182,15 @@ class AWSGraphStore:
 
     def _parse_s3_uri(self, s3_uri: str) -> tuple:
         """Parse an S3 URI into bucket and key."""
-        if not s3_uri.startswith("s3://"):
+        parsed = urlparse(s3_uri)
+        if parsed.scheme != "s3":
             raise ValueError(f"Invalid S3 URI: {s3_uri}")
-        _, _, bucket_and_key = s3_uri.partition("s3://")
-        bucket, _, key = bucket_and_key.partition("/")
-        return bucket, key
+        return parsed.netloc, parsed.path.lstrip("/")
+
+    @staticmethod
+    def _normalize_path(path: str) -> str:
+        """Normalize paths by collapsing slashes."""
+        return re.sub(r"/+", "/", path)
 
     def __repr__(self):
         """Return a string representation of the AWSGraphStore object."""
