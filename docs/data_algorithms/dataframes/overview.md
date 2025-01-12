@@ -7,7 +7,11 @@
 
 Workbench has a growing set of algorithms and data processing tools for Pandas Dataframes. In general these algorithm will take a dataframe as input and give you back a dataframe with additional columns.
 
-::: workbench.algorithms.dataframe.feature_space_proximity
+::: workbench.algorithms.dataframe.features_proximity
+    options:
+      show_root_heading: false
+      
+::: workbench.algorithms.dataframe.fingerprint_proximity
     options:
       show_root_heading: false
 
