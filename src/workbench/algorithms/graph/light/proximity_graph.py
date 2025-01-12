@@ -2,6 +2,10 @@ import networkx as nx
 import pandas as pd
 from typing import Union
 from workbench.algorithms.dataframe import Proximity, FeaturesProximity
+import logging
+
+# Set up logging
+log = logging.getLogger("workbench")
 
 
 class ProximityGraph:
@@ -52,6 +56,7 @@ class ProximityGraph:
         all_neighbors_df = self.proximity.all_neighbors()
 
         # Add nodes with attributes (features)
+        log.info("Adding nodes to the graph...")
         for _, row in df.iterrows():
             node_id = row[id_column]
             if store_features:
@@ -60,9 +65,25 @@ class ProximityGraph:
                 self.nx_graph.add_node(node_id)
 
         # Add edges with weights based on proximity
+        min_edges = 2
+        min_wieght = 0.8
+        current_id = None
+        log.info("Adding edges to the graph...")
         for _, row in all_neighbors_df.iterrows():
+            source_id = row[id_column]
+            if source_id != current_id:
+                num_edges = 0
+                current_id = source_id
             weight = self.proximity.get_edge_weight(row)
-            self.nx_graph.add_edge(row[id_column], row["neighbor_id"], weight=weight)
+            if num_edges <= min_edges or weight > min_wieght:
+                weight = 0.1 if weight < 0.1 else weight
+                self.nx_graph.add_edge(row[id_column], row["neighbor_id"], weight=weight)
+                num_edges += 1
+
+        # Print the number of nodes and edges
+        nodes = self.nx_graph.number_of_nodes()
+        edges = self.nx_graph.number_of_edges()
+        log.info(f"Graph built with {nodes} nodes and {edges} edges.")
 
     def get_graph(self) -> nx.Graph:
         """
@@ -183,7 +204,7 @@ if __name__ == "__main__":
         df,
         id_column=fs.id_column,
         proximity_class=FingerprintProximity,
-        proximity_kwargs={"fingerprint_column": "morgan_fingerprint", "n_neighbors": 2},
+        proximity_kwargs={"fingerprint_column": "morgan_fingerprint", "n_neighbors": 5},
     )
     nx_graph = fingerprint_graph.get_graph()
 

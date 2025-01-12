@@ -3,6 +3,10 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from typing import Union
 from workbench.algorithms.dataframe.proximity import Proximity
+import logging
+
+# Set up logging
+log = logging.getLogger("workbench")
 
 
 class FingerprintProximity(Proximity):
@@ -26,12 +30,14 @@ class FingerprintProximity(Proximity):
         Prepare the DataFrame by converting fingerprints into a binary feature matrix.
         """
         # Convert the fingerprint strings to binary arrays
+        log.info("Converting fingerprints to binary feature matrix...")
         self.df["fingerprint_bits"] = self.df[self.fingerprint_column].apply(
             lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
         )
-
-        # Create the feature matrix and initialize NearestNeighbors
         self.X = np.vstack(self.df["fingerprint_bits"].values)
+
+        # Use Jaccard similarity for binary fingerprints
+        log.info("Computing NearestNeighbors with Jaccard metric...")
         self.nn = NearestNeighbors(metric="jaccard", n_neighbors=self.n_neighbors + 1).fit(self.X)
 
     def get_edge_weight(self, row: pd.Series) -> float:
