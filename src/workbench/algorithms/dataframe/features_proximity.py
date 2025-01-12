@@ -30,7 +30,7 @@ class FeaturesProximity(Proximity):
         """
         # Scale features for better distance computation
         scaler = StandardScaler()
-        self.X = scaler.fit_transform(self.df[self.features].values)
+        self.X = scaler.fit_transform(self.data[self.features].values)
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
     @classmethod

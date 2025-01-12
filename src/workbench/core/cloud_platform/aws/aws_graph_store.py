@@ -12,6 +12,7 @@ import pandas as pd
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.utils.json_utils import CustomEncoder, custom_decoder
 
 
 class AWSGraphStore:
@@ -104,7 +105,7 @@ class AWSGraphStore:
 
         try:
             response = self.s3_client.get_object(Bucket=bucket, Key=key)
-            graph_json = json.loads(response["Body"].read().decode("utf-8"))
+            graph_json = json.loads(response["Body"].read().decode("utf-8"), object_hook=custom_decoder)
             return nx.readwrite.json_graph.node_link_graph(graph_json)
         except json.JSONDecodeError as e:
             self.log.error(f"Failed to decode JSON for graph at '{s3_uri}': {e}")
@@ -125,7 +126,7 @@ class AWSGraphStore:
 
         try:
             graph_json = nx.readwrite.json_graph.node_link_data(graph)
-            json_data = json.dumps(graph_json, indent=2)
+            json_data = json.dumps(graph_json, cls=CustomEncoder)
             self.s3_client.put_object(Bucket=bucket, Key=key, Body=json_data)
             self.log.info(f"Graph stored at '{s3_uri}'")
         except Exception as e:

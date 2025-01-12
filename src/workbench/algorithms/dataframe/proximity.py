@@ -6,7 +6,7 @@ from typing import Union, List
 
 class Proximity:
     def __init__(
-        self, df: pd.DataFrame, id_column: Union[int, str], features: List[str] = None, n_neighbors: int = 10
+        self, df: pd.DataFrame, id_column: Union[int, str], features: List[str] = None, n_neighbors: int = 5
     ) -> None:
         """
         Initialize the Proximity class.
@@ -17,29 +17,41 @@ class Proximity:
             features (List[str]): List of feature column names to be used for neighbor computations.
             n_neighbors (int): Number of neighbors to compute.
         """
-        self.df = df.copy()
-        self.id_column = id_column
+        self._df = df.copy()
+        self._id_column = id_column
         self.n_neighbors = n_neighbors
 
         # Automatically determine features if not provided
-        self.features = features or self._auto_features()
+        self._features = features or self._auto_features()
         self._prepare_data()
 
         # Store the min and max distances for normalization
         self.min_distance = None
         self.max_distance = None
 
+    @property
+    def id_column(self) -> str:
+        return self._id_column
+
+    @property
+    def features(self) -> List[str]:
+        return self._features
+
+    @property
+    def data(self) -> pd.DataFrame:
+        return self._df
+
     def _auto_features(self) -> List[str]:
         """Automatically determine feature columns, excluding the ID column."""
-        return self.df.select_dtypes(include=[np.number]).columns.difference([self.id_column]).tolist()
+        return self._df.select_dtypes(include=[np.number]).columns.difference([self.id_column]).tolist()
 
     def _prepare_data(self) -> None:
         if not self.features:
             # Default to all numeric columns except the ID column
-            self.features = self.df.select_dtypes(include=[np.number]).columns.tolist()
+            self.features = self._df.select_dtypes(include=[np.number]).columns.tolist()
             self.features.remove(self.id_column)
 
-        self.X = self.df[self.features].values
+        self.X = self._df[self.features].values
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
     def get_edge_weight(self, row: pd.Series) -> float:
@@ -79,7 +91,7 @@ class Proximity:
         Returns:
             pd.DataFrame: A DataFrame of neighbors and their distances.
         """
-        query_idx = self.df.index[self.df[self.id_column] == query_id].tolist()
+        query_idx = self._df.index[self._df[self.id_column] == query_id].tolist()
         if not query_idx:
             raise ValueError(f"Query ID {query_id} not found in the DataFrame")
         query_idx = query_idx[0]
@@ -120,8 +132,8 @@ class Proximity:
                         continue
                     results.append(
                         {
-                            self.id_column: self.df.iloc[idx][self.id_column],
-                            "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
+                            self.id_column: self._df.iloc[idx][self.id_column],
+                            "neighbor_id": self._df.iloc[neighbor_idx][self.id_column],
                             "distance": dist,
                         }
                     )
@@ -131,8 +143,8 @@ class Proximity:
                     continue
                 results.append(
                     {
-                        self.id_column: self.df.iloc[query_idx][self.id_column],
-                        "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
+                        self.id_column: self._df.iloc[query_idx][self.id_column],
+                        "neighbor_id": self._df.iloc[neighbor_idx][self.id_column],
                         "distance": dist,
                     }
                 )

@@ -281,6 +281,13 @@ class GraphPlot(PluginInterface):
 if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
+    from workbench.api.graph_store import GraphStore
+
+    # Pull a test graph
+    graph_store = GraphStore()
+    test_graph = graph_store.get("test/fingerprint_graph")
+    if test_graph is None:
+        print("Test graph not found... using default")
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(GraphPlot, theme="light").run()
+    PluginUnitTest(GraphPlot, theme="light", input_data=test_graph).run()

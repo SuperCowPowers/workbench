@@ -10,54 +10,45 @@ log = logging.getLogger("workbench")
 
 class ProximityGraph:
     """
-    Build a proximity graph of the nearest neighbors using a Proximity class.
+    Build a NetworkX graph using the Proximity class.
     """
 
     def __init__(
         self,
-        df: pd.DataFrame,
-        id_column: str,
-        proximity_class: Proximity = FeaturesProximity,
-        proximity_kwargs: dict = None,
+        proximity_instance: Proximity,
         store_features: bool = True,
     ):
         """
-        Processes the input DataFrame and builds a proximity graph.
+        Build a NetworkX graph using the Proximity class.
 
         Args:
-            df (pd.DataFrame): The input DataFrame.
-            id_column (str): Name of the ID column in the DataFrame.
-            proximity_class (Proximity): A Proximity class to compute neighbors (default: FeaturesProximity).
-            proximity_kwargs (dict): Additional arguments for initializing the proximity class.
+            proximity_instance (Proximity): An instance of a Proximity class to compute neighbors.
             store_features (bool): Whether to store the features as node attributes (default: True).
         """
-        if id_column not in df.columns:
-            raise ValueError(f"'{id_column}' must be a column in the DataFrame.")
 
+        # Initialize the NetworkX graph
         self.nx_graph = nx.Graph()
-        proximity_kwargs = proximity_kwargs or {}
 
-        # Initialize the Proximity class
-        self.proximity = proximity_class(df=df, id_column=id_column, **proximity_kwargs)
+        # Handle to our Proximity class instance
+        self.proximity = proximity_instance
 
         # Build the graph using the Proximity class
-        self._build_graph(df, id_column, store_features)
+        self._build_graph(store_features)
 
-    def _build_graph(self, df: pd.DataFrame, id_column: str, store_features: bool) -> None:
+    def _build_graph(self, store_features: bool) -> None:
         """
-        Build the NetworkX graph using the Proximity class.
+        Build a NetworkX graph using the Proximity class.
 
         Args:
-            df (pd.DataFrame): The input DataFrame.
-            id_column (str): Name of the ID column.
             store_features (bool): Whether to store features as node attributes.
         """
         # Retrieve all neighbors and their distances
+        id_column = self.proximity.id_column
         all_neighbors_df = self.proximity.all_neighbors()
 
         # Add nodes with attributes (features)
         log.info("Adding nodes to the graph...")
-        for _, row in df.iterrows():
+        for _, row in all_neighbors_df.iterrows():
             node_id = row[id_column]
             if store_features:
                 self.nx_graph.add_node(node_id, **row.to_dict())
@@ -127,14 +118,8 @@ if __name__ == "__main__":
 
     # Build a graph using FeaturesProximity
     print("\n--- FeaturesProximity Graph ---")
-    feature_proximity_kwargs = {
-        "features": ["Feature1", "Feature2"],
-        "n_neighbors": 2,
-        "target": "target",
-    }
-    feature_graph = ProximityGraph(
-        feature_df, id_column="id", proximity_class=FeaturesProximity, proximity_kwargs=feature_proximity_kwargs
-    )
+    prox = FeaturesProximity(feature_df, id_column="id", features=["Feature1", "Feature2"], n_neighbors=2, target="target")
+    feature_graph = ProximityGraph(prox)
     nx_graph = feature_graph.get_graph()
     print("Edges:", nx_graph.edges(data=True))
 
@@ -147,16 +132,8 @@ if __name__ == "__main__":
 
     # Build a graph using FingerprintProximity
     print("\n--- FingerprintProximity Graph ---")
-    fingerprint_proximity_kwargs = {
-        "fingerprint_column": "fingerprint",
-        "n_neighbors": 2,
-    }
-    fingerprint_graph = ProximityGraph(
-        fingerprint_df,
-        id_column="id",
-        proximity_class=FingerprintProximity,
-        proximity_kwargs=fingerprint_proximity_kwargs,
-    )
+    prox = FingerprintProximity(fingerprint_df, fingerprint_column="fingerprint", id_column="id", n_neighbors=2)
+    fingerprint_graph = ProximityGraph(prox)
     nx_graph = fingerprint_graph.get_graph()
     print("Edges:", nx_graph.edges(data=True))
 
@@ -200,12 +177,8 @@ if __name__ == "__main__":
 
     # Build a graph using FingerprintProximity
     print("\n--- FingerprintProximity Graph ---")
-    fingerprint_graph = ProximityGraph(
-        df,
-        id_column=fs.id_column,
-        proximity_class=FingerprintProximity,
-        proximity_kwargs={"fingerprint_column": "morgan_fingerprint", "n_neighbors": 5},
-    )
+    prox = FingerprintProximity(df, fingerprint_column="morgan_fingerprint", id_column=fs.id_column, n_neighbors=5)
+    fingerprint_graph = ProximityGraph(prox)
     nx_graph = fingerprint_graph.get_graph()
 
     # Plot the full graph
@@ -213,3 +186,8 @@ if __name__ == "__main__":
     graph_plot = GraphPlot()
     properties = graph_plot.update_properties(nx_graph, labels=id_column, hover_text="all")
     properties[0].show()
+
+    # Save the graph to the GraphStore
+    from workbench.api import GraphStore
+    g_store = GraphStore()
+    g_store.upsert("test/fingerprint_graph", nx_graph)

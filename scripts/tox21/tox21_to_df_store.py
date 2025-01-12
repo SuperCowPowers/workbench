@@ -60,7 +60,7 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
     # Convert to numeric, coercing errors to NaN
     df[assay_cols] = df[assay_cols].apply(pd.to_numeric, errors="coerce")
 
-    # Set is_toxic to 1 if any of the toxicity columns has a 1
+    # Set toxic_any to 1 if any of the toxicity columns has a 1
     df["toxic_any"] = (df[assay_cols] == 1).any(axis=1).astype(int)
     print(df["toxic_any"].value_counts(dropna=False))
 

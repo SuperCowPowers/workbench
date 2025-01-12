@@ -19,6 +19,7 @@ from .endpoint import Endpoint
 from .meta import Meta
 from .parameter_store import ParameterStore
 from .df_store import DFStore
+from .graph_store import GraphStore
 from .compound import Compound
 
 __all__ = [
@@ -30,5 +31,6 @@ __all__ = [
     "Meta",
     "ParameterStore",
     "DFStore",
+    "GraphStore",
     "Compound",
 ]
