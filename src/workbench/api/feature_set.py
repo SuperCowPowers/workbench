@@ -49,10 +49,11 @@ class FeatureSet(FeatureSetCore):
         """
         return super().query(query, **kwargs)
 
-    def pull_dataframe(self, include_aws_columns=False) -> pd.DataFrame:
+    def pull_dataframe(self, limit: int = 50000, include_aws_columns=False) -> pd.DataFrame:
         """Return a DataFrame of ALL the data from this FeatureSet
 
         Args:
+            limit (int): Limit the number of rows returned (default: 50000)
             include_aws_columns (bool): Include the AWS columns in the DataFrame (default: False)
 
         Returns:
@@ -64,8 +65,8 @@ class FeatureSet(FeatureSetCore):
 
         # Get the table associated with the data
         self.log.info(f"Pulling all data from {self.uuid}...")
-        query = f"SELECT * FROM {self.athena_table}"
-        df = self.query(query)
+        pull_query = f'SELECT * FROM "{self.athen_table}" LIMIT {limit}'
+        df = self.query(pull_query)
 
         # Drop any columns generated from AWS
         if not include_aws_columns:

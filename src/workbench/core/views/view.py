@@ -89,20 +89,17 @@ class View:
             self.table, self.data_source.database, self.data_source.boto3_session
         )
 
-    def pull_dataframe(self, limit: int = 50000, head: bool = False) -> Union[pd.DataFrame, None]:
+    def pull_dataframe(self, limit: int = 50000) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
 
         Args:
             limit (int): The maximum number of rows to pull (default: 50000)
-            head (bool): Return just the head of the DataFrame (default: False)
 
         Returns:
             Union[pd.DataFrame, None]: The DataFrame for the view or None if it doesn't exist
         """
 
         # Pull the DataFrame
-        if head:
-            limit = 5
         pull_query = f'SELECT * FROM "{self.table}" LIMIT {limit}'
         df = self.data_source.query(pull_query)
         return df
@@ -305,7 +302,7 @@ if __name__ == "__main__":
     # Create a display View for a FeatureSet
     fs = FeatureSet("test_features")
     display_view = View(fs, "display")
-    df_head = display_view.pull_dataframe(head=True)
+    df_head = display_view.pull_dataframe(limit=5)
     print(df_head)
 
     # Pull the columns for the display view

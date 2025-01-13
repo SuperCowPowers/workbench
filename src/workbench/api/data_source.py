@@ -81,10 +81,11 @@ class DataSource(AthenaSource):
         """
         return super().query(query)
 
-    def pull_dataframe(self, include_aws_columns=False) -> pd.DataFrame:
+    def pull_dataframe(self, limit: int = 50000, include_aws_columns=False) -> pd.DataFrame:
         """Return a DataFrame of ALL the data from this DataSource
 
         Args:
+            limit (int): Limit the number of rows returned (default: 50000)
             include_aws_columns (bool): Include the AWS columns in the DataFrame (default: False)
 
         Returns:
@@ -97,8 +98,8 @@ class DataSource(AthenaSource):
         # Get the table associated with the data
         self.log.info(f"Pulling all data from {self.uuid}...")
         table = super().table
-        query = f'SELECT * FROM "{table}"'
-        df = self.query(query)
+        pull_query = f'SELECT * FROM "{table}" LIMIT {limit}'
+        df = self.query(pull_query)
 
         # Drop any columns generated from AWS
         if not include_aws_columns:

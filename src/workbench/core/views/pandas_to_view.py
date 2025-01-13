@@ -151,7 +151,7 @@ if __name__ == "__main__":
     df_view = PandasToView.create("test_df", ds, df=my_df, id_column="id")
 
     # Pull the dataframe view
-    my_df = df_view.pull_dataframe(head=True)
+    my_df = df_view.pull_dataframe(limit=5)
     print(my_df)
 
     # Delete the dataframe view

@@ -22,7 +22,7 @@ class MDQView:
 
         # Create a ModelDataQuality View
         mdq_view = MDQView.create(fs, endpoint=endpoint, id_column="id")
-        my_df = mdq_view.pull_dataframe(head=True)
+        my_df = mdq_view.pull_dataframe(limit=5)
 
         # Query the view
         df = mdq_view.query(f"SELECT * FROM {mdq_view.table} where residuals > 0.5")
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     mdq_view = MDQView.create(my_fs, endpoint=my_endpoint, id_column="id")
 
     # Pull the data quality dataframe
-    my_df = mdq_view.pull_dataframe(head=True)
+    my_df = mdq_view.pull_dataframe(limit=5)
     print(my_df)
 
     # Query the view

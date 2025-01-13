@@ -19,7 +19,7 @@ def test_pandas_to_ds_view():
     df["random2"] = np.random.rand(len(df))
     PandasToView.create("test_df", ds, df, "id")
     test_view = ds.view("test_df")
-    df = test_view.pull_dataframe(head=True)
+    df = test_view.pull_dataframe(limit=5)
     print(df)
     test_view.delete()
 
@@ -32,7 +32,7 @@ def test_pandas_to_fs_view():
     df["random2"] = np.random.rand(len(df))
     PandasToView.create("test_df", fs, df, "id")
     test_view = fs.view("test_df")
-    df = test_view.pull_dataframe(head=True)
+    df = test_view.pull_dataframe(limit=5)
     print(df)
     test_view.delete()
 

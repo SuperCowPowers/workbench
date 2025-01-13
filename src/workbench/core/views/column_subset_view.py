@@ -107,7 +107,7 @@ if __name__ == "__main__":
     # Create a Display View with a subset of columns
     columns = ["id", "name", "age", "height", "weight"]
     test_view = ColumnSubsetView.create("test_subset", fs, column_list=columns)
-    print(test_view.pull_dataframe(head=True))
+    print(test_view.pull_dataframe(limit=5))
 
     # Delete the View
     test_view.delete()

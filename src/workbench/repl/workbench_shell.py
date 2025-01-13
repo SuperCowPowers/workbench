@@ -8,6 +8,7 @@ import logging
 import importlib
 import botocore
 import webbrowser
+import pandas as pd
 import readline  # noqa
 
 try:
@@ -152,11 +153,12 @@ class WorkbenchShell:
         self.commands["log_warning"] = self.log_warning
         self.commands["config"] = self.show_config
         self.commands["status"] = self.status_description
-        self.commands["launch"] = self.launch_plugin
+        self.commands["plot"] = self.plot_manager
         self.commands["log"] = logging.getLogger("workbench")
         self.commands["get_meta"] = self.get_meta
         self.commands["params"] = importlib.import_module("workbench.api.parameter_store").ParameterStore()
         self.commands["df_store"] = importlib.import_module("workbench.api.df_store").DFStore()
+        self.commands["g_store"] = importlib.import_module("workbench.api.graph_store").GraphStore()
         self.commands["version"] = lambda: print(version)
         self.commands["cached_meta"] = self.switch_to_cached_meta
         self.commands["direct_meta"] = self.switch_to_direct_meta
@@ -256,6 +258,7 @@ class WorkbenchShell:
             self.commands["Monitor"] = importlib.import_module("workbench.api.monitor").Monitor
             self.commands["ParameterStore"] = importlib.import_module("workbench.api.parameter_store").ParameterStore
             self.commands["DFStore"] = importlib.import_module("workbench.api.df_store").DFStore
+            self.commands["GraphStore"] = importlib.import_module("workbench.api.graph_store").GraphStore
             self.commands["PandasToFeatures"] = importlib.import_module(
                 "workbench.core.transforms.pandas_transforms"
             ).PandasToFeatures
@@ -492,19 +495,43 @@ class WorkbenchShell:
     def get_meta(self):
         return self.meta
 
+    def plot_manager(self, data, plot_type: str="table", **kwargs):
+        """Plot Manager for Workbench"""
+        from workbench.web_interface.components.plugins import ag_table, graph_plot, scatter_plot
+        if plot_type == "table":
+            # Check what type of data we have
+            if isinstance(data, pd.DataFrame):
+                self.plot_plugin(ag_table.AGTable, data, **kwargs)
+            else:
+                # Does this object have a pull_dataframe() method?
+                if hasattr(data, "pull_dataframe"):
+                    data = data.pull_dataframe()
+                    self.plot_plugin(ag_table.AGTable, data, **kwargs)
+                else:
+                    cprint("yellow", f"Unknown Data Type for Table Plot '{type(data)}'")
+        elif plot_type == "graph":
+            self.plot_plugin(graph_plot.GraphPlot, data, **kwargs)
+        elif plot_type == "scatter":
+            self.plot_plugin(scatter_plot.ScatterPlot, data, **kwargs)
+        else:
+            cprint("yellow", f"Unknown Plot Type '{plot_type}'")
+
     @staticmethod
-    def launch_plugin(plugin_class, input_data=None, **kwargs):
-        """Launch a plugin in a browser tab with minimal setup.
+    def plot_plugin(plugin_class, data=None, **kwargs):
+        """Plot data using a plugin.
 
         Args:
-            plugin_class (PluginInterface): The plugin class to launch.
+            plugin_class (PluginInterface): The plugin class to use.
             input_data (Optional): Optional input data (e.g., DataSource, FeatureSet, etc.)
             **kwargs: Additional keyword arguments for plugin properties.
+                theme (str): The theme to use for the Dash app (default: "dark")
         """
         from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
-        plugin_test = PluginUnitTest(plugin_class, input_data, auto_update=True, **kwargs)
+        # Get kwargs
+        theme = kwargs.get("theme", "dark")
 
+        plugin_test = PluginUnitTest(plugin_class, theme=theme, input_data=data, **kwargs)
         url = "http://127.0.0.1:8050"
         webbrowser.open(url)
 
