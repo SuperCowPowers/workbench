@@ -107,6 +107,9 @@ class ProximityGraph:
 if __name__ == "__main__":
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
+    from workbench.api import FeatureSet, DFStore, GraphStore
+    from workbench.utils.chem_utils import compute_morgan_fingerprints
+
 
     # Example DataFrame for FeaturesProximity
     feature_data = {
@@ -170,8 +173,7 @@ if __name__ == "__main__":
     properties[0].show()
 
     # Now a real dataset with fingerprints
-    from workbench.api import FeatureSet
-    from workbench.utils.chem_utils import compute_morgan_fingerprints
+    """
 
     fs = FeatureSet("aqsol_mol_descriptors")
     df = fs.pull_dataframe()
@@ -195,3 +197,23 @@ if __name__ == "__main__":
 
     g_store = GraphStore()
     g_store.upsert("test/fingerprint_graph", nx_graph)
+    """
+
+
+    # Pull in the tox21 data
+    tox_df = DFStore().get("/datasets/chem_info/tox21")
+    tox_df = tox_df.sample(1000)
+    tox_df = compute_morgan_fingerprints(tox_df)
+    id_column = "id"
+
+    # Compute FingerprintProximity Graph
+    prox = FingerprintProximity(tox_df, fingerprint_column="morgan_fingerprint", id_column=id_column, n_neighbors=5)
+    fingerprint_graph = ProximityGraph(prox)
+    nx_graph = fingerprint_graph.get_graph()
+
+    # Plot the full graph
+    graph_plot = GraphPlot()
+    properties = graph_plot.update_properties(nx_graph, labels=id_column, hover_text="all")
+    properties[0].show()
+
+    GraphStore().upsert("chem_info/tox21", nx_graph)
