@@ -17,10 +17,10 @@ prox = FingerprintProximity(tox_df, fingerprint_column="morgan_fingerprint", id_
 # Get all the neighbors for all the compounds
 neighbors_df = prox.all_neighbors()
 print("\nAll neighbors:")
-print(neighbors_df.head())
+print(neighbors_df.head(20))
 
 # Query for neighbors for a specific compound
-query_id = tox_df["id"].iloc[0]
+query_id = tox_df["id"].iloc[1]
 query_neighbors_df = prox.neighbors(query_id=query_id)
 print(f"\nNeighbors for query ID {query_id}:")
 print(query_neighbors_df)
