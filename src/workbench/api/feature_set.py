@@ -64,7 +64,7 @@ class FeatureSet(FeatureSetCore):
         """
 
         # Get the table associated with the data
-        self.log.info(f"Pulling all data from {self.uuid}...")
+        self.log.info(f"Pulling data from {self.uuid}...")
         pull_query = f'SELECT * FROM "{self.athena_table}" LIMIT {limit}'
         df = self.query(pull_query)
 

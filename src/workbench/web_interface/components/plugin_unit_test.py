@@ -45,6 +45,7 @@ class PluginUnitTest:
             title="Plugin Unit Test",
             external_stylesheets=css_files,
         )
+        self.port = 8050
 
         # Register the CSS route in the ThemeManager
         tm.register_css_route(self.app)
@@ -156,10 +157,12 @@ class PluginUnitTest:
 
     def run(self):
         """Run the Dash server for the plugin, handling common errors gracefully."""
-        if not self.is_port_in_use(8050):
-            self.app.run_server(debug=True, use_reloader=False)
-        else:
-            log.error("It looks like another Dash server is running, stop that server and try again.")
+        while self.is_port_in_use(self.port):
+            log.info(f"Port {self.port} is in use. Trying the next one...")
+            self.port += 1  # Increment the port number until an available one is found
+
+        log.info(f"Starting Dash server on port {self.port}...")
+        self.app.run_server(debug=True, use_reloader=False, port=self.port)
 
     @staticmethod
     def is_port_in_use(port):

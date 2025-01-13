@@ -532,11 +532,11 @@ class WorkbenchShell:
         theme = kwargs.get("theme", "dark")
 
         plugin_test = PluginUnitTest(plugin_class, theme=theme, input_data=data, **kwargs)
-        url = "http://127.0.0.1:8050"
-        webbrowser.open(url)
 
         # Run the server and open in the browser
         plugin_test.run()
+        url = f"http://127.0.0.1:{plugin_test.port}"
+        webbrowser.open(url)
 
 
 # Launch Shell Entry Point

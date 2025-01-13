@@ -61,7 +61,7 @@ class AGTable(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        log.important(f"Updating Table Plugin with a table dataframe and kwargs: {kwargs}")
+        log.info(f"Updating Table Plugin with a table dataframe and kwargs: {kwargs}")
 
         # Add Health Symbols
         if "Health" in table_df.columns:

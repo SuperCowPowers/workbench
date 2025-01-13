@@ -96,7 +96,7 @@ class DataSource(AthenaSource):
         """
 
         # Get the table associated with the data
-        self.log.info(f"Pulling all data from {self.uuid}...")
+        self.log.info(f"Pulling data from {self.uuid}...")
         table = super().table
         pull_query = f'SELECT * FROM "{table}" LIMIT {limit}'
         df = self.query(pull_query)
