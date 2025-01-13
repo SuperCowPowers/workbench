@@ -289,9 +289,9 @@ if __name__ == "__main__":
 
     # Pull a test graph
     graph_store = GraphStore()
-    test_graph = graph_store.get("test/fingerprint_graph")
+    test_graph = graph_store.get("chem_info/tox21")
     if test_graph is None:
         print("Test graph not found... using default")
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(GraphPlot, theme="light", input_data=test_graph).run()
+    PluginUnitTest(GraphPlot, theme="dark", input_data=test_graph).run()
