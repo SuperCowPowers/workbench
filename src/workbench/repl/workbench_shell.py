@@ -495,9 +495,10 @@ class WorkbenchShell:
     def get_meta(self):
         return self.meta
 
-    def plot_manager(self, data, plot_type: str="table", **kwargs):
+    def plot_manager(self, data, plot_type: str = "table", **kwargs):
         """Plot Manager for Workbench"""
         from workbench.web_interface.components.plugins import ag_table, graph_plot, scatter_plot
+
         if plot_type == "table":
             # Check what type of data we have
             if isinstance(data, pd.DataFrame):

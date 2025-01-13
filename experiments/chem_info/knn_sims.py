@@ -1,4 +1,3 @@
-
 # Workbench Imports
 from workbench.api.df_store import DFStore
 from workbench.utils.chem_utils import compute_morgan_fingerprints

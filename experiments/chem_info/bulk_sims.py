@@ -29,8 +29,11 @@ for i, query_fp in enumerate(explicit_fingerprints):
     top_indices = sorted(range(len(similarities)), key=lambda j: -similarities[j])[:6]  # Include self
     top_neighbors = [
         {"query_id": compound_ids[i], "neighbor_id": compound_ids[j], "similarity": similarities[j]}
-        for j in top_indices if compound_ids[j] != compound_ids[i]
-    ][:5]  # Exclude self and limit to top 5
+        for j in top_indices
+        if compound_ids[j] != compound_ids[i]
+    ][
+        :5
+    ]  # Exclude self and limit to top 5
     results.extend(top_neighbors)
 
 # Convert results to a DataFrame
