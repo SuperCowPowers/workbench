@@ -91,11 +91,14 @@ class Proximity:
         Returns:
             pd.DataFrame: A DataFrame of neighbors and their distances.
         """
+        # Map the query_id to its positional index in self._df
         query_idx = self._df.index[self._df[self.id_column] == query_id].tolist()
         if not query_idx:
             raise ValueError(f"Query ID {query_id} not found in the DataFrame")
-        query_idx = query_idx[0]
+        # Use the positional index to query self.X
+        query_idx = self._df.index.get_loc(query_idx[0])
 
+        # Compute neighbors
         results = self._get_neighbors(query_idx=query_idx, radius=radius, include_self=include_self)
         return pd.DataFrame(results)
 
