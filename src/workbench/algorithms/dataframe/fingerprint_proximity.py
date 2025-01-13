@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     # Example DataFrame
     data = {
-        "id": [1, 2, 3, 4],
+        "id": ["a", "b", "c", "d"],
         "fingerprint": ["101010", "111010", "101110", "011100"],
     }
     df = pd.DataFrame(data)
@@ -113,10 +113,10 @@ if __name__ == "__main__":
 
     # Test 2: Neighbors for a specific query
     print("\n--- Test 2: Neighbors for Query ID 1 ---")
-    query_neighbors_df = proximity.neighbors(query_id=1)
+    query_neighbors_df = proximity.neighbors(query_id="a")
     print(query_neighbors_df)
 
     # Test 3: Neighbors for a specific query with similarity threshold
     print("\n--- Test 3: Neighbors for Query ID 1 with Similarity 0.5 ---")
-    query_neighbors_sim_df = proximity.neighbors(query_id=1, similarity=0.5)
+    query_neighbors_sim_df = proximity.neighbors(query_id="a", similarity=0.5)
     print(query_neighbors_sim_df)
