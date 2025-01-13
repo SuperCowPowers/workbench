@@ -212,7 +212,8 @@ class GraphPlot(PluginInterface):
         node_attributes.discard("pos")  # Remove 'pos' from the attributes
 
         # Create dropdown options for the label list (all non-'pos' attributes)
-        label_list = [{"label": attr, "value": attr} for attr in node_attributes]
+        label_list = [{"label": "None", "value": "None"}]  # Add "None" option as the first entry
+        label_list.extend([{"label": attr, "value": attr} for attr in node_attributes])
 
         # Create the color list using only numeric attributes or enumerated string fields
         color_list = []
@@ -257,7 +258,10 @@ class GraphPlot(PluginInterface):
 
             # Update node labels dynamically if a label field is selected
             if label:
-                node_trace["text"] = [nodes[node].get(label, "") for node in nodes]
+                if label == "None":  # Handle "None" option
+                    node_trace["text"] = [""] * len(nodes)
+                else:
+                    node_trace["text"] = [nodes[node].get(label, "") for node in nodes]
 
             # Update node colors dynamically if a color field is selected
             if color:
