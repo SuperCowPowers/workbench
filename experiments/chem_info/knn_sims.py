@@ -1,41 +1,26 @@
-from sklearn.neighbors import NearestNeighbors
-import numpy as np
-from rdkit import Chem
-from rdkit.Chem import rdMolDescriptors
 
-# Group A (similar within group)
-group_a_smiles = ["CCO", "CCOCC", "CCOCCC", "CCOC", "CCOCO"]
+# Workbench Imports
+from workbench.api.df_store import DFStore
+from workbench.utils.chem_utils import compute_morgan_fingerprints
+from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
 
-# Group B (similar within group, dissimilar to group A)
-group_b_smiles = ["CCCCN", "CCCCCN", "CCCCCCN", "CCCCCCCN", "CCCCCCCCN"]
+# Grab tox21 dataset
+tox_df = DFStore().get("/datasets/chem_info/tox21")
+tox_df = tox_df.sample(100)
 
-# Combine groups
-smiles_list = group_a_smiles + group_b_smiles
+# Compute Morgan fingerprints
+tox_df = compute_morgan_fingerprints(tox_df)
 
-# Generate fingerprints using MorganGenerator
-fingerprints = []
-for sm in smiles_list:
-    mol = Chem.MolFromSmiles(sm)
-    if mol:
-        gen = rdMolDescriptors.MorganGenerator(radius=2, fpSize=2048)
-        fingerprints.append(np.array(gen.GetFingerprint(mol), dtype=np.int8))
+# Compute FingerprintProximity
+prox = FingerprintProximity(tox_df, fingerprint_column="morgan_fingerprint", id_column="id", n_neighbors=5)
 
-fingerprints_array = np.array(fingerprints)
+# Get all the neighbors for all the compounds
+neighbors_df = prox.all_neighbors()
+print("\nAll neighbors:")
+print(neighbors_df.head())
 
-# Fit NearestNeighbors (use n_neighbors < total samples)
-n_neighbors = 3  # Adjust to fit dataset size
-nn = NearestNeighbors(metric="jaccard", n_neighbors=n_neighbors)
-nn.fit(fingerprints_array)
-
-# Query for neighbors
-query_fp = fingerprints_array[0]  # First molecule from group A
-distances, indices = nn.kneighbors([query_fp])
-
-# Convert Jaccard distances to Tanimoto similarities
-tanimoto_similarities = 1 - distances
-
-# Output results
-print("Query molecule:", smiles_list[0])
-print("Nearest neighbors (indices):", indices[0])
-print("Nearest neighbors (SMILES):", [smiles_list[i] for i in indices[0]])
-print("Tanimoto similarities:", tanimoto_similarities[0])
+# Query for neighbors for a specific compound
+query_id = tox_df["id"].iloc[0]
+query_neighbors_df = prox.neighbors(query_id=query_id)
+print(f"\nNeighbors for query ID {query_id}:")
+print(query_neighbors_df)
