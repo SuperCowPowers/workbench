@@ -65,7 +65,7 @@ class FeatureSet(FeatureSetCore):
 
         # Get the table associated with the data
         self.log.info(f"Pulling all data from {self.uuid}...")
-        pull_query = f'SELECT * FROM "{self.athen_table}" LIMIT {limit}'
+        pull_query = f'SELECT * FROM "{self.athena_table}" LIMIT {limit}'
         df = self.query(pull_query)
 
         # Drop any columns generated from AWS

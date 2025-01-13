@@ -505,7 +505,7 @@ class WorkbenchShell:
             else:
                 # Does this object have a pull_dataframe() method?
                 if hasattr(data, "pull_dataframe"):
-                    data = data.pull_dataframe()
+                    data = data.pull_dataframe(limit=100)
                     self.plot_plugin(ag_table.AGTable, data, **kwargs)
                 else:
                     cprint("yellow", f"Unknown Data Type for Table Plot '{type(data)}'")
