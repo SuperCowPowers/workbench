@@ -118,8 +118,16 @@ class GraphPlot(PluginInterface):
 
         # Check to make sure the first node has a 'pos' attribute
         if "pos" not in first_node:
-            self.log.important("No 'pos' attribute found, running spring layout for node positions...")
-            pos = nx.spring_layout(self.graph, iterations=500)
+            self.log.important("No 'pos' attribute found, running layout for node positions...")
+            if self.graph.number_of_nodes() < 100:
+                self.log.info("Using Kamada-Kawai layout for small graphs.")
+                pos = nx.kamada_kawai_layout(self.graph)
+            elif self.graph.number_of_nodes() < 1000:
+                self.log.info("Using Spring layout for medium graphs.")
+                pos = nx.spring_layout(self.graph, iterations=500)
+            else:
+                self.log.info("Using Spectral layout for large graphs.")
+                pos = nx.spectral_layout(self.graph)
             nx.set_node_attributes(self.graph, pos, "pos")
 
         # Use 'id' as default label field if not specified

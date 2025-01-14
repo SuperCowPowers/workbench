@@ -2,7 +2,10 @@ import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from typing import Union, List
+import logging
 
+# Set up logging
+log = logging.getLogger("workbench")
 
 class Proximity:
     def __init__(
@@ -115,6 +118,7 @@ class Proximity:
             List[dict]: List of dictionaries with neighbor information.
         """
         if query_idx is None:  # Handle all_neighbors case
+            log.info(f"Computing NearestNeighbors with input size: {self.X.shape}...")
             distances, indices = self.nn.kneighbors(self.X)
         elif radius is not None:  # Radius-based search
             distances, indices = self.nn.radius_neighbors([self.X[query_idx]], radius=radius)
@@ -129,6 +133,7 @@ class Proximity:
 
         results = []
         if query_idx is None:
+            log.info(f"Building index and distance results: {len(indices)}...")
             for idx, (neighbors, dists) in enumerate(zip(indices, distances)):
                 for neighbor_idx, dist in zip(neighbors, dists):
                     if not include_self and idx == neighbor_idx:

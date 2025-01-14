@@ -188,6 +188,24 @@ def load_graph_from_file(file_path: str) -> Optional[nx.Graph]:
         log.error(f"An error occurred while loading the graph from file: {file_path}. Error: {e}")
         return None
 
+def sample_graph(graph: nx.Graph, n: int) -> nx.Graph:
+    """Sample a graph to a smaller number of nodes
+
+    Args:
+        graph (nx.Graph): The input graph
+        n (int): The number of nodes to subsample
+
+    Returns:
+        nx.Graph: A subsampled graph
+    """
+    # Create a subgraph with n nodes
+    subgraph_nodes = list(graph.nodes())[:n]
+    subgraph = graph.subgraph(subgraph_nodes).copy()
+
+    # Remove any isolated nodes
+    subgraph.remove_nodes_from(list(nx.isolates(subgraph)))
+
+    return subgraph
 
 def create_nxgraph_from_dfs(
     node_df: pd.DataFrame,
@@ -219,7 +237,6 @@ def create_nxgraph_from_dfs(
     # Add edges with attributes
     edge_attributes = edges_df.set_index([edge_source_col, edge_target_col]).to_dict(orient="index")
     G.add_edges_from([(src, tgt, attrs) for (src, tgt), attrs in edge_attributes.items()])
-
     return G
 
 
