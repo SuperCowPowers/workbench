@@ -188,6 +188,7 @@ def load_graph_from_file(file_path: str) -> Optional[nx.Graph]:
         log.error(f"An error occurred while loading the graph from file: {file_path}. Error: {e}")
         return None
 
+
 def sample_graph(graph: nx.Graph, n: int) -> nx.Graph:
     """Sample a graph to a smaller number of nodes
 
@@ -206,6 +207,7 @@ def sample_graph(graph: nx.Graph, n: int) -> nx.Graph:
     subgraph.remove_nodes_from(list(nx.isolates(subgraph)))
 
     return subgraph
+
 
 def create_nxgraph_from_dfs(
     node_df: pd.DataFrame,

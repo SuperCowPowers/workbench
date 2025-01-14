@@ -7,6 +7,7 @@ import logging
 # Set up logging
 log = logging.getLogger("workbench")
 
+
 class Proximity:
     def __init__(
         self, df: pd.DataFrame, id_column: Union[int, str], features: List[str] = None, n_neighbors: int = 5

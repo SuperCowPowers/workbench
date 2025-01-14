@@ -85,7 +85,7 @@ class ProximityGraph:
         Args:
             graph_path (str): The path to the graph in GraphStore.
         """
-        self._nx_graph = self.graph_store.get(graph_name)
+        self._nx_graph = self.graph_store.get(graph_path)
 
     def store_graph(self, graph_path: str):
         """
@@ -205,5 +205,3 @@ if __name__ == "__main__":
     graph_plot = GraphPlot()
     properties = graph_plot.update_properties(sample, labels=id_column, hover_text="all")
     properties[0].show()
-
-
