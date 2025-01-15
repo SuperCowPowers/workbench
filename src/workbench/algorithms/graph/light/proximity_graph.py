@@ -23,13 +23,13 @@ class ProximityGraph:
         # GraphStore
         self.graph_store = GraphStore()
 
-    def build_graph(self, proximity_instance: Proximity, store_features: bool = True) -> None:
+    def build_graph(self, proximity_instance: Proximity, node_attributes_df: pd.DataFrame) -> None:
         """
         Build a NetworkX graph using a Proximity class.
 
         Args:
             proximity_instance (Proximity): An instance of a Proximity class to compute neighbors.
-            store_features (bool): Whether to store the features as node attributes (default: True).
+            node_attributes_df (pd.DataFrame): DataFrame containing node attributes
         """
         # Retrieve all neighbors and their distances
         prox = proximity_instance
@@ -42,10 +42,14 @@ class ProximityGraph:
         self._nx_graph = nx.Graph()
         for _, row in all_neighbors_df.iterrows():
             node_id = row[id_column]
-            if store_features:
-                self._nx_graph.add_node(node_id, **row.to_dict())
+
+            # Get all the node attributes
+            if node_id in node_attributes_df[id_column].values:
+                node_attributes = node_attributes_df[node_attributes_df[id_column] == node_id].iloc[0].to_dict()
+                self._nx_graph.add_node(node_id, **node_attributes)
             else:
-                self._nx_graph.add_node(node_id)
+                log.error(f"Node ID '{node_id}' not found in the node attributes DataFrame. Terminating graph build.")
+                return
 
         # Add edges with weights based on proximity
         min_edges = 2
@@ -119,8 +123,9 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
     from workbench.api import DFStore
     from workbench.utils.chem_utils import compute_morgan_fingerprints
-    from workbench.utils.graph_utils import sample_graph
+    from workbench.utils.graph_utils import connected_sample
 
+    """
     # Example DataFrame for FeaturesProximity
     feature_data = {
         "id": [1, 2, 3, 4],
@@ -183,25 +188,35 @@ if __name__ == "__main__":
     # Plot the subgraph
     properties = graph_plot.update_properties(subgraph, labels=id_column, hover_text="all")
     properties[0].show()
+    """
 
     # Now a real dataset with fingerprints
 
     # Pull in the tox21 data
-    tox_df = DFStore().get("/datasets/chem_info/tox21")
+    tox_df = DFStore().get("/datasets/chem_info/tox21")[:200]
     tox_df = compute_morgan_fingerprints(tox_df)
     id_column = "id"
 
     # Compute FingerprintProximity Graph
     prox = FingerprintProximity(tox_df, fingerprint_column="morgan_fingerprint", id_column=id_column, n_neighbors=5)
     fingerprint_graph = ProximityGraph()
-    fingerprint_graph.build_graph(prox)
+    fingerprint_graph.build_graph(prox, tox_df)
     nx_graph = fingerprint_graph.nx_graph
 
     # Store the graph in the GraphStore
     fingerprint_graph.store_graph("chem_info/tox21")
 
     # Plot a sample of the graph
-    sample = sample_graph(nx_graph, n=100)
+    sample = connected_sample(nx_graph, n=100)
     graph_plot = GraphPlot()
     properties = graph_plot.update_properties(sample, labels=id_column, hover_text="all")
+    properties[0].show()
+
+    # Store the graph and load it back
+    fingerprint_graph.store_graph("chem_info/tox21_100")
+    fingerprint_graph.load_graph("chem_info/tox21_100")
+    nx_graph = fingerprint_graph.nx_graph
+
+    # Plot to compare
+    properties = graph_plot.update_properties(nx_graph, labels=id_column, hover_text="all")
     properties[0].show()

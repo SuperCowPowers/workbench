@@ -1,7 +1,7 @@
 """Tests for graph_plot web component"""
 
 # Workbench Imports
-from workbench.utils.graph_utils import load_graph
+from workbench.api import GraphStore
 from workbench.web_interface.components.plugins.graph_plot import GraphPlot
 
 
@@ -9,7 +9,7 @@ def test_graph_plot():
     """Test the GraphPlot class"""
 
     # Instantiate a Graph
-    graph = load_graph("karate_club")
+    graph = GraphStore().get("test/karate_club")
 
     # Instantiate the GraphPlot class
     graph_plot = GraphPlot()

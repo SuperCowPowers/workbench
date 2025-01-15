@@ -106,7 +106,15 @@ class AWSGraphStore:
         try:
             response = self.s3_client.get_object(Bucket=bucket, Key=key)
             graph_json = json.loads(response["Body"].read().decode("utf-8"), object_hook=custom_decoder)
-            return nx.readwrite.json_graph.node_link_graph(graph_json)
+
+            # Deserialize the graph
+            graph = nx.readwrite.json_graph.node_link_graph(graph_json)
+
+            # Replace "_node_id" back to "id" in the graph's node attributes
+            for node in graph.nodes:
+                if "_node_id" in graph.nodes[node]:
+                    graph.nodes[node]["id"] = graph.nodes[node].pop("_node_id")
+            return graph
         except json.JSONDecodeError as e:
             self.log.error(f"Failed to decode JSON for graph at '{s3_uri}': {e}")
             raise
@@ -126,6 +134,12 @@ class AWSGraphStore:
 
         try:
             graph_json = nx.readwrite.json_graph.node_link_data(graph)
+
+            # Replace "id" with "_node_id" in node attributes
+            for node in graph_json["nodes"]:
+                if "id" in node:
+                    node["_node_id"] = node.pop("id")
+
             json_data = json.dumps(graph_json, cls=CustomEncoder)
             self.s3_client.put_object(Bucket=bucket, Key=key, Body=json_data)
             self.log.info(f"Graph stored at '{s3_uri}'")
@@ -210,8 +224,16 @@ if __name__ == "__main__":
     for u, v, d in G.edges(data=True):
         d["weight"] = 1.0
 
+    # Add node attributes, including an "id"
+    for node in G.nodes:
+        G.nodes[node]["id"] = node
+
     # Store the graph
-    graph_store.upsert("test_graph", G)
+    graph_store.upsert("test/test_graph", G)
+
+    # Get the graph and print out attributes
+    G = graph_store.get("test/test_graph")
+    print("Graph Nodes:", G.nodes(data=True))
 
     # Get a summary of the graphs
     print("Graph Store Summary:")
@@ -222,19 +244,19 @@ if __name__ == "__main__":
     print(graph_store.details())
 
     # Last modified date
-    print("Last modified:", graph_store.last_modified("test_graph"))
+    print("Last modified:", graph_store.last_modified("test/test_graph"))
 
     # List all graphs
     print("List all graphs in the store:")
     print(graph_store.list())
 
     # Retrieve and display the graph
-    retrieved_graph = graph_store.get("test_graph")
+    retrieved_graph = graph_store.get("test/test_graph")
     print("Retrieved Graph Edges:", retrieved_graph.edges(data=True))
 
     # Check if the graph exists
-    print("Graph exists:", graph_store.check("test_graph"))
+    print("Graph exists:", graph_store.check("test/test_graph"))
 
     # Delete the graph
-    graph_store.delete("test_graph")
-    print("Graph exists after deletion:", graph_store.check("test_graph"))
+    graph_store.delete("test/test_graph")
+    print("Graph exists after deletion:", graph_store.check("test/test_graph"))

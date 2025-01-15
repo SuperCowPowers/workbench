@@ -31,10 +31,10 @@ class FingerprintProximity(Proximity):
         """
         # Convert the fingerprint strings to binary arrays
         log.info("Converting fingerprints to binary feature matrix...")
-        self.data["fingerprint_bits"] = self.data[self.fingerprint_column].apply(
+        fingerprint_bits = self.data[self.fingerprint_column].apply(
             lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
         )
-        self.X = np.vstack(self.data["fingerprint_bits"].values)
+        self.X = np.vstack(fingerprint_bits)
 
         # Use Jaccard similarity for binary fingerprints
         log.info("Computing NearestNeighbors with Jaccard metric...")

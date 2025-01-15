@@ -1,10 +1,14 @@
-"""Graph/NetworkX Utilities"""
+"""Graph/NetworkX Utilities
+
+    Note: For most end-users the GraphStore() class is the API to use
+"""
 
 import pandas as pd
 import json
 from typing import Optional
 from datetime import datetime
 import logging
+import random
 
 # NetworkX import
 try:
@@ -42,23 +46,6 @@ def s3_client():
     aws_account_clamp = AWSAccountClamp()
     boto3_session = aws_account_clamp.boto3_session
     return boto3_session.client("s3")
-
-
-def exists(graph_name: str) -> bool:
-    """Check if the graph exists in S3
-
-    Args:
-        graph_name (str): The name of the graph artifact
-    Returns:
-        bool: True if the graph exists, False otherwise
-    """
-    s3 = s3_client()
-    try:
-        s3.head_object(Bucket=graph_bucket(), Key=f"graphs/{graph_name}.json")
-        return True
-    except s3.exceptions.ClientError:
-        return False
-
 
 def details(graph) -> dict:
     """Additional details about this graph
@@ -138,33 +125,6 @@ def aws_url(graph) -> Optional[str]:
     return f"https://s3.console.aws.amazon.com/s3/object/{graph_bucket()}?prefix=graphs/{graph.name}.json"
 
 
-def delete(graph):
-    """Delete this graph artifact including all related AWS objects"""
-    s3_client().delete_object(Bucket=graph_bucket(), Key=f"graphs/{graph.name}.json")
-    log.info(f"Graph {graph.name} deleted from S3")
-
-
-def save(graph) -> None:
-    """Save the internal NetworkX graph to S3"""
-    graph_json = nx.readwrite.json_graph.node_link_data(graph)
-    graph_str = json.dumps(graph_json, cls=CustomEncoder)
-    s3_client().put_object(Bucket=graph_bucket(), Key=f"graphs/{graph.name}.json", Body=graph_str)
-    log.info(f"Graph {graph.name} saved to S3")
-
-
-def load_graph(graph_name: str) -> nx.Graph:
-    """Load a NetworkX graph from S3"""
-
-    bucket = graph_bucket()
-    key = f"graphs/{graph_name}.json"
-
-    # Load the graph from S3
-    response = s3_client().get_object(Bucket=bucket, Key=key)
-    graph_str = response["Body"].read().decode("utf-8")
-    graph_json = json.loads(graph_str)
-    return nx.readwrite.json_graph.node_link_graph(graph_json)
-
-
 def load_graph_from_file(file_path: str) -> Optional[nx.Graph]:
     """Load a graph from a file path
 
@@ -189,24 +149,32 @@ def load_graph_from_file(file_path: str) -> Optional[nx.Graph]:
         return None
 
 
-def sample_graph(graph: nx.Graph, n: int) -> nx.Graph:
-    """Sample a graph to a smaller number of nodes
+def connected_sample(G: nx.Graph, n: int) -> nx.Graph:
+    # Get the largest connected component
+    largest_component = max(nx.connected_components(G), key=len)
+    subgraph = G.subgraph(largest_component)
 
-    Args:
-        graph (nx.Graph): The input graph
-        n (int): The number of nodes to subsample
+    # Ensure n doesn't exceed the number of nodes in the component
+    n = min(n, len(subgraph.nodes))
 
-    Returns:
-        nx.Graph: A subsampled graph
-    """
-    # Create a subgraph with n nodes
-    subgraph_nodes = list(graph.nodes())[:n]
-    subgraph = graph.subgraph(subgraph_nodes).copy()
+    # Start from a random node
+    start_node = random.choice(list(subgraph.nodes))
+    sampled_nodes = {start_node}
 
-    # Remove any isolated nodes
-    subgraph.remove_nodes_from(list(nx.isolates(subgraph)))
+    # Perform a breadth-first sampling until we have n nodes
+    queue = [start_node]
+    while queue and len(sampled_nodes) < n:
+        current_node = queue.pop(0)
+        neighbors = list(subgraph.neighbors(current_node))
+        random.shuffle(neighbors)  # Randomize neighbor order
+        for neighbor in neighbors:
+            if neighbor not in sampled_nodes and len(sampled_nodes) < n:
+                sampled_nodes.add(neighbor)
+                queue.append(neighbor)
 
-    return subgraph
+    # Induce a subgraph on the sampled nodes
+    sampled_subgraph = subgraph.subgraph(sampled_nodes)
+    return sampled_subgraph
 
 
 def create_nxgraph_from_dfs(
@@ -245,6 +213,7 @@ def create_nxgraph_from_dfs(
 if __name__ == "__main__":
     # Test the graph utility functions
     import sys
+    from workbench.api import GraphStore
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
 
     # Example node DataFrame
@@ -260,11 +229,12 @@ if __name__ == "__main__":
     print(G.nodes(data=True))
     print(G.edges(data=True))
 
-    # Load a graph from S3
-    if exists("karate_club"):
-        G = load_graph("karate_club")
+    # Load a graph from the GraphStore
+    graph_store = GraphStore()
+    if graph_store.check("test/karate_club"):
+        G = graph_store.get("test/karate_club")
     else:
-        print("Graph 'karate_club' not found in S3")
+        print("Graph 'karate_club' not found in the GraphStore")
         sys.exit(1)
 
     # Set description and tags for the graph
@@ -273,11 +243,17 @@ if __name__ == "__main__":
     print(f"Tags: {get_tags(G)}")
     save(G)
 
-    # Load the graph
-    G = load_graph("karate_club")
+    # Show details
     print(details(G))
 
     # View the graph
     graph_plot = GraphPlot()
     [figure, *_] = graph_plot.update_properties(G)
     figure.show()
+
+    # Sample the graph
+    s_graph = connected_sample(G, 10)
+    print(f"Sampled Graph: {s_graph.nodes()}")
+    [figure, *_] = graph_plot.update_properties(s_graph)
+    figure.show()
+

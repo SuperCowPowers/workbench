@@ -1,13 +1,15 @@
-from workbench.utils.graph_utils import load_graph, exists, modified, details, get_tags
+from workbench.api import GraphStore
+from workbench.utils.graph_utils import modified, details, get_tags
 
 
 def test_general_info():
-    """Simple test of the Endpoint functionality"""
+    """Simple tests of Graph functionality"""
+    graph_store = GraphStore()
 
     # Call the various methods
-    assert exists("karate_club")
+    assert graph_store.check("test/karate_club")
 
-    test_graph = load_graph("karate_club")
+    test_graph = graph_store.get("test/karate_club")
 
     # Modification Time
     print(modified(test_graph))

@@ -484,6 +484,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The input DataFrame with all the RDKit Descriptors added
     """
+    delete_mol_column = False
 
     # Check for the smiles column (any capitalization)
     smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
@@ -496,6 +497,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     # Convert SMILES to RDKit molecule objects (vectorized)
     if "molecule" not in df.columns:
         log.info("Converting SMILES to RDKit Molecules...")
+        delete_mol_column = True
         df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
 
     # If we have fragments in our compounds, get the largest fragment before computing descriptors
@@ -534,6 +536,10 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     feature_list = list(rdkit_features_df.columns) + list(mordred_df.columns)
     output_df = feature_quality_metrics(output_df, feature_list=feature_list)
 
+    # Drop the intermediate 'molecule' column if it was added
+    if delete_mol_column:
+        del output_df["molecule"]
+
     # Return the DataFrame with the RDKit and Mordred Descriptors added
     return output_df
 
@@ -553,6 +559,7 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=
     Note:
         See: https://greglandrum.github.io/rdkit-blog/posts/2021-07-06-simulating-counts.html
     """
+    delete_mol_column = False
 
     # Check for the SMILES column (case-insensitive)
     smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
@@ -567,6 +574,7 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=
     # Convert SMILES to RDKit molecule objects (vectorized)
     if "molecule" not in df.columns:
         log.info("Converting SMILES to RDKit Molecules...")
+        delete_mol_column = True
         df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
 
     # If we have fragments in our compounds, get the largest fragment before computing fingerprints
@@ -584,6 +592,10 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=
 
     # Add the fingerprints to the DataFrame
     df["morgan_fingerprint"] = fingerprints
+
+    # Drop the intermediate 'molecule' column if it was added
+    if delete_mol_column:
+        del df["molecule"]
     return df
 
 
