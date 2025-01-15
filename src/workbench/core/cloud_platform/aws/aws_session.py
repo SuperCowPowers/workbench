@@ -10,8 +10,15 @@ import logging
 
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
-from workbench.utils.ipython_utils import is_running_in_ipython, display_error_and_raise
 from workbench.utils.execution_environment import running_on_lambda, running_on_glue
+
+# Attempt to import IPython-related utilities
+try:
+    from workbench.utils.ipython_utils import is_running_in_ipython, display_error_and_raise
+except ImportError:
+    # Mock the utilities if the import fails
+    def is_running_in_ipython() -> bool:
+        return False
 
 
 class AWSSession:
