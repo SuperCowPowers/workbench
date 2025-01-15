@@ -140,7 +140,6 @@ class AWSGraphStore:
                 if "id" in node:
                     node["_node_id"] = node["id"]
 
-
             json_data = json.dumps(graph_json, cls=CustomEncoder)
             self.s3_client.put_object(Bucket=bucket, Key=key, Body=json_data)
             self.log.info(f"Graph stored at '{s3_uri}'")
