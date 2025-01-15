@@ -4,7 +4,7 @@ from typing import Union
 import logging
 
 # Workbench Imports
-from workbench.algorithms.dataframe import Proximity, FeaturesProximity
+from workbench.algorithms.dataframe import Proximity, FeaturesProximity  # noqa: F401
 from workbench.api import GraphStore
 
 # Set up logging
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     # Now a real dataset with fingerprints
 
     # Pull in the tox21 data
-    tox_df = DFStore().get("/datasets/chem_info/tox21")[:200]
+    tox_df = DFStore().get("/datasets/chem_info/tox21")[:1000]
     tox_df = compute_morgan_fingerprints(tox_df)
     id_column = "id"
 
@@ -213,10 +213,10 @@ if __name__ == "__main__":
     properties[0].show()
 
     # Store the graph and load it back
-    fingerprint_graph.store_graph("chem_info/tox21_100")
-    fingerprint_graph.load_graph("chem_info/tox21_100")
-    nx_graph = fingerprint_graph.nx_graph
+    graph_store = GraphStore()
+    graph_store.upsert("chem_info/tox21_100", sample)
+    load_sample = graph_store.get("chem_info/tox21_100")
 
     # Plot to compare
-    properties = graph_plot.update_properties(nx_graph, labels=id_column, hover_text="all")
+    properties = graph_plot.update_properties(load_sample, labels=id_column, hover_text="all")
     properties[0].show()

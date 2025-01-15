@@ -297,7 +297,7 @@ if __name__ == "__main__":
 
     # Pull a test graph
     graph_store = GraphStore()
-    test_graph = graph_store.get("chem_info/tox21")
+    test_graph = graph_store.get("chem_info/tox21_100")
     if test_graph is None:
         print("Test graph not found... using default")
 

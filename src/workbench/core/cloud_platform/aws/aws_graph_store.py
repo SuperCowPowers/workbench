@@ -135,10 +135,11 @@ class AWSGraphStore:
         try:
             graph_json = nx.readwrite.json_graph.node_link_data(graph)
 
-            # Replace "id" with "_node_id" in node attributes
+            # If we have an "id" field, replicate that into "_node_id" for serialization
             for node in graph_json["nodes"]:
                 if "id" in node:
-                    node["_node_id"] = node.pop("id")
+                    node["_node_id"] = node["id"]
+
 
             json_data = json.dumps(graph_json, cls=CustomEncoder)
             self.s3_client.put_object(Bucket=bucket, Key=key, Body=json_data)

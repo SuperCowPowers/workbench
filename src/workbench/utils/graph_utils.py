@@ -17,9 +17,6 @@ except ImportError:
     print("NetworkX Python module not found! pip install networkx")
     raise ImportError("NetworkX Python module not found! pip install networkx")
 
-# Workbench imports
-from workbench.utils.json_utils import CustomEncoder
-
 # Set up logging
 log = logging.getLogger("workbench")
 
@@ -46,6 +43,7 @@ def s3_client():
     aws_account_clamp = AWSAccountClamp()
     boto3_session = aws_account_clamp.boto3_session
     return boto3_session.client("s3")
+
 
 def details(graph) -> dict:
     """Additional details about this graph
@@ -149,7 +147,14 @@ def load_graph_from_file(file_path: str) -> Optional[nx.Graph]:
         return None
 
 
-def connected_sample(G: nx.Graph, n: int) -> nx.Graph:
+def connected_sample(G: nx.Graph, n: int, remove_pos: bool = True) -> nx.Graph:
+    """Sample a connected subgraph of a given size from a NetworkX graph.
+
+    Args:
+        G (nx.Graph): The input NetworkX graph.
+        n (int): The number of nodes to sample.
+        remove_pos (bool): Remove node positions if they exist (default: True).
+    """
     # Get the largest connected component
     largest_component = max(nx.connected_components(G), key=len)
     subgraph = G.subgraph(largest_component)
@@ -174,6 +179,12 @@ def connected_sample(G: nx.Graph, n: int) -> nx.Graph:
 
     # Induce a subgraph on the sampled nodes
     sampled_subgraph = subgraph.subgraph(sampled_nodes)
+
+    # Remove node positions if they exist
+    if remove_pos:
+        for node in sampled_subgraph.nodes:
+            if "pos" in sampled_subgraph.nodes[node]:
+                del sampled_subgraph.nodes[node]["pos"]
     return sampled_subgraph
 
 
@@ -241,7 +252,6 @@ if __name__ == "__main__":
     G.graph["description"] = "Zachary's Karate Club"
     set_tags(G, ["social", "karate"])
     print(f"Tags: {get_tags(G)}")
-    save(G)
 
     # Show details
     print(details(G))
@@ -256,4 +266,3 @@ if __name__ == "__main__":
     print(f"Sampled Graph: {s_graph.nodes()}")
     [figure, *_] = graph_plot.update_properties(s_graph)
     figure.show()
-
