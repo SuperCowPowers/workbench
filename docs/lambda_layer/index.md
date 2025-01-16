@@ -16,7 +16,7 @@ Here are the ARNs for the current Workbench Lambda Layers, please note they are 
  
 **us-east-1**
 
-- arn:aws:lambda:us-east-1:507740646243:layer:sageworks\_lambda_layer-us-east-1-python312:8
+- arn:aws:lambda:us-east-1:507740646243:layer:sageworks\_lambda_layer-us-east-1-python312:9
 
 **us-west-2**
 
