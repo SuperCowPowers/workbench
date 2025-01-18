@@ -2,7 +2,7 @@ import argparse
 from workbench.api import DataSource
 from workbench.core.artifacts.athena_source import AthenaSource
 from workbench.core.transforms.pandas_transforms import PandasToData
-from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.core.cloud_platform.aws.aws_meta import AWSMeta
 
 
 def migrate(ds_name):
@@ -36,22 +36,15 @@ def migrate(ds_name):
 def migrate_all():
     old_database = "sageworks"
 
-    # Grab an Glue Client from Workbench
-    aws_account_clamp = AWSAccountClamp()
-    session = aws_account_clamp.boto3_session
-    glue_client = session.client("glue")
-
-    # Get a list of all tables in the old database
-    print(f"Fetching all tables from the old database: {old_database}")
-    paginator = glue_client.get_paginator("get_tables")
-    for page in paginator.paginate(DatabaseName=old_database):
-        for table_name in page["TableList"]:
-            print(f"Starting migration for table: {table_name}")
-            try:
-                print("Fake migration")
-                # migrate(table_name)
-            except Exception as e:
-                print(f"Migration failed for table: {table_name}. Error: {e}")
+    # Grab the DataSource in the old database
+    old_datasources = AWSMeta()._list_catalog_tables(old_database)
+    for ds_name in old_datasources["Name"].values:
+        print(f"Starting migration for DataSource: {ds_name}")
+        try:
+            print(f"Mock migration for {ds_name}")
+            # migrate(ds_name)
+        except Exception as e:
+            print(f"Migration failed for: {ds_name}. Error: {e}")
 
 
 if __name__ == "__main__":

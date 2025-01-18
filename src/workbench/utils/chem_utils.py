@@ -826,6 +826,10 @@ if __name__ == "__main__":
     for smile, is_druglike in zip(druglike_smiles, druglike):
         print(f"SMILES: {smile} -> Drug-like: {is_druglike}")
 
+    # Test mol/None issue
+    df = DataSource("aqsol_data").pull_dataframe()[:100]
+    mol_df = compute_molecular_descriptors(df)
+
     # Compute Molecular Descriptors
     df = pd.DataFrame({"smiles": [smiles, smiles, smiles, smiles, smiles]})
     df = compute_molecular_descriptors(df)
