@@ -534,7 +534,7 @@ class EndpointCore(Artifact):
             raise
 
     def _fill_with_nans(self, feature_df):
-        """Internal: Fill a single-row DataFrame with NaNs for endpoint-return columns, keeping original feature data."""
+        """Internal: Fill a single-row DataFrame with NaNs for inference columns, keeping original feature data."""
 
         # Create a single-row DataFrame with NaNs for endpoint_return_columns
         one_row_df_with_nans = pd.DataFrame({col: [np.NaN] for col in self.endpoint_return_columns})
