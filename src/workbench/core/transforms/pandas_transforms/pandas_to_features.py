@@ -396,7 +396,7 @@ class PandasToFeatures(Transform):
             num_retry += 1
             time.sleep(sleep_time)
             rows = self.output_feature_set.num_rows()
-            self.log.info(f"Offline Storage {self.output_uuid}: {rows} rows out of {expected_rows}")
+            self.log.info(f"Checking Offline Storage {self.output_uuid}: {rows}/{expected_rows} rows")
         if rows == expected_rows:
             self.log.important(f"Success: Reached Expected Rows ({rows} rows)...")
         else:
