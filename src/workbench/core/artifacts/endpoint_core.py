@@ -476,11 +476,6 @@ class EndpointCore(Artifact):
         # Convert columns to the best possible dtype that supports the pd.NA missing value.
         converted_df = converted_df.convert_dtypes()
 
-        # Report on any rows that failed
-        failed_rows = converted_df[converted_df["prediction"].isna()]
-        if not failed_rows.empty:
-            self.log.warning(f"Rows that failed:\n{failed_rows}")
-
         # Convert pd.NA placeholders to pd.NA
         # Note: CSV serialization converts pd.NA to blank strings, so we have to put in placeholders
         converted_df.replace("__NA__", pd.NA, inplace=True)
@@ -518,7 +513,10 @@ class EndpointCore(Artifact):
                 if len(feature_df) == 1:
                     if not self.endpoint_return_columns:
                         raise
-                    return self._error_df(feature_df, self.endpoint_return_columns)
+
+                    # Fill the row with NaNs for endpoint_return_columns
+                    self.log.warning(f"Endpoint Inference failed on :{feature_df}")
+                    return self._fill_with_nans(feature_df)
 
                 # Binary search to find the problematic row(s)
                 mid_point = len(feature_df) // 2
@@ -535,14 +533,16 @@ class EndpointCore(Artifact):
             self.log.critical(f"Unexpected general error: {err}")
             raise
 
-    def _error_df(self, df, all_columns):
-        """Internal: Method to construct an Error DataFrame (a Pandas DataFrame with one row of NaNs)"""
-        # Create a new dataframe with all NaNs
-        error_df = pd.DataFrame(dict(zip(all_columns, [[np.NaN]] * len(self.endpoint_return_columns))))
-        # Now set the original values for the incoming dataframe
-        for column in df.columns:
-            error_df[column] = df[column].values
-        return error_df
+    def _fill_with_nans(self, feature_df):
+        """Internal: Fill a single-row DataFrame with NaNs for endpoint-return columns, keeping original feature data."""
+
+        # Create a single-row DataFrame with NaNs for endpoint_return_columns
+        one_row_df_with_nans = pd.DataFrame({col: [np.NaN] for col in self.endpoint_return_columns})
+
+        # Copy values from the input DataFrame for overlapping columns
+        for column in feature_df.columns:
+            one_row_df_with_nans.at[0, column] = feature_df.at[0, column]
+        return one_row_df_with_nans
 
     def _capture_inference_results(
         self,
