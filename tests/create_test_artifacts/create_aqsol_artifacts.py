@@ -17,12 +17,10 @@ import logging
 import pandas as pd
 import awswrangler as wr
 
-from workbench.api.data_source import DataSource
-from workbench.api.feature_set import FeatureSet
-from workbench.api.model import Model, ModelType
-from workbench.api.endpoint import Endpoint
+from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
+from workbench.core.transforms.pandas_transforms import PandasToFeatures
+from workbench.utils.chem_utils import compute_molecular_descriptors
 
-from workbench.core.transforms.data_to_features.light.molecular_descriptors import MolecularDescriptors
 
 log = logging.getLogger("workbench")
 
@@ -95,10 +93,12 @@ if __name__ == "__main__":
     #
     # Create the rdkit FeatureSet (this is an example of using lower level classes)
     if recreate or not FeatureSet("aqsol_mol_descriptors").exists():
-        rdkit_features = MolecularDescriptors("aqsol_data", "aqsol_mol_descriptors")
-        rdkit_features.set_output_tags(["aqsol", "public"])
-        query = "SELECT id, solubility, solubility_class, smiles FROM aqsol_data"
-        rdkit_features.transform(target_column="solubility", id_column="id", query=query)
+        df = DataSource("aqsol_data").pull_dataframe()
+        mol_df = compute_molecular_descriptors(df)
+        to_features = PandasToFeatures("aqsol_mol_descriptors")
+        to_features.set_output_tags(["aqsol", "public"])
+        to_features.set_input(mol_df, id_column="id")
+        to_features.transform()
 
     # Create the Molecular Descriptor based Regression Model
     if recreate or not Model("aqsol-mol-regression").exists():
