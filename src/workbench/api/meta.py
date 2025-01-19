@@ -150,7 +150,7 @@ class Meta(CloudMeta):
         Returns:
             dict: The details of the Data Source (None if not found)
         """
-        return super().data_source(table_name=data_source_name, database=database)
+        return super().data_source(data_source_name=data_source_name, database=database)
 
     def feature_set(self, feature_set_name: str) -> Union[dict, None]:
         """Get the details of a specific Feature Set
