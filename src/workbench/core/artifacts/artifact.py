@@ -435,8 +435,7 @@ class Artifact(ABC):
         self.log.important(f"Deleting Metadata {key_to_delete} for Artifact: {aws_arn}...")
 
         # First, fetch all the existing tags
-        response = self.sm_session.list_tags(aws_arn)
-        existing_tags = response.get("Tags", [])
+        existing_tags = self.sm_session.list_tags(aws_arn)
 
         # Convert existing AWS tags to a dictionary for easy manipulation
         existing_tags_dict = {item["Key"]: item["Value"] for item in existing_tags}
@@ -484,3 +483,9 @@ if __name__ == "__main__":
     # Test new input method
     fs.set_input("test_data")
     print(f"Input: {fs.get_input()}")
+
+    # Test add metadata
+    fs.upsert_workbench_meta({"test_key": "test_value"})
+
+    # Test delete metadata
+    fs.remove_workbench_meta("test_key")
