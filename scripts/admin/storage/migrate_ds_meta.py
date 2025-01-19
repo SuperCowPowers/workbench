@@ -7,10 +7,7 @@ meta = Meta()
 def replace_key_substrings(input_dict: Dict[str, str]) -> Dict[str, str]:
     old_substring = "sageworks"
     new_substring = "workbench"
-    return {
-        key.replace(old_substring, new_substring): value
-        for key, value in input_dict.items()
-    }
+    return {key.replace(old_substring, new_substring): value for key, value in input_dict.items()}
 
 
 # Loop through the data sources and migrate the metadata

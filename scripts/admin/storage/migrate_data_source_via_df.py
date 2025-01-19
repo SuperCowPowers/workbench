@@ -41,7 +41,7 @@ def compare_dataframes_with_tolerance(df1: pd.DataFrame, df2: pd.DataFrame, tole
 
     # Compare each column
     for column in df1.columns:
-        if df1[column].dtype.kind in 'f':  # Float column
+        if df1[column].dtype.kind in "f":  # Float column
             is_close = np.isclose(df1[column], df2[column], atol=tolerance)
             if not np.all(is_close):
                 print(f"Differences found in column: {column}")
