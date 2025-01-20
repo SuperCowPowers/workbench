@@ -2,12 +2,23 @@ from workbench.api import Meta, Model, ModelType
 
 meta = Meta()
 
+
+# Check if artifact has sageworks metadata
+def has_sageworks_meta(meta: dict) -> bool:
+    return any("sageworks" in key for key in meta)
+
+
 # Loop through the Models and update the metadata
 for model_name in meta.models()["Model Group"].values:
     m = Model(model_name)
 
     # Loop over the metadata and migrate
     meta = m.workbench_meta()
+
+    # Check if artifact has sageworks metadata
+    if not has_sageworks_meta(meta):
+        print(f"Skipping {model_name} as it does not have sageworks metadata")
+        continue
 
     # Build new metadata
     new_meta = {}

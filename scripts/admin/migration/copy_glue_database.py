@@ -46,6 +46,13 @@ def create_table_with_retry(dest_db, table_input, retries=3, delay=5):
                 raise e
 
 
+def flip_parameters(parameters: dict) -> dict:
+    return {
+        key.replace("sageworks", "workbench"): value
+        for key, value in parameters.items()
+    }
+
+
 def copy_tables(src_db, dest_db):
     # Ensure destination database exists
     ensure_database_exists(dest_db)
@@ -54,6 +61,9 @@ def copy_tables(src_db, dest_db):
     paginator = glue_client.get_paginator("get_tables")
     for page in paginator.paginate(DatabaseName=src_db):
         for table in page["TableList"]:
+            # Flip 'sageworks' to 'workbench' in parameters
+            updated_parameters = flip_parameters(table.get("Parameters", {}))
+
             # Construct the TableInput
             table_input = {
                 "Name": table["Name"],
@@ -62,7 +72,7 @@ def copy_tables(src_db, dest_db):
                 "StorageDescriptor": sanitize_storage_descriptor(table["StorageDescriptor"]),
                 "PartitionKeys": table.get("PartitionKeys", []),
                 "TableType": table.get("TableType", ""),
-                "Parameters": table.get("Parameters", {}),
+                "Parameters": updated_parameters,
             }
 
             # Add view-specific fields
