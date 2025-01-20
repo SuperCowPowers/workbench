@@ -47,10 +47,7 @@ def create_table_with_retry(dest_db, table_input, retries=3, delay=5):
 
 
 def flip_parameters(parameters: dict) -> dict:
-    return {
-        key.replace("sageworks", "workbench"): value
-        for key, value in parameters.items()
-    }
+    return {key.replace("sageworks", "workbench"): value for key, value in parameters.items()}
 
 
 def copy_tables(src_db, dest_db):
