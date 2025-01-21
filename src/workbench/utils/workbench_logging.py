@@ -76,31 +76,34 @@ logging.Logger.important = important
 logging.Logger.monitor = monitor
 
 
-# Define a ColoredFormatter
 class ColoredFormatter(logging.Formatter):
     COLORS_DARK_THEME = {
-        "DEBUG": "\x1b[38;5;60m",  # "DarkGrey"
+        "DEBUG": "\x1b[38;5;60m",  # DarkGrey
         "TRACE": "\x1b[38;5;141m",  # LightPurple
         "INFO": "\x1b[38;5;69m",  # LightBlue
         "IMPORTANT": "\x1b[38;5;113m",  # LightGreen
-        "WARNING": "\x1b[38;5;190m",  # DarkYellow
-        "MONITOR": "\x1b[38;5;220m",  # LightPurple
+        "WARNING": "\x1b[38;5;190m",  # LightLime
+        "MONITOR": "\x1b[38;5;220m",  # LightOrange
         "ERROR": "\x1b[38;5;208m",  # Orange
         "CRITICAL": "\x1b[38;5;198m",  # Hot Pink
     }
     COLORS_LIGHT_THEME = {
-        "DEBUG": "\x1b[38;5;21m",  # Blue
-        "TRACE": "\x1b[38;5;91m",  # Purple
-        "INFO": "\x1b[38;5;22m",  # Green
-        "IMPORTANT": "\x1b[38;5;178m",  # Lime
-        "WARNING": "\x1b[38;5;94m",  # DarkYellow
-        "MONITOR": "\x1b[38;5;91m",  # Purple
-        "ERROR": "\x1b[38;5;166m",  # Orange
-        "CRITICAL": "\x1b[38;5;124m",  # Red
+        "DEBUG": "\x1b[38;5;249m",  # LightGrey
+        "TRACE": "\x1b[38;5;141m",  # LightPurple
+        "INFO": "\x1b[38;5;69m",  # LightBlue
+        "IMPORTANT": "\x1b[38;5;113m",  # LightGreen
+        "WARNING": "\x1b[38;5;178m",  # LightOrange
+        "MONITOR": "\x1b[38;5;178m",  # LightOrange
+        "ERROR": "\x1b[38;5;208m",  # Orange
+        "CRITICAL": "\x1b[38;5;198m",  # Hot Pink
     }
-    COLORS = COLORS_DARK_THEME
-
+    COLORS = COLORS_DARK_THEME  # Default to dark
     RESET = "\x1b[0m"
+
+    @classmethod
+    def set_theme(cls, theme: str):
+        """Set the color theme globally."""
+        cls.COLORS = cls.COLORS_LIGHT_THEME if theme.lower() == "light" else cls.COLORS_DARK_THEME
 
     def format(self, record):
         log_message = super().format(record)

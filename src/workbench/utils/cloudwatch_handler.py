@@ -19,9 +19,8 @@ from workbench.core.cloud_platform.aws.aws_session import AWSSession
 class CloudWatchHandler(logging.Handler):
     """A helper class to add a CloudWatch Logs handler with buffering to a logger"""
 
-    def __init__(self, buffer_size=10, send_interval=5):
+    def __init__(self, buffer_size=10, send_interval=5, theme="dark"):
         super().__init__()  # Initialize the base Handler class
-        from workbench.utils.workbench_logging import ColoredFormatter  # Import here to avoid circular imports
 
         # Buffer to hold log messages
         self.buffer = []
@@ -32,7 +31,6 @@ class CloudWatchHandler(logging.Handler):
         # Get our session and log stream name
         self.boto3_session = AWSSession().boto3_session
         self.log_stream_name = self.determine_log_stream()
-        self.formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
         self.cloudwatch_client = self.boto3_session.client("logs")
         self.sequence_token = None
         self.log_group_name = "WorkbenchLogGroup"
@@ -40,6 +38,12 @@ class CloudWatchHandler(logging.Handler):
         # Create the log group and stream
         self.create_log_group()
         self.create_log_stream()
+
+        # Set up ColoredFormatter
+        from workbench.utils.workbench_logging import ColoredFormatter  # Avoid circular import
+
+        ColoredFormatter.set_theme(theme)  # Ensure theme is consistent
+        self.setFormatter(ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s"))
 
     def emit(self, record):
         """Add a log message to the buffer and send when ready"""
@@ -131,9 +135,6 @@ class CloudWatchHandler(logging.Handler):
 
     def get_unique_identifier(self, job_name):
         """Get a unique identifier for the log stream."""
-
-        # Note: Glue Job run Id kinda doesn't work so we'll just return the datetime
-        # return glue_job_run_id(job_name, self.boto3_session) or
         return datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
 
 
