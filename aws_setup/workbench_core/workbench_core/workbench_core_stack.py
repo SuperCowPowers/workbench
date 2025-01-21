@@ -696,7 +696,9 @@ class WorkbenchCoreStack(Stack):
         # Add a subset of policies for the Lambda Role
         lambda_role.add_managed_policy(self.datasource_policy)
         lambda_role.add_managed_policy(self.featureset_policy)
-
+        lambda_role.add_managed_policy(self.model_policy)
+        lambda_role.add_managed_policy(self.endpoint_policy)
+        lambda_role.add_managed_policy(self.pipeline_policy)
         return lambda_role
 
     def create_glue_role(self) -> iam.Role:
@@ -712,5 +714,7 @@ class WorkbenchCoreStack(Stack):
         # Add a subset of policies for the Glue Role
         glue_role.add_managed_policy(self.datasource_policy)
         glue_role.add_managed_policy(self.featureset_policy)
-
+        glue_role.add_managed_policy(self.model_policy)
+        glue_role.add_managed_policy(self.endpoint_policy)
+        glue_role.add_managed_policy(self.pipeline_policy)
         return glue_role
