@@ -76,7 +76,6 @@ logging.Logger.important = important
 logging.Logger.monitor = monitor
 
 
-# Define a ColoredFormatter
 class ColoredFormatter(logging.Formatter):
     COLORS_DARK_THEME = {
         "DEBUG": "\x1b[38;5;60m",  # "DarkGrey"
@@ -98,9 +97,20 @@ class ColoredFormatter(logging.Formatter):
         "ERROR": "\x1b[38;5;166m",  # Orange
         "CRITICAL": "\x1b[38;5;124m",  # Red
     }
-    COLORS = COLORS_DARK_THEME
 
+    # Set the default theme
+    COLORS = COLORS_DARK_THEME
     RESET = "\x1b[0m"
+
+    @classmethod
+    def set_theme(cls, theme: str):
+        """Set the color theme to either 'dark' or 'light'."""
+        if theme.lower() == "light":
+            cls.COLORS = cls.COLORS_LIGHT_THEME
+        elif theme.lower() == "dark":
+            cls.COLORS = cls.COLORS_DARK_THEME
+        else:
+            raise ValueError("Theme must be 'dark' or 'light'")
 
     def format(self, record):
         log_message = super().format(record)
@@ -238,6 +248,15 @@ def exception_log_forward(call_on_exception=None):
         time.sleep(2)  # Give the logs a chance to flush
 
 
+def set_log_theme(theme: str):
+    """Update the logging theme dynamically."""
+    ColoredFormatter.set_theme(theme)
+    log = logging.getLogger("workbench")
+    for handler in log.handlers:
+        if isinstance(handler.formatter, ColoredFormatter):
+            handler.formatter.COLORS = ColoredFormatter.COLORS
+
+
 if __name__ == "__main__":
     # Uncomment to test the WORKBENCH_DEBUG env variable
     # os.environ["WORKBENCH_DEBUG"] = "True"
@@ -252,6 +271,18 @@ if __name__ == "__main__":
 
     # Test out ALL the colors
     logging.getLogger("workbench").setLevel(logging.DEBUG)
+    my_log.debug("This should be a muted color")
+    my_log.trace("Trace color should stand out from debug")
+    my_log.info("This should be a nice color")
+    my_log.important("Important color should stand out from info")
+    my_log.warning("This should be a color that attracts attention")
+    my_log.monitor("This is a monitor message")
+    my_log.error("This should be a bright color")
+    my_log.critical("This should be an alert color")
+
+    # Test the log theme
+    set_log_theme("light")
+    my_log.info("\n\n\nSwitched to light theme")
     my_log.debug("This should be a muted color")
     my_log.trace("Trace color should stand out from debug")
     my_log.info("This should be a nice color")

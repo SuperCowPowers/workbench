@@ -21,7 +21,6 @@ class CloudWatchHandler(logging.Handler):
 
     def __init__(self, buffer_size=10, send_interval=5):
         super().__init__()  # Initialize the base Handler class
-        from workbench.utils.workbench_logging import ColoredFormatter  # Import here to avoid circular imports
 
         # Buffer to hold log messages
         self.buffer = []
@@ -32,7 +31,6 @@ class CloudWatchHandler(logging.Handler):
         # Get our session and log stream name
         self.boto3_session = AWSSession().boto3_session
         self.log_stream_name = self.determine_log_stream()
-        self.formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
         self.cloudwatch_client = self.boto3_session.client("logs")
         self.sequence_token = None
         self.log_group_name = "WorkbenchLogGroup"
@@ -43,13 +41,21 @@ class CloudWatchHandler(logging.Handler):
 
     def emit(self, record):
         """Add a log message to the buffer and send when ready"""
-        message = self.format(record)
+        if self.formatter:
+            message = self.format(record)
+        else:
+            message = record.getMessage()
+
         log_event = {"timestamp": int(record.created * 1000), "message": message}
         self.buffer.append(log_event)
 
         # Check if the buffer is full or if the time interval has passed
         if len(self.buffer) >= self.buffer_size or (time.time() - self.last_sent_time) >= self.send_interval:
             self.send_logs()
+
+    def setFormatter(self, formatter):
+        """Set the formatter for the handler"""
+        super().setFormatter(formatter)
 
     def send_logs(self):
         """Send buffered log messages to CloudWatch"""
@@ -131,9 +137,6 @@ class CloudWatchHandler(logging.Handler):
 
     def get_unique_identifier(self, job_name):
         """Get a unique identifier for the log stream."""
-
-        # Note: Glue Job run Id kinda doesn't work so we'll just return the datetime
-        # return glue_job_run_id(job_name, self.boto3_session) or
         return datetime.now(timezone.utc).strftime("%Y_%m_%d_%H_%M_%S")
 
 
@@ -142,8 +145,8 @@ if __name__ == "__main__":
     logger = logging.getLogger("Workbench")
     logger.setLevel(logging.INFO)
     cloudwatch_handler = CloudWatchHandler()
+    cloudwatch_handler.setFormatter(
+        logging.Formatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
+    )
     logger.addHandler(cloudwatch_handler)
     logger.info("Test log message to CloudWatch")
-
-    # Test the get_unique_identifier function
-    print(cloudwatch_handler.get_unique_identifier("Glue_Job_1"))
