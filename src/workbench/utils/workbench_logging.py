@@ -241,28 +241,6 @@ def exception_log_forward(call_on_exception=None):
         time.sleep(2)  # Give the logs a chance to flush
 
 
-def set_log_theme(theme: str):
-    """Update the logging theme dynamically."""
-    # Validate the theme
-    if theme.lower() not in ["light", "dark"]:
-        raise ValueError("Theme must be 'light' or 'dark'")
-
-    # Set the global theme in ColoredFormatter
-    ColoredFormatter.set_theme(theme)
-    log = logging.getLogger("workbench")
-
-    # Replace the formatter for all handlers
-    for handler in log.handlers:
-        formatter = handler.formatter
-        if formatter and formatter.__class__.__name__ == "ColoredFormatter":
-            # Create a new formatter with the updated theme
-            new_formatter = ColoredFormatter(
-                "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-            handler.setFormatter(new_formatter)
-
-
 if __name__ == "__main__":
     # Uncomment to test the WORKBENCH_DEBUG env variable
     # os.environ["WORKBENCH_DEBUG"] = "True"
@@ -277,19 +255,6 @@ if __name__ == "__main__":
 
     # Test out ALL the colors
     logging.getLogger("workbench").setLevel(logging.DEBUG)
-    my_log.debug("This should be a muted color")
-    my_log.trace("Trace color should stand out from debug")
-    my_log.info("This should be a nice color")
-    my_log.important("Important color should stand out from info")
-    my_log.warning("This should be a color that attracts attention")
-    my_log.monitor("This is a monitor message")
-    my_log.error("This should be a bright color")
-    my_log.critical("This should be an alert color")
-
-    # Test the log theme
-    set_log_theme("light")
-    print("\n\n\n")
-    my_log.info("Switched to light theme")
     my_log.debug("This should be a muted color")
     my_log.trace("Trace color should stand out from debug")
     my_log.info("This should be a nice color")
