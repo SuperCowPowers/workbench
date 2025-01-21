@@ -41,10 +41,9 @@ class CloudWatchHandler(logging.Handler):
 
         # Set up ColoredFormatter
         from workbench.utils.workbench_logging import ColoredFormatter  # Avoid circular import
+
         ColoredFormatter.set_theme(theme)  # Ensure theme is consistent
-        self.setFormatter(
-            ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
-        )
+        self.setFormatter(ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s"))
 
     def emit(self, record):
         """Add a log message to the buffer and send when ready"""
@@ -146,7 +145,6 @@ if __name__ == "__main__":
     cloudwatch_handler = CloudWatchHandler()
     logger.addHandler(cloudwatch_handler)
     logger.info("Test log message to CloudWatch")
-
 
     # Test the get_unique_identifier function
     print(cloudwatch_handler.get_unique_identifier("Glue_Job_1"))
