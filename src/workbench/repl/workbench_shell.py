@@ -459,6 +459,7 @@ class WorkbenchShell:
     def try_cached_meta(self):
         from workbench.api import Meta
         from workbench.cached.cached_meta import CachedMeta
+
         with silence_logs():
             self.meta = CachedMeta()
         if self.meta.check():
@@ -474,6 +475,7 @@ class WorkbenchShell:
     def switch_to_cached_meta(self):
         from workbench.api import Meta
         from workbench.cached.cached_meta import CachedMeta
+
         self.meta = CachedMeta()
         if self.meta.check():
             self.meta_status = "CACHED"
@@ -486,7 +488,9 @@ class WorkbenchShell:
             self.meta = Meta()
 
     def switch_to_direct_meta(self):
-        # Close the current Meta object (if it exists)
+        from workbench.api import Meta
+
+        # Close the current Meta object
         if self.meta:
             self.meta.close()
         # Create a new direct Meta object
