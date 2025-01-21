@@ -33,8 +33,6 @@ from workbench.utils.repl_utils import cprint, Spinner
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.log_utils import silence_logs
-from workbench.api import Meta
-from workbench.cached.cached_meta import CachedMeta
 
 # If we have RDKIT/Mordred let's pull in our cheminformatics utils
 try:
@@ -459,6 +457,8 @@ class WorkbenchShell:
 
     # Helpers method to switch from direct Meta to Cached Meta
     def try_cached_meta(self):
+        from workbench.api import Meta
+        from workbench.cached.cached_meta import CachedMeta
         with silence_logs():
             self.meta = CachedMeta()
         if self.meta.check():
@@ -472,6 +472,8 @@ class WorkbenchShell:
                 self.meta = Meta()
 
     def switch_to_cached_meta(self):
+        from workbench.api import Meta
+        from workbench.cached.cached_meta import CachedMeta
         self.meta = CachedMeta()
         if self.meta.check():
             self.meta_status = "CACHED"
