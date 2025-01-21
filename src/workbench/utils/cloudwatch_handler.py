@@ -145,8 +145,6 @@ if __name__ == "__main__":
     logger = logging.getLogger("Workbench")
     logger.setLevel(logging.INFO)
     cloudwatch_handler = CloudWatchHandler()
-    cloudwatch_handler.setFormatter(
-        logging.Formatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
-    )
+    cloudwatch_handler.setFormatter(logging.Formatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s"))
     logger.addHandler(cloudwatch_handler)
     logger.info("Test log message to CloudWatch")
