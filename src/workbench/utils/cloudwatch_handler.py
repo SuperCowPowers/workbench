@@ -19,7 +19,7 @@ from workbench.core.cloud_platform.aws.aws_session import AWSSession
 class CloudWatchHandler(logging.Handler):
     """A helper class to add a CloudWatch Logs handler with buffering to a logger"""
 
-    def __init__(self, buffer_size=10, send_interval=5):
+    def __init__(self, buffer_size=10, send_interval=5, theme="dark"):
         super().__init__()  # Initialize the base Handler class
 
         # Buffer to hold log messages
@@ -39,23 +39,25 @@ class CloudWatchHandler(logging.Handler):
         self.create_log_group()
         self.create_log_stream()
 
+        # Set up ColoredFormatter
+        from workbench.utils.workbench_logging import ColoredFormatter  # Avoid circular import
+        ColoredFormatter.set_theme(theme)  # Ensure theme is consistent
+        self.setFormatter(
+            ColoredFormatter(
+                "(%(filename)s:%(lineno)d) %(levelname)s %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+        )
+
     def emit(self, record):
         """Add a log message to the buffer and send when ready"""
-        if self.formatter:
-            message = self.format(record)
-        else:
-            message = record.getMessage()
-
+        message = self.format(record)
         log_event = {"timestamp": int(record.created * 1000), "message": message}
         self.buffer.append(log_event)
 
         # Check if the buffer is full or if the time interval has passed
         if len(self.buffer) >= self.buffer_size or (time.time() - self.last_sent_time) >= self.send_interval:
             self.send_logs()
-
-    def setFormatter(self, formatter):
-        """Set the formatter for the handler"""
-        super().setFormatter(formatter)
 
     def send_logs(self):
         """Send buffered log messages to CloudWatch"""
