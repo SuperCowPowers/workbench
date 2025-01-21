@@ -25,7 +25,7 @@ class WorkbenchCoreStack(Stack):
         props: WorkbenchCoreStackProps,
         **kwargs: Any,
     ) -> None:
-        desc = "Workbench Core Stack: Workbench-ExecutionRole (API) and  AWSGlueServiceRole-Workbench (Glue)"
+        desc = "Workbench Core: Workbench-ExecutionRole(API),  Workbench-GlueRole, and Workbench-LambdaRole"
         super().__init__(scope, construct_id, description=desc, **kwargs)
 
         # Grab our properties
