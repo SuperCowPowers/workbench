@@ -41,8 +41,19 @@ class WorkbenchCoreStack(Stack):
         self.bucket_list = [self.workbench_bucket, athena_bucket, sagemaker_bucket] + self.additional_buckets
         self.bucket_arns = self._bucket_names_to_arns(self.bucket_list)
 
+        # Create our managed polices
+        self.datasource_policy = self.workbench_datasource_policy()
+        self.featureset_policy = self.workbench_featureset_policy()
+        self.model_policy = self.workbench_model_policy()
+        self.endpoint_policy = self.workbench_endpoint_policy()
+        self.pipeline_policy = self.workbench_pipeline_policy()
+
         # Create our main Workbench Execution Role
         self.workbench_api_execution_role = self.create_api_execution_role()
+
+        # Create additional roles for Lambda and Glue
+        self.workbench_lambda_role = self.create_lambda_role()
+        self.workbench_glue_role = self.create_glue_role()
 
     def _bucket_names_to_arns(self, bucket_list: list[str]) -> list[str]:
         """Convert a list of dynamic bucket names to ARNs."""
@@ -664,10 +675,42 @@ class WorkbenchCoreStack(Stack):
         )
 
         # Create and attach the Workbench managed policies to the role
-        api_execution_role.add_managed_policy(self.workbench_datasource_policy())
-        api_execution_role.add_managed_policy(self.workbench_featureset_policy())
-        api_execution_role.add_managed_policy(self.workbench_model_policy())
-        api_execution_role.add_managed_policy(self.workbench_endpoint_policy())
-        api_execution_role.add_managed_policy(self.workbench_pipeline_policy())
+        api_execution_role.add_managed_policy(self.datasource_policy)
+        api_execution_role.add_managed_policy(self.featureset_policy)
+        api_execution_role.add_managed_policy(self.model_policy)
+        api_execution_role.add_managed_policy(self.endpoint_policy)
+        api_execution_role.add_managed_policy(self.pipeline_policy)
 
         return api_execution_role
+
+    def create_lambda_role(self) -> iam.Role:
+        """Create the Workbench Lambda Role."""
+        lambda_assumed_by = iam.ServicePrincipal("lambda.amazonaws.com")
+        lambda_role = iam.Role(
+            self,
+            id="Workbench-LambdaRole",
+            assumed_by=lambda_assumed_by,
+            role_name="Workbench-LambdaRole",
+        )
+
+        # Add a subset of policies for the Lambda Role
+        lambda_role.add_managed_policy(self.datasource_policy)
+        lambda_role.add_managed_policy(self.featureset_policy)
+
+        return lambda_role
+
+    def create_glue_role(self) -> iam.Role:
+        """Create the Workbench Glue Role."""
+        glue_assumed_by = iam.ServicePrincipal("glue.amazonaws.com")
+        glue_role = iam.Role(
+            self,
+            id="Workbench-GlueRole",
+            assumed_by=glue_assumed_by,
+            role_name="Workbench-GlueRole",
+        )
+
+        # Add a subset of policies for the Glue Role
+        glue_role.add_managed_policy(self.datasource_policy)
+        glue_role.add_managed_policy(self.featureset_policy)
+
+        return glue_role
