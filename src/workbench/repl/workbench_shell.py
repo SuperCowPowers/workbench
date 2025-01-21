@@ -30,7 +30,7 @@ except ImportError:
 
 # Workbench Imports
 from workbench.utils.repl_utils import cprint, Spinner
-from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
+from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM, set_log_theme
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.log_utils import silence_logs
 
@@ -160,6 +160,7 @@ class WorkbenchShell:
         self.commands["version"] = lambda: print(version)
         self.commands["cached_meta"] = self.switch_to_cached_meta
         self.commands["direct_meta"] = self.switch_to_direct_meta
+        self.commands["log_theme"] = set_log_theme
 
         # Add cheminformatics utils if available
         if HAVE_CHEM_UTILS:

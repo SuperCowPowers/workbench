@@ -78,39 +78,32 @@ logging.Logger.monitor = monitor
 
 class ColoredFormatter(logging.Formatter):
     COLORS_DARK_THEME = {
-        "DEBUG": "\x1b[38;5;60m",  # "DarkGrey"
+        "DEBUG": "\x1b[38;5;60m",  # DarkGrey
         "TRACE": "\x1b[38;5;141m",  # LightPurple
         "INFO": "\x1b[38;5;69m",  # LightBlue
         "IMPORTANT": "\x1b[38;5;113m",  # LightGreen
-        "WARNING": "\x1b[38;5;190m",  # DarkYellow
-        "MONITOR": "\x1b[38;5;220m",  # LightPurple
+        "WARNING": "\x1b[38;5;190m",  # LightLime
+        "MONITOR": "\x1b[38;5;220m",  # LightOrange
         "ERROR": "\x1b[38;5;208m",  # Orange
         "CRITICAL": "\x1b[38;5;198m",  # Hot Pink
     }
     COLORS_LIGHT_THEME = {
-        "DEBUG": "\x1b[38;5;21m",  # Blue
-        "TRACE": "\x1b[38;5;91m",  # Purple
-        "INFO": "\x1b[38;5;22m",  # Green
-        "IMPORTANT": "\x1b[38;5;178m",  # Lime
-        "WARNING": "\x1b[38;5;94m",  # DarkYellow
-        "MONITOR": "\x1b[38;5;91m",  # Purple
-        "ERROR": "\x1b[38;5;166m",  # Orange
-        "CRITICAL": "\x1b[38;5;124m",  # Red
+        "DEBUG": "\x1b[38;5;249m",  # LightGrey
+        "TRACE": "\x1b[38;5;141m",  # LightPurple
+        "INFO": "\x1b[38;5;69m",  # LightBlue
+        "IMPORTANT": "\x1b[38;5;113m",  # LightGreen
+        "WARNING": "\x1b[38;5;178m",  # LightOrange
+        "MONITOR": "\x1b[38;5;178m",  # LightOrange
+        "ERROR": "\x1b[38;5;208m",  # Orange
+        "CRITICAL": "\x1b[38;5;198m",  # Hot Pink
     }
-
-    # Set the default theme
-    COLORS = COLORS_DARK_THEME
+    COLORS = COLORS_DARK_THEME  # Default to dark
     RESET = "\x1b[0m"
 
     @classmethod
     def set_theme(cls, theme: str):
-        """Set the color theme to either 'dark' or 'light'."""
-        if theme.lower() == "light":
-            cls.COLORS = cls.COLORS_LIGHT_THEME
-        elif theme.lower() == "dark":
-            cls.COLORS = cls.COLORS_DARK_THEME
-        else:
-            raise ValueError("Theme must be 'dark' or 'light'")
+        """Set the color theme globally."""
+        cls.COLORS = cls.COLORS_LIGHT_THEME if theme.lower() == "light" else cls.COLORS_DARK_THEME
 
     def format(self, record):
         log_message = super().format(record)
@@ -250,11 +243,24 @@ def exception_log_forward(call_on_exception=None):
 
 def set_log_theme(theme: str):
     """Update the logging theme dynamically."""
+    # Validate the theme
+    if theme.lower() not in ["light", "dark"]:
+        raise ValueError("Theme must be 'light' or 'dark'")
+
+    # Set the global theme in ColoredFormatter
     ColoredFormatter.set_theme(theme)
     log = logging.getLogger("workbench")
+
+    # Replace the formatter for all handlers
     for handler in log.handlers:
-        if isinstance(handler.formatter, ColoredFormatter):
-            handler.formatter.COLORS = ColoredFormatter.COLORS
+        formatter = handler.formatter
+        if formatter and formatter.__class__.__name__ == "ColoredFormatter":
+            # Create a new formatter with the updated theme
+            new_formatter = ColoredFormatter(
+                "%(asctime)s (%(filename)s:%(lineno)d) %(levelname)s %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+            handler.setFormatter(new_formatter)
 
 
 if __name__ == "__main__":
@@ -282,7 +288,8 @@ if __name__ == "__main__":
 
     # Test the log theme
     set_log_theme("light")
-    my_log.info("\n\n\nSwitched to light theme")
+    print("\n\n\n")
+    my_log.info("Switched to light theme")
     my_log.debug("This should be a muted color")
     my_log.trace("Trace color should stand out from debug")
     my_log.info("This should be a nice color")
