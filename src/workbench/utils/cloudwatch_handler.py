@@ -19,7 +19,7 @@ from workbench.core.cloud_platform.aws.aws_session import AWSSession
 class CloudWatchHandler(logging.Handler):
     """A helper class to add a CloudWatch Logs handler with buffering to a logger"""
 
-    def __init__(self, buffer_size=10, send_interval=5, theme="dark"):
+    def __init__(self, buffer_size=10, send_interval=5):
         super().__init__()  # Initialize the base Handler class
 
         # Buffer to hold log messages
@@ -38,12 +38,6 @@ class CloudWatchHandler(logging.Handler):
         # Create the log group and stream
         self.create_log_group()
         self.create_log_stream()
-
-        # Set up ColoredFormatter
-        from workbench.utils.workbench_logging import ColoredFormatter  # Avoid circular import
-
-        ColoredFormatter.set_theme(theme)  # Ensure theme is consistent
-        self.setFormatter(ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s"))
 
     def emit(self, record):
         """Add a log message to the buffer and send when ready"""

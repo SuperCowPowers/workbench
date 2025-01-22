@@ -187,6 +187,9 @@ def logging_setup(color_logs=True):
     # Add a CloudWatch handler
     try:
         cloudwatch_handler = CloudWatchHandler()
+        # We're going to remove the time because CloudWatch adds its own timestamp
+        formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
+        cloudwatch_handler.setFormatter(formatter)
         log.info("Adding CloudWatch logging handler...")
         log.info(f"Log Stream Name: {cloudwatch_handler.log_stream_name}")
         log.addHandler(cloudwatch_handler)
