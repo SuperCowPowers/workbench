@@ -1,3 +1,4 @@
+import time
 from workbench.api import Meta, Endpoint
 
 meta = Meta()
@@ -21,16 +22,19 @@ for name in meta.endpoints()["Name"].values:
         continue
 
     # Build new metadata
+    print(f"Starting migration for {name}...")
     new_meta = {}
     for key, value in meta.items():
         if "sageworks" in key:
             print(f"Replacing {key} with {key.replace('sageworks', 'workbench')}")
             new_meta[key.replace("sageworks", "workbench")] = value
 
-    # Add new meta
-    end.upsert_workbench_meta(new_meta)
-
     # Now Delete all the old keys
     for key in meta.keys():
         if "sageworks" in key:
             end.delete_metadata(key)
+
+    # Add new meta
+    end.upsert_workbench_meta(new_meta)
+    print(f"Migrating done for {name}...")
+    time.sleep(5)

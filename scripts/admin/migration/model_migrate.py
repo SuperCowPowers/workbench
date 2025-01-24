@@ -1,3 +1,4 @@
+import time
 from workbench.api import Meta, Model, ModelType
 
 meta = Meta()
@@ -21,16 +22,19 @@ for model_name in meta.models()["Model Group"].values:
         continue
 
     # Build new metadata
+    print(f"Starting migration for {model_name}...")
     new_meta = {}
     for key, value in meta.items():
         if "sageworks" in key:
             print(f"Replacing {key} with {key.replace('sageworks', 'workbench')}")
             new_meta[key.replace("sageworks", "workbench")] = value
 
-    # Add new meta
-    m.upsert_workbench_meta(new_meta)
-
     # Now Delete all the old keys
     for key in meta.keys():
         if "sageworks" in key:
             m.delete_metadata(key)
+
+    # Add new meta
+    m.upsert_workbench_meta(new_meta)
+    print(f"Migrating done for {model_name}...")
+    time.sleep(5)
