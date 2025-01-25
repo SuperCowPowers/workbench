@@ -25,7 +25,7 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
                     # Column 2: Molecular Viewer
                     dbc.Col(
                         [molecule_view],
-                        style={"width": "480px", "flex": "0 0 auto"},  # Fixed width for right column
+                        style={"width": "520px", "flex": "0 0 auto"},  # Fixed width for right column
                         className="text-break",
                     ),
                 ],

@@ -6,6 +6,12 @@ from dash import Input, Output, callback, html, no_update
 from workbench.api import FeatureSet  # noqa: F401
 from workbench.api import Compound, df_store
 from workbench.web_interface.components.plugins import scatter_plot, compound_details
+from workbench.utils.ai_summary import AISummary
+from workbench.utils.ai_compound_generator import AICompoundGenerator
+
+# Create an instance of the AISummary class
+ai_summary = AISummary()
+ai_compound_generator = AICompoundGenerator()
 
 
 # Set up the scatter plot callbacks
@@ -82,6 +88,18 @@ def molecule_view_callbacks(my_compound_view: compound_details.CompoundDetails):
 
         # Update the properties for the molecule viewer
         [header_text, img, details] = my_compound_view.update_properties(compound)
+
+        # Temp hack to get the AI Summary and Compound Generation
+
+        # Get AI Summary for this compound
+        ai_summary_markdown = ai_summary.smiles_query(smiles)
+        ai_summary_markdown = "### AI Summary\n" + ai_summary_markdown
+        details += ai_summary_markdown
+
+        # Get AI Compound Generation for this compound
+        ai_compound_markdown = ai_compound_generator.generate_variants(smiles)
+        ai_compound_markdown = "\n### AI Compound Generation\n" + ai_compound_markdown
+        details += ai_compound_markdown
 
         # Set up the outputs for the hover tooltip
         show = True

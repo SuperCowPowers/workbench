@@ -59,6 +59,14 @@ class ScatterPlot(PluginInterface):
         return html.Div(
             className="workbench-container",
             children=[
+                # Main Scatter Plot Graph
+                dcc.Graph(
+                    id=f"{component_id}-graph",
+                    figure=self.display_text("Waiting for Data..."),
+                    config={"scrollZoom": True},
+                    style={"height": "100%"},
+                    clear_on_unhover=True,
+                ),
                 # Controls: X, Y, Color Dropdowns, and Regression Line Checkbox
                 html.Div(
                     [
@@ -91,14 +99,6 @@ class ScatterPlot(PluginInterface):
                         ),
                     ],
                     style={"padding": "20px 0px 0px 0px", "display": "flex", "gap": "10px"},
-                ),
-                # Main Scatter Plot Graph
-                dcc.Graph(
-                    id=f"{component_id}-graph",
-                    figure=self.display_text("Waiting for Data..."),
-                    config={"scrollZoom": True},
-                    style={"height": "100%"},
-                    clear_on_unhover=True,
                 ),
                 dcc.Tooltip(
                     id=f"{component_id}-overlay",
