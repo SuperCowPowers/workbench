@@ -261,17 +261,17 @@ class ScatterPlot(PluginInterface):
 
         # Logic for axis labels
         if self.show_axes:
-            xaxis=dict(
+            xaxis = dict(
                 title=x_col,
                 tickformat=".2f",
             )
-            yaxis=dict(
+            yaxis = dict(
                 title=y_col,
                 tickformat=".2f",
             )
         else:
-            xaxis=dict(visible=False)
-            yaxis=dict(visible=False)
+            xaxis = dict(visible=False)
+            yaxis = dict(visible=False)
 
         # Update layout
         figure.update_layout(
