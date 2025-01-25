@@ -35,7 +35,7 @@ tm.register_css_route(app)
 server = app.server
 
 # Create the main components for the Compound Explorer
-scatter_plot = scatter_plot.ScatterPlot()
+scatter_plot = scatter_plot.ScatterPlot(show_axes=False)
 scatter_plot_component = scatter_plot.create_component("compound_scatter_plot")
 compound_view = compound_details.CompoundDetails()
 compound_view_component = compound_view.create_component("compound_viewer")

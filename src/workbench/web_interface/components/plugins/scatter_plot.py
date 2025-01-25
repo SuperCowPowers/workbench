@@ -16,11 +16,16 @@ class ScatterPlot(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
 
-    def __init__(self):
-        """Initialize the Scatter Plot Plugin"""
+    def __init__(self, show_axes: bool = True):
+        """Initialize the Scatter Plot Plugin
+
+        Args:
+            show_axes (bool): Whether to show the axes and grid. Default is True.
+        """
         self.component_id = None
         self.hover_columns = []
         self.df = None
+        self.show_axes = show_axes
 
         # Initialize the Theme Manager
         self.theme_manager = ThemeManager()
@@ -48,7 +53,6 @@ class ScatterPlot(PluginInterface):
             (f"{component_id}-x-dropdown", "value"),
             (f"{component_id}-y-dropdown", "value"),
             (f"{component_id}-color-dropdown", "value"),
-            (f"{component_id}-regression-line", "value"),
         ]
         self.signals = [(f"{component_id}-graph", "hoverData"), (f"{component_id}-graph", "clickData")]
 
@@ -98,7 +102,7 @@ class ScatterPlot(PluginInterface):
                             style={"margin": "10px"},
                         ),
                     ],
-                    style={"padding": "20px 0px 0px 0px", "display": "flex", "gap": "10px"},
+                    style={"padding": "0px 0px 10px 0px", "display": "flex", "gap": "10px"},
                 ),
                 dcc.Tooltip(
                     id=f"{component_id}-overlay",
@@ -176,7 +180,7 @@ class ScatterPlot(PluginInterface):
             dropdown_columns = numeric_columns
         options = [{"label": col, "value": col} for col in dropdown_columns]
 
-        return [figure, options, options, options, x_default, y_default, color_default, []]
+        return [figure, options, options, options, x_default, y_default, color_default]
 
     def create_scatter_plot(
         self,
@@ -255,19 +259,25 @@ class ScatterPlot(PluginInterface):
                 y1=axis_max,
             )
 
-        # Update layout
-        figure.update_layout(
-            margin={"t": 30, "b": 40, "r": 30, "l": 70, "pad": 10},
+        # Logic for axis labels
+        if self.show_axes:
             xaxis=dict(
                 title=x_col,
                 tickformat=".2f",
-                showgrid=True,
-            ),
+            )
             yaxis=dict(
                 title=y_col,
                 tickformat=".2f",
-                showgrid=True,
-            ),
+            )
+        else:
+            xaxis=dict(visible=False)
+            yaxis=dict(visible=False)
+
+        # Update layout
+        figure.update_layout(
+            margin={"t": 30, "b": 40, "r": 30, "l": 70, "pad": 10},
+            xaxis=xaxis,
+            yaxis=yaxis,
             showlegend=False,
             dragmode="pan",
             modebar={"bgcolor": "rgba(0, 0, 0, 0)"},  # Transparent background
