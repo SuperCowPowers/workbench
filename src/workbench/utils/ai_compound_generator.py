@@ -12,7 +12,7 @@ class AICompoundGenerator:
         self.log = logging.getLogger("workbench")
 
         # Get the API key from the environment
-        self.deepseek_api = os.getenv('DEEPSEEK_API')
+        self.deepseek_api = os.getenv("DEEPSEEK_API")
 
         # If the API key is not set, raise an error
         if not self.deepseek_api:
@@ -59,15 +59,20 @@ class AICompoundGenerator:
         lookup_context = {
             "action": "generate_variants",
             "input": smiles_string,
-            "optimization_criteria": ["reduce toxicity", "increase solubility", "improve binding affinity", "enhance metabolic stability"],
-            "query": task
+            "optimization_criteria": [
+                "reduce toxicity",
+                "increase solubility",
+                "improve binding affinity",
+                "enhance metabolic stability",
+            ],
+            "query": task,
         }
 
         try:
             # Make the API request
             response = self.client.chat.completions.create(
                 model="deepseek-chat",  # Specify the model
-                messages=[{"role": "user", "content": str(lookup_context)}]  # Convert dict to string
+                messages=[{"role": "user", "content": str(lookup_context)}],  # Convert dict to string
             )
 
             # Extract the variants from the response

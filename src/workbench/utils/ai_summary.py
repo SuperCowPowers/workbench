@@ -13,7 +13,7 @@ class AISummary:
         self.log = logging.getLogger("workbench")
 
         # Get the API key from the environment
-        self.deepseek_api = os.getenv('DEEPSEEK_API')
+        self.deepseek_api = os.getenv("DEEPSEEK_API")
 
         # If the API key is not set, raise an error
         if not self.deepseek_api:
@@ -52,14 +52,14 @@ class AISummary:
         lookup_context = {
             "action": "lookup",
             "resources": ["PubMed", "PubChem", "ChEMBL", "DrugBank", "ChemSpider", "open source"],
-            "query": f"Find information about the compound with SMILES {smiles_string}. {task}"
+            "query": f"Find information about the compound with SMILES {smiles_string}. {task}",
         }
 
         try:
             # Make the API request
             response = self.client.chat.completions.create(
                 model="deepseek-chat",  # Specify the model
-                messages=[{"role": "user", "content": str(lookup_context)}]  # Convert dict to string
+                messages=[{"role": "user", "content": str(lookup_context)}],  # Convert dict to string
             )
 
             # Extract the summary from the response
@@ -75,6 +75,7 @@ class AISummary:
         except Exception as e:
             # Handle any errors that occur during the API request
             return f"### Error\n\nAn error occurred while querying the API: {str(e)}"
+
 
 # Example usage
 if __name__ == "__main__":
