@@ -1,12 +1,12 @@
 """A molecule viewer plugin component"""
-
-from dash import html
+from dash import html, dcc
 
 # Workbench Imports
 from workbench.api import Compound
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
 from workbench.utils.chem_utils import svg_from_smiles
+from workbench.utils.compound_utils import details_to_markdown
 
 
 class MoleculeViewer(PluginInterface):
@@ -38,21 +38,27 @@ class MoleculeViewer(PluginInterface):
         self.container = html.Div(
             id=self.component_id,
             children=[
-                html.H5(id=f"{self.component_id}-header", children="Compound:"),
+                html.H3(id=f"{self.component_id}-header", children="Compound:"),
                 html.Img(
                     id=f"{self.component_id}-img",
-                    className="workbench-container",
                     style={"padding": "0px"},
                 ),
+                dcc.Markdown(
+                    id=f"{self.component_id}-details",
+                    dangerously_allow_html=True,
+                    children="**Details Loading...**"
+                ),
             ],
+            className="workbench-offset",
         )
+
 
         # Fill in plugin properties
         self.properties = [
             (f"{self.component_id}-header", "children"),
             (f"{self.component_id}-img", "src"),
+            (f"{self.component_id}-details", "children"),
         ]
-        # self.signals = [(f"{self.component_id}-img", "clickData")]
 
         return self.container
 
@@ -78,8 +84,11 @@ class MoleculeViewer(PluginInterface):
         # Create the Molecule Image
         img = svg_from_smiles(compound.smiles, width, height, background=self.theme_manager.background())
 
+        # Compound Details
+        details = details_to_markdown(compound)
+
         # Return the updated property values for this plugin
-        return [header_text, img]
+        return [header_text, img, details]
 
 
 if __name__ == "__main__":
@@ -89,4 +98,4 @@ if __name__ == "__main__":
     # Run the Unit Test on the Plugin
     compound = Compound("AQSOL-0001")
     compound.smiles = "CC(C)C1=CC=C(C=C1)C(=O)O"
-    PluginUnitTest(MoleculeViewer, input_data=compound, theme="light").run()
+    PluginUnitTest(MoleculeViewer, input_data=compound, theme="dark").run()
