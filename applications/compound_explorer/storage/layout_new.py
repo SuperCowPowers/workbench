@@ -28,24 +28,13 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
                     ),
                 ]
             ),
-            # Main Content
-            dbc.Row(
-                [
-                    # Column 1: Scatter Plot
-                    dbc.Col(
-                        [scatter_plot],
-                        style={"flex": "1 1 auto", "min-width": "200px"},  # Shrinks but stays visible
-                    ),
-                    # Column 2: Molecular Viewer
-                    dbc.Col(
-                        [molecule_view],
-                        style={"width": "480px", "flex": "0 0 auto"},  # Fixed width for right column
-                        className="text-break",
-                    ),
-                ],
-                style={"height": "90vh", "display": "flex", "flex-wrap": "nowrap"},  # Prevent wrapping
-            ),
-            # Update Button (hidden)
+            # Scatter Plot
+            dbc.Row([scatter_plot], style={"margin": "20px"}),
+            # Molecule Viewer
+            dbc.Row([molecule_view], style={"margin": "20px"}),
+            # Molecular Viewer for Neighbors
+            # dbc.Row([molecule_view, molecule_view, molecule_view, molecule_view]),
+            # Update Button (Hidden)
             html.Button("Update Plugin", id="update-button", hidden=True),
             # Hover Tooltip
             dcc.Tooltip(
@@ -56,6 +45,5 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
                 loading_text="",
             ),
         ],
-        style={"margin": "10px"},
     )
     return layout
