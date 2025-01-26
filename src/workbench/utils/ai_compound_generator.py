@@ -117,7 +117,7 @@ class AICompoundGenerator:
             list: A list of all found SMILES strings.
         """
         # Regex pattern to match SMILES strings after "**SMILES**:"
-        smiles_pattern = r'\*\*SMILES\*\*:\s*([^\n]+)'
+        smiles_pattern = r"\*\*SMILES\*\*:\s*([^\n]+)"
 
         # Find all matches in the markdown text
         matches = re.findall(smiles_pattern, markdown)
