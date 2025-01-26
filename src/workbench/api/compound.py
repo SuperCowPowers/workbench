@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
 import logging
-from typing import List, Optional
+from typing import List
+
+# Workbench Imports
+from workbench.utils.chem_utils import svg_from_smiles
 
 
 @dataclass
@@ -8,7 +11,7 @@ class Compound:
     """Compound: Store details about an individual compound."""
 
     id: str
-    smiles: Optional[str] = None
+    smiles: str = None
     tags: List[str] = field(default_factory=list)
     meta: dict = field(default_factory=dict)
     log: logging.Logger = field(default_factory=lambda: logging.getLogger("workbench"), init=False)
@@ -35,6 +38,20 @@ class Compound:
         """
         return {"project": "XYZ", "smiles": self.smiles, "tags": self.tags, "meta": self.meta}
 
+    def image(self, width: int = 300, height: int = 200) -> str:
+        """Generate an SVG image of the Compound
+
+        Args:
+            width (int, optional): The width of the image (default: 300)
+            height (int, optional): The height of the image (default: 200)
+
+        Returns:
+            str: The SVG image of the Compound
+        """
+        from workbench.utils.theme_manager import ThemeManager  # Avoid circular import
+
+        return svg_from_smiles(self.smiles, width, height, background=ThemeManager().background())
+
     def __str__(self) -> str:
         """User-friendly string representation."""
         str_output = (
@@ -59,3 +76,6 @@ if __name__ == "__main__":
 
     # User-friendly view (__str__)
     print(compound)
+
+    # Generate an SVG image of the Compound
+    print(compound.image())
