@@ -44,6 +44,12 @@ a:hover {
     border-radius: 12px; /* Rounded corners */
 }
 
+/* Apply styling to Workbench Offsets */
+.workbench-offset {
+    box-shadow: 1px 1px 3px 2px rgba(0, 0, 0, 0.25);
+    border-radius: 12px; /* Rounded corners */
+}
+
 /* Apply styling to custom tooltips */
 .custom-tooltip {
     background-color: rgba(40, 40, 40, 1.0);
