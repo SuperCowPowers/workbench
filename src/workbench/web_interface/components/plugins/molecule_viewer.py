@@ -38,18 +38,19 @@ class MoleculeViewer(PluginInterface):
         self.container = html.Div(
             id=self.component_id,
             children=[
-                html.H3(id=f"{self.component_id}-header", children="Compound:"),
+                html.H4(id=f"{self.component_id}-header", children="Compound:"),
                 html.Img(
                     id=f"{self.component_id}-img",
                     style={"padding": "0px"},
                 ),
                 dcc.Markdown(
-                    id=f"{self.component_id}-details",
+                    id=f"{self.component_id}-summary",
                     dangerously_allow_html=True,
-                    children="**Details Loading...**"
+                    children="**Summary Loading...**"
                 ),
             ],
-            className="workbench-offset",
+            className="workbench-container",
+            style={"padding": "10px"}
         )
 
 
@@ -57,7 +58,7 @@ class MoleculeViewer(PluginInterface):
         self.properties = [
             (f"{self.component_id}-header", "children"),
             (f"{self.component_id}-img", "src"),
-            (f"{self.component_id}-details", "children"),
+            (f"{self.component_id}-summary", "children"),
         ]
 
         return self.container
@@ -84,11 +85,11 @@ class MoleculeViewer(PluginInterface):
         # Create the Molecule Image
         img = svg_from_smiles(compound.smiles, width, height, background=self.theme_manager.background())
 
-        # Compound Details
-        details = details_to_markdown(compound)
+        # Compound Summary
+        summary = details_to_markdown(compound)
 
         # Return the updated property values for this plugin
-        return [header_text, img, details]
+        return [header_text, img, summary]
 
 
 if __name__ == "__main__":
