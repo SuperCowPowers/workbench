@@ -1,7 +1,15 @@
 import os
+import re
 import logging
 from openai import OpenAI
 from workbench.utils.workbench_cache import WorkbenchCache
+
+# Try to import RDKit
+try:
+    from rdkit import Chem
+except ImportError:
+    print("RDKit is not installed. Please pip install rdkit'")
+    Chem = None
 
 
 class AICompoundGenerator:
@@ -21,6 +29,7 @@ class AICompoundGenerator:
         # Create a client with the API key
         self.client = OpenAI(api_key=self.deepseek_api, base_url="https://api.deepseek.com/v1")
         self.ai_cache = WorkbenchCache(prefix="ai_compound_generator")
+        self.generated_markdown = ""
 
     def generate_variants(self, smiles_string: str, force_pull=False) -> str:
         """
@@ -34,10 +43,11 @@ class AICompoundGenerator:
             str: A markdown-formatted list of optimized compound variants and their properties.
         """
         # Check if the variants are already cached
-        cached_variants = self.ai_cache.get(f"{smiles_string}_variants")
-        if cached_variants and not force_pull:
-            self.log.info(f"Using cached variants for SMILES: {smiles_string}")
-            return cached_variants
+        cached_markdown = self.ai_cache.get(f"{smiles_string}_variants")
+        if cached_markdown and not force_pull:
+            self.log.info(f"Using cached variant markdown for SMILES: {smiles_string}")
+            self.generated_markdown = cached_markdown
+            return cached_markdown
 
         # If the variants are not cached, query the API
         self.log.info(f"Generating variants for SMILES: {smiles_string}")
@@ -76,15 +86,60 @@ class AICompoundGenerator:
             )
 
             # Extract the variants from the response
-            variants = response.choices[0].message.content
+            self.generated_markdown = response.choices[0].message.content
 
-            # Cache the variants for future use
-            self.ai_cache.set(f"{smiles_string}_variants", variants)
-            return variants
+            # Cache the generated marked for future use
+            self.ai_cache.set(f"{smiles_string}_variants", self.generated_markdown)
+            return self.generated_markdown
 
         except Exception as e:
             # Handle any errors that occur during the API request
             return f"### Error\n\nAn error occurred while generating variants: {str(e)}"
+
+    def get_smiles(self) -> list:
+        """
+        Extracts all SMILES strings from the generated markdown.
+
+        Returns:
+            list: A list of all found SMILES strings.
+        """
+        return self.extract_smiles_from_markdown(self.generated_markdown)
+
+    @staticmethod
+    def extract_smiles_from_markdown(markdown: str) -> list:
+        """
+        Extracts all SMILES strings from the given markdown text.
+
+        Args:
+            markdown (str): The markdown text containing SMILES strings.
+
+        Returns:
+            list: A list of all found SMILES strings.
+        """
+        # Regex pattern to match SMILES strings after "**SMILES**:"
+        smiles_pattern = r'\*\*SMILES\*\*:\s*([^\n]+)'
+
+        # Find all matches in the markdown text
+        matches = re.findall(smiles_pattern, markdown)
+
+        # Clean up the SMILES strings (remove trailing spaces or unwanted characters)
+        smiles_strings = [smiles.strip() for smiles in matches]
+
+        return smiles_strings
+
+    @staticmethod
+    def is_valid_smiles(smiles: str) -> bool:
+        """
+        Checks if a SMILES string is valid using RDKit.
+
+        Args:
+            smiles (str): The SMILES string to validate.
+
+        Returns:
+            bool: True if the SMILES string is valid, False otherwise.
+        """
+        mol = Chem.MolFromSmiles(smiles)
+        return mol is not None
 
 
 if __name__ == "__main__":
@@ -95,7 +150,11 @@ if __name__ == "__main__":
     compound_generator = AICompoundGenerator()
 
     # Generate variants and get the markdown result
-    markdown_result = compound_generator.generate_variants(smiles_string, force_pull=True)
+    markdown_result = compound_generator.generate_variants(smiles_string, force_pull=False)
 
     # Print the markdown result
     print(markdown_result)
+
+    # Get the generated SMILES strings
+    smiles_strings = compound_generator.get_smiles()
+    print(smiles_strings)
