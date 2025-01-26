@@ -1,11 +1,11 @@
 """A molecule viewer plugin component"""
+
 from dash import html, dcc
 
 # Workbench Imports
 from workbench.api import Compound
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.chem_utils import svg_from_smiles
 from workbench.utils.compound_utils import details_to_markdown
 
 
@@ -44,15 +44,12 @@ class MoleculeViewer(PluginInterface):
                     style={"padding": "0px"},
                 ),
                 dcc.Markdown(
-                    id=f"{self.component_id}-summary",
-                    dangerously_allow_html=True,
-                    children="**Summary Loading...**"
+                    id=f"{self.component_id}-summary", dangerously_allow_html=True, children="**Summary Loading...**"
                 ),
             ],
             className="workbench-container",
-            style={"padding": "10px"}
+            style={"padding": "10px"},
         )
-
 
         # Fill in plugin properties
         self.properties = [
@@ -83,7 +80,7 @@ class MoleculeViewer(PluginInterface):
         header_text = f"Compound: {compound.id}"
 
         # Create the Molecule Image
-        img = svg_from_smiles(compound.smiles, width, height, background=self.theme_manager.background())
+        img = compound.image(width, height)
 
         # Compound Summary
         summary = details_to_markdown(compound)
