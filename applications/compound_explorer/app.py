@@ -62,7 +62,8 @@ app.layout = html.Div(
 callbacks.populate_scatter_plot(scatter_plot)
 callbacks.hover_tooltip_callbacks()
 
-# callbacks.setup_plugin_callbacks([molecule_view])
+# Set up the plugin callbacks
+callbacks.setup_plugin_callbacks([molecule_view])
 
 
 if __name__ == "__main__":

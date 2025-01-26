@@ -63,15 +63,11 @@ def hover_tooltip_callbacks():
         if custom_data_list is None:
             return False, no_update, no_update
 
-        # Construct a compound object
-        compound_id = custom_data_list[0]
-        smiles = custom_data_list[1]
-        tags = custom_data_list[2]
-        meta = custom_data_list[3]
-        compound = Compound(compound_id)
-        compound.smiles = smiles
-        compound.tags = tags
-        compound.meta = meta
+        # Construct a compound object (hardcoded to the hoverData format)
+        compound = Compound(custom_data_list[0])
+        compound.smiles = custom_data_list[1]
+        compound.tags = custom_data_list[2]
+        compound.meta = custom_data_list[3]
 
         # Generate the molecule image for the hover tooltip
         img = compound.image()
@@ -102,25 +98,27 @@ def setup_plugin_callbacks(plugins):
     @callback(
         # Aggregate plugin outputs
         [Output(component_id, prop) for p in plugins for component_id, prop in p.properties],
-        State("model_details-dropdown", "value"),
-        Input("models_table", "selectedRows"),
+        Input("compound_scatter_plot-graph", "hoverData"),
     )
-    def update_all_plugin_properties(inference_run, selected_rows):
-        # Check for no selected rows
-        if not selected_rows or selected_rows[0] is None:
+    def update_all_plugin_properties(hover_data):
+        # Check for no hover data
+        # Sanity Check that we get the data we need to update the molecule viewer
+        if hover_data is None:
+            raise PreventUpdate
+        custom_data_list = hover_data.get("points")[0].get("customdata")
+        if custom_data_list is None:
             raise PreventUpdate
 
-        # Get the selected row data and grab the uuid
-        # selected_row_data = selected_rows[0]
-        # object_uuid = selected_row_data["uuid"]
-
-        # Create the Model object
-        model = {}  # CachedModel(object_uuid)
+        # Construct a compound object (hardcoded to the hoverData format)
+        compound = Compound(custom_data_list[0])
+        compound.smiles = custom_data_list[1]
+        compound.tags = custom_data_list[2]
+        compound.meta = custom_data_list[3]
 
         # Update all the properties for each plugin
         all_props = []
         for p in plugins:
-            all_props.extend(p.update_properties(model, inference_run=inference_run))
+            all_props.extend(p.update_properties(compound))
 
         # Return all the updated properties
         return all_props
