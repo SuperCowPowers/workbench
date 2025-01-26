@@ -1,14 +1,16 @@
 """A compound details plugin component"""
 
-import re
 from dash import html, dcc
+import dash_bootstrap_components as dbc
 
 # Workbench Imports
 from workbench.api import Compound
+from workbench.utils.chem_utils import svg_from_smiles
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.chem_utils import svg_from_smiles
-from workbench.utils.markdown_utils import tag_styling
+from workbench.utils.compound_utils import details_to_markdown
+from workbench.utils.ai_summary import AISummary
+from workbench.utils.ai_compound_generator import AICompoundGenerator
 
 
 class CompoundDetails(PluginInterface):
@@ -25,6 +27,10 @@ class CompoundDetails(PluginInterface):
         # Initialize the Theme Manager
         self.theme_manager = ThemeManager()
 
+        # Create an instance of the AISummary and AICompoundGenerator classes
+        self.ai_summary = AISummary()
+        self.ai_compound_generator = AICompoundGenerator()
+
         # Call the parent class constructor
         super().__init__()
 
@@ -40,15 +46,52 @@ class CompoundDetails(PluginInterface):
         self.container = html.Div(
             id=self.component_id,
             children=[
-                html.H5(id=f"{self.component_id}-header", children="Compound Details Loading..."),
-                html.Img(
-                    id=f"{self.component_id}-img",
-                    className="workbench-container",
-                    style={"padding": "0px", "marginBottom": "30px"},
-                ),
-                html.H5("Details:"),
-                dcc.Markdown(id=f"{self.component_id}-details", dangerously_allow_html=True),
+                # Left Column: Header + Molecular Image + Details + Summary
+                dbc.Col(
+                    [
+                        html.H3(id=f"{self.component_id}-header", children="Compound Details Loading..."),
+                        html.Img(
+                            id=f"{self.component_id}-img",
+                            className="workbench-container",
+                            style={"padding": "0px", "marginBottom": "30px"},
+                        ),
+                        dcc.Markdown(
+                            id=f"{self.component_id}-details",
+                            dangerously_allow_html=True,
+                            children="**Details Loading...**",
+                        ),
+                        dcc.Markdown(
+                            id=f"{self.component_id}-summary",
+                            dangerously_allow_html=True,
+                            children="**Summary Details**",
+                        ),
+                    ],
+                    style={"width": "480px", "flex": "0 0 auto"},
+                ),  # Fixed width of 480px
+                # Right Column: Generated Compounds
+                dbc.Col(
+                    [
+                        # Row with 5 Img components
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    html.Img(id=f"{self.component_id}-img-{i}"),
+                                    className="workbench-container",
+                                    style={"margin": "10px"},
+                                )
+                                for i in range(5)
+                            ]
+                        ),
+                        dcc.Markdown(
+                            id=f"{self.component_id}-generative",
+                            dangerously_allow_html=True,
+                            children="**Generative Details**",
+                        ),
+                    ],
+                    style={"flex": "1"},
+                ),  # Takes up remaining space
             ],
+            style={"display": "flex"},  # Ensures the columns are side by side
         )
 
         # Fill in plugin properties
@@ -56,6 +99,13 @@ class CompoundDetails(PluginInterface):
             (f"{self.component_id}-header", "children"),
             (f"{self.component_id}-img", "src"),
             (f"{self.component_id}-details", "children"),
+            (f"{self.component_id}-summary", "children"),
+            (f"{self.component_id}-generative", "children"),
+            (f"{self.component_id}-img-0", "src"),
+            (f"{self.component_id}-img-1", "src"),
+            (f"{self.component_id}-img-2", "src"),
+            (f"{self.component_id}-img-3", "src"),
+            (f"{self.component_id}-img-4", "src"),
         ]
 
         return self.container
@@ -80,48 +130,28 @@ class CompoundDetails(PluginInterface):
         header_text = f"Compound: {compound.id}"
 
         # Create the Molecule Image
-        img = svg_from_smiles(compound.smiles, width, height, background=self.theme_manager.background())
+        img = compound.image(width, height)
 
         # Compound Details
-        details = self.details_to_markdown(compound)
+        details = details_to_markdown(compound)
+
+        # AI Summary for this compound
+        ai_summary_markdown = self.ai_summary.smiles_query(compound.smiles)
+        ai_summary_markdown = "#### Summary\n" + ai_summary_markdown
+
+        # AI Compound Generation for this compound
+        ai_compound_markdown = self.ai_compound_generator.generate_variants(compound.smiles)
+        ai_compound_markdown = "\n#### Generated Compounds\n" + ai_compound_markdown
+
+        # Generate 5 compounds images
+        images = []
+        generated_smiles = self.ai_compound_generator.get_smiles()
+        for i, smiles in enumerate(generated_smiles[:5]):
+            img_src = svg_from_smiles(smiles, 300, 200, background=self.theme_manager.background())
+            images.append(img_src)
 
         # Return the updated property values for this plugin
-        return [header_text, img, details]
-
-    def details_to_markdown(self, compound: Compound) -> str:
-        """Construct the markdown string for compound details.
-
-        Args:
-            compound (Compound): The Compound object
-
-        Returns:
-                str: A markdown string
-        """
-
-        def escape_markdown(value) -> str:
-            """Escape special characters in Markdown strings."""
-            return re.sub(r"([<>\[\]])", r"\\\1", str(value))
-
-        # Construct the markdown string
-        markdown = ""
-        for key, value in compound.details().items():
-            # Convert tags to styled spans
-            if key == "tags":
-                tag_substrings = {"toxic": "alert", "heavy": "warning", "frag": "warning", "druglike": "good"}
-                markdown += f"**{key}:** {tag_styling(value, tag_substrings)}  \n"
-            # For dictionaries, convert to Markdown
-            elif isinstance(value, dict):
-                for k, v in value.items():
-                    if v is not None:
-                        if isinstance(v, list):
-                            v = ", ".join(v)
-                        escaped_value = escape_markdown(v)
-                        markdown += f"**{k}:** {escaped_value}  \n"
-            else:
-                escaped_value = escape_markdown(value)
-                markdown += f"**{key}:** {escaped_value}  \n"
-
-        return markdown
+        return [header_text, img, details, ai_summary_markdown, ai_compound_markdown, *images]
 
 
 if __name__ == "__main__":
