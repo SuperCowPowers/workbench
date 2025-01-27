@@ -18,36 +18,23 @@ from workbench.utils.pandas_utils import feature_quality_metrics
 from workbench.utils.color_utils import is_dark, rgba_to_tuple
 
 # Molecular Descriptor Imports
-try:
-    from rdkit import Chem
-    from rdkit.Chem import AllChem, Mol, Descriptors, rdFingerprintGenerator, Draw
-    from rdkit.Chem.Draw import rdMolDraw2D
-    from rdkit.ML.Descriptors import MoleculeDescriptors
-    from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
-    from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
-    from rdkit import RDLogger
-    from rdkit.Chem import FunctionalGroups as FG
+from rdkit import Chem
+from rdkit.Chem import AllChem, Mol, Descriptors, rdFingerprintGenerator, Draw
+from rdkit.Chem.Draw import rdMolDraw2D
+from rdkit.ML.Descriptors import MoleculeDescriptors
+from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
+from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
+from rdkit import RDLogger
+from rdkit.Chem import FunctionalGroups as FG
+from mordred import Calculator
+from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
 
-    # Load functional group hierarchy once during initialization
-    fgroup_hierarchy = FG.BuildFuncGroupHierarchy()
+# Load functional group hierarchy once during initialization
+fgroup_hierarchy = FG.BuildFuncGroupHierarchy()
 
-    # Set RDKit logger to only show errors or critical messages
-    lg = RDLogger.logger()
-    lg.setLevel(RDLogger.ERROR)
-
-    NO_RDKIT = False
-except ImportError:
-    print("RDKit Python module not found! pip install rdkit")
-    NO_RDKIT = True
-
-try:
-    from mordred import Calculator
-    from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
-
-    NO_MORDRED = False
-except ImportError:
-    print("Mordred Python module not found! pip install mordred")
-    NO_MORDRED = True
+# Set RDKit logger to only show errors or critical messages
+lg = RDLogger.logger()
+lg.setLevel(RDLogger.ERROR)
 
 # Set up the logger
 log = logging.getLogger("workbench")
