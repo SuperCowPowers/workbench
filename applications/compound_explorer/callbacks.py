@@ -1,6 +1,6 @@
 """Callbacks for the Compound Explorer Application"""
 
-from dash import Input, Output, State, callback, html, no_update
+from dash import Input, Output, callback, html, no_update
 from dash.exceptions import PreventUpdate
 
 # Workbench Imports
