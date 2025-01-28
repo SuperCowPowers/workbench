@@ -3,6 +3,8 @@ from workbench.core.transforms.features_to_model.features_to_model import Featur
 import importlib.resources
 from pathlib import Path
 
+fs_name = "solubility_featurized_class_0_fs",
+fs_name = "aqsol_features",
 
 # Example: Assuming your scripts are in a package called "workbench.models"
 def get_custom_script_path(script_name: str) -> Path:
@@ -14,7 +16,7 @@ def get_custom_script_path(script_name: str) -> Path:
 my_script_path = get_custom_script_path("molecular_descriptors.py")
 
 to_model = FeaturesToModel(
-    "solubility_featurized_class_0_fs",
+    fs_name,
     "smiles-to-md-v0",
     model_type=ModelType.TRANSFORMER,
     custom_script=my_script_path
