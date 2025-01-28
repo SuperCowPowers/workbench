@@ -96,36 +96,49 @@ class AICompoundGenerator:
             # Handle any errors that occur during the API request
             return f"### Error\n\nAn error occurred while generating variants: {str(e)}"
 
-    def get_smiles(self) -> list:
-        """
-        Extracts all SMILES strings from the generated markdown.
-
-        Returns:
-            list: A list of all found SMILES strings.
-        """
-        return self.extract_smiles_from_markdown(self.generated_markdown)
-
     @staticmethod
-    def extract_smiles_from_markdown(markdown: str) -> list:
-        """
-        Extracts all SMILES strings from the given markdown text.
+    def escape_markdown(value) -> str:
+        """Escape special characters in Markdown strings."""
+        return re.sub(r"([<>\[\]])", r"\\\1", str(value))
 
-        Args:
-            markdown (str): The markdown text containing SMILES strings.
+    def extract_smiles_and_desc(self) -> list[tuple[str, str]]:
+        """
+        Extracts SMILES strings and their corresponding descriptions from our generated markdown.
 
         Returns:
-            list: A list of all found SMILES strings.
+            list[tuple[str, str]]: A list of tuples, where each tuple contains a valid SMILES string
+                                   and its corresponding description (with the SMILES as the first line).
         """
-        # Regex pattern to match SMILES strings after "**SMILES**:"
-        smiles_pattern = r"\*\*SMILES\*\*:\s*([^\n]+)"
+        # Split the markdown into individual entries based on the **SMILES**: keyword
+        entries = re.split(r"\n\s*\d+\.\s\*\*SMILES\*\*:", self.generated_markdown)
 
-        # Find all matches in the markdown text
-        matches = re.findall(smiles_pattern, markdown)
+        # Remove the first entry if it's empty (due to the split)
+        if entries and not entries[0].strip():
+            entries = entries[1:]
 
-        # Clean up the SMILES strings (remove trailing spaces or unwanted characters)
-        smiles_strings = [smiles.strip() for smiles in matches]
+        # Process each entry
+        results = []
+        for entry in entries:
+            # Extract SMILES, Explanation, and Impact using a more flexible regex
+            match = re.match(
+                r"\s*([^\n]+)\n\s*\*\*Explanation\*\*:\s*([^\n]+)\n\s*\*\*Impact\*\*:\s*([\s\S]+)",
+                entry,
+            )
+            if match:
+                smiles, explanation, impact = match.groups()
+                smiles = smiles.strip()
+                if self.is_valid_smiles(smiles):
+                    explanation = explanation.strip()
+                    impact = "\n".join([line.strip() for line in impact.split("\n")])
+                    description = (
+                            f"**SMILES**: {self.escape_markdown(smiles)}<br>"
+                            f"**Explanation**: {explanation}<br>"
+                            f"**Impact**:<br>"
+                            + impact.replace("- ", "-&nbsp;").replace("\n", "<br>").replace("**", "")
+                    )
+                    results.append((smiles, description))
 
-        return smiles_strings
+        return results
 
     @staticmethod
     def is_valid_smiles(smiles: str) -> bool:
@@ -145,6 +158,8 @@ class AICompoundGenerator:
 if __name__ == "__main__":
     # Example SMILES from tox21 dataset
     smiles_string = "CCCCCCCCCCCCCC[n+]1ccc(C)cc1.[Cl-]"
+    # smiles_string = "CCCC[n+]1cccc(C)c1.F[B-](F)(F)F"
+    smiles_string = "CCCCCCCCCCCCCC[n+]1ccc(C)cc1.[Cl-]"
 
     # Create an instance of the AICompoundGenerator class
     compound_generator = AICompoundGenerator()
@@ -155,6 +170,9 @@ if __name__ == "__main__":
     # Print the markdown result
     print(markdown_result)
 
-    # Get the generated SMILES strings
-    smiles_strings = compound_generator.get_smiles()
-    print(smiles_strings)
+    # Get the SMILES strings and descriptions from the markdown
+    smile_descriptions = compound_generator.extract_smiles_and_desc()
+    for smiles, description in smile_descriptions:
+        print(f"SMILES: {smiles}")
+        print(f"Description: {description}")
+        print()

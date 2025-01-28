@@ -1,4 +1,5 @@
 import os
+import re
 import logging
 from openai import OpenAI
 
@@ -68,6 +69,9 @@ class AISummary:
             # If one of the lines has SMILES, delete that line
             summary = "\n".join([line for line in summary.split("\n") if "SMILES" not in line])
 
+            # Clean up the summary
+            # summary = self.clean_summary(summary)
+
             # Cache the summary for future use
             self.ai_cache.set(smiles_string, summary)
             return summary
@@ -76,17 +80,32 @@ class AISummary:
             # Handle any errors that occur during the API request
             return f"### Error\n\nAn error occurred while querying the API: {str(e)}"
 
+    @staticmethod
+    def clean_summary(response: str) -> str:
+        # Remove leading numbers with dots (e.g., "1. ", "2. ")
+        response = re.sub(r"^\d+\.\s", "", response, flags=re.MULTILINE)
+
+        # Strip whitespace from each line
+        cleaned_lines = [line.strip() for line in response.split("\n")]
+
+        # Join the cleaned lines into a single string
+        cleaned_response = "\n".join(cleaned_lines)
+
+        return cleaned_response
 
 # Example usage
 if __name__ == "__main__":
     # Example SMILES from tox21 dataset
-    smiles_string = "CCCCCCCCCCCCCC[n+]1ccc(C)cc1.[Cl-]"
+
+    smiles_string = "CC(C)C1=CC=C(C=C1)C(=O)O"
+    smiles_string = "CCCC[n+]1cccc(C)c1.F[B-](F)(F)F"
+    # smiles_string = "CCCCCCCCCCCCCC[n+]1ccc(C)cc1.[Cl-]"
 
     # Create an instance of the AISummary class
     ai_summary = AISummary()
 
     # Query the API and get the markdown summary
-    markdown_result = ai_summary.smiles_query(smiles_string, force_pull=True)
+    summary_markdown = ai_summary.smiles_query(smiles_string, force_pull=True)
 
     # Print the markdown result
-    print(markdown_result)
+    print(summary_markdown)

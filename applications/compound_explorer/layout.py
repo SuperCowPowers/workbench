@@ -4,7 +4,11 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 
-def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -> html.Div:
+def compound_explorer_layout(
+        scatter_plot: dcc.Graph,
+        molecule_view: html.Div,
+        gen_compounds: html.Div,
+) -> html.Div:
     """Set up the layout for the Compound Explorer Page"""
     layout = html.Div(
         children=[
@@ -13,7 +17,7 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
                 [
                     html.H2(
                         [
-                            "Compound Explorer: Public ",
+                            "Compound Explorer: Public Tox21",
                             html.A(
                                 "(Sign up for Private Cloud)",
                                 href="https://www.supercowpowers.com/workbench",
@@ -28,7 +32,7 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
                     ),
                 ]
             ),
-            # Main Content
+            # Scatter Plot and Molecule Viewer
             dbc.Row(
                 [
                     # Column 1: Scatter Plot
@@ -43,10 +47,15 @@ def compound_explorer_layout(scatter_plot: dcc.Graph, molecule_view: html.Div) -
                         className="text-break",
                     ),
                 ],
-                style={"height": "90vh", "display": "flex", "flex-wrap": "nowrap"},  # Prevent wrapping
+                style={"height": "500px", "display": "flex", "flex-wrap": "nowrap", "marginBottom": "20px"},
             ),
-            # Update Button (hidden)
-            html.Button("Update Plugin", id="update-button", hidden=True),
+
+            # Generated Compounds
+            dbc.Row([gen_compounds]),
+
+            # Invisible Go Button (hidden) that triggers once on page load
+            html.Button(id="invisible-go-button", hidden=True),
+
             # Hover Tooltip
             dcc.Tooltip(
                 id="hover-tooltip",

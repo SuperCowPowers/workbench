@@ -11,7 +11,6 @@ from workbench.utils.theme_manager import ThemeManager
 from workbench.utils.compound_utils import details_to_markdown
 from workbench.utils.ai_summary import AISummary
 from workbench.utils.ai_compound_generator import AICompoundGenerator
-from workbench.web_interface.components.plugins.molecule_viewer import MoleculeViewer
 
 
 class GeneratedCompounds(PluginInterface):
@@ -24,9 +23,6 @@ class GeneratedCompounds(PluginInterface):
     def __init__(self):
         """Initialize the GeneratedCompounds plugin class"""
         self.component_id = None
-
-        # Initialize the Molecule Viewer Plugin
-        self.molecule_viewer = MoleculeViewer()
 
         # Initialize the Theme Manager
         self.theme_manager = ThemeManager()
@@ -53,7 +49,12 @@ class GeneratedCompounds(PluginInterface):
                 # Left Column: Molecule Viewer + Summary
                 dbc.Col(
                     [
-                        self.molecule_viewer.create_component(f"{self.component_id}-molecule-viewer"),
+                        html.H4(id=f"{self.component_id}-header", children="Compound:"),
+                        html.Img(
+                            id=f"{self.component_id}-img",
+                            style={"padding": "0px"},
+                            className="workbench-highlight",
+                        ),
                         dcc.Markdown(
                             id=f"{self.component_id}-summary",
                             dangerously_allow_html=True,
@@ -63,42 +64,61 @@ class GeneratedCompounds(PluginInterface):
                     ],
                     style={"width": "480px", "flex": "0 0 auto", "marginRight": 30},  # Fixed width of 480px
                 ),
-                # Right Column: Generated Compounds
+                # Right Column: 5 Rows of Generated Compounds
                 dbc.Col(
                     [
-                        # Row with 5 Img components
+                        # Add H3 header at the top
                         dbc.Row(
-                            [
-                                dbc.Col(
-                                    html.Img(id=f"{self.component_id}-img-{i}"),
-                                    className="workbench-container",
-                                    style={"margin": "10px"},
-                                )
-                                for i in range(5)
-                            ]
+                            html.H3("Generated Compounds", style={"marginBottom": "10px"})
                         ),
-                        dcc.Markdown(
-                            id=f"{self.component_id}-generative",
-                            dangerously_allow_html=True,
-                            children="**Generative Details**",
-                        ),
+                        # Create 5 rows, each with an image and a Markdown component
+                        *[
+                            dbc.Row(
+                                [
+                                    # Fixed-width image column (300px)
+                                    dbc.Col(
+                                        html.Img(
+                                            id=f"{self.component_id}-img-{i}",
+                                            style={"margin": "10px", "maxWidth": "100%", "height": "auto", "width": "300px"},
+                                        ),
+                                        style={"flex": "0 0 300px"},  # Fixed width of 300px
+                                    ),
+                                    # Flex markdown column (takes remaining space)
+                                    dbc.Col(
+                                        dcc.Markdown(
+                                            id=f"{self.component_id}-markdown-{i}",
+                                            dangerously_allow_html=True,
+                                            children=f"**Details for Image {i + 1}**",
+                                        ),
+                                        style={"flex": "1", "paddingTop": "10px"},
+                                    ),
+                                ],
+                                style={"marginBottom": "10px", "display": "flex"}, className="workbench-offset",
+                            )
+                            for i in range(5)
+                        ],
                     ],
                     style={"flex": "1"},
-                ),  # Takes up remaining space
+                )
             ],
-            style={"display": "flex"},  # Ensures the columns are side by side
+            style={"display": "flex"},  # Flexbox layout
         )
 
         # Fill in plugin properties
-        self.properties = self.molecule_viewer.properties
-        self.properties += [
+        self.properties = [
+            (f"{self.component_id}-header", "children"),
+            (f"{self.component_id}-img", "src"),
             (f"{self.component_id}-summary", "children"),
-            (f"{self.component_id}-generative", "children"),
             (f"{self.component_id}-img-0", "src"),
+            (f"{self.component_id}-markdown-0", "children"),
             (f"{self.component_id}-img-1", "src"),
+            (f"{self.component_id}-markdown-1", "children"),
             (f"{self.component_id}-img-2", "src"),
+            (f"{self.component_id}-markdown-2", "children"),
             (f"{self.component_id}-img-3", "src"),
+            (f"{self.component_id}-markdown-3", "children"),
             (f"{self.component_id}-img-4", "src"),
+            (f"{self.component_id}-markdown-4", "children"),
         ]
 
         return self.container
@@ -116,35 +136,42 @@ class GeneratedCompounds(PluginInterface):
         """
 
         # Get the width and height of the image
-        width = kwargs.get("width", 450)
-        height = kwargs.get("height", 300)
+        width = kwargs.get("width", 300)
+        height = kwargs.get("height", 200)
 
         # Header Text
         header_text = f"Compound: {compound.id}"
 
-        # Hardcoded Smiles for now
-        compound.smiles = "CC(C)C1=CC=C(C=C1)C(=O)O"
-
-        # Send the Compound to the Molecule Viewer
-        mol_view_props = self.molecule_viewer.update_properties(compound, width=450, height=300)
+        # Generate a molecule image for the compound
+        img = compound.image(450, 300)
 
         # AI Summary for this compound
         ai_summary_markdown = self.ai_summary.smiles_query(compound.smiles)
-        ai_summary_markdown = "#### Summary\n" + ai_summary_markdown
+        ai_summary_markdown = "#### Summary<br>" + ai_summary_markdown
 
         # AI Compound Generation for this compound
-        ai_compound_markdown = self.ai_compound_generator.generate_variants(compound.smiles)
-        ai_compound_markdown = "\n#### Generated Compounds\n" + ai_compound_markdown
+        _ai_compound_markdown = self.ai_compound_generator.generate_variants(compound.smiles)
 
-        # Generate 5 compounds images
-        images = []
-        generated_smiles = self.ai_compound_generator.get_smiles()
-        for i, smiles in enumerate(generated_smiles[:5]):
-            img_src = svg_from_smiles(smiles, 300, 200, background=self.theme_manager.background())
-            images.append(img_src)
+        # Generate 5 rows, each with an image and markdown details
+        generated_smiles_and_desc = self.ai_compound_generator.extract_smiles_and_desc()
+
+        # Sanity check that we have at least 5 generated compounds
+        if len(generated_smiles_and_desc) < 5:
+            generated_smiles_and_desc += [
+                (compound.smiles, f"Compound Generation failed for {compound.smiles}") for _ in range(5 - len(generated_smiles_and_desc))
+            ]
+        image_markdown_pairs = [
+            (
+                svg_from_smiles(smiles, 300, 200, background=self.theme_manager.background()),
+                description,
+            )
+            for smiles, description in generated_smiles_and_desc
+        ]
+        # Flatten the list of tuples into a single list
+        flattened_pairs = [item for pair in image_markdown_pairs for item in pair]
 
         # Return the updated property values for this plugin
-        return mol_view_props + [ai_summary_markdown, ai_compound_markdown, *images]
+        return [header_text, img, ai_summary_markdown, *flattened_pairs]
 
 
 if __name__ == "__main__":
@@ -152,8 +179,10 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    compound = Compound("AQSOL-0001")
+    compound = Compound("XYZ-0001")
     compound.smiles = "CC(C)C1=CC=C(C=C1)C(=O)O"
+    compound.smiles = "CCCC[n+]1cccc(C)c1.F[B-](F)(F)F"
+    compound.smiles = "CCCCCCCCCCCCCC[n+]1ccc(C)cc1.[Cl-]"
     compound.tags = ["toxic", "primary"]
     compound.meta = {"toxic_elements": None, "toxic_groups": ["[C;$(C#CH)]", "[C;$(C#CH)]"]}
     PluginUnitTest(GeneratedCompounds, input_data=compound, theme="light").run()

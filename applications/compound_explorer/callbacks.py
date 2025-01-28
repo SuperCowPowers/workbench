@@ -18,7 +18,7 @@ def populate_scatter_plot(my_scatter_plot: scatter_plot.ScatterPlot):
     @callback(
         # We can use the properties of the scatter plot to get the output properties
         [Output(component_id, prop) for component_id, prop in my_scatter_plot.properties],
-        [Input("update-button", "n_clicks")],
+        [Input("invisible-go-button", "n_clicks")],
     )
     def _populate_scatter_plot(_n_clicks):
 

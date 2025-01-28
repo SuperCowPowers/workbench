@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 
 # Workbench Imports
 from workbench.utils.theme_manager import ThemeManager
-from workbench.web_interface.components.plugins import scatter_plot, molecule_viewer
+from workbench.web_interface.components.plugins import scatter_plot, molecule_viewer, generated_compounds
 
 # Local Imports
 from layout import compound_explorer_layout
@@ -39,12 +39,15 @@ scatter_plot = scatter_plot.ScatterPlot(show_axes=False)
 scatter_plot_component = scatter_plot.create_component("compound_scatter_plot")
 molecule_view = molecule_viewer.MoleculeViewer()
 molecule_view_component = molecule_view.create_component("molecule_view")
+gen_compounds = generated_compounds.GeneratedCompounds()
+gen_compounds_component = gen_compounds.create_component("gen_compounds")
 
 
 # Create our components
 components = {
     "scatter_plot": scatter_plot_component,
     "molecule_view": molecule_view_component,
+    "gen_compounds": gen_compounds_component,
 }
 
 # Set up our application layout
@@ -55,15 +58,12 @@ app.layout = html.Div(
     **{"data-bs-theme": tm.data_bs_theme()},
 )
 
-# Populate the scatter plot with data
-
-
 # Set up our application callbacks
 callbacks.populate_scatter_plot(scatter_plot)
 callbacks.hover_tooltip_callbacks()
 
 # Set up the plugin callbacks
-callbacks.setup_plugin_callbacks([molecule_view])
+callbacks.setup_plugin_callbacks([molecule_view, gen_compounds])
 
 
 if __name__ == "__main__":
