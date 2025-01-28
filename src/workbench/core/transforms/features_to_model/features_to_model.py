@@ -10,7 +10,7 @@ from workbench.core.transforms.transform import Transform, TransformInput, Trans
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.artifacts.model_core import ModelCore, ModelType, InferenceImage
 from workbench.core.artifacts.artifact import Artifact
-from workbench.model_scripts.script_generation import generate_model_script, copy_imports_to_script_dir
+from workbench.model_scripts.script_generation import generate_model_script
 
 
 class FeaturesToModel(Transform):
@@ -142,8 +142,6 @@ class FeaturesToModel(Transform):
         if self.custom_script:
             script_path = self.custom_script
             self.log.info("Custom script path: {script_path}")
-            # Fixme: We'll need to circle back to this later
-            copy_imports_to_script_dir(script_path, ["workbench.utils.chem_utils"])
 
         # We're using one of the built-in model script templates
         else:
