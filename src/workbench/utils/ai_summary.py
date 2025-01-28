@@ -93,6 +93,7 @@ class AISummary:
 
         return cleaned_response
 
+
 # Example usage
 if __name__ == "__main__":
     # Example SMILES from tox21 dataset

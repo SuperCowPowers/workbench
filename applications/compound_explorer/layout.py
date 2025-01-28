@@ -5,9 +5,9 @@ import dash_bootstrap_components as dbc
 
 
 def compound_explorer_layout(
-        scatter_plot: dcc.Graph,
-        molecule_view: html.Div,
-        gen_compounds: html.Div,
+    scatter_plot: dcc.Graph,
+    molecule_view: html.Div,
+    gen_compounds: html.Div,
 ) -> html.Div:
     """Set up the layout for the Compound Explorer Page"""
     layout = html.Div(
@@ -49,13 +49,10 @@ def compound_explorer_layout(
                 ],
                 style={"height": "500px", "display": "flex", "flex-wrap": "nowrap", "marginBottom": "20px"},
             ),
-
             # Generated Compounds
             dbc.Row([gen_compounds]),
-
             # Invisible Go Button (hidden) that triggers once on page load
             html.Button(id="invisible-go-button", hidden=True),
-
             # Hover Tooltip
             dcc.Tooltip(
                 id="hover-tooltip",

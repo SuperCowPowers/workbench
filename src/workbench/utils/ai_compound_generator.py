@@ -131,10 +131,9 @@ class AICompoundGenerator:
                     explanation = explanation.strip()
                     impact = "\n".join([line.strip() for line in impact.split("\n")])
                     description = (
-                            f"**SMILES**: {self.escape_markdown(smiles)}<br>"
-                            f"**Explanation**: {explanation}<br>"
-                            f"**Impact**:<br>"
-                            + impact.replace("- ", "-&nbsp;").replace("\n", "<br>").replace("**", "")
+                        f"**SMILES**: {self.escape_markdown(smiles)}<br>"
+                        f"**Explanation**: {explanation}<br>"
+                        f"**Impact**:<br>" + impact.replace("- ", "-&nbsp;").replace("\n", "<br>").replace("**", "")
                     )
                     results.append((smiles, description))
 
