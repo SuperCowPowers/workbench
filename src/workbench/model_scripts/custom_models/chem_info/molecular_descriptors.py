@@ -13,7 +13,7 @@ import pandas as pd
 import json
 
 # Local imports
-from chem_utils import compute_molecular_descriptors
+from local_utils import compute_molecular_descriptors
 
 
 # TRAINING SECTION
