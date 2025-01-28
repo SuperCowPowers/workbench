@@ -517,7 +517,9 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     mordred_df = calc.pandas(largest_frags, nproc=1)
 
     # Combine the DataFrame with the RDKit and Mordred Descriptors added
-    output_df = pd.concat([df, rdkit_features_df, mordred_df], axis=1)
+    # Note: This will overwrite any existing columns with the same name. This is a good thing
+    #       since we want computed descriptors to overwrite anything in the input dataframe
+    output_df = mordred_df.combine_first(rdkit_features_df).combine_first(df)
 
     # Compute feature quality metrics
     feature_list = list(rdkit_features_df.columns) + list(mordred_df.columns)
