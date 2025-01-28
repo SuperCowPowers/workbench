@@ -473,7 +473,7 @@ class EndpointCore(Artifact):
                 pass
             except TypeError:
                 # This typically means a duplicated column name, so confirm duplicate (more than 1) and log it
-                column_count = (df.columns == column).sum()
+                column_count = (converted_df.columns == column).sum()
                 self.log.critical(f"{column} occurs {column_count} times in the DataFrame.")
                 pass
 
@@ -490,6 +490,11 @@ class EndpointCore(Artifact):
 
     def _endpoint_error_handling(self, predictor, feature_df):
         """Internal: Handles errors, retries, and binary search for problematic rows."""
+
+        # Sanity check: Does the DataFrame have 0 rows?
+        if feature_df.empty:
+            self.log.warning("DataFrame has 0 rows. No predictions to run.")
+            return pd.DataFrame(columns=feature_df.columns)
 
         # Convert DataFrame into a CSV buffer
         csv_buffer = StringIO()
@@ -521,10 +526,12 @@ class EndpointCore(Artifact):
 
                     # Fill the row with NaNs for endpoint_return_columns
                     self.log.warning(f"Endpoint Inference failed on :{feature_df}")
-                    return self._fill_with_nans(feature_df)
+                    return pd.DataFrame(columns=feature_df.columns)  # Empty DataFrame with same structure
+                    # return self._fill_with_nans(feature_df)
 
                 # Binary search to find the problematic row(s)
                 mid_point = len(feature_df) // 2
+                self.log.info(f"Bisect DataFrame: 0 -> {mid_point} and {mid_point} -> {len(feature_df)}")
                 first_half = self._endpoint_error_handling(predictor, feature_df.iloc[:mid_point])
                 second_half = self._endpoint_error_handling(predictor, feature_df.iloc[mid_point:])
                 return pd.concat([first_half, second_half], ignore_index=True)
