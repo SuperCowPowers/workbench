@@ -337,11 +337,6 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     # Now get all the RDKIT Descriptors
     all_descriptors = [x[0] for x in Descriptors._descList]
 
-    # There's an overflow issue that happens with the IPC descriptor, so we'll remove it
-    # See: https://github.com/rdkit/rdkit/issues/1527
-    if "Ipc" in all_descriptors:
-        all_descriptors.remove("Ipc")
-
     # Make sure we don't have duplicates
     all_descriptors = list(set(all_descriptors))
 
