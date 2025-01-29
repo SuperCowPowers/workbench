@@ -1,6 +1,6 @@
 """A table component testing script
-   Note: This is purely slash/hack code to test and compare Table components
-         When the components are finalized, the classes will go into workbench/components
+Note: This is purely slash/hack code to test and compare Table components
+      When the components are finalized, the classes will go into workbench/components
 """
 
 import sys

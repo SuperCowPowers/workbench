@@ -1,6 +1,6 @@
 """Graph/NetworkX Utilities
 
-    Note: For most end-users the GraphStore() class is the API to use
+Note: For most end-users the GraphStore() class is the API to use
 """
 
 import pandas as pd

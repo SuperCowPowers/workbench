@@ -1,11 +1,11 @@
 """MolecularDescriptors: Compute a Feature Set based on RDKit Descriptors
 
-   Note: An alternative to using this class is to use the `compute_molecular_descriptors` function directly.
-         df_features = compute_molecular_descriptors(df)
-         to_features = PandasToFeatures("my_feature_set")
-            to_features.set_input(df_features, id_column="id")
-            to_features.set_output_tags(["blah", "whatever"])
-            to_features.transform()
+Note: An alternative to using this class is to use the `compute_molecular_descriptors` function directly.
+      df_features = compute_molecular_descriptors(df)
+      to_features = PandasToFeatures("my_feature_set")
+         to_features.set_input(df_features, id_column="id")
+         to_features.set_output_tags(["blah", "whatever"])
+         to_features.transform()
 """
 
 # Local Imports

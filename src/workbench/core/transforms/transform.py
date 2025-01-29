@@ -1,5 +1,5 @@
 """Transform: Base Class for all transforms within Workbench
-              Inherited Classes must implement the abstract transform_impl() method"""
+Inherited Classes must implement the abstract transform_impl() method"""
 
 from abc import ABC, abstractmethod
 from enum import Enum, auto

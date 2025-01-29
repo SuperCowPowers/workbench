@@ -1,5 +1,5 @@
 """A Model Plot component that switches display based on model type. The plot
-   will be a confusion matrix for a classifier and a regression plot for a regressor
+will be a confusion matrix for a classifier and a regression plot for a regressor
 """
 
 from dash import dcc

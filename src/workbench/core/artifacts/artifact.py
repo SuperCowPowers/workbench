@@ -1,5 +1,5 @@
 """Artifact: Abstract Base Class for all Artifact classes in Workbench.
-                Artifacts simply reflect and aggregate one or more AWS Services"""
+Artifacts simply reflect and aggregate one or more AWS Services"""
 
 from abc import ABC, abstractmethod
 from datetime import datetime

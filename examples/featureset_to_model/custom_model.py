@@ -3,8 +3,8 @@ from workbench.core.transforms.features_to_model.features_to_model import Featur
 import importlib.resources
 from pathlib import Path
 
-# fs_name = "solubility_featurized_class_0_fs"
-fs_name = "aqsol_features"
+fs_name = "solubility_featurized_class_0_fs"
+# fs_name = "aqsol_features"
 
 
 # Example: Assuming your scripts are in a package called "workbench.models"

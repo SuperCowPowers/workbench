@@ -1,5 +1,5 @@
 """DNS Data To Features: Custom Script
-   This is a custom script that knows about DNS data specifics"""
+This is a custom script that knows about DNS data specifics"""
 
 # Workbench Imports
 from workbench.core.transforms.data_to_features.heavy.chunk.data_to_features_chunk import (
