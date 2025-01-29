@@ -296,7 +296,7 @@ class FeatureSetCore(Artifact):
         """
         from workbench.core.views.view import View
 
-        return View(self, "training").pull_dataframe()
+        return View(self, "training").pull_dataframe(limit=1_000_000)
 
     def snapshot_query(self, table_name: str = None) -> str:
         """An Athena query to get the latest snapshot of features
