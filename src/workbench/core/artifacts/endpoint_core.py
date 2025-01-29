@@ -459,6 +459,16 @@ class EndpointCore(Artifact):
         # Concatenate the dataframes
         combined_df = pd.concat(df_list, ignore_index=True)
 
+        # Some endpoints will put in "N/A" values (for CSV serialization)
+        # We need to convert these to NaN and the run the conversions below
+        # Report on the number of N/A values in each column in the DataFrame
+        # For any cound above 0 list the column name and the number of N/A values
+        na_counts = combined_df.isin(["N/A"]).sum()
+        for column, count in na_counts.items():
+            if count > 0:
+                self.log.warning(f"{column} has {count} N/A values, converting to NaN")
+        combined_df = combined_df.replace("N/A", float("nan"))
+
         # Convert data to numeric
         # Note: Since we're using CSV serializers numeric columns often get changed to generic 'object' types
 
