@@ -325,7 +325,7 @@ class PandasToFeatures(Transform):
 
         # Now we actually push the data into the Feature Group (called ingestion)
         self.log.important(f"Ingesting rows into Feature Group {self.output_uuid}...")
-        ingest_manager = self.output_feature_group.ingest(self.output_df, max_workers=8, max_processes=2, wait=False)
+        ingest_manager = self.output_feature_group.ingest(self.output_df, max_workers=8, max_processes=4, wait=False)
         try:
             ingest_manager.wait()
         except IngestionError as exc:
@@ -335,12 +335,8 @@ class PandasToFeatures(Transform):
         if ingest_manager.failed_rows:
             self.log.warning(f"Number of Failed Rows: {len(ingest_manager.failed_rows)}")
 
-            # FIXME: This may or may not give us the correct rows
-            # If any index is greater then the number of rows, then the index needs
-            # to be converted to a relative index in our current output_df
-            df_rows = len(self.output_df)
-            relative_indexes = [idx - df_rows if idx >= df_rows else idx for idx in ingest_manager.failed_rows]
-            failed_data = self.output_df.iloc[relative_indexes]
+            # Log failed row details
+            failed_data = self.output_df.iloc[ingest_manager.failed_rows]
             for idx, row in failed_data.iterrows():
                 self.log.warning(f"Failed Row {idx}: {row.to_dict()}")
 
