@@ -467,7 +467,7 @@ class EndpointCore(Artifact):
         for column, count in na_counts.items():
             if count > 0:
                 self.log.warning(f"{column} has {count} N/A values, converting to NaN")
-        pd.set_option('future.no_silent_downcasting', True)
+        pd.set_option("future.no_silent_downcasting", True)
         combined_df = combined_df.replace("N/A", float("nan"))
 
         # Convert data to numeric
