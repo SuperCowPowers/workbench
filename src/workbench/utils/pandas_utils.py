@@ -98,9 +98,22 @@ def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: li
     if only_in_df2:
         print("\nColumns only in df2:", only_in_df2)
 
+    # For common columns make sure they all have the same data types
+    common_columns = list(df1_columns.intersection(df2_columns))
+    same_types = True
+    for column in common_columns:
+        if df1[column].dtype != df2[column].dtype:
+            same_types = False
+            print(f"\nColumn '{column}' has different data types: {df1[column].dtype} vs {df2[column].dtype}")
+    if same_types:
+        print("\nAll common columns have the same data types")
+        # Print out the column types
+        print("\nColumn Types:")
+        print(f"DF1: {df1[common_columns].dtypes.value_counts()}")
+        print(f"DF2: {df2[common_columns].dtypes.value_counts()}")
+
     # Define tolerance for float comparisons
-    epsilon = 1e-5
-    common_columns = df1_columns.intersection(df2_columns)
+    epsilon = 1e-10
 
     # Check for differences in common columns
     for column in common_columns:
