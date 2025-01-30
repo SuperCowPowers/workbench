@@ -467,6 +467,7 @@ class EndpointCore(Artifact):
         for column, count in na_counts.items():
             if count > 0:
                 self.log.warning(f"{column} has {count} N/A values, converting to NaN")
+        pd.set_option('future.no_silent_downcasting', True)
         combined_df = combined_df.replace("N/A", float("nan"))
 
         # Convert data to numeric
@@ -536,8 +537,8 @@ class EndpointCore(Artifact):
 
                     # Fill the row with NaNs for endpoint_return_columns
                     self.log.warning(f"Endpoint Inference failed on :{feature_df}")
-                    return pd.DataFrame(columns=feature_df.columns)  # Empty DataFrame with same structure
-                    # return self._fill_with_nans(feature_df)
+                    # return pd.DataFrame(columns=feature_df.columns)  # Empty DataFrame with same structure
+                    return self._fill_with_nans(feature_df)
 
                 # Binary search to find the problematic row(s)
                 mid_point = len(feature_df) // 2
@@ -555,15 +556,19 @@ class EndpointCore(Artifact):
             self.log.critical(f"Unexpected general error: {err}")
             raise
 
-    def _fill_with_nans(self, feature_df):
+    def _fill_with_nans(self, feature_df: pd.DataFrame) -> pd.DataFrame:
         """Internal: Fill a single-row DataFrame with NaNs for inference columns, keeping original feature data."""
 
-        # Create a single-row DataFrame with NaNs for endpoint_return_columns
-        one_row_df_with_nans = pd.DataFrame({col: [np.NaN] for col in self.endpoint_return_columns})
+        # Create a single-row DataFrame with NaNs, ensuring dtype=object to prevent type downcasting
+        one_row_df_with_nans = pd.DataFrame({col: [np.NaN] for col in self.endpoint_return_columns}, dtype=object)
 
-        # Copy values from the input DataFrame for overlapping columns
-        for column in feature_df.columns:
-            one_row_df_with_nans.at[0, column] = feature_df.at[0, column]
+        # Check if feature_df is not empty and has at least one row
+        if not feature_df.empty:
+            # Copy values from the input DataFrame for overlapping columns
+            for column in feature_df.columns:
+                # Use .iloc[0] to access the first row by position, regardless of the index
+                one_row_df_with_nans.at[0, column] = feature_df.iloc[0][column]
+
         return one_row_df_with_nans
 
     def _capture_inference_results(
