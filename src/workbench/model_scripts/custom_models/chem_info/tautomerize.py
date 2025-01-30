@@ -60,8 +60,12 @@ def input_fn(input_data, content_type):
 
 def output_fn(output_df, accept_type):
     """Supports both CSV and JSON output formats."""
+    use_explicit_na = False
     if "text/csv" in accept_type:
-        csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
+        if use_explicit_na:
+            csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
+        else:
+            csv_output = output_df.to_csv(index=False)
         return csv_output, "text/csv"
     elif "application/json" in accept_type:
         return output_df.to_json(orient="records"), "application/json"  # JSON array of records (NaNs -> null)
