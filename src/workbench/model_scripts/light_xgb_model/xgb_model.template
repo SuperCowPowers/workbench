@@ -159,7 +159,7 @@ if __name__ == "__main__":
     print(f"Features: {str(feature_list)}")
 
     # Do we want to train on all the data?
-    if train_all_data == "True":
+    if train_all_data:
         print("Training on ALL of the data")
         df_train = all_df.copy()
         df_val = all_df.copy()
