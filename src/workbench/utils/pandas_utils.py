@@ -112,6 +112,18 @@ def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: li
         print(f"DF1: {df1[common_columns].dtypes.value_counts()}")
         print(f"DF2: {df2[common_columns].dtypes.value_counts()}")
 
+    # Count the NaNs in each DataFrame individually (only show columns with > 0 NaNs)
+    nan_counts_df1 = df1.isna().sum()
+    nan_counts_df2 = df2.isna().sum()
+    nan_counts_df1 = nan_counts_df1[nan_counts_df1 > 0]
+    nan_counts_df2 = nan_counts_df2[nan_counts_df2 > 0]
+    if not nan_counts_df1.empty:
+        print("\nNaN Counts in df1:")
+        print(nan_counts_df1)
+    if not nan_counts_df2.empty:
+        print("\nNaN Counts in df2:")
+        print(nan_counts_df2)
+
     # Define tolerance for float comparisons
     epsilon = 1e-10
 
