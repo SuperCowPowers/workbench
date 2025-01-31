@@ -337,6 +337,11 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     # Now get all the RDKIT Descriptors
     all_descriptors = [x[0] for x in Descriptors._descList]
 
+    # There's an overflow issue that happens with the IPC descriptor, so we'll remove it
+    # See: https://github.com/rdkit/rdkit/issues/1527
+    if "Ipc" in all_descriptors:
+        all_descriptors.remove("Ipc")
+
     # Make sure we don't have duplicates
     all_descriptors = list(set(all_descriptors))
 
@@ -363,6 +368,9 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     # Lowercase all column names and ensure no duplicate column names
     output_df.columns = output_df.columns.str.lower()
     output_df = output_df.loc[:, ~output_df.columns.duplicated()]
+
+    # Reorder the columns to have all the ones in the input df first and then the descriptors
+    output_df = output_df[list(df.columns) + [col for col in output_df.columns if col not in df.columns]]
 
     # Drop the intermediate 'molecule' column if it was added
     if delete_mol_column:
