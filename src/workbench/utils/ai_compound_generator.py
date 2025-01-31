@@ -2,14 +2,10 @@ import os
 import re
 import logging
 from openai import OpenAI
-from workbench.utils.workbench_cache import WorkbenchCache
+from rdkit import Chem
 
-# Try to import RDKit
-try:
-    from rdkit import Chem
-except ImportError:
-    print("RDKit is not installed. Please pip install rdkit'")
-    Chem = None
+# Workbench Imports
+from workbench.utils.workbench_cache import WorkbenchCache
 
 
 class AICompoundGenerator:
