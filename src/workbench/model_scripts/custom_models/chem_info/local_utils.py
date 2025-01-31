@@ -315,6 +315,9 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The input DataFrame with all the RDKit Descriptors added
     """
+
+    # Make a copy of the input DataFrame
+    df = df.copy()
     delete_mol_column = False
 
     # Check for the smiles column (any capitalization)
@@ -370,7 +373,8 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     output_df = output_df.loc[:, ~output_df.columns.duplicated()]
 
     # Reorder the columns to have all the ones in the input df first and then the descriptors
-    output_df = output_df[list(df.columns) + [col for col in output_df.columns if col not in df.columns]]
+    input_columns = df.columns.str.lower()
+    output_df = output_df[list(input_columns) + [col for col in output_df.columns if col not in input_columns]]
 
     # Drop the intermediate 'molecule' column if it was added
     if delete_mol_column:
