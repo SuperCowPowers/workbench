@@ -50,8 +50,8 @@ class Outliers:
         outlier_df = self.get_top_n_outliers(outlier_df)
 
         # Make sure the dataframe isn't too big, if it's too big sample it down
-        if len(outlier_df) > 300:
-            log.important(f"Outliers DataFrame is too large {len(outlier_df)}, sampling down to 300 rows")
+        if len(outlier_df) > 500:
+            log.important(f"Outliers DataFrame is too large {len(outlier_df)}, sampling down to 500 rows")
             outlier_df = outlier_df.sample(300)
 
         # Sort by outlier_group and reset the index
