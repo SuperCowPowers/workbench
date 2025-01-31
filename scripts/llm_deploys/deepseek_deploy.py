@@ -32,7 +32,7 @@ huggingface_model = HuggingFaceModel(
 
 # deploy model to SageMaker Inference
 predictor = huggingface_model.deploy(
-	endpoint_name="deepseek-8b",
+    endpoint_name="deepseek-8b",
     initial_instance_count=1,
     instance_type="ml.inf2.xlarge",
     container_startup_health_check_timeout=1800,
@@ -49,6 +49,6 @@ predictor.predict(
             "temperature": 0.7,
             "top_k": 50,
             "top_p": 0.95,
-        }
+        },
     }
 )
