@@ -157,3 +157,14 @@ if __name__ == "__main__":
     my_cache.set("large", large_data)
     my_cache.get("large")
     my_cache.clear()
+
+    # Test Dataframe with a named index
+    import pandas as pd
+    df = pd.DataFrame({"a": [1, 2, 3], "b": [4, 5, 6]})
+    df.index.name = "named_index"
+    print(df)
+    my_cache.set("df", df)
+    df = my_cache.get("df")
+    print(df)
+
+
