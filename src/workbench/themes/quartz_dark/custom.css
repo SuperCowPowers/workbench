@@ -87,3 +87,24 @@ b, strong {
 .good {
     color: rgb(40, 100, 40);
 }
+
+
+/* Table styling */
+table {
+    width: 100%;
+}
+
+th {
+    padding: 10px;
+    border: 1px solid #444;
+    background-color: rgb(40, 40, 40);
+    color: rgb(160, 120, 240);
+    font-weight: bold;
+    text-align: center !important;
+}
+
+td {
+    padding: 5px;
+    border: 0.5px solid #444;
+    text-align: center !important;
+}
