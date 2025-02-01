@@ -6,6 +6,7 @@ from typing import Union
 from dash import html, callback, dcc, Input, Output, State
 
 # Workbench Imports
+from workbench.api import ModelType
 from workbench.cached.cached_model import CachedModel
 from workbench.utils.markdown_utils import health_tag_markdown
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
@@ -187,7 +188,11 @@ class ModelDetails(PluginInterface):
         else:
             markdown += "  \n"
             metrics = metrics.round(3)
-            markdown += metrics.to_markdown(index=False)
+
+            # If the model is a classification model, have the index sorting match the class labels
+            if self.current_model.model_type == ModelType.CLASSIFIER:
+                metrics = metrics.reindex(self.current_model.class_labels())
+            markdown += metrics.to_markdown()
 
         print(markdown)
         return markdown
