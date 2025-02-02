@@ -267,6 +267,13 @@ class PandasToFeatures(Transform):
                     self.log.important(f"Column name {c} converted to lowercase: {c.lower()}")
             self.output_df.columns = self.output_df.columns.str.lower()
 
+        # Check for duplicate column names in the dataframe
+        if len(self.output_df.columns) != len(set(self.output_df.columns)):
+            self.log.critical("Duplicate column names detected in the DataFrame")
+            duplicates = self.output_df.columns[self.output_df.columns.duplicated()].tolist()
+            self.log.critical(f"Duplicated columns: {duplicates}")
+            raise ValueError("Duplicate column names detected in the DataFrame")
+
         # Make sure we have the required id and event_time columns
         self._ensure_id_column()
         self._ensure_event_time()
