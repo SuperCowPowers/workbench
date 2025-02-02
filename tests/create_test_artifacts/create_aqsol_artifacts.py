@@ -104,8 +104,16 @@ if __name__ == "__main__":
     if recreate or not Model("aqsol-mol-regression").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_mol_descriptors")
-        exclude = ['id', 'name', 'inchi', 'inchikey', 'smiles', 'group',
-                   'solubility_class', 'rotratio']  # rotratio is often string type
+        exclude = [
+            "id",
+            "name",
+            "inchi",
+            "inchikey",
+            "smiles",
+            "group",
+            "solubility_class",
+            "rotratio",
+        ]  # rotratio is often string type
         feature_list = [f for f in feature_set.columns if f not in exclude]
         feature_set.to_model(
             name="aqsol-mol-regression",
@@ -120,8 +128,16 @@ if __name__ == "__main__":
     if recreate or not Model("aqsol-mol-class").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_mol_descriptors")
-        exclude = ['id', 'name', 'inchi', 'inchikey', 'smiles', 'group',
-                   'solubility_class', 'rotratio']  # rotratio is often string type
+        exclude = [
+            "id",
+            "name",
+            "inchi",
+            "inchikey",
+            "smiles",
+            "group",
+            "solubility_class",
+            "rotratio",
+        ]  # rotratio is often string type
         feature_list = [f for f in feature_set.columns if f not in exclude]
         feature_set.to_model(
             name="aqsol-mol-class",
