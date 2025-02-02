@@ -487,6 +487,12 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         delete_mol_column = True
         df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
 
+    # Make sure our molecules are not None
+    failed_smiles = df[df["molecule"].isnull()][smiles_column].tolist()
+    if failed_smiles:
+        log.error(f"Failed to convert the following SMILES to molecules: {failed_smiles}")
+    df = df.dropna(subset=["molecule"])
+
     # If we have fragments in our compounds, get the largest fragment before computing descriptors
     largest_frags = df["molecule"].apply(remove_disconnected_fragments)
 
@@ -521,9 +527,13 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     #       since we want computed descriptors to overwrite anything in the input dataframe
     output_df = mordred_df.combine_first(rdkit_features_df).combine_first(df)
 
-    # Compute feature quality metrics
-    feature_list = list(rdkit_features_df.columns) + list(mordred_df.columns)
-    output_df = feature_quality_metrics(output_df, feature_list=feature_list)
+    # Lowercase all column names and ensure no duplicate column names
+    output_df.columns = output_df.columns.str.lower()
+    output_df = output_df.loc[:, ~output_df.columns.duplicated()]
+
+    # Reorder the columns to have all the ones in the input df first and then the descriptors
+    input_columns = df.columns.str.lower()
+    output_df = output_df[list(input_columns) + [col for col in output_df.columns if col not in input_columns]]
 
     # Drop the intermediate 'molecule' column if it was added
     if delete_mol_column:
