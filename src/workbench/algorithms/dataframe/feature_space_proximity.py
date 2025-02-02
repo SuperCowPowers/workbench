@@ -5,12 +5,12 @@ from typing import List
 from workbench.algorithms.dataframe.proximity import Proximity
 
 
-class FeaturesProximity(Proximity):
+class FeatureSpaceProximity(Proximity):
     def __init__(
         self, df: pd.DataFrame, id_column: str, features: List[str], target: str = None, n_neighbors: int = 10
     ) -> None:
         """
-        Initialize the FeaturesProximity class.
+        Initialize the FeatureSpaceProximity class.
 
         Args:
             df (pd.DataFrame): DataFrame containing feature data.
@@ -19,10 +19,9 @@ class FeaturesProximity(Proximity):
             target (str): Optional name of the target column.
             n_neighbors (int): Number of neighbors to compute.
         """
-        self.target = target
         if not features:
             raise ValueError("The 'features' list must be defined and contain at least one feature.")
-        super().__init__(df, id_column=id_column, features=features, n_neighbors=n_neighbors)
+        super().__init__(df, id_column=id_column, features=features, target=target, n_neighbors=n_neighbors)
 
     def _prepare_data(self) -> None:
         """
@@ -34,14 +33,14 @@ class FeaturesProximity(Proximity):
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
     @classmethod
-    def from_model(cls, model) -> "FeaturesProximity":
-        """Create a FeaturesProximity instance from a Workbench model object.
+    def from_model(cls, model) -> "FeatureSpaceProximity":
+        """Create a FeatureSpaceProximity instance from a Workbench model object.
 
         Args:
             model (Model): A Workbench model object.
 
         Returns:
-            FeaturesProximity: A new instance of the FeaturesProximity class.
+            FeatureSpaceProximity: A new instance of the FeatureSpaceProximity class.
         """
         from workbench.api import FeatureSet
 
@@ -53,7 +52,7 @@ class FeaturesProximity(Proximity):
         # Retrieve the training DataFrame from the feature set
         df = fs.view("training").pull_dataframe()
 
-        # Create and return a new instance of FeatureSpaceProximityDeprecated
+        # Create and return a new instance of FeatureSpaceProximity
         return cls(df=df, id_column=fs.id_column, features=features, target=target)
 
 
@@ -70,9 +69,9 @@ if __name__ == "__main__":
     }
     df = pd.DataFrame(data)
 
-    # Initialize the FeaturesProximity class
+    # Initialize the FeatureSpaceProximity class
     features = ["Feature1", "Feature2", "Feature3"]
-    proximity = FeaturesProximity(df, id_column="id", features=features, n_neighbors=2)
+    proximity = FeatureSpaceProximity(df, id_column="id", features=features, n_neighbors=2)
 
     # Test 1: All neighbors
     print("\n--- Test 1: All Neighbors ---")
@@ -93,10 +92,10 @@ if __name__ == "__main__":
     from workbench.api import Model
 
     m = Model("abalone-regression")
-    proximity = FeaturesProximity.from_model(m)
+    proximity = FeatureSpaceProximity.from_model(m)
 
     # Neighbors Test using a single query ID
     single_query_id = 5
-    single_query_neighbors = proximity.neighbors(single_query_id)
+    single_query_neighbors = proximity.neighbors(single_query_id, include_self=True)
     print("\nNeighbors for Query ID:", single_query_id)
     print(single_query_neighbors)

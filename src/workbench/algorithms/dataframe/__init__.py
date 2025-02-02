@@ -6,9 +6,9 @@ These classes provide functionality for Pandas Dataframes
 """
 
 from .proximity import Proximity
-from .features_proximity import FeaturesProximity
+from .feature_space_proximity import FeatureSpaceProximity
 from .fingerprint_proximity import FingerprintProximity
 from .residuals_calculator import ResidualsCalculator
 from .dimensionality_reduction import DimensionalityReduction
 
-__all__ = ["Proximity", "FeaturesProximity", "FingerprintProximity", "ResidualsCalculator", "DimensionalityReduction"]
+__all__ = ["Proximity", "FeatureSpaceProximity", "FingerprintProximity", "ResidualsCalculator", "DimensionalityReduction"]
