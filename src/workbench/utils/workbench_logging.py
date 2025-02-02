@@ -12,6 +12,9 @@ from importlib.metadata import version
 # Import the CloudWatchHandler
 from workbench.utils.cloudwatch_handler import CloudWatchHandler
 
+# New botocore version barfs a bunch of checksum logs
+logging.getLogger("botocore.httpchecksum").setLevel(logging.WARNING)
+
 
 class ThrottlingFilter(logging.Filter):
     def __init__(self, rate_seconds=60):
