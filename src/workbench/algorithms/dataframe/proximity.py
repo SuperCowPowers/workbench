@@ -10,8 +10,12 @@ log = logging.getLogger("workbench")
 
 class Proximity:
     def __init__(
-        self, df: pd.DataFrame, id_column: Union[int, str], features: List[str] = None,
-            target: str = None, n_neighbors: int = 5
+        self,
+        df: pd.DataFrame,
+        id_column: Union[int, str],
+        features: List[str] = None,
+        target: str = None,
+        n_neighbors: int = 5,
     ) -> None:
         """
         Initialize the Proximity class.
@@ -139,7 +143,9 @@ class Proximity:
         else:
             query_point = [self.X[query_idx]]
             distances, indices = (
-                self.nn.radius_neighbors(query_point, radius=radius) if radius is not None else self.nn.kneighbors(query_point)
+                self.nn.radius_neighbors(query_point, radius=radius)
+                if radius is not None
+                else self.nn.kneighbors(query_point)
             )
 
         self.min_distance, self.max_distance = distances.min(), distances.max()
@@ -155,7 +161,7 @@ class Proximity:
                 neighbor_info = {
                     self.id_column: query_id,
                     "neighbor_id": self._df.iloc[neighbor_idx][self.id_column],
-                    "distance": dist
+                    "distance": dist,
                 }
 
                 # Optionally include the target column
@@ -168,7 +174,7 @@ class Proximity:
 
 # Testing the Proximity class
 if __name__ == "__main__":
-    import numpy as np
+
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 1000)
 

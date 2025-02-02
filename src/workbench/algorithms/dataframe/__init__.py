@@ -11,4 +11,10 @@ from .fingerprint_proximity import FingerprintProximity
 from .residuals_calculator import ResidualsCalculator
 from .dimensionality_reduction import DimensionalityReduction
 
-__all__ = ["Proximity", "FeatureSpaceProximity", "FingerprintProximity", "ResidualsCalculator", "DimensionalityReduction"]
+__all__ = [
+    "Proximity",
+    "FeatureSpaceProximity",
+    "FingerprintProximity",
+    "ResidualsCalculator",
+    "DimensionalityReduction",
+]
