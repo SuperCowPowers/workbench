@@ -14,7 +14,6 @@ except ImportError:
     umap = None
 
 # Workbench Imports
-from workbench.utils.pandas_utils import feature_quality_metrics
 from workbench.utils.color_utils import is_dark, rgba_to_tuple
 
 # Molecular Descriptor Imports
