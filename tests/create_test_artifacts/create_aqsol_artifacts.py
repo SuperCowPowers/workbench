@@ -111,6 +111,7 @@ if __name__ == "__main__":
             "inchikey",
             "smiles",
             "group",
+            "solubility",
             "solubility_class",
             "rotratio",
         ]  # rotratio is often string type
@@ -135,6 +136,7 @@ if __name__ == "__main__":
             "inchikey",
             "smiles",
             "group",
+            "solubility",
             "solubility_class",
             "rotratio",
         ]  # rotratio is often string type
