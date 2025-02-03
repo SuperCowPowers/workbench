@@ -35,7 +35,7 @@ class Proximity:
         self._target = target
 
         # All proximity classes pretty much fail with NaNs
-        # Check for NaNs within the feautres and if we so we drop them here
+        # Check for NaNs within the features and if we so we drop them here
         orig_len = len(self._df)
         self._df = self._df.dropna(subset=self.features)
         if len(self._df) < orig_len:
@@ -102,7 +102,8 @@ class Proximity:
         results = self._get_neighbors(query_idx=None, include_self=include_self)
         return pd.DataFrame(results)
 
-    def neighbors(self, query_id: Union[int, str], radius: float = None, include_self: bool = False) -> pd.DataFrame:
+    def neighbors(self, query_id: Union[int, str], radius: float = None,
+                  include_self: bool = False, add_columns: list = None) -> pd.DataFrame:
         """
         Return neighbors of the given query ID, either by fixed neighbors or within a radius.
 
@@ -110,6 +111,7 @@ class Proximity:
             query_id (Union[int, str]): The ID of the query point.
             radius (float): Optional radius within which neighbors are to be included.
             include_self (bool): Whether to include the query ID itself in the neighbor results.
+            add_columns (list): Optional list of additional columns to include in the results.
 
         Returns:
             pd.DataFrame: A DataFrame of neighbors and their distances.
@@ -118,14 +120,17 @@ class Proximity:
         query_idx = self._df.index[self._df[self.id_column] == query_id].tolist()
         if not query_idx:
             raise ValueError(f"Query ID {query_id} not found in the DataFrame")
+
         # Use the positional index to query self.X
         query_idx = self._df.index.get_loc(query_idx[0])
 
         # Compute neighbors
-        results = self._get_neighbors(query_idx=query_idx, radius=radius, include_self=include_self)
+        results = self._get_neighbors(query_idx=query_idx, radius=radius,
+                                      include_self=include_self, add_columns=add_columns)
         return pd.DataFrame(results)
 
-    def _get_neighbors(self, query_idx: int = None, radius: float = None, include_self: bool = True) -> List[dict]:
+    def _get_neighbors(self, query_idx: int = None, radius: float = None,
+                       include_self: bool = True, add_columns: list = None) -> List[dict]:
         """
         Internal: Helper method to compute neighbors for a given query index or all rows.
 
@@ -133,6 +138,7 @@ class Proximity:
             query_idx (int, optional): Index of the query point. If None, computes for all rows.
             radius (float, optional): Optional radius threshold.
             include_self (bool): Whether to include the query ID itself in the neighbor results.
+            add_columns (list): Optional list of additional columns to include in the results.
 
         Returns:
             List[dict]: List of dictionaries with neighbor information.
@@ -167,6 +173,11 @@ class Proximity:
                 # Optionally include the target column
                 if self.target:
                     neighbor_info[self.target] = self._df.iloc[neighbor_idx][self.target]
+
+                # Optionally include additional columns
+                if add_columns:
+                    for col in add_columns:
+                        neighbor_info[col] = self._df.iloc[neighbor_idx][col]
                 results.append(neighbor_info)
 
         return results
@@ -213,3 +224,6 @@ if __name__ == "__main__":
     # Test with String Ids
     prox = Proximity(df, id_column="ID", target="target", n_neighbors=3)
     print(prox.all_neighbors())
+
+    # Test the neighbors method
+    print(prox.neighbors(query_id="a", add_columns=["Feature1", "Feature2"]))
