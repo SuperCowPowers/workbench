@@ -130,6 +130,47 @@ def show(smiles: str, width: int = 500, height: int = 500) -> None:
         img.show()
 
 
+def geometric_mean(series: pd.Series) -> float:
+    """Computes the geometric mean manually to avoid using scipy."""
+    return np.exp(np.log(series).mean())
+
+
+def rollup_experimental_data(
+        df: pd.DataFrame,
+        id: str,
+        time: str,
+        target: str,
+        use_gmean: bool = False
+) -> pd.DataFrame:
+    """
+    Rolls up a dataset by selecting the largest time per unique ID and averaging the target value
+    if multiple records exist at that time. Supports both arithmetic and geometric mean.
+
+    Parameters:
+        df (pd.DataFrame): Input dataframe.
+        id (str): Column representing the unique molecule ID.
+        time (str): Column representing the time.
+        target (str): Column representing the target value.
+        use_gmean (bool): Whether to use the geometric mean instead of the arithmetic mean.
+
+    Returns:
+        pd.DataFrame: Rolled-up dataframe with all original columns retained.
+    """
+    # Find the max time per unique ID
+    max_time_df = df.groupby(id)[time].transform("max")
+    filtered_df = df[df[time] == max_time_df]
+
+    # Define aggregation function
+    agg_func = geometric_mean if use_gmean else np.mean
+
+    # Perform aggregation on all columns
+    agg_dict = {col: "first" for col in df.columns if col not in [target, id, time]}
+    agg_dict[target] = lambda x: agg_func(x) if len(x) > 1 else x.iloc[0]  # Apply mean or gmean
+
+    rolled_up_df = filtered_df.groupby([id, time]).agg(agg_dict).reset_index()
+    return rolled_up_df
+
+
 def micromolar_to_log(series_µM: pd.Series) -> pd.Series:
     """
     Convert a pandas Series of concentrations in µM (micromolar) to their logarithmic values (log10).
@@ -853,4 +894,18 @@ if __name__ == "__main__":
 
     # Perform Tautomerization
     df = perform_tautomerization(df)
+    print(df)
+
+    # Test Rollup Experimental Data
+    # Sample Data
+    data = {
+        "id": ["IDC-19959-1", "IDC-19959-1"],
+        "time_hr": [1, 4],
+        "target_value": [1.90, 4.03],
+        "date": ["2022-11-07", "2025-01-13"],
+        "smiles": ["CCO[C@H]1C[C@@H]...", "CCO[C@H]1C[C@@H]..."]
+    }
+    df = pd.DataFrame(data)
+    print(df)
+    df = rollup_experimental_data(df, id="id", time="time_hr", target="target_value")
     print(df)
