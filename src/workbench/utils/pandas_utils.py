@@ -10,6 +10,7 @@ import hashlib
 import logging
 from collections import defaultdict
 from typing import Dict, Tuple, List, Optional
+from sklearn.metrics import confusion_matrix
 
 # Workbench Logger
 log = logging.getLogger("workbench")
@@ -189,6 +190,126 @@ def subnormal_check(df):
         print(rows_with_subnormal)
     else:
         print("No subnormal floats found in the DataFrame.")
+
+
+def binary_accuracy(conf_matrix: pd.DataFrame, positive_classes: list, negative_classes: list) -> float:
+    """
+    Computes binary accuracy from a confusion matrix.
+
+    Parameters:
+        conf_matrix (pd.DataFrame): Confusion matrix as a DataFrame.
+        positive_classes (list): List of class labels considered as 'positive'.
+        negative_classes (list): List of class labels considered as 'negative'.
+
+    Returns:
+        float: Binary accuracy score.
+    """
+    # True Positives (TP) - Correctly classified as Positive
+    tps = conf_matrix.loc[positive_classes, positive_classes].values.sum()
+
+    # True Negatives (TN) - Correctly classified as Negative
+    tns = conf_matrix.loc[negative_classes, negative_classes].values.sum()
+
+    # False Positives (FP) - Negative misclassified as Positive
+    fps = conf_matrix.loc[negative_classes, positive_classes].values.sum()
+
+    # False Negatives (FN) - Positive misclassified as Negative
+    fns = conf_matrix.loc[positive_classes, negative_classes].values.sum()
+
+    # Compute Binary Accuracy
+    accuracy = (tps + tns) / (tps + tns + fps + fns)
+    return accuracy
+
+
+import pandas as pd
+import numpy as np
+
+
+def split_dataframe_by_quantiles(df: pd.DataFrame, column: str, quantiles: int = 10) -> List[pd.DataFrame]:
+    """
+    Splits a DataFrame into N quantile-based DataFrames based on the specified column.
+    Ensures highest values are in the first quantiles and prevents gaps in quantile indices.
+
+    Parameters:
+        df (pd.DataFrame): The input DataFrame.
+        column (str): The column used for quantile splitting.
+        quantiles (int): The number of quantiles to split into (default is 10).
+
+    Returns:
+        List[pd.DataFrame]: A list of DataFrames, each representing a quantile.
+    """
+    # Compute quantiles, reversing order so highest values get lower indices
+    df["quantile"] = pd.qcut(df[column], q=quantiles, labels=False, duplicates="drop")
+
+    # If fewer than expected quantiles exist, reindex to ensure 0-based sequential bins
+    unique_quantiles = sorted(df["quantile"].dropna().unique(), reverse=True)
+    remap = {old: new for new, old in enumerate(unique_quantiles)}
+    df["quantile"] = df["quantile"].map(remap)
+
+    # Create a list of DataFrames for each quantile
+    quantile_dfs = [df[df["quantile"] == i].drop(columns=["quantile"]) for i in range(len(unique_quantiles))]
+    return quantile_dfs
+
+
+def max_proba(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adds a new column 'max_proba' to the DataFrame, which is the max value
+    among all columns ending in '_proba'.
+
+    Parameters:
+        df (pd.DataFrame): The input DataFrame.
+
+    Returns:
+        pd.DataFrame: The updated DataFrame with the new 'max_proba' column.
+    """
+    # Identify probability columns
+    proba_cols = [col for col in df.columns if col.endswith("_proba")]
+
+    # Compute max probability per row
+    df["max_proba"] = df[proba_cols].max(axis=1)
+    return df
+
+
+def confidence_profile(df: pd.DataFrame, target: str, positive_classes: list, negative_classes: list, quantiles: int = 10) -> pd.DataFrame:
+    """
+    Computes binary accuracy at different confidence quantiles.
+
+    Parameters:
+        df (pd.DataFrame): DataFrame containing predictions and probabilities.
+        target (str): Name of the target column.
+        positive_classes (list): List of class labels considered as 'positive'.
+        negative_classes (list): List of class labels considered as 'negative'.
+        quantiles (int): Number of quantiles to split data into (default = 10).
+
+    Returns:
+        pd.DataFrame: A DataFrame with confidence quantiles and corresponding binary accuracy.
+    """
+    # Step 1: Compute max confidence per row
+    df = max_proba(df)
+
+    # Step 2: Split dataframe into quantiles based on max confidence
+    quantile_dfs = split_dataframe_by_quantiles(df, "max_proba", quantiles)
+
+    # Step 3: Compute accuracy per quantile
+    quant_accuracy = []
+
+    for i, q_df in enumerate(quantile_dfs):
+        # Step 3a: Create confusion matrix for this quantile
+        cm = pd.DataFrame(
+            confusion_matrix(q_df[target], q_df["prediction"], labels=positive_classes + negative_classes),
+            index=positive_classes + negative_classes,
+            columns=positive_classes + negative_classes
+        )
+
+        # Step 3b: Compute binary accuracy
+        accuracy = binary_accuracy(cm, positive_classes, negative_classes)
+
+        # Step 3c: Store result
+        quant_accuracy.append({"quantile": i, "binary_accuracy": accuracy})
+
+    # Convert results to DataFrame for easy plotting
+    accuracy_df = pd.DataFrame(quant_accuracy)
+    return accuracy_df
 
 
 def get_percent_nan(df):
@@ -742,3 +863,53 @@ if __name__ == "__main__":
     data = {"col1": [5, 0, 1e-310, 5e-325], "col2": [3, 0, 1e-100, -1e-320]}
     df = pd.DataFrame(data)
     subnormal_check(df)
+
+    # Example for Binary Accuracy
+    conf_matrix = pd.DataFrame({
+        "bad_low": [11, 1, 0, 0, 0],
+        "okay_low": [19, 413, 64, 0, 0],
+        "good": [0, 92, 1161, 111, 17],
+        "okay_high": [0, 0, 42, 188, 34],
+        "bad_high": [0, 0, 8, 18, 96]
+    }, index=["bad_low", "okay_low", "good", "okay_high", "bad_high"])
+
+    # Define Positive and Negative Classes
+    positive_classes = ["okay_low", "good", "okay_high"]
+    negative_classes = ["bad_low", "bad_high"]
+
+    # Compute Binary Accuracy
+    accuracy = binary_accuracy(conf_matrix, positive_classes, negative_classes)
+    print(f"Binary Accuracy: {accuracy:.3f}")
+
+    # Test split_dataframe_by_quantiles
+    data = {
+        "id": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "value": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    }
+    df = pd.DataFrame(data)
+    quantile_dfs = split_dataframe_by_quantiles(df, "value", quantiles=3)
+    for i, quantile_df in enumerate(quantile_dfs):
+        print(f"Quantile {i + 1}:")
+        print(quantile_df)
+
+    # Test confidence_profile
+    data = {
+        "class": ["low", "low", "high", "med", "low", "high", "low", "high", "low", "high"],
+        "prediction": ["low", "low", "high", "high", "low", "high", "low", "high", "low", "med"],
+        "pred_proba": [
+            [0.8, 0.1, 0.1],
+            [0.7, 0.2, 0.1],
+            [0.1, 0.1, 0.8],
+            [0.2, 0.1, 0.7],
+            [0.6, 0.2, 0.2],
+            [0.1, 0.3, 0.6],
+            [0.5, 0.3, 0.2],
+            [0.3, 0.3, 0.4],
+            [0.6, 0.2, 0.2],
+            [0.25, 0.5, 0.25]
+        ]
+    }
+    df = pd.DataFrame(data)
+    df = expand_proba_column(df, ["low", "med", "high"])
+    accuracy_df = confidence_profile(df, "class", ["high"], ["med", "low"])
+    print(accuracy_df)
