@@ -102,8 +102,9 @@ class Proximity:
         results = self._get_neighbors(query_idx=None, include_self=include_self)
         return pd.DataFrame(results)
 
-    def neighbors(self, query_id: Union[int, str], radius: float = None,
-                  include_self: bool = False, add_columns: list = None) -> pd.DataFrame:
+    def neighbors(
+        self, query_id: Union[int, str], radius: float = None, include_self: bool = False, add_columns: list = None
+    ) -> pd.DataFrame:
         """
         Return neighbors of the given query ID, either by fixed neighbors or within a radius.
 
@@ -125,12 +126,14 @@ class Proximity:
         query_idx = self._df.index.get_loc(query_idx[0])
 
         # Compute neighbors
-        results = self._get_neighbors(query_idx=query_idx, radius=radius,
-                                      include_self=include_self, add_columns=add_columns)
+        results = self._get_neighbors(
+            query_idx=query_idx, radius=radius, include_self=include_self, add_columns=add_columns
+        )
         return pd.DataFrame(results)
 
-    def _get_neighbors(self, query_idx: int = None, radius: float = None,
-                       include_self: bool = True, add_columns: list = None) -> List[dict]:
+    def _get_neighbors(
+        self, query_idx: int = None, radius: float = None, include_self: bool = True, add_columns: list = None
+    ) -> List[dict]:
         """
         Internal: Helper method to compute neighbors for a given query index or all rows.
 

@@ -136,11 +136,7 @@ def geometric_mean(series: pd.Series) -> float:
 
 
 def rollup_experimental_data(
-        df: pd.DataFrame,
-        id: str,
-        time: str,
-        target: str,
-        use_gmean: bool = False
+    df: pd.DataFrame, id: str, time: str, target: str, use_gmean: bool = False
 ) -> pd.DataFrame:
     """
     Rolls up a dataset by selecting the largest time per unique ID and averaging the target value
@@ -903,7 +899,7 @@ if __name__ == "__main__":
         "time_hr": [1, 4],
         "target_value": [1.90, 4.03],
         "date": ["2022-11-07", "2025-01-13"],
-        "smiles": ["CCO[C@H]1C[C@@H]...", "CCO[C@H]1C[C@@H]..."]
+        "smiles": ["CCO[C@H]1C[C@@H]...", "CCO[C@H]1C[C@@H]..."],
     }
     df = pd.DataFrame(data)
     print(df)

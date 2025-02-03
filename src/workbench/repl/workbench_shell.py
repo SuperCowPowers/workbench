@@ -274,7 +274,9 @@ class WorkbenchShell:
             self.commands["Pipeline"] = importlib.import_module("workbench.api.pipeline").Pipeline
 
             # Algorithms
-            self.commands["FSP"] = importlib.import_module("workbench.algorithms.dataframe.feature_space_proximity").FeatureSpaceProximity
+            self.commands["FSP"] = importlib.import_module(
+                "workbench.algorithms.dataframe.feature_space_proximity"
+            ).FeatureSpaceProximity
 
             # These are 'nice to have' imports
             self.commands["pd"] = importlib.import_module("pandas")
