@@ -221,10 +221,6 @@ def binary_accuracy(conf_matrix: pd.DataFrame, positive_classes: list, negative_
     return accuracy
 
 
-import pandas as pd
-import numpy as np
-
-
 def split_dataframe_by_quantiles(df: pd.DataFrame, column: str, quantiles: int = 10) -> List[pd.DataFrame]:
     """
     Splits a DataFrame into N quantile-based DataFrames based on the specified column.
@@ -270,7 +266,9 @@ def max_proba(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def confidence_profile(df: pd.DataFrame, target: str, positive_classes: list, negative_classes: list, quantiles: int = 10) -> pd.DataFrame:
+def confidence_profile(
+    df: pd.DataFrame, target: str, positive_classes: list, negative_classes: list, quantiles: int = 10
+) -> pd.DataFrame:
     """
     Computes binary accuracy at different confidence quantiles.
 
@@ -298,7 +296,7 @@ def confidence_profile(df: pd.DataFrame, target: str, positive_classes: list, ne
         cm = pd.DataFrame(
             confusion_matrix(q_df[target], q_df["prediction"], labels=positive_classes + negative_classes),
             index=positive_classes + negative_classes,
-            columns=positive_classes + negative_classes
+            columns=positive_classes + negative_classes,
         )
 
         # Step 3b: Compute binary accuracy
@@ -865,13 +863,16 @@ if __name__ == "__main__":
     subnormal_check(df)
 
     # Example for Binary Accuracy
-    conf_matrix = pd.DataFrame({
-        "bad_low": [11, 1, 0, 0, 0],
-        "okay_low": [19, 413, 64, 0, 0],
-        "good": [0, 92, 1161, 111, 17],
-        "okay_high": [0, 0, 42, 188, 34],
-        "bad_high": [0, 0, 8, 18, 96]
-    }, index=["bad_low", "okay_low", "good", "okay_high", "bad_high"])
+    conf_matrix = pd.DataFrame(
+        {
+            "bad_low": [11, 1, 0, 0, 0],
+            "okay_low": [19, 413, 64, 0, 0],
+            "good": [0, 92, 1161, 111, 17],
+            "okay_high": [0, 0, 42, 188, 34],
+            "bad_high": [0, 0, 8, 18, 96],
+        },
+        index=["bad_low", "okay_low", "good", "okay_high", "bad_high"],
+    )
 
     # Define Positive and Negative Classes
     positive_classes = ["okay_low", "good", "okay_high"]
@@ -882,10 +883,7 @@ if __name__ == "__main__":
     print(f"Binary Accuracy: {accuracy:.3f}")
 
     # Test split_dataframe_by_quantiles
-    data = {
-        "id": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        "value": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-    }
+    data = {"id": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "value": [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]}
     df = pd.DataFrame(data)
     quantile_dfs = split_dataframe_by_quantiles(df, "value", quantiles=3)
     for i, quantile_df in enumerate(quantile_dfs):
@@ -906,8 +904,8 @@ if __name__ == "__main__":
             [0.5, 0.3, 0.2],
             [0.3, 0.3, 0.4],
             [0.6, 0.2, 0.2],
-            [0.25, 0.5, 0.25]
-        ]
+            [0.25, 0.5, 0.25],
+        ],
     }
     df = pd.DataFrame(data)
     df = expand_proba_column(df, ["low", "med", "high"])
