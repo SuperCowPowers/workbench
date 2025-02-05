@@ -31,7 +31,7 @@ class FingerprintProximity(Proximity):
         """
         # Convert the fingerprint strings to binary arrays
         log.info("Converting fingerprints to binary feature matrix...")
-        fingerprint_bits = self.data[self.fingerprint_column].apply(
+        fingerprint_bits = self.df[self.fingerprint_column].apply(
             lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
         )
         self.X = np.vstack(fingerprint_bits)

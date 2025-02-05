@@ -1,6 +1,4 @@
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.neighbors import NearestNeighbors
 from typing import List
 from workbench.algorithms.dataframe.proximity import Proximity
 
@@ -22,15 +20,6 @@ class FeatureSpaceProximity(Proximity):
         if not features:
             raise ValueError("The 'features' list must be defined and contain at least one feature.")
         super().__init__(df, id_column=id_column, features=features, target=target, n_neighbors=n_neighbors)
-
-    def _prepare_data(self) -> None:
-        """
-        Prepare the feature matrix by scaling numeric features.
-        """
-        # Scale features for better distance computation
-        scaler = StandardScaler()
-        self.X = scaler.fit_transform(self.data[self.features].values)
-        self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
     @classmethod
     def from_model(cls, model) -> "FeatureSpaceProximity":

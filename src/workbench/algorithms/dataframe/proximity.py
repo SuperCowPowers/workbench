@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
 from typing import Union, List
 import logging
@@ -26,20 +27,19 @@ class Proximity:
             features (List[str]): List of feature column names to be used for neighbor computations.
             n_neighbors (int): Number of neighbors to compute.
         """
-        self._df = df.copy()
-        self._id_column = id_column
+        self.df = df.copy()
+        self.id_column = id_column
         self.n_neighbors = n_neighbors
+        self.target = target
 
         # Automatically determine features if not provided
-        self._features = features or self._auto_features()
-        self._target = target
+        self.features = features or self._auto_features()
 
-        # All proximity classes pretty much fail with NaNs
         # Check for NaNs within the features and if we so we drop them here
-        orig_len = len(self._df)
-        self._df = self._df.dropna(subset=self.features)
-        if len(self._df) < orig_len:
-            log.warning(f"Dropped {orig_len - len(self._df)} rows with NaNs in the feature columns")
+        orig_len = len(self.df)
+        self.df = self.df.dropna(subset=self.features)
+        if len(self.df) < orig_len:
+            log.warning(f"Dropped {orig_len - len(self.df)} rows with NaNs in the feature columns")
 
         # Call the internal method to prepare the data (overridden in subclasses)
         self._prepare_data()
@@ -48,33 +48,13 @@ class Proximity:
         self.min_distance = None
         self.max_distance = None
 
-    @property
-    def id_column(self) -> str:
-        return self._id_column
-
-    @property
-    def features(self) -> List[str]:
-        return self._features
-
-    @property
-    def target(self) -> List[str]:
-        return self._target
-
-    @property
-    def data(self) -> pd.DataFrame:
-        return self._df
-
     def _auto_features(self) -> List[str]:
-        """Automatically determine feature columns, excluding the ID column."""
-        return self._df.select_dtypes(include=[np.number]).columns.difference([self.id_column]).tolist()
+        """Automatically determine feature columns, excluding the ID column and target column."""
+        return self.df.select_dtypes(include=[np.number]).columns.difference([self.id_column, self.target]).tolist()
 
     def _prepare_data(self) -> None:
-        if not self.features:
-            # Default to all numeric columns except the ID column
-            self.features = self._df.select_dtypes(include=[np.number]).columns.tolist()
-            self.features.remove(self.id_column)
-
-        self.X = self._df[self.features].values
+        scaler = StandardScaler()
+        self.X = scaler.fit_transform(self.df[self.features].values)
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
     def get_edge_weight(self, row: pd.Series) -> float:
@@ -117,13 +97,13 @@ class Proximity:
         Returns:
             pd.DataFrame: A DataFrame of neighbors and their distances.
         """
-        # Map the query_id to its positional index in self._df
-        query_idx = self._df.index[self._df[self.id_column] == query_id].tolist()
+        # Map the query_id to its positional index in self.df
+        query_idx = self.df.index[self.df[self.id_column] == query_id].tolist()
         if not query_idx:
             raise ValueError(f"Query ID {query_id} not found in the DataFrame")
 
         # Use the positional index to query self.X
-        query_idx = self._df.index.get_loc(query_idx[0])
+        query_idx = self.df.index.get_loc(query_idx[0])
 
         # Compute neighbors
         results = self._get_neighbors(
@@ -163,24 +143,24 @@ class Proximity:
         query_indices = range(len(self.X)) if query_idx is None else [query_idx]
 
         for i, (neighbors, dists) in zip(query_indices, zip(indices, distances)):
-            query_id = self._df.iloc[i][self.id_column]
+            query_id = self.df.iloc[i][self.id_column]
             for neighbor_idx, dist in zip(neighbors, dists):
                 if not include_self and i == neighbor_idx:
                     continue
                 neighbor_info = {
                     self.id_column: query_id,
-                    "neighbor_id": self._df.iloc[neighbor_idx][self.id_column],
+                    "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
                     "distance": dist,
                 }
 
                 # Optionally include the target column
                 if self.target:
-                    neighbor_info[self.target] = self._df.iloc[neighbor_idx][self.target]
+                    neighbor_info[self.target] = self.df.iloc[neighbor_idx][self.target]
 
                 # Optionally include additional columns
                 if add_columns:
                     for col in add_columns:
-                        neighbor_info[col] = self._df.iloc[neighbor_idx][col]
+                        neighbor_info[col] = self.df.iloc[neighbor_idx][col]
                 results.append(neighbor_info)
 
         return results
