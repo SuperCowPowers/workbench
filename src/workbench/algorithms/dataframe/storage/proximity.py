@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
 from typing import Union, List
 import logging
@@ -41,8 +42,10 @@ class Proximity:
         if len(self._df) < orig_len:
             log.warning(f"Dropped {orig_len - len(self._df)} rows with NaNs in the feature columns")
 
-        # Call the internal method to prepare the data (overridden in subclasses)
-        self._prepare_data()
+        # Scale features for better distance computation
+        scaler = StandardScaler()
+        self.X = scaler.fit_transform(self.data[self.features].values)
+        self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
         # Store the min and max distances for normalization
         self.min_distance = None
@@ -57,7 +60,7 @@ class Proximity:
         return self._features
 
     @property
-    def target(self) -> List[str]:
+    def target(self) -> str:
         return self._target
 
     @property
@@ -65,17 +68,9 @@ class Proximity:
         return self._df
 
     def _auto_features(self) -> List[str]:
-        """Automatically determine feature columns, excluding the ID column."""
-        return self._df.select_dtypes(include=[np.number]).columns.difference([self.id_column]).tolist()
-
-    def _prepare_data(self) -> None:
-        if not self.features:
-            # Default to all numeric columns except the ID column
-            self.features = self._df.select_dtypes(include=[np.number]).columns.tolist()
-            self.features.remove(self.id_column)
-
-        self.X = self._df[self.features].values
-        self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
+        """Automatically determine feature columns, excluding the ID column and Target"""
+        log.important("Automatically determining features, recommend providing 'features' list explicitly")
+        return self._df.select_dtypes(include=[np.number]).columns.difference([self.id_column, self.target]).tolist()
 
     def get_edge_weight(self, row: pd.Series) -> float:
         """
