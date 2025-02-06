@@ -71,9 +71,13 @@ class CompoundExplorerStack(Stack):
             peer=ec2.Peer.ipv4(cluster.vpc.vpc_cidr_block), connection=ec2.Port.tcp(6379)
         )
 
+        # Allow specific whitelist IPs to connect to the Redis cluster
+        if props.whitelist_ips:
+            for ip in props.whitelist_ips:
+                redis_security_group.add_ingress_rule(ec2.Peer.ipv4(ip), ec2.Port.tcp(6379))
+
         # Adding AWS Managed Prefix Lists to connect to the Redis cluster
         if props.whitelist_prefix_lists:
-            print(f"Adding Whitelist Prefix Lists: {props.whitelist_prefix_lists}")
             for pl in props.whitelist_prefix_lists:
                 redis_security_group.add_ingress_rule(ec2.Peer.prefix_list(pl), ec2.Port.tcp(6379))
 
