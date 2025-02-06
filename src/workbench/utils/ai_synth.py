@@ -5,6 +5,8 @@ from openai import OpenAI
 
 from workbench.utils.workbench_cache import WorkbenchCache
 
+use_openai = False
+
 
 class AISynth:
     def __init__(self):
@@ -14,15 +16,22 @@ class AISynth:
         self.log = logging.getLogger("workbench")
 
         # Get the API key from the environment
-        self.deepseek_api = os.getenv("DEEPSEEK_API")
+        if use_openai:
+            self.api_key = os.getenv("OPENAI_API")
+            self.base_url = "https://api.openai.com/v1"
+            self.model = "gpt-4o"
+        else:
+            self.api_key = os.getenv("DEEPSEEK_API")
+            self.base_url = "https://api.deepseek.com/v1"
+            self.model = "deepseek-chat"
 
         # If the API key is not set, raise an error
-        if not self.deepseek_api:
-            raise ValueError("DEEPSEEK API key is not set")
+        if not self.api_key:
+            raise ValueError("AI API key is not set")
 
         # Create a client with the API key
-        self.client = OpenAI(api_key=self.deepseek_api, base_url="https://api.deepseek.com/v1")
-        self.ai_cache = WorkbenchCache(prefix="ai_summary")
+        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+        self.ai_cache = WorkbenchCache(prefix="ai_synth")
 
     def smiles_query(self, smiles_string: str, force_pull=False) -> str:
         """
@@ -33,7 +42,8 @@ class AISynth:
             force_pull (bool, optional): Force the API to pull the data again. Defaults to False.
 
         Returns:
-            str: A markdown-formatted bulleted list of the compound's properties.
+            str: A markdown-formatted response containing a synthetic accessibility score (1-10)
+                 and a description of how to synthesize the compound.
         """
         # Check if the summary is already cached
         cached_summary = self.ai_cache.get(smiles_string)
@@ -46,28 +56,26 @@ class AISynth:
 
         # Define the task and lookup context
         task = """
-            Search open sources and use internal chemistry knowledge to provide a concise
-            summary of its properties relevant to targeted therapeutics and toxicity.
-            DO NOT INCLUDE INTRODUCTORY SENTENCES, CONCLUSIONS, OR CONVERSATIONAL PHRASES
+            Provide the following information for the compound with the given SMILES string:
+            1. A synthetic accessibility score (1-10), where 1 is very easy to synthesize and 10 is very difficult.
+            2. A concise description of how to synthesize the compound, including common precursors and reaction steps.
+            DO NOT INCLUDE INTRODUCTORY SENTENCES, CONCLUSIONS, OR CONVERSATIONAL PHRASES.
         """
         lookup_context = {
             "action": "lookup",
             "resources": ["PubMed", "PubChem", "ChEMBL", "DrugBank", "ChemSpider", "open source"],
-            "query": f"Find information about the compound with SMILES {smiles_string}. {task}",
+            "query": f"Provide synthetic accessibility information for compound {smiles_string}. {task}",
         }
 
         try:
             # Make the API request
             response = self.client.chat.completions.create(
-                model="deepseek-chat",  # Specify the model
+                model=self.model,  # Specify the model
                 messages=[{"role": "user", "content": str(lookup_context)}],  # Convert dict to string
             )
 
             # Extract the summary from the response
             summary = response.choices[0].message.content
-
-            # If one of the lines has SMILES, delete that line
-            summary = "\n".join([line for line in summary.split("\n") if "SMILES" not in line])
 
             # Clean up the summary
             # summary = self.clean_summary(summary)
@@ -97,9 +105,9 @@ class AISynth:
 # Example usage
 if __name__ == "__main__":
     # Example SMILES from tox21 dataset
-
     smiles_string = "CC(C)C1=CC=C(C=C1)C(=O)O"
     smiles_string = "CCCC[n+]1cccc(C)c1.F[B-](F)(F)F"
+    smiles_string = "CCCC[n+]1ccc(C)cc1.[I-]"
     # smiles_string = "CCCCCCCCCCCCCC[n+]1ccc(C)cc1.[Cl-]"
 
     # Create an instance of the AISynth class
