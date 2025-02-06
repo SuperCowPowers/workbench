@@ -53,7 +53,7 @@ class CompoundExplorerStack(Stack):
 
         # Create a cluster using a NEW VPC
         else:
-            cluster = ecs.Cluster(self, "ExplorerCluster", vpc=ec2.Vpc(self, "WorkbenchVpc", max_azs=2))
+            cluster = ecs.Cluster(self, "ExplorerCluster", vpc=ec2.Vpc(self, "ExplorerVpc", max_azs=2))
 
         # Import the existing Workbench-ExecutionRole
         workbench_execution_role = iam.Role.from_role_arn(
@@ -96,7 +96,7 @@ class CompoundExplorerStack(Stack):
             cache_node_type="cache.t2.micro",
             engine="redis",
             num_cache_nodes=1,
-            cluster_name="WorkbenchRedis",
+            cluster_name="ExplorerRedis",
             cache_subnet_group_name=redis_subnet_group.ref,
             vpc_security_group_ids=[redis_security_group.security_group_id],
         )
