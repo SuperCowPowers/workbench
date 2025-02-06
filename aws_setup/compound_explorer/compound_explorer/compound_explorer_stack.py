@@ -53,11 +53,7 @@ class CompoundExplorerStack(Stack):
 
         # Create a cluster using a NEW VPC
         else:
-            vpc = ec2.Vpc(self, "ExplorerVpc", max_azs=2)
-            cluster = ecs.Cluster(self, "ExplorerCluster", vpc=vpc)
-
-            # Add Network ACL rules for the Redis cluster
-            self._configure_network_acls(vpc, props.whitelist_ips)
+            cluster = ecs.Cluster(self, "ExplorerCluster", vpc=ec2.Vpc(self, "ExplorerVpc", max_azs=2))
 
         # Import the existing Workbench-ExecutionRole
         workbench_execution_role = iam.Role.from_role_arn(
@@ -179,35 +175,3 @@ class CompoundExplorerStack(Stack):
 
         # Add our custom security group
         fargate_service.load_balancer.add_security_group(lb_security_group)
-
-    def _configure_network_acls(self, vpc: ec2.Vpc, whitelist_ips: Optional[List[str]]) -> None:
-        """
-        Configure Network ACLs to allow traffic on port 6379 for Redis.
-        """
-        if not whitelist_ips:
-            return
-
-        # Get the default Network ACL for the VPC
-        default_network_acl = ec2.NetworkAcl.from_network_acl_id(self, "DefaultNetworkAcl", vpc.vpc_default_network_acl)
-
-        # Add inbound rule for Redis
-        for ip in whitelist_ips:
-            default_network_acl.add_entry(
-                id=f"AllowRedisInbound-{ip.replace('.', '-')}",
-                cidr=ec2.AclCidr.ipv4(ip),
-                rule_number=100,
-                traffic=ec2.AclTraffic.tcp_port(6379),
-                direction=ec2.TrafficDirection.INGRESS,
-                rule_action=ec2.Action.ALLOW,
-            )
-
-        # Add outbound rule for Redis
-        for ip in whitelist_ips:
-            default_network_acl.add_entry(
-                id=f"AllowRedisOutbound-{ip.replace('.', '-')}",
-                cidr=ec2.AclCidr.ipv4(ip),
-                rule_number=100,
-                traffic=ec2.AclTraffic.tcp_port(6379),
-                direction=ec2.TrafficDirection.EGRESS,
-                rule_action=ec2.Action.ALLOW,
-            )
