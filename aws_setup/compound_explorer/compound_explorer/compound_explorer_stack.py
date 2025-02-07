@@ -15,27 +15,25 @@ from constructs import Construct
 
 class CompoundExplorerStackProps(StackProps):
     def __init__(
-        self,
-        dashboard_image: str,
-        workbench_bucket: str,
-        workbench_api_key: str,
-        workbench_plugins: str,
-        existing_vpc_id: Optional[str] = None,
-        existing_subnet_ids: Optional[List[str]] = None,
-        whitelist_ips: Optional[List[str]] = None,
-        whitelist_prefix_lists: Optional[List[str]] = None,
-        certificate_arn: Optional[str] = None,
-        public: bool = False,
+            self,
+            dashboard_image: str,
+            workbench_bucket: str,
+            workbench_api_key: str,
+            workbench_plugins: str,
+            existing_vpc_id: Optional[str] = None,
+            whitelist_ips: Optional[List[str]] = None,
+            whitelist_prefix_lists: Optional[List[str]] = None,
+            certificate_arn: Optional[str] = None,
+            public: bool = False,
     ):
         self.dashboard_image = dashboard_image
         self.workbench_bucket = workbench_bucket
         self.workbench_api_key = workbench_api_key
         self.workbench_plugins = workbench_plugins
         self.existing_vpc_id = existing_vpc_id
-        self.existing_subnet_ids = existing_subnet_ids
-        self.whitelist_ips = whitelist_ips
+        self.whitelist_ips = whitelist_ips or []
+        self.whitelist_prefix_lists = whitelist_prefix_lists or []
         self.certificate_arn = certificate_arn
-        self.whitelist_prefix_lists = whitelist_prefix_lists
         self.public = public
 
 
@@ -46,12 +44,10 @@ class CompoundExplorerStack(Stack):
         if not props.workbench_bucket:
             raise ValueError("workbench_bucket is a required property")
 
-        # Create a cluster using a EXISTING VPC
+        # Create a cluster using an EXISTING VPC
         if props.existing_vpc_id:
             vpc = ec2.Vpc.from_lookup(self, "ImportedVPC", vpc_id=props.existing_vpc_id)
             cluster = ecs.Cluster(self, "ExplorerCluster", vpc=vpc)
-
-        # Create a cluster using a NEW VPC
         else:
             cluster = ecs.Cluster(self, "ExplorerCluster", vpc=ec2.Vpc(self, "ExplorerVpc", max_azs=2))
 
@@ -66,20 +62,10 @@ class CompoundExplorerStack(Stack):
         # Setup Security Group for Redis
         redis_security_group = ec2.SecurityGroup(self, "ExplorerRedisSecurityGroup", vpc=cluster.vpc)
 
-        # Allow the ECS task to connect to the Redis cluster
+        # Allow the ECS task to connect to the Redis cluster (this is needed)
         redis_security_group.add_ingress_rule(
             peer=ec2.Peer.ipv4(cluster.vpc.vpc_cidr_block), connection=ec2.Port.tcp(6379)
         )
-
-        # Allow specific whitelist IPs to connect to the Redis cluster
-        if props.whitelist_ips:
-            for ip in props.whitelist_ips:
-                redis_security_group.add_ingress_rule(ec2.Peer.ipv4(ip), ec2.Port.tcp(6379))
-
-        # Adding AWS Managed Prefix Lists to connect to the Redis cluster
-        if props.whitelist_prefix_lists:
-            for pl in props.whitelist_prefix_lists:
-                redis_security_group.add_ingress_rule(ec2.Peer.prefix_list(pl), ec2.Port.tcp(6379))
 
         # Create the Redis subnet group
         redis_subnet_group = elasticache.CfnSubnetGroup(
@@ -129,12 +115,11 @@ class CompoundExplorerStack(Stack):
         # Create a NEW Security Group for the Load Balancer
         lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
 
-        # Add rules for the whitelist IPs
+        # Add rules for the whitelist IPs (this is needed)
         if props.whitelist_ips:
             for ip in props.whitelist_ips:
                 lb_security_group.add_ingress_rule(ec2.Peer.ipv4(ip), ec2.Port.tcp(443))
 
-        # Adding AWS Managed Prefix Lists
         if props.whitelist_prefix_lists:
             for pl in props.whitelist_prefix_lists:
                 lb_security_group.add_ingress_rule(ec2.Peer.prefix_list(pl), ec2.Port.tcp(443))
@@ -146,14 +131,9 @@ class CompoundExplorerStack(Stack):
             else None
         )
 
-        # Allow HTTP/HTTPS access from the internet (public)
+        # Public access for LB
         if props.public:
-            if certificate:
-                # Only allow HTTPS access if a certificate is provided
-                lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(443))
-            else:
-                # Allow HTTP access if no certificate is provided
-                lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(80))
+            lb_security_group.add_ingress_rule(ec2.Peer.any_ipv4(), ec2.Port.tcp(443 if certificate else 80))
 
         # Adding LoadBalancer with Fargate Service
         fargate_service = ApplicationLoadBalancedFargateService(

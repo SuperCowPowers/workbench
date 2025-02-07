@@ -47,7 +47,6 @@ CompoundExplorerStack(
         workbench_api_key=workbench_api_key,
         workbench_plugins=workbench_plugins,
         existing_vpc_id=existing_vpc_id,
-        existing_subnet_ids=existing_subnet_ids,
         whitelist_ips=whitelist_ips,
         whitelist_prefix_lists=whitelist_prefix_lists,
         certificate_arn=certificate_arn,
