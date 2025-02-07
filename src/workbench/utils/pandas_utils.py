@@ -310,6 +310,61 @@ def confidence_profile(
     return accuracy_df
 
 
+def temporal_split(df: pd.DataFrame, date_column: str, test_split: float = 0.2) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Splits a DataFrame into training and testing sets based on chronological order,
+    handling 'clumps' (dates with a large number of rows) separately.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame.
+        date_column (str): The name of the datetime column.
+        test_split (float): Proportion of data to be used for testing (default 0.2).
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]: (train_df, test_df)
+    """
+    df = df.copy()
+    df[date_column] = pd.to_datetime(df[date_column])  # Ensure datetime type
+
+    # Compute clump threshold (5% of total rows, min 10 rows)
+    clump_threshold = max(int(len(df) * 0.05), 10)
+
+    # Count occurrences per date
+    date_counts = df[date_column].value_counts()
+
+    # Identify clump and non-clump dates
+    clump_dates = date_counts[date_counts > clump_threshold].index
+    non_clump_dates = date_counts[date_counts <= clump_threshold].index
+
+    # Separate clump and non-clump data
+    clump_df = df[df[date_column].isin(clump_dates)]
+    non_clump_df = df[df[date_column].isin(non_clump_dates)]
+
+    # Handle clump splits (80/20 within each clump)
+    train_clumps, test_clumps = [], []
+    for date in clump_dates:
+        subset = clump_df[clump_df[date_column] == date]
+        train_size = int(len(subset) * (1 - test_split))
+        train_clumps.append(subset.iloc[:train_size])
+        test_clumps.append(subset.iloc[train_size:])
+
+    # Concatenate clump splits
+    train_clump_df = pd.concat(train_clumps) if train_clumps else pd.DataFrame(columns=df.columns)
+    test_clump_df = pd.concat(test_clumps) if test_clumps else pd.DataFrame(columns=df.columns)
+
+    # Handle non-clump splits (sorted by date, then split)
+    sorted_non_clump_df = non_clump_df.sort_values(by=date_column)
+    split_index = int(len(sorted_non_clump_df) * (1 - test_split))
+    train_non_clump_df = sorted_non_clump_df.iloc[:split_index]
+    test_non_clump_df = sorted_non_clump_df.iloc[split_index:]
+
+    # Final train/test DataFrames
+    train_df = pd.concat([train_clump_df, train_non_clump_df])
+    test_df = pd.concat([test_clump_df, test_non_clump_df])
+
+    return train_df, test_df
+
+
 def get_percent_nan(df):
     log.info("DataFrame ({:d} rows)".format(len(df)))
     s = df.isna().mean().round(3) * 100.0
@@ -911,3 +966,11 @@ if __name__ == "__main__":
     df = expand_proba_column(df, ["low", "med", "high"])
     accuracy_df = confidence_profile(df, "class", ["high"], ["med", "low"])
     print(accuracy_df)
+
+    # Add a datetime column to our df and test temporal_split
+    df["date"] = pd.date_range(start="1/1/2020", periods=len(df))
+    train_df, test_df = temporal_split(df, "date", test_split=0.2)
+    print("Train DataFrame:")
+    print(train_df)
+    print("\nTest DataFrame:")
+    print(test_df)
