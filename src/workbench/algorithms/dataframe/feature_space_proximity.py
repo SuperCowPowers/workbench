@@ -35,6 +35,7 @@ if __name__ == "__main__":
 
     # Test a Workbench classification Model
     from workbench.api import Model
+
     m = Model("wine-classification")
     proximity = FeatureSpaceProximity(m)
 
@@ -53,5 +54,3 @@ if __name__ == "__main__":
     single_query_neighbors = proximity.neighbors(single_query_id)
     print("\nNeighbors for Query ID:", single_query_id)
     print(single_query_neighbors)
-
-
