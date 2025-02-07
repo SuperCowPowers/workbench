@@ -83,7 +83,7 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-        self, query_id: Union[int, str], radius: float = None, include_self: bool = False, add_columns: list = None
+        self, query_id: Union[int, str], radius: float = None, include_self: bool = True, add_columns: list = None
     ) -> pd.DataFrame:
         """
         Return neighbors of the given query ID, either by fixed neighbors or within a radius.
@@ -156,6 +156,12 @@ class Proximity:
                 # Optionally include the target column
                 if self.target:
                     neighbor_info[self.target] = self.df.iloc[neighbor_idx][self.target]
+                    # Check for any prediction or _proba columns
+                    if "prediction" in self.df.columns:
+                        neighbor_info["prediction"] = self.df.iloc[neighbor_idx]["prediction"]
+                    for col in self.df.columns:
+                        if col.endswith("_proba"):
+                            neighbor_info[col] = self.df.iloc[neighbor_idx][col]
 
                 # Optionally include additional columns
                 if add_columns:
