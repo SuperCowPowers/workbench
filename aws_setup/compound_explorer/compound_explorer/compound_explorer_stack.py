@@ -15,16 +15,16 @@ from constructs import Construct
 
 class CompoundExplorerStackProps(StackProps):
     def __init__(
-            self,
-            dashboard_image: str,
-            workbench_bucket: str,
-            workbench_api_key: str,
-            workbench_plugins: str,
-            existing_vpc_id: Optional[str] = None,
-            whitelist_ips: Optional[List[str]] = None,
-            whitelist_prefix_lists: Optional[List[str]] = None,
-            certificate_arn: Optional[str] = None,
-            public: bool = False,
+        self,
+        dashboard_image: str,
+        workbench_bucket: str,
+        workbench_api_key: str,
+        workbench_plugins: str,
+        existing_vpc_id: Optional[str] = None,
+        whitelist_ips: Optional[List[str]] = None,
+        whitelist_prefix_lists: Optional[List[str]] = None,
+        certificate_arn: Optional[str] = None,
+        public: bool = False,
     ):
         self.dashboard_image = dashboard_image
         self.workbench_bucket = workbench_bucket
