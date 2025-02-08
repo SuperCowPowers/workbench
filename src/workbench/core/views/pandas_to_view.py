@@ -148,7 +148,7 @@ if __name__ == "__main__":
     my_df["random2"] = np.random.rand(len(my_df))
 
     # Create a PandasToView
-    df_view = PandasToView.create("test_df", ds, df=my_df, id_column="id")
+    df_view = PandasToView.create("test_view", ds, df=my_df, id_column="id")
 
     # Pull the dataframe view
     my_df = df_view.pull_dataframe(limit=5)

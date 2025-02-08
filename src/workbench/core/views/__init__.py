@@ -17,8 +17,7 @@ from .view import View
 from .display_view import DisplayView
 from .computation_view import ComputationView
 from .training_view import TrainingView
-from .mdq_view import MDQView
 from .column_subset_view import ColumnSubsetView
 from .pandas_to_view import PandasToView
 
-__all__ = ["View", "DisplayView", "ComputationView", "TrainingView", "PandasToView", "MDQView", "ColumnSubsetView"]
+__all__ = ["View", "DisplayView", "ComputationView", "TrainingView", "PandasToView", "ColumnSubsetView"]
