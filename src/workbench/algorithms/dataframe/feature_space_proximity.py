@@ -4,13 +4,14 @@ import logging
 # Workbench Imports
 from workbench.algorithms.dataframe.proximity import Proximity
 from workbench.core.views.inference_view import InferenceView
+from workbench.api import FeatureSet, Model
 
 # Set up logging
 log = logging.getLogger("workbench")
 
 
 class FeatureSpaceProximity(Proximity):
-    def __init__(self, model, n_neighbors: int = 10) -> None:
+    def __init__(self, model: Model, n_neighbors: int = 10) -> None:
         """
         Initialize the FeatureSpaceProximity class.
 
@@ -18,7 +19,6 @@ class FeatureSpaceProximity(Proximity):
             model (Model): A Workbench model object.
 
         """
-        from workbench.api import FeatureSet, Endpoint
 
         # Grab the features and target from the model
         features = model.features()
@@ -47,8 +47,6 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Test a Workbench classification Model
-    from workbench.api import Model
-
     m = Model("wine-classification")
     proximity = FeatureSpaceProximity(m)
 

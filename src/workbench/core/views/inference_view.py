@@ -1,11 +1,10 @@
 """InferenceView Class: A View that does endpoint inference and computes residuals"""
 
 from typing import Union
-import pandas as pd
 import logging
 
 # Workbench Imports
-from workbench.api import FeatureSet, Model, ModelType, Endpoint
+from workbench.api import Model, ModelType
 from workbench.core.views.view import View
 from workbench.core.views.pandas_to_view import PandasToView
 
