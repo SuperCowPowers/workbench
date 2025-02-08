@@ -71,9 +71,18 @@ class Proximity:
         if query_id not in self.df[self.id_column].values:
             raise ValueError(f"Query ID {query_id} not found in the DataFrame")
         query_idx = self.df.index[self.df[self.id_column] == query_id][0]
-        return pd.DataFrame(self._get_neighbors(query_idx=self.df.index.get_loc(query_idx), radius=radius, include_self=include_self, add_columns=add_columns))
+        return pd.DataFrame(
+            self._get_neighbors(
+                query_idx=self.df.index.get_loc(query_idx),
+                radius=radius,
+                include_self=include_self,
+                add_columns=add_columns,
+            )
+        )
 
-    def _get_neighbors(self, query_idx: int = None, radius: float = None, include_self: bool = True, add_columns: List[str] = None) -> List[dict]:
+    def _get_neighbors(
+        self, query_idx: int = None, radius: float = None, include_self: bool = True, add_columns: List[str] = None
+    ) -> List[dict]:
         """
         Internal method to compute nearest neighbors for a given query index or all rows.
 
@@ -101,10 +110,18 @@ class Proximity:
             for neighbor_idx, dist in zip(neighbors, dists):
                 if not include_self and i == neighbor_idx:
                     continue
-                neighbor_info = {self.id_column: query_id, "neighbor_id": self.df.iloc[neighbor_idx][self.id_column], "distance": dist}
+                neighbor_info = {
+                    self.id_column: query_id,
+                    "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
+                    "distance": dist,
+                }
 
                 # Include target, predictions, and residuals
-                relevant_cols = [self.target, "prediction"] + [c for c in self.df.columns if "_proba" in c or "residual" in c] + (add_columns or [])
+                relevant_cols = (
+                    [self.target, "prediction"]
+                    + [c for c in self.df.columns if "_proba" in c or "residual" in c]
+                    + (add_columns or [])
+                )
                 for col in filter(lambda c: c in self.df.columns, relevant_cols):
                     neighbor_info[col] = self.df.iloc[neighbor_idx][col]
 
