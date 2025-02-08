@@ -15,10 +15,6 @@ Workbench has a growing set of algorithms and data processing tools for Pandas D
     options:
       show_root_heading: false
 
-::: workbench.algorithms.dataframe.residuals_calculator
-    options:
-      show_root_heading: false
-
 ::: workbench.algorithms.dataframe.dimensionality_reduction
     options:
       show_root_heading: false

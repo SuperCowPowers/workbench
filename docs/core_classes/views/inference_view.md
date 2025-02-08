@@ -1,9 +1,9 @@
-# ModelDataQuality View
+# Inference View
 
 !!! warning inline end "Experimental"
     The Workbench View classes are currently in experimental mode so have fun but expect issues and API changes going forward.
     
-::: workbench.core.views.mdq_view
+::: workbench.core.views.inference_view
 
 ## Questions?
 <img align="right" src="../../../images/scp.png" width="180">
