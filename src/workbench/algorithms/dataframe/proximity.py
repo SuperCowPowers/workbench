@@ -30,7 +30,7 @@ class Proximity:
         """
         self.df = df.dropna(subset=features).copy()
         self.id_column = id_column
-        self.n_neighbors = min(n_neighbors, len(self.df)-1)
+        self.n_neighbors = min(n_neighbors, len(self.df) - 1)
         self.target = target
         self.features = features
 
