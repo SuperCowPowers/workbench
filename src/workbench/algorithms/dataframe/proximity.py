@@ -90,6 +90,10 @@ class Proximity:
         - For classification, an outlier is a point whose target differs from most of its neighbors.
         - For regression, an outlier is a point more than 3 standard deviations away from the mean of its neighbors.
         """
+        log.warning("Computing outliers is TBD... :)")
+        self.df["outlier"] = False
+        return
+
         if self.target is None:
             raise ValueError("Target column must be set to compute outliers.")
 
