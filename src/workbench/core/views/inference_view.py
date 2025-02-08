@@ -4,7 +4,7 @@ from typing import Union
 import logging
 
 # Workbench Imports
-from workbench.api import Model, ModelType
+from workbench.api import FeatureSet, Model, ModelType, Endpoint
 from workbench.core.views.view import View
 from workbench.core.views.pandas_to_view import PandasToView
 
@@ -77,7 +77,6 @@ class InferenceView:
 
 if __name__ == "__main__":
     """Exercise the InferenceView functionality"""
-    from workbench.api import FeatureSet, Endpoint
 
     # Grab a classification Model
     my_model = Model("wine-classification")

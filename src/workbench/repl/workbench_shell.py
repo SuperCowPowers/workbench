@@ -269,7 +269,7 @@ class WorkbenchShell:
             self.commands["ComputationView"] = importlib.import_module(
                 "workbench.core.views.computation_view"
             ).ComputationView
-            self.commands["MDQView"] = importlib.import_module("workbench.core.views.mdq_view").MDQView
+            self.commands["InferenceView"] = importlib.import_module("workbench.core.views.inference_view").InferenceView
             self.commands["PandasToView"] = importlib.import_module("workbench.core.views.pandas_to_view").PandasToView
             self.commands["Pipeline"] = importlib.import_module("workbench.api.pipeline").Pipeline
 
