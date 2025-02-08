@@ -1,5 +1,12 @@
 import pandas as pd
+import logging
+
+# Workbench Imports
 from workbench.algorithms.dataframe.proximity import Proximity
+from workbench.core.views.inference_view import InferenceView
+
+# Set up logging
+log = logging.getLogger("workbench")
 
 
 class FeatureSpaceProximity(Proximity):
@@ -17,13 +24,19 @@ class FeatureSpaceProximity(Proximity):
         features = model.features()
         target = model.target()
 
-        # Retrieve the training DataFrame from the feature set
+        # Grab the feature set for the model
         fs = FeatureSet(model.get_input())
-        df = fs.view("training").pull_dataframe()
 
-        # Run inference on the model to get the predictions
-        end = Endpoint(model.endpoints()[0])
-        df = end.inference(df)
+        # If we have a "inference" view, pull the data from that view
+        view_name = f"inference_{model.uuid.replace('-', '_')}"
+        if view_name in fs.views():
+            df = fs.view(view_name).pull_dataframe()
+
+        # Otherwise, pull the data from the feature set and run inference
+        else:
+            log.important("Creating inference View...")
+            inf_view = InferenceView.create(model)
+            df = inf_view.pull_dataframe()
 
         # Call the parent class constructor
         super().__init__(df, id_column=fs.id_column, features=features, target=target, n_neighbors=n_neighbors)
