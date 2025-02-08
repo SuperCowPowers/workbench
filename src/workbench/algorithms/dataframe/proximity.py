@@ -156,12 +156,13 @@ class Proximity:
                 # Optionally include the target column
                 if self.target:
                     neighbor_info[self.target] = self.df.iloc[neighbor_idx][self.target]
-                    # Check for any prediction, residual, or _proba columns
-                    if "prediction" in self.df.columns:
-                        neighbor_info["prediction"] = self.df.at[neighbor_idx, "prediction"]
-                    for col in self.df.columns:
-                        if "_proba" in col or "residual" in col:
-                            neighbor_info[col] = self.df.at[neighbor_idx, col]
+
+                # Check for any prediction, residual, or _proba columns
+                if "prediction" in self.df.columns:
+                    neighbor_info["prediction"] = self.df.iloc[neighbor_idx]["prediction"]
+                for col in self.df.columns:
+                    if "_proba" in col or "residual" in col:
+                        neighbor_info[col] = self.df.iloc[neighbor_idx][col]
 
                 # Optionally include additional columns
                 if add_columns:

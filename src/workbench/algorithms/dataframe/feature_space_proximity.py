@@ -34,7 +34,6 @@ class FeatureSpaceProximity(Proximity):
 
         # Otherwise, pull the data from the feature set and run inference
         else:
-            log.important("Creating inference View...")
             inf_view = InferenceView.create(model)
             df = inf_view.pull_dataframe()
 
