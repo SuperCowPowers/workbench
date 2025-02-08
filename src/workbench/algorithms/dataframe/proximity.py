@@ -30,7 +30,7 @@ class Proximity:
         """
         self.df = df.dropna(subset=features).copy()
         self.id_column = id_column
-        self.n_neighbors = n_neighbors
+        self.n_neighbors = min(n_neighbors, len(self.df)-1)
         self.target = target
         self.features = features
 
@@ -80,6 +80,37 @@ class Proximity:
             )
         )
 
+    def compute_outliers(self, model_type="classifier"):
+        """
+        Identifies outliers based on the target values of nearest neighbors.
+
+        Args:
+            model_type (str): Type of model to use for outlier detection. Defaults to "classifier".
+
+        - For classification, an outlier is a point whose target differs from most of its neighbors.
+        - For regression, an outlier is a point more than 3 standard deviations away from the mean of its neighbors.
+        """
+        if self.target is None:
+            raise ValueError("Target column must be set to compute outliers.")
+
+        outliers = []
+        for idx in self.df.index:
+            neighbors = self.neighbors(self.df.at[idx, self.id_column], include_self=False)
+
+            if model_type == "classifier":
+                majority_class = neighbors[self.target].mode()[0]
+                is_outlier = self.df.at[idx, self.target] != majority_class
+
+            else:  # Regression
+                neighbor_mean = neighbors[self.target].mean()
+                neighbor_std = neighbors[self.target].std()
+                is_outlier = abs(self.df.at[idx, self.target] - neighbor_mean) > 3 * neighbor_std
+
+            outliers.append(is_outlier)
+
+        # Add the outlier column to the DataFrame
+        self.df["outlier"] = outliers
+
     def _get_neighbors(
         self, query_idx: int = None, radius: float = None, include_self: bool = True, add_columns: List[str] = None
     ) -> List[dict]:
@@ -116,10 +147,11 @@ class Proximity:
                     "distance": dist,
                 }
 
-                # Include target, predictions, and residuals
+                # Include target, predictions, outliers, and residuals
                 relevant_cols = (
                     [self.target, "prediction"]
                     + [c for c in self.df.columns if "_proba" in c or "residual" in c]
+                    + ["outlier"]
                     + (add_columns or [])
                 )
                 for col in filter(lambda c: c in self.df.columns, relevant_cols):
@@ -164,7 +196,7 @@ if __name__ == "__main__":
         "ID": ["a", "b", "c", "d", "e"],
         "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
         "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
-        "target": [1, 0, 1, 0, 1],
+        "target": [1, 0, 1, 0, 5],
     }
     df = pd.DataFrame(data)
 
@@ -174,3 +206,21 @@ if __name__ == "__main__":
 
     # Test the neighbors method
     print(prox.neighbors(query_id="a", add_columns=["Feature1", "Feature2"]))
+
+    # Test the compute_outliers method
+    prox.compute_outliers(model_type="regressor")
+    print(prox.df)
+
+    # Test the compute_outliers method with classification
+    data = {
+        "ID": ["a", "b", "c", "d", "e"],
+        "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
+        "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
+        "target": ["red", "red", "red", "red", "blue"],
+    }
+    df = pd.DataFrame(data)
+    prox = Proximity(df, id_column="ID", features=["Feature1", "Feature2"], target="target", n_neighbors=10)
+    print(prox.all_neighbors())
+
+    prox.compute_outliers(model_type="classifier")
+    print(prox.neighbors(query_id="a"))
