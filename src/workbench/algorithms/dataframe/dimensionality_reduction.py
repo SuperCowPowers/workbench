@@ -29,8 +29,6 @@ class DimensionalityReduction:
         # If no features are given, indentify all numeric columns
         if features is None:
             features = [x for x in df.select_dtypes(include="number").columns.tolist() if not x.endswith("id")]
-            # Also drop group_count if it exists
-            features = [x for x in features if x != "group_count"]
             self.log.info("No features given, auto identifying numeric columns...")
             self.log.info(f"{features}")
         self.features = features
@@ -49,7 +47,7 @@ class DimensionalityReduction:
         # Most projection models will fail if there are any NaNs in the data
         # So we'll fill NaNs with the mean value for that column
         for col in df[self.features].columns:
-            df[col].fillna(df[col].mean(), inplace=True)
+            df[col] = df[col].fillna(df[col].mean())
 
         # Normalize the features
         scaler = StandardScaler()
@@ -80,7 +78,7 @@ class DimensionalityReduction:
         df["y"] = projection[:, 1]  # Projection Y Column
 
         # Jitter the data to resolve coincident points
-        # df = self.resolve_coincident_points(df)
+        df = self.resolve_coincident_points(df)
 
         # Return the DataFrame with the new columns
         return df
