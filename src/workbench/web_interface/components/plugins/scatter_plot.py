@@ -214,14 +214,15 @@ class ScatterPlot(PluginInterface):
             hoverinfo = "none"
             hovertemplate = None
 
+        # Get colorscale from theme manager
+        colorscale = self.theme_manager.colorscale()
+
         # Determine marker settings based on color_col type
         if pd.api.types.is_numeric_dtype(df[color_col]):
             marker_color = df[color_col]
-            colorscale = self.theme_manager.colorscale()
             colorbar = dict(title=color_col, thickness=20)
         else:
-            marker_color, colorscale, colorbar = process_categorical_color(df[color_col])
-        colorscale = self.theme_manager.colorscale()
+            marker_color, colorbar = process_categorical_color(df[color_col])
 
         # Create the scatter plot
         figure = go.Figure(

@@ -127,19 +127,13 @@ def weights_to_colors(weights: list[float], colorscale: list, muted: bool = True
 
 
 def process_categorical_color(series):
-    """Convert a categorical series to numeric codes with a discrete colorscale and colorbar."""
-    import plotly.express as px
-
+    """Convert a categorical series to numeric codes with ticks on the colorbar."""
     cat = series.astype("category")
     codes = cat.cat.codes
     categories = cat.cat.categories.tolist()
     n = len(categories)
-    # Use Plotly Express's built-in discrete (categorical) colors
-    discrete_colors = px.colors.qualitative.Plotly[:n]
-    # Build a discrete colorscale: normalized stops paired with colors
-    colorscale = [[i / (n - 1) if n > 1 else 0.5, discrete_colors[i]] for i in range(n)]
     colorbar = dict(title=series.name, tickmode="array", tickvals=list(range(n)), ticktext=categories, thickness=20)
-    return codes, colorscale, colorbar
+    return codes, colorbar
 
 
 if __name__ == "__main__":
