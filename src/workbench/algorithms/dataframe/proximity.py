@@ -80,40 +80,7 @@ class Proximity:
             )
         )
 
-    def compute_outliers(self, model_type="classifier"):
-        """
-        Identifies outliers based on the target values of nearest neighbors.
 
-        Args:
-            model_type (str): Type of model to use for outlier detection. Defaults to "classifier".
-
-        - For classification, an outlier is a point whose target differs from most of its neighbors.
-        - For regression, an outlier is a point more than 3 standard deviations away from the mean of its neighbors.
-        """
-        log.warning("Computing outliers is TBD... :)")
-        self.df["outlier"] = False
-        return
-
-        if self.target is None:
-            raise ValueError("Target column must be set to compute outliers.")
-
-        outliers = []
-        for idx in self.df.index:
-            neighbors = self.neighbors(self.df.at[idx, self.id_column], include_self=False)
-
-            if model_type == "classifier":
-                majority_class = neighbors[self.target].mode()[0]
-                is_outlier = self.df.at[idx, self.target] != majority_class
-
-            else:  # Regression
-                neighbor_mean = neighbors[self.target].mean()
-                neighbor_std = neighbors[self.target].std()
-                is_outlier = abs(self.df.at[idx, self.target] - neighbor_mean) > 3 * neighbor_std
-
-            outliers.append(is_outlier)
-
-        # Add the outlier column to the DataFrame
-        self.df["outlier"] = outliers
 
     def _get_neighbors(
         self, query_idx: int = None, radius: float = None, include_self: bool = True, add_columns: List[str] = None
