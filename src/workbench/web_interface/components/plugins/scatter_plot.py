@@ -125,61 +125,59 @@ class ScatterPlot(PluginInterface):
                             - x: The default x-axis column
                             - y: The default y-axis column
                             - color: The default color column
-                            - dropdown_columns: The columns to use for the x, y, color options
+                            - dropdown_columns: The columns to use for the x and y options
                             - hover_columns: The columns to show when hovering over a point
                             - suppress_hover_display: Suppress hover display (default: False)
                             - custom_data: Custom data that get passed to hoverData callbacks
 
         Returns:
-            list: A list of updated property values (figure, x options, y options, color options).
+            list: A list of updated property values (figure, x options, y options, color options, x default, y default, color default).
         """
-
         # Get the limit for the number of rows to plot
         limit = kwargs.get("limit", 20000)
 
-        # Check that we got a dataframe for our input data object
+        # Ensure input_data is a DataFrame and sample if necessary
         if isinstance(input_data, pd.DataFrame):
-            if len(input_data) > limit:
-                self.log.warning(f"Input data has {len(input_data)} rows, sampling to {limit} rows.")
-                self.df = input_data.sample(n=limit)
-            else:
-                self.df = input_data
+            self.df = input_data.sample(n=limit) if len(input_data) > limit else input_data
         else:
             raise ValueError("The input data must be a Pandas DataFrame.")
 
-        # AWS Feature Groups will also add these implicit columns, so remove these columns
+        # Remove AWS implicit columns and drop any columns with NaNs
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        self.df = self.df.drop(columns=aws_cols, errors="ignore")
+        self.df = self.df.drop(columns=aws_cols, errors="ignore").dropna(axis=1, how="any")
 
-        # Drop any columns with NaNs
-        self.df = self.df.dropna(axis=1, how="any")
-
-        # Set the hover columns and custom data
+        # Set hover columns and custom data
         self.hover_columns = kwargs.get("hover_columns", self.df.columns.tolist()[:10])
         self.suppress_hover_display = kwargs.get("suppress_hover_display", False)
         self.custom_data = kwargs.get("custom_data", [])
 
-        # Get numeric columns for default selections
+        # Identify numeric columns
         numeric_columns = self.df.select_dtypes(include="number").columns.tolist()
         if len(numeric_columns) < 3:
             raise ValueError("At least three numeric columns are required for x, y, and color.")
 
-        # Check if the kwargs are provided for x, y, and color
+        # Default x, y, and color (for color, default to a numeric column)
         x_default = kwargs.get("x", numeric_columns[0])
         y_default = kwargs.get("y", numeric_columns[1])
         color_default = kwargs.get("color", numeric_columns[2])
 
-        # Create default Plotly Scatter Plot
+        # Create the default scatter plot
         figure = self.create_scatter_plot(self.df, x_default, y_default, color_default)
 
-        # Dropdown options for x, y, and color
-        if "dropdown_columns" in kwargs:
-            dropdown_columns = kwargs["dropdown_columns"]
-        else:
-            dropdown_columns = numeric_columns
-        options = [{"label": col, "value": col} for col in dropdown_columns]
+        # Dropdown options for x and y: use provided dropdown_columns or fallback to numeric columns
+        dropdown_columns = kwargs.get("dropdown_columns", numeric_columns)
+        x_options = [{"label": col, "value": col} for col in dropdown_columns]
+        y_options = x_options.copy()
 
-        return [figure, options, options, options, x_default, y_default, color_default]
+        # For color dropdown, include numeric columns plus non-numeric columns with <12 unique values
+        categorical_for_color = [
+            col for col in self.df.columns
+            if col not in numeric_columns and self.df[col].nunique() < 12
+        ]
+        color_columns = list(dict.fromkeys(numeric_columns + categorical_for_color))
+        color_options = [{"label": col, "value": col} for col in color_columns]
+
+        return [figure, x_options, y_options, color_options, x_default, y_default, color_default]
 
     def create_scatter_plot(
         self,
