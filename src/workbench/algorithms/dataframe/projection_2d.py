@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 # Try importing UMAP with a fallback to TSNE
 try:
     import umap
+
     UMAP_AVAILABLE = True
 except ImportError:
     UMAP_AVAILABLE = False
