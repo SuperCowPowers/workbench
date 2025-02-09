@@ -80,8 +80,6 @@ class Proximity:
             )
         )
 
-
-
     def _get_neighbors(
         self, query_idx: int = None, radius: float = None, include_self: bool = True, add_columns: List[str] = None
     ) -> List[dict]:
