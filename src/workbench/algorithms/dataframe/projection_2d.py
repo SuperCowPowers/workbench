@@ -106,8 +106,8 @@ class Projection2D:
         Returns:
             pd.DataFrame: The DataFrame with resolved coincident points.
         """
-        jitter_x = (df["x"].max() - df["x"].min()) * 0.0001
-        jitter_y = (df["y"].max() - df["y"].min()) * 0.0001
+        jitter_x = (df["x"].max() - df["x"].min()) * 0.005
+        jitter_y = (df["y"].max() - df["y"].min()) * 0.005
         df["x"] += np.random.normal(0, jitter_x, len(df))
         df["y"] += np.random.normal(0, jitter_y, len(df))
         return df

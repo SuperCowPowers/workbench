@@ -175,7 +175,6 @@ class ScatterPlot(PluginInterface):
         # Dropdown options for x, y, and color
         if "dropdown_columns" in kwargs:
             dropdown_columns = kwargs["dropdown_columns"]
-            dropdown_columns = [col for col in dropdown_columns if col in numeric_columns]
         else:
             dropdown_columns = numeric_columns
         options = [{"label": col, "value": col} for col in dropdown_columns]
