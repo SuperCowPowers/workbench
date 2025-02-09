@@ -221,6 +221,7 @@ class ScatterPlot(PluginInterface):
             colorbar = dict(title=color_col, thickness=20)
         else:
             marker_color, colorscale, colorbar = process_categorical_color(df[color_col])
+        colorscale = self.theme_manager.colorscale()
 
         # Create the scatter plot
         figure = go.Figure(
