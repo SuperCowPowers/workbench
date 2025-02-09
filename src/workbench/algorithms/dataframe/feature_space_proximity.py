@@ -41,7 +41,7 @@ class FeatureSpaceProximity(Proximity):
         super().__init__(df, id_column=fs.id_column, features=features, target=target, n_neighbors=n_neighbors)
 
         # Compute Outliers
-        self.compute_outliers(model_type=model.model_type.value)
+        # self.compute_outliers(model_type=model.model_type.value)
 
 
 if __name__ == "__main__":
