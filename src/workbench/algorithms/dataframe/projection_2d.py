@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 # Try importing UMAP with a fallback to TSNE
 try:
     import umap
+
     UMAP_AVAILABLE = True
 except ImportError:
     UMAP_AVAILABLE = False
@@ -31,7 +32,7 @@ class Projection2D:
         Args:
             df (pd.DataFrame): The DataFrame containing features to project.
             features (list, optional): List of feature column names. If None, numeric columns are auto-selected.
-            projection (str, optional): The projection model to use ('TSNE', 'MDS', 'PCA', or 'UMAP'). Defaults to 'TSNE'.
+            projection (str, optional): The projection to use ('TSNE', 'MDS', 'PCA', or 'UMAP'). Default 'TSNE'.
 
         Returns:
             pd.DataFrame: The original DataFrame with new columns 'x' and 'y' containing the projected 2D coordinates.
@@ -88,7 +89,9 @@ class Projection2D:
             self.log.info("Projection: UMAP")
             return umap.UMAP(n_components=2)
 
-        self.log.warning(f"Projection method '{projection}' not recognized or UMAP not available. Falling back to TSNE.")
+        self.log.warning(
+            f"Projection method '{projection}' not recognized or UMAP not available. Falling back to TSNE."
+        )
         return TSNE(perplexity=min(40, len(df) - 1))
 
     @staticmethod
@@ -126,10 +129,5 @@ if __name__ == "__main__":
     print(projection)
 
     # Run the Unit Test on the Plugin
-    unit_test = PluginUnitTest(
-        ScatterPlot,
-        input_data=df,
-        x="x",
-        y="y"
-    )
+    unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y")
     unit_test.run()
