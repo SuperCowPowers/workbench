@@ -9,7 +9,7 @@ import logging
 
 # Workbench Imports
 from workbench.algorithms.dataframe.aggregation import aggregate
-from workbench.algorithms.dataframe.dimensionality_reduction import DimensionalityReduction
+from workbench.algorithms.dataframe.projection_2d import Projection2D
 
 
 # Workbench Logger
@@ -38,7 +38,7 @@ def create_figure(df: pd.DataFrame, title: str = "Outlier Groups") -> plotly.gra
     if "x" not in df.columns:
         log.info("Outlier Plot: No coordinates in dataframe, running aggregation and dimensionality reduction...")
         agg_df = aggregate(df, group_column="outlier_group")
-        coord_df = DimensionalityReduction().fit_transform(agg_df)
+        coord_df = Projection2D().fit_transform(agg_df)
     else:
         log.info("Outlier Plot: Coordinates found...")
         coord_df = df
