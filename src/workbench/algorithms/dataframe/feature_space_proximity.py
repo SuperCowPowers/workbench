@@ -40,9 +40,6 @@ class FeatureSpaceProximity(Proximity):
         # Call the parent class constructor
         super().__init__(df, id_column=fs.id_column, features=features, target=target, n_neighbors=n_neighbors)
 
-        # Compute Outliers
-        # self.compute_outliers(model_type=model.model_type.value)
-
 
 if __name__ == "__main__":
     pd.set_option("display.max_columns", None)

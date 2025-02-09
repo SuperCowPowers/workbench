@@ -177,21 +177,3 @@ if __name__ == "__main__":
 
     # Test the neighbors method
     print(prox.neighbors(query_id="a", add_columns=["Feature1", "Feature2"]))
-
-    # Test the compute_outliers method
-    prox.compute_outliers(model_type="regressor")
-    print(prox.df)
-
-    # Test the compute_outliers method with classification
-    data = {
-        "ID": ["a", "b", "c", "d", "e"],
-        "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
-        "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
-        "target": ["red", "red", "red", "red", "blue"],
-    }
-    df = pd.DataFrame(data)
-    prox = Proximity(df, id_column="ID", features=["Feature1", "Feature2"], target="target", n_neighbors=10)
-    print(prox.all_neighbors())
-
-    prox.compute_outliers(model_type="classifier")
-    print(prox.neighbors(query_id="a"))
