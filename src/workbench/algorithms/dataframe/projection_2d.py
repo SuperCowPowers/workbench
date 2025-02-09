@@ -8,7 +8,6 @@ from sklearn.preprocessing import StandardScaler
 # Try importing UMAP with a fallback to TSNE
 try:
     import umap
-
     UMAP_AVAILABLE = True
 except ImportError:
     UMAP_AVAILABLE = False
@@ -22,21 +21,24 @@ class Projection2D:
         self.log = logging.getLogger("workbench")
         self.projection_model = None
 
-    def fit_transform(self, df: pd.DataFrame, features: list = None, projection: str = "TSNE") -> pd.DataFrame:
+    def fit_transform(self, input_df: pd.DataFrame, features: list = None, projection: str = "UMAP") -> pd.DataFrame:
         """Fit and transform a DataFrame using the selected dimensionality reduction method.
 
-        This method processes a copy of the specified features for normalization and projection,
-        then adds the resulting 'x' and 'y' columns to the original DataFrame without altering
-        the original feature values.
+        This method creates a copy of the input DataFrame, processes the specified features
+        for normalization and projection, and returns a new DataFrame with added 'x' and 'y' columns
+        containing the projected 2D coordinates.
 
         Args:
-            df (pd.DataFrame): The DataFrame containing features to project.
+            input_df (pd.DataFrame): The DataFrame containing features to project.
             features (list, optional): List of feature column names. If None, numeric columns are auto-selected.
-            projection (str, optional): The projection to use ('TSNE', 'MDS', 'PCA', or 'UMAP'). Default 'TSNE'.
+            projection (str, optional): The projection to use ('UMAP', 'TSNE', 'MDS' or 'PCA'). Default 'UMAP'.
 
         Returns:
-            pd.DataFrame: The original DataFrame with new columns 'x' and 'y' containing the projected 2D coordinates.
+            pd.DataFrame: A new DataFrame (a copy of input_df) with added 'x' and 'y' columns.
         """
+        # Create a copy of the input DataFrame
+        df = input_df.copy()
+
         # Auto-identify numeric features if none are provided
         if features is None:
             features = [col for col in df.select_dtypes(include="number").columns if not col.endswith("id")]
@@ -47,18 +49,18 @@ class Projection2D:
             return df
 
         # Process a copy of the feature data for projection
-        X = df[features].copy()
+        X = df[features]
         X = X.apply(lambda col: col.fillna(col.mean()))
         X_scaled = StandardScaler().fit_transform(X)
 
-        # Select the projection method (using original df for perplexity calculation)
+        # Select the projection method (using df for perplexity calculation)
         self.projection_model = self._get_projection_model(projection, df)
 
         # Apply the projection on the normalized data
         projection_result = self.projection_model.fit_transform(X_scaled)
         df[["x", "y"]] = projection_result
 
-        # Resolve coincident points by adding jitter
+        # Resolve coincident points by adding jitter and return the new DataFrame
         return self.resolve_coincident_points(df)
 
     def _get_projection_model(self, projection: str, df: pd.DataFrame):
@@ -122,11 +124,11 @@ if __name__ == "__main__":
         "feat3": [0.1, 0.15, 0.2, 0.9, 2.8, 0.25, 0.35, 0.4, 1.6, 2.5],
         "price": [31, 60, 62, 40, 20, 31, 61, 60, 40, 20],
     }
-    df = pd.DataFrame(data)
+    input_df = pd.DataFrame(data)
 
-    projection = Projection2D().fit_transform(df, features=["feat1", "feat2", "feat3"], projection="UMAP")
-    print(projection)
+    df = Projection2D().fit_transform(input_df, features=["feat1", "feat2", "feat3"], projection="UMAP")
+    print(df)
 
-    # Run the Unit Test on the Plugin
+    # Run the Unit Test on the Plugin using the new DataFrame with 'x' and 'y'
     unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y")
     unit_test.run()

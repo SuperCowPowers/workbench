@@ -42,7 +42,7 @@ class FeatureSpaceProximity(Proximity):
         super().__init__(self.df, id_column=fs.id_column, features=features, target=target, n_neighbors=n_neighbors)
 
         # Project the data to 2D
-        self.df = Projection2D(self.df, features=features)
+        self.df = Projection2D().fit_transform(self.df, features=features)
 
 
 if __name__ == "__main__":
@@ -68,3 +68,11 @@ if __name__ == "__main__":
     single_query_neighbors = proximity.neighbors(single_query_id)
     print("\nNeighbors for Query ID:", single_query_id)
     print(single_query_neighbors)
+
+    # Show a scatter plot of the data
+    from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
+    from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
+
+    # Run the Unit Test on the Plugin using the new DataFrame with 'x' and 'y'
+    unit_test = PluginUnitTest(ScatterPlot, input_data=proximity.df, x="x", y="y")
+    unit_test.run()
