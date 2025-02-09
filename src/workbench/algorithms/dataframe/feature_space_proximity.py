@@ -3,6 +3,7 @@ import logging
 
 # Workbench Imports
 from workbench.algorithms.dataframe.proximity import Proximity
+from workbench.algorithms.dataframe.projection_2d import Projection2D
 from workbench.core.views.inference_view import InferenceView
 from workbench.api import FeatureSet, Model
 
@@ -30,15 +31,18 @@ class FeatureSpaceProximity(Proximity):
         # If we have a "inference" view, pull the data from that view
         view_name = f"inference_{model.uuid.replace('-', '_')}"
         if view_name in fs.views():
-            df = fs.view(view_name).pull_dataframe()
+            self.df = fs.view(view_name).pull_dataframe()
 
         # Otherwise, pull the data from the feature set and run inference
         else:
             inf_view = InferenceView.create(model)
-            df = inf_view.pull_dataframe()
+            self.df = inf_view.pull_dataframe()
 
         # Call the parent class constructor
-        super().__init__(df, id_column=fs.id_column, features=features, target=target, n_neighbors=n_neighbors)
+        super().__init__(self.df, id_column=fs.id_column, features=features, target=target, n_neighbors=n_neighbors)
+
+        # Project the data to 2D
+        self.df = Projection2D(self.df, features=features)
 
 
 if __name__ == "__main__":

@@ -59,7 +59,6 @@ class Projection2D:
         df[["x", "y"]] = projection_result
 
         # Resolve coincident points by adding jitter
-        return df
         return self.resolve_coincident_points(df)
 
     def _get_projection_model(self, projection: str, df: pd.DataFrame):
