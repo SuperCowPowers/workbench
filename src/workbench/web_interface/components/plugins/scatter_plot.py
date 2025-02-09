@@ -7,6 +7,7 @@ from dash.exceptions import PreventUpdate
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
+from workbench.utils.color_utils import process_categorical_color
 
 
 class ScatterPlot(PluginInterface):
@@ -142,9 +143,9 @@ class ScatterPlot(PluginInterface):
         else:
             raise ValueError("The input data must be a Pandas DataFrame.")
 
-        # Remove AWS implicit columns and drop any columns with NaNs
+        # Remove AWS created columns
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        self.df = self.df.drop(columns=aws_cols, errors="ignore").dropna(axis=1, how="any")
+        self.df = self.df.drop(columns=aws_cols, errors="ignore")
 
         # Set hover columns and custom data
         self.hover_columns = kwargs.get("hover_columns", self.df.columns.tolist()[:10])
@@ -169,24 +170,22 @@ class ScatterPlot(PluginInterface):
         x_options = [{"label": col, "value": col} for col in dropdown_columns]
         y_options = x_options.copy()
 
-        # For color dropdown, include numeric columns plus non-numeric columns with <12 unique values
-        categorical_for_color = [
-            col for col in self.df.columns
-            if col not in numeric_columns and self.df[col].nunique() < 12
-        ]
-        color_columns = list(dict.fromkeys(numeric_columns + categorical_for_color))
+        # For color dropdown include categorical columns (with less than 12 unique values)
+        str_columns = self.df.select_dtypes(include=["object", "string"]).columns.tolist()
+        str_columns = [col for col in str_columns if self.df[col].nunique() < 12]
+        color_columns = numeric_columns + str_columns
         color_options = [{"label": col, "value": col} for col in color_columns]
 
         return [figure, x_options, y_options, color_options, x_default, y_default, color_default]
 
     def create_scatter_plot(
-        self,
-        df: pd.DataFrame,
-        x_col: str,
-        y_col: str,
-        color_col: str,
-        regression_line: bool = False,
-        marker_size: int = 15,
+            self,
+            df: pd.DataFrame,
+            x_col: str,
+            y_col: str,
+            color_col: str,
+            regression_line: bool = False,
+            marker_size: int = 15,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
@@ -202,26 +201,25 @@ class ScatterPlot(PluginInterface):
             go.Figure: A Plotly Figure object.
         """
 
-        def compute_opacity(value, min_val, max_val):
-            """Normalize and compute opacity based on value."""
-            return 0.5 + 0.49 * (value - min_val) / (max_val - min_val)
-
         def generate_hover_text(row):
             """Generate hover text for each data point."""
             return "<br>".join([f"{col}: {row[col]}" for col in self.hover_columns])
-
-        # Cache min and max for color_col
-        color_min, color_max = df[color_col].min(), df[color_col].max()
 
         # Generate hover text for all points
         hovertext = df.apply(generate_hover_text, axis=1)
         hovertemplate = "%{hovertext}<extra></extra>"
         hoverinfo = None
-
-        # Suppress the display of hover info
         if self.suppress_hover_display:
-            hoverinfo = "none" if self.suppress_hover_display else None
+            hoverinfo = "none"
             hovertemplate = None
+
+        # Determine marker settings based on color_col type
+        if pd.api.types.is_numeric_dtype(df[color_col]):
+            marker_color = df[color_col]
+            colorscale = self.theme_manager.colorscale()
+            colorbar = dict(title=color_col, thickness=20)
+        else:
+            marker_color, colorscale, colorbar = process_categorical_color(df[color_col])
 
         # Create the scatter plot
         figure = go.Figure(
@@ -235,18 +233,19 @@ class ScatterPlot(PluginInterface):
                 customdata=df[self.custom_data],
                 marker=dict(
                     size=marker_size,
-                    color=df[color_col],
-                    colorscale=self.theme_manager.colorscale(),
-                    colorbar=dict(title=color_col, thickness=20),
-                    opacity=df[color_col].apply(lambda x: compute_opacity(x, color_min, color_max)),
-                    line=dict(color="rgba(0,0,0,1)", width=1),
+                    color=marker_color,
+                    colorscale=colorscale,
+                    colorbar=colorbar,
+                    opacity=0.8,
+                    line=dict(color="rgba(0,0,0,1)", width=1)
                 ),
             )
         )
 
-        # Add 45-degree line if enabled
+        # Add regression line if enabled
         if regression_line:
-            axis_min, axis_max = min(df[x_col].min(), df[y_col].min()), max(df[x_col].max(), df[y_col].max())
+            axis_min = min(df[x_col].min(), df[y_col].min())
+            axis_max = max(df[x_col].max(), df[y_col].max())
             figure.add_shape(
                 type="line",
                 line=dict(width=4, color="rgba(128, 128, 128, 0.5)"),
@@ -256,16 +255,10 @@ class ScatterPlot(PluginInterface):
                 y1=axis_max,
             )
 
-        # Logic for axis labels
+        # Axis labels
         if self.show_axes:
-            xaxis = dict(
-                title=x_col,
-                tickformat=".2f",
-            )
-            yaxis = dict(
-                title=y_col,
-                tickformat=".2f",
-            )
+            xaxis = dict(title=x_col, tickformat=".2f")
+            yaxis = dict(title=y_col, tickformat=".2f")
         else:
             xaxis = dict(visible=False)
             yaxis = dict(visible=False)
@@ -277,7 +270,7 @@ class ScatterPlot(PluginInterface):
             yaxis=yaxis,
             showlegend=False,
             dragmode="pan",
-            modebar={"bgcolor": "rgba(0, 0, 0, 0)"},  # Transparent background
+            modebar={"bgcolor": "rgba(0, 0, 0, 0)"},
             uirevision="constant",
         )
 
@@ -354,10 +347,16 @@ class ScatterPlot(PluginInterface):
 if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
-    from workbench.api import df_store
 
-    # Load our preprocessed tox21 training data
-    df = df_store.DFStore().get("/datasets/chem_info/tox21")
+    # Create a fake dataframe with 3 numeric columns and 2 categorical columns
+    data = {
+        "x": [1, 2, 3, 4, 5],
+        "y": [2, 3, 4, 5, 6],
+        "z": [3, 4, 5, 6, 7],
+        "class": ["A", "C", "B", "B", "A"],
+        "label": ["good", "bad", "okay", "good", "bad"],
+    }
+    df = pd.DataFrame(data)
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ScatterPlot, input_data=df, theme="dark", suppress_hover_display=True, x="x", y="y").run()
+    PluginUnitTest(ScatterPlot, input_data=df, theme="dark", suppress_hover_display=True).run()
