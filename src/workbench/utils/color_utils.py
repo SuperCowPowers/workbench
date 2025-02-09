@@ -137,14 +137,8 @@ def process_categorical_color(series):
     # Use Plotly Express's built-in discrete (categorical) colors
     discrete_colors = px.colors.qualitative.Plotly[:n]
     # Build a discrete colorscale: normalized stops paired with colors
-    colorscale = [[i/(n-1) if n > 1 else 0.5, discrete_colors[i]] for i in range(n)]
-    colorbar = dict(
-        title=series.name,
-        tickmode='array',
-        tickvals=list(range(n)),
-        ticktext=categories,
-        thickness=20
-    )
+    colorscale = [[i / (n - 1) if n > 1 else 0.5, discrete_colors[i]] for i in range(n)]
+    colorbar = dict(title=series.name, tickmode="array", tickvals=list(range(n)), ticktext=categories, thickness=20)
     return codes, colorscale, colorbar
 
 
@@ -176,10 +170,8 @@ if __name__ == "__main__":
 
     # Test the process_categorical_color function
     import pandas as pd
-    data = {
-        "Category": ["A", "B", "A", "C", "B", "C", "A", "B", "C"],
-        "Value": [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    }
+
+    data = {"Category": ["A", "B", "A", "C", "B", "C", "A", "B", "C"], "Value": [1, 2, 3, 4, 5, 6, 7, 8, 9]}
     df = pd.DataFrame(data)
     codes, colorscale, colorbar = process_categorical_color(df["Category"])
     print(codes)

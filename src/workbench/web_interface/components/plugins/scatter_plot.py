@@ -132,7 +132,8 @@ class ScatterPlot(PluginInterface):
                             - custom_data: Custom data that get passed to hoverData callbacks
 
         Returns:
-            list: A list of updated property values (figure, x options, y options, color options, x default, y default, color default).
+            list: A list of updated property values (figure, x options, y options, color options,
+                                                     x default, y default, color default).
         """
         # Get the limit for the number of rows to plot
         limit = kwargs.get("limit", 20000)
@@ -179,13 +180,13 @@ class ScatterPlot(PluginInterface):
         return [figure, x_options, y_options, color_options, x_default, y_default, color_default]
 
     def create_scatter_plot(
-            self,
-            df: pd.DataFrame,
-            x_col: str,
-            y_col: str,
-            color_col: str,
-            regression_line: bool = False,
-            marker_size: int = 15,
+        self,
+        df: pd.DataFrame,
+        x_col: str,
+        y_col: str,
+        color_col: str,
+        regression_line: bool = False,
+        marker_size: int = 15,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
@@ -237,7 +238,7 @@ class ScatterPlot(PluginInterface):
                     colorscale=colorscale,
                     colorbar=colorbar,
                     opacity=0.8,
-                    line=dict(color="rgba(0,0,0,1)", width=1)
+                    line=dict(color="rgba(0,0,0,1)", width=1),
                 ),
             )
         )
