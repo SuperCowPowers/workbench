@@ -9,4 +9,4 @@ RUN apt-get update && apt-get upgrade -y && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Workbench (no layer optimization)
-RUN pip install --no-cache-dir workbench==0.8.100
+RUN pip install --no-cache-dir workbench==0.8.101

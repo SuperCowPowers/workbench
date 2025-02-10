@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir gunicorn
 EXPOSE 8000
 
 # Install Workbench with the [ui] extras (no layer optimization)
-RUN pip install --no-cache-dir workbench[ui]==0.8.100
+RUN pip install --no-cache-dir workbench[ui]==0.8.101
 
 # Copy the Nginx and Supervisor configuration files
 COPY nginx.conf /etc/nginx/sites-available/default
