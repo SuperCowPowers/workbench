@@ -180,13 +180,13 @@ class ScatterPlot(PluginInterface):
         return [figure, x_options, y_options, color_options, x_default, y_default, color_default]
 
     def create_scatter_plot(
-        self,
-        df: pd.DataFrame,
-        x_col: str,
-        y_col: str,
-        color_col: str,
-        regression_line: bool = False,
-        marker_size: int = 15,
+            self,
+            df: pd.DataFrame,
+            x_col: str,
+            y_col: str,
+            color_col: str,
+            regression_line: bool = False,
+            marker_size: int = 15,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
@@ -202,50 +202,76 @@ class ScatterPlot(PluginInterface):
             go.Figure: A Plotly Figure object.
         """
 
+        # Helper to generate hover text for each point.
         def generate_hover_text(row):
-            """Generate hover text for each data point."""
             return "<br>".join([f"{col}: {row[col]}" for col in self.hover_columns])
 
-        # Generate hover text for all points
+        # Generate hover text for all points.
         hovertext = df.apply(generate_hover_text, axis=1)
         hovertemplate = "%{hovertext}<extra></extra>"
-        hoverinfo = None
-        if self.suppress_hover_display:
-            hoverinfo = "none"
-            hovertemplate = None
+        hoverinfo = "none" if self.suppress_hover_display else None
 
-        # Get colorscale from theme manager
+        # Get the colorscale from the theme manager.
         colorscale = self.theme_manager.colorscale()
 
-        # Determine marker settings based on color_col type
+        # Determine marker settings based on the type of the color column.
         if pd.api.types.is_numeric_dtype(df[color_col]):
             marker_color = df[color_col]
             colorbar = dict(title=color_col, thickness=20)
+            # Single trace for numeric data.
+            data = [
+                go.Scattergl(
+                    x=df[x_col],
+                    y=df[y_col],
+                    mode="markers",
+                    hoverinfo=hoverinfo,
+                    hovertext=hovertext,
+                    hovertemplate=hovertemplate,
+                    customdata=df[self.custom_data],
+                    marker=dict(
+                        size=marker_size,
+                        color=marker_color,
+                        colorscale=colorscale,
+                        colorbar=colorbar,
+                        opacity=0.8,
+                        line=dict(color="rgba(0,0,0,1)", width=1),
+                    ),
+                )
+            ]
+            showlegend = False
         else:
-            marker_color, colorbar = process_categorical_color(df[color_col])
+            # For categorical data, create one trace per category so that a legend appears.
+            categories = sorted(df[color_col].astype(str).unique())
+            # Use the provided colorscale as a discrete palette.
+            # Hardcode a discrete colorscale using Plotly Express's qualitative palette.
+            import plotly.express as px
+            discrete_colors = px.colors.qualitative.Plotly
+            data = []
+            for i, cat in enumerate(categories):
+                sub_df = df[df[color_col] == cat]
+                sub_hovertext = hovertext.loc[sub_df.index]
+                trace = go.Scattergl(
+                    x=sub_df[x_col],
+                    y=sub_df[y_col],
+                    mode="markers",
+                    name=cat,
+                    hoverinfo=hoverinfo,
+                    hovertext=sub_hovertext,
+                    hovertemplate=hovertemplate,
+                    customdata=sub_df[self.custom_data],
+                    marker=dict(
+                        size=marker_size,
+                        color=discrete_colors[i % len(discrete_colors)],
+                        opacity=0.8,
+                        line=dict(color="rgba(0,0,0,1)", width=1),
+                    ),
+                )
+                data.append(trace)
+            showlegend = True
 
-        # Create the scatter plot
-        figure = go.Figure(
-            data=go.Scattergl(
-                x=df[x_col],
-                y=df[y_col],
-                mode="markers",
-                hoverinfo=hoverinfo,
-                hovertext=hovertext,
-                hovertemplate=hovertemplate,
-                customdata=df[self.custom_data],
-                marker=dict(
-                    size=marker_size,
-                    color=marker_color,
-                    colorscale=colorscale,
-                    colorbar=colorbar,
-                    opacity=0.8,
-                    line=dict(color="rgba(0,0,0,1)", width=1),
-                ),
-            )
-        )
+        figure = go.Figure(data=data)
 
-        # Add regression line if enabled
+        # Add regression line if enabled.
         if regression_line:
             axis_min = min(df[x_col].min(), df[y_col].min())
             axis_max = max(df[x_col].max(), df[y_col].max())
@@ -258,7 +284,7 @@ class ScatterPlot(PluginInterface):
                 y1=axis_max,
             )
 
-        # Axis labels
+        # Set up axes.
         if self.show_axes:
             xaxis = dict(title=x_col, tickformat=".2f")
             yaxis = dict(title=y_col, tickformat=".2f")
@@ -266,12 +292,12 @@ class ScatterPlot(PluginInterface):
             xaxis = dict(visible=False)
             yaxis = dict(visible=False)
 
-        # Update layout
+        # Update layout.
         figure.update_layout(
             margin={"t": 30, "b": 40, "r": 30, "l": 70, "pad": 10},
             xaxis=xaxis,
             yaxis=yaxis,
-            showlegend=False,
+            showlegend=showlegend,
             dragmode="pan",
             modebar={"bgcolor": "rgba(0, 0, 0, 0)"},
             uirevision="constant",
