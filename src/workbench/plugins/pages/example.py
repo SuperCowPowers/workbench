@@ -33,17 +33,17 @@ class PluginPage3:
 
         # Create a table to display the models
         self.table_component = self.models_table.create_component(
-            "plugin_3_model_table", header_color="rgb(60, 60, 60)", max_height=400
+            "example_model_table", header_color="rgb(60, 60, 60)", max_height=400
         )
 
         # Create a model details panel and model plot
-        self.details_component = self.model_details.create_component("plugin_3_model_details")
-        self.plot_component = self.model_plot.create_component("plugin_3_model_plot")
+        self.details_component = self.model_details.create_component("example_model_details")
+        self.plot_component = self.model_plot.create_component("example_model_plot")
 
         # Register this page with Dash and set up the layout
         register_page(
             __file__,
-            path="/plugin_3",
+            path="/example",
             name=self.page_name,
             layout=self.page_layout(),
         )
@@ -79,9 +79,9 @@ class PluginPage3:
         """Register the callbacks for the page"""
 
         @callback(
-            Output("plugin_3_model_plot", "figure"),
-            Input("plugin_3_model_details-dropdown", "value"),
-            Input("plugin_3_model_table", "selectedRows"),
+            Output("example_model_plot", "figure"),
+            Input("example_model_details-dropdown", "value"),
+            Input("example_model_table", "selectedRows"),
             prevent_initial_call=True,
         )
         def generate_model_plot_figure(inference_run, selected_rows):
@@ -104,8 +104,8 @@ class PluginPage3:
         @callback(
             # Aggregate plugin outputs
             [Output(component_id, prop) for p in self.plugins for component_id, prop in p.properties],
-            Input("plugin_3_model_details-dropdown", "value"),
-            Input("plugin_3_model_table", "selectedRows"),
+            Input("example_model_details-dropdown", "value"),
+            Input("example_model_table", "selectedRows"),
         )
         def update_all_plugin_properties(inference_run, selected_rows):
             # Check for no selected rows
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     plugin_page.page_setup(my_app)
 
     # Open the browser to the plugin page
-    webbrowser.open("http://localhost:8000/plugin_3")
+    webbrowser.open("http://localhost:8000/example")
 
     # Note: This 'main' is purely for running/testing locally
     my_app.run(host="localhost", port=8000, debug=True)
