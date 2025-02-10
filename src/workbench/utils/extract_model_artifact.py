@@ -5,8 +5,6 @@ import tempfile
 import awswrangler as wr
 import os
 import glob
-import xgboost as xgb
-from xgboost import XGBModel
 import json
 import joblib
 import logging
@@ -16,203 +14,177 @@ from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 log = logging.getLogger("workbench")
 
+# Try importing xgboost, set flag if unavailable
+try:
+    import xgboost as xgb
+    from xgboost import XGBModel
+
+    XGBOOST_AVAILABLE = True
+except ImportError:
+    log.warning("XGBoost Python module not found! pip install xgboost")
+    XGBOOST_AVAILABLE = False
+
 
 class ExtractModelArtifact:
-    def __init__(self, endpoint_name):
-        """ExtractModelArtifact Class
+    """
+    ExtractModelArtifact is a utility class that retrieves and processes model artifacts
+    from an Amazon SageMaker endpoint.
+    """
+
+    def __init__(self, endpoint_name: str):
+        """
+        Initialize ExtractModelArtifact.
+
         Args:
-            endpoint_name (str): Name of the endpoint to extract the model artifact from
+            endpoint_name (str): Name of the endpoint to extract the model artifact from.
         """
         self.endpoint_name = endpoint_name
-
-        # Initialize SageMaker client
         self.sagemaker_client = AWSAccountClamp().sagemaker_client()
 
     def get_model_artifact(self):
-        """Get the model artifact from the endpoint"""
+        """
+        Get the model artifact from the endpoint.
+
+        Returns:
+            The extracted model object or None if unavailable.
+        """
         model_artifact_uri, _ = self.get_artifact_uris()
         return self.download_and_extract_model(model_artifact_uri)
 
     def get_artifact_uris(self) -> tuple:
-        """Get the model artifact URI (S3 Path) and source artifact URI from the endpoint
+        """
+        Retrieve the model artifact URI (S3 Path) and script artifact URI from the endpoint.
 
         Returns:
             tuple: (Model artifact URI, Script artifact URI)
         """
-
-        # Get the endpoint configuration
         endpoint_desc = self.sagemaker_client.describe_endpoint(EndpointName=self.endpoint_name)
         endpoint_config_desc = self.sagemaker_client.describe_endpoint_config(
             EndpointConfigName=endpoint_desc["EndpointConfigName"]
         )
-
-        # Extract the model name from the endpoint configuration
-        # Assuming single model for simplicity; adjust if handling multiple models
         model_name = endpoint_config_desc["ProductionVariants"][0]["ModelName"]
-
-        # Get the model description using the Model ARN
         model_desc = self.sagemaker_client.describe_model(ModelName=model_name)
 
-        # Check if 'Containers' (real-time) or 'PrimaryContainer' (serverless) is used
-        if "Containers" in model_desc:
-            # Real-time model
+        # Handle different SageMaker model configurations
+        if "Containers" in model_desc:  # Real-time model
             model_package_arn = model_desc["Containers"][0].get("ModelPackageName")
-        elif "PrimaryContainer" in model_desc:
-            # Serverless model
+        elif "PrimaryContainer" in model_desc:  # Serverless model
             model_package_arn = model_desc["PrimaryContainer"].get("ModelPackageName")
         else:
             model_package_arn = None
 
-        # Throw an error if the model package ARN is not found
         if model_package_arn is None:
-            raise ValueError("ModelPackageName not found in the model description")
+            raise ValueError("ModelPackageName not found in the model description. Check if the model is correctly configured.")
 
-        # Now get the model package description and from that the model artifact URI
         model_package_desc = self.sagemaker_client.describe_model_package(ModelPackageName=model_package_arn)
-        inference_spec = model_package_desc.get("InferenceSpecification", {})
-        containers = inference_spec.get("Containers", [])
+        containers = model_package_desc.get("InferenceSpecification", {}).get("Containers", [])
 
-        # Do we have containers for the model package?
-        if containers:
-            # Get the model artifact URI
-            model_data_uri = containers[0].get("ModelDataUrl")
-            # Assuming 'source.tar.gz' is also located in the same container specification
-            script_uri = containers[0]["Environment"].get("SAGEMAKER_SUBMIT_DIRECTORY")
-
-            # Ensure both URLs are found
-            if model_data_uri is None:
-                raise ValueError("ModelDataUrl not found in the model package description")
-            if script_uri is None:
-                raise ValueError("SAGEMAKER_SUBMIT_DIRECTORY not found in the model package description")
-
-            return model_data_uri, script_uri
-        else:
+        if not containers:
             raise ValueError("Containers not found in the model package description")
+
+        model_data_uri = containers[0].get("ModelDataUrl")
+        script_uri = containers[0].get("Environment", {}).get("SAGEMAKER_SUBMIT_DIRECTORY")
+
+        if not model_data_uri or not script_uri:
+            raise ValueError("Required URIs not found in the model package description")
+
+        return model_data_uri, script_uri
 
     @staticmethod
     def load_from_json(tmpdir):
-        # Find the model file in the extracted directory
+        """
+        Load model from a JSON file in the given directory.
+
+        Args:
+            tmpdir (str): Path to the directory containing model files.
+
+        Returns:
+            XGBModel or None if the model cannot be loaded.
+        """
+        if not XGBOOST_AVAILABLE:
+            return None
+
         model_files = glob.glob(os.path.join(tmpdir, "*_model.json"))
         if not model_files:
             return None
 
-        # Instantiate return model
-        model_return = None
-
-        # Check each model_file for an XGBModel object
         for model_file in model_files:
-            # Get json and get model type
-            with open(model_file, "rb") as f:
+            with open(model_file, "r") as f:
                 model_json = json.load(f)
-            model_type = json.loads(model_json.get("learner").get("attributes").get("scikit_learn")).get(
-                "_estimator_type"
-            )
+            model_type = json.loads(model_json.get("learner", {}).get("attributes", {}).get("scikit_learn", "{}")).get("_estimator_type")
 
-            # Load based on model type
-            if model_type == "classifier":
-                model_object = xgb.XGBClassifier()
-                model_object.load_model(model_file)
+            model_object = xgb.XGBClassifier() if model_type == "classifier" else xgb.XGBRegressor()
+            model_object.load_model(model_file)
 
-            else:
-                model_object = xgb.XGBRegressor()
-                model_object.load_model(model_file)
-
-            # Check type
             if isinstance(model_object, XGBModel):
-                print(f"{model_file} is a model object.")
-
-                # Set return if type check passes
-                model_return = model_object
-            else:
-                print(f"{model_file} is NOT a model object.")
-
-        return model_return
+                return model_object
+        return None
 
     @staticmethod
     def load_from_joblib(tmpdir):
-        # Deprecation Warning
+        """
+        Load model from a Joblib file in the given directory.
 
-        # Find the model file in the extracted directory
+        Args:
+            tmpdir (str): Path to the directory containing model files.
+
+        Returns:
+            XGBModel or None if the model cannot be loaded.
+        """
+        if not XGBOOST_AVAILABLE:
+            return None
+
         model_files = glob.glob(os.path.join(tmpdir, "*_model.joblib"))
         if not model_files:
             return None
 
-        # Instantiate return model
-        model_return = None
-
-        # Check each model_file for an XGBModel object
         for model_file in model_files:
-            # Load the model
             model_object = joblib.load(model_file)
-
-            # Check type
             if isinstance(model_object, XGBModel):
-                print(f"{model_file} is a model object.")
-
-                # Set return if type check passes
-                model_return = model_object
-            else:
-                print(f"{model_file} is NOT a model object.")
-
-        # Return the model after exiting the temporary directory context
-        return model_return
+                return model_object
+        return None
 
     def download_and_extract_model(self, model_artifact_uri):
-        """Download and extract model artifact from S3, then load the model into memory."""
+        """
+        Download and extract model artifact from S3, then load the model into memory.
+
+        Args:
+            model_artifact_uri (str): S3 URI of the model artifact.
+
+        Returns:
+            Extracted model object or None if unavailable.
+        """
         with tempfile.TemporaryDirectory() as tmpdir:
             local_tar_path = os.path.join(tmpdir, "model.tar.gz")
-
-            # Downloading the model artifact using awswrangler
             wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
 
             with tarfile.open(local_tar_path, "r:gz") as tar:
                 tar.extractall(path=tmpdir)
 
-            # Try loading from joblib first
-            model_return = self.load_from_joblib(tmpdir)
-            if model_return:
-                log.warning("Joblib is being deprecated as an XGBoost model format.")
-                log.warning(
-                    "Please recreate this model using the Workbench API or the xgb.XGBModel.save_model() method."
-                )
+            model_return = self.load_from_joblib(tmpdir) or self.load_from_json(tmpdir)
 
-            # If no joblib model, load from json
-            else:
-                model_return = self.load_from_json(tmpdir)
-
-        # Return the model after exiting the temporary directory context
         return model_return
 
     @staticmethod
-    def unpack_artifacts(model_uri, source_uri, output_path=None):
+    def unpack_artifacts(model_uri: str, source_uri: str, output_path: str = None):
         """
         Unpack the model and script artifacts from S3 URIs into local directories.
 
         Args:
-            model_uri (str): S3 URI for the model artifact (model.tar.gz)
-            source_uri (str): S3 URI for the script artifact (script.tar.gz)
+            model_uri (str): S3 URI for the model artifact (model.tar.gz).
+            source_uri (str): S3 URI for the script artifact (script.tar.gz).
             output_path (str): Local directory to unpack the artifacts into. Defaults to None.
         """
-        # Extract the model name from the model_uri
         model_name = model_uri.split("/")[-3]
-
-        if output_path is None:
-            output_path = f"/tmp/workbench/{model_name}"
-
-        model_dir = os.path.join(output_path, "model")
-        script_dir = os.path.join(output_path, "script")
-
+        output_path = output_path or f"/tmp/workbench/{model_name}"
+        model_dir, script_dir = os.path.join(output_path, "model"), os.path.join(output_path, "script")
         os.makedirs(model_dir, exist_ok=True)
         os.makedirs(script_dir, exist_ok=True)
 
-        # Download and unpack model artifact
-        model_tar_path = os.path.join(output_path, "model.tar.gz")
+        model_tar_path, script_tar_path = os.path.join(output_path, "model.tar.gz"), os.path.join(output_path, "script.tar.gz")
         wr.s3.download(model_uri, model_tar_path)
         with tarfile.open(model_tar_path, "r:gz") as tar:
             tar.extractall(path=model_dir)
-
-        # Download and unpack script artifact
-        script_tar_path = os.path.join(output_path, "script.tar.gz")
         wr.s3.download(source_uri, script_tar_path)
         with tarfile.open(script_tar_path, "r:gz") as tar:
             tar.extractall(path=script_dir)
