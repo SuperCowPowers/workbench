@@ -5,9 +5,6 @@ from dash.dash_table.Format import Format
 import plotly.express as px
 import pandas as pd
 
-# Local imports
-from workbench.web_interface.components.experiments.color_maps import color_map_add_alpha
-
 # Workbench Imports
 from workbench.web_interface.components.component_interface import ComponentInterface
 from workbench.utils.deprecated_utils import deprecated
@@ -147,7 +144,7 @@ class Table(ComponentInterface):
         if color_column is not None and unique_categories is not None:
             hex_color_map = px.colors.qualitative.Plotly
             len_color_map = len(hex_color_map)
-            color_map = color_map_add_alpha(hex_color_map, 0.15)
+            color_map = hex_color_map
             style_cells += [
                 {
                     "if": {"filter_query": f"{{{color_column}}} = {cat}"},
