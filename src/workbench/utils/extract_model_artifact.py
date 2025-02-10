@@ -74,7 +74,9 @@ class ExtractModelArtifact:
             model_package_arn = None
 
         if model_package_arn is None:
-            raise ValueError("ModelPackageName not found in the model description. Check if the model is correctly configured.")
+            raise ValueError(
+                "ModelPackageName not found in the model description. Check if the model is correctly configured."
+            )
 
         model_package_desc = self.sagemaker_client.describe_model_package(ModelPackageName=model_package_arn)
         containers = model_package_desc.get("InferenceSpecification", {}).get("Containers", [])
@@ -111,7 +113,9 @@ class ExtractModelArtifact:
         for model_file in model_files:
             with open(model_file, "r") as f:
                 model_json = json.load(f)
-            model_type = json.loads(model_json.get("learner", {}).get("attributes", {}).get("scikit_learn", "{}")).get("_estimator_type")
+            model_type = json.loads(model_json.get("learner", {}).get("attributes", {}).get("scikit_learn", "{}")).get(
+                "_estimator_type"
+            )
 
             model_object = xgb.XGBClassifier() if model_type == "classifier" else xgb.XGBRegressor()
             model_object.load_model(model_file)
@@ -181,7 +185,9 @@ class ExtractModelArtifact:
         os.makedirs(model_dir, exist_ok=True)
         os.makedirs(script_dir, exist_ok=True)
 
-        model_tar_path, script_tar_path = os.path.join(output_path, "model.tar.gz"), os.path.join(output_path, "script.tar.gz")
+        model_tar_path, script_tar_path = os.path.join(output_path, "model.tar.gz"), os.path.join(
+            output_path, "script.tar.gz"
+        )
         wr.s3.download(model_uri, model_tar_path)
         with tarfile.open(model_tar_path, "r:gz") as tar:
             tar.extractall(path=model_dir)
