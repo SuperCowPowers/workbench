@@ -1,5 +1,0 @@
--r requirements.txt
-shap>=0.43.0
-rdkit>=2024.3.2
-mordredcommunity>=2.0.6
-networkx>=3.2
