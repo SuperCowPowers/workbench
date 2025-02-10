@@ -19,11 +19,8 @@ RUN pip install --no-cache-dir gunicorn
 # Inform Docker that the container is listening on port 8000
 EXPOSE 8000
 
-# Install all dependencies **except Workbench**
-RUN pip install --no-cache-dir $(pip index show workbench | grep Requires | cut -d ' ' -f2- | tr ',' '\n')
-
-# Install Workbench separately for layer optimization
-RUN pip install --no-cache-dir workbench==0.8.98
+# Install Workbench with the [ui] extras (no layer optimization)
+RUN pip install --no-cache-dir workbench[ui]==0.8.100
 
 # Copy the Nginx and Supervisor configuration files
 COPY nginx.conf /etc/nginx/sites-available/default

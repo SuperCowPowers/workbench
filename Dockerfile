@@ -8,5 +8,5 @@ RUN apt-get update && apt-get upgrade -y && \
     apt-get autoremove -y && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Workbench
-RUN pip install --no-cache-dir 'workbench[ml-tools]'==0.8.98
+# Install Workbench (no layer optimization)
+RUN pip install --no-cache-dir workbench==0.8.100
