@@ -172,7 +172,7 @@ class ScatterPlot(PluginInterface):
 
         # For color dropdown include categorical columns (with less than 12 unique values)
         str_columns = self.df.select_dtypes(include=["object", "string"]).columns.tolist()
-        str_columns = [col for col in str_columns if self.df[col].nunique() < 12]
+        str_columns = [col for col in str_columns if self.df[col].astype(str).nunique() < 12]
         color_columns = numeric_columns + str_columns
         color_options = [{"label": col, "value": col} for col in color_columns]
 
