@@ -23,7 +23,7 @@ from workbench.utils import endpoint_utils
 
 class MonitorCore:
     def __init__(self, endpoint_name, instance_type="ml.t3.large"):
-        """ExtractModelArtifact Class
+        """MonitorCore Class
         Args:
             endpoint_name (str): Name of the endpoint to set up monitoring for
             instance_type (str): Instance type to use for monitoring. Defaults to "ml.t3.large".

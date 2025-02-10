@@ -137,7 +137,7 @@ if __name__ == "__main__":
     target_column = model.target()
     feature_columns = model.features()
 
-    # Initialize the ResidualsCalculator
+    # Initialize the TargetGradients
     target_gradients = TargetGradients(n_neighbors=2)
     result_df = target_gradients.fit_transform(df[feature_columns], df[target_column])
 

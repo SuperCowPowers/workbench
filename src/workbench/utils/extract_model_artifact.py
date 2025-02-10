@@ -1,4 +1,4 @@
-"""ExtractModelArtifact is a utility class that reanimates a model file."""
+"""ExtractModelArtifact is a utility class that recreates a model from a SageMaker endpoint artifact"""
 
 import tarfile
 import tempfile
