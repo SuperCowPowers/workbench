@@ -1,7 +1,7 @@
 """Plugin Page Example:  A 'Hello World' Workbench Plugin Page"""
 
 import dash
-from dash import html, page_container, register_page, callback, Output, Input, State, no_update
+from dash import html, page_container, register_page, callback, Output, Input, no_update
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
