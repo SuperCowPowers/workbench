@@ -7,7 +7,6 @@ from dash.exceptions import PreventUpdate
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.color_utils import process_categorical_color
 
 
 class ScatterPlot(PluginInterface):
@@ -180,13 +179,13 @@ class ScatterPlot(PluginInterface):
         return [figure, x_options, y_options, color_options, x_default, y_default, color_default]
 
     def create_scatter_plot(
-            self,
-            df: pd.DataFrame,
-            x_col: str,
-            y_col: str,
-            color_col: str,
-            regression_line: bool = False,
-            marker_size: int = 15,
+        self,
+        df: pd.DataFrame,
+        x_col: str,
+        y_col: str,
+        color_col: str,
+        regression_line: bool = False,
+        marker_size: int = 15,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
@@ -245,6 +244,7 @@ class ScatterPlot(PluginInterface):
             # Use the provided colorscale as a discrete palette.
             # Hardcode a discrete colorscale using Plotly Express's qualitative palette.
             import plotly.express as px
+
             discrete_colors = px.colors.qualitative.Plotly
             data = []
             for i, cat in enumerate(categories):

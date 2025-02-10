@@ -126,16 +126,6 @@ def weights_to_colors(weights: list[float], colorscale: list, muted: bool = True
     return result_colors
 
 
-def process_categorical_color(series):
-    """Convert a categorical series to numeric codes with ticks on the colorbar."""
-    cat = series.astype("category")
-    codes = cat.cat.codes
-    categories = cat.cat.categories.tolist()
-    n = len(categories)
-    colorbar = dict(title=series.name, tickmode="array", tickvals=list(range(n)), ticktext=categories, thickness=20)
-    return codes, colorbar
-
-
 if __name__ == "__main__":
     """Exercise the Color Utilities"""
 
@@ -161,13 +151,3 @@ if __name__ == "__main__":
     ]
     print(weights_to_colors([0.0, 0.2, 0.4, 0.8, 1.0], colorscale))
     print("Color Utilities tests pass.")
-
-    # Test the process_categorical_color function
-    import pandas as pd
-
-    data = {"Category": ["A", "B", "A", "C", "B", "C", "A", "B", "C"], "Value": [1, 2, 3, 4, 5, 6, 7, 8, 9]}
-    df = pd.DataFrame(data)
-    codes, colorscale, colorbar = process_categorical_color(df["Category"])
-    print(codes)
-    print(colorscale)
-    print(colorbar)
