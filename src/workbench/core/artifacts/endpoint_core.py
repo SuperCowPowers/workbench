@@ -10,30 +10,20 @@ from io import StringIO
 import awswrangler as wr
 from typing import Union, Optional
 import joblib
-import logging
 
-# Check if scikit-learn is installed
-try:
-    # Model Performance Scores
-    from sklearn.metrics import (
-        mean_absolute_error,
-        r2_score,
-        median_absolute_error,
-        roc_auc_score,
-        confusion_matrix,
-        precision_recall_fscore_support,
-        mean_squared_error,
-    )
-    from sklearn.preprocessing import OneHotEncoder
+# Model Performance Scores
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    median_absolute_error,
+    roc_auc_score,
+    confusion_matrix,
+    precision_recall_fscore_support,
+    mean_squared_error,
+)
+from sklearn.preprocessing import OneHotEncoder
 
-except ImportError as e:
-    # Initialize the logger
-    log = logging.getLogger("workbench")
-    msg = "Please install the scikit-learn package: pip install scikit-learn"
-    log.critical(msg)
-    log.critical(e)
-    raise SystemExit(msg) from e
-
+# SageMaker Imports
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
 from sagemaker import Predictor
@@ -42,7 +32,8 @@ from sagemaker import Predictor
 from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts import FeatureSetCore, ModelCore, ModelType
 from workbench.utils.endpoint_metrics import EndpointMetrics
-from workbench.utils.shapley_values import generate_shap_values
+
+# from workbench.utils.shapley_values import generate_shap_values
 from workbench.utils.fast_inference import fast_inference
 from workbench.utils.cache import Cache
 from workbench.utils.s3_utils import compute_s3_object_hash
@@ -644,7 +635,7 @@ class EndpointCore(Artifact):
             wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=True)
 
         # Generate SHAP values for our Prediction Dataframe
-        generate_shap_values(self.endpoint_name, model_type.value, pred_results_df, inference_capture_path)
+        # generate_shap_values(self.endpoint_name, model_type.value, pred_results_df, inference_capture_path)
 
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
