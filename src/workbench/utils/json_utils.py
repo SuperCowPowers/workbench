@@ -16,9 +16,7 @@ log = logging.getLogger("workbench")
 class CustomEncoder(json.JSONEncoder):
     def default(self, obj) -> object:
         try:
-            if isinstance(obj, dict):
-                return {key: self.default(value) for key, value in obj.items()}
-            elif isinstance(obj, np.integer):
+            if isinstance(obj, np.integer):
                 return int(obj)
             elif isinstance(obj, np.floating):
                 return float(obj)
@@ -48,3 +46,43 @@ def custom_decoder(dct):
     except Exception as e:
         log.error(f"Failed to decode object: {e}")
         return dct
+
+
+if __name__ == "__main__":
+    # Test the custom encoder and decoder
+    test_dict = {
+        "int": 42,
+        "float": 3.14,
+        "bool": True,
+        "np_int": np.int64(42),
+        "np_float": np.float64(3.14),
+        "np_bool": np.bool_(True),
+        "np_array": np.array([1, 2, 3]),
+        "datetime": datetime.now(),
+        "date": date.today(),
+        "dataframe": pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]}),
+    }
+
+    # Encode the test dictionary
+    encoded = json.dumps(test_dict, cls=CustomEncoder)
+    print("Encoded JSON:")
+    print(encoded)
+
+    # Decode the encoded JSON
+    decoded = json.loads(encoded, object_hook=custom_decoder)
+    print("\nDecoded Dictionary:")
+    print(decoded)
+    print("\nDecoded DataFrame:")
+    print(decoded["dataframe"])
+    print("\nDecoded DataFrame Columns:")
+    print(decoded["dataframe"].columns)
+
+    # Test DataFrame with named index
+    print("\nTesting DataFrame with named index:")
+    df_with_index = pd.DataFrame({"A": [1, 2, 3]})
+    df_with_index.index.name = "index_name"
+    encoded_df = json.dumps(df_with_index, cls=CustomEncoder)
+    decoded_df = json.loads(encoded_df, object_hook=custom_decoder)
+
+    print("Original DataFrame index name:", df_with_index.index.name)
+    print("Decoded DataFrame index name:", decoded_df.index.name)  # Likely None
