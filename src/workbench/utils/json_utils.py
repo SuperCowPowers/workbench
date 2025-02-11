@@ -27,7 +27,10 @@ class CustomEncoder(json.JSONEncoder):
             elif isinstance(obj, (datetime, date)):
                 return {"__datetime__": True, "datetime": datetime_to_iso8601(obj)}
             elif isinstance(obj, pd.DataFrame):
-                return {"__dataframe__": True, "df": obj.to_dict()}
+                data = {"__dataframe__": True, "df": obj.to_dict()}
+                data["index"] = obj.index.tolist()
+                data["index_name"] = obj.index.name
+                return data
             else:
                 return super(CustomEncoder, self).default(obj)
         except Exception as e:
@@ -41,7 +44,11 @@ def custom_decoder(dct):
         if "__datetime__" in dct:
             return iso8601_to_datetime(dct["datetime"])
         elif "__dataframe__" in dct:
-            return pd.DataFrame.from_dict(dct["df"])
+            df = pd.DataFrame.from_dict(dct["df"])
+            if "index" in dct:
+                df.index = dct["index"]
+                df.index.name = dct.get("index_name")
+            return df
         return dct
     except Exception as e:
         log.error(f"Failed to decode object: {e}")
