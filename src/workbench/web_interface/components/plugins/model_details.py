@@ -191,7 +191,10 @@ class ModelDetails(PluginInterface):
 
             # If the model is a classification model, have the index sorting match the class labels
             if self.current_model.model_type == ModelType.CLASSIFIER:
-                metrics = metrics.reindex(self.current_model.class_labels())
+                # Sort the metrics by the class labels (if they match)
+                class_labels = self.current_model.class_labels()
+                if set(metrics.index) == set(class_labels):
+                    metrics = metrics.reindex(class_labels)
             markdown += metrics.to_markdown()
 
         print(markdown)
