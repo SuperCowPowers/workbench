@@ -789,9 +789,6 @@ class EndpointCore(Artifact):
                 "support": scores[3],
             }
         )
-
-        # Sort the target labels
-        score_df = score_df.sort_values(by=[target_column], ascending=True)
         return score_df
 
     def generate_confusion_matrix(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
