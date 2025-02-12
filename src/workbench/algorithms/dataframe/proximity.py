@@ -41,20 +41,21 @@ class Proximity:
         self.X = StandardScaler().fit_transform(self.df[self.features])
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
-    def all_neighbors(self, include_self: bool = False) -> pd.DataFrame:
+    def all_neighbors(self) -> pd.DataFrame:
         """
         Compute nearest neighbors for all rows in the dataset.
-
-        Args:
-            include_self (bool): Whether to include self-loops in the results.
 
         Returns:
             pd.DataFrame: A DataFrame of neighbors and their distances.
         """
-        return pd.DataFrame(self._get_neighbors(include_self=include_self))
+        distances, indices = self.nn.kneighbors(self.X)
+        results = []
+        for i, (dists, nbrs) in enumerate(zip(distances, indices)):
+            results.extend(self._build_results(i, dists, nbrs, include_self=False, add_columns=None))
+        return pd.DataFrame(results)
 
     def neighbors(
-        self, query_id: Union[int, str], radius: float = None, include_self: bool = True, add_columns: List[str] = None
+            self, query_id: Union[int, str], radius: float = None, include_self: bool = True, add_columns: List[str] = None
     ) -> pd.DataFrame:
         """
         Return neighbors of the given query ID, either by fixed neighbors or within a radius.
@@ -71,62 +72,34 @@ class Proximity:
         if query_id not in self.df[self.id_column].values:
             raise ValueError(f"Query ID {query_id} not found in the DataFrame")
         query_idx = self.df.index[self.df[self.id_column] == query_id][0]
-        return pd.DataFrame(
-            self._get_neighbors(
-                query_idx=self.df.index.get_loc(query_idx),
-                radius=radius,
-                include_self=include_self,
-                add_columns=add_columns,
-            )
-        )
+        if radius is not None:
+            distances, indices = self.nn.radius_neighbors([self.X[query_idx]], radius=radius)
+            distances, indices = distances[0], indices[0]
+        else:
+            distances, indices = self.nn.kneighbors([self.X[query_idx]])
+            distances, indices = distances[0], indices[0]
+        return pd.DataFrame(self._build_results(query_idx, distances, indices, include_self, add_columns))
 
-    def _get_neighbors(
-        self, query_idx: int = None, radius: float = None, include_self: bool = True, add_columns: List[str] = None
-    ) -> List[dict]:
-        """
-        Internal method to compute nearest neighbors for a given query index or all rows.
-
-        Args:
-            query_idx (int, optional): Index of the query point. If None, computes for all rows.
-            radius (float, optional): Optional radius threshold.
-            include_self (bool): Whether to include the query ID itself in the neighbor results.
-            add_columns (List[str], optional): Additional columns to include in the results.
-
-        Returns:
-            List[dict]: List of dictionaries with neighbor information.
-        """
-        distances, indices = (
-            self.nn.radius_neighbors([self.X[query_idx]], radius=radius)
-            if query_idx is not None and radius is not None
-            else self.nn.kneighbors(self.X if query_idx is None else [self.X[query_idx]])
-        )
-
-        self.min_distance, self.max_distance = distances.min(), distances.max()
-        query_indices = range(len(self.X)) if query_idx is None else [query_idx]
-
+    def _build_results(self, query_idx: int, distances, indices, include_self: bool, add_columns: List[str]) -> List[dict]:
+        """Internal: Convert indices and distances to a list of dictionaries."""
         results = []
-        for i, (neighbors, dists) in zip(query_indices, zip(indices, distances)):
-            query_id = self.df.iloc[i, self.df.columns.get_loc(self.id_column)]
-            for neighbor_idx, dist in zip(neighbors, dists):
-                if not include_self and i == neighbor_idx:
-                    continue
-                neighbor_info = {
-                    self.id_column: query_id,
-                    "neighbor_id": self.df.iloc[neighbor_idx][self.id_column],
-                    "distance": dist,
-                }
-
-                # Include target, predictions, outliers, and residuals
-                relevant_cols = (
-                    [self.target, "prediction"]
-                    + [c for c in self.df.columns if "_proba" in c or "residual" in c]
-                    + ["outlier"]
-                    + (add_columns or [])
-                )
-                for col in filter(lambda c: c in self.df.columns, relevant_cols):
-                    neighbor_info[col] = self.df.iloc[neighbor_idx][col]
-
-                results.append(neighbor_info)
+        query_id = self.df.at[query_idx, self.id_column]
+        for neighbor_idx, dist in zip(indices, distances):
+            if not include_self and query_idx == neighbor_idx:
+                continue
+            neighbor_info = {
+                self.id_column: query_id,
+                "neighbor_id": self.df.at[neighbor_idx, self.id_column],
+                "distance": dist,
+            }
+            # Collect extra columns if they exist.
+            relevant_cols = ([self.target, "prediction"]
+                             + [c for c in self.df.columns if "_proba" in c or "residual" in c]
+                             + ["outlier"]
+                             + (add_columns or []))
+            for col in filter(lambda c: c in self.df.columns, relevant_cols):
+                neighbor_info[col] = self.df.iloc[neighbor_idx][col]
+            results.append(neighbor_info)
         return results
 
 
@@ -154,7 +127,7 @@ if __name__ == "__main__":
     print(prox.neighbors(query_id=1))
 
     # Test the neighbors method with radius
-    print(prox.neighbors(query_id=1, radius=0.3))
+    print(prox.neighbors(query_id=1, radius=2.0))
 
     # Test with Features list
     prox = Proximity(df, id_column="ID", features=["Feature1"], n_neighbors=2)
