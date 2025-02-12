@@ -5,7 +5,6 @@ import sys
 import shutil
 import zipfile
 import logging
-import subprocess
 
 log = logging.getLogger("workbench")
 

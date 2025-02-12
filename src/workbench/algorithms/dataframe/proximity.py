@@ -55,7 +55,7 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-            self, query_id: Union[int, str], radius: float = None, include_self: bool = True, add_columns: List[str] = None
+        self, query_id: Union[int, str], radius: float = None, include_self: bool = True, add_columns: List[str] = None
     ) -> pd.DataFrame:
         """
         Return neighbors of the given query ID, either by fixed neighbors or within a radius.
@@ -80,7 +80,9 @@ class Proximity:
             distances, indices = distances[0], indices[0]
         return pd.DataFrame(self._build_results(query_idx, distances, indices, include_self, add_columns))
 
-    def _build_results(self, query_idx: int, distances, indices, include_self: bool, add_columns: List[str]) -> List[dict]:
+    def _build_results(
+        self, query_idx: int, distances, indices, include_self: bool, add_columns: List[str]
+    ) -> List[dict]:
         """Internal: Convert indices and distances to a list of dictionaries."""
         results = []
         query_id = self.df.at[query_idx, self.id_column]
@@ -93,10 +95,12 @@ class Proximity:
                 "distance": dist,
             }
             # Collect extra columns if they exist.
-            relevant_cols = ([self.target, "prediction"]
-                             + [c for c in self.df.columns if "_proba" in c or "residual" in c]
-                             + ["outlier"]
-                             + (add_columns or []))
+            relevant_cols = (
+                [self.target, "prediction"]
+                + [c for c in self.df.columns if "_proba" in c or "residual" in c]
+                + ["outlier"]
+                + (add_columns or [])
+            )
             for col in filter(lambda c: c in self.df.columns, relevant_cols):
                 neighbor_info[col] = self.df.iloc[neighbor_idx][col]
             results.append(neighbor_info)
