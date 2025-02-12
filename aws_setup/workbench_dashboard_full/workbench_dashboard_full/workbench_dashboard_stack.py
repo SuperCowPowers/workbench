@@ -159,7 +159,7 @@ class WorkbenchDashboardStack(Stack):
             "WorkbenchService",
             cluster=cluster,
             cpu=2048,
-            desired_count=1,
+            desired_count=2,
             task_definition=task_definition,
             memory_limit_mib=4096,
             public_load_balancer=False,

@@ -19,7 +19,7 @@ def load_lambda_layer():
     os.makedirs(extract_path, exist_ok=True)
 
     # Check for available disk space in the extract path
-    min_required_space = 1024 * 1024 * 1024  # 1 GB
+    min_required_space = 1024 * 1024 * 512  # 512 MB
     total, used, free = shutil.disk_usage(extract_path)
     if free < min_required_space:
         log.error(f"Insufficient disk space. Available: {free / (1024 * 1024):.2f} MB.")
@@ -47,19 +47,6 @@ def load_lambda_layer():
             # Extract each zip file into the extract path
             with zipfile.ZipFile(zip_path, "r") as zip_ref:
                 zip_ref.extractall(extract_path)
-
-    # Check if xgboost already exists in the extract path
-    if os.path.exists(os.path.join(extract_path, "xgboost")):
-        log.important("xgboost already exists in the extract path...")
-
-    else:
-        # Install xgboost into the extract path
-        log.important("Installing xgboost...")
-        try:
-            subprocess.check_call(["pip", "install", "--target", extract_path, "xgboost"])
-            log.important("Successfully installed xgboost...")
-        except subprocess.CalledProcessError as e:
-            log.critical(f"Failed to install xgboost: {e}")
 
     # Add the extracted path to the System Path (so imports will find it)
     sys.path.append(extract_path)
