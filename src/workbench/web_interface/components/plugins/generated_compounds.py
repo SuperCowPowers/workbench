@@ -4,7 +4,7 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 # Workbench Imports
-from workbench.api import Compound
+from workbench.api.compound import Compound
 from workbench.utils.chem_utils import svg_from_smiles
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager

@@ -19,7 +19,6 @@ from .endpoint import Endpoint
 from .meta import Meta
 from .parameter_store import ParameterStore
 from .df_store import DFStore
-from .compound import Compound
 
 __all__ = [
     "DataSource",
@@ -30,5 +29,4 @@ __all__ = [
     "Meta",
     "ParameterStore",
     "DFStore",
-    "Compound",
 ]

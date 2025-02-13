@@ -1,7 +1,7 @@
 """Compound Utility/helper methods"""
 
 import re
-from workbench.api import Compound
+from workbench.api.compound import Compound
 from workbench.utils.markdown_utils import tag_styling
 
 

@@ -3,7 +3,7 @@
 from dash import html, dcc
 
 # Workbench Imports
-from workbench.api import Compound
+from workbench.api.compound import Compound
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
 from workbench.utils.compound_utils import details_to_markdown

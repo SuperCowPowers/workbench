@@ -4,7 +4,8 @@ from dash import Input, Output, callback, html, no_update
 from dash.exceptions import PreventUpdate
 
 # Workbench Imports
-from workbench.api import Compound, df_store
+from workbench.api import df_store
+from workbench.api.compound import Compound
 from workbench.web_interface.components.plugins import scatter_plot
 
 
