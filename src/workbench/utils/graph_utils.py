@@ -224,7 +224,7 @@ def create_nxgraph_from_dfs(
 if __name__ == "__main__":
     # Test the graph utility functions
     import sys
-    from workbench.api import GraphStore
+    from workbench.api.graph_store import GraphStore
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
 
     # Example node DataFrame

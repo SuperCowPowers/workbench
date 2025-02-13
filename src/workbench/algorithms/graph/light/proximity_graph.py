@@ -5,7 +5,7 @@ import logging
 
 # Workbench Imports
 from workbench.algorithms.dataframe import Proximity, FeaturesProximity  # noqa: F401
-from workbench.api import GraphStore
+from workbench.api.graph_store import GraphStore
 
 # Set up logging
 log = logging.getLogger("workbench")

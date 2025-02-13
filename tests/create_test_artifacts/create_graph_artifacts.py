@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 
 # Workbench Imports
-from workbench.api import GraphStore
+from workbench.api.graph_store import GraphStore
 from workbench.utils import graph_utils
 
 # Setup the logger

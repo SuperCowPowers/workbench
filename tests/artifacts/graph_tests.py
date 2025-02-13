@@ -1,4 +1,4 @@
-from workbench.api import GraphStore
+from workbench.api.graph_store import GraphStore
 from workbench.utils.graph_utils import modified, details, get_tags
 
 

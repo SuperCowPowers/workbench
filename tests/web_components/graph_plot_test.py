@@ -1,7 +1,7 @@
 """Tests for graph_plot web component"""
 
 # Workbench Imports
-from workbench.api import GraphStore
+from workbench.api.graph_store import GraphStore
 from workbench.web_interface.components.plugins.graph_plot import GraphPlot
 
 
