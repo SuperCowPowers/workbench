@@ -60,8 +60,10 @@ class Model(ModelCore):
         model_to_endpoint.set_output_tags(tags)
         model_to_endpoint.transform()
 
-        # Return the Endpoint
-        return Endpoint(name)
+        # Set the Endpoint Owner and Return the Endpoint
+        end = Endpoint(name)
+        end.set_owner(self.get_owner())
+        return end
 
 
 if __name__ == "__main__":

@@ -278,8 +278,8 @@ class AWSMeta:
                 endpoint_info = sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
 
                 # Retrieve Workbench metadata from tags
-                workbench_meta = self.get_aws_tags(endpoint_info["EndpointArn"])
-                health_tags = workbench_meta.get("workbench_health_tags", "")
+                aws_tags = self.get_aws_tags(endpoint_info["EndpointArn"])
+                health_tags = aws_tags.get("workbench_health_tags", "")
 
                 # Retrieve endpoint configuration to determine instance type or serverless info
                 endpoint_config_name = endpoint_info["EndpointConfigName"]
@@ -298,10 +298,11 @@ class AWSMeta:
                 summary = {
                     "Name": endpoint_name,
                     "Health": health_tags,
+                    "Owner": aws_tags.get("workbench_owner", "-"),
                     "Instance": instance_type,
                     "Created": datetime_string(endpoint_info.get("CreationTime")),
-                    "Tags": workbench_meta.get("workbench_tags", "-"),
-                    "Input": workbench_meta.get("workbench_input", "-"),
+                    "Tags": aws_tags.get("workbench_tags", "-"),
+                    "Input": aws_tags.get("workbench_input", "-"),
                     "Status": endpoint_info["EndpointStatus"],
                     "Variant": production_variant.get("VariantName", "-"),
                     "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
