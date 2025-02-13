@@ -16,11 +16,11 @@ Here are the ARNs for the current Workbench Lambda Layers, please note they are 
  
 **us-east-1**
 
-- arn:aws:lambda:us-east-1:507740646243:layer:workbench_lambda_layer-us-east-1-python312:1
+- arn:aws:lambda:us-east-1:507740646243:layer:workbench_lambda_layer-us-east-1-python312:2
 
 **us-west-2**
 
-- arn:aws:lambda:us-west-2:507740646243:layer:workbench\_lambda\_layer-us-west-2-python312:1
+- arn:aws:lambda:us-west-2:507740646243:layer:workbench\_lambda\_layer-us-west-2-python312:3
 
 **Note:** If you're using lambdas on a different region or with a different Python version, just let us know and we'll publish some additional layers.
 
