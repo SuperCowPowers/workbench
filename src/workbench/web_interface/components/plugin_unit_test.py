@@ -6,7 +6,9 @@ import socket
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginInputType
-from workbench.api import DataSource, FeatureSet, Model, Endpoint, Compound, GraphStore
+from workbench.api import DataSource, FeatureSet, Model, Endpoint
+from workbench.api.compound import Compound
+from workbench.api.graph_store import GraphStore
 from workbench.api.pipeline import Pipeline
 from workbench.utils.theme_manager import ThemeManager
 

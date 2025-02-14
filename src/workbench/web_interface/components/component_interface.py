@@ -13,7 +13,8 @@ from dash.development.base_component import Component
 import networkx as nx
 
 # Workbench Imports
-from workbench.api import DataSource, FeatureSet, Model, Endpoint, Compound
+from workbench.api import DataSource, FeatureSet, Model, Endpoint
+from workbench.api.compound import Compound
 from workbench.cached.cached_data_source import CachedDataSource
 from workbench.cached.cached_feature_set import CachedFeatureSet
 from workbench.cached.cached_model import CachedModel
