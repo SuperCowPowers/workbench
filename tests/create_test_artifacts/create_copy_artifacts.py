@@ -1,13 +1,13 @@
 """This Script creates the Classification Artifacts in AWS/Workbench
 
 DataSources:
-    - wine_data_copy_copy
+    - wine_data_copy
 FeatureSets:
     - wine_feature_set_copy
 Models:
-    - wine-classification-copy-copy
+    - wine-classification-copy
 Endpoints:
-    - wine-classification-copy-end-copy
+    - wine-classification-end-copy
 """
 
 import sys
@@ -46,9 +46,9 @@ if __name__ == "__main__":
         m.set_owner("test")
 
     # Create the wine classification Endpoint
-    if recreate or not Endpoint("wine-classification-copy-end").exists():
+    if recreate or not Endpoint("wine-classification-end-copy").exists():
         m = Model("wine-classification-copy")
-        end = m.to_endpoint("wine-classification-copy-end", tags=["wine", "classification"])
+        end = m.to_endpoint("wine-classification-end-copy", tags=["wine", "classification"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
