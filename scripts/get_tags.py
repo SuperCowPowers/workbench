@@ -6,7 +6,7 @@ import base64
 import json
 from pprint import pprint
 
-model_group_name = 'abalone-regression'
+model_group_name = "abalone-regression"
 
 
 # Helper method to decode tags
@@ -75,7 +75,7 @@ client = sm_session.sagemaker_client
 
 # Retrieve the model package group ARN
 response = client.describe_model_package_group(ModelPackageGroupName=model_group_name)
-group_arn = response['ModelPackageGroupArn']
+group_arn = response["ModelPackageGroupArn"]
 
 # Use the SageMaker session's list_tags method
 tags = sm_session.list_tags(resource_arn=group_arn)
