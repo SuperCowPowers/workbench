@@ -4,6 +4,7 @@ import importlib.resources
 from pathlib import Path
 
 fs_name = "solubility_featurized_class_0_fs"
+fs_name = "solubility_test_features"
 # fs_name = "aqsol_features"
 
 
