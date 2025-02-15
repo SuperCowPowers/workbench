@@ -120,8 +120,8 @@ class GraphPlot(PluginInterface):
         if "pos" not in first_node:
             self.log.important("No 'pos' attribute found, running layout for node positions...")
             if self.graph.number_of_nodes() < 100:
-                self.log.info("Using Kamada-Kawai layout for small graphs.")
-                pos = nx.kamada_kawai_layout(self.graph)
+                self.log.info("Using Sprint layout for small graphs.")
+                pos = nx.spring_layout(self.graph, iterations=1000)
             elif self.graph.number_of_nodes() < 1000:
                 self.log.info("Using Spring layout for medium graphs.")
                 pos = nx.spring_layout(self.graph, iterations=500)
@@ -152,16 +152,22 @@ class GraphPlot(PluginInterface):
             node_degrees.append(data.get("degree", self.graph.degree[node]))
             hover_text.append("<br>".join([f"{key}: {data.get(key, '')}" for key in hover_columns]))
 
+        # Node label colors
+        if self.theme_manager.dark_mode():
+            label_color = "rgba(200, 200, 255)"
+        else:
+            label_color = "rgba(100, 100, 100)"
+
         # Create an OpenGL Scattergl plot for nodes using Plotly
         node_trace = go.Scattergl(
             x=x_nodes,
             y=y_nodes,
             mode="markers+text",  # Include text mode for labels
             text=labels,  # Set text for node labels
+            textfont=dict(color=label_color, size=14),  # Set font size/color for node labels
             textposition="top center",  # Position labels above the nodes
             hovertext=hover_text,  # Set hover text for nodes
             hovertemplate="%{hovertext}<extra></extra>",  # Define hover template and remove extra info
-            textfont=dict(family="Arial Black", size=14),  # Set font size for node labels
             marker=dict(
                 size=20,  # Marker size for nodes
                 color=node_degrees,  # Use node degrees for marker colors
@@ -302,4 +308,4 @@ if __name__ == "__main__":
         print("Test graph not found... using default")
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(GraphPlot, theme="dark", input_data=test_graph).run()
+    PluginUnitTest(GraphPlot, theme="light", input_data=test_graph).run()
