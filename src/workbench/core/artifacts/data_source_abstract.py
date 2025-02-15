@@ -84,6 +84,12 @@ class DataSourceAbstract(Artifact):
 
         return list_views(self)
 
+    def supplemental_data(self) -> list[str]:
+        """Return the supplemental data for this Data Source"""
+        from workbench.core.views.view_utils import list_supplemental_data
+
+        return list_supplemental_data(self)
+
     def view(self, view_name: str) -> "View":
         """Return a DataFrame for a specific view
         Args:

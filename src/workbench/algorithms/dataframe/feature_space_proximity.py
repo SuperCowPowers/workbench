@@ -29,7 +29,7 @@ class FeatureSpaceProximity(Proximity):
         fs = FeatureSet(model.get_input())
 
         # If we have a "inference" view, pull the data from that view
-        view_name = f"inference_{model.uuid.replace('-', '_')}"
+        view_name = f"inf_{model.uuid.replace('-', '_')}"
         if view_name in fs.views():
             self.df = fs.view(view_name).pull_dataframe()
 

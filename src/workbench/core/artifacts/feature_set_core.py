@@ -161,6 +161,12 @@ class FeatureSetCore(Artifact):
 
         return list_views(self.data_source)
 
+    def supplemental_data(self) -> list[str]:
+        """Return the supplemental data for this Data Source"""
+        from workbench.core.views.view_utils import list_supplemental_data
+
+        return list_supplemental_data(self.data_source)
+
     def view(self, view_name: str) -> "View":
         """Return a DataFrame for a specific view
         Args:

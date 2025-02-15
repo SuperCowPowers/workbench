@@ -37,7 +37,7 @@ class CreateView(ABC):
         # Set table names
         self.base_table_name = self.data_source.table
         self.source_table = source_table or self.base_table_name
-        self.table = f"{self.base_table_name}_{self.view_name}"
+        self.table = f"{self.base_table_name}___{self.view_name}"
 
     @abstractmethod
     def create(self, **kwargs) -> Union[View, None]:

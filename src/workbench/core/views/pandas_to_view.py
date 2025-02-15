@@ -109,8 +109,8 @@ class PandasToView(CreateView):
         df = df.drop(columns=overlap_columns)
 
         # Create a supplemental data table with the incoming dataframe
-        df_table = f"_{self.base_table_name}_{self.view_name}"
-        dataframe_to_table(self.data_source, df, df_table)
+        supplemental_table = f"_{self.base_table_name}___{self.view_name}"
+        dataframe_to_table(self.data_source, df, supplemental_table)
 
         # Create a list of columns in SQL form (for the source table)
         source_columns_str = ", ".join([f'A."{col}"' for col in source_df.columns])
@@ -123,7 +123,7 @@ class PandasToView(CreateView):
         CREATE OR REPLACE VIEW "{self.table}" AS
         SELECT {source_columns_str}, {df_columns_str}
         FROM {self.source_table} A
-        LEFT JOIN {df_table} B
+        LEFT JOIN {supplemental_table} B
         ON A.{id_column} = B.{id_column}
         """
 

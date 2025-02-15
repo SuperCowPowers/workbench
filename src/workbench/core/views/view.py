@@ -81,7 +81,7 @@ class View:
                     self.log.error(
                         f"View {self.view_name} for {self.artifact_name} doesn't exist and cannot be auto-created..."
                     )
-                    self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = None
+                    self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = self.join_view = None
                     return
 
         # Now fill some details about the view
@@ -134,7 +134,7 @@ class View:
             return None
         if self.view_name == "base":
             return self.base_table_name
-        return f"{self.base_table_name}_{self.view_name}"
+        return f"{self.base_table_name}___{self.view_name}"
 
     def delete(self):
         """Delete the database view (and supplemental data) if it exists."""
@@ -317,8 +317,8 @@ if __name__ == "__main__":
     my_df["random2"] = np.random.rand(len(my_df))
 
     # Create a view with a PandasToView class
-    df_view = PandasToView("test_df", fs).create(df=my_df, id_column="id")
+    df_view = PandasToView.create("test_view", fs, df=my_df, id_column="id")
 
     # Test supplemental data tables deletion
-    view = View(fs, "test_df")
+    view = View(fs, "test_view")
     view.delete()

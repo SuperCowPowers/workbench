@@ -50,8 +50,8 @@ def list_views(data_source: DataSource) -> list[str]:
     # Get the list of view tables for this data source
     view_tables = list_view_tables(data_source.table, data_source.database)
 
-    # Each view will have the format: {data_table_name}_{view_name}
-    return [view_table.replace(data_source.table + "_", "") for view_table in view_tables]
+    # Each view will have the format: {data_table_name}___{view_name}
+    return [view_table.replace(data_source.table + "___", "") for view_table in view_tables]
 
 
 def list_view_tables(base_table_name: str, database: str) -> list[str]:
@@ -71,10 +71,26 @@ def list_view_tables(base_table_name: str, database: str) -> list[str]:
     FROM information_schema.tables
     WHERE table_schema = '{database}'
       AND table_type = 'VIEW'
-      AND table_name LIKE '{base_table_name}_%'
+      AND table_name LIKE '{base_table_name}\\_\\_\\_%' ESCAPE '\\'
     """
     df = DataSource.database_query(database, view_query)
     return df["table_name"].tolist()
+
+
+def list_supplemental_data(data_source: DataSource) -> list[str]:
+    """Extract the last part of the view table names in a database for a DataSource
+
+    Args:
+        data_source (DataSource): The DataSource object
+
+    Returns:
+        list[str]: A list containing only the last part of the view table names
+    """
+    # Get the list of supplemental data tables for this data source
+    supplemental_tables = list_supplemental_data_tables(data_source.table, data_source.database)
+
+    # Each view will have the format: {data_table_name}___{view_name}
+    return [table.replace(data_source.table + "___", "") for table in supplemental_tables]
 
 
 def list_supplemental_data_tables(base_table_name: str, database: str) -> list[str]:
@@ -88,14 +104,13 @@ def list_supplemental_data_tables(base_table_name: str, database: str) -> list[s
         list[str]: A list of supplemental data table names
     """
 
-    # Use REGEXP_LIKE to match table names that start with an underscore, followed by the base_table_name,
-    # followed by one underscore, and no more underscores
+    # Use LIKE to match table names that start with _base_table_name___ followed by any characters
     supplemental_data_query = f"""
     SELECT table_name
     FROM information_schema.tables
     WHERE table_schema = '{database}'
       AND table_type = 'BASE TABLE'
-      AND table_name LIKE '{base_table_name}_%'
+      AND table_name LIKE '\\_{base_table_name}\\_\\_\\_%' ESCAPE '\\'
     """
     df = DataSource.database_query(database, supplemental_data_query)
     return df["table_name"].tolist()
@@ -292,16 +307,20 @@ if __name__ == "__main__":
     training_table = fs.view("training").table
     print(get_column_list(my_data_source, training_table))
 
-    # Test list_view_tables
-    print("List Views...")
-    print(list_view_tables(my_data_source.table, my_data_source.database))
-
     # Test list_views
     print("List Views...")
     print(list_views(my_data_source))
 
+    # Test list_view_tables
+    print("List Views Tables...")
+    print(list_view_tables(my_data_source.table, my_data_source.database))
+
     # Test list_supplemental_data
     print("List Supplemental Data...")
+    print(list_supplemental_data(my_data_source))
+
+    # Test list_supplemental_data tables
+    print("List Supplemental Data Tables...")
     print(list_supplemental_data_tables(my_data_source.table, my_data_source.database))
 
     # Test view/supplemental data deletion
