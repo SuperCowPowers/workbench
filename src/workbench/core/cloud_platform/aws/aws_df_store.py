@@ -220,6 +220,7 @@ class AWSDFStore:
         """
         # Construct the full prefix for S3
         s3_prefix = re.sub(r"/+", "/", f"{self.path_prefix}/{location}")  # Collapse slashes
+        s3_prefix = s3_prefix.rstrip("/") + "/"  # Ensure the prefix ends with a slash
 
         # List all objects under the given prefix
         try:
