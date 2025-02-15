@@ -153,7 +153,6 @@ class AWSMeta:
             pd.DataFrame: A summary of all the Views, for the given database, in AWS
         """
         summary = self._list_catalog_tables(database, views=True)
-        summary.drop(columns=["Owner"], inplace=True, errors="ignore")  # Drop the Owner column
         return summary
 
     def feature_sets(self, details: bool = False) -> pd.DataFrame:
