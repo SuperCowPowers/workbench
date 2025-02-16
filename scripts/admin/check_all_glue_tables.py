@@ -3,7 +3,7 @@ from workbench.api import Meta
 from pprint import pprint
 from datetime import datetime, timedelta, timezone
 
-older_than = datetime.now(timezone.utc) - timedelta(days=360)
+older_than = datetime.now(timezone.utc) - timedelta(days=90)
 
 
 def glue_table_inspection(database_scope):
