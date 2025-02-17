@@ -32,7 +32,6 @@ class AGTable(PluginInterface):
             "rowHeight": 25,
             "headerHeight": 30,
             "defaultColDef": {"sortable": True, "filter": True, "resizable": True},
-            "domLayout": "autoHeight",  # Automatically adjust height to fit content
         }
 
         self.container = AgGrid(
