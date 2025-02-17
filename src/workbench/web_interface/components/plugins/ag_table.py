@@ -41,7 +41,7 @@ class AGTable(PluginInterface):
         self.container = AgGrid(
             id=component_id,
             dashGridOptions=grid_options,
-            style={"overflow": "auto"},
+            style={"height": f"{self.max_height}px", "overflow": "auto"},
         )
 
         # Fill in plugin properties
