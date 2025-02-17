@@ -1,7 +1,7 @@
 """Plugin Page 2:  A 'Hello World' Workbench Plugin Page"""
 
 import dash
-from dash import html, page_container, register_page
+from dash import Input, Output, callback, html, dcc, page_container, register_page
 import dash_bootstrap_components as dbc
 
 # Workbench Imports
@@ -35,11 +35,8 @@ class PluginPage2:
             layout=self.page_layout(),
         )
 
-        # Populate the models table with data
-        models = self.meta.models(details=True)
-        models["uuid"] = models["Model Group"]
-        models["id"] = range(len(models))
-        [self.table_component.columnDefs, self.table_component.rowData] = self.models_table.update_properties(models)
+        # Set up the callbacks for the page
+        self.page_callbacks()
 
     def page_layout(self) -> dash.html.Div:
         """Set up the layout for the page"""
@@ -47,9 +44,23 @@ class PluginPage2:
             children=[
                 dash.html.H1(self.page_name),
                 dbc.Row(self.table_component),
+                # Interval that triggers once on page load
+                dcc.Interval(id="plugin-2-page-load", interval=100, max_intervals=1),
             ]
         )
         return layout
+
+    def page_callbacks(self):
+        """Set up the callbacks for the page"""
+        @callback(
+            [Output(component_id, prop) for component_id, prop in self.models_table.properties],
+            [Input("plugin-2-page-load", "n_intervals")],
+        )
+        def _populate_models_table(_n_intervals):
+            """Callback to Populate the models table with data"""
+            models = self.meta.models(details=True)
+            models["uuid"] = models["Model Group"]
+            return self.models_table.update_properties(models)
 
 
 # Unit Test for your Plugin Page

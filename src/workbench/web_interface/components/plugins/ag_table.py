@@ -18,30 +18,34 @@ class AGTable(PluginInterface):
     """Initialize this Plugin Component Class with required attributes"""
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
+    max_height = 500
+    header_height = 30
+    row_height = 25
 
     def create_component(
-        self, component_id: str, header_color: str = "rgb(120, 60, 60)", max_height: int = 800
+        self, component_id: str, header_color: str = "rgb(120, 60, 60)", max_height: int = 500
     ) -> AgGrid:
         """Create a Table Component without any data."""
         self.component_id = component_id
+        self.max_height = max_height
 
         # AG Grid configuration for tighter rows and columns
         grid_options = {
             "rowSelection": "single",
             "suppressCellFocus": True,
-            "rowHeight": 25,
-            "headerHeight": 30,
+            "headerHeight": self.header_height,
+            "rowHeight": self.row_height,
             "defaultColDef": {"sortable": True, "filter": True, "resizable": True},
         }
 
         self.container = AgGrid(
             id=component_id,
             dashGridOptions=grid_options,
-            style={"maxHeight": f"{max_height}px", "overflow": "auto"},
+            style={"overflow": "auto"},
         )
 
         # Fill in plugin properties
-        self.properties = [(self.component_id, "columnDefs"), (self.component_id, "rowData")]
+        self.properties = [(self.component_id, "columnDefs"), (self.component_id, "rowData"), (self.component_id, "style")]
 
         # Output signals
         self.signals = [
@@ -81,8 +85,13 @@ class AGTable(PluginInterface):
             for col in table_df.columns
         ]
 
-        # Return the column definitions and table data (must match the plugin properties)
-        return [column_defs, table_data]
+        # Dynamically adjust height based on row count
+        row_count = len(table_df)
+        computed_height = min(self.header_height + self.row_height * row_count, self.max_height) + 2
+        style = {"height": f"{computed_height}px", "overflow": "auto"}
+
+        # Return the column definitions, table data, and style (must match the plugin properties)
+        return [column_defs, table_data, style]
 
 
 if __name__ == "__main__":
@@ -90,4 +99,4 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(AGTable, theme="quartz").run()
+    PluginUnitTest(AGTable, theme="quartz", max_height=500).run()
