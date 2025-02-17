@@ -40,7 +40,7 @@ class ModelDetails(PluginInterface):
             children=[
                 html.H3(id=f"{self.component_id}-header", children="Model: Loading..."),
                 dcc.Markdown(id=f"{self.component_id}-summary"),
-                html.H3(children="Inference Metrics"),
+                html.H4(children="Inference Metrics"),
                 dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
                 dcc.Markdown(id=f"{self.component_id}-metrics"),
             ],
