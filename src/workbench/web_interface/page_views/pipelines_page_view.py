@@ -24,7 +24,7 @@ class PipelinesPageView(PageView):
 
     def refresh(self):
         """Refresh the pipeline data from the Cloud Platform"""
-        self.log.important("Calling refresh()..")
+        self.log.important("Calling pipelines page view refresh()..")
         self.pipelines_df = self.meta.pipelines()
 
         # Drop the AWS URL column

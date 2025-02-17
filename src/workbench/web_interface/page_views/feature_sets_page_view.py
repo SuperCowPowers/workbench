@@ -23,7 +23,7 @@ class FeatureSetsPageView(PageView):
 
     def refresh(self):
         """Refresh the data from the AWS Service Broker"""
-        self.log.important("Calling refresh()..")
+        self.log.important("Calling featuresets page view refresh()..")
         self.feature_sets_df = self.meta.feature_sets(details=True)
 
     def feature_sets(self) -> pd.DataFrame:
