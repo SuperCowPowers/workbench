@@ -45,7 +45,11 @@ class AGTable(PluginInterface):
         )
 
         # Fill in plugin properties
-        self.properties = [(self.component_id, "columnDefs"), (self.component_id, "rowData"), (self.component_id, "style")]
+        self.properties = [
+            (self.component_id, "columnDefs"),
+            (self.component_id, "rowData"),
+            (self.component_id, "style"),
+        ]
 
         # Output signals
         self.signals = [

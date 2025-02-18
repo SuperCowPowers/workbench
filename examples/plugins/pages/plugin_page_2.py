@@ -52,6 +52,7 @@ class PluginPage2:
 
     def page_callbacks(self):
         """Set up the callbacks for the page"""
+
         @callback(
             [Output(component_id, prop) for component_id, prop in self.models_table.properties],
             [Input("plugin-2-page-load", "n_intervals")],

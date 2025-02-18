@@ -69,13 +69,14 @@ class PluginPage3:
                     ]
                 ),
                 # Interval that triggers once on page load
-                dcc.Interval(id="plugin-3-page-load", interval=100, max_intervals=1)
+                dcc.Interval(id="plugin-3-page-load", interval=100, max_intervals=1),
             ]
         )
         return layout
 
     def page_load_callbacks(self):
         """Load page (once) callbacks"""
+
         @callback(
             [Output(component_id, prop) for component_id, prop in self.models_table.properties],
             [Input("plugin-3-page-load", "n_intervals")],
