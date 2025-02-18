@@ -1,12 +1,14 @@
 """Layout for the Pipelines page"""
 
 from typing import Any
-from dash import html, dcc, dash_table
+from dash import html, dcc
 import dash_bootstrap_components as dbc
+
+from workbench.web_interface.components.plugins.ag_table import AGTable
 
 
 def pipelines_layout(
-    pipelines_table: dash_table.DataTable,
+    pipelines_table: AGTable,
     pipeline_details: dcc.Markdown,
     **kwargs: Any,
 ) -> html.Div:

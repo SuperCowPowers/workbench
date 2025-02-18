@@ -1,12 +1,14 @@
 """Layout for the Models page"""
 
 from typing import Any
-from dash import dcc, html, dash_table
+from dash import dcc, html
 import dash_bootstrap_components as dbc
+
+from workbench.web_interface.components.plugins.ag_table import AGTable
 
 
 def models_layout(
-    models_table: dash_table.DataTable,
+    models_table: AGTable,
     model_details: html.Div,
     model_plot: dcc.Graph,
     **kwargs: Any,
