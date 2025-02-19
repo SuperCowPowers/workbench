@@ -1,4 +1,5 @@
 """Tests for graph_plot web component"""
+
 import time
 
 # Workbench Imports

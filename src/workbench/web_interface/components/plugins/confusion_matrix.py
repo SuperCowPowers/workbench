@@ -64,7 +64,7 @@ class ConfusionMatrix(PluginInterface):
         inference_run = kwargs.get("inference_run", "auto_inference")
         df = model.confusion_matrix(inference_run)
         if df is None:
-            return self.display_text("No Data")
+            return [self.display_text("No Data")]
 
         # Use Plotly's default theme-friendly colorscale
         # from plotly.colors import sequential
@@ -187,3 +187,11 @@ if __name__ == "__main__":
     # Run the Unit Test on the Plugin
     model = CachedModel("wine-classification")
     PluginUnitTest(ConfusionMatrix, input_data=model, theme="dark").run()
+
+    # Temp test
+    """
+    cm = ConfusionMatrix()
+    cm.create_component("test")
+    fig = cm.update_properties(model, inference_run="foo")[0]
+    fig.show()
+    """
