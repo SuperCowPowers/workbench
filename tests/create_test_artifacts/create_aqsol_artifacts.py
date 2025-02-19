@@ -184,7 +184,7 @@ if __name__ == "__main__":
             model_type=ModelType.TRANSFORMER,
             description="Smiles to Molecular Descriptors",
             tags=["smiles", "molecular descriptors"],
-            custom_script=script_path
+            custom_script=script_path,
         )
 
     # A 'Model' to Compute Morgan Fingerprints Features
@@ -196,7 +196,7 @@ if __name__ == "__main__":
             model_type=ModelType.TRANSFORMER,
             description="Smiles to Morgan Fingerprints",
             tags=["smiles", "morgan fingerprints"],
-            custom_script=script_path
+            custom_script=script_path,
         )
 
     # A 'Model' to Tautomerize Smiles
@@ -208,7 +208,7 @@ if __name__ == "__main__":
             model_type=ModelType.TRANSFORMER,
             description="Tautomerize Smiles",
             tags=["smiles", "tautomerization"],
-            custom_script=script_path
+            custom_script=script_path,
         )
 
     # Endpoints for our Transformer/Custome Models
