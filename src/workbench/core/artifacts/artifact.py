@@ -9,7 +9,7 @@ from typing import Union
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.core.cloud_platform.aws.aws_df_store import AWSDFStore as DFStore
-from workbench.utils.aws_utils import sagemaker_delete_tag, dict_to_aws_tags
+from workbench.utils.aws_utils import dict_to_aws_tags
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
 from workbench.core.cloud_platform.cloud_meta import CloudMeta
 from workbench.cached.cached_meta import CachedMeta

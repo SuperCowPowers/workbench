@@ -213,38 +213,6 @@ def list_tags_with_throttle(arn: str, sm_session) -> dict:
 
 
 @deprecated(version="0.9")
-def sagemaker_delete_tag(arn: str, sm_session: SageSession, key_to_remove: str):
-    """Delete a tag from a SageMaker resource
-    Args:
-        arn (str): The ARN of the SageMaker resource
-        sm_session (SageSession): A SageMaker session object
-        key_to_remove (str): The metadata key to remove
-
-    Note:
-        Some tags might be 'chunked' into multiple tags, so we need to remove all of them
-    """
-    # Get the current tag keys
-    current_keys = [tag["Key"] for tag in sm_session.list_tags(arn)]
-
-    # Grab the client from our SageMaker session
-    sm_client = sm_session.sagemaker_client
-
-    # Check if this key is a regular tag
-    if key_to_remove in current_keys:
-        sm_client.delete_tags(ResourceArn=arn, TagKeys=[key_to_remove])
-
-    # Check if this key is split into chunks
-    else:
-        keys_to_remove = []
-        for key in current_keys:
-            if key.startswith(f"{key_to_remove}_chunk_"):
-                keys_to_remove.append(key)
-        if keys_to_remove:
-            log.info(f"Removing chunked tags {keys_to_remove}...")
-            sm_client.delete_tags(ResourceArn=arn, TagKeys=keys_to_remove)
-
-
-@deprecated(version="0.9")
 def workbench_meta_from_catalog_table_meta(table_meta: dict) -> dict:
     """Retrieve the Workbench metadata from AWS Data Catalog table metadata
     Args:
