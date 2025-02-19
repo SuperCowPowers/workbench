@@ -8,14 +8,17 @@ FeatureSets:
 Models:
     - aqsol-regression
     - aqsol-mol-regression
+
 Endpoints:
     - aqsol-regression-end
     - aqsol-mol-regression-end
 """
 
+import importlib.resources
 import logging
 import pandas as pd
 import awswrangler as wr
+from pathlib import Path
 
 from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
@@ -23,6 +26,12 @@ from workbench.utils.chem_utils import compute_molecular_descriptors
 
 
 log = logging.getLogger("workbench")
+
+
+# We have some custom model script in "workbench.model_scripts.custom_models"
+def get_custom_script_path(script_name: str) -> Path:
+    with importlib.resources.path("workbench.model_scripts.custom_models.chem_info", script_name) as script_path:
+        return script_path
 
 
 if __name__ == "__main__":
@@ -165,3 +174,56 @@ if __name__ == "__main__":
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
+
+    # A 'Model' to Compute Molecular Descriptors Features
+    if recreate or not Model("smiles-to-md-v0").exists():
+        script_path = get_custom_script_path("molecular_descriptors.py")
+        feature_set = FeatureSet("aqsol_features")
+        feature_set.to_model(
+            name="smiles-to-md-v0",
+            model_type=ModelType.TRANSFORMER,
+            description="Smiles to Molecular Descriptors",
+            tags=["smiles", "molecular descriptors"],
+        )
+
+    # A 'Model' to Compute Morgan Fingerprints Features
+    if recreate or not Model("smiles-to-fingerprints-v0").exists():
+        script_path = get_custom_script_path("morgan_fingerprints.py")
+        feature_set = FeatureSet("aqsol_features")
+        feature_set.to_model(
+            name="smiles-to-fingerprints-v0",
+            model_type=ModelType.TRANSFORMER,
+            description="Smiles to Morgan Fingerprints",
+            tags=["smiles", "morgan fingerprints"],
+        )
+
+    # A 'Model' to Tautomerize Smiles
+    if recreate or not Model("tautomerize-v0").exists():
+        script_path = get_custom_script_path("tautomerize.py")
+        feature_set = FeatureSet("aqsol_features")
+        feature_set.to_model(
+            name="tautomerize-v0",
+            model_type=ModelType.TRANSFORMER,
+            description="Tautomerize Smiles",
+            tags=["smiles", "tautomerization"],
+        )
+
+    """
+    # Molecular Fingerprints Model
+    scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
+    my_script = scripts_root / "custom_models" / "chem_info" / "morgan_fingerprints.py"
+    input_uuid = "aqsol_features"
+    output_uuid = "smiles-to-fingerprints-v0"
+    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_script)
+    to_model.set_output_tags(["smiles", "morgan fingerprints"])
+    to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Morgan Fingerprints")
+
+    # Tautomerization Model
+    scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
+    my_script = scripts_root / "custom_models" / "chem_info" / "tautomerize.py"
+    input_uuid = "aqsol_features"
+    output_uuid = "tautomerize-v0"
+    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_script)
+    to_model.set_output_tags(["smiles", "tautomerization"])
+    to_model.transform(target_column=None, feature_list=["smiles"], description="Tautomerize Smiles")
+    """
