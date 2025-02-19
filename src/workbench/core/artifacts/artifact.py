@@ -245,22 +245,6 @@ class Artifact(ABC):
         except Exception as e:
             self.log.error(f"Error adding metadata to {aws_arn}: {e}")
 
-    def remove_workbench_meta(self, key_to_remove: str):
-        """Remove Workbench specific metadata from this Artifact
-        Args:
-            key_to_remove (str): The metadata key to remove
-        Note:
-            This functionality will work for FeatureSets, Models, and Endpoints
-            but not for DataSources. The DataSource class overrides this method.
-        """
-        aws_arn = self.arn()
-        # Sanity check
-        if aws_arn is None:
-            self.log.error(f"ARN is None for {self.uuid}!")
-            return
-        self.log.info(f"Removing Workbench Metadata {key_to_remove} for Artifact: {aws_arn}...")
-        sagemaker_delete_tag(aws_arn, self.sm_session, key_to_remove)
-
     def get_tags(self, tag_type="user") -> list:
         """Get the tags for this artifact
         Args:
@@ -488,4 +472,4 @@ if __name__ == "__main__":
     fs.upsert_workbench_meta({"test_key": "test_value"})
 
     # Test delete metadata
-    fs.remove_workbench_meta("test_key")
+    fs.delete_metadata("test_key")

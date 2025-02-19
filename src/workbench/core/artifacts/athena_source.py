@@ -107,7 +107,7 @@ class AthenaSource(DataSourceAbstract):
         # Give a warning message for keys that don't start with workbench_
         for key in new_meta.keys():
             if not key.startswith("workbench_"):
-                self.log.warning("Append 'workbench_' to key names to avoid overwriting AWS meta data")
+                self.log.error("NOT STORING META: Append 'workbench_' to key names to avoid overwriting AWS meta data")
 
         # Now convert any non-string values to JSON strings
         for key, value in new_meta.items():

@@ -623,7 +623,7 @@ if __name__ == "__main__":
     print(list_s3_files("s3://workbench-public-data/common"))
 
     # Test the newest files in an S3 folder method
-    s3_path = "s3://sandbox-workbench-artifacts/endpoints/inference/abalone-regression-end"
+    s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference/abalone-regression-end"
     most_recent = newest_path([s3_path], sm_session)
 
     # Add a health tag
@@ -668,7 +668,7 @@ if __name__ == "__main__":
     pprint(my_meta)
 
     # Remove the tag
-    my_features.remove_workbench_meta("large_meta")
+    my_features.delete_metadata("large_meta")
     my_meta = my_features.workbench_meta()
     pprint(my_meta)
 
