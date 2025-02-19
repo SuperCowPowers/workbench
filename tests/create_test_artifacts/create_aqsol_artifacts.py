@@ -184,6 +184,7 @@ if __name__ == "__main__":
             model_type=ModelType.TRANSFORMER,
             description="Smiles to Molecular Descriptors",
             tags=["smiles", "molecular descriptors"],
+            custom_script=script_path
         )
 
     # A 'Model' to Compute Morgan Fingerprints Features
@@ -195,6 +196,7 @@ if __name__ == "__main__":
             model_type=ModelType.TRANSFORMER,
             description="Smiles to Morgan Fingerprints",
             tags=["smiles", "morgan fingerprints"],
+            custom_script=script_path
         )
 
     # A 'Model' to Tautomerize Smiles
@@ -206,24 +208,27 @@ if __name__ == "__main__":
             model_type=ModelType.TRANSFORMER,
             description="Tautomerize Smiles",
             tags=["smiles", "tautomerization"],
+            custom_script=script_path
         )
 
-    """
-    # Molecular Fingerprints Model
-    scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
-    my_script = scripts_root / "custom_models" / "chem_info" / "morgan_fingerprints.py"
-    input_uuid = "aqsol_features"
-    output_uuid = "smiles-to-fingerprints-v0"
-    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_script)
-    to_model.set_output_tags(["smiles", "morgan fingerprints"])
-    to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Morgan Fingerprints")
+    # Endpoints for our Transformer/Custome Models
+    if recreate or not Endpoint("smiles-to-md-v0-end").exists():
+        m = Model("smiles-to-md-v0")
+        end = m.to_endpoint(name="smiles-to-md-v0-end", tags=["smiles", "molecular descriptors"])
 
-    # Tautomerization Model
-    scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
-    my_script = scripts_root / "custom_models" / "chem_info" / "tautomerize.py"
-    input_uuid = "aqsol_features"
-    output_uuid = "tautomerize-v0"
-    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_script)
-    to_model.set_output_tags(["smiles", "tautomerization"])
-    to_model.transform(target_column=None, feature_list=["smiles"], description="Tautomerize Smiles")
-    """
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
+
+    if recreate or not Endpoint("smiles-to-fingerprints-v0-end").exists():
+        m = Model("smiles-to-fingerprints-v0")
+        end = m.to_endpoint(name="smiles-to-fingerprints-v0-end", tags=["smiles", "morgan fingerprints"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
+
+    if recreate or not Endpoint("tautomerize-v0-end").exists():
+        m = Model("tautomerize-v0")
+        end = m.to_endpoint(name="tautomerize-v0-end", tags=["smiles", "tautomerization"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)

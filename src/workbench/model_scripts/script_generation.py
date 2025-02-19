@@ -102,8 +102,9 @@ def generate_model_script(template_params: dict) -> str:
         template_name = "quant_regression.template"
         model_script_dir = "light_quant_regression"
     else:
-        log.critical(f"Unknown ModelType: {template_params['model_type']}")
-        raise ValueError(f"Unknown ModelType: {template_params['model_type']}")
+        msg = f"ModelType: {template_params['model_type']} needs to set custom_script argument"
+        log.critical(msg)
+        raise ValueError(msg)
 
     # Model Type is an enumerated type, so we need to convert it to a string
     template_params["model_type"] = template_params["model_type"].value

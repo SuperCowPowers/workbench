@@ -84,6 +84,7 @@ class FeatureSet(FeatureSetCore):
         target_column: str = None,
         scikit_model_class: str = None,
         model_import_str: str = None,
+        custom_script: str = None,
         **kwargs,
     ) -> Union[Model, None]:
         """Create a Model from the FeatureSet
@@ -98,6 +99,7 @@ class FeatureSet(FeatureSetCore):
             target_column (str, optional): The target column for the model (use None for unsupervised model)
             scikit_model_class (str, optional): Scikit model class to use (e.g. "KMeans", default: None)
             model_import_str (str, optional): The import for the model (e.g. "from sklearn.cluster import KMeans")
+            custom_script (str, optional): The custom script to use for the model (default: None)
 
         Returns:
             Model: The Model created from the FeatureSet (or None if the Model could not be created)
@@ -124,6 +126,7 @@ class FeatureSet(FeatureSetCore):
             model_type=model_type,
             scikit_model_class=scikit_model_class,
             model_import_str=model_import_str,
+            custom_script=custom_script,
         )
         features_to_model.set_output_tags(tags)
         features_to_model.transform(
