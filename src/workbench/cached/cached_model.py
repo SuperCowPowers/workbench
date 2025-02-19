@@ -45,15 +45,6 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().details(**kwargs)
 
     @CachedArtifactMixin.cache_result
-    def health_check(self, **kwargs) -> dict:
-        """Retrieve the CachedModel Health Check.
-
-        Returns:
-            dict: A dictionary of health check details for the CachedModel
-        """
-        return super().health_check(**kwargs)
-
-    @CachedArtifactMixin.cache_result
     def workbench_meta(self) -> Union[str, None]:
         """Retrieve the Enumerated Model Type (REGRESSOR, CLASSIFER, etc).
 
@@ -130,7 +121,6 @@ if __name__ == "__main__":
     my_model = CachedModel("abalone-regression")
     pprint(my_model.summary())
     pprint(my_model.details())
-    pprint(my_model.health_check())
     pprint(my_model.list_inference_runs())
     print(my_model.get_inference_metrics())
     print(my_model.get_inference_predictions())

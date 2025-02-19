@@ -13,7 +13,7 @@ class CachedArtifactMixin:
     # Class-level caches, thread pool, and shutdown flag
     log = logging.getLogger("workbench")
     artifact_cache = WorkbenchCache(prefix="artifact_cache")
-    fresh_cache = WorkbenchCache(prefix="artifact_fresh_cache", expire=90)
+    fresh_cache = WorkbenchCache(prefix="artifact_fresh_cache", expire=10)
     thread_pool = ThreadPoolExecutor(max_workers=5)
 
     @staticmethod
@@ -47,7 +47,7 @@ class CachedArtifactMixin:
 
             # Stale cache: Refresh in the background if enabled and no refresh is already in progress
             if WorkbenchCache.refresh_enabled and cache_fresh is None:
-                self.log.debug(f"Async: Results for {cache_key} refresh thread started...")
+                self.log.debug(f"Async: Refresh thread started: {cache_key}...")
                 cls.fresh_cache.set(cache_key, True)
                 cls.thread_pool.submit(cls._refresh_data_in_background, self, cache_key, method, *args, **kwargs)
 
@@ -88,5 +88,4 @@ if __name__ == "__main__":
     my_model = CachedModel("abalone-regression")
     pprint(my_model.summary())
     pprint(my_model.details())
-    pprint(my_model.health_check())
     CachedArtifactMixin._shutdown()

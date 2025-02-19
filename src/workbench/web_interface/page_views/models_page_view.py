@@ -24,7 +24,7 @@ class ModelsPageView(PageView):
 
     def refresh(self):
         """Refresh the model data from the Cloud Platform"""
-        self.log.important("Calling refresh()..")
+        self.log.important("Calling model page view refresh()..")
         self.models_df = self.meta.models(details=True)
 
         # Drop some columns

@@ -1,12 +1,14 @@
 """Layout for the Endpoints page"""
 
 from typing import Any
-from dash import html, dcc, dash_table
+from dash import html, dcc
 import dash_bootstrap_components as dbc
+
+from workbench.web_interface.components.plugins.ag_table import AGTable
 
 
 def endpoints_layout(
-    endpoints_table: dash_table.DataTable,
+    endpoints_table: AGTable,
     endpoint_details: dcc.Markdown,
     endpoint_metrics: dcc.Graph,
     **kwargs: Any,

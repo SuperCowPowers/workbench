@@ -23,7 +23,7 @@ class FeatureSetsPageView(PageView):
 
     def refresh(self):
         """Refresh the data from the AWS Service Broker"""
-        self.log.important("Calling refresh()..")
+        self.log.important("Calling featuresets page view refresh()..")
         self.feature_sets_df = self.meta.feature_sets(details=True)
 
     def feature_sets(self) -> pd.DataFrame:
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first FeatureSet
-    my_feature_uuid = summary["uuid"].iloc[0]
+    my_feature_uuid = summary["Feature Group"].iloc[0]
     print("\nFeatureSetDetails:")
     details = feature_view.feature_set_details(my_feature_uuid)
     pprint(details)

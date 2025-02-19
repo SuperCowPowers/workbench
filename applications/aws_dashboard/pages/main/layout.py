@@ -1,18 +1,19 @@
 """Main Layout: Layout for the Main page in the Artifact Viewer"""
 
-from dash import html, dcc, dash_table
+from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 # Workbench Imports
 import workbench
+from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.utils.config_manager import ConfigManager
 
 
 def main_layout(
-    data_sources: dash_table.DataTable,
-    feature_sets: dash_table.DataTable,
-    models: dash_table.DataTable,
-    endpoints: dash_table.DataTable,
+    data_sources: AGTable,
+    feature_sets: AGTable,
+    models: AGTable,
+    endpoints: AGTable,
     update_rate: int = 60,
 ) -> html.Div:
     """Main Layout for the Dashboard"""

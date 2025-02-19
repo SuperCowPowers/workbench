@@ -81,7 +81,9 @@ class View:
                     self.log.error(
                         f"View {self.view_name} for {self.artifact_name} doesn't exist and cannot be auto-created..."
                     )
-                    self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = self.join_view = None
+                    self.view_name = self.columns = self.column_types = self.source_table = self.base_table_name = (
+                        self.join_view
+                    ) = None
                     return
 
         # Now fill some details about the view

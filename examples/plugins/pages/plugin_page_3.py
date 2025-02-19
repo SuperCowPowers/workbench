@@ -1,7 +1,7 @@
 """Plugin Page 3:  A 'Hello World' Workbench Plugin Page"""
 
 import dash
-from dash import html, page_container, register_page, callback, Output, Input, State, no_update
+from dash import html, dcc, page_container, register_page, callback, Output, Input, no_update
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 
@@ -48,14 +48,11 @@ class PluginPage3:
             layout=self.page_layout(),
         )
 
-        # Populate the models table with data
-        models = self.meta.models(details=True)
-        models["uuid"] = models["Model Group"]
-        models["id"] = range(len(models))
-        [self.table_component.columnDefs, self.table_component.rowData] = self.models_table.update_properties(models)
+        # Load page callbacks
+        self.page_load_callbacks()
 
-        # Register the callbacks
-        self.register_app_callbacks(app)
+        # Register the callbacks for the page
+        self.page_callbacks()
         self.setup_plugin_callbacks()
         self.model_details.register_internal_callbacks()
 
@@ -71,11 +68,26 @@ class PluginPage3:
                         dbc.Col(self.plot_component, width=7),
                     ]
                 ),
+                # Interval that triggers once on page load
+                dcc.Interval(id="plugin-3-page-load", interval=100, max_intervals=1),
             ]
         )
         return layout
 
-    def register_app_callbacks(self, app: dash.Dash):
+    def page_load_callbacks(self):
+        """Load page (once) callbacks"""
+
+        @callback(
+            [Output(component_id, prop) for component_id, prop in self.models_table.properties],
+            [Input("plugin-3-page-load", "n_intervals")],
+        )
+        def _populate_models_table(_n_intervals):
+            """Callback to Populate the models table with data"""
+            models = self.meta.models(details=True)
+            models["uuid"] = models["Model Group"]
+            return self.models_table.update_properties(models)
+
+    def page_callbacks(self):
         """Register the callbacks for the page"""
 
         @callback(

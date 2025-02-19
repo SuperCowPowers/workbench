@@ -24,7 +24,7 @@ class DataSourcesPageView(PageView):
 
     def refresh(self):
         """Refresh our list of DataSources from the Cloud Platform"""
-        self.log.important("Calling refresh()..")
+        self.log.important("Calling datasource page view refresh()..")
         self.data_sources_df = self.meta.data_sources()
 
         # Add Health Symbols to the Model Group Name

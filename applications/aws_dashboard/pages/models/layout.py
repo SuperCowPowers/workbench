@@ -1,12 +1,14 @@
 """Layout for the Models page"""
 
 from typing import Any
-from dash import dcc, html, dash_table
+from dash import dcc, html
 import dash_bootstrap_components as dbc
+
+from workbench.web_interface.components.plugins.ag_table import AGTable
 
 
 def models_layout(
-    models_table: dash_table.DataTable,
+    models_table: AGTable,
     model_details: html.Div,
     model_plot: dcc.Graph,
     **kwargs: Any,
@@ -28,23 +30,23 @@ def models_layout(
             dbc.Row(
                 [
                     # Column 1: Model Details
-                    dbc.Col(model_details, width=4, style={"padding": "30px 0px 0px 0px"}, className="text-break"),
+                    dbc.Col(model_details, width=5, style={"padding": "30px 0px 0px 0px"}, className="text-break"),
                     # Column 2: Model Plot and Plugins
                     dbc.Col(
                         [
                             dbc.Row(
-                                html.H3("Performance", id="model_plot_header"),
-                                style={"padding": "30px 0px 0px 0px"},
+                                html.H4("Performance", id="model_plot_header"),
+                                style={"padding": "20px 0px 0px 0px"},
                             ),
                             dbc.Row(model_plot),
                             dbc.Row(
-                                html.H3("Plugins", id="plugins_header"),
-                                style={"padding": "30px 0px 0px 0px"},
+                                html.H4("Plugins", id="plugins_header"),
+                                style={"padding": "20px 0px 0px 0px"},
                             ),
                             # Add the dynamically generated Plugin rows
                             *plugin_rows,
                         ],
-                        width=8,
+                        width=7,
                     ),
                 ]
             ),

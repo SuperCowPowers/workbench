@@ -1,12 +1,14 @@
 """DataSources Layout: Layout for the DataSources page in the Artifact Viewer"""
 
-from dash import html, dcc, dash_table
+from dash import html, dcc
 import dash_bootstrap_components as dbc
+
+from workbench.web_interface.components.plugins.ag_table import AGTable
 
 
 def data_sources_layout(
-    data_sources_table: dash_table.DataTable,
-    data_source_sample_rows: dash_table.DataTable,
+    data_sources_table: AGTable,
+    data_source_sample_rows: AGTable,
     data_source_details: dcc.Markdown,
     violin_plot: dcc.Graph,
     correlation_matrix: dcc.Graph,
