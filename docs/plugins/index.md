@@ -6,10 +6,8 @@ The Workbench Plugin system allows clients to customize how their AWS Machine Le
 ### Concept Docs
 Many classes in Workbench need additional high-level material that covers class design and illustrates class usage. Here's the Concept Docs for Plugins:
 
-- [Plugin Concepts: Read First!](https://docs.google.com/presentation/d/1RjpMmJW1i9auPztn2xXYmYKXsZjsnG7vVaCQQ4FLIMM/edit?usp=sharing)
-- [How to Write a Plugin]( https://docs.google.com/presentation/d/1S_-XapmyTsXIkO6od9AVkTbEU2nqS-mEZwFrtUucUME/edit?usp=sharing) 
-- [Plugin Pages](https://docs.google.com/presentation/d/1Yp4ka8DGPdRs8WfsAAUTnc0SHzkkcdJY2TABKxD_CPo/edit?usp=sharing)
-- [Plugins Advanced](https://docs.google.com/presentation/d/1sByTnZa24lY6d4INRMm7OHmQndIZmLbTxOyTeAJol20/edit?usp=sharing)
+- [Workbench Plugin Overview](https://docs.google.com/presentation/d/1RjpMmJW1i9auPztn2xXYmYKXsZjsnG7vVaCQQ4FLIMM/edit?usp=sharing)
+
 
 ## Make a plugin
 
@@ -67,17 +65,19 @@ class ModelPlugin(PluginInterface):
 
 The class variable plugin\_page determines what type of plugin the MyPlugin class is. This variable is inspected during plugin loading at runtime in order to load the plugin to the correct artifact page in the Workbench dashboard. The PluginPage class can be DATA_SOURCE, FEATURE\_SET, MODEL, or ENDPOINT.
 
-## S3 Bucket Plugins (Work in Progress)
-Note: This functionality is coming soon
+## S3 Bucket Plugins
+Offers the most flexibility and fast prototyping. Simply set your workbench  S3 Path and Workbench will load the plugins from S3 directly.
 
-Offers the most flexibility and fast prototyping. Simple set your config/env for  blah to an S3 Path and Workbench will load the plugins from S3 directly.
+```
+"WORKBENCH_PLUGINS": "s3://my-s3-bucket/workbench_plugins"
+```
 
 **Helpful Tip**
 
 You can copy files from your local system up to S3 with this handy AWS CLI call
 
 ```
- aws s3 cp . s3://my-workbench/workbench_plugins \
+ aws s3 cp . s3://my-s3-bucket/workbench_plugins \
  --recursive --exclude "*" --include "*.py"
 ```
  
