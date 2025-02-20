@@ -22,7 +22,6 @@ from pathlib import Path
 
 from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
-from workbench.utils.chem_utils import compute_molecular_descriptors
 
 
 log = logging.getLogger("workbench")
