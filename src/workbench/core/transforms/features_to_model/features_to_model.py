@@ -141,7 +141,7 @@ class FeaturesToModel(Transform):
         # Custom Script
         if self.custom_script:
             script_path = self.custom_script
-            self.log.info("Custom script path: {script_path}")
+            self.log.info(f"Custom script path: {script_path}")
 
         # We're using one of the built-in model script templates
         else:
