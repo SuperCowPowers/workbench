@@ -192,8 +192,8 @@ class ModelCore(Artifact):
             model_data=self.model_data_url(),
             source_dir=self.source_dir_url(),
             entry_point=self.entry_point(),
-            sagemaker_session=self.sm_session, 
-            image_uri=self.container_image()
+            sagemaker_session=self.sm_session,
+            image_uri=self.container_image(),
         )
 
     def list_inference_runs(self) -> list[str]:
@@ -738,7 +738,9 @@ class ModelCore(Artifact):
         """
         meta = self.aws_meta()
         try:
-            return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["Environment"]["SAGEMAKER_SUBMIT_DIRECTORY"]
+            return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["Environment"][
+                "SAGEMAKER_SUBMIT_DIRECTORY"
+            ]
         except (KeyError, IndexError, TypeError):
             return None
 
@@ -750,7 +752,9 @@ class ModelCore(Artifact):
         """
         meta = self.aws_meta()
         try:
-            return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["Environment"]["SAGEMAKER_PROGRAM"]
+            return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["Environment"][
+                "SAGEMAKER_PROGRAM"
+            ]
         except (KeyError, IndexError, TypeError):
             return None
 

@@ -484,6 +484,7 @@ def canonicalize(df: pd.DataFrame, remove_mol_col: bool = True) -> pd.DataFrame:
 
     return df
 
+
 def custom_tautomer_canonicalization(mol: Mol) -> str:
     """Domain-specific processing of a molecule to select the canonical tautomer.
 
@@ -595,4 +596,3 @@ if __name__ == "__main__":
     # Perform Tautomerization
     df = perform_tautomerization(df)
     print(df)
-
