@@ -189,7 +189,7 @@ class ModelCore(Artifact):
            sagemaker.model.Model: AWS Sagemaker Model object
         """
         return SagemakerModel(
-            model_data=self.model_package_arn(), sagemaker_session=self.sm_session, image_uri=self.container_image()
+            model_data=self.get_model_data_url(), sagemaker_session=self.sm_session, image_uri=self.container_image()
         )
 
     def list_inference_runs(self) -> list[str]:
