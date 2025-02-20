@@ -182,14 +182,18 @@ class ModelCore(Artifact):
             self.remove_health_tag("no_endpoint")
         return health_issues
 
-    def latest_model_object(self) -> SagemakerModel:
+    def sagemaker_model_object(self) -> SagemakerModel:
         """Return the latest AWS Sagemaker Model object for this Workbench Model
 
         Returns:
            sagemaker.model.Model: AWS Sagemaker Model object
         """
         return SagemakerModel(
-            model_data=self.get_model_data_url(), sagemaker_session=self.sm_session, image_uri=self.container_image()
+            model_data=self.model_data_url(),
+            source_dir=self.source_dir_url(),
+            entry_point=self.entry_point(),
+            sagemaker_session=self.sm_session, 
+            image_uri=self.container_image()
         )
 
     def list_inference_runs(self) -> list[str]:
@@ -378,7 +382,7 @@ class ModelCore(Artifact):
         Returns:
             Optional[str]: The hash for this artifact
         """
-        model_url = self.get_model_data_url()
+        model_url = self.model_data_url()
         return compute_s3_object_hash(model_url, self.boto3_session)
 
     def register_endpoint(self, endpoint_name: str):
@@ -714,7 +718,7 @@ class ModelCore(Artifact):
         self.details(recompute=True)
         return True
 
-    def get_model_data_url(self) -> Optional[str]:
+    def model_data_url(self) -> Optional[str]:
         """Retrieve the ModelDataUrl from the model's AWS metadata.
 
         Returns:
@@ -723,6 +727,30 @@ class ModelCore(Artifact):
         meta = self.aws_meta()
         try:
             return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["ModelDataUrl"]
+        except (KeyError, IndexError, TypeError):
+            return None
+
+    def source_dir_url(self) -> Optional[str]:
+        """Retrieve the ModelDataUrl from the model's AWS metadata.
+
+        Returns:
+            Optional[str]: The ModelDataUrl if available, otherwise None.
+        """
+        meta = self.aws_meta()
+        try:
+            return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["Environment"]["SAGEMAKER_SUBMIT_DIRECTORY"]
+        except (KeyError, IndexError, TypeError):
+            return None
+
+    def entry_point(self) -> Optional[str]:
+        """Retrieve the ModelDataUrl from the model's AWS metadata.
+
+        Returns:
+            Optional[str]: The ModelDataUrl if available, otherwise None.
+        """
+        meta = self.aws_meta()
+        try:
+            return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["Environment"]["SAGEMAKER_PROGRAM"]
         except (KeyError, IndexError, TypeError):
             return None
 
@@ -1067,8 +1095,8 @@ if __name__ == "__main__":
     print(f"Workbench Meta: {my_model.workbench_meta()}")
 
     # Get the latest model object (sagemaker.model.Model)
-    sagemaker_model = my_model.latest_model_object()
-    print(f"Latest Model Object: {my_model.latest_model_object()}")
+    sagemaker_model = my_model.sagemaker_model_object()
+    print(f"Latest Model Object: {my_model.sagemaker_model_object()}")
 
     # Get the Class Labels (if it's a classifier)
     my_model = ModelCore("wine-classification")

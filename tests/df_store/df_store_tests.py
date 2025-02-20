@@ -44,6 +44,12 @@ def test_get_series():
     print(f"Getting data 'test_series':\n{return_value}")
 
 
+def test_parquet_type_handling():
+    my_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    df_store.upsert("/tests/test_parquet_types", my_df)
+    df_store.delete("/tests/test_parquet_types")
+
+
 def test_deletion():
     df_store.delete("/tests/test_data")
     df_store.delete("/tests/test_series")
