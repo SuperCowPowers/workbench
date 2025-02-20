@@ -2,16 +2,26 @@
 
 DataSources:
     - aqsol_data
+
 FeatureSets:
     - aqsol_features
     - aqsol_mol_descriptors
+
 Models:
     - aqsol-regression
     - aqsol-mol-regression
+    - aqsol-mol-class
+    - smiles-to-md-v0
+    - smiles-to-fingerprints-v0
+    - tautomerize-v0
 
 Endpoints:
-    - aqsol-regression-end
-    - aqsol-mol-regression-end
+    - aqsol-regression
+    - aqsol-mol-regression
+    - aqsol-mol-class
+    - smiles-to-md-v0
+    - smiles-to-fingerprints-v0
+    - tautomerize-v0
 """
 
 import importlib.resources
@@ -92,9 +102,9 @@ if __name__ == "__main__":
         )
 
     # Create the aqsol regression Endpoint
-    if recreate or not Endpoint("aqsol-regression-end").exists():
+    if recreate or not Endpoint("aqsol-regression").exists():
         m = Model("aqsol-regression")
-        m.to_endpoint(name="aqsol-regression-end", tags=["aqsol", "regression"])
+        m.to_endpoint(name="aqsol-regression", tags=["aqsol", "regression"])
 
     #
     # Molecular Descriptor Artifacts
@@ -102,7 +112,7 @@ if __name__ == "__main__":
     # Create the rdkit FeatureSet (this is an example of using lower level classes)
     if recreate or not FeatureSet("aqsol_mol_descriptors").exists():
         df = DataSource("aqsol_data").pull_dataframe()
-        end = Endpoint("smiles-to-md-v0-end")
+        end = Endpoint("smiles-to-md-v0")
         mol_df = end.inference(df)
         to_features = PandasToFeatures("aqsol_mol_descriptors")
         to_features.set_output_tags(["aqsol", "public"])
@@ -160,17 +170,17 @@ if __name__ == "__main__":
         )
 
     # Create the Molecular Descriptor Regression Endpoint
-    if recreate or not Endpoint("aqsol-mol-regression-end").exists():
+    if recreate or not Endpoint("aqsol-mol-regression").exists():
         m = Model("aqsol-mol-regression")
-        end = m.to_endpoint(name="aqsol-mol-regression-end", tags=["aqsol", "mol", "regression"])
+        end = m.to_endpoint(name="aqsol-mol-regression", tags=["aqsol", "mol", "regression"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
 
     # Create the Molecular Descriptor Classification Endpoint
-    if recreate or not Endpoint("aqsol-mol-class-end").exists():
+    if recreate or not Endpoint("aqsol-mol-class").exists():
         m = Model("aqsol-mol-class")
-        end = m.to_endpoint(name="aqsol-mol-class-end", tags=["aqsol", "mol", "classification"])
+        end = m.to_endpoint(name="aqsol-mol-class", tags=["aqsol", "mol", "classification"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
@@ -212,23 +222,23 @@ if __name__ == "__main__":
         )
 
     # Endpoints for our Transformer/Custom Models
-    if recreate or not Endpoint("smiles-to-md-v0-end").exists():
+    if recreate or not Endpoint("smiles-to-md-v0").exists():
         m = Model("smiles-to-md-v0")
-        end = m.to_endpoint(name="smiles-to-md-v0-end", tags=["smiles", "molecular descriptors"])
+        end = m.to_endpoint(name="smiles-to-md-v0", tags=["smiles", "molecular descriptors"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
 
-    if recreate or not Endpoint("smiles-to-fingerprints-v0-end").exists():
+    if recreate or not Endpoint("smiles-to-fingerprints-v0").exists():
         m = Model("smiles-to-fingerprints-v0")
-        end = m.to_endpoint(name="smiles-to-fingerprints-v0-end", tags=["smiles", "morgan fingerprints"])
+        end = m.to_endpoint(name="smiles-to-fingerprints-v0", tags=["smiles", "morgan fingerprints"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
 
-    if recreate or not Endpoint("tautomerize-v0-end").exists():
+    if recreate or not Endpoint("tautomerize-v0").exists():
         m = Model("tautomerize-v0")
-        end = m.to_endpoint(name="tautomerize-v0-end", tags=["smiles", "tautomerization"])
+        end = m.to_endpoint(name="tautomerize-v0", tags=["smiles", "tautomerization"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
