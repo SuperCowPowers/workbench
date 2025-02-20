@@ -103,7 +103,8 @@ if __name__ == "__main__":
     # Create the rdkit FeatureSet (this is an example of using lower level classes)
     if recreate or not FeatureSet("aqsol_mol_descriptors").exists():
         df = DataSource("aqsol_data").pull_dataframe()
-        mol_df = compute_molecular_descriptors(df)
+        end = Endpoint("smiles-to-md-v0-end")
+        mol_df = end.inference(df)
         to_features = PandasToFeatures("aqsol_mol_descriptors")
         to_features.set_output_tags(["aqsol", "public"])
         to_features.set_input(mol_df, id_column="id")
@@ -211,7 +212,7 @@ if __name__ == "__main__":
             custom_script=script_path,
         )
 
-    # Endpoints for our Transformer/Custome Models
+    # Endpoints for our Transformer/Custom Models
     if recreate or not Endpoint("smiles-to-md-v0-end").exists():
         m = Model("smiles-to-md-v0")
         end = m.to_endpoint(name="smiles-to-md-v0-end", tags=["smiles", "molecular descriptors"])
