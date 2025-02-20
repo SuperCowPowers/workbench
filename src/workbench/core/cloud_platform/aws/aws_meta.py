@@ -282,16 +282,23 @@ class AWSMeta:
 
                 # Retrieve endpoint configuration to determine instance type or serverless info
                 endpoint_config_name = endpoint_info["EndpointConfigName"]
-                endpoint_config = sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
-                production_variant = endpoint_config["ProductionVariants"][0]
 
-                # Determine instance type or serverless configuration
-                instance_type = production_variant.get("InstanceType")
-                if instance_type is None:
-                    # If no instance type, it's a serverless configuration
-                    mem_size = production_variant["ServerlessConfig"]["MemorySizeInMB"]
-                    concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
-                    instance_type = f"Serverless ({mem_size//1024}GB/{concurrency})"
+                # Getting the endpoint configuration can fail so account for that
+                try:
+                    endpoint_config = sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
+                    production_variant = endpoint_config["ProductionVariants"][0]
+                    # Determine instance type or serverless configuration
+                    instance_type = production_variant.get("InstanceType")
+                    if instance_type is None:
+                        # If no instance type, it's a serverless configuration
+                        mem_size = production_variant["ServerlessConfig"]["MemorySizeInMB"]
+                        concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
+                        instance_type = f"Serverless ({mem_size // 1024}GB/{concurrency})"
+                except sagemaker_client.exceptions.ClientError:
+                    # If the endpoint config is not found, change the config name to reflect this
+                    endpoint_config_name = f"{endpoint_config_name} (Not Found)"
+                    production_variant = {}
+                    instance_type = "Unknown"
 
                 # Compile endpoint summary
                 summary = {
@@ -303,6 +310,7 @@ class AWSMeta:
                     "Tags": aws_tags.get("workbench_tags", "-"),
                     "Input": aws_tags.get("workbench_input", "-"),
                     "Status": endpoint_info["EndpointStatus"],
+                    "Config": endpoint_config_name,
                     "Variant": production_variant.get("VariantName", "-"),
                     "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
                     "Samp(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
