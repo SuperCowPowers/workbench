@@ -184,6 +184,10 @@ class AWSDFStore:
         if not isinstance(data, pd.DataFrame):
             raise ValueError("Only Pandas DataFrame or Series objects are supported.")
 
+        # Convert object columns to string type to avoid PyArrow type inference issues.
+        data = self.type_convert_before_parquet(data)
+
+        # Update/Insert the DataFrame to S3
         s3_uri = self._generate_s3_uri(location)
         try:
             wr.s3.to_parquet(df=data, path=s3_uri, dataset=True, mode="overwrite")
@@ -191,6 +195,14 @@ class AWSDFStore:
         except Exception as e:
             self.log.error(f"Failed to cache dataframe '{s3_uri}': {e}")
             raise
+
+    @staticmethod
+    def type_convert_before_parquet(df: pd.DataFrame) -> pd.DataFrame:
+        # Convert object columns to string type to avoid PyArrow type inference issues.
+        df = df.copy()
+        object_cols = df.select_dtypes(include=["object"]).columns
+        df[object_cols] = df[object_cols].astype("str")
+        return df
 
     def delete(self, location: str):
         """Delete a DataFrame from the AWS S3.

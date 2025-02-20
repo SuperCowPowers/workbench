@@ -44,10 +44,22 @@ def test_get_series():
     print(f"Getting data 'test_series':\n{return_value}")
 
 
-def test_parquet_type_handling():
-    my_df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    df_store.upsert("/tests/test_parquet_types", my_df)
-    df_store.delete("/tests/test_parquet_types")
+def test_string_types():
+    # Create a DataFrame with int64 values.
+    df = pd.DataFrame({"Id": ["A", "B", "C"], "Name": ["Alice", "Bob", "Charlie"]})
+    df_store.upsert("/tests/test_string_types", df)
+    df_store.delete("/tests/test_string_types")
+
+
+def test_type_conflation_issues():
+    # Create a DataFrame with int64 values.
+    df = pd.DataFrame({"Ver": [123, 456, 789]}, dtype="int64")
+
+    # Sneak in a "-" into one value (now column type becomes 'object').
+    df.loc[1, "Ver"] = "-"
+
+    df_store.upsert("/tests/test_type_conflation", df)
+    df_store.delete("/tests/test_type_conflation")
 
 
 def test_deletion():
@@ -66,4 +78,6 @@ if __name__ == "__main__":
     test_get_dataframe()
     test_get_series()
     test_repr()
+    test_string_types()
+    test_type_conflation_issues()
     test_deletion()
