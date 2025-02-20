@@ -12,6 +12,8 @@ from rdkit import RDLogger
 from rdkit.Chem import FunctionalGroups as FG
 from mordred import Calculator
 from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
+from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
+from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
 
 # Load functional group hierarchy once during initialization
 fgroup_hierarchy = FG.BuildFuncGroupHierarchy()
@@ -445,6 +447,136 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=
     return df
 
 
+def canonicalize(df: pd.DataFrame, remove_mol_col: bool = True) -> pd.DataFrame:
+    """
+    Generate RDKit's canonical SMILES for each molecule in the input DataFrame.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing a column named 'SMILES' (case-insensitive).
+        remove_mol_col (bool): Whether to drop the intermediate 'molecule' column. Default is True.
+
+    Returns:
+        pd.DataFrame: A DataFrame with an additional 'canonical_smiles' column and,
+                      optionally, the 'molecule' column.
+    """
+    # Identify the SMILES column (case-insensitive)
+    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
+    if smiles_column is None:
+        raise ValueError("Input DataFrame must have a 'SMILES' column")
+
+    # Convert SMILES to RDKit molecules
+    df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
+
+    # Handle invalid SMILES strings
+    invalid_indices = df[df["molecule"].isna()].index
+    if not invalid_indices.empty:
+        log.critical(f"Invalid SMILES strings at indices: {invalid_indices.tolist()}")
+
+    # Vectorized canonicalization
+    def mol_to_canonical_smiles(mol):
+        return Chem.MolToSmiles(mol) if mol else pd.NA
+
+    df["canonical_smiles"] = df["molecule"].apply(mol_to_canonical_smiles)
+
+    # Drop intermediate RDKit molecule column if requested
+    if remove_mol_col:
+        df.drop(columns=["molecule"], inplace=True)
+
+    return df
+
+def custom_tautomer_canonicalization(mol: Mol) -> str:
+    """Domain-specific processing of a molecule to select the canonical tautomer.
+
+    This function enumerates all possible tautomers for a given molecule and applies
+    custom logic to select the canonical form.
+
+    Args:
+        mol (Mol): The RDKit molecule for which the canonical tautomer is to be determined.
+
+    Returns:
+        str: The SMILES string of the selected canonical tautomer.
+    """
+    tautomer_enumerator = TautomerEnumerator()
+    enumerated_tautomers = tautomer_enumerator.Enumerate(mol)
+
+    # Example custom logic: prioritize based on use-case specific criteria
+    selected_tautomer = None
+    highest_score = float("-inf")
+
+    for taut in enumerated_tautomers:
+        # Compute custom scoring logic:
+        # 1. Prefer forms with fewer hydrogen bond donors (HBD) if membrane permeability is important
+        # 2. Penalize forms with high molecular weight for better drug-likeness
+        # 3. Incorporate known functional group preferences (e.g., keto > enol for binding)
+
+        hbd = CalcNumHBD(taut)  # Hydrogen Bond Donors
+        mw = CalcExactMolWt(taut)  # Molecular Weight
+        aromatic_rings = taut.GetRingInfo().NumAromaticRings()  # Favor aromaticity
+
+        # Example scoring: balance HBD, MW, and aromaticity
+        score = -hbd - 0.01 * mw + aromatic_rings * 2
+
+        # Update selected tautomer
+        if score > highest_score:
+            highest_score = score
+            selected_tautomer = taut
+
+    # Return the SMILES of the selected tautomer
+    return Chem.MolToSmiles(selected_tautomer)
+
+
+def standard_tautomer_canonicalization(mol: Mol) -> str:
+    """Standard processing of a molecule to select the canonical tautomer.
+
+    RDKit's `TautomerEnumerator` uses heuristics to select a canonical tautomer,
+    such as preferring keto over enol forms and minimizing formal charges.
+
+    Args:
+        mol (Mol): The RDKit molecule for which the canonical tautomer is to be determined.
+
+    Returns:
+        str: The SMILES string of the canonical tautomer.
+    """
+    tautomer_enumerator = TautomerEnumerator()
+    canonical_tautomer = tautomer_enumerator.Canonicalize(mol)
+    return Chem.MolToSmiles(canonical_tautomer)
+
+
+def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Perform tautomer enumeration and canonicalization on a DataFrame.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing SMILES strings.
+
+    Returns:
+        pd.DataFrame: A new DataFrame with additional 'canonical_smiles' and 'tautomeric_form' columns.
+    """
+    # Standardize SMILES strings and create 'molecule' column for further processing
+    df = canonicalize(df, remove_mol_col=False)
+
+    # Helper function to safely canonicalize a molecule's tautomer
+    def safe_tautomerize(mol):
+        """Safely canonicalize a molecule's tautomer, handling errors gracefully."""
+        if not mol:
+            return pd.NA
+        try:
+            # Use RDKit's standard Tautomer enumeration and canonicalization
+            # For custom logic, replace with custom_tautomer_canonicalization(mol)
+            return standard_tautomer_canonicalization(mol)
+        except Exception as e:
+            log.warning(f"Tautomerization failed: {str(e)}")
+            return pd.NA
+
+    # Apply tautomer canonicalization to each molecule
+    df["tautomeric_form"] = df["molecule"].apply(safe_tautomerize)
+
+    # Drop intermediate RDKit molecule column to clean up the DataFrame
+    df.drop(columns=["molecule"], inplace=True)
+
+    return df
+
+
 if __name__ == "__main__":
 
     # Small set of tests
@@ -459,3 +591,8 @@ if __name__ == "__main__":
     # Compute Morgan Fingerprints
     df = compute_morgan_fingerprints(df)
     print(df)
+
+    # Perform Tautomerization
+    df = perform_tautomerization(df)
+    print(df)
+

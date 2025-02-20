@@ -15,7 +15,7 @@ import pandas as pd
 import json
 
 # Local imports
-from chem_utils import perform_tautomerization
+from local_utils import perform_tautomerization
 
 
 # TRAINING SECTION
