@@ -345,6 +345,11 @@ class EndpointCore(Artifact):
             If capture=True inference/performance metrics are written to S3 Endpoint Inference Folder
         """
 
+        # Check if this is a 'floating endpoint' (no model)
+        if self.get_input() == "unknown":
+            self.log.important("No model associated with this endpoint, running 'no frills' inference...")
+            return self.fast_inference(eval_df)
+
         # Run predictions on the evaluation data
         prediction_df = self._predict(eval_df)
         if prediction_df.empty:
