@@ -24,12 +24,13 @@ class ModelToEndpoint(Transform):
         ```
     """
 
-    def __init__(self, model_uuid: str, endpoint_uuid: str, serverless: bool = True):
+    def __init__(self, model_uuid: str, endpoint_uuid: str, serverless: bool = True, instance: str = "ml.t2.medium"):
         """ModelToEndpoint Initialization
         Args:
             model_uuid(str): The UUID of the input Model
             endpoint_uuid(str): The UUID of the output Endpoint
             serverless(bool): Deploy the Endpoint in serverless mode (default: True)
+            instance(str): The instance type to use for the Endpoint (default: "ml.t2.medium")
         """
         # Make sure the endpoint_uuid is a valid name
         Artifact.is_name_valid(endpoint_uuid, delimiter="-", lower_case=False)
@@ -39,7 +40,7 @@ class ModelToEndpoint(Transform):
 
         # Set up all my instance attributes
         self.serverless = serverless
-        self.instance_type = "serverless" if serverless else "ml.m5.large"
+        self.instance_type = "serverless" if serverless else instance
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 

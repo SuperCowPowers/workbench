@@ -255,6 +255,7 @@ class FeaturesToModel(Transform):
 
     def create_and_register_model(self):
         """Create and Register the Model"""
+        from workbench.utils.endpoint_utils import supported_instance_types
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
@@ -276,8 +277,8 @@ class FeaturesToModel(Transform):
             image_uri=image,
             content_types=["text/csv"],
             response_types=["text/csv"],
-            inference_instances=["ml.m5.large"],
-            transform_instances=["ml.m5.large"],
+            inference_instances=supported_instance_types(),
+            transform_instances=supported_instance_types(),
             approval_status="Approved",
             description=self.model_description,
         )
