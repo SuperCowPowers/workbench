@@ -145,6 +145,34 @@ def backtrack_to_fs(end: Endpoint) -> Union[FeatureSet, None]:
     return fs
 
 
+def endpoint_instance_info() -> pd.DataFrame:
+    """Get the instance information for the Endpoint"""
+    data = [
+        {"Instance Name": "ml.t2.medium", "vCPUs": 2, "Memory": 4, "Price per Hour": 0.05, "Category": "General",
+         "Architecture": "x86"},
+        {"Instance Name": "ml.t3.large", "vCPUs": 2, "Memory": 8, "Price per Hour": 0.10, "Category": "General",
+         "Architecture": "x86"},
+        {"Instance Name": "ml.t3.xlarge", "vCPUs": 4, "Memory": 16, "Price per Hour": 0.20, "Category": "General",
+         "Architecture": "x86"},
+        {"Instance Name": "ml.m5.large", "vCPUs": 2, "Memory": 8, "Price per Hour": 0.12, "Category": "General",
+         "Architecture": "x86"},
+        {"Instance Name": "ml.c5.large", "vCPUs": 2, "Memory": 4, "Price per Hour": 0.10, "Category": "Compute",
+         "Architecture": "x86"},
+        {"Instance Name": "ml.c7g.large", "vCPUs": 2, "Memory": 4, "Price per Hour": 0.09, "Category": "Compute",
+         "Architecture": "ARM64"},
+        {"Instance Name": "ml.c7g.xlarge", "vCPUs": 4, "Memory": 8, "Price per Hour": 0.17, "Category": "Compute",
+         "Architecture": "ARM64"},
+    ]
+    return pd.DataFrame(data)
+
+
+def supported_instance_types() -> list:
+    """Get the supported instance types for the Model/Endpoint"""
+
+    # Just return the "Instance Name" column
+    return list(endpoint_instance_info()["Instance Name"])
+
+
 if __name__ == "__main__":
     """Exercise the Endpoint Utilities"""
 
@@ -159,11 +187,6 @@ if __name__ == "__main__":
     model_data_url = get_model_data_url(my_endpoint.endpoint_config_name(), my_endpoint.boto3_session)
     print(model_data_url)
 
-    # Also test for realtime endpoints
-    my_endpoint = Endpoint("abalone-regression-end-rt")
-    model_data_url = get_model_data_url(my_endpoint.endpoint_config_name(), my_endpoint.boto3_session)
-    print(model_data_url)
-
     # Get the training data
     my_train_df = fs_training_data(my_endpoint)
     print(my_train_df)
@@ -175,3 +198,15 @@ if __name__ == "__main__":
     # Backtrack to the FeatureSet
     my_fs = backtrack_to_fs(my_endpoint)
     print(my_fs)
+
+    # Get the instance information
+    print(endpoint_instance_info())
+
+    # Get the supported instance types
+    print(supported_instance_types())
+
+    # Also test for realtime endpoints
+    rt_endpoint = Endpoint("abalone-regression-end-rt")
+    if rt_endpoint.exists():
+        model_data_url = get_model_data_url(rt_endpoint.endpoint_config_name(), rt_endpoint.boto3_session)
+        print(model_data_url)
