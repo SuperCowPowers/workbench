@@ -18,4 +18,4 @@ pipeline_model = PipelineModel(
 )
 
 # Deploy the pipeline endpoint
-predictor = pipeline_model.deploy(initial_instance_count=1, instance_type="ml.m5.large")
+predictor = pipeline_model.deploy(initial_instance_count=1, instance_type="ml.t3.medium")
