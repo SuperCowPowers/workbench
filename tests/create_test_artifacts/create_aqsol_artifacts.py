@@ -192,6 +192,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="smiles-to-md-v0",
             model_type=ModelType.TRANSFORMER,
+            feature_list=["smiles"],
             description="Smiles to Molecular Descriptors",
             tags=["smiles", "molecular descriptors"],
             custom_script=script_path,
@@ -204,6 +205,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="smiles-to-fingerprints-v0",
             model_type=ModelType.TRANSFORMER,
+            feature_list=["smiles"],
             description="Smiles to Morgan Fingerprints",
             tags=["smiles", "morgan fingerprints"],
             custom_script=script_path,
@@ -216,6 +218,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="tautomerize-v0",
             model_type=ModelType.TRANSFORMER,
+            feature_list=["smiles"],
             description="Tautomerize Smiles",
             tags=["smiles", "tautomerization"],
             custom_script=script_path,
@@ -247,6 +250,16 @@ if __name__ == "__main__":
         m = Model("tautomerize-v0")
         m.set_owner("BW")
         end = m.to_endpoint(name="tautomerize-v0-rt", tags=["smiles", "tautomerization", "real-time"], serverless=False)
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
+
+    # Temp create an endpoint for testing with a ml.c7g.large instance
+    if recreate or not Endpoint("tautomerize-v0-rt-fast").exists():
+        m = Model("tautomerize-v0")
+        m.set_owner("BW")
+        end = m.to_endpoint(name="tautomerize-v0-rt-fast", tags=["smiles", "tautomerization", "real-time"],
+                            serverless=False, instance="ml.c7g.large")
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)

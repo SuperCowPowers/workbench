@@ -696,7 +696,7 @@ def canonicalize(df: pd.DataFrame, remove_mol_col: bool = True) -> pd.DataFrame:
         remove_mol_col (bool): Whether to drop the intermediate 'molecule' column. Default is True.
 
     Returns:
-        pd.DataFrame: A DataFrame with an additional 'canonical_smiles' column and,
+        pd.DataFrame: A DataFrame with an additional 'smiles_canonical' column and,
                       optionally, the 'molecule' column.
     """
     # Identify the SMILES column (case-insensitive)
@@ -713,10 +713,10 @@ def canonicalize(df: pd.DataFrame, remove_mol_col: bool = True) -> pd.DataFrame:
         log.critical(f"Invalid SMILES strings at indices: {invalid_indices.tolist()}")
 
     # Vectorized canonicalization
-    def mol_to_canonical_smiles(mol):
+    def mol_to_smiles_canonical(mol):
         return Chem.MolToSmiles(mol) if mol else pd.NA
 
-    df["canonical_smiles"] = df["molecule"].apply(mol_to_canonical_smiles)
+    df["smiles_canonical"] = df["molecule"].apply(mol_to_smiles_canonical)
 
     # Drop intermediate RDKit molecule column if requested
     if remove_mol_col:
@@ -791,7 +791,7 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): Input DataFrame containing SMILES strings.
 
     Returns:
-        pd.DataFrame: A new DataFrame with additional 'canonical_smiles' and 'tautomeric_form' columns.
+        pd.DataFrame: A new DataFrame with additional 'smiles_canonical' and 'smiles_tautomer' columns.
     """
     # Standardize SMILES strings and create 'molecule' column for further processing
     df = canonicalize(df, remove_mol_col=False)
@@ -810,10 +810,13 @@ def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
             return pd.NA
 
     # Apply tautomer canonicalization to each molecule
-    df["tautomeric_form"] = df["molecule"].apply(safe_tautomerize)
+    df["smiles_tautomer"] = df["molecule"].apply(safe_tautomerize)
 
     # Drop intermediate RDKit molecule column to clean up the DataFrame
     df.drop(columns=["molecule"], inplace=True)
+
+    # Now switch the smiles columns
+    df.rename(columns={"smiles": "smiles_orig", "smiles_tautomer": "smiles"}, inplace=True)
 
     return df
 

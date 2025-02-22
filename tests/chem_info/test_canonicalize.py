@@ -27,7 +27,7 @@ def test_canonicalize():
 
     # Test that the results match the expected canonical SMILES
     for index, row in result_df.iterrows():
-        assert row["canonical_smiles"] == row["expected"], f"Canonicalization failed for {row['id']}"
+        assert row["smiles_canonical"] == row["expected"], f"Canonicalization failed for {row['id']}"
 
     print("All canonicalization tests passed!")
 

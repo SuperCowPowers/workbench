@@ -42,7 +42,7 @@ def test_tautomerization():
 
     # Test that the results match the expected canonical tautomers
     for index, row in result_df.iterrows():
-        assert row["tautomeric_form"] == row["expected"], f"Tautomerization failed for {row['id']}"
+        assert row["smiles_tautomer"] == row["expected"], f"Tautomerization failed for {row['id']}"
 
     print("All tests passed!")
 

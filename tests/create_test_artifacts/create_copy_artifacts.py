@@ -7,7 +7,7 @@ FeatureSets:
 Models:
     - wine-classification-copy
 Endpoints:
-    - wine-classification-end-copy
+    - wine-classification-copy
 """
 
 import sys
@@ -46,9 +46,9 @@ if __name__ == "__main__":
         m.set_owner("test")
 
     # Create the wine classification Endpoint
-    if recreate or not Endpoint("wine-classification-end-copy").exists():
+    if recreate or not Endpoint("wine-classification-copy").exists():
         m = Model("wine-classification-copy")
-        end = m.to_endpoint("wine-classification-end-copy", tags=["wine", "classification"])
+        end = m.to_endpoint("wine-classification-copy", tags=["wine", "classification"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
