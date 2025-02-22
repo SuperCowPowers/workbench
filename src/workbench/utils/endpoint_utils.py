@@ -219,7 +219,7 @@ if __name__ == "__main__":
     """Exercise the Endpoint Utilities"""
 
     # Create an Endpoint
-    endpoint_name = "abalone-regression-end"
+    endpoint_name = "abalone-regression"
     my_endpoint = Endpoint(endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")

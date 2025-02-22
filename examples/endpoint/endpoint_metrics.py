@@ -6,7 +6,7 @@ pd.set_option("display.max_rows", None)
 pd.set_option("display.width", 1000)
 
 # Grab an existing Endpoint
-endpoint = Endpoint("abalone-regression-end")
+endpoint = Endpoint("abalone-regression")
 
 # Workbench tracks both Model performance and Endpoint Metrics
 model_metrics = endpoint.details()["model_metrics"]

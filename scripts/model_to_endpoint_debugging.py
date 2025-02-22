@@ -7,8 +7,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Hardcoded values
-MODEL_PACKAGE_GROUP_NAME = "abalone-regression-end"
-ENDPOINT_NAME = f"{MODEL_PACKAGE_GROUP_NAME}-end"
+MODEL_PACKAGE_GROUP_NAME = "abalone-regression"
+ENDPOINT_NAME = f"{MODEL_PACKAGE_GROUP_NAME}"
 MEM_SIZE = 4096
 MAX_CONCURRENCY = 10
 ROLE_ARN = "arn:aws:iam::507740646243:role/Workbench-ExecutionRole"

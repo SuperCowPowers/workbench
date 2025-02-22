@@ -23,7 +23,7 @@ to_model.transform(target_column=None, feature_list=["smiles"], description="Smi
 
 # Deploy an Endpoint for the Model
 my_model = Model("smiles-to-md-v0")
-endpoint = my_model.to_endpoint(name="smiles-to-md-v0-end", tags=["smiles", "molecular descriptors"])
+endpoint = my_model.to_endpoint(name="smiles-to-md-v0", tags=["smiles", "molecular descriptors"])
 
 # Run auto-inference on the Endpoint
 endpoint.auto_inference(capture=True)

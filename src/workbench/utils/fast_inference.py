@@ -57,7 +57,7 @@ if __name__ == "__main__":
     from workbench.utils.endpoint_utils import fs_training_data, fs_evaluation_data
 
     # Create an Endpoint
-    my_endpoint_name = "abalone-regression-end"
+    my_endpoint_name = "abalone-regression"
     my_endpoint = Endpoint(my_endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {my_endpoint_name} does not exist.")

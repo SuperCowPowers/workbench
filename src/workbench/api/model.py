@@ -49,7 +49,7 @@ class Model(ModelCore):
 
         # If the endpoint_name wasn't given generate it
         else:
-            name = self.uuid.replace("_features", "") + "-end"
+            name = self.uuid.replace("_features", "") + ""
             name = Artifact.generate_valid_name(name, delimiter="-")
 
         # Create the Endpoint Tags

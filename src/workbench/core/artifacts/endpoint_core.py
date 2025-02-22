@@ -956,7 +956,7 @@ if __name__ == "__main__":
     from workbench.utils.endpoint_utils import fs_evaluation_data
 
     # Grab an EndpointCore object and pull some information from it
-    my_endpoint = EndpointCore("abalone-regression-end")
+    my_endpoint = EndpointCore("abalone-regression")
 
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()
@@ -1001,7 +1001,7 @@ if __name__ == "__main__":
     pred_results = my_endpoint.inference(my_eval_df, capture_uuid="holdout_xyz")
 
     # Run Inference and metrics for a Classification Endpoint
-    class_endpoint = EndpointCore("wine-classification-end")
+    class_endpoint = EndpointCore("wine-classification")
     auto_predictions = class_endpoint.auto_inference()
 
     # Generate the confusion matrix
@@ -1012,4 +1012,4 @@ if __name__ == "__main__":
     fast_results = my_endpoint.fast_inference(my_eval_df)
 
     # Test the class method delete
-    EndpointCore.managed_delete("abc-end")
+    EndpointCore.managed_delete("abc")

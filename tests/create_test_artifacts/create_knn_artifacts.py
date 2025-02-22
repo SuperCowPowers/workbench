@@ -38,9 +38,9 @@ if __name__ == "__main__":
         )
 
     # Create the Abalone KNN Regression Endpoint
-    if recreate or not Endpoint("abalone-knn-end").exists():
+    if recreate or not Endpoint("abalone-knn").exists():
         m = Model("abalone-knn-reg")
-        end = m.to_endpoint(name="abalone-knn-end", tags=["abalone", "knn"])
+        end = m.to_endpoint(name="abalone-knn", tags=["abalone", "knn"])
 
         # Run auto-inference on the Abalone KNN Regression Endpoint
         end.auto_inference(capture=True)
@@ -84,9 +84,9 @@ if __name__ == "__main__":
         )
 
     # Create the AQSol KNN Regression Endpoint
-    if recreate or not Endpoint("aqsol-knn-end").exists():
+    if recreate or not Endpoint("aqsol-knn").exists():
         m = Model("aqsol-knn-reg")
-        end = m.to_endpoint(name="aqsol-knn-end", tags=["aqsol", "knn"])
+        end = m.to_endpoint(name="aqsol-knn", tags=["aqsol", "knn"])
 
         # Run auto-inference on the AQSol Quantile Regression Endpoint
         end.auto_inference(capture=True)

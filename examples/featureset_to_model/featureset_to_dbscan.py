@@ -21,7 +21,7 @@ pprint(my_model.details())
 my_model = Model("abalone-clusters")
 
 # Deploy an Endpoint for the Model
-endpoint = my_model.to_endpoint(name="abalone-clusters-end", tags=["abalone", "clusters"])
+endpoint = my_model.to_endpoint(name="abalone-clusters", tags=["abalone", "clusters"])
 
 # Run auto-inference on the Endpoint
 endpoint.auto_inference(capture=True)

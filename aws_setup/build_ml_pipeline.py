@@ -66,6 +66,6 @@ if __name__ == "__main__":
         )
 
     # Create the abalone_regression Endpoint
-    if not Endpoint("abalone-regression-end").exists():
+    if not Endpoint("abalone-regression").exists():
         model = Model("abalone-regression")
-        model.to_endpoint(name="abalone-regression-end", tags=["abalone", "regression"])
+        model.to_endpoint(name="abalone-regression", tags=["abalone", "regression"])

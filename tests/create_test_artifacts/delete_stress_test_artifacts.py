@@ -10,7 +10,7 @@ if __name__ == "__main__":
     model_names = [f"stress-model-{i}" for i in range(16)]
     datasource_names = [f"{model.replace('-model-', '_data_')}" for model in model_names]
     feature_names = [f"{model.replace('-model-', '_features_')}" for model in model_names]
-    endpoint_names = [f"{model}-end" for model in model_names]
+    endpoint_names = [f"{model}" for model in model_names]
 
     # Delete the DataSources
     for datasource_name in datasource_names:

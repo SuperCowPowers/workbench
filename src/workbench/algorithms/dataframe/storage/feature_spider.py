@@ -332,7 +332,7 @@ def integration_test():
     feature_spider.coincident(1.0)
 
     # Now run predictions on the endpoint
-    endpoint = Endpoint("aqsol-regression-end")
+    endpoint = Endpoint("aqsol-regression")
     pred_df = endpoint.inference(feature_df)
     print(len(pred_df))
 

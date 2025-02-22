@@ -37,8 +37,8 @@ def create_endpoint():
     create_model()
 
     # Create some new endpoints
-    if not Endpoint("abc-end").exists():
-        Model("abc-regression").to_endpoint(name="abc-end")
+    if not Endpoint("abc").exists():
+        Model("abc-regression").to_endpoint(name="abc")
 
 
 @pytest.mark.long
@@ -46,7 +46,7 @@ def test_endpoint_deletion():
     create_endpoint()
 
     # Now Delete the endpoint
-    Endpoint("abc-end").delete()
+    Endpoint("abc").delete()
 
 
 @pytest.mark.long

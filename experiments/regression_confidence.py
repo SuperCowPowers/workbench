@@ -16,7 +16,7 @@ import numpy as np
 from workbench.api import Model, Endpoint
 
 # Get the endpoint
-end = Endpoint("aqsol-qr-end")
+end = Endpoint("aqsol-qr")
 
 # Domain specific error_distance (if we got it wrong by this much, we have low confidence)
 error_distance = 1.5

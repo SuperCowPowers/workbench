@@ -89,7 +89,7 @@ if __name__ == "__main__":
     from workbench.api import Endpoint
 
     # Grab an endpoint
-    endpoint_name = "abalone-regression-end"
+    endpoint_name = "abalone-regression"
     end = Endpoint(endpoint_name)
 
     # Define the input parameters

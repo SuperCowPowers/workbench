@@ -591,7 +591,7 @@ if __name__ == "__main__":
     print(list_s3_files("s3://workbench-public-data/common"))
 
     # Test the newest files in an S3 folder method
-    s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference/abalone-regression-end"
+    s3_path = "s3://sandbox-sageworks-artifacts/endpoints/inference/abalone-regression"
     most_recent = newest_path([s3_path], sm_session)
 
     # Add a health tag

@@ -39,6 +39,6 @@ if __name__ == "__main__":
     features_to_model.transform(target_column="class_number_of_rings", description="Abalone Regression Model")
 
     # Create the abalone_regression Endpoint
-    model_to_endpoint = ModelToEndpoint("abalone-regression", "abalone-regression-end")
+    model_to_endpoint = ModelToEndpoint("abalone-regression", "abalone-regression")
     model_to_endpoint.set_output_tags(["abalone", "regression"])
     model_to_endpoint.transform()

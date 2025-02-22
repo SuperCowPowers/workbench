@@ -3,7 +3,7 @@ from workbench.api.model import Model
 from workbench.api.endpoint import Endpoint
 
 # Grab an existing Endpoint
-endpoint = Endpoint("abalone-regression-end")
+endpoint = Endpoint("abalone-regression")
 
 # Workbench has full ML Pipeline provenance, so we can backtrack the inputs,
 # get a DataFrame of data (not used for training) and run inference

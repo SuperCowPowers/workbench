@@ -76,7 +76,7 @@ if __name__ == "__main__":
     from pprint import pprint
 
     # Retrieve an existing Endpoint
-    my_endpoint = CachedEndpoint("abalone-regression-end")
+    my_endpoint = CachedEndpoint("abalone-regression")
     pprint(my_endpoint.summary())
     pprint(my_endpoint.details())
     pprint(my_endpoint.health_check())

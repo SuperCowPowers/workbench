@@ -18,7 +18,7 @@ class MDQView:
         ```python
         # Grab a FeatureSet and an Endpoint
         fs = FeatureSet("abalone_features")
-        endpoint = Endpoint("abalone-regression-end")
+        endpoint = Endpoint("abalone-regression")
 
         # Create a ModelDataQuality View
         mdq_view = MDQView.create(fs, endpoint=endpoint, id_column="id")
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     my_fs = FeatureSet("abalone_features")
 
     # Grab the Endpoint
-    my_endpoint = Endpoint("abalone-regression-end")
+    my_endpoint = Endpoint("abalone-regression")
 
     # Create a MDQView
     mdq_view = MDQView.create(my_fs, endpoint=my_endpoint, id_column="id")

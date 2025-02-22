@@ -35,9 +35,9 @@ if __name__ == "__main__":
         )
 
     # Create the Abalone Quantile Regression Endpoint
-    if recreate or not Endpoint("abalone-qr-end").exists():
+    if recreate or not Endpoint("abalone-qr").exists():
         m = Model("abalone-quantile-reg")
-        end = m.to_endpoint(name="abalone-qr-end", tags=["abalone", "quantiles"])
+        end = m.to_endpoint(name="abalone-qr", tags=["abalone", "quantiles"])
 
         # Run auto-inference on the Abalone Quantile Regression Endpoint
         end.auto_inference(capture=True)
@@ -78,9 +78,9 @@ if __name__ == "__main__":
         )
 
     # Create the AQSol Quantile Regression Endpoint
-    if recreate or not Endpoint("aqsol-qr-end").exists():
+    if recreate or not Endpoint("aqsol-qr").exists():
         m = Model("aqsol-quantile-reg")
-        end = m.to_endpoint(name="aqsol-qr-end", tags=["aqsol", "quantiles"])
+        end = m.to_endpoint(name="aqsol-qr", tags=["aqsol", "quantiles"])
 
         # Run auto-inference on the AQSol Quantile Regression Endpoint
         end.auto_inference(capture=True)

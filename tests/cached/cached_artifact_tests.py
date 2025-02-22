@@ -38,7 +38,7 @@ def test_cached_model():
 
 def test_cached_endpoint():
     print("\n\n*** Cached Endpoint ***")
-    my_endpoint = CachedEndpoint("abalone-regression-end")
+    my_endpoint = CachedEndpoint("abalone-regression")
     pprint(my_endpoint.summary())
     pprint(my_endpoint.details())
     pprint(my_endpoint.health_check())

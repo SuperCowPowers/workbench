@@ -46,9 +46,9 @@ if __name__ == "__main__":
         m.set_owner("test")
 
     # Create the wine classification Endpoint
-    if recreate or not Endpoint("wine-classification-end").exists():
+    if recreate or not Endpoint("wine-classification").exists():
         m = Model("wine-classification")
-        end = m.to_endpoint("wine-classification-end", tags=["wine", "classification"])
+        end = m.to_endpoint("wine-classification", tags=["wine", "classification"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)

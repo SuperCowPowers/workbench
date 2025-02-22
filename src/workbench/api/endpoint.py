@@ -74,7 +74,7 @@ if __name__ == "__main__":
     from pprint import pprint
 
     # Retrieve an existing Data Source
-    my_endpoint = Endpoint("abalone-regression-end")
+    my_endpoint = Endpoint("abalone-regression")
     pprint(my_endpoint.summary())
 
     # Run predictions on the Endpoint

@@ -66,7 +66,7 @@ if __name__ == "__main__":
     pprint(meta.pipelines())
 
     # Create a Pipeline from an Endpoint
-    abalone_pipeline = create_from_endpoint("abalone-regression-end")
+    abalone_pipeline = create_from_endpoint("abalone-regression")
 
     # Publish the Pipeline
     publish_pipeline("abalone_pipeline_test", abalone_pipeline)

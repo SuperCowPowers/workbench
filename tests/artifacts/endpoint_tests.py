@@ -6,8 +6,8 @@ import pandas as pd
 from workbench.core.artifacts.endpoint_core import EndpointCore
 from workbench.utils.endpoint_utils import fs_evaluation_data
 
-reg_endpoint = EndpointCore("abalone-regression-end")
-class_endpoint = EndpointCore("wine-classification-end")
+reg_endpoint = EndpointCore("abalone-regression")
+class_endpoint = EndpointCore("wine-classification")
 
 
 def test_general_info():

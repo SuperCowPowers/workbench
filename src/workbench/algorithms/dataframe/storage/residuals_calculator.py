@@ -195,7 +195,7 @@ if __name__ == "__main__":
     my_result_df = residuals_calculator.fit_transform(df[feature_columns], df[target_column])
 
     # Case 2: Use an existing endpoint for inference
-    endpoint = Endpoint("aqsol-regression-end")
+    endpoint = Endpoint("aqsol-regression")
     residuals_calculator_endpoint = ResidualsCalculator(endpoint=endpoint)
     result_df_endpoint = residuals_calculator_endpoint.fit_transform(df[feature_columns], df[target_column])
 

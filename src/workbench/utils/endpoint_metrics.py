@@ -176,7 +176,7 @@ if __name__ == "__main__":
     """Exercise the EndpointMetrics class."""
     from pprint import pprint
 
-    endpoint = "abalone-regression-end"
+    endpoint = "abalone-regression"
     print(f"Fetching metrics for endpoint: {endpoint}...")
 
     # Create the Class and query for metrics

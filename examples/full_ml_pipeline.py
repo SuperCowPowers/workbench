@@ -38,10 +38,10 @@ if __name__ == "__main__":
 
     # Create the abalone_regression Endpoint
     model = Model("abalone-regression")
-    model.to_endpoint(name="abalone-regression-end", tags=["abalone", "regression"])
+    model.to_endpoint(name="abalone-regression", tags=["abalone", "regression"])
 
     # Now we'll run inference on the endpoint
-    endpoint = Endpoint("abalone-regression-end")
+    endpoint = Endpoint("abalone-regression")
 
     # Get a DataFrame of data (not used to train) and run predictions
     athena_table = fs.view("training").table

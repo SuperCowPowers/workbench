@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     # Create the class with inputs and outputs and invoke the transform
     input_uuid = "abalone-regression"
-    output_uuid = f"{input_uuid}-end"
+    output_uuid = f"{input_uuid}"
     to_endpoint = ModelToEndpoint(input_uuid, output_uuid, serverless=True)
     to_endpoint.set_output_tags(["abalone", "public"])
     to_endpoint.transform()

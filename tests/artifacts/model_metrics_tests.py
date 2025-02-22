@@ -57,9 +57,9 @@ def test_inference_predictions():
     print("\n\n*** Inference Predictions ***")
 
     # Make sure we have inference predictions
-    end = Endpoint("abalone-regression-end")
+    end = Endpoint("abalone-regression")
     end.auto_inference(capture=True)
-    end = Endpoint("wine-classification-end")
+    end = Endpoint("wine-classification")
     end.auto_inference(capture=True)
 
     # Retrieve the inference predictions
@@ -107,12 +107,12 @@ def test_metrics_with_capture_uuid():
 @pytest.mark.long
 def test_auto_inference():
     # Run auto_inference (back track to FeatureSet)
-    my_endpoint = Endpoint("abalone-regression-end")
+    my_endpoint = Endpoint("abalone-regression")
     pred_results = my_endpoint.auto_inference()
     print("\n\n*** Auto Inference ***")
     pprint(pred_results.head())
 
-    my_endpoint = Endpoint("wine-classification-end")
+    my_endpoint = Endpoint("wine-classification")
     pred_results = my_endpoint.auto_inference()
     pprint(pred_results.head())
 
@@ -128,7 +128,7 @@ def test_inference_with_capture_uuid():
     df = my_features.query(f'SELECT * FROM "{table}" where training = FALSE')
 
     # Run inference
-    my_endpoint = Endpoint("abalone-regression-end")
+    my_endpoint = Endpoint("abalone-regression")
     pred_results = my_endpoint.inference(df, capture_uuid)
     pprint(pred_results.head())
 
@@ -141,7 +141,7 @@ def create_model_and_endpoint():
     model_reg = my_features.to_model(
         name="abalone-regression", model_type=ModelType.REGRESSOR, target_column="class_number_of_rings"
     )
-    model_reg.to_endpoint(name="abalone-regression-end", tags=["abalone", "public"])
+    model_reg.to_endpoint(name="abalone-regression", tags=["abalone", "public"])
 
 
 if __name__ == "__main__":
