@@ -39,7 +39,7 @@ class ModelToEndpoint(Transform):
 
         # Set up all my instance attributes
         self.serverless = serverless
-        self.instance_type = "serverless" if serverless else "ml.t3.medium"
+        self.instance_type = "serverless" if serverless else "ml.m5.large"
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 

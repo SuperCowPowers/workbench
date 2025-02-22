@@ -22,11 +22,11 @@ from workbench.utils import endpoint_utils
 
 
 class MonitorCore:
-    def __init__(self, endpoint_name, instance_type="ml.t3.medium"):
+    def __init__(self, endpoint_name, instance_type="ml.m5.large"):
         """MonitorCore Class
         Args:
             endpoint_name (str): Name of the endpoint to set up monitoring for
-            instance_type (str): Instance type to use for monitoring. Defaults to "ml.t3.medium".
+            instance_type (str): Instance type to use for monitoring. Defaults to "ml.m5.large".
         """
         self.log = logging.getLogger("workbench")
         self.endpoint_name = endpoint_name

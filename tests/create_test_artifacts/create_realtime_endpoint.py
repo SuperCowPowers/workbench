@@ -19,6 +19,6 @@ if __name__ == "__main__":
     recreate = False
 
     # Create the abalone_regression Endpoint
-    if recreate or not Endpoint("abalone-regression-end-rt").exists():
+    if recreate or not Endpoint("abalone-regression-rt").exists():
         m = Model("abalone-regression")
-        m.to_endpoint("abalone-regression-end-rt", tags=["abalone", "regression", "realtime"], serverless=False)
+        m.to_endpoint("abalone-regression-rt", tags=["abalone", "regression", "realtime"], serverless=False)
