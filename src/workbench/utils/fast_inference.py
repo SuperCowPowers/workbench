@@ -2,26 +2,28 @@
 
 import pandas as pd
 from io import StringIO
+import logging
+from concurrent.futures import ThreadPoolExecutor
 
 # Sagemaker Imports
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
 from sagemaker import Predictor
 
+log = logging.getLogger("workbench")
 
-def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session) -> pd.DataFrame:
+
+def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session, chunk_size: int = 500) -> pd.DataFrame:
     """Run inference on the Endpoint using the provided DataFrame
 
     Args:
         endpoint_name (str): The name of the Endpoint
         eval_df (pd.DataFrame): The DataFrame to run predictions on
         sm_session (sagemaker.session.Session): The SageMaker Session
+        chunk_size (int): Number of rows per batch
 
     Returns:
         pd.DataFrame: The DataFrame with predictions
-
-    Note:
-        There's no sanity checks or error handling... just FAST Inference!
     """
     predictor = Predictor(
         endpoint_name,
@@ -30,20 +32,27 @@ def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session) -> pd.
         deserializer=CSVDeserializer(),
     )
 
-    # Convert the DataFrame into a CSV buffer
-    csv_buffer = StringIO()
-    eval_df.to_csv(csv_buffer, index=False)
+    total_rows = len(eval_df)
 
-    # Send the CSV Buffer to the predictor
-    results = predictor.predict(csv_buffer.getvalue())
+    def process_chunk(chunk_df: pd.DataFrame, start_index: int) -> pd.DataFrame:
+        log.info(f"Processing {start_index}:{min(start_index + chunk_size, total_rows)} out of {total_rows} rows...")
+        csv_buffer = StringIO()
+        chunk_df.to_csv(csv_buffer, index=False)
+        response = predictor.predict(csv_buffer.getvalue())
+        # CSVDeserializer returns a nested list: first row is headers
+        return pd.DataFrame.from_records(response[1:], columns=response[0])
 
-    # Construct a DataFrame from the results
-    results_df = pd.DataFrame.from_records(results[1:], columns=results[0])
-    return results_df
+    # Split DataFrame into chunks and process them concurrently
+    chunks = [(eval_df[i: i + chunk_size], i) for i in range(0, total_rows, chunk_size)]
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        df_list = list(executor.map(lambda p: process_chunk(*p), chunks))
+
+    return pd.concat(df_list, ignore_index=True)
 
 
 if __name__ == "__main__":
     """Exercise the Endpoint Utilities"""
+    import time
     from workbench.api.endpoint import Endpoint
     from workbench.utils.endpoint_utils import fs_training_data, fs_evaluation_data
 
@@ -58,8 +67,11 @@ if __name__ == "__main__":
     my_train_df = fs_training_data(my_endpoint)
     print(my_train_df)
 
-    # Run Fast Inference
+    # Run Fast Inference and time it
     sm_session = my_endpoint.sm_session
     my_eval_df = fs_evaluation_data(my_endpoint)
+    start_time = time.time()
     my_results_df = fast_inference(my_endpoint_name, my_eval_df, sm_session)
+    end_time = time.time()
+    print(f"Fast Inference took {end_time - start_time} seconds")
     print(my_results_df)
