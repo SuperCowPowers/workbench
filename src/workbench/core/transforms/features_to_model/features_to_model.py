@@ -278,7 +278,7 @@ class FeaturesToModel(Transform):
             content_types=["text/csv"],
             response_types=["text/csv"],
             inference_instances=supported_instance_types(),
-            transform_instances=supported_instance_types(),
+            transform_instances=["ml.m5.large", "ml.m5.xlarge"],
             approval_status="Approved",
             description=self.model_description,
         )
