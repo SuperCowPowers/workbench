@@ -31,13 +31,14 @@ class Model(ModelCore):
         """
         return super().details(**kwargs)
 
-    def to_endpoint(self, name: str = None, tags: list = None, serverless: bool = True) -> Endpoint:
+    def to_endpoint(self, name: str = None, tags: list = None, serverless: bool = True, instance: str = "ml.t2.medium") -> Endpoint:
         """Create an Endpoint from the Model.
 
         Args:
             name (str): Set the name for the endpoint. If not specified, an automatic name will be generated
             tags (list): Set the tags for the endpoint. If not specified automatic tags will be generated.
             serverless (bool): Set the endpoint to be serverless (default: True)
+            instance (str): The instance type to use for the Endpoint (default: "ml.t2.medium")
 
         Returns:
             Endpoint: The Endpoint created from the Model
@@ -56,7 +57,7 @@ class Model(ModelCore):
         tags = [name] if tags is None else tags
 
         # Create an Endpoint from the Model
-        model_to_endpoint = ModelToEndpoint(self.uuid, name, serverless=serverless)
+        model_to_endpoint = ModelToEndpoint(self.uuid, name, serverless=serverless, instance=instance)
         model_to_endpoint.set_output_tags(tags)
         model_to_endpoint.transform()
 
