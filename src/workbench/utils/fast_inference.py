@@ -50,6 +50,10 @@ def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session, thread
     # Compute the chunk size (divide number of threads)
     chunk_size = max(1, total_rows // threads)
 
+    # We also need to ensure that the chunk size is not too big
+    if chunk_size > 100:
+        chunk_size = 100
+
     # Split DataFrame into chunks and process them concurrently
     chunks = [(eval_df[i : i + chunk_size], i) for i in range(0, total_rows, chunk_size)]
     with ThreadPoolExecutor(max_workers=threads) as executor:
