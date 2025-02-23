@@ -216,6 +216,11 @@ class EndpointCore(Artifact):
         model_url = self.model_data_url()
         return compute_s3_object_hash(model_url, self.boto3_session)
 
+    @property
+    def instance_type(self) -> str:
+        """Return the instance type for this endpoint"""
+        return self.endpoint_meta["InstanceType"]
+
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
         """Return the metrics for this endpoint
 
