@@ -31,7 +31,9 @@ class Model(ModelCore):
         """
         return super().details(**kwargs)
 
-    def to_endpoint(self, name: str = None, tags: list = None, serverless: bool = True, instance: str = "ml.t2.medium") -> Endpoint:
+    def to_endpoint(
+        self, name: str = None, tags: list = None, serverless: bool = True, instance: str = "ml.t2.medium"
+    ) -> Endpoint:
         """Create an Endpoint from the Model.
 
         Args:
