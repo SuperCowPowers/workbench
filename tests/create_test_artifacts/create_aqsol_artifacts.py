@@ -245,21 +245,3 @@ if __name__ == "__main__":
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
-
-    if recreate or not Endpoint("tautomerize-v0-rt").exists():
-        m = Model("tautomerize-v0")
-        m.set_owner("BW")
-        end = m.to_endpoint(name="tautomerize-v0-rt", tags=["smiles", "tautomerization", "real-time"], serverless=False)
-
-        # Run inference on the endpoint
-        end.auto_inference(capture=True)
-
-    # Temp create an endpoint for testing with a ml.c7g.large instance
-    if recreate or not Endpoint("tautomerize-v0-rt-fast").exists():
-        m = Model("tautomerize-v0")
-        m.set_owner("BW")
-        end = m.to_endpoint(name="tautomerize-v0-rt-fast", tags=["smiles", "tautomerization", "real-time"],
-                            serverless=False, instance="ml.c7g.large")
-
-        # Run inference on the endpoint
-        end.auto_inference(capture=True)
