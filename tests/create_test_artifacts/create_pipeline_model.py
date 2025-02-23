@@ -18,4 +18,12 @@ pipeline_model = PipelineModel(
 )
 
 # Deploy the pipeline endpoint
+predictor = pipeline_model.deploy(initial_instance_count=1, instance_type="ml.t2.medium")
+
+# Create a pipeline model with slightly better endpoint instance
+pipeline_model = PipelineModel(
+    name="pipeline-model-fast", models=[taut_model, md_model, sol_model], role=role, sagemaker_session=session
+)
+
+# Deploy the pipeline endpoint
 predictor = pipeline_model.deploy(initial_instance_count=1, instance_type="ml.c7i.xlarge")
