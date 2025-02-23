@@ -758,6 +758,18 @@ class ModelCore(Artifact):
         except (KeyError, IndexError, TypeError):
             return None
 
+    def supported_inference_instances(self) -> Optional[list]:
+        """Retrieve the supported endpoint inference instance types
+
+        Returns:
+            Optional[list]: List of supported inference instance types
+        """
+        meta = self.aws_meta()
+        try:
+            return meta["ModelPackageList"][0]["InferenceSpecification"]["SupportedRealtimeInferenceInstanceTypes"]
+        except (KeyError, IndexError, TypeError):
+            return None
+
     def delete(self):
         """Delete the Model Packages and the Model Group"""
         if not self.exists():
@@ -1105,6 +1117,12 @@ if __name__ == "__main__":
     # Get the Class Labels (if it's a classifier)
     my_model = ModelCore("wine-classification")
     print(f"Class Labels: {my_model.class_labels()}")
+
+    # Get various metadata about the model
+    print(my_model.model_data_url())
+    print(my_model.source_dir_url())
+    print(my_model.entry_point())
+    print(my_model.supported_inference_instances())
 
     # Delete the Model
     # ModelCore.managed_delete("wine-classification")
