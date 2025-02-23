@@ -254,7 +254,7 @@ def monitor_log_group(
         else:
             break
 
-        # Wait for the next poll if monitoring real-time logs
+        # Wait for the next poll if monitoring realtime logs
         if end_time is None:
             time.sleep(poll_interval)
         else:

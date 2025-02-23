@@ -11,6 +11,7 @@ from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.artifacts.model_core import ModelCore, ModelType, InferenceImage
 from workbench.core.artifacts.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script
+from workbench.utils.model_utils import supported_instance_types
 
 
 class FeaturesToModel(Transform):
@@ -255,7 +256,6 @@ class FeaturesToModel(Transform):
 
     def create_and_register_model(self):
         """Create and Register the Model"""
-        from workbench.utils.endpoint_utils import supported_instance_types
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
