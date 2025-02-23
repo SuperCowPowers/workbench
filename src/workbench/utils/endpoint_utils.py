@@ -9,11 +9,13 @@ import pandas as pd
 from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model
 from workbench.api.endpoint import Endpoint
+from workbench.utils.deprecated_utils import deprecated
 
 # Set up the log
 log = logging.getLogger("workbench")
 
 
+@deprecated(version="0.9")
 def get_model_data_url(endpoint_config_name: str, session: boto3.Session) -> Optional[str]:
     """
     Retrieves the S3 URL of the model.tar.gz file associated with a SageMaker endpoint configuration.
@@ -145,68 +147,6 @@ def backtrack_to_fs(end: Endpoint) -> Union[FeatureSet, None]:
     return fs
 
 
-def endpoint_instance_info() -> pd.DataFrame:
-    """Get the instance information for the Endpoint"""
-    data = [
-        {
-            "Instance Name": "ml.t2.medium",
-            "vCPUs": 2,
-            "Memory": 4,
-            "Price per Hour": 0.06,
-            "Category": "General",
-            "Architecture": "x86",
-        },
-        {
-            "Instance Name": "ml.m7i.large",
-            "vCPUs": 2,
-            "Memory": 8,
-            "Price per Hour": 0.12,
-            "Category": "General",
-            "Architecture": "x86",
-        },
-        {
-            "Instance Name": "ml.c7i.large",
-            "vCPUs": 2,
-            "Memory": 4,
-            "Price per Hour": 0.11,
-            "Category": "Compute",
-            "Architecture": "x86",
-        },
-        {
-            "Instance Name": "ml.c7i.xlarge",
-            "vCPUs": 4,
-            "Memory": 8,
-            "Price per Hour": 0.21,
-            "Category": "Compute",
-            "Architecture": "x86",
-        },
-        {
-            "Instance Name": "ml.c7g.large",
-            "vCPUs": 2,
-            "Memory": 4,
-            "Price per Hour": 0.09,
-            "Category": "Compute",
-            "Architecture": "ARM64",
-        },
-        {
-            "Instance Name": "ml.c7g.xlarge",
-            "vCPUs": 4,
-            "Memory": 8,
-            "Price per Hour": 0.17,
-            "Category": "Compute",
-            "Architecture": "ARM64",
-        },
-    ]
-    return pd.DataFrame(data)
-
-
-def supported_instance_types() -> list:
-    """Get the supported instance types for the Model/Endpoint"""
-
-    # Just return the "Instance Name" column
-    return list(endpoint_instance_info()["Instance Name"])
-
-
 if __name__ == "__main__":
     """Exercise the Endpoint Utilities"""
 
@@ -232,12 +172,6 @@ if __name__ == "__main__":
     # Backtrack to the FeatureSet
     my_fs = backtrack_to_fs(my_endpoint)
     print(my_fs)
-
-    # Get the instance information
-    print(endpoint_instance_info())
-
-    # Get the supported instance types
-    print(supported_instance_types())
 
     # Also test for realtime endpoints
     rt_endpoint = Endpoint("abalone-regression-end-rt")
