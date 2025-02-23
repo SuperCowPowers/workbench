@@ -52,11 +52,12 @@ class Endpoint(EndpointCore):
         """
         return super().auto_inference(capture)
 
-    def fast_inference(self, eval_df: pd.DataFrame) -> pd.DataFrame:
+    def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
         Args:
             eval_df (pd.DataFrame): The DataFrame to run predictions on
+            threads (int): The number of threads to use (default: 4)
 
         Returns:
             pd.DataFrame: The DataFrame with predictions
@@ -64,7 +65,7 @@ class Endpoint(EndpointCore):
         Note:
             There's no sanity checks or error handling... just FAST Inference!
         """
-        return super().fast_inference(eval_df)
+        return super().fast_inference(eval_df, threads=threads)
 
 
 if __name__ == "__main__":

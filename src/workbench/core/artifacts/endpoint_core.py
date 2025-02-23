@@ -393,11 +393,12 @@ class EndpointCore(Artifact):
         # Return the prediction DataFrame
         return prediction_df
 
-    def fast_inference(self, eval_df: pd.DataFrame) -> pd.DataFrame:
+    def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
         Args:
             eval_df (pd.DataFrame): The DataFrame to run predictions on
+            threads (int): The number of threads to use (default: 4)
 
         Returns:
             pd.DataFrame: The DataFrame with predictions
@@ -405,7 +406,7 @@ class EndpointCore(Artifact):
         Note:
             There's no sanity checks or error handling... just FAST Inference!
         """
-        return fast_inference(self.uuid, eval_df, self.sm_session)
+        return fast_inference(self.uuid, eval_df, self.sm_session, threads=threads)
 
     def _predict(self, eval_df: pd.DataFrame) -> pd.DataFrame:
         """Internal: Run prediction on the given observations in the given DataFrame

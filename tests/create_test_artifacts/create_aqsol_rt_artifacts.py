@@ -45,6 +45,20 @@ if __name__ == "__main__":
         # Run inference on the endpoint
         end.auto_inference(capture=True)
 
+    # Create realtime endpoint for testing with a ml.c7i.xlarge instance
+    if recreate or not Endpoint("tautomerize-v0-rt-fast2").exists():
+        m = Model("tautomerize-v0")
+        m.set_owner("BW")
+        end = m.to_endpoint(
+            name="tautomerize-v0-rt-fast2",
+            tags=["smiles", "tautomerization", "realtime"],
+            serverless=False,
+            instance="ml.c7i.xlarge",
+        )
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
+
     # Create a realtime endpoint for Molecular Descriptors Transformer Model
     if recreate or not Endpoint("smiles-to-md-v0-rt").exists():
         m = Model("smiles-to-md-v0")

@@ -13,14 +13,14 @@ from sagemaker import Predictor
 log = logging.getLogger("workbench")
 
 
-def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session, chunk_size: int = 500) -> pd.DataFrame:
+def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session, threads: int = 4) -> pd.DataFrame:
     """Run inference on the Endpoint using the provided DataFrame
 
     Args:
         endpoint_name (str): The name of the Endpoint
         eval_df (pd.DataFrame): The DataFrame to run predictions on
         sm_session (sagemaker.session.Session): The SageMaker Session
-        chunk_size (int): Number of rows per batch
+        threads (int): The number of threads to use (default: 4)
 
     Returns:
         pd.DataFrame: The DataFrame with predictions
@@ -42,9 +42,17 @@ def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session, chunk_
         # CSVDeserializer returns a nested list: first row is headers
         return pd.DataFrame.from_records(response[1:], columns=response[0])
 
+    # Sagemaker has a connection pool limit of 10
+    if threads > 10:
+        log.warning("Sagemaker has a connection pool limit of 10. Reducing threads to 10.")
+        threads = 10
+
+    # Compute the chunk size (divide number of threads)
+    chunk_size = max(1, total_rows // threads)
+
     # Split DataFrame into chunks and process them concurrently
     chunks = [(eval_df[i : i + chunk_size], i) for i in range(0, total_rows, chunk_size)]
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=threads) as executor:
         df_list = list(executor.map(lambda p: process_chunk(*p), chunks))
 
     return pd.concat(df_list, ignore_index=True)
