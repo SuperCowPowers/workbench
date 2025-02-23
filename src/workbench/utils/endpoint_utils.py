@@ -9,14 +9,12 @@ import pandas as pd
 from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model
 from workbench.api.endpoint import Endpoint
-from workbench.utils.deprecated_utils import deprecated
 
 # Set up the log
 log = logging.getLogger("workbench")
 
 
-@deprecated(version="0.9")
-def get_model_data_url(endpoint_config_name: str, session: boto3.Session) -> Optional[str]:
+def internal_model_data_url(endpoint_config_name: str, session: boto3.Session) -> Optional[str]:
     """
     Retrieves the S3 URL of the model.tar.gz file associated with a SageMaker endpoint configuration.
 
@@ -158,7 +156,7 @@ if __name__ == "__main__":
         exit(1)
 
     # Get the Model Data URL
-    model_data_url = get_model_data_url(my_endpoint.endpoint_config_name(), my_endpoint.boto3_session)
+    model_data_url = internal_model_data_url(my_endpoint.endpoint_config_name(), my_endpoint.boto3_session)
     print(model_data_url)
 
     # Get the training data
@@ -176,5 +174,5 @@ if __name__ == "__main__":
     # Also test for realtime endpoints
     rt_endpoint = Endpoint("abalone-regression-end-rt")
     if rt_endpoint.exists():
-        model_data_url = get_model_data_url(rt_endpoint.endpoint_config_name(), rt_endpoint.boto3_session)
+        model_data_url = internal_model_data_url(rt_endpoint.endpoint_config_name(), rt_endpoint.boto3_session)
         print(model_data_url)

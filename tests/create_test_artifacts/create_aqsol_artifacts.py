@@ -132,8 +132,10 @@ if __name__ == "__main__":
             "group",
             "solubility",
             "solubility_class",
-            "rotratio",
-        ]  # rotratio is often string type
+            "rotratio",  # rotratio is often string type
+            "ocurrences",
+            "sd",
+        ]
         feature_list = [f for f in feature_set.columns if f not in exclude]
         feature_set.to_model(
             name="aqsol-mol-regression",
@@ -157,8 +159,10 @@ if __name__ == "__main__":
             "group",
             "solubility",
             "solubility_class",
-            "rotratio",
-        ]  # rotratio is often string type
+            "rotratio",  # rotratio is often string type
+            "ocurrences",
+            "sd",
+        ]
         feature_list = [f for f in feature_set.columns if f not in exclude]
         feature_set.to_model(
             name="aqsol-mol-class",

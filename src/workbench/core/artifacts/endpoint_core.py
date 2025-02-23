@@ -197,15 +197,23 @@ class EndpointCore(Artifact):
         """Return the datetime when this artifact was last modified"""
         return self.endpoint_meta["LastModifiedTime"]
 
+    def model_data_url(self) -> Optional[str]:
+        """Return the model data URL for this endpoint
+
+        Returns:
+            Optional[str]: The model data URL for this endpoint
+        """
+        from workbench.utils.endpoint_utils import internal_model_data_url  # Avoid circular import
+
+        return internal_model_data_url(self.endpoint_config_name(), self.boto3_session)
+
     def hash(self) -> Optional[str]:
         """Return the hash for the internal model used by this endpoint
 
         Returns:
             Optional[str]: The hash for the internal model used by this endpoint
         """
-        from workbench.utils.endpoint_utils import get_model_data_url  # Avoid circular import
-
-        model_url = get_model_data_url(self.endpoint_config_name(), self.boto3_session)
+        model_url = self.model_data_url()
         return compute_s3_object_hash(model_url, self.boto3_session)
 
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
@@ -980,6 +988,12 @@ if __name__ == "__main__":
 
     # Health Check
     print(f"Health Check: {my_endpoint.health_check()}")
+
+    # Get the ARN
+    print(f"ARN: {my_endpoint.arn()}")
+
+    # Get the internal model data URL
+    print(f"Internal Model Data URL: {my_endpoint.model_data_url()}")
 
     # Capitalization Test
     fs = FeatureSet("abalone_features")
