@@ -15,7 +15,7 @@ import pandas as pd
 import json
 
 # Local imports
-from local_utils import perform_tautomerization
+from local_utils import tautomerize_smiles
 
 
 # TRAINING SECTION
@@ -76,5 +76,5 @@ def output_fn(output_df, accept_type):
 # Prediction function
 def predict_fn(df, model):
     # Perform Tautomerization
-    df = perform_tautomerization(df)
+    df = tautomerize_smiles(df)
     return df

@@ -543,7 +543,7 @@ def standard_tautomer_canonicalization(mol: Mol) -> str:
     return Chem.MolToSmiles(canonical_tautomer)
 
 
-def perform_tautomerization(df: pd.DataFrame) -> pd.DataFrame:
+def tautomerize_smiles(df: pd.DataFrame) -> pd.DataFrame:
     """
     Perform tautomer enumeration and canonicalization on a DataFrame.
 
@@ -597,5 +597,5 @@ if __name__ == "__main__":
     print(fp_df)
 
     # Perform Tautomerization
-    t_df = perform_tautomerization(df)
+    t_df = tautomerize_smiles(df)
     print(t_df)

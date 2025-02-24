@@ -1,4 +1,4 @@
-from workbench.utils.chem_utils import perform_tautomerization
+from workbench.utils.chem_utils import tautomerize_smiles
 
 
 def test_tautomerization():
@@ -38,7 +38,7 @@ def test_tautomerization():
     df = pd.DataFrame(test_data)
 
     # Perform tautomerization
-    result_df = perform_tautomerization(df)
+    result_df = tautomerize_smiles(df)
 
     # Test that the results match the expected canonical tautomers
     for index, row in result_df.iterrows():
