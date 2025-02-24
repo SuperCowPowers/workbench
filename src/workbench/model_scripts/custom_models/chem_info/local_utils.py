@@ -26,7 +26,7 @@ lg.setLevel(RDLogger.ERROR)
 log = logging.getLogger("workbench")
 
 
-def remove_disconnected_fragments(mol: Mol) -> Optional[Mol]:
+def remove_disconnected_fragments(mol: Chem.Mol) -> Chem.Mol:
     """
     Remove disconnected fragments from a molecule, keeping the fragment with the most heavy atoms.
 
@@ -34,16 +34,10 @@ def remove_disconnected_fragments(mol: Mol) -> Optional[Mol]:
         mol (Mol): RDKit molecule object.
 
     Returns:
-        Optional[Mol]: The fragment with the most heavy atoms, or None if no such fragment exists.
+        Mol: The fragment with the most heavy atoms, or None if no such fragment exists.
     """
-    # Get all fragments as individual molecules
     fragments = Chem.GetMolFrags(mol, asMols=True)
-
-    # Return the fragment with the most heavy atoms, or None if no fragments
-    if fragments:
-        return max(fragments, key=lambda frag: frag.GetNumHeavyAtoms())
-    else:
-        return None
+    return max(fragments, key=lambda frag: frag.GetNumHeavyAtoms()) if fragments else None
 
 
 def contains_heavy_metals(mol):
@@ -467,16 +461,19 @@ def canonicalize(df: pd.DataFrame, remove_mol_col: bool = True) -> pd.DataFrame:
     # Convert SMILES to RDKit molecules
     df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
 
-    # Handle invalid SMILES strings
+    # Log invalid SMILES
     invalid_indices = df[df["molecule"].isna()].index
     if not invalid_indices.empty:
         log.critical(f"Invalid SMILES strings at indices: {invalid_indices.tolist()}")
 
-    # Vectorized canonicalization
-    def mol_to_smiles_canonical(mol):
-        return Chem.MolToSmiles(mol) if mol else pd.NA
+    # Drop rows where SMILES failed to convert to molecule
+    df.dropna(subset=["molecule"], inplace=True)
 
-    df["smiles_canonical"] = df["molecule"].apply(mol_to_smiles_canonical)
+    # Remove disconnected fragments (keep the largest fragment)
+    df["molecule"] = df["molecule"].apply(lambda mol: remove_disconnected_fragments(mol) if mol else None)
+
+    # Convert molecules to canonical SMILES (preserving isomeric information)
+    df["smiles_canonical"] = df["molecule"].apply(lambda mol: Chem.MolToSmiles(mol, isomericSmiles=True) if mol else None)
 
     # Drop intermediate RDKit molecule column if requested
     if remove_mol_col:
