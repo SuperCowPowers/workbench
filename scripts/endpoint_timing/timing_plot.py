@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def plot_grouped_bar_chart():
     # Data
     row_sizes = ["10", "100", "500", "1000", "10000"]
@@ -13,7 +14,7 @@ def plot_grouped_bar_chart():
     # Split data for two plots
     subsets = {
         "Small Row Sizes": (["10", "100", "500"], taut[:3], md[:3], model[:3], pipeline[:3], pipeline_fast[:3]),
-        "Large Row Sizes": (["1000", "10000"], taut[3:], md[3:], model[3:], pipeline[3:], pipeline_fast[3:])
+        "Large Row Sizes": (["1000", "10000"], taut[3:], md[3:], model[3:], pipeline[3:], pipeline_fast[3:]),
     }
 
     for title, (rows, taut_vals, md_vals, model_vals, pipeline_vals, pipeline_fast_vals) in subsets.items():
@@ -26,7 +27,14 @@ def plot_grouped_bar_chart():
         # Individual stacked bar
         ax.bar(x - width, taut_vals, width, label="Taut", color="lightblue")
         ax.bar(x - width, md_vals, width, bottom=taut_vals, label="MD", color="lightgreen")
-        ax.bar(x - width, model_vals, width, bottom=np.array(taut_vals) + np.array(md_vals), label="Model", color="lightcoral")
+        ax.bar(
+            x - width,
+            model_vals,
+            width,
+            bottom=np.array(taut_vals) + np.array(md_vals),
+            label="Model",
+            color="lightcoral",
+        )
 
         # Pipeline and Pipeline Fast bars
         ax.bar(x, pipeline_vals, width, label="Pipeline", color="blue", alpha=0.7)
@@ -41,5 +49,6 @@ def plot_grouped_bar_chart():
         ax.legend()
 
         plt.show()
+
 
 plot_grouped_bar_chart()
