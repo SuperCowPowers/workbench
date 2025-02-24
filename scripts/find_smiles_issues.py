@@ -4,7 +4,7 @@
 
     - Tauomerize: All SMILES strings were valid
     - SMILES to MD: Failed on 1 SMILES string
-        - CN1C=CC=C/C1=C\[NH+]=O.[I-]
+        - id=B-376 CN1C=CC=C/C1=C\[NH+]=O.[I-]
 """
 
 # Workbench imports
@@ -26,3 +26,6 @@ print(f"Endpoint: {end_2.uuid}, Instance: {end_2.instance_type}")
 # Run all the smiles through normal inference (will mark the bad ones)
 df = end_1.inference(df)
 df = end_2.inference(df)
+
+# Pull out the bad smiles
+print("Bad SMILES:")

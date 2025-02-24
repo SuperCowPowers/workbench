@@ -1,5 +1,6 @@
 """Timing of pipeline endpoints vs. individual model endpoints"""
 
+import re
 import time
 
 # Workbench imports
@@ -13,6 +14,13 @@ id_column = "id"
 fs = FeatureSet(feature_set_name)
 df = fs.pull_dataframe()
 total_df = df[[id_column, "smiles"]]
+
+# Remove any rows with this SMILES substring "[I-].CN1C=CC=C\C1=C/[NH+]=O"
+print(f"Before: {total_df.shape}")
+# total_df = total_df[~total_df["smiles"].str.contains(r"[I-].CN1C=CC=C\C1=C/[NH+]=O")]
+pattern = re.escape(r"[I-].CN1C=CC=C\C1=C/[NH+]=O")  # Escapes all special characters
+total_df = total_df[~total_df["smiles"].str.contains(pattern)]
+print(f"After: {total_df.shape}")
 
 # First let's dump the information about all the endpoints
 end_1 = Endpoint("tautomerize-v0-rt")
@@ -30,7 +38,7 @@ print(f"Endpoint: {end_pipe_fast.uuid}, Instance: {end_pipe_fast.instance_type}"
 session = end_1.sm_session
 
 # We're going to run 3 timings on 10, 100, 500, 1000, 10000 rows
-for n in [10, 100, 500, 1000]:
+for n in [10, 100, 500, 1000, 10000]:
     input_df = total_df.head(n)
     print(f"Timing for {n} rows")
 
