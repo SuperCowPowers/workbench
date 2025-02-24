@@ -473,7 +473,9 @@ def canonicalize(df: pd.DataFrame, remove_mol_col: bool = True) -> pd.DataFrame:
     df["molecule"] = df["molecule"].apply(lambda mol: remove_disconnected_fragments(mol) if mol else None)
 
     # Convert molecules to canonical SMILES (preserving isomeric information)
-    df["smiles_canonical"] = df["molecule"].apply(lambda mol: Chem.MolToSmiles(mol, isomericSmiles=True) if mol else None)
+    df["smiles_canonical"] = df["molecule"].apply(
+        lambda mol: Chem.MolToSmiles(mol, isomericSmiles=True) if mol else None
+    )
 
     # Drop intermediate RDKit molecule column if requested
     if remove_mol_col:

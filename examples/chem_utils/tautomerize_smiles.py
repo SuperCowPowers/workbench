@@ -1,6 +1,8 @@
 """Example for Tautomerizing SMILES strings"""
+
 import pandas as pd
 from workbench.utils.chem_utils import tautomerize_smiles
+
 pd.options.display.max_columns = None
 pd.options.display.width = 1200
 
@@ -24,7 +26,7 @@ test_data = [
     # Urea undergoes a proton shift between nitrogen atoms.
     {"id": "Urea", "smiles": "C(=O)(N)N", "expected": "NC(N)=O"},
     # Phenol standardizes hydroxyl group placement in the aromatic system.
-    {"id": "Phenol", "smiles": "c1ccc(cc1)O", "expected": "Oc1ccccc1"}
+    {"id": "Phenol", "smiles": "c1ccc(cc1)O", "expected": "Oc1ccccc1"},
 ]
 
 # Convert test data to a DataFrame

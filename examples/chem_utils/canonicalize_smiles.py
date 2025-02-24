@@ -1,4 +1,5 @@
 """Example for computing Canonicalize SMILES strings"""
+
 import pandas as pd
 from workbench.utils.chem_utils import canonicalize
 
