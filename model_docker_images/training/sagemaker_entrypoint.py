@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import os
 import sys
 import json
@@ -99,11 +100,20 @@ def main():
 
     # Get source directory from hyperparameters
     if 'sagemaker_submit_directory' in hyperparameters:
-        s3_source = hyperparameters['sagemaker_submit_directory'].strip('"\'')
-        logger.info(f"Downloading source from: {s3_source}")
+        submit_dir_value = hyperparameters['sagemaker_submit_directory'].strip('"\'')
+        logger.info(f"Source directory: {submit_dir_value}")
 
-        # Download and extract source code
-        submit_dir = download_and_extract_s3(s3_source)
+        # Check if it's an S3 URI or a local path
+        if submit_dir_value.startswith('s3://'):
+            logger.info(f"Downloading source from S3: {submit_dir_value}")
+            submit_dir = download_and_extract_s3(submit_dir_value)
+        else:
+            logger.info(f"Using local source directory: {submit_dir_value}")
+            submit_dir = submit_dir_value
+            # Verify the directory exists
+            if not os.path.exists(submit_dir):
+                logger.error(f"Local directory not found: {submit_dir}")
+                sys.exit(1)
 
         # Install requirements
         install_requirements(os.path.join(submit_dir, "requirements.txt"))

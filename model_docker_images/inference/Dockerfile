@@ -1,5 +1,8 @@
 FROM python:3.12-slim
 
+# Install Vim
+RUN apt-get update && apt-get install -y vim
+
 # Copy requirements file
 COPY requirements.txt /tmp/
 

@@ -74,7 +74,7 @@ deploy_image() {
 
     for REGION in "${REGION_LIST[@]}"; do
         echo "Processing region: ${REGION}"
-        # Construct the ECR repository URL (using your account ID 507740646243)
+        # Construct the ECR repository URL
         ECR_REPO="507740646243.dkr.ecr.${REGION}.amazonaws.com/model_images/${image_name}"
         AWS_ECR_IMAGE="${ECR_REPO}:${tag}"
 
@@ -140,39 +140,6 @@ else
     echo "Inference image: ${INFERENCE_IMAGE}:${IMAGE_VERSION}"
     echo "======================================"
 
-    # Ask if user wants to test the containers
-    read -p "Do you want to test the containers? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        # Test training container
-        echo "======================================"
-        echo "🧪 Testing training container"
-        echo "======================================"
-        python "$SCRIPT_DIR/test_training.py" --image "${TRAINING_IMAGE}:${IMAGE_VERSION}"
-
-        # Test inference container
-        echo "======================================"
-        echo "🧪 Testing inference container"
-        echo "======================================"
-
-        # Start the inference container in the background
-        echo "Starting inference container..."
-        CONTAINER_ID=$(docker run -d -p 8080:8080 "${INFERENCE_IMAGE}:${IMAGE_VERSION}")
-
-        # Wait for the container to initialize
-        echo "Waiting for server to initialize (5 seconds)..."
-        sleep 5
-
-        # Run the test
-        python "$SCRIPT_DIR/test_inference.py"
-
-        # Stop and remove the container
-        echo "Stopping inference container..."
-        docker stop $CONTAINER_ID
-        docker rm $CONTAINER_ID
-
-        echo "======================================"
-        echo -e "${GREEN}✅ Testing completed!${NC}"
-        echo "======================================"
-    fi
+    # Inform about testing option
+    echo "To test these containers, run: $PROJECT_ROOT/tests/scripts/run_tests.sh ${IMAGE_VERSION}"
 fi
