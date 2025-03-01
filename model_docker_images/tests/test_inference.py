@@ -215,13 +215,11 @@ def test_json_inference(endpoint, test_data=None):
     print("\nTesting JSON inference...")
 
     if test_data is None:
-        # Create sample test data
-        test_data = {
-            "instances": [
-                [1.0, 2.0, 3.0],
-                [4.0, 5.0, 6.0]
-            ]
-        }
+        # Create sample test data - use list of lists of floats
+        test_data = [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0]
+        ]
 
     try:
         response = endpoint.predict(test_data)
