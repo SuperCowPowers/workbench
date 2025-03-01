@@ -2,7 +2,6 @@ import os
 import json
 import argparse
 import tempfile
-import shutil
 import subprocess
 import numpy as np
 import pandas as pd

@@ -6,9 +6,12 @@ COPY requirements.txt /tmp/
 # Install dependencies
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Set up the program in the image
-COPY train.py /opt/program/
+# Copy the SageMaker entrypoint script
+COPY sagemaker_entrypoint.py /opt/program/
 WORKDIR /opt/program
 
-# Set up the entry point
-ENTRYPOINT ["python", "train.py"]
+# Make the entrypoint executable
+RUN chmod +x /opt/program/sagemaker_entrypoint.py
+
+# Set the entrypoint
+ENTRYPOINT ["/opt/program/sagemaker_entrypoint.py"]
