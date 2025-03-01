@@ -90,7 +90,17 @@ async def invoke(request: Request):
         else:  # Default to JSON
             json_str = body.decode('utf-8')
             data_json = json.loads(json_str)
-            data = pd.DataFrame(data_json) if not isinstance(data_json, pd.DataFrame) else data_json
+
+            # Handle different JSON formats
+            if isinstance(data_json, dict) and "instances" in data_json:
+                # Format: {"instances": [[1,2,3], [4,5,6]]}
+                data = pd.DataFrame(data_json["instances"])
+            elif isinstance(data_json, list) and all(isinstance(item, list) for item in data_json):
+                # Format: [[1,2,3], [4,5,6]]
+                data = pd.DataFrame(data_json)
+            else:
+                # Try to convert to DataFrame
+                data = pd.DataFrame(data_json)
 
         # Make prediction
         predictions = model.predict(data)
