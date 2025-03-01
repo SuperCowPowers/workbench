@@ -9,7 +9,7 @@ import subprocess
 import requests
 import pandas as pd
 import numpy as np
-from pathlib import Path
+from io import StringIO
 
 
 class MockModel:
@@ -166,7 +166,7 @@ class MockEndpoint:
             # Parse response based on response type
             if hasattr(self.model, 'response_types') and 'text/csv' in self.model.response_types:
                 # Parse CSV response
-                return pd.read_csv(pd.StringIO(response.text), header=None)
+                return pd.read_csv(StringIO(response.text), header=None)
             else:
                 # Parse JSON response
                 return response.json()

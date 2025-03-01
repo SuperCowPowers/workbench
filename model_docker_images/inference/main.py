@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import os
 import json
 import pandas as pd
+from io import StringIO
 import joblib
 import logging
 
@@ -85,7 +86,7 @@ async def invoke(request: Request):
         # Parse input data based on content type
         if 'text/csv' in content_type:
             s = body.decode('utf-8')
-            data = pd.read_csv(pd.StringIO(s), header=None)
+            data = pd.read_csv(StringIO(s), header=None)
         else:  # Default to JSON
             json_str = body.decode('utf-8')
             data_json = json.loads(json_str)
