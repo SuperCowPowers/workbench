@@ -46,10 +46,10 @@ class ModelImages:
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
         ("us-west-2", "training", "0.1"): (
-            "174872318107.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
+            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
         ),
         ("us-west-2", "inference", "0.1"): (
-            "174872318107.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
+            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
 
         # These are the OLD locked SKLearn images
