@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import os
 import sys
 import json
@@ -9,8 +9,10 @@ import boto3
 from urllib.parse import urlparse
 
 # Set up logging
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger('sagemaker-entry-point')
 
 
@@ -25,16 +27,15 @@ def download_and_extract_s3(s3_uri, target_dir="/opt/ml/code"):
     try:
         s3 = boto3.client("s3")
         s3.download_file(bucket, key, local_tar)
-        logger.info(f"Download successful, tar file size: {os.path.getsize(local_tar)} bytes")
+        logger.info(f"Download successful: {os.path.getsize(local_tar)} bytes")
 
         os.makedirs(target_dir, exist_ok=True)
         with tarfile.open(local_tar, "r:gz") as tar:
             tar.extractall(path=target_dir)
 
-        logger.info(f"Files in {target_dir} after extraction: {os.listdir(target_dir)}")
         return target_dir
     except Exception as e:
-        logger.error(f"Error downloading from S3: {str(e)}")
+        logger.error(f"Error downloading from S3: {e}")
         sys.exit(1)
 
 
@@ -46,16 +47,16 @@ def install_requirements(requirements_path):
             subprocess.check_call([
                 sys.executable, "-m", "pip", "install", "-r", requirements_path
             ])
-            logger.info("Requirements installation completed successfully.")
+            logger.info("Requirements installed successfully.")
         except subprocess.CalledProcessError as e:
-            logger.error(f"Error installing requirements: {str(e)}")
+            logger.error(f"Error installing requirements: {e}")
             sys.exit(1)
     else:
         logger.info(f"No requirements file found at {requirements_path}")
 
 
-def setup_sagemaker_environment():
-    """Set up SageMaker environment variables based on /opt/ml structure."""
+def setup_environment():
+    """Set up SageMaker environment variables."""
     env_vars = {
         "SM_MODEL_DIR": "/opt/ml/model",
         "SM_OUTPUT_DATA_DIR": "/opt/ml/output/data",
@@ -65,92 +66,66 @@ def setup_sagemaker_environment():
         "SM_INPUT_CONFIG_DIR": "/opt/ml/input/config"
     }
 
-    # Set the environment variables
     for key, value in env_vars.items():
         os.environ[key] = str(value)
+        os.makedirs(value, exist_ok=True)
 
-    logger.info(f"Set SageMaker environment variables: {list(env_vars.keys())}")
+    logger.info(f"SageMaker environment initialized.")
 
 
 def main():
     logger.info("Starting SageMaker container entry point")
 
-    # Read hyperparameters
-    hyperparameters_path = '/opt/ml/input/config/hyperparameters.json'
-    if not os.path.exists(hyperparameters_path):
-        logger.error("Error: hyperparameters.json not found!")
+    # Load hyperparameters
+    hyperparams_path = '/opt/ml/input/config/hyperparameters.json'
+    if not os.path.exists(hyperparams_path):
+        logger.error("hyperparameters.json not found!")
         sys.exit(1)
 
-    with open(hyperparameters_path, 'r') as f:
-        hyperparameters = json.load(f)
-        logger.info(f"Hyperparameters: {hyperparameters}")
+    with open(hyperparams_path, 'r') as f:
+        hyperparams = json.load(f)
 
-    # Set up environment based on hyperparameters
-    # Get program name from hyperparameters or environment variable
-    if 'sagemaker_program' in hyperparameters:
-        program = hyperparameters['sagemaker_program'].strip('"\'')
+    # Get program name from hyperparameters or environment
+    if 'sagemaker_program' in hyperparams:
+        program = hyperparams['sagemaker_program'].strip('"\'')
         os.environ['SAGEMAKER_PROGRAM'] = program
     elif 'SAGEMAKER_PROGRAM' in os.environ:
         program = os.environ['SAGEMAKER_PROGRAM']
     else:
-        logger.error("Error: sagemaker_program not found in hyperparameters or environment!")
+        logger.error("sagemaker_program not found in hyperparameters or environment!")
         sys.exit(1)
 
     logger.info(f"Using program: {program}")
 
-    # Get source directory from hyperparameters
-    if 'sagemaker_submit_directory' in hyperparameters:
-        submit_dir_value = hyperparameters['sagemaker_submit_directory'].strip('"\'')
-        logger.info(f"Source directory: {submit_dir_value}")
+    # Get source directory
+    submit_dir = "/opt/ml/code"
+    if 'sagemaker_submit_directory' in hyperparams:
+        submit_dir_value = hyperparams['sagemaker_submit_directory'].strip('"\'')
 
-        # Check if it's an S3 URI or a local path
+        # Handle S3 vs local path
         if submit_dir_value.startswith('s3://'):
-            logger.info(f"Downloading source from S3: {submit_dir_value}")
             submit_dir = download_and_extract_s3(submit_dir_value)
         else:
-            logger.info(f"Using local source directory: {submit_dir_value}")
             submit_dir = submit_dir_value
-            # Verify the directory exists
             if not os.path.exists(submit_dir):
                 logger.error(f"Local directory not found: {submit_dir}")
                 sys.exit(1)
 
-        # Install requirements
-        install_requirements(os.path.join(submit_dir, "requirements.txt"))
-    else:
-        logger.info("No sagemaker_submit_directory specified, assuming code is already in /opt/ml/code")
-        submit_dir = "/opt/ml/code"
+    # Install requirements if present
+    install_requirements(os.path.join(submit_dir, "requirements.txt"))
 
-        # Check if directory exists
-        if not os.path.exists(submit_dir):
-            logger.error(f"Code directory {submit_dir} does not exist!")
-            sys.exit(1)
+    # Set up environment variables
+    setup_environment()
 
-        # List code directory contents for debugging
-        logger.info(f"Contents of {submit_dir}:")
-        try:
-            output = subprocess.check_output(['ls', '-la', submit_dir])
-            logger.info(output.decode('utf-8'))
-        except Exception as e:
-            logger.error(f"Failed to list directory: {e}")
-
-    # Set up SageMaker environment variables
-    setup_sagemaker_environment()
-
-    # Ensure directories exist
-    os.makedirs(os.environ["SM_MODEL_DIR"], exist_ok=True)
-    os.makedirs(os.environ["SM_OUTPUT_DATA_DIR"], exist_ok=True)
-
-    # Locate entry point script
+    # Find entry point script
     entry_point = os.path.join(submit_dir, program)
     if not os.path.exists(entry_point):
-        logger.error(f"Error: Entry point '{entry_point}' not found!")
+        logger.error(f"Entry point not found: {entry_point}")
         sys.exit(1)
 
-    logger.info(f"Running entry point: {entry_point}")
-    sys.stdout.flush()
+    logger.info(f"Executing: {program}")
 
-    # Execute with proper arguments
+    # Execute the training script with SageMaker arguments
     cmd = [
         sys.executable, entry_point,
         "--model-dir", os.environ["SM_MODEL_DIR"],
@@ -158,9 +133,6 @@ def main():
         "--train", os.environ["SM_CHANNEL_TRAIN"]
     ]
 
-    logger.info(f"Executing: {' '.join(cmd)}")
-
-    # Replace current process with the entry point script and arguments
     try:
         os.execv(sys.executable, cmd)
     except Exception as e:
