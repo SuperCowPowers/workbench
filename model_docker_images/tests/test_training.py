@@ -121,16 +121,9 @@ class MockEstimator:
                 "-e", f"SAGEMAKER_PROGRAM={self.entry_point}",
                 "-e", "SM_MODEL_DIR=/opt/ml/model",
                 "-e", "SM_OUTPUT_DATA_DIR=/opt/ml/output/data",
-                "-e", "SM_CHANNEL_TRAIN=/opt/ml/input/data/train"
+                "-e", "SM_CHANNEL_TRAIN=/opt/ml/input/data/train",
+                self.image_uri
             ]
-
-            # Add platform flag for Mac M1/M2/M3 users
-            if os.uname().machine == 'arm64':
-                cmd.insert(2, "--platform")
-                cmd.insert(3, "linux/amd64")
-
-            # Add the image URI
-            cmd.append(self.image_uri)
 
             print(f"Running training container with command: {' '.join(cmd)}")
 
@@ -195,7 +188,7 @@ def main():
                         help="Directory containing the training script")
     parser.add_argument("--data", type=str, default="tests/data/abalone_sm.csv",
                         help="Path to training data file or directory")
-    parser.add_argument("--cleanup", action="store_true", help="Clean up temporary files after test")
+    # Removed cleanup argument since we always clean up
     args = parser.parse_args()
 
     # Handle relative paths
@@ -219,7 +212,6 @@ def main():
         image_uri=args.image,
         entry_point=args.entry_point,
         source_dir=args.source_dir,
-        # Common SageMaker instance type for training
         instance_type="ml.m5.large"
     )
 
@@ -236,12 +228,9 @@ def main():
         raise
 
     finally:
-        # Clean up if requested
-        if args.cleanup:
-            estimator.cleanup()
-        else:
-            print(f"Temporary files are in: {estimator.temp_dir}")
-            print("Not removing temporary files for debugging purposes.")
+        # Always clean up temporary files
+        estimator.cleanup()
+        print("Temporary files have been cleaned up.")
 
 
 if __name__ == "__main__":
