@@ -251,7 +251,7 @@ def test_ping_endpoint(url):
 def main():
     """Run the test using MockModel and MockEndpoint"""
     parser = argparse.ArgumentParser(description="Test SageMaker inference container")
-    parser.add_argument("--image", type=str, default="aws_model_inference:0.1", help="Inference image name:tag")
+    parser.add_argument("--image", type=str, default="aws-ml-images/py312-sklearn-xgb-inference:0.1", help="Inference image name:tag")
     parser.add_argument("--model-dir", type=str, default=None, help="Path to model directory (optional)")
     args = parser.parse_args()
 

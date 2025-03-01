@@ -6,11 +6,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 # Get the parent directory (project root)
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Configuration
+# AWS Account ID
+AWS_ACCOUNT_ID="507740646243"
+
+# Define repository names - used for both local and ECR images
+TRAINING_REPO="aws-ml-images/py312-sklearn-xgb-training"
+INFERENCE_REPO="aws-ml-images/py312-sklearn-xgb-inference"
+
+# Local directories
 TRAINING_DIR="$PROJECT_ROOT/training"
 INFERENCE_DIR="$PROJECT_ROOT/inference"
-TRAINING_IMAGE="aws_model_training"
-INFERENCE_IMAGE="aws_model_inference"
+
+# Image version
 IMAGE_VERSION=${1:-"0.1"}
 
 # Expect AWS_PROFILE to be set in the environment when deploying
@@ -45,9 +52,9 @@ done
 # Function to build a Docker image
 build_image() {
     local dir=$1
-    local image_name=$2
+    local repo_name=$2
     local tag=$3
-    local full_name="${image_name}:${tag}"
+    local full_name="${repo_name}:${tag}"
 
     echo -e "${YELLOW}Building image: ${full_name}${NC}"
 
@@ -67,20 +74,20 @@ build_image() {
 
 # Function to deploy an image to ECR
 deploy_image() {
-    local image_name=$1
+    local repo_name=$1
     local tag=$2
     local use_latest=$3
-    local full_name="${image_name}:${tag}"
+    local full_name="${repo_name}:${tag}"
 
     for REGION in "${REGION_LIST[@]}"; do
         echo "Processing region: ${REGION}"
         # Construct the ECR repository URL
-        ECR_REPO="507740646243.dkr.ecr.${REGION}.amazonaws.com/model_images/${image_name}"
+        ECR_REPO="${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${repo_name}"
         AWS_ECR_IMAGE="${ECR_REPO}:${tag}"
 
         echo "Logging in to AWS ECR in ${REGION}..."
         aws ecr get-login-password --region ${REGION} --profile ${AWS_PROFILE} | \
-            docker login --username AWS --password-stdin ${ECR_REPO}
+            docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
 
         echo "Tagging image for AWS ECR as ${AWS_ECR_IMAGE}..."
         docker tag ${full_name} ${AWS_ECR_IMAGE}
@@ -102,13 +109,13 @@ deploy_image() {
 echo "======================================"
 echo "🏗️  Building training container"
 echo "======================================"
-build_image "$TRAINING_DIR" "$TRAINING_IMAGE" "$IMAGE_VERSION"
+build_image "$TRAINING_DIR" "$TRAINING_REPO" "$IMAGE_VERSION"
 
 # Build inference image
 echo "======================================"
 echo "🏗️  Building inference container"
 echo "======================================"
-build_image "$INFERENCE_DIR" "$INFERENCE_IMAGE" "$IMAGE_VERSION"
+build_image "$INFERENCE_DIR" "$INFERENCE_REPO" "$IMAGE_VERSION"
 
 echo "======================================"
 echo -e "${GREEN}✅ All builds completed successfully!${NC}"
@@ -121,11 +128,11 @@ if [ "$DEPLOY" = true ]; then
 
     # Deploy training image
     echo "Deploying training image..."
-    deploy_image "$TRAINING_IMAGE" "$IMAGE_VERSION" "$LATEST"
+    deploy_image "$TRAINING_REPO" "$IMAGE_VERSION" "$LATEST"
 
     # Deploy inference image
     echo "Deploying inference image..."
-    deploy_image "$INFERENCE_IMAGE" "$IMAGE_VERSION" "$LATEST"
+    deploy_image "$INFERENCE_REPO" "$IMAGE_VERSION" "$LATEST"
 
     echo "======================================"
     echo -e "${GREEN}✅ Deployment complete!${NC}"
@@ -136,10 +143,10 @@ else
     # Print information about the built images
     echo "======================================"
     echo "📋 Image information:"
-    echo "Training image: ${TRAINING_IMAGE}:${IMAGE_VERSION}"
-    echo "Inference image: ${INFERENCE_IMAGE}:${IMAGE_VERSION}"
+    echo "Training image: ${TRAINING_REPO}:${IMAGE_VERSION}"
+    echo "Inference image: ${INFERENCE_REPO}:${IMAGE_VERSION}"
     echo "======================================"
 
     # Inform about testing option
-    echo "To test these containers, run: $PROJECT_ROOT/tests/scripts/run_tests.sh ${IMAGE_VERSION}"
+    echo "To test these containers, run: $PROJECT_ROOT/tests/run_tests.sh ${IMAGE_VERSION}"
 fi
