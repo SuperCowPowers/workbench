@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 # Local Imports
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
-from workbench.core.artifacts.model_core import ModelCore, ModelType, InferenceImage
+from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelImages
 from workbench.core.artifacts.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script
 from workbench.utils.model_utils import supported_instance_types
@@ -208,7 +208,7 @@ class FeaturesToModel(Transform):
         source_dir = str(Path(script_path).parent)
 
         # Create a Sagemaker Model with our script
-        image = InferenceImage.get_image_uri(self.sm_session.boto_region_name, "sklearn", "1.2.1")
+        image = ModelImages.get_image_uri(self.sm_session.boto_region_name, "sklearn", "1.2.1")
         self.estimator = SKLearn(
             entry_point=entry_point,
             source_dir=source_dir,
@@ -268,7 +268,7 @@ class FeaturesToModel(Transform):
         )
 
         # Register our model
-        image = InferenceImage.get_image_uri(self.sm_session.boto_region_name, "sklearn", "1.2.1")
+        image = ModelImages.get_image_uri(self.sm_session.boto_region_name, "sklearn", "1.2.1")
         self.log.important(f"Registering model {self.output_uuid} with image {image}...")
         model = self.estimator.create_model(role=self.workbench_role_arn)
         model.register(
