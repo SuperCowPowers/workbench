@@ -65,9 +65,13 @@ def include_code_and_meta_for_inference(model_dir, code_dir, entry_point):
         json.dump(inference_metadata, fp)
 
     # Copy code to model directory, copy ALL files and directories recursively (except __pycache__)
+    # Also list all files/directories that are being copied
     for item in os.listdir(code_dir):
-        if item != "__pycache__":
-            shutil.copytree(os.path.join(code_dir, item), os.path.join(model_dir, item))
+        if item == "__pycache__":
+            continue
+        src, dst = os.path.join(code_dir, item), os.path.join(model_dir, item)
+        shutil.copytree(src, dst, dirs_exist_ok=True) if os.path.isdir(src) else shutil.copy2(src, dst)
+        logger.info(f"Copied: {src} -> {dst}")
 
 
 def main():
