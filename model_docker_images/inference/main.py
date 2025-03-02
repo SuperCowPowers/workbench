@@ -36,9 +36,9 @@ def get_inference_script(model_dir: str) -> str:
 
 def install_requirements(requirements_path):
     """Install Python dependencies from requirements file.
-       Uses a persistent cache to speed up container cold starts.
-       Note: Inference containers don't have root access, so we
-             use the --user flag and add the user package path manually.
+    Uses a persistent cache to speed up container cold starts.
+    Note: Inference containers don't have root access, so we
+          use the --user flag and add the user package path manually.
     """
     if os.path.exists(requirements_path):
         logger.info(f"Installing dependencies from {requirements_path}...")
@@ -48,14 +48,21 @@ def install_requirements(requirements_path):
         os.environ["PIP_CACHE_DIR"] = pip_cache_dir
 
         try:
-            subprocess.check_call([
-                sys.executable, "-m", "pip", "install",
-                "--cache-dir", pip_cache_dir,  # Enable caching
-                "--disable-pip-version-check",
-                "--no-warn-script-location",
-                "--user",
-                "-r", requirements_path
-            ])
+            subprocess.check_call(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--cache-dir",
+                    pip_cache_dir,  # Enable caching
+                    "--disable-pip-version-check",
+                    "--no-warn-script-location",
+                    "--user",
+                    "-r",
+                    requirements_path,
+                ]
+            )
             # Ensure Python can find user-installed packages
             sys.path.append(site.getusersitepackages())
             logger.info("Requirements installed successfully.")
