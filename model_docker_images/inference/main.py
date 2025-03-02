@@ -5,6 +5,7 @@ import sys
 import json
 import importlib.util
 import logging
+import subprocess
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -32,6 +33,20 @@ def get_inference_script(model_dir: str) -> str:
         return config["inference_script"]
 
 
+def install_requirements(requirements_path):
+    """Install Python dependencies from requirements file."""
+    if os.path.exists(requirements_path):
+        logger.info(f"Installing dependencies from {requirements_path}...")
+        try:
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_path])
+            logger.info("Requirements installed successfully.")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Error installing requirements: {e}")
+            sys.exit(1)
+    else:
+        logger.info(f"No requirements file found at {requirements_path}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Handle model loading on startup and cleanup on shutdown."""
@@ -50,6 +65,9 @@ async def lifespan(app: FastAPI):
         inference_script_path = os.path.join(model_dir, inference_script)
         if not os.path.exists(inference_script_path):
             raise FileNotFoundError(f"Inference script not found: {inference_script_path}")
+
+        # Install requirements if present
+        install_requirements(os.path.join(model_dir, "requirements.txt"))
 
         # Ensure the model directory is in the Python path
         sys.path.insert(0, model_dir)
