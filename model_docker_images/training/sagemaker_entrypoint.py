@@ -64,9 +64,10 @@ def include_code_and_meta_for_inference(model_dir, code_dir, entry_point):
     with open(metadata_path, "w") as fp:
         json.dump(inference_metadata, fp)
 
-    # Copy code to model directory
-    for file in os.listdir(code_dir):
-        shutil.copy2(os.path.join(code_dir, file), model_dir)
+    # Copy code to model directory, copy ALL files and directories recursively (except __pycache__)
+    for item in os.listdir(code_dir):
+        if item != "__pycache__":
+            shutil.copytree(os.path.join(code_dir, item), os.path.join(model_dir, item))
 
 
 def main():
