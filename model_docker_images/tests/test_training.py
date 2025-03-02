@@ -30,7 +30,7 @@ class MockEstimator:
             print(f"Created test environment at: {self.temp_dir}")
 
             # Create directories
-            for path in ['input/data/train', 'input/config', 'model', 'output/data', 'code']:
+            for path in ["input/data/train", "input/config", "model", "output/data", "code"]:
                 os.makedirs(f"{self.temp_dir}/{path}", exist_ok=True)
 
             # Copy data files
@@ -57,7 +57,7 @@ class MockEstimator:
             all_hyperparams = {
                 **self.hyperparameters,
                 "sagemaker_program": self.entry_point,
-                "sagemaker_submit_directory": "/opt/ml/code"
+                "sagemaker_submit_directory": "/opt/ml/code",
             }
 
             with open(f"{self.temp_dir}/input/config/hyperparameters.json", "w") as f:
@@ -65,20 +65,30 @@ class MockEstimator:
 
             # Run the container
             cmd = [
-                "docker", "run", "--rm",
-                "-v", f"{self.temp_dir}/input:/opt/ml/input",
-                "-v", f"{self.temp_dir}/model:/opt/ml/model",
-                "-v", f"{self.temp_dir}/output:/opt/ml/output",
-                "-v", f"{self.temp_dir}/code:/opt/ml/code",
-                "-e", f"SAGEMAKER_PROGRAM={self.entry_point}",
-                "-e", "SM_MODEL_DIR=/opt/ml/model",
-                "-e", "SM_OUTPUT_DATA_DIR=/opt/ml/output/data",
-                "-e", "SM_CHANNEL_TRAIN=/opt/ml/input/data/train",
-                self.image_uri
+                "docker",
+                "run",
+                "--rm",
+                "-v",
+                f"{self.temp_dir}/input:/opt/ml/input",
+                "-v",
+                f"{self.temp_dir}/model:/opt/ml/model",
+                "-v",
+                f"{self.temp_dir}/output:/opt/ml/output",
+                "-v",
+                f"{self.temp_dir}/code:/opt/ml/code",
+                "-e",
+                f"SAGEMAKER_PROGRAM={self.entry_point}",
+                "-e",
+                "SM_MODEL_DIR=/opt/ml/model",
+                "-e",
+                "SM_OUTPUT_DATA_DIR=/opt/ml/output/data",
+                "-e",
+                "SM_CHANNEL_TRAIN=/opt/ml/input/data/train",
+                self.image_uri,
             ]
 
             # Add platform flag for Mac M1/M2/M3 users
-            if os.uname().machine == 'arm64':
+            if os.uname().machine == "arm64":
                 cmd.insert(2, "--platform")
                 cmd.insert(3, "linux/amd64")
 
@@ -119,7 +129,9 @@ class MockEstimator:
 def main():
     """Run the test using a MockEstimator"""
     parser = argparse.ArgumentParser(description="Test SageMaker training container")
-    parser.add_argument("--image", type=str, default="aws-ml-images/py312-sklearn-xgb-training:0.1", help="Training image name:tag")
+    parser.add_argument(
+        "--image", type=str, default="aws-ml-images/py312-sklearn-xgb-training:0.1", help="Training image name:tag"
+    )
     parser.add_argument("--entry-point", type=str, default="example_model_script.py", help="Training script name")
     parser.add_argument("--source-dir", type=str, default="tests/", help="Directory containing training scripts")
     parser.add_argument("--data", type=str, default="tests/data/abalone_sm.csv", help="Training data path")
@@ -135,17 +147,10 @@ def main():
     print(f"Testing with image {args.image}, script {args.entry_point}")
 
     # Create and run the estimator
-    estimator = MockEstimator(
-        image_uri=args.image,
-        entry_point=args.entry_point,
-        source_dir=source_dir
-    )
+    estimator = MockEstimator(image_uri=args.image, entry_point=args.entry_point, source_dir=source_dir)
 
     try:
-        estimator.fit(
-            inputs={"train": data_path},
-            job_name="mock-training-job"
-        )
+        estimator.fit(inputs={"train": data_path}, job_name="mock-training-job")
         print("✅ Training completed successfully")
     except Exception as e:
         print(f"❌ Training failed: {e}")

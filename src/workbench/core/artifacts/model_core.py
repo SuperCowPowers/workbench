@@ -51,7 +51,6 @@ class ModelImages:
         ("us-west-2", "inference", "0.1"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
-
         # These are the OLD locked SKLearn images
         ("us-east-1", "sklearn", "1.2.1"): (
             "683313688378.dkr.ecr.us-east-1.amazonaws.com/"
@@ -69,7 +68,6 @@ class ModelImages:
             "246618743249.dkr.ecr.us-west-2.amazonaws.com/"
             "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
         ),
-
     }
 
     @classmethod

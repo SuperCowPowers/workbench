@@ -66,20 +66,17 @@ class MockModel:
             import xgboost as xgb
 
             # Train a simple model
-            model = xgb.XGBRegressor(objective='reg:squarederror')
+            model = xgb.XGBRegressor(objective="reg:squarederror")
             X = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
             y = np.array([10, 20, 30])
             model.fit(X, y)
 
             # Save the model
-            joblib.dump(model, os.path.join(model_dir, 'model.joblib'))
+            joblib.dump(model, os.path.join(model_dir, "model.joblib"))
 
             # Save metadata
-            with open(os.path.join(model_dir, 'metadata.json'), 'w') as f:
-                json.dump({
-                    'feature_names': ['feature1', 'feature2', 'feature3'],
-                    'model_type': 'regression'
-                }, f)
+            with open(os.path.join(model_dir, "metadata.json"), "w") as f:
+                json.dump({"feature_names": ["feature1", "feature2", "feature3"], "model_type": "regression"}, f)
 
             self.model_data = model_dir
         else:
@@ -88,21 +85,27 @@ class MockModel:
 
         # Start the container
         cmd = [
-            "docker", "run", "-d", "--rm",
-            "-p", "8080:8080",
-            "-v", f"{model_dir}:/opt/ml/model",
-            "-e", "MODEL_PATH=/opt/ml/model",
+            "docker",
+            "run",
+            "-d",
+            "--rm",
+            "-p",
+            "8080:8080",
+            "-v",
+            f"{model_dir}:/opt/ml/model",
+            "-e",
+            "MODEL_PATH=/opt/ml/model",
         ]
 
         # Add platform flag for Mac M1/M2/M3 users
-        if os.uname().machine == 'arm64':
+        if os.uname().machine == "arm64":
             cmd.insert(2, "--platform")
             cmd.insert(3, "linux/amd64")
 
         # Add the image URI
         cmd.append(self.image_uri)
         print(f"Starting inference container: {' '.join(cmd)}")
-        self.container_id = subprocess.check_output(cmd).decode('utf-8').strip()
+        self.container_id = subprocess.check_output(cmd).decode("utf-8").strip()
 
         # Add this block immediately after starting the container
         print(f"Container ID: {self.container_id}")
@@ -111,14 +114,14 @@ class MockModel:
             time.sleep(1)
 
             # Get container logs
-            logs = subprocess.check_output(
-                ["docker", "logs", self.container_id], stderr=subprocess.STDOUT
-            ).decode('utf-8')
+            logs = subprocess.check_output(["docker", "logs", self.container_id], stderr=subprocess.STDOUT).decode(
+                "utf-8"
+            )
             print(f"Container startup logs:\n{logs}")
         except Exception as e:
             print(f"Error getting container logs: {e}")
 
-        self.endpoint_url = 'http://localhost:8080'
+        self.endpoint_url = "http://localhost:8080"
         return MockEndpoint(self)
 
 
@@ -133,17 +136,19 @@ class MockEndpoint:
         # Check container status and logs
         try:
             # Get container state
-            inspect_output = subprocess.check_output(
-                ["docker", "inspect", "--format", "{{.State.Status}}", model.container_id]
-            ).decode('utf-8').strip()
+            inspect_output = (
+                subprocess.check_output(["docker", "inspect", "--format", "{{.State.Status}}", model.container_id])
+                .decode("utf-8")
+                .strip()
+            )
 
             print(f"Container status: {inspect_output}")
 
             # If not running, get the logs
             if inspect_output != "running":
-                logs = subprocess.check_output(
-                    ["docker", "logs", model.container_id], stderr=subprocess.STDOUT
-                ).decode('utf-8')
+                logs = subprocess.check_output(["docker", "logs", model.container_id], stderr=subprocess.STDOUT).decode(
+                    "utf-8"
+                )
                 print(f"Container logs:\n{logs}")
                 raise RuntimeError("Container failed to start properly")
         except Exception as e:
@@ -161,10 +166,10 @@ class MockEndpoint:
             The prediction result
         """
         # Default to first registered content type
-        content_type = self.model.content_types[0] if hasattr(self.model, 'content_types') else 'application/json'
+        content_type = self.model.content_types[0] if hasattr(self.model, "content_types") else "application/json"
 
         # Format the data according to content type
-        if content_type == 'text/csv':
+        if content_type == "text/csv":
             if isinstance(data, pd.DataFrame):
                 payload = data.to_csv(header=False, index=False)
             elif isinstance(data, (list, np.ndarray)):
@@ -174,26 +179,22 @@ class MockEndpoint:
         else:
             # Default to JSON
             if isinstance(data, pd.DataFrame):
-                payload = data.to_json(orient='records')
+                payload = data.to_json(orient="records")
             elif isinstance(data, (list, np.ndarray)):
-                payload = json.dumps({"instances": data.tolist() if hasattr(data, 'tolist') else data})
+                payload = json.dumps({"instances": data.tolist() if hasattr(data, "tolist") else data})
             else:
                 payload = json.dumps(data)
 
         # Send the request to the container
         try:
-            response = requests.post(
-                f"{self.url}/invocations",
-                data=payload,
-                headers={"Content-Type": content_type}
-            )
+            response = requests.post(f"{self.url}/invocations", data=payload, headers={"Content-Type": content_type})
 
             # Check for errors
             if response.status_code != 200:
                 raise Exception(f"Prediction failed with status code {response.status_code}: {response.text}")
 
             # Parse response based on response type
-            if hasattr(self.model, 'response_types') and 'text/csv' in self.model.response_types:
+            if hasattr(self.model, "response_types") and "text/csv" in self.model.response_types:
                 # Parse CSV response
                 return pd.read_csv(StringIO(response.text), header=None)
             else:
@@ -226,10 +227,7 @@ def test_csv_inference(endpoint, test_data=None):
 
     if test_data is None:
         # Create sample test data
-        test_data = pd.DataFrame([
-            [1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0]
-        ])
+        test_data = pd.DataFrame([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
 
     try:
         response = endpoint.predict(test_data)
@@ -247,10 +245,7 @@ def test_json_inference(endpoint, test_data=None):
 
     if test_data is None:
         # Create sample test data - use list of lists of floats
-        test_data = [
-            [1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0]
-        ]
+        test_data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
 
     try:
         response = endpoint.predict(test_data)
@@ -282,7 +277,9 @@ def test_ping_endpoint(url):
 def main():
     """Run the test using MockModel and MockEndpoint"""
     parser = argparse.ArgumentParser(description="Test SageMaker inference container")
-    parser.add_argument("--image", type=str, default="aws-ml-images/py312-sklearn-xgb-inference:0.1", help="Inference image name:tag")
+    parser.add_argument(
+        "--image", type=str, default="aws-ml-images/py312-sklearn-xgb-inference:0.1", help="Inference image name:tag"
+    )
     parser.add_argument("--model-dir", type=str, default=None, help="Path to model directory (optional)")
     args = parser.parse_args()
 
@@ -295,11 +292,7 @@ def main():
 
     try:
         # Create and deploy the model
-        model = MockModel(
-            image_uri=args.image,
-            model_data=args.model_dir,
-            role="mock-role"
-        )
+        model = MockModel(image_uri=args.image, model_data=args.model_dir, role="mock-role")
 
         # Register the model
         model.register(
@@ -307,15 +300,11 @@ def main():
             response_types=["text/csv", "application/json"],
             inference_instances=["ml.t2.medium"],
             transform_instances=["ml.m5.large"],
-            description="Test model"
+            description="Test model",
         )
 
         # Deploy the model
-        endpoint = model.deploy(
-            instance_type="local",
-            initial_instance_count=1,
-            endpoint_name="test-endpoint"
-        )
+        endpoint = model.deploy(instance_type="local", initial_instance_count=1, endpoint_name="test-endpoint")
 
         # Test the /ping endpoint
         ping_success = test_ping_endpoint(endpoint.url)

@@ -41,9 +41,7 @@ def install_requirements(requirements_path):
     if os.path.exists(requirements_path):
         logger.info(f"Installing dependencies from {requirements_path}...")
         try:
-            subprocess.check_call([
-                sys.executable, "-m", "pip", "install", "-r", requirements_path
-            ])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_path])
             logger.info("Requirements installed successfully.")
         except subprocess.CalledProcessError as e:
             logger.error(f"Error installing requirements: {e}")
@@ -78,18 +76,18 @@ def main():
     logger.info("Starting Workbench training container...")
 
     # Load hyperparameters
-    hyperparams_path = '/opt/ml/input/config/hyperparameters.json'
+    hyperparams_path = "/opt/ml/input/config/hyperparameters.json"
     if not os.path.exists(hyperparams_path):
         logger.error("hyperparameters.json not found!")
         sys.exit(1)
 
-    with open(hyperparams_path, 'r') as f:
+    with open(hyperparams_path, "r") as f:
         hyperparams = json.load(f)
     logger.info(f"Hyperparameters: {hyperparams}")
 
     # Get program name from hyperparameters
-    if 'sagemaker_program' in hyperparams:
-        training_script = hyperparams['sagemaker_program'].strip('"\'')
+    if "sagemaker_program" in hyperparams:
+        training_script = hyperparams["sagemaker_program"].strip("\"'")
     else:
         logger.error("sagemaker_program not found in hyperparameters!")
         sys.exit(1)
@@ -97,11 +95,11 @@ def main():
     logger.info(f"Using training_script: {training_script}")
 
     # Get source directory from hyperparameters
-    if 'sagemaker_submit_directory' in hyperparams:
-        code_directory = hyperparams['sagemaker_submit_directory'].strip('"\'')
+    if "sagemaker_submit_directory" in hyperparams:
+        code_directory = hyperparams["sagemaker_submit_directory"].strip("\"'")
 
         # Handle S3 vs local path
-        if code_directory.startswith('s3://'):
+        if code_directory.startswith("s3://"):
             code_directory = download_and_extract_s3(code_directory)
         elif not os.path.exists(code_directory):
             logger.error(f"Local code directory not found: {code_directory}")
@@ -123,18 +121,24 @@ def main():
 
     # Call the training script and then include code and meta for inference
     try:
-        subprocess.check_call([
-            sys.executable, training_script_path,
-            "--model-dir", os.environ.get("SM_MODEL_DIR", "/opt/ml/model"),
-            "--output-data-dir", os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data"),
-            "--train", os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"),
-        ])
+        subprocess.check_call(
+            [
+                sys.executable,
+                training_script_path,
+                "--model-dir",
+                os.environ.get("SM_MODEL_DIR", "/opt/ml/model"),
+                "--output-data-dir",
+                os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data"),
+                "--train",
+                os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"),
+            ]
+        )
 
         # After training completes, include code and meta in the model.tar.gz
         include_code_and_meta_for_inference(
             model_dir=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"),
             code_dir=code_directory,
-            entry_point=training_script
+            entry_point=training_script,
         )
 
     except subprocess.CalledProcessError as e:
@@ -142,5 +146,5 @@ def main():
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
