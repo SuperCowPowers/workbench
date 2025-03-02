@@ -131,13 +131,13 @@ if __name__ == "__main__":
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
     validation_split = 0.2
 
-    # Sagemaker specific arguments. Defaults are set in the environment variables.
+    # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
     parser.add_argument(
-        "--output-data-dir", type=str, default=os.environ["SM_OUTPUT_DATA_DIR"]
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
     )
-    parser.add_argument("--model-dir", type=str, default=os.environ["SM_MODEL_DIR"])
-    parser.add_argument("--train", type=str, default=os.environ["SM_CHANNEL_TRAIN"])
     args = parser.parse_args()
 
     # Read the training data into DataFrames
@@ -342,7 +342,7 @@ def predict_fn(df, model) -> pd.DataFrame:
     """
 
     # Grab our feature columns (from training)
-    model_dir = os.environ["SM_MODEL_DIR"]
+    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
         model_features = json.load(fp)
     print(f"Model Features: {model_features}")

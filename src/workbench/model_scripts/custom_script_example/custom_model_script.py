@@ -147,7 +147,7 @@ def output_fn(output_df, accept_type):
 
 # Prediction function
 def predict_fn(df, model):
-    model_dir = os.environ["SM_MODEL_DIR"]
+    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
         model_features = json.load(fp)
 
