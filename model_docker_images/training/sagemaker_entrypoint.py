@@ -9,11 +9,8 @@ import boto3
 from urllib.parse import urlparse
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
 logger = logging.getLogger('sagemaker-entry-point')
+logger.setLevel(logging.INFO)
 
 
 def download_and_extract_s3(s3_uri, target_dir="/opt/ml/code"):
@@ -31,8 +28,7 @@ def download_and_extract_s3(s3_uri, target_dir="/opt/ml/code"):
 
         os.makedirs(target_dir, exist_ok=True)
         with tarfile.open(local_tar, "r:gz") as tar:
-            tar.extractall(path=target_dir)
-
+            tar.extractall(path=target_dir, numeric_owner=True)
         return target_dir
     except Exception as e:
         logger.error(f"Error downloading from S3: {e}")
@@ -74,7 +70,18 @@ def setup_environment():
 
 
 def main():
-    logger.info("Starting SageMaker container entry point")
+    logger.info("Starting Workbench training container...")
+
+    # Debug available environment variables
+    logger.info("Available environment variables:")
+    for key in os.environ:
+        logger.info(f"  {key}: {os.environ[key]}")
+
+    # Recursively list out all files in /opt/ml
+    logger.info("Contents of /opt/ml:")
+    for root, dirs, files in os.walk("/opt/ml"):
+        for file in files:
+            logger.info(f"  {root}/{file}")
 
     # Load hyperparameters
     hyperparams_path = '/opt/ml/input/config/hyperparameters.json'
@@ -84,46 +91,41 @@ def main():
 
     with open(hyperparams_path, 'r') as f:
         hyperparams = json.load(f)
+    logger.info(f"Hyperparameters: {hyperparams}")
 
-    # Get program name from hyperparameters or environment
+    # Get program name from hyperparameters
     if 'sagemaker_program' in hyperparams:
-        program = hyperparams['sagemaker_program'].strip('"\'')
-        os.environ['SAGEMAKER_PROGRAM'] = program
-    elif 'SAGEMAKER_PROGRAM' in os.environ:
-        program = os.environ['SAGEMAKER_PROGRAM']
+        training_script = hyperparams['sagemaker_program'].strip('"\'')
     else:
-        logger.error("sagemaker_program not found in hyperparameters or environment!")
+        logger.error("sagemaker_program not found in hyperparameters!")
         sys.exit(1)
 
-    logger.info(f"Using program: {program}")
+    logger.info(f"Using training_script: {training_script}")
 
-    # Get source directory
-    submit_dir = "/opt/ml/code"
+    # Get source directory from hyperparameters
     if 'sagemaker_submit_directory' in hyperparams:
-        submit_dir_value = hyperparams['sagemaker_submit_directory'].strip('"\'')
+        code_directory = hyperparams['sagemaker_submit_directory'].strip('"\'')
 
         # Handle S3 vs local path
-        if submit_dir_value.startswith('s3://'):
-            submit_dir = download_and_extract_s3(submit_dir_value)
-        else:
-            submit_dir = submit_dir_value
-            if not os.path.exists(submit_dir):
-                logger.error(f"Local directory not found: {submit_dir}")
-                sys.exit(1)
+        if code_directory.startswith('s3://'):
+            code_directory = download_and_extract_s3(code_directory)
+        elif not os.path.exists(code_directory):
+            logger.error(f"Local code directory not found: {code_directory}")
+            sys.exit(1)
 
     # Install requirements if present
-    install_requirements(os.path.join(submit_dir, "requirements.txt"))
+    install_requirements(os.path.join(code_directory, "requirements.txt"))
 
     # Set up environment variables
     setup_environment()
 
-    # Find entry point script
-    entry_point = os.path.join(submit_dir, program)
+    # Find training script (entry point)
+    entry_point = os.path.join(code_directory, training_script)
     if not os.path.exists(entry_point):
         logger.error(f"Entry point not found: {entry_point}")
         sys.exit(1)
 
-    logger.info(f"Executing: {program}")
+    logger.info(f"Executing: {entry_point}")
 
     # Execute the training script with SageMaker arguments
     cmd = [

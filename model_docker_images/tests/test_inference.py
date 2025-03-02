@@ -101,12 +101,22 @@ class MockModel:
 
         # Add the image URI
         cmd.append(self.image_uri)
-
         print(f"Starting inference container: {' '.join(cmd)}")
         self.container_id = subprocess.check_output(cmd).decode('utf-8').strip()
 
-        print(f"Waiting for container to initialize...")
-        time.sleep(5)  # Give it time to start
+        # Add this block immediately after starting the container
+        print(f"Container ID: {self.container_id}")
+        try:
+            # Give it a moment to start or fail
+            time.sleep(1)
+
+            # Get container logs
+            logs = subprocess.check_output(
+                ["docker", "logs", self.container_id], stderr=subprocess.STDOUT
+            ).decode('utf-8')
+            print(f"Container startup logs:\n{logs}")
+        except Exception as e:
+            print(f"Error getting container logs: {e}")
 
         self.endpoint_url = 'http://localhost:8080'
         return MockEndpoint(self)
@@ -119,6 +129,25 @@ class MockEndpoint:
         """Initialize with a reference to the model"""
         self.model = model
         self.url = model.endpoint_url
+
+        # Check container status and logs
+        try:
+            # Get container state
+            inspect_output = subprocess.check_output(
+                ["docker", "inspect", "--format", "{{.State.Status}}", model.container_id]
+            ).decode('utf-8').strip()
+
+            print(f"Container status: {inspect_output}")
+
+            # If not running, get the logs
+            if inspect_output != "running":
+                logs = subprocess.check_output(
+                    ["docker", "logs", model.container_id], stderr=subprocess.STDOUT
+                ).decode('utf-8')
+                print(f"Container logs:\n{logs}")
+                raise RuntimeError("Container failed to start properly")
+        except Exception as e:
+            print(f"Error checking container: {e}")
 
     def predict(self, data, initial_args=None):
         """
@@ -179,8 +208,10 @@ class MockEndpoint:
         """Clean up resources by stopping the container"""
         print(f"Deleting endpoint (stopping container {self.model.container_id})")
         if self.model.container_id:
-            subprocess.run(["docker", "stop", self.model.container_id], check=True)
-            self.model.container_id = None
+            try:
+                subprocess.run(["docker", "stop", self.model.container_id], check=False)
+            except Exception as e:
+                print(f"Error stopping container: {e}")
 
         # Clean up temp directory if needed
         if self.model.temp_dir and os.path.exists(self.model.temp_dir):
