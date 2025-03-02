@@ -1,10 +1,19 @@
 # Template Placeholders
 TEMPLATE_PARAMS = {
-    "model_type": "{{model_type}}",
-    "target_column": "{{target_column}}",
-    "feature_list": "{{feature_list}}",
-    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "train_all_data": "{{train_all_data}}"
+    "model_type": "regressor",
+    "target_column": "class_number_of_rings",
+    "feature_list": [
+        "length",
+        "diameter",
+        "height",
+        "whole_weight",
+        "shucked_weight",
+        "viscera_weight",
+        "shell_weight",
+        "auto_id",
+    ],
+    "model_metrics_s3_path": "s3://sandbox-sageworks-artifacts/models/training/abalone-regression",
+    "train_all_data": False,
 }
 
 # Imports for XGB Model
@@ -140,13 +149,8 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-
     # Read the training data into DataFrames
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train)
-        if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     print(f"Training Files: {training_files}")
 
     # Combine files and read them all into a single pandas dataframe
@@ -173,9 +177,7 @@ if __name__ == "__main__":
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(
-            all_df, test_size=validation_split, random_state=42
-        )
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
@@ -216,6 +218,8 @@ if __name__ == "__main__":
         preds = label_encoder.inverse_transform(preds)
 
     # Save predictions to S3 (just the target, prediction, and '_proba' columns)
+    # Note: Skipping this for our test script
+    """
     df_val["prediction"] = preds
     output_columns = [target, "prediction"]
     output_columns += [col for col in df_val.columns if col.endswith("_proba")]
@@ -224,6 +228,7 @@ if __name__ == "__main__":
         path=f"{model_metrics_s3_path}/validation_predictions.csv",
         index=False,
     )
+    """
 
     # Report Performance Metrics
     if model_type == "classifier":
@@ -231,9 +236,7 @@ if __name__ == "__main__":
         label_names = label_encoder.classes_
 
         # Calculate various model performance metrics
-        scores = precision_recall_fscore_support(
-            df_val[target], preds, average=None, labels=label_names
-        )
+        scores = precision_recall_fscore_support(df_val[target], preds, average=None, labels=label_names)
 
         # Put the scores into a dataframe
         score_df = pd.DataFrame(
@@ -287,7 +290,9 @@ def model_fn(model_dir):
     model_path = os.path.join(model_dir, "xgb_model.json")
     with open(model_path, "r") as f:
         model_json = json.load(f)
-    saved_model_type = json.loads(model_json.get('learner').get('attributes').get('scikit_learn')).get('_estimator_type')
+    saved_model_type = json.loads(model_json.get("learner").get("attributes").get("scikit_learn")).get(
+        "_estimator_type"
+    )
     if saved_model_type == "classifier":
         model = xgb.XGBClassifier()
     elif saved_model_type == "regressor":
@@ -304,7 +309,7 @@ def input_fn(input_data, content_type):
     """Parse input data and return a DataFrame."""
     if not input_data:
         raise ValueError("Empty input data is not supported!")
-    
+
     # Decode bytes to string if necessary
     if isinstance(input_data, bytes):
         input_data = input_data.decode("utf-8")

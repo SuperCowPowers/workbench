@@ -1,14 +1,14 @@
 """FeaturesToModel: Train/Create a Model from a Feature Set"""
 
 from pathlib import Path
-from sagemaker.sklearn.estimator import SKLearn
+from sagemaker.estimator import Estimator
 import awswrangler as wr
 from datetime import datetime, timezone
 
 # Local Imports
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
-from workbench.core.artifacts.model_core import ModelCore, ModelType, InferenceImage
+from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelImages
 from workbench.core.artifacts.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script
 from workbench.utils.model_utils import supported_instance_types
@@ -111,6 +111,7 @@ class FeaturesToModel(Transform):
             all_columns = feature_set.columns
             filter_list = [
                 "id",
+                "auto_id",
                 "__index_level_0__",
                 "write_time",
                 "api_invocation_time",
@@ -208,14 +209,14 @@ class FeaturesToModel(Transform):
         source_dir = str(Path(script_path).parent)
 
         # Create a Sagemaker Model with our script
-        image = InferenceImage.get_image_uri(self.sm_session.boto_region_name, "sklearn", "1.2.1")
-        self.estimator = SKLearn(
+        image = ModelImages.get_image_uri(self.sm_session.boto_region_name, "training", "0.1")
+        self.estimator = Estimator(
             entry_point=entry_point,
             source_dir=source_dir,
             role=self.workbench_role_arn,
+            instance_count=1,
             instance_type="ml.m5.large",
             sagemaker_session=self.sm_session,
-            framework_version="1.2-1",
             image_uri=image,
             metric_definitions=metric_definitions,
         )
@@ -268,12 +269,11 @@ class FeaturesToModel(Transform):
         )
 
         # Register our model
-        image = InferenceImage.get_image_uri(self.sm_session.boto_region_name, "sklearn", "1.2.1")
+        image = ModelImages.get_image_uri(self.sm_session.boto_region_name, "inference", "0.1")
         self.log.important(f"Registering model {self.output_uuid} with image {image}...")
         model = self.estimator.create_model(role=self.workbench_role_arn)
         model.register(
             model_package_group_name=self.output_uuid,
-            framework_version="1.2.1",
             image_uri=image,
             content_types=["text/csv"],
             response_types=["text/csv"],

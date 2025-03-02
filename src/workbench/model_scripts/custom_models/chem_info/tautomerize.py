@@ -23,10 +23,13 @@ from local_utils import tautomerize_smiles
 # This section (__main__) is where SageMaker will execute the job and save the model artifacts.
 #
 if __name__ == "__main__":
+    # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output-data-dir", type=str, default=os.environ["SM_OUTPUT_DATA_DIR"])
-    parser.add_argument("--model-dir", type=str, default=os.environ["SM_MODEL_DIR"])
-    parser.add_argument("--train", type=str, default=os.environ["SM_CHANNEL_TRAIN"])
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
     args = parser.parse_args()
 
     # This model doesn't get trained; it's a feature processing 'model'

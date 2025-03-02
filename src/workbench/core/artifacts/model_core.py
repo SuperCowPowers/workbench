@@ -35,10 +35,23 @@ class ModelType(Enum):
     UNKNOWN = "unknown"
 
 
-class InferenceImage:
+class ModelImages:
     """Class for retrieving locked Scikit-Learn inference images"""
 
     image_uris = {
+        ("us-east-1", "training", "0.1"): (
+            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
+        ),
+        ("us-east-1", "inference", "0.1"): (
+            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
+        ),
+        ("us-west-2", "training", "0.1"): (
+            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
+        ),
+        ("us-west-2", "inference", "0.1"): (
+            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
+        ),
+        # These are the OLD locked SKLearn images
         ("us-east-1", "sklearn", "1.2.1"): (
             "683313688378.dkr.ecr.us-east-1.amazonaws.com/"
             "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
@@ -58,13 +71,13 @@ class InferenceImage:
     }
 
     @classmethod
-    def get_image_uri(cls, region, framework, version):
-        key = (region, framework, version)
+    def get_image_uri(cls, region, image_type="training", version="0.1"):
+        key = (region, image_type, version)
         if key in cls.image_uris:
             return cls.image_uris[key]
         else:
             raise ValueError(
-                f"No matching image found for region: {region}, framework: {framework}, version: {version}"
+                f"No matching image found for region: {region}, image_type: {image_type}, version: {version}"
             )
 
 
