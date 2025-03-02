@@ -51,8 +51,8 @@ async def lifespan(app: FastAPI):
         if not os.path.exists(inference_script_path):
             raise FileNotFoundError(f"Inference script not found: {inference_script_path}")
 
-        # Add the code directory to the Python path
-        os.environ["PYTHONPATH"] = f"{model_dir}:{os.environ.get('PYTHONPATH', '')}"
+        # Ensure the model directory is in the Python path
+        sys.path.insert(0, model_dir)
 
         # Import the inference module
         logger.info(f"Importing inference module from {inference_script_path}")
