@@ -48,10 +48,13 @@ def expand_proba_column(df: pd.DataFrame, class_labels: list) -> pd.DataFrame:
 # and save the model artifacts to the model directory.
 #
 if __name__ == "__main__":
+    # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
-    parser.add_argument("--output-data-dir", type=str, default=os.environ["SM_OUTPUT_DATA_DIR"])
-    parser.add_argument("--model-dir", type=str, default=os.environ["SM_MODEL_DIR"])
-    parser.add_argument("--train", type=str, default=os.environ["SM_CHANNEL_TRAIN"])
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
     args = parser.parse_args()
 
     # Load the training data
