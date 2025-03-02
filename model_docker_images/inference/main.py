@@ -6,6 +6,7 @@ import json
 import importlib.util
 import logging
 import subprocess
+import site
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -34,11 +35,29 @@ def get_inference_script(model_dir: str) -> str:
 
 
 def install_requirements(requirements_path):
-    """Install Python dependencies from requirements file."""
+    """Install Python dependencies from requirements file.
+       Uses a persistent cache to speed up container cold starts.
+       Note: Inference containers don't have root access, so we
+             use the --user flag and add the user package path manually.
+    """
     if os.path.exists(requirements_path):
         logger.info(f"Installing dependencies from {requirements_path}...")
+
+        # Define a persistent cache location
+        pip_cache_dir = "/opt/ml/model/.cache/pip"
+        os.environ["PIP_CACHE_DIR"] = pip_cache_dir
+
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_path])
+            subprocess.check_call([
+                sys.executable, "-m", "pip", "install",
+                "--cache-dir", pip_cache_dir,  # Enable caching
+                "--disable-pip-version-check",
+                "--no-warn-script-location",
+                "--user",
+                "-r", requirements_path
+            ])
+            # Ensure Python can find user-installed packages
+            sys.path.append(site.getusersitepackages())
             logger.info("Requirements installed successfully.")
         except subprocess.CalledProcessError as e:
             logger.error(f"Error installing requirements: {e}")
@@ -103,7 +122,8 @@ app = FastAPI(lifespan=lifespan)
 @app.get("/ping")
 def ping():
     """Health check endpoint for SageMaker."""
-    return Response(status_code=200 if model else 404)
+    # Check if the inference module is loaded
+    return Response(status_code=200 if inference_module else 500)
 
 
 @app.post("/invocations")
