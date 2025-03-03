@@ -25,3 +25,6 @@ ENV PYTHONUNBUFFERED=TRUE
 
 # SageMaker will look for this
 CMD ["serve"]
+
+# Required label for SageMaker pipeline models
+LABEL com.amazonaws.sagemaker.capabilities.accept-bind-to-port=true
