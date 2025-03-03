@@ -456,15 +456,15 @@ class EndpointCore(Artifact):
             deserializer=CSVDeserializer(),
         )
 
-        # Now split up the dataframe into 500 row chunks, send those chunks to our
+        # Now split up the dataframe into 100 row chunks, send those chunks to our
         # endpoint (with error handling) and stitch all the chunks back together
         df_list = []
         total_rows = len(eval_df)
-        for index in range(0, len(eval_df), 500):
-            self.log.info(f"Processing {index}:{min(index+500, total_rows)} out of {total_rows} rows...")
+        for index in range(0, len(eval_df), 100):
+            self.log.info(f"Processing {index}:{min(index+100, total_rows)} out of {total_rows} rows...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + 500])
+            partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + 100])
             df_list.append(partial_df)
 
         # Concatenate the dataframes
