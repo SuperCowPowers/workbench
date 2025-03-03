@@ -122,7 +122,6 @@ class WorkbenchDashboardStack(Stack):
         container.add_port_mappings(ecs.PortMapping(container_port=8000))
 
         # Were we given a subnet selection?
-        # TODO: This isn't currently working, so we need to figure out how to use existing subnets
         subnet_selection = None
         if props.existing_subnet_ids:
             subnets = [
@@ -166,7 +165,7 @@ class WorkbenchDashboardStack(Stack):
             security_groups=[lb_security_group],
             open_listener=False,
             certificate=certificate,
-            # task_subnets=subnet_selection
+            task_subnets=subnet_selection
         )
 
         # Remove all default security groups from the load balancer
