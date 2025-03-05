@@ -165,7 +165,7 @@ class WorkbenchDashboardStack(Stack):
             security_groups=[lb_security_group],
             open_listener=False,
             certificate=certificate,
-            task_subnets=subnet_selection
+            task_subnets=subnet_selection,
         )
 
         # Remove all default security groups from the load balancer

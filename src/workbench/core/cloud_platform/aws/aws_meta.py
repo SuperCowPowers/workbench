@@ -696,6 +696,7 @@ class AWSMeta:
 
 if __name__ == "__main__":
     """Exercise the Workbench AWSMeta Class"""
+    import time
     from pprint import pprint
 
     # Pandas Display Options
