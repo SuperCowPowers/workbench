@@ -195,7 +195,8 @@ class AWSMeta:
                 data_summary.append(summary)
 
         # Return the summary as a DataFrame
-        return pd.DataFrame(data_summary).convert_dtypes()
+        df = pd.DataFrame(data_summary).convert_dtypes()
+        return df.sort_values(by="Created", ascending=False)
 
     def models(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Models in AWS.
@@ -254,7 +255,8 @@ class AWSMeta:
                 model_summary.append(summary)
 
         # Return the summary as a DataFrame
-        return pd.DataFrame(model_summary).convert_dtypes()
+        df = pd.DataFrame(model_summary).convert_dtypes()
+        return df.sort_values(by="Created", ascending=False)
 
     def endpoints(self, refresh: bool = False) -> pd.DataFrame:
         """Get a summary of the Endpoints in AWS.
@@ -318,7 +320,8 @@ class AWSMeta:
                 data_summary.append(summary)
 
         # Return the summary as a DataFrame
-        return pd.DataFrame(data_summary).convert_dtypes()
+        df = pd.DataFrame(data_summary).convert_dtypes()
+        return df.sort_values(by="Created", ascending=False)
 
     def pipelines(self) -> pd.DataFrame:
         """List all the Pipelines in the S3 Bucket
@@ -627,7 +630,11 @@ class AWSMeta:
             }
             data_summary.append(summary)
 
-        return pd.DataFrame(data_summary).convert_dtypes()
+        df = pd.DataFrame(data_summary).convert_dtypes()
+
+        # Sort by the Modified column
+        df = df.sort_values(by="Modified", ascending=False)
+        return df
 
     def _aws_pipelines(self) -> pd.DataFrame:
         """Internal: Get a summary of the Cloud internal Pipelines (not Workbench Pipelines).
@@ -701,8 +708,6 @@ if __name__ == "__main__":
     # Test the __repr__ method
     print(meta)
 
-    """
-
     # Get the AWS Account Info
     print("*** AWS Account ***")
     pprint(meta.account())
@@ -751,7 +756,6 @@ if __name__ == "__main__":
     # Get the Endpoints
     print("\n\n*** Endpoints ***")
     pprint(meta.endpoints())
-    """
 
     # List Pipelines
     print("\n\n*** Workbench Pipelines ***")
