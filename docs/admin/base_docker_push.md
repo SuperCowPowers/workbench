@@ -13,7 +13,7 @@ ARG WORKBENCH_VERSION=0.8.110 <-- change this in TWO places
 **Note:** For a client specific config file you'll need to copy it locally so that it's within Dockers 'build context'. If you're building the 'vanilla' open source Docker image, then you can use the `open_source_config.json` that's in the directory already.
 
 ```
-./deploy.sh
+./deploy_docker.sh
 ```
 
 ### Update the 'stable' tag
