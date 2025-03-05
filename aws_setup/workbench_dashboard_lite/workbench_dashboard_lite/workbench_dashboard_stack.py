@@ -105,13 +105,13 @@ class WorkbenchDashboardStack(Stack):
             self,
             "WorkbenchTaskDef",
             task_role=workbench_execution_role,
-            memory_limit_mib=4096,
+            memory_limit_mib=2048,
             cpu=1024,
         )
         container = task_definition.add_container(
             "WorkbenchContainer",
             image=ecs.ContainerImage.from_registry(props.dashboard_image),
-            memory_limit_mib=4096,
+            memory_limit_mib=2048,
             environment={
                 "REDIS_HOST": redis_endpoint,
                 "WORKBENCH_BUCKET": props.workbench_bucket,
@@ -122,16 +122,27 @@ class WorkbenchDashboardStack(Stack):
         )
         container.add_port_mappings(ecs.PortMapping(container_port=8000))
 
+        # Were we given a subnet selection?
+        subnet_selection = None
+        if props.existing_subnet_ids:
+            subnets = [
+                ec2.Subnet.from_subnet_id(self, f"Subnet{i}", subnet_id)
+                for i, subnet_id in enumerate(props.existing_subnet_ids)
+            ]
+            subnet_selection = ec2.SubnetSelection(subnets=subnets)
+
         # Create a NEW Security Group for the Load Balancer
         lb_security_group = ec2.SecurityGroup(self, "LoadBalancerSecurityGroup", vpc=cluster.vpc)
 
         # Add rules for the whitelist IPs
         if props.whitelist_ips:
+            print(f"Adding Whitelist IPs: {props.whitelist_ips}")
             for ip in props.whitelist_ips:
                 lb_security_group.add_ingress_rule(ec2.Peer.ipv4(ip), ec2.Port.tcp(443))
 
         # Adding AWS Managed Prefix Lists
         if props.whitelist_prefix_lists:
+            print(f"Adding Whitelist Prefix Lists: {props.whitelist_prefix_lists}")
             for pl in props.whitelist_prefix_lists:
                 lb_security_group.add_ingress_rule(ec2.Peer.prefix_list(pl), ec2.Port.tcp(443))
 
@@ -159,11 +170,12 @@ class WorkbenchDashboardStack(Stack):
             cpu=1024,
             desired_count=1,
             task_definition=task_definition,
-            memory_limit_mib=4096,
+            memory_limit_mib=2048,
             public_load_balancer=props.public,
             security_groups=[lb_security_group],
             open_listener=props.public,
             certificate=certificate,
+            task_subnets=subnet_selection,
         )
 
         # Remove all default security groups from the load balancer
