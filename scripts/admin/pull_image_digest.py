@@ -3,7 +3,7 @@ from sagemaker import image_uris
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 
-def get_image_uri_with_digest(framework, region, version, sm_session: SageSession):
+def aws_image_uri_with_digest(framework, region, version, sm_session: SageSession):
     # Retrieve the base image URI using sagemaker SDK
     base_image_uri = image_uris.retrieve(
         framework=framework, region=region, version=version, sagemaker_session=sm_session
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     sm_session = AWSAccountClamp().sagemaker_session()
 
     try:
-        full_image_uri = get_image_uri_with_digest(framework, region, version, sm_session)
+        full_image_uri = aws_image_uri_with_digest(framework, region, version, sm_session)
         print(f"Full Image URI with Digest: {full_image_uri}")
     except Exception as e:
         print(f"Error: {e}")
