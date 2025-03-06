@@ -15,7 +15,6 @@ from pathlib import Path
 import posixpath
 from botocore.exceptions import ClientError
 from sagemaker.session import Session as SageSession
-from sagemaker import image_uris
 from collections.abc import Mapping, Iterable
 
 
