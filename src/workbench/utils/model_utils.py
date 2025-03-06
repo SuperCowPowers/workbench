@@ -16,7 +16,7 @@ def model_instance_info() -> pd.DataFrame:
             "Memory": 4,
             "Price per Hour": 0.06,
             "Category": "General",
-            "Architecture": "x86",
+            "Architecture": "x86_64",
         },
         {
             "Instance Name": "ml.m7i.large",
@@ -24,7 +24,7 @@ def model_instance_info() -> pd.DataFrame:
             "Memory": 8,
             "Price per Hour": 0.12,
             "Category": "General",
-            "Architecture": "x86",
+            "Architecture": "x86_64",
         },
         {
             "Instance Name": "ml.c7i.large",
@@ -32,7 +32,7 @@ def model_instance_info() -> pd.DataFrame:
             "Memory": 4,
             "Price per Hour": 0.11,
             "Category": "Compute",
-            "Architecture": "x86",
+            "Architecture": "x86_64",
         },
         {
             "Instance Name": "ml.c7i.xlarge",
@@ -40,7 +40,7 @@ def model_instance_info() -> pd.DataFrame:
             "Memory": 8,
             "Price per Hour": 0.21,
             "Category": "Compute",
-            "Architecture": "x86",
+            "Architecture": "x86_64",
         },
         {
             "Instance Name": "ml.c7g.large",
@@ -48,7 +48,7 @@ def model_instance_info() -> pd.DataFrame:
             "Memory": 4,
             "Price per Hour": 0.09,
             "Category": "Compute",
-            "Architecture": "ARM64",
+            "Architecture": "arm64",
         },
         {
             "Instance Name": "ml.c7g.xlarge",
@@ -56,10 +56,15 @@ def model_instance_info() -> pd.DataFrame:
             "Memory": 8,
             "Price per Hour": 0.17,
             "Category": "Compute",
-            "Architecture": "ARM64",
+            "Architecture": "arm64",
         }
     ]
     return pd.DataFrame(data)
+
+def instance_architecutre(instance_name: str) -> str:
+    """Get the architecture for the given instance name"""
+    info = model_instance_info()
+    return info[info["Instance Name"] == instance_name]["Architecture"].values[0]
 
 
 def supported_instance_types() -> list:
@@ -77,3 +82,7 @@ if __name__ == "__main__":
 
     # Get the supported instance types
     print(supported_instance_types())
+
+    # Get the architecture for the given instance
+    print(instance_architecutre("ml.c7i.large"))
+    print(instance_architecutre("ml.c7g.large"))

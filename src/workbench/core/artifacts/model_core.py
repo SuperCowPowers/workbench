@@ -39,18 +39,25 @@ class ModelImages:
     """Class for retrieving locked Scikit-Learn inference images"""
 
     image_uris = {
-        ("us-east-1", "training", "0.1"): (
+        ("us-east-1", "training", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
         ),
-        ("us-east-1", "inference", "0.1"): (
+        ("us-east-1", "inference", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
-        ("us-west-2", "training", "0.1"): (
+        ("us-west-2", "training", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
         ),
-        ("us-west-2", "inference", "0.1"): (
+        ("us-west-2", "inference", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
+        ("us-east-1", "inference", "0.1", "arm64"): (
+            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
+        ),
+        ("us-west-2", "inference", "0.1", "arm64"): (
+            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
+        ),
+
         # These are the OLD locked SKLearn images
         ("us-east-1", "sklearn", "1.2.1"): (
             "683313688378.dkr.ecr.us-east-1.amazonaws.com/"
@@ -71,8 +78,8 @@ class ModelImages:
     }
 
     @classmethod
-    def get_image_uri(cls, region, image_type="training", version="0.1"):
-        key = (region, image_type, version)
+    def get_image_uri(cls, region, image_type="training", version="0.1", architecture="x86_64"):
+        key = (region, image_type, version, architecture)
         if key in cls.image_uris:
             return cls.image_uris[key]
         else:
