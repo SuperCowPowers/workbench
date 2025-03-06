@@ -1,5 +1,6 @@
 import os
 import re
+import datetime
 import logging
 from openai import OpenAI
 
@@ -9,21 +10,31 @@ use_openai = False
 
 
 class AISynth:
-    def __init__(self):
+    def __init__(self, llm_provider="deepseek", llm_model="deepseek-reasoner"):
         """
         Initialize the AISynth class by setting up the OpenAI client.
         """
         self.log = logging.getLogger("workbench")
 
         # Get the API key from the environment
-        if use_openai:
+        if llm_provider == "openai":
             self.api_key = os.getenv("OPENAI_API")
             self.base_url = "https://api.openai.com/v1"
+            self.model = "o3-mini"
             self.model = "gpt-4o"
         else:
+            # Deepseek has off-peak hours (16:30-00:30 UTC daily), so check if it's off-peak
+            # by converting the current time to UTC and checking the range against the off-peak hours
+            current_time = datetime.datetime.utcnow().time()
+            off_peak_start = datetime.time(16, 30)
+            off_peak_end = datetime.time(0, 30)
+            is_off_peak = off_peak_start <= current_time <= off_peak_end
+            print(f"Is off-peak: {is_off_peak}")
+
             self.api_key = os.getenv("DEEPSEEK_API")
             self.base_url = "https://api.deepseek.com/v1"
             self.model = "deepseek-chat"
+            self.model = "deepseek-reasoner"
 
         # If the API key is not set, raise an error
         if not self.api_key:
@@ -35,7 +46,7 @@ class AISynth:
 
     def smiles_query(self, smiles_string: str, force_pull=False) -> str:
         """
-        Query the DeepSeek API for information about a compound using its SMILES string.
+        Query the LLM API for information about a compound using its SMILES string.
 
         Args:
             smiles_string (str): The SMILES string of the compound.
@@ -110,11 +121,19 @@ if __name__ == "__main__":
     smiles_string = "CCCC[n+]1ccc(C)cc1.[I-]"
     # smiles_string = "CCCCCCCCCCCCCC[n+]1ccc(C)cc1.[Cl-]"
 
-    # Create an instance of the AISynth class
-    ai_summary = AISynth()
+    # Set up our 4 provider/models for testing
+    providers = ["openai", "openai", "deepseek", "deepseek"]
+    models = ["gpt-4o", "o3-mini", "deepseek-chat", "deepseek-reasoner"]
 
-    # Query the API and get the markdown summary
-    summary_markdown = ai_summary.smiles_query(smiles_string, force_pull=True)
+    # Loop through the providers and models
+    for provider, model in zip(providers, models):
+        # Create an instance of the AISynth class
+        ai_synth = AISynth(llm_provider=provider, llm_model=model)
 
-    # Print the markdown result
-    print(summary_markdown)
+        # Query the API and get the markdown summary
+        synth_markdown = ai_synth.smiles_query(smiles_string, force_pull=True)
+
+        # Print the markdown result
+        print(f"\nSMILES: {smiles_string}")
+        print(f"Provider: {provider} | Model: {model}")
+        print(synth_markdown)
