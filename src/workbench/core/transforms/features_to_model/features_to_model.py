@@ -65,6 +65,7 @@ class FeaturesToModel(Transform):
         self.model_feature_list = None
         self.target_column = None
         self.class_labels = None
+        self.inference_arch = "x86_64"
 
     def transform_impl(
         self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False
@@ -269,7 +270,7 @@ class FeaturesToModel(Transform):
         )
 
         # Register our model
-        image = ModelImages.get_image_uri(self.sm_session.boto_region_name, "inference", "0.1")
+        image = ModelImages.get_image_uri(self.sm_session.boto_region_name, "inference", "0.1", self.inference_arch)
         self.log.important(f"Registering model {self.output_uuid} with image {image}...")
         model = self.estimator.create_model(role=self.workbench_role_arn)
         model.register(

@@ -68,11 +68,12 @@ def instance_architecutre(instance_name: str) -> str:
     return info[info["Instance Name"] == instance_name]["Architecture"].values[0]
 
 
-def supported_instance_types() -> list:
+def supported_instance_types(arch: str = "x86_64") -> list:
     """Get the supported instance types for the Model/Model"""
 
-    # Just return the "Instance Name" column
-    return list(model_instance_info()["Instance Name"])
+    # Filter the instance types based on the architecture
+    info = model_instance_info()
+    return info[info["Architecture"] == arch]["Instance Name"].tolist()
 
 
 if __name__ == "__main__":
