@@ -57,7 +57,6 @@ class ModelImages:
         ("us-west-2", "inference", "0.1", "arm64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
         ),
-
         # These are the OLD locked SKLearn images
         ("us-east-1", "sklearn", "1.2.1"): (
             "683313688378.dkr.ecr.us-east-1.amazonaws.com/"

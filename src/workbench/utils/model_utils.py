@@ -57,9 +57,10 @@ def model_instance_info() -> pd.DataFrame:
             "Price per Hour": 0.17,
             "Category": "Compute",
             "Architecture": "arm64",
-        }
+        },
     ]
     return pd.DataFrame(data)
+
 
 def instance_architecutre(instance_name: str) -> str:
     """Get the architecture for the given instance name"""
