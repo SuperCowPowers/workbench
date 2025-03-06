@@ -42,25 +42,23 @@ def model_instance_info() -> pd.DataFrame:
             "Category": "Compute",
             "Architecture": "x86",
         },
+        {
+            "Instance Name": "ml.c7g.large",
+            "vCPUs": 2,
+            "Memory": 4,
+            "Price per Hour": 0.09,
+            "Category": "Compute",
+            "Architecture": "ARM64",
+        },
+        {
+            "Instance Name": "ml.c7g.xlarge",
+            "vCPUs": 4,
+            "Memory": 8,
+            "Price per Hour": 0.17,
+            "Category": "Compute",
+            "Architecture": "ARM64",
+        }
     ]
-    """Right Now we do not support ARM64 instances, but we could add them in the future
-    {
-        "Instance Name": "ml.c7g.large",
-        "vCPUs": 2,
-        "Memory": 4,
-        "Price per Hour": 0.09,
-        "Category": "Compute",
-        "Architecture": "ARM64",
-    },
-    {
-        "Instance Name": "ml.c7g.xlarge",
-        "vCPUs": 4,
-        "Memory": 8,
-        "Price per Hour": 0.17,
-        "Category": "Compute",
-        "Architecture": "ARM64",
-    },
-    """
     return pd.DataFrame(data)
 
 
