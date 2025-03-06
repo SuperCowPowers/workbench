@@ -49,7 +49,7 @@ for arg in "$@"; do
     esac
 done
 
-# Function to build a Docker image
+# Function to build a Docker image (AMD64)
 build_image() {
     local dir=$1
     local repo_name=$2
@@ -105,17 +105,29 @@ deploy_image() {
     done
 }
 
-# Build training image
+# Build training image (AMD64)
 echo "======================================"
 echo "🏗️  Building training container"
 echo "======================================"
 build_image "$TRAINING_DIR" "$TRAINING_REPO" "$IMAGE_VERSION"
 
-# Build inference image
+# Build inference image (AMD64)
 echo "======================================"
-echo "🏗️  Building inference container"
+echo "🏗️  Building inference container (AMD64)"
 echo "======================================"
 build_image "$INFERENCE_DIR" "$INFERENCE_REPO" "$IMAGE_VERSION"
+
+# Build inference image for ARM64 ---
+echo "======================================"
+echo "🏗️  Building inference container (ARM64)"
+echo "======================================"
+if [ ! -f "$INFERENCE_DIR/Dockerfile" ]; then
+    echo "❌ Error: Dockerfile not found in $INFERENCE_DIR"
+    exit 1
+fi
+echo "Building local Docker image ${INFERENCE_REPO}:${IMAGE_VERSION}-arm64 for linux/arm64..."
+docker build --platform linux/arm64 -t ${INFERENCE_REPO}:${IMAGE_VERSION}-arm64 $INFERENCE_DIR
+echo -e "${GREEN}✅ Successfully built: ${INFERENCE_REPO}:${IMAGE_VERSION}-arm64${NC}"
 
 echo "======================================"
 echo -e "${GREEN}✅ All builds completed successfully!${NC}"
@@ -130,9 +142,12 @@ if [ "$DEPLOY" = true ]; then
     echo "Deploying training image..."
     deploy_image "$TRAINING_REPO" "$IMAGE_VERSION" "$LATEST"
 
-    # Deploy inference image
-    echo "Deploying inference image..."
+    # Deploy inference images
+    echo "Deploying inference image (AMD64)..."
     deploy_image "$INFERENCE_REPO" "$IMAGE_VERSION" "$LATEST"
+
+    echo "Deploying inference image (ARM64)..."
+    deploy_image "$INFERENCE_REPO" "${IMAGE_VERSION}-arm64" "$LATEST"
 
     echo "======================================"
     echo -e "${GREEN}✅ Deployment complete!${NC}"
@@ -144,7 +159,8 @@ else
     echo "======================================"
     echo "📋 Image information:"
     echo "Training image: ${TRAINING_REPO}:${IMAGE_VERSION}"
-    echo "Inference image: ${INFERENCE_REPO}:${IMAGE_VERSION}"
+    echo "Inference image (AMD64): ${INFERENCE_REPO}:${IMAGE_VERSION}"
+    echo "Inference image (ARM64): ${INFERENCE_REPO}:${IMAGE_VERSION}-arm64"
     echo "======================================"
 
     # Inform about testing option
