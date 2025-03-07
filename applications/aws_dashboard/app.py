@@ -8,6 +8,10 @@ from dash import page_registry
 from workbench.utils.plugin_manager import PluginManager
 from workbench.utils.theme_manager import ThemeManager
 
+# Set up the logging
+import logging
+log = logging.getLogger("workbench")
+
 
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
@@ -52,8 +56,13 @@ plugin_pages = pm.get_pages()
 
 # Setup each if the plugin pages (call layout and callbacks internally)
 for name, page in plugin_pages.items():
-    page.page_setup(app)
-print("Done with Plugin Pages")
+    # Note: We need to catch any exceptions here
+    try:
+        page.page_setup(app)
+    except Exception as e:
+        log.critical(f"Error setting up Plugin Page '{name}': {e}")
+        continue
+log.info("Done with Plugin Pages")
 
 # Grab our plugin page info from the page registry and populate our plugin-pages-info store
 dashboard_page_paths = [
