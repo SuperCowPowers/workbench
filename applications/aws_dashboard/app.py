@@ -61,7 +61,9 @@ for name, page in plugin_pages.items():
     try:
         page.page_setup(app)
     except Exception as e:
-        log.critical(f"Error setting up Plugin Page '{name}': {e}")
+        # Put the exception full stack trace
+        log.critical(f"Error setting up plugin page: {name}")
+        log.critical(e, exc_info=True)
         continue
 log.info("Done with Plugin Pages")
 
