@@ -35,6 +35,7 @@ class FeaturesToModel(Transform):
         scikit_model_class=None,
         model_import_str=None,
         custom_script=None,
+        inference_arch="x86_64",
     ):
         """FeaturesToModel Initialization
         Args:
@@ -44,6 +45,7 @@ class FeaturesToModel(Transform):
             scikit_model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)
             model_import_str (str, optional): The import string for the model (default None)
             custom_script (str, optional): Custom script to use for the model (default None)
+            inference_arch (str, optional): Inference architecture (default "x86_64")
         """
 
         # Make sure the model_uuid is a valid name
@@ -65,7 +67,7 @@ class FeaturesToModel(Transform):
         self.model_feature_list = None
         self.target_column = None
         self.class_labels = None
-        self.inference_arch = "x86_64"
+        self.inference_arch = inference_arch
 
     def transform_impl(
         self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False
@@ -278,7 +280,7 @@ class FeaturesToModel(Transform):
             image_uri=image,
             content_types=["text/csv"],
             response_types=["text/csv"],
-            inference_instances=supported_instance_types(),
+            inference_instances=supported_instance_types(self.inference_arch),
             transform_instances=["ml.m5.large", "ml.m5.xlarge"],
             approval_status="Approved",
             description=self.model_description,
