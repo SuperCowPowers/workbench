@@ -10,6 +10,7 @@ from workbench.utils.theme_manager import ThemeManager
 
 # Set up the logging
 import logging
+
 log = logging.getLogger("workbench")
 
 
