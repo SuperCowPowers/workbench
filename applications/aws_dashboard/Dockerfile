@@ -2,7 +2,7 @@
 FROM python:3.12.5-bookworm AS deps-stage
 
 # Set workbench version at the top for easy updates
-ARG WORKBENCH_VERSION=0.8.110
+ARG WORKBENCH_VERSION=0.8.111
 
 # Install pip-tools and generate dependency list (excluding workbench itself)
 RUN pip install --no-cache-dir pip-tools && \
@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir pip-tools && \
 FROM python:3.12.5-bookworm
 
 # Set workbench version again (ARGs don't persist across FROM statements)
-ARG WORKBENCH_VERSION=0.8.110
+ARG WORKBENCH_VERSION=0.8.111
 
 WORKDIR /app
 EXPOSE 8000
