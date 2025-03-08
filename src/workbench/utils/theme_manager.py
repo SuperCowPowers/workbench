@@ -16,13 +16,13 @@ class ThemeManager:
     _instance = None  # Singleton instance
 
     # Class-level state
-    _log = logging.getLogger("workbench")
-    _themes_path = None
-    _dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-    _available_themes = {}
-    _current_theme_name = None
-    _current_template = None
-    _default_theme = "dark"
+    log = logging.getLogger("workbench")
+    theme_path_list = [files("workbench") / "themes"]
+    dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
+    available_themes = {}
+    current_theme_name = None
+    current_template = None
+    default_theme = "dark"
 
     def __new__(cls):
         if cls._instance is None:
@@ -34,18 +34,25 @@ class ThemeManager:
     def _initialize(cls):
         """Initialize the ThemeManager's shared state."""
         cm = ConfigManager()
-        config_theme_path = cm.get_config("WORKBENCH_THEMES")
+        custom_themes = cm.get_config("WORKBENCH_THEMES")
 
-        # If the theme path is not set, use the default path
-        if not config_theme_path:
-            cls._log.important("Using default themes path...")
-            cls._theme_path = files("workbench") / "themes"
-        else:
-            cls._theme_path = Path(config_theme_path)
+        # Check if they set custom themes dir/S3 path
+        if custom_themes:
+            
+            # Check if this is an S3 path
+            if custom_themes.startswith("s3://"):
+                cls.log.error("S3 paths are not currently supported for themes.")
+            
+            # Local path
+            else:
+                custom_path = Path(custom_themes)
 
-        # Make sure the themes path exists
-        if not cls._theme_path.exists():
-            cls._log.error(f"The themes path '{cls._theme_path}' does not exist.")
+                # Make sure the themes path exists
+                if not custom_path.exists():
+                    cls.log.error(f"The custom themes path '{custom_path}' does not exist.")
+                else:
+                    # Add the custom path to the theme path
+                    cls.theme_path_list += [custom_path]
 
         # Our parameter store
         cls._ps = ParameterStore()
@@ -57,7 +64,7 @@ class ThemeManager:
     @classmethod
     def list_themes(cls) -> list[str]:
         """List available themes."""
-        return list(cls._available_themes.keys())
+        return list(cls.available_themes.keys())
 
     @classmethod
     def set_theme(cls, theme_name: str):
@@ -66,28 +73,28 @@ class ThemeManager:
         # For 'auto', we try to grab a theme from the Parameter Store
         # if we can't find one, we'll set the theme to the default
         if theme_name == "auto":
-            theme_name = cls._ps.get("/workbench/dashboard/theme", warn=False) or cls._default_theme
+            theme_name = cls._ps.get("/workbench/dashboard/theme", warn=False) or cls.default_theme
 
         # Check if the theme is in our available themes
-        if theme_name not in cls._available_themes:
-            cls._log.error(f"Theme '{theme_name}' is not available, trying another theme...")
-            theme_name = cls._default_theme if cls._default_theme in cls._available_themes else list(cls._available_themes.keys())[0]
+        if theme_name not in cls.available_themes:
+            cls.log.error(f"Theme '{theme_name}' is not available, trying another theme...")
+            theme_name = cls.default_theme if cls.default_theme in cls.available_themes else list(cls.available_themes.keys())[0]
 
         # Grab the theme from the available themes
-        theme = cls._available_themes[theme_name]
+        theme = cls.available_themes[theme_name]
 
         # Update Plotly template
         if theme["plotly_template"]:
             with open(theme["plotly_template"], "r") as f:
-                cls._current_template = json.load(f)
-            pio.templates["custom_template"] = cls._current_template
+                cls.current_template = json.load(f)
+            pio.templates["custom_template"] = cls.current_template
             pio.templates.default = "custom_template"
         else:
-            cls._log.error(f"No Plotly template found for '{theme_name}'.")
+            cls.log.error(f"No Plotly template found for '{theme_name}'.")
 
         # Update the current theme name
-        cls._current_theme_name = theme_name
-        cls._log.info(f"Theme set to '{theme_name}'")
+        cls.current_theme_name = theme_name
+        cls.log.info(f"Theme set to '{theme_name}'")
 
     @classmethod
     def dark_mode(cls) -> bool:
@@ -102,15 +109,15 @@ class ThemeManager:
     @classmethod
     def current_theme(cls) -> str:
         """Get the name of the current theme."""
-        return cls._current_theme_name
+        return cls.current_theme_name
 
     @classmethod
     def background(cls) -> list[list[float | str]]:
         """Get the plot background for the current theme."""
 
         # We have 2 background options (paper_bgcolor and plot_bgcolor)
-        background = cls._current_template["layout"]["paper_bgcolor"]
-        background = cls._current_template["layout"]["plot_bgcolor"]
+        background = cls.current_template["layout"]["paper_bgcolor"]
+        background = cls.current_template["layout"]["plot_bgcolor"]
         return color_to_rgba(background)
 
     @classmethod
@@ -118,7 +125,7 @@ class ThemeManager:
         """Get the colorscale for the current theme."""
 
         # We have 3 colorscale options (diverging, sequential, and sequentialminus)
-        color_scales = cls._current_template["layout"]["colorscale"]
+        color_scales = cls.current_template["layout"]["colorscale"]
         if scale_type in color_scales:
             return color_scales[scale_type]
         else:
@@ -126,11 +133,11 @@ class ThemeManager:
             try:
                 first_colorscale_name = list(color_scales.keys())[0]
                 backup_colorscale = color_scales[first_colorscale_name]
-                cls._log.warning(f"Color scale '{scale_type}' not found for template '{cls._current_theme_name}'.")
-                cls._log.warning(f"Using color scale '{backup_colorscale}' instead.")
+                cls.log.warning(f"Color scale '{scale_type}' not found for template '{cls.current_theme_name}'.")
+                cls.log.warning(f"Using color scale '{backup_colorscale}' instead.")
                 return backup_colorscale
             except IndexError:
-                cls._log.error(f"No color scales found for template '{cls._current_theme_name}'.")
+                cls.log.error(f"No color scales found for template '{cls.current_theme_name}'.")
         return []
 
     @staticmethod
@@ -158,7 +165,7 @@ class ThemeManager:
     @classmethod
     def css_files(cls) -> list[str]:
         """Get the list of CSS files for the current theme."""
-        theme = cls._available_themes[cls._current_theme_name]
+        theme = cls.available_themes[cls.current_theme_name]
         css_files = []
 
         # Add base.css or its CDN URL
@@ -166,7 +173,7 @@ class ThemeManager:
             css_files.append(theme["base_css"])
 
         # Add the DBC template CSS
-        css_files.append(cls._dbc_css)
+        css_files.append(cls.dbc_css)
 
         # Add custom.css if it exists
         if theme["custom_css"]:
@@ -180,7 +187,7 @@ class ThemeManager:
 
         @app.server.route("/custom.css")
         def serve_custom_css():
-            theme = cls._available_themes[cls._current_theme_name]
+            theme = cls.available_themes[cls.current_theme_name]
             if theme["custom_css"]:
                 return send_from_directory(theme["custom_css"].parent, theme["custom_css"].name)
             return "", 404
@@ -207,7 +214,7 @@ class ThemeManager:
                         # Dynamically get the URL from Dash Bootstrap Components
                         return getattr(dbc.themes, theme_name.upper())
                     except AttributeError:
-                        cls._log.error(f"Invalid theme name in {base_css_file}: {theme_name}")
+                        cls.log.error(f"Invalid theme name in {base_css_file}: {theme_name}")
                 # Otherwise, assume it's a direct URL
                 elif content.startswith("http"):
                     return content
@@ -216,32 +223,34 @@ class ThemeManager:
     @classmethod
     def _load_themes(cls):
         """Load available themes."""
-        if not cls._theme_path:
-            cls._log.warning("No themes path specified...")
+        if not cls.theme_path_list:
+            cls.log.warning("No themes path specified...")
             return
 
-        for theme_dir in cls._theme_path.iterdir():
-            if theme_dir.is_dir():
-                theme_name = theme_dir.name
+        # Loop over each path in the theme path
+        for theme_path in cls.theme_path_list:
+            for theme_dir in theme_path.iterdir():
+                if theme_dir.is_dir():
+                    theme_name = theme_dir.name
 
-                # Grab the base.css URL
-                base_css_url = cls._get_base_css_url(theme_dir)
+                    # Grab the base.css URL
+                    base_css_url = cls._get_base_css_url(theme_dir)
 
-                # Find the first JSON file in the directory
-                json_files = list(theme_dir.glob("*.json"))
-                plotly_template = json_files[0] if json_files else None
+                    # Find the first JSON file in the directory
+                    json_files = list(theme_dir.glob("*.json"))
+                    plotly_template = json_files[0] if json_files else None
 
-                # Check for a custom.css file
-                custom_css = theme_dir / "custom.css"
+                    # Check for a custom.css file
+                    custom_css = theme_dir / "custom.css"
 
-                cls._available_themes[theme_name] = {
-                    "base_css": base_css_url,
-                    "plotly_template": plotly_template,
-                    "custom_css": custom_css if custom_css.exists() else None,
-                }
+                    cls.available_themes[theme_name] = {
+                        "base_css": base_css_url,
+                        "plotly_template": plotly_template,
+                        "custom_css": custom_css if custom_css.exists() else None,
+                    }
 
-        if not cls._available_themes:
-            cls._log.warning(f"No themes found in '{cls._theme_path}'...")
+        if not cls.available_themes:
+            cls.log.warning(f"No themes found in '{cls.theme_path_list}'...")
 
 
 if __name__ == "__main__":
