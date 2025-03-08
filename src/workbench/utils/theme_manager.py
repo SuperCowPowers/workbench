@@ -38,11 +38,11 @@ class ThemeManager:
 
         # Check if they set custom themes dir/S3 path
         if custom_themes:
-            
+
             # Check if this is an S3 path
             if custom_themes.startswith("s3://"):
                 cls.log.error("S3 paths are not currently supported for themes.")
-            
+
             # Local path
             else:
                 custom_path = Path(custom_themes)
@@ -78,7 +78,9 @@ class ThemeManager:
         # Check if the theme is in our available themes
         if theme_name not in cls.available_themes:
             cls.log.error(f"Theme '{theme_name}' is not available, trying another theme...")
-            theme_name = cls.default_theme if cls.default_theme in cls.available_themes else list(cls.available_themes.keys())[0]
+            theme_name = (
+                cls.default_theme if cls.default_theme in cls.available_themes else list(cls.available_themes.keys())[0]
+            )
 
         # Grab the theme from the available themes
         theme = cls.available_themes[theme_name]
