@@ -118,8 +118,7 @@ class ConfigManager:
             "WORKBENCH_BUCKET",
             "WORKBENCH_API_KEY",
             "WORKBENCH_PLUGINS",
-            "WORKBENCH_THEMES"
-            "REDIS_HOST",
+            "WORKBENCH_THEMES" "REDIS_HOST",
             "REDIS_PORT",
             "REDIS_PASSWORD",
         ]

@@ -11,6 +11,7 @@ from workbench.utils.theme_manager import ThemeManager
 tm = ThemeManager()
 project_name = tm.branding().get("project_name", "Workbench")
 
+
 def endpoints_layout(
     endpoints_table: AGTable,
     endpoint_details: dcc.Markdown,
