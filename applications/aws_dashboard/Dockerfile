@@ -1,28 +1,21 @@
-# Use Python 3.12 as the base image
-FROM python:3.12.5-bookworm AS deps-stage
-
-# Set workbench version at the top for easy updates
+# Base image stage
+FROM python:3.12.5-bookworm AS base
 ARG WORKBENCH_VERSION=0.8.112
-
-# Install pip-tools and generate dependencies without installing workbench
-RUN pip install --no-cache-dir pip-tools && \
-    # Create a temporary file with workbench reference
-    echo "workbench[ui]==${WORKBENCH_VERSION}" > /tmp/requirements.in && \
-    # Use pip-compile with --dry-run to get dependencies without installing
-    pip-compile --no-header --no-emit-index-url --no-emit-trusted-host --no-annotate /tmp/requirements.in -o /tmp/all-deps.txt && \
-    # Remove workbench line from dependencies file
-    grep -v "^workbench==" /tmp/all-deps.txt > /tmp/deps.txt
-
-# Final image
-FROM python:3.12.5-bookworm
-
-# Set workbench version again (ARGs don't persist across FROM statements)
-ARG WORKBENCH_VERSION=0.8.112
-
 WORKDIR /app
 EXPOSE 8000
 
-# Install system packages, clean up in a single layer
+# Resolve and freeze dependencies (excluding workbench)
+FROM base AS deps-stage
+ARG WORKBENCH_VERSION=0.8.112
+RUN pip install --no-cache-dir workbench[ui]==${WORKBENCH_VERSION} && \
+    pip uninstall -y workbench && \
+    pip freeze > /tmp/deps.txt
+
+# Final image
+FROM base
+ARG WORKBENCH_VERSION=0.8.112
+
+# Install system packages and gunicorn
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx supervisor libnghttp2-dev && \
     apt-get remove --purge -y git libaom3 && \
@@ -30,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/* && \
     pip install --no-cache-dir gunicorn
 
-# Copy and install dependency list from deps stage
+# Install frozen dependencies
 COPY --from=deps-stage /tmp/deps.txt /tmp/deps.txt
 RUN pip install --no-cache-dir -r /tmp/deps.txt
 
@@ -38,7 +31,7 @@ RUN pip install --no-cache-dir -r /tmp/deps.txt
 COPY nginx.conf /etc/nginx/sites-available/default
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Install workbench in a separate layer
+# Install workbench[ui] separately
 RUN pip install --no-cache-dir workbench[ui]==${WORKBENCH_VERSION}
 
 # Copy app code and configuration
