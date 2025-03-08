@@ -4,19 +4,14 @@ FROM python:3.12.5-bookworm AS deps-stage
 # Set workbench version at the top for easy updates
 ARG WORKBENCH_VERSION=0.8.112
 
-# Install pip-tools and generate dependency list (excluding workbench itself)
+# Install pip-tools and generate dependencies without installing workbench
 RUN pip install --no-cache-dir pip-tools && \
-    # Create a requirements.in file for pip-compile
-    echo "# Do not include workbench itself here" > /tmp/requirements.in && \
-    # Generate the dependencies of workbench[ui] without installing
-    pip download --no-deps workbench[ui]==${WORKBENCH_VERSION} && \
-    pip download --no-binary :all: --no-deps --dest /tmp --quiet workbench[ui]==${WORKBENCH_VERSION} && \
-    pip install -q wheel && \
-    cd /tmp && unzip -q workbench-*.whl "*.dist-info/METADATA" && \
-    grep "Requires-Dist:" */METADATA | sed 's/.*Requires-Dist: \(.*\) .*/\1/' | \
-    grep -v "extra ==" > /tmp/requirements.in && \
-    # Compile exact dependencies
-    pip-compile --no-header --no-emit-index-url --no-emit-trusted-host --no-annotate /tmp/requirements.in -o /tmp/deps.txt
+    # Create a temporary file with workbench reference
+    echo "workbench[ui]==${WORKBENCH_VERSION}" > /tmp/requirements.in && \
+    # Use pip-compile with --dry-run to get dependencies without installing
+    pip-compile --no-header --no-emit-index-url --no-emit-trusted-host --no-annotate /tmp/requirements.in -o /tmp/all-deps.txt && \
+    # Remove workbench line from dependencies file
+    grep -v "^workbench==" /tmp/all-deps.txt > /tmp/deps.txt
 
 # Final image
 FROM python:3.12.5-bookworm
