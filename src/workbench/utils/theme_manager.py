@@ -23,6 +23,7 @@ class ThemeManager:
     current_theme_name = None
     current_template = None
     default_theme = "dark"
+    ps = ParameterStore()
 
     def __new__(cls):
         if cls._instance is None:
@@ -41,21 +42,19 @@ class ThemeManager:
 
             # Check if this is an S3 path
             if custom_themes.startswith("s3://"):
-                cls.log.error("S3 paths are not currently supported for themes.")
+                temp_theme_dir = tempfile.mkdtemp()
+                cls.log.important(f"Moving {custom_themes} themes to local path {temp_theme_dir}")
+                copy_s3_files_to_local(custom_themes, temp_theme_dir)
+                atexit.register(temp_theme_dir)
+                custom_path = temp_theme_dir
 
-            # Local path
+            # Make sure the themes path exists
+            custom_path = Path(custom_themes)
+            if not custom_path.exists():
+                cls.log.error(f"The custom themes path '{custom_path}' does not exist.")
             else:
-                custom_path = Path(custom_themes)
-
-                # Make sure the themes path exists
-                if not custom_path.exists():
-                    cls.log.error(f"The custom themes path '{custom_path}' does not exist.")
-                else:
-                    # Add the custom path to the theme path
-                    cls.theme_path_list += [custom_path]
-
-        # Our parameter store
-        cls._ps = ParameterStore()
+                # Add the custom path to the theme path
+                cls.theme_path_list += [custom_path]
 
         # Load the available themes and set the automatic theme
         cls._load_themes()
@@ -73,7 +72,7 @@ class ThemeManager:
         # For 'auto', we try to grab a theme from the Parameter Store
         # if we can't find one, we'll set the theme to the default
         if theme_name == "auto":
-            theme_name = cls._ps.get("/workbench/dashboard/theme", warn=False) or cls.default_theme
+            theme_name = cls.ps.get("/workbench/dashboard/theme", warn=False) or cls.default_theme
 
         # Check if the theme is in our available themes
         if theme_name not in cls.available_themes:
@@ -226,7 +225,7 @@ class ThemeManager:
     def _load_themes(cls):
         """Load available themes."""
         if not cls.theme_path_list:
-            cls.log.warning("No themes path specified...")
+            cls.log.warning("No themes paths specified...")
             return
 
         # Loop over each path in the theme path
@@ -238,9 +237,8 @@ class ThemeManager:
                     # Grab the base.css URL
                     base_css_url = cls._get_base_css_url(theme_dir)
 
-                    # Find the first JSON file in the directory
-                    json_files = list(theme_dir.glob("*.json"))
-                    plotly_template = json_files[0] if json_files else None
+                    # Grab the plotly template json file
+                    plotly_template = theme_dir / "plotly.json"
 
                     # Check for a custom.css file
                     custom_css = theme_dir / "custom.css"
