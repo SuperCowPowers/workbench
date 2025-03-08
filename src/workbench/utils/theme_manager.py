@@ -70,8 +70,8 @@ class ThemeManager:
 
         # Check if the theme is in our available themes
         if theme_name not in cls._available_themes:
-            cls._log.error(f"Theme '{theme_name}' is not available, using default theme.")
-            theme_name = cls._default_theme
+            cls._log.error(f"Theme '{theme_name}' is not available, trying another theme...")
+            theme_name = cls._default_theme if cls._default_theme in cls._available_themes else list(cls._available_themes.keys())[0]
 
         # Grab the theme from the available themes
         theme = cls._available_themes[theme_name]
