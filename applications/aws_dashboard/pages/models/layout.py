@@ -5,6 +5,11 @@ from dash import dcc, html
 import dash_bootstrap_components as dbc
 
 from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.utils.theme_manager import ThemeManager
+
+# Get the Project Name
+tm = ThemeManager()
+project_name = tm.branding().get("project_name", "Workbench")
 
 
 def models_layout(
@@ -21,7 +26,7 @@ def models_layout(
             dcc.Store(id="models_page_loaded", data=False),
             dbc.Row(
                 [
-                    html.H2("Workbench: Models"),
+                    html.H2(f"{project_name}: Models"),
                 ]
             ),
             # A table that lists out all the Models

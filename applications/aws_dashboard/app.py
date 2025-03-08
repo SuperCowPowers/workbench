@@ -23,10 +23,13 @@ tm.set_theme("auto")
 css_files = tm.css_files()
 print(css_files)
 
+# Set the Dash App Title
+app_title = tm.branding().get("app_title", "Workbench Dashboard")
+
 # Create the Dash app
 app = Dash(
     __name__,
-    title="Workbench Dashboard",
+    title=app_title,
     use_pages=True,
     external_stylesheets=css_files,
 )

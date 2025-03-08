@@ -1,7 +1,11 @@
+import os
+import shutil
 import json
 import logging
 from importlib.resources import files
 from pathlib import Path
+import atexit
+import tempfile
 import plotly.io as pio
 import dash_bootstrap_components as dbc
 from flask import send_from_directory
@@ -10,6 +14,7 @@ from flask import send_from_directory
 from workbench.utils.config_manager import ConfigManager
 from workbench.api import ParameterStore
 from workbench.utils.color_utils import color_to_rgba
+from workbench.utils.s3_utils import copy_s3_files_to_local
 
 
 class ThemeManager:
@@ -24,6 +29,7 @@ class ThemeManager:
     current_template = None
     default_theme = "dark"
     ps = ParameterStore()
+    loading_temp_dir = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -42,11 +48,11 @@ class ThemeManager:
 
             # Check if this is an S3 path
             if custom_themes.startswith("s3://"):
-                temp_theme_dir = tempfile.mkdtemp()
-                cls.log.important(f"Moving {custom_themes} themes to local path {temp_theme_dir}")
-                copy_s3_files_to_local(custom_themes, temp_theme_dir)
-                atexit.register(temp_theme_dir)
-                custom_path = temp_theme_dir
+                cls.loading_temp_dir = tempfile.mkdtemp()
+                cls.log.important(f"Moving {custom_themes} themes to local path {cls.loading_temp_dir}")
+                copy_s3_files_to_local(custom_themes, cls.loading_temp_dir)
+                atexit.register(cls._cleanup_temp_dir)
+                custom_themes = cls.loading_temp_dir
 
             # Make sure the themes path exists
             custom_path = Path(custom_themes)
@@ -120,6 +126,16 @@ class ThemeManager:
         background = cls.current_template["layout"]["paper_bgcolor"]
         background = cls.current_template["layout"]["plot_bgcolor"]
         return color_to_rgba(background)
+
+    @classmethod
+    def branding(cls) -> dict:
+        """Get the branding for the current theme."""
+        theme = cls.available_themes[cls.current_theme_name]
+        branding = {}
+        if theme["branding"]:
+            with open(theme["branding"], "r") as f:
+                branding = json.load(f)
+        return branding
 
     @classmethod
     def colorscale(cls, scale_type: str = "sequential") -> list[list[float | str]]:
@@ -237,20 +253,28 @@ class ThemeManager:
                     # Grab the base.css URL
                     base_css_url = cls._get_base_css_url(theme_dir)
 
-                    # Grab the plotly template json file
+                    # Grab the plotly template json, custom.css, and branding json
                     plotly_template = theme_dir / "plotly.json"
-
-                    # Check for a custom.css file
                     custom_css = theme_dir / "custom.css"
+                    branding = theme_dir / "branding.json"
 
                     cls.available_themes[theme_name] = {
                         "base_css": base_css_url,
                         "plotly_template": plotly_template,
                         "custom_css": custom_css if custom_css.exists() else None,
+                        "branding": branding if branding.exists() else None,
                     }
 
         if not cls.available_themes:
             cls.log.warning(f"No themes found in '{cls.theme_path_list}'...")
+
+    @classmethod
+    def _cleanup_temp_dir(cls):
+        """Cleans up the temporary directory created for S3 files."""
+        if cls.loading_temp_dir and os.path.isdir(cls.loading_temp_dir):
+            cls.log.important(f"Cleaning up temporary directory: {cls.loading_temp_dir}")
+            shutil.rmtree(cls.loading_temp_dir)
+            cls.loading_temp_dir = None
 
 
 if __name__ == "__main__":
@@ -263,3 +287,6 @@ if __name__ == "__main__":
     theme_manager.set_theme("light")
     print("Theme switched to:", theme_manager.current_theme())
     print("CSS Files for Current Theme:", theme_manager.css_files())
+
+    # Get the branding for the current theme
+    print("Branding:", theme_manager.branding())

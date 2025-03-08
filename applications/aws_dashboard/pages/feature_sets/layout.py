@@ -4,6 +4,11 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.utils.theme_manager import ThemeManager
+
+# Get the Project Name
+tm = ThemeManager()
+project_name = tm.branding().get("project_name", "Workbench")
 
 
 def feature_sets_layout(
@@ -20,7 +25,7 @@ def feature_sets_layout(
             dcc.Store(id="feature_sets_page_loaded", data=False),
             dbc.Row(
                 [
-                    html.H2("Workbench: FeatureSets"),
+                    html.H2(f"{project_name}: FeatureSets"),
                 ]
             ),
             # A table that lists out all the Feature Sets

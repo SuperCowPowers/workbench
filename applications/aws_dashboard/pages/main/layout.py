@@ -7,6 +7,11 @@ import dash_bootstrap_components as dbc
 import workbench
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.utils.config_manager import ConfigManager
+from workbench.utils.theme_manager import ThemeManager
+
+# Set the Main Page Title
+tm = ThemeManager()
+app_title = tm.branding().get("app_title", "Workbench Dashboard")
 
 
 def main_layout(
@@ -46,7 +51,7 @@ def main_layout(
                             html.H2(
                                 [
                                     html.A(
-                                        "Workbench Dashboard ",
+                                        app_title + " ",
                                         href="/status",
                                         style={
                                             "textDecoration": "none",

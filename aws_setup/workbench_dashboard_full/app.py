@@ -23,6 +23,7 @@ try:
     workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
     workbench_api_key = cm.get_config("WORKBENCH_API_KEY")
     workbench_plugins = cm.get_config("WORKBENCH_PLUGINS")
+    workbench_themes = cm.get_config("WORKBENCH_THEMES")
     existing_vpc_id = cm.get_config("WORKBENCH_VPC_ID")
     existing_subnet_ids = cm.get_config("WORKBENCH_SUBNET_IDS")
     config_ips = cm.get_config("WORKBENCH_WHITELIST", "")
@@ -48,6 +49,7 @@ WorkbenchDashboardStack(
         workbench_bucket=workbench_bucket,
         workbench_api_key=workbench_api_key,
         workbench_plugins=workbench_plugins,
+        workbench_themes=workbench_themes,
         existing_vpc_id=existing_vpc_id,
         existing_subnet_ids=existing_subnet_ids,
         whitelist_ips=whitelist_ips,
