@@ -1,5 +1,5 @@
 # Declare global argument for workbench version
-ARG WORKBENCH_VERSION=0.8.113
+ARG WORKBENCH_VERSION=0.8.114
 
 # Base image stage using Python 3.12 and Debian Bookworm
 FROM python:3.12.5-bookworm AS base
@@ -9,10 +9,10 @@ EXPOSE 8000
 # Stage to resolve and freeze workbench[ui] dependencies (excluding workbench itself)
 FROM base AS deps-stage
 ARG WORKBENCH_VERSION
-# Install workbench[ui] to resolve dependencies, then uninstall workbench to exclude it from the freeze
-RUN pip install --no-cache-dir workbench[ui]==${WORKBENCH_VERSION} && \
-    pip uninstall -y workbench && \
-    pip freeze > /tmp/deps.txt
+
+# Install only workbench's dependencies, but not the package itself
+RUN pip install --no-cache-dir "workbench[ui]==${WORKBENCH_VERSION}" && \
+    pip freeze | grep -v "workbench" > /tmp/deps.txt
 
 # Final image stage
 FROM base
@@ -30,17 +30,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=deps-stage /tmp/deps.txt /tmp/deps.txt
 RUN pip install --no-cache-dir -r /tmp/deps.txt
 
-# Configure Nginx and Supervisor
-COPY nginx.conf /etc/nginx/sites-available/default
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Install workbench[ui] in a separate layer
-RUN pip install --no-cache-dir workbench[ui]==${WORKBENCH_VERSION}
-
 # Copy app code and configuration
 COPY . /app
 ARG WORKBENCH_CONFIG
 COPY $WORKBENCH_CONFIG /app/workbench_config.json
 ENV WORKBENCH_CONFIG=/app/workbench_config.json
+
+# Install workbench[ui] separately to keep the layer small and cacheable
+RUN pip install --no-cache-dir "workbench[ui]==${WORKBENCH_VERSION}"
+
+# Configure Nginx and Supervisor
+COPY nginx.conf /etc/nginx/sites-available/default
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 CMD ["/usr/bin/supervisord"]
