@@ -8,7 +8,7 @@ import plotly.express as px
 from workbench.web_interface.components.component_interface import ComponentInterface
 from workbench.api import Model
 from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.deprecation import deprecated
+from workbench.utils.deprecated_utils import deprecated
 
 
 # This class is basically a specialized version of a Plotly Scatter Plot
