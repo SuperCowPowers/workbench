@@ -15,7 +15,7 @@ import awswrangler as wr
 from sklearn.metrics import (
     mean_absolute_error,
     r2_score,
-    mean_squared_error
+    root_mean_squared_error
 )
 
 from io import StringIO
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     )
 
     # Report Performance Metrics
-    rmse = mean_squared_error(result_df[target], result_df["prediction"], squared=False)
+    rmse = root_mean_squared_error(result_df[target], result_df["prediction"])
     mae = mean_absolute_error(result_df[target], result_df["prediction"])
     r2 = r2_score(result_df[target], result_df["prediction"])
     print(f"RMSE: {rmse:.3f}")
