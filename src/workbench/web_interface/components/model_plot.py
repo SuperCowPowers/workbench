@@ -6,10 +6,10 @@ from dash import dcc
 import plotly.graph_objects as go
 
 # Workbench Imports
-from workbench.api import Model
+from workbench.api import Model, ModelType
 from workbench.web_interface.components.component_interface import ComponentInterface
 from workbench.web_interface.components.plugins.confusion_matrix import ConfusionMatrix
-from workbench.web_interface.components.regression_plot import RegressionPlot
+from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
 
 
 class ModelPlot(ComponentInterface):
@@ -25,31 +25,30 @@ class ModelPlot(ComponentInterface):
             model (Model): Workbench Model object
             inference_run (str): Inference run capture UUID
         Returns:
-            plotly.graph_objs.Figure: A Figure object containing the model metrics.
+            go.Figure: A Plotly Figure (either a Confusion Matrix or Scatter Plot)
         """
 
-        # Get model details
-        model_details = model.details()
-
-        # If the model details are empty then return a message
-        if model_details is None:
-            return self.display_text("Model Details are Empty")
-
         # Based on the model type, we'll generate a different plot
-        model_type = model_details.get("model_type")
-        if model_type == "classifier":
+        if model.model_type == ModelType.CLASSIFIER:
             return ConfusionMatrix().update_properties(model, inference_run=inference_run)[0]
-        elif model_type in ["regressor", "quantile_regressor"]:
-            return RegressionPlot().update_properties(model, inference_run)
+        elif model.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
+            df = model.get_inference_predictions(inference_run)
+            if df is None:
+                return self.display_text("No Data")
+
+            # Calculate the distance from the diagonal for each point
+            target = model.target()
+            df["prediction_error"] = abs(df["prediction"] - df[target])
+            return ScatterPlot().update_properties(df, color="prediction_error", regression_line=True)[0]
         else:
-            return self.display_text(f"Model Type: {model_type}\n\n Awesome Plot Coming Soon!")
+            return self.display_text(f"Model Type: {model.model_type}\n\n Awesome Plot Coming Soon!")
 
 
 if __name__ == "__main__":
     # This class takes in model details and generates a Confusion Matrix
     from workbench.api.model import Model
 
-    m = Model("wine-classification")
+    m = Model("abalone-regression")
     inference_run = "model_training"
 
     # Instantiate the ModelPlot class
@@ -57,9 +56,6 @@ if __name__ == "__main__":
 
     # Generate the figure
     fig = model_plot.update_properties(m, inference_run)
-
-    # Apply dark theme
-    fig.update_layout(template="plotly_dark")
 
     # Show the figure
     fig.show()
