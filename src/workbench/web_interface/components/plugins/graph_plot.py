@@ -171,7 +171,6 @@ class GraphPlot(PluginInterface):
             marker=dict(
                 size=20,  # Marker size for nodes
                 color=node_degrees,  # Use node degrees for marker colors
-                colorscale=self.theme_manager.colorscale(),
                 colorbar=dict(title="Degree"),  # Include a color bar for degrees
                 line=dict(color="rgba(0, 0, 0, 0.5)", width=2),  # Set border color and width for nodes
             ),
@@ -308,4 +307,4 @@ if __name__ == "__main__":
         print("Test graph not found... using default")
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(GraphPlot, theme="light", input_data=test_graph).run()
+    PluginUnitTest(GraphPlot, theme="dark", input_data=test_graph).run()
