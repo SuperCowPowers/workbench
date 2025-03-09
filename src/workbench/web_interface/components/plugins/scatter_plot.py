@@ -27,9 +27,6 @@ class ScatterPlot(PluginInterface):
         self.df = None
         self.show_axes = show_axes
 
-        # Initialize the Theme Manager
-        self.theme_manager = ThemeManager()
-
         # Call the parent class constructor
         super().__init__()
 
@@ -161,9 +158,10 @@ class ScatterPlot(PluginInterface):
         x_default = kwargs.get("x", numeric_columns[0])
         y_default = kwargs.get("y", numeric_columns[1])
         color_default = kwargs.get("color", numeric_columns[2])
+        regression_line = kwargs.get("regression_line", False)
 
         # Create the default scatter plot
-        figure = self.create_scatter_plot(self.df, x_default, y_default, color_default)
+        figure = self.create_scatter_plot(self.df, x_default, y_default, color_default, regression_line)
 
         # Dropdown options for x and y: use provided dropdown_columns or fallback to numeric columns
         dropdown_columns = kwargs.get("dropdown_columns", numeric_columns)
@@ -210,9 +208,6 @@ class ScatterPlot(PluginInterface):
         hovertemplate = "%{hovertext}<extra></extra>"
         hoverinfo = "none" if self.suppress_hover_display else None
 
-        # Get the colorscale from the theme manager.
-        colorscale = self.theme_manager.colorscale()
-
         # Determine marker settings based on the type of the color column.
         if pd.api.types.is_numeric_dtype(df[color_col]):
             marker_color = df[color_col]
@@ -230,10 +225,9 @@ class ScatterPlot(PluginInterface):
                     marker=dict(
                         size=marker_size,
                         color=marker_color,
-                        colorscale=colorscale,
                         colorbar=colorbar,
                         opacity=0.8,
-                        line=dict(color="rgba(0,0,0,1)", width=1),
+                        line=dict(color="rgba(0,0,0,0.25)", width=1),
                     ),
                 )
             ]
@@ -263,7 +257,7 @@ class ScatterPlot(PluginInterface):
                         size=marker_size,
                         color=discrete_colors[i % len(discrete_colors)],
                         opacity=0.8,
-                        line=dict(color="rgba(0,0,0,1)", width=1),
+                        line=dict(color="rgba(0,0,0,0.25)", width=1),
                     ),
                 )
                 data.append(trace)
@@ -388,4 +382,4 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ScatterPlot, input_data=df, theme="dark", suppress_hover_display=True).run()
+    PluginUnitTest(ScatterPlot, input_data=df, theme="ideaya", suppress_hover_display=True).run()
