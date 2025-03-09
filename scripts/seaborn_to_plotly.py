@@ -13,4 +13,4 @@ for v in vals:
     plotly_scale.append([round(v, 2), f"rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, {a})"])
 
 for sublist in plotly_scale:
-    print(json.dumps(sublist))
+    print(json.dumps(sublist)+",")
