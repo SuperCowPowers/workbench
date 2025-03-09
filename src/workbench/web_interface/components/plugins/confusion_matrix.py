@@ -21,9 +21,6 @@ class ConfusionMatrix(PluginInterface):
         self.component_id = None
         self.current_highlight = None  # Store the currently highlighted cell
 
-        # Initialize the Theme Manager
-        self.theme_manager = ThemeManager()
-
         # Call the parent class constructor
         super().__init__()
 
@@ -78,8 +75,6 @@ class ConfusionMatrix(PluginInterface):
         y_labels = [f"{c}:{i}" for i, c in enumerate(df.index)]
 
         # Create the heatmap figure
-        colorscale = self.theme_manager.colorscale()
-        colorscale = self.theme_manager.adjust_colorscale_alpha(colorscale, alpha=0.5)
         fig = go.Figure(
             data=go.Heatmap(
                 z=df,
@@ -87,7 +82,6 @@ class ConfusionMatrix(PluginInterface):
                 y=y_labels,
                 xgap=3,  # Add space between cells
                 ygap=3,
-                colorscale=colorscale,  # Use the current theme's colorscale
             )
         )
 
@@ -186,7 +180,7 @@ if __name__ == "__main__":
 
     # Run the Unit Test on the Plugin
     model = CachedModel("wine-classification")
-    PluginUnitTest(ConfusionMatrix, input_data=model, theme="dark").run()
+    PluginUnitTest(ConfusionMatrix, input_data=model, theme="ideaya").run()
 
     # Temp test
     """
