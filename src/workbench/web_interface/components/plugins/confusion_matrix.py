@@ -7,7 +7,6 @@ import plotly.graph_objects as go
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.cached.cached_model import CachedModel
-from workbench.utils.theme_manager import ThemeManager
 
 
 class ConfusionMatrix(PluginInterface):
