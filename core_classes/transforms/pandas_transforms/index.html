@@ -4241,6 +4241,7 @@
 
 
 
+
   <div class="doc doc-children">
 
 
@@ -4263,7 +4264,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="workbench.core.transforms.transform.Transform" href="../transform/#workbench.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Transform (workbench.core.transforms.transform.Transform)" href="../transform/#workbench.core.transforms.transform.Transform">Transform</a></code></p>
 
 
         <p>DataToPandas: Class to transform a Data Source into a Pandas DataFrame</p>
@@ -4279,6 +4280,7 @@
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">Note</span><span class="p">:</span> <span class="n">query</span> <span class="ow">is</span> <span class="n">the</span> <span class="n">best</span> <span class="n">way</span> <span class="n">to</span> <span class="n">use</span> <span class="n">this</span> <span class="n">class</span><span class="p">,</span> <span class="n">so</span> <span class="n">use</span> <span class="n">it</span> <span class="p">:)</span>
 </span></code></pre></div>
 </details>
+
 
 
 
@@ -4441,6 +4443,7 @@
 
         <p>DataToPandas Initialization</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-24">24</a></span>
@@ -4481,6 +4484,7 @@
 
         <p>Get the DataFrame Output from this Transform</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-71">71</a></span>
@@ -4506,6 +4510,7 @@
     <div class="doc doc-contents ">
 
         <p>Post-Transform: Any checks on the Pandas DataFrame that need to be done</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
@@ -4537,6 +4542,7 @@
 Args:
     query(str): The query to run against the DataSource (default: None)
     max_rows(int): The maximum number of rows to return (default: 100000)</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/data_to_pandas.py</code></summary>
@@ -4626,7 +4632,7 @@ Args:
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="workbench.core.transforms.transform.Transform" href="../transform/#workbench.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Transform (workbench.core.transforms.transform.Transform)" href="../transform/#workbench.core.transforms.transform.Transform">Transform</a></code></p>
 
 
         <p>FeaturesToPandas: Class to transform a FeatureSet into a Pandas DataFrame</p>
@@ -4639,6 +4645,7 @@ Args:
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">my_df</span> <span class="o">=</span> <span class="n">feature_to_df</span><span class="o">.</span><span class="n">get_output</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
 
 
 
@@ -4803,6 +4810,7 @@ Args:
 
         <p>FeaturesToPandas Initialization</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-21">21</a></span>
@@ -4845,6 +4853,7 @@ Args:
 
         <p>Get the DataFrame Output from this Transform</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-70">70</a></span>
@@ -4875,6 +4884,7 @@ Args:
 
         <p>Post-Transform: Any checks on the Pandas DataFrame that need to be done</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-65">65</a></span>
@@ -4902,6 +4912,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Convert the FeatureSet into a Pandas DataFrame</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/features_to_pandas.py</code></summary>
@@ -4993,7 +5004,7 @@ Args:
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="workbench.core.transforms.transform.Transform" href="../transform/#workbench.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Transform (workbench.core.transforms.transform.Transform)" href="../transform/#workbench.core.transforms.transform.Transform">Transform</a></code></p>
 
 
         <p>PandasToData: Class to publish a Pandas DataFrame as a DataSource</p>
@@ -5007,6 +5018,7 @@ Args:
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">df_to_data</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
 
 
 
@@ -5371,6 +5383,7 @@ Args:
     output_format (str): The file format to store the S3 object data in (default: "parquet")
     catalog_db (str): The AWS Data Catalog Database to use (default: "workbench")</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-28">28</a></span>
@@ -5441,6 +5454,7 @@ Args:
 
         <p>Convert datetime columns to ISO-8601 string</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-81">81</a></span>
@@ -5477,6 +5491,7 @@ Args:
 
         <p>Try to automatically convert object columns to datetime or string columns</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-72">72</a></span>
@@ -5512,6 +5527,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Try to automatically convert object columns to string columns</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
@@ -5551,6 +5567,7 @@ Args:
 
         <p>Post-Transform: Calling onboard() fnr the DataSource</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-172">172</a></span>
@@ -5585,6 +5602,7 @@ Args:
 
         <p>Pre-Transform: Delete the existing DataSource if it exists</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-90">90</a></span>
@@ -5610,6 +5628,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Set the DataFrame Input for this Transform</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
@@ -5668,6 +5687,7 @@ store the information about the data to the AWS Data Catalog workbench database<
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_data.py</code></summary>
@@ -5851,7 +5871,7 @@ store the information about the data to the AWS Data Catalog workbench database<
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="workbench.core.transforms.transform.Transform" href="../transform/#workbench.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Transform (workbench.core.transforms.transform.Transform)" href="../transform/#workbench.core.transforms.transform.Transform">Transform</a></code></p>
 
 
         <p>PandasToFeatures: Class to publish a Pandas DataFrame into a FeatureSet</p>
@@ -5865,6 +5885,7 @@ store the information about the data to the AWS Data Catalog workbench database<
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">to_features</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
 
 
 
@@ -6716,6 +6737,7 @@ store the information about the data to the AWS Data Catalog workbench database<
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-28">28</a></span>
@@ -6792,6 +6814,7 @@ store the information about the data to the AWS Data Catalog workbench database<
 
         <p>Internal: AWS Feature Store doesn't know how to store object dtypes, so convert to String</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-117">117</a></span>
@@ -6821,6 +6844,7 @@ store the information about the data to the AWS Data Catalog workbench database<
     <div class="doc doc-contents ">
 
         <p>Internal: AWS Feature Store requires an event_time field for all data stored</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -6890,6 +6914,7 @@ store the information about the data to the AWS Data Catalog workbench database<
 
         <p>Internal: AWS Feature Store requires an Id field</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-80">80</a></span>
@@ -6935,6 +6960,7 @@ store the information about the data to the AWS Data Catalog workbench database<
     <div class="doc doc-contents ">
 
         <p>Convert the types of the DataFrame to the correct types for the Feature Store</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -6998,6 +7024,7 @@ store the information about the data to the AWS Data Catalog workbench database<
 
         <p>Convert column to Categorical type</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-207">207</a></span>
@@ -7037,6 +7064,7 @@ store the information about the data to the AWS Data Catalog workbench database<
     <div class="doc doc-contents ">
 
         <p>Create a Feature Group, load our Feature Definitions, and wait for it to be ready</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -7119,6 +7147,7 @@ store the information about the data to the AWS Data Catalog workbench database<
 categorical_dtypes attribute to a dictionary of column names and
 their respective categorical types.</p>
 </details>
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-218">218</a></span>
@@ -7229,6 +7258,7 @@ their respective categorical types.</p>
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-172">172</a></span>
@@ -7315,6 +7345,7 @@ their respective categorical types.</p>
 
         <p>Post-Transform: Populating Offline Storage and onboard()</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-360">360</a></span>
@@ -7369,6 +7400,7 @@ their respective categorical types.</p>
 
         <p>Pre-Transform: Delete any existing FeatureSet and Create the Feature Group</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-325">325</a></span>
@@ -7396,6 +7428,7 @@ their respective categorical types.</p>
     <div class="doc doc-contents ">
 
         <p>Prep the DataFrame for Feature Store Creation</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -7509,6 +7542,7 @@ their respective categorical types.</p>
 Args:
     column (str): The column name to process
     shorten (bool): Should we shorten the column name? (default: False)</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -7641,6 +7675,7 @@ Args:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-57">57</a></span>
@@ -7692,6 +7727,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Transform Implementation: Ingest the data into the Feature Group</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
@@ -7771,6 +7807,7 @@ Args:
 
         <p>Wait for AWS Feature Group to fully populate the Offline Storage</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-389">389</a></span>
@@ -7839,7 +7876,7 @@ Args:
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="workbench.core.transforms.transform.Transform" href="../transform/#workbench.core.transforms.transform.Transform">Transform</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Transform (workbench.core.transforms.transform.Transform)" href="../transform/#workbench.core.transforms.transform.Transform">Transform</a></code></p>
 
 
         <p>PandasToFeaturesChunked:  Class to manage a bunch of chunked Pandas DataFrames into a FeatureSet</p>
@@ -7857,6 +7894,7 @@ Args:
 </span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">to_features</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
 
 
 
@@ -8037,6 +8075,7 @@ Args:
 
         <p>PandasToFeaturesChunked Initialization</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-29">29</a></span>
@@ -8084,6 +8123,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Add a Chunk of Data to the FeatureSet</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
@@ -8133,6 +8173,7 @@ Args:
 
         <p>Post-Transform: Any Post Transform Steps</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-83">83</a></span>
@@ -8158,6 +8199,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Pre-Transform: Create the Feature Group with Chunked Data</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
@@ -8190,6 +8232,7 @@ Args:
         <p>Set the Categorical Columns
 Args:
     cat_column_info (dict[list[str]]): Dictionary of categorical columns and their possible values</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>
@@ -8236,6 +8279,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Required implementation of the Transform interface</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/pandas_transforms/pandas_to_features_chunked.py</code></summary>

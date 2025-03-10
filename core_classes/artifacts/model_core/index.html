@@ -4443,6 +4443,7 @@
 
 
 
+
   <div class="doc doc-children">
 
 
@@ -4465,7 +4466,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="workbench.core.artifacts.artifact.Artifact" href="../artifact/#workbench.core.artifacts.artifact.Artifact">Artifact</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Artifact (workbench.core.artifacts.artifact.Artifact)" href="../artifact/#workbench.core.artifacts.artifact.Artifact">Artifact</a></code></p>
 
 
         <p>ModelCore: Workbench ModelCore Class</p>
@@ -4478,6 +4479,7 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">my_model</span><span class="o">.</span><span class="n">details</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
 
 
 
@@ -6482,6 +6484,7 @@ Args:
     model_type (ModelType, optional): Set this for newly created Models. Defaults to None.
     **kwargs: Additional keyword arguments</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-101">101</a></span>
@@ -6614,6 +6617,7 @@ Args:
 
         <p>Internal: Determine the Model Type</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-609">609</a></span>
@@ -6666,6 +6670,7 @@ Args:
 
         <p>Internal: Extract the training job name from the ModelDataUrl</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-998"> 998</a></span>
@@ -6710,6 +6715,7 @@ Returns:
 Notes:
     This is an internal method that should not be called directly
     Use the model_type attribute instead</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -6781,6 +6787,7 @@ Notes:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -6867,6 +6874,7 @@ Notes:
         <p>Notes:
     This may or may not exist based on whether an Endpoint ran Inference</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-904">904</a></span>
@@ -6926,6 +6934,7 @@ Notes:
   <summary>Notes</summary>
   <p>This may or may not exist based on whether we have access to TrainingJobAnalytics</p>
 </details>
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-863">863</a></span>
@@ -7034,6 +7043,7 @@ Args:
 Returns:
     (pd.DataFrame, pd.DataFrame): Tuple of DataFrames. Metrics and confusion matrix</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1009">1009</a></span>
@@ -7116,6 +7126,7 @@ Returns:
 
         <p>Internal: Set the Model Type for this Model</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-842">842</a></span>
@@ -7146,6 +7157,7 @@ Returns:
 
         <p>AWS ARN (Amazon Resource Name) for the Model Package Group</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-360">360</a></span>
@@ -7172,6 +7184,7 @@ Returns:
 
         <p>Get ALL the AWS metadata for this artifact</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-356">356</a></span>
@@ -7197,6 +7210,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>The AWS URL for looking at/querying this model</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -7246,6 +7260,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -7319,6 +7334,7 @@ Returns:
     </table>
         <p>Returns:
     pd.DataFrame: DataFrame of the Confusion Matrix (might be None)</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -7406,6 +7422,7 @@ Returns:
 
         <p>Container Image for the Latest Model Package</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-378">378</a></span>
@@ -7432,6 +7449,7 @@ Returns:
 
         <p>Container Info for the Latest Model Package</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-374">374</a></span>
@@ -7457,6 +7475,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Return the datetime when this artifact was created</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -7487,6 +7506,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Delete the Model Packages and the Model Group</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -7553,6 +7573,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-243">243</a></span>
@@ -7616,6 +7637,7 @@ Args:
     recompute (bool, optional): Recompute the details (default: False)
 Returns:
     dict: Dictionary of details about this Model</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -7762,6 +7784,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-444">444</a></span>
@@ -7819,6 +7842,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-766">766</a></span>
@@ -7865,6 +7889,7 @@ Returns:
 
         <p>Does the model metadata exist in the AWS Metadata?</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-165">165</a></span>
@@ -7898,6 +7923,7 @@ Returns:
         <p>Metadata we expect to see for this Model when it's ready
 Returns:
     list[str]: List of expected metadata keys</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -7956,6 +7982,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-502">502</a></span>
@@ -8012,6 +8039,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -8138,6 +8166,7 @@ Returns:
     </table>
         <p>Notes:
     Basically when Endpoint inference was run, name of the dataset, the MD5, etc</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -8271,6 +8300,7 @@ Returns:
   <summary>Note</summary>
   <p>If a capture_uuid isn't specified this will try to return something reasonable</p>
 </details>
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-264">264</a></span>
@@ -8415,6 +8445,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-958">958</a></span>
@@ -8483,6 +8514,7 @@ Returns:
 
         <p>Get the pipeline for this model</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-585">585</a></span>
@@ -8508,6 +8540,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>AWS ARN (Amazon Resource Name) for the Model Package Group</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -8558,6 +8591,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-398">398</a></span>
@@ -8595,6 +8629,7 @@ Returns:
         <p>Perform a health check on this model
 Returns:
     list[str]: List of health issues</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -8678,6 +8713,7 @@ Returns:
 
         <p>Is the Model Type unknown?</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-605">605</a></span>
@@ -8726,6 +8762,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -8829,6 +8866,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -8955,6 +8993,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-740">740</a></span>
@@ -8997,6 +9036,7 @@ Returns:
 
         <p>AWS ARN (Amazon Resource Name) for the Latest Model Package (within the Group)</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-368">368</a></span>
@@ -9026,6 +9066,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Return the datetime when this artifact was last modified</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -9110,6 +9151,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -9276,7 +9318,7 @@ Returns:
                 <code>model_type</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="workbench.core.artifacts.model_core.ModelType" href="#workbench.core.artifacts.model_core.ModelType">ModelType</a></code>
+                  <code><a class="autorefs autorefs-internal" title="ModelType (workbench.core.artifacts.model_core.ModelType)" href="#workbench.core.artifacts.model_core.ModelType">ModelType</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -9355,6 +9397,7 @@ Returns:
     </table>
         <p>Returns:
     bool: True if the Model is successfully onboarded, False otherwise</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -9472,6 +9515,7 @@ Returns:
 
         <p>Refresh the Artifact's metadata</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-158">158</a></span>
@@ -9534,6 +9578,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -9620,6 +9665,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-425">425</a></span>
@@ -9699,6 +9745,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-204">204</a></span>
@@ -9776,6 +9823,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-521">521</a></span>
@@ -9846,6 +9894,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -9929,6 +9978,7 @@ Returns:
     </table>
         <p>Note:
     We're going to not allow this to be used for Models</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -10015,6 +10065,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-589">589</a></span>
@@ -10079,6 +10130,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -10173,6 +10225,7 @@ Returns:
   <summary>Notes</summary>
   <p>This may or may not exist based on whether an Endpoint ran Shapley</p>
 </details>
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-1041">1041</a></span>
@@ -10257,6 +10310,7 @@ Returns:
 
         <p>Return the size of this data in MegaBytes</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-352">352</a></span>
@@ -10305,6 +10359,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
@@ -10375,6 +10430,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-780">780</a></span>
@@ -10440,6 +10496,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/model_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-494">494</a></span>
@@ -10484,6 +10541,7 @@ Returns:
 
 
         <p>Class for retrieving locked Scikit-Learn inference images</p>
+
 
 
 
@@ -10631,6 +10689,7 @@ Returns:
 
 
         <p>Enumerated Types for Workbench Model Types</p>
+
 
 
 

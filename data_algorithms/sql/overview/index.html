@@ -3661,6 +3661,7 @@
 
 
 
+
   <div class="doc doc-children">
 
 
@@ -3685,6 +3686,7 @@
 
 
         <p>Outliers: Class to compute outliers for all the columns in a DataSource using SQL</p>
+
 
 
 
@@ -4134,6 +4136,7 @@
 
         <p>SQLOutliers Initialization</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/algorithms/sql/outliers.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-18">18</a></span>
@@ -4170,6 +4173,7 @@ Args:
     upper_bounds(list): The upper bounds for each column
 Returns:
     pd.DataFrame: A DataFrame with an added 'outlier_group' column, indicating the type of outlier.</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/algorithms/sql/outliers.py</code></summary>
@@ -4270,6 +4274,7 @@ Args:
 Returns:
     str: A SQL query to compute outliers for multiple columns</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/algorithms/sql/outliers.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-133">133</a></span>
@@ -4351,6 +4356,7 @@ Args:
     use_stddev (bool): Option to use the standard deviation for the outlier calculation (default: False)
 Returns:
     pd.DataFrame: A DataFrame of all the outliers combined</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/algorithms/sql/outliers.py</code></summary>
@@ -4516,6 +4522,7 @@ Returns:
 Notes:
     Uses the IQR * 1.5 (~= 2.5 Sigma) (use 1.7 for ~= 3 Sigma)
     The scale parameter can be adjusted to change the IQR multiplier</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/algorithms/sql/outliers.py</code></summary>
@@ -4693,6 +4700,7 @@ Notes:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/algorithms/sql/outliers.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-197">197</a></span>
@@ -4783,6 +4791,7 @@ Notes:
 
 
 
+
   <div class="doc doc-children">
 
 
@@ -4811,6 +4820,7 @@ Returns:
     dict(dict): A dictionary of descriptive stats for each column in this format
          {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4, 'mean': 2.5, 'stddev': 1.5},
           'col2': ...}</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/algorithms/sql/descriptive_stats.py</code></summary>
@@ -4925,6 +4935,7 @@ Args:
 Returns:
     str: The SQL query to compute descriptive stats</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/algorithms/sql/descriptive_stats.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-15">15</a></span>
@@ -4996,6 +5007,7 @@ Returns:
     <div class="doc doc-contents first">
 
         <p>SQL based Correlations: Compute Correlations for all the numeric columns in a DataSource using SQL</p>
+
 
 
 
@@ -5104,6 +5116,7 @@ Returns:
 -1 indicates a perfect negative linear relationship.
  0 indicates no linear relationship.</p>
 </details>
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/algorithms/sql/correlations.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-15">15</a></span>
@@ -5179,6 +5192,7 @@ Returns:
     dict(dict): A dictionary of correlations for each column in this format
          {'col1': {'col2': 0.5, 'col3': 0.9, 'col4': 0.4, ...},
           'col2': {'col1': 0.5, 'col3': 0.8, 'col4': 0.3, ...}}</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/algorithms/sql/correlations.py</code></summary>

@@ -3689,6 +3689,7 @@ Inherited Classes must implement the abstract transform_impl() method</p>
 
 
 
+
   <div class="doc doc-children">
 
 
@@ -3716,6 +3717,7 @@ Inherited Classes must implement the abstract transform_impl() method</p>
 
         <p>Transform: Abstract Base Class for all transforms within Workbench. Inherited Classes
 must implement the abstract transform_impl() method</p>
+
 
 
 
@@ -4034,6 +4036,7 @@ must implement the abstract transform_impl() method</p>
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-42">42</a></span>
@@ -4134,6 +4137,7 @@ must implement the abstract transform_impl() method</p>
 Args:
     meta (dict): A dictionary of metadata</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-105">105</a></span>
@@ -4169,6 +4173,7 @@ Args:
         <p>Convert a dictionary to the AWS tag format (list of dicts)
 [ {Key: key_name, Value: value}, {..}, ...]</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-111">111</a></span>
@@ -4198,6 +4203,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Get the metadata/tags and convert them into AWS Tag Format</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
@@ -4235,6 +4241,7 @@ Args:
 
         <p>What Input Type does this Transform Consume</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-133">133</a></span>
@@ -4260,6 +4267,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>What Output Type does this Transform Produce</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
@@ -4291,6 +4299,7 @@ Args:
 
         <p>Post-Transform ensures that the output Artifact is ready for use</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-91">91</a></span>
@@ -4319,6 +4328,7 @@ Args:
 
         <p>Perform any Pre-Transform operations</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-87">87</a></span>
@@ -4344,6 +4354,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Set the Input UUID (Name) for this Transform</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
@@ -4372,6 +4383,7 @@ Args:
         <p>Set the tags that will be associated with the output object
 Args:
     tags (Union[list, str]): The list of tags or a '::' separated string of tags</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
@@ -4409,6 +4421,7 @@ Args:
 
         <p>Set the Output UUID (Name) for this Transform</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-145">145</a></span>
@@ -4434,6 +4447,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Perform the Transformation from Input to Output with pre_transform() and post_transform() invocations</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
@@ -4470,6 +4484,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Abstract Method: Implement the Transformation from Input to Output</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
@@ -4511,6 +4526,7 @@ Args:
 
 
         <p>Enumerated Types for Workbench Transform Inputs</p>
+
 
 
 
@@ -4578,6 +4594,7 @@ Args:
 
 
         <p>Enumerated Types for Workbench Transform Outputs</p>
+
 
 
 

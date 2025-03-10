@@ -4227,6 +4227,7 @@
 
 
 
+
   <div class="doc doc-children">
 
 
@@ -4249,7 +4250,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="workbench.core.artifacts.artifact.Artifact" href="../artifact/#workbench.core.artifacts.artifact.Artifact">Artifact</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Artifact (workbench.core.artifacts.artifact.Artifact)" href="../artifact/#workbench.core.artifacts.artifact.Artifact">Artifact</a></code></p>
 
 
         <p>FeatureSetCore: Workbench FeatureSetCore Class</p>
@@ -4262,6 +4263,7 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">my_features</span><span class="o">.</span><span class="n">details</span><span class="p">()</span>
 </span></code></pre></div>
 </details>
+
 
 
 
@@ -5474,6 +5476,7 @@
     <div class="doc doc-contents ">
 
         <p>Return the column types of the Feature Set</p>
+
     </div>
 
 </div>
@@ -5495,6 +5498,7 @@
     <div class="doc doc-contents ">
 
         <p>Return the column names of the Feature Set</p>
+
     </div>
 
 </div>
@@ -5516,6 +5520,7 @@
     <div class="doc doc-contents ">
 
         <p>Get the base table name for this FeatureSet</p>
+
     </div>
 
 </div>
@@ -5565,6 +5570,7 @@
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -5670,6 +5676,7 @@
 Returns:
     pd.DataFrame: A dataframe of anomalies from the underlying DataSource</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-513">513</a></span>
@@ -5716,6 +5723,7 @@ Returns:
 
         <p>AWS ARN (Amazon Resource Name) for this artifact</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-122">122</a></span>
@@ -5742,6 +5750,7 @@ Returns:
 
         <p>Get ALL the AWS metadata for this artifact</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-118">118</a></span>
@@ -5767,6 +5776,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>The AWS URL for looking at/querying the underlying data source</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -5825,6 +5835,7 @@ Returns:
   <p>We can't call just call self.data_source.column_details() because FeatureSets have different
 types, so we need to overlay that type information on top of the DataSource type information</p>
 </details>
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-140">140</a></span>
@@ -5886,6 +5897,7 @@ Returns:
      {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
       'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'descriptive_stats': {...}},
       ...}</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -5953,6 +5965,7 @@ Args:
 Returns:
     dict: A dictionary of correlations for the numeric columns</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-536">536</a></span>
@@ -5992,6 +6005,7 @@ additional options/features use the get_feature_store() method and see AWS docs 
 the details: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
 Returns:
     str: The full path/file for the CSV file created by Feature Store create_dataset()</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -6059,6 +6073,7 @@ Returns:
 
         <p>Return the datetime when this artifact was created</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-245">245</a></span>
@@ -6084,6 +6099,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Instance Method: Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -6172,6 +6188,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-459">459</a></span>
@@ -6217,6 +6234,7 @@ Args:
     recompute (bool): Recompute the descriptive stats (default=False)
 Returns:
     dict: A dictionary of descriptive stats for the numeric columns</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -6307,6 +6325,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -6412,6 +6431,7 @@ Returns:
 
         <p>Does the feature_set_name exist in the AWS Metadata?</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-91">91</a></span>
@@ -6444,6 +6464,7 @@ Returns:
 
         <p>Return the underlying DataSource object</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-262">262</a></span>
@@ -6471,6 +6492,7 @@ Returns:
         <p>Return the underlying AWS FeatureStore object. This can be useful for more advanced usage
 with create_dataset() such as Joins and time ranges and a host of other options
 See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -6527,6 +6549,7 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-297">297</a></span>
@@ -6564,6 +6587,7 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
     <div class="doc doc-contents ">
 
         <p>Return the hash for the set of Parquet files for this artifact</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -6613,6 +6637,7 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -6706,6 +6731,7 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -6807,6 +6833,7 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
 
         <p>Return the datetime when this artifact was last modified</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-249">249</a></span>
@@ -6835,6 +6862,7 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
 
         <p>Return the number of columns of the Feature Set</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-218">218</a></span>
@@ -6861,6 +6889,7 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
 
         <p>Return the number of rows of the internal DataSource</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-222">222</a></span>
@@ -6886,6 +6915,7 @@ See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-data
     <div class="doc doc-contents ">
 
         <p>This is a BLOCKING method that will onboard the FeatureSet (make it ready)</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -6962,6 +6992,7 @@ Returns:
 Notes:
     Uses the IQR * 1.5 (~= 2.5 Sigma) method to compute outliers
     The scale parameter can be adjusted to change the IQR multiplier</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -7077,6 +7108,7 @@ Notes:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-226">226</a></span>
@@ -7124,6 +7156,7 @@ Notes:
         <p>Is the FeatureSet ready? Is initial setup complete and expected metadata populated?
 Note: Since FeatureSet is a composite of DataSource and FeatureGroup, we need to
    check both to see if the FeatureSet is ready.</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -7175,6 +7208,7 @@ Note: Since FeatureSet is a composite of DataSource and FeatureGroup, we need to
 
         <p>This is a BLOCKING method that will recompute the stats for the FeatureSet</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-608">608</a></span>
@@ -7211,6 +7245,7 @@ Note: Since FeatureSet is a composite of DataSource and FeatureGroup, we need to
 
         <p>Internal: Refresh our internal AWS Feature Store metadata</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-86">86</a></span>
@@ -7242,6 +7277,7 @@ Args:
     recompute (bool): Recompute the sample (default=False)
 Returns:
     pd.DataFrame: A sample of the data from the underlying DataSource</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -7325,6 +7361,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -7410,6 +7447,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -7514,6 +7552,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-446">446</a></span>
@@ -7557,6 +7596,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Return the size of the internal DataSource in MegaBytes</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -7637,6 +7677,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -7732,6 +7773,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-307">307</a></span>
@@ -7796,6 +7838,7 @@ Returns:
 
         <p>Return the supplemental data for this Data Source</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-164">164</a></span>
@@ -7826,6 +7869,7 @@ Returns:
 
         <p>Return the hash for the Athena table</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-258">258</a></span>
@@ -7855,6 +7899,7 @@ Args:
     recompute (bool): Recompute the value counts (default=False)
 Returns:
     dict: A dictionary of value counts for the string columns</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
@@ -7896,6 +7941,7 @@ Args:
 Returns:
     pd.DataFrame: A DataFrame for the specified view</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-170">170</a></span>
@@ -7935,6 +7981,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Return the views for this Data Source</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/feature_set_core.py</code></summary>

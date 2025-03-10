@@ -3741,6 +3741,7 @@
 
 
 
+
   <div class="doc doc-children">
 
 
@@ -3762,6 +3763,7 @@
 
 
     <div class="doc doc-contents ">
+
 
 
 
@@ -4637,6 +4639,7 @@ Args:
     endpoint_name (str): Name of the endpoint to set up monitoring for
     instance_type (str): Instance type to use for monitoring. Defaults to "ml.m5.large".</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-25">25</a></span>
@@ -4732,6 +4735,7 @@ Args:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-75">75</a></span>
@@ -4775,6 +4779,7 @@ Args:
     s3_path(str): The S3 path to the monitoring data
 Returns:
     pd.DataFrame: Monitoring data in DataFrame form (None if it doesn't exist)</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
@@ -4858,6 +4863,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
@@ -4984,6 +4990,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-293">293</a></span>
@@ -5030,6 +5037,7 @@ Notes:
     - baseline.csv
     - constraints.json
     - statistics.json</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
@@ -5113,6 +5121,7 @@ Notes:
 Args:
     schedule (str): The schedule for the monitoring job (hourly or daily, defaults to hourly).
     recreate (bool): If True, recreate the monitoring schedule even if it already exists.</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
@@ -5246,6 +5255,7 @@ Args:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
@@ -5398,6 +5408,7 @@ Args:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-335">335</a></span>
@@ -5465,6 +5476,7 @@ Args:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-348">348</a></span>
@@ -5521,6 +5533,7 @@ Args:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
@@ -5607,6 +5620,7 @@ Args:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-356">356</a></span>
@@ -5644,6 +5658,7 @@ Args:
     capture_percentage (int): Expected data capture percentage.
 Returns:
     bool: True if data capture is already configured, False otherwise.</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
@@ -5728,6 +5743,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-86"> 86</a></span>
@@ -5791,6 +5807,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Code to figure out if a monitoring schedule already exists for this endpoint</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
@@ -5891,6 +5908,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
@@ -5998,6 +6016,7 @@ Returns:
 
         <p>Code to set up alerts based on monitoring results</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-427">427</a></span>
@@ -6046,6 +6065,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/monitor_core.py</code></summary>

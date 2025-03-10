@@ -3606,6 +3606,7 @@
 
 
 
+
   <div class="doc doc-children">
 
 
@@ -3628,7 +3629,8 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="workbench.core.artifacts.artifact.Artifact" href="../artifact/#workbench.core.artifacts.artifact.Artifact">Artifact</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Artifact (workbench.core.artifacts.artifact.Artifact)" href="../artifact/#workbench.core.artifacts.artifact.Artifact">Artifact</a></code></p>
+
 
 
 
@@ -4288,6 +4290,7 @@
     <div class="doc doc-contents ">
 
         <p>Return the column types for this Data Source</p>
+
     </div>
 
 </div>
@@ -4310,6 +4313,7 @@
     <div class="doc doc-contents ">
 
         <p>Return the column names for this Data Source</p>
+
     </div>
 
 </div>
@@ -4331,6 +4335,7 @@
     <div class="doc doc-contents ">
 
         <p>Get the database for this Data Source</p>
+
     </div>
 
 </div>
@@ -4352,6 +4357,7 @@
     <div class="doc doc-contents ">
 
         <p>Get the base table name for this Data Source</p>
+
     </div>
 
 </div>
@@ -4373,6 +4379,7 @@
 Args:
     data_uuid(str): The UUID for this Data Source
     database(str): The database to use for this Data Source (default: workbench)</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
@@ -4419,6 +4426,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Internal: Create the Display View for this DataSource</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
@@ -4473,6 +4481,7 @@ Args:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-73">73</a></span>
@@ -4518,6 +4527,7 @@ Returns:
      {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
       'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'descriptive_stats': {...}},
       ...}</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
@@ -4625,6 +4635,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-231">231</a></span>
@@ -4681,6 +4692,7 @@ Returns:
          {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
           'col2': ...}</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-169">169</a></span>
@@ -4723,6 +4735,7 @@ Returns:
 
         <p>Additional Details about this DataSourceAbstract Artifact</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-245">245</a></span>
@@ -4763,6 +4776,7 @@ Returns:
 Args:
     query(str): The SQL statement to execute</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-152">152</a></span>
@@ -4796,6 +4810,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>DataSources have quite a bit of expected Metadata for EDA displays</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
@@ -4843,6 +4858,7 @@ Args:
 
         <p>Get the database for this Data Source</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-36">36</a></span>
@@ -4875,6 +4891,7 @@ Args:
 
         <p>Return the number of columns for this Data Source</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-56">56</a></span>
@@ -4906,6 +4923,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Return the number of rows for this Data Source</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
@@ -4957,6 +4975,7 @@ Args:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
@@ -5088,6 +5107,7 @@ Args:
   <p>Uses the IQR * 1.5 (~= 2.5 Sigma) method to compute outliers
 The scale parameter can be adjusted to change the IQR multiplier</p>
 </details>
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-181">181</a></span>
@@ -5144,6 +5164,7 @@ The scale parameter can be adjusted to change the IQR multiplier</p>
 Args:
     query(str): The SQL query to execute</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-144">144</a></span>
@@ -5177,6 +5198,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Is the DataSource ready?</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
@@ -5248,6 +5270,7 @@ Args:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
@@ -5338,6 +5361,7 @@ Args:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-160">160</a></span>
@@ -5421,6 +5445,7 @@ Args:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-123">123</a></span>
@@ -5500,6 +5525,7 @@ Args:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-104">104</a></span>
@@ -5562,6 +5588,7 @@ Args:
 Returns:
     pd.DataFrame: A combined DataFrame of sample data + outliers</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-197">197</a></span>
@@ -5595,6 +5622,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Return the supplemental data for this Data Source</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
@@ -5635,6 +5663,7 @@ Returns:
     dict(dict): A dictionary of value counts for each column in the form
          {'col1': {'value_1': X, 'value_2': Y, 'value_3': Z,...},
           'col2': ...}</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
@@ -5682,6 +5711,7 @@ Args:
 Returns:
     pd.DataFrame: A DataFrame for the specified view</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-93"> 93</a></span>
@@ -5721,6 +5751,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Return the views for this Data Source</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/data_source_abstract.py</code></summary>

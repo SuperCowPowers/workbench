@@ -4013,6 +4013,7 @@ Artifacts simply reflect and aggregate one or more AWS Services</p>
 
 
 
+
   <div class="doc doc-children">
 
 
@@ -4039,6 +4040,7 @@ Artifacts simply reflect and aggregate one or more AWS Services</p>
 
 
         <p>Artifact: Abstract Base Class for all Artifact classes in Workbench</p>
+
 
 
 
@@ -4961,6 +4963,7 @@ Artifacts simply reflect and aggregate one or more AWS Services</p>
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-52">52</a></span>
@@ -5006,6 +5009,7 @@ Artifacts simply reflect and aggregate one or more AWS Services</p>
     <div class="doc doc-contents ">
 
         <p>Artifact Post Initialization</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -5092,6 +5096,7 @@ Artifacts simply reflect and aggregate one or more AWS Services</p>
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-386">386</a></span>
@@ -5165,6 +5170,7 @@ Args:
     tag (str): Tag to add for this artifact
     tag_type (str): Type of tag to add (user or health)</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-274">274</a></span>
@@ -5217,6 +5223,7 @@ Args:
 
         <p>AWS ARN (Amazon Resource Name) for this artifact</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-206">206</a></span>
@@ -5248,6 +5255,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Get the full AWS metadata for this artifact</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -5281,6 +5289,7 @@ Args:
 
         <p>AWS console/web interface for this artifact</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-211">211</a></span>
@@ -5312,6 +5321,7 @@ Args:
     <div class="doc doc-contents ">
 
         <p>Return the datetime when this artifact was created</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -5345,6 +5355,7 @@ Args:
 
         <p>Delete this artifact including all related AWS objects</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-221">221</a></span>
@@ -5374,6 +5385,7 @@ Args:
         <p>Delete specific metadata from this artifact
 Args:
     key_to_delete (str): Metadata key to delete</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -5451,6 +5463,7 @@ Args:
 
         <p>Additional Details about this Artifact</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-181">181</a></span>
@@ -5483,6 +5496,7 @@ Args:
 
         <p>Does the Artifact exist? Can we connect to it?</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-125">125</a></span>
@@ -5512,6 +5526,7 @@ Args:
         <p>Metadata we expect to see for this Artifact when it's ready
 Returns:
     list[str]: List of expected metadata keys</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -5639,6 +5654,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-106">106</a></span>
@@ -5695,6 +5711,7 @@ Returns:
 
         <p>Get the input data for this artifact</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-330">330</a></span>
@@ -5721,6 +5738,7 @@ Returns:
 
         <p>Get the owner of this artifact</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-318">318</a></span>
@@ -5746,6 +5764,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Get the status for this artifact</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -5776,6 +5795,7 @@ Args:
     tag_type (str): Type of tags to return (user or health)
 Returns:
     list[str]: List of tags for this artifact</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -5845,6 +5865,7 @@ Returns:
 
         <p>Return the hash of this artifact, useful for content validation</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-201">201</a></span>
@@ -5874,6 +5895,7 @@ Returns:
         <p>Perform a health check on this artifact
 Returns:
     list[str]: List of health issues</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -6009,6 +6031,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-88"> 88</a></span>
@@ -6067,6 +6090,7 @@ Returns:
 
         <p>Return the datetime when this artifact was last modified</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-196">196</a></span>
@@ -6101,6 +6125,7 @@ Returns:
 Returns:
     bool: True if the Artifact was successfully onboarded, False otherwise</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-173">173</a></span>
@@ -6134,6 +6159,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Is the Artifact ready? Is initial setup complete and expected metadata populated?</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -6193,6 +6219,7 @@ Returns:
 
         <p>Refresh the Artifact's metadata</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-150">150</a></span>
@@ -6223,6 +6250,7 @@ Returns:
 Args:
     tag (str): Tag to remove from this artifact
     tag_type (str): Type of tag to remove (user or health)</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -6305,6 +6333,7 @@ Args:
         <p>Note:
     This breaks the official provenance of the artifact, so use with caution.</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-334">334</a></span>
@@ -6378,6 +6407,7 @@ Args:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-322">322</a></span>
@@ -6413,6 +6443,7 @@ Args:
         <p>Set the status for this artifact
 Args:
     status (str): Status to set for this artifact</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -6450,6 +6481,7 @@ Args:
 
         <p>Return the size of this artifact in MegaBytes</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-186">186</a></span>
@@ -6479,6 +6511,7 @@ Args:
         <p>This is generic summary information for all Artifacts. If you
 want to get more detailed information, call the details() method
 which is implemented by the specific Artifact class</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -6534,6 +6567,7 @@ Args:
 Note:
     This functionality will work for FeatureSets, Models, and Endpoints
     but not for DataSources. The DataSource class overrides this method.</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
@@ -6625,6 +6659,7 @@ Note:
   <summary>This functionality will work for FeatureSets, Models, and Endpoints</summary>
   <p>but not for DataSources and Graphs, those classes need to override this method.</p>
 </details>
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/artifact.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-130">130</a></span>

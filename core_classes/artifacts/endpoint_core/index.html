@@ -4065,6 +4065,7 @@
 
 
 
+
   <div class="doc doc-children">
 
 
@@ -4087,7 +4088,7 @@
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" title="workbench.core.artifacts.artifact.Artifact" href="../artifact/#workbench.core.artifacts.artifact.Artifact">Artifact</a></code></p>
+              Bases: <code><a class="autorefs autorefs-internal" title="Artifact (workbench.core.artifacts.artifact.Artifact)" href="../artifact/#workbench.core.artifacts.artifact.Artifact">Artifact</a></code></p>
 
 
         <p>EndpointCore: Workbench EndpointCore Class</p>
@@ -4102,6 +4103,7 @@
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">0.3f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </span></code></pre></div>
 </details>
+
 
 
 
@@ -5984,6 +5986,7 @@
     <div class="doc doc-contents ">
 
         <p>Return the instance type for this endpoint</p>
+
     </div>
 
 </div>
@@ -6033,6 +6036,7 @@
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -6215,7 +6219,7 @@
                 <code>model_type</code>
             </td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="workbench.core.artifacts.ModelType" href="../model_core/#workbench.core.artifacts.model_core.ModelType">ModelType</a></code>
+                  <code><a class="autorefs autorefs-internal" title="ModelType (workbench.core.artifacts.ModelType)" href="../model_core/#workbench.core.artifacts.model_core.ModelType">ModelType</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -6276,6 +6280,7 @@
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -6463,6 +6468,7 @@
 
         <p>Internal: Handles errors, retries, and binary search for problematic rows.</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-513">513</a></span>
@@ -6595,6 +6601,7 @@
 
         <p>Internal: Fill a single-row DataFrame with NaNs for inference columns, keeping original feature data.</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-570">570</a></span>
@@ -6646,6 +6653,7 @@ Args:
     eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
 Returns:
     pd.DataFrame: Return the DataFrame with additional columns, prediction and any _proba columns</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -6843,6 +6851,7 @@ Returns:
 
         <p>Add data capture to the endpoint</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-166">166</a></span>
@@ -6868,6 +6877,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>AWS ARN (Amazon Resource Name) for this artifact</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -6925,6 +6935,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -6994,6 +7005,7 @@ Returns:
 
         <p>Get ALL the AWS metadata for this artifact</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-180">180</a></span>
@@ -7019,6 +7031,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>The AWS URL for looking at/querying this data source</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -7115,6 +7128,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -7260,6 +7274,7 @@ Returns:
 
         <p>Return the datetime when this artifact was created</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-192">192</a></span>
@@ -7285,6 +7300,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>"Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -7354,6 +7370,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -7436,6 +7453,7 @@ Args:
     recompute (bool): Recompute the details (default: False)
 Returns:
     dict(dict): A dictionary of details about this Endpoint</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -7536,6 +7554,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-224">224</a></span>
@@ -7597,6 +7616,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Does the feature_set_name exist in the AWS Metadata?</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -7705,6 +7725,7 @@ Returns:
   <summary>Note</summary>
   <p>There's no sanity checks or error handling... just FAST Inference!</p>
 </details>
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-409">409</a></span>
@@ -7757,6 +7778,7 @@ Args:
     prediction_df (pd.DataFrame): DataFrame with the prediction results
 Returns:
     pd.DataFrame: DataFrame with the confusion matrix</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -7844,6 +7866,7 @@ Returns:
 
         <p>Get the MonitorCore class for this endpoint</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-170">170</a></span>
@@ -7896,6 +7919,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -7955,6 +7979,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -8151,6 +8176,7 @@ Returns:
   <summary>Note</summary>
   <p>If capture=True inference/performance metrics are written to S3 Endpoint Inference Folder</p>
 </details>
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-346">346</a></span>
@@ -8318,6 +8344,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-158">158</a></span>
@@ -8355,6 +8382,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Delete the Endpoint and associated resources if it exists</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -8513,6 +8541,7 @@ Returns:
       </tbody>
     </table>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-200">200</a></span>
@@ -8551,6 +8580,7 @@ Returns:
 
         <p>Return the datetime when this artifact was last modified</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-196">196</a></span>
@@ -8580,6 +8610,7 @@ Args:
     interactive (bool, optional): If True, will prompt the user for information. (default: False)
 Returns:
     bool: True if the Endpoint is successfully onboarded, False otherwise</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -8674,6 +8705,7 @@ Returns:
         <p>Returns:
     bool: True if the Endpoint is successfully onboarded, False otherwise</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-296">296</a></span>
@@ -8742,6 +8774,7 @@ Returns:
 
         <p>Refresh the Artifact's metadata</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-104">104</a></span>
@@ -8772,6 +8805,7 @@ Args:
     prediction_df (pd.DataFrame): DataFrame with the prediction results
 Returns:
     pd.DataFrame: DataFrame with the performance metrics</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -8871,6 +8905,7 @@ Args:
     prediction_df (pd.DataFrame): DataFrame with the prediction results
 Returns:
     pd.DataFrame: DataFrame with two new columns called 'residuals' and 'residuals_abs'</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -8991,6 +9026,7 @@ Returns:
         <p>Note:
     We're going to not allow this to be used for Models</p>
 
+
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-852">852</a></span>
@@ -9044,6 +9080,7 @@ Returns:
     <div class="doc doc-contents ">
 
         <p>Return the size of this data in MegaBytes</p>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
@@ -9137,6 +9174,7 @@ Returns:
           </tr>
       </tbody>
     </table>
+
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/artifacts/endpoint_core.py</code></summary>
