@@ -298,6 +298,9 @@ def predict_fn(df, models) -> pd.DataFrame:
         else:
             df[name] = model.predict(matched_df[model_features])
 
+    # Compute confidence score based on quantile spread
+    df["confidence"] = 1 - ((df["q_95"] - df["q_05"]) / (abs(df["q_50"]) + 1e-6))
+
     # Reorganize the columns so they are in alphabetical order
     df = df.reindex(sorted(df.columns), axis=1)
 
