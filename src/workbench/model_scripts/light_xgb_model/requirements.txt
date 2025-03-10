@@ -1,3 +1,1 @@
-xgboost-cpu==2.1.4
-pandas==2.2.3
-awswrangler==3.11.0
+# Note: In general this file should be empty (as the default inference image has all required libraries)
