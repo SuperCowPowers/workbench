@@ -73,6 +73,7 @@ class DashboardStatus(PluginInterface):
         details += f"**Redis Server:** {config_info['REDIS_HOST']}:{config_info.get('REDIS_PORT', 6379)}<br>"
         details += f"**Workbench S3 Bucket:** {config_info['WORKBENCH_BUCKET']}<br>"
         details += f"**Plugin Path:** {config_info.get('WORKBENCH_PLUGINS', 'unknown')}<br>"
+        details += f"**Themes Path:** {config_info.get('WORKBENCH_THEMES', 'unknown')}<br>"
         details += "**Workbench API Key:**\n"
         for key, value in config_info["API_KEY_INFO"].items():
             details += f"  - **{key}:** {value}\n"
