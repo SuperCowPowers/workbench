@@ -3422,7 +3422,8 @@
 <div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cd applications/aws_dashboard
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>vi Dockerfile
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>ARG WORKBENCH_VERSION=0.8.110 &lt;-- change this
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a># Install workbench[ui] in separate layer
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>RUN pip install --no-cache-dir &quot;workbench[ui]==0.8.116&quot;  &lt;-- change this
 </span></code></pre></div>
 <h3 id="run-the-deploy-script">Run the Deploy Script</h3>
 <p><strong>Note:</strong> For a client specific config file you'll need to copy it locally so that it's within Dockers 'build context'. If you're building the 'vanilla' open source Docker image, then you can use the <code>open_source_config.json</code> that's in the directory already.</p>
