@@ -6,6 +6,9 @@ FROM python:3.12.5-bookworm AS base
 WORKDIR /app
 EXPOSE 8000
 
+# Set PYTHONHASHSEED to ensure consistent hashing across processes
+ENV PYTHONHASHSEED=0
+
 # Install system packages and gunicorn in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nginx supervisor libnghttp2-dev && \
