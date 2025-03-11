@@ -81,6 +81,7 @@ if __name__ == "__main__":
 
     # Time the all_neighbors method
     import time
+
     start_time = time.time()
     all_neighbors_df = proximity.all_neighbors()
     end_time = time.time()
