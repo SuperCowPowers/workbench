@@ -55,8 +55,11 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-            self, query_ids: Union[Union[int, str], List[Union[int, str]]],
-            radius: float = None, include_self: bool = True, add_columns: List[str] = None
+        self,
+        query_ids: Union[Union[int, str], List[Union[int, str]]],
+        radius: float = None,
+        include_self: bool = True,
+        add_columns: List[str] = None,
     ) -> pd.DataFrame:
         """
         Return neighbors for one or more query IDs, either by fixed neighbors or within a radius.
@@ -166,6 +169,7 @@ if __name__ == "__main__":
 
     # Time neighbors with all IDs versus calling all_neighbors
     import time
+
     start_time = time.time()
     df = prox.neighbors(query_ids=["a", "b", "c", "d", "e"], include_self=False)
     end_time = time.time()
