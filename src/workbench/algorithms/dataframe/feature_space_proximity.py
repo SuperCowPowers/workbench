@@ -79,6 +79,15 @@ if __name__ == "__main__":
     print("\nNeighbors for Query ID:", single_query_id)
     print(single_query_neighbors)
 
+    # Time the all_neighbors method
+    import time
+    start_time = time.time()
+    all_neighbors_df = proximity.all_neighbors()
+    end_time = time.time()
+    print("\nTime taken for all_neighbors:", end_time - start_time)
+    print("\nAll Neighbors DataFrame:")
+    print(all_neighbors_df)
+
     # Show a scatter plot of the data
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
     from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
