@@ -23,7 +23,7 @@ ARG WORKBENCH_VERSION=0.8.110 <-- change this
 This is obviously only when you want to mark a version as stable. Meaning that it seems to 'be good and stable (ish)' :)
 
 ```
-./deploy.sh --stable
+./deploy.sh 0_8_110 --stable
 ```
 
 ### Test the ECR Image
