@@ -69,6 +69,16 @@ if __name__ == "__main__":
     print("\nNeighbors for Query ID:", single_query_id)
     print(single_query_neighbors)
 
+    # Test a Workbench regression model
+    m = Model("aqsol-regression")
+    proximity = FeatureSpaceProximity(m)
+
+    # Neighbors Test using a single query ID
+    single_query_id = "A-3093"
+    single_query_neighbors = proximity.neighbors(single_query_id)
+    print("\nNeighbors for Query ID:", single_query_id)
+    print(single_query_neighbors)
+
     # Show a scatter plot of the data
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
     from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
