@@ -153,7 +153,7 @@ if __name__ == "__main__":
 
     # Create a sample DataFrame
     data = {
-        "ID": ["a", "b", "c", "d", "e"],
+        "foo_id": ["a", "b", "c", "d", "e"],  # Testing differnt ID column name
         "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
         "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
         "target": [1, 0, 1, 0, 5],
@@ -161,7 +161,7 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
 
     # Test with String Ids
-    prox = Proximity(df, id_column="ID", features=["Feature1", "Feature2"], target="target", n_neighbors=3)
+    prox = Proximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target", n_neighbors=3)
     print(prox.all_neighbors())
 
     # Test the neighbors method
