@@ -1,7 +1,4 @@
-# Declare global argument for workbench version
-ARG WORKBENCH_VERSION=0.8.116
-
-# Base image using Python 3.12 and Debian Bookworm
+# Base image: python:3.12.5-bookworm
 FROM python:3.12.5-bookworm AS base
 WORKDIR /app
 EXPOSE 8000
@@ -16,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rm -rf /var/lib/apt/lists/* && \
     pip install --no-cache-dir gunicorn
 
-# Copy and install dependencies
+# Dependency Layer
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
@@ -26,9 +23,8 @@ ARG WORKBENCH_CONFIG
 COPY $WORKBENCH_CONFIG /app/workbench_config.json
 ENV WORKBENCH_CONFIG=/app/workbench_config.json
 
-# Install workbench[ui] separately to keep the layer small and cacheable
-ARG WORKBENCH_VERSION
-RUN pip install --no-cache-dir "workbench[ui]==${WORKBENCH_VERSION}"
+# Install workbench[ui] in separate layer
+RUN pip install --no-cache-dir "workbench[ui]==0.8.116
 
 # Configure Nginx and Supervisor
 COPY nginx.conf /etc/nginx/sites-available/default
