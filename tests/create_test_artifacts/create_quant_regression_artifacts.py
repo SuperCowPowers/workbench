@@ -22,12 +22,12 @@ if __name__ == "__main__":
     recreate = False
 
     # Create the Abalone Quantile Regression Model
-    if recreate or not Model("abalone-quantile-reg").exists():
+    if recreate or not Model("abalone-quantile").exists():
 
         # Transform FeatureSet into Quantile Regression Model
         feature_set = FeatureSet("abalone_features")
         feature_set.to_model(
-            name="abalone-quantile-reg",
+            name="abalone-quantile",
             model_type=ModelType.QUANTILE_REGRESSOR,
             target_column="class_number_of_rings",
             description="Abalone Quantile Regression",
@@ -35,15 +35,15 @@ if __name__ == "__main__":
         )
 
     # Create the Abalone Quantile Regression Endpoint
-    if recreate or not Endpoint("abalone-qr").exists():
-        m = Model("abalone-quantile-reg")
+    if recreate or not Endpoint("abalone-quantile").exists():
+        m = Model("abalone-quantile")
         end = m.to_endpoint(tags=["abalone", "quantiles"])
 
         # Run auto-inference on the Abalone Quantile Regression Endpoint
         end.auto_inference(capture=True)
 
     # Create the AQSol Quantile Regression Model
-    if recreate or not Model("aqsol-quantile-reg").exists():
+    if recreate or not Model("aqsol-quantile").exists():
 
         # AQSol Features
         features = [
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         # Transform FeatureSet into Quantile Regression Model
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
-            name="aqsol-quantile-reg",
+            name="aqsol-quantile",
             model_type=ModelType.QUANTILE_REGRESSOR,
             target_column="solubility",
             feature_list=features,
@@ -78,8 +78,8 @@ if __name__ == "__main__":
         )
 
     # Create the AQSol Quantile Regression Endpoint
-    if recreate or not Endpoint("aqsol-qr").exists():
-        m = Model("aqsol-quantile-reg")
+    if recreate or not Endpoint("aqsol-quantile").exists():
+        m = Model("aqsol-quantile")
         end = m.to_endpoint(tags=["aqsol", "quantiles"])
 
         # Run auto-inference on the AQSol Quantile Regression Endpoint
