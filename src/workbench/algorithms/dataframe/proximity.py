@@ -55,13 +55,14 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-        self, query_id: Union[int, str], radius: float = None, include_self: bool = True, add_columns: List[str] = None
+            self, query_ids: Union[Union[int, str], List[Union[int, str]]],
+            radius: float = None, include_self: bool = True, add_columns: List[str] = None
     ) -> pd.DataFrame:
         """
-        Return neighbors of the given query ID, either by fixed neighbors or within a radius.
+        Return neighbors for one or more query IDs, either by fixed neighbors or within a radius.
 
         Args:
-            query_id (Union[int, str]): The ID of the query point.
+            query_ids (Union[int, str, List[Union[int, str]]]): One or more query IDs.
             radius (float, optional): Optional radius within which neighbors are to be included.
             include_self (bool): Whether to include the query ID itself in the neighbor results.
             add_columns (List[str], optional): Optional list of additional columns to include.
@@ -69,16 +70,26 @@ class Proximity:
         Returns:
             pd.DataFrame: A DataFrame of neighbors and their distances.
         """
-        if query_id not in self.df[self.id_column].values:
-            raise ValueError(f"Query ID {query_id} not found in the DataFrame")
-        query_idx = self.df.index[self.df[self.id_column] == query_id][0]
-        if radius is not None:
-            distances, indices = self.nn.radius_neighbors([self.X[query_idx]], radius=radius)
-            distances, indices = distances[0], indices[0]
-        else:
-            distances, indices = self.nn.kneighbors([self.X[query_idx]])
-            distances, indices = distances[0], indices[0]
-        return pd.DataFrame(self._build_results(query_idx, distances, indices, include_self, add_columns))
+        if not isinstance(query_ids, list):
+            query_ids = [query_ids]
+
+        all_results = []
+        for query_id in query_ids:
+            if query_id not in self.df[self.id_column].values:
+                raise ValueError(f"Query ID {query_id} not found in the DataFrame")
+            query_idx = self.df.index[self.df[self.id_column] == query_id][0]
+
+            if radius is not None:
+                distances, indices = self.nn.radius_neighbors([self.X[query_idx]], radius=radius)
+                distances, indices = distances[0], indices[0]
+            else:
+                distances, indices = self.nn.kneighbors([self.X[query_idx]])
+                distances, indices = distances[0], indices[0]
+
+            results = self._build_results(query_idx, distances, indices, include_self, add_columns)
+            all_results.extend(results)
+
+        return pd.DataFrame(all_results)
 
     def _build_results(
         self, query_idx: int, distances, indices, include_self: bool, add_columns: List[str]
@@ -128,10 +139,10 @@ if __name__ == "__main__":
     print(prox.all_neighbors())
 
     # Test the neighbors method
-    print(prox.neighbors(query_id=1))
+    print(prox.neighbors(query_ids=1))
 
     # Test the neighbors method with radius
-    print(prox.neighbors(query_id=1, radius=2.0))
+    print(prox.neighbors(query_ids=[1, 2], radius=2.0))
 
     # Test with Features list
     prox = Proximity(df, id_column="ID", features=["Feature1"], n_neighbors=2)
@@ -151,4 +162,26 @@ if __name__ == "__main__":
     print(prox.all_neighbors())
 
     # Test the neighbors method
-    print(prox.neighbors(query_id="a", add_columns=["Feature1", "Feature2"]))
+    print(prox.neighbors(query_ids=["a", "b"], add_columns=["Feature1", "Feature2"]))
+
+    # Time neighbors with all IDs versus calling all_neighbors
+    import time
+    start_time = time.time()
+    df = prox.neighbors(query_ids=["a", "b", "c", "d", "e"], include_self=False)
+    end_time = time.time()
+    print(f"Time taken for neighbors: {end_time - start_time:.4f} seconds")
+    start_time = time.time()
+    df_all = prox.all_neighbors()
+    end_time = time.time()
+    print(f"Time taken for all_neighbors: {end_time - start_time:.4f} seconds")
+
+    # Now compare the two dataframes
+    print("Neighbors DataFrame:")
+    print(df)
+    print("\nAll Neighbors DataFrame:")
+    print(df_all)
+    # Check for any discrepancies
+    if df.equals(df_all):
+        print("The two DataFrames are equal :)")
+    else:
+        print("ERRPR: The two DataFrames are not equal!")
