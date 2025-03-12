@@ -91,7 +91,7 @@ class FingerprintProximity:
 
         return neighbor_info
 
-    def find_neighbors(
+    def neighbors(
             self,
             query_df: pd.DataFrame,
             min_similarity: float = None,
@@ -164,7 +164,7 @@ class FingerprintProximity:
 
         return pd.DataFrame(all_results)
 
-    def find_all_neighbors(
+    def all_neighbors(
             self,
             min_similarity: float = None,
             max_neighbors: int = None,
@@ -184,7 +184,7 @@ class FingerprintProximity:
             DataFrame containing neighbors and similarities
         """
         # Use the same method but with the original dataframe as query
-        return self.find_neighbors(
+        return self.neighbors(
             query_df=self.df,
             min_similarity=min_similarity,
             max_neighbors=max_neighbors,
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     # Example DataFrame
     data = {
         "id": ["a", "b", "c", "d"],
-        "fingerprint": ["101010", "111010", "101210", "011300"],
+        "fingerprint": ["101010", "111010", "101110", "011100"],
     }
     df = pd.DataFrame(data)
 
@@ -210,16 +210,16 @@ if __name__ == "__main__":
 
     # Test 1: All neighbors
     print("\n--- Test 1: All Neighbors ---")
-    all_neighbors_df = proximity.find_all_neighbors()
+    all_neighbors_df = proximity.all_neighbors()
     print(all_neighbors_df)
 
     # Test 2: Neighbors for a specific query
     print("\n--- Test 2: Neighbors for Query ---")
     query_df = pd.DataFrame({"id": ["a"], "fingerprint": ["101010"]})
-    query_neighbors_df = proximity.find_neighbors(query_df=query_df)
+    query_neighbors_df = proximity.neighbors(query_df=query_df)
     print(query_neighbors_df)
 
     # Test 3: Neighbors with similarity threshold
     print("\n--- Test 3: Neighbors with Minimum Similarity 0.5 ---")
-    query_neighbors_sim_df = proximity.find_neighbors(query_df=query_df, min_similarity=0.5)
+    query_neighbors_sim_df = proximity.neighbors(query_df=query_df, min_similarity=0.5)
     print(query_neighbors_sim_df)
