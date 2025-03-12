@@ -190,7 +190,7 @@ if __name__ == "__main__":
     print(f"R2: {r2:.3f}")
     print(f"NumRows: {len(result_df)}")
 
-    # Now save the both the target quantile and residual quantiles models
+    # Now save both the target quantile and residual quantiles models
     for name, model in q_models.items():
         model_path = os.path.join(args.model_dir, f"{name}.json")
         print(f"Saving model:  {model_path}")

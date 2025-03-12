@@ -18,7 +18,7 @@ class FeatureSpaceProximity(Proximity):
 
         Args:
             model (Model): A Workbench model object.
-
+            n_neighbors (int): Number of neighbors to compute. Defaults to 10.
         """
 
         # Grab the features and target from the model
