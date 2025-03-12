@@ -381,4 +381,4 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ScatterPlot, input_data=df, theme="ideaya", suppress_hover_display=True).run()
+    PluginUnitTest(ScatterPlot, input_data=df, theme="dark", suppress_hover_display=True).run()
