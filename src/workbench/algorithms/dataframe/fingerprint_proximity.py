@@ -97,7 +97,7 @@ if __name__ == "__main__":
     # Example DataFrame
     data = {
         "id": ["a", "b", "c", "d"],
-        "fingerprint": ["101010", "111010", "101110", "011100"],
+        "fingerprint": ["101010", "111010", "101210", "011300"],
     }
     df = pd.DataFrame(data)
 

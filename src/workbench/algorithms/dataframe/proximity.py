@@ -58,9 +58,9 @@ class Proximity:
         for i, (dists, nbrs) in enumerate(zip(distances, indices)):
             query_id = self.df.iloc[i][self.id_column]
 
-            # Process all neighbors except self
+            # Process neighbors
             for neighbor_idx, dist in zip(nbrs, dists):
-                # Skip self (neighbor index == my index)
+                # Skip self (neighbor index == current row index)
                 if neighbor_idx == i:
                     continue
                 results.append(self._build_neighbor_result(
