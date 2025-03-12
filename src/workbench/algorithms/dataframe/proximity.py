@@ -56,11 +56,11 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-            self,
-            query_df: pd.DataFrame,
-            radius: float = None,
-            include_self: bool = True,
-            add_columns: List[str] = None,
+        self,
+        query_df: pd.DataFrame,
+        radius: float = None,
+        include_self: bool = True,
+        add_columns: List[str] = None,
     ) -> pd.DataFrame:
         """
         Return neighbors for rows in a query DataFrame.
@@ -94,10 +94,10 @@ class Proximity:
                 }
                 # Add extra columns if available.
                 relevant_cols = (
-                        [self.target, "prediction"]
-                        + [c for c in self.df.columns if "_proba" in c or "residual" in c]
-                        + ["outlier"]
-                        + (add_columns or [])
+                    [self.target, "prediction"]
+                    + [c for c in self.df.columns if "_proba" in c or "residual" in c]
+                    + ["outlier"]
+                    + (add_columns or [])
                 )
                 for col in filter(lambda c: c in self.df.columns, relevant_cols):
                     neighbor_info[col] = self.df.iloc[neighbor_idx][col]
