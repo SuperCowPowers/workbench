@@ -33,12 +33,13 @@ class Proximity:
         self.n_neighbors = min(n_neighbors, len(self.df) - 1)
         self.target = target
         self.features = features
+        self.scaler = StandardScaler()
 
         self._prepare_data()
 
     def _prepare_data(self) -> None:
         """Standardize features and fit Nearest Neighbors model."""
-        self.X = StandardScaler().fit_transform(self.df[self.features])
+        self.X = self.scaler.fit_transform(self.df[self.features])
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
     def all_neighbors(self) -> pd.DataFrame:
@@ -55,43 +56,52 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-        self,
-        query_ids: Union[Union[int, str], List[Union[int, str]]],
-        radius: float = None,
-        include_self: bool = True,
-        add_columns: List[str] = None,
+            self,
+            query_df: pd.DataFrame,
+            radius: float = None,
+            include_self: bool = True,
+            add_columns: List[str] = None,
     ) -> pd.DataFrame:
         """
-        Return neighbors for one or more query IDs, either by fixed neighbors or within a radius.
-
-        Args:
-            query_ids (Union[int, str, List[Union[int, str]]]): One or more query IDs.
-            radius (float, optional): Optional radius within which neighbors are to be included.
-            include_self (bool): Whether to include the query ID itself in the neighbor results.
-            add_columns (List[str], optional): Optional list of additional columns to include.
-
-        Returns:
-            pd.DataFrame: A DataFrame of neighbors and their distances.
+        Return neighbors for rows in a query DataFrame.
+        The query DataFrame must include the feature columns and the id_column.
         """
-        if not isinstance(query_ids, list):
-            query_ids = [query_ids]
+        required_cols = set(self.features + [self.id_column])
+        missing = required_cols - set(query_df.columns)
+        if missing:
+            raise ValueError(f"Query DataFrame is missing required columns: {missing}")
+
+        # Transform the query features using the model's scaler.
+        X_query = self.scaler.transform(query_df[self.features])
+
+        if radius is not None:
+            distances, indices = self.nn.radius_neighbors(X_query, radius=radius)
+        else:
+            distances, indices = self.nn.kneighbors(X_query)
 
         all_results = []
-        for query_id in query_ids:
-            if query_id not in self.df[self.id_column].values:
-                raise ValueError(f"Query ID {query_id} not found in the DataFrame")
-            query_idx = self.df.index[self.df[self.id_column] == query_id][0]
-
-            if radius is not None:
-                distances, indices = self.nn.radius_neighbors([self.X[query_idx]], radius=radius)
-                distances, indices = distances[0], indices[0]
-            else:
-                distances, indices = self.nn.kneighbors([self.X[query_idx]])
-                distances, indices = distances[0], indices[0]
-
-            results = self._build_results(query_idx, distances, indices, include_self, add_columns)
-            all_results.extend(results)
-
+        for i, (dists, nbrs) in enumerate(zip(distances, indices)):
+            query_id = query_df.iloc[i][self.id_column]
+            for neighbor_idx, dist in zip(nbrs, dists):
+                neighbor_id = self.df.iloc[neighbor_idx][self.id_column]
+                # Skip if the neighbor is the query itself.
+                if not include_self and neighbor_id == query_id:
+                    continue
+                neighbor_info = {
+                    self.id_column: query_id,
+                    "neighbor_id": neighbor_id,
+                    "distance": dist,
+                }
+                # Add extra columns if available.
+                relevant_cols = (
+                        [self.target, "prediction"]
+                        + [c for c in self.df.columns if "_proba" in c or "residual" in c]
+                        + ["outlier"]
+                        + (add_columns or [])
+                )
+                for col in filter(lambda c: c in self.df.columns, relevant_cols):
+                    neighbor_info[col] = self.df.iloc[neighbor_idx][col]
+                all_results.append(neighbor_info)
         return pd.DataFrame(all_results)
 
     def _build_results(
@@ -142,10 +152,20 @@ if __name__ == "__main__":
     print(prox.all_neighbors())
 
     # Test the neighbors method
-    print(prox.neighbors(query_ids=1))
+    print(prox.neighbors(query_df=df.iloc[[0]]))
 
     # Test the neighbors method with radius
-    print(prox.neighbors(query_ids=[1, 2], radius=2.0))
+    print(prox.neighbors(query_df=df.iloc[0:2], radius=2.0))
+
+    # Test with data that isn't in the 'train' dataframe
+    query_data = {
+        "ID": [6],
+        "Feature1": [0.31],
+        "Feature2": [0.31],
+        "Feature3": [2.31],
+    }
+    query_df = pd.DataFrame(query_data)
+    print(prox.neighbors(query_df=query_df))
 
     # Test with Features list
     prox = Proximity(df, id_column="ID", features=["Feature1"], n_neighbors=2)
@@ -153,7 +173,7 @@ if __name__ == "__main__":
 
     # Create a sample DataFrame
     data = {
-        "foo_id": ["a", "b", "c", "d", "e"],  # Testing differnt ID column name
+        "foo_id": ["a", "b", "c", "d", "e"],  # Testing string IDs
         "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
         "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
         "target": [1, 0, 1, 0, 5],
@@ -165,13 +185,13 @@ if __name__ == "__main__":
     print(prox.all_neighbors())
 
     # Test the neighbors method
-    print(prox.neighbors(query_ids=["a", "b"], add_columns=["Feature1", "Feature2"]))
+    print(prox.neighbors(query_df=df.iloc[0:2], add_columns=["Feature1", "Feature2"]))
 
     # Time neighbors with all IDs versus calling all_neighbors
     import time
 
     start_time = time.time()
-    df = prox.neighbors(query_ids=["a", "b", "c", "d", "e"], include_self=False)
+    df = prox.neighbors(query_df=df, include_self=False)
     end_time = time.time()
     print(f"Time taken for neighbors: {end_time - start_time:.4f} seconds")
     start_time = time.time()
