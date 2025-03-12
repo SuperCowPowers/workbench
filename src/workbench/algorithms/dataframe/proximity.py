@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
-from typing import Union, List
+from typing import Union, List, Dict, Tuple, Optional
 import logging
 
 # Set up logging
@@ -11,12 +11,12 @@ log = logging.getLogger("workbench")
 
 class Proximity:
     def __init__(
-        self,
-        df: pd.DataFrame,
-        id_column: Union[int, str],
-        features: List[str],
-        target: str = None,
-        n_neighbors: int = 5,
+            self,
+            df: pd.DataFrame,
+            id_column: Union[int, str],
+            features: List[str],
+            target: str = None,
+            n_neighbors: int = 5,
     ) -> None:
         """
         Initialize the Proximity class.
@@ -42,93 +42,135 @@ class Proximity:
         self.X = self.scaler.fit_transform(self.df[self.features])
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
-    def all_neighbors(self) -> pd.DataFrame:
+    def _build_neighbor_result(
+            self,
+            query_id,
+            neighbor_idx: int,
+            distance: float,
+            add_columns: Optional[List[str]] = None
+    ) -> Dict:
+        """
+        Build a result dictionary for a single neighbor.
+
+        Args:
+            query_id: ID of the query point
+            neighbor_idx: Index of the neighbor in the original DataFrame
+            distance: Distance between query and neighbor
+            add_columns: Additional columns to include in result
+
+        Returns:
+            Dictionary containing neighbor information
+        """
+        neighbor_id = self.df.iloc[neighbor_idx][self.id_column]
+
+        # Basic neighbor info
+        neighbor_info = {
+            self.id_column: query_id,
+            "neighbor_id": neighbor_id,
+            "distance": distance,
+        }
+
+        # Determine which additional columns to include
+        relevant_cols = [self.target, "prediction"] if self.target else []
+        relevant_cols += [c for c in self.df.columns if "_proba" in c or "residual" in c]
+        relevant_cols += ["outlier"]
+
+        # Add user-specified columns
+        if add_columns:
+            relevant_cols += add_columns
+
+        # Add values for each relevant column that exists in the dataframe
+        for col in filter(lambda c: c in self.df.columns, relevant_cols):
+            neighbor_info[col] = self.df.iloc[neighbor_idx][col]
+
+        return neighbor_info
+
+    def all_neighbors(self, add_columns: List[str] = None) -> pd.DataFrame:
         """
         Compute nearest neighbors for all rows in the dataset.
+
+        Args:
+            add_columns: Additional columns to include in results
 
         Returns:
             pd.DataFrame: A DataFrame of neighbors and their distances.
         """
         distances, indices = self.nn.kneighbors(self.X)
         results = []
+
         for i, (dists, nbrs) in enumerate(zip(distances, indices)):
-            results.extend(self._build_results(i, dists, nbrs, include_self=False, add_columns=None))
+            query_id = self.df.iloc[i][self.id_column]
+
+            # Skip the first neighbor (self) and process the rest
+            for j, (neighbor_idx, dist) in enumerate(zip(nbrs, dists)):
+                # Skip self (first neighbor, distance=0)
+                if j == 0:
+                    continue
+
+                results.append(self._build_neighbor_result(
+                    query_id=query_id,
+                    neighbor_idx=neighbor_idx,
+                    distance=dist,
+                    add_columns=add_columns
+                ))
+
         return pd.DataFrame(results)
 
     def neighbors(
-        self,
-        query_df: pd.DataFrame,
-        radius: float = None,
-        include_self: bool = True,
-        add_columns: List[str] = None,
+            self,
+            query_df: pd.DataFrame,
+            radius: float = None,
+            include_self: bool = True,
+            add_columns: List[str] = None,
     ) -> pd.DataFrame:
         """
         Return neighbors for rows in a query DataFrame.
-        The query DataFrame must include the feature columns and the id_column.
+
+        Args:
+            query_df: DataFrame containing query points
+            radius: If provided, find all neighbors within this radius
+            include_self: Whether to include self in results (if present)
+            add_columns: Additional columns to include in results
+
+        Returns:
+            DataFrame containing neighbors and distances
+
+        Note: The query DataFrame must include the feature columns and the id_column.
         """
+        # Verify required columns are present
         required_cols = set(self.features + [self.id_column])
         missing = required_cols - set(query_df.columns)
         if missing:
             raise ValueError(f"Query DataFrame is missing required columns: {missing}")
 
-        # Transform the query features using the model's scaler.
+        # Transform the query features using the model's scaler
         X_query = self.scaler.transform(query_df[self.features])
 
+        # Get neighbors using either radius or k-nearest neighbors
         if radius is not None:
             distances, indices = self.nn.radius_neighbors(X_query, radius=radius)
         else:
             distances, indices = self.nn.kneighbors(X_query)
 
+        # Build results
         all_results = []
         for i, (dists, nbrs) in enumerate(zip(distances, indices)):
             query_id = query_df.iloc[i][self.id_column]
+
             for neighbor_idx, dist in zip(nbrs, dists):
+                # Skip if the neighbor is the query itself and include_self is False
                 neighbor_id = self.df.iloc[neighbor_idx][self.id_column]
-                # Skip if the neighbor is the query itself.
                 if not include_self and neighbor_id == query_id:
                     continue
-                neighbor_info = {
-                    self.id_column: query_id,
-                    "neighbor_id": neighbor_id,
-                    "distance": dist,
-                }
-                # Add extra columns if available.
-                relevant_cols = (
-                    [self.target, "prediction"]
-                    + [c for c in self.df.columns if "_proba" in c or "residual" in c]
-                    + ["outlier"]
-                    + (add_columns or [])
-                )
-                for col in filter(lambda c: c in self.df.columns, relevant_cols):
-                    neighbor_info[col] = self.df.iloc[neighbor_idx][col]
-                all_results.append(neighbor_info)
-        return pd.DataFrame(all_results)
 
-    def _build_results(
-        self, query_idx: int, distances, indices, include_self: bool, add_columns: List[str]
-    ) -> List[dict]:
-        """Internal: Convert indices and distances to a list of dictionaries."""
-        results = []
-        query_id = self.df.at[query_idx, self.id_column]
-        for neighbor_idx, dist in zip(indices, distances):
-            if not include_self and query_idx == neighbor_idx:
-                continue
-            neighbor_info = {
-                self.id_column: query_id,
-                "neighbor_id": self.df.at[neighbor_idx, self.id_column],
-                "distance": dist,
-            }
-            # Collect extra columns if they exist.
-            relevant_cols = (
-                [self.target, "prediction"]
-                + [c for c in self.df.columns if "_proba" in c or "residual" in c]
-                + ["outlier"]
-                + (add_columns or [])
-            )
-            for col in filter(lambda c: c in self.df.columns, relevant_cols):
-                neighbor_info[col] = self.df.iloc[neighbor_idx][col]
-            results.append(neighbor_info)
-        return results
+                all_results.append(self._build_neighbor_result(
+                    query_id=query_id,
+                    neighbor_idx=neighbor_idx,
+                    distance=dist,
+                    add_columns=add_columns
+                ))
+
+        return pd.DataFrame(all_results)
 
 
 # Testing the Proximity class
