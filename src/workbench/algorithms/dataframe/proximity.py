@@ -4,6 +4,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
 from typing import Union, List, Dict, Tuple, Optional
 import logging
+import pickle
+import os
+import json
+from pathlib import Path
 
 # Set up logging
 log = logging.getLogger("workbench")
@@ -34,6 +38,8 @@ class Proximity:
         self.target = target
         self.features = features
         self.scaler = StandardScaler()
+        self.X = None
+        self.nn = None
 
         self._prepare_data()
 
@@ -170,6 +176,85 @@ class Proximity:
             neighbor_info[col] = self.df.iloc[neighbor_idx][col]
 
         return neighbor_info
+
+    def serialize(self, directory: str) -> None:
+        """
+        Serialize the Proximity model to a directory.
+
+        Args:
+            directory: Directory path to save the model components
+        """
+        # Create directory if it doesn't exist
+        os.makedirs(directory, exist_ok=True)
+
+        # Save metadata
+        metadata = {
+            'id_column': self.id_column,
+            'features': self.features,
+            'target': self.target,
+            'n_neighbors': self.n_neighbors,
+        }
+
+        with open(os.path.join(directory, 'metadata.json'), 'w') as f:
+            json.dump(metadata, f)
+
+        # Save the DataFrame
+        self.df.to_pickle(os.path.join(directory, 'df.pkl'))
+
+        # Save the scaler and nearest neighbors model
+        with open(os.path.join(directory, 'scaler.pkl'), 'wb') as f:
+            pickle.dump(self.scaler, f)
+
+        with open(os.path.join(directory, 'nn_model.pkl'), 'wb') as f:
+            pickle.dump(self.nn, f)
+
+        log.info(f"Proximity model serialized to {directory}")
+
+    @classmethod
+    def deserialize(cls, directory: str) -> 'Proximity':
+        """
+        Deserialize a Proximity model from a directory.
+
+        Args:
+            directory: Directory path containing the serialized model components
+
+        Returns:
+            Proximity: A new Proximity instance
+        """
+        directory_path = Path(directory)
+        if not directory_path.exists() or not directory_path.is_dir():
+            raise ValueError(f"Directory {directory} does not exist or is not a directory")
+
+        # Load metadata
+        with open(os.path.join(directory, 'metadata.json'), 'r') as f:
+            metadata = json.load(f)
+
+        # Load DataFrame
+        df_path = os.path.join(directory, 'df.pkl')
+        if not os.path.exists(df_path):
+            raise FileNotFoundError(f"DataFrame file not found at {df_path}")
+        df = pd.read_pickle(df_path)
+
+        # Create instance but skip _prepare_data
+        instance = cls.__new__(cls)
+        instance.df = df
+        instance.id_column = metadata['id_column']
+        instance.features = metadata['features']
+        instance.target = metadata['target']
+        instance.n_neighbors = metadata['n_neighbors']
+
+        # Load scaler and nn model
+        with open(os.path.join(directory, 'scaler.pkl'), 'rb') as f:
+            instance.scaler = pickle.load(f)
+
+        with open(os.path.join(directory, 'nn_model.pkl'), 'rb') as f:
+            instance.nn = pickle.load(f)
+
+        # Load X from scaler transform
+        instance.X = instance.scaler.transform(instance.df[instance.features])
+
+        log.info(f"Proximity model deserialized from {directory}")
+        return instance
 
 
 # Testing the Proximity class
