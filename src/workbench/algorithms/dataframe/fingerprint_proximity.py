@@ -46,9 +46,7 @@ class FingerprintProximity(Proximity):
         """
         return row["similarity"]
 
-    def neighbors(
-        self, query_df: pd.DataFrame, similarity: float = None, include_self: bool = False
-    ) -> pd.DataFrame:
+    def neighbors(self, query_df: pd.DataFrame, similarity: float = None, include_self: bool = False) -> pd.DataFrame:
         """
         Return neighbors of the given rows in the query_df, either by fixed neighbors or above a similarity threshold.
 
