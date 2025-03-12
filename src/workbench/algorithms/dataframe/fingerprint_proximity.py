@@ -23,7 +23,7 @@ class FingerprintProximity(Proximity):
             n_neighbors (int): Number of neighbors to compute.
         """
         self.fingerprint_column = fingerprint_column
-        super().__init__(df, id_column=id_column, n_neighbors=n_neighbors)
+        super().__init__(df, id_column=id_column, features=[self.fingerprint_column], n_neighbors=n_neighbors)
 
     def _prepare_data(self) -> None:
         """
@@ -47,13 +47,13 @@ class FingerprintProximity(Proximity):
         return row["similarity"]
 
     def neighbors(
-        self, query_id: Union[int, str], similarity: float = None, include_self: bool = False
+        self, query_df: pd.DataFrame, similarity: float = None, include_self: bool = False
     ) -> pd.DataFrame:
         """
-        Return neighbors of the given query ID, either by fixed neighbors or above a similarity threshold.
+        Return neighbors of the given rows in the query_df, either by fixed neighbors or above a similarity threshold.
 
         Args:
-            query_id (Union[int, str]): The ID of the query point.
+            query_df (pd.DataFrame): The dataframe with query rows.
             similarity (float): Optional similarity threshold above which neighbors are to be included.
             include_self (bool): Whether to include the query ID itself in the neighbor results.
 
@@ -62,7 +62,7 @@ class FingerprintProximity(Proximity):
         """
         # Convert similarity to a radius (1 - similarity)
         radius = 1 - similarity if similarity is not None else None
-        neighbors_df = super().neighbors(query_id=query_id, radius=radius, include_self=include_self)
+        neighbors_df = super().neighbors(query_df=query_df, radius=radius, include_self=include_self)
 
         # Convert distances to Tanimoto similarities
         if "distance" in neighbors_df.columns:

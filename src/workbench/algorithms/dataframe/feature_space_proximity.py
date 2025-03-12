@@ -53,30 +53,33 @@ if __name__ == "__main__":
     m = Model("wine-classification")
     proximity = FeatureSpaceProximity(m)
 
-    # Neighbors Test using a single query ID
-    single_query_id = 5
-    single_query_neighbors = proximity.neighbors(single_query_id)
-    print("\nNeighbors for Query ID:", single_query_id)
+    # Neighbors Test using a single row from FeatureSet
+    fs = FeatureSet(m.get_input())
+    df = fs.pull_dataframe()
+    single_query_neighbors = proximity.neighbors(df.iloc[[0]])
+    print("\nNeighbors for Query ID:", df.iloc[0][fs.id_column])
     print(single_query_neighbors)
 
     # Test a Workbench regression model
     m = Model("abalone-regression")
     proximity = FeatureSpaceProximity(m)
 
-    # Neighbors Test using a single query ID
-    single_query_id = 5
-    single_query_neighbors = proximity.neighbors(single_query_id)
-    print("\nNeighbors for Query ID:", single_query_id)
+    # Neighbors Test using a multiple rows from FeatureSet
+    fs = FeatureSet(m.get_input())
+    df = fs.pull_dataframe()
+    single_query_neighbors = proximity.neighbors(df.iloc[0:2])
+    print("\nNeighbors for Query ID:", df.iloc[0][fs.id_column])
     print(single_query_neighbors)
 
     # Test a Workbench regression model
     m = Model("aqsol-regression")
     proximity = FeatureSpaceProximity(m)
 
-    # Neighbors Test using a single query ID
-    single_query_id = "A-3093"
-    single_query_neighbors = proximity.neighbors(single_query_id)
-    print("\nNeighbors for Query ID:", single_query_id)
+    # Neighbors Test using a multiple rowsfrom FeatureSet
+    fs = FeatureSet(m.get_input())
+    df = fs.pull_dataframe()
+    single_query_neighbors = proximity.neighbors(df.iloc[5:7])
+    print("\nNeighbors for Query ID:", df.iloc[5][fs.id_column])
     print(single_query_neighbors)
 
     # Time the all_neighbors method
