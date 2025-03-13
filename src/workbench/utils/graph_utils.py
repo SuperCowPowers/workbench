@@ -242,7 +242,6 @@ if __name__ == "__main__":
 
     # Load a graph from a file
 
-
     # Load a graph from the GraphStore
     graph_store = GraphStore()
     if graph_store.check("test/karate_club"):
