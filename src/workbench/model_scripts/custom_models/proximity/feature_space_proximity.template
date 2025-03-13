@@ -131,6 +131,6 @@ def predict_fn(df, model):
     # Match column names before prediction if needed
     df = match_features_case_insensitive(df, model.features + [model.id_column])
 
-    # Compute Proximities
+    # Compute Nearest neighbors
     df = model.neighbors(df)
     return df
