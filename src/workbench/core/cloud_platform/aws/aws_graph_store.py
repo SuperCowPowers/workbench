@@ -108,7 +108,7 @@ class AWSGraphStore:
             graph_json = json.loads(response["Body"].read().decode("utf-8"), object_hook=custom_decoder)
 
             # Deserialize the graph
-            graph = nx.readwrite.json_graph.node_link_graph(graph_json)
+            graph = nx.readwrite.json_graph.node_link_graph(graph_json, edges="edges")
 
             # Replace "_node_id" back to "id" in the graph's node attributes
             for node in graph.nodes:
@@ -133,7 +133,7 @@ class AWSGraphStore:
         bucket, key = self._parse_s3_uri(s3_uri)
 
         try:
-            graph_json = nx.readwrite.json_graph.node_link_data(graph)
+            graph_json = nx.readwrite.json_graph.node_link_data(graph, edges="edges")
 
             # If we have an "id" field, replicate that into "_node_id" for serialization
             for node in graph_json["nodes"]:

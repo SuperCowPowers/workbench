@@ -63,7 +63,7 @@ def details(graph) -> dict:
 
 def size(graph) -> float:
     """Return the size of this graph artifact in MegaBytes"""
-    graph_str = json.dumps(nx.readwrite.json_graph.node_link_data(graph))
+    graph_str = json.dumps(nx.readwrite.json_graph.node_link_data(graph, edges="edges"))
     return len(graph_str.encode("utf-8")) / (1024 * 1024)
 
 
@@ -135,7 +135,7 @@ def load_graph_from_file(file_path: str) -> Optional[nx.Graph]:
     try:
         with open(file_path, "r") as file:
             graph_json = json.load(file)
-        return nx.readwrite.json_graph.node_link_graph(graph_json)
+        return nx.readwrite.json_graph.node_link_graph(graph_json, edges="edges")
     except FileNotFoundError:
         log.error(f"File not found: {file_path}")
         return None
@@ -239,6 +239,9 @@ if __name__ == "__main__":
     # Check the graph
     print(G.nodes(data=True))
     print(G.edges(data=True))
+
+    # Load a graph from a file
+
 
     # Load a graph from the GraphStore
     graph_store = GraphStore()
