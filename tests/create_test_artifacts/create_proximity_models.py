@@ -21,7 +21,7 @@ log = logging.getLogger("workbench")
 if __name__ == "__main__":
 
     # Recreate Flag in case you want to recreate the artifacts
-    recreate = True
+    recreate = False
 
     # A Proximity Model based on Abalone Features
     if recreate or not Model("abalone-prox").exists():
