@@ -12,8 +12,8 @@ Endpoints:
 import logging
 
 # Workbench Imports
-from workbench.api import FeatureSet, Model, ModelType, Endpoint
-from workbench.utils.model_utils import get_custom_script_path, proximity_model
+from workbench.api import Model, Endpoint
+from workbench.utils.model_utils import proximity_model
 
 log = logging.getLogger("workbench")
 
