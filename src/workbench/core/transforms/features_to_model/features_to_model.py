@@ -10,7 +10,7 @@ from workbench.core.transforms.transform import Transform, TransformInput, Trans
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelImages
 from workbench.core.artifacts.artifact import Artifact
-from workbench.model_scripts.script_generation import generate_model_script
+from workbench.model_scripts.script_generation import generate_model_script, fill_template
 from workbench.utils.model_utils import supported_instance_types
 
 
@@ -60,7 +60,7 @@ class FeaturesToModel(Transform):
         self.model_type = model_type
         self.scikit_model_class = scikit_model_class
         self.model_import_str = model_import_str
-        self.custom_script = custom_script
+        self.custom_script = str(custom_script) if custom_script else None
         self.estimator = None
         self.model_description = None
         self.model_training_root = self.models_s3_path + "/training"
@@ -143,23 +143,27 @@ class FeaturesToModel(Transform):
         self.model_feature_list = feature_list
         self.log.important(f"Feature List for Modeling: {self.model_feature_list}")
 
+        # Set up our parameters for the model script
+        template_params = {
+            "model_imports": self.model_import_str,
+            "model_type": self.model_type,
+            "scikit_model_class": self.scikit_model_class,
+            "target_column": self.target_column,
+            "feature_list": self.model_feature_list,
+            "model_metrics_s3_path": f"{self.model_training_root}/{self.output_uuid}",
+            "train_all_data": train_all_data,
+            "id_column": feature_set.id_column,
+        }
+
         # Custom Script
         if self.custom_script:
             script_path = self.custom_script
+            if self.custom_script.endswith(".template"):
+                script_path = fill_template(self.custom_script, template_params, "generated_model_script.py")
             self.log.info(f"Custom script path: {script_path}")
 
         # We're using one of the built-in model script templates
         else:
-            # Set up our parameters for the model script
-            template_params = {
-                "model_imports": self.model_import_str,
-                "model_type": self.model_type,
-                "scikit_model_class": self.scikit_model_class,
-                "target_column": self.target_column,
-                "feature_list": self.model_feature_list,
-                "model_metrics_s3_path": f"{self.model_training_root}/{self.output_uuid}",
-                "train_all_data": train_all_data,
-            }
             # Generate our model script
             script_path = generate_model_script(template_params)
 

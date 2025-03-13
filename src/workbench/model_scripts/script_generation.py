@@ -42,16 +42,22 @@ def copy_imports_to_script_dir(script_path: str, imports: list[str]) -> None:
         print(f"Copied {source_path} to {destination_path}")
 
 
-def fill_template(template: str, params: dict) -> str:
+def fill_template(template_path: str, params: dict, output_script: str) -> str:
     """
     Fill in the placeholders in the template with the values provided in params,
     ensuring that the correct Python data types are used.
     Args:
-        template (str): The template string with placeholders.
+        template_path (str): The path to the template file.
         params (dict): A dictionary with placeholder keys and their corresponding values.
+        output_script (str): The name of the generated model script.
     Returns:
-        str: The template with placeholders replaced by their values.
+        str: The path to the generated model script.
     """
+
+    # Read the template file
+    with open(template_path, "r") as fp:
+        template = fp.read()
+
     # Perform the replacements
     for key, value in params.items():
         # For string values wrap them in quotes (except for model_imports and scikit_model_class)
@@ -66,7 +72,12 @@ def fill_template(template: str, params: dict) -> str:
         msg = "Not all template placeholders were replaced. Please check your params."
         log.critical(msg)
         raise ValueError(msg)
-    return template
+
+    # Write out the generated model script and return the name
+    output_path = os.path.join(os.path.dirname(template_path), output_script)
+    with open(output_path, "w") as fp:
+        fp.write(template)
+    return output_path
 
 
 def generate_model_script(template_params: dict) -> str:
@@ -87,9 +98,6 @@ def generate_model_script(template_params: dict) -> str:
         str: The name of the generated model script
     """
     from workbench.api import ModelType  # Avoid circular import
-
-    # Output script name
-    output_script = "generated_model_script.py"
 
     # Determine which template to use based on model type
     if template_params.get("scikit_model_class"):
@@ -113,20 +121,13 @@ def generate_model_script(template_params: dict) -> str:
     dir_path = Path(__file__).parent.absolute()
     model_script_dir = os.path.join(dir_path, model_script_dir)
     template_path = os.path.join(model_script_dir, template_name)
-    with open(template_path, "r") as fp:
-        template = fp.read()
 
-    # Fill in the template using the utility function
-    aws_script = fill_template(template, template_params)
-
-    # Write out the generated model script and return the name
-    output_path = os.path.join(model_script_dir, output_script)
-    with open(output_path, "w") as fp:
-        fp.write(aws_script)
+    # Fill in the template and write out the generated model script
+    output_path = fill_template(template_path, template_params, "generated_model_script.py")
 
     # Ensure the model script directory only contains the template, model script, and a requirements file
     for file in os.listdir(model_script_dir):
-        if file not in [output_script, "requirements.txt"] and not file.endswith(".template"):
+        if file not in ["generated_model_script.py", "requirements.txt"] and not file.endswith(".template"):
             log.warning(f"Unexpected file {file} found in model_script_dir...")
 
     return output_path
