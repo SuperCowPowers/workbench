@@ -10,11 +10,7 @@ log = logging.getLogger("workbench")
 
 class FingerprintProximity:
     def __init__(
-            self,
-            df: pd.DataFrame,
-            fingerprint_column: str,
-            id_column: Union[int, str],
-            n_neighbors: int = 10
+        self, df: pd.DataFrame, fingerprint_column: str, id_column: Union[int, str], n_neighbors: int = 10
     ) -> None:
         """
         Initialize the FingerprintProximity class for binary fingerprint similarity.
@@ -51,17 +47,10 @@ class FingerprintProximity:
 
         # Use Jaccard similarity for binary fingerprints
         log.info("Computing NearestNeighbors with Jaccard metric...")
-        self.nn = NearestNeighbors(
-            metric="jaccard",
-            n_neighbors=self.n_neighbors + 1
-        ).fit(self.X)
+        self.nn = NearestNeighbors(metric="jaccard", n_neighbors=self.n_neighbors + 1).fit(self.X)
 
     def _build_neighbor_result(
-            self,
-            query_id,
-            neighbor_idx: int,
-            similarity: float,
-            add_columns: Optional[List[str]] = None
+        self, query_id, neighbor_idx: int, similarity: float, add_columns: Optional[List[str]] = None
     ) -> Dict:
         """
         Build a result dictionary for a single neighbor.
@@ -92,12 +81,12 @@ class FingerprintProximity:
         return neighbor_info
 
     def neighbors(
-            self,
-            query_df: pd.DataFrame,
-            min_similarity: float = None,
-            max_neighbors: int = None,
-            include_self: bool = False,
-            add_columns: List[str] = None,
+        self,
+        query_df: pd.DataFrame,
+        min_similarity: float = None,
+        max_neighbors: int = None,
+        include_self: bool = False,
+        add_columns: List[str] = None,
     ) -> pd.DataFrame:
         """
         Find neighbors for each row in the query DataFrame.
@@ -155,21 +144,20 @@ class FingerprintProximity:
                 # Convert distance to similarity
                 similarity = 1 - dist
 
-                all_results.append(self._build_neighbor_result(
-                    query_id=query_id,
-                    neighbor_idx=neighbor_idx,
-                    similarity=similarity,
-                    add_columns=add_columns
-                ))
+                all_results.append(
+                    self._build_neighbor_result(
+                        query_id=query_id, neighbor_idx=neighbor_idx, similarity=similarity, add_columns=add_columns
+                    )
+                )
 
         return pd.DataFrame(all_results)
 
     def all_neighbors(
-            self,
-            min_similarity: float = None,
-            max_neighbors: int = None,
-            include_self: bool = False,
-            add_columns: List[str] = None,
+        self,
+        min_similarity: float = None,
+        max_neighbors: int = None,
+        include_self: bool = False,
+        add_columns: List[str] = None,
     ) -> pd.DataFrame:
         """
         Find neighbors for all fingerprints in the dataset.
@@ -189,7 +177,7 @@ class FingerprintProximity:
             min_similarity=min_similarity,
             max_neighbors=max_neighbors,
             include_self=include_self,
-            add_columns=add_columns
+            add_columns=add_columns,
         )
 
 

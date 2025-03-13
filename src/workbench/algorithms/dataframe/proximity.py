@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
-from typing import Union, List, Dict, Tuple, Optional
+from typing import Union, List, Dict, Optional
 import logging
 import pickle
 import os
@@ -15,12 +15,12 @@ log = logging.getLogger("workbench")
 
 class Proximity:
     def __init__(
-            self,
-            df: pd.DataFrame,
-            id_column: Union[int, str],
-            features: List[str],
-            target: str = None,
-            n_neighbors: int = 5,
+        self,
+        df: pd.DataFrame,
+        id_column: Union[int, str],
+        features: List[str],
+        target: str = None,
+        n_neighbors: int = 5,
     ) -> None:
         """
         Initialize the Proximity class.
@@ -69,21 +69,20 @@ class Proximity:
                 # Skip self (neighbor index == current row index)
                 if neighbor_idx == i:
                     continue
-                results.append(self._build_neighbor_result(
-                    query_id=query_id,
-                    neighbor_idx=neighbor_idx,
-                    distance=dist,
-                    add_columns=add_columns
-                ))
+                results.append(
+                    self._build_neighbor_result(
+                        query_id=query_id, neighbor_idx=neighbor_idx, distance=dist, add_columns=add_columns
+                    )
+                )
 
         return pd.DataFrame(results)
 
     def neighbors(
-            self,
-            query_df: pd.DataFrame,
-            radius: float = None,
-            include_self: bool = True,
-            add_columns: List[str] = None,
+        self,
+        query_df: pd.DataFrame,
+        radius: float = None,
+        include_self: bool = True,
+        add_columns: List[str] = None,
     ) -> pd.DataFrame:
         """
         Return neighbors for rows in a query DataFrame.
@@ -125,21 +124,16 @@ class Proximity:
                 if not include_self and neighbor_id == query_id:
                     continue
 
-                all_results.append(self._build_neighbor_result(
-                    query_id=query_id,
-                    neighbor_idx=neighbor_idx,
-                    distance=dist,
-                    add_columns=add_columns
-                ))
+                all_results.append(
+                    self._build_neighbor_result(
+                        query_id=query_id, neighbor_idx=neighbor_idx, distance=dist, add_columns=add_columns
+                    )
+                )
 
         return pd.DataFrame(all_results)
 
     def _build_neighbor_result(
-            self,
-            query_id,
-            neighbor_idx: int,
-            distance: float,
-            add_columns: Optional[List[str]] = None
+        self, query_id, neighbor_idx: int, distance: float, add_columns: Optional[List[str]] = None
     ) -> Dict:
         """
         Internal: Build a result dictionary for a single neighbor.
@@ -189,29 +183,29 @@ class Proximity:
 
         # Save metadata
         metadata = {
-            'id_column': self.id_column,
-            'features': self.features,
-            'target': self.target,
-            'n_neighbors': self.n_neighbors,
+            "id_column": self.id_column,
+            "features": self.features,
+            "target": self.target,
+            "n_neighbors": self.n_neighbors,
         }
 
-        with open(os.path.join(directory, 'metadata.json'), 'w') as f:
+        with open(os.path.join(directory, "metadata.json"), "w") as f:
             json.dump(metadata, f)
 
         # Save the DataFrame
-        self.df.to_pickle(os.path.join(directory, 'df.pkl'))
+        self.df.to_pickle(os.path.join(directory, "df.pkl"))
 
         # Save the scaler and nearest neighbors model
-        with open(os.path.join(directory, 'scaler.pkl'), 'wb') as f:
+        with open(os.path.join(directory, "scaler.pkl"), "wb") as f:
             pickle.dump(self.scaler, f)
 
-        with open(os.path.join(directory, 'nn_model.pkl'), 'wb') as f:
+        with open(os.path.join(directory, "nn_model.pkl"), "wb") as f:
             pickle.dump(self.nn, f)
 
         log.info(f"Proximity model serialized to {directory}")
 
     @classmethod
-    def deserialize(cls, directory: str) -> 'Proximity':
+    def deserialize(cls, directory: str) -> "Proximity":
         """
         Deserialize a Proximity model from a directory.
 
@@ -226,11 +220,11 @@ class Proximity:
             raise ValueError(f"Directory {directory} does not exist or is not a directory")
 
         # Load metadata
-        with open(os.path.join(directory, 'metadata.json'), 'r') as f:
+        with open(os.path.join(directory, "metadata.json"), "r") as f:
             metadata = json.load(f)
 
         # Load DataFrame
-        df_path = os.path.join(directory, 'df.pkl')
+        df_path = os.path.join(directory, "df.pkl")
         if not os.path.exists(df_path):
             raise FileNotFoundError(f"DataFrame file not found at {df_path}")
         df = pd.read_pickle(df_path)
@@ -238,16 +232,16 @@ class Proximity:
         # Create instance but skip _prepare_data
         instance = cls.__new__(cls)
         instance.df = df
-        instance.id_column = metadata['id_column']
-        instance.features = metadata['features']
-        instance.target = metadata['target']
-        instance.n_neighbors = metadata['n_neighbors']
+        instance.id_column = metadata["id_column"]
+        instance.features = metadata["features"]
+        instance.target = metadata["target"]
+        instance.n_neighbors = metadata["n_neighbors"]
 
         # Load scaler and nn model
-        with open(os.path.join(directory, 'scaler.pkl'), 'rb') as f:
+        with open(os.path.join(directory, "scaler.pkl"), "rb") as f:
             instance.scaler = pickle.load(f)
 
-        with open(os.path.join(directory, 'nn_model.pkl'), 'rb') as f:
+        with open(os.path.join(directory, "nn_model.pkl"), "rb") as f:
             instance.nn = pickle.load(f)
 
         # Load X from scaler transform
