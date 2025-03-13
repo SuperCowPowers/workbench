@@ -7,30 +7,23 @@ Endpoints:
     - abalone-prox
 """
 
-import importlib.resources
 import logging
-from pathlib import Path
 
+# Workbench Imports
 from workbench.api import FeatureSet, Model, ModelType, Endpoint
-
+from workbench.utils.model_utils import get_custom_script_path
 
 log = logging.getLogger("workbench")
-
-
-# We have some custom model script in "workbench.model_scripts.custom_models"
-def get_custom_script_path(script_name: str) -> Path:
-    with importlib.resources.path("workbench.model_scripts.custom_models.proximity", script_name) as script_path:
-        return script_path
 
 
 if __name__ == "__main__":
 
     # Recreate Flag in case you want to recreate the artifacts
-    recreate = True
+    recreate = False
 
     # A Proximity Model based on Abalone Features
     if recreate or not Model("abalone-prox").exists():
-        script_path = get_custom_script_path("feature_space_proximity.template")
+        script_path = get_custom_script_path("proximity", "feature_space_proximity.template")
 
         # Get Feature and Target Columns from the existing Abalone Model
         m = Model("abalone-regression")

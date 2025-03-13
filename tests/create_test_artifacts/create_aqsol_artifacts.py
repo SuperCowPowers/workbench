@@ -24,23 +24,15 @@ Endpoints:
     - tautomerize-v0
 """
 
-import importlib.resources
 import logging
 import pandas as pd
 import awswrangler as wr
-from pathlib import Path
 
 from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
-
+from workbench.utils.model_utils import get_custom_script_path
 
 log = logging.getLogger("workbench")
-
-
-# We have some custom model script in "workbench.model_scripts.custom_models"
-def get_custom_script_path(script_name: str) -> Path:
-    with importlib.resources.path("workbench.model_scripts.custom_models.chem_info", script_name) as script_path:
-        return script_path
 
 
 if __name__ == "__main__":
@@ -191,7 +183,7 @@ if __name__ == "__main__":
 
     # A 'Model' to Compute Molecular Descriptors Features
     if recreate or not Model("smiles-to-md-v0").exists():
-        script_path = get_custom_script_path("molecular_descriptors.py")
+        script_path = get_custom_script_path("chem_info", "molecular_descriptors.py")
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
             name="smiles-to-md-v0",
@@ -204,7 +196,7 @@ if __name__ == "__main__":
 
     # A 'Model' to Compute Morgan Fingerprints Features
     if recreate or not Model("smiles-to-fingerprints-v0").exists():
-        script_path = get_custom_script_path("morgan_fingerprints.py")
+        script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
             name="smiles-to-fingerprints-v0",
@@ -217,7 +209,7 @@ if __name__ == "__main__":
 
     # A 'Model' to Tautomerize Smiles
     if recreate or not Model("tautomerize-v0").exists():
-        script_path = get_custom_script_path("tautomerize.py")
+        script_path = get_custom_script_path("chem_info", "tautomerize.py")
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
             name="tautomerize-v0",

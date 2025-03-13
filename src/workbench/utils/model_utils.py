@@ -2,6 +2,8 @@
 
 import logging
 import pandas as pd
+import importlib.resources
+from pathlib import Path
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -76,6 +78,11 @@ def supported_instance_types(arch: str = "x86_64") -> list:
     return info[info["Architecture"] == arch]["Instance Name"].tolist()
 
 
+def get_custom_script_path(package: str, script_name: str) -> Path:
+    with importlib.resources.path(f"workbench.model_scripts.custom_models.{package}", script_name) as script_path:
+        return script_path
+
+
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
 
@@ -88,3 +95,6 @@ if __name__ == "__main__":
     # Get the architecture for the given instance
     print(instance_architecutre("ml.c7i.large"))
     print(instance_architecutre("ml.c7g.large"))
+
+    # Get the custom script path
+    print(get_custom_script_path("chem_info", "molecular_descriptors.py"))
