@@ -2,9 +2,11 @@
 
 Models:
     - abalone-prox
+    - aqsol-prox
 
 Endpoints:
     - abalone-prox
+    - aqsol-prox
 """
 
 import logging
@@ -42,7 +44,28 @@ if __name__ == "__main__":
             custom_script=script_path,
         )
 
-    # Endpoints for our Proximity Model
+    # Create the Proximity Model based on AQSol Features
+    if recreate or not Model("aqsol-prox").exists():
+        script_path = get_custom_script_path("proximity", "feature_space_proximity.template")
+
+        # Get Feature and Target Columns from the existing AQSol Model
+        m = Model("aqsol-knn-reg")
+        features = m.features()
+        target = m.target()
+
+        # Create the Proximity Model from our FeatureSet
+        fs = FeatureSet("aqsol_features")
+        fs.to_model(
+            name="aqsol-prox",
+            model_type=ModelType.TRANSFORMER,
+            feature_list=features,
+            target_column=target,
+            description="Proximity Model for AQSol Features",
+            tags=["proximity", "aqsol"],
+            custom_script=script_path,
+        )
+
+    # Endpoints for our Proximity Models
     if recreate or not Endpoint("abalone-prox").exists():
         m = Model("abalone-prox")
         m.set_owner("BW")
@@ -50,3 +73,13 @@ if __name__ == "__main__":
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
+
+    if recreate or not Endpoint("aqsol-prox").exists():
+        m = Model("aqsol-prox")
+        m.set_owner("BW")
+        end = m.to_endpoint(tags=["proximity", "aqsol"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
+
+
