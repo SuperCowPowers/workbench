@@ -306,7 +306,7 @@ class AthenaSource(DataSourceAbstract):
         # First check if we have already computed the descriptive stats
         stat_dict = self.workbench_meta().get("workbench_descriptive_stats")
         if stat_dict:
-            log.info("Returning precomputed meta(workbench_descriptive_stats)")
+            self.log.info("Returning precomputed meta(workbench_descriptive_stats)")
             return stat_dict
 
         # Call the SQL function to compute descriptive stats
