@@ -6,8 +6,6 @@ import pandas as pd
 # Workbench Imports
 from workbench.core.artifacts.data_source_abstract import DataSourceAbstract
 
-from workbench.utils.pandas_utils import shorten_values
-
 # Workbench Logger
 log = logging.getLogger("workbench")
 
@@ -56,9 +54,6 @@ class Outliers:
 
         # Sort by outlier_group and reset the index
         outlier_df = outlier_df.sort_values("outlier_group").reset_index(drop=True)
-
-        # Shorten any long string values
-        outlier_df = shorten_values(outlier_df)
         return outlier_df
 
     def _numeric_outliers(self, data_source: DataSourceAbstract, scale: float, use_stddev=False) -> pd.DataFrame:

@@ -5,7 +5,6 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.core.artifacts.data_source_abstract import DataSourceAbstract
-from workbench.utils.pandas_utils import shorten_values
 
 # Workbench Logger
 log = logging.getLogger("workbench")
@@ -46,9 +45,6 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
 
     # Grab the first 100 rows
     sample_df = sample_df.head(sample_rows)
-
-    # Shorten any long string values
-    sample_df = shorten_values(sample_df)
 
     # Return the sample_df
     return sample_df

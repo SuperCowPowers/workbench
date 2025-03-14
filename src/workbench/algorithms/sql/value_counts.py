@@ -5,7 +5,6 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.core.artifacts.data_source_abstract import DataSourceAbstract
-from workbench.utils.pandas_utils import shorten_values
 
 # Workbench Logger
 log = logging.getLogger("workbench")
@@ -56,9 +55,6 @@ def value_counts(data_source: DataSourceAbstract) -> dict[dict]:
             # If all of our counts equal 1 we can drop most of them
             if result_df["workbench_count"].sum() == result_df.shape[0]:
                 result_df = result_df.iloc[:5]
-
-            # Shorten any long string values
-            result_df = shorten_values(result_df)
 
             # Convert the result_df into a dictionary
             value_count_dict[column] = dict(zip(result_df[column], result_df["workbench_count"]))
