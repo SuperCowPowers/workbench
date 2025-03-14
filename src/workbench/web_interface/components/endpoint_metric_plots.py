@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     # Grab the endpoint details
     end = EndpointCore("abalone-regression-end-rt")
-    end_details = end.details(recompute=True)
+    end_details = end.details()
 
     # Instantiate the EndpointMetricPlots class
     endpoint_metric_plots = EndpointMetricPlots()

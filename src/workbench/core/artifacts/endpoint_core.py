@@ -243,10 +243,9 @@ class EndpointCore(Artifact):
         self.temp_storage.set(metrics_key, endpoint_metrics)
         return endpoint_metrics
 
-    def details(self, recompute: bool = False) -> dict:
+    def details(self) -> dict:
         """Additional Details about this Endpoint
-        Args:
-            recompute (bool): Recompute the details (default: False)
+
         Returns:
             dict(dict): A dictionary of details about this Endpoint
         """
@@ -315,7 +314,7 @@ class EndpointCore(Artifact):
         time.sleep(2)  # Give the AWS Metadata a chance to update
         self.health_check()
         self.refresh_meta()
-        self.details(recompute=True)
+        self.details()
         return True
 
     def auto_inference(self, capture: bool = False) -> pd.DataFrame:
@@ -660,11 +659,11 @@ class EndpointCore(Artifact):
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
         model = ModelCore(self.model_name)
         model._load_inference_metrics(capture_uuid)
-        model.details(recompute=True)
+        model.details()
 
         # Recompute the details so that inference model metrics are updated
         self.log.important(f"Recomputing Details for {self.uuid} to show latest Inference Results...")
-        self.details(recompute=True)
+        self.details()
 
     def regression_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
@@ -986,7 +985,7 @@ if __name__ == "__main__":
     print(f"Tags: {my_endpoint.get_tags()}")
 
     print("Details:")
-    print(f"{my_endpoint.details(recompute=True)}")
+    print(f"{my_endpoint.details()}")
 
     # Serverless?
     print(f"Serverless: {my_endpoint.is_serverless()}")

@@ -120,20 +120,18 @@ class DataSourceAbstract(Artifact):
         # Create a NEW display view
         DisplayView.create(self, source_table=c_view.table, column_list=diplay_columns)
 
-    def set_computation_columns(self, computation_columns: list[str], recompute_stats: bool = True):
+    def set_computation_columns(self, computation_columns: list[str]):
         """Set the computation columns for this Data Source
 
         Args:
             computation_columns (list[str]): The computation columns for this Data Source
-            recompute_stats (bool): Recomputes all the stats for this Data Source (default: True)
         """
         self.log.important(f"Setting Computation Columns...{computation_columns}")
         from workbench.core.views import ComputationView
 
         # Create a NEW computation view
         ComputationView.create(self, column_list=computation_columns)
-        if recompute_stats:
-            self.recompute_stats()
+        self.recompute_stats()
 
     def _create_display_view(self):
         """Internal: Create the Display View for this DataSource"""
@@ -167,10 +165,9 @@ class DataSourceAbstract(Artifact):
         pass
 
     @abstractmethod
-    def descriptive_stats(self, recompute: bool = False) -> dict[dict]:
+    def descriptive_stats(self) -> dict[dict]:
         """Compute Descriptive Stats for all the numeric columns in a DataSource
-        Args:
-            recompute (bool): Recompute the descriptive stats (default: False)
+
         Returns:
             dict(dict): A dictionary of descriptive stats for each column in the form
                  {'col1': {'min': 0, 'q1': 1, 'median': 2, 'q3': 3, 'max': 4},
@@ -203,10 +200,9 @@ class DataSourceAbstract(Artifact):
         pass
 
     @abstractmethod
-    def value_counts(self, recompute: bool = False) -> dict[dict]:
+    def value_counts(self) -> dict[dict]:
         """Compute 'value_counts' for all the string columns in a DataSource
-        Args:
-            recompute (bool): Recompute the value counts (default: False)
+
         Returns:
             dict(dict): A dictionary of value counts for each column in the form
                  {'col1': {'value_1': X, 'value_2': Y, 'value_3': Z,...},
@@ -215,10 +211,9 @@ class DataSourceAbstract(Artifact):
         pass
 
     @abstractmethod
-    def column_stats(self, recompute: bool = False) -> dict[dict]:
+    def column_stats(self) -> dict[dict]:
         """Compute Column Stats for all the columns in a DataSource
-        Args:
-            recompute (bool): Recompute the column stats (default: False)
+
         Returns:
             dict(dict): A dictionary of stats for each column this format
             NB: String columns will NOT have num_zeros and descriptive stats
@@ -229,11 +224,8 @@ class DataSourceAbstract(Artifact):
         pass
 
     @abstractmethod
-    def correlations(self, recompute: bool = False) -> dict[dict]:
+    def correlations(self) -> dict[dict]:
         """Compute Correlations for all the numeric columns in a DataSource
-
-        Args:
-            recompute (bool): Recompute the column stats (default: False)
 
         Returns:
             dict(dict): A dictionary of correlations for each column in this format
@@ -299,7 +291,7 @@ class DataSourceAbstract(Artifact):
         time.sleep(2)  # Give the AWS Metadata a chance to update
         self.health_check()
         self.refresh_meta()
-        self.details(recompute=True)
+        self.details()
         self.set_status("ready")
         return True
 
@@ -317,7 +309,7 @@ class DataSourceAbstract(Artifact):
         # Compute the sample, column stats, outliers, and smart_sample
         self.df_cache.delete(f"{self.uuid}/sample")
         self.sample()
-        self.column_stats(recompute=True)
+        self.column_stats()
         self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
         self.df_cache.delete(f"{self.uuid}/outliers")
         self.outliers()

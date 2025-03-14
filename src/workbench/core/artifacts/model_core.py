@@ -436,7 +436,7 @@ class ModelCore(Artifact):
         # If we have NO endpionts, then set a health tags
         if not registered_endpoints:
             self.add_health_tag("no_endpoint")
-            self.details(recompute=True)
+            self.details()
 
         # A new endpoint means we need to refresh our inference path
         time.sleep(2)
@@ -529,10 +529,9 @@ class ModelCore(Artifact):
         else:
             self.log.error(f"Model {self.model_name} is not a classifier!")
 
-    def details(self, recompute=False) -> dict:
+    def details(self) -> dict:
         """Additional Details about this Model
-        Args:
-            recompute (bool, optional): Recompute the details (default: False)
+
         Returns:
             dict: Dictionary of details about this Model
         """
@@ -734,7 +733,7 @@ class ModelCore(Artifact):
         time.sleep(2)  # Give the AWS Metadata a chance to update
         self.health_check()
         self.refresh_meta()
-        self.details(recompute=True)
+        self.details()
         return True
 
     def model_data_url(self) -> Optional[str]:

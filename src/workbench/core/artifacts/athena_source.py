@@ -294,11 +294,8 @@ class AthenaSource(DataSourceAbstract):
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
 
-    def descriptive_stats(self, recompute: bool = False) -> dict[dict]:
+    def descriptive_stats(self) -> dict[dict]:
         """Compute Descriptive Stats for all the numeric columns in a DataSource
-
-        Args:
-            recompute (bool): Recompute the descriptive stats (default: False)
 
         Returns:
             dict(dict): A dictionary of descriptive stats for each column in the form
@@ -308,7 +305,8 @@ class AthenaSource(DataSourceAbstract):
 
         # First check if we have already computed the descriptive stats
         stat_dict = self.workbench_meta().get("workbench_descriptive_stats")
-        if stat_dict and not recompute:
+        if stat_dict:
+            log.info("Returning precomputed meta(workbench_descriptive_stats)")
             return stat_dict
 
         # Call the SQL function to compute descriptive stats
@@ -352,11 +350,8 @@ class AthenaSource(DataSourceAbstract):
         return sql_outliers.compute_outliers(self, scale=scale, use_stddev=use_stddev)
 
     @cache_dataframe("smart_sample")
-    def smart_sample(self, recompute: bool = False) -> pd.DataFrame:
+    def smart_sample(self) -> pd.DataFrame:
         """Get a smart sample dataframe for this DataSource
-
-        Args:
-            recompute (bool): Recompute the smart sample (default: False)
 
         Returns:
             pd.DataFrame: A combined DataFrame of sample data + outliers
@@ -382,11 +377,8 @@ class AthenaSource(DataSourceAbstract):
         # Return the smart_sample data
         return all_rows
 
-    def correlations(self, recompute: bool = False) -> dict[dict]:
+    def correlations(self) -> dict[dict]:
         """Compute Correlations for all the numeric columns in a DataSource
-
-        Args:
-            recompute (bool): Recompute the column stats (default: False)
 
         Returns:
             dict(dict): A dictionary of correlations for each column in this format
@@ -396,7 +388,7 @@ class AthenaSource(DataSourceAbstract):
 
         # First check if we have already computed the correlations
         correlations_dict = self.workbench_meta().get("workbench_correlations")
-        if correlations_dict and not recompute:
+        if correlations_dict:
             return correlations_dict
 
         # Call the SQL function to compute correlations
@@ -408,11 +400,8 @@ class AthenaSource(DataSourceAbstract):
         # Return the correlation data
         return correlations_dict
 
-    def column_stats(self, recompute: bool = False) -> dict[dict]:
+    def column_stats(self) -> dict[dict]:
         """Compute Column Stats for all the columns in a DataSource
-
-        Args:
-            recompute (bool): Recompute the column stats (default: False)
 
         Returns:
             dict(dict): A dictionary of stats for each column this format
@@ -425,11 +414,11 @@ class AthenaSource(DataSourceAbstract):
 
         # First check if we have already computed the column stats
         columns_stats_dict = self.workbench_meta().get("workbench_column_stats")
-        if columns_stats_dict and not recompute:
+        if columns_stats_dict:
             return columns_stats_dict
 
         # Call the SQL function to compute column stats
-        column_stats_dict = sql.column_stats(self, recompute=recompute)
+        column_stats_dict = sql.column_stats(self)
 
         # Push the column stats data into our DataSource Metadata
         self.upsert_workbench_meta({"workbench_column_stats": column_stats_dict})
@@ -437,11 +426,8 @@ class AthenaSource(DataSourceAbstract):
         # Return the column stats data
         return column_stats_dict
 
-    def value_counts(self, recompute: bool = False) -> dict[dict]:
+    def value_counts(self) -> dict[dict]:
         """Compute 'value_counts' for all the string columns in a DataSource
-
-        Args:
-            recompute (bool): Recompute the value counts (default: False)
 
         Returns:
             dict(dict): A dictionary of value counts for each column in the form
@@ -451,7 +437,7 @@ class AthenaSource(DataSourceAbstract):
 
         # First check if we have already computed the value counts
         value_counts_dict = self.workbench_meta().get("workbench_value_counts")
-        if value_counts_dict and not recompute:
+        if value_counts_dict:
             return value_counts_dict
 
         # Call the SQL function to compute value_counts
@@ -463,11 +449,8 @@ class AthenaSource(DataSourceAbstract):
         # Return the value_count data
         return value_count_dict
 
-    def details(self, recompute: bool = False) -> dict[dict]:
+    def details(self) -> dict[dict]:
         """Additional Details about this AthenaSource Artifact
-
-        Args:
-            recompute (bool): Recompute the details (default: False)
 
         Returns:
             dict(dict): A dictionary of details about this AthenaSource

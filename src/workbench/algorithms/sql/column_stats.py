@@ -50,11 +50,12 @@ def count_zeros_query(columns: list[str], table_name: str) -> str:
     return sql_query
 
 
-def column_stats(data_source: DataSourceAbstract, recompute: bool = False) -> dict[dict]:
+def column_stats(data_source: DataSourceAbstract) -> dict[dict]:
     """SQL based Column Statistics: Compute Column Statistics for a DataSource using SQL
+
     Args:
         data_source(DataSource): The DataSource that we're computing column stats on
-        recompute (bool): Whether or not to recompute the column stats (default: False)
+
     Returns:
         dict(dict): A dictionary of stats for each column this format
         NB: String columns will have value_counts but NOT have num_zeros and descriptive stats
@@ -73,17 +74,17 @@ def column_stats(data_source: DataSourceAbstract, recompute: bool = False) -> di
     data_source.log.info(f"Computing Column Statistics for {list(column_data.keys())} columns...")
 
     # Now add descriptive stats to the column stats
-    descriptive_stats = data_source.descriptive_stats(recompute=recompute)
+    descriptive_stats = data_source.descriptive_stats()
     for column, stat_info in descriptive_stats.items():
         column_data[column]["descriptive_stats"] = stat_info
 
     # Now add value_counts to the column stats
-    value_counts = data_source.value_counts(recompute=recompute)
+    value_counts = data_source.value_counts()
     for column, count_info in value_counts.items():
         column_data[column]["value_counts"] = count_info
 
     # Now add correlations to the column stats
-    correlations = data_source.correlations(recompute=recompute)
+    correlations = data_source.correlations()
     for column, correlation_info in correlations.items():
         column_data[column]["correlations"] = correlation_info
 

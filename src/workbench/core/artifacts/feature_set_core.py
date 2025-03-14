@@ -327,11 +327,8 @@ class FeatureSetCore(Artifact):
         )
         return query
 
-    def details(self, recompute: bool = False) -> dict[dict]:
+    def details(self) -> dict[dict]:
         """Additional Details about this FeatureSet Artifact
-
-        Args:
-            recompute (bool): Recompute the details (default: False)
 
         Returns:
             dict(dict): A dictionary of details about this FeatureSet
@@ -468,47 +465,42 @@ class FeatureSetCore(Artifact):
 
         delete_views_and_supplemental_data(table, database, cls.boto3_session)
 
-    def descriptive_stats(self, recompute: bool = False) -> dict:
+    def descriptive_stats(self) -> dict:
         """Get the descriptive stats for the numeric columns of the underlying DataSource
-        Args:
-            recompute (bool): Recompute the descriptive stats (default=False)
+
         Returns:
             dict: A dictionary of descriptive stats for the numeric columns
         """
-        return self.data_source.descriptive_stats(recompute)
+        return self.data_source.descriptive_stats()
 
-    def sample(self, recompute: bool = False) -> pd.DataFrame:
+    def sample(self) -> pd.DataFrame:
         """Get a sample of the data from the underlying DataSource
-        Args:
-            recompute (bool): Recompute the sample (default=False)
+
         Returns:
             pd.DataFrame: A sample of the data from the underlying DataSource
         """
-        return self.data_source.sample(recompute)
+        return self.data_source.sample()
 
-    def outliers(self, scale: float = 1.5, recompute: bool = False) -> pd.DataFrame:
+    def outliers(self, scale: float = 1.5) -> pd.DataFrame:
         """Compute outliers for all the numeric columns in a DataSource
+
         Args:
             scale (float): The scale to use for the IQR (default: 1.5)
-            recompute (bool): Recompute the outliers (default: False)
         Returns:
             pd.DataFrame: A DataFrame of outliers from this DataSource
         Notes:
             Uses the IQR * 1.5 (~= 2.5 Sigma) method to compute outliers
             The scale parameter can be adjusted to change the IQR multiplier
         """
-        return self.data_source.outliers(scale=scale, recompute=recompute)
+        return self.data_source.outliers(scale=scale)
 
-    def smart_sample(self, recompute: bool = False) -> pd.DataFrame:
+    def smart_sample(self) -> pd.DataFrame:
         """Get a SMART sample dataframe from this FeatureSet
-
-        Args:
-            recompute (bool): Recompute the smart sample (default=False)
 
         Returns:
             pd.DataFrame: A combined DataFrame of sample data + outliers
         """
-        return self.data_source.smart_sample(recompute=recompute)
+        return self.data_source.smart_sample()
 
     def anomalies(self) -> pd.DataFrame:
         """Get a set of anomalous data from the underlying DataSource
@@ -524,28 +516,25 @@ class FeatureSetCore(Artifact):
         anom_df["y"] = np.random.rand(anom_df.shape[0])
         return anom_df
 
-    def value_counts(self, recompute: bool = False) -> dict:
+    def value_counts(self) -> dict:
         """Get the value counts for the string columns of the underlying DataSource
-        Args:
-            recompute (bool): Recompute the value counts (default=False)
+
         Returns:
             dict: A dictionary of value counts for the string columns
         """
-        return self.data_source.value_counts(recompute)
+        return self.data_source.value_counts()
 
-    def correlations(self, recompute: bool = False) -> dict:
+    def correlations(self) -> dict:
         """Get the correlations for the numeric columns of the underlying DataSource
-        Args:
-            recompute (bool): Recompute the value counts (default=False)
+
         Returns:
             dict: A dictionary of correlations for the numeric columns
         """
-        return self.data_source.correlations(recompute)
+        return self.data_source.correlations()
 
-    def column_stats(self, recompute: bool = False) -> dict[dict]:
+    def column_stats(self) -> dict[dict]:
         """Compute Column Stats for all the columns in the FeatureSets underlying DataSource
-        Args:
-            recompute (bool): Recompute the column stats (default: False)
+
         Returns:
             dict(dict): A dictionary of stats for each column this format
             NB: String columns will NOT have num_zeros and descriptive_stats
@@ -555,7 +544,7 @@ class FeatureSetCore(Artifact):
         """
 
         # Grab the column stats from our DataSource
-        ds_column_stats = self.data_source.column_stats(recompute)
+        ds_column_stats = self.data_source.column_stats()
 
         # Map the types from our DataSource to the FeatureSet types
         fs_type_mapper = self.column_details()
@@ -601,7 +590,7 @@ class FeatureSetCore(Artifact):
         time.sleep(2)  # Give the AWS Metadata a chance to update
         self.health_check()
         self.refresh_meta()
-        self.details(recompute=True)
+        self.details()
         self.set_status("ready")
         return True
 
@@ -611,7 +600,7 @@ class FeatureSetCore(Artifact):
         # Call our underlying DataSource recompute stats method
         self.log.important(f"Recomputing Stats {self.uuid}...")
         self.data_source.recompute_stats()
-        self.details(recompute=True)
+        self.details()
         return True
 
 

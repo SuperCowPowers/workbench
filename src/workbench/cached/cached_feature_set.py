@@ -70,7 +70,7 @@ class CachedFeatureSet(CachedArtifactMixin, FeatureSetCore):
         Returns:
             pd.DataFrame: The Smart Sample DataFrame
         """
-        return super().smart_sample(recompute=False)
+        return super().smart_sample()
 
 
 if __name__ == "__main__":
