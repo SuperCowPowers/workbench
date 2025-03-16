@@ -78,11 +78,11 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-            self,
-            query_df: pd.DataFrame,
-            radius: float = None,
-            include_self: bool = True,
-            add_columns: List[str] = None,
+        self,
+        query_df: pd.DataFrame,
+        radius: float = None,
+        include_self: bool = True,
+        add_columns: List[str] = None,
     ) -> pd.DataFrame:
         """
         Return neighbors for rows in a query DataFrame.
