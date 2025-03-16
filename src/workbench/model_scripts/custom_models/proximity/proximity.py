@@ -78,11 +78,11 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-        self,
-        query_df: pd.DataFrame,
-        radius: float = None,
-        include_self: bool = True,
-        add_columns: List[str] = None,
+            self,
+            query_df: pd.DataFrame,
+            radius: float = None,
+            include_self: bool = True,
+            add_columns: List[str] = None,
     ) -> pd.DataFrame:
         """
         Return neighbors for rows in a query DataFrame.
@@ -96,13 +96,15 @@ class Proximity:
         Returns:
             DataFrame containing neighbors and distances
 
-        Note: The query DataFrame must include the feature columns and the id_column.
+        Note: The query DataFrame must include the feature columns. The id_column is optional.
         """
-        # Verify required columns are present
-        required_cols = set(self.features + [self.id_column])
-        missing = required_cols - set(query_df.columns)
+        # Verify required feature columns are present
+        missing = set(self.features) - set(query_df.columns)
         if missing:
-            raise ValueError(f"Query DataFrame is missing required columns: {missing}")
+            raise ValueError(f"Query DataFrame is missing required feature columns: {missing}")
+
+        # Check if id_column is present
+        id_column_present = self.id_column in query_df.columns
 
         # Transform the query features using the model's scaler
         X_query = self.scaler.transform(query_df[self.features])
@@ -116,7 +118,8 @@ class Proximity:
         # Build results
         all_results = []
         for i, (dists, nbrs) in enumerate(zip(distances, indices)):
-            query_id = query_df.iloc[i][self.id_column]
+            # Use the ID from the query DataFrame if available, otherwise use the row index
+            query_id = query_df.iloc[i][self.id_column] if id_column_present else f"query_{i}"
 
             for neighbor_idx, dist in zip(nbrs, dists):
                 # Skip if the neighbor is the query itself and include_self is False
