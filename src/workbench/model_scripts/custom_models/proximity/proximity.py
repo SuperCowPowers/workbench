@@ -314,21 +314,25 @@ if __name__ == "__main__":
     import time
 
     start_time = time.time()
-    df = prox.neighbors(query_df=df, include_self=False)
+    prox_df = prox.neighbors(query_df=df, include_self=False)
     end_time = time.time()
     print(f"Time taken for neighbors: {end_time - start_time:.4f} seconds")
     start_time = time.time()
-    df_all = prox.all_neighbors()
+    prox_df_all = prox.all_neighbors()
     end_time = time.time()
     print(f"Time taken for all_neighbors: {end_time - start_time:.4f} seconds")
 
     # Now compare the two dataframes
     print("Neighbors DataFrame:")
-    print(df)
+    print(prox_df)
     print("\nAll Neighbors DataFrame:")
-    print(df_all)
+    print(prox_df_all)
     # Check for any discrepancies
-    if df.equals(df_all):
+    if prox_df.equals(prox_df_all):
         print("The two DataFrames are equal :)")
     else:
-        print("ERRPR: The two DataFrames are not equal!")
+        print("ERROR: The two DataFrames are not equal!")
+
+    # Test querying without the id_column
+    df_no_id = df.drop(columns=["foo_id"])
+    print(prox.neighbors(query_df=df_no_id, include_self=False))
