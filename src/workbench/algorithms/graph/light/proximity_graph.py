@@ -4,7 +4,7 @@ from typing import Union
 import logging
 
 # Workbench Imports
-from workbench.algorithms.dataframe import Proximity, FeaturesProximity  # noqa: F401
+from workbench.algorithms.dataframe import Proximity, FeatureSpaceProximity
 from workbench.api.graph_store import GraphStore
 
 # Set up logging
@@ -53,7 +53,7 @@ class ProximityGraph:
 
         # Add edges with weights based on proximity
         min_edges = 2
-        min_wieght = 0.8
+        min_weight = 0.8
         current_id = None
         log.info("Adding edges to the graph...")
         for _, row in all_neighbors_df.iterrows():
@@ -62,7 +62,7 @@ class ProximityGraph:
                 num_edges = 0
                 current_id = source_id
             weight = prox.get_edge_weight(row)
-            if num_edges <= min_edges or weight > min_wieght:
+            if num_edges <= min_edges or weight > min_weight:
                 weight = 0.1 if weight < 0.1 else weight
                 self._nx_graph.add_edge(row[id_column], row["neighbor_id"], weight=weight)
                 num_edges += 1
