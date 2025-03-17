@@ -161,6 +161,7 @@ class WorkbenchShell:
         self.commands["cached_meta"] = self.switch_to_cached_meta
         self.commands["direct_meta"] = self.switch_to_direct_meta
         self.commands["log_theme"] = log_theme
+        self.commands["reconnect"] = self.check_aws_account
 
         # Add cheminformatics utils if available
         if HAVE_CHEM_UTILS:

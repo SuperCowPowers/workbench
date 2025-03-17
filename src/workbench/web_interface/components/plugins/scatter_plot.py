@@ -167,10 +167,10 @@ class ScatterPlot(PluginInterface):
         x_options = [{"label": col, "value": col} for col in dropdown_columns]
         y_options = x_options.copy()
 
-        # For color dropdown include categorical columns (with less than 12 unique values)
-        str_columns = self.df.select_dtypes(include=["object", "string"]).columns.tolist()
-        str_columns = [col for col in str_columns if self.df[col].astype(str).nunique() < 12]
-        color_columns = numeric_columns + str_columns
+        # For color dropdown include any categorical columns (with less than 12 unique values)
+        cat_columns = self.df.select_dtypes(include=["object", "string", "category"]).columns.tolist()
+        cat_columns = [col for col in cat_columns if self.df[col].astype(str).nunique() < 12]
+        color_columns = numeric_columns + cat_columns
         color_options = [{"label": col, "value": col} for col in color_columns]
 
         return [figure, x_options, y_options, color_options, x_default, y_default, color_default]
