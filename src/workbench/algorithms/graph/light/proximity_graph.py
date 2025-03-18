@@ -40,7 +40,7 @@ class ProximityGraph:
         # Add nodes with attributes (features)
         log.info("Adding nodes to the proximity graph...")
         self._nx_graph = nx.Graph()
-        self._nx_graph.add_nodes_from(node_df.set_index(id_column, drop=False).to_dict('index').items())
+        self._nx_graph.add_nodes_from(node_df.set_index(id_column, drop=False).to_dict("index").items())
 
         # Determine edge weights based on proximity type
         if prox.proximity_type == ProximityType.SIMILARITY:
@@ -65,16 +65,17 @@ class ProximityGraph:
             top_edges = sorted_group.iloc[:actual_min_edges]
 
             # Also take any additional neighbors above min_weight (beyond the top edges)
-            high_weight_edges = sorted_group.iloc[actual_min_edges:][sorted_group.iloc[actual_min_edges:]["weight"] > min_weight]
+            high_weight_edges = sorted_group.iloc[actual_min_edges:][
+                sorted_group.iloc[actual_min_edges:]["weight"] > min_weight
+            ]
 
             # Combine both sets
             edges_to_add = pd.concat([top_edges, high_weight_edges])
 
             # Add all edges at once
-            self._nx_graph.add_edges_from([
-                (source_id, row["neighbor_id"], {"weight": row["weight"]})
-                for _, row in edges_to_add.iterrows()
-            ])
+            self._nx_graph.add_edges_from(
+                [(source_id, row["neighbor_id"], {"weight": row["weight"]}) for _, row in edges_to_add.iterrows()]
+            )
 
     @property
     def nx_graph(self) -> nx.Graph:
@@ -141,9 +142,7 @@ if __name__ == "__main__":
 
     # Build a graph using the base Proximity class
     print("\n--- Proximity Class ---")
-    prox = Proximity(
-        feature_df, id_column="id", features=["Feature1", "Feature2"], target="target"
-    )
+    prox = Proximity(feature_df, id_column="id", features=["Feature1", "Feature2"], target="target")
     feature_graph = ProximityGraph()
     feature_graph.build_graph(prox)
     nx_graph = feature_graph.nx_graph
