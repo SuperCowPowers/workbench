@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
-from typing import Union, List, Dict, Optional
+from typing import Union, List
 import logging
 
 # Workbench Imports
