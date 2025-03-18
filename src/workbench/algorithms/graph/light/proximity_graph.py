@@ -4,7 +4,7 @@ from typing import Union
 import logging
 
 # Workbench Imports
-from workbench.algorithms.dataframe import Proximity, FeatureSpaceProximity
+from workbench.algorithms.dataframe import Proximity, ProximityType
 from workbench.api.graph_store import GraphStore
 
 # Set up logging
@@ -23,48 +23,47 @@ class ProximityGraph:
         # GraphStore
         self.graph_store = GraphStore()
 
-    def build_graph(self, proximity_instance: Proximity, node_attributes_df: pd.DataFrame) -> None:
+    def build_graph(self, proximity_instance: Proximity) -> None:
         """
         Build a NetworkX graph using a Proximity class.
 
         Args:
             proximity_instance (Proximity): An instance of a Proximity class to compute neighbors.
-            node_attributes_df (pd.DataFrame): DataFrame containing node attributes
         """
         # Retrieve all neighbors and their distances
         prox = proximity_instance
+        node_df = prox.df
         id_column = prox.id_column
         log.info("Retrieving all neighbors...")
         all_neighbors_df = prox.all_neighbors()
 
         # Add nodes with attributes (features)
-        log.info("Building proximity graph...")
+        log.info("Adding nodes to the proximity graph...")
         self._nx_graph = nx.Graph()
-        for _, row in all_neighbors_df.iterrows():
-            node_id = row[id_column]
+        nodes_with_attrs = node_df.set_index(id_column).to_dict('index')
+        self._nx_graph.add_nodes_from(nodes_with_attrs.items())
 
-            # Get all the node attributes
-            if node_id in node_attributes_df[id_column].values:
-                node_attributes = node_attributes_df[node_attributes_df[id_column] == node_id].iloc[0].to_dict()
-                self._nx_graph.add_node(node_id, **node_attributes)
-            else:
-                log.error(f"Node ID '{node_id}' not found in the node attributes DataFrame. Terminating graph build.")
-                return
+        # Edge weights are based on proximity type
+        if prox.proximity_type == ProximityType.SIMILARITY:
+            edge_weights = all_neighbors_df["similarity"]
+        elif prox.proximity_type == ProximityType.DISTANCE:
+            # Divide the distance by the maximum distance to normalize and then invert
+            edge_weights = all_neighbors_df["distance"].values
+            edge_weights = edge_weights / edge_weights.max()
 
-        # Add edges with weights based on proximity
+        # Add edges to the graph
+        num_edges = 0
         min_edges = 2
         min_weight = 0.8
         current_id = None
         log.info("Adding edges to the graph...")
-        for _, row in all_neighbors_df.iterrows():
+        for (_, row), edge_weight in zip(all_neighbors_df.iterrows(), edge_weights):
             source_id = row[id_column]
             if source_id != current_id:
                 num_edges = 0
                 current_id = source_id
-            weight = prox.get_edge_weight(row)
-            if num_edges <= min_edges or weight > min_weight:
-                weight = 0.1 if weight < 0.1 else weight
-                self._nx_graph.add_edge(row[id_column], row["neighbor_id"], weight=weight)
+            if num_edges <= min_edges or edge_weight > min_weight:
+                self._nx_graph.add_edge(row[id_column], row["neighbor_id"], weight=edge_weight)
                 num_edges += 1
 
         # Print the number of nodes and edges
@@ -119,13 +118,13 @@ class ProximityGraph:
 
 
 if __name__ == "__main__":
+    from workbench.algorithms.dataframe.proximity import Proximity
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
     from workbench.api import DFStore
     from workbench.utils.chem_utils import compute_morgan_fingerprints
     from workbench.utils.graph_utils import connected_sample
 
-    """
     # Example DataFrame for FeaturesProximity
     feature_data = {
         "id": [1, 2, 3, 4],
@@ -135,10 +134,10 @@ if __name__ == "__main__":
     }
     feature_df = pd.DataFrame(feature_data)
 
-    # Build a graph using FeaturesProximity
-    print("\n--- FeaturesProximity Graph ---")
-    prox = FeaturesProximity(
-        feature_df, id_column="id", features=["Feature1", "Feature2"], n_neighbors=2, target="target"
+    # Build a graph using the base Proximity class
+    print("\n--- Proximity Class ---")
+    prox = Proximity(
+        feature_df, id_column="id", features=["Feature1", "Feature2"], target="target"
     )
     feature_graph = ProximityGraph()
     feature_graph.build_graph(prox)
@@ -188,7 +187,6 @@ if __name__ == "__main__":
     # Plot the subgraph
     properties = graph_plot.update_properties(subgraph, labels=id_column, hover_text="all")
     properties[0].show()
-    """
 
     # Now a real dataset with fingerprints
 
@@ -200,7 +198,7 @@ if __name__ == "__main__":
     # Compute FingerprintProximity Graph
     prox = FingerprintProximity(tox_df, fingerprint_column="morgan_fingerprint", id_column=id_column, n_neighbors=5)
     fingerprint_graph = ProximityGraph()
-    fingerprint_graph.build_graph(prox, tox_df)
+    fingerprint_graph.build_graph(prox)
     nx_graph = fingerprint_graph.nx_graph
 
     # Store the graph in the GraphStore
