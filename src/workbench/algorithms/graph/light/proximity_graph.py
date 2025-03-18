@@ -128,7 +128,6 @@ if __name__ == "__main__":
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
     from workbench.api import DFStore
-    from workbench.api.graph_store import GraphStore
     from workbench.utils.chem_utils import compute_morgan_fingerprints
     from workbench.utils.graph_utils import connected_sample
 
@@ -137,7 +136,7 @@ if __name__ == "__main__":
         graph_plot = GraphPlot()
         properties = graph_plot.update_properties(graph, labels=id_column, hover_text="all")
         fig = properties[0]
-        fig.update_layout(paper_bgcolor='rgb(30,30,30)', plot_bgcolor='rgb(30,30,30)')
+        fig.update_layout(paper_bgcolor="rgb(30,30,30)", plot_bgcolor="rgb(30,30,30)")
         fig.show()
 
     # Example DataFrame for FeaturesProximity
