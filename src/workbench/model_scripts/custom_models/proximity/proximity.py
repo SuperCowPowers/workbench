@@ -8,9 +8,16 @@ import pickle
 import os
 import json
 from pathlib import Path
+from enum import Enum
 
 # Set up logging
 log = logging.getLogger("workbench")
+
+
+# ^Enumerated^ Proximity Types (distance or similarity)
+class ProximityType(Enum):
+    DISTANCE = "distance"
+    SIMILARITY = "similarity"
 
 
 class Proximity:
@@ -37,14 +44,19 @@ class Proximity:
         self.n_neighbors = min(n_neighbors, len(self.df) - 1)
         self.target = target
         self.features = features
-        self.scaler = StandardScaler()
+        self.scaler = None
         self.X = None
         self.nn = None
+        self.proximity_type = None
 
-        self._prepare_data()
+        # Build the proximity model
+        self.build_proximity_model()
 
-    def _prepare_data(self) -> None:
-        """Standardize features and fit Nearest Neighbors model."""
+    def build_proximity_model(self) -> None:
+        """Standardize features and fit Nearest Neighbors model.
+           Note: This method can be overridden in subclasses for custom behavior."""
+        self.proximity_type = ProximityType.DISTANCE
+        self.scaler = StandardScaler()
         self.X = self.scaler.fit_transform(self.df[self.features])
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 

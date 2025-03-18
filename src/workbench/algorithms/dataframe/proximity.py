@@ -8,9 +8,16 @@ import pickle
 import os
 import json
 from pathlib import Path
+from enum import Enum
 
 # Set up logging
 log = logging.getLogger("workbench")
+
+
+# ^Enumerated^ Proximity Types (distance or similarity)
+class ProximityType(Enum):
+    DISTANCE = "distance"
+    SIMILARITY = "similarity"
 
 
 class Proximity:
@@ -37,14 +44,19 @@ class Proximity:
         self.n_neighbors = min(n_neighbors, len(self.df) - 1)
         self.target = target
         self.features = features
-        self.scaler = StandardScaler()
+        self.scaler = None
         self.X = None
         self.nn = None
+        self.proximity_type = None
 
-        self._prepare_data()
+        # Build the proximity model
+        self.build_proximity_model()
 
-    def _prepare_data(self) -> None:
-        """Standardize features and fit Nearest Neighbors model."""
+    def build_proximity_model(self) -> None:
+        """Standardize features and fit Nearest Neighbors model.
+           Note: This method can be overridden in subclasses for custom behavior."""
+        self.proximity_type = ProximityType.DISTANCE
+        self.scaler = StandardScaler()
         self.X = self.scaler.fit_transform(self.df[self.features])
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
@@ -96,13 +108,15 @@ class Proximity:
         Returns:
             DataFrame containing neighbors and distances
 
-        Note: The query DataFrame must include the feature columns and the id_column.
+        Note: The query DataFrame must include the feature columns. The id_column is optional.
         """
-        # Verify required columns are present
-        required_cols = set(self.features + [self.id_column])
-        missing = required_cols - set(query_df.columns)
+        # Verify required feature columns are present
+        missing = set(self.features) - set(query_df.columns)
         if missing:
-            raise ValueError(f"Query DataFrame is missing required columns: {missing}")
+            raise ValueError(f"Query DataFrame is missing required feature columns: {missing}")
+
+        # Check if id_column is present
+        id_column_present = self.id_column in query_df.columns
 
         # Transform the query features using the model's scaler
         X_query = self.scaler.transform(query_df[self.features])
@@ -116,7 +130,8 @@ class Proximity:
         # Build results
         all_results = []
         for i, (dists, nbrs) in enumerate(zip(distances, indices)):
-            query_id = query_df.iloc[i][self.id_column]
+            # Use the ID from the query DataFrame if available, otherwise use the row index
+            query_id = query_df.iloc[i][self.id_column] if id_column_present else f"query_{i}"
 
             for neighbor_idx, dist in zip(nbrs, dists):
                 # Skip if the neighbor is the query itself and include_self is False
@@ -311,21 +326,25 @@ if __name__ == "__main__":
     import time
 
     start_time = time.time()
-    df = prox.neighbors(query_df=df, include_self=False)
+    prox_df = prox.neighbors(query_df=df, include_self=False)
     end_time = time.time()
     print(f"Time taken for neighbors: {end_time - start_time:.4f} seconds")
     start_time = time.time()
-    df_all = prox.all_neighbors()
+    prox_df_all = prox.all_neighbors()
     end_time = time.time()
     print(f"Time taken for all_neighbors: {end_time - start_time:.4f} seconds")
 
     # Now compare the two dataframes
     print("Neighbors DataFrame:")
-    print(df)
+    print(prox_df)
     print("\nAll Neighbors DataFrame:")
-    print(df_all)
+    print(prox_df_all)
     # Check for any discrepancies
-    if df.equals(df_all):
+    if prox_df.equals(prox_df_all):
         print("The two DataFrames are equal :)")
     else:
-        print("ERRPR: The two DataFrames are not equal!")
+        print("ERROR: The two DataFrames are not equal!")
+
+    # Test querying without the id_column
+    df_no_id = df.drop(columns=["foo_id"])
+    print(prox.neighbors(query_df=df_no_id, include_self=False))
