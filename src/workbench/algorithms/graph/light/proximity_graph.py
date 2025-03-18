@@ -128,6 +128,7 @@ if __name__ == "__main__":
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
     from workbench.api import DFStore
+    from workbench.api.graph_store import GraphStore
     from workbench.utils.chem_utils import compute_morgan_fingerprints
     from workbench.utils.graph_utils import connected_sample
 
@@ -136,7 +137,7 @@ if __name__ == "__main__":
         graph_plot = GraphPlot()
         properties = graph_plot.update_properties(graph, labels=id_column, hover_text="all")
         fig = properties[0]
-        fig.update_layout(paper_bgcolor="rgb(30,30,30)", plot_bgcolor="rgb(30,30,30)")
+        fig.update_layout(paper_bgcolor='rgb(30,30,30)', plot_bgcolor='rgb(30,30,30)')
         fig.show()
 
     # Example DataFrame for FeaturesProximity
@@ -208,9 +209,30 @@ if __name__ == "__main__":
     fingerprint_graph = ProximityGraph()
     fingerprint_graph.build_graph(prox)
     nx_graph = fingerprint_graph.nx_graph
+    print("\nTox21 Graph:")
+    print("Nodes:", nx_graph.number_of_nodes())
+    print("Edges:", nx_graph.number_of_edges())
 
-    # Plot a sample of the graph
+    # Grab the biggest connected component
+    largest_cc = max(nx.connected_components(nx_graph), key=len)
+    nx_graph = nx.subgraph(nx_graph, largest_cc)
+    print("Largest Connected Component:")
+    print("Nodes:", nx_graph.number_of_nodes())
+    print("Edges:", nx_graph.number_of_edges())
+
+    # Store the graph in the GraphStore
+    gstore = GraphStore()
+    print("\nStoring the graph in GraphStore...")
+    gstore.upsert("chem_info/tox21", nx_graph)
+
+    # Compute a connected sample of the graph
     print("\nComputing a connected sample of the graph...")
     sample = connected_sample(nx_graph, n=100)
+
+    # Store the graph in the GraphStore
+    # print("\nStoring the sample graph in GraphStore...")
+    # gstore.upsert("chem_info/tox21_100", sample)
+
+    # Plot a sample of the graph
     print("\nShowing the connected sample graph...")
-    show_graph(sample, id_column)
+    show_graph(nx_graph, id_column)
