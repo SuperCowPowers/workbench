@@ -57,8 +57,7 @@ class PluginUnitTest:
 
         # Set up the layout
         layout_children = [
-            dbc.Row([html.H2("Plugin Unit Test")], style={"marginBottom": "20px"}),
-            dbc.Row(self.component, style={"marginBottom": "20px"}),
+            dbc.Row(self.component, style={"marginBottom": "20px", "height": "700px"}),
             html.Button("Update Plugin", id="update-button", style={"marginBottom": "20px"}),
         ]
 

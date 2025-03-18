@@ -116,11 +116,13 @@ class GraphPlot(PluginInterface):
         # We'll use the first node to look for node attributes
         first_node = self.graph.nodes[next(iter(self.graph.nodes))]
 
-        # Check to make sure the first node has an 'x' and 'y' attribute
-        if "pos" not in first_node:
-            self.log.important("No 'pos' attribute found, running layout for node positions...")
-            pos = nx.spring_layout(self.graph, iterations=500)
-            nx.set_node_attributes(self.graph, pos, "pos")
+        # Check to make sure the first node has 'x' and 'y' attributes
+        if "x" not in first_node or "y" not in first_node:
+            self.log.important("No 'x'/'y' attributes found, running layout for node positions...")
+            pos = nx.spring_layout(self.graph, iterations=5000)
+            for node, position in pos.items():
+                self.graph.nodes[node]["x"] = position[0]
+                self.graph.nodes[node]["y"] = position[1]
 
         # Use 'id' as default label field if not specified
         label_field = kwargs.get("label", next(iter(first_node), "id"))
@@ -134,12 +136,12 @@ class GraphPlot(PluginInterface):
         # Define hover columns if not specified
         hover_columns = kwargs.get("hover_columns", ["id", "degree"])  # Default hover columns
         if hover_columns == "all":
-            hover_columns = [key for key in first_node if key != "pos"]
+            hover_columns = [key for key in first_node if key != "x" and key != "y"]
 
         # Iterate through nodes once and extract required fields
         for node, data in self.graph.nodes(data=True):
-            x_nodes.append(data["pos"][0])
-            y_nodes.append(data["pos"][1])
+            x_nodes.append(data["x"])
+            y_nodes.append(data["y"])
             labels.append(data.get(label_field, ""))
             node_degrees.append(data.get("degree", self.graph.degree[node]))
             hover_text.append("<br>".join([f"{key}: {data.get(key, '')}" for key in hover_columns]))
@@ -175,8 +177,8 @@ class GraphPlot(PluginInterface):
         edge_weights = list(nx.get_edge_attributes(self.graph, "weight").values())
         edge_colors = weights_to_colors(edge_weights, color_scale)
         for edge, color in zip(self.graph.edges(), edge_colors):
-            x0, y0 = self.graph.nodes[edge[0]]["pos"]
-            x1, y1 = self.graph.nodes[edge[1]]["pos"]
+            x0, y0 = self.graph.nodes[edge[0]]["x"], self.graph.nodes[edge[0]]["y"]
+            x1, y1 = self.graph.nodes[edge[1]]["x"], self.graph.nodes[edge[1]]["y"]
 
             # Create individual Scattergl trace for each edge with specific styling
             edge_traces += [
@@ -214,9 +216,10 @@ class GraphPlot(PluginInterface):
 
         # Get the first node's attributes (all fields should be defined here)
         node_attributes = {key for key in first_node.keys()}
-        node_attributes.discard("pos")  # Remove 'pos' from the attributes
+        node_attributes.discard("x")  # Remove 'x/y' from the attributes
+        node_attributes.discard("y")
 
-        # Create dropdown options for the label list (all non-'pos' attributes)
+        # Create dropdown options for the label list (all non-'x/y' attributes)
         label_list = [{"label": "None", "value": "None"}]  # Add "None" option as the first entry
         label_list.extend([{"label": attr, "value": attr} for attr in node_attributes])
 
