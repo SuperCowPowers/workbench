@@ -116,18 +116,10 @@ class GraphPlot(PluginInterface):
         # We'll use the first node to look for node attributes
         first_node = self.graph.nodes[next(iter(self.graph.nodes))]
 
-        # Check to make sure the first node has a 'pos' attribute
+        # Check to make sure the first node has an 'x' and 'y' attribute
         if "pos" not in first_node:
             self.log.important("No 'pos' attribute found, running layout for node positions...")
-            if self.graph.number_of_nodes() < 100:
-                self.log.info("Using Sprint layout for small graphs.")
-                pos = nx.spring_layout(self.graph, iterations=1000)
-            elif self.graph.number_of_nodes() < 1000:
-                self.log.info("Using Spring layout for medium graphs.")
-                pos = nx.spring_layout(self.graph, iterations=500)
-            else:
-                self.log.info("Using Spectral layout for large graphs.")
-                pos = nx.spectral_layout(self.graph)
+            pos = nx.spring_layout(self.graph, iterations=500)
             nx.set_node_attributes(self.graph, pos, "pos")
 
         # Use 'id' as default label field if not specified
@@ -302,7 +294,7 @@ if __name__ == "__main__":
 
     # Pull a test graph
     graph_store = GraphStore()
-    test_graph = graph_store.get("chem_info/tox21")
+    test_graph = graph_store.get("chem_info/tox21_100")
     if test_graph is None:
         print("Test graph not found... using default")
 

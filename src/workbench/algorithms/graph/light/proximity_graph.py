@@ -229,9 +229,9 @@ if __name__ == "__main__":
     sample = connected_sample(nx_graph, n=100)
 
     # Store the graph in the GraphStore
-    # print("\nStoring the sample graph in GraphStore...")
-    # gstore.upsert("chem_info/tox21_100", sample)
+    print("\nStoring the sample graph in GraphStore...")
+    gstore.upsert("chem_info/tox21_100", sample)
 
     # Plot a sample of the graph
     print("\nShowing the connected sample graph...")
-    show_graph(nx_graph, id_column)
+    show_graph(sample, id_column)
