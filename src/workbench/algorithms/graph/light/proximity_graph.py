@@ -40,36 +40,41 @@ class ProximityGraph:
         # Add nodes with attributes (features)
         log.info("Adding nodes to the proximity graph...")
         self._nx_graph = nx.Graph()
-        nodes_with_attrs = node_df.set_index(id_column).to_dict('index')
-        self._nx_graph.add_nodes_from(nodes_with_attrs.items())
+        self._nx_graph.add_nodes_from(node_df.set_index(id_column, drop=False).to_dict('index').items())
 
-        # Edge weights are based on proximity type
+        # Determine edge weights based on proximity type
         if prox.proximity_type == ProximityType.SIMILARITY:
-            edge_weights = all_neighbors_df["similarity"]
+            all_neighbors_df["weight"] = all_neighbors_df["similarity"]
         elif prox.proximity_type == ProximityType.DISTANCE:
-            # Divide the distance by the maximum distance to normalize and then invert
-            edge_weights = all_neighbors_df["distance"].values
-            edge_weights = edge_weights / edge_weights.max()
+            # Normalize and invert distance
+            max_distance = all_neighbors_df["distance"].max()
+            all_neighbors_df["weight"] = 1.0 - all_neighbors_df["distance"] / max_distance
 
         # Add edges to the graph
-        num_edges = 0
+        log.info("Adding edges to the graph...")
         min_edges = 2
         min_weight = 0.8
-        current_id = None
-        log.info("Adding edges to the graph...")
-        for (_, row), edge_weight in zip(all_neighbors_df.iterrows(), edge_weights):
-            source_id = row[id_column]
-            if source_id != current_id:
-                num_edges = 0
-                current_id = source_id
-            if num_edges <= min_edges or edge_weight > min_weight:
-                self._nx_graph.add_edge(row[id_column], row["neighbor_id"], weight=edge_weight)
-                num_edges += 1
 
-        # Print the number of nodes and edges
-        nodes = self._nx_graph.number_of_nodes()
-        edges = self._nx_graph.number_of_edges()
-        log.info(f"Graph built with {nodes} nodes and {edges} edges.")
+        # Group by source ID and process each group
+        for source_id, group in all_neighbors_df.groupby(id_column):
+            # Sort by weight (assuming higher is better)
+            sorted_group = group.sort_values("weight", ascending=False)
+
+            # Take all edges up to min_edges (or all if fewer)
+            actual_min_edges = min(len(sorted_group), min_edges)
+            top_edges = sorted_group.iloc[:actual_min_edges]
+
+            # Also take any additional neighbors above min_weight (beyond the top edges)
+            high_weight_edges = sorted_group.iloc[actual_min_edges:][sorted_group.iloc[actual_min_edges:]["weight"] > min_weight]
+
+            # Combine both sets
+            edges_to_add = pd.concat([top_edges, high_weight_edges])
+
+            # Add all edges at once
+            self._nx_graph.add_edges_from([
+                (source_id, row["neighbor_id"], {"weight": row["weight"]})
+                for _, row in edges_to_add.iterrows()
+            ])
 
     @property
     def nx_graph(self) -> nx.Graph:
@@ -153,7 +158,7 @@ if __name__ == "__main__":
 
     # Build a graph using FingerprintProximity
     print("\n--- FingerprintProximity Graph ---")
-    prox = FingerprintProximity(fingerprint_df, fingerprint_column="fingerprint", id_column="id", n_neighbors=2)
+    prox = FingerprintProximity(fingerprint_df, fingerprint_column="fingerprint", id_column="id")
     fingerprint_graph = ProximityGraph()
     fingerprint_graph.build_graph(prox)
     nx_graph = fingerprint_graph.nx_graph
