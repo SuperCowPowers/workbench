@@ -220,12 +220,12 @@ if __name__ == "__main__":
     print("Edges:", nx_graph.number_of_edges())
 
     # If the graph has 'x' and 'y' columns, drop them
-    if 'x' in next(iter(nx_graph.nodes(data=True)))[1]:
+    if "x" in next(iter(nx_graph.nodes(data=True)))[1]:
         for node_id, node_data in nx_graph.nodes(data=True):
-            if 'x' in node_data:
-                del node_data['x']
-            if 'y' in node_data:
-                del node_data['y']
+            if "x" in node_data:
+                del node_data["x"]
+            if "y" in node_data:
+                del node_data["y"]
 
     # Store the graph in the GraphStore
     gstore = GraphStore()
