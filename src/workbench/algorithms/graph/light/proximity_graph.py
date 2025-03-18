@@ -131,6 +131,14 @@ if __name__ == "__main__":
     from workbench.utils.chem_utils import compute_morgan_fingerprints
     from workbench.utils.graph_utils import connected_sample
 
+    def show_graph(graph, id_column):
+        """Display the graph using Plotly."""
+        graph_plot = GraphPlot()
+        properties = graph_plot.update_properties(graph, labels=id_column, hover_text="all")
+        fig = properties[0]
+        fig.update_layout(paper_bgcolor='rgb(30,30,30)', plot_bgcolor='rgb(30,30,30)')
+        fig.show()
+
     # Example DataFrame for FeaturesProximity
     feature_data = {
         "id": [1, 2, 3, 4],
@@ -170,27 +178,22 @@ if __name__ == "__main__":
     print("Edges:", neighborhood_subgraph.edges(data=True))
 
     # Plot the full graph
-    id_column = "id"
-    graph_plot = GraphPlot()
-    properties = graph_plot.update_properties(nx_graph, labels=id_column, hover_text="all")
-    properties[0].show()
+    show_graph(nx_graph, "id")
 
     # Get a neighborhood subgraph for a specific node
-    neighborhood_subgraph = fingerprint_graph.get_neighborhood(node_id=fingerprint_df[id_column].iloc[0], radius=2)
+    neighborhood_subgraph = fingerprint_graph.get_neighborhood(node_id=fingerprint_df["id"].iloc[0], radius=2)
 
     # Plot the neighborhood subgraph
-    properties = graph_plot.update_properties(neighborhood_subgraph, labels=id_column, hover_text="all")
-    properties[0].show()
+    show_graph(neighborhood_subgraph, "id")
 
     # Compute a shortest path subgraph using two random nodes
-    source_node = fingerprint_df[id_column].iloc[0]
-    target_node = fingerprint_df[id_column].iloc[-1]
+    source_node = fingerprint_df["id"].iloc[0]
+    target_node = fingerprint_df["id"].iloc[-1]
     short_path = set(nx.shortest_path(nx_graph, source=source_node, target=target_node, weight="weight"))
     subgraph = nx_graph.subgraph(short_path)
 
     # Plot the subgraph
-    properties = graph_plot.update_properties(subgraph, labels=id_column, hover_text="all")
-    properties[0].show()
+    show_graph(subgraph, "id")
 
     # Now a real dataset with fingerprints
 
@@ -200,25 +203,14 @@ if __name__ == "__main__":
     id_column = "id"
 
     # Compute FingerprintProximity Graph
+    print("\nComputing FingerprintProximity Graph for Tox21 Data...")
     prox = FingerprintProximity(tox_df, fingerprint_column="morgan_fingerprint", id_column=id_column, n_neighbors=5)
     fingerprint_graph = ProximityGraph()
     fingerprint_graph.build_graph(prox)
     nx_graph = fingerprint_graph.nx_graph
 
-    # Store the graph in the GraphStore
-    fingerprint_graph.store_graph("chem_info/tox21")
-
     # Plot a sample of the graph
+    print("\nComputing a connected sample of the graph...")
     sample = connected_sample(nx_graph, n=100)
-    graph_plot = GraphPlot()
-    properties = graph_plot.update_properties(sample, labels=id_column, hover_text="all")
-    properties[0].show()
-
-    # Store the graph and load it back
-    graph_store = GraphStore()
-    graph_store.upsert("chem_info/tox21_100", sample)
-    load_sample = graph_store.get("chem_info/tox21_100")
-
-    # Plot to compare
-    properties = graph_plot.update_properties(load_sample, labels=id_column, hover_text="all")
-    properties[0].show()
+    print("\nShowing the connected sample graph...")
+    show_graph(sample, id_column)
