@@ -136,7 +136,7 @@ if __name__ == "__main__":
         graph_plot = GraphPlot()
         properties = graph_plot.update_properties(graph, labels=id_column, hover_text="all")
         fig = properties[0]
-        fig.update_layout(paper_bgcolor='rgb(30,30,30)', plot_bgcolor='rgb(30,30,30)')
+        fig.update_layout(paper_bgcolor="rgb(30,30,30)", plot_bgcolor="rgb(30,30,30)")
         fig.show()
 
     # Example DataFrame for FeaturesProximity
