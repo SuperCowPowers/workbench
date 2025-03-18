@@ -54,7 +54,7 @@ class Proximity:
 
     def build_proximity_model(self) -> None:
         """Standardize features and fit Nearest Neighbors model.
-           Note: This method can be overridden in subclasses for custom behavior."""
+        Note: This method can be overridden in subclasses for custom behavior."""
         self.proximity_type = ProximityType.DISTANCE
         self.scaler = StandardScaler()
         self.X = self.scaler.fit_transform(self.df[self.features])

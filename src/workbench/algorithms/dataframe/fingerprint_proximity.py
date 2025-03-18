@@ -13,7 +13,7 @@ log = logging.getLogger("workbench")
 
 class FingerprintProximity(Proximity):
     def __init__(
-        self, df: pd.DataFrame, id_column: Union[int, str],  fingerprint_column: str, n_neighbors: int = 5
+        self, df: pd.DataFrame, id_column: Union[int, str], fingerprint_column: str, n_neighbors: int = 5
     ) -> None:
         """
         Initialize the FingerprintProximity class for binary fingerprint similarity.
@@ -24,6 +24,7 @@ class FingerprintProximity(Proximity):
             fingerprint_column (str): Name of the column containing fingerprints.
             n_neighbors (int): Default number of neighbors to compute.
         """
+        self.fingerprint_column = fingerprint_column
 
         # Call the parent class constructor
         super().__init__(df, id_column=id_column, features=[fingerprint_column], n_neighbors=n_neighbors)
@@ -38,6 +39,7 @@ class FingerprintProximity(Proximity):
         self.proximity_type = ProximityType.SIMILARITY
 
         # Convert fingerprint strings to binary arrays
+
         fingerprint_bits = self.df[self.fingerprint_column].apply(
             lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
         )
@@ -47,10 +49,25 @@ class FingerprintProximity(Proximity):
         log.info("Computing NearestNeighbors with Jaccard metric...")
         self.nn = NearestNeighbors(metric="jaccard", n_neighbors=self.n_neighbors + 1).fit(self.X)
 
+    # Override the prep_features_for_query method
+    def prep_features_for_query(self, query_df: pd.DataFrame) -> np.ndarray:
+        """
+        Prepare the query DataFrame by converting fingerprints to binary arrays.
+
+        Args:
+            query_df (pd.DataFrame): DataFrame containing query fingerprints.
+
+        Returns:
+            np.ndarray: Binary feature matrix for the query fingerprints.
+        """
+        fingerprint_bits = query_df[self.fingerprint_column].apply(
+            lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
+        )
+        return np.vstack(fingerprint_bits)
+
     def all_neighbors(
         self,
         min_similarity: float = None,
-        max_neighbors: int = None,
         include_self: bool = False,
         add_columns: List[str] = None,
     ) -> pd.DataFrame:
@@ -66,11 +83,11 @@ class FingerprintProximity(Proximity):
         Returns:
             DataFrame containing neighbors and similarities
         """
-        # Use the same method but with the original dataframe as query
+
+        # Call the parent class method to find neighbors
         return self.neighbors(
             query_df=self.df,
             min_similarity=min_similarity,
-            max_neighbors=max_neighbors,
             include_self=include_self,
             add_columns=add_columns,
         )
@@ -79,7 +96,6 @@ class FingerprintProximity(Proximity):
         self,
         query_df: pd.DataFrame,
         min_similarity: float = None,
-        max_neighbors: int = None,
         include_self: bool = False,
         add_columns: List[str] = None,
     ) -> pd.DataFrame:
@@ -89,63 +105,30 @@ class FingerprintProximity(Proximity):
         Args:
             query_df: DataFrame containing query fingerprints
             min_similarity: Minimum similarity threshold (0-1)
-            max_neighbors: Maximum number of neighbors to return per query
             include_self: Whether to include self in results (if present)
             add_columns: Additional columns to include in results
 
         Returns:
             DataFrame containing neighbors and similarities
 
-        Note: The query DataFrame must include both the fingerprint_column and id_column.
+        Note: The query DataFrame must include the feature columns. The id_column is optional.
         """
-        # Verify required columns are present
-        required_cols = {self.fingerprint_column, self.id_column}
-        missing = required_cols - set(query_df.columns)
-        if missing:
-            raise ValueError(f"Query DataFrame is missing required columns: {missing}")
-
-        # Determine neighbors to find
-        n_neighbors = max_neighbors if max_neighbors is not None else self.n_neighbors
-        n_neighbors = min(n_neighbors + 1, len(self.df))  # +1 to account for self
-
-        # Convert fingerprints to binary arrays
-        fingerprint_bits = query_df[self.fingerprint_column].apply(
-            lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
-        )
-        X_query = np.vstack(fingerprint_bits)
 
         # Calculate radius from similarity if provided
         radius = 1 - min_similarity if min_similarity is not None else None
 
-        # Find neighbors based on radius or k-nearest
-        if radius is not None:
-            distances, indices = self.nn.radius_neighbors(X_query, radius=radius)
-        else:
-            distances, indices = self.nn.kneighbors(X_query, n_neighbors=n_neighbors)
+        # Call the parent class method to find neighbors
+        neighbors_df = super().neighbors(
+            query_df=query_df,
+            radius=radius,
+            include_self=include_self,
+            add_columns=add_columns,
+        )
 
-        # Build results
-        all_results = []
-        for i, (dists, nbrs) in enumerate(zip(distances, indices)):
-            query_id = query_df.iloc[i][self.id_column]
-
-            for neighbor_idx, dist in zip(nbrs, dists):
-                # Get neighbor ID
-                neighbor_id = self.df.iloc[neighbor_idx][self.id_column]
-
-                # Skip if the neighbor is the query itself and include_self is False
-                if not include_self and neighbor_id == query_id:
-                    continue
-
-                # Convert distance to similarity
-                similarity = 1 - dist
-
-                all_results.append(
-                    self._build_neighbor_result(
-                        query_id=query_id, neighbor_idx=neighbor_idx, similarity=similarity, add_columns=add_columns
-                    )
-                )
-
-        return pd.DataFrame(all_results)
+        # Convert distances to similarity
+        neighbors_df["similarity"] = 1 - neighbors_df["distance"]
+        neighbors_df.drop(columns=["distance"], inplace=True)
+        return neighbors_df
 
 
 # Testing the FingerprintProximity class

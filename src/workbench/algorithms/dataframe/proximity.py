@@ -54,11 +54,25 @@ class Proximity:
 
     def build_proximity_model(self) -> None:
         """Standardize features and fit Nearest Neighbors model.
-           Note: This method can be overridden in subclasses for custom behavior."""
+        Note: This method can be overridden in subclasses for custom behavior."""
         self.proximity_type = ProximityType.DISTANCE
         self.scaler = StandardScaler()
         self.X = self.scaler.fit_transform(self.df[self.features])
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
+
+    def prep_features_for_query(self, query_df: pd.DataFrame) -> np.ndarray:
+        """
+        Preprocess the query DataFrame features.
+
+        Args:
+            query_df (pd.DataFrame): DataFrame containing query points.
+
+        Returns:
+            np.ndarray: Transformed feature matrix.
+        """
+
+        # Transform the query features using the model's scaler
+        return self.scaler.transform(query_df[self.features])
 
     def all_neighbors(self, add_columns: List[str] = None) -> pd.DataFrame:
         """
@@ -110,16 +124,16 @@ class Proximity:
 
         Note: The query DataFrame must include the feature columns. The id_column is optional.
         """
-        # Verify required feature columns are present
+        # Check if all required features are present
         missing = set(self.features) - set(query_df.columns)
         if missing:
             raise ValueError(f"Query DataFrame is missing required feature columns: {missing}")
 
+        # Prep features for query
+        X_query = self.prep_features_for_query(query_df)
+
         # Check if id_column is present
         id_column_present = self.id_column in query_df.columns
-
-        # Transform the query features using the model's scaler
-        X_query = self.scaler.transform(query_df[self.features])
 
         # Get neighbors using either radius or k-nearest neighbors
         if radius is not None:
