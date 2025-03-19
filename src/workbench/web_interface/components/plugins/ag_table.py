@@ -35,13 +35,13 @@ class AGTable(PluginInterface):
             "suppressCellFocus": True,
             "headerHeight": self.header_height,
             "rowHeight": self.row_height,
-            "defaultColDef": {"sortable": True, "filter": True, "resizable": True},
+            "defaultColDef": {"sortable": True, "filter": True, "resizable": True, "maxWidth": 500},
+            "autoSizeStrategy": {"type": "fitCellContents"},
         }
 
         self.container = AgGrid(
             id=component_id,
             dashGridOptions=grid_options,
-            columnSize="autoSize",
             style={"height": f"{self.max_height}px", "overflow": "auto"},
         )
 
@@ -78,12 +78,11 @@ class AGTable(PluginInterface):
         # Convert the DataFrame to a list of dictionaries for AG Grid
         table_data = table_df.to_dict("records")
 
-        # Okay the Health and Owner columns are always way too big
+        # Create column definitions for AG Grid
         column_defs = [
             {
                 "headerName": col,
                 "field": col,
-                "width": 100 if col in ["Health", "Owner", "Ver"] else None,  # Smaller width for specific columns
             }
             for col in table_df.columns
         ]
