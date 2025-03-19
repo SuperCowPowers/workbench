@@ -187,9 +187,9 @@ class AWSMeta:
                     "Created": datetime_string(feature_set_details.get("CreationTime")),
                     "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),
                     "Input": aws_tags.get("workbench_input", "-"),
-                    "Tags": aws_tags.get("workbench_tags", "-"),
                     "Online": str(feature_set_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "Unknown")),
                     "Offline": "True" if feature_set_details.get("OfflineStoreConfig") else "Unknown",
+                    "Tags": aws_tags.get("workbench_tags", "-"),
                     "_aws_url": self.feature_group_console_url(name),
                 }
                 data_summary.append(summary)
@@ -246,10 +246,10 @@ class AWSMeta:
                     "Model Type": aws_tags.get("workbench_model_type", "-"),
                     "Created": created,
                     "Ver": model_details.get("ModelPackageVersion", "-"),
-                    "Tags": aws_tags.get("workbench_tags", "-"),
                     "Input": aws_tags.get("workbench_input", "-"),
                     "Status": status,
                     "Description": description,
+                    "Tags": aws_tags.get("workbench_tags", "-"),
                     "_aws_url": self.model_package_group_console_url(model_group_name),
                 }
                 model_summary.append(summary)
@@ -309,13 +309,13 @@ class AWSMeta:
                     "Owner": aws_tags.get("workbench_owner", "-"),
                     "Instance": instance_type,
                     "Created": datetime_string(endpoint_info.get("CreationTime")),
-                    "Tags": aws_tags.get("workbench_tags", "-"),
                     "Input": aws_tags.get("workbench_input", "-"),
                     "Status": endpoint_info["EndpointStatus"],
                     "Config": endpoint_config_name,
                     "Variant": production_variant.get("VariantName", "-"),
                     "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
                     "Samp(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
+                    "Tags": aws_tags.get("workbench_tags", "-"),
                 }
                 data_summary.append(summary)
 
@@ -340,10 +340,10 @@ class AWSMeta:
                 "Name": pipeline_name.replace(self.pipeline_prefix + "/", ""),
                 "Health": "",
                 "Num Stages": len(pipeline_info),
-                "Tags": pipeline_info.get("tags", "-"),
                 "Modified": datetime_string(datetime.now(timezone.utc)),
                 "Last Run": datetime_string(datetime.now(timezone.utc)),
                 "Status": "Success",  # pipeline_info.get("Status", "-"),
+                "Tags": pipeline_info.get("tags", "-"),
             }
             pipeline_summaries.append(summary)
 
@@ -621,11 +621,11 @@ class AWSMeta:
                 "Owner": table.get("Parameters", {}).get("workbench_owner", "-"),
                 "Database": database,
                 "Modified": datetime_string(table["UpdateTime"]),
-                "Tags": table.get("Parameters", {}).get("workbench_tags", "-"),
                 "Columns": len(table["StorageDescriptor"].get("Columns", [])),
                 "Input": str(
                     table.get("Parameters", {}).get("workbench_input", "-"),
                 ),
+                "Tags": table.get("Parameters", {}).get("workbench_tags", "-"),
                 "_aws_url": self.data_catalog_console_url(table["Name"], database),
             }
             data_summary.append(summary)
