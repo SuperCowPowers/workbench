@@ -12,7 +12,7 @@ dynamic = ["version"]
 description = "Workbench: A Dashboard and Python API for creating and deploying AWS SageMaker Model Pipelines"
 readme = "README.md"
 license = "MIT"
-license-files = { paths = ["LICENSE"] }
+license-files = ["LICENSE"]
 requires-python = ">=3.9"
 keywords = ["SageMaker", "Machine Learning", "AWS", "Python", "Utilities"]
 classifiers = [
