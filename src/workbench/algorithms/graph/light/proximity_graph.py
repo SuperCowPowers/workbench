@@ -128,8 +128,8 @@ if __name__ == "__main__":
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
     from workbench.api import DFStore
-    from workbench.utils.chem_utils import compute_morgan_fingerprints
-    from workbench.utils.graph_utils import connected_sample
+    from workbench.utils.chem_utils import compute_morgan_fingerprints, project_fingerprints
+    from workbench.utils.graph_utils import connected_sample, graph_layout
 
     def show_graph(graph, id_column):
         """Display the graph using Plotly."""
@@ -202,6 +202,9 @@ if __name__ == "__main__":
     tox_df = compute_morgan_fingerprints(tox_df)
     id_column = "id"
 
+    # Project the fingerprints to 2D space
+    tox_df = project_fingerprints(tox_df, projection="UMAP")
+
     # Compute FingerprintProximity Graph
     print("\nComputing FingerprintProximity Graph for Tox21 Data...")
     prox = FingerprintProximity(tox_df, fingerprint_column="morgan_fingerprint", id_column=id_column, n_neighbors=5)
@@ -219,13 +222,9 @@ if __name__ == "__main__":
     print("Nodes:", nx_graph.number_of_nodes())
     print("Edges:", nx_graph.number_of_edges())
 
-    # If the graph has 'x' and 'y' columns, drop them
-    if "x" in next(iter(nx_graph.nodes(data=True)))[1]:
-        for node_id, node_data in nx_graph.nodes(data=True):
-            if "x" in node_data:
-                del node_data["x"]
-            if "y" in node_data:
-                del node_data["y"]
+    # Now fine tune the projection with force-directed layout
+    print("\nApplying force-directed layout...")
+    nx_graph = graph_layout(nx_graph)
 
     # Store the graph in the GraphStore
     gstore = GraphStore()
@@ -235,6 +234,7 @@ if __name__ == "__main__":
     # Compute a connected sample of the graph
     print("\nComputing a connected sample of the graph...")
     sample = connected_sample(nx_graph, n=100)
+    sample = graph_layout(sample)
 
     # Store the graph in the GraphStore
     print("\nStoring the sample graph in GraphStore...")
