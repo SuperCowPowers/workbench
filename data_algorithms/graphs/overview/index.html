@@ -1944,6 +1944,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#workbench.algorithms.graph.light.proximity_graph.show_graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      show_graph
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#questions" class="md-nav__link">
     <span class="md-ellipsis">
       Questions?
@@ -3494,6 +3503,15 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#workbench.algorithms.graph.light.proximity_graph.show_graph" class="md-nav__link">
+    <span class="md-ellipsis">
+      show_graph
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#questions" class="md-nav__link">
     <span class="md-ellipsis">
       Questions?
@@ -4319,6 +4337,41 @@
 
 </div>
 
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="workbench.algorithms.graph.light.proximity_graph.show_graph" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">show_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">id_column</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Display the graph using Plotly.</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>src/workbench/algorithms/graph/light/proximity_graph.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-134">134</a></span>
+<span class="normal"><a href="#__codelineno-0-135">135</a></span>
+<span class="normal"><a href="#__codelineno-0-136">136</a></span>
+<span class="normal"><a href="#__codelineno-0-137">137</a></span>
+<span class="normal"><a href="#__codelineno-0-138">138</a></span>
+<span class="normal"><a href="#__codelineno-0-139">139</a></span>
+<span class="normal"><a href="#__codelineno-0-140">140</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-134"><a id="__codelineno-0-134" name="__codelineno-0-134"></a><span class="k">def</span><span class="w"> </span><span class="nf">show_graph</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">id_column</span><span class="p">):</span>
+</span><span id="__span-0-135"><a id="__codelineno-0-135" name="__codelineno-0-135"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Display the graph using Plotly.&quot;&quot;&quot;</span>
+</span><span id="__span-0-136"><a id="__codelineno-0-136" name="__codelineno-0-136"></a>    <span class="n">graph_plot</span> <span class="o">=</span> <span class="n">GraphPlot</span><span class="p">()</span>
+</span><span id="__span-0-137"><a id="__codelineno-0-137" name="__codelineno-0-137"></a>    <span class="n">properties</span> <span class="o">=</span> <span class="n">graph_plot</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">id_column</span><span class="p">,</span> <span class="n">hover_text</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+</span><span id="__span-0-138"><a id="__codelineno-0-138" name="__codelineno-0-138"></a>    <span class="n">fig</span> <span class="o">=</span> <span class="n">properties</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-0-139"><a id="__codelineno-0-139" name="__codelineno-0-139"></a>    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">paper_bgcolor</span><span class="o">=</span><span class="s2">&quot;rgb(30,30,30)&quot;</span><span class="p">,</span> <span class="n">plot_bgcolor</span><span class="o">=</span><span class="s2">&quot;rgb(30,30,30)&quot;</span><span class="p">)</span>
+</span><span id="__span-0-140"><a id="__codelineno-0-140" name="__codelineno-0-140"></a>    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
 
 
 
