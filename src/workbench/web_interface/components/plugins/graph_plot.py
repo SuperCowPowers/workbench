@@ -116,10 +116,20 @@ class GraphPlot(PluginInterface):
         # We'll use the first node to look for node attributes
         first_node = self.graph.nodes[next(iter(self.graph.nodes))]
 
-        # Check to make sure the first node has 'x' and 'y' attributes
+        # Check if nodes have 'x' and 'y' attributes
         if "x" not in first_node or "y" not in first_node:
-            self.log.important("No 'x'/'y' attributes found, running layout for node positions...")
-            pos = nx.spring_layout(self.graph, iterations=5000)
+            self.log.important("No 'x'/'y' attributes found, running layout...")
+
+            # Choose layout algorithm based on graph size
+            node_count = len(self.graph.nodes())
+            if node_count < 500:
+                self.log.important(f"Graph has {node_count} nodes, using spring layout")
+                pos = nx.spring_layout(self.graph, iterations=500)
+            else:
+                self.log.important(f"Large graph with {node_count} nodes, using spectral layout")
+                pos = nx.spectral_layout(self.graph)
+
+            # Update x/y attributes for all nodes
             for node, position in pos.items():
                 self.graph.nodes[node]["x"] = position[0]
                 self.graph.nodes[node]["y"] = position[1]
