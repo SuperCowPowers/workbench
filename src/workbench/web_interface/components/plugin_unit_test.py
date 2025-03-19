@@ -92,6 +92,7 @@ class PluginUnitTest:
             [Input("update-button", "n_clicks")],
         )
         def update_plugin_properties(n_clicks):
+            print("Update Plugin Properties")
             return self._trigger_update()
 
         # Set up callbacks for displaying output signals
