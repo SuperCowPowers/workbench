@@ -33,7 +33,7 @@ password = pypi-AgENdG...
 
 ### Tox Background
 
-Tox will install the SageMaker Sandbox package into a blank virtualenv and then execute all the tests against the newly installed package. So if everything goes okay, you know the pypi package installed fine and the tests (which puls from the installed `workbench` package) also ran okay.
+Tox will install the SageMaker Sandbox package into a blank virtualenv and then execute all the tests against the newly installed package. So if everything goes okay, you know the pypi package installed fine and the tests (which pulls from the installed `workbench` package) also ran okay.
 
 ### Make sure ALL tests pass
 
