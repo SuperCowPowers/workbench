@@ -102,5 +102,16 @@ if __name__ == "__main__":
     # Run the Unit Test for the Plugin
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
+    # Test data
+    data = {
+        "ID": [f"id_{i}" for i in range(10)],
+        "feat1": [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
+        "feat2": [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
+        "feat3": [0.1, 0.15, 0.2, 0.9, 2.8, 0.25, 0.35, 0.4, 1.6, 2.5],
+        "price": [31, 60, 62, 40, 20, 31, 61, 60, 40, 20],
+        "name": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "Z"*55],
+    }
+    test_df = pd.DataFrame(data)
+
     # Run the Unit Test on the Plugin
-    PluginUnitTest(AGTable, theme="quartz", max_height=500).run()
+    PluginUnitTest(AGTable, theme="quartz", input_data=test_df, max_height=500).run()
