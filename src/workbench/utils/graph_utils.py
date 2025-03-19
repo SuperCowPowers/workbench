@@ -147,13 +147,41 @@ def load_graph_from_file(file_path: str) -> Optional[nx.Graph]:
         return None
 
 
-def connected_sample(G: nx.Graph, n: int, remove_pos: bool = True) -> nx.Graph:
+def graph_layout(graph, iterations=1000):
+    """
+    Apply spring layout to a NetworkX graph and set x/y coordinates for each node.
+
+    Args:
+        graph (nx.Graph): NetworkX graph to apply layout to
+        iterations (int): Number of layout iterations
+
+    Returns:
+        nx.Graph: The original graph with x/y coordinates updated
+    """
+    # Check if we should use existing coordinates
+    initial_pos = None
+    first_node = next(iter(graph.nodes))
+    if 'x' in graph.nodes[first_node] and 'y' in graph.nodes[first_node]:
+        log.info("Using existing node positions as initial positions...")
+        initial_pos = {node: (data['x'], data['y']) for node, data in graph.nodes(data=True)}
+
+    # Apply spring layout
+    pos = nx.spring_layout(graph, pos=initial_pos, iterations=iterations)
+
+    # Update x/y coordinates in the original graph
+    for node, position in pos.items():
+        graph.nodes[node]['x'] = float(position[0])
+        graph.nodes[node]['y'] = float(position[1])
+    return graph
+
+
+def connected_sample(G: nx.Graph, n: int, remove_pos: bool = False) -> nx.Graph:
     """Sample a connected subgraph of a given size from a NetworkX graph.
 
     Args:
         G (nx.Graph): The input NetworkX graph.
         n (int): The number of nodes to sample.
-        remove_pos (bool): Remove node positions if they exist (default: True).
+        remove_pos (bool): Remove node positions if they exist (default: False).
     """
     # Get the largest connected component
     largest_component = max(nx.connected_components(G), key=len)
@@ -183,8 +211,11 @@ def connected_sample(G: nx.Graph, n: int, remove_pos: bool = True) -> nx.Graph:
     # Remove node positions if they exist
     if remove_pos:
         for node in sampled_subgraph.nodes:
-            if "pos" in sampled_subgraph.nodes[node]:
-                del sampled_subgraph.nodes[node]["pos"]
+            if "x" in sampled_subgraph.nodes[node]:
+                del sampled_subgraph.nodes[node]["x"]
+            if "y" in sampled_subgraph.nodes[node]:
+                del sampled_subgraph.nodes[node]["y"]
+
     return sampled_subgraph
 
 
