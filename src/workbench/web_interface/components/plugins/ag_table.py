@@ -41,6 +41,7 @@ class AGTable(PluginInterface):
         self.container = AgGrid(
             id=component_id,
             dashGridOptions=grid_options,
+            columnSize="autoSize",
             style={"height": f"{self.max_height}px", "overflow": "auto"},
         )
 
@@ -82,9 +83,7 @@ class AGTable(PluginInterface):
             {
                 "headerName": col,
                 "field": col,
-                "resizable": True,
                 "width": 100 if col in ["Health", "Owner", "Ver"] else None,  # Smaller width for specific columns
-                "cellStyle": {"fontSize": "18px"} if col == "Health" else None,  # Larger font for Health column
             }
             for col in table_df.columns
         ]
