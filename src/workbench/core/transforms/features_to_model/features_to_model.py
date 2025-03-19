@@ -4,6 +4,7 @@ from pathlib import Path
 from sagemaker.estimator import Estimator
 import awswrangler as wr
 from datetime import datetime, timezone
+import time
 
 # Local Imports
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput
@@ -249,6 +250,7 @@ class FeaturesToModel(Transform):
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() on the Model"""
         self.log.info("Post-Transform: Calling onboard() on the Model...")
+        time.sleep(3)  # Give AWS time to complete Model register
 
         # Store the model feature_list and target_column in the workbench_meta
         output_model = ModelCore(self.output_uuid, model_type=self.model_type)

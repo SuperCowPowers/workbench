@@ -127,8 +127,9 @@ class ModelCore(Artifact):
         else:
             # Is this a model package group without any models?
             if len(self.model_meta["ModelPackageList"]) == 0:
-                self.log.warning(f"Model Group {self.model_name} has no Model Packages!")
+                self.log.critical(f"Model Group {self.model_name} has no Model Packages!")
                 self.latest_model = None
+                self.training_job_name = None
                 self.add_health_tag("model_not_found")
                 return
             try:
