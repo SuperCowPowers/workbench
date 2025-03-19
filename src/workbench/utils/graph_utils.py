@@ -161,17 +161,17 @@ def graph_layout(graph, iterations=1000):
     # Check if we should use existing coordinates
     initial_pos = None
     first_node = next(iter(graph.nodes))
-    if 'x' in graph.nodes[first_node] and 'y' in graph.nodes[first_node]:
+    if "x" in graph.nodes[first_node] and "y" in graph.nodes[first_node]:
         log.info("Using existing node positions as initial positions...")
-        initial_pos = {node: (data['x'], data['y']) for node, data in graph.nodes(data=True)}
+        initial_pos = {node: (data["x"], data["y"]) for node, data in graph.nodes(data=True)}
 
     # Apply spring layout
     pos = nx.spring_layout(graph, pos=initial_pos, iterations=iterations)
 
     # Update x/y coordinates in the original graph
     for node, position in pos.items():
-        graph.nodes[node]['x'] = float(position[0])
-        graph.nodes[node]['y'] = float(position[1])
+        graph.nodes[node]["x"] = float(position[0])
+        graph.nodes[node]["y"] = float(position[1])
     return graph
 
 
