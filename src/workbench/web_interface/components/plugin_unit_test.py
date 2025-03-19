@@ -6,7 +6,7 @@ import socket
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginInputType
-from workbench.api import DataSource, FeatureSet, Model, Endpoint
+from workbench.api import DataSource, FeatureSet, Model, Endpoint, Meta
 from workbench.api.compound import Compound
 from workbench.api.graph_store import GraphStore
 from workbench.api.pipeline import Pipeline
@@ -132,7 +132,7 @@ class PluginUnitTest:
             df = (
                 self.input_data
                 if self.input_data is not None
-                else FeatureSet("abalone_features").pull_dataframe()[:100]
+                else Meta().models(details=True)
             )
             return self.plugin.update_properties(df, **self.kwargs)
         elif plugin_input_type == PluginInputType.COMPOUND:
