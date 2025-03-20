@@ -175,6 +175,37 @@ def graph_layout(graph, iterations=1000):
     return graph
 
 
+def display_graph(graph, n_samples=10):
+    """
+    Display a sample of nodes and edges from a NetworkX graph with their attributes.
+
+    Args:
+        graph (nx.Graph): The NetworkX graph to display.
+        n_samples (int): The number of nodes and edges to display. Default is 10.
+    """
+    # Display nodes
+    print(f"NODES (showing {min(n_samples, graph.number_of_nodes())} of {graph.number_of_nodes()}):")
+    for i, (node, attrs) in enumerate(graph.nodes(data=True)):
+        if i >= n_samples:
+            print(f"...and {graph.number_of_nodes() - n_samples} more nodes")
+            break
+        print(f"Node {node}:")
+        for key, value in attrs.items():
+            print(f"  {key}: {value}")
+        print()  # Empty line for better readability
+
+    # Display edges
+    print(f"EDGES (showing {min(n_samples, graph.number_of_edges())} of {graph.number_of_edges()}):")
+    for i, (u, v, attrs) in enumerate(graph.edges(data=True)):
+        if i >= n_samples:
+            print(f"...and {graph.number_of_edges() - n_samples} more edges")
+            break
+        print(f"Edge ({u}, {v}):")
+        for key, value in attrs.items():
+            print(f"  {key}: {value}")
+        print()  # Empty line for better readability
+
+
 def connected_sample(G: nx.Graph, n: int, remove_pos: bool = False) -> nx.Graph:
     """Sample a connected subgraph of a given size from a NetworkX graph.
 
