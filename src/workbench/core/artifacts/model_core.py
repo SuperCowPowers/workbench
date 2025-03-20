@@ -750,10 +750,10 @@ class ModelCore(Artifact):
             return None
 
     def source_dir_url(self) -> Optional[str]:
-        """Retrieve the ModelDataUrl from the model's AWS metadata.
+        """Retrieve the model source directory from the model's AWS metadata.
 
         Returns:
-            Optional[str]: The ModelDataUrl if available, otherwise None.
+            Optional[str]: The model source directory if available, otherwise None.
         """
         meta = self.aws_meta()
         try:
@@ -764,10 +764,10 @@ class ModelCore(Artifact):
             return None
 
     def entry_point(self) -> Optional[str]:
-        """Retrieve the ModelDataUrl from the model's AWS metadata.
+        """Retrieve the entry point from the model's AWS metadata.
 
         Returns:
-            Optional[str]: The ModelDataUrl if available, otherwise None.
+            Optional[str]: The entry point if available, otherwise None.
         """
         meta = self.aws_meta()
         try:
