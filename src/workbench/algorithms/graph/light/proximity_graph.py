@@ -44,7 +44,7 @@ class ProximityGraph:
         # Check for duplicate IDs in the node DataFrame
         if not node_df[id_column].is_unique:
             log.error(f"Column '{id_column}' contains duplicate values. Using first occurrence for each ID...")
-            node_df = node_df.drop_duplicates(subset=[id_column], keep='first')
+            node_df = node_df.drop_duplicates(subset=[id_column], keep="first")
 
         # Set the id_column as index and add nodes
         self._nx_graph.add_nodes_from(node_df.set_index(id_column, drop=False).to_dict("index").items())
