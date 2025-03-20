@@ -5988,10 +5988,10 @@
 </span><span id="__span-0-750"><a id="__codelineno-0-750" name="__codelineno-0-750"></a>            <span class="k">return</span> <span class="kc">None</span>
 </span><span id="__span-0-751"><a id="__codelineno-0-751" name="__codelineno-0-751"></a>
 </span><span id="__span-0-752"><a id="__codelineno-0-752" name="__codelineno-0-752"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">source_dir_url</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="__span-0-753"><a id="__codelineno-0-753" name="__codelineno-0-753"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the ModelDataUrl from the model&#39;s AWS metadata.</span>
+</span><span id="__span-0-753"><a id="__codelineno-0-753" name="__codelineno-0-753"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the model source directory from the model&#39;s AWS metadata.</span>
 </span><span id="__span-0-754"><a id="__codelineno-0-754" name="__codelineno-0-754"></a>
 </span><span id="__span-0-755"><a id="__codelineno-0-755" name="__codelineno-0-755"></a><span class="sd">        Returns:</span>
-</span><span id="__span-0-756"><a id="__codelineno-0-756" name="__codelineno-0-756"></a><span class="sd">            Optional[str]: The ModelDataUrl if available, otherwise None.</span>
+</span><span id="__span-0-756"><a id="__codelineno-0-756" name="__codelineno-0-756"></a><span class="sd">            Optional[str]: The model source directory if available, otherwise None.</span>
 </span><span id="__span-0-757"><a id="__codelineno-0-757" name="__codelineno-0-757"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-758"><a id="__codelineno-0-758" name="__codelineno-0-758"></a>        <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_meta</span><span class="p">()</span>
 </span><span id="__span-0-759"><a id="__codelineno-0-759" name="__codelineno-0-759"></a>        <span class="k">try</span><span class="p">:</span>
@@ -6002,10 +6002,10 @@
 </span><span id="__span-0-764"><a id="__codelineno-0-764" name="__codelineno-0-764"></a>            <span class="k">return</span> <span class="kc">None</span>
 </span><span id="__span-0-765"><a id="__codelineno-0-765" name="__codelineno-0-765"></a>
 </span><span id="__span-0-766"><a id="__codelineno-0-766" name="__codelineno-0-766"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">entry_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="__span-0-767"><a id="__codelineno-0-767" name="__codelineno-0-767"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the ModelDataUrl from the model&#39;s AWS metadata.</span>
+</span><span id="__span-0-767"><a id="__codelineno-0-767" name="__codelineno-0-767"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the entry point from the model&#39;s AWS metadata.</span>
 </span><span id="__span-0-768"><a id="__codelineno-0-768" name="__codelineno-0-768"></a>
 </span><span id="__span-0-769"><a id="__codelineno-0-769" name="__codelineno-0-769"></a><span class="sd">        Returns:</span>
-</span><span id="__span-0-770"><a id="__codelineno-0-770" name="__codelineno-0-770"></a><span class="sd">            Optional[str]: The ModelDataUrl if available, otherwise None.</span>
+</span><span id="__span-0-770"><a id="__codelineno-0-770" name="__codelineno-0-770"></a><span class="sd">            Optional[str]: The entry point if available, otherwise None.</span>
 </span><span id="__span-0-771"><a id="__codelineno-0-771" name="__codelineno-0-771"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-772"><a id="__codelineno-0-772" name="__codelineno-0-772"></a>        <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_meta</span><span class="p">()</span>
 </span><span id="__span-0-773"><a id="__codelineno-0-773" name="__codelineno-0-773"></a>        <span class="k">try</span><span class="p">:</span>
@@ -7152,7 +7152,7 @@ Args:
 
     <div class="doc doc-contents ">
 
-        <p>Retrieve the ModelDataUrl from the model's AWS metadata.</p>
+        <p>Retrieve the entry point from the model's AWS metadata.</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -7170,7 +7170,7 @@ Args:
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Optional[str]: The ModelDataUrl if available, otherwise None.</p>
+                <p>Optional[str]: The entry point if available, otherwise None.</p>
               </div>
             </td>
           </tr>
@@ -7193,10 +7193,10 @@ Args:
 <span class="normal"><a href="#__codelineno-0-776">776</a></span>
 <span class="normal"><a href="#__codelineno-0-777">777</a></span>
 <span class="normal"><a href="#__codelineno-0-778">778</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-766"><a id="__codelineno-0-766" name="__codelineno-0-766"></a><span class="k">def</span><span class="w"> </span><span class="nf">entry_point</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="__span-0-767"><a id="__codelineno-0-767" name="__codelineno-0-767"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the ModelDataUrl from the model&#39;s AWS metadata.</span>
+</span><span id="__span-0-767"><a id="__codelineno-0-767" name="__codelineno-0-767"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the entry point from the model&#39;s AWS metadata.</span>
 </span><span id="__span-0-768"><a id="__codelineno-0-768" name="__codelineno-0-768"></a>
 </span><span id="__span-0-769"><a id="__codelineno-0-769" name="__codelineno-0-769"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-770"><a id="__codelineno-0-770" name="__codelineno-0-770"></a><span class="sd">        Optional[str]: The ModelDataUrl if available, otherwise None.</span>
+</span><span id="__span-0-770"><a id="__codelineno-0-770" name="__codelineno-0-770"></a><span class="sd">        Optional[str]: The entry point if available, otherwise None.</span>
 </span><span id="__span-0-771"><a id="__codelineno-0-771" name="__codelineno-0-771"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-772"><a id="__codelineno-0-772" name="__codelineno-0-772"></a>    <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_meta</span><span class="p">()</span>
 </span><span id="__span-0-773"><a id="__codelineno-0-773" name="__codelineno-0-773"></a>    <span class="k">try</span><span class="p">:</span>
@@ -9670,7 +9670,7 @@ Returns:
 
     <div class="doc doc-contents ">
 
-        <p>Retrieve the ModelDataUrl from the model's AWS metadata.</p>
+        <p>Retrieve the model source directory from the model's AWS metadata.</p>
 
 
     <p><span class="doc-section-title">Returns:</span></p>
@@ -9688,7 +9688,7 @@ Returns:
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Optional[str]: The ModelDataUrl if available, otherwise None.</p>
+                <p>Optional[str]: The model source directory if available, otherwise None.</p>
               </div>
             </td>
           </tr>
@@ -9711,10 +9711,10 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-762">762</a></span>
 <span class="normal"><a href="#__codelineno-0-763">763</a></span>
 <span class="normal"><a href="#__codelineno-0-764">764</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-752"><a id="__codelineno-0-752" name="__codelineno-0-752"></a><span class="k">def</span><span class="w"> </span><span class="nf">source_dir_url</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span id="__span-0-753"><a id="__codelineno-0-753" name="__codelineno-0-753"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the ModelDataUrl from the model&#39;s AWS metadata.</span>
+</span><span id="__span-0-753"><a id="__codelineno-0-753" name="__codelineno-0-753"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the model source directory from the model&#39;s AWS metadata.</span>
 </span><span id="__span-0-754"><a id="__codelineno-0-754" name="__codelineno-0-754"></a>
 </span><span id="__span-0-755"><a id="__codelineno-0-755" name="__codelineno-0-755"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-756"><a id="__codelineno-0-756" name="__codelineno-0-756"></a><span class="sd">        Optional[str]: The ModelDataUrl if available, otherwise None.</span>
+</span><span id="__span-0-756"><a id="__codelineno-0-756" name="__codelineno-0-756"></a><span class="sd">        Optional[str]: The model source directory if available, otherwise None.</span>
 </span><span id="__span-0-757"><a id="__codelineno-0-757" name="__codelineno-0-757"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-758"><a id="__codelineno-0-758" name="__codelineno-0-758"></a>    <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aws_meta</span><span class="p">()</span>
 </span><span id="__span-0-759"><a id="__codelineno-0-759" name="__codelineno-0-759"></a>    <span class="k">try</span><span class="p">:</span>
