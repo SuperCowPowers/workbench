@@ -128,7 +128,7 @@ class PluginUnitTest:
             return self.plugin.update_properties(pipeline, **self.kwargs)
         elif plugin_input_type == PluginInputType.GRAPH:
             graph = self.input_data if self.input_data is not None else GraphStore().get("test/karate_club")
-            return self.plugin.update_properties(graph, labels="club", hover_text=["club", "degree"], **self.kwargs)
+            return self.plugin.update_properties(graph, **self.kwargs)
         elif plugin_input_type == PluginInputType.DATAFRAME:
             df = self.input_data if self.input_data is not None else Meta().models(details=True)
             return self.plugin.update_properties(df, **self.kwargs)
