@@ -71,7 +71,9 @@ class FeatureSetCore(Artifact):
 
             # Check our DataSource (AWS Metadata refresh can fix)
             if not self.data_source.exists():
-                self.log.warning(f"FS: Data Source {self.athena_table} not found, sleeping and refreshing AWS Metadata...")
+                self.log.warning(
+                    f"FS: Data Source {self.athena_table} not found, sleeping and refreshing AWS Metadata..."
+                )
                 time.sleep(3)
                 self.refresh_meta()
 
