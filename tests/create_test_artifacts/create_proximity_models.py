@@ -13,7 +13,6 @@ import logging
 
 # Workbench Imports
 from workbench.api import Model, Endpoint
-from workbench.utils.model_utils import proximity_model
 
 log = logging.getLogger("workbench")
 
@@ -28,14 +27,14 @@ if __name__ == "__main__":
 
         # Create the Proximity Model from our Model
         model = Model("abalone-regression")
-        proximity_model(model, "abalone-prox")
+        model.prox_model("abalone-prox")
 
     # Create the Proximity Model based on AQSol Features
     if recreate or not Model("aqsol-prox").exists():
 
         # Create the Proximity Model from our Model
         model = Model("aqsol-regression")
-        proximity_model(model, "aqsol-prox")
+        model.prox_model("aqsol-prox")
 
     # Endpoints for our Proximity Models
     if recreate or not Endpoint("abalone-prox").exists():
