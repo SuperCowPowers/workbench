@@ -1085,7 +1085,7 @@ if __name__ == "__main__":
     print(f"Model Check: {my_model.exists()}")
 
     # Make sure the model is 'ready'
-    my_model.onboard()
+    # my_model.onboard()
 
     # Get the ARN of the Model Group
     print(f"Model Group ARN: {my_model.group_arn()}")
