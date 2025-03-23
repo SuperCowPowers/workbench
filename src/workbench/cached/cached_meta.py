@@ -376,7 +376,6 @@ if __name__ == "__main__":
     pprint(meta.model("abalone-regression"))
     print("\n\n*** Endpoint Details ***")
     pprint(meta.endpoint("abalone-regression"))
-    pprint(meta.endpoint("test-timing-realtime"))
 
     # Test out a non-existent model
     print("\n\n*** Model Doesn't Exist ***")
