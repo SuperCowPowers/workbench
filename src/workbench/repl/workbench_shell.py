@@ -71,22 +71,22 @@ if not ConfigManager().config_okay():
 # logging.getLogger("workbench").setLevel(IMPORTANT_LEVEL_NUM)
 
 
-class CustomPromptStyle(Style):
-    styles = {
-        Token.Workbench: "#ff69b4",  # Pink color for Workbench
-        Token.AWSProfile: "#ffd700",  # Yellow color for AWS Profile
-        Token.Lightblue: "#5fd7ff",
-        Token.Lightpurple: "#af87ff",
-        Token.Lightgreen: "#87ff87",
-        Token.Lime: "#afff00",
-        Token.Darkyellow: "#ddb777",
-        Token.Orange: "#ff8700",
-        Token.Red: "#dd0000",
-        Token.Blue: "#4444d7",
-        Token.Green: "#22cc22",
-        Token.Yellow: "#ffd787",
-        Token.Grey: "#aaaaaa",
-    }
+# We want to customize our prompt colors
+prompt_styles = {
+    Token.Workbench: "#ff69b4",  # Pink color for Workbench
+    Token.AWSProfile: "#ffd700",  # Yellow color for AWS Profile
+    Token.Lightblue: "#5fd7ff",
+    Token.Lightpurple: "#af87ff",
+    Token.Lightgreen: "#87ff87",
+    Token.Lime: "#afff00",
+    Token.Darkyellow: "#ddb777",
+    Token.Orange: "#ff8700",
+    Token.Red: "#dd0000",
+    Token.Blue: "#4444d7",
+    Token.Green: "#22cc22",
+    Token.Yellow: "#ffd787",
+    Token.Grey: "#aaaaaa",
+}
 
 
 # Note: Hack so the Prompt Class can access these variables
@@ -182,8 +182,8 @@ class WorkbenchShell:
         config = load_default_config()
         config.TerminalInteractiveShell.autocall = 2
         config.TerminalInteractiveShell.prompts_class = WorkbenchPrompt
-        config.TerminalInteractiveShell.highlighting_style = CustomPromptStyle
         config.TerminalInteractiveShell.banner1 = ""
+        config.TerminalInteractiveShell.highlighting_style_overrides = prompt_styles
 
         # Merge custom commands and globals into the namespace
         locs = self.commands.copy()  # Copy the custom commands
