@@ -1,3 +1,4 @@
+import IPython
 from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
@@ -9,6 +10,7 @@ import botocore
 import webbrowser
 import pandas as pd
 import readline  # noqa
+from distutils.version import LooseVersion
 
 try:
     import matplotlib.pyplot as plt  # noqa
@@ -190,7 +192,11 @@ class WorkbenchShell:
 
         # Start IPython with the config and commands in the namespace
         try:
-            start_ipython(argv=["--no-tip"], user_ns=locs, config=config)
+            if LooseVersion(IPython.__version__) >= LooseVersion("9.0.0"):
+                ipython_argv = ["--no-tip"]
+            else:
+                ipython_argv = []
+            start_ipython(ipython_argv, user_ns=locs, config=config)
         finally:
             spinner = self.spinner_start("Goodbye to AWS:")
             with silence_logs():
