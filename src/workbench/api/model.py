@@ -10,6 +10,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType  # noqa: F401
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from workbench.api.endpoint import Endpoint
+from workbench.utils.model_utils import proximity_model
 
 
 class Model(ModelCore):
@@ -67,6 +68,19 @@ class Model(ModelCore):
         end = Endpoint(name)
         end.set_owner(self.get_owner())
         return end
+
+    def prox_model(self, prox_model_name: str = None) -> "Model":
+        """Create a Proximity Model for this Model
+
+        Args:
+            prox_model_name (str, optional): Name of the Proximity Model.
+
+        Returns:
+            Model: The Proximity Model
+        """
+        if prox_model_name is None:
+            prox_model_name = self.model_name + "-prox"
+        return proximity_model(self, prox_model_name)
 
 
 if __name__ == "__main__":
