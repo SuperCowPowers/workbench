@@ -1,7 +1,6 @@
 from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
-from pygments.style import Style
 from pygments.token import Token
 import sys
 import logging
