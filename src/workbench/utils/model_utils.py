@@ -64,7 +64,7 @@ def model_instance_info() -> pd.DataFrame:
     return pd.DataFrame(data)
 
 
-def instance_architecutre(instance_name: str) -> str:
+def instance_architecture(instance_name: str) -> str:
     """Get the architecture for the given instance name"""
     info = model_instance_info()
     return info[info["Instance Name"] == instance_name]["Architecture"].values[0]
@@ -126,8 +126,8 @@ if __name__ == "__main__":
     print(supported_instance_types())
 
     # Get the architecture for the given instance
-    print(instance_architecutre("ml.c7i.large"))
-    print(instance_architecutre("ml.c7g.large"))
+    print(instance_architecture("ml.c7i.large"))
+    print(instance_architecture("ml.c7g.large"))
 
     # Get the custom script path
     print(get_custom_script_path("chem_info", "molecular_descriptors.py"))
