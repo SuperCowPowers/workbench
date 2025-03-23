@@ -3203,28 +3203,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../admin/dashboard_with_plugins/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Dashboard with Docker Plugins
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
         
   
@@ -4135,9 +4113,9 @@
 </span><span id="__span-0-217"><a id="__codelineno-0-217" name="__codelineno-0-217"></a><span class="sd">        Returns:</span>
 </span><span id="__span-0-218"><a id="__codelineno-0-218" name="__codelineno-0-218"></a><span class="sd">            dict(dict): A dictionary of stats for each column this format</span>
 </span><span id="__span-0-219"><a id="__codelineno-0-219" name="__codelineno-0-219"></a><span class="sd">            NB: String columns will NOT have num_zeros and descriptive stats</span>
-</span><span id="__span-0-220"><a id="__codelineno-0-220" name="__codelineno-0-220"></a><span class="sd">             {&#39;col1&#39;: {&#39;dtype&#39;: &#39;string&#39;, &#39;unique&#39;: 4321, &#39;nulls&#39;: 12},</span>
-</span><span id="__span-0-221"><a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">              &#39;col2&#39;: {&#39;dtype&#39;: &#39;int&#39;, &#39;unique&#39;: 4321, &#39;nulls&#39;: 12, &#39;num_zeros&#39;: 100, &#39;descriptive_stats&#39;: {...}},</span>
-</span><span id="__span-0-222"><a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="sd">              ...}</span>
+</span><span id="__span-0-220"><a id="__codelineno-0-220" name="__codelineno-0-220"></a><span class="sd">                {&#39;col1&#39;: {&#39;dtype&#39;: &#39;string&#39;, &#39;unique&#39;: 4321, &#39;nulls&#39;: 12},</span>
+</span><span id="__span-0-221"><a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">                 &#39;col2&#39;: {&#39;dtype&#39;: &#39;int&#39;, &#39;unique&#39;: 4321, &#39;nulls&#39;: 12, &#39;num_zeros&#39;: 100, &#39;descriptive_stats&#39;: {...}},</span>
+</span><span id="__span-0-222"><a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="sd">                 ...}</span>
 </span><span id="__span-0-223"><a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-224"><a id="__codelineno-0-224" name="__codelineno-0-224"></a>        <span class="k">pass</span>
 </span><span id="__span-0-225"><a id="__codelineno-0-225" name="__codelineno-0-225"></a>
@@ -4492,8 +4470,8 @@ Args:
               <div class="doc-md-description">
                 <p>String columns will NOT have num_zeros and descriptive stats
 {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
-'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'descriptive_stats': {...}},
-...}</p>
+ 'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'descriptive_stats': {...}},
+ ...}</p>
               </div>
             </td>
           </tr>
@@ -4521,9 +4499,9 @@ Args:
 </span><span id="__span-0-217"><a id="__codelineno-0-217" name="__codelineno-0-217"></a><span class="sd">    Returns:</span>
 </span><span id="__span-0-218"><a id="__codelineno-0-218" name="__codelineno-0-218"></a><span class="sd">        dict(dict): A dictionary of stats for each column this format</span>
 </span><span id="__span-0-219"><a id="__codelineno-0-219" name="__codelineno-0-219"></a><span class="sd">        NB: String columns will NOT have num_zeros and descriptive stats</span>
-</span><span id="__span-0-220"><a id="__codelineno-0-220" name="__codelineno-0-220"></a><span class="sd">         {&#39;col1&#39;: {&#39;dtype&#39;: &#39;string&#39;, &#39;unique&#39;: 4321, &#39;nulls&#39;: 12},</span>
-</span><span id="__span-0-221"><a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">          &#39;col2&#39;: {&#39;dtype&#39;: &#39;int&#39;, &#39;unique&#39;: 4321, &#39;nulls&#39;: 12, &#39;num_zeros&#39;: 100, &#39;descriptive_stats&#39;: {...}},</span>
-</span><span id="__span-0-222"><a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="sd">          ...}</span>
+</span><span id="__span-0-220"><a id="__codelineno-0-220" name="__codelineno-0-220"></a><span class="sd">            {&#39;col1&#39;: {&#39;dtype&#39;: &#39;string&#39;, &#39;unique&#39;: 4321, &#39;nulls&#39;: 12},</span>
+</span><span id="__span-0-221"><a id="__codelineno-0-221" name="__codelineno-0-221"></a><span class="sd">             &#39;col2&#39;: {&#39;dtype&#39;: &#39;int&#39;, &#39;unique&#39;: 4321, &#39;nulls&#39;: 12, &#39;num_zeros&#39;: 100, &#39;descriptive_stats&#39;: {...}},</span>
+</span><span id="__span-0-222"><a id="__codelineno-0-222" name="__codelineno-0-222"></a><span class="sd">             ...}</span>
 </span><span id="__span-0-223"><a id="__codelineno-0-223" name="__codelineno-0-223"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-224"><a id="__codelineno-0-224" name="__codelineno-0-224"></a>    <span class="k">pass</span>
 </span></code></pre></div></td></tr></table></div>
