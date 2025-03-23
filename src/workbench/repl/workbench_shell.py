@@ -190,7 +190,7 @@ class WorkbenchShell:
 
         # Start IPython with the config and commands in the namespace
         try:
-            start_ipython(argv=[], user_ns=locs, config=config)
+            start_ipython(argv=["--no-tip"], user_ns=locs, config=config)
         finally:
             spinner = self.spinner_start("Goodbye to AWS:")
             with silence_logs():
