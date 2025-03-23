@@ -69,6 +69,12 @@ class FeatureSetCore(Artifact):
             # Create our internal DataSource (hardcoded to Athena for now)
             self.data_source = AthenaSource(self.athena_table, self.athena_database)
 
+            # Check our DataSource (AWS Metadata refresh can fix)
+            if not self.data_source.exists():
+                self.log.warning(f"Data Source {self.uuid} not found, sleeping and refreshing AWS Metadata...")
+                time.sleep(3)
+                self.refresh_meta()
+
         # Spin up our Feature Store
         self.feature_store = FeatureStore(self.sm_session)
 
@@ -85,7 +91,15 @@ class FeatureSetCore(Artifact):
 
     def refresh_meta(self):
         """Internal: Refresh our internal AWS Feature Store metadata"""
-        self.log.info("Calling refresh_meta() on the underlying DataSource")
+        self.log.info(f"Calling refresh_meta() on the FeatureSet {self.uuid}")
+        self.feature_meta = self.meta.feature_set(self.uuid)
+        self.id_column = self.feature_meta["RecordIdentifierFeatureName"]
+        self.event_time = self.feature_meta["EventTimeFeatureName"]
+        self.athena_table = self.feature_meta["workbench_meta"]["athena_table"]
+        self.athena_database = self.feature_meta["workbench_meta"]["athena_database"]
+        self.s3_storage = self.feature_meta["workbench_meta"].get("s3_storage")
+        self.data_source = AthenaSource(self.athena_table, self.athena_database)
+        self.log.info(f"Calling refresh_meta() on the DataSource {self.data_source.uuid}")
         self.data_source.refresh_meta()
 
     def exists(self) -> bool:
