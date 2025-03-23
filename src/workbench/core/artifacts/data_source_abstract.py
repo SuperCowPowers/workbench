@@ -217,9 +217,9 @@ class DataSourceAbstract(Artifact):
         Returns:
             dict(dict): A dictionary of stats for each column this format
             NB: String columns will NOT have num_zeros and descriptive stats
-             {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
-              'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'descriptive_stats': {...}},
-              ...}
+                {'col1': {'dtype': 'string', 'unique': 4321, 'nulls': 12},
+                 'col2': {'dtype': 'int', 'unique': 4321, 'nulls': 12, 'num_zeros': 100, 'descriptive_stats': {...}},
+                 ...}
         """
         pass
 

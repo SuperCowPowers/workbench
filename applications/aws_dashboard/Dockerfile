@@ -24,7 +24,7 @@ COPY $WORKBENCH_CONFIG /app/workbench_config.json
 ENV WORKBENCH_CONFIG=/app/workbench_config.json
 
 # Install workbench[ui] in separate layer
-RUN pip install --no-cache-dir "workbench[ui]==0.8.117"
+RUN pip install --no-cache-dir "workbench[ui]==0.8.122"
 
 # Configure Nginx and Supervisor
 COPY nginx.conf /etc/nginx/sites-available/default

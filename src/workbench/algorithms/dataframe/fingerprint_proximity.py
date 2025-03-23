@@ -76,7 +76,6 @@ class FingerprintProximity(Proximity):
 
         Args:
             min_similarity: Minimum similarity threshold (0-1)
-            max_neighbors: Maximum number of neighbors to return per fingerprint
             include_self: Whether to include self in results
             add_columns: Additional columns to include in results
 

@@ -230,7 +230,7 @@ def remove_disconnected_fragments(mol: Chem.Mol) -> Chem.Mol:
     return max(fragments, key=lambda frag: frag.GetNumHeavyAtoms()) if fragments else None
 
 
-def contains_heavy_metals(mol):
+def contains_heavy_metals(mol: Mol) -> bool:
     """
     Check if a molecule contains any heavy metals (broad filter).
 
@@ -371,7 +371,7 @@ def toxic_groups(mol: Chem.Mol) -> Optional[List[str]]:
     return toxic_smarts_matches if toxic_smarts_matches else None
 
 
-def contains_metalloenzyme_relevant_metals(mol):
+def contains_metalloenzyme_relevant_metals(mol: Mol) -> bool:
     """
     Check if a molecule contains metals relevant to metalloenzymes.
 
@@ -385,7 +385,7 @@ def contains_metalloenzyme_relevant_metals(mol):
     return any(atom.GetSymbol() in metalloenzyme_metals for atom in mol.GetAtoms())
 
 
-def contains_salts(mol):
+def contains_salts(mol: Mol) -> bool:
     """
     Check if a molecule contains common salts or counterions.
 
@@ -433,7 +433,7 @@ def is_druglike_compound(mol: Mol) -> bool:
     return True
 
 
-def add_compound_tags(df, mol_column="molecule"):
+def add_compound_tags(df, mol_column="molecule") -> pd.DataFrame:
     """
     Adds a 'tags' column to a DataFrame, tagging compounds based on their properties.
 
@@ -496,7 +496,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     """Compute and add all the Molecular Descriptors
 
     Args:
-        df(pd.DataFrame): The DataFrame to process and generate RDKit/Mordred Descriptors
+        df (pd.DataFrame): Input DataFrame containing SMILES strings.
 
     Returns:
         pd.DataFrame: The input DataFrame with all the RDKit Descriptors added

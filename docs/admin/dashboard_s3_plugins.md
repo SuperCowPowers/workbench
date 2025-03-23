@@ -7,8 +7,6 @@ Notes and information on how to include S3 based plugins with your Workbench Das
 
 Deploying your Dashboard plugins via an S3 bucket allows plugin developers to modify and improve plugins without a bunch of Docker builds, ECR, and CDK Deploy.
 
-On, the other hand when you have a 'final build' you might want to lock it in with a Docker image. If you'd like to bundle up your plugins in a Docker image and deploy please see [Dashboard with Plugins](dashboard_with_plugins.md).
-
 ## Check your Dashboard
 Make sure your Dashboard is configured to pull plugin pages, views, and components from an S3 bucket. Go to your main dashboard page and there's a 'secret link' when you click on the main title that brings up the **Dashboard Status Page**.
 

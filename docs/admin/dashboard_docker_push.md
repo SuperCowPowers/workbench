@@ -18,7 +18,7 @@ RUN pip install --no-cache-dir "workbench[ui]==0.8.116"  <-- change this
 ./deploy.sh 0_8_110   (match version to above)
 ```
 
-**Docker with Custom Plugins:** If you're using custom plugins you should visit our [Dashboard with Plugins](dashboard_with_plugins.md)) page.
+**Custom Plugins:** If you're using custom plugins those are simply 'pushed' to S3, visit our [Dashboard with Plugins](dashboard_s3_plugins.md)) page.
 
 ### Update the 'stable' tag
 This is obviously only when you want to mark a version as stable. Meaning that it seems to 'be good and stable (ish)' :)
