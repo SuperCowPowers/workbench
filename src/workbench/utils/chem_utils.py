@@ -837,11 +837,11 @@ def feature_resolution_issues(df: pd.DataFrame, features: List[str], show_cols: 
     show_cols = show_cols if show_cols is not None else df.columns.tolist()
 
     # Filter groups with more than one unique SMILES
-    feature_collisions = df.groupby(features).filter(lambda x: x['smiles'].nunique() > 1)
+    feature_collisions = df.groupby(features).filter(lambda x: x["smiles"].nunique() > 1)
 
     # Group by features and print each group
     for group, sub_df in feature_collisions.groupby(features):
-        print(f"Feature Group:")
+        print("Feature Group:")
         print(sub_df[show_cols])
         print("\n")
 
