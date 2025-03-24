@@ -820,6 +820,32 @@ def tautomerize_smiles(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def feature_resolution_issues(df: pd.DataFrame, features: List[str], show_cols: Optional[List[str]] = None) -> None:
+    """
+    Identify and print groups in a DataFrame where the given features have more than one unique SMILES.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing SMILES strings.
+        features (List[str]): List of features to check.
+        show_cols (Optional[List[str]]): Columns to display; defaults to all columns.
+    """
+    # Check for the 'smiles' column (case-insensitive)
+    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
+    if smiles_column is None:
+        raise ValueError("Input DataFrame must have a 'smiles' column")
+
+    show_cols = show_cols if show_cols is not None else df.columns.tolist()
+
+    # Filter groups with more than one unique SMILES
+    feature_collisions = df.groupby(features).filter(lambda x: x['smiles'].nunique() > 1)
+
+    # Group by features and print each group
+    for group, sub_df in feature_collisions.groupby(features):
+        print(f"Feature Group:")
+        print(sub_df[show_cols])
+        print("\n")
+
+
 if __name__ == "__main__":
     from workbench.api import DataSource
 
