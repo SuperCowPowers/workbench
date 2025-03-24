@@ -183,8 +183,8 @@ class WorkbenchShell:
         config = load_default_config()
         config.TerminalInteractiveShell.autocall = 2
         config.TerminalInteractiveShell.prompts_class = WorkbenchPrompt
-        config.TerminalInteractiveShell.banner1 = ""
         config.TerminalInteractiveShell.highlighting_style_overrides = prompt_styles
+        config.TerminalInteractiveShell.banner1 = ""
 
         # Merge custom commands and globals into the namespace
         locs = self.commands.copy()  # Copy the custom commands
@@ -193,7 +193,7 @@ class WorkbenchShell:
         # Start IPython with the config and commands in the namespace
         try:
             if LooseVersion(IPython.__version__) >= LooseVersion("9.0.0"):
-                ipython_argv = ["--no-tip"]
+                ipython_argv = ["--no-tip", "--theme", "linux"]
             else:
                 ipython_argv = []
             start_ipython(ipython_argv, user_ns=locs, config=config)
