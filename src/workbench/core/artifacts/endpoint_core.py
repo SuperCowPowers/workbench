@@ -599,7 +599,6 @@ class EndpointCore(Artifact):
         description: str,
         features: list,
         id_column: str = None,
-
     ):
         """Internal: Capture the inference results and metrics to S3
 
