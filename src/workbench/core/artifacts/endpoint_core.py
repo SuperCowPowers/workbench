@@ -9,7 +9,7 @@ import numpy as np
 from io import StringIO
 import awswrangler as wr
 from typing import Union, Optional
-import joblib
+import hashlib
 
 # Model Performance Scores
 from sklearn.metrics import (
@@ -398,8 +398,9 @@ class EndpointCore(Artifact):
             # Capture the inference results and metrics
             if capture_uuid is not None:
                 description = capture_uuid.replace("_", " ").title()
+                features = model.features()
                 self._capture_inference_results(
-                    capture_uuid, prediction_df, target_column, model_type, metrics, description, id_column
+                    capture_uuid, prediction_df, target_column, model_type, metrics, description, features, id_column
                 )
 
         # Return the prediction DataFrame
@@ -581,6 +582,13 @@ class EndpointCore(Artifact):
 
         return one_row_df_with_nans
 
+    @staticmethod
+    def _hash_dataframe(df: pd.DataFrame, hash_length: int = 8):
+        # Internal: Compute a data hash for the dataframe
+        row_hashes = pd.util.hash_pandas_object(df, index=False)
+        combined = row_hashes.values.tobytes()
+        return hashlib.md5(combined).hexdigest()[:hash_length]
+
     def _capture_inference_results(
         self,
         capture_uuid: str,
@@ -589,7 +597,9 @@ class EndpointCore(Artifact):
         model_type: ModelType,
         metrics: pd.DataFrame,
         description: str,
+        features: list,
         id_column: str = None,
+
     ):
         """Internal: Capture the inference results and metrics to S3
 
@@ -600,11 +610,13 @@ class EndpointCore(Artifact):
             model_type (ModelType): Type of the model (e.g. REGRESSOR, CLASSIFIER)
             metrics (pd.DataFrame): DataFrame with the performance metrics
             description (str): Description of the inference results
+            features (list): List of features to include in the inference results
             id_column (str, optional): Name of the ID column (default=None)
         """
 
         # Compute a dataframe hash (just use the last 8)
-        data_hash = joblib.hash(pred_results_df)[:8]
+        features = features + [id_column] if id_column else features
+        data_hash = self._hash_dataframe(pred_results_df[features])
 
         # Metadata for the model inference
         inference_meta = {
