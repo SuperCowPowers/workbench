@@ -103,6 +103,10 @@ class PandasToView(CreateView):
             self.log.error(f"id_column {id_column} not found in the dataframe. Cannot create the View.")
             return None
 
+        # Check for duplicate id_column values in the incoming dataframe
+        if df[id_column].duplicated().any():
+            self.log.error(f"id_column {id_column} has duplicate values in the dataframe, this will cause duplicate rows in the view!")
+
         # Remove any columns in the incoming df that overlap with the source_df (except for the id_column)
         overlap_columns = [col for col in df.columns if col in source_df.columns and col != id_column]
         self.log.info(f"Removing overlap columns: {overlap_columns}")
@@ -136,19 +140,18 @@ class PandasToView(CreateView):
 
 if __name__ == "__main__":
     """Exercise the PandasToView functionality"""
-    from workbench.api import DataSource
     import numpy as np
 
-    # Grab a DataSource
-    ds = DataSource("test_data")
+    # Grab a FeatureSet
+    fs = FeatureSet("abalone_features")
 
     # Generate a DataFrame with two random columns
-    my_df = ds.pull_dataframe()
+    my_df = fs.pull_dataframe()
     my_df["random1"] = np.random.rand(len(my_df))
     my_df["random2"] = np.random.rand(len(my_df))
 
     # Create a PandasToView
-    df_view = PandasToView.create("test_view", ds, df=my_df, id_column="id")
+    df_view = PandasToView.create("test_view", fs, df=my_df, id_column="auto_id")
 
     # Pull the dataframe view
     my_df = df_view.pull_dataframe(limit=5)
