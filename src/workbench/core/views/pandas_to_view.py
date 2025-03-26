@@ -105,7 +105,7 @@ class PandasToView(CreateView):
 
         # Check for duplicate id_column values in the incoming dataframe
         if df[id_column].duplicated().any():
-            self.log.error(f"id_column {id_column} has duplicate values in the dataframe, this will cause duplicate rows in the view!")
+            self.log.error(f"id_column {id_column} has duplicate values, this will cause duplicate rows in the view!")
 
         # Remove any columns in the incoming df that overlap with the source_df (except for the id_column)
         overlap_columns = [col for col in df.columns if col in source_df.columns and col != id_column]
