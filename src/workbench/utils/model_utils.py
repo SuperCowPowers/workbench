@@ -132,10 +132,10 @@ def prediction_confidence(predict_df: pd.DataFrame, prox_df: pd.DataFrame, id_co
         target_column (str): Column in prox_df to compute stats on.
     """
     # Group prox_df by id_column and compute mean and std for target_column
-    stats_df = prox_df.groupby(id_column)[target_column].agg(['mean', 'std']).reset_index()
+    stats_df = prox_df.groupby(id_column)[target_column].agg(["mean", "std"]).reset_index()
 
     # Merge stats with predict_df
-    merged = predict_df.merge(stats_df, on=id_column, how='left')
+    merged = predict_df.merge(stats_df, on=id_column, how="left")
 
     # Function to determine confidence based on prediction vs mean and std
     def compute_confidence(pred, mean, std):
@@ -149,12 +149,14 @@ def prediction_confidence(predict_df: pd.DataFrame, prox_df: pd.DataFrame, id_co
         else:
             return "Low"
 
-    merged['confidence'] = merged.apply(lambda row: compute_confidence(row['prediction'], row['mean'], row['std']), axis=1)
+    merged["confidence"] = merged.apply(
+        lambda row: compute_confidence(row["prediction"], row["mean"], row["std"]), axis=1
+    )
 
     # Print each group for inspection
     for group_id, group in merged.groupby(id_column):
         print(f"Group for {id_column} = {group_id}:")
-        print(group[[id_column, 'prediction', 'mean', 'std', 'confidence']])
+        print(group[[id_column, "prediction", "mean", "std", "confidence"]])
         print("\n")
 
 
@@ -181,34 +183,118 @@ if __name__ == "__main__":
     # print(prox_model)
 
     # Prediction Confidence Testing
-    prox_df = pd.DataFrame({
-        "my_id": ["1", "1", "1", "1", "1",
-                  "2", "2", "2", "2", "2",
-                  "3", "3", "3", "3", "3",
-                  "4", "4", "4", "4", "4",
-                  "5", "5", "5", "5", "5"],
-        "neighbor_id": [
-            "1", "2", "3", "4", "5",
-            "2", "3", "4", "5", "6",
-            "3", "4", "5", "6", "7",
-            "4", "5", "6", "7", "8",
-            "5", "6", "7", "8", "9",
-        ],
-        "distance": [
-            0.0, 0.1, 0.2, 0.3, 0.4,
-            0.0, 0.1, 0.2, 0.3, 0.4,
-            0.0, 0.1, 0.2, 0.3, 0.4,
-            0.0, 0.1, 0.2, 0.3, 0.4,
-            0.0, 0.1, 0.2, 0.3, 0.4,
-        ],
-        "target": [
-            1.0, 1.1, 1.2, 1.3, 1.4,
-            2.0, 2.1, 2.2, 2.3, 2.4,
-            3.0, 3.1, 3.2, 3.3, 3.4,
-            4.0, 4.1, 4.2, 4.3, 4.4,
-            5.0, 5.1, 5.2, 5.3, 5.4,
-        ]
-    })
+    prox_df = pd.DataFrame(
+        {
+            "my_id": [
+                "1",
+                "1",
+                "1",
+                "1",
+                "1",
+                "2",
+                "2",
+                "2",
+                "2",
+                "2",
+                "3",
+                "3",
+                "3",
+                "3",
+                "3",
+                "4",
+                "4",
+                "4",
+                "4",
+                "4",
+                "5",
+                "5",
+                "5",
+                "5",
+                "5",
+            ],
+            "neighbor_id": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "3",
+                "4",
+                "5",
+                "6",
+                "7",
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "5",
+                "6",
+                "7",
+                "8",
+                "9",
+            ],
+            "distance": [
+                0.0,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.0,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.0,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.0,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.0,
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+            ],
+            "target": [
+                1.0,
+                1.1,
+                1.2,
+                1.3,
+                1.4,
+                2.0,
+                2.1,
+                2.2,
+                2.3,
+                2.4,
+                3.0,
+                3.1,
+                3.2,
+                3.3,
+                3.4,
+                4.0,
+                4.1,
+                4.2,
+                4.3,
+                4.4,
+                5.0,
+                5.1,
+                5.2,
+                5.3,
+                5.4,
+            ],
+        }
+    )
 
     predict_data = {
         "my_id": ["1", "2", "3", "4", "5"],
