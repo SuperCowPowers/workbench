@@ -115,6 +115,49 @@ def proximity_model(model: "Model", prox_model_name: str) -> "Model":
     return prox_model
 
 
+def prediction_confidence(predict_df: pd.DataFrame, prox_df: pd.DataFrame, id_column: str, target_column: str) -> None:
+    """
+    For each group in prox_df (grouped by id_column), compute the mean and stddev of target_column,
+    merge with predict_df, and compare the 'prediction' with the computed mean.
+
+    Confidence is assigned as:
+      - "High" if prediction is within 1 std,
+      - "Medium" if within 2 stds,
+      - "Low" otherwise.
+
+    Args:
+        predict_df (pd.DataFrame): DataFrame with a 'prediction' column.
+        prox_df (pd.DataFrame): DataFrame with neighbor info.
+        id_column (str): Column name to group by (must be in both DataFrames).
+        target_column (str): Column in prox_df to compute stats on.
+    """
+    # Group prox_df by id_column and compute mean and std for target_column
+    stats_df = prox_df.groupby(id_column)[target_column].agg(['mean', 'std']).reset_index()
+
+    # Merge stats with predict_df
+    merged = predict_df.merge(stats_df, on=id_column, how='left')
+
+    # Function to determine confidence based on prediction vs mean and std
+    def compute_confidence(pred, mean, std):
+        if pd.isna(std) or std == 0:
+            return "Undefined" if pred != mean else "High"
+        diff = abs(pred - mean)
+        if diff <= std:
+            return "High"
+        elif diff <= 2 * std:
+            return "Medium"
+        else:
+            return "Low"
+
+    merged['confidence'] = merged.apply(lambda row: compute_confidence(row['prediction'], row['mean'], row['std']), axis=1)
+
+    # Print each group for inspection
+    for group_id, group in merged.groupby(id_column):
+        print(f"Group for {id_column} = {group_id}:")
+        print(group[[id_column, 'prediction', 'mean', 'std', 'confidence']])
+        print("\n")
+
+
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
     from workbench.api import Model
@@ -133,6 +176,46 @@ if __name__ == "__main__":
     print(get_custom_script_path("chem_info", "molecular_descriptors.py"))
 
     # Test the proximity model
-    m = Model("abalone-regression")
-    prox_model = proximity_model(m, "abalone-prox")
-    print(prox_model)
+    # m = Model("abalone-regression")
+    # prox_model = proximity_model(m, "abalone-prox")
+    # print(prox_model)
+
+    # Prediction Confidence Testing
+    prox_df = pd.DataFrame({
+        "my_id": ["1", "1", "1", "1", "1",
+                  "2", "2", "2", "2", "2",
+                  "3", "3", "3", "3", "3",
+                  "4", "4", "4", "4", "4",
+                  "5", "5", "5", "5", "5"],
+        "neighbor_id": [
+            "1", "2", "3", "4", "5",
+            "2", "3", "4", "5", "6",
+            "3", "4", "5", "6", "7",
+            "4", "5", "6", "7", "8",
+            "5", "6", "7", "8", "9",
+        ],
+        "distance": [
+            0.0, 0.1, 0.2, 0.3, 0.4,
+            0.0, 0.1, 0.2, 0.3, 0.4,
+            0.0, 0.1, 0.2, 0.3, 0.4,
+            0.0, 0.1, 0.2, 0.3, 0.4,
+            0.0, 0.1, 0.2, 0.3, 0.4,
+        ],
+        "target": [
+            1.0, 1.1, 1.2, 1.3, 1.4,
+            2.0, 2.1, 2.2, 2.3, 2.4,
+            3.0, 3.1, 3.2, 3.3, 3.4,
+            4.0, 4.1, 4.2, 4.3, 4.4,
+            5.0, 5.1, 5.2, 5.3, 5.4,
+        ]
+    })
+
+    predict_data = {
+        "my_id": ["1", "2", "3", "4", "5"],
+        "prediction": [1.1, 2.1, 3.1, 4.1, 5.1],
+    }
+
+    predict_df = pd.DataFrame(predict_data)
+
+    # Call the prediction confidence function
+    prediction_confidence(predict_df, prox_df, "my_id", "target")

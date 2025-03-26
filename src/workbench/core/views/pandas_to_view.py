@@ -59,7 +59,7 @@ class PandasToView(CreateView):
         return instance._create_view(df, id_column)
 
     def _create_view(self, df: pd.DataFrame, id_column: str) -> Union[View, None]:
-        """Internal method to create the view by joining with a Pandas DataFrame.
+        """Internal method to create the view by combining (or joining) with a Pandas DataFrame.
 
         Args:
             df (pd.DataFrame): The Pandas DataFrame to join with the source_table

@@ -336,6 +336,17 @@ if __name__ == "__main__":
     # Test the neighbors method
     print(prox.neighbors(query_df=df.iloc[0:2], add_columns=["Feature1", "Feature2"]))
 
+    # Test duplicate IDs
+    data = {
+        "foo_id": ["a", "b", "c", "d", "d"],  # Duplicate ID (d)
+        "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
+        "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
+        "target": [1, 0, 1, 0, 5],
+    }
+    df = pd.DataFrame(data)
+    prox = Proximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target", n_neighbors=3)
+    print(df.equals(prox.df))
+
     # Time neighbors with all IDs versus calling all_neighbors
     import time
 
