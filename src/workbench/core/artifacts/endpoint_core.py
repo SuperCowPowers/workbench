@@ -585,6 +585,8 @@ class EndpointCore(Artifact):
     @staticmethod
     def _hash_dataframe(df: pd.DataFrame, hash_length: int = 8):
         # Internal: Compute a data hash for the dataframe
+        df = df.copy()
+        df = df.sort_values(by=sorted(df.columns.tolist()))
         row_hashes = pd.util.hash_pandas_object(df, index=False)
         combined = row_hashes.values.tobytes()
         return hashlib.md5(combined).hexdigest()[:hash_length]
@@ -614,7 +616,6 @@ class EndpointCore(Artifact):
         """
 
         # Compute a dataframe hash (just use the last 8)
-        features = features + [id_column] if id_column else features
         data_hash = self._hash_dataframe(pred_results_df[features])
 
         # Metadata for the model inference
