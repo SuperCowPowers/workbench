@@ -22,11 +22,13 @@ from rdkit.Chem import AllChem, Mol, Descriptors, rdFingerprintGenerator, Draw
 from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.ML.Descriptors import MoleculeDescriptors
 from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
+from rdkit.Chem import rdMolDescriptors
 from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
 from rdkit import RDLogger
 from rdkit.Chem import FunctionalGroups as FG
-from mordred import Calculator
+from mordred import Calculator as MordredCalculator
 from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
+from mordred import GeometricalIndex, TopologicalIndex, KappaShapeIndex
 
 # Load functional group hierarchy once during initialization
 fgroup_hierarchy = FG.BuildFuncGroupHierarchy()
@@ -524,7 +526,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     df = df.dropna(subset=["molecule"])
 
     # If we have fragments in our compounds, get the largest fragment before computing descriptors
-    largest_frags = df["molecule"].apply(remove_disconnected_fragments)
+    df["molecule"] = df["molecule"].apply(remove_disconnected_fragments)
 
     # Now get all the RDKIT Descriptors
     all_descriptors = [x[0] for x in Descriptors._descList]
@@ -541,21 +543,24 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     log.info("Computing RDKit Descriptors...")
     calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
     column_names = calc.GetDescriptorNames()
-    descriptor_values = [calc.CalcDescriptors(m) for m in largest_frags]
+    descriptor_values = [calc.CalcDescriptors(m) for m in df["molecule"]]
     rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
 
     # Now compute Mordred Features
     log.info("Computing Mordred Descriptors...")
     descriptor_choice = [AcidBase, Aromatic, Polarizability, RotatableBond]
-    calc = Calculator()
+    calc = MordredCalculator()
     for des in descriptor_choice:
         calc.register(des)
-    mordred_df = calc.pandas(largest_frags, nproc=1)
+    mordred_df = calc.pandas(df["molecule"], nproc=1)
+
+    # Compute stereochemistry descriptors
+    stereo_df = compute_stereochemistry_descriptors(df)
 
     # Combine the DataFrame with the RDKit and Mordred Descriptors added
     # Note: This will overwrite any existing columns with the same name. This is a good thing
     #       since we want computed descriptors to overwrite anything in the input dataframe
-    output_df = mordred_df.combine_first(rdkit_features_df).combine_first(df)
+    output_df = stereo_df.combine_first(mordred_df).combine_first(rdkit_features_df)
 
     # Lowercase all column names and ensure no duplicate column names
     output_df.columns = output_df.columns.str.lower()
@@ -570,6 +575,172 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         del output_df["molecule"]
 
     # Return the DataFrame with the RDKit and Mordred Descriptors added
+    return output_df
+
+
+def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
+    """Compute stereochemistry descriptors for molecules in a DataFrame.
+
+    This function calculates various descriptors related to molecular stereochemistry,
+    including chiral centers (R/S configuration) and double bond stereochemistry (E/Z).
+    It also adds selected topological and geometric descriptors from Mordred that
+    relate to 3D molecular shape.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame with RDKit molecule objects in 'molecule' column
+
+    Returns:
+        pd.DataFrame: DataFrame with added stereochemistry descriptors
+    """
+    if "molecule" not in df.columns:
+        raise ValueError("Input DataFrame must have a 'molecule' column")
+
+    log.info("Computing stereochemistry descriptors...")
+    output_df = df.copy()
+    mols = df["molecule"].tolist()
+
+    # --- Atom Stereochemistry Descriptors ---
+    # These descriptors quantify chiral centers (sp3 stereogenic atoms)
+    try:
+        # Count total potential stereocenters
+        output_df["chiral_cnt"] = [rdMolDescriptors.CalcNumAtomStereoCenters(m) for m in mols]
+        # Count stereocenters with unspecified configuration
+        output_df["chiral_unspec"] = [rdMolDescriptors.CalcNumUnspecifiedAtomStereoCenters(m) for m in mols]
+        # Count stereocenters with specified configuration
+        output_df["chiral_spec"] = output_df["chiral_cnt"] - output_df["chiral_unspec"]
+
+        # Fraction of specified chiral centers (with safe division)
+        output_df["chiral_frac"] = output_df.apply(
+            lambda x: x["chiral_spec"] / x["chiral_cnt"] if x["chiral_cnt"] > 0 else 0,
+            axis=1
+        )
+
+        # Has any stereochemistry specified?
+        output_df["has_stereo"] = output_df["chiral_spec"] > 0
+    except Exception as e:
+        log.warning(f"Error calculating atom stereochemistry descriptors: {str(e)}")
+        # Add empty columns to maintain DataFrame structure
+        for col in ["chiral_cnt", "chiral_unspec", "chiral_spec", "chiral_frac", "has_stereo"]:
+            output_df[col] = None
+
+    # --- Double Bond Stereochemistry Descriptors ---
+    # These descriptors quantify E/Z configurations of double bonds
+    db_stereo_counts = []
+    db_spec_counts = []
+    e_counts = []
+    z_counts = []
+
+    try:
+        for mol in mols:
+            if mol is None:
+                db_stereo_counts.append(0)
+                db_spec_counts.append(0)
+                e_counts.append(0)
+                z_counts.append(0)
+                continue
+
+            # Make sure stereochemistry is properly perceived
+            try:
+                Chem.AssignStereochemistry(mol, force=True)
+            except Exception as e:
+                log.debug(f"Error assigning stereochemistry: {str(e)}")
+
+            # Count stereo double bonds
+            e_count = 0
+            z_count = 0
+            db_count = 0
+            spec_count = 0
+
+            for bond in mol.GetBonds():
+                if bond.GetBondType() == Chem.BondType.DOUBLE:
+                    # Check if this double bond could potentially have stereochemistry
+                    begin_atom = bond.GetBeginAtom()
+                    end_atom = bond.GetEndAtom()
+
+                    # A stereogenic double bond needs at least one non-H neighbor on each end
+                    if (begin_atom.GetDegree() > 1 and end_atom.GetDegree() > 1):
+                        db_count += 1
+
+                        # Check if stereochemistry is specified
+                        if bond.GetStereo() in [Chem.BondStereo.STEREOE, Chem.BondStereo.STEREOZ]:
+                            spec_count += 1
+
+                            if bond.GetStereo() == Chem.BondStereo.STEREOE:
+                                e_count += 1
+                            elif bond.GetStereo() == Chem.BondStereo.STEREOZ:
+                                z_count += 1
+
+            db_stereo_counts.append(db_count)
+            db_spec_counts.append(spec_count)
+            e_counts.append(e_count)
+            z_counts.append(z_count)
+
+        # Add double bond stereochemistry counts to dataframe
+        output_df["db_stereo_cnt"] = db_stereo_counts  # Total potential stereo double bonds
+        output_df["db_spec"] = db_spec_counts  # Double bonds with specified stereochem
+        output_df["db_unspec"] = output_df["db_stereo_cnt"] - output_df["db_spec"]  # Unspecified
+        output_df["e_count"] = e_counts  # Count of E (trans) double bonds
+        output_df["z_count"] = z_counts  # Count of Z (cis) double bonds
+    except Exception as e:
+        log.warning(f"Error calculating double bond stereochemistry descriptors: {str(e)}")
+        # Add empty columns to maintain DataFrame structure
+        for col in ["db_stereo_cnt", "db_spec", "db_unspec", "e_count", "z_count"]:
+            output_df[col] = None
+
+    # --- R/S Configuration Descriptors ---
+    # These descriptors count the specific R and S chiral configurations
+    r_cnt, s_cnt = [], []
+    try:
+        for mol in mols:
+            if mol is None:
+                r_cnt.append(0)
+                s_cnt.append(0)
+                continue
+
+            try:
+                # Find chiral centers and their R/S designations
+                centers = Chem.FindMolChiralCenters(mol, includeUnassigned=False)
+                r = sum(1 for _, stereo in centers if stereo == "R")
+                s = sum(1 for _, stereo in centers if stereo == "S")
+                r_cnt.append(r)
+                s_cnt.append(s)
+            except Exception as e:
+                log.debug(f"Error finding chiral centers: {str(e)}")
+                r_cnt.append(0)
+                s_cnt.append(0)
+
+        output_df["r_count"] = r_cnt  # Count of R configured stereocenters
+        output_df["s_count"] = s_cnt  # Count of S configured stereocenters
+
+        # R/S ratio (with safe division)
+        output_df["r_s_ratio"] = output_df.apply(
+            lambda x: (x["r_count"] / x["s_count"] if x["s_count"] > 0 else
+                       float('inf') if x["r_count"] > 0 else 0),
+            axis=1
+        )
+    except Exception as e:
+        log.warning(f"Error calculating R/S configuration descriptors: {str(e)}")
+        # Add empty columns to maintain DataFrame structure
+        for col in ["r_count", "s_count", "r_s_ratio"]:
+            output_df[col] = None
+
+    # --- Mordred Topological and Geometric Descriptors ---
+    # These descriptors relate to molecular shape and can be related to stereochemistry
+    try:
+        # Create a calculator with only the specific descriptors we want
+        calc = MordredCalculator()
+
+        # Register relevant descriptor modules
+        calc.register(TopologicalIndex)  # Shape-related indices like radius, diameter
+        calc.register(KappaShapeIndex)  # Kier shape indices - flexibility indicators
+        calc.register(GeometricalIndex)  # 3D geometry descriptors
+
+        # Calculate mordred descriptors
+        mordred_df = calc.pandas(mols, nproc=1)
+        output_df = pd.concat([output_df, mordred_df], axis=1)
+    except Exception as e:
+        log.warning(f"Error calculating Mordred descriptors: {str(e)}")
+
     return output_df
 
 
