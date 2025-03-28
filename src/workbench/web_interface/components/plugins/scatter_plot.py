@@ -171,14 +171,7 @@ class ScatterPlot(PluginInterface):
         regression_line = kwargs.get("regression_line", False)
 
         # Create the default scatter plot
-        figure = self.create_scatter_plot(
-            self.df,
-            x_default,
-            y_default,
-            color_default,
-            "none",
-            regression_line
-        )
+        figure = self.create_scatter_plot(self.df, x_default, y_default, color_default, "none", regression_line)
 
         # Dropdown options for x and y: use provided dropdown_columns or fallback to numeric columns
         dropdown_columns = kwargs.get("dropdown_columns", numeric_columns)
@@ -195,26 +188,17 @@ class ScatterPlot(PluginInterface):
         label_options = [{"label": "None", "value": "none"}]
         label_options.extend([{"label": col, "value": col} for col in self.df.columns])
 
-        return [
-            figure,
-            x_options,
-            y_options,
-            color_options,
-            label_options,
-            x_default,
-            y_default,
-            color_default
-        ]
+        return [figure, x_options, y_options, color_options, label_options, x_default, y_default, color_default]
 
     def create_scatter_plot(
-            self,
-            df: pd.DataFrame,
-            x_col: str,
-            y_col: str,
-            color_col: str,
-            label_col: str,
-            regression_line: bool = False,
-            marker_size: int = 15,
+        self,
+        df: pd.DataFrame,
+        x_col: str,
+        y_col: str,
+        color_col: str,
+        label_col: str,
+        regression_line: bool = False,
+        marker_size: int = 15,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
@@ -356,14 +340,7 @@ class ScatterPlot(PluginInterface):
             # Check if the dataframe is not empty and the values are not None
             if not self.df.empty and x_value and y_value and color_value:
                 # Update Plotly Scatter Plot with the label value
-                figure = self.create_scatter_plot(
-                    self.df,
-                    x_value,
-                    y_value,
-                    color_value,
-                    label_value,
-                    regression_line
-                )
+                figure = self.create_scatter_plot(self.df, x_value, y_value, color_value, label_value, regression_line)
                 return figure
 
             raise PreventUpdate

@@ -611,8 +611,7 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
 
         # Fraction of specified chiral centers (with safe division)
         output_df["chiral_frac"] = output_df.apply(
-            lambda x: x["chiral_spec"] / x["chiral_cnt"] if x["chiral_cnt"] > 0 else 0,
-            axis=1
+            lambda x: x["chiral_spec"] / x["chiral_cnt"] if x["chiral_cnt"] > 0 else 0, axis=1
         )
 
         # Has any stereochemistry specified?
@@ -658,7 +657,7 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
                     end_atom = bond.GetEndAtom()
 
                     # A stereogenic double bond needs at least one non-H neighbor on each end
-                    if (begin_atom.GetDegree() > 1 and end_atom.GetDegree() > 1):
+                    if begin_atom.GetDegree() > 1 and end_atom.GetDegree() > 1:
                         db_count += 1
 
                         # Check if stereochemistry is specified
@@ -714,9 +713,8 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
 
         # R/S ratio (with safe division)
         output_df["r_s_ratio"] = output_df.apply(
-            lambda x: (x["r_count"] / x["s_count"] if x["s_count"] > 0 else
-                       float('inf') if x["r_count"] > 0 else 0),
-            axis=1
+            lambda x: (x["r_count"] / x["s_count"] if x["s_count"] > 0 else float("inf") if x["r_count"] > 0 else 0),
+            axis=1,
         )
     except Exception as e:
         log.warning(f"Error calculating R/S configuration descriptors: {str(e)}")
