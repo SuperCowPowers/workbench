@@ -74,7 +74,7 @@ if not ConfigManager().config_okay():
 
 # We want to customize our prompt colors
 prompt_styles = {
-    Token.Workbench: "#ff69b4",  # Pink color for Workbench
+    Token.Workbench: "#af87ff",  # Light Purple color for Workbench
     Token.AWSProfile: "#ffd700",  # Yellow color for AWS Profile
     Token.Lightblue: "#5fd7ff",
     Token.Lightpurple: "#af87ff",
