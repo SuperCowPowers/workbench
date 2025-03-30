@@ -62,7 +62,7 @@ def data_sources_layout(
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],
-                        width=4,
+                        width=5,
                         className="text-break",
                     ),
                     # Column 2: Violin Plots (Correlation Matrix + Outliers)
@@ -74,7 +74,7 @@ def data_sources_layout(
                                 style={"padding": "0px 0px 0px 0px"},
                             ),
                         ],
-                        width=8,
+                        width=7,
                     ),
                 ]
             ),

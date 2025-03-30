@@ -54,7 +54,7 @@ def feature_sets_layout(
                                 style={"padding": "0px 0px 30px 0px"},
                             ),
                         ],
-                        width=4,
+                        width=5,
                         className="text-break",
                     ),
                     # Column 2: Violin Plots (Correlation Matrix + Outliers)
@@ -63,7 +63,7 @@ def feature_sets_layout(
                             dbc.Row(violin_plot, style={"padding": "0px 0px 30px 0px"}),
                             dbc.Row(correlation_matrix, style={"padding": "0px 0px 30px 0px"}),
                         ],
-                        width=8,
+                        width=7,
                     ),
                 ]
             ),
