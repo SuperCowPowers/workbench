@@ -3,7 +3,7 @@
 from dash import register_page
 
 # Workbench Imports
-from workbench.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
+from workbench.web_interface.components import violin_plots, correlation_matrix
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.web_interface.components.plugins.data_details import DataDetails
 from workbench.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
