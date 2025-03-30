@@ -214,7 +214,7 @@ class ScatterPlot(PluginInterface):
             go.Figure: A Plotly Figure object.
         """
         # Check if we need to show labels
-        show_labels = label_col != "none"
+        show_labels = label_col != "none" and len(df) < 1000
 
         # Helper to generate hover text for each point.
         def generate_hover_text(row):
