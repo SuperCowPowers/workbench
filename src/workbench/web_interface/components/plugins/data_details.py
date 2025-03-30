@@ -9,6 +9,7 @@ from dash import html, dcc
 # Workbench Imports
 from workbench.api import DataSource, FeatureSet
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from workbench.utils.markdown_utils import tags_to_markdown
 
 # Get the Workbench logger
 log = logging.getLogger("workbench")
@@ -75,28 +76,26 @@ class DataDetails(PluginInterface):
 
     def data_details_markdown(self, data_details: dict) -> str:
 
-        markdown_template = """
-        **Rows:** <<num_rows>>
-        <br>**Columns:** <<num_columns>>
-        <br>**Created/Mod:** <<created>> / <<modified>>
-        <br>**Tags:** <<workbench_tags>>
-        <br>**Input:** <<input>>
+        markdown_template = \
+            "**Rows:** <<num_rows>>  \n" \
+            "**Columns:** <<num_columns>>  \n" \
+            "**Created/Mod:** <<created>> / <<modified>>  \n" \
+            "<<workbench_tags>>  \n" \
+            "**Input:** <<input>>  \n" \
+            "<br>  \n" \
+            "\n#### Numeric Columns  \n" \
+            "<<numeric_column_details>>  \n" \
+            "\n<div style='margin-top: 15px;'></div>  \n" \
+            "\n#### Non-Numeric Columns  \n" \
+            "<<string_column_details>>  \n"
 
-        #### Numeric Columns
-        <<numeric_column_details>>
-
-        #### Non-Numeric Columns
-        <<string_column_details>>
-        """
-
-        expanding_list = """
-        <details>
-            <summary><<column_info>></summary>
-            <ul>
-            <<bullet_list>>
-            </ul>
-        </details>
-        """
+        expanding_list = \
+            "<details>  \n" \
+            "    <summary><<column_info>></summary>  \n" \
+            "    <ul>  \n" \
+            "    <<bullet_list>>  \n" \
+            "    </ul>  \n" \
+            "</details>"
 
         # Sanity Check for empty data
         if not data_details:
@@ -110,6 +109,10 @@ class DataDetails(PluginInterface):
                     value = value.replace(".000Z", "").replace("T", " ")
                 except AttributeError:
                     pass
+
+            # Special case for tags
+            if key == "workbench_tags":
+                value = tags_to_markdown(value)
             markdown_template = markdown_template.replace(f"<<{key}>>", str(value))
 
         # Fill in numeric column details
