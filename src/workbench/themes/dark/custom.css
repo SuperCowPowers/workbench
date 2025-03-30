@@ -10,10 +10,23 @@ b, strong {
     color: rgb(120, 120, 240); /* Replace with your desired RGB color */
 }
 
-/* Links in Quartz are pink and hard to see */
+/* Custom CSS to style italic text */
+i, em {
+    color: rgb(160, 120, 240); /* Replace with your desired RGB color */
+}
+
 /* Default link color */
 a {
     color: rgb(120, 120, 240); /* Change to your preferred color */
+}
+
+/* Reduce spacing around lists */
+p {
+    margin-bottom: 0 !important;
+}
+ul, ol {
+    margin-top: 0 !important;
+    margin-bottom: 0.25em !important;
 }
 
 /* Hover effect */
@@ -78,6 +91,10 @@ a:hover {
 
 .orange-text {
     color: rgb(255, 195, 140);
+}
+
+.purple-text {
+    color: rgb(160, 120, 240);
 }
 
 .alert {

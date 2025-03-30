@@ -16,6 +16,15 @@ a {
     color: rgb(80, 80, 240); /* Change to your preferred color */
 }
 
+/* Reduce spacing around lists */
+p {
+    margin-bottom: 0 !important;
+}
+ul, ol {
+    margin-top: 0 !important;
+    margin-bottom: 0.25em !important;
+}
+
 /* Hover effect */
 a:hover {
     color: rgb(100, 100, 255); /* Change hover color */

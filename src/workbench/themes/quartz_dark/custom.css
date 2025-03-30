@@ -1,9 +1,13 @@
 h1, h2, h3, h4 {
     color: rgb(40, 40, 40); /* We want the headers dark gray */
 }
-
 body {
     color: rgb(40, 40, 40); /* Dark gray text */
+}
+
+/* Custom CSS to style bold text */
+b, strong {
+    color: rgb(0, 0, 0);
 }
 
 /* Links in Quartz are pink and hard to see */
@@ -12,14 +16,18 @@ a {
     color: rgb(60, 60, 200); /* Change to your preferred color */
 }
 
-/* Hover effect */
-a:hover {
-    color: rgb(80, 80, 2000); /* Change hover color */
+/* Reduce spacing around lists */
+p {
+    margin-bottom: 0 !important;
+}
+ul, ol {
+    margin-top: 0 !important;
+    margin-bottom: 0.25em !important;
 }
 
-/* Custom CSS to style bold text */
-b, strong {
-    color: rgb(0, 0, 0);
+/* Hover effect */
+a:hover {
+    color: rgb(80, 80, 200); /* Change hover color */
 }
 
 /* AgGrid custom CSS */

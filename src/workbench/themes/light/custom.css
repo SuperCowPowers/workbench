@@ -14,6 +14,15 @@ b, strong {
     color: rgb(40, 40, 40);
 }
 
+/* Reduce spacing around lists */
+p {
+    margin-bottom: 0 !important;
+}
+ul, ol {
+    margin-top: 0 !important;
+    margin-bottom: 0.25em !important;
+}
+
 /* AgGrid custom CSS */
 
 /* Adjust header background color */
