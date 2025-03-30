@@ -68,8 +68,10 @@ def tags_to_markdown(tags: str) -> str:
     # Separate items with ":" from those without
     with_colon = [item for item in tag_list if ":" in item]
     without_colon = [item for item in tag_list if ":" not in item]
-    without_colon = ", ".join(without_colon)
-    ordered_tag_list = with_colon + [without_colon]
+    ordered_tag_list = with_colon
+    if without_colon:
+        without_colon = ", ".join(without_colon)
+        ordered_tag_list += [without_colon]
     tag_markdown = "**Tags:**\n"
     for tag in ordered_tag_list:
         if ":" in tag:
@@ -92,4 +94,8 @@ if __name__ == "__main__":
 
     # Print the tag markdown
     tag_str = "tag1::tag2::tag3::key1:value1::key2:value2"
+    print(tags_to_markdown(tag_str))
+
+    # Print the tag markdown
+    tag_str = "key1:value1::key2:value2::key3:value3"
     print(tags_to_markdown(tag_str))
