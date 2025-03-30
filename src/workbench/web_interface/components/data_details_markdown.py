@@ -4,8 +4,10 @@ from dash import dcc
 
 # Workbench Imports
 from workbench.web_interface.components.component_interface import ComponentInterface
+from workbench.utils.deprecated_utils import deprecated
 
 
+@deprecated(version="0.9")
 class DataDetailsMarkdown(ComponentInterface):
     """Data Details Markdown Component"""
 
