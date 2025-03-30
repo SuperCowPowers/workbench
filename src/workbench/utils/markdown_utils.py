@@ -53,6 +53,32 @@ def tag_styling(tags: list, tag_dict: dict) -> str:
     return ", ".join(styled_tags)
 
 
+def tags_to_markdown(tags: str) -> str:
+    """Convert tags to a Markdown string.
+
+    Args:
+        tags (str): Deliminator-separated string of tags.
+
+    Returns:
+        str: Markdown string with tags.
+    """
+    # Split the tags (this needs to be refactored to use a list)
+    tag_list = tags.split("::")
+
+    # Separate items with ":" from those without
+    with_colon = [item for item in tag_list if ":" in item]
+    without_colon = [item for item in tag_list if ":" not in item]
+    without_colon = ", ".join(without_colon)
+    ordered_tag_list = with_colon + [without_colon]
+    tag_markdown = "**Tags:**\n"
+    for tag in ordered_tag_list:
+        if ":" in tag:
+            tag_markdown += f"- *{tag.split(':')[0]}:* {tag.split(':')[1]}\n"
+        else:
+            tag_markdown += f"- {tag}\n"
+    return tag_markdown
+
+
 if __name__ == "__main__":
     """Exercise the Markdown Utilities"""
     from workbench.api.model import Model
@@ -63,3 +89,7 @@ if __name__ == "__main__":
 
     # Print the health tag markdown
     print(health_tag_markdown(health_tags))
+
+    # Print the tag markdown
+    tag_str = "tag1::tag2::tag3::key1:value1::key2:value2"
+    print(tags_to_markdown(tag_str))
