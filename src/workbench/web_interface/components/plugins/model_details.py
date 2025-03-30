@@ -119,6 +119,7 @@ class ModelDetails(PluginInterface):
         # Construct the markdown string
         summary = self.current_model.summary()
         markdown = ""
+        tag_markdown = ""
         for key in show_fields:
 
             # Special case for the health tags
@@ -134,6 +135,17 @@ class ModelDetails(PluginInterface):
                 markdown += f"**{key}:** {value}  \n"
                 continue
 
+            # Special case for tags
+            if key == "workbench_tags":
+                tags = summary.get(key, "")
+                tag_markdown += f"**Tags:**\n"
+                for tag in self._split_tags(tags):
+                    if ":" in tag:
+                        tag_markdown += f"- *{tag.split(':')[0]}:* {tag.split(':')[1]}  \n"
+                    else:
+                        tag_markdown += f"- {tag}  \n"
+                continue
+
             # Get the value
             value = summary.get(key, "-")
 
@@ -147,7 +159,7 @@ class ModelDetails(PluginInterface):
             # Add to markdown string
             markdown += f"**{key}:** {value}  \n"
 
-        return markdown
+        return markdown + tag_markdown
 
     def inference_metrics(self, inference_run: Union[str, None]) -> str:
         """Construct the markdown string for the model metrics
@@ -221,10 +233,27 @@ class ModelDetails(PluginInterface):
         # Return the options for the dropdown and the selected value
         return inference_runs, default_inference_run
 
+    @staticmethod
+    def _split_tags(tag_str) -> list:
+        """Split the tags string into a list of tags
+
+        Args:
+            tag_str (str): The tags string to split
+        Returns:
+            list: A list of tags
+        """
+        parts = tag_str.split("::")
+
+        # Separate items with ":" from those without
+        with_colon = [item for item in parts if ":" in item]
+        without_colon = [item for item in parts if ":" not in item]
+        without_colon = ", ".join(without_colon)
+        return with_colon + [without_colon]
+
 
 if __name__ == "__main__":
     # This class takes in model details and generates a details Markdown component
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ModelDetails).run()
+    PluginUnitTest(ModelDetails, theme="ideaya").run()

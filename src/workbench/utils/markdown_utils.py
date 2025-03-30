@@ -26,7 +26,6 @@ def health_tag_markdown(health_tags: list[str]) -> str:
 
     # If we have health tags, then add a bullet for each tag
     markdown += "\n".join(f"* {tag}: {health_icons.get(tag, '')}" for tag in health_tags)
-    markdown += "\n\n"  # Add newlines for separation
     return markdown
 
 
