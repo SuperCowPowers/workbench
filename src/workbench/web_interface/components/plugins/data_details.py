@@ -76,26 +76,28 @@ class DataDetails(PluginInterface):
 
     def data_details_markdown(self, data_details: dict) -> str:
 
-        markdown_template = \
-            "**Rows:** <<num_rows>>  \n" \
-            "**Columns:** <<num_columns>>  \n" \
-            "**Created/Mod:** <<created>> / <<modified>>  \n" \
-            "<<workbench_tags>>  \n" \
-            "**Input:** <<input>>  \n" \
-            "<br>  \n" \
-            "\n#### Numeric Columns  \n" \
-            "<<numeric_column_details>>  \n" \
-            "\n<div style='margin-top: 15px;'></div>  \n" \
-            "\n#### Non-Numeric Columns  \n" \
+        markdown_template = (
+            "**Rows:** <<num_rows>>  \n"
+            "**Columns:** <<num_columns>>  \n"
+            "**Created/Mod:** <<created>> / <<modified>>  \n"
+            "<<workbench_tags>>  \n"
+            "**Input:** <<input>>  \n"
+            "<br>  \n"
+            "\n#### Numeric Columns  \n"
+            "<<numeric_column_details>>  \n"
+            "\n<div style='margin-top: 15px;'></div>  \n"
+            "\n#### Non-Numeric Columns  \n"
             "<<string_column_details>>  \n"
+        )
 
-        expanding_list = \
-            "<details>  \n" \
-            "    <summary><<column_info>></summary>  \n" \
-            "    <ul>  \n" \
-            "    <<bullet_list>>  \n" \
-            "    </ul>  \n" \
+        expanding_list = (
+            "<details>  \n"
+            "    <summary><<column_info>></summary>  \n"
+            "    <ul>  \n"
+            "    <<bullet_list>>  \n"
+            "    </ul>  \n"
             "</details>"
+        )
 
         # Sanity Check for empty data
         if not data_details:
