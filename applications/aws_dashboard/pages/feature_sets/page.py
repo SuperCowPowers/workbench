@@ -5,6 +5,7 @@ from dash import register_page
 # Workbench Imports
 from workbench.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
 from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.web_interface.components.plugins.data_details import DataDetails
 from workbench.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
 
 # Local Imports
@@ -28,7 +29,8 @@ samples_component = samples_table.create_component(
 )
 
 # Feature Set Details
-feature_details = data_details_markdown.DataDetailsMarkdown().create_component("feature_set_details")
+feature_details = DataDetails()
+feature_details_component = feature_details.create_component("feature_set_details")
 
 # Create a violin plot of all the numeric columns in the Feature Set
 violin = violin_plots.ViolinPlots().create_component("feature_set_violin_plot")
@@ -41,7 +43,7 @@ corr_matrix = correlation_matrix.CorrelationMatrix().create_component("feature_s
 components = {
     "feature_sets_table": feature_sets_component,
     "feature_set_sample_rows": samples_component,
-    "feature_set_details": feature_details,
+    "feature_set_details": feature_details_component,
     "violin_plot": violin,
     "correlation_matrix": corr_matrix,
 }
@@ -59,8 +61,8 @@ callbacks.on_page_load()
 callbacks.feature_sets_refresh(feature_set_view, feature_sets_table)
 
 # Callbacks for when a feature set is selected
-callbacks.update_feature_set_details(feature_set_view)
-callbacks.update_feature_set_sample_rows(feature_set_view, samples_table)
+callbacks.update_feature_set_details(feature_details)
+callbacks.update_feature_set_sample_rows(samples_table)
 
 # Callbacks for selections
 callbacks.violin_plot_selection()

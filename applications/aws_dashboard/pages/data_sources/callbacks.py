@@ -10,8 +10,10 @@ from urllib.parse import urlparse, parse_qs
 
 # Workbench Imports
 from workbench.web_interface.page_views.data_sources_page_view import DataSourcesPageView
-from workbench.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
+from workbench.web_interface.components import violin_plots, correlation_matrix
 from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.web_interface.components.plugins.data_details import DataDetails
+from workbench.cached.cached_data_source import CachedDataSource
 
 # Set up logging
 log = logging.getLogger("workbench")
@@ -67,11 +69,11 @@ def data_sources_refresh(page_view: DataSourcesPageView, ds_table: AGTable):
 
 
 # Updates the data source details and the correlation matrix when a new DataSource is selected
-def update_data_source_details(page_view: DataSourcesPageView):
+def update_data_source_details(data_details: DataDetails):
     @callback(
         [
-            Output("data_details_header", "children"),
-            Output("data_source_details", "children"),
+            Output("data_details-header", "children"),
+            Output("data_details-details", "children"),
             Output("data_source_correlation_matrix", "figure", allow_duplicate=True),
         ],
         Input("data_sources_table", "selectedRows"),
@@ -86,22 +88,19 @@ def update_data_source_details(page_view: DataSourcesPageView):
         selected_row_data = selected_rows[0]
         data_source_uuid = selected_row_data["uuid"]
         log.debug(f"DataSource UUID: {data_source_uuid}")
+        ds = CachedDataSource(data_source_uuid)
 
-        # Set the Header Text
-        header = f"Details: {data_source_uuid}"
-
-        # DataSource Details
-        data_details = page_view.data_source_details(data_source_uuid)
-        details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(data_details)
+        # DataSource Details Markdown component
+        header, details_markdown = data_details.update_properties(ds)
 
         # Generate a new correlation matrix figure
-        corr_figure = correlation_matrix.CorrelationMatrix().update_properties(data_details)
+        corr_figure = correlation_matrix.CorrelationMatrix().update_properties(ds.details())
 
-        # Return the details/markdown for these data details
+        # Return the details/markdown for this data source
         return [header, details_markdown, corr_figure]
 
 
-def update_data_source_sample_rows(page_view: DataSourcesPageView, samples_table: AGTable):
+def update_data_source_sample_rows(samples_table: AGTable):
     @callback(
         [
             Output("sample_rows_header", "children"),
@@ -121,9 +120,10 @@ def update_data_source_sample_rows(page_view: DataSourcesPageView, samples_table
         selected_row_data = selected_rows[0]
         data_source_uuid = selected_row_data["uuid"]
         log.debug(f"DataSource UUID: {data_source_uuid}")
+        ds = CachedDataSource(data_source_uuid)
 
         log.info("Calling DataSource Smart Sample Rows...")
-        smart_sample_rows = page_view.data_source_smart_sample(data_source_uuid)
+        smart_sample_rows = ds.smart_sample()
 
         # Header Text
         header = f"Sample/Outlier Rows: {data_source_uuid}"

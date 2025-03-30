@@ -3,8 +3,9 @@
 from dash import register_page
 
 # Workbench Imports
-from workbench.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
+from workbench.web_interface.components import violin_plots, correlation_matrix
 from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.web_interface.components.plugins.data_details import DataDetails
 from workbench.web_interface.page_views.data_sources_page_view import DataSourcesPageView
 
 # Local Imports
@@ -35,7 +36,8 @@ samples_component = samples_table.create_component(
 )
 
 # Data Source Details Markdown PANEL
-data_details = data_details_markdown.DataDetailsMarkdown().create_component("data_source_details")
+data_details = DataDetails()
+data_details_component = data_details.create_component("data_details")
 
 # Create a violin plot of all the numeric columns in the Data Source
 violin = violin_plots.ViolinPlots().create_component("data_source_violin_plot")
@@ -47,7 +49,7 @@ corr_matrix = correlation_matrix.CorrelationMatrix().create_component("data_sour
 components = {
     "data_sources_table": data_sources_component,
     "data_source_sample_rows": samples_component,
-    "data_source_details": data_details,
+    "data_source_details": data_details_component,
     "violin_plot": violin,
     "correlation_matrix": corr_matrix,
 }
@@ -65,8 +67,8 @@ callbacks.on_page_load()
 callbacks.data_sources_refresh(data_source_view, data_sources_table)
 
 # Callbacks for when a data source is selected
-callbacks.update_data_source_details(data_source_view)
-callbacks.update_data_source_sample_rows(data_source_view, samples_table)
+callbacks.update_data_source_details(data_details)
+callbacks.update_data_source_sample_rows(samples_table)
 
 # Callbacks for selections
 callbacks.violin_plot_selection()

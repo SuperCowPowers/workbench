@@ -10,8 +10,10 @@ from urllib.parse import urlparse, parse_qs
 
 # Workbench Imports
 from workbench.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
-from workbench.web_interface.components import data_details_markdown, violin_plots, correlation_matrix
+from workbench.web_interface.components import violin_plots, correlation_matrix
 from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.web_interface.components.plugins.data_details import DataDetails
+from workbench.cached.cached_feature_set import CachedFeatureSet
 
 # Set up logging
 log = logging.getLogger("workbench")
@@ -67,11 +69,11 @@ def feature_sets_refresh(page_view: FeatureSetsPageView, fs_table: AGTable):
 
 
 # Updates the feature set details and correlation matrix when a new FeatureSet is selected
-def update_feature_set_details(page_view: FeatureSetsPageView):
+def update_feature_set_details(feature_details: DataDetails):
     @callback(
         [
-            Output("feature_details_header", "children"),
-            Output("feature_set_details", "children"),
+            Output("feature_set_details-header", "children"),
+            Output("feature_set_details-details", "children"),
             Output("feature_set_correlation_matrix", "figure", allow_duplicate=True),
         ],
         Input("feature_sets_table", "selectedRows"),
@@ -86,22 +88,19 @@ def update_feature_set_details(page_view: FeatureSetsPageView):
         selected_row_data = selected_rows[0]
         feature_set_uuid = selected_row_data["uuid"]
         print(f"FeatureSet UUID: {feature_set_uuid}")
+        fs = CachedFeatureSet(feature_set_uuid)
 
-        # Set the Header Text
-        header = f"Details: {feature_set_uuid}"
-
-        # FeatureSet Details
-        feature_details = page_view.feature_set_details(feature_set_uuid)
-        feature_details_markdown = data_details_markdown.DataDetailsMarkdown().generate_markdown(feature_details)
+        # FeatureSet Details Markdown component
+        header, feature_details_markdown = feature_details.update_properties(fs)
 
         # Generate a new correlation matrix figure
-        corr_figure = correlation_matrix.CorrelationMatrix().update_properties(feature_details)
+        corr_figure = correlation_matrix.CorrelationMatrix().update_properties(fs.details())
 
         # Return the details/markdown for these data details
         return [header, feature_details_markdown, corr_figure]
 
 
-def update_feature_set_sample_rows(page_view: FeatureSetsPageView, samples_table: AGTable):
+def update_feature_set_sample_rows(samples_table: AGTable):
     @callback(
         [
             Output("feature_sample_rows_header", "children"),
@@ -121,9 +120,10 @@ def update_feature_set_sample_rows(page_view: FeatureSetsPageView, samples_table
         selected_row_data = selected_rows[0]
         feature_set_uuid = selected_row_data["uuid"]
         print(f"FeatureSet UUID: {feature_set_uuid}")
+        fs = CachedFeatureSet(feature_set_uuid)
 
         print("Calling FeatureSet Sample Rows...")
-        smart_sample_rows = page_view.feature_set_smart_sample(feature_set_uuid)
+        smart_sample_rows = fs.smart_sample()
 
         # Header Text
         header = f"Sample/Outlier Rows: {feature_set_uuid}"
