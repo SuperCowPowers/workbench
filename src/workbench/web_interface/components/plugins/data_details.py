@@ -137,7 +137,8 @@ class DataDetails(PluginInterface):
                 # Populate the bullet list (descriptive_stats and unique)
                 bullet_list = ""
                 for q, value in column_info["descriptive_stats"].items():
-                    bullet_list += f"<li>{q}: {value:.3f}</li>"
+                    if value is not None:
+                        bullet_list += f"<li>{q}: {value:.3f}</li>"
                 bullet_list += f"<li>Unique: {column_info['unique']}</li>"
 
                 # Add correlations if they exist
@@ -237,8 +238,16 @@ class DataDetails(PluginInterface):
             # Just hardcode the min and max for now
             min = column_info["descriptive_stats"]["min"]
             max = column_info["descriptive_stats"]["max"]
-            if column_info["dtype"] in float_types:
+
+            # Sanity Check
+            if min is None or max is None:
+                html_template += """ <span class="red-text">No Stats</span>"""
+
+            # Floats get 2 decimal places
+            elif column_info["dtype"] in float_types:
                 html_template += f""" {min:.2f} → {max:.2f}&nbsp;&nbsp;&nbsp;&nbsp;"""
+
+            # Integers get no decimal places
             else:
                 html_template += f""" {int(min)} → {int(max)}&nbsp;&nbsp;&nbsp;&nbsp;"""
             if column_info["unique"] == 2 and min == 0 and max == 1:
