@@ -138,7 +138,7 @@ class ModelDetails(PluginInterface):
             # Special case for tags
             if key == "workbench_tags":
                 tags = summary.get(key, "")
-                tag_markdown += f"**Tags:**\n"
+                tag_markdown += "**Tags:**\n"
                 for tag in self._split_tags(tags):
                     if ":" in tag:
                         tag_markdown += f"- *{tag.split(':')[0]}:* {tag.split(':')[1]}  \n"
