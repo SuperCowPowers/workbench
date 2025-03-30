@@ -25,8 +25,8 @@ models_table = ag_table.AGTable()
 models_table_component = models_table.create_component("models_table", header_color="rgb(60, 100, 60)", max_height=270)
 
 # Create a Markdown component to display the model details
-model_details = model_details.ModelDetails()
-model_details_component = model_details.create_component("model_details")
+my_model_details = model_details.ModelDetails()
+model_details_component = my_model_details.create_component("model_details")
 
 # Create a Model Plot component to display the model metrics
 model_plot_component = model_plot.ModelPlot().create_component("model_plot")
@@ -41,9 +41,6 @@ components = {
 # Load any web components plugins of type 'model'
 pm = PluginManager()
 plugins = pm.get_list_of_web_plugins(plugin_page=PluginPage.MODEL)
-
-# Our model details is a plugin, so we need to add it to the list
-plugins.append(model_details)
 
 # Add the plugins to the components dictionary
 for plugin in plugins:
@@ -64,6 +61,9 @@ callbacks.model_table_refresh(model_view, models_table)
 
 # Callback for the model table
 callbacks.update_model_plot_component()
+
+# Our model details is a plugin, so we need to add it to the list
+plugins.append(my_model_details)
 
 # Set up callbacks for all the plugins
 if plugins:
