@@ -126,6 +126,101 @@ def weights_to_colors(weights: list[float], colorscale: list, muted: bool = True
     return result_colors
 
 
+def remove_middle_colors(colorscale, min_threshold=0.3, max_threshold=0.7):
+    """Removes colors between min_threshold and max_threshold from a colorscale
+    and adds transparent versions of the closest colors at the thresholds.
+
+    Args:
+        colorscale (list): List of (position, color) tuples where position is between 0 and 1.
+        min_threshold (float, optional): Lower bound for the range to make transparent. Defaults to 0.35.
+        max_threshold (float, optional): Upper bound for the range to make transparent. Defaults to 0.65.
+
+    Returns:
+        list: Modified colorscale with middle colors removed and transparent colors added at thresholds.
+    """
+    new_colorscale = []
+    has_min_threshold = False
+    has_max_threshold = False
+
+    # Sort the colorscale by position to ensure we process in order
+    sorted_colorscale = sorted(colorscale, key=lambda x: x[0])
+
+    # Helper function to make a color transparent
+    def make_transparent(color_str):
+        # Handle different color formats
+        if color_str.startswith('rgb'):
+            if color_str.startswith('rgba'):
+                # Replace the alpha value
+                return color_str.rsplit(',', 1)[0] + ',0)'
+            else:
+                # Convert rgb to rgba with 0 alpha
+                return color_str.replace('rgb', 'rgba').rstrip(')') + ',0)'
+        elif color_str.startswith('#'):
+            # Convert hex to rgba
+            hex_color = color_str.lstrip('#')
+            if len(hex_color) == 3:
+                hex_color = ''.join([c * 2 for c in hex_color])
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            return f'rgba({r},{g},{b},0)'
+        # Return as-is if format is not recognized
+        return color_str
+
+    for i, (pos, color) in enumerate(sorted_colorscale):
+        # Keep colors outside the range
+        if pos < min_threshold or pos > max_threshold:
+            new_colorscale.append((pos, color))
+
+        # Check if we need to add a color at min_threshold
+        if not has_min_threshold and pos >= min_threshold:
+            # Find the previous point for interpolation
+            if i > 0 and sorted_colorscale[i - 1][0] < min_threshold:
+                prev_pos, prev_color = sorted_colorscale[i - 1]
+                new_colorscale.append((min_threshold, make_transparent(prev_color)))
+                has_min_threshold = True
+
+        # Check if we need to add a color at max_threshold
+        if not has_max_threshold and pos > max_threshold:
+            # Find the previous point for interpolation
+            if i > 0 and sorted_colorscale[i - 1][0] <= max_threshold:
+                transparent_color = make_transparent(sorted_colorscale[i - 1][1])
+                new_colorscale.append((max_threshold, transparent_color))
+                has_max_threshold = True
+
+    # If we've gone through all points and haven't added thresholds yet
+    if not has_min_threshold and len(sorted_colorscale) > 0:
+        # Find closest color below min_threshold
+        closest_below = None
+        min_dist = float('inf')
+        for p, c in sorted_colorscale:
+            if p < min_threshold and min_threshold - p < min_dist:
+                closest_below = c
+                min_dist = min_threshold - p
+
+        if closest_below:
+            new_colorscale.append((min_threshold, make_transparent(closest_below)))
+        elif sorted_colorscale:
+            new_colorscale.append((min_threshold, make_transparent(sorted_colorscale[0][1])))
+
+    if not has_max_threshold and len(sorted_colorscale) > 0:
+        # Find closest color above max_threshold
+        closest_above = None
+        min_dist = float('inf')
+        for p, c in sorted_colorscale:
+            if p > max_threshold and p - max_threshold < min_dist:
+                closest_above = c
+                min_dist = p - max_threshold
+
+        if closest_above:
+            new_colorscale.append((max_threshold, make_transparent(closest_above)))
+        elif sorted_colorscale:
+            new_colorscale.append((max_threshold, make_transparent(sorted_colorscale[-1][1])))
+
+    # Re-sort the final colorscale
+    return sorted(new_colorscale, key=lambda x: x[0])
+
+
 if __name__ == "__main__":
     """Exercise the Color Utilities"""
 
@@ -151,3 +246,7 @@ if __name__ == "__main__":
     ]
     print(weights_to_colors([0.0, 0.2, 0.4, 0.8, 1.0], colorscale))
     print("Color Utilities tests pass.")
+
+    # Test the remove_middle_colors function
+    new_colorscale = remove_middle_colors(colorscale)
+    print("Modified colorscale:", new_colorscale)

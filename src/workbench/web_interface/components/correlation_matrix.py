@@ -7,6 +7,7 @@ import pandas as pd
 # Workbench Imports
 from workbench.web_interface.components.component_interface import ComponentInterface
 from workbench.utils.theme_manager import ThemeManager
+from workbench.utils.color_utils import remove_middle_colors
 
 
 # This class is basically a specialized version of a Plotly Heatmap
@@ -19,6 +20,10 @@ class CorrelationMatrix(ComponentInterface):
 
         # Initialize the Theme Manager
         self.theme_manager = ThemeManager()
+
+        # Hack the colorscale (revisit this)
+        colorscale = self.theme_manager.colorscale("diverging")
+        self.colorscale = remove_middle_colors(colorscale)
 
         # Call the parent class constructor
         super().__init__()
@@ -34,8 +39,10 @@ class CorrelationMatrix(ComponentInterface):
 
     def update_properties(self, data_source_details: dict) -> go.Figure:
         """Create a Correlation Matrix Figure for the numeric columns in the dataframe.
+
         Args:
             data_source_details (dict): A dictionary containing DataSource details.
+
         Returns:
             plotly.graph_objs.Figure: A Figure object containing the correlation matrix.
         """
@@ -74,7 +81,7 @@ class CorrelationMatrix(ComponentInterface):
                 xgap=2,  # Add space between cells
                 ygap=2,
                 name="",
-                colorscale=self.theme_manager.colorscale("diverging"),
+                colorscale=self.colorscale,
                 zmin=-1,
                 zmax=1,
             )
