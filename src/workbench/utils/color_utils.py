@@ -148,22 +148,22 @@ def remove_middle_colors(colorscale, min_threshold=0.3, max_threshold=0.7):
     # Helper function to make a color transparent
     def make_transparent(color_str):
         # Handle different color formats
-        if color_str.startswith('rgb'):
-            if color_str.startswith('rgba'):
+        if color_str.startswith("rgb"):
+            if color_str.startswith("rgba"):
                 # Replace the alpha value
-                return color_str.rsplit(',', 1)[0] + ',0)'
+                return color_str.rsplit(",", 1)[0] + ",0)"
             else:
                 # Convert rgb to rgba with 0 alpha
-                return color_str.replace('rgb', 'rgba').rstrip(')') + ',0)'
-        elif color_str.startswith('#'):
+                return color_str.replace("rgb", "rgba").rstrip(")") + ",0)"
+        elif color_str.startswith("#"):
             # Convert hex to rgba
-            hex_color = color_str.lstrip('#')
+            hex_color = color_str.lstrip("#")
             if len(hex_color) == 3:
-                hex_color = ''.join([c * 2 for c in hex_color])
+                hex_color = "".join([c * 2 for c in hex_color])
             r = int(hex_color[0:2], 16)
             g = int(hex_color[2:4], 16)
             b = int(hex_color[4:6], 16)
-            return f'rgba({r},{g},{b},0)'
+            return f"rgba({r},{g},{b},0)"
         # Return as-is if format is not recognized
         return color_str
 
@@ -192,7 +192,7 @@ def remove_middle_colors(colorscale, min_threshold=0.3, max_threshold=0.7):
     if not has_min_threshold and len(sorted_colorscale) > 0:
         # Find closest color below min_threshold
         closest_below = None
-        min_dist = float('inf')
+        min_dist = float("inf")
         for p, c in sorted_colorscale:
             if p < min_threshold and min_threshold - p < min_dist:
                 closest_below = c
@@ -206,7 +206,7 @@ def remove_middle_colors(colorscale, min_threshold=0.3, max_threshold=0.7):
     if not has_max_threshold and len(sorted_colorscale) > 0:
         # Find closest color above max_threshold
         closest_above = None
-        min_dist = float('inf')
+        min_dist = float("inf")
         for p, c in sorted_colorscale:
             if p > max_threshold and p - max_threshold < min_dist:
                 closest_above = c

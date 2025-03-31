@@ -20,7 +20,7 @@ def datetime_to_iso8601(datetime_obj) -> str:
         str: The datetime as a string in ISO-8601 format
     Note: This particular format is required by AWS Feature Store
     """
-    global last_log, log_interval
+    global last_log
     current_time = time.time()
 
     # Check for valid input
