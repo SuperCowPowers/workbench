@@ -15,7 +15,6 @@ from rdkit import RDLogger
 from rdkit.Chem import FunctionalGroups as FG
 from mordred import Calculator as MordredCalculator
 from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
-from mordred import GeometricalIndex, TopologicalIndex, KappaShapeIndex
 
 # Load functional group hierarchy once during initialization
 fgroup_hierarchy = FG.BuildFuncGroupHierarchy()
@@ -406,8 +405,10 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
 
     # Count total potential stereocenters and specified ones
     output_df["chiral_cnt"] = [rdMolDescriptors.CalcNumAtomStereoCenters(m) for m in mols]
-    output_df["chiral_spec"] = [rdMolDescriptors.CalcNumAtomStereoCenters(m) -
-                                rdMolDescriptors.CalcNumUnspecifiedAtomStereoCenters(m) for m in mols]
+    output_df["chiral_spec"] = [
+        rdMolDescriptors.CalcNumAtomStereoCenters(m) - rdMolDescriptors.CalcNumUnspecifiedAtomStereoCenters(m)
+        for m in mols
+    ]
 
     # Has any stereochemistry specified?
     output_df["has_stereo"] = output_df["chiral_spec"] > 0
@@ -428,8 +429,10 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         # Count stereo double bonds
         spec_count = 0
         for bond in mol.GetBonds():
-            if (bond.GetBondType() == Chem.BondType.DOUBLE and
-                    bond.GetStereo() in [Chem.BondStereo.STEREOE, Chem.BondStereo.STEREOZ]):
+            if bond.GetBondType() == Chem.BondType.DOUBLE and bond.GetStereo() in [
+                Chem.BondStereo.STEREOE,
+                Chem.BondStereo.STEREOZ,
+            ]:
                 spec_count += 1
 
         db_spec_counts.append(spec_count)
