@@ -581,11 +581,6 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
 def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     """Compute stereochemistry descriptors for molecules in a DataFrame.
 
-    This function calculates various descriptors related to molecular stereochemistry,
-    including chiral centers (R/S configuration) and double bond stereochemistry (E/Z).
-    It also adds selected topological and geometric descriptors from Mordred that
-    relate to 3D molecular shape.
-
     Args:
         df (pd.DataFrame): Input DataFrame with RDKit molecule objects in 'molecule' column
 
@@ -599,146 +594,61 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     output_df = df.copy()
     mols = df["molecule"].tolist()
 
-    # --- Atom Stereochemistry Descriptors ---
-    # These descriptors quantify chiral centers (sp3 stereogenic atoms)
-    try:
-        # Count total potential stereocenters
-        output_df["chiral_cnt"] = [rdMolDescriptors.CalcNumAtomStereoCenters(m) for m in mols]
-        # Count stereocenters with unspecified configuration
-        output_df["chiral_unspec"] = [rdMolDescriptors.CalcNumUnspecifiedAtomStereoCenters(m) for m in mols]
-        # Count stereocenters with specified configuration
-        output_df["chiral_spec"] = output_df["chiral_cnt"] - output_df["chiral_unspec"]
+    # Count total potential stereocenters and specified ones
+    output_df["chiral_cnt"] = [rdMolDescriptors.CalcNumAtomStereoCenters(m) for m in mols]
+    output_df["chiral_spec"] = [rdMolDescriptors.CalcNumAtomStereoCenters(m) -
+                                rdMolDescriptors.CalcNumUnspecifiedAtomStereoCenters(m) for m in mols]
 
-        # Fraction of specified chiral centers (with safe division)
-        output_df["chiral_frac"] = output_df.apply(
-            lambda x: x["chiral_spec"] / x["chiral_cnt"] if x["chiral_cnt"] > 0 else 0, axis=1
-        )
+    # Has any stereochemistry specified?
+    output_df["has_stereo"] = output_df["chiral_spec"] > 0
 
-        # Has any stereochemistry specified?
-        output_df["has_stereo"] = output_df["chiral_spec"] > 0
-    except Exception as e:
-        log.warning(f"Error calculating atom stereochemistry descriptors: {str(e)}")
-        # Add empty columns to maintain DataFrame structure
-        for col in ["chiral_cnt", "chiral_unspec", "chiral_spec", "chiral_frac", "has_stereo"]:
-            output_df[col] = None
-
-    # --- Double Bond Stereochemistry Descriptors ---
-    # These descriptors quantify E/Z configurations of double bonds
-    db_stereo_counts = []
+    # --- Double Bond Stereochemistry ---
     db_spec_counts = []
-    e_counts = []
-    z_counts = []
+    for mol in mols:
+        if mol is None:
+            db_spec_counts.append(0)
+            continue
 
-    try:
-        for mol in mols:
-            if mol is None:
-                db_stereo_counts.append(0)
-                db_spec_counts.append(0)
-                e_counts.append(0)
-                z_counts.append(0)
-                continue
+        # Make sure stereochemistry is properly perceived
+        try:
+            Chem.AssignStereochemistry(mol, force=True)
+        except Exception as e:
+            log.warning(f"Error assigning stereochemistry: {str(e)}")
 
-            # Make sure stereochemistry is properly perceived
-            try:
-                Chem.AssignStereochemistry(mol, force=True)
-            except Exception as e:
-                log.debug(f"Error assigning stereochemistry: {str(e)}")
+        # Count stereo double bonds
+        spec_count = 0
+        for bond in mol.GetBonds():
+            if (bond.GetBondType() == Chem.BondType.DOUBLE and
+                    bond.GetStereo() in [Chem.BondStereo.STEREOE, Chem.BondStereo.STEREOZ]):
+                spec_count += 1
 
-            # Count stereo double bonds
-            e_count = 0
-            z_count = 0
-            db_count = 0
-            spec_count = 0
+        db_spec_counts.append(spec_count)
 
-            for bond in mol.GetBonds():
-                if bond.GetBondType() == Chem.BondType.DOUBLE:
-                    # Check if this double bond could potentially have stereochemistry
-                    begin_atom = bond.GetBeginAtom()
-                    end_atom = bond.GetEndAtom()
+    # Add double bond stereochemistry count to dataframe
+    output_df["db_spec"] = db_spec_counts  # Double bonds with specified stereochem
 
-                    # A stereogenic double bond needs at least one non-H neighbor on each end
-                    if begin_atom.GetDegree() > 1 and end_atom.GetDegree() > 1:
-                        db_count += 1
-
-                        # Check if stereochemistry is specified
-                        if bond.GetStereo() in [Chem.BondStereo.STEREOE, Chem.BondStereo.STEREOZ]:
-                            spec_count += 1
-
-                            if bond.GetStereo() == Chem.BondStereo.STEREOE:
-                                e_count += 1
-                            elif bond.GetStereo() == Chem.BondStereo.STEREOZ:
-                                z_count += 1
-
-            db_stereo_counts.append(db_count)
-            db_spec_counts.append(spec_count)
-            e_counts.append(e_count)
-            z_counts.append(z_count)
-
-        # Add double bond stereochemistry counts to dataframe
-        output_df["db_stereo_cnt"] = db_stereo_counts  # Total potential stereo double bonds
-        output_df["db_spec"] = db_spec_counts  # Double bonds with specified stereochem
-        output_df["db_unspec"] = output_df["db_stereo_cnt"] - output_df["db_spec"]  # Unspecified
-        output_df["e_count"] = e_counts  # Count of E (trans) double bonds
-        output_df["z_count"] = z_counts  # Count of Z (cis) double bonds
-    except Exception as e:
-        log.warning(f"Error calculating double bond stereochemistry descriptors: {str(e)}")
-        # Add empty columns to maintain DataFrame structure
-        for col in ["db_stereo_cnt", "db_spec", "db_unspec", "e_count", "z_count"]:
-            output_df[col] = None
-
-    # --- R/S Configuration Descriptors ---
-    # These descriptors count the specific R and S chiral configurations
+    # --- R/S Configuration Counts ---
     r_cnt, s_cnt = [], []
-    try:
-        for mol in mols:
-            if mol is None:
-                r_cnt.append(0)
-                s_cnt.append(0)
-                continue
+    for mol in mols:
+        if mol is None:
+            r_cnt.append(0)
+            s_cnt.append(0)
+            continue
 
-            try:
-                # Find chiral centers and their R/S designations
-                centers = Chem.FindMolChiralCenters(mol, includeUnassigned=False)
-                r = sum(1 for _, stereo in centers if stereo == "R")
-                s = sum(1 for _, stereo in centers if stereo == "S")
-                r_cnt.append(r)
-                s_cnt.append(s)
-            except Exception as e:
-                log.debug(f"Error finding chiral centers: {str(e)}")
-                r_cnt.append(0)
-                s_cnt.append(0)
+        try:
+            # Find chiral centers and their R/S designations
+            centers = Chem.FindMolChiralCenters(mol, includeUnassigned=False)
+            r = sum(1 for _, stereo in centers if stereo == "R")
+            s = sum(1 for _, stereo in centers if stereo == "S")
+            r_cnt.append(r)
+            s_cnt.append(s)
+        except Exception as e:
+            log.warning(f"Error finding chiral centers: {str(e)}")
+            r_cnt.append(0)
+            s_cnt.append(0)
 
-        output_df["r_count"] = r_cnt  # Count of R configured stereocenters
-        output_df["s_count"] = s_cnt  # Count of S configured stereocenters
-
-        # R/S ratio (with safe division)
-        output_df["r_s_ratio"] = output_df.apply(
-            lambda x: (x["r_count"] / x["s_count"] if x["s_count"] > 0 else float("inf") if x["r_count"] > 0 else 0),
-            axis=1,
-        )
-    except Exception as e:
-        log.warning(f"Error calculating R/S configuration descriptors: {str(e)}")
-        # Add empty columns to maintain DataFrame structure
-        for col in ["r_count", "s_count", "r_s_ratio"]:
-            output_df[col] = None
-
-    # --- Mordred Topological and Geometric Descriptors ---
-    # These descriptors relate to molecular shape and can be related to stereochemistry
-    try:
-        # Create a calculator with only the specific descriptors we want
-        calc = MordredCalculator()
-
-        # Register relevant descriptor modules
-        calc.register(TopologicalIndex)  # Shape-related indices like radius, diameter
-        calc.register(KappaShapeIndex)  # Kier shape indices - flexibility indicators
-        calc.register(GeometricalIndex)  # 3D geometry descriptors
-
-        # Calculate mordred descriptors
-        mordred_df = calc.pandas(mols, nproc=1)
-        output_df = pd.concat([output_df, mordred_df], axis=1)
-    except Exception as e:
-        log.warning(f"Error calculating Mordred descriptors: {str(e)}")
-
+    output_df["r_count"] = r_cnt  # Count of R configured stereocenters
+    output_df["s_count"] = s_cnt  # Count of S configured stereocenters
     return output_df
 
 
@@ -991,7 +901,8 @@ def tautomerize_smiles(df: pd.DataFrame) -> pd.DataFrame:
 
 def feature_resolution_issues(df: pd.DataFrame, features: List[str], show_cols: Optional[List[str]] = None) -> None:
     """
-    Identify and print groups in a DataFrame where the given features have more than one unique SMILES.
+    Identify and print groups in a DataFrame where the given features have more than one unique SMILES,
+    sorted by group size (largest number of unique SMILES first).
 
     Args:
         df (pd.DataFrame): Input DataFrame containing SMILES strings.
@@ -1005,13 +916,25 @@ def feature_resolution_issues(df: pd.DataFrame, features: List[str], show_cols: 
 
     show_cols = show_cols if show_cols is not None else df.columns.tolist()
 
-    # Filter groups with more than one unique SMILES
-    feature_collisions = df.groupby(features).filter(lambda x: x["smiles"].nunique() > 1)
+    # Drop duplicates to keep only unique SMILES for each feature combination
+    unique_df = df.drop_duplicates(subset=[smiles_column] + features)
 
-    # Group by features and print each group
-    for group, sub_df in feature_collisions.groupby(features):
-        print("Feature Group:")
-        print(sub_df[show_cols])
+    # Find groups with more than one unique SMILES
+    group_counts = unique_df.groupby(features).size()
+    collision_groups = group_counts[group_counts > 1].sort_values(ascending=False)
+
+    # Print each group in order of size (largest first)
+    for group, count in collision_groups.items():
+        # Get the rows for this group
+        if isinstance(group, tuple):
+            group_mask = (unique_df[features] == group).all(axis=1)
+        else:
+            group_mask = unique_df[features[0]] == group
+
+        group_df = unique_df[group_mask]
+
+        print(f"Feature Group (unique SMILES: {count}):")
+        print(group_df[show_cols])
         print("\n")
 
 

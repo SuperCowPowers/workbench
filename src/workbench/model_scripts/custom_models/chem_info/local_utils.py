@@ -8,12 +8,14 @@ from typing import List, Optional
 from rdkit import Chem
 from rdkit.Chem import Mol, Descriptors, rdFingerprintGenerator
 from rdkit.ML.Descriptors import MoleculeDescriptors
+from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
+from rdkit.Chem import rdMolDescriptors
+from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
 from rdkit import RDLogger
 from rdkit.Chem import FunctionalGroups as FG
-from mordred import Calculator
+from mordred import Calculator as MordredCalculator
 from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
-from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
-from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
+from mordred import GeometricalIndex, TopologicalIndex, KappaShapeIndex
 
 # Load functional group hierarchy once during initialization
 fgroup_hierarchy = FG.BuildFuncGroupHierarchy()
@@ -40,7 +42,7 @@ def remove_disconnected_fragments(mol: Chem.Mol) -> Chem.Mol:
     return max(fragments, key=lambda frag: frag.GetNumHeavyAtoms()) if fragments else None
 
 
-def contains_heavy_metals(mol):
+def contains_heavy_metals(mol: Mol) -> bool:
     """
     Check if a molecule contains any heavy metals (broad filter).
 
@@ -181,7 +183,7 @@ def toxic_groups(mol: Chem.Mol) -> Optional[List[str]]:
     return toxic_smarts_matches if toxic_smarts_matches else None
 
 
-def contains_metalloenzyme_relevant_metals(mol):
+def contains_metalloenzyme_relevant_metals(mol: Mol) -> bool:
     """
     Check if a molecule contains metals relevant to metalloenzymes.
 
@@ -195,7 +197,7 @@ def contains_metalloenzyme_relevant_metals(mol):
     return any(atom.GetSymbol() in metalloenzyme_metals for atom in mol.GetAtoms())
 
 
-def contains_salts(mol):
+def contains_salts(mol: Mol) -> bool:
     """
     Check if a molecule contains common salts or counterions.
 
@@ -243,7 +245,7 @@ def is_druglike_compound(mol: Mol) -> bool:
     return True
 
 
-def add_compound_tags(df, mol_column="molecule"):
+def add_compound_tags(df, mol_column="molecule") -> pd.DataFrame:
     """
     Adds a 'tags' column to a DataFrame, tagging compounds based on their properties.
 
@@ -306,14 +308,11 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     """Compute and add all the Molecular Descriptors
 
     Args:
-        df(pd.DataFrame): The DataFrame to process and generate RDKit/Mordred Descriptors
+        df (pd.DataFrame): Input DataFrame containing SMILES strings.
 
     Returns:
         pd.DataFrame: The input DataFrame with all the RDKit Descriptors added
     """
-
-    # Make a copy of the input DataFrame
-    df = df.copy()
     delete_mol_column = False
 
     # Check for the smiles column (any capitalization)
@@ -337,7 +336,7 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     df = df.dropna(subset=["molecule"])
 
     # If we have fragments in our compounds, get the largest fragment before computing descriptors
-    largest_frags = df["molecule"].apply(remove_disconnected_fragments)
+    df["molecule"] = df["molecule"].apply(remove_disconnected_fragments)
 
     # Now get all the RDKIT Descriptors
     all_descriptors = [x[0] for x in Descriptors._descList]
@@ -354,21 +353,24 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     log.info("Computing RDKit Descriptors...")
     calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
     column_names = calc.GetDescriptorNames()
-    descriptor_values = [calc.CalcDescriptors(m) for m in largest_frags]
+    descriptor_values = [calc.CalcDescriptors(m) for m in df["molecule"]]
     rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
 
     # Now compute Mordred Features
     log.info("Computing Mordred Descriptors...")
     descriptor_choice = [AcidBase, Aromatic, Polarizability, RotatableBond]
-    calc = Calculator()
+    calc = MordredCalculator()
     for des in descriptor_choice:
         calc.register(des)
-    mordred_df = calc.pandas(largest_frags, nproc=1)
+    mordred_df = calc.pandas(df["molecule"], nproc=1)
+
+    # Compute stereochemistry descriptors
+    stereo_df = compute_stereochemistry_descriptors(df)
 
     # Combine the DataFrame with the RDKit and Mordred Descriptors added
     # Note: This will overwrite any existing columns with the same name. This is a good thing
     #       since we want computed descriptors to overwrite anything in the input dataframe
-    output_df = mordred_df.combine_first(rdkit_features_df).combine_first(df)
+    output_df = stereo_df.combine_first(mordred_df).combine_first(rdkit_features_df)
 
     # Lowercase all column names and ensure no duplicate column names
     output_df.columns = output_df.columns.str.lower()
@@ -383,6 +385,80 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         del output_df["molecule"]
 
     # Return the DataFrame with the RDKit and Mordred Descriptors added
+    return output_df
+
+
+def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
+    """Compute stereochemistry descriptors for molecules in a DataFrame.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame with RDKit molecule objects in 'molecule' column
+
+    Returns:
+        pd.DataFrame: DataFrame with added stereochemistry descriptors
+    """
+    if "molecule" not in df.columns:
+        raise ValueError("Input DataFrame must have a 'molecule' column")
+
+    log.info("Computing stereochemistry descriptors...")
+    output_df = df.copy()
+    mols = df["molecule"].tolist()
+
+    # Count total potential stereocenters and specified ones
+    output_df["chiral_cnt"] = [rdMolDescriptors.CalcNumAtomStereoCenters(m) for m in mols]
+    output_df["chiral_spec"] = [rdMolDescriptors.CalcNumAtomStereoCenters(m) -
+                                rdMolDescriptors.CalcNumUnspecifiedAtomStereoCenters(m) for m in mols]
+
+    # Has any stereochemistry specified?
+    output_df["has_stereo"] = output_df["chiral_spec"] > 0
+
+    # --- Double Bond Stereochemistry ---
+    db_spec_counts = []
+    for mol in mols:
+        if mol is None:
+            db_spec_counts.append(0)
+            continue
+
+        # Make sure stereochemistry is properly perceived
+        try:
+            Chem.AssignStereochemistry(mol, force=True)
+        except Exception as e:
+            log.warning(f"Error assigning stereochemistry: {str(e)}")
+
+        # Count stereo double bonds
+        spec_count = 0
+        for bond in mol.GetBonds():
+            if (bond.GetBondType() == Chem.BondType.DOUBLE and
+                    bond.GetStereo() in [Chem.BondStereo.STEREOE, Chem.BondStereo.STEREOZ]):
+                spec_count += 1
+
+        db_spec_counts.append(spec_count)
+
+    # Add double bond stereochemistry count to dataframe
+    output_df["db_spec"] = db_spec_counts  # Double bonds with specified stereochem
+
+    # --- R/S Configuration Counts ---
+    r_cnt, s_cnt = [], []
+    for mol in mols:
+        if mol is None:
+            r_cnt.append(0)
+            s_cnt.append(0)
+            continue
+
+        try:
+            # Find chiral centers and their R/S designations
+            centers = Chem.FindMolChiralCenters(mol, includeUnassigned=False)
+            r = sum(1 for _, stereo in centers if stereo == "R")
+            s = sum(1 for _, stereo in centers if stereo == "S")
+            r_cnt.append(r)
+            s_cnt.append(s)
+        except Exception as e:
+            log.warning(f"Error finding chiral centers: {str(e)}")
+            r_cnt.append(0)
+            s_cnt.append(0)
+
+    output_df["r_count"] = r_cnt  # Count of R configured stereocenters
+    output_df["s_count"] = s_cnt  # Count of S configured stereocenters
     return output_df
 
 
