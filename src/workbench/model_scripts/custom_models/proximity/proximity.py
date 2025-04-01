@@ -27,7 +27,7 @@ class Proximity:
         id_column: Union[int, str],
         features: List[str],
         target: str = None,
-        n_neighbors: int = 5,
+        n_neighbors: int = 6,
     ) -> None:
         """
         Initialize the Proximity class.
@@ -37,7 +37,7 @@ class Proximity:
             id_column (Union[int, str]): Name of the column used as an identifier.
             features (List[str]): List of feature column names to be used for neighbor computations.
             target (str, optional): Name of the target column. Defaults to None.
-            n_neighbors (int): Number of neighbors to compute. Defaults to 5.
+            n_neighbors (int): Number of neighbors to compute. Defaults to 6.
         """
         self.df = df.dropna(subset=features).copy()
         self.id_column = id_column
