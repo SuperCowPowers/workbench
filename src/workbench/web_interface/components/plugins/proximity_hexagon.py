@@ -100,10 +100,41 @@ class ProximityHexagon(PluginInterface):
                 showlegend=False
             )
 
-        # Add center hexagon (delta = 0)
+        # Center coordinates
         center = (0, 0)
         center_color = get_color_from_delta(0)
 
+        # Calculate coordinates for surrounding hexagons
+        radius = 0.55
+        hex_coords = []
+        for i in range(6):
+            angle = (np.pi / 3) * i
+            x = center[0] + radius * np.cos(angle)
+            y = center[1] + radius * np.sin(angle)
+            hex_coords.append((x, y))
+
+        # Add connecting lines from center to each neighbor hexagon (ADDED)
+        # These need to be added first so they appear behind the hexagons
+        for i, (x, y) in enumerate(hex_coords):
+            if i < len(neighbors):
+                # Get the distance for this neighbor
+                neighbor = neighbors.iloc[i]
+                distance = neighbor["distance"]
+
+                # Calculate line width based on the formula: line_width = max(5-distance, 0) * 4 + 5
+                line_width = max(5-distance, 0) * 4 + 5
+
+                # Create a line from center to this neighbor with scaled width
+                fig.add_trace(go.Scatter(
+                    x=[center[0], x],
+                    y=[center[1], y],
+                    mode="lines",
+                    line=dict(color="rgba(100, 100, 100, 0.5)", width=line_width),
+                    hoverinfo="none",
+                    showlegend=False
+                ))
+
+        # Add center hexagon (delta = 0)
         # Create center hexagon with hover text
         hover_text = f"ID: {query_id}<br>Value: {query_target:.2f}"
         center_hex = create_hexagon(
@@ -124,15 +155,6 @@ class ProximityHexagon(PluginInterface):
             hoverinfo="skip",
             showlegend=False
         ))
-
-        # Calculate coordinates for surrounding hexagons
-        radius = 0.43
-        hex_coords = []
-        for i in range(6):
-            angle = (np.pi / 3) * i
-            x = center[0] + radius * np.cos(angle)
-            y = center[1] + radius * np.sin(angle)
-            hex_coords.append((x, y))
 
         # Add neighbor hexagons
         for i, (x, y) in enumerate(hex_coords):
