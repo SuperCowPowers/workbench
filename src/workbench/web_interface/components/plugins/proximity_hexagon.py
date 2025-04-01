@@ -32,7 +32,7 @@ class ProximityHexagon(PluginInterface):
             id=component_id,
             className="workbench-container",
             figure=self.display_text("Waiting for Data..."),
-            config={"scrollZoom": False, "doubleClick": "reset"},
+            config={"scrollZoom": False, "doubleClick": "reset", "displayModeBar": False},
         )
         self.properties = [(self.component_id, "figure")]
         self.signals = [(self.component_id, "clickData")]
@@ -103,22 +103,25 @@ class ProximityHexagon(PluginInterface):
         # Add center hexagon (delta = 0)
         center = (0, 0)
         center_color = get_color_from_delta(0)
+
+        # Create center hexagon with hover text
+        hover_text = f"ID: {query_id}<br>Value: {query_target:.2f}"
         center_hex = create_hexagon(
             center[0],
             center[1],
-            hover_text=f"ID: {query_id}",
+            hover_text=hover_text,
             fill_color=center_color
         )
         center_hex.customdata = [{"type": "query", "id": query_id, "target": query_target}]
         fig.add_trace(center_hex)
 
-        # Add center label (with no hover)
+        # Add center text
         fig.add_trace(go.Scatter(
             x=[center[0]], y=[center[1]],
             mode="text",
             text=[f"{query_target:.2f}"],
             textposition="middle center",
-            hoverinfo="none",
+            hoverinfo="skip",
             showlegend=False
         ))
 
@@ -144,27 +147,29 @@ class ProximityHexagon(PluginInterface):
                 fill_color = get_color_from_delta(delta)
 
                 # Create neighbor hexagon with hover text
-                hover_text = f"ID: {neighbor_id}<br>Distance: {distance:.2f}"
+                hover_text = f"ID: {neighbor_id}<br>Distance: {distance:.2f}<br>Value: {target_val:.2f}"
                 neighbor_hex = create_hexagon(x, y, hover_text=hover_text, fill_color=fill_color)
                 neighbor_hex.customdata = [{"type": "neighbor", "id": neighbor_id, "distance": distance, "target": target_val}]
                 fig.add_trace(neighbor_hex)
 
-                # Add Value label (with no hover)
+                # Add Value label
                 fig.add_trace(go.Scatter(
                     x=[x], y=[y],
                     mode="text",
                     text=[f"{target_val:.2f}"],
                     textposition="middle center",
-                    hoverinfo="none",
+                    hoverinfo="skip",
                     showlegend=False
                 ))
 
         # Configure layout
         fig.update_layout(
-            margin=dict(l=20, r=20, t=30, b=20),
-            height=300, width=300,
+            margin=dict(l=0, r=0, t=0, b=0),
+            height=200, width=200,
             showlegend=False,
-            plot_bgcolor=self.theme_manager.background()
+            plot_bgcolor=self.theme_manager.background(),
+            hoverlabel=dict(bgcolor="white", font_size=12, font_family="Arial"),  # Customize hover label
+            hovermode="closest"  # Ensure hover works correctly
         )
 
         # Configure fixed aspect ratio and view range
