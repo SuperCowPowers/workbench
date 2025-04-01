@@ -2,6 +2,7 @@
 
 from dash import dcc, callback, Output, Input, State
 import plotly.graph_objects as go
+import plotly.colors
 import pandas as pd
 import numpy as np
 
@@ -60,8 +61,26 @@ class ProximityHexagon(PluginInterface):
         # Create figure
         fig = go.Figure()
 
+        # Calculate deltas for all hexagons (including center with delta=0)
+        all_deltas = [0]  # Center hex has delta = 0
+        all_deltas.extend([neighbor[target_column] - query_target for _, neighbor in neighbors.iterrows()])
+
+        # Create a color mapping function using plotly's color scaling
+        min_delta = min(all_deltas)
+        max_delta = max(all_deltas)
+
+        # If all deltas are the same (or very close), create a small range to avoid division by zero
+        if abs(max_delta - min_delta) < 1e-6:
+            min_delta -= 0.5
+            max_delta += 0.5
+
+        # Function to get color from delta value
+        def get_color_from_delta(delta):
+            norm_delta = (delta - min_delta) / (max_delta - min_delta)
+            return plotly.colors.sample_colorscale(self.colorscale, norm_delta)[0]
+
         # Helper function to create a hexagon
-        def create_hexagon(x_center, y_center, size=0.25, hover_text=None):
+        def create_hexagon(x_center, y_center, size=0.25, hover_text=None, fill_color=None):
             hex_points = []
             for i in range(6):
                 angle = (np.pi / 3) * i + np.pi / 6
@@ -73,19 +92,22 @@ class ProximityHexagon(PluginInterface):
             return go.Scatter(
                 x=x_vals, y=y_vals,
                 fill="toself",
-                line=dict(color="rgba(100, 100, 100, 1)", width=1),
+                fillcolor=fill_color,
+                line=dict(color="rgba(0, 0, 0, 1)", width=1),
                 mode="lines",
                 text=hover_text,
                 hoverinfo="text" if hover_text else "none",
                 showlegend=False
             )
 
-        # Add center hexagon
+        # Add center hexagon (delta = 0)
         center = (0, 0)
+        center_color = get_color_from_delta(0)
         center_hex = create_hexagon(
             center[0],
             center[1],
-            hover_text=f"ID: {query_id}"
+            hover_text=f"ID: {query_id}",
+            fill_color=center_color
         )
         center_hex.customdata = [{"type": "query", "id": query_id, "target": query_target}]
         fig.add_trace(center_hex)
@@ -118,9 +140,12 @@ class ProximityHexagon(PluginInterface):
                 target_val = neighbor[target_column]
                 delta = target_val - query_target
 
+                # Get fill color based on delta
+                fill_color = get_color_from_delta(delta)
+
                 # Create neighbor hexagon with hover text
                 hover_text = f"ID: {neighbor_id}<br>Distance: {distance:.2f}"
-                neighbor_hex = create_hexagon(x, y, hover_text=hover_text)
+                neighbor_hex = create_hexagon(x, y, hover_text=hover_text, fill_color=fill_color)
                 neighbor_hex.customdata = [{"type": "neighbor", "id": neighbor_id, "distance": distance, "target": target_val}]
                 fig.add_trace(neighbor_hex)
 
@@ -176,4 +201,4 @@ if __name__ == "__main__":
     })
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ProximityHexagon, input_data=test_data, theme="light").run()
+    PluginUnitTest(ProximityHexagon, input_data=test_data, theme="dark").run()
