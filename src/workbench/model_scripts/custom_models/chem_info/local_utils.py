@@ -442,10 +442,14 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
 
     # --- R/S Configuration Counts ---
     r_cnt, s_cnt = [], []
+    stereo_parity, stereo_hash = [], []
+
     for mol in mols:
         if mol is None:
             r_cnt.append(0)
             s_cnt.append(0)
+            stereo_parity.append(0)
+            stereo_hash.append(0)
             continue
 
         try:
