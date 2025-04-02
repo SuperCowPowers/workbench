@@ -8,7 +8,6 @@ import os
 import tempfile
 import tarfile
 import awswrangler as wr
-import numpy as np
 from typing import Optional, List, Tuple
 
 # Set up the log

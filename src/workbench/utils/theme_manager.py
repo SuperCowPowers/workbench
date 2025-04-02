@@ -149,7 +149,9 @@ class ThemeManager:
         else:
             # Use the default colorscale (sequential)
             try:
-                cls.log.warning(f"Color scale '{scale_type}' not found for template '{cls.current_theme_name}', returning default.")
+                cls.log.warning(
+                    f"Color scale '{scale_type}' not found for template '{cls.current_theme_name}', returning default."
+                )
                 return color_scales["sequential"]
             except KeyError:
                 cls.log.error(f"No color scales found for template '{cls.current_theme_name}'.")

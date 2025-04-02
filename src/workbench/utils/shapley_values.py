@@ -17,6 +17,7 @@ import logging
 
 log = logging.getLogger("workbench")
 
+
 @deprecated(version="0.9")
 def generate_shap_values(
     endpoint_name: str, model_type: str, pred_results_df: pd.DataFrame, inference_capture_path: str

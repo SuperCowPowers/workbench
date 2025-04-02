@@ -1,24 +1,19 @@
 """Model Utilities for Workbench models"""
 
 import logging
-import pandas as pd
-import importlib.resources
-from pathlib import Path
-import os
-import tempfile
-import tarfile
-import awswrangler as wr
 import numpy as np
 from typing import Optional, List, Tuple
 
 try:
     import shap
 except ImportError:
-    log.error("SHAP library is not installed. Please 'pip install shap'.")
-
+    print("SHAP library is not installed. Please 'pip install shap'.")
 
 # Workbench Imports
 from workbench.utils.model_utils import xgboost_model_from_s3
+
+# Set up the log
+log = logging.getLogger("workbench")
 
 
 def shap_feature_importances(workbench_model, top_n=None) -> Optional[List[Tuple[str, float]]]:
@@ -34,7 +29,6 @@ def shap_feature_importances(workbench_model, top_n=None) -> Optional[List[Tuple
         List of tuples (feature, importance) sorted by importance (descending)
         or None if there was an error
     """
-    import numpy as np
 
     # Get SHAP values from internal function
     features, shap_values, model, X = _calculate_shap_values(workbench_model)
@@ -51,8 +45,7 @@ def shap_feature_importances(workbench_model, top_n=None) -> Optional[List[Tuple
         mean_abs_shap = np.abs(shap_values).mean(axis=0)
 
     # Create list of (feature, importance) tuples
-    shap_importance = [(features[i], float(mean_abs_shap[i]))
-                       for i in range(len(features))]
+    shap_importance = [(features[i], float(mean_abs_shap[i])) for i in range(len(features))]
 
     # Sort by importance (descending)
     sorted_importance = sorted(shap_importance, key=lambda x: x[1], reverse=True)
@@ -60,7 +53,6 @@ def shap_feature_importances(workbench_model, top_n=None) -> Optional[List[Tuple
     # Return top N if specified
     if top_n is not None and isinstance(top_n, int):
         return sorted_importance[:top_n]
-
     return sorted_importance
 
 
@@ -81,12 +73,6 @@ def _calculate_shap_values(workbench_model):
         or (None, None, None, None) if there was an error
     """
     from workbench.api import FeatureSet
-    try:
-        import shap
-        import numpy as np
-    except ImportError:
-        log.error("SHAP library is not installed. Please 'pip install shap'.")
-        return None, None, None, None
 
     # Get features from workbench model
     features = workbench_model.features()
@@ -110,6 +96,7 @@ def _calculate_shap_values(workbench_model):
     shap_values = explainer.shap_values(X)
 
     return features, shap_values, xgb_model, X
+
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""

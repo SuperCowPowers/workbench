@@ -25,6 +25,7 @@ except ImportError:
     log.warning("XGBoost Python module not found! pip install xgboost")
     XGBOOST_AVAILABLE = False
 
+
 @deprecated(version="0.9")
 class ExtractModelArtifact:
     """
