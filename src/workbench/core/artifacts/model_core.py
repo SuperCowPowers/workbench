@@ -19,6 +19,7 @@ from sagemaker.model import Model as SagemakerModel
 from workbench.core.artifacts.artifact import Artifact
 from workbench.utils.aws_utils import newest_path, pull_s3_data
 from workbench.utils.s3_utils import compute_s3_object_hash
+from workbench.utils.deprecated_utils import deprecated
 
 
 class ModelType(Enum):
@@ -749,6 +750,7 @@ class ModelCore(Artifact):
         except (KeyError, IndexError, TypeError):
             return None
 
+    @deprecated(version="0.9")
     def source_dir_url(self) -> Optional[str]:
         """Retrieve the model source directory from the model's AWS metadata.
 
@@ -763,6 +765,7 @@ class ModelCore(Artifact):
         except (KeyError, IndexError, TypeError):
             return None
 
+    @deprecated(version="0.9")
     def entry_point(self) -> Optional[str]:
         """Retrieve the entry point from the model's AWS metadata.
 
