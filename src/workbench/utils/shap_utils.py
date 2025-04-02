@@ -30,6 +30,7 @@ def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[
         or None if there was an error
     """
     # Get SHAP values from internal function
+    log.important("Calculating SHAP values...")
     features, shap_values, model, X = _calculate_shap_values(workbench_model)
 
     if features is None:
@@ -48,6 +49,11 @@ def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[
 
     # Sort by importance (descending)
     sorted_importance = sorted(shap_importance, key=lambda x: x[1], reverse=True)
+
+    # Log the top 10 features
+    log.info("Top 10 SHAP feature importances:")
+    for feature, importance in sorted_importance[:10]:
+        log.info(f"  {feature}: {importance:.4f}")
 
     # Return top N if specified
     if top_n is not None and isinstance(top_n, int):
