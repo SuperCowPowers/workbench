@@ -8,6 +8,7 @@ import os
 import tempfile
 import tarfile
 import awswrangler as wr
+import numpy as np
 from typing import Optional, List, Tuple
 
 # Set up the log
@@ -179,7 +180,7 @@ def try_load_xgboost_model(model_path: str):
     return None
 
 
-def get_xgboost_model_from_s3(model_artifact_uri):
+def xgboost_model_from_s3(model_artifact_uri):
     """
     Download and extract XGBoost model artifact from S3, then load the model into memory.
 
@@ -245,12 +246,12 @@ def get_xgboost_model_from_s3(model_artifact_uri):
     return None
 
 
-def get_feature_importances(model, importance_type: str = "weight") -> Optional[List[Tuple[str, float]]]:
+def feature_importances(workbench_model, importance_type: str = "weight") -> Optional[List[Tuple[str, float]]]:
     """
-    Get sorted feature importances from an XGBoost model.
+    Get sorted feature importances from an Workbench Model object.
 
     Args:
-        model: XGBoost Booster model
+        workbench_model: Workbench model object
         importance_type: Type of feature importance.
             Options: 'weight', 'gain', 'cover', 'total_gain', 'total_cover'
 
@@ -258,20 +259,18 @@ def get_feature_importances(model, importance_type: str = "weight") -> Optional[
         List of tuples (feature, importance) sorted by importance value (descending)
         or None if there was an error
     """
-    if model is None:
+    model_artifact_uri = workbench_model.model_data_url()
+    xgb_model = xgboost_model_from_s3(model_artifact_uri)
+    if xgb_model is None:
+        log.error("No XGBoost model found in the artifact.")
         return None
 
-    try:
-        # Get feature importances
-        importances = model.get_score(importance_type=importance_type)
+    # Get feature importances
+    importances = xgb_model.get_score(importance_type=importance_type)
 
-        # Convert to sorted list of tuples (feature, importance)
-        sorted_importances = sorted(importances.items(), key=lambda x: x[1], reverse=True)
-
-        return sorted_importances
-    except Exception as e:
-        print(f"Error getting feature importances: {e}")
-        return None
+    # Convert to sorted list of tuples (feature, importance)
+    sorted_importances = sorted(importances.items(), key=lambda x: x[1], reverse=True)
+    return sorted_importances
 
 
 if __name__ == "__main__":
@@ -341,9 +340,7 @@ if __name__ == "__main__":
     prediction_confidence(predict_df, prox_df, "my_id", "target")
 
     # Test the XGBoost model loading and feature importances
-    m = Model("abalone-regression")
-    model_artifact_uri = m.model_data_url()
-    xgb_model = get_xgboost_model_from_s3(model_artifact_uri)
-    feature_importances = get_feature_importances(xgb_model)
+    model = Model("abalone-regression")
+    feature_importances = feature_importances(model)
     print("Feature Importances:")
     print(feature_importances)
