@@ -9,6 +9,7 @@ import tempfile
 import plotly.io as pio
 import dash_bootstrap_components as dbc
 from flask import send_from_directory
+from typing import Optional, List, Union
 
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
@@ -138,7 +139,7 @@ class ThemeManager:
         return branding
 
     @classmethod
-    def colorscale(cls, scale_type: str = "sequential") -> list[list[float | str]]:
+    def colorscale(cls, scale_type: str = "sequential") -> Optional[List[List[Union[float, str]]]]:
         """Get the colorscale for the current theme."""
 
         # We have 3 colorscale options (diverging, sequential, and sequentialminus)
@@ -146,16 +147,13 @@ class ThemeManager:
         if scale_type in color_scales:
             return color_scales[scale_type]
         else:
-            # Use the default colorscale (first one in the dictionary)
+            # Use the default colorscale (sequential)
             try:
-                first_colorscale_name = list(color_scales.keys())[0]
-                backup_colorscale = color_scales[first_colorscale_name]
-                cls.log.warning(f"Color scale '{scale_type}' not found for template '{cls.current_theme_name}'.")
-                cls.log.warning(f"Using color scale '{backup_colorscale}' instead.")
-                return backup_colorscale
-            except IndexError:
+                cls.log.warning(f"Color scale '{scale_type}' not found for template '{cls.current_theme_name}', returning default.")
+                return color_scales["sequential"]
+            except KeyError:
                 cls.log.error(f"No color scales found for template '{cls.current_theme_name}'.")
-        return []
+        return None
 
     @staticmethod
     def adjust_colorscale_alpha(colorscale, alpha=0.5):
