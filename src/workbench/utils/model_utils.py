@@ -88,16 +88,18 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
         return script_path
 
 
-def proximity_model(model: "Model", prox_model_name: str) -> "Model":
+def proximity_model(model: "Model", prox_model_name: str, shap_50: bool = True) -> "Model":
     """Create a proximity model based on the given model
 
     Args:
         model (Model): The model to create the proximity model from
         prox_model_name (str): The name of the proximity model to create
+        shap_50 (bool): Whether to use the top 50 SHAP features for the proximity model
     Returns:
         Model: The proximity model
     """
     from workbench.api import Model, ModelType, FeatureSet  # noqa: F401 (avoid circular import)
+    from workbench.utils.shap_utils import shap_feature_importance  # noqa: F401 (avoid circular import)
 
     # Get the custom script path for the proximity model
     script_path = get_custom_script_path("proximity", "feature_space_proximity.template")
@@ -105,6 +107,11 @@ def proximity_model(model: "Model", prox_model_name: str) -> "Model":
     # Get Feature and Target Columns from the existing given Model
     features = model.features()
     target = model.target()
+
+    # Compute the top 50 Shap feature importances?
+    if shap_50:
+        shap_importances = shap_feature_importance(model, top_n=50)
+        features = [feature for feature, _ in shap_importances]
 
     # Create the Proximity Model from our FeatureSet
     fs = FeatureSet(model.get_input())
@@ -290,9 +297,9 @@ if __name__ == "__main__":
     print(get_custom_script_path("chem_info", "molecular_descriptors.py"))
 
     # Test the proximity model
-    # m = Model("abalone-regression")
-    # prox_model = proximity_model(m, "abalone-prox")
-    # print(prox_model)
+    m = Model("abalone-regression")
+    prox_model = proximity_model(m, "abalone-prox")
+    print(prox_model)
 
     # Prediction Confidence Testing
     # fmt: off
