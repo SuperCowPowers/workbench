@@ -4,6 +4,12 @@ import logging
 import pandas as pd
 import importlib.resources
 from pathlib import Path
+import os
+import tempfile
+import tarfile
+import json
+import awswrangler as wr
+from typing import Optional, List, Tuple
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -160,6 +166,114 @@ def prediction_confidence(predict_df: pd.DataFrame, prox_df: pd.DataFrame, id_co
         print("\n")
 
 
+def get_xgboost_model_from_s3(model_artifact_uri):
+    """
+    Download and extract XGBoost model artifact from S3, then load the model into memory.
+
+    Args:
+        model_artifact_uri (str): S3 URI of the model artifact.
+
+    Returns:
+        Loaded XGBoost model or None if unavailable.
+    """
+    import xgboost as xgb
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Download model artifact
+        local_tar_path = os.path.join(tmpdir, "model.tar.gz")
+        wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
+
+        # Extract tarball
+        with tarfile.open(local_tar_path, "r:gz") as tar:
+            tar.extractall(path=tmpdir)
+
+        # Try to load XGBoost model from common SageMaker paths
+        possible_paths = [
+            os.path.join(tmpdir, "xgboost-model"),
+            os.path.join(tmpdir, "model"),
+            os.path.join(tmpdir, "model.bin")
+        ]
+
+        # Try each possible path
+        for path in possible_paths:
+            if os.path.exists(path):
+                try:
+                    booster = xgb.Booster()
+                    booster.load_model(path)
+                    return booster
+                except Exception as e:
+                    print(f"Failed to load model from {path}: {e}")
+
+        # Try to load from JSON files
+        for root, _, files in os.walk(tmpdir):
+            for file in files:
+                if 'model' in file.lower() and file.endswith('.json'):
+                    try:
+                        model_path = os.path.join(root, file)
+                        # Load the JSON file
+                        with open(model_path, 'r') as f:
+                            model_json = json.load(f)
+
+                        # Try to create XGBoost model from JSON
+                        booster = xgb.Booster()
+                        booster.load_model(model_path)
+                        return booster
+                    except Exception as e:
+                        print(f"Failed to load JSON model from {file}: {e}")
+
+        # If no XGBoost model found, look for pickled models
+        for root, _, files in os.walk(tmpdir):
+            for file in files:
+                if file.endswith('.pkl') or file.endswith('.pickle'):
+                    try:
+                        import pickle
+                        model_path = os.path.join(root, file)
+                        with open(model_path, 'rb') as f:
+                            model = pickle.load(f)
+                        if isinstance(model, xgb.Booster) or hasattr(model, 'get_booster'):
+                            # Return the booster if it's a pipeline with XGBoost
+                            if hasattr(model, 'get_booster'):
+                                return model.get_booster()
+                            return model
+                    except Exception as e:
+                        print(f"Failed to load pickled model from {file}: {e}")
+
+    # If no model found
+    return None
+
+
+def get_feature_importances(model, importance_type: str = 'weight') -> Optional[List[Tuple[str, float]]]:
+    """
+    Get sorted feature importances from an XGBoost model.
+
+    Args:
+        model: XGBoost Booster model
+        importance_type: Type of feature importance.
+            Options: 'weight', 'gain', 'cover', 'total_gain', 'total_cover'
+
+    Returns:
+        List of tuples (feature, importance) sorted by importance value (descending)
+        or None if there was an error
+    """
+    if model is None:
+        return None
+
+    try:
+        # Get feature importances
+        importances = model.get_score(importance_type=importance_type)
+
+        # Convert to sorted list of tuples (feature, importance)
+        sorted_importances = sorted(
+            importances.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        return sorted_importances
+    except Exception as e:
+        print(f"Error getting feature importances: {e}")
+        return None
+
+
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
     from workbench.api import Model
@@ -183,118 +297,36 @@ if __name__ == "__main__":
     # print(prox_model)
 
     # Prediction Confidence Testing
-    prox_df = pd.DataFrame(
-        {
-            "my_id": [
-                "1",
-                "1",
-                "1",
-                "1",
-                "1",
-                "2",
-                "2",
-                "2",
-                "2",
-                "2",
-                "3",
-                "3",
-                "3",
-                "3",
-                "3",
-                "4",
-                "4",
-                "4",
-                "4",
-                "4",
-                "5",
-                "5",
-                "5",
-                "5",
-                "5",
-            ],
-            "neighbor_id": [
-                "1",
-                "2",
-                "3",
-                "4",
-                "5",
-                "2",
-                "3",
-                "4",
-                "5",
-                "6",
-                "3",
-                "4",
-                "5",
-                "6",
-                "7",
-                "4",
-                "5",
-                "6",
-                "7",
-                "8",
-                "5",
-                "6",
-                "7",
-                "8",
-                "9",
-            ],
-            "distance": [
-                0.0,
-                0.1,
-                0.2,
-                0.3,
-                0.4,
-                0.0,
-                0.1,
-                0.2,
-                0.3,
-                0.4,
-                0.0,
-                0.1,
-                0.2,
-                0.3,
-                0.4,
-                0.0,
-                0.1,
-                0.2,
-                0.3,
-                0.4,
-                0.0,
-                0.1,
-                0.2,
-                0.3,
-                0.4,
-            ],
-            "target": [
-                1.0,
-                1.1,
-                1.2,
-                1.3,
-                1.4,
-                2.0,
-                2.1,
-                2.2,
-                2.3,
-                2.4,
-                3.0,
-                3.1,
-                3.2,
-                3.3,
-                3.4,
-                4.0,
-                4.1,
-                4.2,
-                4.3,
-                4.4,
-                5.0,
-                5.1,
-                5.2,
-                5.3,
-                5.4,
-            ],
-        }
-    )
+    prox_df = pd.DataFrame({
+        "my_id": [
+            "1", "1", "1", "1", "1",
+            "2", "2", "2", "2", "2",
+            "3", "3", "3", "3", "3",
+            "4", "4", "4", "4", "4",
+            "5", "5", "5", "5", "5"
+        ],
+        "neighbor_id": [
+            "1", "2", "3", "4", "5",
+            "2", "3", "4", "5", "6",
+            "3", "4", "5", "6", "7",
+            "4", "5", "6", "7", "8",
+            "5", "6", "7", "8", "9"
+        ],
+        "distance": [
+            0.0, 0.1, 0.2, 0.3, 0.4,
+            0.0, 0.1, 0.2, 0.3, 0.4,
+            0.0, 0.1, 0.2, 0.3, 0.4,
+            0.0, 0.1, 0.2, 0.3, 0.4,
+            0.0, 0.1, 0.2, 0.3, 0.4
+        ],
+        "target": [
+            1.0, 1.1, 1.2, 1.3, 1.4,
+            2.0, 2.1, 2.2, 2.3, 2.4,
+            3.0, 3.1, 3.2, 3.3, 3.4,
+            4.0, 4.1, 4.2, 4.3, 4.4,
+            5.0, 5.1, 5.2, 5.3, 5.4
+        ]
+    })
 
     predict_data = {
         "my_id": ["1", "2", "3", "4", "5"],
@@ -305,3 +337,11 @@ if __name__ == "__main__":
 
     # Call the prediction confidence function
     prediction_confidence(predict_df, prox_df, "my_id", "target")
+
+    # Test the XGBoost model loading and feature importances
+    m = Model("abalone-regression")
+    model_artifact_uri = m.model_data_url()
+    xgb_model = get_xgboost_model_from_s3(model_artifact_uri)
+    feature_importances = get_feature_importances(xgb_model)
+    print("Feature Importances:")
+    print(feature_importances)
