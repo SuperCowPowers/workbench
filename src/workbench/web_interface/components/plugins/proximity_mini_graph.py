@@ -79,16 +79,18 @@ class ProximityMiniGraph(PluginInterface):
         # Set up center node
         x_coords.append(center[0])
         y_coords.append(center[1])
-        node_data.append({
-            "id": query_id,
-            "color": 0,
-            "size": 40,
-            "hover_text": f"ID: {query_id}<br>Value: {query_target:.2f}",
-            "text": f"{query_target:.2f}",
-            "type": "query",
-            "distance": 0,
-            "target": query_target
-        })
+        node_data.append(
+            {
+                "id": query_id,
+                "color": 0,
+                "size": 40,
+                "hover_text": f"ID: {query_id}<br>Value: {query_target:.2f}",
+                "text": f"{query_target:.2f}",
+                "type": "query",
+                "distance": 0,
+                "target": query_target,
+            }
+        )
 
         # Set up neighbor nodes and connecting lines
         for i, (x, y) in enumerate(circle_coords):
@@ -101,35 +103,35 @@ class ProximityMiniGraph(PluginInterface):
             # Add node data
             x_coords.append(x)
             y_coords.append(y)
-            node_data.append({
-                "id": neighbor_id,
-                "color": delta,
-                "size": 40,
-                "hover_text": f"ID: {neighbor_id}<br>Distance: {distance:.2f}<br>Value: {target_val:.2f}",
-                "text": f"{target_val:.2f}",
-                "type": "neighbor",
-                "distance": distance,
-                "target": target_val
-            })
+            node_data.append(
+                {
+                    "id": neighbor_id,
+                    "color": delta,
+                    "size": 40,
+                    "hover_text": f"ID: {neighbor_id}<br>Distance: {distance:.2f}<br>Value: {target_val:.2f}",
+                    "text": f"{target_val:.2f}",
+                    "type": "neighbor",
+                    "distance": distance,
+                    "target": target_val,
+                }
+            )
 
             # Add line data
             line_width = max(4 - distance, 0) * 5 + 5
-            lines_data.append({
-                "x": [center[0], x],
-                "y": [center[1], y],
-                "width": line_width
-            })
+            lines_data.append({"x": [center[0], x], "y": [center[1], y], "width": line_width})
 
         # Add connecting lines to figure
         for line in lines_data:
-            fig.add_trace(go.Scatter(
-                x=line["x"],
-                y=line["y"],
-                mode="lines",
-                line=dict(color="rgba(150, 150, 150, 0.75)", width=line["width"]),
-                hoverinfo="none",
-                showlegend=False
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=line["x"],
+                    y=line["y"],
+                    mode="lines",
+                    line=dict(color="rgba(150, 150, 150, 0.75)", width=line["width"]),
+                    hoverinfo="none",
+                    showlegend=False,
+                )
+            )
 
         # Extract data for scatter plot
         colors = [node["color"] for node in node_data]
@@ -140,29 +142,22 @@ class ProximityMiniGraph(PluginInterface):
         # Create custom data for interactivity
         custom_data = []
         for node in node_data:
-            custom_data.append({
-                "type": node["type"],
-                "id": node["id"],
-                "distance": node["distance"],
-                "target": node["target"]
-            })
+            custom_data.append(
+                {"type": node["type"], "id": node["id"], "distance": node["distance"], "target": node["target"]}
+            )
 
         # Add nodes to figure
         scatter = go.Scatter(
             x=x_coords,
             y=y_coords,
-            mode='markers+text',
+            mode="markers+text",
             marker=dict(
-                color=colors,
-                colorscale=self.colorscale,
-                size=sizes,
-                line=dict(color='black', width=1),
-                opacity=1.0
+                color=colors, colorscale=self.colorscale, size=sizes, line=dict(color="black", width=1), opacity=1.0
             ),
             text=texts,
             hovertext=hover_texts,
             hoverinfo="text",
-            showlegend=False
+            showlegend=False,
         )
         scatter.customdata = custom_data
         fig.add_trace(scatter)
@@ -170,21 +165,14 @@ class ProximityMiniGraph(PluginInterface):
         # Configure layout
         fig.update_layout(
             margin=dict(l=0, r=0, t=0, b=0),
-            height=200, width=200,
+            height=200,
+            width=200,
             showlegend=False,
             plot_bgcolor=self.theme_manager.background(),
             hoverlabel=dict(bgcolor="white", font_size=12, font_family="Arial"),
             hovermode="closest",
-            xaxis=dict(
-                range=[-1, 1],
-                visible=False
-            ),
-            yaxis=dict(
-                range=[-1, 1],
-                visible=False,
-                scaleanchor="x",
-                scaleratio=1
-            )
+            xaxis=dict(range=[-1, 1], visible=False),
+            yaxis=dict(range=[-1, 1], visible=False, scaleanchor="x", scaleratio=1),
         )
 
         return [fig]
@@ -199,12 +187,14 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Create sample data for testing
-    test_data = pd.DataFrame({
-        "id": ["1", "1", "1", "1", "1", "1", "1"],
-        "neighbor_id": ["1", "2", "3", "4", "5", "6", "7"],
-        "distance": [0.0, 0.0, 1.299653, 1.377522, 1.442327, 2.636339, 5.636339],
-        "activity": [8.0, 8.0, 3.499257, 4.368489, 4.34046, 8.0, 2.0]
-    })
+    test_data = pd.DataFrame(
+        {
+            "id": ["1", "1", "1", "1", "1", "1", "1"],
+            "neighbor_id": ["1", "2", "3", "4", "5", "6", "7"],
+            "distance": [0.0, 0.0, 1.299653, 1.377522, 1.442327, 2.636339, 5.636339],
+            "activity": [8.0, 8.0, 3.499257, 4.368489, 4.34046, 8.0, 2.0],
+        }
+    )
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(ProximityMiniGraph, input_data=test_data, theme="light").run()

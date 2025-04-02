@@ -7,7 +7,6 @@ from pathlib import Path
 import os
 import tempfile
 import tarfile
-import json
 import awswrangler as wr
 from typing import Optional, List, Tuple
 
@@ -166,6 +165,20 @@ def prediction_confidence(predict_df: pd.DataFrame, prox_df: pd.DataFrame, id_co
         print("\n")
 
 
+def try_load_xgboost_model(model_path: str):
+    """Helper function to try loading an XGBoost model from a path."""
+    import xgboost as xgb
+
+    if os.path.exists(model_path):
+        try:
+            booster = xgb.Booster()
+            booster.load_model(model_path)
+            return booster
+        except Exception as e:
+            print(f"Failed to load model from {model_path}: {e}")
+    return None
+
+
 def get_xgboost_model_from_s3(model_artifact_uri):
     """
     Download and extract XGBoost model artifact from S3, then load the model into memory.
@@ -177,6 +190,7 @@ def get_xgboost_model_from_s3(model_artifact_uri):
         Loaded XGBoost model or None if unavailable.
     """
     import xgboost as xgb
+
     with tempfile.TemporaryDirectory() as tmpdir:
         # Download model artifact
         local_tar_path = os.path.join(tmpdir, "model.tar.gz")
@@ -186,52 +200,42 @@ def get_xgboost_model_from_s3(model_artifact_uri):
         with tarfile.open(local_tar_path, "r:gz") as tar:
             tar.extractall(path=tmpdir)
 
-        # Try to load XGBoost model from common SageMaker paths
+        # Start with common model paths
         possible_paths = [
             os.path.join(tmpdir, "xgboost-model"),
             os.path.join(tmpdir, "model"),
-            os.path.join(tmpdir, "model.bin")
+            os.path.join(tmpdir, "model.bin"),
         ]
 
-        # Try each possible path
+        # Find all JSON model files and add to possible_paths
+        possible_paths.extend(
+            [
+                os.path.join(root, file)
+                for root, _, files in os.walk(tmpdir)
+                for file in files
+                if "model" in file.lower() and file.endswith(".json")
+            ]
+        )
+
+        # Try each path
         for path in possible_paths:
-            if os.path.exists(path):
-                try:
-                    booster = xgb.Booster()
-                    booster.load_model(path)
-                    return booster
-                except Exception as e:
-                    print(f"Failed to load model from {path}: {e}")
-
-        # Try to load from JSON files
-        for root, _, files in os.walk(tmpdir):
-            for file in files:
-                if 'model' in file.lower() and file.endswith('.json'):
-                    try:
-                        model_path = os.path.join(root, file)
-                        # Load the JSON file
-                        with open(model_path, 'r') as f:
-                            model_json = json.load(f)
-
-                        # Try to create XGBoost model from JSON
-                        booster = xgb.Booster()
-                        booster.load_model(model_path)
-                        return booster
-                    except Exception as e:
-                        print(f"Failed to load JSON model from {file}: {e}")
+            model = try_load_xgboost_model(path)
+            if model:
+                return model
 
         # If no XGBoost model found, look for pickled models
         for root, _, files in os.walk(tmpdir):
             for file in files:
-                if file.endswith('.pkl') or file.endswith('.pickle'):
+                if file.endswith(".pkl") or file.endswith(".pickle"):
                     try:
                         import pickle
+
                         model_path = os.path.join(root, file)
-                        with open(model_path, 'rb') as f:
+                        with open(model_path, "rb") as f:
                             model = pickle.load(f)
-                        if isinstance(model, xgb.Booster) or hasattr(model, 'get_booster'):
+                        if isinstance(model, xgb.Booster) or hasattr(model, "get_booster"):
                             # Return the booster if it's a pipeline with XGBoost
-                            if hasattr(model, 'get_booster'):
+                            if hasattr(model, "get_booster"):
                                 return model.get_booster()
                             return model
                     except Exception as e:
@@ -241,7 +245,7 @@ def get_xgboost_model_from_s3(model_artifact_uri):
     return None
 
 
-def get_feature_importances(model, importance_type: str = 'weight') -> Optional[List[Tuple[str, float]]]:
+def get_feature_importances(model, importance_type: str = "weight") -> Optional[List[Tuple[str, float]]]:
     """
     Get sorted feature importances from an XGBoost model.
 
@@ -262,11 +266,7 @@ def get_feature_importances(model, importance_type: str = 'weight') -> Optional[
         importances = model.get_score(importance_type=importance_type)
 
         # Convert to sorted list of tuples (feature, importance)
-        sorted_importances = sorted(
-            importances.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
+        sorted_importances = sorted(importances.items(), key=lambda x: x[1], reverse=True)
 
         return sorted_importances
     except Exception as e:
@@ -297,6 +297,7 @@ if __name__ == "__main__":
     # print(prox_model)
 
     # Prediction Confidence Testing
+    # fmt: off
     prox_df = pd.DataFrame({
         "my_id": [
             "1", "1", "1", "1", "1",
@@ -327,6 +328,7 @@ if __name__ == "__main__":
             5.0, 5.1, 5.2, 5.3, 5.4
         ]
     })
+    # fmt: on
 
     predict_data = {
         "my_id": ["1", "2", "3", "4", "5"],
