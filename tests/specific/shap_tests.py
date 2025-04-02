@@ -11,7 +11,7 @@ def test_generate_shap_values_reg():
     end = Endpoint("abalone-regression")
 
     # Running auto_inference with capture=True will invoke the SHAP values generation
-    print("Running SHAP values generation for regression")
+    print("TBD: SHAP values generation for regression")
     end.auto_inference(capture=True)
 
 
@@ -22,7 +22,7 @@ def test_generate_shap_values_class():
     end = Endpoint("wine-classification")
 
     # Running auto_inference with capture=True will invoke the SHAP values generation
-    print("Running SHAP values generation for classification")
+    print("TBD: SHAP values generation for classification")
     end.auto_inference(capture=True)
 
 
