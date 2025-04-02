@@ -76,11 +76,7 @@ def shap_summary_data(workbench_model) -> Optional[dict]:
         return None
 
     # Return structured data
-    return {
-        'features': features,
-        'shap_values': shap_values,
-        'X': X
-    }
+    return {"features": features, "shap_values": shap_values, "X": X}
 
 
 def shap_dependence_data(workbench_model, feature_idx) -> Optional[dict]:
@@ -126,11 +122,11 @@ def shap_dependence_data(workbench_model, feature_idx) -> Optional[dict]:
 
     # Return structured data
     return {
-        'feature_name': feature_name,
-        'feature_values': feature_values,
-        'shap_values': feature_shap_values,
-        'features': features,
-        'X': X
+        "feature_name": feature_name,
+        "feature_values": feature_values,
+        "shap_values": feature_shap_values,
+        "features": features,
+        "X": X,
     }
 
 
@@ -156,12 +152,12 @@ def instance_explanation_data(workbench_model, instance_data) -> Optional[dict]:
         return None
 
     # Ensure instance data has the right format and correct dtypes
-    if hasattr(instance_data, 'to_frame'):
+    if hasattr(instance_data, "to_frame"):
         instance_data = instance_data.to_frame().T
 
     # Make sure all columns have numeric types
     for col in instance_data.columns:
-        if instance_data[col].dtype == 'object':
+        if instance_data[col].dtype == "object":
             try:
                 instance_data[col] = instance_data[col].astype(float)
             except ValueError:
@@ -173,15 +169,13 @@ def instance_explanation_data(workbench_model, instance_data) -> Optional[dict]:
     instance_shap = explainer.shap_values(instance_data)
 
     # Extract feature values
-    feature_values = [float(instance_data[features[i]].iloc[0]) if features[i] in instance_data.columns else None
-                      for i in range(len(features))]
+    feature_values = [
+        float(instance_data[features[i]].iloc[0]) if features[i] in instance_data.columns else None
+        for i in range(len(features))
+    ]
 
     # Return structured data
-    return {
-        'features': features,
-        'shap_values': instance_shap,
-        'feature_values': feature_values
-    }
+    return {"features": features, "shap_values": instance_shap, "feature_values": feature_values}
 
 
 def _calculate_shap_values(workbench_model):
@@ -228,8 +222,7 @@ def _calculate_shap_values(workbench_model):
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
-    from workbench.api import Model
-    import matplotlib.pyplot as plt
+    from workbench.api import FeatureSet, Model
 
     # Load a model
     model = Model("abalone-regression")  # Example model
@@ -248,9 +241,9 @@ if __name__ == "__main__":
     # Example 2: Get summary data
     print("\n=== SHAP Summary Data Example ===")
     summary_data = shap_summary_data(model)
-    features = summary_data['features']
-    shap_values = summary_data['shap_values']
-    X = summary_data['X']
+    features = summary_data["features"]
+    shap_values = summary_data["shap_values"]
+    X = summary_data["X"]
 
     print("SHAP features summary:")
     print(f"Number of features analyzed: {len(features)}")
@@ -261,7 +254,7 @@ if __name__ == "__main__":
         print(f"SHAP matrix shape for class 0: {shap_values[0].shape}")
         print(f"Total predictions analyzed: {shap_values[0].shape[0]}")
     else:
-        print(f"Model type: Regression or binary classification")
+        print("Model type: Regression or binary classification")
         print(f"SHAP matrix shape: {shap_values.shape}")
         print(f"Total predictions analyzed: {shap_values.shape[0]}")
 
@@ -278,9 +271,9 @@ if __name__ == "__main__":
     print("\n=== SHAP Dependence Data Example ===")
     top_feature = importance_data[0][0]
     dependence_data = shap_dependence_data(model, top_feature)
-    feature_name = dependence_data['feature_name']
-    feature_values = dependence_data['feature_values']
-    feature_shap = dependence_data['shap_values']
+    feature_name = dependence_data["feature_name"]
+    feature_values = dependence_data["feature_values"]
+    feature_shap = dependence_data["shap_values"]
 
     print(f"Analyzing feature: {feature_name}")
     print(f"Number of data points: {len(feature_values)}")
@@ -294,8 +287,6 @@ if __name__ == "__main__":
         print(f"SHAP value range: {min(feature_shap):.3f} to {max(feature_shap):.3f}")
 
     # Calculate correlation between feature value and SHAP value
-    import numpy as np
-
     if isinstance(feature_shap, list):
         corr = np.corrcoef(feature_values, feature_shap[0])[0, 1]
     else:
@@ -313,17 +304,15 @@ if __name__ == "__main__":
 
     # Example 4: Get instance explanation data
     print("\n=== Instance Explanation Data Example ===")
-    from workbench.api import FeatureSet
-
     fs = FeatureSet(model.get_input())
     sample_data = fs.view("training").pull_dataframe()[features][0:1]
     explanation_data = instance_explanation_data(model, sample_data)
-    print(f"Explaining prediction for a single instance:")
+    print("Explaining prediction for a single instance:")
     print(f"Number of features: {len(explanation_data['features'])}")
 
-    features = explanation_data['features']
-    feature_values = explanation_data['feature_values']
-    shap_values = explanation_data['shap_values']
+    features = explanation_data["features"]
+    feature_values = explanation_data["feature_values"]
+    shap_values = explanation_data["shap_values"]
 
     # Display the instance's feature values
     print("\nFeature values for this instance:")
@@ -333,13 +322,11 @@ if __name__ == "__main__":
     # Extract and show the top contributing features
     if isinstance(shap_values, list):
         # Multi-class case (using first class for simplicity)
-        contributions = [(features[i], float(shap_values[0][0][i]))
-                         for i in range(len(features))]
+        contributions = [(features[i], float(shap_values[0][0][i])) for i in range(len(features))]
         print("\nTop contributions for class 0:")
     else:
         # Regression case
-        contributions = [(features[i], float(shap_values[0][i]))
-                         for i in range(len(features))]
+        contributions = [(features[i], float(shap_values[0][i])) for i in range(len(features))]
         print("\nTop feature contributions:")
 
     # Sort by absolute value
