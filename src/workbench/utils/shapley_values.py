@@ -12,12 +12,12 @@ import pandas as pd
 import awswrangler as wr
 
 
-# Workbench logging
+from workbench.utils.deprecated_utils import deprecated
 import logging
 
 log = logging.getLogger("workbench")
 
-
+@deprecated(version="0.9")
 def generate_shap_values(
     endpoint_name: str, model_type: str, pred_results_df: pd.DataFrame, inference_capture_path: str
 ):
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     end = Endpoint(endpoint_name)
 
     # Define the input parameters
-    model_type = end.model_type()
+    model_type = "regressor"  # or "classifier"
     pred_results_df = end.auto_inference()
     inference_capture_path = f"{end.endpoint_inference_path}/test_capture"
 

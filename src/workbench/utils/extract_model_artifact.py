@@ -11,6 +11,7 @@ import logging
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.utils.deprecated_utils import deprecated
 
 log = logging.getLogger("workbench")
 
@@ -24,7 +25,7 @@ except ImportError:
     log.warning("XGBoost Python module not found! pip install xgboost")
     XGBOOST_AVAILABLE = False
 
-
+@deprecated(version="0.9")
 class ExtractModelArtifact:
     """
     ExtractModelArtifact is a utility class that retrieves and processes model artifacts
