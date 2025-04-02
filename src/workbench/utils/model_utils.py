@@ -245,7 +245,7 @@ def xgboost_model_from_s3(model_artifact_uri):
     return None
 
 
-def feature_importances(workbench_model, importance_type: str = "weight") -> Optional[List[Tuple[str, float]]]:
+def feature_importance(workbench_model, importance_type: str = "weight") -> Optional[List[Tuple[str, float]]]:
     """
     Get sorted feature importances from an Workbench Model object.
 
@@ -340,6 +340,6 @@ if __name__ == "__main__":
 
     # Test the XGBoost model loading and feature importances
     model = Model("abalone-regression")
-    feature_importances = feature_importances(model)
+    feature_importance = feature_importance(model)
     print("Feature Importances:")
-    print(feature_importances)
+    print(feature_importance)
