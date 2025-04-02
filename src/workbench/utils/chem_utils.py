@@ -632,10 +632,14 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
 
     # --- R/S Configuration Counts ---
     r_cnt, s_cnt = [], []
+    stereo_parity, stereo_hash = [], []  # New descriptors
+
     for mol in mols:
         if mol is None:
             r_cnt.append(0)
             s_cnt.append(0)
+            stereo_parity.append(0)
+            stereo_hash.append(0)
             continue
 
         try:
@@ -645,13 +649,50 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
             s = sum(1 for _, stereo in centers if stereo == "S")
             r_cnt.append(r)
             s_cnt.append(s)
+
+            # Calculate stereo parity (1 for same configuration, -1 for opposite, 0 for odd/none)
+            if len(centers) >= 2:
+                # Convert R/S to binary (R=1, S=0)
+                binary_stereo = [1 if stereo == "R" else 0 for _, stereo in centers]
+                # XOR all values - 0 if even number of same type, 1 if odd
+                parity = 1
+                for b in binary_stereo:
+                    parity ^= b
+                # Convert to -1, 0, 1 scale:
+                # If all same -> parity=0 -> 1
+                # If mixed evenly -> parity=0 -> 1
+                # If mixed unevenly -> parity=1 -> -1
+                stereo_parity.append(1 if parity == 0 else -1)
+            else:
+                # Single stereocenter or none
+                stereo_parity.append(0)
+
+            # Calculate numerical hash of stereo pattern
+            if centers:
+                # Sort by atom index
+                sorted_centers = sorted(centers)
+                # Create a numerical hash from the pattern
+                hash_val = 0
+                for i, (idx, stereo) in enumerate(sorted_centers):
+                    # R=1, S=0
+                    bit_val = 1 if stereo == "R" else 0
+                    # Shift by position and add
+                    hash_val += bit_val << i
+                stereo_hash.append(hash_val)
+            else:
+                stereo_hash.append(0)
+
         except Exception as e:
             log.warning(f"Error finding chiral centers: {str(e)}")
             r_cnt.append(0)
             s_cnt.append(0)
+            stereo_parity.append(0)
+            stereo_hash.append(0)
 
     output_df["r_count"] = r_cnt  # Count of R configured stereocenters
     output_df["s_count"] = s_cnt  # Count of S configured stereocenters
+    output_df["stereo_parity"] = stereo_parity  # Pattern parity (-1, 0, 1)
+    output_df["stereo_hash"] = stereo_hash  # Numerical stereo pattern hash
     return output_df
 
 
