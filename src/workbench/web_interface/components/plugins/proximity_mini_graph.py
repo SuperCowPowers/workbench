@@ -20,7 +20,7 @@ class ProximityMiniGraph(PluginInterface):
         """Initialize the ProximityMiniGraph plugin class"""
         self.component_id = None
         self.theme_manager = ThemeManager()
-        self.colorscale = self.theme_manager.colorscale("")
+        self.colorscale = self.theme_manager.colorscale()
         super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -192,7 +192,7 @@ if __name__ == "__main__":
             "id": ["1", "1", "1", "1", "1", "1", "1"],
             "neighbor_id": ["1", "2", "3", "4", "5", "6", "7"],
             "distance": [0.0, 0.0, 1.299653, 1.377522, 1.442327, 2.636339, 5.636339],
-            "activity": [8.0, 8.0, 3.499257, 4.368489, 4.34046, 8.0, 2.0],
+            "activity": [4.2, 8.0, 3.499257, 4.368489, 4.34046, 8.0, 2.0],
         }
     )
 
