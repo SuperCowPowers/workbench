@@ -261,7 +261,7 @@ class ModelCore(Artifact):
             else:
                 self.log.warning(f"Inference run {inference_run_uuid} not found for {self.model_name}!")
         else:
-            self.log.warning(f"No inference data found for {self.model_name}!")
+            self.log.important(f"No inference data found for {self.model_name}!")
 
     def get_inference_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
         """Retrieve the inference performance metrics for this model
@@ -466,7 +466,9 @@ class ModelCore(Artifact):
             endpoint_inference_base = self.endpoints_s3_path + "/inference/"
             endpoint_inference_paths = [endpoint_inference_base + e for e in registered_endpoints]
             inference_path = newest_path(endpoint_inference_paths, self.sm_session)
-            if inference_path is None:
+
+            # If the ModelType is Regressor or Classifier we should log this
+            if inference_path is None and self.model_type in {ModelType.REGRESSOR, ModelType.CLASSIFIER}:
                 self.log.important(f"No inference data found for {self.model_name}!")
                 self.log.important(f"Returning default inference path for {registered_endpoints[0]}...")
                 self.log.important(f"{endpoint_inference_paths[0]}")
