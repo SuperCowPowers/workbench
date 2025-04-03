@@ -988,22 +988,6 @@ if __name__ == "__main__":
     df = compute_stereochemistry_descriptors(df)
     print(df)
 
-    # Temp Test
-    df = pd.DataFrame(
-        {
-            "smiles": [
-                "O=C1CC(C(=O)NC2C=CS(=O)(=O)C2)N2C(=NC3=C2C=CC(C(F)(F)F)=C3)N1",
-                "O=C1C[C@H](C(=O)N[C@H]2C=CS(=O)(=O)C2)N2C(=NC3=C2C=CC(C(F)(F)F)=C3)N1",
-                "O=C1C[C@@H](C(=O)N[C@@H]2C=CS(=O)(=O)C2)N2C(=NC3=C2C=CC(C(F)(F)F)=C3)N1",
-                "O=C1C[C@@H](C(=O)N[C@H]2C=CS(=O)(=O)C2)N2C(=NC3=C2C=CC(C(F)(F)F)=C3)N1",
-                "O=C1C[C@H](C(=O)N[C@@H]2C=CS(=O)(=O)C2)N2C(=NC3=C2C=CC(C(F)(F)F)=C3)N1",
-            ]
-        }
-    )
-    df["molecule"] = df["smiles"].apply(Chem.MolFromSmiles)
-    df = compute_stereochemistry_descriptors(df)
-    print(df)
-
     # Toxicity tests
     smiles = "O=C(CCl)c1ccc(Cl)cc1Cl"
     mol = Chem.MolFromSmiles(smiles)
