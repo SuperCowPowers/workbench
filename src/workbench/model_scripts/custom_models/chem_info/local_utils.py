@@ -403,89 +403,56 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     output_df = df.copy()
     mols = df["molecule"].tolist()
 
-    # Count total potential stereocenters and specified ones
-    output_df["chiral_cnt"] = [rdMolDescriptors.CalcNumAtomStereoCenters(m) for m in mols]
-    output_df["chiral_spec"] = [
-        rdMolDescriptors.CalcNumAtomStereoCenters(m) - rdMolDescriptors.CalcNumUnspecifiedAtomStereoCenters(m)
-        for m in mols
-    ]
-
-    # Has any stereochemistry specified?
-    output_df["has_stereo"] = output_df["chiral_spec"] > 0
-
-    # --- Double Bond Stereochemistry ---
-    db_spec_counts = []
-    for mol in mols:
-        if mol is None:
-            db_spec_counts.append(0)
-            continue
-
-        # Make sure stereochemistry is properly perceived
-        try:
-            Chem.AssignStereochemistry(mol, force=True)
-        except Exception as e:
-            log.warning(f"Error assigning stereochemistry: {str(e)}")
-
-        # Count stereo double bonds
-        spec_count = 0
-        for bond in mol.GetBonds():
-            if bond.GetBondType() == Chem.BondType.DOUBLE and bond.GetStereo() in [
-                Chem.BondStereo.STEREOE,
-                Chem.BondStereo.STEREOZ,
-            ]:
-                spec_count += 1
-
-        db_spec_counts.append(spec_count)
-
-    # Add double bond stereochemistry count to dataframe
-    output_df["db_spec"] = db_spec_counts  # Double bonds with specified stereochem
-
-    # --- R/S Configuration Counts ---
-    r_cnt, s_cnt = [], []
-    stereo_parity, stereo_hash = [], []
+    # Initialize result lists for all descriptors
+    chiral_cnt, chiral_spec = [], []
+    db_spec, r_cnt, s_cnt = [], [], []
+    stereo_hash = []
 
     for mol in mols:
         if mol is None:
+            log.warning("Found a None molecule, skipping...")
+            chiral_cnt.append(0)
+            chiral_spec.append(0)
+            db_spec.append(0)
             r_cnt.append(0)
             s_cnt.append(0)
-            stereo_parity.append(0)
             stereo_hash.append(0)
             continue
 
+        # Ensure stereochemistry is properly perceived AND assigned
         try:
-            # Find chiral centers and their R/S designations
+            Chem.AssignStereochemistry(mol, force=True, cleanIt=True)
+            Chem.AssignCIPLabels(mol)  # Explicitly assign R/S labels
+        except Exception as e:
+            log.warning(f"Error assigning stereochemistry: {str(e)}")
+
+        # Find chiral centers with their R/S designations
+        try:
             centers = Chem.FindMolChiralCenters(mol, includeUnassigned=False)
-            r = sum(1 for _, stereo in centers if stereo == "R")
-            s = sum(1 for _, stereo in centers if stereo == "S")
+
+            # Count specified chiral centers (those with assigned R/S)
+            specified = len(centers)
+
+            # Use total centers count from centers or potential count, whichever is larger
+            potential_centers = rdMolDescriptors.CalcNumAtomStereoCenters(mol)
+            total_centers = max(potential_centers, specified)
+
+            chiral_cnt.append(total_centers)
+            chiral_spec.append(specified)
+
+            # Count R and S configurations
+            r = sum(1 for _, stereo in centers if stereo == "r")
+            s = sum(1 for _, stereo in centers if stereo == "s")
             r_cnt.append(r)
             s_cnt.append(s)
 
-            # Calculate stereo parity (1 for same configuration, -1 for opposite, 0 for odd/none)
-            if len(centers) >= 2:
-                # Convert R/S to binary (R=1, S=0)
-                binary_stereo = [1 if stereo == "R" else 0 for _, stereo in centers]
-                # XOR all values - 0 if even number of same type, 1 if odd
-                parity = 1
-                for b in binary_stereo:
-                    parity ^= b
-                # Convert to -1, 0, 1 scale:
-                # If all same -> parity=0 -> 1
-                # If mixed evenly -> parity=0 -> 1
-                # If mixed unevenly -> parity=1 -> -1
-                stereo_parity.append(1 if parity == 0 else -1)
-            else:
-                # Single stereocenter or none
-                stereo_parity.append(0)
-
             # Calculate numerical hash of stereo pattern
             if centers:
-                # Sort by atom index
-                sorted_centers = sorted(centers)
                 # Create a numerical hash from the pattern
                 hash_val = 0
-                for i, (idx, stereo) in enumerate(sorted_centers):
-                    # R=1, S=0
-                    bit_val = 1 if stereo == "R" else 0
+                for i, (idx, stereo) in enumerate(sorted(centers)):
+                    # r=1, s=0
+                    bit_val = 1 if stereo == "r" else 0
                     # Shift by position and add
                     hash_val += bit_val << i
                 stereo_hash.append(hash_val)
@@ -493,16 +460,36 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
                 stereo_hash.append(0)
 
         except Exception as e:
-            log.warning(f"Error finding chiral centers: {str(e)}")
+            log.warning(f"Error processing chiral centers: {str(e)}")
+            chiral_cnt.append(0)
+            chiral_spec.append(0)
             r_cnt.append(0)
             s_cnt.append(0)
-            stereo_parity.append(0)
             stereo_hash.append(0)
 
-    output_df["r_count"] = r_cnt  # Count of R configured stereocenters
-    output_df["s_count"] = s_cnt  # Count of S configured stereocenters
-    output_df["stereo_parity"] = stereo_parity  # Pattern parity (-1, 0, 1)
-    output_df["stereo_hash"] = stereo_hash  # Numerical stereo pattern hash
+        # Count stereo double bonds
+        try:
+            e_z_count = 0
+            for bond in mol.GetBonds():
+                if bond.GetBondType() == Chem.BondType.DOUBLE and bond.GetStereo() in [
+                    Chem.BondStereo.STEREOE,
+                    Chem.BondStereo.STEREOZ,
+                ]:
+                    e_z_count += 1
+            db_spec.append(e_z_count)
+        except Exception as e:
+            log.warning(f"Error counting stereo double bonds: {str(e)}")
+            db_spec.append(0)
+
+    # Add all descriptors to dataframe
+    output_df["chiral_cnt"] = chiral_cnt
+    output_df["chiral_spec"] = chiral_spec
+    output_df["has_stereo"] = [(spec > 0) or (db > 0) for spec, db in zip(chiral_spec, db_spec)]
+    output_df["db_spec"] = db_spec
+    output_df["r_count"] = r_cnt
+    output_df["s_count"] = s_cnt
+    output_df["stereo_hash"] = stereo_hash
+
     return output_df
 
 

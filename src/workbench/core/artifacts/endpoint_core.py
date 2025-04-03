@@ -387,7 +387,7 @@ class EndpointCore(Artifact):
             metrics = self.classification_metrics(target_column, prediction_df)
         else:
             # For other model types, we don't compute metrics
-            self.log.important(f"Model Type: {model_type} doesn't have metrics...")
+            self.log.info(f"Model Type: {model_type} doesn't have metrics...")
             metrics = pd.DataFrame()
 
         # Print out the metrics
