@@ -29,7 +29,7 @@ def detect_double_bond_stereochemistry(df, verbose=True):
 
     # Method 1: Using FindPotentialStereo (modern approach)
     for idx in sampled_indices:
-        mol = df.iloc[idx]['molecule']
+        mol = df.iloc[idx]["molecule"]
         if mol is None:
             continue
 
@@ -48,11 +48,9 @@ def detect_double_bond_stereochemistry(df, verbose=True):
                     end_atom = bond.GetEndAtom().GetSymbol()
                     stereo_desc = "Cis (Z)" if element.descriptor == Chem.StereoDescriptor.Bond_Cis else "Trans (E)"
 
-                    ez_bonds.append({
-                        "bond_idx": element.centeredOn,
-                        "atoms": f"{begin_atom}={end_atom}",
-                        "stereo": stereo_desc
-                    })
+                    ez_bonds.append(
+                        {"bond_idx": element.centeredOn, "atoms": f"{begin_atom}={end_atom}", "stereo": stereo_desc}
+                    )
 
         if ez_bonds:
             molecules_with_ez += 1
@@ -60,21 +58,17 @@ def detect_double_bond_stereochemistry(df, verbose=True):
 
             if verbose:
                 smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-                molecules_with_ez_details.append({
-                    "idx": idx,
-                    "smiles": smiles,
-                    "ez_bonds": ez_bonds
-                })
+                molecules_with_ez_details.append({"idx": idx, "smiles": smiles, "ez_bonds": ez_bonds})
 
     # Check the entire dataset with a faster method
     total_with_ez = 0
-    for mol in df['molecule']:
+    for mol in df["molecule"]:
         if mol is None:
             continue
 
         # Check for double bond stereochemistry in the SMILES
         smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-        if '/' in smiles or '\\' in smiles:  # Quick check for potential E/Z notation
+        if "/" in smiles or "\\" in smiles:  # Quick check for potential E/Z notation
             total_with_ez += 1
 
     # Prepare results
@@ -84,26 +78,26 @@ def detect_double_bond_stereochemistry(df, verbose=True):
         "ez_bonds_total_sampled": ez_bonds_total,
         "estimated_percent_with_ez": (molecules_with_ez / sample_size) * 100 if sample_size > 0 else 0,
         "total_with_potential_ez": total_with_ez,
-        "percent_with_potential_ez": (total_with_ez / total_molecules) * 100 if total_molecules > 0 else 0
+        "percent_with_potential_ez": (total_with_ez / total_molecules) * 100 if total_molecules > 0 else 0,
     }
 
     # Print detailed results if requested
     if verbose and molecules_with_ez_details:
         print(f"Found {molecules_with_ez} molecules with E/Z stereochemistry in sample of {sample_size}")
         print(f"Estimated {results['estimated_percent_with_ez']:.2f}% of molecules have E/Z stereochemistry")
-        print(f"\nDetailed examples:")
+        print("\nDetailed examples:")
 
         for idx, mol_info in enumerate(molecules_with_ez_details[:5]):  # Show first 5 examples
             print(f"\nExample {idx + 1}:")
             print(f"SMILES: {mol_info['smiles']}")
             print("E/Z bonds:")
-            for bond in mol_info['ez_bonds']:
+            for bond in mol_info["ez_bonds"]:
                 print(f"  - Bond {bond['bond_idx']} ({bond['atoms']}): {bond['stereo']}")
 
     return results
 
+
 if __name__ == "__main__":
-    from workbench.api import DataSource
 
     # Set pandas display options
     pd.options.display.max_columns = 20
@@ -118,27 +112,23 @@ if __name__ == "__main__":
         "C/C=C/Cl",  # trans-2-chloro-2-butene
         "ClC=CCl",  # non-stereo notation
         "Cl/C=C/Cl",  # trans-1,2-dichloroethene
-
         # Z (cis) examples
         "C/C=C\\C",  # cis-2-butene
         "C/C=C\\Cl",  # cis-2-chloro-2-butene
         "Cl/C=C\\Cl",  # cis-1,2-dichloroethene
-
         # More complex examples
         "C/C=C/C=C",  # trans-2,4-hexadiene
         "C/C=C\\C=C",  # mix of cis and trans
         "C/C=C/C=C/C",  # all-trans-2,4,6-octatriene
         "C/C(Cl)=C\\C",  # substituted example
-
         # Non-stereochemical double bonds
         "C=C",  # ethene (no stereochemistry)
         "C=CC=C",  # 1,3-butadiene (no specified stereochemistry)
         "C1=CCCCC1",  # cyclohexene (no stereochemistry possible)
-
         # Compare with chiral centers
         "C[C@H](Cl)Br",  # chiral molecule
         "CC(Cl)Br"  # non-chiral notation
-        "N[C@H]1CC[C@@H](CC1)[NH2+]CCF"  # From RDKIT/Github discussion example
+        "N[C@H]1CC[C@@H](CC1)[NH2+]CCF",  # From RDKIT/Github discussion example
     ]
 
     # AQSol Smiles
@@ -171,7 +161,6 @@ if __name__ == "__main__":
         r"O\\N=C1\\CCCC=C1",
         r"CCCCCCCCCCCCCCCC(=O)NCCCCCCCC\\C=C/CCCCCCCC",
         r"ClC\\C=C/CCl",
-        r"CC(C)OC(=O)C1=CC=C(C)C(=C1)\\N=N\\C1=C(O)C(=CC2=CC=CC=C12)C(=O)NC1=CC(Cl)=C(NC(=O)C2=CC3=CC=CC=C3C(\\N=N\\C3=CC(=CC=C3C)C(=O)OC(C)C)=C2O)C=C1Cl",
         r"CC(=O)C(\\N=N\\C1=CC=C(Cl)C=C1[N+]([O-])=O)C(=O)NC1=CC=C2NC(=O)NC2=C1",
         r"OC(=O)\\C=C(/Cl)C1=CC=CC=C1",
         r"CC(=O)C(\\N=N\\C1=CC=C(C=C1)[N+]([O-])=O)C(=O)NC1=CC=C2NC(=O)NC2=C1",
@@ -183,10 +172,7 @@ if __name__ == "__main__":
     mols = [Chem.MolFromSmiles(s) for s in all_smiles]
 
     # Create test dataframe
-    df = pd.DataFrame({
-        'smiles': all_smiles,
-        'molecule': mols
-    })
+    df = pd.DataFrame({"smiles": all_smiles, "molecule": mols})
 
     # Run the detection function
     results = detect_double_bond_stereochemistry(df, verbose=True)

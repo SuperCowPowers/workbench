@@ -9,7 +9,7 @@ from rdkit import Chem
 from rdkit.Chem import Mol, Descriptors, rdFingerprintGenerator
 from rdkit.ML.Descriptors import MoleculeDescriptors
 from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
-from rdkit.Chem import rdMolDescriptors
+from rdkit.Chem import rdMolDescriptors, rdCIPLabeler
 from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
 from rdkit import RDLogger
 from rdkit.Chem import FunctionalGroups as FG
@@ -474,11 +474,11 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         try:
             e_z_count = 0
             for bond in mol.GetBonds():
-                # Check both CIP labels and traditional stereo flags
                 if bond.GetBondType() == Chem.BondType.DOUBLE:
-                    if bond.HasProp("_CIPCode"):
-                        e_z_count += 1
-                    elif bond.GetStereo() in [Chem.BondStereo.STEREOE, Chem.BondStereo.STEREOZ]:
+                    if bond.HasProp("_CIPCode") or bond.GetStereo() in [
+                        Chem.BondStereo.STEREOTRANS,
+                        Chem.BondStereo.STEREOCIS,
+                    ]:
                         e_z_count += 1
             db_spec.append(e_z_count)
         except Exception as e:

@@ -664,11 +664,11 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         try:
             e_z_count = 0
             for bond in mol.GetBonds():
-                # Check both CIP labels and traditional stereo flags
                 if bond.GetBondType() == Chem.BondType.DOUBLE:
-                    if bond.HasProp("_CIPCode"):
-                        e_z_count += 1
-                    elif bond.GetStereo() in [Chem.BondStereo.STEREOE, Chem.BondStereo.STEREOZ]:
+                    if bond.HasProp("_CIPCode") or bond.GetStereo() in [
+                        Chem.BondStereo.STEREOTRANS,
+                        Chem.BondStereo.STEREOCIS,
+                    ]:
                         e_z_count += 1
             db_spec.append(e_z_count)
         except Exception as e:
@@ -981,10 +981,78 @@ if __name__ == "__main__":
     pd.options.display.max_colwidth = 200
     pd.options.display.width = 1400
 
+    # Test data
+    # Create test molecules with known E/Z stereochemistry
+    test_smiles = [
+        # E (trans) examples
+        "C/C=C/C",  # trans-2-butene
+        "C/C=C/Cl",  # trans-2-chloro-2-butene
+        "ClC=CCl",  # non-stereo notation
+        "Cl/C=C/Cl",  # trans-1,2-dichloroethene
+        # Z (cis) examples
+        "C/C=C\\C",  # cis-2-butene
+        "C/C=C\\Cl",  # cis-2-chloro-2-butene
+        "Cl/C=C\\Cl",  # cis-1,2-dichloroethene
+        # More complex examples
+        "C/C=C/C=C",  # trans-2,4-hexadiene
+        "C/C=C\\C=C",  # mix of cis and trans
+        "C/C=C/C=C/C",  # all-trans-2,4,6-octatriene
+        "C/C(Cl)=C\\C",  # substituted example
+        # Non-stereochemical double bonds
+        "C=C",  # ethene (no stereochemistry)
+        "C=CC=C",  # 1,3-butadiene (no specified stereochemistry)
+        "C1=CCCCC1",  # cyclohexene (no stereochemistry possible)
+        # Compare with chiral centers
+        "C[C@H](Cl)Br",  # chiral molecule
+        "CC(Cl)Br"  # non-chiral notation
+        "N[C@H]1CC[C@@H](CC1)[NH2+]CCF",  # From RDKIT/Github discussion example
+    ]
+
+    # AQSol Smiles
+    aqsol_smiles = [
+        r"CCCCCCCC\\C=C\\CCCCCCCCNCCCNCCCNCCCN",
+        r"COC1=CC=C(C=C1N\\N=C1/C(=O)C(=CC2=CC=CC=C12)C(=O)NC1=CC(Cl)=CC=C1C)C(=O)NC1=CC=CC=C1",
+        r"NC(=O)N\\N=C\\C(O)C(O)C(O)CO",
+        r"C1=CC=C(C=C1)\\N=N\\C1=CC=CC=C1",
+        r"CC(=O)N\\N=C\\C1=CC=C(O1)[N+]([O-])=O",
+        r"CC(=O)OCCN(CCC#N)C1=CC=C(C=C1)\\N=N\\C1=CC=C(C=C1)[N+]([O-])=O",
+        r"ClC1=CC=C(Cl)C(N\\N=C2/C(=O)C(=CC3=CC=CC=C23)C(=O)NC2=CC=C3NC(=O)NC3=C2)=C1",
+        r"NC1=CC=C(C=C1)\\N=N\\C1=CC=CC=C1",
+        r"OC(=O)\\C=C/C=C\\C(O)=O",
+        r"CCOC(=O)\\C=C\\C1=CC=CC=C1",
+        r"CC(=O)\\C=C\\C1=C(C)CCCC1(C)C",
+        r"C\\C(=C/C(O)=O)C(O)=O",
+        r"CCC\\C=C\\C",
+        r"CC1=NN(C(=O)\\C1=N\\NC1=CC=C(C=C1Cl)C1=CC=C(N\\N=C2/C(C)=NN(C2=O)C2=CC=CC=C2)C(Cl)=C1)C1=CC=CC=C1",
+        r"OC(C1=CC2C3C(C1\\C2=C(\\C1=CC=CC=C1)C1=CC=CC=N1)C(=O)NC3=O)(C1=CC=CC=C1)C1=CC=CC=N1",
+        r"COC1=CC=C(\\C=C\\C(=O)C2=C(O)C=CC=C2)C=C1",
+        r"CC\\C(=C(\\CC)C1=CC=C(O)C=C1)C1=CC=C(O)C=C1",
+        r"C\\C=C\\OC1CCC(CC1)O\\C=C\\C",
+        r"CC(C)=C[C@@H]1[C@@H](C(=O)O[C@H]2CC(=O)C(C\\C=C/C=C)=C2C)C1(C)C",
+        r"CC\\C=C\\C",
+        r"COC(=O)C(\\C)=C\\[C@@H]1[C@@H](C(=O)O[C@H]2CC(=O)C(C\\C=C/C=C)=C2C)C1(C)C",
+        r"CC1=C(F)C(F)=C(COC(=O)C2C(\\C=C(/Cl)C(F)(F)F)C2(C)C)C(F)=C1F",
+        r"CCC(=O)OC\\C=C(/C)\\C=C\\C=C(/C)\\C=C\\C1=C(C)CCCC1(C)C",
+        r"CC(=O)C(\\C)=C/C1C(C)=CCCC1(C)C",
+        r"CC(=O)C(\\N=N\\C1=CC=CC=C1C(O)=O)C(=O)NC1=CC=C2NC(=O)NC2=C1",
+        r"O\\N=C1\\CCCC=C1",
+        r"CCCCCCCCCCCCCCCC(=O)NCCCCCCCC\\C=C/CCCCCCCC",
+        r"ClC\\C=C/CCl",
+        r"CC(=O)C(\\N=N\\C1=CC=C(Cl)C=C1[N+]([O-])=O)C(=O)NC1=CC=C2NC(=O)NC2=C1",
+        r"OC(=O)\\C=C(/Cl)C1=CC=CC=C1",
+        r"CC(=O)C(\\N=N\\C1=CC=C(C=C1)[N+]([O-])=O)C(=O)NC1=CC=C2NC(=O)NC2=C1",
+        r"CC\\C=C/CCO",
+    ]
+    all_smiles = test_smiles + aqsol_smiles
+
+    # Create molecules
+    mols = [Chem.MolFromSmiles(s) for s in all_smiles]
+
+    # Create test dataframe
+    df = pd.DataFrame({"smiles": all_smiles, "molecule": mols})
+
     # Test Stereochemistry Descriptors
     # See: https://github.com/rdkit/rdkit/discussions/6567
-    df = pd.DataFrame({"smiles": ["N[C@H]1CC[C@@H](CC1)[NH2+]CCF"]})
-    df["molecule"] = df["smiles"].apply(Chem.MolFromSmiles)
     df = compute_stereochemistry_descriptors(df)
     print(df)
 
