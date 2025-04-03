@@ -9,7 +9,7 @@ from rdkit import Chem
 from rdkit.Chem import Mol, Descriptors, rdFingerprintGenerator
 from rdkit.ML.Descriptors import MoleculeDescriptors
 from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
-from rdkit.Chem import rdMolDescriptors, rdCIPLabeler
+from rdkit.Chem import rdCIPLabeler
 from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
 from rdkit import RDLogger
 from rdkit.Chem import FunctionalGroups as FG
@@ -406,7 +406,9 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     # Initialize result lists for all descriptors
     chiral_cnt, chiral_spec = [], []
     db_spec, r_cnt, s_cnt = [], [], []
+    e_cnt, z_cnt = [], []
     stereo_hash = []
+    db_hash_list = []
 
     for mol in mols:
         if mol is None:
@@ -416,74 +418,105 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
             db_spec.append(0)
             r_cnt.append(0)
             s_cnt.append(0)
+            e_cnt.append(0)
+            z_cnt.append(0)
             stereo_hash.append(0)
+            db_hash_list.append(0)
             continue
 
         # Ensure stereochemistry is properly assigned
         try:
-            Chem.AssignStereochemistry(mol, force=True, cleanIt=True)
+            # Use the more accurate CIP labeling algorithm
             rdCIPLabeler.AssignCIPLabels(mol)
-        except Exception as e:
-            log.warning(f"Error assigning stereochemistry: {str(e)}")
 
-        # Process chiral centers
-        try:
-            # Count total potential centers
-            potential_centers = rdMolDescriptors.CalcNumAtomStereoCenters(mol)
+            # Use FindPotentialStereo() to identify all potential stereochemistry
+            stereo_info = Chem.FindPotentialStereo(mol)
 
-            # Check atoms for R/S labels
+            # Count potential and specified stereocenters
+            potential_centers = 0
+            specified_centers = 0
             r_count = 0
             s_count = 0
             stereo_atoms = []
 
-            for atom in mol.GetAtoms():
-                if atom.HasProp("_CIPCode"):
-                    cip_code = atom.GetProp("_CIPCode")
-                    if cip_code.upper() == "R":
-                        r_count += 1
-                        stereo_atoms.append((atom.GetIdx(), "R"))
-                    elif cip_code.upper() == "S":
-                        s_count += 1
-                        stereo_atoms.append((atom.GetIdx(), "S"))
+            # Count potential and specified stereobonds
+            potential_bonds = 0
+            specified_bonds = 0
+            e_count = 0
+            z_count = 0
+            stereo_bonds = []
 
-            specified = len(stereo_atoms)
+            # Process all stereo information
+            for element in stereo_info:
+                if element.type == Chem.StereoType.Atom_Tetrahedral:
+                    potential_centers += 1
+                    atom_idx = element.centeredOn
+
+                    if element.specified == Chem.StereoSpecified.Specified:
+                        specified_centers += 1
+
+                        if element.descriptor == Chem.StereoDescriptor.Tet_CCW:
+                            r_count += 1
+                            stereo_atoms.append((atom_idx, "R"))
+                        elif element.descriptor == Chem.StereoDescriptor.Tet_CW:
+                            s_count += 1
+                            stereo_atoms.append((atom_idx, "S"))
+
+                elif element.type == Chem.StereoType.Bond_Double:
+                    potential_bonds += 1
+                    bond_idx = element.centeredOn
+
+                    if element.specified == Chem.StereoSpecified.Specified:
+                        specified_bonds += 1
+
+                        if element.descriptor == Chem.StereoDescriptor.Bond_Trans:
+                            e_count += 1
+                            stereo_bonds.append((bond_idx, "E"))
+                        elif element.descriptor == Chem.StereoDescriptor.Bond_Cis:
+                            z_count += 1
+                            stereo_bonds.append((bond_idx, "Z"))
+
+            # Calculate chiral center hash (limiting to 8 centers to keep hash small)
+            chiral_hash = 0
+            if stereo_atoms:
+                for i, (idx, stereo) in enumerate(sorted(stereo_atoms, key=lambda x: x[0])):
+                    if i >= 8:  # Limit to 8 stereocenters
+                        break
+                    bit_val = 1 if stereo == "R" else 0
+                    chiral_hash += bit_val << i
+
+            # Calculate double bond hash (limiting to 8 bonds to keep hash small)
+            db_hash = 0
+            if stereo_bonds:
+                for i, (idx, stereo) in enumerate(sorted(stereo_bonds, key=lambda x: x[0])):
+                    if i >= 8:  # Limit to 8 stereobonds
+                        break
+                    bit_val = 1 if stereo == "E" else 0
+                    db_hash += bit_val << i
+
+            # Store the calculated values
             chiral_cnt.append(potential_centers)
-            chiral_spec.append(specified)
+            chiral_spec.append(specified_centers)
             r_cnt.append(r_count)
             s_cnt.append(s_count)
-
-            # Calculate hash of stereo pattern
-            if stereo_atoms:
-                hash_val = 0
-                for i, (idx, stereo) in enumerate(sorted(stereo_atoms, key=lambda x: x[0])):
-                    bit_val = 1 if stereo == "R" else 0
-                    hash_val += bit_val << i
-                stereo_hash.append(hash_val)
-            else:
-                stereo_hash.append(0)
+            db_spec.append(specified_bonds)
+            e_cnt.append(e_count)
+            z_cnt.append(z_count)
+            stereo_hash.append(chiral_hash)
+            db_hash_list.append(db_hash)
 
         except Exception as e:
-            log.warning(f"Error processing chiral centers: {str(e)}")
+            log.warning(f"Error processing stereochemistry: {str(e)}")
+            # Append zeros for all descriptors in case of error
             chiral_cnt.append(0)
             chiral_spec.append(0)
+            db_spec.append(0)
             r_cnt.append(0)
             s_cnt.append(0)
+            e_cnt.append(0)
+            z_cnt.append(0)
             stereo_hash.append(0)
-
-        # Count stereo double bonds
-        try:
-            e_z_count = 0
-            for bond in mol.GetBonds():
-                if bond.GetBondType() == Chem.BondType.DOUBLE:
-                    if bond.HasProp("_CIPCode") or bond.GetStereo() in [
-                        Chem.BondStereo.STEREOTRANS,
-                        Chem.BondStereo.STEREOCIS,
-                    ]:
-                        e_z_count += 1
-            db_spec.append(e_z_count)
-        except Exception as e:
-            log.warning(f"Error counting stereo double bonds: {str(e)}")
-            db_spec.append(0)
+            db_hash_list.append(0)
 
     # Add all descriptors to dataframe
     output_df["chiral_cnt"] = chiral_cnt
@@ -491,7 +524,10 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     output_df["db_spec"] = db_spec
     output_df["r_count"] = r_cnt
     output_df["s_count"] = s_cnt
+    output_df["e_count"] = e_cnt
+    output_df["z_count"] = z_cnt
     output_df["stereo_hash"] = stereo_hash
+    output_df["db_hash"] = db_hash_list
     output_df["has_stereo"] = [(spec > 0) or (db > 0) for spec, db in zip(chiral_spec, db_spec)]
     return output_df
 
