@@ -488,12 +488,11 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     # Add all descriptors to dataframe
     output_df["chiral_cnt"] = chiral_cnt
     output_df["chiral_spec"] = chiral_spec
-    output_df["has_stereo"] = [(spec > 0) or (db > 0) for spec, db in zip(chiral_spec, db_spec)]
     output_df["db_spec"] = db_spec
     output_df["r_count"] = r_cnt
     output_df["s_count"] = s_cnt
     output_df["stereo_hash"] = stereo_hash
-
+    output_df["has_stereo"] = [(spec > 0) or (db > 0) for spec, db in zip(chiral_spec, db_spec)]
     return output_df
 
 
