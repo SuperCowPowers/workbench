@@ -507,6 +507,11 @@ class EndpointCore(Artifact):
         # Note: CSV serialization converts pd.NA to blank strings, so we have to put in placeholders
         converted_df.replace("__NA__", pd.NA, inplace=True)
 
+        # Check for True/False values in the string columns
+        for column in converted_df.select_dtypes(include=["string"]).columns:
+            if converted_df[column].str.lower().isin(["true", "false"]).all():
+                converted_df[column] = converted_df[column].str.lower().map({"true": True, "false": False})
+
         # Return the Dataframe
         return converted_df
 
@@ -979,6 +984,7 @@ if __name__ == "__main__":
     """Exercise the Endpoint Class"""
     from workbench.api import FeatureSet
     from workbench.utils.endpoint_utils import fs_evaluation_data
+    import random
 
     # Grab an EndpointCore object and pull some information from it
     my_endpoint = EndpointCore("abalone-regression")
@@ -1013,9 +1019,15 @@ if __name__ == "__main__":
 
     # Capitalization Test
     fs = FeatureSet("abalone_features")
-    cap_df = fs.pull_dataframe()
+    df = fs.pull_dataframe()[:100]
+    cap_df = df.copy()
     cap_df.columns = [col.upper() for col in cap_df.columns]
     my_endpoint._predict(cap_df)
+
+    # Boolean Type Test
+    df["bool_column"] = [random.choice([True, False]) for _ in range(len(df))]
+    result_df = my_endpoint._predict(df)
+    assert result_df["bool_column"].dtype == bool
 
     # Run Auto Inference on the Endpoint (uses the FeatureSet)
     print("Running Auto Inference...")
