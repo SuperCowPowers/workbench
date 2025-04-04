@@ -418,7 +418,7 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
                 "e_cnt": 0,
                 "z_cnt": 0,
                 "chiral_fp": 0,
-                "db_fp": 0
+                "db_fp": 0,
             }
 
         try:
@@ -493,7 +493,7 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
                 "e_cnt": e_cnt,
                 "z_cnt": z_cnt,
                 "chiral_fp": chiral_fp,
-                "db_fp": db_fp
+                "db_fp": db_fp,
             }
 
         except Exception as e:
@@ -506,7 +506,7 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
                 "e_cnt": 0,
                 "z_cnt": 0,
                 "chiral_fp": 0,
-                "db_fp": 0
+                "db_fp": 0,
             }
 
     # Process all molecules and collect results
