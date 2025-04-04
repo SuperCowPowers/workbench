@@ -410,7 +410,16 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     def process_molecule(mol):
         if mol is None:
             log.warning("Found a None molecule, skipping...")
-            return {"chiral": 0, "r_cnt": 0, "s_cnt": 0, "db": 0, "e_cnt": 0, "z_cnt": 0, "chiral_fp": 0, "db_fp": 0}
+            return {
+                "chiral_centers": 0,
+                "r_cnt": 0,
+                "s_cnt": 0,
+                "db_stereo": 0,
+                "e_cnt": 0,
+                "z_cnt": 0,
+                "chiral_fp": 0,
+                "db_fp": 0
+            }
 
         try:
             # Use the more accurate CIP labeling algorithm (Cahn-Ingold-Prelog rules)
@@ -477,19 +486,28 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
                     db_fp += bit_val << i  # Shift bits to create a unique fingerprint
 
             return {
-                "chiral": specified_centers,
+                "chiral_centers": specified_centers,
                 "r_cnt": r_cnt,
                 "s_cnt": s_cnt,
-                "db": specified_bonds,
+                "db_stereo": specified_bonds,
                 "e_cnt": e_cnt,
                 "z_cnt": z_cnt,
                 "chiral_fp": chiral_fp,
-                "db_fp": db_fp,
+                "db_fp": db_fp
             }
 
         except Exception as e:
             log.warning(f"Error processing stereochemistry: {str(e)}")
-            return {"chiral": 0, "r_cnt": 0, "s_cnt": 0, "db": 0, "e_cnt": 0, "z_cnt": 0, "chiral_fp": 0, "db_fp": 0}
+            return {
+                "chiral_centers": 0,
+                "r_cnt": 0,
+                "s_cnt": 0,
+                "db_stereo": 0,
+                "e_cnt": 0,
+                "z_cnt": 0,
+                "chiral_fp": 0,
+                "db_fp": 0
+            }
 
     # Process all molecules and collect results
     results = []
@@ -501,7 +519,7 @@ def compute_stereochemistry_descriptors(df: pd.DataFrame) -> pd.DataFrame:
         output_df[key] = [r[key] for r in results]
 
     # Boolean flag indicating if the molecule has any stereochemistry defined
-    output_df["has_stereo"] = (output_df["chiral"] > 0) | (output_df["db"] > 0)
+    output_df["has_stereo"] = (output_df["chiral_centers"] > 0) | (output_df["db_stereo"] > 0)
 
     return output_df
 
