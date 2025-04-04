@@ -478,10 +478,9 @@ class FeatureSetCore(Artifact):
         Returns:
             list[str]: The list of holdout ids.
         """
-        from workbench.core.views import TrainingView
 
         # Create a NEW training view
-        self.log.important(f"Getting Training Holdouts...")
+        self.log.important("Getting Training Holdouts...")
         table = self.view("training").table
         hold_out_ids = self.query(f'SELECT {id_column} FROM "{table}" where training = FALSE')[id_column].tolist()
         return hold_out_ids
