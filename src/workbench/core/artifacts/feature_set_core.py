@@ -469,6 +469,23 @@ class FeatureSetCore(Artifact):
         self.log.important(f"Setting Training Holdouts: {len(holdout_ids)} ids...")
         TrainingView.create(self, id_column=id_column, holdout_ids=holdout_ids)
 
+    def get_training_holdouts(self, id_column: str) -> list[str]:
+        """Get the hold out ids for the training view for this FeatureSet
+
+        Args:
+            id_column (str): The name of the id column.
+
+        Returns:
+            list[str]: The list of holdout ids.
+        """
+        from workbench.core.views import TrainingView
+
+        # Create a NEW training view
+        self.log.important(f"Getting Training Holdouts...")
+        table = self.view("training").table
+        hold_out_ids = self.query(f'SELECT {id_column} FROM "{table}" where training = FALSE')[id_column].tolist()
+        return hold_out_ids
+
     @classmethod
     def delete_views(cls, table: str, database: str):
         """Delete any views associated with this FeatureSet
@@ -668,6 +685,11 @@ if __name__ == "__main__":
     storage = my_features.get_data_source()
     print("\nStorage Details:")
     pprint(storage.details())
+
+    # Test getting the holdout ids
+    print("Getting the hold out ids...")
+    holdout_ids = my_features.get_training_holdouts("id")
+    print(f"Holdout IDs: {holdout_ids}")
 
     # Get a sample of the data
     df = my_features.sample()
