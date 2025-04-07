@@ -1161,13 +1161,17 @@ if __name__ == "__main__":
         "time_hr": [1, 4, 3, 3, 2, np.nan, 5, 6, 6, np.nan, np.nan],
         "target_value": [1.90, 4.03, 2.5, 3.5, 7.8, 6.2, 8.1, np.nan, 5.4, 6.7, 6.9],
         "smiles": [
-            "CC(=O)O", "CC(=O)O",  # Acetic acid
-            "C1CCCCC1", "C1CCCCC1",  # Cyclohexane
+            "CC(=O)O",
+            "CC(=O)O",  # Acetic acid
+            "C1CCCCC1",
+            "C1CCCCC1",  # Cyclohexane
             "C1=CC=CC=C1",  # Benzene
-            "CCO", "CCO",  # Ethanol
-            "CC(C)=O", "CC(C)=O",  # Acetone
+            "CCO",
+            "CCO",  # Ethanol
+            "CC(C)=O",
+            "CC(C)=O",  # Acetone
             "C1=CC=CC=C1",  # Benzene
-        ]
+        ],
     }
 
     # Create test DataFrame
@@ -1177,16 +1181,12 @@ if __name__ == "__main__":
     print("\n")
 
     # Test with arithmetic mean
-    result_df = rollup_experimental_data(
-        test_df, id="id", time="time_hr", target="target_value", use_gmean=False
-    )
+    result_df = rollup_experimental_data(test_df, id="id", time="time_hr", target="target_value", use_gmean=False)
     print("Result with Arithmetic Mean:")
     print(result_df)
     print("\n")
 
     # Test with geometric mean
-    result_df_gmean = rollup_experimental_data(
-        test_df, id="id", time="time_hr", target="target_value", use_gmean=True
-    )
+    result_df_gmean = rollup_experimental_data(test_df, id="id", time="time_hr", target="target_value", use_gmean=True)
     print("Result with Geometric Mean:")
     print(result_df_gmean)
