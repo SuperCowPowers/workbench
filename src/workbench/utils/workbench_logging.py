@@ -250,6 +250,7 @@ def exception_log_forward(call_on_exception=None):
 if __name__ == "__main__":
     # Uncomment to test the WORKBENCH_DEBUG env variable
     # os.environ["WORKBENCH_DEBUG"] = "True"
+    from workbench.utils.log_utils import log_theme
 
     logging_setup()
     my_log = logging.getLogger("workbench")
