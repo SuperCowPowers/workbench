@@ -273,3 +273,6 @@ if __name__ == "__main__":
     # Test the exception handler
     with exception_log_forward():
         raise ValueError("Testing the exception handler")
+
+    # Test the light theme
+    log_theme("light")
