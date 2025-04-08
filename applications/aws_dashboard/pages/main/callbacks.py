@@ -1,7 +1,6 @@
 """Callbacks/Connections for the Main/Front Dashboard Page"""
 
-from datetime import datetime
-from dash import callback, Input, Output, State, html, no_update
+from dash import callback, Input, Output, State, no_update, html, clientside_callback
 from dash.exceptions import PreventUpdate
 
 # Workbench Imports
@@ -12,13 +11,18 @@ from workbench.utils.pandas_utils import dataframe_delta
 
 # Update the last updated time
 def last_updated():
-    @callback(
+    clientside_callback(
+        """
+        function(n_intervals) {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('en-CA');
+            const timeStr = now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit', hour12: true});
+            return `${dateStr} (${timeStr})`;
+        }
+        """,
         Output("data-last-updated", "children"),
-        Input("main_page_refresh", "n_intervals"),
+        Input("main_page_refresh", "n_intervals")
     )
-    def refresh_last_updated_time(_n):
-        # A string of the new time (in the local time zone)
-        return datetime.now().strftime("%Y-%m-%d (%I:%M %p)")
 
 
 def plugin_page_info():
