@@ -102,6 +102,9 @@ class ConfigManager:
         # Add the WORKBENCH_API_KEY info
         api_key_info = self.get_api_key_info()
         output["API_KEY_INFO"] = api_key_info
+
+        # Add the UI_UPDATE_RATE
+        output["UI_UPDATE_RATE"] = self.ui_update_rate()
         return output
 
     def set_config(self, key: str, value: Any):
