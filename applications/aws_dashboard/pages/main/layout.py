@@ -6,7 +6,6 @@ import dash_bootstrap_components as dbc
 # Workbench Imports
 import workbench
 from workbench.web_interface.components.plugins.ag_table import AGTable
-from workbench.utils.config_manager import ConfigManager
 from workbench.utils.theme_manager import ThemeManager
 from workbench.utils.config_manager import ConfigManager
 
