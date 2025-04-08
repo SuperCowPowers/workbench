@@ -21,7 +21,7 @@ def last_updated():
         }
         """,
         Output("data-last-updated", "children"),
-        Input("main_page_refresh", "n_intervals")
+        Input("main_page_refresh", "n_intervals"),
     )
 
 
