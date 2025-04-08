@@ -174,6 +174,15 @@ class ConfigManager:
             with open(open_source_key_path, "r") as key_file:
                 return key_file.read().strip()
 
+    def ui_update_rate(self) -> int:
+        """Get the UI update rate from the configuration.
+
+        Returns:
+            int: The UI update rate in seconds.
+        """
+        # Default to 120 seconds if not set
+        return int(self.config.get("UI_UPDATE_RATE", 120))
+
     def create_site_config(self):
         """Create a site configuration file from the default configuration."""
         site_config_updates = {}
@@ -408,6 +417,10 @@ if __name__ == "__main__":
 
     # All config
     pprint(cm.get_all_config())
+
+    # Get the UI update rate
+    ui_update_rate = cm.ui_update_rate()
+    print(f"UI_UPDATE_RATE: {ui_update_rate}")
 
     # Unset WORKBENCH_CONFIG
     os.environ.pop("WORKBENCH_CONFIG", None)

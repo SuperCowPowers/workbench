@@ -5,6 +5,10 @@ import dash_bootstrap_components as dbc
 
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.utils.theme_manager import ThemeManager
+from workbench.utils.config_manager import ConfigManager
+
+# Get the UI update rate
+update_rate = ConfigManager().ui_update_rate() * 1000  # Convert to Milliseconds
 
 # Get the Project Name
 tm = ThemeManager()
@@ -21,7 +25,7 @@ def feature_sets_layout(
     # The layout for the FeatureSets page
     layout = html.Div(
         children=[
-            dcc.Interval(id="feature_sets_refresh", interval=60000),
+            dcc.Interval(id="feature_sets_refresh", interval=update_rate),
             dcc.Store(id="feature_sets_page_loaded", data=False),
             dbc.Row(
                 [

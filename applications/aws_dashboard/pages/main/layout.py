@@ -8,6 +8,10 @@ import workbench
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.theme_manager import ThemeManager
+from workbench.utils.config_manager import ConfigManager
+
+# Get the UI update rate
+update_rate = ConfigManager().ui_update_rate() * 1000  # Convert to Milliseconds
 
 # Set the Main Page Title
 tm = ThemeManager()
@@ -19,20 +23,16 @@ def main_layout(
     feature_sets: AGTable,
     models: AGTable,
     endpoints: AGTable,
-    update_rate: int = 60,
 ) -> html.Div:
     """Main Layout for the Dashboard"""
     workbench_version = workbench.__version__.split("+")[0].strip()
     cm = ConfigManager()
     license_id = cm.get_license_id()
 
-    # Update rate is in seconds (convert to milliseconds)
-    update_rate = update_rate * 1000
-
     # Define the layout with one table per row
     layout = html.Div(
         children=[
-            # This refreshes the page every 60 seconds
+            # This refreshes the page at the specified intervals
             dcc.Interval(id="main_page_refresh", interval=update_rate, n_intervals=0),
             dcc.Store(
                 id="table_hashes",

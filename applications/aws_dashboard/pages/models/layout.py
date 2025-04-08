@@ -6,6 +6,10 @@ import dash_bootstrap_components as dbc
 
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.utils.theme_manager import ThemeManager
+from workbench.utils.config_manager import ConfigManager
+
+# Get the UI update rate
+update_rate = ConfigManager().ui_update_rate() * 1000  # Convert to Milliseconds
 
 # Get the Project Name
 tm = ThemeManager()
@@ -22,7 +26,7 @@ def models_layout(
     plugin_rows = [dbc.Row(plugin, style={"padding": "0px 0px 20px 0px"}) for component_id, plugin in kwargs.items()]
     layout = html.Div(
         children=[
-            dcc.Interval(id="models_refresh", interval=60000),
+            dcc.Interval(id="models_refresh", interval=update_rate),
             dcc.Store(id="models_page_loaded", data=False),
             dbc.Row(
                 [

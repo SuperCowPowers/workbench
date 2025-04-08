@@ -5,6 +5,10 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 
 from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.utils.config_manager import ConfigManager
+
+# Get the UI update rate
+update_rate = ConfigManager().ui_update_rate() * 1000  # Convert to Milliseconds
 
 
 def pipelines_layout(
@@ -22,7 +26,7 @@ def pipelines_layout(
     ]
     layout = html.Div(
         children=[
-            dcc.Interval(id="pipelines_refresh", interval=60000),
+            dcc.Interval(id="pipelines_refresh", interval=update_rate),
             dcc.Store(id="pipelines_page_loaded", data=False),
             dbc.Row(
                 [
