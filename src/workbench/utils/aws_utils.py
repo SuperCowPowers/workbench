@@ -19,10 +19,12 @@ from collections.abc import Mapping, Iterable
 
 
 # Workbench Imports
+from workbench.utils.config_manager import ConfigManager
 from workbench.utils.deprecated_utils import deprecated
 
 # Workbench Logger
 log = logging.getLogger("workbench")
+cm = ConfigManager()
 
 
 def client_error_printout(err: botocore.exceptions.ClientError):
@@ -53,6 +55,7 @@ def aws_throttle(func=None, retry_intervals=None):
     if func is None:
         return lambda f: aws_throttle(f, retry_intervals=retry_intervals)
 
+    service_hold_time = 2  # Seconds to wait before calling AWS function
     default_intervals = [2**i for i in range(1, 9)]  # Default exponential backoff: 2, 4, 8... 256 seconds
     intervals = retry_intervals or default_intervals
 
@@ -60,6 +63,9 @@ def aws_throttle(func=None, retry_intervals=None):
     def wrapper(*args, **kwargs):
         for attempt, delay in enumerate(intervals, start=1):
             try:
+                # Add sleep before calling AWS func if running as a service
+                if cm.running_as_service:
+                    time.sleep(service_hold_time)
                 return func(*args, **kwargs)
             except ClientError as e:
                 if e.response["Error"]["Code"] == "ThrottlingException":

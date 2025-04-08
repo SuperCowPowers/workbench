@@ -50,8 +50,10 @@ class ConfigManager:
         self.license_manager = LicenseManager()
 
         # Check if we're running as a service
+        self.running_as_service = False
         if running_as_service():
-            self.log.important("Running as part of a Service...")
+            self.log.monitor("Running as part of a Service...")
+            self.running_as_service = True
 
             # Remove the AWS_PROFILE from the config
             if "AWS_PROFILE" in self.config:
@@ -416,8 +418,8 @@ if __name__ == "__main__":
     cm = ConfigManager()
     pprint(cm.get_all_config())
 
-    # Simulate running on Docker
-    def running_on_docker() -> bool:  # noqa: F811
+    # Simulate running as a service
+    def running_as_service() -> bool:  # noqa: F811
         return True
 
     ConfigManager._instance = None  # We need to reset the singleton instance for testing
