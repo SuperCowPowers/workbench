@@ -120,6 +120,36 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     return df.rename(columns=rename_dict)
 
 
+def convert_categorical_types(df: pd.DataFrame, category_mappings={}) -> tuple:
+    """
+    Converts appropriate columns to categorical type with consistent mappings.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to process.
+        category_mappings (dict, optional): Existing category mappings. If empty dict, we're in
+                                            training mode. If populated, we're in inference mode.
+
+    Returns:
+        tuple: (processed DataFrame, category mappings dictionary)
+    """
+    # Training mode
+    if category_mappings == {}:
+        for col in df.select_dtypes(include=["object", "string"]):
+            if df[col].nunique() < 20:
+                print(f"Training mode: Converting {col} to category")
+                df[col] = df[col].astype("category")
+                category_mappings[col] = df[col].cat.categories.tolist()  # Store category mappings
+
+    # Inference mode
+    else:
+        for col, categories in category_mappings.items():
+            if col in df.columns:
+                print(f"Inference mode: Applying categorical mapping for {col}")
+                df[col] = pd.Categorical(df[col], categories=categories)  # Apply consistent categorical mapping
+
+    return df, category_mappings
+
+
 if __name__ == "__main__":
     """The main function is for training the XGBoost model"""
 
@@ -140,7 +170,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-
     # Read the training data into DataFrames
     training_files = [
         os.path.join(args.train, file)
@@ -158,6 +187,9 @@ if __name__ == "__main__":
     # Features/Target output
     print(f"Target: {target}")
     print(f"Features: {str(feature_list)}")
+
+    # Convert any features that might be categorical to 'category' type
+    all_df, category_mappings = convert_categorical_types(all_df)
 
     # Do we want to train on all the data?
     if train_all_data:
@@ -181,7 +213,7 @@ if __name__ == "__main__":
 
     # Now spin up our XGB Model
     if model_type == "classifier":
-        xgb_model = xgb.XGBClassifier()
+        xgb_model = xgb.XGBClassifier(enable_categorical=True)
 
         # Encode the target column
         label_encoder = LabelEncoder()
@@ -189,7 +221,7 @@ if __name__ == "__main__":
         df_val[target] = label_encoder.transform(df_val[target])
 
     else:
-        xgb_model = xgb.XGBRegressor()
+        xgb_model = xgb.XGBRegressor(enable_categorical=True)
         label_encoder = None  # We don't need this for regression
 
     # Grab our Features, Target and Train the Model
@@ -275,9 +307,13 @@ if __name__ == "__main__":
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
-    # Also save the features (this will validate input during predictions)
+    # Save the features (this will validate input during predictions)
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
         json.dump(feature_list, fp)
+
+    # Save the category mappings
+    with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
+        json.dump(category_mappings, fp)
 
 
 def model_fn(model_dir):
@@ -289,9 +325,9 @@ def model_fn(model_dir):
         model_json = json.load(f)
     saved_model_type = json.loads(model_json.get('learner').get('attributes').get('scikit_learn')).get('_estimator_type')
     if saved_model_type == "classifier":
-        model = xgb.XGBClassifier()
+        model = xgb.XGBClassifier(enable_categorical=True)
     elif saved_model_type == "regressor":
-        model = xgb.XGBRegressor()
+        model = xgb.XGBRegressor(enable_categorical=True)
     else:
         msg = f"Model type ({saved_model_type}) not recognized. Expected 'classifier' or 'regressor'"
         raise ValueError(msg)
@@ -345,6 +381,10 @@ def predict_fn(df, model) -> pd.DataFrame:
         model_features = json.load(fp)
     print(f"Model Features: {model_features}")
 
+    # Load the category mappings (from training)
+    with open(os.path.join(model_dir, "category_mappings.json")) as fp:
+        category_mappings = json.load(fp)
+
     # Load our Label Encoder if we have one
     label_encoder = None
     if os.path.exists(os.path.join(model_dir, "label_encoder.joblib")):
@@ -354,6 +394,9 @@ def predict_fn(df, model) -> pd.DataFrame:
     # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
     # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
     matched_df = match_features_case_insensitive(df, model_features)
+
+    # Detect categorical types in the incoming DataFrame
+    matched_df, _ = convert_categorical_types(matched_df, category_mappings)
 
     # Predict the features against our XGB Model
     predictions = model.predict(matched_df[model_features])
