@@ -38,14 +38,36 @@ if __name__ == "__main__":
         df = test_data.person_data()
         DataSource(df, name="test_data")
 
-    # Create the abalone_data DataSource
-    if recreate or not DataSource("abalone_data").exists():
-        DataSource(abalone_data_path, name="abalone_data")
-
     # Create the test_features FeatureSet
     if recreate or not FeatureSet("test_features").exists():
         ds = DataSource("test_data")
         ds.to_features("test_features", id_column="id", event_time_column="date")
+
+    # Create the Test Model (with categorical features)
+    features = ['height', 'weight', 'salary', 'age', 'iq_score', 'likes_dogs', 'food']  # Food is categorical
+    if recreate or not Model("test-regression").exists():
+        fs = FeatureSet("test_features")
+        m = fs.to_model(
+            name="test-regression",
+            model_type=ModelType.REGRESSOR,
+            feature_list=features,
+            target_column="iq_score",
+            tags=["test", "regression"],
+            description="Test Model with Categorical Features",
+        )
+        m.set_owner("test")
+
+    # Create the Test Endpoint
+    if recreate or not Endpoint("test-regression").exists():
+        model = Model("test-regression")
+        end = model.to_endpoint(name="test-regression", tags=["test", "regression"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
+
+    # Create the abalone_data DataSource
+    if recreate or not DataSource("abalone_data").exists():
+        DataSource(abalone_data_path, name="abalone_data")
 
     # Create the abalone_features FeatureSet
     if recreate or not FeatureSet("abalone_features").exists():
