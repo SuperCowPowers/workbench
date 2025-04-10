@@ -207,7 +207,7 @@ def xgboost_model_from_s3(model_artifact_uri):
 
         # Extract tarball
         with tarfile.open(local_tar_path, "r:gz") as tar:
-            tar.extractall(path=tmpdir, filter='data')
+            tar.extractall(path=tmpdir, filter="data")
 
         # Start with common model paths
         possible_paths = [
@@ -273,14 +273,14 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
 
         # Extract tarball
         with tarfile.open(local_tar_path, "r:gz") as tar:
-            tar.extractall(path=tmpdir, filter='data')
+            tar.extractall(path=tmpdir, filter="data")
 
         # Look for category mappings in base directory only
         mappings_path = os.path.join(tmpdir, "category_mappings.json")
 
         if os.path.exists(mappings_path):
             try:
-                with open(mappings_path, 'r') as f:
+                with open(mappings_path, "r") as f:
                     category_mappings = json.load(f)
                 print(f"Loaded category mappings from {mappings_path}")
             except Exception as e:
