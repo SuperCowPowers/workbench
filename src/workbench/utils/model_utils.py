@@ -5,6 +5,7 @@ import pandas as pd
 import importlib.resources
 from pathlib import Path
 import os
+import json
 import tempfile
 import tarfile
 import awswrangler as wr
@@ -84,8 +85,9 @@ def supported_instance_types(arch: str = "x86_64") -> list:
 
 
 def get_custom_script_path(package: str, script_name: str) -> Path:
-    with importlib.resources.path(f"workbench.model_scripts.custom_models.{package}", script_name) as script_path:
-        return script_path
+    package_path = importlib.resources.files(f"workbench.model_scripts.custom_models.{package}")
+    script_path = package_path / script_name
+    return script_path
 
 
 def proximity_model(model: "Model", prox_model_name: str, shap_50: bool = True) -> "Model":
@@ -205,7 +207,7 @@ def xgboost_model_from_s3(model_artifact_uri):
 
         # Extract tarball
         with tarfile.open(local_tar_path, "r:gz") as tar:
-            tar.extractall(path=tmpdir)
+            tar.extractall(path=tmpdir, filter='data')
 
         # Start with common model paths
         possible_paths = [
@@ -250,6 +252,41 @@ def xgboost_model_from_s3(model_artifact_uri):
 
     # If no model found
     return None
+
+
+def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
+    """
+    Download and extract category mappings from a model artifact in S3.
+
+    Args:
+        model_artifact_uri (str): S3 URI of the model artifact.
+
+    Returns:
+        dict: The loaded category mappings or None if not found.
+    """
+    category_mappings = None
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Download model artifact
+        local_tar_path = os.path.join(tmpdir, "model.tar.gz")
+        wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
+
+        # Extract tarball
+        with tarfile.open(local_tar_path, "r:gz") as tar:
+            tar.extractall(path=tmpdir, filter='data')
+
+        # Look for category mappings in base directory only
+        mappings_path = os.path.join(tmpdir, "category_mappings.json")
+
+        if os.path.exists(mappings_path):
+            try:
+                with open(mappings_path, 'r') as f:
+                    category_mappings = json.load(f)
+                print(f"Loaded category mappings from {mappings_path}")
+            except Exception as e:
+                print(f"Failed to load category mappings from {mappings_path}: {e}")
+
+    return category_mappings
 
 
 def feature_importance(workbench_model, importance_type: str = "weight") -> Optional[List[Tuple[str, float]]]:
@@ -297,9 +334,9 @@ if __name__ == "__main__":
     print(get_custom_script_path("chem_info", "molecular_descriptors.py"))
 
     # Test the proximity model
-    m = Model("abalone-regression")
-    prox_model = proximity_model(m, "abalone-prox")
-    print(prox_model)
+    # m = Model("abalone-regression")
+    # prox_model = proximity_model(m, "abalone-prox")
+    # print(prox_model)
 
     # Prediction Confidence Testing
     # fmt: off
@@ -345,8 +382,13 @@ if __name__ == "__main__":
     # Call the prediction confidence function
     prediction_confidence(predict_df, prox_df, "my_id", "target")
 
-    # Test the XGBoost model loading and feature importances
+    # Test the XGBoost model loading and feature importance
     model = Model("abalone-regression")
     feature_importance = feature_importance(model)
-    print("Feature Importances:")
+    print("Feature Importance:")
     print(feature_importance)
+
+    # Test loading category mappings from S3
+    model = Model("test-regression")
+    model_artifact_uri = model.model_data_url()
+    category_mappings = load_category_mappings_from_s3(model_artifact_uri)
