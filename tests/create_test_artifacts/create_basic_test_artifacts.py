@@ -44,14 +44,14 @@ if __name__ == "__main__":
         ds.to_features("test_features", id_column="id", event_time_column="date")
 
     # Create the Test Model (with categorical features)
-    features = ["height", "weight", "salary", "age", "iq_score", "likes_dogs", "food"]  # Food is categorical
+    features = ["height", "weight", "age", "iq_score", "likes_dogs", "food"]  # Food is categorical
     if recreate or not Model("test-regression").exists():
         fs = FeatureSet("test_features")
         m = fs.to_model(
             name="test-regression",
             model_type=ModelType.REGRESSOR,
             feature_list=features,
-            target_column="iq_score",
+            target_column="salary",
             tags=["test", "regression"],
             description="Test Model with Categorical Features",
         )

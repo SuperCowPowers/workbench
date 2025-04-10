@@ -231,7 +231,7 @@ if __name__ == "__main__":
     from workbench.api import FeatureSet, Model
 
     # Load a model
-    model = Model("abalone-regression")  # Example model
+    model = Model("test-regression")  # Example model
 
     # Example 1: Get feature importance data
     print("\n=== Feature Importance Example ===")

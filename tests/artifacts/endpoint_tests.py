@@ -3,11 +3,11 @@
 import pandas as pd
 
 # Workbench Imports
-from workbench.core.artifacts.endpoint_core import EndpointCore
+from workbench.api import FeatureSet, Endpoint
 from workbench.utils.endpoint_utils import fs_evaluation_data
 
-reg_endpoint = EndpointCore("abalone-regression")
-class_endpoint = EndpointCore("wine-classification")
+reg_endpoint = Endpoint("abalone-regression")
+class_endpoint = Endpoint("wine-classification")
 
 
 def test_general_info():
@@ -137,6 +137,21 @@ def test_fast_inference():
     print(pred_df)
 
 
+def test_categorical_features():
+    """Test the Categorical Features"""
+
+    # Grab the first row of our test_features
+    test_features = FeatureSet("test_features")
+    df = test_features.pull_dataframe()[:1]
+    end = Endpoint("test-regression")
+
+    # Food is roughly correlated to salary
+    for food in ["pizza, tacos, steak, sushi"]:
+        df.at[0, "food"] = food
+        pred_df = end.inference(df)
+        print(pred_df)
+
+
 if __name__ == "__main__":
 
     # Run the tests
@@ -149,5 +164,6 @@ if __name__ == "__main__":
     test_classification_metrics()
     test_classification_roc_auc()
     test_fast_inference()
+    test_categorical_features()
 
     print("All tests passed!")

@@ -187,8 +187,8 @@ class TestDataGenerator:
         # Weight is loosely correlated with height
         df["Weight"] = self.generate_correlated_series(df["Height"], 0.2, 100, 300)
 
-        # Salary ranges from 80k to 200k and is correlated with height
-        df["Salary"] = self.generate_correlated_series(df["Height"], 0.95, 80000, 200000)
+        # Salary ranges from 80k to 200k and is loosely correlated with height
+        df["Salary"] = self.generate_correlated_series(df["Height"], 0.3, 80000, 200000)
 
         # Create a few salary outliers
         # Select 4 highest salaries and set them to a random value between 200k and 230k
@@ -203,7 +203,7 @@ class TestDataGenerator:
 
         # Food will be correlated with salary
         food_list = "pizza, tacos, steak, sushi".split(", ")
-        df["Food"] = self.generate_correlated_series(df["Salary"], 0.8, -1.5, 4.4)
+        df["Food"] = self.generate_correlated_series(df["Salary"], 1.0, -1.5, 4.4)
 
         # Round to nearest integer
         df["Food"] = df["Food"].round().astype(int).clip(0, len(food_list) - 1)
