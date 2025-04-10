@@ -210,7 +210,7 @@ def _calculate_shap_values(workbench_model):
     # Get training data
     fs = FeatureSet(workbench_model.get_input())
     df = fs.view("training").pull_dataframe()
-    X = df[features]
+    X = df[features].copy()
 
     # Get the XGBoost model from the Workbench Model
     model_artifact_uri = workbench_model.model_data_url()

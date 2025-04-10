@@ -8,6 +8,8 @@ import os
 import json
 import tempfile
 import tarfile
+import pickle
+import glob
 import awswrangler as wr
 from typing import Optional, List, Tuple
 
@@ -174,23 +176,11 @@ def prediction_confidence(predict_df: pd.DataFrame, prox_df: pd.DataFrame, id_co
         print("\n")
 
 
-def try_load_xgboost_model(model_path: str):
-    """Helper function to try loading an XGBoost model from a path."""
-    import xgboost as xgb
-
-    if os.path.exists(model_path):
-        try:
-            booster = xgb.Booster()
-            booster.load_model(model_path)
-            return booster
-        except Exception as e:
-            print(f"Failed to load model from {model_path}: {e}")
-    return None
-
-
-def xgboost_model_from_s3(model_artifact_uri):
+def xgboost_model_from_s3(model_artifact_uri: str) -> Optional["xgb.Booster"]:
     """
     Download and extract XGBoost model artifact from S3, then load the model into memory.
+    Handles both direct XGBoost model files and pickled models.
+    Ensures categorical feature support is enabled.
 
     Args:
         model_artifact_uri (str): S3 URI of the model artifact.
@@ -209,48 +199,53 @@ def xgboost_model_from_s3(model_artifact_uri):
         with tarfile.open(local_tar_path, "r:gz") as tar:
             tar.extractall(path=tmpdir, filter="data")
 
-        # Start with common model paths
-        possible_paths = [
+        # Define model file patterns to search for (in order of preference)
+        patterns = [
+            # Direct XGBoost model files
             os.path.join(tmpdir, "xgboost-model"),
             os.path.join(tmpdir, "model"),
-            os.path.join(tmpdir, "model.bin"),
+            os.path.join(tmpdir, "*.bin"),
+            os.path.join(tmpdir, "**", "*model*.json"),
+            # Pickled models
+            os.path.join(tmpdir, "*.pkl"),
+            os.path.join(tmpdir, "**", "*.pkl"),
+            os.path.join(tmpdir, "*.pickle"),
+            os.path.join(tmpdir, "**", "*.pickle")
         ]
 
-        # Find all JSON model files and add to possible_paths
-        possible_paths.extend(
-            [
-                os.path.join(root, file)
-                for root, _, files in os.walk(tmpdir)
-                for file in files
-                if "model" in file.lower() and file.endswith(".json")
-            ]
-        )
+        # Try each pattern
+        for pattern in patterns:
+            # Use glob to find all matching files
+            for model_path in glob.glob(pattern, recursive=True):
+                # Determine file type by extension
+                _, ext = os.path.splitext(model_path)
 
-        # Try each path
-        for path in possible_paths:
-            model = try_load_xgboost_model(path)
-            if model:
-                return model
-
-        # If no XGBoost model found, look for pickled models
-        for root, _, files in os.walk(tmpdir):
-            for file in files:
-                if file.endswith(".pkl") or file.endswith(".pickle"):
-                    try:
-                        import pickle
-
-                        model_path = os.path.join(root, file)
+                try:
+                    if ext.lower() in ['.pkl', '.pickle']:
+                        # Handle pickled models
                         with open(model_path, "rb") as f:
                             model = pickle.load(f)
-                        if isinstance(model, xgb.Booster) or hasattr(model, "get_booster"):
-                            # Return the booster if it's a pipeline with XGBoost
-                            if hasattr(model, "get_booster"):
-                                return model.get_booster()
+
+                        # Handle different model types
+                        if isinstance(model, xgb.Booster):
+                            log.important(f"Loaded XGBoost Booster from pickle: {model_path}")
                             return model
-                    except Exception as e:
-                        print(f"Failed to load pickled model from {file}: {e}")
+                        elif hasattr(model, "get_booster"):
+                            log.important(f"Loaded XGBoost model from pipeline: {model_path}")
+                            booster = model.get_booster()
+                            return booster
+                    else:
+                        # Handle direct XGBoost model files
+                        booster = xgb.Booster()
+                        booster.load_model(model_path)
+                        log.important(f"Loaded XGBoost model directly: {model_path}")
+                        return booster
+                except Exception as e:
+                    log.info(f"Failed to load model from {model_path}: {e}")
+                    continue  # Try the next file
 
     # If no model found
+    log.error("No XGBoost model found in the artifact.")
     return None
 
 
@@ -384,11 +379,14 @@ if __name__ == "__main__":
 
     # Test the XGBoost model loading and feature importance
     model = Model("abalone-regression")
-    feature_importance = feature_importance(model)
+    features = feature_importance(model)
     print("Feature Importance:")
-    print(feature_importance)
+    print(features)
 
     # Test loading category mappings from S3
     model = Model("test-regression")
+    features = feature_importance(model)
+    print("Feature Importance:")
+    print(features)
     model_artifact_uri = model.model_data_url()
     category_mappings = load_category_mappings_from_s3(model_artifact_uri)
