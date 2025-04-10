@@ -10,7 +10,8 @@ except ImportError:
     print("SHAP library is not installed. Please 'pip install shap'.")
 
 # Workbench Imports
-from workbench.utils.model_utils import xgboost_model_from_s3
+from workbench.utils.model_utils import xgboost_model_from_s3, load_category_mappings_from_s3
+from workbench.utils.pandas_utils import convert_categorical_types
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -188,6 +189,7 @@ def _calculate_shap_values(workbench_model):
     """
     Internal function to calculate SHAP values for Workbench Models.
     Handles both regression and multi-class classification models.
+    Supports categorical features if mappings are available.
 
     Args:
         workbench_model: Workbench Model object
@@ -217,7 +219,15 @@ def _calculate_shap_values(workbench_model):
         log.error("No XGBoost model found in the artifact.")
         return None, None, None, None
 
-    # Create explainer
+    # Load category mappings if available
+    category_mappings = load_category_mappings_from_s3(model_artifact_uri)
+
+    # Apply categorical conversions if mappings exist
+    if category_mappings:
+        log.info("Category mappings found. Applying categorical conversions.")
+        X = convert_categorical_types(X, category_mappings)
+
+    # Use TreeExplainer for SHAP values
     explainer = shap.TreeExplainer(xgb_model)
 
     # Calculate SHAP values
