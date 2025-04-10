@@ -49,6 +49,24 @@ def df_hash(df: pd.DataFrame) -> str:
     return hashlib.md5(pd.util.hash_pandas_object(df, index=True).values.tobytes()).hexdigest()
 
 
+def convert_categorical_types(df: pd.DataFrame, category_mappings: dict) -> pd.DataFrame:
+    """
+    Converts appropriate columns to categorical type with consistent mappings.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to process.
+        category_mappings (dict): Existing category mappings.
+
+    Returns:
+        pd.DataFrame: DataFrame with specified columns converted to categorical type.
+    """
+    for col, categories in category_mappings.items():
+        if col in df.columns:
+            print(f"Inference mode: Applying categorical mapping for {col}")
+            df[col] = pd.Categorical(df[col], categories=categories)
+    return df
+
+
 def dataframe_delta(func_that_returns_df, previous_hash: Optional[str] = None) -> Tuple[Optional[pd.DataFrame], str]:
     """Generalized method to compute the delta for any function that returns a DataFrame.
 
