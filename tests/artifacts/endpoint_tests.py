@@ -146,10 +146,10 @@ def test_categorical_features():
     end = Endpoint("test-regression")
 
     # Food is roughly correlated to salary
-    for food in ["pizza, tacos, steak, sushi"]:
+    for food in ["pizza", "tacos", "steak", "sushi"]:
         df.at[0, "food"] = food
         pred_df = end.inference(df)
-        print(pred_df)
+        print(f"{pred_df["food"]} -> {pred_df["prediction"]}")
 
 
 if __name__ == "__main__":
