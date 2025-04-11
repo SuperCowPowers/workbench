@@ -301,13 +301,7 @@ if __name__ == "__main__":
 
     # Handle display based on feature type
     if is_categorical:
-        try:
-            # Convert values to strings first to avoid comparison issues
-            str_values = [str(v) for v in feature_values]
-            unique_values = set(str_values)
-            print(f"Feature is categorical with {len(unique_values)} unique values")
-        except:
-            print("Feature is categorical")
+        print(f"Feature is categorical: {set(feature_values)}")
     else:
         print(f"Feature value range: {min(feature_values):.3f} to {max(feature_values):.3f}")
 
@@ -327,7 +321,7 @@ if __name__ == "__main__":
     # Loop through each sample
     for i in range(len(sample_rows)):
         # Get single row
-        single_row = sample_rows[i:i + 1]
+        single_row = sample_rows[i : i + 1]
 
         # Get explanation for this row
         explanation_data = instance_explanation_data(model, single_row)
