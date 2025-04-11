@@ -321,37 +321,34 @@ if __name__ == "__main__":
     # Example 4: Get instance explanation data
     print("\n=== Instance Explanation Data Example ===")
     fs = FeatureSet(model.get_input())
-    sample_data = fs.view("training").pull_dataframe()[features][0:1]
-    explanation_data = instance_explanation_data(model, sample_data)
-    print("Explaining prediction for a single instance:")
-    print(f"Number of features: {len(explanation_data['features'])}")
+    sample_rows = fs.pull_dataframe()[features][0:5]
 
-    features = explanation_data["features"]
-    feature_values = explanation_data["feature_values"]
-    shap_values = explanation_data["shap_values"]
+    print("\n=== SHAP Analysis for Different Rows ===")
+    # Loop through each sample
+    for i in range(len(sample_rows)):
+        # Get single row
+        single_row = sample_rows[i:i + 1]
 
-    # Display the instance's feature values
-    print("\nFeature values for this instance:")
-    for i, (feature, value) in enumerate(zip(features, feature_values)):
-        # Simple formatting based on type
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            formatted_value = f"{value:.4f}" if value != int(value) else str(int(value))
+        # Get explanation for this row
+        explanation_data = instance_explanation_data(model, single_row)
+
+        features = explanation_data["features"]
+        feature_values = explanation_data["feature_values"]
+        shap_values = explanation_data["shap_values"]
+
+        # Print results
+        print(f"\nSample {i + 1}: \n{single_row}")
+
+        # Extract and show the top contributing features
+        if isinstance(shap_values, list):
+            # Multi-class case
+            contributions = [(features[j], float(shap_values[0][j])) for j in range(len(features))]
         else:
-            formatted_value = str(value)
-        print(f"  {feature}: {formatted_value}")
+            # Regression case
+            contributions = [(features[j], float(shap_values[j])) for j in range(len(features))]
 
-    # Extract and show the top contributing features
-    if isinstance(shap_values, list):
-        # Multi-class case (using first class for simplicity)
-        contributions = [(features[i], float(shap_values[0][i])) for i in range(len(features))]
-        print("\nTop contributions for class 0:")
-    else:
-        # Regression case
-        contributions = [(features[i], float(shap_values[i])) for i in range(len(features))]
-        print("\nTop feature contributions:")
-
-    # Sort by absolute value
-    sorted_contrib = sorted(contributions, key=lambda x: abs(x[1]), reverse=True)
-    for feature, value in sorted_contrib:
-        direction = "increases" if value > 0 else "decreases"
-        print(f"  {feature}: {value:.4f} ({direction} prediction)")
+        # Sort by absolute value
+        sorted_contrib = sorted(contributions, key=lambda x: abs(x[1]), reverse=True)
+        print("  Top feature contributions:")
+        for feature, value in sorted_contrib[:5]:  # Show top 5 features
+            print(f"    {feature}: {value:.4f}")
