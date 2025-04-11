@@ -1,4 +1,4 @@
-"""Model Utilities for Workbench models"""
+"""Model Utilities for Workbench models with explanation capabilities"""
 
 import logging
 import numpy as np
@@ -21,6 +21,7 @@ def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[
     """
     Get feature importance data based on SHAP values from a Workbench Model.
     Works with both regression and multi-class classification models.
+    Currently implemented for XGBoost models.
 
     Args:
         workbench_model: Workbench Model object
@@ -119,6 +120,9 @@ def shap_dependence_data(workbench_model, feature_idx) -> Optional[dict]:
     # Extract feature values
     feature_values = X.iloc[:, feature_idx].values
 
+    # Detect if feature is categorical
+    is_categorical = X.iloc[:, feature_idx].dtype.name == 'category' or X.iloc[:, feature_idx].dtype == 'object'
+
     # Extract SHAP values for this feature
     if isinstance(shap_values, list):
         # For multi-class, return a list of arrays (one per class)
@@ -134,6 +138,7 @@ def shap_dependence_data(workbench_model, feature_idx) -> Optional[dict]:
         "shap_values": feature_shap_values,
         "features": features,
         "X": X,
+        "is_categorical": is_categorical
     }
 
 
@@ -152,37 +157,53 @@ def instance_explanation_data(workbench_model, instance_data) -> Optional[dict]:
         - 'feature_values': Values of features for this instance
         or None if there was an error
     """
+    import xgboost as xgb
+
     # Get SHAP values from internal function
     features, _, model, _ = _calculate_shap_values(workbench_model)
 
     if features is None:
         return None
 
-    # Ensure instance data has the right format and correct dtypes
+    # Ensure instance data has the right format
     if hasattr(instance_data, "to_frame"):
         instance_data = instance_data.to_frame().T
 
-    # Make sure all columns have numeric types
-    for col in instance_data.columns:
-        if instance_data[col].dtype == "object":
-            try:
-                instance_data[col] = instance_data[col].astype(float)
-            except ValueError:
-                log.error(f"Column {col} cannot be converted to numeric type.")
-                return None
+    # Load category mappings if available
+    model_artifact_uri = workbench_model.model_data_url()
+    category_mappings = load_category_mappings_from_s3(model_artifact_uri)
 
-    # Create explainer and calculate SHAP values for this instance
-    explainer = shap.TreeExplainer(model)
-    instance_shap = explainer.shap_values(instance_data)
+    # Apply categorical conversions if mappings exist
+    if category_mappings:
+        log.info("Category mappings found. Applying categorical conversions.")
+        instance_data = convert_categorical_types(instance_data, category_mappings)
+
+    # Create a DMatrix with categorical support for this instance
+    dmatrix = xgb.DMatrix(instance_data, enable_categorical=True)
+
+    # Calculate SHAP values using XGBoost's native method
+    instance_shap = model.predict(dmatrix, pred_contribs=True)
+
+    # Remove the bias term (last column) if present
+    if instance_shap.shape[1] > len(features):
+        instance_shap = instance_shap[0, :-1]
+    else:
+        instance_shap = instance_shap[0]
 
     # Extract feature values
-    feature_values = [
-        float(instance_data[features[i]].iloc[0]) if features[i] in instance_data.columns else None
-        for i in range(len(features))
-    ]
+    feature_values = []
+    for feature in features:
+        if feature in instance_data.columns:
+            feature_values.append(instance_data[feature].iloc[0])
+        else:
+            feature_values.append(None)
 
     # Return structured data
-    return {"features": features, "shap_values": instance_shap, "feature_values": feature_values}
+    return {
+        "features": features,
+        "shap_values": instance_shap,
+        "feature_values": feature_values
+    }
 
 
 def _calculate_shap_values(workbench_model):
@@ -231,8 +252,13 @@ def _calculate_shap_values(workbench_model):
     # Create a DMatrix with categorical support
     dmatrix = xgb.DMatrix(X, enable_categorical=True)
 
-    # Use XGBoost's built-in SHAP calculation instead of the shap package
+    # Use XGBoost's built-in SHAP calculation
     shap_values = xgb_model.predict(dmatrix, pred_contribs=True)
+
+    # Remove the bias term (last column) if present
+    if shap_values.shape[1] > len(features):
+        shap_values = shap_values[:, :-1]
+
     return features, shap_values, xgb_model, X
 
 
@@ -251,8 +277,6 @@ if __name__ == "__main__":
         print(f"  {feature}: {importance:.4f}")
     print("\nWhat this means: These values represent the average magnitude of each feature's")
     print("impact on model predictions. Higher values indicate more influential features.")
-    print("SHAP values measure how much each feature contributes to pushing the prediction")
-    print("away from the baseline (average) prediction.")
 
     # Example 2: Get summary data
     print("\n=== SHAP Summary Data Example ===")
@@ -268,20 +292,9 @@ if __name__ == "__main__":
     if isinstance(shap_values, list):
         print(f"Model type: Classification with {len(shap_values)} classes")
         print(f"SHAP matrix shape for class 0: {shap_values[0].shape}")
-        print(f"Total predictions analyzed: {shap_values[0].shape[0]}")
     else:
         print("Model type: Regression or binary classification")
         print(f"SHAP matrix shape: {shap_values.shape}")
-        print(f"Total predictions analyzed: {shap_values.shape[0]}")
-
-    print("\nWhat this means: The summary data provides the raw material needed for")
-    print("various SHAP visualizations. It contains the feature values from your dataset")
-    print("along with their corresponding SHAP values, which represent how each feature")
-    print("value impacts individual predictions. You can use this data to create summary")
-    print("plots, dependence plots, or other custom visualizations.")
-
-    # You could create visualizations here if needed
-    # For example: shap.summary_plot(shap_values, summary_data['X'], feature_names=features)
 
     # Example 3: Get dependence data for a specific feature
     print("\n=== SHAP Dependence Data Example ===")
@@ -290,33 +303,29 @@ if __name__ == "__main__":
     feature_name = dependence_data["feature_name"]
     feature_values = dependence_data["feature_values"]
     feature_shap = dependence_data["shap_values"]
+    is_categorical = dependence_data.get("is_categorical", False)
 
     print(f"Analyzing feature: {feature_name}")
     print(f"Number of data points: {len(feature_values)}")
-    print(f"Feature value range: {min(feature_values):.3f} to {max(feature_values):.3f}")
 
-    if isinstance(feature_shap, list):
-        # Multi-class case
-        print(f"SHAP value range for class 0: {min(feature_shap[0]):.3f} to {max(feature_shap[0]):.3f}")
+    # Handle display based on feature type
+    if is_categorical:
+        try:
+            # Convert values to strings first to avoid comparison issues
+            str_values = [str(v) for v in feature_values]
+            unique_values = set(str_values)
+            print(f"Feature is categorical with {len(unique_values)} unique values")
+        except:
+            print("Feature is categorical")
     else:
-        # Regression case
-        print(f"SHAP value range: {min(feature_shap):.3f} to {max(feature_shap):.3f}")
+        print(f"Feature value range: {min(feature_values):.3f} to {max(feature_values):.3f}")
 
-    # Calculate correlation between feature value and SHAP value
-    if isinstance(feature_shap, list):
-        corr = np.corrcoef(feature_values, feature_shap[0])[0, 1]
-    else:
-        corr = np.corrcoef(feature_values, feature_shap)[0, 1]
-
-    print(f"Correlation between feature value and SHAP value: {corr:.3f}")
-
-    print("\nWhat this means: Dependence data shows how the SHAP values (model impact)")
-    print(f"change as the values of {feature_name} change. A strong correlation indicates")
-    print("a linear relationship, while patterns might reveal non-linear effects.")
-    print("This data is useful for understanding how specific feature values affect")
-    print("predictions and for detecting interactions between features.")
-
-    # You could create visualizations here if needed
+        # Only calculate correlation for numeric features
+        if isinstance(feature_shap, list):
+            corr = np.corrcoef(feature_values, feature_shap[0])[0, 1]
+        else:
+            corr = np.corrcoef(feature_values, feature_shap)[0, 1]
+        print(f"Correlation between feature value and SHAP value: {corr:.3f}")
 
     # Example 4: Get instance explanation data
     print("\n=== Instance Explanation Data Example ===")
@@ -333,16 +342,21 @@ if __name__ == "__main__":
     # Display the instance's feature values
     print("\nFeature values for this instance:")
     for i, (feature, value) in enumerate(zip(features, feature_values)):
-        print(f"  {feature}: {value}")
+        # Simple formatting based on type
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            formatted_value = f"{value:.4f}" if value != int(value) else str(int(value))
+        else:
+            formatted_value = str(value)
+        print(f"  {feature}: {formatted_value}")
 
     # Extract and show the top contributing features
     if isinstance(shap_values, list):
         # Multi-class case (using first class for simplicity)
-        contributions = [(features[i], float(shap_values[0][0][i])) for i in range(len(features))]
+        contributions = [(features[i], float(shap_values[0][i])) for i in range(len(features))]
         print("\nTop contributions for class 0:")
     else:
         # Regression case
-        contributions = [(features[i], float(shap_values[0][i])) for i in range(len(features))]
+        contributions = [(features[i], float(shap_values[i])) for i in range(len(features))]
         print("\nTop feature contributions:")
 
     # Sort by absolute value
@@ -350,11 +364,3 @@ if __name__ == "__main__":
     for feature, value in sorted_contrib:
         direction = "increases" if value > 0 else "decreases"
         print(f"  {feature}: {value:.4f} ({direction} prediction)")
-
-    print("\nWhat this means: These SHAP values explain how each feature contributes")
-    print("to this specific prediction. Positive values push the prediction higher,")
-    print("negative values push it lower. The magnitude shows how strongly each")
-    print("feature affects this particular prediction. This helps you understand")
-    print("exactly why the model made this prediction for this specific instance.")
-
-    # You could create visualizations or formatted output here if needed
