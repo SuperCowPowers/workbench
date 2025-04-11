@@ -202,6 +202,7 @@ def _calculate_shap_values(workbench_model):
         - input data used for explanation
         or (None, None, None, None) if there was an error
     """
+    import xgboost as xgb
     from workbench.api import FeatureSet
 
     # Get features from workbench model
@@ -227,12 +228,11 @@ def _calculate_shap_values(workbench_model):
         log.info("Category mappings found. Applying categorical conversions.")
         X = convert_categorical_types(X, category_mappings)
 
-    # Use TreeExplainer for SHAP values
-    explainer = shap.TreeExplainer(xgb_model)
+    # Create a DMatrix with categorical support
+    dmatrix = xgb.DMatrix(X, enable_categorical=True)
 
-    # Calculate SHAP values
-    shap_values = explainer.shap_values(X)
-
+    # Use XGBoost's built-in SHAP calculation instead of the shap package
+    shap_values = xgb_model.predict(dmatrix, pred_contribs=True)
     return features, shap_values, xgb_model, X
 
 
