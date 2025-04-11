@@ -364,3 +364,10 @@ if __name__ == "__main__":
     print(df_store.summary())
     df_store.delete("test_data")
     print(df_store.summary())
+
+    # Test columns with Spaces in them
+    my_df = pd.DataFrame({"My A": [1, 2], "My B": [3, 4]})
+    df_store.upsert("/testing/test_data", my_df)
+    my_df = df_store.get("/testing/test_data")
+    print(my_df)
+
