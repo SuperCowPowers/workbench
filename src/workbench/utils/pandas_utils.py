@@ -49,17 +49,18 @@ def df_hash(df: pd.DataFrame) -> str:
     return hashlib.md5(pd.util.hash_pandas_object(df, index=True).values.tobytes()).hexdigest()
 
 
-def convert_categorical_types(df: pd.DataFrame, category_mappings: dict) -> pd.DataFrame:
+def convert_categorical_types(input_df: pd.DataFrame, category_mappings: dict) -> pd.DataFrame:
     """
     Converts appropriate columns to categorical type with consistent mappings.
 
     Args:
-        df (pd.DataFrame): The DataFrame to process.
+        input_df (pd.DataFrame): The DataFrame to process.
         category_mappings (dict): Existing category mappings.
 
     Returns:
         pd.DataFrame: DataFrame with specified columns converted to categorical type.
     """
+    df = input_df.copy()
     for col, categories in category_mappings.items():
         if col in df.columns:
             print(f"Inference mode: Applying categorical mapping for {col}")
@@ -377,8 +378,8 @@ def temporal_split(df: pd.DataFrame, date_column: str, test_split: float = 0.2) 
     test_non_clump_df = sorted_non_clump_df.iloc[split_index:]
 
     # Final train/test DataFrames
-    train_df = pd.concat([train_clump_df, train_non_clump_df])
-    test_df = pd.concat([test_clump_df, test_non_clump_df])
+    train_df = pd.concat([train_clump_df, train_non_clump_df], ignore_index=True)
+    test_df = pd.concat([test_clump_df, test_non_clump_df], ignore_index=True)
 
     return train_df, test_df
 
