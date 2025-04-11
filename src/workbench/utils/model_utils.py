@@ -176,7 +176,7 @@ def prediction_confidence(predict_df: pd.DataFrame, prox_df: pd.DataFrame, id_co
         print("\n")
 
 
-def xgboost_model_from_s3(model_artifact_uri: str) -> Optional["xgb.Booster"]:
+def xgboost_model_from_s3(model_artifact_uri: str):
     """
     Download and extract XGBoost model artifact from S3, then load the model into memory.
     Handles both direct XGBoost model files and pickled models.
@@ -210,7 +210,7 @@ def xgboost_model_from_s3(model_artifact_uri: str) -> Optional["xgb.Booster"]:
             os.path.join(tmpdir, "*.pkl"),
             os.path.join(tmpdir, "**", "*.pkl"),
             os.path.join(tmpdir, "*.pickle"),
-            os.path.join(tmpdir, "**", "*.pickle")
+            os.path.join(tmpdir, "**", "*.pickle"),
         ]
 
         # Try each pattern
@@ -221,7 +221,7 @@ def xgboost_model_from_s3(model_artifact_uri: str) -> Optional["xgb.Booster"]:
                 _, ext = os.path.splitext(model_path)
 
                 try:
-                    if ext.lower() in ['.pkl', '.pickle']:
+                    if ext.lower() in [".pkl", ".pickle"]:
                         # Handle pickled models
                         with open(model_path, "rb") as f:
                             model = pickle.load(f)

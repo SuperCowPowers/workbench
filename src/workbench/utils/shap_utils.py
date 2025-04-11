@@ -4,11 +4,6 @@ import logging
 import numpy as np
 from typing import Optional, List, Tuple
 
-try:
-    import shap
-except ImportError:
-    print("SHAP library is not installed. Please 'pip install shap'.")
-
 # Workbench Imports
 from workbench.utils.model_utils import xgboost_model_from_s3, load_category_mappings_from_s3
 from workbench.utils.pandas_utils import convert_categorical_types
@@ -121,7 +116,7 @@ def shap_dependence_data(workbench_model, feature_idx) -> Optional[dict]:
     feature_values = X.iloc[:, feature_idx].values
 
     # Detect if feature is categorical
-    is_categorical = X.iloc[:, feature_idx].dtype.name == 'category' or X.iloc[:, feature_idx].dtype == 'object'
+    is_categorical = X.iloc[:, feature_idx].dtype.name == "category" or X.iloc[:, feature_idx].dtype == "object"
 
     # Extract SHAP values for this feature
     if isinstance(shap_values, list):
@@ -138,7 +133,7 @@ def shap_dependence_data(workbench_model, feature_idx) -> Optional[dict]:
         "shap_values": feature_shap_values,
         "features": features,
         "X": X,
-        "is_categorical": is_categorical
+        "is_categorical": is_categorical,
     }
 
 
@@ -199,11 +194,7 @@ def instance_explanation_data(workbench_model, instance_data) -> Optional[dict]:
             feature_values.append(None)
 
     # Return structured data
-    return {
-        "features": features,
-        "shap_values": instance_shap,
-        "feature_values": feature_values
-    }
+    return {"features": features, "shap_values": instance_shap, "feature_values": feature_values}
 
 
 def _calculate_shap_values(workbench_model):
