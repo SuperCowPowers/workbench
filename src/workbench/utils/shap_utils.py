@@ -33,12 +33,13 @@ def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[
     if features is None:
         return None
 
-    # Handle different model types
-    if isinstance(shap_values, list):
-        # Multi-class case - average across all classes
-        mean_abs_shap = np.mean([np.abs(class_shap).mean(axis=0) for class_shap in shap_values], axis=0)
+    # Multi-Classification Models
+    if len(shap_values.shape) > 2:
+        # Simply flatten all dimensions except the last one (features) and take mean of absolute values
+        mean_abs_shap = np.abs(shap_values).mean(axis=tuple(range(len(shap_values.shape) - 1)))
+
+    # Regression or Binary Classification Models
     else:
-        # Regression or binary classification case
         mean_abs_shap = np.abs(shap_values).mean(axis=0)
 
     # Create list of (feature, importance) tuples
@@ -257,8 +258,8 @@ if __name__ == "__main__":
     """Exercise the Model Utilities"""
     from workbench.api import FeatureSet, Model
 
-    # Load a model
-    model = Model("test-regression")  # Example model
+    # Test a regression model
+    model = Model("test-regression")
 
     # Example 1: Get feature importance data
     print("\n=== Feature Importance Example ===")
@@ -268,6 +269,12 @@ if __name__ == "__main__":
         print(f"  {feature}: {importance:.4f}")
     print("\nWhat this means: These values represent the average magnitude of each feature's")
     print("impact on model predictions. Higher values indicate more influential features.")
+
+    # Test a classification model
+    cmodel = Model("wine-classification")
+    c_importance_data = shap_feature_importance(cmodel)
+    for feature, importance in c_importance_data:
+        print(f"  {feature}: {importance:.4f}")
 
     # Example 2: Get summary data
     print("\n=== SHAP Summary Data Example ===")
