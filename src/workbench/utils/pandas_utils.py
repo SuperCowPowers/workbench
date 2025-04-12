@@ -63,7 +63,7 @@ def convert_categorical_types(input_df: pd.DataFrame, category_mappings: dict) -
     df = input_df.copy()
     for col, categories in category_mappings.items():
         if col in df.columns:
-            print(f"Inference mode: Applying categorical mapping for {col}")
+            log.info(f"Applying categorical mapping for {col}")
             df[col] = pd.Categorical(df[col], categories=categories)
     return df
 
