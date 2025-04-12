@@ -1,8 +1,9 @@
 """Model Utilities for Workbench models with explanation capabilities"""
 
 import logging
+import pandas as pd
 import numpy as np
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Union
 
 # Workbench Imports
 from workbench.utils.model_utils import xgboost_model_from_s3, load_category_mappings_from_s3
@@ -28,8 +29,7 @@ def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[
     """
     # Get SHAP values from internal function
     log.important("Calculating SHAP values...")
-    features, shap_values, model, X = _calculate_shap_values(workbench_model)
-
+    features, shap_values, _, _ = _calculate_shap_values(workbench_model)
     if features is None:
         return None
 
@@ -59,143 +59,45 @@ def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[
     return sorted_importance
 
 
-def shap_summary_data(workbench_model) -> Optional[dict]:
+def shap_values_data(workbench_model) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
     """
-    Get data for SHAP summary visualization for a Workbench Model.
+    Get SHAP explanation data for all instances in the training data.
+    Handles both regression/binary classification and multi-class models.
 
     Args:
         workbench_model: Workbench Model object
 
     Returns:
-        Dictionary containing:
-        - 'features': List of feature names
-        - 'shap_values': SHAP values array or list of arrays for multi-class
-        - 'X': DataFrame of input features
-        or None if there was an error
+        For regression/binary: DataFrame with SHAP values, one row per instance, columns are features
+        For multi-class: Dictionary of DataFrames, one per class, each with SHAP values
+        ID column is always included as the first column
     """
-    # Get SHAP values from internal function
-    features, shap_values, model, X = _calculate_shap_values(workbench_model)
-
+    # Get all data from internal function
+    features, shap_values, _, ids = _calculate_shap_values(workbench_model)
     if features is None:
         return None
 
-    # Return structured data
-    return {"features": features, "shap_values": shap_values, "X": X}
+    # Check if we have a multi-class model (SHAP values will have 3 dimensions)
+    is_multiclass = len(shap_values.shape) > 2
+    if is_multiclass:
+        # For multi-class models, return a dictionary of DataFrames (one per class)
+        # The second dimension is the number of classes
+        num_classes = shap_values.shape[1]
+        result = {}
 
+        for class_idx in range(num_classes):
+            # Create a DataFrame for this class
+            # For each class, we have (num_instances, num_features) SHAP values
+            class_df = pd.DataFrame(shap_values[class_idx], columns=features)
+            class_df.insert(0, 'id', ids)
+            result[f'class_{class_idx}'] = class_df
+        return result
 
-def shap_dependence_data(workbench_model, feature_idx) -> Optional[dict]:
-    """
-    Get data for SHAP dependence plot for a specific feature.
-
-    Args:
-        workbench_model: Workbench Model object
-        feature_idx: Index or name of the feature to analyze
-
-    Returns:
-        Dictionary containing:
-        - 'feature_name': Name of the feature
-        - 'feature_values': Array of feature values
-        - 'shap_values': Array of SHAP values for the feature
-        - 'features': List of all feature names for interaction selection
-        - 'X': DataFrame of all features for potential interaction
-        or None if there was an error
-    """
-    # Get SHAP values from internal function
-    features, shap_values, model, X = _calculate_shap_values(workbench_model)
-
-    if features is None:
-        return None
-
-    # Resolve feature index if name was provided
-    if isinstance(feature_idx, str) and feature_idx in features:
-        feature_name = feature_idx
-        feature_idx = features.index(feature_idx)
+    # For regression or binary classification models
     else:
-        feature_name = features[feature_idx]
-
-    # Extract feature values
-    feature_values = X.iloc[:, feature_idx].values
-
-    # Detect if feature is categorical
-    is_categorical = X.iloc[:, feature_idx].dtype.name == "category" or X.iloc[:, feature_idx].dtype == "object"
-
-    # Extract SHAP values for this feature
-    if isinstance(shap_values, list):
-        # For multi-class, return a list of arrays (one per class)
-        feature_shap_values = [class_shap[:, feature_idx] for class_shap in shap_values]
-    else:
-        # For regression/binary, return a single array
-        feature_shap_values = shap_values[:, feature_idx]
-
-    # Return structured data
-    return {
-        "feature_name": feature_name,
-        "feature_values": feature_values,
-        "shap_values": feature_shap_values,
-        "features": features,
-        "X": X,
-        "is_categorical": is_categorical,
-    }
-
-
-def instance_explanation_data(workbench_model, instance_data) -> Optional[dict]:
-    """
-    Get SHAP explanation data for a single prediction.
-
-    Args:
-        workbench_model: Workbench Model object
-        instance_data: DataFrame or Series with features for a single instance
-
-    Returns:
-        Dictionary containing:
-        - 'features': List of feature names
-        - 'shap_values': SHAP values for this instance (single array or list of arrays for multi-class)
-        - 'feature_values': Values of features for this instance
-        or None if there was an error
-    """
-    import xgboost as xgb
-
-    # Get SHAP values from internal function
-    features, _, model, _ = _calculate_shap_values(workbench_model)
-
-    if features is None:
-        return None
-
-    # Ensure instance data has the right format
-    if hasattr(instance_data, "to_frame"):
-        instance_data = instance_data.to_frame().T
-
-    # Load category mappings if available
-    model_artifact_uri = workbench_model.model_data_url()
-    category_mappings = load_category_mappings_from_s3(model_artifact_uri)
-
-    # Apply categorical conversions if mappings exist
-    if category_mappings:
-        log.info("Category mappings found. Applying categorical conversions.")
-        instance_data = convert_categorical_types(instance_data, category_mappings)
-
-    # Create a DMatrix with categorical support for this instance
-    dmatrix = xgb.DMatrix(instance_data, enable_categorical=True)
-
-    # Calculate SHAP values using XGBoost's native method
-    instance_shap = model.predict(dmatrix, pred_contribs=True)
-
-    # Remove the bias term (last column) if present
-    if instance_shap.shape[1] > len(features):
-        instance_shap = instance_shap[0, :-1]
-    else:
-        instance_shap = instance_shap[0]
-
-    # Extract feature values
-    feature_values = []
-    for feature in features:
-        if feature in instance_data.columns:
-            feature_values.append(instance_data[feature].iloc[0])
-        else:
-            feature_values.append(None)
-
-    # Return structured data
-    return {"features": features, "shap_values": instance_shap, "feature_values": feature_values}
+        result_df = pd.DataFrame(shap_values, columns=features)
+        result_df.insert(0, 'id', ids)
+        return result_df
 
 
 def _calculate_shap_values(workbench_model):
@@ -208,11 +110,10 @@ def _calculate_shap_values(workbench_model):
         workbench_model: Workbench Model object
 
     Returns:
-        tuple containing:
         - list of feature names
         - raw shap values
-        - model object
         - input data used for explanation
+        - ids of the input data
         or (None, None, None, None) if there was an error
     """
     import xgboost as xgb
@@ -221,10 +122,11 @@ def _calculate_shap_values(workbench_model):
     # Get features from workbench model
     features = workbench_model.features()
 
-    # Get training data
+    # Get input data for the model
     fs = FeatureSet(workbench_model.get_input())
-    df = fs.view("training").pull_dataframe()
+    df = fs.pull_dataframe()
     X = df[features].copy()
+    ids = df[fs.id_column]
 
     # Get the XGBoost model from the Workbench Model
     model_artifact_uri = workbench_model.model_data_url()
@@ -248,15 +150,24 @@ def _calculate_shap_values(workbench_model):
     shap_values = xgb_model.predict(dmatrix, pred_contribs=True)
 
     # Remove the bias term (last column) if present
-    if shap_values.shape[1] > len(features):
-        shap_values = shap_values[:, :-1]
+    if len(shap_values.shape) == 2:  # Binary or regression
+        if shap_values.shape[1] > len(features):
+            shap_values = shap_values[:, :len(features)]
+    elif len(shap_values.shape) == 3:  # Multi-class
+        if shap_values.shape[2] > len(features):
+            shap_values = shap_values[:, :, :len(features)]
 
-    return features, shap_values, xgb_model, X
+    return features, shap_values, X, ids
 
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
     from workbench.api import FeatureSet, Model
+
+    # Set pandas display options
+    pd.options.display.max_columns = 20
+    pd.options.display.max_colwidth = 200
+    pd.options.display.width = 1400
 
     # Test a regression model
     model = Model("test-regression")
@@ -270,86 +181,21 @@ if __name__ == "__main__":
     print("\nWhat this means: These values represent the average magnitude of each feature's")
     print("impact on model predictions. Higher values indicate more influential features.")
 
+    # Get instance explanation data
+    print("\n=== Instance Explanation Data Example (Regression) ===")
+    shap_df = shap_values_data(model)
+    print(shap_df.head())
+
     # Test a classification model
     cmodel = Model("wine-classification")
     c_importance_data = shap_feature_importance(cmodel)
     for feature, importance in c_importance_data:
         print(f"  {feature}: {importance:.4f}")
 
-    # Example 2: Get summary data
-    print("\n=== SHAP Summary Data Example ===")
-    summary_data = shap_summary_data(model)
-    features = summary_data["features"]
-    shap_values = summary_data["shap_values"]
-    X = summary_data["X"]
+    # Get instance explanation data
+    print("\n=== Instance Explanation Data Example (Classification) ===")
+    shap_df_dict = shap_values_data(cmodel)
+    for class_name, df in shap_df_dict.items():
+        print(f"\nClass: {class_name}")
+        print(df.head())
 
-    print("SHAP features summary:")
-    print(f"Number of features analyzed: {len(features)}")
-    print(f"Feature names: {', '.join(features)}")
-
-    if isinstance(shap_values, list):
-        print(f"Model type: Classification with {len(shap_values)} classes")
-        print(f"SHAP matrix shape for class 0: {shap_values[0].shape}")
-    else:
-        print("Model type: Regression or binary classification")
-        print(f"SHAP matrix shape: {shap_values.shape}")
-
-    # Example 3: Get dependence data for a specific feature
-    print("\n=== SHAP Dependence Data Example ===")
-    top_feature = importance_data[0][0]
-    dependence_data = shap_dependence_data(model, top_feature)
-    feature_name = dependence_data["feature_name"]
-    feature_values = dependence_data["feature_values"]
-    feature_shap = dependence_data["shap_values"]
-    is_categorical = dependence_data.get("is_categorical", False)
-
-    print(f"Analyzing feature: {feature_name}")
-    print(f"Number of data points: {len(feature_values)}")
-
-    # Handle display based on feature type
-    if is_categorical:
-        print(f"Feature is categorical: {set(feature_values)}")
-    else:
-        print(f"Feature value range: {min(feature_values):.3f} to {max(feature_values):.3f}")
-
-        # Only calculate correlation for numeric features
-        if isinstance(feature_shap, list):
-            corr = np.corrcoef(feature_values, feature_shap[0])[0, 1]
-        else:
-            corr = np.corrcoef(feature_values, feature_shap)[0, 1]
-        print(f"Correlation between feature value and SHAP value: {corr:.3f}")
-
-    # Example 4: Get instance explanation data
-    print("\n=== Instance Explanation Data Example ===")
-    fs = FeatureSet(model.get_input())
-    sample_rows = fs.pull_dataframe()[features][0:5]
-
-    print("\n=== SHAP Analysis for Different Rows ===")
-    # Loop through each sample
-    for i in range(len(sample_rows)):
-        # Get single row
-        single_row = sample_rows[i : i + 1]
-
-        # Get explanation for this row
-        explanation_data = instance_explanation_data(model, single_row)
-
-        features = explanation_data["features"]
-        feature_values = explanation_data["feature_values"]
-        shap_values = explanation_data["shap_values"]
-
-        # Print results
-        print(f"\nSample {i + 1}: \n{single_row}")
-
-        # Extract and show the top contributing features
-        if isinstance(shap_values, list):
-            # Multi-class case
-            contributions = [(features[j], float(shap_values[0][j])) for j in range(len(features))]
-        else:
-            # Regression case
-            contributions = [(features[j], float(shap_values[j])) for j in range(len(features))]
-
-        # Sort by absolute value
-        sorted_contrib = sorted(contributions, key=lambda x: abs(x[1]), reverse=True)
-        print("  Top feature contributions:")
-        for feature, value in sorted_contrib[:5]:  # Show top 5 features
-            print(f"    {feature}: {value:.4f}")
