@@ -89,14 +89,14 @@ def shap_values_data(workbench_model) -> Union[pd.DataFrame, Dict[str, pd.DataFr
             # Create a DataFrame for this class
             # For each class, we have (num_instances, num_features) SHAP values
             class_df = pd.DataFrame(shap_values[class_idx], columns=features)
-            class_df.insert(0, 'id', ids)
-            result[f'class_{class_idx}'] = class_df
+            class_df.insert(0, "id", ids)
+            result[f"class_{class_idx}"] = class_df
         return result
 
     # For regression or binary classification models
     else:
         result_df = pd.DataFrame(shap_values, columns=features)
-        result_df.insert(0, 'id', ids)
+        result_df.insert(0, "id", ids)
         return result_df
 
 
@@ -152,17 +152,17 @@ def _calculate_shap_values(workbench_model):
     # Remove the bias term (last column) if present
     if len(shap_values.shape) == 2:  # Binary or regression
         if shap_values.shape[1] > len(features):
-            shap_values = shap_values[:, :len(features)]
+            shap_values = shap_values[:, : len(features)]
     elif len(shap_values.shape) == 3:  # Multi-class
         if shap_values.shape[2] > len(features):
-            shap_values = shap_values[:, :, :len(features)]
+            shap_values = shap_values[:, :, : len(features)]
 
     return features, shap_values, X, ids
 
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
-    from workbench.api import FeatureSet, Model
+    from workbench.api import Model
 
     # Set pandas display options
     pd.options.display.max_columns = 20
@@ -198,4 +198,3 @@ if __name__ == "__main__":
     for class_name, df in shap_df_dict.items():
         print(f"\nClass: {class_name}")
         print(df.head())
-
