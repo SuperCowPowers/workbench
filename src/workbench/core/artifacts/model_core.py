@@ -37,43 +37,43 @@ class ModelType(Enum):
 
 
 class ModelImages:
-    """Class for retrieving locked Scikit-Learn inference images"""
+    """Class for retrieving workbench inference images"""
 
     image_uris = {
+        # US East 1 images
         ("us-east-1", "training", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
         ),
         ("us-east-1", "inference", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
+        # US West 2 images
         ("us-west-2", "training", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
         ),
         ("us-west-2", "inference", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
+        # ARM64 images
         ("us-east-1", "inference", "0.1", "arm64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
         ),
         ("us-west-2", "inference", "0.1", "arm64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
         ),
-        # These are the OLD locked SKLearn images
-        ("us-east-1", "sklearn", "1.2.1"): (
-            "683313688378.dkr.ecr.us-east-1.amazonaws.com/"
-            "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
+        # Workbench inference images
+        ("us-east-1", "workbench-inference", "0.1", "x86_64"): (
+            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1"
         ),
-        ("us-east-2", "sklearn", "1.2.1"): (
-            "257758044811.dkr.ecr.us-east-2.amazonaws.com/"
-            "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
+        ("us-west-2", "workbench-inference", "0.1", "x86_64"): (
+            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1"
         ),
-        ("us-west-1", "sklearn", "1.2.1"): (
-            "746614075791.dkr.ecr.us-west-1.amazonaws.com/"
-            "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
+        # Workbench inference ARM64 images
+        ("us-east-1", "workbench-inference", "0.1", "arm64"): (
+            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1-arm64"
         ),
-        ("us-west-2", "sklearn", "1.2.1"): (
-            "246618743249.dkr.ecr.us-west-2.amazonaws.com/"
-            "sagemaker-scikit-learn@sha256:ed242e33af079f334972acd2a7ddf74d13310d3c9a0ef3a0e9b0429ccc104dcd"
+        ("us-west-2", "workbench-inference", "0.1", "arm64"): (
+            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1-arm64"
         ),
     }
 

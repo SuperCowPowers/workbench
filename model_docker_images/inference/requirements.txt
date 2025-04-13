@@ -1,7 +1,4 @@
-fastapi==0.115.10
-uvicorn==0.34.0
-scikit-learn==1.6.1
-xgboost-cpu==2.1.4
-pandas==2.2.3
-awswrangler==3.11.0
-joblib==1.4.2
+fastapi==0.115.12
+uvicorn==0.34.1
+xgboost-cpu==3.0.0
+workbench==0.8.131

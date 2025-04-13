@@ -37,6 +37,7 @@ class FeaturesToModel(Transform):
         model_import_str=None,
         custom_script=None,
         inference_arch="x86_64",
+        inference_image="inference",
     ):
         """FeaturesToModel Initialization
         Args:
@@ -47,6 +48,7 @@ class FeaturesToModel(Transform):
             model_import_str (str, optional): The import string for the model (default None)
             custom_script (str, optional): Custom script to use for the model (default None)
             inference_arch (str, optional): Inference architecture (default "x86_64")
+            inference_image (str, optional): Inference image (default "inference")
         """
 
         # Make sure the model_uuid is a valid name
@@ -69,6 +71,7 @@ class FeaturesToModel(Transform):
         self.target_column = None
         self.class_labels = None
         self.inference_arch = inference_arch
+        self.inference_image = inference_image
 
     def transform_impl(
         self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False
@@ -278,7 +281,9 @@ class FeaturesToModel(Transform):
         )
 
         # Register our model
-        image = ModelImages.get_image_uri(self.sm_session.boto_region_name, "inference", "0.1", self.inference_arch)
+        image = ModelImages.get_image_uri(
+            self.sm_session.boto_region_name, self.inference_image, "0.1", self.inference_arch
+        )
         self.log.important(f"Registering model {self.output_uuid} with image {image}...")
         model = self.estimator.create_model(role=self.workbench_role_arn)
         model.register(

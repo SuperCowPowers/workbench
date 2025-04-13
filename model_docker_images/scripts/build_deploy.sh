@@ -11,7 +11,7 @@ AWS_ACCOUNT_ID="507740646243"
 
 # Define repository names - used for both local and ECR images
 TRAINING_REPO="aws-ml-images/py312-sklearn-xgb-training"
-INFERENCE_REPO="aws-ml-images/py312-sklearn-xgb-inference"
+INFERENCE_REPO="aws-ml-images/py312-workbench-inference"
 
 # Local directories
 TRAINING_DIR="$PROJECT_ROOT/training"
@@ -72,11 +72,28 @@ build_image() {
     return 0
 }
 
+
+# Helper function to check if an image exists in ECR
+image_exists() {
+    local repo_name=$1
+    local tag=$2
+    local region=$3
+
+    aws ecr describe-images \
+        --repository-name ${repo_name} \
+        --image-ids imageTag=${tag} \
+        --region ${region} \
+        --profile ${AWS_PROFILE} &>/dev/null
+
+    return $?  # Returns 0 (true) if image exists, non-zero (false) if it doesn't
+}
+
 # Function to deploy an image to ECR
 deploy_image() {
     local repo_name=$1
     local tag=$2
     local use_latest=$3
+    local overwrite=${4:-false}  # Default is false
     local full_name="${repo_name}:${tag}"
 
     for REGION in "${REGION_LIST[@]}"; do
@@ -89,6 +106,12 @@ deploy_image() {
         aws ecr get-login-password --region ${REGION} --profile ${AWS_PROFILE} | \
             docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
 
+        # Check if image already exists
+        if [ "$overwrite" = false ] && image_exists ${repo_name} ${tag} ${REGION}; then
+            echo "Image ${AWS_ECR_IMAGE} already exists and overwrite is set to false. Skipping..."
+            continue
+        fi
+
         echo "Tagging image for AWS ECR as ${AWS_ECR_IMAGE}..."
         docker tag ${full_name} ${AWS_ECR_IMAGE}
 
@@ -97,6 +120,13 @@ deploy_image() {
 
         if [ "$use_latest" = true ]; then
             AWS_ECR_LATEST="${ECR_REPO}:latest"
+
+            # Check if latest tag should be overwritten
+            if [ "$overwrite" = false ] && image_exists ${repo_name} "latest" ${REGION}; then
+                echo "Image ${AWS_ECR_LATEST} already exists and overwrite is set to false. Skipping latest tag..."
+                continue
+            fi
+
             echo "Tagging AWS ECR image as latest: ${AWS_ECR_LATEST}..."
             docker tag ${full_name} ${AWS_ECR_LATEST}
             echo "Pushing Docker image to AWS ECR: ${AWS_ECR_LATEST}..."

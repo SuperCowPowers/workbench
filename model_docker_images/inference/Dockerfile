@@ -1,13 +1,21 @@
-FROM python:3.12-slim
-
-# Install Vim
-RUN apt-get update && apt-get install -y vim
+FROM python:3.12-slim AS builder
 
 # Copy requirements file
 COPY requirements.txt /tmp/
-
 # Install dependencies
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
+
+FROM python:3.12-slim
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Install vim and clean up in a single layer
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends vim && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Add the serve script
 COPY serve /usr/local/bin/

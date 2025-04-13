@@ -86,6 +86,7 @@ class FeatureSet(FeatureSetCore):
         model_import_str: str = None,
         custom_script: str = None,
         inference_arch: str = "x86_64",
+        inference_image: str = "inference",
         **kwargs,
     ) -> Union[Model, None]:
         """Create a Model from the FeatureSet
@@ -102,6 +103,7 @@ class FeatureSet(FeatureSetCore):
             model_import_str (str, optional): The import for the model (e.g. "from sklearn.cluster import KMeans")
             custom_script (str, optional): The custom script to use for the model (default: None)
             inference_arch (str, optional): The architecture to use for inference (default: "x86_64")
+            inference_image (str, optional): The inference image to use (default: "inference")
 
         Returns:
             Model: The Model created from the FeatureSet (or None if the Model could not be created)
@@ -130,6 +132,7 @@ class FeatureSet(FeatureSetCore):
             model_import_str=model_import_str,
             custom_script=custom_script,
             inference_arch=inference_arch,
+            inference_image=inference_image,
         )
         features_to_model.set_output_tags(tags)
         features_to_model.transform(
