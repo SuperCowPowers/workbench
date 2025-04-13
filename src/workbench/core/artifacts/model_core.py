@@ -38,6 +38,7 @@ class ModelType(Enum):
 
 class ModelImages:
     """Class for retrieving workbench inference images"""
+
     image_uris = {
         # US East 1 images
         ("us-east-1", "training", "0.1", "x86_64"): (
@@ -46,7 +47,6 @@ class ModelImages:
         ("us-east-1", "inference", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
-
         # US West 2 images
         ("us-west-2", "training", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
@@ -54,7 +54,6 @@ class ModelImages:
         ("us-west-2", "inference", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
-
         # ARM64 images
         ("us-east-1", "inference", "0.1", "arm64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
@@ -62,7 +61,6 @@ class ModelImages:
         ("us-west-2", "inference", "0.1", "arm64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
         ),
-
         # Workbench inference images
         ("us-east-1", "workbench-inference", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1"
@@ -70,7 +68,6 @@ class ModelImages:
         ("us-west-2", "workbench-inference", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1"
         ),
-
         # Workbench inference ARM64 images
         ("us-east-1", "workbench-inference", "0.1", "arm64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1-arm64"

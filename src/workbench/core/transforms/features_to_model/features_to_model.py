@@ -281,7 +281,9 @@ class FeaturesToModel(Transform):
         )
 
         # Register our model
-        image = ModelImages.get_image_uri(self.sm_session.boto_region_name, self.inference_image, "0.1", self.inference_arch)
+        image = ModelImages.get_image_uri(
+            self.sm_session.boto_region_name, self.inference_image, "0.1", self.inference_arch
+        )
         self.log.important(f"Registering model {self.output_uuid} with image {image}...")
         model = self.estimator.create_model(role=self.workbench_role_arn)
         model.register(
