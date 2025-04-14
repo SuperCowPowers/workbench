@@ -33,6 +33,8 @@ ENV PYTHONUNBUFFERED=TRUE
 
 # Temp Fixme: Figure out how to do this in general way
 ENV WORKBENCH_BUCKET=sandbox-sageworks-artifacts
+ENV AWS_DEFAULT_REGION=us-west-2
+ENV AWS_REGION=us-west-2
 
 # SageMaker will look for this
 CMD ["serve"]

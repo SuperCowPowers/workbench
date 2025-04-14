@@ -18,7 +18,7 @@ log = logging.getLogger("workbench")
 if __name__ == "__main__":
 
     # Recreate Flag in case you want to recreate the artifacts
-    recreate = False
+    recreate = True
 
     # Create the abalone_regression Model
     tags = ["abalone", "regression", "meta"]
