@@ -31,6 +31,9 @@ EXPOSE 8080
 # Define environment variable
 ENV PYTHONUNBUFFERED=TRUE
 
+# Temp Fixme: Figure out how to do this in general way
+ENV WORKBENCH_BUCKET=sandbox-sageworks-artifacts
+
 # SageMaker will look for this
 CMD ["serve"]
 
