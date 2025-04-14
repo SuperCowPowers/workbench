@@ -48,7 +48,7 @@ class AWSSession:
             # Grab our AWS Account Info
             try:
                 self.account_id = boto3.client("sts").get_caller_identity()["Account"]
-                self.region = os.environ.get('AWS_REGION', os.environ.get('AWS_DEFAULT_REGION'))
+                self.region = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION"))
                 self.region = boto3.Session().region_name if self.region is None else self.region
             except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError):
                 msg = "AWS SSO Token Failure: Check AWS_PROFILE and/or Renew SSO Token..."
