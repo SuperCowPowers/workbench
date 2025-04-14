@@ -1,7 +1,5 @@
 """Tests for Endpoint 'chaining''"""
 
-import pandas as pd
-
 # Workbench Imports
 from workbench.api import Endpoint
 
