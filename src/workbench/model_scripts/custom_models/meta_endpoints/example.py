@@ -9,9 +9,9 @@ import json
 
 # Workbench imports
 try:
-    from workbench.api import Endpoint
+    from workbench.utils import fast_inference
 except ImportError:
-    print("Workbench not available, this is fine for training")
+    print("Workbench not available, this is fine for training...")
 
 
 # TRAINING SECTION (not used)
@@ -68,5 +68,5 @@ def output_fn(output_df, accept_type):
 def predict_fn(df, model):
 
     # Call inference on an endpoint
-    end = Endpoint("abalone-regression")
+    end = fast_inference("abalone-regression", df)
     return end.inference(df)

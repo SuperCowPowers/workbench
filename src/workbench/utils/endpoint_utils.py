@@ -172,7 +172,9 @@ if __name__ == "__main__":
     print(my_fs)
 
     # Also test for realtime endpoints
+    """
     rt_endpoint = Endpoint("abalone-regression-end-rt")
     if rt_endpoint.exists():
         model_data_url = internal_model_data_url(rt_endpoint.endpoint_config_name(), rt_endpoint.boto3_session)
         print(model_data_url)
+    """
