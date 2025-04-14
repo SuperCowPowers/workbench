@@ -11,11 +11,13 @@ AWS_ACCOUNT_ID="507740646243"
 
 # Define repository names - used for both local and ECR images
 TRAINING_REPO="aws-ml-images/py312-sklearn-xgb-training"
-INFERENCE_REPO="aws-ml-images/py312-workbench-inference"
+INFERENCE_REPO="aws-ml-images/py312-sklearn-xgb-inference"
+WORKBENCH_INFERENCE_REPO="aws-ml-images/py312-workbench-inference"
 
 # Local directories
 TRAINING_DIR="$PROJECT_ROOT/training"
 INFERENCE_DIR="$PROJECT_ROOT/inference"
+WORKBENCH_INFERENCE_DIR="$PROJECT_ROOT/inference"
 
 # Image version
 IMAGE_VERSION=${1:-"0.1"}
@@ -147,6 +149,12 @@ echo "🏗️  Building inference container (AMD64)"
 echo "======================================"
 build_image "$INFERENCE_DIR" "$INFERENCE_REPO" "$IMAGE_VERSION"
 
+# Build workbench inference image (AMD64)
+echo "======================================"
+echo "🏗️  Building inference container (AMD64)"
+echo "======================================"
+build_image "$WORKBENCH_INFERENCE_DIR" "$WORKBENCH_INFERENCE_REPO" "$IMAGE_VERSION"
+
 # Build inference image for ARM64 ---
 echo "======================================"
 echo "🏗️  Building inference container (ARM64)"
@@ -178,6 +186,9 @@ if [ "$DEPLOY" = true ]; then
 
     echo "Deploying inference image (ARM64)..."
     deploy_image "$INFERENCE_REPO" "${IMAGE_VERSION}-arm64" "$LATEST"
+
+    echo "Deploying workbench inference image..."
+    deploy_image "$WORKBENCH_INFERENCE_REPO" "$IMAGE_VERSION" "$LATEST"
 
     echo "======================================"
     echo -e "${GREEN}✅ Deployment complete!${NC}"
