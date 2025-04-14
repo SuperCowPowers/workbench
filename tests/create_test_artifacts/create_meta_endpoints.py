@@ -8,11 +8,8 @@ Endpoints:
 """
 
 import logging
-import pandas as pd
-import awswrangler as wr
 
-from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
-from workbench.core.transforms.pandas_transforms import PandasToFeatures
+from workbench.api import FeatureSet, Model, ModelType, Endpoint
 from workbench.utils.model_utils import get_custom_script_path
 
 log = logging.getLogger("workbench")
