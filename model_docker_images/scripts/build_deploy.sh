@@ -17,7 +17,7 @@ WORKBENCH_INFERENCE_REPO="aws-ml-images/py312-workbench-inference"
 # Local directories
 TRAINING_DIR="$PROJECT_ROOT/training"
 INFERENCE_DIR="$PROJECT_ROOT/inference"
-WORKBENCH_INFERENCE_DIR="$PROJECT_ROOT/inference"
+WORKBENCH_INFERENCE_DIR="$PROJECT_ROOT/workbench_inference"
 
 # Image version
 IMAGE_VERSION=${1:-"0.1"}
@@ -188,7 +188,7 @@ if [ "$DEPLOY" = true ]; then
     deploy_image "$INFERENCE_REPO" "${IMAGE_VERSION}-arm64" "$LATEST"
 
     echo "Deploying workbench inference image..."
-    deploy_image "$WORKBENCH_INFERENCE_REPO" "$IMAGE_VERSION" "$LATEST"
+    deploy_image "$WORKBENCH_INFERENCE_REPO" "$IMAGE_VERSION" "$LATEST" true
 
     echo "======================================"
     echo -e "${GREEN}✅ Deployment complete!${NC}"
@@ -202,6 +202,7 @@ else
     echo "Training image: ${TRAINING_REPO}:${IMAGE_VERSION}"
     echo "Inference image (AMD64): ${INFERENCE_REPO}:${IMAGE_VERSION}"
     echo "Inference image (ARM64): ${INFERENCE_REPO}:${IMAGE_VERSION}-arm64"
+    echo "Workbench inference image: ${WORKBENCH_INFERENCE_REPO}:${IMAGE_VERSION}"
     echo "======================================"
 
     # Inform about testing option
