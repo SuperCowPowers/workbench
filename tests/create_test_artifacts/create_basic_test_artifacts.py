@@ -14,6 +14,7 @@ Endpoints:
 
 import sys
 import logging
+import pandas as pd
 from pathlib import Path
 from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 from workbench.utils.test_data_generator import TestDataGenerator
@@ -36,6 +37,11 @@ if __name__ == "__main__":
         # Create a new Data Source from a dataframe of test data
         test_data = TestDataGenerator()
         df = test_data.person_data()
+
+        # Create classification column
+        bins = [-float("inf"), 130000, 150000, float("inf")]
+        labels = ["low", "medium", "high"]
+        df["salary_class"] = pd.cut(df["Salary"], bins=bins, labels=labels)
         DataSource(df, name="test_data")
 
     # Create the test_features FeatureSet
@@ -60,7 +66,28 @@ if __name__ == "__main__":
     # Create the Test Endpoint
     if recreate or not Endpoint("test-regression").exists():
         model = Model("test-regression")
-        end = model.to_endpoint(name="test-regression", tags=["test", "regression"])
+        end = model.to_endpoint(tags=["test", "regression"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
+
+    # Test Data Classification Model
+    if recreate or not Model("test-classification").exists():
+        fs = FeatureSet("test_features")
+        m = fs.to_model(
+            name="test-classification",
+            model_type=ModelType.CLASSIFIER,
+            feature_list=features,
+            target_column="salary_class",
+            tags=["test", "classification"],
+            description="Test Classification Model",
+        )
+        m.set_owner("test")
+
+    # Create the Test Endpoint
+    if recreate or not Endpoint("test-classification").exists():
+        model = Model("test-classification")
+        end = model.to_endpoint(tags=["test", "classification"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
@@ -93,3 +120,5 @@ if __name__ == "__main__":
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
+
+

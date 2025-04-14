@@ -3,8 +3,8 @@
 # Workbench Imports
 from workbench.api import Endpoint
 
-end_reg = Endpoint("abalone-regression")
-end_class = Endpoint("wine-classification")
+end_reg = Endpoint("test-regression")
+end_class = Endpoint("test-classification")
 
 
 def test_reg_to_reg():
@@ -16,7 +16,9 @@ def test_reg_to_reg():
 
 def test_reg_to_class():
     """Test chaining a regression endpoint to a classification endpoint"""
-    pass
+    pred_df = end_class.inference(end_reg.auto_inference())
+    print(pred_df.columns)
+    print(pred_df)
 
 
 def test_class_to_class():
@@ -28,7 +30,9 @@ def test_class_to_class():
 
 def test_class_to_reg():
     """Test chaining a classification endpoint to a regression endpoint"""
-    pass
+    pred_df = end_reg.inference(end_class.auto_inference())
+    print(pred_df.columns)
+    print(pred_df)
 
 
 if __name__ == "__main__":
