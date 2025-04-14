@@ -29,7 +29,7 @@ def fast_inference(endpoint_name: str, eval_df: pd.DataFrame, sm_session=None, t
     Args:
         endpoint_name (str): The name of the Endpoint
         eval_df (pd.DataFrame): The DataFrame to run predictions on
-        sm_session (sagemaker.session.Session, optional): The SageMaker Session. If None, a default session will be created.
+        sm_session (sagemaker.session.Session, optional): SageMaker Session. If None, a cached session is created.
         threads (int): The number of threads to use (default: 4)
 
     Returns:
