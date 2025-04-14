@@ -17,11 +17,8 @@ log = logging.getLogger("workbench")
 
 if __name__ == "__main__":
 
-    # Get the path to the dataset in S3
-    s3_path = "s3://workbench-public-data/comp_chem/aqsol_public_data.csv"
-
     # Recreate Flag in case you want to recreate the artifacts
-    recreate = True
+    recreate = False
 
     # Create the abalone_regression Model
     tags = ["abalone", "regression", "meta"]
