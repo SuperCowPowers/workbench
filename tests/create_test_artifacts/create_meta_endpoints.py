@@ -11,9 +11,12 @@ import logging
 
 from workbench.api import FeatureSet, Model, ModelType, Endpoint
 from workbench.utils.model_utils import get_custom_script_path
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 log = logging.getLogger("workbench")
 
+# Meta Endpoint Models need to lock their regions
+aws_region = AWSAccountClamp().region
 
 if __name__ == "__main__":
 
@@ -32,6 +35,8 @@ if __name__ == "__main__":
             tags=tags,
             description="Abalone Regression Meta Model",
             custom_script=script_path,
+            inference_image="meta-endpoint",
+            aws_region=aws_region,
         )
         m.set_owner("test")
 

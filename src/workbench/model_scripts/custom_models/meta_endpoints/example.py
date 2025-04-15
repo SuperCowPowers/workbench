@@ -8,7 +8,10 @@ import pandas as pd
 import json
 
 # Workbench Bridges imports
-from workbench_bridges.endpoints import fast_inference
+try:
+    from workbench_bridges.endpoints.fast_inference import fast_inference
+except ImportError:
+    print("workbench_bridges not found, this is fine for training...")
 
 
 # TRAINING SECTION (not used)

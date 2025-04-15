@@ -74,7 +74,7 @@ class FeaturesToModel(Transform):
         self.inference_image = inference_image
 
     def transform_impl(
-        self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False
+        self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False, **kwargs
     ):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model
@@ -248,7 +248,7 @@ class FeaturesToModel(Transform):
 
         # Create Model and officially Register
         self.log.important(f"Creating new model {self.output_uuid}...")
-        self.create_and_register_model()
+        self.create_and_register_model(**kwargs)
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() on the Model"""
@@ -267,8 +267,12 @@ class FeaturesToModel(Transform):
         # Call the Model onboard method
         output_model.onboard_with_args(self.model_type, self.target_column, self.model_feature_list)
 
-    def create_and_register_model(self):
-        """Create and Register the Model"""
+    def create_and_register_model(self, aws_region=None):
+        """Create and Register the Model
+
+        Args:
+            aws_region (str, optional): AWS Region to use (default None)
+        """
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
@@ -286,6 +290,9 @@ class FeaturesToModel(Transform):
         )
         self.log.important(f"Registering model {self.output_uuid} with image {image}...")
         model = self.estimator.create_model(role=self.workbench_role_arn)
+        if aws_region:
+            self.log.important(f"Setting AWS Region: {aws_region} for model {self.output_uuid}...")
+            model.env = {"AWS_REGION": aws_region}
         model.register(
             model_package_group_name=self.output_uuid,
             image_uri=image,
