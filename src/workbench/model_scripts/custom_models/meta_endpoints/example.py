@@ -7,8 +7,8 @@ from io import StringIO
 import pandas as pd
 import json
 
-# Local imports
-from fast_inference import fast_inference
+# Workbench Bridges imports
+from workbench_bridges.endpoints import fast_inference
 
 
 # TRAINING SECTION (not used)
