@@ -32,7 +32,6 @@ if __name__ == "__main__":
             tags=tags,
             description="Abalone Regression Meta Model",
             custom_script=script_path,
-            inference_image="workbench-inference",
         )
         m.set_owner("test")
 
