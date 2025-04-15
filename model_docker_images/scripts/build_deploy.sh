@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 set -e
 
 # Get the directory of this script
@@ -70,11 +70,6 @@ REGION_LIST=("us-east-1" "us-west-2")
 # Get repository and directory for the selected image type
 REPO_NAME=${REPO_MAP[$IMAGE_TYPE]}
 DIR=$PROJECT_ROOT/$IMAGE_TYPE
-
-# For workbench_inference, always set overwrite to true
-if [ "$IMAGE_TYPE" = "workbench_inference" ]; then
-  OVERWRITE=true
-fi
 
 # Function to build a Docker image
 build_image() {
