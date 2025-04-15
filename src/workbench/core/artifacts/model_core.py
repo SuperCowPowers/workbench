@@ -61,19 +61,12 @@ class ModelImages:
         ("us-west-2", "inference", "0.1", "arm64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
         ),
-        # Workbench inference images
-        ("us-east-1", "workbench-inference", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1"
+        # Meta Endpoint inference images
+        ("us-east-1", "meta-endpoint", "0.1", "x86_64"): (
+            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-meta-endpoint:0.1"
         ),
-        ("us-west-2", "workbench-inference", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1"
-        ),
-        # Workbench inference ARM64 images
-        ("us-east-1", "workbench-inference", "0.1", "arm64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1-arm64"
-        ),
-        ("us-west-2", "workbench-inference", "0.1", "arm64"): (
-            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-workbench-inference:0.1-arm64"
+        ("us-west-2", "meta-endpoint", "0.1", "x86_64"): (
+            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-meta-endpoint:0.1"
         ),
     }
 
