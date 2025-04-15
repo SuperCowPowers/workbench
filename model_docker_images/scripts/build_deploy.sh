@@ -3,32 +3,18 @@ set -e
 
 # Get the directory of this script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-# Get the parent directory (project root)
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # AWS Account ID
 AWS_ACCOUNT_ID="507740646243"
 
-# Define repository names - used for both local and ECR images
-TRAINING_REPO="aws-ml-images/py312-sklearn-xgb-training"
-INFERENCE_REPO="aws-ml-images/py312-sklearn-xgb-inference"
-WORKBENCH_INFERENCE_REPO="aws-ml-images/py312-workbench-inference"
-
-# Local directories
-TRAINING_DIR="$PROJECT_ROOT/training"
-INFERENCE_DIR="$PROJECT_ROOT/inference"
-WORKBENCH_INFERENCE_DIR="$PROJECT_ROOT/workbench_inference"
-
-# Image version
-IMAGE_VERSION=${1:-"0.1"}
-
-# Expect AWS_PROFILE to be set in the environment when deploying
-if [ "$2" == "--deploy" ]; then
-    : "${AWS_PROFILE:?AWS_PROFILE environment variable is not set.}"
-fi
-
-# Define the regions to deploy to.
-REGION_LIST=("us-east-1" "us-west-2")
+# Map of image types to their repository names and directories
+declare -A REPO_MAP=(
+  ["training"]="aws-ml-images/py312-sklearn-xgb-training"
+  ["inference"]="aws-ml-images/py312-sklearn-xgb-inference"
+  ["workbench_inference"]="aws-ml-images/py312-workbench-inference"
+  ["meta_endpoint"]="aws-ml-images/py312-meta-endpoint"
+)
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -36,175 +22,187 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Parse arguments
-DEPLOY=false
-LATEST=false
-for arg in "$@"; do
-    case $arg in
-        --deploy)
-            DEPLOY=true
-            ;;
-        --latest)
-            LATEST=true
-            ;;
-        *)
-            ;;
-    esac
-done
-
-# Function to build a Docker image (AMD64)
-build_image() {
-    local dir=$1
-    local repo_name=$2
-    local tag=$3
-    local full_name="${repo_name}:${tag}"
-
-    echo -e "${YELLOW}Building image: ${full_name}${NC}"
-
-    # Check if Dockerfile exists
-    if [ ! -f "$dir/Dockerfile" ]; then
-        echo "❌ Error: Dockerfile not found in $dir"
-        return 1
-    fi
-
-    # Build the image for AMD64 architecture
-    echo "Building local Docker image ${full_name} for linux/amd64..."
-    docker build --platform linux/amd64 -t $full_name $dir
-
-    echo -e "${GREEN}✅ Successfully built: ${full_name}${NC}"
-    return 0
+usage() {
+  echo "Usage: $(basename $0) IMAGE_TYPE [VERSION] [--deploy] [--latest] [--overwrite]"
+  echo "  IMAGE_TYPE: One of ${!REPO_MAP[*]}"
+  echo "  VERSION: Image version (default: 0.1)"
+  echo "  --deploy: Deploy to ECR"
+  echo "  --latest: Also tag as latest"
+  echo "  --overwrite: Overwrite existing images"
+  exit 1
 }
 
+# Validate image type
+if [ -z "$1" ] || [[ ! "${!REPO_MAP[*]}" =~ $1 ]]; then
+  echo "Error: You must specify a valid image type"
+  usage
+fi
+
+IMAGE_TYPE=$1
+shift
+
+# Set defaults
+IMAGE_VERSION="0.1"
+DEPLOY=false
+LATEST=false
+OVERWRITE=false
+
+# Parse remaining arguments
+[[ $1 =~ ^[0-9]+\.[0-9]+$ ]] && IMAGE_VERSION=$1 && shift
+
+for arg in "$@"; do
+  case $arg in
+    --deploy)    DEPLOY=true ;;
+    --latest)    LATEST=true ;;
+    --overwrite) OVERWRITE=true ;;
+    *)           echo "Unknown option: $arg" && usage ;;
+  esac
+done
+
+# Check AWS_PROFILE when deploying
+if [ "$DEPLOY" = true ]; then
+  : "${AWS_PROFILE:?AWS_PROFILE environment variable is not set.}"
+fi
+
+# Define the regions to deploy to
+REGION_LIST=("us-east-1" "us-west-2")
+
+# Get repository and directory for the selected image type
+REPO_NAME=${REPO_MAP[$IMAGE_TYPE]}
+DIR=$PROJECT_ROOT/$IMAGE_TYPE
+
+# For workbench_inference, always set overwrite to true
+if [ "$IMAGE_TYPE" = "workbench_inference" ]; then
+  OVERWRITE=true
+fi
+
+# Function to build a Docker image
+build_image() {
+  local arch=$1  # amd64 or arm64
+  local tag=$2
+  local platform="linux/$arch"
+  local name="$REPO_NAME:$tag"
+
+  echo -e "${YELLOW}Building image: $name ($platform)${NC}"
+
+  if [ ! -f "$DIR/Dockerfile" ]; then
+    echo "❌ Error: Dockerfile not found in $DIR"
+    exit 1
+  fi
+
+  docker build --platform $platform -t $name $DIR
+  echo -e "${GREEN}✅ Successfully built: $name${NC}"
+}
 
 # Helper function to check if an image exists in ECR
 image_exists() {
-    local repo_name=$1
-    local tag=$2
-    local region=$3
+  local repo=$1
+  local tag=$2
+  local region=$3
 
-    aws ecr describe-images \
-        --repository-name ${repo_name} \
-        --image-ids imageTag=${tag} \
-        --region ${region} \
-        --profile ${AWS_PROFILE} &>/dev/null
+  aws ecr describe-images \
+    --repository-name $repo \
+    --image-ids imageTag=$tag \
+    --region $region \
+    --profile $AWS_PROFILE &>/dev/null
 
-    return $?  # Returns 0 (true) if image exists, non-zero (false) if it doesn't
+  return $?
 }
 
 # Function to deploy an image to ECR
 deploy_image() {
-    local repo_name=$1
-    local tag=$2
-    local use_latest=$3
-    local overwrite=${4:-false}  # Default is false
-    local full_name="${repo_name}:${tag}"
+  local tag=$1
+  local full_name="$REPO_NAME:$tag"
 
-    for REGION in "${REGION_LIST[@]}"; do
-        echo "Processing region: ${REGION}"
-        # Construct the ECR repository URL
-        ECR_REPO="${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${repo_name}"
-        AWS_ECR_IMAGE="${ECR_REPO}:${tag}"
+  for region in "${REGION_LIST[@]}"; do
+    echo "Processing region: $region"
 
-        echo "Logging in to AWS ECR in ${REGION}..."
-        aws ecr get-login-password --region ${REGION} --profile ${AWS_PROFILE} | \
-            docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com"
+    # Construct ECR repository URL
+    local ecr_repo="$AWS_ACCOUNT_ID.dkr.ecr.$region.amazonaws.com/$REPO_NAME"
+    local ecr_image="$ecr_repo:$tag"
 
-        # Check if image already exists
-        if [ "$overwrite" = false ] && image_exists ${repo_name} ${tag} ${REGION}; then
-            echo "Image ${AWS_ECR_IMAGE} already exists and overwrite is set to false. Skipping..."
-            continue
-        fi
+    # Login to ECR
+    echo "Logging in to AWS ECR in $region..."
+    aws ecr get-login-password --region $region --profile $AWS_PROFILE | \
+      docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$region.amazonaws.com"
 
-        echo "Tagging image for AWS ECR as ${AWS_ECR_IMAGE}..."
-        docker tag ${full_name} ${AWS_ECR_IMAGE}
+    # Check if image exists
+    if [ "$OVERWRITE" = false ] && image_exists $REPO_NAME $tag $region; then
+      echo "Image $ecr_image already exists and overwrite is set to false. Skipping..."
+      continue
+    fi
 
-        echo "Pushing Docker image to AWS ECR: ${AWS_ECR_IMAGE}..."
-        docker push ${AWS_ECR_IMAGE}
+    # Tag and push
+    echo "Tagging image for AWS ECR as $ecr_image..."
+    docker tag $full_name $ecr_image
 
-        if [ "$use_latest" = true ]; then
-            AWS_ECR_LATEST="${ECR_REPO}:latest"
+    echo "Pushing Docker image to AWS ECR: $ecr_image..."
+    docker push $ecr_image
 
-            # Check if latest tag should be overwritten
-            if [ "$overwrite" = false ] && image_exists ${repo_name} "latest" ${REGION}; then
-                echo "Image ${AWS_ECR_LATEST} already exists and overwrite is set to false. Skipping latest tag..."
-                continue
-            fi
+    # Handle latest tag
+    if [ "$LATEST" = true ]; then
+      local ecr_latest="$ecr_repo:latest"
 
-            echo "Tagging AWS ECR image as latest: ${AWS_ECR_LATEST}..."
-            docker tag ${full_name} ${AWS_ECR_LATEST}
-            echo "Pushing Docker image to AWS ECR: ${AWS_ECR_LATEST}..."
-            docker push ${AWS_ECR_LATEST}
-        fi
-    done
+      if [ "$OVERWRITE" = false ] && image_exists $REPO_NAME "latest" $region; then
+        echo "Image $ecr_latest already exists and overwrite is set to false. Skipping latest tag..."
+        continue
+      fi
+
+      echo "Tagging AWS ECR image as latest: $ecr_latest..."
+      docker tag $full_name $ecr_latest
+
+      echo "Pushing Docker image to AWS ECR: $ecr_latest..."
+      docker push $ecr_latest
+    fi
+  done
 }
 
-# Build training image (AMD64)
+# Build AMD64 image
 echo "======================================"
-echo "🏗️  Building training container"
+echo "🏗️  Building $IMAGE_TYPE container (AMD64)"
 echo "======================================"
-build_image "$TRAINING_DIR" "$TRAINING_REPO" "$IMAGE_VERSION"
+build_image "amd64" "$IMAGE_VERSION"
 
-# Build inference image (AMD64)
-echo "======================================"
-echo "🏗️  Building inference container (AMD64)"
-echo "======================================"
-build_image "$INFERENCE_DIR" "$INFERENCE_REPO" "$IMAGE_VERSION"
-
-# Build workbench inference image (AMD64)
-echo "======================================"
-echo "🏗️  Building inference container (AMD64)"
-echo "======================================"
-build_image "$WORKBENCH_INFERENCE_DIR" "$WORKBENCH_INFERENCE_REPO" "$IMAGE_VERSION"
-
-# Build inference image for ARM64 ---
-echo "======================================"
-echo "🏗️  Building inference container (ARM64)"
-echo "======================================"
-if [ ! -f "$INFERENCE_DIR/Dockerfile" ]; then
-    echo "❌ Error: Dockerfile not found in $INFERENCE_DIR"
-    exit 1
+# For inference, also build ARM64 image
+if [ "$IMAGE_TYPE" = "inference" ]; then
+  echo "======================================"
+  echo "🏗️  Building $IMAGE_TYPE container (ARM64)"
+  echo "======================================"
+  build_image "arm64" "${IMAGE_VERSION}-arm64"
 fi
-echo "Building local Docker image ${INFERENCE_REPO}:${IMAGE_VERSION}-arm64 for linux/arm64..."
-docker build --platform linux/arm64 -t ${INFERENCE_REPO}:${IMAGE_VERSION}-arm64 $INFERENCE_DIR
-echo -e "${GREEN}✅ Successfully built: ${INFERENCE_REPO}:${IMAGE_VERSION}-arm64${NC}"
 
 echo "======================================"
-echo -e "${GREEN}✅ All builds completed successfully!${NC}"
+echo -e "${GREEN}✅ Build completed successfully!${NC}"
 echo "======================================"
 
+# Deploy if requested
 if [ "$DEPLOY" = true ]; then
-    echo "======================================"
-    echo "🚀 Deploying containers to ECR"
-    echo "======================================"
+  echo "======================================"
+  echo "🚀 Deploying $IMAGE_TYPE container to ECR"
+  echo "======================================"
 
-    # Deploy training image
-    echo "Deploying training image..."
-    deploy_image "$TRAINING_REPO" "$IMAGE_VERSION" "$LATEST"
+  deploy_image "$IMAGE_VERSION"
 
-    # Deploy inference images
-    echo "Deploying inference image (AMD64)..."
-    deploy_image "$INFERENCE_REPO" "$IMAGE_VERSION" "$LATEST"
+  # For inference, also deploy ARM64 image
+  if [ "$IMAGE_TYPE" = "inference" ]; then
+    deploy_image "${IMAGE_VERSION}-arm64"
+  fi
 
-    echo "Deploying inference image (ARM64)..."
-    deploy_image "$INFERENCE_REPO" "${IMAGE_VERSION}-arm64" "$LATEST"
-
-    echo "Deploying workbench inference image..."
-    deploy_image "$WORKBENCH_INFERENCE_REPO" "$IMAGE_VERSION" "$LATEST" true
-
-    echo "======================================"
-    echo -e "${GREEN}✅ Deployment complete!${NC}"
-    echo "======================================"
+  echo "======================================"
+  echo -e "${GREEN}✅ Deployment complete!${NC}"
+  echo "======================================"
 else
-    echo "Local build complete. Use --deploy to push the images to AWS ECR in regions: ${REGION_LIST[*]}."
+  # Print information about the built image
+  echo "Local build complete. Use --deploy to push the image to AWS ECR in regions: ${REGION_LIST[*]}."
 
-    # Print information about the built images
-    echo "======================================"
-    echo "📋 Image information:"
-    echo "Training image: ${TRAINING_REPO}:${IMAGE_VERSION}"
-    echo "Inference image (AMD64): ${INFERENCE_REPO}:${IMAGE_VERSION}"
-    echo "Inference image (ARM64): ${INFERENCE_REPO}:${IMAGE_VERSION}-arm64"
-    echo "Workbench inference image: ${WORKBENCH_INFERENCE_REPO}:${IMAGE_VERSION}"
-    echo "======================================"
+  echo "======================================"
+  echo "📋 Image information:"
+  echo "${IMAGE_TYPE^} image: $REPO_NAME:$IMAGE_VERSION"
 
-    # Inform about testing option
-    echo "To test these containers, run: $PROJECT_ROOT/tests/run_tests.sh ${IMAGE_VERSION}"
+  if [ "$IMAGE_TYPE" = "inference" ]; then
+    echo "Inference image (ARM64): $REPO_NAME:${IMAGE_VERSION}-arm64"
+  fi
+
+  echo "======================================"
+  echo "To test these containers, run: $PROJECT_ROOT/tests/run_tests.sh $IMAGE_VERSION"
 fi
