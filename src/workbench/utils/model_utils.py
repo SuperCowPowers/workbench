@@ -92,13 +92,13 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
     return script_path
 
 
-def proximity_model(model: "Model", prox_model_name: str, shap_50: bool = True) -> "Model":
+def proximity_model(model: "Model", prox_model_name: str, shap_50: bool = False) -> "Model":
     """Create a proximity model based on the given model
 
     Args:
         model (Model): The model to create the proximity model from
         prox_model_name (str): The name of the proximity model to create
-        shap_50 (bool): Whether to use the top 50 SHAP features for the proximity model
+        shap_50 (bool): Whether to ONLY use the top 50 SHAP features (default: False)
     Returns:
         Model: The proximity model
     """
