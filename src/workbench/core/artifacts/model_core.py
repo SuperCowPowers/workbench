@@ -3,7 +3,7 @@
 import time
 from datetime import datetime
 import urllib.parse
-from typing import Union, Optional
+from typing import Union, Optional, List, Dict, Tuple
 from enum import Enum
 import botocore
 from botocore.exceptions import ClientError
@@ -19,6 +19,7 @@ from sagemaker.model import Model as SagemakerModel
 from workbench.core.artifacts.artifact import Artifact
 from workbench.utils.aws_utils import newest_path, pull_s3_data
 from workbench.utils.s3_utils import compute_s3_object_hash
+from workbench.utils.shap_utils import shap_values_data, shap_feature_importance
 from workbench.utils.deprecated_utils import deprecated
 
 
@@ -722,7 +723,8 @@ class ModelCore(Artifact):
         self._load_training_metrics()
         self._load_inference_metrics()
 
-        # Compute feature importance
+        # Compute SHAP feature importance
+        self.compute_shap_values()
 
         # Remove the needs_onboard tag
         self.remove_health_tag("needs_onboard")
@@ -776,6 +778,48 @@ class ModelCore(Artifact):
             ]
         except (KeyError, IndexError, TypeError):
             return None
+
+    def compute_shap_values(self):
+        # Compute SHAP feature importance (try/except in case of failure)
+        try:
+            shap_data = shap_values_data(self)
+            shap_importance = shap_feature_importance(self, shap_data)
+            self.parameter_store.upsert(f"/workbench/models/{self.uuid}/shap_importance", shap_importance)
+
+            # Shap Data might be a DataFrame or a dict of DataFrames
+            if isinstance(shap_data, dict):
+                for key, df in shap_data.items():
+                    self.df_store.upsert(f"/workbench/models/{self.uuid}/shap_data/{key}", df)
+            else:
+                self.df_store.upsert(f"/workbench/models/{self.uuid}/shap_data", shap_data)
+        except Exception as e:
+            self.log.warning(f"SHAP Feature Importance failed: {e}")
+
+    def shap_importance(self) -> Optional[List[Tuple[str, float]]]:
+        """Retrieve the Shapely Feature Importance for this model
+
+        Returns:
+            Optional[List[Tuple[str, float]]]: List of tuples containing feature names and their importance scores
+        """
+        return self.parameter_store.get(f"/workbench/models/{self.uuid}/shap_importance")
+
+    def shap_data(self) -> Optional[Union[pd.DataFrame, dict]]:
+        """Retrieve the SHAP data for this model
+
+        Returns:
+            Optional[Union[pd.DataFrame, dict]]: SHAP data (DataFrame or dict of DataFrames)
+        """
+        # Check if the SHAP data is one DataFrame or a dict of DataFrames
+        if self.df_store.check(f"/workbench/models/{self.uuid}/shap_data"):
+            return self.df_store.get(f"/workbench/models/{self.uuid}/shap_data")
+        else:
+            # Loop over the SHAP data and return a dict of DataFrames
+            shap_dfs = self.df_store.list_subfiles(f"/workbench/models/{self.uuid}/shap_data")
+            shap_data = {}
+            for df_location in shap_dfs:
+                key = df_location.split("/")[-1]
+                shap_data[key] = self.df_store.get(df_location)
+            return shap_data
 
     def supported_inference_instances(self) -> Optional[list]:
         """Retrieve the supported endpoint inference instance types
@@ -1037,39 +1081,6 @@ class ModelCore(Artifact):
         cm_df = cm_df.astype(int)
 
         return metrics_df, cm_df
-
-    def shapley_values(self, capture_uuid: str = "auto_inference") -> Union[list[pd.DataFrame], pd.DataFrame, None]:
-        """Retrieve the Shapely values for this model
-
-        Args:
-            capture_uuid (str, optional): Specific capture_uuid (default: training_holdout)
-
-        Returns:
-            pd.DataFrame: Dataframe(s) of the shapley values or None if not found
-
-        Notes:
-            This may or may not exist based on whether an Endpoint ran Shapley
-        """
-
-        # Sanity check the inference path (which may or may not exist)
-        if self.endpoint_inference_path is None:
-            return None
-
-        # Construct the S3 path for the Shapley values
-        shapley_s3_path = f"{self.endpoint_inference_path}/{capture_uuid}"
-
-        # Multiple CSV if classifier
-        if self.model_type == ModelType.CLASSIFIER:
-            # CSVs for shap values are indexed by prediction class
-            # Because we don't know how many classes there are, we need to search through
-            # a list of S3 objects in the parent folder
-            s3_paths = wr.s3.list_objects(shapley_s3_path)
-            return [pull_s3_data(f) for f in s3_paths if "inference_shap_values" in f]
-
-        # One CSV if regressor
-        if self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
-            s3_path = f"{shapley_s3_path}/inference_shap_values.csv"
-            return pull_s3_data(s3_path)
 
 
 if __name__ == "__main__":

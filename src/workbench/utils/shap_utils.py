@@ -152,7 +152,7 @@ def _calculate_shap_values(workbench_model):
     shap_values = xgb_model.predict(dmatrix, pred_contribs=True, strict_shape=True)
 
     # Return the feature names, SHAP values, input data, and IDs
-    features_with_bias = features + ['bias']
+    features_with_bias = features + ["bias"]
     return features_with_bias, shap_values, X, ids
 
 
