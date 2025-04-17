@@ -250,6 +250,32 @@ class AWSDFStore:
         except Exception as e:
             self.log.error(f"Failed to delete data recursively at '{location}': {e}")
 
+    def list_subfiles(self, prefix: str) -> list:
+        """Return a list of file locations with the given prefix.
+
+        Args:
+            prefix (str, optional): Only include files with the given prefix
+
+        Returns:
+            list: List of file locations (paths)
+        """
+        try:
+            full_prefix = f"{self.path_prefix}{prefix.lstrip('/')}"
+            response = self.s3_client.list_objects_v2(Bucket=self.workbench_bucket, Prefix=full_prefix)
+            if "Contents" not in response:
+                return []
+
+            locations = []
+            for obj in response["Contents"]:
+                full_key = obj["Key"]
+                location = full_key.replace(f"{self.path_prefix}", "/").split(".parquet")[0]
+                locations.append(location)
+            return locations
+
+        except Exception as e:
+            self.log.error(f"Failed to list subfiles: {e}")
+            return []
+
     def _generate_s3_uri(self, location: str) -> str:
         """Generate the S3 URI for the given location."""
         s3_path = f"{self.workbench_bucket}/{self.path_prefix}/{location}.parquet"
@@ -333,6 +359,10 @@ if __name__ == "__main__":
     start_time = time.time()
     print(df_store.check("/testing/test_data"))
     print("--- Check %s seconds ---" % (time.time() - start_time))
+
+    # Test list_subfiles
+    print("List Subfiles:")
+    print(df_store.list_subfiles("/testing"))
 
     # Now delete the test data
     df_store.delete("/testing/test_data")
