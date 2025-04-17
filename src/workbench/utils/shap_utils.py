@@ -29,29 +29,32 @@ def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[
     """
     # Get SHAP values from internal function
     log.important("Calculating SHAP values...")
-    features, shap_values, _, _ = _calculate_shap_values(workbench_model)
-    if features is None:
+    features_with_bias, shap_values, _, _ = _calculate_shap_values(workbench_model)
+    if features_with_bias is None:
         return None
+
+    # Exclude the bias term from features and SHAP values
+    features = features_with_bias[:-1]  # All but the last element (bias)
 
     # Multi-Classification Models
     if len(shap_values.shape) > 2:
-        # Simply flatten all dimensions except the last one (features) and take mean of absolute values
-        mean_abs_shap = np.abs(shap_values).mean(axis=tuple(range(len(shap_values.shape) - 1)))
+        # For multiclass, we need to exclude the bias column (last column)
+        # The shape is (n_samples, n_classes, n_features+1)
+        shap_values_no_bias = shap_values[:, :, :-1]
+        # Flatten all dimensions except the last one (features) and take mean of absolute values
+        mean_abs_shap = np.abs(shap_values_no_bias).mean(axis=tuple(range(len(shap_values_no_bias.shape) - 1)))
 
     # Regression or Binary Classification Models
     else:
-        mean_abs_shap = np.abs(shap_values).mean(axis=0)
+        # For binary/regression, exclude the bias column (last column)
+        shap_values_no_bias = shap_values[:, :-1]
+        mean_abs_shap = np.abs(shap_values_no_bias).mean(axis=0)
 
     # Create list of (feature, importance) tuples
     shap_importance = [(features[i], float(mean_abs_shap[i])) for i in range(len(features))]
 
     # Sort by importance (descending)
     sorted_importance = sorted(shap_importance, key=lambda x: x[1], reverse=True)
-
-    # Log the top 10 features
-    log.info("Top 10 SHAP feature importances:")
-    for feature, importance in sorted_importance[:10]:
-        log.info(f"  {feature}: {importance:.4f}")
 
     # Return top N if specified
     if top_n is not None and isinstance(top_n, int):
@@ -70,7 +73,9 @@ def shap_values_data(workbench_model) -> Union[pd.DataFrame, Dict[str, pd.DataFr
     Returns:
         For regression/binary: DataFrame with SHAP values, one row per instance, columns are features
         For multi-class: Dictionary of DataFrames, one per class, each with SHAP values
-        ID column is always included as the first column
+
+    Note:
+        The ID column is always included as the first column
     """
     # Get all data from internal function
     features, shap_values, _, ids = _calculate_shap_values(workbench_model)
@@ -78,25 +83,26 @@ def shap_values_data(workbench_model) -> Union[pd.DataFrame, Dict[str, pd.DataFr
         return None
 
     # Check if we have a multi-class model (SHAP values will have 3 dimensions)
-    is_multiclass = len(shap_values.shape) > 2
+    is_multiclass = shap_values.shape[1] > 1
     if is_multiclass:
         # For multi-class models, return a dictionary of DataFrames (one per class)
         # The second dimension is the number of classes
         num_classes = shap_values.shape[1]
         result = {}
 
+        # Create a DataFrame for EACH class
         for class_idx in range(num_classes):
-            # Create a DataFrame for this class
-            # For each class, we have (num_instances, num_features) SHAP values
-            class_df = pd.DataFrame(shap_values[class_idx], columns=features)
-            class_df.insert(0, "id", ids)
+            class_df = pd.DataFrame(shap_values[:, class_idx, :], columns=features)
+            class_df.insert(0, ids.name, ids)
             result[f"class_{class_idx}"] = class_df
         return result
 
-    # For regression or binary classification models
+    # For regression or binary classification models (single class)
     else:
-        result_df = pd.DataFrame(shap_values, columns=features)
-        result_df.insert(0, "id", ids)
+        # Extract the single class from the 3D array
+        single_class_values = shap_values[:, 0, :]
+        result_df = pd.DataFrame(single_class_values, columns=features)
+        result_df.insert(0, ids.name, ids)
         return result_df
 
 
@@ -147,17 +153,11 @@ def _calculate_shap_values(workbench_model):
     dmatrix = xgb.DMatrix(X, enable_categorical=True)
 
     # Use XGBoost's built-in SHAP calculation
-    shap_values = xgb_model.predict(dmatrix, pred_contribs=True)
+    shap_values = xgb_model.predict(dmatrix, pred_contribs=True, strict_shape=True)
 
-    # Remove the bias term (last column) if present
-    if len(shap_values.shape) == 2:  # Binary or regression
-        if shap_values.shape[1] > len(features):
-            shap_values = shap_values[:, : len(features)]
-    elif len(shap_values.shape) == 3:  # Multi-class
-        if shap_values.shape[2] > len(features):
-            shap_values = shap_values[:, :, : len(features)]
-
-    return features, shap_values, X, ids
+    # Return the feature names, SHAP values, input data, and IDs
+    features_with_bias = features + ['bias']
+    return features_with_bias, shap_values, X, ids
 
 
 if __name__ == "__main__":
