@@ -38,11 +38,6 @@ def test_retrieval_with_capture_uuid():
         pprint(model_class.get_inference_metrics(capture_uuid).head())
         pprint(model_class.get_inference_predictions(capture_uuid).head())
         pprint(model_class.confusion_matrix(capture_uuid))
-        # Classifiers have a list of dataframes for shap values
-        shap_list = model_class.shapley_values(capture_uuid)
-        for i, df in enumerate(shap_list):
-            print(f"SHAP Values for Class {i}")
-            pprint(df.head())
 
 
 def test_validation_predictions():
@@ -81,18 +76,36 @@ def test_confusion_matrix():
 
 
 def test_shap_values():
-    print("\n\n*** SHAP Values ***")
-    shap_value = model_reg.shapley_values()
-    if shap_value is None:
-        print(f"Model {model_reg.uuid} has no SHAP values!")
+    print("\n\n*** SHAP Features (regression) ***")
+    shap_features = model_reg.shap_importance()
+    if shap_features is None:
+        print(f"Model {model_reg.uuid} has no SHAP features!")
     else:
-        pprint(model_reg.shapley_values().head())
+        pprint(shap_features)
 
-    # Classifiers have a list of dataframes
-    shap_list = model_class.shapley_values()
-    for i, df in enumerate(shap_list):
-        print(f"SHAP Values for Class {i}")
-        pprint(df.head())
+    print("\n\n*** SHAP Data (regression) ***")
+    shap_data = model_reg.shap_data()
+    if shap_data is None:
+        print(f"Model {model_reg.uuid} has no SHAP data!")
+    else:
+        pprint(shap_features)
+
+    print("\n\n*** SHAP Features (classification) ***")
+    shap_features = model_class.shap_importance()
+    if shap_features is None:
+        print(f"Model {model_class.uuid} has no SHAP features!")
+    else:
+        pprint(shap_features)
+
+    print("\n\n*** SHAP Data (classification) ***")
+    shap_data = model_class.shap_data()
+    if shap_data is None:
+        print(f"Model {model_class.uuid} has no SHAP data!")
+    else:
+        # Classifiers have a dictionary of dataframes
+        for key, df in shap_data.items():
+            print(f"{key}")
+            print(df.head())
 
 
 def test_metrics_with_capture_uuid():

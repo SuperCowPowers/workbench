@@ -2,10 +2,6 @@
 
 from typing import Union
 import logging
-import json
-import zlib
-import base64
-from botocore.exceptions import ClientError
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_parameter_store import AWSParameterStore

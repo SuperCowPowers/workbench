@@ -3,7 +3,7 @@
 from pprint import pprint
 
 # Workbench Imports
-from workbench.api.model import Model, ModelType
+from workbench.api.model import Model
 
 
 model = Model("empty-model-group")
@@ -31,17 +31,6 @@ def test_retrieval_with_capture_uuid():
         pprint(model.get_inference_metrics(capture_uuid).head())
         pprint(model.get_inference_predictions(capture_uuid).head())
         pprint(model.confusion_matrix(capture_uuid))
-        # Classifiers have a list of dataframes for shap values
-        shap_list = model.shapley_values(capture_uuid)
-        if shap_list is None:
-            print(f"Model {model.uuid} has no SHAP values!")
-        elif model.model_type == ModelType.REGRESSOR:
-            print("SHAP Values for Regressor")
-            pprint(shap_list.head())
-        elif model.model_type == ModelType.CLASSIFIER:
-            for i, df in enumerate(shap_list):
-                print(f"SHAP Values for Class {i}")
-                pprint(df.head())
 
 
 def test_validation_predictions():
@@ -56,29 +45,6 @@ def test_validation_predictions():
 def test_confusion_matrix():
     print("\n\n*** Confusion Matrix ***")
     pprint(model.confusion_matrix())
-
-
-def test_shap_values():
-    print("\n\n*** SHAP Values ***")
-
-    # Regressors have a single dataframe
-    if model.model_type == ModelType.REGRESSOR:
-        shap_value = model.shapley_values()
-        if shap_value is None:
-            print(f"Model {model.uuid} has no SHAP values!")
-        else:
-            pprint(model.shapley_values().head())
-
-    # Classifiers have a list of dataframes
-    elif model.model_type == ModelType.CLASSIFIER:
-        shap_list = model.shapley_values()
-        for i, df in enumerate(shap_list):
-            print(f"SHAP Values for Class {i}")
-            pprint(df.head())
-
-    # Just skip for other model types
-    else:
-        print(f"Model {model.uuid} has no SHAP values!")
 
 
 def test_metrics_with_capture_uuid():
@@ -103,5 +69,4 @@ if __name__ == "__main__":
     test_retrieval_with_capture_uuid()
     test_validation_predictions()
     test_confusion_matrix()
-    test_shap_values()
     test_metrics_with_capture_uuid()

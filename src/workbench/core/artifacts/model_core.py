@@ -784,7 +784,7 @@ class ModelCore(Artifact):
         try:
             shap_data = shap_values_data(self)
             shap_importance = shap_feature_importance(self, shap_data)
-            self.parameter_store.upsert(f"/workbench/models/{self.uuid}/shap_importance", shap_importance)
+            self.param_store.upsert(f"/workbench/models/{self.uuid}/shap_importance", shap_importance)
 
             # Shap Data might be a DataFrame or a dict of DataFrames
             if isinstance(shap_data, dict):
@@ -801,9 +801,9 @@ class ModelCore(Artifact):
         Returns:
             Optional[List[Tuple[str, float]]]: List of tuples containing feature names and their importance scores
         """
-        return self.parameter_store.get(f"/workbench/models/{self.uuid}/shap_importance")
+        return self.param_store.get(f"/workbench/models/{self.uuid}/shap_importance")
 
-    def shap_data(self) -> Optional[Union[pd.DataFrame, dict]]:
+    def shap_data(self) -> Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]:
         """Retrieve the SHAP data for this model
 
         Returns:
@@ -1133,9 +1133,13 @@ if __name__ == "__main__":
     print("Captured Predictions: (might be None)")
     print(my_model.get_inference_predictions())
 
-    # Grab our Shapley values from S3
-    print("Shapley Values: (might be None)")
-    print(my_model.shapley_values())
+    # Grab our Shapley Feature Importance
+    print("Shapley Feature Importance:")
+    print(my_model.shap_importance())
+
+    # Grab our Shapley Detailed Data
+    print("Shapley Detailed Data:")
+    print(my_model.shap_data())
 
     # Get the Workbench metadata associated with this Model
     print(f"Workbench Meta: {my_model.workbench_meta()}")

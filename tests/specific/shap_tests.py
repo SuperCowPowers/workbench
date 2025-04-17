@@ -1,29 +1,23 @@
 """Tests for the SHAP Feature Importance functionality"""
 
 # Local Imports
-from workbench.api import Endpoint
+from workbench.api import Model
 
 
 def test_generate_shap_values_reg():
     """Test the generation of SHAP values for a regression model"""
 
-    # Grab a test regression endpoint
-    end = Endpoint("abalone-regression")
-
-    # Running auto_inference with capture=True will invoke the SHAP values generation
-    print("TBD: SHAP values generation for regression")
-    end.auto_inference(capture=True)
+    # Grab a test regression model
+    model = Model("abalone-regression")
+    model.compute_shap_values()
 
 
 def test_generate_shap_values_class():
     """Test the generation of SHAP values for a classification model"""
 
-    # Grab a test classification endpoint
-    end = Endpoint("wine-classification")
-
-    # Running auto_inference with capture=True will invoke the SHAP values generation
-    print("TBD: SHAP values generation for classification")
-    end.auto_inference(capture=True)
+    # Grab a test classification model
+    model = Model("wine-classification")
+    model.compute_shap_values()
 
 
 if __name__ == "__main__":
