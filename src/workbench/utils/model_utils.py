@@ -131,51 +131,6 @@ def proximity_model(model: "Model", prox_model_name: str, shap_50: bool = False)
     return prox_model
 
 
-def prediction_confidence(predict_df: pd.DataFrame, prox_df: pd.DataFrame, id_column: str, target_column: str) -> None:
-    """
-    For each group in prox_df (grouped by id_column), compute the mean and stddev of target_column,
-    merge with predict_df, and compare the 'prediction' with the computed mean.
-
-    Confidence is assigned as:
-      - "High" if prediction is within 1 std,
-      - "Medium" if within 2 stds,
-      - "Low" otherwise.
-
-    Args:
-        predict_df (pd.DataFrame): DataFrame with a 'prediction' column.
-        prox_df (pd.DataFrame): DataFrame with neighbor info.
-        id_column (str): Column name to group by (must be in both DataFrames).
-        target_column (str): Column in prox_df to compute stats on.
-    """
-    # Group prox_df by id_column and compute mean and std for target_column
-    stats_df = prox_df.groupby(id_column)[target_column].agg(["mean", "std"]).reset_index()
-
-    # Merge stats with predict_df
-    merged = predict_df.merge(stats_df, on=id_column, how="left")
-
-    # Function to determine confidence based on prediction vs mean and std
-    def compute_confidence(pred, mean, std):
-        if pd.isna(std) or std == 0:
-            return "Undefined" if pred != mean else "High"
-        diff = abs(pred - mean)
-        if diff <= std:
-            return "High"
-        elif diff <= 2 * std:
-            return "Medium"
-        else:
-            return "Low"
-
-    merged["confidence"] = merged.apply(
-        lambda row: compute_confidence(row["prediction"], row["mean"], row["std"]), axis=1
-    )
-
-    # Print each group for inspection
-    for group_id, group in merged.groupby(id_column):
-        print(f"Group for {id_column} = {group_id}:")
-        print(group[[id_column, "prediction", "mean", "std", "confidence"]])
-        print("\n")
-
-
 def xgboost_model_from_s3(model_artifact_uri: str):
     """
     Download and extract XGBoost model artifact from S3, then load the model into memory.
@@ -366,16 +321,6 @@ if __name__ == "__main__":
         ]
     })
     # fmt: on
-
-    predict_data = {
-        "my_id": ["1", "2", "3", "4", "5"],
-        "prediction": [1.1, 2.1, 3.1, 4.1, 5.1],
-    }
-
-    predict_df = pd.DataFrame(predict_data)
-
-    # Call the prediction confidence function
-    prediction_confidence(predict_df, prox_df, "my_id", "target")
 
     # Test the XGBoost model loading and feature importance
     model = Model("abalone-regression")
