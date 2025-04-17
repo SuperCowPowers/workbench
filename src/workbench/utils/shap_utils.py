@@ -13,42 +13,38 @@ from workbench.utils.pandas_utils import convert_categorical_types
 log = logging.getLogger("workbench")
 
 
-def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[str, float]]]:
+def shap_feature_importance(workbench_model, top_n=None, shap_data=None) -> Optional[List[Tuple[str, float]]]:
     """
     Get feature importance data based on SHAP values from a Workbench Model.
     Works with both regression and multi-class classification models.
-    Currently implemented for XGBoost models.
 
     Args:
         workbench_model: Workbench Model object
         top_n: Optional integer to limit results to top N features
+        shap_data: Optional pre-calculated SHAP values data from shap_values_data()
 
     Returns:
         List of tuples (feature, importance) sorted by importance (descending)
         or None if there was an error
     """
-    # Get SHAP values from internal function
-    log.important("Calculating SHAP values...")
-    features_with_bias, shap_values, _, _ = _calculate_shap_values(workbench_model)
-    if features_with_bias is None:
-        return None
+    # Get SHAP data if not provided
+    if shap_data is None:
+        log.important("Calculating SHAP values...")
+        shap_data = shap_values_data(workbench_model)
+        if shap_data is None:
+            return None
 
-    # Exclude the bias term from features and SHAP values
-    features = features_with_bias[:-1]  # All but the last element (bias)
+    # Get feature names directly from the model
+    features = workbench_model.features()
 
-    # Multi-Classification Models
-    if len(shap_values.shape) > 2:
-        # For multiclass, we need to exclude the bias column (last column)
-        # The shape is (n_samples, n_classes, n_features+1)
-        shap_values_no_bias = shap_values[:, :, :-1]
-        # Flatten all dimensions except the last one (features) and take mean of absolute values
-        mean_abs_shap = np.abs(shap_values_no_bias).mean(axis=tuple(range(len(shap_values_no_bias.shape) - 1)))
-
-    # Regression or Binary Classification Models
+    # Check if multi-class (dictionary of DataFrames) or single-class (DataFrame)
+    is_multiclass = isinstance(shap_data, dict)
+    if is_multiclass:
+        # For multiclass, calculate mean absolute SHAP value across all classes
+        mean_abs_shap = np.mean([np.abs(df[features].values).mean(axis=0) for df in shap_data.values()], axis=0)
     else:
-        # For binary/regression, exclude the bias column (last column)
-        shap_values_no_bias = shap_values[:, :-1]
-        mean_abs_shap = np.abs(shap_values_no_bias).mean(axis=0)
+        # For single class, get mean abs values
+        mean_abs_shap = np.abs(shap_data[features].values).mean(axis=0)
 
     # Create list of (feature, importance) tuples
     shap_importance = [(features[i], float(mean_abs_shap[i])) for i in range(len(features))]
@@ -75,7 +71,7 @@ def shap_values_data(workbench_model) -> Union[pd.DataFrame, Dict[str, pd.DataFr
         For multi-class: Dictionary of DataFrames, one per class, each with SHAP values
 
     Note:
-        The ID column is always included as the first column
+        The ID column is always included as the first column of each DataFrame.
     """
     # Get all data from internal function
     features, shap_values, _, ids = _calculate_shap_values(workbench_model)
@@ -198,3 +194,17 @@ if __name__ == "__main__":
     for class_name, df in shap_df_dict.items():
         print(f"\nClass: {class_name}")
         print(df.head())
+
+    # Test passing in shap data
+    print("\n=== Passing in SHAP Data (Regression) ===")
+    importance_data = shap_feature_importance(model, shap_data=shap_df)
+    print("SHAP feature importance:")
+    for feature, importance in importance_data:
+        print(f"  {feature}: {importance:.4f}")
+
+    # Test passing in shap data for classification
+    print("\n=== Passing in SHAP Data (Classification) ===")
+    importance_data = shap_feature_importance(cmodel, shap_data=shap_df_dict)
+    print("SHAP feature importance:")
+    for feature, importance in importance_data:
+        print(f"  {feature}: {importance:.4f}")

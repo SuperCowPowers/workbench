@@ -722,6 +722,8 @@ class ModelCore(Artifact):
         self._load_training_metrics()
         self._load_inference_metrics()
 
+        # Compute feature importance
+
         # Remove the needs_onboard tag
         self.remove_health_tag("needs_onboard")
         self.set_status("ready")
