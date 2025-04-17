@@ -884,6 +884,14 @@ class ModelCore(Artifact):
         cls.log.info("Deleting Dataframe Cache...")
         cls.df_cache.delete_recursive(model_group_name)
 
+        # Delete any dataframes that were stored in the Dataframe Store
+        cls.log.info("Deleting Dataframe Store...")
+        cls.df_store.delete_recursive(f"workbench/models/{model_group_name}")
+
+        # Delete anything we might have stored in the Parameter Store
+        cls.log.info("Deleting Parameter Store...")
+        cls.param_store.delete_recursive(f"workbench/models/{model_group_name}")
+
     def _set_model_type(self, model_type: ModelType):
         """Internal: Set the Model Type for this Model"""
         self.model_type = model_type

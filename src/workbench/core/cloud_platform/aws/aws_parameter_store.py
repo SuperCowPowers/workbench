@@ -195,6 +195,17 @@ class AWSParameterStore:
         except Exception as e:
             self.log.error(f"Failed to delete parameter '{name}': {e}")
 
+    def delete_recursive(self, prefix: str):
+        """Delete all parameters with a given prefix from the AWS Parameter Store.
+
+        Args:
+            prefix (str): The prefix of the parameters to delete.
+        """
+        # List all parameters with the given prefix
+        parameters = self.list(prefix=prefix)
+        for param in parameters:
+            self.delete(param)
+
     def __repr__(self):
         """Return a string representation of the AWSParameterStore object."""
         return "\n".join(self.list())

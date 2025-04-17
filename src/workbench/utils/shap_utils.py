@@ -13,15 +13,15 @@ from workbench.utils.pandas_utils import convert_categorical_types
 log = logging.getLogger("workbench")
 
 
-def shap_feature_importance(workbench_model, top_n=None, shap_data=None) -> Optional[List[Tuple[str, float]]]:
+def shap_feature_importance(workbench_model, shap_data=None, top_n=None) -> Optional[List[Tuple[str, float]]]:
     """
     Get feature importance data based on SHAP values from a Workbench Model.
     Works with both regression and multi-class classification models.
 
     Args:
         workbench_model: Workbench Model object
-        top_n: Optional integer to limit results to top N features
         shap_data: Optional pre-calculated SHAP values data from shap_values_data()
+        top_n: Optional integer to limit results to top N features
 
     Returns:
         List of tuples (feature, importance) sorted by importance (descending)
