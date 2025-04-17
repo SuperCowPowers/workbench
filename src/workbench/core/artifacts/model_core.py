@@ -801,7 +801,8 @@ class ModelCore(Artifact):
         Returns:
             Optional[List[Tuple[str, float]]]: List of tuples containing feature names and their importance scores
         """
-        return self.param_store.get(f"/workbench/models/{self.uuid}/shap_importance")
+        shap_features = self.param_store.get(f"/workbench/models/{self.uuid}/shap_importance")
+        return [tuple(e) for e in shap_features] if shap_features else None
 
     def shap_data(self) -> Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]:
         """Retrieve the SHAP data for this model
@@ -819,7 +820,7 @@ class ModelCore(Artifact):
             for df_location in shap_dfs:
                 key = df_location.split("/")[-1]
                 shap_data[key] = self.df_store.get(df_location)
-            return shap_data
+            return shap_data or None
 
     def supported_inference_instances(self) -> Optional[list]:
         """Retrieve the supported endpoint inference instance types
@@ -1132,6 +1133,9 @@ if __name__ == "__main__":
     # Grab our regression predictions from S3
     print("Captured Predictions: (might be None)")
     print(my_model.get_inference_predictions())
+
+    # Compute SHAP values
+    my_model.compute_shap_values()
 
     # Grab our Shapley Feature Importance
     print("Shapley Feature Importance:")

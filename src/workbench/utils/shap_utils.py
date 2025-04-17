@@ -84,13 +84,17 @@ def shap_values_data(workbench_model) -> Union[pd.DataFrame, Dict[str, pd.DataFr
         # For multi-class models, return a dictionary of DataFrames (one per class)
         # The second dimension is the number of classes
         num_classes = shap_values.shape[1]
+        class_labels = workbench_model.class_labels()
+        if num_classes != len(class_labels):
+            log.error("Mismatch between number of classes in SHAP values and Workbench model.")
+            return None
         result = {}
 
         # Create a DataFrame for EACH class
-        for class_idx in range(num_classes):
-            class_df = pd.DataFrame(shap_values[:, class_idx, :], columns=features)
+        for idx, label in enumerate(class_labels):
+            class_df = pd.DataFrame(shap_values[:, idx, :], columns=features)
             class_df.insert(0, ids.name, ids)
-            result[f"class_{class_idx}"] = class_df
+            result[label] = class_df
         return result
 
     # For regression or binary classification models (single class)
