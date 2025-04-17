@@ -697,28 +697,32 @@ class EndpointCore(Artifact):
             return pd.DataFrame()
 
         # Compute the metrics
-        y_true = prediction_df[target_column]
-        prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
-        y_pred = prediction_df[prediction_col]
+        try:
+            y_true = prediction_df[target_column]
+            prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
+            y_pred = prediction_df[prediction_col]
 
-        mae = mean_absolute_error(y_true, y_pred)
-        rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-        r2 = r2_score(y_true, y_pred)
-        # Mean Absolute Percentage Error
-        mape = np.mean(np.where(y_true != 0, np.abs((y_true - y_pred) / y_true), np.abs(y_true - y_pred))) * 100
-        # Median Absolute Error
-        medae = median_absolute_error(y_true, y_pred)
+            mae = mean_absolute_error(y_true, y_pred)
+            rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+            r2 = r2_score(y_true, y_pred)
+            # Mean Absolute Percentage Error
+            mape = np.mean(np.where(y_true != 0, np.abs((y_true - y_pred) / y_true), np.abs(y_true - y_pred))) * 100
+            # Median Absolute Error
+            medae = median_absolute_error(y_true, y_pred)
 
-        # Organize and return the metrics
-        metrics = {
-            "MAE": round(mae, 3),
-            "RMSE": round(rmse, 3),
-            "R2": round(r2, 3),
-            "MAPE": round(mape, 3),
-            "MedAE": round(medae, 3),
-            "NumRows": len(prediction_df),
-        }
-        return pd.DataFrame.from_records([metrics])
+            # Organize and return the metrics
+            metrics = {
+                "MAE": round(mae, 3),
+                "RMSE": round(rmse, 3),
+                "R2": round(r2, 3),
+                "MAPE": round(mape, 3),
+                "MedAE": round(medae, 3),
+                "NumRows": len(prediction_df),
+            }
+            return pd.DataFrame.from_records([metrics])
+        except Exception as e:
+            self.log.warning(f"Error computing regression metrics: {str(e)}")
+            return pd.DataFrame()
 
     def residuals(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Add the residuals to the prediction DataFrame
