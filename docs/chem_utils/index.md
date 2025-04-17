@@ -1,6 +1,6 @@
 # Chemical Utilities
-!!! tip inline end "Endpoint Examples"
-    Examples of using the Endpoint class are listed at the bottom of this page [Examples](#examples).
+!!! tip inline end "Examples"
+    Examples of using the Chemical Utilities are listed at the bottom of this page [Examples](#examples).
 
 The majority of the chemical utilities in Workbench use either RDKIT or Mordred (Community). The inclusion of these utilities allows the use and deployment of this functionality into AWS (FeatureSets, Models, Endpoints). 
     
