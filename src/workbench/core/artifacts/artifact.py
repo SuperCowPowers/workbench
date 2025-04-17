@@ -8,6 +8,7 @@ from typing import Union
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.core.cloud_platform.aws.aws_parameter_store import AWSParameterStore as ParameterStore
 from workbench.core.cloud_platform.aws.aws_df_store import AWSDFStore as DFStore
 from workbench.utils.aws_utils import dict_to_aws_tags
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
@@ -46,8 +47,12 @@ class Artifact(ABC):
     # Delimiter for storing lists in AWS Tags
     tag_delimiter = "::"
 
-    # Grab our Dataframe Storage
+    # Grab our Dataframe Cache Storage
     df_cache = DFStore(path_prefix="/workbench/dataframe_cache")
+
+    # Artifact may want to use the Parameter Store or Dataframe Store
+    param_store = ParameterStore()
+    df_store = DFStore()
 
     def __init__(self, uuid: str, use_cached_meta: bool = False):
         """Initialize the Artifact Base Class
