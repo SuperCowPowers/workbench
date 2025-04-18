@@ -58,13 +58,14 @@ def shap_feature_importance(workbench_model, shap_data=None, top_n=None) -> Opti
     return sorted_importance
 
 
-def shap_values_data(workbench_model) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+def shap_values_data(workbench_model, sample=False) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
     """
     Get SHAP explanation data for all instances in the training data.
     Handles both regression/binary classification and multi-class models.
 
     Args:
         workbench_model: Workbench Model object
+        sample: Boolean to indicate if we want to sample (both rows/columns) (default: False)
 
     Returns:
         For regression/binary: DataFrame with SHAP values, one row per instance, columns are features
@@ -74,7 +75,7 @@ def shap_values_data(workbench_model) -> Union[pd.DataFrame, Dict[str, pd.DataFr
         The ID column is always included as the first column of each DataFrame.
     """
     # Get all data from internal function
-    features, shap_values, _, ids = _calculate_shap_values(workbench_model)
+    features, shap_values, _, ids = _calculate_shap_values(workbench_model, sample=sample)
     if features is None:
         return None
 
@@ -106,7 +107,7 @@ def shap_values_data(workbench_model) -> Union[pd.DataFrame, Dict[str, pd.DataFr
         return result_df
 
 
-def _calculate_shap_values(workbench_model):
+def _calculate_shap_values(workbench_model, sample=False):
     """
     Internal function to calculate SHAP values for Workbench Models.
     Handles both regression and multi-class classification models.
@@ -114,6 +115,10 @@ def _calculate_shap_values(workbench_model):
 
     Args:
         workbench_model: Workbench Model object
+        sample: Boolean to indicate if we want to sample (both rows/columns) (default: False)
+
+    Note:
+        If you set sample=True, the model must have 'shap_importance' already computed
 
     Returns:
         - list of feature names
@@ -125,14 +130,22 @@ def _calculate_shap_values(workbench_model):
     import xgboost as xgb
     from workbench.api import FeatureSet
 
-    # Get features from workbench model
-    features = workbench_model.features()
-
     # Get input data for the model
     fs = FeatureSet(workbench_model.get_input())
-    df = fs.pull_dataframe()
-    X = df[features].copy()
-    ids = df[fs.id_column]
+    features = workbench_model.features()
+
+    # If sample is True, we're going to use the smart_sample for rows
+    if sample:
+        log.info("Sampling using smart_sample for rows...")
+        sample_df = fs.smart_sample()
+        X = sample_df[features]
+        ids = sample_df[fs.id_column]
+
+    # Full run using all the columns and all the rows
+    else:
+        df = fs.pull_dataframe()
+        X = df[features]
+        ids = df[fs.id_column]
 
     # Get the XGBoost model from the Workbench Model
     model_artifact_uri = workbench_model.model_data_url()
@@ -154,9 +167,23 @@ def _calculate_shap_values(workbench_model):
 
     # Use XGBoost's built-in SHAP calculation
     shap_values = xgb_model.predict(dmatrix, pred_contribs=True, strict_shape=True)
+    features_with_bias = features + ["bias"]
+
+    # Now we need to subset the columns based on top 20 SHAP values
+    if sample:
+        # Get just the feature names from your top_shap
+        top_shap = [f[0] for f in workbench_model.shap_importance()][:20]
+
+        # Find indices of these top features in original features list
+        top_indices = [features.index(feat) for feat in top_shap]
+
+        # Filter shap_values (-1 is to get the bias term)
+        shap_values = shap_values[:, :, top_indices + [-1]]
+
+        # Update features list to match
+        features_with_bias = [features[i] for i in top_indices] + ["bias"]
 
     # Return the feature names, SHAP values, input data, and IDs
-    features_with_bias = features + ["bias"]
     return features_with_bias, shap_values, X, ids
 
 
@@ -212,3 +239,18 @@ if __name__ == "__main__":
     print("SHAP feature importance:")
     for feature, importance in importance_data:
         print(f"  {feature}: {importance:.4f}")
+
+    # Test SHAP values data with sampling (regression)
+    model = Model("abalone-regression")
+    print("\n=== SHAP Values Data with Sampling (regression) ===")
+    shap_df_sample = shap_values_data(model, sample=True)
+    print(shap_df_sample.head())
+
+    # Test SHAP values data with sampling (classification)
+    model = Model("wine-classification")
+    print("\n=== SHAP Values Data with Sampling (classification) ===")
+    shap_df_sample = shap_values_data(model, sample=True)
+    for class_name, df in shap_df_sample.items():
+        print(f"\nClass: {class_name}")
+        print(df.head())
+

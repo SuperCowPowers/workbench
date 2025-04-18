@@ -205,8 +205,6 @@ class ModelCore(Artifact):
         """
         return SagemakerModel(
             model_data=self.model_data_url(),
-            source_dir=self.source_dir_url(),
-            entry_point=self.entry_point(),
             sagemaker_session=self.sm_session,
             image_uri=self.container_image(),
         )
@@ -782,9 +780,13 @@ class ModelCore(Artifact):
     def compute_shap_values(self):
         # Compute SHAP feature importance (try/except in case of failure)
         try:
+            # Okay, so we use ALL the data to compute feature importance
             shap_data = shap_values_data(self)
             shap_importance = shap_feature_importance(self, shap_data)
             self.param_store.upsert(f"/workbench/models/{self.uuid}/shap_importance", shap_importance)
+
+            # Now we recompute the SHAP values using the feature importance and smart sampling
+            shap_data = shap_values_data(self, sample=True)
 
             # Shap Data might be a DataFrame or a dict of DataFrames
             if isinstance(shap_data, dict):
