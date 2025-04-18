@@ -1,6 +1,8 @@
 """Color Utilities for Workbench"""
 
 import re
+import numpy as np
+from typing import Union
 
 
 def is_dark(color: str) -> bool:
@@ -221,6 +223,32 @@ def remove_middle_colors(colorscale, min_threshold=0.3, max_threshold=0.7):
     return sorted(new_colorscale, key=lambda x: x[0])
 
 
+# For approximating beeswarm effect
+def jitter_array(values: Union[np.ndarray, list], jitter_width: float = 0.4, precision: int = 1) -> np.ndarray:
+    """
+    Generate jitter offsets for approximate beeswarm-like plots.
+
+    Args:
+        values: Array of values to group for jittering.
+        jitter_width: Max jitter range centered around 0.
+        precision: Rounding precision to group similar values.
+
+    Returns:
+        np.ndarray of jitter offsets (same length as `values`).
+    """
+    values = np.asarray(values)
+    rounded = np.round(values, precision)
+    offsets = np.zeros_like(values, dtype=float)
+    for val in np.unique(rounded):
+        indices = np.where(rounded == val)[0]
+        if len(indices) > 1:
+            jitter = np.linspace(-jitter_width / 2, jitter_width / 2, len(indices))
+            np.random.shuffle(jitter)
+            offsets[indices] = jitter
+
+    return offsets
+
+
 if __name__ == "__main__":
     """Exercise the Color Utilities"""
 
@@ -250,3 +278,8 @@ if __name__ == "__main__":
     # Test the remove_middle_colors function
     new_colorscale = remove_middle_colors(colorscale)
     print("Modified colorscale:", new_colorscale)
+
+    # Test the jitter_array function
+    values = np.array([1, 1.01, 1.02, 2.02, 2.04, 3])
+    jittered_values = jitter_array(values, jitter_width=0.4, precision=1)
+    print("Jittered values:", jittered_values)
