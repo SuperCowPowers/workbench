@@ -785,6 +785,13 @@ class ModelCore(Artifact):
             shap_importance = shap_feature_importance(self, shap_data)
             self.param_store.upsert(f"/workbench/models/{self.uuid}/shap_importance", shap_importance)
 
+            # We're going to store the sample rows in the DataFrame Cache (smart_sample)
+            # Note: We should revisit this FIXME
+            from workbench.api import FeatureSet
+            fs = FeatureSet(self.get_input())
+            shap_sample = fs.smart_sample()
+            self.df_store.upsert(f"/workbench/models/{self.uuid}/shap_sample", shap_sample)
+
             # Now we recompute the SHAP values using the feature importance and smart sampling
             shap_data = shap_values_data(self, sample=True)
 
@@ -805,6 +812,15 @@ class ModelCore(Artifact):
         """
         shap_features = self.param_store.get(f"/workbench/models/{self.uuid}/shap_importance")
         return [tuple(e) for e in shap_features] if shap_features else None
+
+    def shap_sample(self) -> Optional[pd.DataFrame]:
+        """Retrieve the SHAP sample data for this model
+
+        Returns:
+            Optional[pd.DataFrame]: SHAP sample data (DataFrame)
+        """
+        shap_sample = self.df_store.get(f"/workbench/models/{self.uuid}/shap_sample")
+        return shap_sample if shap_sample is not None else None
 
     def shap_data(self) -> Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]:
         """Retrieve the SHAP data for this model
@@ -1168,8 +1184,6 @@ if __name__ == "__main__":
 
     # Get various metadata about the model
     print(my_model.model_data_url())
-    print(my_model.source_dir_url())
-    print(my_model.entry_point())
     print(my_model.supported_inference_instances())
 
     # Delete the Model
