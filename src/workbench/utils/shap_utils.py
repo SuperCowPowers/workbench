@@ -13,26 +13,25 @@ from workbench.utils.pandas_utils import convert_categorical_types
 log = logging.getLogger("workbench")
 
 
-def shap_feature_importance(workbench_model, shap_data=None, top_n=None) -> Optional[List[Tuple[str, float]]]:
+def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[str, float]]]:
     """
     Get feature importance data based on SHAP values from a Workbench Model.
     Works with both regression and multi-class classification models.
 
     Args:
         workbench_model: Workbench Model object
-        shap_data: Optional pre-calculated SHAP values data from shap_values_data()
         top_n: Optional integer to limit results to top N features
 
     Returns:
         List of tuples (feature, importance) sorted by importance (descending)
         or None if there was an error
     """
-    # Get SHAP data if not provided
+    # Compute the SHAP values
+    log.important("Calculating SHAP values...")
+    shap_data = shap_values_data(workbench_model)
     if shap_data is None:
-        log.important("Calculating SHAP values...")
-        shap_data = shap_values_data(workbench_model)
-        if shap_data is None:
-            return None
+        log.error("No SHAP data found.")
+        return None
 
     # Get feature names directly from the model
     features = workbench_model.features()
@@ -226,20 +225,6 @@ if __name__ == "__main__":
         print(f"\nClass: {class_name}")
         print(df.head())
 
-    # Test passing in shap data
-    print("\n=== Passing in SHAP Data (Regression) ===")
-    importance_data = shap_feature_importance(model, shap_data=shap_df)
-    print("SHAP feature importance:")
-    for feature, importance in importance_data:
-        print(f"  {feature}: {importance:.4f}")
-
-    # Test passing in shap data for classification
-    print("\n=== Passing in SHAP Data (Classification) ===")
-    importance_data = shap_feature_importance(cmodel, shap_data=shap_df_dict)
-    print("SHAP feature importance:")
-    for feature, importance in importance_data:
-        print(f"  {feature}: {importance:.4f}")
-
     # Test SHAP values data with sampling (regression)
     model = Model("abalone-regression")
     print("\n=== SHAP Values Data with Sampling (regression) ===")
@@ -253,4 +238,3 @@ if __name__ == "__main__":
     for class_name, df in shap_df_sample.items():
         print(f"\nClass: {class_name}")
         print(df.head())
-
