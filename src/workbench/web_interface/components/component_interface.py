@@ -223,6 +223,6 @@ def stack_trace_figure(class_name: str, e: Exception) -> tuple[go.Figure, str]:
     )
 
     # Send the wrapped stack output as a figure with text
-    figure = ComponentInterface.display_text(wrapped_stack_output, figure_height=400, font_size=16)
+    figure = ComponentInterface.display_text(wrapped_stack_output, figure_height=400, font_size=12)
 
     return figure, stack_output  # Return both figure and the stack trace
