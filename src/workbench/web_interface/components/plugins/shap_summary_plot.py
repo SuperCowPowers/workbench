@@ -4,7 +4,7 @@ from dash import dcc
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
-from typing import Union, Dict, List, Optional
+from typing import Dict, List
 
 # Workbench Imports
 from workbench.cached.cached_model import CachedModel
@@ -23,14 +23,6 @@ class ShapSummaryPlot(PluginInterface):
         """Initialize the ShapSummaryPlot plugin class"""
         self.component_id = None
         self.theme_manager = ThemeManager()
-        self.colorscale = [
-            [0, "rgb(70, 70, 200)"],  # Blue
-            [0.2, "rgb(70, 70, 200)"],  # Blue
-            [0.5, "rgb(150, 0, 150)"],  # Purple
-            [0.8, "rgb(200, 50, 50)"],  # Red
-            [1, "rgb(200, 50, 50)"]     # Red
-        ]
-        self.colorscale = self.theme_manager.colorscale()
         super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
