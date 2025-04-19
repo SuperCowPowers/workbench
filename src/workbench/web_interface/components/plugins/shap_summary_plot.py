@@ -1,0 +1,265 @@
+"""SHAP Summary Plot visualization component for XGBoost models"""
+
+from dash import dcc
+import plotly.graph_objects as go
+import pandas as pd
+import numpy as np
+from typing import Union, Dict, List, Optional
+
+# Workbench Imports
+from workbench.cached.cached_model import CachedModel
+from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from workbench.utils.theme_manager import ThemeManager
+from workbench.utils.color_utils import beeswarm_offsets
+
+
+class ShapSummaryPlot(PluginInterface):
+    """SHAP Summary Visualization Component for XGBoost model explanations"""
+
+    auto_load_page = PluginPage.MODEL
+    plugin_input_type = PluginInputType.MODEL
+
+    def __init__(self):
+        """Initialize the ShapSummaryPlot plugin class"""
+        self.component_id = None
+        self.theme_manager = ThemeManager()
+        self.colorscale = [
+            [0, "rgb(70, 70, 200)"],  # Blue
+            [0.2, "rgb(70, 70, 200)"],  # Blue
+            [0.5, "rgb(150, 0, 150)"],  # Purple
+            [0.8, "rgb(200, 50, 50)"],  # Red
+            [1, "rgb(200, 50, 50)"]     # Red
+        ]
+        super().__init__()
+
+    def create_component(self, component_id: str) -> dcc.Graph:
+        """Create a SHAP Summary Visualization Component without any data."""
+        self.component_id = component_id
+        self.container = dcc.Graph(
+            id=component_id,
+            className="workbench-container",
+            figure=self.display_text("Waiting for SHAP data..."),
+            config={"scrollZoom": False, "doubleClick": "reset", "displayModeBar": False},
+        )
+        self.properties = [(self.component_id, "figure")]
+        self.signals = [(self.component_id, "clickData")]
+        return self.container
+
+    def update_properties(self, model: CachedModel, **kwargs) -> list:
+        """Create a SHAP Summary Plot for feature importance visualization."""
+        # Basic validation
+        shap_data = model.shap_data()
+        shap_sample_rows = model.shap_sample()
+        if shap_data is None or shap_sample_rows is None:
+            return [self.display_text("SHAP data not available")]
+
+        # Check if the model is multiclass
+        is_multiclass = isinstance(shap_data, dict)
+        if is_multiclass:
+            id_column = shap_data[list(shap_data.keys())[0]].columns[0]
+            fig = self._create_multiclass_summary_plot(shap_data, shap_sample_rows, id_column)
+
+        # Regression or binary classification
+        else:
+            id_column = shap_data.columns[0]
+            fig = self._create_summary_plot(shap_data, shap_sample_rows, id_column)
+        return [fig]
+
+    def _create_summary_plot(
+            self,
+            shap_df: pd.DataFrame,
+            sample_df: pd.DataFrame,
+            id_column: str
+    ) -> go.Figure:
+        """Create a SHAP summary plot for a single class."""
+
+        # Remove bias column if present
+        if 'bias' in shap_df.columns:
+            shap_df.drop(columns=['bias'], inplace=True)
+
+        # Grab the shap features (all columns except the ID column)
+        shap_features = [feature for feature in shap_df.columns if feature != id_column]
+
+        # Right now we are only supporting numeric features
+        shap_features = [feature for feature in shap_features if feature in sample_df.select_dtypes(include='number').columns]
+
+        # Merge SHAP values with feature values
+        merged_df = pd.merge(shap_df, sample_df, on=id_column, how="inner", suffixes=("_shap", ""))
+
+        # Create figure
+        fig = go.Figure()
+
+        # Add a zero vertical line for reference
+        fig.add_shape(
+            type='line',
+            x0=0, x1=0,
+            y0=-0.5, y1=len(shap_features) - 0.5,
+            line=dict(color='gray', width=2),
+            layer="below"
+        )
+
+        # Add traces for each feature
+        for i, feature in enumerate(shap_features):
+            feature_shap = f"{feature}_shap"
+
+            # Normalize feature values for this specific feature (0-1 scale)
+            feature_vals = merged_df[feature].values
+            norm_vals = (feature_vals - np.min(feature_vals)) / (np.max(feature_vals) - np.min(feature_vals) + 1e-10)
+
+            # Get y positions with beeswarm offsets
+            y_jitter = beeswarm_offsets(merged_df[feature_shap]) + i
+
+            # Add scatter plot
+            fig.add_trace(
+                go.Scatter(
+                    x=merged_df[feature_shap],
+                    y=y_jitter,
+                    mode='markers',
+                    name=feature,
+                    marker=dict(
+                        color=norm_vals,
+                        colorscale=self.colorscale,
+                        colorbar=dict(
+                            title="Feature Value",  # Add the title
+                            title_side="right",
+                            tickvals=[0, 1],
+                            ticktext=["Low", "High"],
+                            thickness=10,
+                            outlinewidth=0,
+                        ) if i == 0 else None,  # Only show colorbar for first feature
+                        opacity=0.6,
+                        size=8,
+                        showscale=(i == 0)  # Only show color scale for first feature
+                    ),
+                    showlegend=False,
+                    hoverinfo="text",
+                    hovertext=[
+                        f"Feature: {feature}<br>SHAP value: {shap:.4f}<br>Feature value: {val:.4f}"
+                        for shap, val in zip(merged_df[feature_shap], feature_vals)
+                    ],
+                )
+            )
+
+        # Update layout
+        fig.update_layout(
+            title="SHAP Summary Plot",
+            xaxis_title="SHAP Value (Impact on Model Output)",
+            margin=dict(l=10, r=10, t=50, b=50),
+            height=max(400, 50 * len(shap_features)),
+            plot_bgcolor=self.theme_manager.background(),
+            xaxis=dict(showgrid=False, zeroline=False),
+            yaxis=dict(
+                tickvals=list(range(len(shap_features))),
+                ticktext=shap_features,
+                autorange="reversed",  # Most important features at top
+                showgrid=False,
+                zeroline=False,
+            ),
+        )
+        return fig
+
+    def _create_multiclass_summary_plot(
+            self,
+            shap_values: Dict[str, pd.DataFrame],
+            sample_df: pd.DataFrame,
+            id_column: str
+    ) -> go.Figure:
+        """Create a SHAP summary plot for multiple classes with class selector."""
+
+        # Get list of classes
+        class_names = list(shap_values.keys())
+        first_class = class_names[0]
+
+        # Create base figure for first class
+        main_fig = self._create_summary_plot(shap_values[first_class], sample_df, id_column)
+
+        # Extract feature list from first class (needed for button setup)
+        first_df = shap_values[first_class].copy()
+        if 'bias' in first_df.columns:
+            first_df = first_df.drop(columns=['bias'])
+        shap_features = [feature for feature in first_df.columns if feature != id_column]
+        shap_features = [feature for feature in shap_features if feature in sample_df.select_dtypes(include='number').columns]
+
+        # Store traces from first class - we'll need to make these invisible when switching classes
+        first_class_traces = list(range(len(main_fig.data)))
+
+        # Add traces for all other classes (initially invisible)
+        for class_name in class_names[1:]:
+            # Create figure for this class
+            class_fig = self._create_summary_plot(shap_values[class_name], sample_df, id_column)
+
+            # Add all traces from class_fig to main_fig (set to invisible)
+            for trace in class_fig.data:
+                # Update hover text to include class
+                if hasattr(trace, 'hovertext'):
+                    new_hovertext = []
+                    for ht in trace.hovertext:
+                        new_hovertext.append(f"Class: {class_name}<br>{ht}")
+                    trace.hovertext = new_hovertext
+
+                # Set to invisible and add to main figure
+                trace.visible = False
+                main_fig.add_trace(trace)
+
+        # Create buttons for class selection
+        buttons = []
+        for i, class_name in enumerate(class_names):
+            # Create visibility list
+            # Each class has the same number of traces
+            traces_per_class = len(first_class_traces)
+            total_traces = len(main_fig.data)
+
+            # Set visibility (True for selected class, False for others)
+            visibility = [False] * total_traces
+            class_traces_start = i * traces_per_class
+            class_traces_end = class_traces_start + traces_per_class
+
+            for j in range(total_traces):
+                if class_traces_start <= j < class_traces_end:
+                    visibility[j] = True
+
+            # Add button for this class
+            buttons.append(
+                dict(
+                    method="update",
+                    label=str(class_name),
+                    args=[
+                        {"visible": visibility},
+                        {"title": f"SHAP Summary Plot: Feature Impact (Class: {class_name})"}
+                    ],
+                    # Make sure update is applied to the layout
+                    args2=[{}, {"title": f"SHAP Summary Plot: Feature Impact (Class: {class_name})"}]
+                )
+            )
+
+        # Update layout to add dropdown menu
+        main_fig.update_layout(
+            title=f"SHAP Summary Plot: Feature Impact (Class: {first_class})",
+            updatemenus=[
+                {
+                    "buttons": buttons,
+                    "direction": "down",
+                    "showactive": True,
+                    "x": 1.0,
+                    "y": 1.15,
+                    "xanchor": "right",
+                    "yanchor": "top",
+                }
+            ]
+        )
+
+        return main_fig
+
+    def register_internal_callbacks(self):
+        """Register internal callbacks for the plugin."""
+        pass  # Implement if needed
+
+
+if __name__ == "__main__":
+    """Run the Unit Test for the Plugin."""
+    from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
+
+    # Run the Unit Test on the Plugin
+    # model = CachedModel("abalone-regression")
+    model = CachedModel("wine-classification")
+    PluginUnitTest(ShapSummaryPlot, input_data=model, theme="light").run()
