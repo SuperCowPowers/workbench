@@ -142,8 +142,11 @@ class ThemeManager:
     def colorscale(cls, scale_type: str = "sequential") -> Optional[List[List[Union[float, str]]]]:
         """Get the colorscale for the current theme."""
 
-        # We have 3 colorscale options (diverging, sequential, and sequentialminus)
+        # We have 3 colorscale here (diverging, sequential, and sequentialminus)
         color_scales = cls.current_template["layout"]["colorscale"]
+
+        # We have another colorscale in data/heatmap
+        color_scales["heatmap"] = cls.current_template["data"]["heatmap"][0]["colorscale"]
         if scale_type in color_scales:
             return color_scales[scale_type]
         else:
@@ -290,3 +293,9 @@ if __name__ == "__main__":
 
     # Get the branding for the current theme
     print("Branding:", theme_manager.branding())
+
+    # Get some color scales
+    print("Colorscale:", theme_manager.colorscale())
+    print("Sequential Colorscale:", theme_manager.colorscale("sequential"))
+    print("Diverging Colorscale:", theme_manager.colorscale("diverging"))
+    print("Heatmap Colorscale:", theme_manager.colorscale("heatmap"))
