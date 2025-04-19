@@ -59,23 +59,20 @@ class ShapSummaryPlot(PluginInterface):
             fig = self._create_summary_plot(shap_data, shap_sample_rows, id_column)
         return [fig]
 
-    def _create_summary_plot(
-            self,
-            shap_df: pd.DataFrame,
-            sample_df: pd.DataFrame,
-            id_column: str
-    ) -> go.Figure:
+    def _create_summary_plot(self, shap_df: pd.DataFrame, sample_df: pd.DataFrame, id_column: str) -> go.Figure:
         """Create a SHAP summary plot for a single class."""
 
         # Remove bias column if present
-        if 'bias' in shap_df.columns:
-            shap_df.drop(columns=['bias'], inplace=True)
+        if "bias" in shap_df.columns:
+            shap_df.drop(columns=["bias"], inplace=True)
 
         # Grab the shap features (all columns except the ID column)
         shap_features = [feature for feature in shap_df.columns if feature != id_column]
 
         # Right now we are only supporting numeric features
-        shap_features = [feature for feature in shap_features if feature in sample_df.select_dtypes(include='number').columns]
+        shap_features = [
+            feature for feature in shap_features if feature in sample_df.select_dtypes(include="number").columns
+        ]
 
         # Merge SHAP values with feature values
         merged_df = pd.merge(shap_df, sample_df, on=id_column, how="inner", suffixes=("_shap", ""))
@@ -85,11 +82,13 @@ class ShapSummaryPlot(PluginInterface):
 
         # Add a zero vertical line for reference
         fig.add_shape(
-            type='line',
-            x0=0, x1=0,
-            y0=-0.5, y1=len(shap_features) - 0.5,
-            line=dict(color='gray', width=2),
-            layer="below"
+            type="line",
+            x0=0,
+            x1=0,
+            y0=-0.5,
+            y1=len(shap_features) - 0.5,
+            line=dict(color="gray", width=2),
+            layer="below",
         )
 
         # Add traces for each feature
@@ -108,21 +107,25 @@ class ShapSummaryPlot(PluginInterface):
                 go.Scatter(
                     x=merged_df[feature_shap],
                     y=y_jitter,
-                    mode='markers',
+                    mode="markers",
                     name=feature,
                     marker=dict(
                         color=norm_vals,
-                        colorbar=dict(
-                            title="Feature Value",  # Add the title
-                            title_side="right",
-                            tickvals=[0, 1],
-                            ticktext=["Low", "High"],
-                            thickness=10,
-                            outlinewidth=0,
-                        ) if i == 0 else None,  # Only show colorbar for first feature
+                        colorbar=(
+                            dict(
+                                title="Feature Value",  # Add the title
+                                title_side="right",
+                                tickvals=[0, 1],
+                                ticktext=["Low", "High"],
+                                thickness=10,
+                                outlinewidth=0,
+                            )
+                            if i == 0
+                            else None
+                        ),  # Only show colorbar for first feature
                         opacity=1.0,
                         size=8,
-                        showscale=(i == 0)  # Only show color scale for first feature
+                        showscale=(i == 0),  # Only show color scale for first feature
                     ),
                     showlegend=False,
                     hoverinfo="text",
@@ -153,11 +156,7 @@ class ShapSummaryPlot(PluginInterface):
         return fig
 
     def _create_multiclass_summary_plot(
-            self,
-            shap_values: Dict[str, pd.DataFrame],
-            sample_df: pd.DataFrame,
-            id_column: str,
-            class_labels: List[str]
+        self, shap_values: Dict[str, pd.DataFrame], sample_df: pd.DataFrame, id_column: str, class_labels: List[str]
     ) -> go.Figure:
         """Create a SHAP summary plot for multiple classes with class selector."""
 
@@ -180,7 +179,7 @@ class ShapSummaryPlot(PluginInterface):
             # Add all traces from class_fig to main_fig (set to invisible)
             for trace in class_fig.data:
                 # Update hover text to include class
-                if hasattr(trace, 'hovertext'):
+                if hasattr(trace, "hovertext"):
                     new_hovertext = []
                     for ht in trace.hovertext:
                         new_hovertext.append(f"Class: {class_name}<br>{ht}")
@@ -205,13 +204,7 @@ class ShapSummaryPlot(PluginInterface):
                 visibility[j] = True
 
             # Add button for this class
-            buttons.append(
-                dict(
-                    method="restyle",
-                    label=str(class_name),
-                    args=[{"visible": visibility}]
-                )
-            )
+            buttons.append(dict(method="restyle", label=str(class_name), args=[{"visible": visibility}]))
 
         # Update layout to add dropdown menu with static title
         main_fig.update_layout(
@@ -226,7 +219,7 @@ class ShapSummaryPlot(PluginInterface):
                     "xanchor": "right",
                     "yanchor": "top",
                 }
-            ]
+            ],
         )
         return main_fig
 

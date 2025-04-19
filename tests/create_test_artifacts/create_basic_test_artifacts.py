@@ -104,7 +104,16 @@ if __name__ == "__main__":
     # Create the abalone_regression Model
     if recreate or not Model("abalone-regression").exists():
         fs = FeatureSet("abalone_features")
-        features = ["length", "diameter", "height", "whole_weight", "shucked_weight", "viscera_weight", "shell_weight", "sex"]
+        features = [
+            "length",
+            "diameter",
+            "height",
+            "whole_weight",
+            "shucked_weight",
+            "viscera_weight",
+            "shell_weight",
+            "sex",
+        ]
         m = fs.to_model(
             name="abalone-regression",
             model_type=ModelType.REGRESSOR,

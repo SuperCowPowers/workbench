@@ -73,11 +73,11 @@ def add_alpha_to_first_color(input_colorscale, alpha=0.5):
     pos, color = colorscale[0]
 
     # Handle both rgb and rgba cases
-    if color.startswith('rgb(') and not color.startswith('rgba('):
-        color = color.replace('rgb(', 'rgba(').replace(')', f', {alpha})')
-    elif color.startswith('rgba('):
+    if color.startswith("rgb(") and not color.startswith("rgba("):
+        color = color.replace("rgb(", "rgba(").replace(")", f", {alpha})")
+    elif color.startswith("rgba("):
         # Replace existing alpha value
-        color = color.rsplit(',', 1)[0] + f', {alpha})'
+        color = color.rsplit(",", 1)[0] + f", {alpha})"
 
     colorscale[0] = [pos, color]
     return colorscale

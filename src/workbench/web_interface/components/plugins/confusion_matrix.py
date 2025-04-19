@@ -89,7 +89,7 @@ class ConfusionMatrix(PluginInterface):
                     thickness=10,
                     title="Count",
                 ),
-                colorscale=self.colorscale
+                colorscale=self.colorscale,
             )
         )
 

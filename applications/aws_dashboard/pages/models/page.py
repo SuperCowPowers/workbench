@@ -9,7 +9,6 @@ from . import callbacks
 # Workbench Imports
 from workbench.web_interface.components import model_plot
 from workbench.web_interface.components.plugins import model_details, ag_table, shap_summary_plot
-from workbench.web_interface.components.plugin_interface import PluginPage
 from workbench.web_interface.page_views.models_page_view import ModelsPageView
 
 # Register this page with Dash

@@ -1,6 +1,5 @@
 """Layout for the Models page"""
 
-from typing import Any
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 
@@ -44,7 +43,7 @@ def models_layout(
                             # Wrap this in a div to with className="workbench-container"
                             dbc.Row(
                                 html.Div(model_plot, className="workbench-container"),
-                                style={"padding": "20px 0px 0px 20px"}
+                                style={"padding": "20px 0px 0px 20px"},
                             ),
                             dbc.Row(shap_plot, style={"padding": "20px 0px 0px 20px"}),
                         ],
