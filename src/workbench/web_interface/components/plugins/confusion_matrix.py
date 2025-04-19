@@ -6,7 +6,9 @@ import plotly.graph_objects as go
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from workbench.utils.theme_manager import ThemeManager
 from workbench.cached.cached_model import CachedModel
+from workbench.utils.color_utils import add_alpha_to_first_color
 
 
 class ConfusionMatrix(PluginInterface):
@@ -19,6 +21,8 @@ class ConfusionMatrix(PluginInterface):
         """Initialize the ConfusionMatrix plugin class"""
         self.component_id = None
         self.current_highlight = None  # Store the currently highlighted cell
+        self.theme_manager = ThemeManager()
+        self.colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("heatmap"))
 
         # Call the parent class constructor
         super().__init__()
@@ -81,6 +85,11 @@ class ConfusionMatrix(PluginInterface):
                 y=y_labels,
                 xgap=3,  # Add space between cells
                 ygap=3,
+                colorbar=dict(
+                    thickness=10,
+                    title="Count",
+                ),
+                colorscale=self.colorscale
             )
         )
 
@@ -180,11 +189,3 @@ if __name__ == "__main__":
     # Run the Unit Test on the Plugin
     model = CachedModel("wine-classification")
     PluginUnitTest(ConfusionMatrix, input_data=model, theme="dark").run()
-
-    # Temp test
-    """
-    cm = ConfusionMatrix()
-    cm.create_component("test")
-    fig = cm.update_properties(model, inference_run="foo")[0]
-    fig.show()
-    """
