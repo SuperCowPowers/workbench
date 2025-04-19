@@ -2,7 +2,6 @@
 
 import re
 import numpy as np
-from typing import Union
 
 
 def is_dark(color: str) -> bool:
@@ -224,27 +223,58 @@ def remove_middle_colors(colorscale, min_threshold=0.3, max_threshold=0.7):
 
 
 # For approximating beeswarm effect
-def jitter_array(values: Union[np.ndarray, list], jitter_width: float = 0.4, precision: int = 1) -> np.ndarray:
+def beeswarm_offsets(values, point_size=0.05, precision=2, max_offset=0.3):
     """
-    Generate jitter offsets for approximate beeswarm-like plots.
+    Generate optimal beeswarm offsets with a maximum limit.
 
     Args:
-        values: Array of values to group for jittering.
-        jitter_width: Max jitter range centered around 0.
-        precision: Rounding precision to group similar values.
+        values: Array of positions to be adjusted
+        point_size: Diameter of each point
+        precision: Rounding precision for grouping
+        max_offset: Maximum allowed offset in either direction
 
     Returns:
-        np.ndarray of jitter offsets (same length as `values`).
+        Array of offsets for each point
     """
     values = np.asarray(values)
     rounded = np.round(values, precision)
     offsets = np.zeros_like(values, dtype=float)
+
+    # Sort indices by original values
+    sorted_idx = np.argsort(values)
+
     for val in np.unique(rounded):
-        indices = np.where(rounded == val)[0]
-        if len(indices) > 1:
-            jitter = np.linspace(-jitter_width / 2, jitter_width / 2, len(indices))
-            np.random.shuffle(jitter)
-            offsets[indices] = jitter
+        # Get indices belonging to this group
+        group_idx = sorted_idx[np.isin(sorted_idx, np.where(rounded == val)[0])]
+
+        if len(group_idx) > 1:
+            # Track occupied positions for collision detection
+            occupied = []
+
+            for idx in group_idx:
+                # Find best position with no collision
+                offset = 0
+                direction = 1
+                step = 0
+
+                while True:
+                    # Check if current offset position is free
+                    collision = any(abs(offset - pos) < point_size for pos in occupied)
+
+                    if not collision or abs(offset) >= max_offset:
+                        # Accept position if no collision or max offset reached
+                        if abs(offset) > max_offset:
+                            # Clamp to maximum
+                            offset = max_offset * (1 if offset > 0 else -1)
+                        break
+
+                    # Switch sides with increasing distance
+                    step += 0.25
+                    direction *= -1
+                    offset = direction * step * point_size
+
+                offsets[idx] = offset
+                occupied.append(offset)
 
     return offsets
 
@@ -280,6 +310,6 @@ if __name__ == "__main__":
     print("Modified colorscale:", new_colorscale)
 
     # Test the jitter_array function
-    values = np.array([1, 1.01, 1.02, 2.02, 2.04, 3])
-    jittered_values = jitter_array(values, jitter_width=0.4, precision=1)
+    values = np.array([1, 1.01, 1.02, 2.02, 2.04, 3, 4, 5, 5.01, 5.02, 5.03, 5.04, 5.05, 6])
+    jittered_values = beeswarm_offsets(values, precision=1)
     print("Jittered values:", jittered_values)
