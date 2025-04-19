@@ -228,7 +228,7 @@ class ScatterPlot(PluginInterface):
         # Determine marker settings based on the type of the color column.
         if pd.api.types.is_numeric_dtype(df[color_col]):
             marker_color = df[color_col]
-            colorbar = dict(title=color_col, thickness=20)
+            colorbar = dict(title=color_col, thickness=10)
             # Single trace for numeric data.
             data = [
                 go.Scattergl(

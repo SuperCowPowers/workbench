@@ -38,8 +38,8 @@ class ModelPlot(ComponentInterface):
 
             # Calculate the distance from the diagonal for each point
             target = model.target()
-            df["prediction_error"] = abs(df["prediction"] - df[target])
-            return ScatterPlot().update_properties(df, color="prediction_error", regression_line=True)[0]
+            df["error"] = abs(df["prediction"] - df[target])
+            return ScatterPlot().update_properties(df, color="error", regression_line=True)[0]
         else:
             return self.display_text(f"Model Type: {model.model_type}\n\n Awesome Plot Coming Soon!")
 

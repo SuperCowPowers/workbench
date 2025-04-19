@@ -30,6 +30,7 @@ class ShapSummaryPlot(PluginInterface):
             [0.8, "rgb(200, 50, 50)"],  # Red
             [1, "rgb(200, 50, 50)"]     # Red
         ]
+        self.colorscale = self.theme_manager.colorscale()
         super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -56,8 +57,9 @@ class ShapSummaryPlot(PluginInterface):
         # Check if the model is multiclass
         is_multiclass = isinstance(shap_data, dict)
         if is_multiclass:
+            class_labels = model.class_labels()
             id_column = shap_data[list(shap_data.keys())[0]].columns[0]
-            fig = self._create_multiclass_summary_plot(shap_data, shap_sample_rows, id_column)
+            fig = self._create_multiclass_summary_plot(shap_data, shap_sample_rows, id_column, class_labels)
 
         # Regression or binary classification
         else:
@@ -118,7 +120,6 @@ class ShapSummaryPlot(PluginInterface):
                     name=feature,
                     marker=dict(
                         color=norm_vals,
-                        colorscale=self.colorscale,
                         colorbar=dict(
                             title="Feature Value",  # Add the title
                             title_side="right",
@@ -127,7 +128,7 @@ class ShapSummaryPlot(PluginInterface):
                             thickness=10,
                             outlinewidth=0,
                         ) if i == 0 else None,  # Only show colorbar for first feature
-                        opacity=0.6,
+                        opacity=1.0,
                         size=8,
                         showscale=(i == 0)  # Only show color scale for first feature
                     ),
@@ -141,8 +142,9 @@ class ShapSummaryPlot(PluginInterface):
             )
 
         # Update layout
+        tick_labels = [f[:15] for f in shap_features]  # Truncate labels to 15 characters
         fig.update_layout(
-            title="SHAP Summary Plot",
+            title="SHAP Summary Plot: Feature Impact",
             xaxis_title="SHAP Value (Impact on Model Output)",
             margin=dict(l=10, r=10, t=50, b=50),
             height=max(400, 50 * len(shap_features)),
@@ -150,7 +152,7 @@ class ShapSummaryPlot(PluginInterface):
             xaxis=dict(showgrid=False, zeroline=False),
             yaxis=dict(
                 tickvals=list(range(len(shap_features))),
-                ticktext=shap_features,
+                ticktext=tick_labels,
                 autorange="reversed",  # Most important features at top
                 showgrid=False,
                 zeroline=False,
@@ -162,26 +164,21 @@ class ShapSummaryPlot(PluginInterface):
             self,
             shap_values: Dict[str, pd.DataFrame],
             sample_df: pd.DataFrame,
-            id_column: str
+            id_column: str,
+            class_labels: List[str]
     ) -> go.Figure:
         """Create a SHAP summary plot for multiple classes with class selector."""
 
         # Get list of classes
-        class_names = list(shap_values.keys())
+        class_names = class_labels
         first_class = class_names[0]
 
         # Create base figure for first class
         main_fig = self._create_summary_plot(shap_values[first_class], sample_df, id_column)
 
-        # Extract feature list from first class (needed for button setup)
-        first_df = shap_values[first_class].copy()
-        if 'bias' in first_df.columns:
-            first_df = first_df.drop(columns=['bias'])
-        shap_features = [feature for feature in first_df.columns if feature != id_column]
-        shap_features = [feature for feature in shap_features if feature in sample_df.select_dtypes(include='number').columns]
-
-        # Store traces from first class - we'll need to make these invisible when switching classes
+        # Store traces from first class
         first_class_traces = list(range(len(main_fig.data)))
+        traces_per_class = len(first_class_traces)
 
         # Add traces for all other classes (initially invisible)
         for class_name in class_names[1:]:
@@ -205,8 +202,6 @@ class ShapSummaryPlot(PluginInterface):
         buttons = []
         for i, class_name in enumerate(class_names):
             # Create visibility list
-            # Each class has the same number of traces
-            traces_per_class = len(first_class_traces)
             total_traces = len(main_fig.data)
 
             # Set visibility (True for selected class, False for others)
@@ -214,27 +209,21 @@ class ShapSummaryPlot(PluginInterface):
             class_traces_start = i * traces_per_class
             class_traces_end = class_traces_start + traces_per_class
 
-            for j in range(total_traces):
-                if class_traces_start <= j < class_traces_end:
-                    visibility[j] = True
+            for j in range(class_traces_start, class_traces_end):
+                visibility[j] = True
 
             # Add button for this class
             buttons.append(
                 dict(
-                    method="update",
+                    method="restyle",
                     label=str(class_name),
-                    args=[
-                        {"visible": visibility},
-                        {"title": f"SHAP Summary Plot: Feature Impact (Class: {class_name})"}
-                    ],
-                    # Make sure update is applied to the layout
-                    args2=[{}, {"title": f"SHAP Summary Plot: Feature Impact (Class: {class_name})"}]
+                    args=[{"visible": visibility}]
                 )
             )
 
-        # Update layout to add dropdown menu
+        # Update layout to add dropdown menu with static title
         main_fig.update_layout(
-            title=f"SHAP Summary Plot: Feature Impact (Class: {first_class})",
+            title="SHAP Summary Plot: Feature Impact",
             updatemenus=[
                 {
                     "buttons": buttons,
@@ -247,7 +236,6 @@ class ShapSummaryPlot(PluginInterface):
                 }
             ]
         )
-
         return main_fig
 
     def register_internal_callbacks(self):
@@ -262,4 +250,5 @@ if __name__ == "__main__":
     # Run the Unit Test on the Plugin
     # model = CachedModel("abalone-regression")
     model = CachedModel("wine-classification")
+    # model = CachedModel("test-classification")
     PluginUnitTest(ShapSummaryPlot, input_data=model, theme="light").run()

@@ -787,7 +787,7 @@ class ModelCore(Artifact):
             # We're going to create sample rows for our SHAP plots
             from workbench.api import FeatureSet
             fs = FeatureSet(self.get_input())
-            shap_sample = fs.query(f"SELECT * FROM {fs.table} ORDER BY RAND() LIMIT 1000")
+            shap_sample = fs.query(f"SELECT * FROM {fs.table} ORDER BY RAND() LIMIT 500")
 
             # Now we recompute the SHAP values using our sample rows
             shap_data = shap_values_data(self, sample_df=shap_sample)

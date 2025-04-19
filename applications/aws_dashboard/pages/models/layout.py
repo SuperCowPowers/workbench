@@ -20,10 +20,8 @@ def models_layout(
     models_table: AGTable,
     model_details: html.Div,
     model_plot: dcc.Graph,
-    **kwargs: Any,
+    shap_plot: dcc.Graph,
 ) -> html.Div:
-    # Generate rows for each plugin
-    plugin_rows = [dbc.Row(plugin, style={"padding": "0px 0px 20px 0px"}) for component_id, plugin in kwargs.items()]
     layout = html.Div(
         children=[
             dcc.Interval(id="models_refresh", interval=update_rate),
@@ -35,25 +33,20 @@ def models_layout(
             ),
             # A table that lists out all the Models
             dbc.Row(models_table),
-            # Model Details, and Plugins
+            # Model Details, Model Plot, and Shap Summary Plot
             dbc.Row(
                 [
                     # Column 1: Model Details
                     dbc.Col(model_details, width=5, style={"padding": "30px 0px 0px 0px"}, className="text-break"),
-                    # Column 2: Model Plot and Plugins
+                    # Column 2: Model Plot and Shap Summary
                     dbc.Col(
                         [
+                            # Wrap this in a div to with className="workbench-container"
                             dbc.Row(
-                                html.H4("Performance", id="model_plot_header"),
-                                style={"padding": "20px 0px 0px 0px"},
+                                html.Div(model_plot, className="workbench-container"),
+                                style={"padding": "20px 0px 0px 20px"}
                             ),
-                            dbc.Row(model_plot),
-                            dbc.Row(
-                                html.H4("Plugins", id="plugins_header"),
-                                style={"padding": "20px 0px 0px 0px"},
-                            ),
-                            # Add the dynamically generated Plugin rows
-                            *plugin_rows,
+                            dbc.Row(shap_plot, style={"padding": "20px 0px 0px 20px"}),
                         ],
                         width=7,
                     ),
