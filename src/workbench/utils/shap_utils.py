@@ -13,14 +13,13 @@ from workbench.utils.pandas_utils import convert_categorical_types
 log = logging.getLogger("workbench")
 
 
-def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[str, float]]]:
+def shap_feature_importance(workbench_model) -> Optional[List[Tuple[str, float]]]:
     """
     Get feature importance data based on SHAP values from a Workbench Model.
     Works with both regression and multi-class classification models.
 
     Args:
         workbench_model: Workbench Model object
-        top_n: Optional integer to limit results to top N features
 
     Returns:
         List of tuples (feature, importance) sorted by importance (descending)
@@ -50,10 +49,6 @@ def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[
 
     # Sort by importance (descending)
     sorted_importance = sorted(shap_importance, key=lambda x: x[1], reverse=True)
-
-    # Return top N if specified
-    if top_n is not None and isinstance(top_n, int):
-        return sorted_importance[:top_n]
     return sorted_importance
 
 
@@ -73,7 +68,7 @@ def shap_values_data(workbench_model, sample_df: pd.DataFrame = None) -> Union[p
     Note:
         The ID column is always included as the first column of each DataFrame.
     """
-    # Get all data from internal function
+    # Get all shap data from internal function
     features, shap_values, _, ids = _calculate_shap_values(workbench_model, sample_df=sample_df)
     if features is None:
         return None
@@ -167,10 +162,10 @@ def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
     shap_values = xgb_model.predict(dmatrix, pred_contribs=True, strict_shape=True)
     features_with_bias = features + ["bias"]
 
-    # Now we need to subset the columns based on top 20 SHAP values
+    # Now we need to subset the columns based on top 10 SHAP values
     if sample_df is not None:
         # Get just the feature names from your top_shap
-        top_shap = [f[0] for f in workbench_model.shap_importance()][:20]
+        top_shap = [f[0] for f in workbench_model.shap_importance()][:10]
 
         # Find indices of these top features in original features list
         top_indices = [features.index(feat) for feat in top_shap]

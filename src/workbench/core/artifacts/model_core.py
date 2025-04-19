@@ -780,20 +780,21 @@ class ModelCore(Artifact):
     def compute_shap_values(self):
         # Compute SHAP feature importance (try/except in case of failure)
         try:
-            # Okay, so we use ALL the data to compute feature importance
-            shap_data = shap_values_data(self)
-            shap_importance = shap_feature_importance(self, shap_data)
+            # Okay, first we compute feature importance
+            shap_importance = shap_feature_importance(self)
             self.param_store.upsert(f"/workbench/models/{self.uuid}/shap_importance", shap_importance)
 
-            # We're going to store the sample rows in the DataFrame Cache (smart_sample)
-            # Note: We should revisit this FIXME
+            # We're going to create sample rows for our SHAP plots
             from workbench.api import FeatureSet
             fs = FeatureSet(self.get_input())
-            shap_sample = fs.smart_sample()
-            self.df_store.upsert(f"/workbench/models/{self.uuid}/shap_sample", shap_sample)
+            shap_sample = fs.query(f"SELECT * FROM {fs.table} ORDER BY RAND() LIMIT 1000")
 
-            # Now we recompute the SHAP values using the feature importance and smart sampling
-            shap_data = shap_values_data(self, sample=True)
+            # Now we recompute the SHAP values using our sample rows
+            shap_data = shap_values_data(self, sample_df=shap_sample)
+
+            # Store the SHAP sample data in the DataFrame Cache (just the top 10 shap values)
+            shap_sample = shap_sample[[fs.id_column] + [f[0] for f in shap_importance[:10]]]
+            self.df_store.upsert(f"/workbench/models/{self.uuid}/shap_sample", shap_sample)
 
             # Shap Data might be a DataFrame or a dict of DataFrames
             if isinstance(shap_data, dict):
