@@ -57,14 +57,14 @@ def shap_feature_importance(workbench_model, top_n=None) -> Optional[List[Tuple[
     return sorted_importance
 
 
-def shap_values_data(workbench_model, sample=False) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+def shap_values_data(workbench_model, sample_df: pd.DataFrame = None) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
     """
     Get SHAP explanation data for all instances in the training data.
     Handles both regression/binary classification and multi-class models.
 
     Args:
         workbench_model: Workbench Model object
-        sample: Boolean to indicate if we want to sample (both rows/columns) (default: False)
+        sample_df: Optional DataFrame to sample from (default: None)
 
     Returns:
         For regression/binary: DataFrame with SHAP values, one row per instance, columns are features
@@ -74,7 +74,7 @@ def shap_values_data(workbench_model, sample=False) -> Union[pd.DataFrame, Dict[
         The ID column is always included as the first column of each DataFrame.
     """
     # Get all data from internal function
-    features, shap_values, _, ids = _calculate_shap_values(workbench_model, sample=sample)
+    features, shap_values, _, ids = _calculate_shap_values(workbench_model, sample_df=sample_df)
     if features is None:
         return None
 
@@ -93,7 +93,7 @@ def shap_values_data(workbench_model, sample=False) -> Union[pd.DataFrame, Dict[
         # Create a DataFrame for EACH class
         for idx, label in enumerate(class_labels):
             class_df = pd.DataFrame(shap_values[:, idx, :], columns=features)
-            class_df.insert(0, ids.name, ids)
+            class_df.insert(0, ids.name, ids.reset_index(drop=True))
             result[label] = class_df
         return result
 
@@ -102,11 +102,11 @@ def shap_values_data(workbench_model, sample=False) -> Union[pd.DataFrame, Dict[
         # Extract the single class from the 3D array
         single_class_values = shap_values[:, 0, :]
         result_df = pd.DataFrame(single_class_values, columns=features)
-        result_df.insert(0, ids.name, ids)
+        result_df.insert(0, ids.name, ids.reset_index(drop=True))
         return result_df
 
 
-def _calculate_shap_values(workbench_model, sample=False):
+def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
     """
     Internal function to calculate SHAP values for Workbench Models.
     Handles both regression and multi-class classification models.
@@ -114,7 +114,7 @@ def _calculate_shap_values(workbench_model, sample=False):
 
     Args:
         workbench_model: Workbench Model object
-        sample: Boolean to indicate if we want to sample (both rows/columns) (default: False)
+        sample_df: Optional DataFrame to sample from (default: None)
 
     Note:
         If you set sample=True, the model must have 'shap_importance' already computed
@@ -133,10 +133,9 @@ def _calculate_shap_values(workbench_model, sample=False):
     fs = FeatureSet(workbench_model.get_input())
     features = workbench_model.features()
 
-    # If sample is True, we're going to use the smart_sample for rows
-    if sample:
-        log.info("Sampling using smart_sample for rows...")
-        sample_df = fs.smart_sample()
+    # Did we get a sample DataFrame?
+    if sample_df is not None:
+        log.info("Sampling rows with sample dataframe...")
         X = sample_df[features]
         ids = sample_df[fs.id_column]
 
@@ -169,7 +168,7 @@ def _calculate_shap_values(workbench_model, sample=False):
     features_with_bias = features + ["bias"]
 
     # Now we need to subset the columns based on top 20 SHAP values
-    if sample:
+    if sample_df is not None:
         # Get just the feature names from your top_shap
         top_shap = [f[0] for f in workbench_model.shap_importance()][:20]
 
@@ -188,7 +187,7 @@ def _calculate_shap_values(workbench_model, sample=False):
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
-    from workbench.api import Model
+    from workbench.api import Model, FeatureSet
 
     # Set pandas display options
     pd.options.display.max_columns = 20
@@ -227,14 +226,16 @@ if __name__ == "__main__":
 
     # Test SHAP values data with sampling (regression)
     model = Model("abalone-regression")
+    my_sample_df = FeatureSet(model.get_input()).pull_dataframe().sample(1000)
     print("\n=== SHAP Values Data with Sampling (regression) ===")
-    shap_df_sample = shap_values_data(model, sample=True)
+    shap_df_sample = shap_values_data(model, sample_df=my_sample_df)
     print(shap_df_sample.head())
 
     # Test SHAP values data with sampling (classification)
     model = Model("wine-classification")
+    my_sample_df = FeatureSet(model.get_input()).pull_dataframe().sample(100)
     print("\n=== SHAP Values Data with Sampling (classification) ===")
-    shap_df_sample = shap_values_data(model, sample=True)
+    shap_df_sample = shap_values_data(model, sample_df=my_sample_df)
     for class_name, df in shap_df_sample.items():
         print(f"\nClass: {class_name}")
         print(df.head())
