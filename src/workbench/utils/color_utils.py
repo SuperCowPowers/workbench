@@ -56,6 +56,33 @@ def color_to_rgba(color: str) -> str:
     raise ValueError(f"Unsupported color format: {color}")
 
 
+def add_alpha_to_first_color(input_colorscale, alpha=0.5):
+    """
+    Modify the first color in a Plotly colorscale to include alpha transparency.
+
+    Args:
+        input_colorscale (list): A Plotly colorscale list of [position, color] pairs
+        alpha (float): Alpha value between 0 and 1 (default: 0.5)
+
+    Returns:
+        list: Modified colorscale with alpha transparency in first color
+    """
+    colorscale = input_colorscale.copy()
+
+    # Extract the first color
+    pos, color = colorscale[0]
+
+    # Handle both rgb and rgba cases
+    if color.startswith('rgb(') and not color.startswith('rgba('):
+        color = color.replace('rgb(', 'rgba(').replace(')', f', {alpha})')
+    elif color.startswith('rgba('):
+        # Replace existing alpha value
+        color = color.rsplit(',', 1)[0] + f', {alpha})'
+
+    colorscale[0] = [pos, color]
+    return colorscale
+
+
 def rgba_to_tuple(rgba: str) -> tuple[float, float, float, float]:
     """
     Converts an rgba(...) string to a normalized tuple of (R, G, B, A), where R, G, B are in the range [0, 1].
