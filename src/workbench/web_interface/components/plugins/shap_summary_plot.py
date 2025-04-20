@@ -118,7 +118,6 @@ class ShapSummaryPlot(PluginInterface):
                                 tickvals=[0, 1],
                                 ticktext=["Low", "High"],
                                 thickness=10,
-                                outlinewidth=0,
                             )
                             if i == 0
                             else None

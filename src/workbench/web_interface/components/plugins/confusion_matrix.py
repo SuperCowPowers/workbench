@@ -88,6 +88,7 @@ class ConfusionMatrix(PluginInterface):
                 colorbar=dict(
                     thickness=10,
                     title="Count",
+                    outlinewidth=1,
                 ),
                 colorscale=self.colorscale,
             )
@@ -95,7 +96,7 @@ class ConfusionMatrix(PluginInterface):
 
         # Apply theme-based layout updates
         fig.update_layout(
-            margin=dict(l=60, r=0, t=15, b=70),  # Custom margins
+            margin=dict(l=60, r=0, t=15, b=70, pad=5),  # Custom margins
             xaxis_title="Predicted",  # Add meaningful axis labels
             yaxis_title="Actual",
             title_font_size=14,
