@@ -782,6 +782,9 @@ class ModelCore(Artifact):
         try:
             # Okay, first we compute feature importance
             shap_importance = shap_feature_importance(self)
+
+            # Store the top 100
+            shap_importance = shap_importance[:100]
             self.param_store.upsert(f"/workbench/models/{self.uuid}/shap_importance", shap_importance)
 
             # We're going to create sample rows for our SHAP plots
