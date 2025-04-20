@@ -97,8 +97,8 @@ class ConfusionMatrix(PluginInterface):
         # Apply theme-based layout updates
         fig.update_layout(
             margin=dict(l=60, r=0, t=15, b=70, pad=5),  # Custom margins
-            xaxis_title="Predicted",  # Add meaningful axis labels
-            yaxis_title="Actual",
+            xaxis=dict(title=dict(text="Predicted", standoff=20)),
+            yaxis=dict(title=dict(text="Actual", standoff=20)),
             title_font_size=14,
         )
 
