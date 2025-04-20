@@ -141,7 +141,7 @@ class ShapSummaryPlot(PluginInterface):
         fig.update_layout(
             title="SHAP Summary Plot: Feature Impact",
             xaxis_title="SHAP Value (Impact on Model Output)",
-            margin=dict(l=10, r=10, t=50, b=50),
+            margin={"t": 50, "b": 60, "r": 0, "l": 0, "pad": 0},
             height=max(400, 50 * len(shap_features)),
             plot_bgcolor=self.theme_manager.background(),
             xaxis=dict(showgrid=False, zeroline=False),
