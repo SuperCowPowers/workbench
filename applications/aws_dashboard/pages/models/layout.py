@@ -42,7 +42,7 @@ def models_layout(
                     dbc.Col(
                         [
                             dbc.Row(model_plot, className="workbench-container",
-                                    style={"margin": "20px 0px 10px 0px"}),
+                                    style={"margin": "20px 0px 10px 0px", "height": "300px"}),
                             dbc.Row(shap_plot, style={"margin": "20px 0px 10px 0px"}),
                         ],
                         width=7,

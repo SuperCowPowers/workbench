@@ -301,15 +301,23 @@ class ScatterPlot(PluginInterface):
 
         # Set up axes.
         if self.show_axes:
-            xaxis = dict(title=x_col, tickformat=".2f")
-            yaxis = dict(title=y_col, tickformat=".2f")
+            xaxis = dict(
+                title=dict(text=x_col, font=dict(size=16), standoff=15),
+                tickformat=".2f",
+                tickfont=dict(size=10)
+            )
+            yaxis = dict(
+                title=dict(text=y_col, font=dict(size=16), standoff=25),
+                tickformat=".2f",
+                tickfont=dict(size=10)
+            )
         else:
             xaxis = dict(visible=False)
             yaxis = dict(visible=False)
 
         # Update layout.
         figure.update_layout(
-            margin={"t": 30, "b": 40, "r": 30, "l": 70, "pad": 10},
+            margin={"t": 20, "b": 55, "r": 0, "l": 35, "pad": 0},
             xaxis=xaxis,
             yaxis=yaxis,
             showlegend=showlegend,

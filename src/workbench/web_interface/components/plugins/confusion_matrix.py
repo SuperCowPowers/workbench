@@ -95,10 +95,10 @@ class ConfusionMatrix(PluginInterface):
 
         # Apply theme-based layout updates
         fig.update_layout(
-            margin=dict(l=100, r=10, t=15, b=80),  # Custom margins
-            height=360,  # Fixed height for consistent layout
+            margin=dict(l=60, r=0, t=15, b=70),  # Custom margins
             xaxis_title="Predicted",  # Add meaningful axis labels
             yaxis_title="Actual",
+            title_font_size=14,
         )
 
         # Configure x-axis
@@ -106,7 +106,7 @@ class ConfusionMatrix(PluginInterface):
             tickvals=x_labels,  # Position ticks for each label
             ticktext=df.columns,  # Display readable column names
             tickangle=30,  # Rotate labels for better readability
-            tickfont_size=14,  # Font size for tick labels
+            tickfont_size=12,  # Font size for tick labels
             automargin=True,  # Automatically manage margins
             title_standoff=10,  # Add space between axis title and labels
             title_font={"size": 18},
@@ -117,7 +117,7 @@ class ConfusionMatrix(PluginInterface):
         fig.update_yaxes(
             tickvals=y_labels,  # Position ticks for each label
             ticktext=df.index,  # Display readable row names
-            tickfont_size=14,  # Font size for tick labels
+            tickfont_size=12,  # Font size for tick labels
             automargin=True,  # Automatically manage margins
             title_standoff=10,  # Add space between axis title and labels
             title_font={"size": 18},
@@ -134,7 +134,7 @@ class ConfusionMatrix(PluginInterface):
                     y=i,  # Cell row position
                     text=text_value,  # Display the value in the cell
                     showarrow=False,  # No arrows, place directly in the cell
-                    font_size=16,  # Font size for cell values
+                    font_size=14,  # Font size for cell values
                 )
 
         # Return the updated figure wrapped in a list
