@@ -302,14 +302,10 @@ class ScatterPlot(PluginInterface):
         # Set up axes.
         if self.show_axes:
             xaxis = dict(
-                title=dict(text=x_col, font=dict(size=16), standoff=15),
-                tickformat=".2f",
-                tickfont=dict(size=10)
+                title=dict(text=x_col, font=dict(size=16), standoff=15), tickformat=".2f", tickfont=dict(size=10)
             )
             yaxis = dict(
-                title=dict(text=y_col, font=dict(size=16), standoff=25),
-                tickformat=".2f",
-                tickfont=dict(size=10)
+                title=dict(text=y_col, font=dict(size=16), standoff=25), tickformat=".2f", tickfont=dict(size=10)
             )
         else:
             xaxis = dict(visible=False)

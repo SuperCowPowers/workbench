@@ -36,13 +36,20 @@ def models_layout(
             dbc.Row(
                 [
                     # Column 1: Model Details
-                    dbc.Col(model_details, width=5, className="text-break workbench-container",
-                            style={"margin": "20px 0px 0px 0px", "padding": "20px 20px 20px 20px"}),
+                    dbc.Col(
+                        model_details,
+                        width=5,
+                        className="text-break workbench-container",
+                        style={"margin": "20px 0px 0px 0px", "padding": "20px 20px 20px 20px"},
+                    ),
                     # Column 2: Model Plot and Shap Summary
                     dbc.Col(
                         [
-                            dbc.Row(model_plot, className="workbench-container",
-                                    style={"margin": "20px 0px 10px 0px", "height": "300px"}),
+                            dbc.Row(
+                                model_plot,
+                                className="workbench-container",
+                                style={"margin": "20px 0px 10px 0px", "height": "300px"},
+                            ),
                             dbc.Row(shap_plot, style={"margin": "20px 0px 10px 0px"}),
                         ],
                         width=7,
