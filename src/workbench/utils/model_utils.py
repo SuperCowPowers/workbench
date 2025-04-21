@@ -161,6 +161,7 @@ def xgboost_model_from_s3(model_artifact_uri: str):
             os.path.join(tmpdir, "model"),
             os.path.join(tmpdir, "*.bin"),
             os.path.join(tmpdir, "**", "*model*.json"),
+            os.path.join(tmpdir, "**", "rmse.json"),
             # Pickled models
             os.path.join(tmpdir, "*.pkl"),
             os.path.join(tmpdir, "**", "*.pkl"),
