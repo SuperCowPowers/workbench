@@ -10,7 +10,7 @@ from typing import Dict, List
 from workbench.cached.cached_model import CachedModel
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.color_utils import beeswarm_offsets
+from workbench.utils.plot_utils import beeswarm_offsets
 
 
 class ShapSummaryPlot(PluginInterface):
