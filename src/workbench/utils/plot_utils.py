@@ -90,26 +90,20 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
         # Apply smoothing if requested
         if smoothing > 0:
             # Use odd window size for centered smoothing
-            window_size = smoothing if smoothing % 2 == 1 else smoothing + 1
+            smoothing = smoothing if smoothing % 2 == 1 else smoothing + 1
 
             # Apply appropriate aggregation for each percentile
             # Lower percentiles use min to avoid underestimating lower bounds
-            sorted_df["q_05"] = sorted_df["q_05"].rolling(
-                window=window_size, center=True, min_periods=1
-            ).min()
-
-            sorted_df["q_25"] = sorted_df["q_25"].rolling(
-                window=window_size, center=True, min_periods=1
-            ).min()
+            sorted_df["q_05"] = sorted_df["q_05"].rolling(window=smoothing, center=True, min_periods=1).min()
+            sorted_df["q_05"] = sorted_df["q_05"].ewm(span=smoothing, min_periods=1).mean()
+            sorted_df["q_25"] = sorted_df["q_25"].rolling(window=smoothing, center=True, min_periods=1).min()
+            sorted_df["q_25"] = sorted_df["q_25"].ewm(span=smoothing, min_periods=1).mean()
 
             # Upper percentiles use max to avoid overestimating upper bounds
-            sorted_df["q_75"] = sorted_df["q_75"].rolling(
-                window=window_size, center=True, min_periods=1
-            ).max()
-
-            sorted_df["q_95"] = sorted_df["q_95"].rolling(
-                window=window_size, center=True, min_periods=1
-            ).max()
+            sorted_df["q_75"] = sorted_df["q_75"].rolling(window=smoothing, center=True, min_periods=1).max()
+            sorted_df["q_75"] = sorted_df["q_75"].ewm(span=smoothing, min_periods=1).mean()
+            sorted_df["q_95"] = sorted_df["q_95"].rolling(window=smoothing, center=True, min_periods=1).max()
+            sorted_df["q_95"] = sorted_df["q_95"].ewm(span=smoothing, min_periods=1).mean()
 
         # Add outer band (q_05 to q_95) - more transparent
         figure.add_trace(
@@ -125,7 +119,7 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
                 x=sorted_df[x_col], y=sorted_df["q_95"],
                 mode="lines", line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
                 name="95th Percentile", hoverinfo="none",
-                fill="tonexty", fillcolor="rgba(99, 110, 250, 0.2)"  # More transparent
+                fill="tonexty", fillcolor="rgba(99, 110, 250, 0.2)"
             )
         )
 
@@ -143,7 +137,7 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
                 x=sorted_df[x_col], y=sorted_df["q_75"],
                 mode="lines", line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
                 name="75th Percentile", hoverinfo="none",
-                fill="tonexty", fillcolor="rgba(99, 110, 250, 0.3)"  # Less transparent
+                fill="tonexty", fillcolor="rgba(99, 110, 250, 0.2)"
             )
         )
 

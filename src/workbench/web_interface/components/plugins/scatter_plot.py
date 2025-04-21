@@ -7,6 +7,7 @@ from dash.exceptions import PreventUpdate
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
+from workbench.utils.plot_utils import prediction_intervals
 
 
 class ScatterPlot(PluginInterface):
@@ -304,36 +305,11 @@ class ScatterPlot(PluginInterface):
                 y1=axis_max,
             )
 
-        # Add q_05 and q_95 lines when y_col is "prediction" and columns exist
-        if y_col == "prediction" and "q_05" in df.columns and "q_95" in df.columns:
-            # Sort dataframe by x_col for connected lines
-            sorted_df = df.sort_values(by=x_col)
-
-            # Add lower bound line (q_05)
-            figure.add_trace(
-                go.Scatter(
-                    x=sorted_df[x_col],
-                    y=sorted_df["q_05"],
-                    mode="lines",
-                    line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
-                    name="5th Percentile",
-                    hoverinfo="none",
-                )
-            )
-
-            # Add upper bound line (q_75)
-            figure.add_trace(
-                go.Scatter(
-                    x=sorted_df[x_col],
-                    y=sorted_df["q_95"],
-                    mode="lines",
-                    line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
-                    name="95th Percentile",
-                    hoverinfo="none",
-                    fill="tonexty",  # Fill area between this trace and the previous trace
-                    fillcolor="rgba(99, 110, 250, 0.2)",
-                )
-            )
+        # Add prediction interval bands when y_col is "prediction"
+        if y_col == "prediction":
+            # smoothing = len(df)//50
+            smoothing = 0
+            figure = prediction_intervals(df, figure, x_col, smoothing=smoothing)
 
         # Set up axes.
         if self.show_axes:

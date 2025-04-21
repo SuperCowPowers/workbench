@@ -123,9 +123,13 @@ if __name__ == "__main__":
         params = {
             "objective": "reg:quantileerror",
             "quantile_alpha": q,
-            "n_estimators": 5000,  # Number of trees
-            "max_depth": 1,  # Limit tree depth
-            "reg_lambda": 100,  # Heavy L2 regularization
+            "n_estimators": 5000, # Number of trees
+            "max_depth": 1,       # Limit tree depth
+            "reg_lambda": 100,    # Heavy L2 regularization
+        }
+        params = {
+            "objective": "reg:quantileerror",
+            "quantile_alpha": q,
         }
         model = xgb.XGBRegressor(**params)
         model.fit(X, y)
