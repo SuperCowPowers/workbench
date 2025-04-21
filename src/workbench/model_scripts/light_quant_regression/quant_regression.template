@@ -123,6 +123,13 @@ if __name__ == "__main__":
         params = {
             "objective": "reg:quantileerror",
             "quantile_alpha": q,
+            "max_depth": 6,  # Limit tree depth
+            "learning_rate": 0.05,  # Smaller learning rate
+            "min_child_weight": 3,  # Increase for more conservative trees
+            "subsample": 0.8,  # Use subsampling
+            "colsample_bytree": 0.8,  # Column subsampling
+            "reg_alpha": 0.1,  # L1 regularization
+            "reg_lambda": 1.0,  # L2 regularization
         }
         model = xgb.XGBRegressor(**params)
         model.fit(X, y)
@@ -152,29 +159,12 @@ if __name__ == "__main__":
     result_df["mean"] = rmse_model.predict(X)
     result_df["prediction"] = result_df["mean"]
 
-    # Now compute residuals on the prediction and compute quantiles on the residuals
+    # Now compute residuals on the rmse prediction
     result_df["residual"] = result_df[target] - result_df["prediction"]
     result_df["residual_abs"] = result_df["residual"].abs()
 
-    # Change the target to the residual
-    y = result_df["residual"]
 
-    # Train models for each of the residual quantiles
-    for q in quantiles:
-        params = {
-            "objective": "reg:quantileerror",
-            "quantile_alpha": q,
-        }
-        model = xgb.XGBRegressor(**params)
-        model.fit(X, y)
-
-        # Convert quantile to string
-        q_str = f"qr_{int(q * 100):02}"
-
-        # Store the model
-        q_models[q_str] = model
-
-    # Save the target quantiles and residual quantiles to S3
+    # Save the results dataframe to S3
     wr.s3.to_csv(
         result_df,
         path=f"{model_metrics_s3_path}/validation_predictions.csv",
@@ -190,7 +180,7 @@ if __name__ == "__main__":
     print(f"R2: {r2:.3f}")
     print(f"NumRows: {len(result_df)}")
 
-    # Now save both the target quantile and residual quantiles models
+    # Now save the quantile models
     for name, model in q_models.items():
         model_path = os.path.join(args.model_dir, f"{name}.json")
         print(f"Saving model:  {model_path}")
