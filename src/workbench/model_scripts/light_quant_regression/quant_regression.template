@@ -123,13 +123,8 @@ if __name__ == "__main__":
         params = {
             "objective": "reg:quantileerror",
             "quantile_alpha": q,
-            "max_depth": 6,  # Limit tree depth
-            "learning_rate": 0.05,  # Smaller learning rate
-            "min_child_weight": 3,  # Increase for more conservative trees
-            "subsample": 0.8,  # Use subsampling
-            "colsample_bytree": 0.8,  # Column subsampling
-            "reg_alpha": 0.1,  # L1 regularization
-            "reg_lambda": 1.0,  # L2 regularization
+            "n_estimators": 1000,  # Number of trees
+            "max_depth": 1,  # Limit tree depth
         }
         model = xgb.XGBRegressor(**params)
         model.fit(X, y)
