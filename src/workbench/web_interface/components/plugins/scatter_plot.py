@@ -194,14 +194,14 @@ class ScatterPlot(PluginInterface):
         return [figure, x_options, y_options, color_options, label_options, x_default, y_default, color_default]
 
     def create_scatter_plot(
-            self,
-            df: pd.DataFrame,
-            x_col: str,
-            y_col: str,
-            color_col: str,
-            label_col: str,
-            regression_line: bool = False,
-            marker_size: int = 15,
+        self,
+        df: pd.DataFrame,
+        x_col: str,
+        y_col: str,
+        color_col: str,
+        label_col: str,
+        regression_line: bool = False,
+        marker_size: int = 15,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
@@ -317,7 +317,7 @@ class ScatterPlot(PluginInterface):
                     mode="lines",
                     line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
                     name="5th Percentile",
-                    hoverinfo="none"
+                    hoverinfo="none",
                 )
             )
 
@@ -331,7 +331,7 @@ class ScatterPlot(PluginInterface):
                     name="95th Percentile",
                     hoverinfo="none",
                     fill="tonexty",  # Fill area between this trace and the previous trace
-                    fillcolor="rgba(99, 110, 250, 0.2)"
+                    fillcolor="rgba(99, 110, 250, 0.2)",
                 )
             )
 
