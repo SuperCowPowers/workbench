@@ -1,7 +1,6 @@
 """Color Utilities for Workbench"""
 
 import re
-import numpy as np
 
 
 def is_dark(color: str) -> bool:

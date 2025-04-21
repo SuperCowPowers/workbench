@@ -108,36 +108,50 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
         # Add outer band (q_05 to q_95) - more transparent
         figure.add_trace(
             go.Scatter(
-                x=sorted_df[x_col], y=sorted_df["q_05"],
-                mode="lines", line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
-                name="5th Percentile", hoverinfo="none"
+                x=sorted_df[x_col],
+                y=sorted_df["q_05"],
+                mode="lines",
+                line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
+                name="5th Percentile",
+                hoverinfo="none",
             )
         )
 
         figure.add_trace(
             go.Scatter(
-                x=sorted_df[x_col], y=sorted_df["q_95"],
-                mode="lines", line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
-                name="95th Percentile", hoverinfo="none",
-                fill="tonexty", fillcolor="rgba(99, 110, 250, 0.2)"
+                x=sorted_df[x_col],
+                y=sorted_df["q_95"],
+                mode="lines",
+                line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
+                name="95th Percentile",
+                hoverinfo="none",
+                fill="tonexty",
+                fillcolor="rgba(99, 110, 250, 0.2)",
             )
         )
 
         # Add inner band (q_25 to q_75) - less transparent
         figure.add_trace(
             go.Scatter(
-                x=sorted_df[x_col], y=sorted_df["q_25"],
-                mode="lines", line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
-                name="25th Percentile", hoverinfo="none"
+                x=sorted_df[x_col],
+                y=sorted_df["q_25"],
+                mode="lines",
+                line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
+                name="25th Percentile",
+                hoverinfo="none",
             )
         )
 
         figure.add_trace(
             go.Scatter(
-                x=sorted_df[x_col], y=sorted_df["q_75"],
-                mode="lines", line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
-                name="75th Percentile", hoverinfo="none",
-                fill="tonexty", fillcolor="rgba(99, 110, 250, 0.2)"
+                x=sorted_df[x_col],
+                y=sorted_df["q_75"],
+                mode="lines",
+                line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
+                name="75th Percentile",
+                hoverinfo="none",
+                fill="tonexty",
+                fillcolor="rgba(99, 110, 250, 0.2)",
             )
         )
 
