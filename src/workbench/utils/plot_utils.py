@@ -86,7 +86,7 @@ def generate_heteroskedastic_data(n=1000, noise_factor=1.0, x_range=(0, 10)):
     y_base = 2 + 0.5 * x
 
     # Generate heteroskedastic noise (increasing with x)
-    noise = np.random.normal(0, noise_factor * (0.05 * x), n)
+    noise = np.random.normal(0, noise_factor * (0.1 * x), n)
 
     # Final y with increasing noise
     y = y_base + noise
