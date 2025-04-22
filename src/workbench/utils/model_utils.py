@@ -11,7 +11,7 @@ import tarfile
 import pickle
 import glob
 import awswrangler as wr
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Dict, Any
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -267,6 +267,64 @@ def feature_importance(workbench_model, importance_type: str = "weight") -> Opti
     return sorted_importances
 
 
+def get_xgboost_trees(workbench_model: "Model") -> Optional[List[Dict[str, Any]]]:
+    """
+    Extract the internal tree structure from a Workbench XGBoost model.
+
+    Args:
+        workbench_model: SageMaker Workbench model object
+
+    Returns:
+        List of tree root nodes or None if model couldn't be loaded
+    """
+    # Get the XGBoost model from the Workbench Model
+    model_artifact_uri = workbench_model.model_data_url()
+    xgb_model = xgboost_model_from_s3(model_artifact_uri)
+    if xgb_model is None:
+        log.error("No XGBoost model found in the artifact.")
+        return None
+
+    # Get the internal booster
+    booster = xgb_model.get_booster() if hasattr(xgb_model, 'get_booster') else xgb_model
+
+    # Dump the model as JSON
+    model_json = booster.get_dump(dump_format='json')
+
+    # Parse the JSON strings into Python dictionaries (root nodes)
+    tree_roots = [json.loads(tree) for tree in model_json]
+    return tree_roots
+
+
+def get_leaf_predictions(tree_root: Dict[str, Any]) -> List[Tuple[List[int], float]]:
+    """
+    Extract leaf nodes and their predictions from a tree.
+
+    Args:
+        tree_root: Root node of the tree
+
+    Returns:
+        List of tuples containing (path_to_leaf, prediction_value)
+    """
+    leaf_predictions = []
+
+    def traverse_tree(node: Dict[str, Any], path: List[int] = None):
+        if path is None:
+            path = []
+
+        # Check if it's a leaf node
+        if 'leaf' in node:
+            leaf_predictions.append((path.copy(), node['leaf']))
+        else:
+            # Navigate left child (False branch)
+            traverse_tree(node['children'][0], path + [0])
+
+            # Navigate right child (True branch)
+            traverse_tree(node['children'][1], path + [1])
+
+    traverse_tree(tree_root)
+    return leaf_predictions
+
+
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
     from workbench.api import Model
@@ -336,3 +394,15 @@ if __name__ == "__main__":
     print(features)
     model_artifact_uri = model.model_data_url()
     category_mappings = load_category_mappings_from_s3(model_artifact_uri)
+
+    # Test XGBoost internal tree structure
+    trees = get_xgboost_trees(model)
+
+    # For each tree, get the leaf predictions
+    for tree_idx, tree in enumerate(trees):
+        leaf_preds = get_leaf_predictions(tree)
+        print(f"Tree {tree_idx} has {len(leaf_preds)} leaves")
+
+        # Example: get the first leaf prediction
+        first_leaf_path, first_leaf_value = leaf_preds[0]
+        print(f"First leaf path: {first_leaf_path}, prediction: {first_leaf_value}")
