@@ -8,10 +8,8 @@ import os
 import json
 import tempfile
 import tarfile
-import pickle
-import glob
 import awswrangler as wr
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Optional
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -187,4 +185,3 @@ if __name__ == "__main__":
     # m = Model("abalone-regression")
     # prox_model = proximity_model(m, "abalone-prox")
     # print(prox_model)
-

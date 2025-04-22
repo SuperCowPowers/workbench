@@ -1,9 +1,6 @@
-"""Model Utilities for Workbench models"""
+"""XGBoost Model Utilities"""
 
 import logging
-import pandas as pd
-import importlib.resources
-from pathlib import Path
 import os
 import json
 import tempfile
@@ -91,8 +88,6 @@ def xgboost_model_from_s3(model_artifact_uri: str):
     return None
 
 
-
-
 def feature_importance(workbench_model, importance_type: str = "weight") -> Optional[List[Tuple[str, float]]]:
     """
     Get sorted feature importances from an Workbench Model object.
@@ -138,10 +133,10 @@ def get_xgboost_trees(workbench_model: Any) -> Optional[List[Dict[str, Any]]]:
         return None
 
     # Get the internal booster
-    booster = xgb_model.get_booster() if hasattr(xgb_model, 'get_booster') else xgb_model
+    booster = xgb_model.get_booster() if hasattr(xgb_model, "get_booster") else xgb_model
 
     # Dump the model as JSON
-    model_json = booster.get_dump(dump_format='json')
+    model_json = booster.get_dump(dump_format="json")
 
     # Parse the JSON strings into Python dictionaries (root nodes)
     tree_roots = [json.loads(tree) for tree in model_json]
@@ -170,17 +165,14 @@ def create_leaf_map(trees: List[Dict[str, Any]]) -> List[Dict[int, Dict[str, Any
                 path = []
                 leaf_idx = [0]  # Use a list for mutable counter
 
-            if 'leaf' in node:
+            if "leaf" in node:
                 # This is a leaf node - record its prediction and index
-                tree_leaf_map[leaf_idx[0]] = {
-                    'path': path.copy(),
-                    'prediction': node['leaf']
-                }
+                tree_leaf_map[leaf_idx[0]] = {"path": path.copy(), "prediction": node["leaf"]}
                 leaf_idx[0] += 1
             else:
                 # Navigate children
-                map_leaves(node['children'][0], path + [0], leaf_idx)
-                map_leaves(node['children'][1], path + [1], leaf_idx)
+                map_leaves(node["children"][0], path + [0], leaf_idx)
+                map_leaves(node["children"][1], path + [1], leaf_idx)
 
         map_leaves(tree)
         leaf_predictions.append(tree_leaf_map)
@@ -189,7 +181,7 @@ def create_leaf_map(trees: List[Dict[str, Any]]) -> List[Dict[int, Dict[str, Any
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
-    from workbench.api import Model, FeatureSet
+    from workbench.api import Model
 
     # Test the XGBoost model loading and feature importance
     model = Model("abalone-regression")
