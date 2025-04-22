@@ -204,12 +204,16 @@ if __name__ == "__main__":
     df = generate_heteroskedastic_data()
 
     # Quick visualization with Plotly
-    fig = px.scatter(df, x='x', y='y', opacity=0.7,
-                     title='Heteroskedastic Data for Quantile Regression',
-                     labels={'x': 'X Variable', 'y': 'Y Variable'})
+    fig = px.scatter(
+        df,
+        x="x",
+        y="y",
+        opacity=0.7,
+        title="Heteroskedastic Data for Quantile Regression",
+        labels={"x": "X Variable", "y": "Y Variable"},
+    )
 
     # Add a simple linear regression line to visualize the mean trend
-    fig.add_scatter(x=df['x'], y=2 + 0.5 * df['x'],
-                    mode='lines', name='True Mean', line=dict(color='red'))
+    fig.add_scatter(x=df["x"], y=2 + 0.5 * df["x"], mode="lines", name="True Mean", line=dict(color="red"))
 
     fig.show()

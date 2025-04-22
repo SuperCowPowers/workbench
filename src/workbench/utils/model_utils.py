@@ -285,10 +285,10 @@ def get_xgboost_trees(workbench_model: "Model") -> Optional[List[Dict[str, Any]]
         return None
 
     # Get the internal booster
-    booster = xgb_model.get_booster() if hasattr(xgb_model, 'get_booster') else xgb_model
+    booster = xgb_model.get_booster() if hasattr(xgb_model, "get_booster") else xgb_model
 
     # Dump the model as JSON
-    model_json = booster.get_dump(dump_format='json')
+    model_json = booster.get_dump(dump_format="json")
 
     # Parse the JSON strings into Python dictionaries (root nodes)
     tree_roots = [json.loads(tree) for tree in model_json]
@@ -312,14 +312,14 @@ def get_leaf_predictions(tree_root: Dict[str, Any]) -> List[Tuple[List[int], flo
             path = []
 
         # Check if it's a leaf node
-        if 'leaf' in node:
-            leaf_predictions.append((path.copy(), node['leaf']))
+        if "leaf" in node:
+            leaf_predictions.append((path.copy(), node["leaf"]))
         else:
             # Navigate left child (False branch)
-            traverse_tree(node['children'][0], path + [0])
+            traverse_tree(node["children"][0], path + [0])
 
             # Navigate right child (True branch)
-            traverse_tree(node['children'][1], path + [1])
+            traverse_tree(node["children"][1], path + [1])
 
     traverse_tree(tree_root)
     return leaf_predictions
