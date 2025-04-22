@@ -1,6 +1,7 @@
 """Plot Utilities for Workbench"""
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 
 
@@ -59,6 +60,38 @@ def beeswarm_offsets(values, point_size=0.05, precision=2, max_offset=0.3):
                 occupied.append(offset)
 
     return offsets
+
+
+def generate_heteroskedastic_data(n=1000, noise_factor=1.0, x_range=(0, 10)):
+    """
+    Generate data with heteroskedastic errors (increasing variance).
+
+    Parameters:
+    -----------
+    n : int
+        Number of data points
+    noise_factor : float
+        Controls the amount of noise (higher = more noise)
+    x_range : tuple
+        Range of x values (min, max)
+
+    Returns:
+    --------
+    pd.DataFrame with columns 'x' and 'y'
+    """
+    # Generate x values
+    x = np.linspace(x_range[0], x_range[1], n)
+
+    # Base function (linear)
+    y_base = 2 + 0.5 * x
+
+    # Generate heteroskedastic noise (increasing with x)
+    noise = np.random.normal(0, noise_factor * (0.05 * x), n)
+
+    # Final y with increasing noise
+    y = y_base + noise
+
+    return pd.DataFrame({"id": range(n), "x": x, "y": y})
 
 
 def prediction_intervals(df, figure, x_col, smoothing=0):
@@ -160,8 +193,23 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
 
 if __name__ == "__main__":
     """Exercise the Plot Utilities"""
+    import plotly.express as px
 
     # Test the beeswarm offsets function
     values = np.array([1, 1.01, 1.02, 2.02, 2.04, 3, 4, 5, 5.01, 5.02, 5.03, 5.04, 5.05, 6])
     jittered_values = beeswarm_offsets(values, precision=1)
     print("Jittered values:", jittered_values)
+
+    # Generate noisey data
+    df = generate_heteroskedastic_data()
+
+    # Quick visualization with Plotly
+    fig = px.scatter(df, x='x', y='y', opacity=0.7,
+                     title='Heteroskedastic Data for Quantile Regression',
+                     labels={'x': 'X Variable', 'y': 'Y Variable'})
+
+    # Add a simple linear regression line to visualize the mean trend
+    fig.add_scatter(x=df['x'], y=2 + 0.5 * df['x'],
+                    mode='lines', name='True Mean', line=dict(color='red'))
+
+    fig.show()
