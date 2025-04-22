@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # Create the Test Quantile Regression FeatureSet
     if recreate or not FeatureSet("test_quantile").exists():
         # Generate a synthetic dataset with heteroskedasticity
-        df = generate_heteroskedastic_data(n=10000)
+        df = generate_heteroskedastic_data(n=1000)
         to_features = PandasToFeatures("test_quantile")
         to_features.set_output_tags(["test", "quantiles"])
         to_features.set_input(df, id_column="id")
