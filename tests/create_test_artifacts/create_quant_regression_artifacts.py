@@ -1,17 +1,22 @@
 """This Script creates the Abalone and AQSol Quantile Regression Artifacts in AWS/Workbench
 
+FeatureSets:
+    - test-quantile
 Models:
-    - abalone-quantile-reg
-    - aqsol-quantile-reg
+    - test-quantile
+    - abalone-quantile
+    - aqsol-quantile
 Endpoints:
-    - abalone-qr-end
-    - aqsol-qr-end
+    - test-quantile
+    - abalone-quantile
+    - aqsol-quantile
 """
 
 import logging
-from workbench.api.feature_set import FeatureSet
-from workbench.api.model import Model, ModelType
-from workbench.api.endpoint import Endpoint
+
+from workbench.api import FeatureSet, Model, ModelType, Endpoint
+from workbench.core.transforms.pandas_transforms import PandasToFeatures
+from workbench.utils.plot_utils import generate_heteroskedastic_data
 
 log = logging.getLogger("workbench")
 
@@ -20,6 +25,35 @@ if __name__ == "__main__":
 
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False
+
+    # Create the Test Quantile Regression FeatureSet
+    if recreate or not FeatureSet("test_quantile").exists():
+        # Generate a synthetic dataset with heteroskedasticity
+        df = generate_heteroskedastic_data()
+        to_features = PandasToFeatures("test_quantile")
+        to_features.set_output_tags(["test", "quantiles"])
+        to_features.set_input(df, id_column="id")
+        to_features.transform()
+
+    # Create the Test Quantile Regression Model
+    if recreate or not Model("test-quantile").exists():
+        # Transform FeatureSet into Quantile Regression Model
+        feature_set = FeatureSet("test_quantile")
+        feature_set.to_model(
+            name="test-quantile",
+            model_type=ModelType.QUANTILE_REGRESSOR,
+            target_column="y",
+            description="Test Quantile Regression",
+            tags=["test", "quantiles"],
+        )
+
+    # Create the Test Quantile Regression Endpoint
+    if recreate or not Endpoint("test-quantile").exists():
+        m = Model("test-quantile")
+        end = m.to_endpoint(tags=["test", "quantiles"])
+
+        # Run auto-inference on the Test Quantile Regression Endpoint
+        end.auto_inference(capture=True)
 
     # Create the Abalone Quantile Regression Model
     if recreate or not Model("abalone-quantile").exists():
