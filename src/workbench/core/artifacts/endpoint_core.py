@@ -378,7 +378,7 @@ class EndpointCore(Artifact):
 
         # Compute the standard performance metrics for this model
         model_type = model.model_type
-        if model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
+        if model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
             prediction_df = self.residuals(target_column, prediction_df)
             metrics = self.regression_metrics(target_column, prediction_df)
         elif model_type == ModelType.CLASSIFIER:

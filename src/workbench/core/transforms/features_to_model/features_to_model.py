@@ -172,7 +172,7 @@ class FeaturesToModel(Transform):
             script_path = generate_model_script(template_params)
 
         # Metric Definitions for Regression
-        if self.model_type == ModelType.REGRESSOR or self.model_type == ModelType.QUANTILE_REGRESSOR:
+        if self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
             metric_definitions = [
                 {"Name": "RMSE", "Regex": "RMSE: ([0-9.]+)"},
                 {"Name": "MAE", "Regex": "MAE: ([0-9.]+)"},

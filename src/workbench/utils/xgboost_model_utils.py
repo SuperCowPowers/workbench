@@ -7,8 +7,10 @@ import tempfile
 import tarfile
 import pickle
 import glob
+import numpy as np
 import awswrangler as wr
 from typing import Optional, List, Tuple, Dict, Any
+import xgboost as xgb
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -26,7 +28,6 @@ def xgboost_model_from_s3(model_artifact_uri: str):
     Returns:
         Loaded XGBoost model or None if unavailable.
     """
-    import xgboost as xgb
 
     with tempfile.TemporaryDirectory() as tmpdir:
         # Download model artifact
@@ -125,7 +126,6 @@ def get_xgboost_trees(workbench_model: Any) -> Optional[List[Dict[str, Any]]]:
     Returns:
         List of tree root nodes or None if model couldn't be loaded
     """
-    # Get the XGBoost model from the Workbench Model
     model_artifact_uri = workbench_model.model_data_url()
     xgb_model = xgboost_model_from_s3(model_artifact_uri)
     if xgb_model is None:
@@ -154,7 +154,7 @@ def create_leaf_map(trees: List[Dict[str, Any]]) -> List[Dict[int, Dict[str, Any
     Returns:
         List of dictionaries mapping leaf indices to prediction data for each tree
     """
-    leaf_predictions = []
+    leaf_maps = []
 
     for tree in trees:
         # Get leaf mapping for this tree
@@ -167,7 +167,11 @@ def create_leaf_map(trees: List[Dict[str, Any]]) -> List[Dict[int, Dict[str, Any
 
             if "leaf" in node:
                 # This is a leaf node - record its prediction and index
-                tree_leaf_map[leaf_idx[0]] = {"path": path.copy(), "prediction": node["leaf"]}
+                tree_leaf_map[leaf_idx[0]] = {
+                    "path": path.copy(),
+                    "prediction": node["leaf"],
+                    "sample_targets": [],  # Will store target values of samples in this leaf
+                }
                 leaf_idx[0] += 1
             else:
                 # Navigate children
@@ -175,8 +179,76 @@ def create_leaf_map(trees: List[Dict[str, Any]]) -> List[Dict[int, Dict[str, Any
                 map_leaves(node["children"][1], path + [1], leaf_idx)
 
         map_leaves(tree)
-        leaf_predictions.append(tree_leaf_map)
-    return leaf_predictions
+        leaf_maps.append(tree_leaf_map)
+
+    return leaf_maps
+
+
+def compute_regression_confidence(
+    X_train: np.ndarray, y_train: np.ndarray, xgb_model: xgb.Booster, X_test: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Compute confidence scores for regression predictions based on leaf node variance.
+
+    Args:
+        X_train: Training features
+        y_train: Training target values
+        xgb_model: Trained XGBoost model
+        X_test: Test features to predict
+
+    Returns:
+        Tuple of (predictions, confidence_scores)
+    """
+    # Get tree structure
+    booster = xgb_model.get_booster() if hasattr(xgb_model, "get_booster") else xgb_model
+    model_json = booster.get_dump(dump_format="json")
+    trees = [json.loads(tree) for tree in model_json]
+
+    # Create leaf mapping
+    leaf_maps = create_leaf_map(trees)
+
+    # Find which training samples fall into which leaf nodes
+    train_leaf_indices = booster.predict(xgb.DMatrix(X_train), pred_leaf=True)
+
+    # Store target values in each leaf node
+    for i, sample_leaves in enumerate(train_leaf_indices):
+        for tree_idx, leaf_idx in enumerate(sample_leaves):
+            leaf_maps[tree_idx][leaf_idx]["sample_targets"].append(y_train[i])
+
+    # Calculate statistics for each leaf node
+    for tree_map in leaf_maps:
+        for leaf_data in tree_map.values():
+            targets = leaf_data["sample_targets"]
+            if targets:
+                leaf_data["target_mean"] = np.mean(targets)
+                leaf_data["target_std"] = np.std(targets)
+                leaf_data["target_count"] = len(targets)
+            else:
+                # Handle empty leaves
+                leaf_data["target_mean"] = 0
+                leaf_data["target_std"] = float("inf")
+                leaf_data["target_count"] = 0
+
+    # Predict for test data
+    test_preds = booster.predict(xgb.DMatrix(X_test))
+    test_leaf_indices = booster.predict(xgb.DMatrix(X_test), pred_leaf=True)
+
+    # Calculate confidence scores (inverse of weighted standard deviation)
+    confidence_scores = np.zeros(len(X_test))
+    for i, sample_leaves in enumerate(test_leaf_indices):
+        leaf_stds = []
+        leaf_counts = []
+
+        for tree_idx, leaf_idx in enumerate(sample_leaves):
+            leaf_data = leaf_maps[tree_idx][leaf_idx]
+            leaf_stds.append(leaf_data["target_std"])
+            leaf_counts.append(leaf_data["target_count"])
+
+        # Weight by sample count and invert (higher values = more confidence)
+        weighted_std = np.average(leaf_stds, weights=leaf_counts) if np.sum(leaf_counts) > 0 else float("inf")
+        confidence_scores[i] = 1.0 / (weighted_std + 1e-6)  # Add small constant to avoid division by zero
+
+    return test_preds, confidence_scores
 
 
 if __name__ == "__main__":

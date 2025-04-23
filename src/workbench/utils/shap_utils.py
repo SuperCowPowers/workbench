@@ -6,7 +6,8 @@ import numpy as np
 from typing import Optional, List, Tuple, Dict, Union
 
 # Workbench Imports
-from workbench.utils.model_utils import xgboost_model_from_s3, load_category_mappings_from_s3
+from workbench.utils.xgboost_model_utils import xgboost_model_from_s3
+from workbench.utils.model_utils import load_category_mappings_from_s3
 from workbench.utils.pandas_utils import convert_categorical_types
 
 # Set up the log

@@ -33,6 +33,7 @@ class ModelType(Enum):
     PROJECTION = "projection"
     UNSUPERVISED = "unsupervised"
     QUANTILE_REGRESSOR = "quantile_regressor"
+    ENSEMBLE_REGRESSOR = "ensemble_regressor"
     DETECTOR = "detector"
     UNKNOWN = "unknown"
 
@@ -184,7 +185,12 @@ class ModelCore(Artifact):
             self.remove_health_tag("model_type_unknown")
 
         # Model Performance Metrics
-        needs_metrics = self.model_type in {ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR, ModelType.CLASSIFIER}
+        needs_metrics = self.model_type in {
+            ModelType.REGRESSOR,
+            ModelType.QUANTILE_REGRESSOR,
+            ModelType.ENSEMBLE_REGRESSOR,
+            ModelType.CLASSIFIER,
+        }
         if needs_metrics and self.get_inference_metrics() is None:
             health_issues.append("metrics_needed")
         else:
@@ -563,7 +569,7 @@ class ModelCore(Artifact):
         if self.model_type == ModelType.CLASSIFIER:
             details["confusion_matrix"] = self.confusion_matrix()
             details["predictions"] = None
-        elif self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
+        elif self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
             details["confusion_matrix"] = None
             details["predictions"] = self.get_inference_predictions()
         else:
@@ -610,6 +616,8 @@ class ModelCore(Artifact):
             self._set_model_type(ModelType.REGRESSOR)
         elif model_type == "quantile_regressor":
             self._set_model_type(ModelType.QUANTILE_REGRESSOR)
+        elif model_type == "ensemble_regressor":
+            self._set_model_type(ModelType.ENSEMBLE_REGRESSOR)
         elif model_type == "unsupervised":
             self._set_model_type(ModelType.UNSUPERVISED)
         elif model_type == "transformer":
@@ -949,7 +957,7 @@ class ModelCore(Artifact):
                 self.log.important(f"No training job metrics found for {self.training_job_name}")
                 self.upsert_workbench_meta({"workbench_training_metrics": None, "workbench_training_cm": None})
                 return
-            if self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
+            if self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
                 if "timestamp" in df.columns:
                     df = df.drop(columns=["timestamp"])
 
@@ -1043,7 +1051,12 @@ class ModelCore(Artifact):
         self.log.important(f"Grabbing {capture_uuid} predictions for {self.model_name}...")
 
         # Sanity check that the model should have predictions
-        has_predictions = self.model_type in [ModelType.CLASSIFIER, ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]
+        has_predictions = self.model_type in [
+            ModelType.CLASSIFIER,
+            ModelType.REGRESSOR,
+            ModelType.QUANTILE_REGRESSOR,
+            ModelType.ENSEMBLE_REGRESSOR,
+        ]
         if not has_predictions:
             self.log.warning(f"No Predictions for {self.model_name}...")
             return None

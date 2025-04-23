@@ -109,6 +109,9 @@ def generate_model_script(template_params: dict) -> str:
     elif template_params["model_type"] == ModelType.QUANTILE_REGRESSOR:
         template_name = "quant_regression.template"
         model_script_dir = "light_quant_regression"
+    elif template_params["model_type"] == ModelType.ENSEMBLE_REGRESSOR:
+        template_name = "ensemble_xgb.template"
+        model_script_dir = "ensemble_xgb"
     else:
         msg = f"ModelType: {template_params['model_type']} needs to set custom_script argument"
         log.critical(msg)
