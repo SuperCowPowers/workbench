@@ -2,15 +2,19 @@
 
 import logging
 import os
-import json
 import tempfile
 import tarfile
 import pickle
 import glob
-import numpy as np
+import pandas as pd
 import awswrangler as wr
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Optional, List, Tuple, Any
 import xgboost as xgb
+import hashlib
+
+# Workbench Imports
+from workbench.utils.model_utils import load_category_mappings_from_s3
+from workbench.utils.pandas_utils import convert_categorical_types
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -116,144 +120,63 @@ def feature_importance(workbench_model, importance_type: str = "weight") -> Opti
     return sorted_importances
 
 
-def get_xgboost_trees(workbench_model: Any) -> Optional[List[Dict[str, Any]]]:
+def _leaf_index_hash(indices):
+    # Internal: Convert leaf index array to string and hash it
+    leaf_str = '-'.join(map(str, indices))
+    hash_obj = hashlib.md5(leaf_str.encode())
+    return hash_obj.hexdigest()[:10]
+
+
+def add_leaf_hash(workbench_model: Any, inference_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Extract the internal tree structure from a Workbench XGBoost model.
+    Add a 'leaf_hash' column to the dataframe representing the unique path
+    through all trees in the XGBoost model.
 
     Args:
         workbench_model: SageMaker Workbench model object
+        inference_df: DataFrame with features to run through the model
 
     Returns:
-        List of tree root nodes or None if model couldn't be loaded
+        DataFrame with added 'leaf_hash' column
     """
+    # Extract the model
     model_artifact_uri = workbench_model.model_data_url()
     xgb_model = xgboost_model_from_s3(model_artifact_uri)
     if xgb_model is None:
-        log.error("No XGBoost model found in the artifact.")
-        return None
+        raise ValueError("No XGBoost model found in the artifact.")
+
+    # Load category mappings if available
+    category_mappings = load_category_mappings_from_s3(model_artifact_uri)
+
+    # Get the features from the model and set up our XGBoost DMatrix
+    features = workbench_model.features()
+    X = inference_df[features]
+
+    # Apply categorical conversions if mappings exist
+    if category_mappings:
+        log.info("Category mappings found. Applying categorical conversions.")
+        X = convert_categorical_types(X, category_mappings)
 
     # Get the internal booster
     booster = xgb_model.get_booster() if hasattr(xgb_model, "get_booster") else xgb_model
 
-    # Dump the model as JSON
-    model_json = booster.get_dump(dump_format="json")
+    # Create DMatrix with categorical features always enabled
+    dmatrix = xgb.DMatrix(X, enable_categorical=True)
 
-    # Parse the JSON strings into Python dictionaries (root nodes)
-    tree_roots = [json.loads(tree) for tree in model_json]
+    # Get leaf indices for each sample across all trees
+    leaf_indices = booster.predict(dmatrix, pred_leaf=True)
+    leaf_hashes = [_leaf_index_hash(row) for row in leaf_indices]
 
-    return tree_roots
+    # Add the leaf hashes to the dataframe
+    result_df = inference_df.copy()
+    result_df['leaf_hash'] = leaf_hashes
 
-
-def create_leaf_map(trees: List[Dict[str, Any]]) -> List[Dict[int, Dict[str, Any]]]:
-    """
-    Create a mapping of leaf indices to predictions and paths for each tree.
-
-    Args:
-        trees: List of tree root nodes from XGBoost model
-
-    Returns:
-        List of dictionaries mapping leaf indices to prediction data for each tree
-    """
-    leaf_maps = []
-
-    for tree in trees:
-        # Get leaf mapping for this tree
-        tree_leaf_map = {}
-
-        def map_leaves(node, path=None, leaf_idx=None):
-            if path is None:
-                path = []
-                leaf_idx = [0]  # Use a list for mutable counter
-
-            if "leaf" in node:
-                # This is a leaf node - record its prediction and index
-                tree_leaf_map[leaf_idx[0]] = {
-                    "path": path.copy(),
-                    "prediction": node["leaf"],
-                    "sample_targets": [],  # Will store target values of samples in this leaf
-                }
-                leaf_idx[0] += 1
-            else:
-                # Navigate children
-                map_leaves(node["children"][0], path + [0], leaf_idx)
-                map_leaves(node["children"][1], path + [1], leaf_idx)
-
-        map_leaves(tree)
-        leaf_maps.append(tree_leaf_map)
-
-    return leaf_maps
-
-
-def compute_regression_confidence(
-    X_train: np.ndarray, y_train: np.ndarray, xgb_model: xgb.Booster, X_test: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Compute confidence scores for regression predictions based on leaf node variance.
-
-    Args:
-        X_train: Training features
-        y_train: Training target values
-        xgb_model: Trained XGBoost model
-        X_test: Test features to predict
-
-    Returns:
-        Tuple of (predictions, confidence_scores)
-    """
-    # Get tree structure
-    booster = xgb_model.get_booster() if hasattr(xgb_model, "get_booster") else xgb_model
-    model_json = booster.get_dump(dump_format="json")
-    trees = [json.loads(tree) for tree in model_json]
-
-    # Create leaf mapping
-    leaf_maps = create_leaf_map(trees)
-
-    # Find which training samples fall into which leaf nodes
-    train_leaf_indices = booster.predict(xgb.DMatrix(X_train), pred_leaf=True)
-
-    # Store target values in each leaf node
-    for i, sample_leaves in enumerate(train_leaf_indices):
-        for tree_idx, leaf_idx in enumerate(sample_leaves):
-            leaf_maps[tree_idx][leaf_idx]["sample_targets"].append(y_train[i])
-
-    # Calculate statistics for each leaf node
-    for tree_map in leaf_maps:
-        for leaf_data in tree_map.values():
-            targets = leaf_data["sample_targets"]
-            if targets:
-                leaf_data["target_mean"] = np.mean(targets)
-                leaf_data["target_std"] = np.std(targets)
-                leaf_data["target_count"] = len(targets)
-            else:
-                # Handle empty leaves
-                leaf_data["target_mean"] = 0
-                leaf_data["target_std"] = float("inf")
-                leaf_data["target_count"] = 0
-
-    # Predict for test data
-    test_preds = booster.predict(xgb.DMatrix(X_test))
-    test_leaf_indices = booster.predict(xgb.DMatrix(X_test), pred_leaf=True)
-
-    # Calculate confidence scores (inverse of weighted standard deviation)
-    confidence_scores = np.zeros(len(X_test))
-    for i, sample_leaves in enumerate(test_leaf_indices):
-        leaf_stds = []
-        leaf_counts = []
-
-        for tree_idx, leaf_idx in enumerate(sample_leaves):
-            leaf_data = leaf_maps[tree_idx][leaf_idx]
-            leaf_stds.append(leaf_data["target_std"])
-            leaf_counts.append(leaf_data["target_count"])
-
-        # Weight by sample count and invert (higher values = more confidence)
-        weighted_std = np.average(leaf_stds, weights=leaf_counts) if np.sum(leaf_counts) > 0 else float("inf")
-        confidence_scores[i] = 1.0 / (weighted_std + 1e-6)  # Add small constant to avoid division by zero
-
-    return test_preds, confidence_scores
+    return result_df
 
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
-    from workbench.api import Model
+    from workbench.api import Model, FeatureSet
 
     # Test the XGBoost model loading and feature importance
     model = Model("abalone-regression")
@@ -261,13 +184,14 @@ if __name__ == "__main__":
     print("Feature Importance:")
     print(features)
 
-    # Test XGBoost internal tree structure
-    trees = get_xgboost_trees(model)
+    # Test XGBoost add_leaf_hash
+    input_df = FeatureSet(model.get_input()).pull_dataframe()
+    output_df = add_leaf_hash(model, input_df[:10])
+    print("DataFrame with Leaf Hash:")
+    print(output_df)
 
-    # Test creating leaf map
-    leaf_map = create_leaf_map(trees)
-    print("Leaf Map:")
-    print(leaf_map)
-
-    # Test the prediction for one sample
-    # df = FeatureSet("abalone-regression").pull_dataframe(limit=1)
+    # Okay, we're going to copy row 3 and insert it into row 7 to make sure the leaf_hash is the same
+    input_df.iloc[7] = input_df.iloc[3]
+    print("DataFrame with Leaf Hash (3 and 7 should match):")
+    output_df = add_leaf_hash(model, input_df[:10])
+    print(output_df)
