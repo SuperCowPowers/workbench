@@ -127,8 +127,8 @@ if __name__ == "__main__":
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
         print(f"Training Model {model_name} with {len(X_train)} rows")
         params = {"objective": "reg:squarederror"}
-        rmse_model = xgb.XGBRegressor(**params)
-        rmse_model.fit(X_train, y_train)
+        model = xgb.XGBRegressor(**params)
+        model.fit(X_train, y_train)
 
         # Store the model
         models[model_name] = model
@@ -181,7 +181,7 @@ if __name__ == "__main__":
     # Save the full model
     model_path = os.path.join(args.model_dir, "model.json")
     print(f"Saving model:  {model_path}")
-    rmse_model.save_model(model_path)
+    full_model.save_model(model_path)
 
     # Also save the features (this will validate input during predictions)
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
@@ -280,6 +280,12 @@ def predict_fn(df, models) -> pd.DataFrame:
             df["prediction"] = model.predict(matched_df[model_features])
         else:
             df[name] = model.predict(matched_df[model_features])
+
+    # Compute the mean, min, max and stddev of the predictions
+    df["p_mean"] = df[[name for name in df.columns if name.startswith("m_")]].mean(axis=1)
+    df["p_min"] = df[[name for name in df.columns if name.startswith("m_")]].min(axis=1)
+    df["p_max"] = df[[name for name in df.columns if name.startswith("m_")]].max(axis=1)
+    df["p_stddev"] = df[[name for name in df.columns if name.startswith("m_")]].std(axis=1)
 
     # Reorganize the columns so they are in alphabetical order
     df = df.reindex(sorted(df.columns), axis=1)
