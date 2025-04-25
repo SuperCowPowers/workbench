@@ -122,7 +122,7 @@ def feature_importance(workbench_model, importance_type: str = "weight") -> Opti
 
 def _leaf_index_hash(indices):
     # Internal: Convert leaf index array to string and hash it
-    leaf_str = '-'.join(map(str, indices))
+    leaf_str = "-".join(map(str, indices))
     hash_obj = hashlib.md5(leaf_str.encode())
     return hash_obj.hexdigest()[:10]
 
@@ -169,7 +169,7 @@ def add_leaf_hash(workbench_model: Any, inference_df: pd.DataFrame) -> pd.DataFr
 
     # Add the leaf hashes to the dataframe
     result_df = inference_df.copy()
-    result_df['leaf_hash'] = leaf_hashes
+    result_df["leaf_hash"] = leaf_hashes
 
     return result_df
 
