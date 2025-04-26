@@ -96,7 +96,7 @@ if __name__ == "__main__":
     # Create the aqsol regression Endpoint
     if recreate or not Endpoint("aqsol-regression").exists():
         m = Model("aqsol-regression")
-        m.to_endpoint(name="aqsol-regression", tags=["aqsol", "regression"])
+        m.to_endpoint(tags=["aqsol", "regression"])
 
     #
     # Molecular Descriptor Artifacts
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     # Create the Molecular Descriptor Regression Endpoint
     if recreate or not Endpoint("aqsol-mol-regression").exists():
         m = Model("aqsol-mol-regression")
-        end = m.to_endpoint(name="aqsol-mol-regression", tags=["aqsol", "mol", "regression"])
+        end = m.to_endpoint(tags=["aqsol", "mol", "regression"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     # Create the Molecular Descriptor Classification Endpoint
     if recreate or not Endpoint("aqsol-mol-class").exists():
         m = Model("aqsol-mol-class")
-        end = m.to_endpoint(name="aqsol-mol-class", tags=["aqsol", "mol", "classification"])
+        end = m.to_endpoint(tags=["aqsol", "mol", "classification"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     # Endpoints for our Transformer/Custom Models
     if recreate or not Endpoint("smiles-to-md-v0").exists():
         m = Model("smiles-to-md-v0")
-        end = m.to_endpoint(name="smiles-to-md-v0", tags=["smiles", "molecular descriptors"])
+        end = m.to_endpoint(tags=["smiles", "molecular descriptors"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
@@ -237,7 +237,7 @@ if __name__ == "__main__":
 
     if recreate or not Endpoint("tautomerize-v0").exists():
         m = Model("tautomerize-v0")
-        end = m.to_endpoint(name="tautomerize-v0", tags=["smiles", "tautomerization"])
+        end = m.to_endpoint(tags=["smiles", "tautomerization"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
