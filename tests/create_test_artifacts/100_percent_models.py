@@ -8,12 +8,8 @@ Endpoints:
     - aqsol-regression-100
 """
 
-import sys
 import logging
-import pandas as pd
-from pathlib import Path
-from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
-from workbench.utils.test_data_generator import TestDataGenerator
+from workbench.api import FeatureSet, Model, ModelType, Endpoint
 
 # Setup the logger
 log = logging.getLogger("workbench")
