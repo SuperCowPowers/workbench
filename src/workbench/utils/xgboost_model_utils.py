@@ -174,6 +174,41 @@ def add_leaf_hash(workbench_model: Any, inference_df: pd.DataFrame) -> pd.DataFr
     return result_df
 
 
+def leaf_stats(df: pd.DataFrame, target_col: str) -> pd.DataFrame:
+    """
+    Add leaf statistics to the dataframe based on leaf_hash grouping.
+
+    Args:
+        df: DataFrame with 'leaf_hash' column and target column
+        target_col: Name of the target column to compute statistics on
+
+    Returns:
+        Original DataFrame with added leaf statistic columns
+    """
+    if 'leaf_hash' not in df.columns:
+        raise ValueError("DataFrame must contain 'leaf_hash' column")
+
+    if target_col not in df.columns:
+        raise ValueError(f"Target column '{target_col}' not found in DataFrame")
+
+    # Group by leaf_hash and compute statistics with shorter syntax
+    stats = df.groupby('leaf_hash')[target_col].agg(
+        leaf_size='count',
+        leaf_min='min',
+        leaf_max='max',
+        leaf_mean='mean',
+        leaf_stddev='std'
+    ).reset_index()
+
+    # Replace NaN values in stddev with 0 (occurs when leaf_size=1)
+    stats['leaf_stddev'] = stats['leaf_stddev'].fillna(0)
+
+    # Merge statistics back to original dataframe
+    result_df = df.merge(stats, on='leaf_hash', how='left')
+
+    return result_df
+
+
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
     from workbench.api import Model, FeatureSet
@@ -186,12 +221,18 @@ if __name__ == "__main__":
 
     # Test XGBoost add_leaf_hash
     input_df = FeatureSet(model.get_input()).pull_dataframe()
-    output_df = add_leaf_hash(model, input_df[:10])
+    leaf_df = add_leaf_hash(model, input_df)
     print("DataFrame with Leaf Hash:")
-    print(output_df)
+    print(leaf_df)
 
     # Okay, we're going to copy row 3 and insert it into row 7 to make sure the leaf_hash is the same
     input_df.iloc[7] = input_df.iloc[3]
     print("DataFrame with Leaf Hash (3 and 7 should match):")
-    output_df = add_leaf_hash(model, input_df[:10])
-    print(output_df)
+    leaf_df = add_leaf_hash(model, input_df)
+    print(leaf_df)
+
+    # Test leaf_stats
+    target_col = "class_number_of_rings"
+    stats_df = leaf_stats(leaf_df, target_col)
+    print("DataFrame with Leaf Statistics:")
+    print(stats_df)
