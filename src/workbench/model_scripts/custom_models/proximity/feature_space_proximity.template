@@ -81,7 +81,7 @@ if __name__ == "__main__":
     check_dataframe(all_df, "training_df")
 
     # Create the Proximity model
-    model = Proximity(all_df, id_column, features, target, n_neighbors=5)
+    model = Proximity(all_df, id_column, features, target, n_neighbors=10)
 
     # Now serialize the model
     model.serialize(args.model_dir)
