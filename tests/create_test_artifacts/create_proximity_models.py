@@ -23,11 +23,20 @@ if __name__ == "__main__":
     recreate = False
 
     # A Proximity Model based on Abalone Features
+    # FIXME: We need to support categorical features for Proximity Models
+    """
     if recreate or not Model("abalone-prox").exists():
 
         # Create the Proximity Model from our Model
         model = Model("abalone-regression")
         model.prox_model("abalone-prox")
+        
+    if recreate or not Endpoint("abalone-prox").exists():
+        m = Model("abalone-prox")
+        m.set_owner("BW")
+        end = m.to_endpoint(tags=["proximity", "abalone"])
+        end.auto_inference(capture=True)
+    """
 
     # Create the Proximity Model based on AQSol Features
     if recreate or not Model("aqsol-prox").exists():
@@ -35,13 +44,6 @@ if __name__ == "__main__":
         # Create the Proximity Model from our Model
         model = Model("aqsol-regression")
         model.prox_model("aqsol-prox")
-
-    # Endpoints for our Proximity Models
-    if recreate or not Endpoint("abalone-prox").exists():
-        m = Model("abalone-prox")
-        m.set_owner("BW")
-        end = m.to_endpoint(tags=["proximity", "abalone"])
-        end.auto_inference(capture=True)
 
     if recreate or not Endpoint("aqsol-prox").exists():
         m = Model("aqsol-prox")
