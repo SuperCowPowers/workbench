@@ -30,7 +30,7 @@ if __name__ == "__main__":
         # Create the Proximity Model from our Model
         model = Model("abalone-regression")
         model.prox_model("abalone-prox")
-        
+
     if recreate or not Endpoint("abalone-prox").exists():
         m = Model("abalone-prox")
         m.set_owner("BW")
