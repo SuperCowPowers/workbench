@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
         # Create the Proximity Model from our Model
         model = Model("aqsol-regression")
-        model.prox_model("aqsol-prox")
+        model.prox_model("aqsol-prox", track_columns=["solubility_class"])
 
     if recreate or not Endpoint("aqsol-prox").exists():
         m = Model("aqsol-prox")
