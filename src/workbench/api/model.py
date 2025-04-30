@@ -69,18 +69,19 @@ class Model(ModelCore):
         end.set_owner(self.get_owner())
         return end
 
-    def prox_model(self, prox_model_name: str = None) -> "Model":
+    def prox_model(self, prox_model_name: str = None, track_columns: list = None) -> "Model":
         """Create a Proximity Model for this Model
 
         Args:
-            prox_model_name (str, optional): Name of the Proximity Model.
+            prox_model_name (str, optional): Name of the Proximity Model (if not specified, a name will be generated)
+            track_columns (list, optional): List of columns to track in the Proximity Model.
 
         Returns:
             Model: The Proximity Model
         """
         if prox_model_name is None:
             prox_model_name = self.model_name + "-prox"
-        return proximity_model(self, prox_model_name)
+        return proximity_model(self, prox_model_name, track_columns=track_columns)
 
 
 if __name__ == "__main__":
