@@ -203,6 +203,7 @@ class Proximity:
             "id_column": self.id_column,
             "features": self.features,
             "target": self.target,
+            "track_columns": self.track_columns,
             "n_neighbors": self.n_neighbors,
         }
 
@@ -252,6 +253,7 @@ class Proximity:
         instance.id_column = metadata["id_column"]
         instance.features = metadata["features"]
         instance.target = metadata["target"]
+        instance.track_columns = metadata["track_columns"]
         instance.n_neighbors = metadata["n_neighbors"]
 
         # Load scaler and nn model
