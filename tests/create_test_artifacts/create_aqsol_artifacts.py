@@ -104,7 +104,7 @@ if __name__ == "__main__":
     # Create the rdkit FeatureSet (this is an example of using lower level classes)
     if recreate or not FeatureSet("aqsol_mol_descriptors").exists():
         df = DataSource("aqsol_data").pull_dataframe()
-        end = Endpoint("smiles-to-md-v0")
+        end = Endpoint("smiles-to-md-stereo")
         mol_df = end.inference(df)
         to_features = PandasToFeatures("aqsol_mol_descriptors")
         to_features.set_output_tags(["aqsol", "public"])
@@ -182,24 +182,24 @@ if __name__ == "__main__":
         end.auto_inference(capture=True)
 
     # A 'Model' to Compute Molecular Descriptors Features
-    if recreate or not Model("smiles-to-md-v0").exists():
+    if recreate or not Model("smiles-to-md-stereo").exists():
         script_path = get_custom_script_path("chem_info", "molecular_descriptors.py")
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
-            name="smiles-to-md-v0",
+            name="smiles-to-md-stereo",
             model_type=ModelType.TRANSFORMER,
             feature_list=["smiles"],
             description="Smiles to Molecular Descriptors",
-            tags=["smiles", "molecular descriptors"],
+            tags=["smiles", "molecular descriptors", "stereo"],
             custom_script=script_path,
         )
 
     # A 'Model' to Compute Morgan Fingerprints Features
-    if recreate or not Model("smiles-to-fingerprints-v0").exists():
+    if recreate or not Model("smiles-to-fingerprints").exists():
         script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
-            name="smiles-to-fingerprints-v0",
+            name="smiles-to-fingerprints",
             model_type=ModelType.TRANSFORMER,
             feature_list=["smiles"],
             description="Smiles to Morgan Fingerprints",
@@ -207,23 +207,10 @@ if __name__ == "__main__":
             custom_script=script_path,
         )
 
-    # A 'Model' to Tautomerize Smiles
-    if recreate or not Model("tautomerize-v0").exists():
-        script_path = get_custom_script_path("chem_info", "tautomerize.py")
-        feature_set = FeatureSet("aqsol_features")
-        feature_set.to_model(
-            name="tautomerize-v0",
-            model_type=ModelType.TRANSFORMER,
-            feature_list=["smiles"],
-            description="Tautomerize Smiles",
-            tags=["smiles", "tautomerization"],
-            custom_script=script_path,
-        )
-
     # Endpoints for our Transformer/Custom Models
-    if recreate or not Endpoint("smiles-to-md-v0").exists():
-        m = Model("smiles-to-md-v0")
-        end = m.to_endpoint(tags=["smiles", "molecular descriptors"])
+    if recreate or not Endpoint("smiles-to-md-stereo").exists():
+        m = Model("smiles-to-md-stereo")
+        end = m.to_endpoint(tags=["smiles", "molecular descriptors", "stereo"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
@@ -231,13 +218,6 @@ if __name__ == "__main__":
     if recreate or not Endpoint("smiles-to-fingerprints-v0").exists():
         m = Model("smiles-to-fingerprints-v0")
         end = m.to_endpoint(name="smiles-to-fingerprints-v0", tags=["smiles", "morgan fingerprints"])
-
-        # Run inference on the endpoint
-        end.auto_inference(capture=True)
-
-    if recreate or not Endpoint("tautomerize-v0").exists():
-        m = Model("tautomerize-v0")
-        end = m.to_endpoint(tags=["smiles", "tautomerization"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
