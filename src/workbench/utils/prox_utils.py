@@ -8,7 +8,7 @@ import numpy as np
 log = logging.getLogger("workbench")
 
 
-def calculate_weights(group, distance_column='distance'):
+def calculate_weights(group, distance_column="distance"):
     """Calculate weights by inverting normalized distances"""
     distances = group[distance_column]
     max_dist = distances.max()
@@ -27,7 +27,7 @@ def calculate_weights(group, distance_column='distance'):
     return weights / weights.sum()
 
 
-def weighted_stats(group, target_column, weight_column='weight'):
+def weighted_stats(group, target_column, weight_column="weight"):
     """Calculate weighted statistics for a group of data"""
     w = group[weight_column]
     x = group[target_column]
@@ -40,12 +40,9 @@ def weighted_stats(group, target_column, weight_column='weight'):
     weighted_variance = np.average((x - weighted_mean) ** 2, weights=w)
     weighted_std = np.sqrt(weighted_variance)
 
-    return pd.Series({
-        'target_mean': weighted_mean,
-        'target_std': weighted_std,
-        'target_min': x.min(),
-        'target_max': x.max()
-    })
+    return pd.Series(
+        {"target_mean": weighted_mean, "target_std": weighted_std, "target_min": x.min(), "target_max": x.max()}
+    )
 
 
 def target_intervals(pred_df, prox_df, id_column: str, target: str) -> pd.DataFrame:
@@ -63,16 +60,18 @@ def target_intervals(pred_df, prox_df, id_column: str, target: str) -> pd.DataFr
         DataFrame: Original pred_df with added pred_min and pred_max columns
     """
     # Calculate weights by group
-    prox_df['weight'] = prox_df.groupby(id_column).apply(
-        lambda x: pd.Series(calculate_weights(x), index=x.index),
-        include_groups=False
-    ).values
+    prox_df["weight"] = (
+        prox_df.groupby(id_column)
+        .apply(lambda x: pd.Series(calculate_weights(x), index=x.index), include_groups=False)
+        .values
+    )
 
     # Calculate statistics
-    target_bounds = prox_df.groupby(id_column, group_keys=False).apply(
-        lambda x: weighted_stats(x, target),
-        include_groups=False
-    ).reset_index()
+    target_bounds = (
+        prox_df.groupby(id_column, group_keys=False)
+        .apply(lambda x: weighted_stats(x, target), include_groups=False)
+        .reset_index()
+    )
 
     # Merge target bounds back to the original prediction dataframe
     result = pred_df.merge(target_bounds, on=id_column, how="left")

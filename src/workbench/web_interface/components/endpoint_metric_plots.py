@@ -41,7 +41,9 @@ class EndpointMetricPlots(ComponentInterface):
 
         # Hack for super long metric names
         if "ServerlessConcurrentExecutionsUtilization" in metrics_df.columns:
-            metrics_df.rename(columns={"ServerlessConcurrentExecutionsUtilization": "ConcurrentExecPercentage"}, inplace=True)
+            metrics_df.rename(
+                columns={"ServerlessConcurrentExecutionsUtilization": "ConcurrentExecPercentage"}, inplace=True
+            )
 
         # Let's convert all the timestamps to local timezone
         metrics_df["timestamps"] = metrics_df["timestamps"].dt.tz_convert(local_tz)
