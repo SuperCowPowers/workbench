@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
-from typing import Union, List, Dict, Optional
+from typing import Union, List, Dict
 import logging
 import pickle
 import os
@@ -53,7 +53,7 @@ class Proximity:
         self.track_columns = track_columns or []
 
         # Right now we only support numeric features, so remove any columns that are not numeric
-        non_numeric_features = self.df[self.features].select_dtypes(exclude=['number']).columns.tolist()
+        non_numeric_features = self.df[self.features].select_dtypes(exclude=["number"]).columns.tolist()
         if non_numeric_features:
             log.warning(f"Non-numeric features {non_numeric_features} aren't currently supported...")
             self.features = [f for f in self.features if f not in non_numeric_features]
@@ -87,11 +87,7 @@ class Proximity:
                 # Skip self (neighbor index == current row index)
                 if neighbor_idx == i:
                     continue
-                results.append(
-                    self._build_neighbor_result(
-                        query_id=query_id, neighbor_idx=neighbor_idx, distance=dist
-                    )
-                )
+                results.append(self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist))
 
         return pd.DataFrame(results)
 
@@ -144,16 +140,12 @@ class Proximity:
                     continue
 
                 all_results.append(
-                    self._build_neighbor_result(
-                        query_id=query_id, neighbor_idx=neighbor_idx, distance=dist
-                    )
+                    self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist)
                 )
 
         return pd.DataFrame(all_results)
 
-    def _build_neighbor_result(
-        self, query_id, neighbor_idx: int, distance: float
-    ) -> Dict:
+    def _build_neighbor_result(self, query_id, neighbor_idx: int, distance: float) -> Dict:
         """
         Internal: Build a result dictionary for a single neighbor.
 
@@ -320,8 +312,14 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
 
     # Test with String Ids
-    prox = Proximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target",
-                     track_columns=["Feature1", "Feature2"], n_neighbors=3)
+    prox = Proximity(
+        df,
+        id_column="foo_id",
+        features=["Feature1", "Feature2"],
+        target="target",
+        track_columns=["Feature1", "Feature2"],
+        n_neighbors=3,
+    )
     print(prox.all_neighbors())
 
     # Test the neighbors method
@@ -367,6 +365,7 @@ if __name__ == "__main__":
 
     # Test with a categorical feature
     from workbench.api import FeatureSet, Model
+
     fs = FeatureSet("abalone_features")
     model = Model("abalone-regression")
     df = fs.pull_dataframe()

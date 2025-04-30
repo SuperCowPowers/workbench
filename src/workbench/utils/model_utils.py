@@ -119,7 +119,7 @@ def proximity_model(model: "Model", prox_model_name: str, track_columns: list = 
         description=f"Proximity Model for {model.uuid}",
         tags=["proximity", model.uuid],
         custom_script=script_path,
-        custom_args={"track_columns": track_columns}
+        custom_args={"track_columns": track_columns},
     )
     return prox_model
 
