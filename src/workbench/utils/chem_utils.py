@@ -493,16 +493,16 @@ def add_compound_tags(df, mol_column="molecule") -> pd.DataFrame:
     return df
 
 
-def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
+def compute_molecular_descriptors(df: pd.DataFrame, tautomerize=True) -> pd.DataFrame:
     """Compute and add all the Molecular Descriptors
 
     Args:
         df (pd.DataFrame): Input DataFrame containing SMILES strings.
+        tautomerize (bool): Whether to tautomerize the SMILES strings.
 
     Returns:
         pd.DataFrame: The input DataFrame with all the RDKit Descriptors added
     """
-    delete_mol_column = False
 
     # Check for the smiles column (any capitalization)
     smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
@@ -513,10 +513,8 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     log.info("Computing Molecular Descriptors...")
 
     # Convert SMILES to RDKit molecule objects (vectorized)
-    if "molecule" not in df.columns:
-        log.info("Converting SMILES to RDKit Molecules...")
-        delete_mol_column = True
-        df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
+    log.info("Converting SMILES to RDKit Molecules...")
+    df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
 
     # Make sure our molecules are not None
     failed_smiles = df[df["molecule"].isnull()][smiles_column].tolist()
@@ -526,6 +524,12 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
 
     # If we have fragments in our compounds, get the largest fragment before computing descriptors
     df["molecule"] = df["molecule"].apply(remove_disconnected_fragments)
+
+    # Tautomerize the molecules if requested
+    if tautomerize:
+        log.info("Tautomerizing molecules...")
+        tautomer_enumerator = TautomerEnumerator()
+        df["molecule"] = df["molecule"].apply(tautomer_enumerator.Canonicalize)
 
     # Now get all the RDKIT Descriptors
     all_descriptors = [x[0] for x in Descriptors._descList]
@@ -569,9 +573,8 @@ def compute_molecular_descriptors(df: pd.DataFrame) -> pd.DataFrame:
     input_columns = df.columns.str.lower()
     output_df = output_df[list(input_columns) + [col for col in output_df.columns if col not in input_columns]]
 
-    # Drop the intermediate 'molecule' column if it was added
-    if delete_mol_column:
-        del output_df["molecule"]
+    # Drop the intermediate 'molecule' column
+    del output_df["molecule"]
 
     # Return the DataFrame with the RDKit and Mordred Descriptors added
     return output_df
