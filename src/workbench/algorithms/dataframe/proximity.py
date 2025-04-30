@@ -27,8 +27,9 @@ class Proximity:
         id_column: Union[int, str],
         features: List[str],
         target: str = None,
-        n_neighbors: int = 5,
-    ) -> None:
+        track_columns: List[str] = None,
+        n_neighbors: int = 10,
+    ):
         """
         Initialize the Proximity class.
 
@@ -37,7 +38,8 @@ class Proximity:
             id_column (Union[int, str]): Name of the column used as an identifier.
             features (List[str]): List of feature column names to be used for neighbor computations.
             target (str, optional): Name of the target column. Defaults to None.
-            n_neighbors (int): Number of neighbors to compute. Defaults to 5.
+            track_columns (List[str], optional): Additional columns to track in results. Defaults to None.
+            n_neighbors (int): Number of neighbors to compute. Defaults to 10.
         """
         self.df = df.dropna(subset=features).copy()
         self.id_column = id_column
@@ -48,6 +50,13 @@ class Proximity:
         self.X = None
         self.nn = None
         self.proximity_type = None
+        self.track_columns = track_columns or []
+
+        # Right now we only support numeric features, so remove any columns that are not numeric
+        non_numeric_features = self.df[self.features].select_dtypes(exclude=['number']).columns.tolist()
+        if non_numeric_features:
+            log.warning(f"Non-numeric features {non_numeric_features} aren't currently supported...")
+            self.features = [f for f in self.features if f not in non_numeric_features]
 
         # Build the proximity model
         self.build_proximity_model()
@@ -60,26 +69,9 @@ class Proximity:
         self.X = self.scaler.fit_transform(self.df[self.features])
         self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
 
-    def prep_features_for_query(self, query_df: pd.DataFrame) -> np.ndarray:
-        """
-        Preprocess the query DataFrame features.
-
-        Args:
-            query_df (pd.DataFrame): DataFrame containing query points.
-
-        Returns:
-            np.ndarray: Transformed feature matrix.
-        """
-
-        # Transform the query features using the model's scaler
-        return self.scaler.transform(query_df[self.features])
-
-    def all_neighbors(self, add_columns: List[str] = None) -> pd.DataFrame:
+    def all_neighbors(self) -> pd.DataFrame:
         """
         Compute nearest neighbors for all rows in the dataset.
-
-        Args:
-            add_columns: Additional columns to include in results
 
         Returns:
             pd.DataFrame: A DataFrame of neighbors and their distances.
@@ -97,7 +89,7 @@ class Proximity:
                     continue
                 results.append(
                     self._build_neighbor_result(
-                        query_id=query_id, neighbor_idx=neighbor_idx, distance=dist, add_columns=add_columns
+                        query_id=query_id, neighbor_idx=neighbor_idx, distance=dist
                     )
                 )
 
@@ -108,7 +100,6 @@ class Proximity:
         query_df: pd.DataFrame,
         radius: float = None,
         include_self: bool = True,
-        add_columns: List[str] = None,
     ) -> pd.DataFrame:
         """
         Return neighbors for rows in a query DataFrame.
@@ -117,7 +108,6 @@ class Proximity:
             query_df: DataFrame containing query points
             radius: If provided, find all neighbors within this radius
             include_self: Whether to include self in results (if present)
-            add_columns: Additional columns to include in results
 
         Returns:
             DataFrame containing neighbors and distances
@@ -129,11 +119,11 @@ class Proximity:
         if missing:
             raise ValueError(f"Query DataFrame is missing required feature columns: {missing}")
 
-        # Prep features for query
-        X_query = self.prep_features_for_query(query_df)
-
         # Check if id_column is present
         id_column_present = self.id_column in query_df.columns
+
+        # Transform the query features using the model's scaler
+        X_query = self.scaler.transform(query_df[self.features])
 
         # Get neighbors using either radius or k-nearest neighbors
         if radius is not None:
@@ -155,14 +145,14 @@ class Proximity:
 
                 all_results.append(
                     self._build_neighbor_result(
-                        query_id=query_id, neighbor_idx=neighbor_idx, distance=dist, add_columns=add_columns
+                        query_id=query_id, neighbor_idx=neighbor_idx, distance=dist
                     )
                 )
 
         return pd.DataFrame(all_results)
 
     def _build_neighbor_result(
-        self, query_id, neighbor_idx: int, distance: float, add_columns: Optional[List[str]] = None
+        self, query_id, neighbor_idx: int, distance: float
     ) -> Dict:
         """
         Internal: Build a result dictionary for a single neighbor.
@@ -171,7 +161,6 @@ class Proximity:
             query_id: ID of the query point
             neighbor_idx: Index of the neighbor in the original DataFrame
             distance: Distance between query and neighbor
-            add_columns: Additional columns to include in result
 
         Returns:
             Dictionary containing neighbor information
@@ -191,8 +180,7 @@ class Proximity:
         relevant_cols += ["outlier"]
 
         # Add user-specified columns
-        if add_columns:
-            relevant_cols += add_columns
+        relevant_cols += self.track_columns
 
         # Add values for each relevant column that exists in the dataframe
         for col in filter(lambda c: c in self.df.columns, relevant_cols):
@@ -330,22 +318,12 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
 
     # Test with String Ids
-    prox = Proximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target", n_neighbors=3)
+    prox = Proximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target",
+                     track_columns=["Feature1", "Feature2"], n_neighbors=3)
     print(prox.all_neighbors())
 
     # Test the neighbors method
-    print(prox.neighbors(query_df=df.iloc[0:2], add_columns=["Feature1", "Feature2"]))
-
-    # Test duplicate IDs
-    data = {
-        "foo_id": ["a", "b", "c", "d", "d"],  # Duplicate ID (d)
-        "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
-        "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
-        "target": [1, 0, 1, 0, 5],
-    }
-    df = pd.DataFrame(data)
-    prox = Proximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target", n_neighbors=3)
-    print(df.equals(prox.df))
+    print(prox.neighbors(query_df=df.iloc[0:2]))
 
     # Time neighbors with all IDs versus calling all_neighbors
     import time
@@ -373,3 +351,22 @@ if __name__ == "__main__":
     # Test querying without the id_column
     df_no_id = df.drop(columns=["foo_id"])
     print(prox.neighbors(query_df=df_no_id, include_self=False))
+
+    # Test duplicate IDs
+    data = {
+        "foo_id": ["a", "b", "c", "d", "d"],  # Duplicate ID (d)
+        "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
+        "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
+        "target": [1, 0, 1, 0, 5],
+    }
+    df = pd.DataFrame(data)
+    prox = Proximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target", n_neighbors=3)
+    print(df.equals(prox.df))
+
+    # Test with a categorical feature
+    from workbench.api import FeatureSet, Model
+    fs = FeatureSet("abalone_features")
+    model = Model("abalone-regression")
+    df = fs.pull_dataframe()
+    prox = Proximity(df, id_column=fs.id_column, features=model.features(), target=model.target())
+    print(prox.neighbors(query_df=df[0:2]))
