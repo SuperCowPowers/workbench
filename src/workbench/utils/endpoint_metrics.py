@@ -12,6 +12,7 @@ class EndpointMetrics:
         """
         EndpointMetrics Class
         - Invocations: The total number of times the endpoint was invoked via the `InvokeEndpoint` API.
+        - ServerlessConcurrentExecutionsUtilization: The percentage of concurrent executions used by the endpoint.
         - ModelLatency: The time taken by the model to complete inference, excluding network and overhead delays.
         - OverheadLatency: The total time from request to response, excluding the `ModelLatency`.
         - ModelSetupTime: The time it takes to launch ^serverless^ endpoints before inference can begin.
@@ -26,6 +27,7 @@ class EndpointMetrics:
         self.end_time = None
         self.metrics = [
             "Invocations",
+            "ServerlessConcurrentExecutionsUtilization",
             "ModelLatency",
             "OverheadLatency",
             "ModelSetupTime",
@@ -34,13 +36,14 @@ class EndpointMetrics:
         ]
         self.metric_conversions = {
             "Invocations": 1,
+            "ServerlessConcurrentExecutionsUtilization": 100,
             "ModelLatency": 1e-6,
             "OverheadLatency": 1e-6,
             "ModelSetupTime": 1e-6,
             "Invocation5XXErrors": 1,
             "Invocation4XXErrors": 1,
         }
-        self.stats = ["Sum", "Average", "Average", "Average", "Sum", "Sum"]
+        self.stats = ["Sum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum"]
 
     def get_metrics(self, endpoint: str, variant: str = "AllTraffic", days_back: int = 3) -> pd.DataFrame:
         """Get the metric data for a given endpoint.

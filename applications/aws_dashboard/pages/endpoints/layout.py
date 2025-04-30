@@ -45,7 +45,7 @@ def endpoints_layout(
             # Model Details, and Plugins
             dbc.Row(
                 [
-                    # Column 1: Model Details
+                    # Column 1: Endpoint Details
                     dbc.Col(
                         [
                             dbc.Row(

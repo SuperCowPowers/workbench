@@ -39,6 +39,10 @@ class EndpointMetricPlots(ComponentInterface):
         if metrics_df is None:
             return self.display_text("No Data")
 
+        # Hack for super long metric names
+        if "ServerlessConcurrentExecutionsUtilization" in metrics_df.columns:
+            metrics_df.rename(columns={"ServerlessConcurrentExecutionsUtilization": "ConcurrentExecPercentage"}, inplace=True)
+
         # Let's convert all the timestamps to local timezone
         metrics_df["timestamps"] = metrics_df["timestamps"].dt.tz_convert(local_tz)
 
@@ -50,7 +54,7 @@ class EndpointMetricPlots(ComponentInterface):
         num_rows = math.ceil(len(metrics_df.columns) / 2)
 
         # Create the figure with subplots for each metric
-        fig = make_subplots(rows=num_rows, cols=2, subplot_titles=metrics_df.columns, vertical_spacing=0.2)
+        fig = make_subplots(rows=num_rows, cols=2, subplot_titles=metrics_df.columns, vertical_spacing=0.12)
         for metric in metrics_df.columns:
             row, col = subplot_pos_lookup[metric]
             fig.add_trace(go.Scatter(x=metrics_df.index, y=metrics_df[metric], fill="toself"), row=row, col=col)
@@ -58,7 +62,7 @@ class EndpointMetricPlots(ComponentInterface):
         # Update the figure layout
         fig.update_xaxes(tickfont_size=10)
         fig.update_yaxes(rangemode="tozero", tickfont_size=10)
-        fig.update_layout(showlegend=False, margin={"t": 30, "b": 20, "r": 10, "l": 30}, height=400)
+        fig.update_layout(showlegend=False, margin={"t": 30, "b": 20, "r": 10, "l": 30}, height=600)
 
         # Return the figure
         return fig
@@ -69,7 +73,7 @@ if __name__ == "__main__":
     from workbench.core.artifacts.endpoint_core import EndpointCore
 
     # Grab the endpoint details
-    end = EndpointCore("abalone-regression-end-rt")
+    end = EndpointCore("abalone-regression")
     end_details = end.details()
 
     # Instantiate the EndpointMetricPlots class
