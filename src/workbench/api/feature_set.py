@@ -85,6 +85,7 @@ class FeatureSet(FeatureSetCore):
         scikit_model_class: str = None,
         model_import_str: str = None,
         custom_script: str = None,
+        custom_args: dict = None,
         inference_arch: str = "x86_64",
         inference_image: str = "inference",
         **kwargs,
@@ -131,6 +132,7 @@ class FeatureSet(FeatureSetCore):
             scikit_model_class=scikit_model_class,
             model_import_str=model_import_str,
             custom_script=custom_script,
+            custom_args=custom_args,
             inference_arch=inference_arch,
             inference_image=inference_image,
         )
