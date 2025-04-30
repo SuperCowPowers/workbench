@@ -7,7 +7,8 @@
 TEMPLATE_PARAMS = {
     "id_column": "{{id_column}}",
     "features": "{{feature_list}}",
-    "target": "{{target_column}}"
+    "target": "{{target_column}}",
+    "track_columns": "{{track_columns}}"
 }
 
 from io import StringIO
@@ -60,6 +61,7 @@ if __name__ == "__main__":
     id_column = TEMPLATE_PARAMS["id_column"]
     features = TEMPLATE_PARAMS["features"]
     target = TEMPLATE_PARAMS["target"]  # Can be None for unsupervised models
+    track_columns = TEMPLATE_PARAMS["track_columns"]  # Can be None
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
@@ -81,7 +83,7 @@ if __name__ == "__main__":
     check_dataframe(all_df, "training_df")
 
     # Create the Proximity model
-    model = Proximity(all_df, id_column, features, target, n_neighbors=10)
+    model = Proximity(all_df, id_column, features, target, track_columns=track_columns)
 
     # Now serialize the model
     model.serialize(args.model_dir)
