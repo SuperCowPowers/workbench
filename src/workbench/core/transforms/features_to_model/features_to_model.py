@@ -36,6 +36,7 @@ class FeaturesToModel(Transform):
         scikit_model_class=None,
         model_import_str=None,
         custom_script=None,
+        custom_args=None,
         inference_arch="x86_64",
         inference_image="inference",
     ):
@@ -47,6 +48,7 @@ class FeaturesToModel(Transform):
             scikit_model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)
             model_import_str (str, optional): The import string for the model (default None)
             custom_script (str, optional): Custom script to use for the model (default None)
+            custom_args (dict, optional): Custom arguments to pass to custom model scripts (default None)
             inference_arch (str, optional): Inference architecture (default "x86_64")
             inference_image (str, optional): Inference image (default "inference")
         """
@@ -64,6 +66,7 @@ class FeaturesToModel(Transform):
         self.scikit_model_class = scikit_model_class
         self.model_import_str = model_import_str
         self.custom_script = str(custom_script) if custom_script else None
+        self.custom_args = custom_args if custom_args else {}
         self.estimator = None
         self.model_description = None
         self.model_training_root = self.models_s3_path + "/training"
@@ -163,6 +166,8 @@ class FeaturesToModel(Transform):
         if self.custom_script:
             script_path = self.custom_script
             if self.custom_script.endswith(".template"):
+                # Fill in the custom script template with specific parameters (include any custom args)
+                template_params.update(self.custom_args)
                 script_path = fill_template(self.custom_script, template_params, "generated_model_script.py")
             self.log.info(f"Custom script path: {script_path}")
 
