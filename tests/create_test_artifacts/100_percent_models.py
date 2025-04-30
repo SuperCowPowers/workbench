@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # Create the aqsol solubility regression Model
     if recreate or not Model("aqsol-regression-100").exists():
         # Compute our features
-        feature_set = FeatureSet("aqsol_features")
+        fs = FeatureSet("aqsol_features")
         feature_list = [
             "molwt",
             "mollogp",
@@ -75,16 +75,21 @@ if __name__ == "__main__":
             "balabanj",
             "bertzct",
         ]
-        feature_set.to_model(
+        m = fs.to_model(
             name="aqsol-regression-100",
             model_type=ModelType.REGRESSOR,
             target_column="solubility",
             feature_list=feature_list,
             description="AQSol Regression Model",
             tags=["aqsol", "regression"],
+            train_all_data=True,
         )
+        m.set_owner("test")
 
     # Create the aqsol regression Endpoint
     if recreate or not Endpoint("aqsol-regression-100").exists():
-        m = Model("aqsol-regression-100")
-        m.to_endpoint(tags=["aqsol", "regression", "100", "test"])
+        model = Model("aqsol-regression-100")
+        end = model.to_endpoint(tags=["aqsol", "regression", "100", "test"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
