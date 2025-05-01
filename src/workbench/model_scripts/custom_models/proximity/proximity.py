@@ -118,6 +118,17 @@ class Proximity:
         # Check if id_column is present
         id_column_present = self.id_column in query_df.columns
 
+        # None of the features can be NaNs, so report rows with NaNs and then drop them
+        rows_with_nan = query_df[self.features].isna().any(axis=1)
+
+        # Print the ID column for rows with NaNs
+        if rows_with_nan.any():
+            log.warning(f"Found {rows_with_nan.sum()} rows with NaNs in feature columns:")
+            log.warning(query_df.loc[rows_with_nan, self.id_column])
+
+        # Drop rows with NaNs in feature columns and reassign to query_df
+        query_df = query_df.dropna(subset=self.features)
+
         # Transform the query features using the model's scaler
         X_query = self.scaler.transform(query_df[self.features])
 

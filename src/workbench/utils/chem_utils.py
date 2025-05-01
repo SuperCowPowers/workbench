@@ -1164,16 +1164,17 @@ if __name__ == "__main__":
         "time_hr": [1, 4, 3, 3, 2, np.nan, 5, 6, 6, np.nan, np.nan],
         "target_value": [1.90, 4.03, 2.5, 3.5, 7.8, 6.2, 8.1, np.nan, 5.4, 6.7, 6.9],
         "smiles": [
-            "CC(=O)O",
             "CC(=O)O",  # Acetic acid
-            "C1CCCCC1",
+            "CC(=O)O",
             "C1CCCCC1",  # Cyclohexane
+            "C1CCCCC1",
             "C1=CC=CC=C1",  # Benzene
-            "CCO",
             "CCO",  # Ethanol
-            "CC(C)=O",
+            "CCO",
             "CC(C)=O",  # Acetone
-            "C1=CC=CC=C1",  # Benzene
+            "CC(C)=O",
+            "CC(C)=O",
+            "CC(C)=O",
         ],
     }
 
