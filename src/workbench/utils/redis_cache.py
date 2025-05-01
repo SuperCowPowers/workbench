@@ -58,7 +58,6 @@ class RedisCache:
                 self.host,
                 port=self.port,
                 password=self.password,
-                charset="utf-8",
                 decode_responses=True,
                 db=0,
             )
