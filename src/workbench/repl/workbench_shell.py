@@ -156,6 +156,7 @@ class WorkbenchShell:
         self.commands["log"] = logging.getLogger("workbench")
         self.commands["get_meta"] = self.get_meta
         self.commands["params"] = importlib.import_module("workbench.api.parameter_store").ParameterStore()
+        self.commands["secrets"] = importlib.import_module("workbench.core.cloud_platform.aws.aws_secrets_manager").AWSSecretsManager()
         self.commands["df_store"] = importlib.import_module("workbench.api.df_store").DFStore()
         self.commands["graph_store"] = importlib.import_module("workbench.api.graph_store").GraphStore()
         self.commands["version"] = lambda: print(version)
