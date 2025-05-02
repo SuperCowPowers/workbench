@@ -1,4 +1,4 @@
-"""AWSAWSParameterStore: Manages Workbench parameters in AWS Systems Manager Parameter Store."""
+"""AWSParameterStore: Manages Workbench parameters in AWS Systems Manager Parameter Store."""
 
 from typing import Union
 import logging
