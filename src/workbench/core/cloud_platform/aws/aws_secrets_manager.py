@@ -155,18 +155,12 @@ class AWSSecretsManager:
             try:
                 self.secrets_client.describe_secret(SecretId=name)
                 # Secret exists, update it
-                response = self.secrets_client.update_secret(
-                    SecretId=name,
-                    SecretString=value
-                )
+                self.secrets_client.update_secret(SecretId=name, SecretString=value)
                 self.log.info(f"Updated secret '{name}'")
             except ClientError as e:
                 if e.response["Error"]["Code"] == "ResourceNotFoundException":
                     # Secret doesn't exist, create it
-                    response = self.secrets_client.create_secret(
-                        Name=name,
-                        SecretString=value
-                    )
+                    self.secrets_client.create_secret(Name=name, SecretString=value)
                     self.log.info(f"Created secret '{name}'")
                 else:
                     raise e
@@ -177,19 +171,24 @@ class AWSSecretsManager:
             self.log.error(f"Failed to upsert secret '{name}': {e}")
             return False
 
-    def delete(self, name: str) -> bool:
+    def delete(self, name: str, force=False) -> bool:
         """Delete a secret from AWS Secrets Manager.
 
         Args:
             name (str): The name of the secret to delete.
+            force (bool): Whether to force delete the secret without recovery.
 
         Returns:
             bool: True if successful, False otherwise.
         """
         try:
-            response = self.secrets_client.delete_secret(
-                SecretId=name,
-            )
+            if force:
+                # Force delete the secret without recovery
+                self.secrets_client.delete_secret(SecretId=name, ForceDeleteWithoutRecovery=True)
+                self.log.info(f"Force deleted secret '{name}' (not recoverable)")
+                return True
+            # Delete the secret with recovery (30 days)
+            self.secrets_client.delete_secret(SecretId=name, ForceDeleteWithoutRecovery=False)
             self.log.info(f"Deleted secret '{name}' (recoverable for 30 days)")
             return True
 
@@ -229,5 +228,5 @@ if __name__ == "__main__":
     print(f"Retrieved secret 'test_database_credentials': {db_creds}")
 
     # Delete the secret
-    secrets_manager.delete("test_database_credentials")
+    secrets_manager.delete("test_database_credentials", force=True)
     print("Deleted secret 'test_database_credentials'")
