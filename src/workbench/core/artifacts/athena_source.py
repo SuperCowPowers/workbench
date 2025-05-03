@@ -319,15 +319,18 @@ class AthenaSource(DataSourceAbstract):
         return stat_dict
 
     @cache_dataframe("sample")
-    def sample(self) -> pd.DataFrame:
+    def sample(self, rows: int = 100) -> pd.DataFrame:
         """Pull a sample of rows from the DataSource
+
+        Args:
+            rows (int): Number of rows to sample (default: 100)
 
         Returns:
             pd.DataFrame: A sample DataFrame for an Athena DataSource
         """
 
         # Call the SQL function to pull a sample of the rows
-        return sql.sample_rows(self)
+        return sql.sample_rows(self, rows=rows)
 
     @cache_dataframe("outliers")
     def outliers(self, scale: float = 1.5, use_stddev=False) -> pd.DataFrame:
@@ -350,8 +353,11 @@ class AthenaSource(DataSourceAbstract):
         return sql_outliers.compute_outliers(self, scale=scale, use_stddev=use_stddev)
 
     @cache_dataframe("smart_sample")
-    def smart_sample(self) -> pd.DataFrame:
+    def smart_sample(self, rows: int = 100) -> pd.DataFrame:
         """Get a smart sample dataframe for this DataSource
+
+        Args:
+            rows (int): Number of rows to sample (default: 100)
 
         Returns:
             pd.DataFrame: A combined DataFrame of sample data + outliers
@@ -364,7 +370,7 @@ class AthenaSource(DataSourceAbstract):
         outlier_rows = self.outliers()
 
         # Sample DataFrame
-        sample_rows = self.sample()
+        sample_rows = self.sample(rows=rows)
         sample_rows["outlier_group"] = "sample"
 
         # Combine the sample rows with the outlier rows
@@ -597,6 +603,11 @@ if __name__ == "__main__":
     print(f"Sample Data: {my_df.shape}")
     print(my_df)
 
+    # Get a larger sample of the data
+    my_df = my_data.sample(rows=1000)
+    print(f"Sample Data: {my_df.shape}")
+    print(my_df)
+
     # Get the Workbench Metadata for this Data Source
     meta = my_data.workbench_meta()
     print("\nWorkbench Meta")
@@ -615,6 +626,11 @@ if __name__ == "__main__":
     # Get a smart sample for numeric columns
     smart_sample = my_data.smart_sample()
     print("\nSmart Sample")
+    print(smart_sample)
+
+    # Get a larger smart sample of the data
+    smart_sample = my_data.smart_sample(rows=1000)
+    print(f"Smart Sample: {smart_sample.shape}")
     print(smart_sample)
 
     # Get descriptive stats for numeric columns

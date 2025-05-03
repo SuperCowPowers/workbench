@@ -10,10 +10,13 @@ from workbench.core.artifacts.data_source_abstract import DataSourceAbstract
 log = logging.getLogger("workbench")
 
 
-def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
+def sample_rows(data_source: DataSourceAbstract, rows: int = 100) -> pd.DataFrame:
     """Pull a sample of rows from the DataSource
+
     Args:
         data_source: The DataSource that we're pulling the sample rows from
+        rows: The number of rows to sample from the DataSource (default: 100)
+
     Returns:
         pd.DataFrame: A sample DataFrame from this DataSource
     """
@@ -25,14 +28,13 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
     column_names = data_source.view("computation").columns
     sql_columns = ", ".join([f'"{name}"' for name in column_names])
 
-    # Note: Hardcoded to 100 rows so that metadata storage is consistent
-    sample_rows = 100
+    # Downsample the DataSource based on Bernoulli Sampling
     num_rows = data_source.num_rows()
-    if num_rows > sample_rows:
-        # Bernoulli Sampling has reasonable variance, so we're going to +1 the
-        # sample percentage and then simply clamp it to 100 rows
-        percentage = round(sample_rows * 100.0 / num_rows) + 1
-        data_source.log.info(f"DataSource has {num_rows} rows.. sampling down to {sample_rows}...")
+    if num_rows > rows:
+        # Bernoulli Sampling has reasonable variance, so we're going to add a 10% fudge factor
+        # to the sample percentage and then simply clamp it to desired rows
+        percentage = round(rows * 110.0 / num_rows)
+        data_source.log.info(f"DataSource has {num_rows} rows.. sampling down to {rows}...")
         query = f'SELECT {sql_columns} FROM "{table}" TABLESAMPLE BERNOULLI({percentage})'
     else:
         query = f'SELECT {sql_columns} FROM "{table}"'
@@ -43,8 +45,8 @@ def sample_rows(data_source: DataSourceAbstract) -> pd.DataFrame:
         log.error(f"Error pulling sample rows from {data_source.uuid}")
         return None
 
-    # Grab the first 100 rows
-    sample_df = sample_df.head(sample_rows)
+    # Grab the first N rows (this clamps the sample_df to the desired number of rows)
+    sample_df = sample_df.head(rows)
 
     # Return the sample_df
     return sample_df
@@ -60,7 +62,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Retrieve a Data Source
-    my_data = DataSource("test_data")
+    my_data = DataSource("abalone_data")
 
     # Verify that the Athena Data Source exists
     assert my_data.exists()
@@ -68,7 +70,12 @@ if __name__ == "__main__":
     # What's my Workbench UUID
     print(f"UUID: {my_data.uuid}")
 
-    # Get sample rows for this DataSource
+    # Sample rows for this DataSource
     my_sample_df = sample_rows(my_data)
+    print("\nSample Rows")
+    print(my_sample_df)
+
+    # Get a larger sample of rows for this DataSource
+    my_sample_df = sample_rows(my_data, rows=1000)
     print("\nSample Rows")
     print(my_sample_df)

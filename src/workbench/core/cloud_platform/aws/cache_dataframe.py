@@ -1,10 +1,18 @@
-"""Cache Dataframe Decorator: Easy decorator to cache DataFrames using AWS S3/Parquet/Snappy"""
+"""Cache Dataframe Decorator: Decorator to cache DataFrames using AWS S3/Parquet/Snappy"""
 
 import logging
 from functools import wraps
 
 # Set up logging
 log = logging.getLogger("workbench")
+
+# Helper function to flatten the args and kwargs into a single string
+def flatten_args_kwargs(args, kwargs):
+    """Flatten the args and kwargs into a single string"""
+    parts = ["_".join(str(arg) for arg in args) if args else "",
+             "_".join(f"{k}_{v}" for k, v in sorted(kwargs.items())) if kwargs else ""]
+    result = "_".join(p for p in parts if p)
+    return f"_{result}" if result else ""
 
 
 def cache_dataframe(location: str):
@@ -15,12 +23,14 @@ def cache_dataframe(location: str):
 
     This decorator assumes it is applied to a Workbench Artifact class (has self.uuid and self.df_cache).
     """
-
     def decorator(method):
         @wraps(method)
         def wrapper(self, *args, **kwargs):
-            # Construct the full cache location
-            df_path = f"{self.uuid}/{location}".replace("//", "/")
+            # Create a cache key based on args and kwargs
+            args_hash = flatten_args_kwargs(args, kwargs)
+
+            # Construct the full cache location with args hash
+            df_path = f"{self.uuid}/{location}{args_hash}"
             full_path = f"{self.df_cache.path_prefix}/{df_path}"
 
             # Check for cached data at the specified location
@@ -48,4 +58,9 @@ if __name__ == "__main__":
     from workbench.api.data_source import DataSource
 
     ds = DataSource("test_data")
-    ds.sample()  # Since the method uses the decorator, the result will be cached
+    df = ds.sample()  # Since the method uses the decorator, the result will be cached
+    print(df)
+
+    # Change args to test the decorator
+    df = ds.sample(rows=50)
+    print(df)
