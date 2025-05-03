@@ -30,11 +30,10 @@ class ModelType(Enum):
     REGRESSOR = "regressor"
     CLUSTERER = "clusterer"
     TRANSFORMER = "transformer"
+    PROXIMITY = "proximity"
     PROJECTION = "projection"
-    UNSUPERVISED = "unsupervised"
     QUANTILE_REGRESSOR = "quantile_regressor"
     ENSEMBLE_REGRESSOR = "ensemble_regressor"
-    DETECTOR = "detector"
     UNKNOWN = "unknown"
 
 
@@ -618,8 +617,8 @@ class ModelCore(Artifact):
             self._set_model_type(ModelType.QUANTILE_REGRESSOR)
         elif model_type == "ensemble_regressor":
             self._set_model_type(ModelType.ENSEMBLE_REGRESSOR)
-        elif model_type == "unsupervised":
-            self._set_model_type(ModelType.UNSUPERVISED)
+        elif model_type == "proxmity":
+            self._set_model_type(ModelType.PROXIMITY)
         elif model_type == "transformer":
             self._set_model_type(ModelType.TRANSFORMER)
         else:
