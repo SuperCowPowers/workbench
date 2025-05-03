@@ -6,11 +6,14 @@ from functools import wraps
 # Set up logging
 log = logging.getLogger("workbench")
 
+
 # Helper function to flatten the args and kwargs into a single string
 def flatten_args_kwargs(args, kwargs):
     """Flatten the args and kwargs into a single string"""
-    parts = ["_".join(str(arg) for arg in args) if args else "",
-             "_".join(f"{k}_{v}" for k, v in sorted(kwargs.items())) if kwargs else ""]
+    parts = [
+        "_".join(str(arg) for arg in args) if args else "",
+        "_".join(f"{k}_{v}" for k, v in sorted(kwargs.items())) if kwargs else "",
+    ]
     result = "_".join(p for p in parts if p)
     return f"_{result}" if result else ""
 
@@ -23,6 +26,7 @@ def cache_dataframe(location: str):
 
     This decorator assumes it is applied to a Workbench Artifact class (has self.uuid and self.df_cache).
     """
+
     def decorator(method):
         @wraps(method)
         def wrapper(self, *args, **kwargs):
