@@ -88,7 +88,7 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
             result_df[name] = preds
 
         # Add the RMSE predictions to the DataFrame
-        result_df["mean"] = self.rmse_model.predict(X)
+        result_df["prediction"] = self.rmse_model.predict(X)
 
         # Return the transformed DataFrame
         return result_df
@@ -116,7 +116,7 @@ def example_confidence(q_dataframe, target_sensitivity=0.25):
     quant_50 = q_dataframe["q_50"]
     upper_75 = q_dataframe["q_75"]
     upper_90 = q_dataframe["q_90"]
-    y = q_dataframe["mean"]
+    y = q_dataframe["prediction"]
 
     # Domain specific logic for calculating confidence
     # If the interval with is greater than target_sensitivity with have 0 confidence
@@ -142,7 +142,7 @@ def example_confidence_norm(q_dataframe):
     quant_50 = q_dataframe["q_50"]
     # upper_75 = q_dataframe["q_75"]
     upper_90 = q_dataframe["q_90"]
-    y = q_dataframe["mean"]
+    y = q_dataframe["prediction"]
 
     # Domain specific logic for calculating confidence
     # If the interval with is greater than target_sensitivity with have 0 confidence
@@ -172,7 +172,7 @@ def solubility_confidence(q_dataframe):
     quant_50 = q_dataframe["q_50"]
     # upper_75 = q_dataframe["q_75"]
     upper_90 = q_dataframe["q_90"]
-    y = q_dataframe["mean"]
+    y = q_dataframe["prediction"]
 
     # Domain specific logic for calculating confidence
     interval = upper_90 - lower_10
@@ -219,7 +219,7 @@ def confusion_matrix(confidence_df):
 
     # Apply categorization to actual and predicted values
     actual_categories = confidence_df["solubility"].apply(categorize)
-    predicted_categories = confidence_df["mean"].apply(categorize)
+    predicted_categories = confidence_df["prediction"].apply(categorize)
 
     # Compute the confusion matrix
     cm = confusion_matrix(actual_categories, predicted_categories, labels=["low", "medium", "high"])
@@ -261,7 +261,7 @@ def unit_test():
     )
 
     # Compute model metrics for RMSE
-    rmse = np.sqrt(np.mean((confidence_df[target_column] - confidence_df["mean"]) ** 2))
+    rmse = np.sqrt(np.mean((confidence_df[target_column] - confidence_df["prediction"]) ** 2))
     print(f"RMSE: {rmse} support: {len(confidence_df)}")
 
     # Domain Specific Confidence Threshold
@@ -272,11 +272,11 @@ def unit_test():
 
     # Now filter the data based on confidence and give RMSE for the filtered data
     high_confidence = confidence_df[confidence_df["high_confidence"] == 1]
-    rmse = np.sqrt(np.mean((high_confidence[target_column] - high_confidence["mean"]) ** 2))
+    rmse = np.sqrt(np.mean((high_confidence[target_column] - high_confidence["prediction"]) ** 2))
     print(f"RMSE: {rmse} support: {len(high_confidence)}")
 
     # Columns of Interest
-    dropdown_columns = ["interval", "conf", "quan_conf", "iqr_conf", "mean", "high_confidence", target_column]
+    dropdown_columns = ["interval", "conf", "quan_conf", "iqr_conf", "prediction", "high_confidence", target_column]
     q_columns = [c for c in confidence_df.columns if c.startswith("q_")]
     dropdown_columns += q_columns
     dropdown_columns += feature_columns
@@ -327,7 +327,7 @@ def integration_test():
     confidence_df["conf"], confidence_df["interval"], confidence_df["mean_diff"] = solubility_confidence(confidence_df)
 
     # Compute model metrics for RMSE
-    rmse = np.sqrt(np.mean((confidence_df[target_column] - confidence_df["mean"]) ** 2))
+    rmse = np.sqrt(np.mean((confidence_df[target_column] - confidence_df["prediction"]) ** 2))
     print(f"RMSE: {rmse} support: {len(confidence_df)}")
 
     # Domain Specific Confidence Threshold
@@ -338,7 +338,7 @@ def integration_test():
 
     # Now filter the data based on confidence and give RMSE for the filtered data
     high_confidence = confidence_df[confidence_df["high_confidence"] == 1]
-    rmse = np.sqrt(np.mean((high_confidence[target_column] - high_confidence["mean"]) ** 2))
+    rmse = np.sqrt(np.mean((high_confidence[target_column] - high_confidence["prediction"]) ** 2))
     print(f"RMSE: {rmse} support: {len(high_confidence)}")
 
     # Print out confusion matrix
@@ -348,7 +348,7 @@ def integration_test():
     confusion_matrix(high_confidence)
 
     # Columns of Interest
-    dropdown_columns = ["interval", "conf", "mean_diff", "mean", "high_confidence", target_column]
+    dropdown_columns = ["interval", "conf", "mean_diff", "prediction", "high_confidence", target_column]
     q_columns = [c for c in confidence_df.columns if c.startswith("q_")]
     dropdown_columns += q_columns
     dropdown_columns += feature_columns
@@ -357,7 +357,7 @@ def integration_test():
     plugin_test = PluginUnitTest(
         ScatterPlot,
         input_data=confidence_df[dropdown_columns],
-        x="mean",
+        x="prediction",
         y="solubility",
         color="conf",
         dropdown_columns=dropdown_columns,
