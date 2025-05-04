@@ -117,7 +117,7 @@ if __name__ == "__main__":
     """Exercise the Dimensionality Reduction."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
     from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
-    from workbench.api import FeatureSet, Model
+    from workbench.api import FeatureSet, Model, Endpoint
     from workbench.utils.shap_utils import shap_feature_importance
 
     data = {
@@ -133,9 +133,11 @@ if __name__ == "__main__":
     print(df)
 
     # Pull a FeatureSet, compute Shapley values, and then project
-    model = Model("aqsol-regression")
+    model = Model("aqsol-ensemble")
     fs = FeatureSet(model.get_input())
     df = fs.pull_dataframe()
+    end = Endpoint(model.endpoints()[0])
+    df = end.inference(df)
 
     # Compute SHAP values and get the top 10 features
     shap_importances = shap_feature_importance(model)[:10]
