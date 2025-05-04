@@ -226,9 +226,9 @@ def model_fn(model_dir) -> dict:
             models[q_name] = model
 
     # Now load the RMSE model
-    models["rsme"] = xgb.XGBRegressor()
     model_path = os.path.join(model_dir, "rmse.json")
     print(f"Loading model: {model_path}")
+    models["rsme"] = xgb.XGBRegressor()
     models["rsme"].load_model(model_path)
 
     # Return all the models

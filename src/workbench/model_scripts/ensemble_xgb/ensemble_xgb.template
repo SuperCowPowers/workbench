@@ -212,13 +212,11 @@ def model_fn(model_dir) -> dict:
             m_name = os.path.splitext(file)[0]
             models[m_name] = model
 
-
     # Load the full model
     model_path = os.path.join(model_dir, "model.json")
     print(f"Loading model: {model_path}")
-    model = xgb.XGBRegressor()
-    model.load_model(model_path)
-    models["full"] = model
+    models["full"] = xgb.XGBRegressor()
+    models["full"].load_model(model_path)
 
     # Return all the models
     return models
