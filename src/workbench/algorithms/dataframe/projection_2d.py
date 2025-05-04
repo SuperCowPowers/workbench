@@ -117,6 +117,8 @@ if __name__ == "__main__":
     """Exercise the Dimensionality Reduction."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
     from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
+    from workbench.api import FeatureSet, Model
+    from workbench.utils.shap_utils import shap_feature_importance
 
     data = {
         "ID": [f"id_{i}" for i in range(10)],
@@ -129,6 +131,16 @@ if __name__ == "__main__":
 
     df = Projection2D().fit_transform(input_df, features=["feat1", "feat2", "feat3"], projection="UMAP")
     print(df)
+
+    # Pull a FeatureSet, compute Shapley values, and then project
+    model = Model("aqsol-regression")
+    fs = FeatureSet(model.get_input())
+    df = fs.pull_dataframe()
+
+    # Compute SHAP values and get the top 10 features
+    shap_importances = shap_feature_importance(model)[:10]
+    shap_features = [feature for feature, _ in shap_importances]
+    df = Projection2D().fit_transform(df, features=shap_features, projection="UMAP")
 
     # Run the Unit Test on the Plugin using the new DataFrame with 'x' and 'y'
     unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y")
