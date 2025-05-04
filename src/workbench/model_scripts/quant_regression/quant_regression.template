@@ -288,10 +288,15 @@ def predict_fn(df, models) -> pd.DataFrame:
     # Predict the features against all the models
     for name, model in models.items():
         if name == "rsme":
-            df["mean"] = model.predict(matched_df[model_features])
-            df["prediction"] = df["mean"]
+            df["prediction"] = model.predict(matched_df[model_features])
         else:
             df[name] = model.predict(matched_df[model_features])
+
+    # Add the Inner Quartile Range (IQR) to the DataFrame
+    df["iqr"] = df["q_75"] - df["q_25"]
+
+    # Add the Inter Decile Range (IDR) range between the 10th and 90th percentiles
+    df["idr"] = df["q_90"] - df["q_10"]
 
     # Reorganize the columns so they are in alphabetical order
     df = df.reindex(sorted(df.columns), axis=1)
