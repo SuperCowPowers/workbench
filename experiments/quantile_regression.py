@@ -60,16 +60,16 @@ def normalize(data):
 
 # Calculate confidence based on the quantile predictions
 def calculate_confidence(quantile_models, X, y):
-    lower_05 = quantile_models[0.05].predict(X)
+    lower_10 = quantile_models[0.10].predict(X)
     lower_25 = quantile_models[0.25].predict(X)
     quant_50 = quantile_models[0.50].predict(X)
     upper_75 = quantile_models[0.75].predict(X)
-    upper_95 = quantile_models[0.95].predict(X)
+    upper_90 = quantile_models[0.90].predict(X)
 
     # Domain specific logic for calculating confidence
     # If the interval with is greater than target_sensitivity with have 0 confidence
     # anything below that is a linear scale from 0 to 1
-    confidence_interval = upper_95 - lower_05
+    confidence_interval = upper_90 - lower_10
     q_conf = 1 - confidence_interval
     print(f"q_conf: {np.min(q_conf):.2f} {np.max(q_conf):.2f}")
 

@@ -121,7 +121,7 @@ def example_confidence(q_dataframe, target_sensitivity=0.25):
     # Domain specific logic for calculating confidence
     # If the interval with is greater than target_sensitivity with have 0 confidence
     # anything below that is a linear scale from 0 to 1
-    confidence_interval = upper_95 - lower_05
+    confidence_interval = upper_90 - lower_10
     q_conf = np.clip(1 - confidence_interval / (target_sensitivity * 4.0), 0, 1)
 
     # Now lets look at the IQR distance for each observation

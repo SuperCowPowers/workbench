@@ -56,11 +56,11 @@ def train_quantile_models(X, y, quantiles, n_estimators=100):
 
 # Calculate confidence based on the quantile predictions
 def domain_specific_confidence(quantile_models, X, predictions):
-    lower_05 = quantile_models[0.05].predict(X)
+    lower_10 = quantile_models[0.10].predict(X)
     lower_25 = quantile_models[0.25].predict(X)
     quant_50 = quantile_models[0.50].predict(X)
     upper_75 = quantile_models[0.75].predict(X)
-    upper_95 = quantile_models[0.95].predict(X)
+    upper_90 = quantile_models[0.90].predict(X)
 
     # Target sensitivity
     target_sensitivity = 1  # 0.25
@@ -68,7 +68,7 @@ def domain_specific_confidence(quantile_models, X, predictions):
     # Domain specific logic for calculating confidence
     # If the interval with is greater than target_sensitivity with have 0 confidence
     # anything below that is a linear scale from 0 to 1
-    confidence_interval = upper_95 - lower_05
+    confidence_interval = upper_90 - lower_10
     q_conf = 1 - (confidence_interval / target_sensitivity)
     print(f"q_conf: {np.min(q_conf):.2f} {np.max(q_conf):.2f}")
     q_conf_clip = np.clip(q_conf, 0, 1)
@@ -88,11 +88,11 @@ def domain_specific_confidence(quantile_models, X, predictions):
 
 
 def domain_specific_confidence_norm(quantile_models, X, predictions):
-    lower_05 = quantile_models[0.05].predict(X)
+    lower_10 = quantile_models[0.10].predict(X)
     lower_25 = quantile_models[0.25].predict(X)
     quant_50 = quantile_models[0.50].predict(X)
     upper_75 = quantile_models[0.75].predict(X)
-    upper_95 = quantile_models[0.95].predict(X)
+    upper_90 = quantile_models[0.90].predict(X)
 
     # Target sensitivity
     # target_sensitivity = 1  # 0.25
@@ -100,7 +100,7 @@ def domain_specific_confidence_norm(quantile_models, X, predictions):
     # Domain specific logic for calculating confidence
     # If the interval with is greater than target_sensitivity with have 0 confidence
     # anything below that is a linear scale from 0 to 1
-    conf_interval = upper_95 - lower_05
+    conf_interval = upper_90 - lower_10
     print(f"confidence_interval: {np.min(conf_interval):.2f} {np.max(conf_interval):.2f}")
 
     # Normalize the confidence_interval between 0 and 1
@@ -127,11 +127,9 @@ def domain_specific_confidence_norm(quantile_models, X, predictions):
 
 
 def domain_specific_confidence_2(quantile_models, X, predictions):
-    lower_05 = quantile_models[0.05].predict(X)
     lower_25 = quantile_models[0.25].predict(X)
     median_pred = quantile_models[0.50].predict(X)
     upper_75 = quantile_models[0.75].predict(X)
-    upper_95 = quantile_models[0.95].predict(X)
 
     # Target sensitivity
     target_sensitivity = 0.25
