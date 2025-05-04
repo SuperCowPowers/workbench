@@ -102,13 +102,13 @@ def generate_model_script(template_params: dict) -> str:
     # Determine which template to use based on model type
     if template_params.get("scikit_model_class"):
         template_name = "scikit_learn.template"
-        model_script_dir = "light_scikit_learn"
+        model_script_dir = "scikit_learn"
     elif template_params["model_type"] in [ModelType.REGRESSOR, ModelType.CLASSIFIER]:
         template_name = "xgb_model.template"
-        model_script_dir = "light_xgb_model"
+        model_script_dir = "xgb_model"
     elif template_params["model_type"] == ModelType.QUANTILE_REGRESSOR:
         template_name = "quant_regression.template"
-        model_script_dir = "light_quant_regression"
+        model_script_dir = "quant_regression"
     elif template_params["model_type"] == ModelType.ENSEMBLE_REGRESSOR:
         template_name = "ensemble_xgb.template"
         model_script_dir = "ensemble_xgb"
