@@ -29,7 +29,7 @@ target = model.target()
 pred_df = model.get_inference_predictions()
 
 # Domain specific confidence
-pred_df["target_spread"] = pred_df["q_95"] - pred_df["q_05"]
+pred_df["target_spread"] = pred_df["q_90"] - pred_df["q_10"]
 pred_df["target_confidence"] = np.clip(1 - (pred_df["target_spread"] / (error_distance * 4.0)), 0, 1)
 
 # Compute the regression outliers
@@ -65,16 +65,11 @@ print(f"RMSE Filtered: {rmse_filtered} support: {len(predictions_filtered)}")
 
 # Columns that we want to show when we hover above a point
 hover_columns = [
-    "q_05",
+    "q_10",
     "q_25",
     "q_50",
     "q_75",
-    "q_95",
-    "qr_05",
-    "qr_25",
-    "qr_50",
-    "qr_75",
-    "qr_95",
+    "q_90",
     "prediction",
     target,
     "confidence",

@@ -111,11 +111,11 @@ class QuantileRegressor(BaseEstimator, TransformerMixin):
 
 # Calculate confidence based on the quantile predictions
 def example_confidence(q_dataframe, target_sensitivity=0.25):
-    lower_05 = q_dataframe["q_05"]
+    lower_10 = q_dataframe["q_10"]
     lower_25 = q_dataframe["q_25"]
     quant_50 = q_dataframe["q_50"]
     upper_75 = q_dataframe["q_75"]
-    upper_95 = q_dataframe["q_95"]
+    upper_90 = q_dataframe["q_90"]
     y = q_dataframe["mean"]
 
     # Domain specific logic for calculating confidence
@@ -137,17 +137,17 @@ def example_confidence(q_dataframe, target_sensitivity=0.25):
 
 
 def example_confidence_norm(q_dataframe):
-    lower_05 = q_dataframe["q_05"]
+    lower_10 = q_dataframe["q_10"]
     # lower_25 = q_dataframe["q_25"]
     quant_50 = q_dataframe["q_50"]
     # upper_75 = q_dataframe["q_75"]
-    upper_95 = q_dataframe["q_95"]
+    upper_90 = q_dataframe["q_90"]
     y = q_dataframe["mean"]
 
     # Domain specific logic for calculating confidence
     # If the interval with is greater than target_sensitivity with have 0 confidence
     # anything below that is a linear scale from 0 to 1
-    interval = upper_95 - lower_05
+    interval = upper_90 - lower_10
 
     # Normalize the confidence interval between 0 and 1
     interval_conf = 1 - (interval - np.min(interval)) / (np.max(interval) - np.min(interval))
@@ -167,15 +167,15 @@ def example_confidence_norm(q_dataframe):
 
 
 def solubility_confidence(q_dataframe):
-    lower_05 = q_dataframe["q_05"]
+    lower_10 = q_dataframe["q_10"]
     # lower_25 = q_dataframe["q_25"]
     quant_50 = q_dataframe["q_50"]
     # upper_75 = q_dataframe["q_75"]
-    upper_95 = q_dataframe["q_95"]
+    upper_90 = q_dataframe["q_90"]
     y = q_dataframe["mean"]
 
     # Domain specific logic for calculating confidence
-    interval = upper_95 - lower_05
+    interval = upper_90 - lower_10
 
     # Normalize the confidence interval between 0 and 1
     interval_conf = 1 - (interval - np.min(interval)) / (np.max(interval) - np.min(interval))
@@ -253,7 +253,7 @@ def unit_test():
     confidence_df[target_column] = y
 
     # Compute the intervals
-    confidence_df["interval"] = confidence_df["q_95"] - confidence_df["q_05"]
+    confidence_df["interval"] = confidence_df["q_90"] - confidence_df["q_10"]
 
     # Compute the confidence
     confidence_df["conf"], confidence_df["quan_conf"], confidence_df["iqr_conf"] = example_confidence_norm(
