@@ -16,7 +16,7 @@ log = logging.getLogger("workbench")
 if __name__ == "__main__":
 
     # Recreate Flag in case you want to recreate the artifacts
-    recreate = True
+    recreate = False
 
     # Create the AQSol Ensemble Regression Model
     if recreate or not Model("aqsol-ensemble").exists():
