@@ -28,19 +28,78 @@ else:
 shap_importances = shap_feature_importance(model)[:10]
 shap_features = [feature for feature, _ in shap_importances]
 """
-shap_features = ["mollogp", "bertzct", "molwt", "tpsa", "numvalenceelectrons", "balabanj",
-                 "molmr", "labuteasa", "numhdonors", "numheteroatoms"]
+shap_features = [
+    "mollogp",
+    "bertzct",
+    "molwt",
+    "tpsa",
+    "numvalenceelectrons",
+    "balabanj",
+    "molmr",
+    "labuteasa",
+    "numhdonors",
+    "numheteroatoms",
+]
 df = Projection2D().fit_transform(df, features=shap_features, projection="UMAP")
 
 
 # First the "mixed" cluster
-mixed_ids = ["A-1392", "B-162", "A-2676", "A-2482", "A-2152", "A-6080", "A-238",
-             "A-5820", "A-2604", "A-5686", "A-5563", "A-5988", "A-5851", "A-5604", "A-6092",
-             "A-5589", "A-5844", "A-2668", "A-55", "A-3275", "A-5086"]
-mixed_big = ["A-1392", "B-162", "A-2482", "A-2152", "A-6080", "A-238", "A-5820", "A-2604", "A-5686", "A-5563",
-             "A-5988", "A-5851", "A-5604", "A-6092", "A-5589", "A-5844", "A-2668", "A-55", "A-3275", "A-5086",
-             "A-3390", "A-2234", "A-5672", "A-343", "A-495", "A-1974", "A-1521", "A-5887", "A-719", "A-2676",
-             "A-2765"]
+mixed_ids = [
+    "A-1392",
+    "B-162",
+    "A-2676",
+    "A-2482",
+    "A-2152",
+    "A-6080",
+    "A-238",
+    "A-5820",
+    "A-2604",
+    "A-5686",
+    "A-5563",
+    "A-5988",
+    "A-5851",
+    "A-5604",
+    "A-6092",
+    "A-5589",
+    "A-5844",
+    "A-2668",
+    "A-55",
+    "A-3275",
+    "A-5086",
+]
+mixed_big = [
+    "A-1392",
+    "B-162",
+    "A-2482",
+    "A-2152",
+    "A-6080",
+    "A-238",
+    "A-5820",
+    "A-2604",
+    "A-5686",
+    "A-5563",
+    "A-5988",
+    "A-5851",
+    "A-5604",
+    "A-6092",
+    "A-5589",
+    "A-5844",
+    "A-2668",
+    "A-55",
+    "A-3275",
+    "A-5086",
+    "A-3390",
+    "A-2234",
+    "A-5672",
+    "A-343",
+    "A-495",
+    "A-1974",
+    "A-1521",
+    "A-5887",
+    "A-719",
+    "A-2676",
+    "A-2765",
+]
 print(mixed_ids)
 
 # Get a specific set of IDs (neighboring points)
@@ -53,14 +112,7 @@ unit_test.run()
 
 
 # Columns that we want to show when we hover above a point
-hover_columns = [
-    "q_10",
-    "q_25",
-    "q_50",
-    "q_75",
-    "q_90",
-    "prediction"
-]
+hover_columns = ["q_10", "q_25", "q_50", "q_75", "q_90", "prediction"]
 
 # PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y", color="confidence", hover_columns=hover_columns).run()
 unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y").run()

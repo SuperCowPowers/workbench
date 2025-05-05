@@ -151,7 +151,6 @@ if __name__ == "__main__":
         if df is None:
             raise ValueError("No cached inference DataFrame found.")
 
-
     # Compute SHAP values and get the top 10 features
     shap_importances = shap_feature_importance(model)[:10]
     shap_features = [feature for feature, _ in shap_importances]

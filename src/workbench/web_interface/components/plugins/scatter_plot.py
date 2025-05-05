@@ -266,6 +266,7 @@ class ScatterPlot(PluginInterface):
             # Use the provided colorscale as a discrete palette.
             # Hardcode a discrete colorscale using Plotly Express's qualitative palette.
             import plotly.express as px
+
             discrete_colors = px.colors.qualitative.Plotly
             data = []
             for i, cat in enumerate(categories):
