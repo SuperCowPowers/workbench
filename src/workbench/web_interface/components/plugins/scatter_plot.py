@@ -260,10 +260,12 @@ class ScatterPlot(PluginInterface):
         else:
             # For categorical data, create one trace per category so that a legend appears.
             categories = sorted(df[color_col].astype(str).unique())
+            # Hack for low, medium, high
+            if categories == ["high", "low", "medium"]:
+                categories = ["low", "high", "medium"]
             # Use the provided colorscale as a discrete palette.
             # Hardcode a discrete colorscale using Plotly Express's qualitative palette.
             import plotly.express as px
-
             discrete_colors = px.colors.qualitative.Plotly
             data = []
             for i, cat in enumerate(categories):
