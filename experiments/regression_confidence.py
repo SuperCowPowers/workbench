@@ -1,67 +1,56 @@
-from typing import Union
-import pandas as pd
-from dash import dcc, html, callback, Input, Output
-import plotly.graph_objects as go
-from dash.exceptions import PreventUpdate
-
 # Workbench Imports
-from workbench.api import DataSource, FeatureSet
-from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from workbench.api import FeatureSet, Model, Endpoint, DFStore
 from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
 from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
+from workbench.utils.shap_utils import shap_feature_importance
+from workbench.algorithms.dataframe.projection_2d import Projection2D
 
-# Run an integration test
-from pprint import pprint
-import numpy as np
-from workbench.api import Model, Endpoint
+model = Model("aqsol-ensemble")
 
-# Get the endpoint
-end = Endpoint("aqsol-qr")
+# Pull a FeatureSet and run inference on it
+recreate = False
+if recreate:
+    fs = FeatureSet(model.get_input())
+    df = fs.pull_dataframe()
+    end = Endpoint(model.endpoints()[0])
+    df = end.inference(df)
 
-# Domain specific error_distance (if we got it wrong by this much, we have low confidence)
-error_distance = 1.5
+    # Store the inference dataframe
+    DFStore().upsert("/workbench/models/aqsol-ensemble/full_inference", df)
+else:
+    # Retrieve the cached inference dataframe
+    df = DFStore().get("/workbench/models/aqsol-ensemble/full_inference")
+    if df is None:
+        raise ValueError("No cached inference DataFrame found.")
 
-# Get the endpoint model and target column
-model = Model(end.get_input())
-target = model.target()
+# Compute SHAP values and get the top 10 features
+"""
+shap_importances = shap_feature_importance(model)[:10]
+shap_features = [feature for feature, _ in shap_importances]
+"""
+shap_features = ["mollogp", "bertzct", "molwt", "tpsa", "numvalenceelectrons", "balabanj",
+                 "molmr", "labuteasa", "numhdonors", "numheteroatoms"]
+df = Projection2D().fit_transform(df, features=shap_features, projection="UMAP")
 
-# Grab the inference data
-pred_df = model.get_inference_predictions()
 
-# Domain specific confidence
-pred_df["target_spread"] = pred_df["q_90"] - pred_df["q_10"]
-pred_df["target_confidence"] = np.clip(1 - (pred_df["target_spread"] / (error_distance * 4.0)), 0, 1)
+# First the "mixed" cluster
+mixed_ids = ["A-1392", "B-162", "A-2676", "A-2482", "A-2152", "A-6080", "A-238",
+             "A-5820", "A-2604", "A-5686", "A-5563", "A-5988", "A-5851", "A-5604", "A-6092",
+             "A-5589", "A-5844", "A-2668", "A-55", "A-3275", "A-5086"]
+mixed_big = ["A-1392", "B-162", "A-2482", "A-2152", "A-6080", "A-238", "A-5820", "A-2604", "A-5686", "A-5563",
+             "A-5988", "A-5851", "A-5604", "A-6092", "A-5589", "A-5844", "A-2668", "A-55", "A-3275", "A-5086",
+             "A-3390", "A-2234", "A-5672", "A-343", "A-495", "A-1974", "A-1521", "A-5887", "A-719", "A-2676",
+             "A-2765"]
+print(mixed_ids)
 
-# Compute the regression outliers
-regression_outliers = np.maximum(np.abs(pred_df["qr_05"]), np.abs(pred_df["qr_95"]))
+# Get a specific set of IDs (neighboring points)
+# query_ids = ['C-2383', 'B-976', 'B-866', 'B-867', 'B-868', 'B-3565', 'G-296', 'C-2215', 'B-861', 'B-870', 'B-871']
+df["neigh"] = df["id"].isin(mixed_ids).astype(int)
 
-# Compute regression IQR distance
-pred_df["iqr"] = pred_df["qr_75"] - pred_df["qr_25"]
+# Run the Unit Test on the Plugin using the new DataFrame with 'x' and 'y'
+unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y")
+unit_test.run()
 
-# Compute residual confidence
-pred_df["residual_confidence"] = np.clip(1 - (regression_outliers / error_distance), 0, 1)
-# pred_df["residual_confidence"] = np.clip(1 - (pred_df["iqr"] / 2.0), 0, 1)
-
-# Compute the median delta for the prediction
-pred_df["median_delta"] = np.abs(pred_df["q_50"] - pred_df["prediction"])
-pred_df["median_confidence"] = np.clip(1 - (pred_df["median_delta"] / (error_distance / 2)), 0, 1)
-
-# Confidence is the product of target, residual, and median confidence
-# pred_df["confidence"] = pred_df["residual_confidence"] * pred_df["median_confidence"]
-# pred_df["confidence"] = pred_df["residual_confidence"] * pred_df["target_confidence"]
-pred_df["confidence"] = pred_df["residual_confidence"]
-
-# Grab the performance metrics
-metrics = model.get_inference_metrics()
-pprint(metrics)
-
-# Confidence Threshold
-confidence_thres = 0.5
-
-# Now filter the data based on confidence and give RMSE for the filtered data
-predictions_filtered = pred_df[pred_df["confidence"] > confidence_thres]
-rmse_filtered = np.sqrt(np.mean((predictions_filtered[target] - predictions_filtered["prediction"]) ** 2))
-print(f"RMSE Filtered: {rmse_filtered} support: {len(predictions_filtered)}")
 
 # Columns that we want to show when we hover above a point
 hover_columns = [
@@ -70,16 +59,9 @@ hover_columns = [
     "q_50",
     "q_75",
     "q_90",
-    "prediction",
-    target,
-    "confidence",
-    "target_spread",
-    "target_confidence",
-    "residual_confidence",
-    "median_delta",
-    "median_confidence",
+    "prediction"
 ]
 
-PluginUnitTest(
-    ScatterPlot, input_data=pred_df, x="solubility", y="prediction", color="confidence", hover_columns=hover_columns
-).run()
+# PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y", color="confidence", hover_columns=hover_columns).run()
+unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y").run()
+unit_test.run()
