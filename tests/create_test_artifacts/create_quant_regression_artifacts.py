@@ -77,7 +77,7 @@ if __name__ == "__main__":
         end.auto_inference(capture=True)
 
     # Create the AQSol Quantile Regression Model
-    if recreate or not Model("aqsol-quantile").exists():
+    if recreate or not Model("aqsol-quantiles").exists():
 
         # AQSol Features
         features = [
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         # Transform FeatureSet into Quantile Regression Model
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
-            name="aqsol-quantile",
+            name="aqsol-quantiles",
             model_type=ModelType.QUANTILE_REGRESSOR,
             target_column="solubility",
             feature_list=features,
@@ -112,8 +112,8 @@ if __name__ == "__main__":
         )
 
     # Create the AQSol Quantile Regression Endpoint
-    if recreate or not Endpoint("aqsol-quantile").exists():
-        m = Model("aqsol-quantile")
+    if recreate or not Endpoint("aqsol-quantiles").exists():
+        m = Model("aqsol-quantiles")
         end = m.to_endpoint(tags=["aqsol", "quantiles"])
 
         # Run auto-inference on the AQSol Quantile Regression Endpoint
