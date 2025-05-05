@@ -7,8 +7,12 @@ FeatureSets:
     - test_features
     - abalone_features
 Models:
+    - test-regression
+    - test-classification
     - abalone-regression
 Endpoints:
+    - test-regression
+    - test-classification
     - abalone-regression-end
 """
 
