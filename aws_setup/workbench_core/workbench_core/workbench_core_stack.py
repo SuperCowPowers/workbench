@@ -548,11 +548,12 @@ class WorkbenchCoreStack(Stack):
         """
         return iam.PolicyStatement(
             actions=[
+                # Read only policy for Secrets Manager
                 "secretsmanager:ListSecrets",
                 "secretsmanager:DescribeSecret",
                 "secretsmanager:GetSecretValue"
             ],
-            resources=["*"],  # Broad permission necessary for Secrets Manager operations
+            resources=["*"],  # We can/should narrow this down
         )
 
     def workbench_datasource_policy(self) -> iam.ManagedPolicy:
