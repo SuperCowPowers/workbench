@@ -540,7 +540,7 @@ class WorkbenchCoreStack(Stack):
             resources=["*"],  # Broad permission necessary for Parameter Store operations
         )
 
-    def secrets_policy_statement(self) -> iam.PolicyStatement:
+    def secrets_read_policy_statement(self) -> iam.PolicyStatement:
         """Create a policy statement for accessing AWS Secrets Manager.
 
         Returns:
@@ -550,11 +550,7 @@ class WorkbenchCoreStack(Stack):
             actions=[
                 "secretsmanager:ListSecrets",
                 "secretsmanager:DescribeSecret",
-                "secretsmanager:GetSecretValue",
-                "secretsmanager:CreateSecret",
-                "secretsmanager:PutSecretValue",
-                "secretsmanager:UpdateSecret",
-                "secretsmanager:DeleteSecret",
+                "secretsmanager:GetSecretValue"
             ],
             resources=["*"],  # Broad permission necessary for Secrets Manager operations
         )
@@ -572,7 +568,7 @@ class WorkbenchCoreStack(Stack):
             self.athena_policy_statement(),
             self.athena_workgroup_policy_statement(),
             self.parameter_store_policy_statement(),
-            self.secrets_policy_statement(),
+            self.secrets_read_policy_statement(),
         ]
 
         return iam.ManagedPolicy(
