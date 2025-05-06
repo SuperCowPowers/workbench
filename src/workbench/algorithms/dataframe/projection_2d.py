@@ -61,7 +61,7 @@ class Projection2D:
         projection_result = self.projection_model.fit_transform(X_scaled)
         df[["x", "y"]] = projection_result
 
-        # Resolve coincident points by adding jitter and return the new DataFrame
+        # Resolve coincident points and return the new DataFrame
         return self.resolve_coincident_points(df)
 
     def _get_projection_model(self, projection: str, df: pd.DataFrame):
@@ -98,19 +98,51 @@ class Projection2D:
 
     @staticmethod
     def resolve_coincident_points(df: pd.DataFrame) -> pd.DataFrame:
-        """Resolve coincident points in a DataFrame by adding jitter.
+        """Resolve coincident points using random jitter
 
         Args:
-            df (pd.DataFrame): The DataFrame containing x and y projection coordinates.
+            df (pd.DataFrame): DataFrame with x and y coordinates.
 
         Returns:
-            pd.DataFrame: The DataFrame with resolved coincident points.
+            pd.DataFrame: DataFrame with resolved coincident points and flag column.
         """
-        jitter_x = (df["x"].max() - df["x"].min()) * 0.005
-        jitter_y = (df["y"].max() - df["y"].min()) * 0.005
-        df["x"] += np.random.normal(0, jitter_x, len(df))
-        df["y"] += np.random.normal(0, jitter_y, len(df))
-        return df
+        result = df.copy()
+        result['coincident'] = 0
+
+        # Set jitter size based on rounding precision
+        precision = 3
+        jitter_amount = 10 ** (-precision) * 2  # 2x the rounding precision
+
+        # Create rounded values for grouping
+        rounded = pd.DataFrame({
+            'x_round': df['x'].round(precision),
+            'y_round': df['y'].round(precision),
+            'idx': df.index
+        })
+
+        # Find and mark duplicates
+        duplicated = rounded.duplicated(subset=['x_round', 'y_round'], keep=False)
+        print("Coincident Points found:", duplicated.sum())
+        if not duplicated.any():
+            return result
+        result.loc[rounded[duplicated]['idx'], 'coincident'] = 1
+
+        # Process each group
+        for (x_round, y_round), group in rounded[duplicated].groupby(['x_round', 'y_round']):
+            indices = group['idx'].values
+            if len(indices) <= 1:
+                continue
+
+            # Apply random jitter to all points
+            for i, idx in enumerate(indices):
+                dx = float(jitter_amount * (np.random.random() * 2 - 1))
+                dy = float(jitter_amount * (np.random.random() * 2 - 1))
+                print(f"\n{result.loc[idx, 'x']}, {result.loc[idx, 'y']}")
+                result.loc[idx, 'x'] += dx
+                result.loc[idx, 'y'] += dy
+                print(f"{result.loc[idx, 'x']}, {result.loc[idx, 'y']}")
+
+        return result
 
 
 if __name__ == "__main__":
@@ -121,16 +153,22 @@ if __name__ == "__main__":
     from workbench.utils.shap_utils import shap_feature_importance
 
     data = {
-        "ID": [f"id_{i}" for i in range(10)],
         "feat1": [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
-        "feat2": [1.0, 1.0, 1.1, 3.0, 4.0, 1.0, 1.0, 1.1, 3.0, 4.0],
+        "feat2": [2.1, 2.2, 2.4, 6.1, 9.0, 2.5, 2.0, 2.2, 6.6, 7.5],
         "feat3": [0.1, 0.15, 0.2, 0.9, 2.8, 0.25, 0.35, 0.4, 1.6, 2.5],
         "price": [31, 60, 62, 40, 20, 31, 61, 60, 40, 20],
     }
     input_df = pd.DataFrame(data)
+    # Concat a bunch of copies to test out the coincidence resolution
+    input_df = pd.concat([input_df] * 10, ignore_index=True)
+    input_df["ID"] = [f"id_{i}" for i in range(len(input_df))]
 
     df = Projection2D().fit_transform(input_df, features=["feat1", "feat2", "feat3"], projection="UMAP")
     print(df)
+
+    # Run the Unit Test on the Plugin using the new DataFrame with 'x' and 'y'
+    # unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y")
+    # unit_test.run()
 
     # Okay now for a real test with real data
     model = Model("aqsol-ensemble")
@@ -159,3 +197,4 @@ if __name__ == "__main__":
     # Run the Unit Test on the Plugin using the new DataFrame with 'x' and 'y'
     unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y")
     unit_test.run()
+
