@@ -104,10 +104,8 @@ class Projection2D:
             df (pd.DataFrame): DataFrame with x and y coordinates.
 
         Returns:
-            pd.DataFrame: DataFrame with resolved coincident points and flag column.
+            pd.DataFrame: DataFrame with resolved coincident points
         """
-        result = df.copy()
-        result['coincident'] = 0
 
         # Set jitter size based on rounding precision
         precision = 3
@@ -120,12 +118,15 @@ class Projection2D:
             'idx': df.index
         })
 
-        # Find and mark duplicates
+        # Find duplicates
         duplicated = rounded.duplicated(subset=['x_round', 'y_round'], keep=False)
         print("Coincident Points found:", duplicated.sum())
         if not duplicated.any():
-            return result
-        result.loc[rounded[duplicated]['idx'], 'coincident'] = 1
+            return df
+
+        # Get the dtypes of the columns
+        x_dtype = df['x'].dtype
+        y_dtype = df['y'].dtype
 
         # Process each group
         for (x_round, y_round), group in rounded[duplicated].groupby(['x_round', 'y_round']):
@@ -135,14 +136,13 @@ class Projection2D:
 
             # Apply random jitter to all points
             for i, idx in enumerate(indices):
-                dx = float(jitter_amount * (np.random.random() * 2 - 1))
-                dy = float(jitter_amount * (np.random.random() * 2 - 1))
-                print(f"\n{result.loc[idx, 'x']}, {result.loc[idx, 'y']}")
-                result.loc[idx, 'x'] += dx
-                result.loc[idx, 'y'] += dy
-                print(f"{result.loc[idx, 'x']}, {result.loc[idx, 'y']}")
+                # Generate and apply properly typed offsets
+                dx = np.array(jitter_amount * (np.random.random() * 2 - 1), dtype=x_dtype)
+                dy = np.array(jitter_amount * (np.random.random() * 2 - 1), dtype=y_dtype)
+                df.loc[idx, 'x'] += dx
+                df.loc[idx, 'y'] += dy
 
-        return result
+        return df
 
 
 if __name__ == "__main__":
