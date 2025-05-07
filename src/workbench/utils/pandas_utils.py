@@ -494,8 +494,8 @@ def remove_rows_with_nans(input_df: pd.DataFrame, how: str = "any", subset: list
 
 def detect_drift(current_df, new_df, drift_percentage=0.1):
     """
-    Detects drift between two dataframes by checking if values fall outside
-    an acceptable range.
+    Detects drift between two dataframes by checking if values in the new dataframe
+    fall outside the acceptable range based on the current dataframe.
 
     Args:
         current_df: DataFrame containing the baseline data
@@ -511,8 +511,8 @@ def detect_drift(current_df, new_df, drift_percentage=0.1):
                 - 'drift_examples': DataFrame showing drift details
 
     Scale invariance:
-    For each column, the allowable drift is calculated as a percentage
-    of that column's total value range, making the comparison scale-invariant.
+        For each column, the allowable drift is calculated as a percentage
+        of that column's total value range, making the comparison scale-invariant.
     """
 
     # Ensure we're only comparing columns present in both dataframes
@@ -537,43 +537,41 @@ def detect_drift(current_df, new_df, drift_percentage=0.1):
         if max_val == min_val:
             continue
 
-        # Calculate the range and the allowable drift
+        # Calculate the column range and the drift allowance
         column_range = max_val - min_val
         column_drift = column_range * (drift_percentage / 100)
 
-        # Vectorized drift check
+        # Calculate drift boundaries
         drift_min = current_df[col] - column_drift
         drift_max = current_df[col] + column_drift
 
-        # Find which values in new_df are outside the drift limits
-        outside_drift = (new_df[col] < drift_min) | (new_df[col] > drift_max)
+        # Check which values in new_df are outside the drift boundaries
+        out_of_bounds = (new_df[col] < drift_min) | (new_df[col] > drift_max)
 
-        # If any values are outside drift limits, record the column
-        if outside_drift.any():
+        if out_of_bounds.any():
             drift_cols.append(col)
 
-            # For example results, get the first few out-of-drift values
-            examples = pd.DataFrame(
-                {
-                    "row_index": outside_drift[outside_drift].index[:5],  # Limit to first 5 examples
-                    "current_value": current_df.loc[outside_drift[outside_drift].index, col][:5],
-                    "new_value": new_df.loc[outside_drift[outside_drift].index, col][:5],
-                    "drift_min": drift_min[outside_drift][:5],
-                    "drift_max": drift_max[outside_drift][:5],
-                    "column_drift": column_drift,
-                    "column_range": column_range,
-                    "drift_percentage": drift_percentage,
-                }
-            )
+            # Get indices where drift occurred
+            drift_indices = out_of_bounds[out_of_bounds].index
 
-            examples["column"] = col
-            drift_data.append(examples)
-
-    # Combine all drift examples
-    drift_examples = pd.concat(drift_data) if drift_data else pd.DataFrame()
+            # Create example data (limited to first 5 instances)
+            for idx in drift_indices[:5]:
+                drift_data.append({
+                    'column': col,
+                    'row_index': idx,
+                    'current_value': current_df.loc[idx, col],
+                    'new_value': new_df.loc[idx, col],
+                    'min_bound': drift_min[idx],
+                    'max_bound': drift_max[idx],
+                    'column_range': column_range,
+                    'allowed_drift': column_drift
+                })
 
     has_drift = len(drift_cols) > 0
-    details = {"columns_with_drift": drift_cols, "drift_examples": drift_examples}
+    details = {
+        'columns_with_drift': drift_cols,
+        'drift_examples': pd.DataFrame(drift_data) if drift_data else pd.DataFrame()
+    }
 
     return has_drift, details
 
