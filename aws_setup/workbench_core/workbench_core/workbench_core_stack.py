@@ -408,19 +408,113 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
-    @staticmethod
-    def endpoint_list_monitoring_policy_statement() -> iam.PolicyStatement:
-        """Create a policy statement for listing all SageMaker monitoring schedules.
+    # For list operations that typically require "*" resource
+    def monitoring_list_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for listing SageMaker monitoring resources.
 
         Returns:
-            iam.PolicyStatement: The policy statement for listing SageMaker monitoring schedules.
+            iam.PolicyStatement: The policy statement for listing operations.
         """
         return iam.PolicyStatement(
             actions=[
                 "sagemaker:ListMonitoringSchedules",
+                "sagemaker:ListMonitoringExecutions",
             ],
-            resources=["*"],  # ListMonitoringSchedules does not support specific resources
+            resources=["*"],  # List operations require "*" resource
         )
+
+    # For specific monitoring schedule operations
+    def monitoring_schedule_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for managing SageMaker monitoring schedules.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for monitoring schedule operations.
+        """
+        schedule_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:monitoring-schedule/*"
+        return iam.PolicyStatement(
+            actions=[
+                "sagemaker:DescribeMonitoringSchedule",
+                "sagemaker:DescribeMonitoringExecution",
+                "sagemaker:CreateMonitoringSchedule",
+                "sagemaker:UpdateMonitoringSchedule",
+                "sagemaker:DeleteMonitoringSchedule",
+                "sagemaker:StartMonitoringSchedule",
+                "sagemaker:StopMonitoringSchedule",
+            ],
+            resources=[schedule_resources],
+        )
+
+    # For data capture operations
+    def data_capture_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for managing SageMaker endpoint data capture.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for endpoint data capture operations.
+        """
+        endpoint_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/*"
+        endpoint_config_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint-config/*"
+
+        return iam.PolicyStatement(
+            actions=[
+                "sagemaker:EnableCapture",
+                "sagemaker:DisableCapture",
+            ],
+            resources=[
+                endpoint_resources,
+                endpoint_config_resources,
+            ],
+        )
+
+    # For CloudWatch alarm operations
+    def monitoring_cloudwatch_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for managing CloudWatch alarms for monitoring.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for CloudWatch operations.
+        """
+        cloudwatch_resources = f"arn:aws:cloudwatch:{self.region}:{self.account}:alarm:*"
+
+        return iam.PolicyStatement(
+            actions=[
+                "cloudwatch:PutMetricAlarm",
+                "cloudwatch:DescribeAlarms",
+                "cloudwatch:DeleteAlarms",
+            ],
+            resources=[cloudwatch_resources],
+        )
+
+    # For SNS notification operations
+    def monitoring_sns_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for managing SNS notifications for monitoring.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for SNS operations.
+        """
+        sns_resources = f"arn:aws:sns:{self.region}:{self.account}:*"
+
+        return iam.PolicyStatement(
+            actions=[
+                "sns:CreateTopic",
+                "sns:Subscribe",
+                "sns:Publish",
+            ],
+            resources=[sns_resources],
+        )
+
+    # Helper method to get all monitoring policy statements
+    def all_monitoring_policy_statements(self) -> List[iam.PolicyStatement]:
+        """Get all policy statements needed for SageMaker endpoint monitoring.
+
+        Returns:
+            List[iam.PolicyStatement]: A list of all policy statements for monitoring.
+        """
+        return [
+            self.monitoring_list_policy_statement(),
+            self.monitoring_schedule_policy_statement(),
+            self.data_capture_policy_statement(),
+            self.monitoring_cloudwatch_policy_statement(),
+            self.monitoring_sns_policy_statement(),
+        ]
 
     @staticmethod
     def pipeline_list_policy_statement() -> iam.PolicyStatement:
@@ -638,10 +732,11 @@ class WorkbenchCoreStack(Stack):
         policy_statements = [
             self.endpoint_list_policy_statement(),
             self.endpoint_policy_statement(),
-            self.endpoint_list_monitoring_policy_statement(),
             self.cloudwatch_policy_statement(),
             self.parameter_store_policy_statement(),
         ]
+        # Add the monitoring policy statements to the endpoint policy
+        policy_statements += self.all_monitoring_policy_statements()
         return iam.ManagedPolicy(
             self,
             id="WorkbenchEndpointPolicy",
