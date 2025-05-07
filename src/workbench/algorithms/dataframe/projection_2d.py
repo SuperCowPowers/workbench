@@ -112,25 +112,23 @@ class Projection2D:
         jitter_amount = 10 ** (-precision) * 2  # 2x the rounding precision
 
         # Create rounded values for grouping
-        rounded = pd.DataFrame({
-            'x_round': df['x'].round(precision),
-            'y_round': df['y'].round(precision),
-            'idx': df.index
-        })
+        rounded = pd.DataFrame(
+            {"x_round": df["x"].round(precision), "y_round": df["y"].round(precision), "idx": df.index}
+        )
 
         # Find duplicates
-        duplicated = rounded.duplicated(subset=['x_round', 'y_round'], keep=False)
+        duplicated = rounded.duplicated(subset=["x_round", "y_round"], keep=False)
         print("Coincident Points found:", duplicated.sum())
         if not duplicated.any():
             return df
 
         # Get the dtypes of the columns
-        x_dtype = df['x'].dtype
-        y_dtype = df['y'].dtype
+        x_dtype = df["x"].dtype
+        y_dtype = df["y"].dtype
 
         # Process each group
-        for (x_round, y_round), group in rounded[duplicated].groupby(['x_round', 'y_round']):
-            indices = group['idx'].values
+        for (x_round, y_round), group in rounded[duplicated].groupby(["x_round", "y_round"]):
+            indices = group["idx"].values
             if len(indices) <= 1:
                 continue
 
@@ -139,8 +137,8 @@ class Projection2D:
                 # Generate and apply properly typed offsets
                 dx = np.array(jitter_amount * (np.random.random() * 2 - 1), dtype=x_dtype)
                 dy = np.array(jitter_amount * (np.random.random() * 2 - 1), dtype=y_dtype)
-                df.loc[idx, 'x'] += dx
-                df.loc[idx, 'y'] += dy
+                df.loc[idx, "x"] += dx
+                df.loc[idx, "y"] += dy
 
         return df
 
@@ -197,4 +195,3 @@ if __name__ == "__main__":
     # Run the Unit Test on the Plugin using the new DataFrame with 'x' and 'y'
     unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y")
     unit_test.run()
-

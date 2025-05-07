@@ -551,7 +551,7 @@ class WorkbenchCoreStack(Stack):
                 # Read only policy for Secrets Manager
                 "secretsmanager:ListSecrets",
                 "secretsmanager:DescribeSecret",
-                "secretsmanager:GetSecretValue"
+                "secretsmanager:GetSecretValue",
             ],
             resources=["*"],  # We can/should narrow this down
         )

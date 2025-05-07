@@ -29,36 +29,54 @@ shap_importances = shap_feature_importance(model)[:20]
 shap_features = [feature for feature, _ in shap_importances]
 """
 shap_features = [
-    'mollogp',
-    'bertzct',
-    'molwt',
-    'tpsa',
-    'numvalenceelectrons',
-    'balabanj',
-    'molmr',
-    'labuteasa',
-    'numhdonors',
-    'numheteroatoms',
-    'numrotatablebonds',
-    'numhacceptors',
-    'heavyatomcount',
-    'ringcount',
-    'numaliphaticrings',
-    'numaromaticrings',
-    'numsaturatedrings'
+    "mollogp",
+    "bertzct",
+    "molwt",
+    "tpsa",
+    "numvalenceelectrons",
+    "balabanj",
+    "molmr",
+    "labuteasa",
+    "numhdonors",
+    "numheteroatoms",
+    "numrotatablebonds",
+    "numhacceptors",
+    "heavyatomcount",
+    "ringcount",
+    "numaliphaticrings",
+    "numaromaticrings",
+    "numsaturatedrings",
 ]
 df = Projection2D().fit_transform(df, features=shap_features, projection="UMAP")
 
 
 # First the "mixed" cluster
-mixed_ids = ['A-2232', 'A-3067', 'A-690', 'A-886', 'B-1540', 'B-2020', 'B-2235', 'B-872',
-             'B-873', 'C-1012', 'C-1018', 'C-1037', 'C-2350', 'C-2396', 'C-2449', 'C-2463',
-             'C-948', 'C-987', 'F-838', 'F-999']
+mixed_ids = [
+    "A-2232",
+    "A-3067",
+    "A-690",
+    "A-886",
+    "B-1540",
+    "B-2020",
+    "B-2235",
+    "B-872",
+    "B-873",
+    "C-1012",
+    "C-1018",
+    "C-1037",
+    "C-2350",
+    "C-2396",
+    "C-2449",
+    "C-2463",
+    "C-948",
+    "C-987",
+    "F-838",
+    "F-999",
+]
 
 print(mixed_ids)
 
-low_ids = ['B-3202', 'B-4094', 'B-3169', 'B-3191', 'B-4092', 'B-4093',
-           'B-2885', 'B-3201', 'C-718', 'H-450', 'B-2811']
+low_ids = ["B-3202", "B-4094", "B-3169", "B-3191", "B-4092", "B-4093", "B-2885", "B-3201", "C-718", "H-450", "B-2811"]
 
 # Get a specific set of IDs (neighboring points)
 df["neigh"] = df["id"].isin(low_ids).astype(int)
