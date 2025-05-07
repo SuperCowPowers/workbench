@@ -553,28 +553,27 @@ def detect_drift(current_df, new_df, drift_percentage=0.1):
             drift_cols.append(col)
 
             # For example results, get the first few out-of-drift values
-            examples = pd.DataFrame({
-                'row_index': outside_drift[outside_drift].index[:5],  # Limit to first 5 examples
-                'current_value': current_df.loc[outside_drift[outside_drift].index, col][:5],
-                'new_value': new_df.loc[outside_drift[outside_drift].index, col][:5],
-                'drift_min': drift_min[outside_drift][:5],
-                'drift_max': drift_max[outside_drift][:5],
-                'column_drift': column_drift,
-                'column_range': column_range,
-                'drift_percentage': drift_percentage
-            })
+            examples = pd.DataFrame(
+                {
+                    "row_index": outside_drift[outside_drift].index[:5],  # Limit to first 5 examples
+                    "current_value": current_df.loc[outside_drift[outside_drift].index, col][:5],
+                    "new_value": new_df.loc[outside_drift[outside_drift].index, col][:5],
+                    "drift_min": drift_min[outside_drift][:5],
+                    "drift_max": drift_max[outside_drift][:5],
+                    "column_drift": column_drift,
+                    "column_range": column_range,
+                    "drift_percentage": drift_percentage,
+                }
+            )
 
-            examples['column'] = col
+            examples["column"] = col
             drift_data.append(examples)
 
     # Combine all drift examples
     drift_examples = pd.concat(drift_data) if drift_data else pd.DataFrame()
 
     has_drift = len(drift_cols) > 0
-    details = {
-        'columns_with_drift': drift_cols,
-        'drift_examples': drift_examples
-    }
+    details = {"columns_with_drift": drift_cols, "drift_examples": drift_examples}
 
     return has_drift, details
 
