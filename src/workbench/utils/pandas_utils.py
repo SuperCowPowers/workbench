@@ -492,6 +492,93 @@ def remove_rows_with_nans(input_df: pd.DataFrame, how: str = "any", subset: list
     return input_df
 
 
+def detect_drift(current_df, new_df, drift_percentage=0.1):
+    """
+    Detects drift between two dataframes by checking if values fall outside
+    an acceptable range.
+
+    Args:
+        current_df: DataFrame containing the baseline data
+        new_df: DataFrame containing the new data to check for drift
+        drift_percentage: Maximum allowed percentage change (0.1 = 0.1%)
+                          relative to each column's min-max range
+
+    Returns:
+        tuple: (has_drift, details_dict)
+            - has_drift: Boolean indicating if any drift was detected
+            - details_dict: Dictionary containing:
+                - 'columns_with_drift': List of column names with drift
+                - 'drift_examples': DataFrame showing drift details
+
+    Scale invariance:
+    For each column, the allowable drift is calculated as a percentage
+    of that column's total value range, making the comparison scale-invariant.
+    """
+
+    # Ensure we're only comparing columns present in both dataframes
+    common_columns = list(set(current_df.columns) & set(new_df.columns))
+
+    if not common_columns:
+        return False, {"columns_with_drift": [], "drift_examples": pd.DataFrame()}
+
+    drift_cols = []
+    drift_data = []
+
+    for col in common_columns:
+        # Skip non-numeric columns
+        if not pd.api.types.is_numeric_dtype(current_df[col]) or not pd.api.types.is_numeric_dtype(new_df[col]):
+            continue
+
+        # Calculate min/max for the allowable range
+        min_val = min(current_df[col].min(), new_df[col].min())
+        max_val = max(current_df[col].max(), new_df[col].max())
+
+        # Avoid division by zero for constant columns
+        if max_val == min_val:
+            continue
+
+        # Calculate the range and the allowable drift
+        column_range = max_val - min_val
+        column_drift = column_range * (drift_percentage / 100)
+
+        # Vectorized drift check
+        drift_min = current_df[col] - column_drift
+        drift_max = current_df[col] + column_drift
+
+        # Find which values in new_df are outside the drift limits
+        outside_drift = (new_df[col] < drift_min) | (new_df[col] > drift_max)
+
+        # If any values are outside drift limits, record the column
+        if outside_drift.any():
+            drift_cols.append(col)
+
+            # For example results, get the first few out-of-drift values
+            examples = pd.DataFrame({
+                'row_index': outside_drift[outside_drift].index[:5],  # Limit to first 5 examples
+                'current_value': current_df.loc[outside_drift[outside_drift].index, col][:5],
+                'new_value': new_df.loc[outside_drift[outside_drift].index, col][:5],
+                'drift_min': drift_min[outside_drift][:5],
+                'drift_max': drift_max[outside_drift][:5],
+                'column_drift': column_drift,
+                'column_range': column_range,
+                'drift_percentage': drift_percentage
+            })
+
+            examples['column'] = col
+            drift_data.append(examples)
+
+    # Combine all drift examples
+    drift_examples = pd.concat(drift_data) if drift_data else pd.DataFrame()
+
+    has_drift = len(drift_cols) > 0
+    details = {
+        'columns_with_drift': drift_cols,
+        'drift_examples': drift_examples
+    }
+
+    return has_drift, details
+
+
 def feature_quality_metrics(input_df: pd.DataFrame, feature_list: list, strategy: str = "median") -> pd.DataFrame:
     """
     Imputes NaN/INF values in the specified feature columns of the DataFrame and tracks feature quality issues.

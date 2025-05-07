@@ -126,7 +126,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", None)
 
     # Create the Class and test it out
-    endpoint_name = "abalone-regression-end-rt"
+    endpoint_name = "abalone-regression-rt"
     my_endpoint = Endpoint(endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")
