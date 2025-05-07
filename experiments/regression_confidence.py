@@ -23,88 +23,45 @@ else:
     if df is None:
         raise ValueError("No cached inference DataFrame found.")
 
-# Compute SHAP values and get the top 10 features
+# Compute SHAP values and get the top 20 features
 """
-shap_importances = shap_feature_importance(model)[:10]
+shap_importances = shap_feature_importance(model)[:20]
 shap_features = [feature for feature, _ in shap_importances]
 """
 shap_features = [
-    "mollogp",
-    "bertzct",
-    "molwt",
-    "tpsa",
-    "numvalenceelectrons",
-    "balabanj",
-    "molmr",
-    "labuteasa",
-    "numhdonors",
-    "numheteroatoms",
+    'mollogp',
+    'bertzct',
+    'molwt',
+    'tpsa',
+    'numvalenceelectrons',
+    'balabanj',
+    'molmr',
+    'labuteasa',
+    'numhdonors',
+    'numheteroatoms',
+    'numrotatablebonds',
+    'numhacceptors',
+    'heavyatomcount',
+    'ringcount',
+    'numaliphaticrings',
+    'numaromaticrings',
+    'numsaturatedrings'
 ]
 df = Projection2D().fit_transform(df, features=shap_features, projection="UMAP")
 
 
 # First the "mixed" cluster
-mixed_ids = [
-    "A-1392",
-    "B-162",
-    "A-2676",
-    "A-2482",
-    "A-2152",
-    "A-6080",
-    "A-238",
-    "A-5820",
-    "A-2604",
-    "A-5686",
-    "A-5563",
-    "A-5988",
-    "A-5851",
-    "A-5604",
-    "A-6092",
-    "A-5589",
-    "A-5844",
-    "A-2668",
-    "A-55",
-    "A-3275",
-    "A-5086",
-]
-mixed_big = [
-    "A-1392",
-    "B-162",
-    "A-2482",
-    "A-2152",
-    "A-6080",
-    "A-238",
-    "A-5820",
-    "A-2604",
-    "A-5686",
-    "A-5563",
-    "A-5988",
-    "A-5851",
-    "A-5604",
-    "A-6092",
-    "A-5589",
-    "A-5844",
-    "A-2668",
-    "A-55",
-    "A-3275",
-    "A-5086",
-    "A-3390",
-    "A-2234",
-    "A-5672",
-    "A-343",
-    "A-495",
-    "A-1974",
-    "A-1521",
-    "A-5887",
-    "A-719",
-    "A-2676",
-    "A-2765",
-]
+mixed_ids = ['A-2232', 'A-3067', 'A-690', 'A-886', 'B-1540', 'B-2020', 'B-2235', 'B-872',
+             'B-873', 'C-1012', 'C-1018', 'C-1037', 'C-2350', 'C-2396', 'C-2449', 'C-2463',
+             'C-948', 'C-987', 'F-838', 'F-999']
+
 print(mixed_ids)
 
+low_ids = ['B-3202', 'B-4094', 'B-3169', 'B-3191', 'B-4092', 'B-4093',
+           'B-2885', 'B-3201', 'C-718', 'H-450', 'B-2811']
+
 # Get a specific set of IDs (neighboring points)
-# query_ids = ['C-2383', 'B-976', 'B-866', 'B-867', 'B-868', 'B-3565', 'G-296', 'C-2215', 'B-861', 'B-870', 'B-871']
-df["neigh"] = df["id"].isin(mixed_ids).astype(int)
+df["neigh"] = df["id"].isin(low_ids).astype(int)
 
 # Run the Unit Test on the Plugin using the new DataFrame with 'x' and 'y'
 unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y")
