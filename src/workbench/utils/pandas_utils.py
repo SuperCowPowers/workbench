@@ -556,21 +556,23 @@ def detect_drift(current_df, new_df, drift_percentage=0.1):
 
             # Create example data (limited to first 5 instances)
             for idx in drift_indices[:5]:
-                drift_data.append({
-                    'column': col,
-                    'row_index': idx,
-                    'current_value': current_df.loc[idx, col],
-                    'new_value': new_df.loc[idx, col],
-                    'min_bound': drift_min[idx],
-                    'max_bound': drift_max[idx],
-                    'column_range': column_range,
-                    'allowed_drift': column_drift
-                })
+                drift_data.append(
+                    {
+                        "column": col,
+                        "row_index": idx,
+                        "current_value": current_df.loc[idx, col],
+                        "new_value": new_df.loc[idx, col],
+                        "min_bound": drift_min[idx],
+                        "max_bound": drift_max[idx],
+                        "column_range": column_range,
+                        "allowed_drift": column_drift,
+                    }
+                )
 
     has_drift = len(drift_cols) > 0
     details = {
-        'columns_with_drift': drift_cols,
-        'drift_examples': pd.DataFrame(drift_data) if drift_data else pd.DataFrame()
+        "columns_with_drift": drift_cols,
+        "drift_examples": pd.DataFrame(drift_data) if drift_data else pd.DataFrame(),
     }
 
     return has_drift, details
