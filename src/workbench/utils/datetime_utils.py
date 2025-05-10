@@ -108,7 +108,7 @@ def datetime_string(datetime_obj: datetime) -> str:
             return str(datetime_obj)
 
     try:
-        return datetime_obj.strftime("%Y-%m-%d %H:%M")
+        return datetime_obj.astimezone().strftime("%Y-%m-%d %H:%M")
     except Exception as e:
         log.error(f"Failed to convert datetime to string: {e}")
         return str(datetime_obj)
