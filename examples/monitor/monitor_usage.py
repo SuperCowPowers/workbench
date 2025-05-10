@@ -21,6 +21,6 @@ statistics_df = mon.get_statistics()
 print(statistics_df.head())
 
 # Get the latest data capture (inputs and outputs)
-input_df, output_df = mon.get_latest_data_capture()
+input_df, output_df = mon.get_captured_data()
 print(input_df.head())
 print(output_df.head())

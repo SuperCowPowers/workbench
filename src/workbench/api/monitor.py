@@ -21,7 +21,7 @@ class Monitor(MonitorCore):
        mon.details()
 
        # One time setup methods
-       mon.add_data_capture()
+       mon.enable_data_capture()
        mon.create_baseline()
        mon.create_monitoring_schedule()
 
@@ -29,7 +29,7 @@ class Monitor(MonitorCore):
        baseline_df = mon.get_baseline()
        constraints_df = mon.get_constraints()
        stats_df = mon.get_statistics()
-       input_df, output_df = mon.get_latest_data_capture()
+       input_df, output_df = mon.get_captured_data()
        ```
     """
 
@@ -49,14 +49,14 @@ class Monitor(MonitorCore):
         """
         return super().details()
 
-    def add_data_capture(self, capture_percentage=100):
+    def enable_data_capture(self, capture_percentage=100):
         """
-        Add data capture configuration for this Monitor/endpoint.
+        Enable data capture configuration for this Monitor/endpoint.
 
         Args:
             capture_percentage (int): Percentage of data to capture. Defaults to 100.
         """
-        super().add_data_capture(capture_percentage)
+        super().enable_data_capture(capture_percentage)
 
     def create_baseline(self, recreate: bool = False):
         """Code to create a baseline for monitoring
@@ -72,24 +72,23 @@ class Monitor(MonitorCore):
         """
         super().create_baseline(recreate)
 
-    def create_monitoring_schedule(self, schedule: str = "hourly", recreate: bool = False):
+    def create_monitoring_schedule(self, schedule: str = "hourly"):
         """
         Sets up the monitoring schedule for the model endpoint.
 
         Args:
             schedule (str): The schedule for the monitoring job (hourly or daily, defaults to hourly).
-            recreate (bool): If True, recreate the monitoring schedule even if it already exists.
         """
-        super().create_monitoring_schedule(schedule, recreate)
+        super().create_monitoring_schedule(schedule)
 
-    def get_latest_data_capture(self) -> (pd.DataFrame, pd.DataFrame):
+    def get_captured_data(self) -> (pd.DataFrame, pd.DataFrame):
         """
         Get the latest data capture input and output from S3.
 
         Returns:
             DataFrame (input), DataFrame(output): Flattened and processed DataFrames for input and output data.
         """
-        return super().get_latest_data_capture()
+        return super().get_captured_data()
 
     def get_baseline(self) -> Union[pd.DataFrame, None]:
         """Code to get the baseline CSV from the S3 baseline directory
@@ -137,8 +136,8 @@ if __name__ == "__main__":
     pprint(mm.summary())
     pprint(mm.details())
 
-    # Add data capture to the endpoint
-    mm.add_data_capture()
+    # Enable data capture for this endpoint
+    mm.enable_data_capture()
 
     # Create a baseline for monitoring
     mm.create_baseline()
@@ -146,18 +145,18 @@ if __name__ == "__main__":
     # Set up the monitoring schedule (if it doesn't already exist)
     mm.create_monitoring_schedule()
 
-    # Check the baseline outputs
+    # Check the monitoring outputs
+    print("\nBaseline outputs...")
     base_df = mm.get_baseline()
-    if base_df is not None:
-        print(base_df.head())
-    constraints_df = mm.get_constraints()
-    if constraints_df is not None:
-        print(constraints_df.head())
-    statistics_df = mm.get_statistics()
-    if statistics_df is not None:
-        print(statistics_df.head())
+    print(base_df.head())
+
+    print("\nConstraints...")
+    pprint(mm.get_constraints())
+
+    print("\nStatistics...")
+    print(mm.get_statistics())
 
     # Get the latest data capture
-    input_df, output_df = mm.get_latest_data_capture()
+    input_df, output_df = mm.get_captured_data()
     print(input_df.head())
     print(output_df.head())
