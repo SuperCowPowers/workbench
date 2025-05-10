@@ -461,7 +461,7 @@ class WorkbenchCoreStack(Stack):
                 "sagemaker:CreateDataQualityJobDefinition",
                 "sagemaker:UpdateDataQualityJobDefinition",
                 "sagemaker:DeleteDataQualityJobDefinition",
-                "sagemaker:ListDataQualityJobDefinitions"
+                "sagemaker:ListDataQualityJobDefinitions",
             ],
             resources=[job_definition_resources],
         )

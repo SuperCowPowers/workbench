@@ -2,9 +2,7 @@
 
 import logging
 import json
-import time
-from typing import Union, Tuple, Dict, Any, List, Optional
-from io import StringIO
+from typing import Union, Tuple
 import pandas as pd
 from sagemaker import Predictor
 from sagemaker.model_monitor import (
@@ -21,13 +19,7 @@ from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.s3_utils import read_from_s3, write_to_s3
 from workbench.utils import endpoint_utils
 from workbench.utils.datetime_utils import datetime_string
-from workbench.utils.monitor_utils import (
-    process_data_capture,
-    get_monitor_json_data,
-    generate_cloudwatch_alarm_config,
-    parse_monitoring_results,
-    extract_violations
-)
+from workbench.utils.monitor_utils import process_data_capture, get_monitor_json_data, parse_monitoring_results
 
 # Note: This resource might come in handy when doing code refactoring
 # https://github.com/aws-samples/amazon-sagemaker-from-idea-to-production/blob/master/06-monitoring.ipynb
@@ -65,16 +57,13 @@ class MonitorCore:
         if existing_schedule:
             # If a schedule exists, attach to it
             self.model_monitor = DefaultModelMonitor.attach(
-                monitor_schedule_name=self.monitoring_schedule_name,
-                sagemaker_session=self.sagemaker_session
+                monitor_schedule_name=self.monitoring_schedule_name, sagemaker_session=self.sagemaker_session
             )
             self.log.info(f"Attached to existing monitoring schedule for {self.endpoint_name}")
         else:
             # Create a new model monitor
             self.model_monitor = DefaultModelMonitor(
-                role=self.workbench_role_arn,
-                instance_type=self.instance_type,
-                sagemaker_session=self.sagemaker_session
+                role=self.workbench_role_arn, instance_type=self.instance_type, sagemaker_session=self.sagemaker_session
             )
             self.log.info(f"Initialized new model monitor for {self.endpoint_name}")
 
@@ -110,35 +99,41 @@ class MonitorCore:
         result = {
             "data_capture_path": self.data_capture_path if self.data_capture_enabled(capture_percentage=100) else None,
             "preprocessing_script_file": self.preprocessing_script_file if self.preprocessing_exists() else None,
-            "monitoring_schedule_status": "Not Scheduled"
+            "monitoring_schedule_status": "Not Scheduled",
         }
 
         if self.baseline_exists():
-            result.update({
-                "baseline_csv_file": self.baseline_csv_file,
-                "baseline_constraints_json_file": self.constraints_json_file,
-                "baseline_statistics_json_file": self.statistics_json_file,
-            })
+            result.update(
+                {
+                    "baseline_csv_file": self.baseline_csv_file,
+                    "baseline_constraints_json_file": self.constraints_json_file,
+                    "baseline_statistics_json_file": self.statistics_json_file,
+                }
+            )
 
         if self.monitoring_schedule_exists():
             schedule_details = self.sagemaker_client.describe_monitoring_schedule(
                 MonitoringScheduleName=self.monitoring_schedule_name
             )
 
-            result.update({
-                "monitoring_schedule_name": schedule_details.get("MonitoringScheduleName"),
-                "monitoring_schedule_status": schedule_details.get("MonitoringScheduleStatus"),
-                "monitoring_output_path": self.monitoring_output_path,
-                "creation_time": datetime_string(schedule_details.get("CreationTime")),
-            })
+            result.update(
+                {
+                    "monitoring_schedule_name": schedule_details.get("MonitoringScheduleName"),
+                    "monitoring_schedule_status": schedule_details.get("MonitoringScheduleStatus"),
+                    "monitoring_output_path": self.monitoring_output_path,
+                    "creation_time": datetime_string(schedule_details.get("CreationTime")),
+                }
+            )
 
             last_run = schedule_details.get("LastMonitoringExecutionSummary", {})
             if last_run:
-                result.update({
-                    "last_run_status": last_run.get("MonitoringExecutionStatus"),
-                    "last_run_time": datetime_string(last_run.get("ScheduledTime")),
-                    "failure_reason": last_run.get("FailureReason"),
-                })
+                result.update(
+                    {
+                        "last_run_status": last_run.get("MonitoringExecutionStatus"),
+                        "last_run_time": datetime_string(last_run.get("ScheduledTime")),
+                        "failure_reason": last_run.get("FailureReason"),
+                    }
+                )
 
         return result
 
@@ -169,7 +164,7 @@ class MonitorCore:
         data_capture_config = DataCaptureConfig(
             enable_capture=True,  # Required parameter
             sampling_percentage=capture_percentage,
-            destination_s3_uri=self.data_capture_path
+            destination_s3_uri=self.data_capture_path,
         )
 
         # Update endpoint with the new capture configuration
@@ -197,10 +192,7 @@ class MonitorCore:
         self.log.important("This normally redeploys the endpoint...")
 
         # Create a configuration with capture disabled
-        data_capture_config = DataCaptureConfig(
-            enable_capture=False,
-            destination_s3_uri=self.data_capture_path
-        )
+        data_capture_config = DataCaptureConfig(enable_capture=False, destination_s3_uri=self.data_capture_path)
 
         # Update endpoint with the new configuration
         Predictor(self.endpoint_name, sagemaker_session=self.sagemaker_session).update_data_capture_config(
@@ -337,7 +329,6 @@ class MonitorCore:
             # Make a modification to the constraints.json file to skip the 'extra_column_check'
             self.update_constraints({"monitoring_config": {"extra_column_check": "DISABLED"}})
 
-
     def get_baseline(self) -> Union[pd.DataFrame, None]:
         """Code to get the baseline CSV from the S3 baseline directory
 
@@ -416,7 +407,7 @@ class MonitorCore:
             return False
 
     def create_monitoring_schedule(self, schedule: str = "hourly"):
-        """ Sets up the monitoring schedule for the model endpoint.
+        """Sets up the monitoring schedule for the model endpoint.
 
         Args:
             schedule (str): The schedule for the monitoring job (hourly or daily, defaults to hourly).
@@ -440,7 +431,7 @@ class MonitorCore:
         # If a monitoring schedule already exists, give an informative message
         if self.monitoring_schedule_exists():
             self.log.warning(f"Monitoring schedule for {self.endpoint_name} already exists.")
-            self.log.warning(f"If you want to create another one, delete existing schedule first.")
+            self.log.warning("If you want to create another one, delete existing schedule first.")
             return
 
         # Set up a NEW monitoring schedule
@@ -470,9 +461,7 @@ class MonitorCore:
             bool: True if a monitoring schedule exists, False otherwise
         """
         try:
-            self.sagemaker_client.describe_monitoring_schedule(
-                MonitoringScheduleName=self.monitoring_schedule_name
-            )
+            self.sagemaker_client.describe_monitoring_schedule(MonitoringScheduleName=self.monitoring_schedule_name)
             return True
         except self.sagemaker_client.exceptions.ResourceNotFound:
             self.log.info(f"No monitoring schedule exists for {self.endpoint_name}.")
@@ -507,7 +496,7 @@ class MonitorCore:
                 MonitoringScheduleName=self.monitoring_schedule_name,
                 MaxResults=max_results,
                 SortBy="ScheduledTime",
-                SortOrder="Descending"
+                SortOrder="Descending",
             )
 
             # Extract the execution details
@@ -522,7 +511,7 @@ class MonitorCore:
                         "creation_time": execution.get("CreationTime"),
                         "last_modified_time": execution.get("LastModifiedTime"),
                         "failure_reason": execution.get("FailureReason"),
-                        "monitoring_type": execution.get("MonitoringType")
+                        "monitoring_type": execution.get("MonitoringType"),
                     }
 
                     # For failure cases, get additional details
@@ -531,10 +520,12 @@ class MonitorCore:
                             exec_details = self.sagemaker_client.describe_monitoring_execution(
                                 MonitoringExecutionArn=execution_arn
                             )
-                            detail.update({
-                                "failure_details": exec_details.get("FailureReason", ""),
-                                "processing_job_arn": exec_details.get("ProcessingJobArn")
-                            })
+                            detail.update(
+                                {
+                                    "failure_details": exec_details.get("FailureReason", ""),
+                                    "processing_job_arn": exec_details.get("ProcessingJobArn"),
+                                }
+                            )
                         except Exception as e:
                             self.log.error(f"Error getting failure details: {e}")
 
@@ -542,7 +533,10 @@ class MonitorCore:
                     if detail["status"] == "Completed":
                         try:
                             # Check for violations
-                            result_path = f"{self.monitoring_output_path}/{detail['creation_time'].strftime('%Y/%m/%d')}/constraint_violations.json"
+                            result_path = (
+                                f"{self.monitoring_output_path}/{detail['creation_time'].strftime('%Y/%m/%d')}"
+                            )
+                            result_path += "/constraint_violations.json"
                             if wr.s3.does_object_exist(result_path):
                                 violations_json = read_from_s3(result_path)
                                 violations = parse_monitoring_results(violations_json)
@@ -581,8 +575,8 @@ class MonitorCore:
         try:
             # Create CloudWatch client
             boto3_session = self.sagemaker_session.boto_session
-            cloudwatch_client = boto3_session.client('cloudwatch')
-            sns_client = boto3_session.client('sns')
+            cloudwatch_client = boto3_session.client("cloudwatch")
+            sns_client = boto3_session.client("sns")
 
             # Create a complete alarm configuration with required parameters
             alarm_name = f"{self.endpoint_name}-monitoring-violations"
@@ -595,33 +589,23 @@ class MonitorCore:
                 "Namespace": "AWS/SageMaker",
                 "Statistic": "Maximum",
                 "Dimensions": [
-                    {
-                        "Name": "MonitoringSchedule",
-                        "Value": self.monitoring_schedule_name
-                    },
-                    {
-                        "Name": "EndpointName",
-                        "Value": self.endpoint_name
-                    }
+                    {"Name": "MonitoringSchedule", "Value": self.monitoring_schedule_name},
+                    {"Name": "EndpointName", "Value": self.endpoint_name},
                 ],
                 "Period": 300,  # 5 minutes
                 "EvaluationPeriods": 1,
                 "Threshold": threshold,
                 "ComparisonOperator": "GreaterThanThreshold",
-                "TreatMissingData": "notBreaching"
+                "TreatMissingData": "notBreaching",
             }
 
             # Create SNS topic for notifications
             topic_name = f"{self.endpoint_name}-monitoring-alerts"
             topic_response = sns_client.create_topic(Name=topic_name)
-            topic_arn = topic_response['TopicArn']
+            topic_arn = topic_response["TopicArn"]
 
             # Subscribe email to topic
-            sns_client.subscribe(
-                TopicArn=topic_arn,
-                Protocol='email',
-                Endpoint=notification_email
-            )
+            sns_client.subscribe(TopicArn=topic_arn, Protocol="email", Endpoint=notification_email)
 
             # Add SNS topic to alarm actions
             alarm_config["AlarmActions"] = [topic_arn]
@@ -712,15 +696,7 @@ if __name__ == "__main__":
 
     # Test update_constraints
     print("\nTesting constraint updates...")
-    custom_constraints = {
-        "sex": {
-            "allowed_values": ["M", "F", "I"]
-        },
-        "length": {
-            "min": 0.0,
-            "max": 1.0
-        }
-    }
+    custom_constraints = {"sex": {"allowed_values": ["M", "F", "I"]}, "length": {"min": 0.0, "max": 1.0}}
     mm.update_constraints(custom_constraints)
 
     # Test monitoring results retrieval
@@ -728,7 +704,7 @@ if __name__ == "__main__":
     results_df = mm.get_monitoring_results(max_results=5)
     if not results_df.empty:
         print(f"Found {len(results_df)} monitoring executions")
-        print(results_df[['status', 'scheduled_time', 'violation_count']].head())
+        print(results_df[["status", "scheduled_time", "violation_count"]].head())
     else:
         print("No monitoring results found yet")
 
@@ -744,4 +720,3 @@ if __name__ == "__main__":
 
     print("Recreating the monitoring schedule.")
     # mm.create_monitoring_schedule()
-

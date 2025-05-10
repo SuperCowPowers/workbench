@@ -18,7 +18,7 @@ log = logging.getLogger("workbench")
 
 def write_to_s3(content, path):
     """Write string content to S3 path"""
-    bytes_io = io.BytesIO(content.encode('utf-8'))
+    bytes_io = io.BytesIO(content.encode("utf-8"))
     return wr.s3.upload(local_file=bytes_io, path=path)
 
 
@@ -27,7 +27,7 @@ def read_from_s3(path):
     buffer = io.BytesIO()
     wr.s3.download(path=path, local_file=buffer)
     buffer.seek(0)
-    return buffer.read().decode('utf-8')
+    return buffer.read().decode("utf-8")
 
 
 def get_s3_etag(s3_uri: str, session: boto3.session.Session) -> Optional[str]:

@@ -3,11 +3,8 @@
 import json
 import logging
 import pandas as pd
-import numpy as np
-import boto3
-from typing import Tuple, Dict, Any, Union, List, Optional
+from typing import Dict, Any, Union
 from io import StringIO
-import base64
 import awswrangler as wr
 
 # Workbench Imports
@@ -33,7 +30,7 @@ def pull_data_capture(data_capture_path, max_files=1) -> Union[pd.DataFrame, Non
     # List files in the specified S3 path
     files = wr.s3.list_objects(data_capture_path)
     if not files:
-        log.warning(f"No data capture files found in {self.data_capture_path}.")
+        log.warning(f"No data capture files found in {data_capture_path}.")
         return None
 
     log.info(f"Found {len(files)} files in {data_capture_path}.")
@@ -98,14 +95,16 @@ def process_data_capture(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         elif output_data["encoding"].upper() == "JSON":
             json_data = json.loads(output_data["data"])
             if isinstance(json_data, dict):
-                output_dfs.append(pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()}))
+                output_dfs.append(
+                    pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()})
+                )
             else:
                 output_dfs.append(pd.DataFrame(json_data))
 
     # Combine and return results
     return (
         pd.concat(input_dfs, ignore_index=True) if input_dfs else pd.DataFrame(),
-        pd.concat(output_dfs, ignore_index=True) if output_dfs else pd.DataFrame()
+        pd.concat(output_dfs, ignore_index=True) if output_dfs else pd.DataFrame(),
     )
 
 
@@ -145,7 +144,7 @@ def parse_monitoring_results(results_json: str) -> Dict[str, Any]:
         # Extract and format the key information
         parsed_results = {
             "schema_validation": results.get("schema", {}).get("validation", {}),
-            "constraint_violations": []
+            "constraint_violations": [],
         }
 
         # Extract violations
@@ -153,7 +152,7 @@ def parse_monitoring_results(results_json: str) -> Dict[str, Any]:
             parsed_violation = {
                 "feature_name": violation.get("feature_name"),
                 "constraint_check_type": violation.get("constraint_check_type"),
-                "description": violation.get("description")
+                "description": violation.get("description"),
             }
             parsed_results["constraint_violations"].append(parsed_violation)
 
@@ -163,76 +162,9 @@ def parse_monitoring_results(results_json: str) -> Dict[str, Any]:
         return {"error": str(e)}
 
 
-def extract_violations(violations_json: str) -> pd.DataFrame:
-    """
-    Extract and format monitoring violations
-
-    Args:
-        violations_json (str): Violations in JSON format
-
-    Returns:
-        pd.DataFrame: DataFrame of violations
-    """
-    try:
-        violations = json.loads(violations_json)
-
-        # Convert to DataFrame
-        violations_list = violations.get("violations", [])
-        if violations_list:
-            return pd.DataFrame(violations_list)
-        else:
-            return pd.DataFrame(columns=["feature_name", "constraint_check_type", "description"])
-    except Exception as e:
-        log.error(f"Error extracting violations: {e}")
-        return pd.DataFrame()
-
-
-def generate_cloudwatch_alarm_config(
-        alarm_name: str,
-        monitoring_schedule_name: str,
-        endpoint_name: str,
-        threshold: int = 1
-) -> Dict[str, Any]:
-    """
-    Generate CloudWatch alarm configuration
-
-    Args:
-        alarm_name (str): Name for the alarm
-        monitoring_schedule_name (str): Name of the monitoring schedule
-        endpoint_name (str): Name of the endpoint
-        threshold (int): Threshold for violations
-
-    Returns:
-        dict: CloudWatch alarm configuration
-    """
-    return {
-        "AlarmName": alarm_name,
-        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
-        "EvaluationPeriods": 1,
-        "MetricName": "ViolationCount",
-        "Namespace": "AWS/SageMaker",
-        "Period": 60,
-        "Statistic": "Maximum",
-        "Threshold": threshold,
-        "ActionsEnabled": True,
-        "AlarmDescription": f'Monitoring violations for {endpoint_name}',
-        "Dimensions": [
-            {
-                'Name': 'MonitoringSchedule',
-                'Value': monitoring_schedule_name
-            },
-            {
-                'Name': 'EndpointName',
-                'Value': endpoint_name
-            }
-        ]
-    }
-
-
 # Test function for the utils
 if __name__ == "__main__":
     """Test the monitor_utils module"""
-    from pprint import pprint
     from workbench.api.monitor import Monitor
 
     # Test pulling data capture
