@@ -408,7 +408,7 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
-    # For list operations that typically require "*" resource
+    # Listing monitoring schedules and executions
     def monitoring_list_policy_statement(self) -> iam.PolicyStatement:
         """Create a policy statement for listing SageMaker monitoring resources.
 
@@ -440,8 +440,30 @@ class WorkbenchCoreStack(Stack):
                 "sagemaker:DeleteMonitoringSchedule",
                 "sagemaker:StartMonitoringSchedule",
                 "sagemaker:StopMonitoringSchedule",
+                "sagemaker:ListTags",
             ],
             resources=[schedule_resources],
+        )
+
+    def data_quality_job_policy_statement(self) -> iam.PolicyStatement:
+        """Create a policy statement for managing SageMaker data quality job definitions and monitoring.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for data quality monitoring operations.
+        """
+        # Define resources for data quality job definitions
+        job_definition_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:data-quality-job-definition/*"
+
+        return iam.PolicyStatement(
+            actions=[
+                # Data quality job definition operations
+                "sagemaker:DescribeDataQualityJobDefinition",
+                "sagemaker:CreateDataQualityJobDefinition",
+                "sagemaker:UpdateDataQualityJobDefinition",
+                "sagemaker:DeleteDataQualityJobDefinition",
+                "sagemaker:ListDataQualityJobDefinitions"
+            ],
+            resources=[job_definition_resources],
         )
 
     # For data capture operations
@@ -514,6 +536,7 @@ class WorkbenchCoreStack(Stack):
             self.data_capture_policy_statement(),
             self.monitoring_cloudwatch_policy_statement(),
             self.monitoring_sns_policy_statement(),
+            self.data_quality_job_policy_statement(),
         ]
 
     @staticmethod
