@@ -1,8 +1,10 @@
 """S3 Utilities for Workbench"""
 
 import os
+import io
 import boto3
 from urllib.parse import urlparse
+import awswrangler as wr
 from botocore.exceptions import ClientError
 import hashlib
 from typing import Optional
@@ -14,17 +16,18 @@ from workbench.utils.performance_utils import performance
 log = logging.getLogger("workbench")
 
 
-def read_s3_file(s3_path: str) -> str:
-    """Reads a file from S3 and returns its content as a string
-    Args:
-        s3_path (str): S3 Path to the file
-    Returns:
-        str: Contents of the file as a string
-    """
-    s3_client = boto3.client("s3")
-    bucket, key = s3_path.replace("s3://", "").split("/", 1)
-    response = s3_client.get_object(Bucket=bucket, Key=key)
-    return response["Body"].read().decode("utf-8")
+def write_to_s3(content, path):
+    """Write string content to S3 path"""
+    bytes_io = io.BytesIO(content.encode('utf-8'))
+    return wr.s3.upload(local_file=bytes_io, path=path)
+
+
+def read_from_s3(path):
+    """Read string content from S3 path"""
+    buffer = io.BytesIO()
+    wr.s3.download(path=path, local_file=buffer)
+    buffer.seek(0)
+    return buffer.read().decode('utf-8')
 
 
 def get_s3_etag(s3_uri: str, session: boto3.session.Session) -> Optional[str]:
@@ -187,16 +190,18 @@ if __name__ == "__main__":
     workbench_bucket = ConfigManager().get_config("WORKBENCH_BUCKET")
 
     # Setup a temporary S3 prefix for the Athena output
-    s3_scratch = f"s3://{workbench_bucket}/temp/athena_output"
+    s3_scratch = f"s3://{workbench_bucket}/temp/s3_utils_test/"
 
     # Check if a bucket and prefix exist
     print(f"Ensuring bucket and prefix exist: {s3_scratch}")
     ensure_s3_bucket_and_prefix(s3_scratch, session)
 
-    # Copy S3 files to local directory
-    """
-    import tempfile
-    s3_path = "s3://sandbox-workbench-artifacts/workbench_plugins"
-    local_path = tempfile.mkdtemp()
-    copy_s3_files_to_local(s3_path, local_path)
-    """
+    # Test the write and read functions
+    test_string = "This is a test string."
+    test_path = f"{s3_scratch}/test.txt"
+    print(f"Writing to S3: {test_path}")
+    write_to_s3(test_string, test_path)
+    print(f"Reading from S3: {test_path}")
+    read_string = read_from_s3(test_path)
+    print(f"Read string: {read_string}")
+    assert read_string == test_string, "Read string does not match the original string."
