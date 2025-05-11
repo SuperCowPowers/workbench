@@ -890,7 +890,11 @@ class EndpointCore(Artifact):
         if not self.exists():
             self.log.warning(f"Trying to delete an Model that doesn't exist: {self.uuid}")
 
-        # Call the Class Method to delete the FeatureSet
+        # Remove this endpoint from the list of registered endpoints
+        self.log.info(f"Removing {self.uuid} from the list of registered endpoints...")
+        ModelCore(self.model_name).remove_endpoint(self.uuid)
+
+        # Call the Class Method to delete the Endpoint
         EndpointCore.managed_delete(endpoint_name=self.uuid)
 
     @classmethod
@@ -1054,6 +1058,6 @@ if __name__ == "__main__":
 
     # Test the class method delete
     # from workbench.api import Model
-    # model = Model("abalone-regression")
-    # model.to_endpoint("test-endpoint")
-    # EndpointCore.managed_delete("test-endpoint")
+    model = Model("abalone-regression")
+    model.to_endpoint("test-endpoint")
+    EndpointCore.managed_delete("test-endpoint")
