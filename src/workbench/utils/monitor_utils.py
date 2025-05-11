@@ -212,6 +212,7 @@ def preprocess_handler(inference_record):
 """
     return script
 
+
 # Test function for the utils
 if __name__ == "__main__":
     """Test the monitor_utils module"""
