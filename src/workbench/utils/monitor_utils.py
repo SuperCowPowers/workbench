@@ -181,7 +181,7 @@ def parse_monitoring_results(results_json: str) -> Dict[str, Any]:
 
 def preprocessing_script(feature_list: list[str]) -> str:
     """
-    Get the preprocessing script for the monitoring job.
+    A preprocessing script for monitoring jobs.
 
     Args:
         feature_list (list[str]): List of features to include in the preprocessing script.
@@ -197,7 +197,8 @@ import pandas as pd
 from io import StringIO
 
 def preprocess_handler(inference_record):
-    input_data = inference_record.endpoint_input.decode('utf-8')
+    # CapturedData objects have endpoint_input with encoding and data attributes
+    input_data = inference_record.endpoint_input.data
 
     # Parse the input data (assuming CSV format)
     df = pd.read_csv(StringIO(input_data))
@@ -210,7 +211,6 @@ def preprocess_handler(inference_record):
     return df.to_csv(index=False)
 """
     return script
-
 
 # Test function for the utils
 if __name__ == "__main__":
