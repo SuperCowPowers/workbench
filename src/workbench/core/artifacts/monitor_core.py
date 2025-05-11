@@ -563,9 +563,7 @@ class MonitorCore:
                     if detail["status"] == "Completed":
                         try:
                             # Check for violations
-                            result_path = (
-                                f"{self.monitoring_path}/{detail['creation_time'].strftime('%Y/%m/%d')}"
-                            )
+                            result_path = f"{self.monitoring_path}/{detail['creation_time'].strftime('%Y/%m/%d')}"
                             result_path += "/constraint_violations.json"
                             if wr.s3.does_object_exist(result_path):
                                 violations_json = read_from_s3(result_path)

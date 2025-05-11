@@ -1057,7 +1057,8 @@ if __name__ == "__main__":
     fast_results = my_endpoint.fast_inference(my_eval_df)
 
     # Test the class method delete
-    # from workbench.api import Model
+    from workbench.api import Model
+
     model = Model("abalone-regression")
     model.to_endpoint("test-endpoint")
     EndpointCore.managed_delete("test-endpoint")
