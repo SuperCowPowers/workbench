@@ -19,7 +19,7 @@ from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.s3_utils import read_from_s3, write_to_s3
 from workbench.utils import endpoint_utils
 from workbench.utils.datetime_utils import datetime_string
-from workbench.utils.monitor_utils import process_data_capture, get_monitor_json_data, parse_monitoring_results
+from workbench.utils.monitor_utils import process_data_capture, get_monitor_json_data, parse_monitoring_results, preprocessing_script
 
 # Note: This resource might come in handy when doing code refactoring
 # https://github.com/aws-samples/amazon-sagemaker-from-idea-to-production/blob/master/06-monitoring.ipynb
@@ -46,7 +46,7 @@ class MonitorCore:
         self.baseline_csv_file = f"{self.baseline_dir}/baseline.csv"
         self.constraints_json_file = f"{self.baseline_dir}/constraints.json"
         self.statistics_json_file = f"{self.baseline_dir}/statistics.json"
-        self.preprocessing_script_file = f"{self.monitoring_path}/preprocessor.py"  # Not currently used
+        self.preprocessing_script_file = f"{self.monitoring_path}/preprocessor.py"
         self.workbench_role_arn = AWSAccountClamp().aws_session.get_workbench_execution_role_arn()
         self.instance_type = instance_type
 
@@ -357,6 +357,7 @@ class MonitorCore:
             )
 
             # Make a modification to the constraints.json file to skip the 'extra_column_check'
+            # Note: This doesn't work but it should :)
             self.update_constraints({"monitoring_config": {"extra_column_check": "Disabled"}})
 
     def get_baseline(self) -> Union[pd.DataFrame, None]:
@@ -475,7 +476,7 @@ class MonitorCore:
         }
 
         # Add preprocessing script if available
-        preprocessor_script = None  # Not currently used
+        preprocessor_script = self.preprocessing_script_file
         if preprocessor_script:
             self.log.important(f"Using preprocessing script: {preprocessor_script}")
             schedule_args["record_preprocessor_script"] = preprocessor_script
