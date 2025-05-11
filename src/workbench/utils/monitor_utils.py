@@ -179,6 +179,39 @@ def parse_monitoring_results(results_json: str) -> Dict[str, Any]:
 """
 
 
+def preprocessing_script(feature_list: list[str]) -> str:
+    """
+    Get the preprocessing script for the monitoring job.
+
+    Args:
+        feature_list (list[str]): List of features to include in the preprocessing script.
+
+    Returns:
+        str: The preprocessing script
+    """
+    # Convert feature list to a proper Python string representation
+    features_str = str(feature_list)
+
+    script = f"""
+import pandas as pd
+from io import StringIO
+
+def preprocess_handler(inference_record):
+    input_data = inference_record.endpoint_input.decode('utf-8')
+
+    # Parse the input data (assuming CSV format)
+    df = pd.read_csv(StringIO(input_data))
+
+    # Keep only the specified features
+    feature_list = {features_str}
+    df = df[feature_list]
+
+    # Convert back to CSV string
+    return df.to_csv(index=False)
+"""
+    return script
+
+
 # Test function for the utils
 if __name__ == "__main__":
     """Test the monitor_utils module"""
@@ -198,3 +231,8 @@ if __name__ == "__main__":
 
     print("\nProcessed Output:")
     print(output_processed)
+
+    # Test preprocessing script
+    script = preprocessing_script(["feature1", "feature2", "feature3"])
+    print("\nPreprocessing Script:")
+    print(script)
