@@ -80,9 +80,10 @@ class EndpointCore(Artifact):
             self.log.critical("Please delete this endpoint and re-deploy...")
 
         # Set the Inference, Capture, and Monitoring S3 Paths
-        self.endpoint_inference_path = self.endpoints_s3_path + "/inference/" + self.uuid
-        self.endpoint_data_capture_path = self.endpoints_s3_path + "/data_capture/" + self.uuid
-        self.endpoint_monitoring_path = self.endpoints_s3_path + "/monitoring/" + self.uuid
+        base_endpoint_path = f"{self.endpoints_s3_path}/{self.uuid}"
+        self.endpoint_inference_path = f"{base_endpoint_path}/inference"
+        self.endpoint_data_capture_path = f"{base_endpoint_path}/data_capture"
+        self.endpoint_monitoring_path = f"{base_endpoint_path}/monitoring"
 
         # Set the Model Name
         self.model_name = self.get_input()
@@ -924,16 +925,12 @@ class EndpointCore(Artifact):
             cls.log.info(f"Deleting Monitoring Schedule {schedule['MonitoringScheduleName']}...")
             cls.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule["MonitoringScheduleName"])
 
-        # Delete related S3 artifacts (inference, data capture, monitoring)
-        endpoint_inference_path = cls.endpoints_s3_path + "/inference/" + endpoint_name
-        endpoint_data_capture_path = cls.endpoints_s3_path + "/data_capture/" + endpoint_name
-        endpoint_monitoring_path = cls.endpoints_s3_path + "/monitoring/" + endpoint_name
-        for s3_path in [endpoint_inference_path, endpoint_data_capture_path, endpoint_monitoring_path]:
-            s3_path = f"{s3_path.rstrip('/')}/"
-            objects = wr.s3.list_objects(s3_path, boto3_session=cls.boto3_session)
-            if objects:
-                cls.log.info(f"Deleting S3 Objects at {s3_path}...")
-                wr.s3.delete_objects(objects, boto3_session=cls.boto3_session)
+        # Recursively delete all endpoint S3 artifacts (inference, data capture, monitoring, etc)
+        base_endpoint_path = f"{cls.endpoints_s3_path}/{endpoint_name}"
+        s3_objects = wr.s3.list_objects(base_endpoint_path, boto3_session=cls.boto3_session)
+        cls.log.info(f"Deleting S3 Objects at {base_endpoint_path}...")
+        cls.log.info(f"{s3_objects}")
+        wr.s3.delete_objects(s3_objects, boto3_session=cls.boto3_session)
 
         # Delete any dataframes that were stored in the Dataframe Cache
         cls.log.info("Deleting Dataframe Cache...")
@@ -983,7 +980,7 @@ class EndpointCore(Artifact):
 
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""
-    from workbench.api import FeatureSet
+    from workbench.api import FeatureSet, Model
     from workbench.utils.endpoint_utils import fs_evaluation_data
     import random
 
@@ -1049,11 +1046,13 @@ if __name__ == "__main__":
     auto_predictions = class_endpoint.auto_inference()
 
     # Generate the confusion matrix
-    target = "solubility_class"
+    target = "wine_class"
     print(class_endpoint.generate_confusion_matrix(target, auto_predictions))
 
     # Run predictions using the fast_inference method
     fast_results = my_endpoint.fast_inference(my_eval_df)
 
     # Test the class method delete
-    EndpointCore.managed_delete("abc")
+    model = Model("abalone-regression")
+    model.to_endpoint("test-endpoint")
+    EndpointCore.managed_delete("test-endpoint")
