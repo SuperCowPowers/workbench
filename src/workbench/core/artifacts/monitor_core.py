@@ -475,11 +475,12 @@ class MonitorCore:
             "schedule_cron_expression": schedule,
         }
 
-        # Add preprocessing script if available
-        preprocessor_script = self.preprocessing_script_file
-        if preprocessor_script:
-            self.log.important(f"Using preprocessing script: {preprocessor_script}")
-            schedule_args["record_preprocessor_script"] = preprocessor_script
+        # Add preprocessing script to get rid of 'extra_column_check' violation (so stupid)
+        feature_list = self.get_baseline().columns.to_list()
+        script = preprocessing_script(feature_list)
+        write_to_s3(script, self.preprocessing_script_file)
+        self.log.important(f"Using preprocessing script: {self.preprocessing_script_file}")
+        schedule_args["record_preprocessor_script"] = self.preprocessing_script_file
 
         # Create the monitoring schedule
         self.model_monitor.create_monitoring_schedule(**schedule_args)
