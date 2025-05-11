@@ -166,7 +166,7 @@ def parse_monitoring_results(results_json: str) -> Dict[str, Any]:
                 # If the status is "CompletedWithViolations", we grab the lastest
                 # violation file and add it to the result
                 if status == "CompletedWithViolations":
-                    violation_file = f"{self.monitoring_report_path}/
+                    violation_file = f"{self.monitoring_path}/
                     {last_run['CreationTime'].strftime('%Y/%m/%d')}/constraint_violations.json"
                     if wr.s3.does_object_exist(violation_file):
                         violations_json = read_from_s3(violation_file)

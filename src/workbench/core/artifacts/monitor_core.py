@@ -39,17 +39,16 @@ class MonitorCore:
         # Initialize Class Attributes
         self.sagemaker_session = self.endpoint.sm_session
         self.sagemaker_client = self.endpoint.sm_client
-        self.data_capture_path = f"{self.endpoint.endpoints_s3_path}/data_capture"
-        self.monitoring_path = f"{self.endpoint.endpoints_s3_path}/monitoring"
-        self.instance_type = instance_type
+        self.data_capture_path = self.endpoint.endpoint_data_capture_path
+        self.monitoring_path = self.endpoint.endpoint_monitoring_path
         self.monitoring_schedule_name = f"{self.endpoint_name}-monitoring-schedule"
-        self.monitoring_report_path = f"{self.endpoint.endpoints_s3_path}/monitoring_reports"
-        self.baseline_dir = f"{self.monitoring_path}/{self.endpoint_name}/baseline"
+        self.baseline_dir = f"{self.monitoring_path}/baseline"
         self.baseline_csv_file = f"{self.baseline_dir}/baseline.csv"
         self.constraints_json_file = f"{self.baseline_dir}/constraints.json"
         self.statistics_json_file = f"{self.baseline_dir}/statistics.json"
         self.preprocessing_script_file = f"{self.monitoring_path}/preprocessor.py"  # Not currently used
         self.workbench_role_arn = AWSAccountClamp().aws_session.get_workbench_execution_role_arn()
+        self.instance_type = instance_type
 
         # Check if a monitoring schedule already exists for this endpoint
         existing_schedule = self.monitoring_schedule_exists()
@@ -83,7 +82,8 @@ class MonitorCore:
         else:
             summary = {
                 "endpoint_type": "realtime",
-                "data_capture": self.data_capture_enabled(capture_percentage=100),
+                "data_capture": self.data_capture_enabled(),
+                "capture_percent": self.data_capture_percent(),
                 "baseline": self.baseline_exists(),
                 "monitoring_schedule": self.monitoring_schedule_exists(),
                 "preprocessing": self.preprocessing_exists(),
@@ -96,11 +96,13 @@ class MonitorCore:
         Returns:
             dict: The monitoring details for the endpoint
         """
-        result = {
-            "data_capture_path": self.data_capture_path if self.data_capture_enabled(capture_percentage=100) else None,
+        result = self.summary()
+        info = {
+            "data_capture_path": self.data_capture_path if self.data_capture_enabled() else None,
             "preprocessing_script_file": self.preprocessing_script_file if self.preprocessing_exists() else None,
             "monitoring_schedule_status": "Not Scheduled",
         }
+        result.update(info)
 
         if self.baseline_exists():
             result.update(
@@ -120,7 +122,7 @@ class MonitorCore:
                 {
                     "monitoring_schedule_name": schedule_details.get("MonitoringScheduleName"),
                     "monitoring_schedule_status": schedule_details.get("MonitoringScheduleStatus"),
-                    "monitoring_report_path": self.monitoring_report_path,
+                    "monitoring_path": self.monitoring_path,
                     "creation_time": datetime_string(schedule_details.get("CreationTime")),
                 }
             )
@@ -157,8 +159,8 @@ class MonitorCore:
             self.log.warning("Data capture is not supported for serverless endpoints.")
             return
 
-        if self.data_capture_enabled(capture_percentage):
-            self.log.important(f"Data capture ({capture_percentage}%) already configured for {self.endpoint_name}.")
+        if self.data_capture_enabled():
+            self.log.important(f"Data capture already configured for {self.endpoint_name}.")
             return
 
         # Get the current endpoint configuration name for later deletion
@@ -210,7 +212,7 @@ class MonitorCore:
         # Clean up old endpoint configuration
         self.sagemaker_client.delete_endpoint_config(EndpointConfigName=current_endpoint_config_name)
 
-    def data_capture_enabled(self, capture_percentage):
+    def data_capture_enabled(self):
         """
         Check if data capture is already configured on the endpoint.
         Args:
@@ -225,11 +227,31 @@ class MonitorCore:
 
             # Check if data capture is enabled and the percentage matches
             is_enabled = data_capture_config.get("EnableCapture", False)
-            current_percentage = data_capture_config.get("InitialSamplingPercentage", 0)
-            return is_enabled and current_percentage == capture_percentage
+            return is_enabled
         except Exception as e:
             self.log.error(f"Error checking data capture configuration: {e}")
             return False
+
+    def data_capture_percent(self):
+        """
+        Get the data capture percentage from the endpoint configuration.
+
+        Returns:
+            int: Data capture percentage if enabled, None otherwise.
+        """
+        try:
+            endpoint_config_name = self.endpoint.endpoint_config_name()
+            endpoint_config = self.sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
+            data_capture_config = endpoint_config.get("DataCaptureConfig", {})
+
+            # Check if data capture is enabled and return the percentage
+            if data_capture_config.get("EnableCapture", False):
+                return data_capture_config.get("InitialSamplingPercentage", 0)
+            else:
+                return None
+        except Exception as e:
+            self.log.error(f"Error checking data capture percentage: {e}")
+            return None
 
     def get_captured_data(self, max_files=1) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
@@ -446,7 +468,7 @@ class MonitorCore:
         schedule_args = {
             "monitor_schedule_name": self.monitoring_schedule_name,
             "endpoint_input": self.endpoint_name,
-            "output_s3_uri": self.monitoring_report_path,
+            "output_s3_uri": self.monitoring_path,
             "statistics": self.statistics_json_file,
             "constraints": self.constraints_json_file,
             "schedule_cron_expression": schedule,
@@ -542,7 +564,7 @@ class MonitorCore:
                         try:
                             # Check for violations
                             result_path = (
-                                f"{self.monitoring_report_path}/{detail['creation_time'].strftime('%Y/%m/%d')}"
+                                f"{self.monitoring_path}/{detail['creation_time'].strftime('%Y/%m/%d')}"
                             )
                             result_path += "/constraint_violations.json"
                             if wr.s3.does_object_exist(result_path):
