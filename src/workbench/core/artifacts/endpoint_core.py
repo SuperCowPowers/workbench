@@ -1053,6 +1053,6 @@ if __name__ == "__main__":
     fast_results = my_endpoint.fast_inference(my_eval_df)
 
     # Test the class method delete
-    model = Model("abalone-regression")
-    model.to_endpoint("test-endpoint")
-    EndpointCore.managed_delete("test-endpoint")
+    # model = Model("abalone-regression")
+    # model.to_endpoint("test-endpoint")
+    # EndpointCore.managed_delete("test-endpoint")

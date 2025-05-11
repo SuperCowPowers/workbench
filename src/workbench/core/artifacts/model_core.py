@@ -460,8 +460,8 @@ class ModelCore(Artifact):
 
         # Note: We may have 0 to N endpoints, so we find the one with the most recent artifacts
         if registered_endpoints:
-            endpoint_inference_base = self.endpoints_s3_path + "/inference/"
-            endpoint_inference_paths = [endpoint_inference_base + e for e in registered_endpoints]
+            base = self.endpoints_s3_path
+            endpoint_inference_paths = [f"{base}/{e}/inference" for e in registered_endpoints]
             inference_path = newest_path(endpoint_inference_paths, self.sm_session)
 
             # If the ModelType is Regressor or Classifier we should log this

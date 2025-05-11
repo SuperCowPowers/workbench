@@ -39,12 +39,12 @@ class MonitorCore:
         # Initialize Class Attributes
         self.sagemaker_session = self.endpoint.sm_session
         self.sagemaker_client = self.endpoint.sm_client
-        self.data_capture_path = self.endpoint.endpoint_data_capture_path
-        self.monitoring_path = self.endpoint.endpoint_monitoring_path
+        self.data_capture_path = f"{self.endpoint.endpoints_s3_path}/data_capture"
+        self.monitoring_path = f"{self.endpoint.endpoints_s3_path}/monitoring"
         self.instance_type = instance_type
         self.monitoring_schedule_name = f"{self.endpoint_name}-monitoring-schedule"
-        self.monitoring_output_path = f"{self.monitoring_path}/monitoring_reports"
-        self.baseline_dir = f"{self.monitoring_path}/baseline"
+        self.monitoring_report_path = f"{self.endpoint.endpoints_s3_path}/monitoring_reports"
+        self.baseline_dir = f"{self.monitoring_path}/{self.endpoint_name}/baseline"
         self.baseline_csv_file = f"{self.baseline_dir}/baseline.csv"
         self.constraints_json_file = f"{self.baseline_dir}/constraints.json"
         self.statistics_json_file = f"{self.baseline_dir}/statistics.json"
@@ -120,18 +120,26 @@ class MonitorCore:
                 {
                     "monitoring_schedule_name": schedule_details.get("MonitoringScheduleName"),
                     "monitoring_schedule_status": schedule_details.get("MonitoringScheduleStatus"),
-                    "monitoring_output_path": self.monitoring_output_path,
+                    "monitoring_report_path": self.monitoring_report_path,
                     "creation_time": datetime_string(schedule_details.get("CreationTime")),
                 }
             )
 
             last_run = schedule_details.get("LastMonitoringExecutionSummary", {})
             if last_run:
+
+                # If no inference was run since the last monitoring schedule, the
+                # status will be "Failed" with reason "Job inputs had no data",
+                # so we check for that and set the status to "No New Data"
+                status = last_run.get("MonitoringExecutionStatus")
+                reason = last_run.get("FailureReason")
+                if status == "Failed" and reason == "Job inputs had no data":
+                    status = reason = "No New Data"
                 result.update(
                     {
-                        "last_run_status": last_run.get("MonitoringExecutionStatus"),
+                        "last_run_status": status,
                         "last_run_time": datetime_string(last_run.get("ScheduledTime")),
-                        "failure_reason": last_run.get("FailureReason"),
+                        "failure_reason": reason,
                     }
                 )
 
@@ -327,7 +335,7 @@ class MonitorCore:
             )
 
             # Make a modification to the constraints.json file to skip the 'extra_column_check'
-            self.update_constraints({"monitoring_config": {"extra_column_check": "DISABLED"}})
+            self.update_constraints({"monitoring_config": {"extra_column_check": "Disabled"}})
 
     def get_baseline(self) -> Union[pd.DataFrame, None]:
         """Code to get the baseline CSV from the S3 baseline directory
@@ -438,7 +446,7 @@ class MonitorCore:
         schedule_args = {
             "monitor_schedule_name": self.monitoring_schedule_name,
             "endpoint_input": self.endpoint_name,
-            "output_s3_uri": self.monitoring_output_path,
+            "output_s3_uri": self.monitoring_report_path,
             "statistics": self.statistics_json_file,
             "constraints": self.constraints_json_file,
             "schedule_cron_expression": schedule,
@@ -534,7 +542,7 @@ class MonitorCore:
                         try:
                             # Check for violations
                             result_path = (
-                                f"{self.monitoring_output_path}/{detail['creation_time'].strftime('%Y/%m/%d')}"
+                                f"{self.monitoring_report_path}/{detail['creation_time'].strftime('%Y/%m/%d')}"
                             )
                             result_path += "/constraint_violations.json"
                             if wr.s3.does_object_exist(result_path):
