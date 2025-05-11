@@ -140,7 +140,7 @@ class ModelCore(Artifact):
                 return
 
         # Set the Model Training S3 Path
-        self.model_training_path = self.models_s3_path + "/training/" + self.model_name
+        self.model_training_path = f"{self.models_s3_path}/{self.model_name}/training"
 
         # Get our Endpoint Inference Path (might be None)
         self.endpoint_inference_path = self.get_endpoint_inference_path()
