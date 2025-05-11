@@ -69,7 +69,7 @@ class FeaturesToModel(Transform):
         self.custom_args = custom_args if custom_args else {}
         self.estimator = None
         self.model_description = None
-        self.model_training_root = self.models_s3_path + "/training"
+        self.model_training_root = f"{self.models_s3_path}/{self.output_uuid}/training"
         self.model_feature_list = None
         self.target_column = None
         self.class_labels = None
@@ -157,7 +157,7 @@ class FeaturesToModel(Transform):
             "scikit_model_class": self.scikit_model_class,
             "target_column": self.target_column,
             "feature_list": self.model_feature_list,
-            "model_metrics_s3_path": f"{self.model_training_root}/{self.output_uuid}",
+            "model_metrics_s3_path": self.model_training_root,
             "train_all_data": train_all_data,
             "id_column": feature_set.id_column,
         }
