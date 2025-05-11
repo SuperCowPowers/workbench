@@ -19,7 +19,12 @@ from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.s3_utils import read_from_s3, write_to_s3
 from workbench.utils import endpoint_utils
 from workbench.utils.datetime_utils import datetime_string
-from workbench.utils.monitor_utils import process_data_capture, get_monitor_json_data, parse_monitoring_results, preprocessing_script
+from workbench.utils.monitor_utils import (
+    process_data_capture,
+    get_monitor_json_data,
+    parse_monitoring_results,
+    preprocessing_script,
+)
 
 # Note: This resource might come in handy when doing code refactoring
 # https://github.com/aws-samples/amazon-sagemaker-from-idea-to-production/blob/master/06-monitoring.ipynb
