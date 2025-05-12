@@ -28,6 +28,7 @@ from workbench.utils.monitor_utils import (
 
 # Note: This resource might come in handy when doing code refactoring
 # https://github.com/aws-samples/amazon-sagemaker-from-idea-to-production/blob/master/06-monitoring.ipynb
+# https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-pre-and-post-processing.html
 
 
 class MonitorCore:
