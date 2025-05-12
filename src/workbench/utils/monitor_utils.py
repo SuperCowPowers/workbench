@@ -197,14 +197,14 @@ import pandas as pd
 from io import StringIO
 
 def preprocess_handler(inference_record, logger):
-    
+
     # Log information about the inference record
     logger.info("=== INFERENCE RECORD DEBUG INFO ===")
-    
+
     # Log all attributes of the inference_record
     record_attrs = dir(inference_record)
     logger.info(f"Inference record attributes: {{record_attrs}}")
-    
+
     # Log endpoint input details
     try:
         logger.info(f"Endpoint input type: {{type(inference_record.endpoint_input)}}")
@@ -213,7 +213,7 @@ def preprocess_handler(inference_record, logger):
         logger.info(f"Data (first 200 chars): {{inference_record.endpoint_input.data[:200]}}")
     except Exception as e:
         logger.error(f"Error accessing endpoint_input: {{e}}")
-    
+
     # Log event metadata if available
     try:
         if hasattr(inference_record, 'event_metadata'):
