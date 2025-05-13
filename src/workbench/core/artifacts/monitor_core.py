@@ -18,7 +18,6 @@ from workbench.core.artifacts.endpoint_core import EndpointCore
 from workbench.api import Model, FeatureSet
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.s3_utils import read_from_s3, write_to_s3
-from workbench.utils import endpoint_utils
 from workbench.utils.datetime_utils import datetime_string
 from workbench.utils.monitor_utils import (
     process_data_capture,
@@ -526,28 +525,31 @@ class MonitorCore:
 
     # Put this functionality into this class
     """
-    executions = my_monitor.list_executions()    
+    executions = my_monitor.list_executions()
     latest_execution = executions[-1]
-    
+
     latest_execution.describe()['ProcessingJobStatus']
     latest_execution.describe()['ExitMessage']
     Here are the possible terminal states and what each of them means:
-    
+
     - Completed - This means the monitoring execution completed and no issues were found in the violations report.
     - CompletedWithViolations - This means the execution completed, but constraint violations were detected.
-    - Failed - The monitoring execution failed, maybe due to client error (perhaps incorrect role premissions) or infrastructure issues. Further examination of the FailureReason and ExitMessage is necessary to identify what exactly happened.
+    - Failed - The monitoring execution failed, maybe due to client error
+                (perhaps incorrect role premissions) or infrastructure issues. Further
+                examination of the FailureReason and ExitMessage is necessary to identify what exactly happened.
     - Stopped - job exceeded the max runtime or was manually stopped.
     You can also get the S3 URI for the output with latest_execution.output.destination and analyze the results.
-    
+
     Visualize results
     You can use the monitor object to gather reports for visualization:
-    
+
     suggested_constraints = my_monitor.suggested_constraints()
     baseline_statistics = my_monitor.baseline_statistics()
-    
+
     latest_monitoring_violations = my_monitor.latest_monitoring_constraint_violations()
     latest_monitoring_statistics = my_monitor.latest_monitoring_statistics()
     """
+
     def get_monitoring_results(self, max_results=10) -> pd.DataFrame:
         """Get the results of monitoring executions
 
