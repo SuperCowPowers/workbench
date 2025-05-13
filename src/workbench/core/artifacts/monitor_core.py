@@ -355,10 +355,9 @@ class MonitorCore:
             fs = FeatureSet(model.get_input())
             baseline_df = fs.pull_dataframe()
 
-            # Remove target if present in the baseline
-            target = model.target()
-            if target in baseline_df.columns:
-                baseline_df = baseline_df.drop(columns=[target])
+            # We only want the model features for our baseline
+            features = model.features()
+            baseline_df = baseline_df[features]
 
             # Sort the columns to ensure consistent ordering (AWS/Spark needs this)
             baseline_df = baseline_df[sorted(baseline_df.columns)]
