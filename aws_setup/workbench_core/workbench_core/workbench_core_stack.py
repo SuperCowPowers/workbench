@@ -686,7 +686,7 @@ class WorkbenchCoreStack(Stack):
             self.athena_policy_statement(),
             self.athena_workgroup_policy_statement(),
             self.parameter_store_policy_statement(),
-            self.secrets_read_policy_statement(),
+            # self.secrets_read_policy_statement(),
         ]
 
         return iam.ManagedPolicy(
