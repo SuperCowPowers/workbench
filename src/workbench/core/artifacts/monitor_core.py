@@ -344,34 +344,36 @@ class MonitorCore:
         """
         # Check if this endpoint is a serverless endpoint
         if self.endpoint.is_serverless():
-            self.log.warning(
-                "You can create a baseline but it can't be used/monitored for serverless endpoints, skipping..."
-            )
+            self.log.warning("Model monitoring doesn't work for serverless endpoints, skipping...")
             return
 
-        if not self.baseline_exists() or recreate:
-            # Create a baseline for monitoring (all rows from the FeatureSet)
-            model = Model(self.endpoint.get_input())
-            fs = FeatureSet(model.get_input())
-            baseline_df = fs.pull_dataframe()
+        if self.baseline_exists() and not recreate:
+            self.log.info(f"Baseline already exists for {self.endpoint_name}.")
+            self.log.info("If you want to recreate it, set recreate=True.")
+            return
 
-            # We only want the model features for our baseline
-            features = model.features()
-            baseline_df = baseline_df[features]
+        # Create a baseline for monitoring (all rows from the FeatureSet)
+        model = Model(self.endpoint.get_input())
+        fs = FeatureSet(model.get_input())
+        baseline_df = fs.pull_dataframe()
 
-            # Sort the columns to ensure consistent ordering (AWS/Spark needs this)
-            baseline_df = baseline_df[sorted(baseline_df.columns)]
+        # We only want the model features for our baseline
+        features = model.features()
+        baseline_df = baseline_df[features]
 
-            # Write the baseline to S3
-            wr.s3.to_csv(baseline_df, self.baseline_csv_file, index=False)
+        # Sort the columns to ensure consistent ordering (AWS/Spark needs this)
+        baseline_df = baseline_df[sorted(baseline_df.columns)]
 
-            # Create the baseline files (constraints.json and statistics.json)
-            self.log.important(f"Creating baseline files for {self.endpoint_name} --> {self.baseline_dir}")
-            self.model_monitor.suggest_baseline(
-                baseline_dataset=self.baseline_csv_file,
-                dataset_format=DatasetFormat.csv(header=True),
-                output_s3_uri=self.baseline_dir,
-            )
+        # Write the baseline to S3
+        wr.s3.to_csv(baseline_df, self.baseline_csv_file, index=False)
+
+        # Create the baseline files (constraints.json and statistics.json)
+        self.log.important(f"Creating baseline files for {self.endpoint_name} --> {self.baseline_dir}")
+        self.model_monitor.suggest_baseline(
+            baseline_dataset=self.baseline_csv_file,
+            dataset_format=DatasetFormat.csv(header=True),
+            output_s3_uri=self.baseline_dir,
+        )
 
     def get_baseline(self) -> Union[pd.DataFrame, None]:
         """Code to get the baseline CSV from the S3 baseline directory
