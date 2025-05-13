@@ -35,6 +35,7 @@ dependencies = [
     "ipython >=8.17.2",
     "pyreadline3; sys_platform == 'win32'",
     "scikit-learn >=1.5.2",
+    "xgboost-cpu>=2.0.3",
     "joblib >= 1.3.2",
     "requests >= 2.26.0",
     "rdkit>=2024.9.5",
@@ -42,7 +43,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-ml-tools = ["xgboost-cpu>=2.0.3", "networkx>=3.2"]
+ml-tools = ["networkx>=3.2"]
 ui = [
     "plotly>=5.18.0",
     "dash>=2.16.1,<3.0.0",
