@@ -24,7 +24,7 @@ glue_args = get_resolved_options(sys.argv)
 cm = ConfigManager()
 cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 """
-    with open(local_file_path, 'r') as file:
+    with open(local_file_path, "r") as file:
         script_content = file.read()
     return f"{glue_header}\n{script_content}"
 
@@ -50,23 +50,17 @@ def create_or_update_glue_job(s3_script_location: str, job_name: str):
     glue_client = AWSAccountClamp().boto3_session.client("glue")
 
     job_args = {
-        'Role': 'Workbench-GlueRole',
-        'Command': {
-            'Name': 'glueetl',
-            'ScriptLocation': s3_script_location,
-            'PythonVersion': '3'
+        "Role": "Workbench-GlueRole",
+        "Command": {"Name": "glueetl", "ScriptLocation": s3_script_location, "PythonVersion": "3"},
+        "DefaultArguments": {
+            "--job-language": "python",
+            "--TempDir": "s3://aws-glue-temporary/",
+            "--additional-python-modules": "workbench",
         },
-        'DefaultArguments': {
-            '--job-language': 'python',
-            '--TempDir': 's3://aws-glue-temporary/',
-            '--additional-python-modules': 'workbench'
-        },
-        'ExecutionProperty': {
-            'MaxConcurrentRuns': 1
-        },
-        'MaxRetries': 0,
-        'Timeout': 2880,
-        'GlueVersion': '5.0'
+        "ExecutionProperty": {"MaxConcurrentRuns": 1},
+        "MaxRetries": 0,
+        "Timeout": 2880,
+        "GlueVersion": "5.0",
     }
 
     try:
@@ -80,28 +74,25 @@ def create_or_update_glue_job(s3_script_location: str, job_name: str):
     try:
         trigger_response = glue_client.create_trigger(
             Name=f"{job_name}-nightly-trigger",
-            Type='SCHEDULED',
+            Type="SCHEDULED",
             Schedule="cron(0 0 * * ? *)",
-            Actions=[{'JobName': job_name}],
-            StartOnCreation=True
+            Actions=[{"JobName": job_name}],
+            StartOnCreation=True,
         )
     except glue_client.exceptions.AlreadyExistsException:
         log.info(f"Trigger already exists: {job_name}-nightly-trigger")
         trigger_response = {"Name": f"{job_name}-nightly-trigger"}
 
-    return {
-        'job_name': job_name,
-        'trigger_name': trigger_response['Name']
-    }
+    return {"job_name": job_name, "trigger_name": trigger_response["Name"]}
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Create or update AWS Glue job with midnight schedule')
-    parser.add_argument('script_file', help='Local path to script for the Glue job')
+    parser = argparse.ArgumentParser(description="Create or update AWS Glue job with midnight schedule")
+    parser.add_argument("script_file", help="Local path to script for the Glue job")
     args = parser.parse_args()
 
     s3_location = upload_script_to_s3(args.script_file)
-    job_name = os.path.basename(args.script_file).split('.')[0]
+    job_name = os.path.basename(args.script_file).split(".")[0]
 
     result = create_or_update_glue_job(s3_location, job_name)
     print(f"Glue job '{result['job_name']}' set up with trigger '{result['trigger_name']}'")
