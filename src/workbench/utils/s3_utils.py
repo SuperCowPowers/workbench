@@ -16,13 +16,13 @@ from workbench.utils.performance_utils import performance
 log = logging.getLogger("workbench")
 
 
-def write_to_s3(content, path):
+def upload_content_to_s3(content, path):
     """Write string content to S3 path"""
     bytes_io = io.BytesIO(content.encode("utf-8"))
     return wr.s3.upload(local_file=bytes_io, path=path)
 
 
-def read_from_s3(path):
+def read_content_from_s3(path):
     """Read string content from S3 path"""
     buffer = io.BytesIO()
     wr.s3.download(path=path, local_file=buffer)
@@ -200,8 +200,8 @@ if __name__ == "__main__":
     test_string = "This is a test string."
     test_path = f"{s3_scratch}/test.txt"
     print(f"Writing to S3: {test_path}")
-    write_to_s3(test_string, test_path)
+    upload_content_to_s3(test_string, test_path)
     print(f"Reading from S3: {test_path}")
-    read_string = read_from_s3(test_path)
+    read_string = read_content_from_s3(test_path)
     print(f"Read string: {read_string}")
     assert read_string == test_string, "Read string does not match the original string."

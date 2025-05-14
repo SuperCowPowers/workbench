@@ -8,7 +8,7 @@ from io import StringIO
 import awswrangler as wr
 
 # Workbench Imports
-from workbench.utils.s3_utils import read_from_s3
+from workbench.utils.s3_utils import read_content_from_s3
 
 # Setup logging
 log = logging.getLogger("workbench")
@@ -124,7 +124,7 @@ def get_monitor_json_data(s3_path: str) -> Union[dict, None]:
         return None
 
     # Read the JSON data from S3
-    raw_json = read_from_s3(s3_path)
+    raw_json = read_content_from_s3(s3_path)
     return json.loads(raw_json)
 
 
@@ -169,7 +169,7 @@ def parse_monitoring_results(results_json: str) -> Dict[str, Any]:
                     violation_file = f"{self.monitoring_path}/
                     {last_run['CreationTime'].strftime('%Y/%m/%d')}/constraint_violations.json"
                     if wr.s3.does_object_exist(violation_file):
-                        violations_json = read_from_s3(violation_file)
+                        violations_json = read_content_from_s3(violation_file)
                         violations = parse_monitoring_results(violations_json)
                         result["violations"] = violations.get("constraint_violations", [])
                         result["violation_count"] = len(result["violations"])

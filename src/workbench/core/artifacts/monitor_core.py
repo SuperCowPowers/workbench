@@ -17,7 +17,7 @@ import awswrangler as wr
 from workbench.core.artifacts.endpoint_core import EndpointCore
 from workbench.api import Model, FeatureSet
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from workbench.utils.s3_utils import read_from_s3, write_to_s3
+from workbench.utils.s3_utils import read_content_from_s3, upload_content_to_s3
 from workbench.utils.datetime_utils import datetime_string
 from workbench.utils.monitor_utils import (
     process_data_capture,
@@ -422,7 +422,7 @@ class MonitorCore:
 
         try:
             # Read constraints file from S3
-            raw_json = read_from_s3(self.constraints_json_file)
+            raw_json = read_content_from_s3(self.constraints_json_file)
             constraints = json.loads(raw_json)
 
             # Handle each update key
@@ -445,7 +445,7 @@ class MonitorCore:
                         self.log.warning(f"Feature {key} not found in constraints")
 
             # Write updated constraints back to S3
-            write_to_s3(json.dumps(constraints, indent=2), self.constraints_json_file)
+            upload_content_to_s3(json.dumps(constraints, indent=2), self.constraints_json_file)
             self.log.important(f"Updated constraints at {self.constraints_json_file}")
             return True
         except Exception as e:
@@ -493,7 +493,7 @@ class MonitorCore:
         # Add preprocessing script to get rid of 'extra_column_check' violation (so stupid)
         feature_list = self.get_baseline().columns.to_list()
         script = preprocessing_script(feature_list)
-        write_to_s3(script, self.preprocessing_script_file)
+        upload_content_to_s3(script, self.preprocessing_script_file)
         self.log.important(f"Using preprocessing script: {self.preprocessing_script_file}")
         schedule_args["record_preprocessor_script"] = self.preprocessing_script_file
 
@@ -610,7 +610,7 @@ class MonitorCore:
                             result_path = f"{self.monitoring_path}/{detail['creation_time'].strftime('%Y/%m/%d')}"
                             result_path += "/constraint_violations.json"
                             if wr.s3.does_object_exist(result_path):
-                                violations_json = read_from_s3(result_path)
+                                violations_json = read_content_from_s3(result_path)
                                 violations = parse_monitoring_results(violations_json)
                                 detail["violations"] = violations.get("constraint_violations", [])
                                 detail["violation_count"] = len(detail["violations"])
