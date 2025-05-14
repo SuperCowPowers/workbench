@@ -64,7 +64,7 @@ def create_or_update_glue_job(s3_script_location: str, job_name: str):
         "MaxRetries": 0,
         "Timeout": 2880,
         "GlueVersion": "5.0",
-        'MaxCapacity': 2.0,
+        "MaxCapacity": 2.0,
     }
 
     try:
