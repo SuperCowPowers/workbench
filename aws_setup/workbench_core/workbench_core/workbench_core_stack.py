@@ -114,13 +114,24 @@ class WorkbenchCoreStack(Stack):
             resources=["arn:aws:s3:::*"],
         )
 
-    @staticmethod
-    def glue_job_policy_statement() -> iam.PolicyStatement:
+    def glue_pass_role_policy_statement(self) -> iam.PolicyStatement:
+        """Allow passing the specific Glue role to AWS Glue."""
+        return iam.PolicyStatement(
+            actions=["iam:PassRole"],
+            resources=[f"arn:aws:iam::{self.account_id}:role/Workbench-GlueRole"],
+            conditions={"StringEquals": {"iam:PassedToService": "glue.amazonaws.com"}},
+        )
+
+    def glue_job_policy_statement(self) -> iam.PolicyStatement:
         """Create a policy statement for AWS Glue job-related actions.
 
         Returns:
             iam.PolicyStatement: The policy statement for AWS Glue job operations.
         """
+        resources = [
+            f"arn:aws:glue:{self.region}:{self.account_id}:job/*",
+            f"arn:aws:glue:{self.region}:{self.account_id}:trigger/*",
+        ]
         return iam.PolicyStatement(
             actions=[
                 "glue:GetJobs",
@@ -128,8 +139,11 @@ class WorkbenchCoreStack(Stack):
                 "glue:GetJob",
                 "glue:StartJobRun",
                 "glue:StopJobRun",
+                "glue:CreateJob",
+                "glue:UpdateJob",
+                "glue:CreateTrigger",
             ],
-            resources=["*"],  # Broad permission necessary for job management
+            resources=resources,
         )
 
     @staticmethod
@@ -810,6 +824,7 @@ class WorkbenchCoreStack(Stack):
         )
 
         # Create and attach the Workbench managed policies to the role
+        api_execution_role.add_to_policy(self.glue_pass_role_policy_statement())
         api_execution_role.add_managed_policy(self.datasource_policy)
         api_execution_role.add_managed_policy(self.featureset_policy)
         api_execution_role.add_managed_policy(self.model_policy)
