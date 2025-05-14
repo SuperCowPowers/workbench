@@ -10,6 +10,10 @@ from workbench.utils.s3_utils import upload_content_to_s3
 # Set up logging
 log = logging.getLogger("workbench")
 
+# Grab our Workbench S3 Bucket
+cm = ConfigManager()
+workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
+
 
 def glue_job_wrapper(local_file_path: str) -> str:
     """Wrap a local script file into a Workbench AWS Glue job."""
@@ -34,8 +38,6 @@ def upload_script_to_s3(local_file_path: str) -> str:
     if not os.path.exists(local_file_path):
         raise FileNotFoundError(f"Script file not found: {local_file_path}")
 
-    cm = ConfigManager()
-    workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
     s3_path = f"s3://{workbench_bucket}/glue-jobs/{os.path.basename(local_file_path)}"
 
     log.info(f"Wrapping {local_file_path}...")
@@ -56,11 +58,13 @@ def create_or_update_glue_job(s3_script_location: str, job_name: str):
             "--job-language": "python",
             "--TempDir": "s3://aws-glue-temporary/",
             "--additional-python-modules": "workbench",
+            "--workbench-bucket": workbench_bucket,
         },
         "ExecutionProperty": {"MaxConcurrentRuns": 1},
         "MaxRetries": 0,
         "Timeout": 2880,
         "GlueVersion": "5.0",
+        'MaxCapacity': 2.0,
     }
 
     try:
