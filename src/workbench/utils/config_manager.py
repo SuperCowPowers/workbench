@@ -339,7 +339,7 @@ class ConfigManager:
 
         # Load site_config_path from environment variable
         self.site_config_path = os.environ.get("WORKBENCH_CONFIG")
-        if self.site_config_path is None:
+        if self.site_config_path is None or self.site_config_path == "":
             self.log.warning("WORKBENCH_CONFIG ENV var not set")
             return self._load_default_config()
 
