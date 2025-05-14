@@ -1,7 +1,7 @@
+# Example Glue Job that simply prints the first few rows of a DataSource
 import sys
 
 # Workbench Imports
-from workbench.api.data_source import DataSource
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.glue_utils import get_resolved_options
 
@@ -12,6 +12,10 @@ glue_args = get_resolved_options(sys.argv)
 cm = ConfigManager()
 cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 
-# Create a new Data Source from an S3 Path
-source_path = "s3://workbench-public-data/common/abalone.csv"
-my_data = DataSource(source_path, name="abalone_glue_test")
+# Important Note: This import needs to happen after the WORKBENCH_BUCKET is set
+from workbench.api import DataSource
+
+# Grab a test DataSource
+ds = DataSource("abalone_data")
+df = ds.pull_dataframe()
+print(df.head())
