@@ -428,9 +428,13 @@ class ModelCore(Artifact):
             endpoint_name (str): Name of the endpoint
         """
         self.log.important(f"Removing Endpoint {endpoint_name} from Model {self.uuid}...")
-        registered_endpoints = set(self.workbench_meta().get("workbench_registered_endpoints", []))
-        registered_endpoints.discard(endpoint_name)
-        self.upsert_workbench_meta({"workbench_registered_endpoints": list(registered_endpoints)})
+        try:
+            registered_endpoints = set(self.workbench_meta().get("workbench_registered_endpoints", []))
+            registered_endpoints.discard(endpoint_name)
+            self.upsert_workbench_meta({"workbench_registered_endpoints": list(registered_endpoints)})
+        except AttributeError:
+            self.log.warning(f"Model {self.uuid} probably doesn't exist, skipping endpoint removal")
+            return
 
         # If we have NO endpionts, then set a health tags
         if not registered_endpoints:

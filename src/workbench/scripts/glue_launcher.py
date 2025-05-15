@@ -27,6 +27,8 @@ glue_args = get_resolved_options(sys.argv)
 
 cm = ConfigManager()
 cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
+
+# End Glue Launch Header
 """
     with open(local_file_path, "r") as file:
         script_content = file.read()
