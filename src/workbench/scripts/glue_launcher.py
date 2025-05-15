@@ -79,15 +79,15 @@ def create_or_update_glue_job(s3_script_location: str, job_name: str):
 
     try:
         trigger_response = glue_client.create_trigger(
-            Name=f"{job_name}-nightly-trigger",
+            Name=f"{job_name}_nightly_trigger",
             Type="SCHEDULED",
             Schedule="cron(0 0 * * ? *)",
             Actions=[{"JobName": job_name}],
             StartOnCreation=True,
         )
     except glue_client.exceptions.AlreadyExistsException:
-        log.info(f"Trigger already exists: {job_name}-nightly-trigger")
-        trigger_response = {"Name": f"{job_name}-nightly-trigger"}
+        log.info(f"Trigger already exists: {job_name}_nightly_trigger")
+        trigger_response = {"Name": f"{job_name}_nightly_trigger"}
 
     return {"job_name": job_name, "trigger_name": trigger_response["Name"]}
 
@@ -98,7 +98,7 @@ def main():
     args = parser.parse_args()
 
     s3_location = upload_script_to_s3(args.script_file)
-    job_name = os.path.basename(args.script_file).split(".")[0]
+    job_name = "workbench_" + os.path.basename(args.script_file).split(".")[0]
 
     result = create_or_update_glue_job(s3_location, job_name)
     print(f"Glue job '{result['job_name']}' set up with trigger '{result['trigger_name']}'")
