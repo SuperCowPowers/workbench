@@ -18,7 +18,7 @@ workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
 def glue_job_wrapper(local_file_path: str) -> str:
     """Wrap a local script file into a Workbench AWS Glue job."""
     glue_header = """
-# Glue Launch Header
+# Workbench GlueLaunch Header
 import sys
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.glue_utils import get_resolved_options
@@ -27,12 +27,11 @@ glue_args = get_resolved_options(sys.argv)
 
 cm = ConfigManager()
 cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
-
-# End Glue Launch Header
+# End Workbench GlueLaunch Header
 """
     with open(local_file_path, "r") as file:
         script_content = file.read()
-    return f"{glue_header}\n{script_content}"
+    return f"{glue_header}\n\n{script_content}"
 
 
 def upload_script_to_s3(local_file_path: str) -> str:
