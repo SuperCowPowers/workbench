@@ -355,8 +355,10 @@ def compute_molecular_descriptors(df: pd.DataFrame, tautomerize=True) -> pd.Data
     # RDKit Molecular Descriptor Calculator Class
     log.info("Computing RDKit Descriptors...")
     calc = MoleculeDescriptors.MolecularDescriptorCalculator(all_descriptors)
-    column_names = calc.GetDescriptorNames()
     descriptor_values = [calc.CalcDescriptors(m) for m in df["molecule"]]
+
+    # Lowercase the column names
+    column_names = [name.lower() for name in calc.GetDescriptorNames()]
     rdkit_features_df = pd.DataFrame(descriptor_values, columns=column_names)
 
     # Now compute Mordred Features
@@ -367,6 +369,9 @@ def compute_molecular_descriptors(df: pd.DataFrame, tautomerize=True) -> pd.Data
         calc.register(des)
     mordred_df = calc.pandas(df["molecule"], nproc=1)
 
+    # Lowercase the column names
+    mordred_df.columns = [col.lower() for col in mordred_df.columns]
+
     # Compute stereochemistry descriptors
     stereo_df = compute_stereochemistry_descriptors(df)
 
@@ -375,13 +380,12 @@ def compute_molecular_descriptors(df: pd.DataFrame, tautomerize=True) -> pd.Data
     #       since we want computed descriptors to overwrite anything in the input dataframe
     output_df = stereo_df.combine_first(mordred_df).combine_first(rdkit_features_df)
 
-    # Lowercase all column names and ensure no duplicate column names
-    output_df.columns = output_df.columns.str.lower()
+    # Ensure no duplicate column names
     output_df = output_df.loc[:, ~output_df.columns.duplicated()]
 
     # Reorder the columns to have all the ones in the input df first and then the descriptors
-    input_columns = df.columns.str.lower()
-    output_df = output_df[list(input_columns) + [col for col in output_df.columns if col not in input_columns]]
+    input_columns = df.columns.tolist()
+    output_df = output_df[input_columns + [col for col in output_df.columns if col not in input_columns]]
 
     # Drop the intermediate 'molecule' column
     del output_df["molecule"]
