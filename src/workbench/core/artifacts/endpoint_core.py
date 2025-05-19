@@ -941,9 +941,9 @@ class EndpointCore(Artifact):
         cls.df_cache.delete_recursive(endpoint_name)
 
         # Delete the endpoint
-        time.sleep(2)  # Allow AWS to catch up
+        cls.log.info(f"Deleting Endpoint {endpoint_name}...")
+        time.sleep(10)  # Allow AWS to catch up
         try:
-            cls.log.info(f"Deleting Endpoint {endpoint_name}...")
             cls.sm_client.delete_endpoint(EndpointName=endpoint_name)
         except ClientError as e:
             cls.log.error("Error deleting endpoint.")
