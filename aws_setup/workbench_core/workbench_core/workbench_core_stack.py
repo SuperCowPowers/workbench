@@ -122,28 +122,33 @@ class WorkbenchCoreStack(Stack):
             conditions={"StringEquals": {"iam:PassedToService": "glue.amazonaws.com"}},
         )
 
-    def glue_job_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for AWS Glue job-related actions.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for AWS Glue job operations.
-        """
-        resources = [
-            f"arn:aws:glue:{self.region}:{self.account_id}:job/*",
-            f"arn:aws:glue:{self.region}:{self.account_id}:trigger/*",
-        ]
+    def glue_job_read_policy(self) -> iam.PolicyStatement:
+        """Policy for read-only Glue job actions."""
         return iam.PolicyStatement(
             actions=[
                 "glue:GetJobs",
-                "glue:GetJobRuns",
                 "glue:GetJob",
-                "glue:StartJobRun",
-                "glue:StopJobRun",
+                "glue:GetJobRuns",
+            ],
+            resources=[
+                "*",  # Needed for GetJobs
+            ],
+        )
+
+    def glue_job_create_policy(self) -> iam.PolicyStatement:
+        """Policy for create/update Glue jobs and triggers."""
+        return iam.PolicyStatement(
+            actions=[
                 "glue:CreateJob",
                 "glue:UpdateJob",
+                "glue:StartJobRun",
+                "glue:StopJobRun",
                 "glue:CreateTrigger",
             ],
-            resources=resources,
+            resources=[
+                f"arn:aws:glue:{self.region}:{self.account_id}:job/*",
+                f"arn:aws:glue:{self.region}:{self.account_id}:trigger/*",
+            ],
         )
 
     @staticmethod
@@ -693,7 +698,8 @@ class WorkbenchCoreStack(Stack):
             self.s3_list_policy_statement(),
             self.s3_policy_statement(),
             self.s3_public_policy_statement(),
-            self.glue_job_policy_statement(),
+            self.glue_job_read_policy(),
+            self.glue_job_create_policy(),
             self.glue_job_connections_policy_statement(),
             self.glue_catalog_policy_statement(),
             self.glue_database_policy_statement(),
