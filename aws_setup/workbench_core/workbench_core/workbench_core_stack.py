@@ -233,6 +233,7 @@ class WorkbenchCoreStack(Stack):
         """
         return iam.PolicyStatement(
             actions=[
+                "athena:ListQueryExecutions",
                 "athena:StartQueryExecution",
                 "athena:GetQueryExecution",
                 "athena:GetQueryResults",
