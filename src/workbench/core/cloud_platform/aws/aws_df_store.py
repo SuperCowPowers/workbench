@@ -26,14 +26,14 @@ class AWSDFStore:
 
         # Add DataFrame
         df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-        df_store.upsert("my_data", df)
+        df_store.upsert("/test/my_data", df)
 
         # Retrieve DataFrame
-        df = df_store.get("my_data")
+        df = df_store.get("/test/my_data")
         print(df)
 
         # Delete Data
-        df_store.delete("my_data")
+        df_store.delete("/test/my_data")
         ```
     """
 
@@ -48,9 +48,11 @@ class AWSDFStore:
         self.path_prefix = self._base_prefix + path_prefix if path_prefix else self._base_prefix
         self.path_prefix = re.sub(r"/+", "/", self.path_prefix)  # Collapse slashes
 
-        # Initialize a Workbench Session and retrieve the S3 bucket from ConfigManager
+        # Get the Workbench Bucket
         config = ConfigManager()
         self.workbench_bucket = config.get_config("WORKBENCH_BUCKET")
+
+        # Get the S3 Client
         self.boto3_session = AWSAccountClamp().boto3_session
         self.s3_client = self.boto3_session.client("s3")
 
