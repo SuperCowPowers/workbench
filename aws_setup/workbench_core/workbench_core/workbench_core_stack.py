@@ -195,12 +195,12 @@ class WorkbenchCoreStack(Stack):
         # ARNs for the databases and tables
         workbench_database_arn = f"arn:aws:glue:{self.region}:{self.account}:database/workbench"
         workbench_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/workbench/*"
-        sageworks_database_arn = f"arn:aws:glue:{self.region}:{self.account}:database/sageworks"
-        sageworks_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/sageworks/*"
         sagemaker_featurestore_database_arn = (
             f"arn:aws:glue:{self.region}:{self.account}:database/sagemaker_featurestore"
         )
         sagemaker_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/sagemaker_featurestore/*"
+        inf_store_database_arn = f"arn:aws:glue:{self.region}:{self.account}:database/inference_store"
+        inf_store_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/inference_store/*"
 
         return iam.PolicyStatement(
             actions=[
@@ -218,10 +218,10 @@ class WorkbenchCoreStack(Stack):
             resources=[
                 workbench_database_arn,
                 workbench_table_arn,
-                sageworks_database_arn,
-                sageworks_table_arn,
                 sagemaker_featurestore_database_arn,
                 sagemaker_table_arn,
+                inf_store_database_arn,
+                inf_store_table_arn,
             ],
         )
 
