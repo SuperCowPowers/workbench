@@ -341,7 +341,9 @@ class EndpointCore(Artifact):
         capture_uuid = "auto_inference" if capture else None
         return self.inference(eval_df, capture_uuid, id_column=fs.id_column)
 
-    def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None, drop_error_rows: bool = False) -> pd.DataFrame:
+    def inference(
+        self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None, drop_error_rows: bool = False
+    ) -> pd.DataFrame:
         """Run inference and compute performance metrics with optional capture
 
         Args:

@@ -28,7 +28,9 @@ class Endpoint(EndpointCore):
         """
         return super().details(**kwargs)
 
-    def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None, drop_error_rows: bool = False) -> pd.DataFrame:
+    def inference(
+        self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None, drop_error_rows: bool = False
+    ) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
         Args:
