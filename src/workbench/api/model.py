@@ -33,7 +33,13 @@ class Model(ModelCore):
         return super().details(**kwargs)
 
     def to_endpoint(
-        self, name: str = None, tags: list = None, serverless: bool = True, mem_size: int = 2048, max_concurrency: int = 5, instance: str = "ml.t2.medium"
+        self,
+        name: str = None,
+        tags: list = None,
+        serverless: bool = True,
+        mem_size: int = 2048,
+        max_concurrency: int = 5,
+        instance: str = "ml.t2.medium",
     ) -> Endpoint:
         """Create an Endpoint from the Model.
 
