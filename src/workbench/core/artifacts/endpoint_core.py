@@ -341,13 +341,14 @@ class EndpointCore(Artifact):
         capture_uuid = "auto_inference" if capture else None
         return self.inference(eval_df, capture_uuid, id_column=fs.id_column)
 
-    def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None) -> pd.DataFrame:
+    def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None, drop_error_rows: bool = False) -> pd.DataFrame:
         """Run inference and compute performance metrics with optional capture
 
         Args:
             eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
             capture_uuid (str, optional): UUID of the inference capture (default=None)
             id_column (str, optional): Name of the ID column (default=None)
+            drop_error_rows (bool, optional): If True, drop rows that had endpoint errors/issues (default=False)
 
         Returns:
             pd.DataFrame: DataFrame with the inference results
@@ -362,7 +363,7 @@ class EndpointCore(Artifact):
             return self.fast_inference(eval_df)
 
         # Run predictions on the evaluation data
-        prediction_df = self._predict(eval_df)
+        prediction_df = self._predict(eval_df, drop_error_rows)
         if prediction_df.empty:
             self.log.warning("No predictions were made. Returning empty DataFrame.")
             return prediction_df
@@ -420,10 +421,12 @@ class EndpointCore(Artifact):
         """
         return fast_inference(self.uuid, eval_df, self.sm_session, threads=threads)
 
-    def _predict(self, eval_df: pd.DataFrame) -> pd.DataFrame:
+    def _predict(self, eval_df: pd.DataFrame, drop_error_rows: bool = False) -> pd.DataFrame:
         """Internal: Run prediction on the given observations in the given DataFrame
+
         Args:
             eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
+            drop_error_rows (bool): If True, drop rows that had endpoint errors/issues (default=False)
         Returns:
             pd.DataFrame: Return the DataFrame with additional columns, prediction and any _proba columns
         """
@@ -463,7 +466,7 @@ class EndpointCore(Artifact):
             self.log.info(f"Processing {index}:{min(index+100, total_rows)} out of {total_rows} rows...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + 100])
+            partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + 100], drop_error_rows)
             df_list.append(partial_df)
 
         # Concatenate the dataframes
@@ -514,8 +517,16 @@ class EndpointCore(Artifact):
         # Return the Dataframe
         return converted_df
 
-    def _endpoint_error_handling(self, predictor, feature_df):
-        """Internal: Handles errors, retries, and binary search for problematic rows."""
+    def _endpoint_error_handling(self, predictor, feature_df, drop_error_rows: bool = False) -> pd.DataFrame:
+        """Internal: Handles errors, retries, and binary search for problematic rows.
+
+        Args:
+            predictor (Predictor): The SageMaker Predictor object
+            feature_df (pd.DataFrame): DataFrame to run predictions on
+            drop_error_rows (bool): If True, drop rows that had endpoint errors/issues (default=False)
+        Returns:
+            pd.DataFrame: DataFrame with predictions (NaNs for problematic rows or dropped rows if specified)
+        """
 
         # Sanity check: Does the DataFrame have 0 rows?
         if feature_df.empty:
@@ -535,35 +546,41 @@ class EndpointCore(Artifact):
 
         except botocore.exceptions.ClientError as err:
             error_code = err.response["Error"]["Code"]
-
             if error_code == "ModelNotReadyException":
-                self.log.error(f"Error {error_code}: {err.response.get('Message', 'No message')}")
+                self.log.error(f"Error {error_code}")
+                self.log.error(err.response)
                 self.log.error("Model not ready. Sleeping and retrying...")
                 time.sleep(60)
                 return self._endpoint_error_handling(predictor, feature_df)
 
             elif error_code == "ModelError":
-                self.log.warning("Model error. Bisecting the DataFrame and retrying...")
+                # Log full error response to capture all available debugging info
+                self.log.error(f"Error {error_code}")
+                self.log.error(err.response)
+                self.log.warning("Bisecting the DataFrame and retrying...")
 
-                # Base case: If there is only one row, we can't binary search further
+                # Base case: single row handling
                 if len(feature_df) == 1:
                     if not self.endpoint_return_columns:
                         raise
-
-                    # Fill the row with NaNs for endpoint_return_columns
-                    self.log.warning(f"Endpoint Inference failed on :{feature_df}")
+                    self.log.warning(f"Endpoint Inference failed on: {feature_df}")
+                    if drop_error_rows:
+                        self.log.warning("Dropping rows with endpoint errors...")
+                        return pd.DataFrame(columns=feature_df.columns)
+                    # Fill with NaNs for inference columns, keeping original feature data
+                    self.log.warning("Filling with NaNs for inference columns...")
                     return self._fill_with_nans(feature_df)
 
-                # Binary search to find the problematic row(s)
+                # Binary search for problematic rows
                 mid_point = len(feature_df) // 2
                 self.log.info(f"Bisect DataFrame: 0 -> {mid_point} and {mid_point} -> {len(feature_df)}")
-                first_half = self._endpoint_error_handling(predictor, feature_df.iloc[:mid_point])
-                second_half = self._endpoint_error_handling(predictor, feature_df.iloc[mid_point:])
+                first_half = self._endpoint_error_handling(predictor, feature_df.iloc[:mid_point], drop_error_rows)
+                second_half = self._endpoint_error_handling(predictor, feature_df.iloc[mid_point:], drop_error_rows)
                 return pd.concat([first_half, second_half], ignore_index=True)
 
             else:
-                # Unknown ClientError, raise the exception
-                self.log.critical(f"Unexpected ClientError: {err}")
+                self.log.critical(f"Unexpected ClientError: {error_code}")
+                self.log.critical(err.response)
                 raise
 
         except Exception as err:
@@ -991,6 +1008,22 @@ if __name__ == "__main__":
     # Grab an EndpointCore object and pull some information from it
     my_endpoint = EndpointCore("abalone-regression")
 
+    # Test various error conditions (set row 42 length to pd.NA)
+    # Note: This test should return ALL rows
+    my_eval_df = fs_evaluation_data(my_endpoint)
+    my_eval_df.at[42, "length"] = pd.NA
+    pred_results = my_endpoint.inference(my_eval_df, drop_error_rows=True)
+    print(f"Sent rows: {len(my_eval_df)}")
+    print(f"Received rows: {len(pred_results)}")
+    assert len(pred_results) == len(my_eval_df), "Predictions should match the number of sent rows"
+
+    # Now we put in an invalid value
+    my_eval_df.at[42, "length"] = "invalid_value"
+    pred_results = my_endpoint.inference(my_eval_df, drop_error_rows=True)
+    print(f"Sent rows: {len(my_eval_df)}")
+    print(f"Received rows: {len(pred_results)}")
+    assert len(pred_results) < len(my_eval_df), "Predictions should be less than the number of sent rows"
+
     # Let's do a check/validation of the Endpoint
     assert my_endpoint.exists()
 
@@ -1056,9 +1089,8 @@ if __name__ == "__main__":
     # Run predictions using the fast_inference method
     fast_results = my_endpoint.fast_inference(my_eval_df)
 
-    # Test the class method delete
-    from workbench.api import Model
-
-    model = Model("abalone-regression")
-    model.to_endpoint("test-endpoint")
-    EndpointCore.managed_delete("test-endpoint")
+    # Test the class method delete (commented out for now)
+    # from workbench.api import Model
+    # model = Model("abalone-regression")
+    # model.to_endpoint("test-endpoint")
+    # EndpointCore.managed_delete("test-endpoint")

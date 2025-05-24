@@ -28,18 +28,19 @@ class Endpoint(EndpointCore):
         """
         return super().details(**kwargs)
 
-    def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None) -> pd.DataFrame:
+    def inference(self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None, drop_error_rows: bool = False) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
         Args:
             eval_df (pd.DataFrame): The DataFrame to run predictions on
             capture_uuid (str, optional): The UUID of the capture to use (default: None)
             id_column (str, optional): The name of the column to use as the ID (default: None)
+            drop_error_rows (bool): Whether to drop rows with errors (default: False)
 
         Returns:
             pd.DataFrame: The DataFrame with predictions
         """
-        return super().inference(eval_df, capture_uuid, id_column)
+        return super().inference(eval_df, capture_uuid, id_column, drop_error_rows)
 
     def auto_inference(self, capture: bool = False) -> pd.DataFrame:
         """Run inference on the Endpoint using the FeatureSet evaluation data
