@@ -33,7 +33,7 @@ class Model(ModelCore):
         return super().details(**kwargs)
 
     def to_endpoint(
-        self, name: str = None, tags: list = None, serverless: bool = True, instance: str = "ml.t2.medium"
+        self, name: str = None, tags: list = None, serverless: bool = True, mem_size: int = 2048, max_concurrency: int = 5, instance: str = "ml.t2.medium"
     ) -> Endpoint:
         """Create an Endpoint from the Model.
 
@@ -41,7 +41,9 @@ class Model(ModelCore):
             name (str): Set the name for the endpoint. If not specified, an automatic name will be generated
             tags (list): Set the tags for the endpoint. If not specified automatic tags will be generated.
             serverless (bool): Set the endpoint to be serverless (default: True)
-            instance (str): The instance type to use for the Endpoint (default: "ml.t2.medium")
+            mem_size (int): The memory size for the Endpoint in MB (default: 2048)
+            max_concurrency (int): The maximum concurrency for the Endpoint (default: 5)
+            instance (str): The instance type to use for Realtime(serverless=False) Endpoints (default: "ml.t2.medium")
 
         Returns:
             Endpoint: The Endpoint created from the Model
@@ -62,7 +64,10 @@ class Model(ModelCore):
         # Create an Endpoint from the Model
         model_to_endpoint = ModelToEndpoint(self.uuid, name, serverless=serverless, instance=instance)
         model_to_endpoint.set_output_tags(tags)
-        model_to_endpoint.transform()
+        model_to_endpoint.transform(
+            mem_size=mem_size,
+            max_concurrency=max_concurrency,
+        )
 
         # Set the Endpoint Owner and Return the Endpoint
         end = Endpoint(name)

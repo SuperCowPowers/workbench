@@ -44,7 +44,7 @@ class ModelToEndpoint(Transform):
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
-    def transform_impl(self):
+    def transform_impl(self, **kwargs):
         """Deploy an Endpoint for a Model"""
 
         # Delete endpoint (if it already exists)
@@ -55,7 +55,7 @@ class ModelToEndpoint(Transform):
         model_package_arn = input_model.model_package_arn()
 
         # Deploy the model
-        self._deploy_model(model_package_arn)
+        self._deploy_model(model_package_arn, **kwargs)
 
         # Add this endpoint to the set of registered endpoints for the model
         input_model.register_endpoint(self.output_uuid)
@@ -65,7 +65,7 @@ class ModelToEndpoint(Transform):
         end = EndpointCore(self.output_uuid)
         self.log.important(f"Endpoint {end.uuid} is ready for use")
 
-    def _deploy_model(self, model_package_arn: str):
+    def _deploy_model(self, model_package_arn: str, mem_size: int = 2048, max_concurrency: int = 5):
         """Internal Method: Deploy the Model
 
         Args:
@@ -85,8 +85,8 @@ class ModelToEndpoint(Transform):
         serverless_config = None
         if self.serverless:
             serverless_config = ServerlessInferenceConfig(
-                memory_size_in_mb=2048,
-                max_concurrency=5,
+                memory_size_in_mb=mem_size,
+                max_concurrency=max_concurrency,
             )
 
         # Deploy the Endpoint
