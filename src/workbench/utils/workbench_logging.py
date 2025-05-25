@@ -122,7 +122,8 @@ def check_latest_version(log: logging.Logger):
     current_version_tuple = tuple(map(int, (current_version.split("."))))
 
     try:
-        response = requests.get("https://pypi.org/pypi/workbench/json", timeout=5)
+        headers = {"User-Agent": "workbench-version-checker/1.0"}
+        response = requests.get("https://pypi.org/pypi/workbench/json", headers=headers, timeout=5)
         response.raise_for_status()  # Raises an exception for 4xx/5xx responses
         latest_version = response.json()["info"]["version"]
         latest_version_tuple = tuple(map(int, (latest_version.split("."))))
