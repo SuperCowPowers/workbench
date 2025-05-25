@@ -260,17 +260,19 @@ if __name__ == "__main__":
     logging.getLogger("workbench").setLevel(logging.WARNING)
     my_log.info("You should NOT see me")
     my_log.warning("You should see this warning")
+    logging.getLogger("workbench").setLevel(logging.DEBUG)
 
     # Test out ALL the colors
-    logging.getLogger("workbench").setLevel(logging.DEBUG)
-    my_log.debug("This should be a muted color")
-    my_log.trace("Trace color should stand out from debug")
-    my_log.info("This should be a nice color")
-    my_log.important("Important color should stand out from info")
-    my_log.warning("This should be a color that attracts attention")
-    my_log.monitor("This is a monitor message")
-    my_log.error("This should be a bright color")
-    my_log.critical("This should be an alert color")
+    for theme in ["dark", "light"]:
+        log_theme(theme)
+        my_log.debug("This should be a muted color")
+        my_log.trace("Trace color should stand out from debug")
+        my_log.info("This should be a nice color")
+        my_log.important("Important color should stand out from info")
+        my_log.warning("This should be a color that attracts attention")
+        my_log.monitor("This is a monitor message")
+        my_log.error("This should be a bright color")
+        my_log.critical("This should be an alert color")
 
     # Test the exception handler
     with exception_log_forward():
