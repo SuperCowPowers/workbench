@@ -1,4 +1,5 @@
 """A molecule viewer plugin component"""
+
 import re
 from dash import html, dcc
 
