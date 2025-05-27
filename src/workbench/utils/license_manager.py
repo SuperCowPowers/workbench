@@ -70,7 +70,9 @@ class LicenseManager:
             cls.log.critical(
                 f"API License expired on {cls.api_license_info.get('expires')} Please contact Workbench support."
             )
-            raise FatalLicenseError()
+            # Note: This can lead to issues with ECS deployment if the license is expired
+            #       so for now we'll skip this FatalLicenseError
+            # raise FatalLicenseError()
 
         # Grab the AWS Account ID from our API License
         api_account_id = cls.api_license_info.get("aws_account_id")
