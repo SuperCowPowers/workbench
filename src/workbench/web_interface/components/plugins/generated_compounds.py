@@ -8,7 +8,6 @@ from workbench.api.compound import Compound
 from workbench.utils.chem_utils import svg_from_smiles
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.compound_utils import details_to_markdown
 from workbench.utils.ai_summary import AISummary
 from workbench.utils.ai_compound_generator import AICompoundGenerator
 
