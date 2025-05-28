@@ -57,4 +57,4 @@ def update_selected_row_info(selected_rows):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run(debug=True)

@@ -159,7 +159,7 @@ class PluginUnitTest:
             self.port += 1  # Increment the port number until an available one is found
 
         log.info(f"Starting Dash server on port {self.port}...")
-        self.app.run_server(debug=True, use_reloader=False, port=self.port)
+        self.app.run(debug=True, use_reloader=False, port=self.port)
 
     @staticmethod
     def is_port_in_use(port):
