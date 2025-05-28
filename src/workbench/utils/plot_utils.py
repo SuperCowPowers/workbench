@@ -200,7 +200,7 @@ if __name__ == "__main__":
     jittered_values = beeswarm_offsets(values, precision=1)
     print("Jittered values:", jittered_values)
 
-    # Generate noisey data
+    # Generate noisy data
     df = generate_heteroskedastic_data()
 
     # Quick visualization with Plotly
