@@ -3,7 +3,7 @@
 import logging
 import numpy as np
 import pandas as pd
-from typing import List, Optional
+from typing import List, Dict, Tuple, Optional, Union
 import base64
 from sklearn.manifold import TSNE
 
@@ -28,6 +28,7 @@ from rdkit import RDLogger
 from rdkit.Chem import FunctionalGroups as FG
 from mordred import Calculator as MordredCalculator
 from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
+
 
 # Load functional group hierarchy once during initialization
 fgroup_hierarchy = FG.BuildFuncGroupHierarchy()
@@ -968,6 +969,125 @@ def tautomerize_smiles(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _get_salt_feature_columns() -> List[str]:
+    """Internal: Return list of all salt feature column names"""
+    return [
+        "has_salt",
+        "mw_ratio",
+        "salt_to_api_ratio",
+        "has_metal_salt",
+        "has_halide",
+        "ionic_strength_proxy",
+        "has_organic_salt",
+    ]
+
+
+def _classify_salt_types(salt_frags: List[Chem.Mol]) -> Dict[str, int]:
+    """Internal: Classify salt fragments into categories"""
+    features = {
+        "has_organic_salt": 0,
+        "has_metal_salt": 0,
+        "has_halide": 0,
+    }
+
+    for frag in salt_frags:
+        # Get atoms
+        atoms = [atom.GetSymbol() for atom in frag.GetAtoms()]
+
+        # Metal detection
+        metals = ["Na", "K", "Ca", "Mg", "Li", "Zn", "Fe", "Al"]
+        if any(metal in atoms for metal in metals):
+            features["has_metal_salt"] = 1
+
+        # Halide detection
+        halides = ["Cl", "Br", "I", "F"]
+        if any(halide in atoms for halide in halides):
+            features["has_halide"] = 1
+
+        # Organic vs inorganic (simple heuristic: contains C)
+        if "C" in atoms:
+            features["has_organic_salt"] = 1
+
+    return features
+
+
+def extract_advanced_salt_features(
+    mol: Optional[Chem.Mol],
+) -> Tuple[Optional[Dict[str, Union[int, float]]], Optional[Chem.Mol]]:
+    """Extract comprehensive salt-related features from RDKit molecule"""
+    if mol is None:
+        return None, None
+
+    # Get fragments
+    fragments = Chem.GetMolFrags(mol, asMols=True)
+
+    # Identify API (largest organic fragment) vs salt fragments
+    fragment_weights = [(frag, Descriptors.MolWt(frag)) for frag in fragments]
+    fragment_weights.sort(key=lambda x: x[1], reverse=True)
+
+    # Find largest organic fragment as API
+    api_mol = None
+    salt_frags = []
+
+    for frag, mw in fragment_weights:
+        atoms = [atom.GetSymbol() for atom in frag.GetAtoms()]
+        if "C" in atoms and api_mol is None:  # First organic fragment = API
+            api_mol = frag
+        else:
+            salt_frags.append(frag)
+
+    # Fallback: if no organic fragments, use largest
+    if api_mol is None:
+        api_mol = fragment_weights[0][0]
+        salt_frags = [frag for frag, _ in fragment_weights[1:]]
+
+    # Initialize all features with default values
+    features = {col: 0 for col in _get_salt_feature_columns()}
+    features["mw_ratio"] = 1.0  # default for no salt
+
+    # Basic features
+    features.update(
+        {
+            "has_salt": int(len(salt_frags) > 0),
+            "mw_ratio": Descriptors.MolWt(api_mol) / Descriptors.MolWt(mol),
+        }
+    )
+
+    if salt_frags:
+        # Salt characterization
+        total_salt_mw = sum(Descriptors.MolWt(frag) for frag in salt_frags)
+        features.update(
+            {
+                "salt_to_api_ratio": total_salt_mw / Descriptors.MolWt(api_mol),
+                "ionic_strength_proxy": sum(abs(Chem.GetFormalCharge(frag)) for frag in salt_frags),
+            }
+        )
+
+        # Salt type classification
+        features.update(_classify_salt_types(salt_frags))
+
+    return features, api_mol
+
+
+def add_salt_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Add salt features to dataframe with 'molecule' column containing RDKit molecules"""
+    salt_features_list = []
+
+    for idx, row in df.iterrows():
+        mol = row["molecule"]
+        features, clean_mol = extract_advanced_salt_features(mol)
+
+        if features is None:
+            # Handle invalid molecules
+            features = {col: None for col in _get_salt_feature_columns()}
+
+        salt_features_list.append(features)
+
+    # Convert to DataFrame and concatenate
+    salt_df = pd.DataFrame(salt_features_list)
+    return pd.concat([df, salt_df], axis=1)
+
+
 def feature_resolution_issues(df: pd.DataFrame, features: List[str], show_cols: Optional[List[str]] = None) -> None:
     """
     Identify and print groups in a DataFrame where the given features have more than one unique SMILES,
@@ -1198,3 +1318,53 @@ if __name__ == "__main__":
     result_df_gmean = rollup_experimental_data(test_df, id="id", time="time_hr", target="target_value", use_gmean=True)
     print("Result with Geometric Mean:")
     print(result_df_gmean)
+
+    # Test some salted compounds
+    test_data = {
+        "id": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+        "target_value": [1.90, 4.03, 2.5, 3.5, 7.8, 6.2, 8.1, 6.9, 5.4, 3.2, 4.8, 7.1],
+        "smiles": [
+            "CC(=O)O",  # Acetic acid (no salt)
+            "C1CCCCC1",  # Cyclohexane (no salt)
+            "C1=CC=CC=C1",  # Benzene (no salt)
+            "CC(=O)O.[K+]",  # Potassium acetate (metal cation)
+            "CC(=O)O.[Ca+2]",  # Calcium acetate (metal cation)
+            "CC(=O)O.[Na+]",  # Sodium acetate (metal cation)
+            "CCO.Cl",  # Ethanol hydrochloride (halide anion)
+            "C1=CC=CC=C1.O.O",  # Benzene hydrate (inorganic)
+            "CC(=O)[O-].C[NH3+]",  # Methylammonium acetate (organic anion + cation)
+            "c1ccc(cc1)[NH3+].[Cl-]",  # Aniline HCl (organic cation, halide anion)
+            "CC(=O)[O-].CC[NH3+]",  # Ethylammonium acetate (organic anion + cation)
+            "CCO.[Br-].[Na+]",  # Multiple salt components
+        ],
+    }
+
+    # Create test DataFrame
+    test_df = pd.DataFrame(test_data)
+
+    # Convert SMILES to molecules
+    test_df["molecule"] = test_df["smiles"].apply(Chem.MolFromSmiles)
+
+    # Test individual function
+    print("Testing individual salt feature extraction:")
+    for i, row in test_df.iterrows():
+        if i < 3:  # Test first few
+            features, clean_mol = extract_advanced_salt_features(row["molecule"])
+            print(f"SMILES: {row['smiles']}")
+            print(f"Features: {features}")
+            print(f"Clean mol atoms: {clean_mol.GetNumAtoms() if clean_mol else 'None'}")
+            print("---")
+
+    # Test full DataFrame processing
+    print("\nTesting DataFrame processing:")
+    result_df = add_salt_features(test_df)
+
+    # Display results focusing on salt-related columns
+    salt_cols = _get_salt_feature_columns()
+    display_cols = ["smiles"] + salt_cols
+    print(result_df[display_cols].to_string())
+
+    # Summary stats
+    print(f"\nDataFrame shape before: {test_df.shape}")
+    print(f"DataFrame shape after: {result_df.shape}")
+    print(f"Compounds with salts: {result_df['has_salt'].sum()}")
