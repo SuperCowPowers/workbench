@@ -344,8 +344,7 @@ class MonitorCore:
         """
         # Check if this endpoint is a serverless endpoint
         if self.endpoint.is_serverless():
-            self.log.warning("Model monitoring doesn't work for serverless endpoints, skipping...")
-            return
+            self.log.warning("You can create a baseline but Model monitoring won't work for serverless endpoints")
 
         if self.baseline_exists() and not recreate:
             self.log.info(f"Baseline already exists for {self.endpoint_name}.")
@@ -374,6 +373,12 @@ class MonitorCore:
             dataset_format=DatasetFormat.csv(header=True),
             output_s3_uri=self.baseline_dir,
         )
+
+        # List the S3 bucket baseline files
+        baseline_files = wr.s3.list_objects(self.baseline_dir)
+        self.log.important(f"Baseline files created:")
+        for file in baseline_files:
+            self.log.important(f" - {file}")
 
     def get_baseline(self) -> Union[pd.DataFrame, None]:
         """Code to get the baseline CSV from the S3 baseline directory
