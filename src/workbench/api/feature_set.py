@@ -5,6 +5,7 @@ techniques (data quality, distributions, stats, outliers, etc.) FeatureSets
 can be viewed and explored within the Workbench Dashboard UI."""
 
 from typing import Union
+from pathlib import Path
 import pandas as pd
 
 # Workbench Imports
@@ -84,7 +85,7 @@ class FeatureSet(FeatureSetCore):
         target_column: str = None,
         scikit_model_class: str = None,
         model_import_str: str = None,
-        custom_script: str = None,
+        custom_script: Union[str, Path] = None,
         custom_args: dict = None,
         inference_arch: str = "x86_64",
         inference_image: str = "inference",
