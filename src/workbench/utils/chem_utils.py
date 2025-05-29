@@ -18,7 +18,7 @@ from workbench.utils.color_utils import is_dark, rgba_to_tuple
 
 # Molecular Descriptor Imports
 from rdkit import Chem
-from rdkit.Chem import AllChem, Mol, Descriptors, rdFingerprintGenerator, Draw
+from rdkit.Chem import AllChem, Mol, Descriptors, rdFingerprintGenerator, Draw, SDWriter
 from rdkit.Chem.Draw import rdMolDraw2D
 from rdkit.ML.Descriptors import MoleculeDescriptors
 from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
@@ -39,6 +39,68 @@ lg.setLevel(RDLogger.ERROR)
 
 # Set up the logger
 log = logging.getLogger("workbench")
+
+
+def df_to_sdf_file(
+        df: pd.DataFrame,
+        output_file: str,
+        smiles_col: str = 'smiles',
+        id_col: Optional[str] = None,
+        include_cols: Optional[List[str]] = None,
+        skip_invalid: bool = True,
+        generate_3d: bool = True
+):
+    """
+    Convert DataFrame with SMILES to SDF file.
+
+    Args:
+        df: DataFrame containing SMILES and other data
+        output_file: Path to output SDF file
+        smiles_col: Column name containing SMILES strings
+        id_col: Column to use as molecule ID/name
+        include_cols: Specific columns to include as properties (default: all except smiles)
+        skip_invalid: Skip invalid SMILES instead of raising error
+        generate_3d: Generate 3D coordinates and optimize geometry
+    """
+    written_count = 0
+
+    with SDWriter(output_file) as writer:
+        writer.SetForceV3000(True)
+        for idx, row in df.iterrows():
+            mol = Chem.MolFromSmiles(row[smiles_col])
+
+            if mol is None:
+                if not skip_invalid:
+                    raise ValueError(f"Invalid SMILES at row {idx}: {row[smiles_col]}")
+                continue
+
+            # Generate 3D coordinates
+            if generate_3d:
+                mol = Chem.AddHs(mol)
+                if AllChem.EmbedMolecule(mol, randomSeed=42) == -1:
+                    if not skip_invalid:
+                        raise ValueError(f"Could not generate 3D coords for row {idx}")
+                    continue
+                AllChem.MMFFOptimizeMolecule(mol)
+
+            # Set molecule name/ID
+            if id_col and id_col in df.columns:
+                mol.SetProp("_Name", str(row[id_col]))
+
+            # Determine which columns to include
+            if include_cols:
+                cols_to_add = [col for col in include_cols if col in df.columns and col != smiles_col]
+            else:
+                cols_to_add = [col for col in df.columns if col != smiles_col]
+
+            # Add properties
+            for col in cols_to_add:
+                mol.SetProp(col, str(row[col]))
+
+            writer.write(mol)
+            written_count += 1
+
+    log.important(f"Wrote {written_count} molecules to SDF: {output_file}")
 
 
 def img_from_smiles(
@@ -1135,6 +1197,8 @@ if __name__ == "__main__":
     pd.options.display.max_colwidth = 200
     pd.options.display.width = 1400
 
+    """
+
     # Test data
     # Create test molecules with known E/Z stereochemistry
     test_smiles = [
@@ -1318,6 +1382,7 @@ if __name__ == "__main__":
     result_df_gmean = rollup_experimental_data(test_df, id="id", time="time_hr", target="target_value", use_gmean=True)
     print("Result with Geometric Mean:")
     print(result_df_gmean)
+    """
 
     # Test some salted compounds
     test_data = {
