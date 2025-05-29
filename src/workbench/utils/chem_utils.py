@@ -68,7 +68,6 @@ def df_to_sdf_file(
         writer.SetForceV3000(True)
         for idx, row in df.iterrows():
             mol = Chem.MolFromSmiles(row[smiles_col])
-
             if mol is None:
                 if not skip_invalid:
                     raise ValueError(f"Invalid SMILES at row {idx}: {row[smiles_col]}")
