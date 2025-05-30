@@ -244,7 +244,7 @@ class AthenaSource(DataSourceAbstract):
             silence_errors (bool): Silence errors (default: False)
         """
         attempt = 0
-        max_retries = 3
+        max_retries = 5
         retry_delay = 30
         while attempt < max_retries:
             try:
