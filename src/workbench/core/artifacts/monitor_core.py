@@ -376,7 +376,7 @@ class MonitorCore:
 
         # List the S3 bucket baseline files
         baseline_files = wr.s3.list_objects(self.baseline_dir)
-        self.log.important(f"Baseline files created:")
+        self.log.important("Baseline files created:")
         for file in baseline_files:
             self.log.important(f" - {file}")
 

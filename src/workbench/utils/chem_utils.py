@@ -42,13 +42,13 @@ log = logging.getLogger("workbench")
 
 
 def df_to_sdf_file(
-        df: pd.DataFrame,
-        output_file: str,
-        smiles_col: str = 'smiles',
-        id_col: Optional[str] = None,
-        include_cols: Optional[List[str]] = None,
-        skip_invalid: bool = True,
-        generate_3d: bool = True
+    df: pd.DataFrame,
+    output_file: str,
+    smiles_col: str = "smiles",
+    id_col: Optional[str] = None,
+    include_cols: Optional[List[str]] = None,
+    skip_invalid: bool = True,
+    generate_3d: bool = True,
 ):
     """
     Convert DataFrame with SMILES to SDF file.
@@ -1196,8 +1196,6 @@ if __name__ == "__main__":
     pd.options.display.max_colwidth = 200
     pd.options.display.width = 1400
 
-    """
-
     # Test data
     # Create test molecules with known E/Z stereochemistry
     test_smiles = [
@@ -1381,7 +1379,6 @@ if __name__ == "__main__":
     result_df_gmean = rollup_experimental_data(test_df, id="id", time="time_hr", target="target_value", use_gmean=True)
     print("Result with Geometric Mean:")
     print(result_df_gmean)
-    """
 
     # Test some salted compounds
     test_data = {
