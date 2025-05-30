@@ -245,7 +245,7 @@ class AthenaSource(DataSourceAbstract):
         """
         attempt = 0
         max_retries = 3
-        retry_delay = 10
+        retry_delay = 30
         while attempt < max_retries:
             try:
                 # Start the query execution
@@ -264,8 +264,8 @@ class AthenaSource(DataSourceAbstract):
                 if "AlreadyExistsException" in str(e):
                     self.log.warning(f"Table already exists: {e} \nIgnoring...")
                     break  # No need to retry for this error
-                elif "ConcurrentModificationException" in str(e):
-                    self.log.warning(f"Concurrent modification detected: {e}\nRetrying...")
+                elif "ConcurrentModificationException" in str(e) or "OperationTimeoutException" in str(e):
+                    self.log.warning(f"Exception {e}\nRetrying...")
                     attempt += 1
                     if attempt < max_retries:
                         time.sleep(retry_delay)
