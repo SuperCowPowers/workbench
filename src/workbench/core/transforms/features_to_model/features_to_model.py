@@ -33,7 +33,7 @@ class FeaturesToModel(Transform):
         feature_uuid: str,
         model_uuid: str,
         model_type: ModelType,
-        scikit_model_class=None,
+        model_class=None,
         model_import_str=None,
         custom_script=None,
         custom_args=None,
@@ -45,7 +45,7 @@ class FeaturesToModel(Transform):
             feature_uuid (str): UUID of the FeatureSet to use as input
             model_uuid (str): UUID of the Model to create as output
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
-            scikit_model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)
+            model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)
             model_import_str (str, optional): The import string for the model (default None)
             custom_script (str, optional): Custom script to use for the model (default None)
             custom_args (dict, optional): Custom arguments to pass to custom model scripts (default None)
@@ -63,7 +63,7 @@ class FeaturesToModel(Transform):
         self.input_type = TransformInput.FEATURE_SET
         self.output_type = TransformOutput.MODEL
         self.model_type = model_type
-        self.scikit_model_class = scikit_model_class
+        self.model_class = model_class
         self.model_import_str = model_import_str
         self.custom_script = str(custom_script) if custom_script else None
         self.custom_args = custom_args if custom_args else {}
@@ -154,7 +154,7 @@ class FeaturesToModel(Transform):
         template_params = {
             "model_imports": self.model_import_str,
             "model_type": self.model_type,
-            "scikit_model_class": self.scikit_model_class,
+            "model_class": self.model_class,
             "target_column": self.target_column,
             "feature_list": self.model_feature_list,
             "model_metrics_s3_path": self.model_training_root,
@@ -231,7 +231,7 @@ class FeaturesToModel(Transform):
             source_dir=source_dir,
             role=self.workbench_role_arn,
             instance_count=1,
-            instance_type="ml.m5.large",
+            instance_type="ml.m5.xlarge",
             sagemaker_session=self.sm_session,
             image_uri=image,
             metric_definitions=metric_definitions,
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(
         input_uuid,
         output_uuid,
-        scikit_model_class="KMeans",  # Clustering algorithm
+        model_class="KMeans",  # Clustering algorithm
         model_import_str="from sklearn.cluster import KMeans",  # Import statement for KMeans
         model_type=ModelType.CLUSTERER,
     )
@@ -354,7 +354,7 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(
         input_uuid,
         output_uuid,
-        scikit_model_class="HDBSCAN",  # Density-based clustering algorithm
+        model_class="HDBSCAN",  # Density-based clustering algorithm
         model_import_str="from sklearn.cluster import HDBSCAN",
         model_type=ModelType.CLUSTERER,
     )
@@ -367,7 +367,7 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(
         input_uuid,
         output_uuid,
-        scikit_model_class="UMAP",
+        model_class="UMAP",
         model_import_str="from umap import UMAP",
         model_type=ModelType.PROJECTION,
     )

@@ -83,7 +83,7 @@ class FeatureSet(FeatureSetCore):
         description: str = None,
         feature_list: list = None,
         target_column: str = None,
-        scikit_model_class: str = None,
+        model_class: str = None,
         model_import_str: str = None,
         custom_script: Union[str, Path] = None,
         custom_args: dict = None,
@@ -101,7 +101,7 @@ class FeatureSet(FeatureSetCore):
             description (str, optional): Set the description for the model. If not give a description is generated.
             feature_list (list, optional): Set the feature list for the model. If not given a feature list is generated.
             target_column (str, optional): The target column for the model (use None for unsupervised model)
-            scikit_model_class (str, optional): Scikit model class to use (e.g. "KMeans", default: None)
+            model_class (str, optional): Scikit model class to use (e.g. "KMeans", default: None)
             model_import_str (str, optional): The import for the model (e.g. "from sklearn.cluster import KMeans")
             custom_script (str, optional): The custom script to use for the model (default: None)
             inference_arch (str, optional): The architecture to use for inference (default: "x86_64")
@@ -130,7 +130,7 @@ class FeatureSet(FeatureSetCore):
             feature_uuid=self.uuid,
             model_uuid=name,
             model_type=model_type,
-            scikit_model_class=scikit_model_class,
+            model_class=model_class,
             model_import_str=model_import_str,
             custom_script=custom_script,
             custom_args=custom_args,

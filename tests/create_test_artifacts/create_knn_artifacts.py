@@ -32,7 +32,7 @@ if __name__ == "__main__":
             target_column="class_number_of_rings",
             description="Abalone KNN Regression",
             tags=["abalone", "knn"],
-            scikit_model_class="KNeighborsRegressor",
+            model_class="KNeighborsRegressor",
             model_import_str="from sklearn.neighbors import KNeighborsRegressor",
             train_all_data=True,
         )
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="aqsol-knn-reg",
             model_type=ModelType.REGRESSOR,
-            scikit_model_class="KNeighborsRegressor",
+            model_class="KNeighborsRegressor",
             model_import_str="from sklearn.neighbors import KNeighborsRegressor",
             target_column="solubility",
             feature_list=features,

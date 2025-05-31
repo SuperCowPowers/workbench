@@ -1,2 +1,2 @@
-# Note: In general this file should be empty (as the default inference image has all required libraries)
+# Note: Umap-learn is not included in the default inference image, so it must be specified here.
 umap-learn
