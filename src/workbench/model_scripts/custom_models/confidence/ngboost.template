@@ -1,5 +1,5 @@
-# Model: Bayesian Ridge Regressor with Standard Deviation output
-from sklearn.linear_model import BayesianRidge
+# Model: NGBoost Regressor with Distribution output
+from ngboost import NGBRegressor
 
 # Template Placeholders
 TEMPLATE_PARAMS = {
@@ -78,8 +78,8 @@ if __name__ == "__main__":
     X_train = df[features]
     y_train = df[target]
 
-    # Create and train the Regression/Confidence model
-    model = BayesianRidge()
+    # Create and train the NGBoost Regression model
+    model = NGBRegressor(verbose=False)
 
     # Fit the model to the training data
     model.fit(X_train, y_train)
@@ -139,10 +139,29 @@ def predict_fn(df, model):
     # Match features in a case-insensitive manner
     matched_df = match_features_case_insensitive(df, model_features)
 
-    # Run predictions and store the results
-    y_mean, y_std = model.predict(matched_df[model_features], return_std=True)
-    df["prediction"] = y_mean
-    df["prediction_std"] = y_std
+    # NGBoost predict returns distribution objects
+    y_dists = model.predict(matched_df[model_features])
+
+    # Extract mean and std from distributions
+    df["prediction"] = y_dists.loc  # mean
+    df["prediction_std"] = y_dists.scale  # standard deviation
+
+    # Add 90% prediction intervals
+    intervals_90 = y_dists.interval(alpha=0.1)
+    df["prediction_lower"] = intervals_90[0]  # 5th percentile
+    df["prediction_upper"] = intervals_90[1]  # 95th percentile
+
+    # Add IQR (Interquartile Range): 75th - 25th percentile
+    intervals_iqr = y_dists.interval(alpha=0.5)
+    df["prediction_q25"] = intervals_iqr[0]  # 25th percentile
+    df["prediction_q75"] = intervals_iqr[1]  # 75th percentile
+    df["prediction_iqr"] = df["prediction_q75"] - df["prediction_q25"]
+
+    # Add IDR (Interdecile Range): 90th - 10th percentile
+    intervals_idr = y_dists.interval(alpha=0.8)
+    df["prediction_q10"] = intervals_idr[0]  # 10th percentile
+    df["prediction_q90"] = intervals_idr[1]  # 90th percentile
+    df["prediction_idr"] = df["prediction_q90"] - df["prediction_q10"]
 
     # Return the modified DataFrame
     return df
