@@ -36,4 +36,3 @@ endpoint = my_model.to_endpoint(tags=["aqsol", "bayesian"])
 
 # Run auto-inference on the Endpoint
 endpoint.auto_inference(capture=True)
-
