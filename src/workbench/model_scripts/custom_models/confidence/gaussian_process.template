@@ -4,11 +4,6 @@ from sklearn.gaussian_process.kernels import Matern, WhiteKernel, ConstantKernel
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 
-# Kernel that should handle noisy, non-smooth data
-kernel = (ConstantKernel(1.0, constant_value_bounds=(1e-3, 1e3)) *
-          Matern(length_scale=1.0, length_scale_bounds=(1e-2, 1e2), nu=1.5) +
-          WhiteKernel(noise_level=1.0, noise_level_bounds=(1e-5, 1e1)))
-
 # Template Placeholders
 TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
@@ -86,8 +81,14 @@ if __name__ == "__main__":
     X_train = df[features]
     y_train = df[target]
 
+    # Kernel for Gaussian Process Regression
+    kernel = ConstantKernel(1.0, constant_value_bounds="fixed") * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(noise_level=1.0)
+    # Kernel that should handle noisy, non-smooth data
+    kernel = (ConstantKernel(1.0, constant_value_bounds=(1e-3, 1e3)) *
+              Matern(length_scale=1.0, length_scale_bounds=(1e-2, 1e2), nu=1.5) +
+              WhiteKernel(noise_level=1.0, noise_level_bounds=(1e-5, 1e1)))
     # Create and train the Regression/Confidence model
-    model = GaussianProcessRegressor(kernel=kernel)
+    model = GaussianProcessRegressor()
 
     # Create a Pipeline with StandardScaler
     model = Pipeline([

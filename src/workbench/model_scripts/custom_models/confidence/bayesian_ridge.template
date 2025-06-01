@@ -79,7 +79,12 @@ if __name__ == "__main__":
     y_train = df[target]
 
     # Create and train the Regression/Confidence model
-    model = BayesianRidge()
+    # model = BayesianRidge()
+    model = BayesianRidge(
+        alpha_1=1e-6, alpha_2=1e-6,  # Noise precision
+        lambda_1=1e-6, lambda_2=1e-6,  # Weight precision
+        fit_intercept=True,
+    )
 
     # Fit the model to the training data
     model.fit(X_train, y_train)
