@@ -158,18 +158,18 @@ def predict_fn(df, model):
     df["prediction_std"] = dist_params['scale']  # standard deviation
 
     # Add prediction intervals using ppf (percent point function)
-    df["prediction_lower"] = y_dists.ppf(0.05)  # 5th percentile
-    df["prediction_upper"] = y_dists.ppf(0.95)  # 95th percentile
+    df["q_05"] = y_dists.ppf(0.05)  # 5th percentile
+    df["q_95"] = y_dists.ppf(0.95)  # 95th percentile
 
     # Add IQR (Interquartile Range): 75th - 25th percentile
-    df["prediction_q25"] = y_dists.ppf(0.25)  # 25th percentile
-    df["prediction_q75"] = y_dists.ppf(0.75)  # 75th percentile
-    df["prediction_iqr"] = df["prediction_q75"] - df["prediction_q25"]
+    df["q_25"] = y_dists.ppf(0.25)  # 25th percentile
+    df["q_75"] = y_dists.ppf(0.75)  # 75th percentile
+    df["iqr"] = df["q_75"] - df["q_25"]
 
     # Add IDR (Interdecile Range): 90th - 10th percentile
-    df["prediction_q10"] = y_dists.ppf(0.10)  # 10th percentile
-    df["prediction_q90"] = y_dists.ppf(0.90)  # 90th percentile
-    df["prediction_idr"] = df["prediction_q90"] - df["prediction_q10"]
+    df["q_10"] = y_dists.ppf(0.10)  # 10th percentile
+    df["q_90"] = y_dists.ppf(0.90)  # 90th percentile
+    df["idr"] = df["q_90"] - df["q_10"]
 
     # Return the modified DataFrame
     return df
