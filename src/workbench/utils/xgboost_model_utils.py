@@ -95,7 +95,7 @@ def xgboost_model_from_s3(model_artifact_uri: str):
 
 def feature_importance(workbench_model, importance_type: str = "weight") -> Optional[List[Tuple[str, float]]]:
     """
-    Get sorted feature importances from an Workbench Model object.
+    Get sorted feature importances from a Workbench Model object.
 
     Args:
         workbench_model: Workbench model object
@@ -103,8 +103,13 @@ def feature_importance(workbench_model, importance_type: str = "weight") -> Opti
             Options: 'weight', 'gain', 'cover', 'total_gain', 'total_cover'
 
     Returns:
-        List of tuples (feature, importance) sorted by importance value (descending)
-        or None if there was an error
+        List of tuples (feature, importance) sorted by importance value (descending).
+        Includes all features from the model, with zero importance for unused features.
+        Returns None if there was an error loading the model.
+
+    Note:
+        XGBoost's get_score() only returns features with non-zero importance.
+        This function ensures all model features are included in the output.
     """
     model_artifact_uri = workbench_model.model_data_url()
     xgb_model = xgboost_model_from_s3(model_artifact_uri)
@@ -112,11 +117,17 @@ def feature_importance(workbench_model, importance_type: str = "weight") -> Opti
         log.error("No XGBoost model found in the artifact.")
         return None
 
-    # Get feature importances
+    # Get feature importances (only non-zero features)
     importances = xgb_model.get_score(importance_type=importance_type)
 
-    # Convert to sorted list of tuples (feature, importance)
-    sorted_importances = sorted(importances.items(), key=lambda x: x[1], reverse=True)
+    # Get all feature names from the model
+    all_features = xgb_model.feature_names
+
+    # Create complete importance dict with zeros for missing features
+    complete_importances = {feat: importances.get(feat, 0.0) for feat in all_features}
+
+    # Convert to sorted list of tuples
+    sorted_importances = sorted(complete_importances.items(), key=lambda x: x[1], reverse=True)
     return sorted_importances
 
 
