@@ -1,6 +1,6 @@
 # Model: Gaussian Process Regressor with Standard Deviation output
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import Matern, WhiteKernel, ConstantKernel
+from sklearn.gaussian_process.kernels import RBF, Matern, WhiteKernel, ConstantKernel
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 
@@ -82,13 +82,14 @@ if __name__ == "__main__":
     y_train = df[target]
 
     # Kernel for Gaussian Process Regression
-    kernel = ConstantKernel(1.0, constant_value_bounds="fixed") * Matern(length_scale=1.0, nu=2.5) + WhiteKernel(noise_level=1.0)
-    # Kernel that should handle noisy, non-smooth data
-    kernel = (ConstantKernel(1.0, constant_value_bounds=(1e-3, 1e3)) *
-              Matern(length_scale=1.0, length_scale_bounds=(1e-2, 1e2), nu=1.5) +
-              WhiteKernel(noise_level=1.0, noise_level_bounds=(1e-5, 1e1)))
+    # kernel = RBF() + WhiteKernel()
+    kernel = Matern(nu=1.5) + WhiteKernel()
+
     # Create and train the Regression/Confidence model
-    model = GaussianProcessRegressor()
+    model = GaussianProcessRegressor(
+        kernel=kernel,
+        alpha=0.1,  # Noise level
+    )
 
     # Create a Pipeline with StandardScaler
     model = Pipeline([
