@@ -48,14 +48,16 @@ df = PandasTools.LoadSDF('file.sdf', molColName='ROMol', smilesName='SMILES')
 PandasTools.WriteSDF(df, 'file.sdf', molColName='ROMol', properties=list(df.columns))
 
 """
+
+
 def df_to_sdf_file(
-        df: pd.DataFrame,
-        output_file: str,
-        smiles_col: str = "smiles",
-        id_col: Optional[str] = None,
-        include_cols: Optional[List[str]] = None,
-        skip_invalid: bool = True,
-        generate_3d: bool = True,
+    df: pd.DataFrame,
+    output_file: str,
+    smiles_col: str = "smiles",
+    id_col: Optional[str] = None,
+    include_cols: Optional[List[str]] = None,
+    skip_invalid: bool = True,
+    generate_3d: bool = True,
 ):
     """
     Convert DataFrame with SMILES to SDF file.
@@ -113,9 +115,8 @@ def df_to_sdf_file(
                 cols_to_add = [col for col in include_cols if col in df.columns and col != smiles_col]
             else:
                 # Auto-exclude common molecule column names and SMILES column
-                mol_col_names = ['mol', 'molecule', 'rdkit_mol', 'Mol']
-                cols_to_add = [col for col in df.columns
-                               if col != smiles_col and col not in mol_col_names]
+                mol_col_names = ["mol", "molecule", "rdkit_mol", "Mol"]
+                cols_to_add = [col for col in df.columns if col != smiles_col and col not in mol_col_names]
 
             # Add properties
             for col in cols_to_add:
@@ -128,12 +129,12 @@ def df_to_sdf_file(
 
 
 def sdf_file_to_df(
-        sdf_file: str,
-        include_smiles: bool = True,
-        smiles_col: str = "smiles",
-        id_col: Optional[str] = None,
-        include_props: Optional[List[str]] = None,
-        exclude_props: Optional[List[str]] = None,
+    sdf_file: str,
+    include_smiles: bool = True,
+    smiles_col: str = "smiles",
+    id_col: Optional[str] = None,
+    include_props: Optional[List[str]] = None,
+    exclude_props: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """
     Convert SDF file to DataFrame.
@@ -187,6 +188,7 @@ def sdf_file_to_df(
     log.important(f"Read {len(df)} molecules from SDF: {sdf_file}")
 
     return df
+
 
 def img_from_smiles(
     smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)"
@@ -1282,8 +1284,6 @@ if __name__ == "__main__":
     pd.options.display.max_colwidth = 200
     pd.options.display.width = 1400
 
-    """
-
     # Test data
     # Create test molecules with known E/Z stereochemistry
     test_smiles = [
@@ -1467,7 +1467,6 @@ if __name__ == "__main__":
     result_df_gmean = rollup_experimental_data(test_df, id="id", time="time_hr", target="target_value", use_gmean=True)
     print("Result with Geometric Mean:")
     print(result_df_gmean)
-    """
 
     # Test some salted compounds
     test_data = {
