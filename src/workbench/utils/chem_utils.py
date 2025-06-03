@@ -40,15 +40,22 @@ lg.setLevel(RDLogger.ERROR)
 # Set up the logger
 log = logging.getLogger("workbench")
 
+"""FIXME:
+Let's figure out what we're not just using these RDKit methods
 
+from rdkit.Chem import PandasTools
+df = PandasTools.LoadSDF('file.sdf', molColName='ROMol', smilesName='SMILES')
+PandasTools.WriteSDF(df, 'file.sdf', molColName='ROMol', properties=list(df.columns))
+
+"""
 def df_to_sdf_file(
-    df: pd.DataFrame,
-    output_file: str,
-    smiles_col: str = "smiles",
-    id_col: Optional[str] = None,
-    include_cols: Optional[List[str]] = None,
-    skip_invalid: bool = True,
-    generate_3d: bool = True,
+        df: pd.DataFrame,
+        output_file: str,
+        smiles_col: str = "smiles",
+        id_col: Optional[str] = None,
+        include_cols: Optional[List[str]] = None,
+        skip_invalid: bool = True,
+        generate_3d: bool = True,
 ):
     """
     Convert DataFrame with SMILES to SDF file.
@@ -58,7 +65,7 @@ def df_to_sdf_file(
         output_file: Path to output SDF file
         smiles_col: Column name containing SMILES strings
         id_col: Column to use as molecule ID/name
-        include_cols: Specific columns to include as properties (default: all except smiles)
+        include_cols: Specific columns to include as properties (default: all except smiles and molecule columns)
         skip_invalid: Skip invalid SMILES instead of raising error
         generate_3d: Generate 3D coordinates and optimize geometry
     """
@@ -76,10 +83,25 @@ def df_to_sdf_file(
             # Generate 3D coordinates
             if generate_3d:
                 mol = Chem.AddHs(mol)
-                if AllChem.EmbedMolecule(mol, randomSeed=42) == -1:
+
+                # Try progressively more aggressive embedding strategies
+                embed_strategies = [
+                    {"maxAttempts": 1000, "randomSeed": 42},
+                    {"maxAttempts": 1000, "randomSeed": 42, "useRandomCoords": True},
+                    {"maxAttempts": 1000, "randomSeed": 42, "boxSizeMult": 5.0},
+                ]
+
+                embedded = False
+                for strategy in embed_strategies:
+                    if AllChem.EmbedMolecule(mol, **strategy) != -1:
+                        embedded = True
+                        break
+
+                if not embedded:
                     if not skip_invalid:
                         raise ValueError(f"Could not generate 3D coords for row {idx}")
                     continue
+
                 AllChem.MMFFOptimizeMolecule(mol)
 
             # Set molecule name/ID
@@ -90,7 +112,10 @@ def df_to_sdf_file(
             if include_cols:
                 cols_to_add = [col for col in include_cols if col in df.columns and col != smiles_col]
             else:
-                cols_to_add = [col for col in df.columns if col != smiles_col]
+                # Auto-exclude common molecule column names and SMILES column
+                mol_col_names = ['mol', 'molecule', 'rdkit_mol', 'Mol']
+                cols_to_add = [col for col in df.columns
+                               if col != smiles_col and col not in mol_col_names]
 
             # Add properties
             for col in cols_to_add:
@@ -101,6 +126,67 @@ def df_to_sdf_file(
 
     log.important(f"Wrote {written_count} molecules to SDF: {output_file}")
 
+
+def sdf_file_to_df(
+        sdf_file: str,
+        include_smiles: bool = True,
+        smiles_col: str = "smiles",
+        id_col: Optional[str] = None,
+        include_props: Optional[List[str]] = None,
+        exclude_props: Optional[List[str]] = None,
+) -> pd.DataFrame:
+    """
+    Convert SDF file to DataFrame.
+
+    Args:
+        sdf_file: Path to input SDF file
+        include_smiles: Add SMILES column to output
+        smiles_col: Name for SMILES column
+        id_col: Column name for molecule ID/name (uses _Name property)
+        include_props: Specific properties to include (default: all)
+        exclude_props: Properties to exclude from output
+
+    Returns:
+        DataFrame with molecules and their properties
+    """
+    data = []
+
+    suppl = Chem.SDMolSupplier(sdf_file)
+    for idx, mol in enumerate(suppl):
+        if mol is None:
+            log.warning(f"Could not parse molecule at index {idx}")
+            continue
+
+        row_data = {}
+
+        # Add SMILES if requested
+        if include_smiles:
+            row_data[smiles_col] = Chem.MolToSmiles(mol)
+
+        # Add molecule name/ID if requested
+        if id_col and mol.HasProp("_Name"):
+            row_data[id_col] = mol.GetProp("_Name")
+
+        # Get all properties
+        prop_names = mol.GetPropNames()
+
+        # Filter properties based on include/exclude lists
+        if include_props:
+            prop_names = [p for p in prop_names if p in include_props]
+        if exclude_props:
+            prop_names = [p for p in prop_names if p not in exclude_props]
+
+        # Add properties to row
+        for prop in prop_names:
+            if prop != "_Name":  # Skip _Name if we already handled it
+                row_data[prop] = mol.GetProp(prop)
+
+        data.append(row_data)
+
+    df = pd.DataFrame(data)
+    log.important(f"Read {len(df)} molecules from SDF: {sdf_file}")
+
+    return df
 
 def img_from_smiles(
     smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)"
@@ -1196,6 +1282,8 @@ if __name__ == "__main__":
     pd.options.display.max_colwidth = 200
     pd.options.display.width = 1400
 
+    """
+
     # Test data
     # Create test molecules with known E/Z stereochemistry
     test_smiles = [
@@ -1379,6 +1467,7 @@ if __name__ == "__main__":
     result_df_gmean = rollup_experimental_data(test_df, id="id", time="time_hr", target="target_value", use_gmean=True)
     print("Result with Geometric Mean:")
     print(result_df_gmean)
+    """
 
     # Test some salted compounds
     test_data = {
@@ -1429,3 +1518,13 @@ if __name__ == "__main__":
     print(f"\nDataFrame shape before: {test_df.shape}")
     print(f"DataFrame shape after: {result_df.shape}")
     print(f"Compounds with salts: {result_df['has_salt'].sum()}")
+
+    # Test the SDF file writing
+    my_sdf_file = "test_salts.sdf"
+    weird_smile = r"CCCCCCCCCCCCCCCCN(CCCCCCCCCCCCCCCC)C(=O)[C@H](C)/N=C(\O)[C@H](CC1=CNC=N1)NC(=O)CCCCC[N+](C)(C)C"
+    test_df.at[0, "smiles"] = weird_smile
+    df_to_sdf_file(test_df, my_sdf_file, skip_invalid=False)
+
+    # Test the SDF file reading
+    df = sdf_file_to_df(my_sdf_file)
+    print(df)
