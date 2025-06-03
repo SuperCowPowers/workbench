@@ -1,10 +1,12 @@
 # Model: Bayesian Ridge Regressor with Standard Deviation output
 from sklearn.linear_model import BayesianRidge
+from sklearn.model_selection import train_test_split
 
 # Template Placeholders
 TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
     "target": "{{target_column}}",
+    "train_all_data": "{{train_all_data}}"
 }
 
 from io import StringIO
@@ -54,6 +56,8 @@ if __name__ == "__main__":
     # Template Parameters
     features = TEMPLATE_PARAMS["features"]
     target = TEMPLATE_PARAMS["target"]
+    train_all_data = TEMPLATE_PARAMS["train_all_data"]
+    validation_split = 0.2
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
@@ -74,9 +78,21 @@ if __name__ == "__main__":
     # Check if the DataFrame is empty
     check_dataframe(df, "training_df")
 
-    # Grab the features and targets for training
-    X_train = df[features]
-    y_train = df[target]
+    # Training data split logic
+    if train_all_data:
+        # Use all data for both training and validation
+        print("Training on all data...")
+        df_train = df.copy()
+        df_val = df.copy()
+    elif "training" in df.columns:
+        # Split data based on a 'training' column if it exists
+        print("Splitting data based on 'training' column...")
+        df_train = df[df["training"]].copy()
+        df_val = df[~df["training"]].copy()
+    else:
+        # Perform a random split if no 'training' column is found
+        print("Splitting data randomly...")
+        df_train, df_val = train_test_split(df, test_size=validation_split, random_state=42)
 
     # Create and train the Regression/Confidence model
     # model = BayesianRidge()
@@ -86,11 +102,17 @@ if __name__ == "__main__":
         fit_intercept=True,
     )
 
-    # Fit the model to the training data
+    # Prepare features and targets for training
+    X_train = df_train[features]
+    X_val = df_val[features]
+    y_train = df_train[target]
+    y_val = df_val[target]
+
+    # Train the model using the training data
     model.fit(X_train, y_train)
 
     # Save the trained model and any necessary assets
-    joblib.dump(model, os.path.join(args.model_dir, "scikit_model.joblib"))
+    joblib.dump(model, os.path.join(args.model_dir, "model.joblib"))
 
     # Save the feature list to validate input during predictions
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
@@ -102,7 +124,7 @@ if __name__ == "__main__":
 #
 def model_fn(model_dir):
     """Load and return the model from the specified directory."""
-    return joblib.load(os.path.join(model_dir, "scikit_model.joblib"))
+    return joblib.load(os.path.join(model_dir, "model.joblib"))
 
 
 def input_fn(input_data, content_type):

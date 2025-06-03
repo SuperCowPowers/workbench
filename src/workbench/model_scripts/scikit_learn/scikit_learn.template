@@ -198,7 +198,7 @@ if __name__ == "__main__":
             all_df[f"component_{i + 1}"] = transformed_data[:, i]
 
     # Save the trained model and any necessary assets
-    joblib.dump(model, os.path.join(args.model_dir, "scikit_model.joblib"))
+    joblib.dump(model, os.path.join(args.model_dir, "model.joblib"))
     if model_type == "classifier" and label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 #
 def model_fn(model_dir):
     """Load and return the model from the specified directory."""
-    return joblib.load(os.path.join(model_dir, "scikit_model.joblib"))
+    return joblib.load(os.path.join(model_dir, "model.joblib"))
 
 
 def input_fn(input_data, content_type):

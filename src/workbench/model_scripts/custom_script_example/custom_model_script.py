@@ -96,7 +96,7 @@ if __name__ == "__main__":
     df_val = expand_proba_column(df_val, label_encoder.classes_)
 
     # Save the model and label encoder
-    joblib.dump(model, os.path.join(args.model_dir, "scikit_model.joblib"))
+    joblib.dump(model, os.path.join(args.model_dir, "model.joblib"))
     joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
     # Save the feature list
@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
 # Model loading and prediction functions
 def model_fn(model_dir):
-    return joblib.load(os.path.join(model_dir, "scikit_model.joblib"))
+    return joblib.load(os.path.join(model_dir, "model.joblib"))
 
 
 def input_fn(input_data, content_type):
