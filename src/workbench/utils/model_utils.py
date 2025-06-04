@@ -160,7 +160,7 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
     return category_mappings
 
 
-def evaluate_uq_model(df, target_col='solubility', model_name='Model'):
+def evaluate_uq_model(df, target_col="solubility", model_name="Model"):
     """
     Evaluate uncertainty quantification model performance
 
@@ -174,24 +174,24 @@ def evaluate_uq_model(df, target_col='solubility', model_name='Model'):
     """
 
     # Calculate absolute residuals
-    abs_residuals = np.abs(df[target_col] - df['prediction'])
+    abs_residuals = np.abs(df[target_col] - df["prediction"])
 
     # Correlation between uncertainty and actual errors
-    uncertainty_error_corr = np.corrcoef(df['prediction_std'], abs_residuals)[0, 1]
+    uncertainty_error_corr = np.corrcoef(df["prediction_std"], abs_residuals)[0, 1]
 
     # Check if we have quantile columns or need to create them from std
-    if 'q_025' in df.columns and 'q_975' in df.columns:
+    if "q_025" in df.columns and "q_975" in df.columns:
         # Quantile-based models (NGBoost, MAPIE, Quantile Regression, Bootstrap)
-        coverage_95 = ((df[target_col] >= df['q_025']) & (df[target_col] <= df['q_975'])).mean()
-        coverage_50 = ((df[target_col] >= df['q_25']) & (df[target_col] <= df['q_75'])).mean()
-        avg_width_95 = (df['q_975'] - df['q_025']).mean()
-        avg_width_50 = (df['q_75'] - df['q_25']).mean()
+        coverage_95 = ((df[target_col] >= df["q_025"]) & (df[target_col] <= df["q_975"])).mean()
+        coverage_50 = ((df[target_col] >= df["q_25"]) & (df[target_col] <= df["q_75"])).mean()
+        avg_width_95 = (df["q_975"] - df["q_025"]).mean()
+        avg_width_50 = (df["q_75"] - df["q_25"]).mean()
     else:
         # Std-based models (Bayesian, Gaussian) - assume normal distribution
-        q_025 = df['prediction'] - 1.96 * df['prediction_std']   # 95% interval
-        q_975 = df['prediction'] + 1.96 * df['prediction_std']
-        q_25 = df['prediction'] - 0.674 * df['prediction_std']   # 50% interval
-        q_75 = df['prediction'] + 0.674 * df['prediction_std']
+        q_025 = df["prediction"] - 1.96 * df["prediction_std"]  # 95% interval
+        q_975 = df["prediction"] + 1.96 * df["prediction_std"]
+        q_25 = df["prediction"] - 0.674 * df["prediction_std"]  # 50% interval
+        q_75 = df["prediction"] + 0.674 * df["prediction_std"]
 
         coverage_95 = ((df[target_col] >= q_025) & (df[target_col] <= q_975)).mean()
         coverage_50 = ((df[target_col] >= q_25) & (df[target_col] <= q_75)).mean()
@@ -200,13 +200,13 @@ def evaluate_uq_model(df, target_col='solubility', model_name='Model'):
 
     # Compile results
     results = {
-        'model': model_name,
-        'coverage_95': coverage_95,
-        'coverage_50': coverage_50,
-        'uncertainty_correlation': uncertainty_error_corr,
-        'avg_width_95': avg_width_95,
-        'avg_width_50': avg_width_50,
-        'n_samples': len(df)
+        "model": model_name,
+        "coverage_95": coverage_95,
+        "coverage_50": coverage_50,
+        "uncertainty_correlation": uncertainty_error_corr,
+        "avg_width_95": avg_width_95,
+        "avg_width_50": avg_width_50,
+        "n_samples": len(df),
     }
 
     # Print formatted results
