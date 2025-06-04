@@ -115,7 +115,7 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
     plotly.graph_objects.Figure
         Updated figure with prediction intervals
     """
-    required_cols = ["q_10", "q_25", "q_75", "q_90"]
+    required_cols = ["q_025", "q_25", "q_75", "q_975"]
     if all(col in df.columns for col in required_cols):
         # Sort dataframe by x_col for connected lines
         sorted_df = df.sort_values(by=x_col)
@@ -127,22 +127,22 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
 
             # Apply appropriate aggregation for each percentile
             # Lower percentiles use min to avoid underestimating lower bounds
-            sorted_df["q_10"] = sorted_df["q_10"].rolling(window=smoothing, center=True, min_periods=1).min()
-            sorted_df["q_10"] = sorted_df["q_10"].ewm(span=smoothing, min_periods=1).mean()
+            sorted_df["q_025"] = sorted_df["q_025"].rolling(window=smoothing, center=True, min_periods=1).min()
+            sorted_df["q_025"] = sorted_df["q_025"].ewm(span=smoothing, min_periods=1).mean()
             sorted_df["q_25"] = sorted_df["q_25"].rolling(window=smoothing, center=True, min_periods=1).min()
             sorted_df["q_25"] = sorted_df["q_25"].ewm(span=smoothing, min_periods=1).mean()
 
             # Upper percentiles use max to avoid overestimating upper bounds
             sorted_df["q_75"] = sorted_df["q_75"].rolling(window=smoothing, center=True, min_periods=1).max()
             sorted_df["q_75"] = sorted_df["q_75"].ewm(span=smoothing, min_periods=1).mean()
-            sorted_df["q_90"] = sorted_df["q_90"].rolling(window=smoothing, center=True, min_periods=1).max()
-            sorted_df["q_90"] = sorted_df["q_90"].ewm(span=smoothing, min_periods=1).mean()
+            sorted_df["q_975"] = sorted_df["q_975"].rolling(window=smoothing, center=True, min_periods=1).max()
+            sorted_df["q_975"] = sorted_df["q_975"].ewm(span=smoothing, min_periods=1).mean()
 
-        # Add outer band (q_10 to q_90) - more transparent
+        # Add outer band (q_025 to q_975) - more transparent
         figure.add_trace(
             go.Scatter(
                 x=sorted_df[x_col],
-                y=sorted_df["q_10"],
+                y=sorted_df["q_025"],
                 mode="lines",
                 line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
                 name="10th Percentile",
@@ -153,7 +153,7 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
         figure.add_trace(
             go.Scatter(
                 x=sorted_df[x_col],
-                y=sorted_df["q_90"],
+                y=sorted_df["q_975"],
                 mode="lines",
                 line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
                 name="90th Percentile",

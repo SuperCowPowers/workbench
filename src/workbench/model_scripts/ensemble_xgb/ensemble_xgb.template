@@ -279,11 +279,17 @@ def predict_fn(df, models) -> pd.DataFrame:
         else:
             df[name] = model.predict(matched_df[model_features])
 
+    # Add quantiles for consistency with other UQ models
+    df["q_025"] = df[[name for name in df.columns if name.startswith("m_")]].quantile(0.025, axis=1)
+    df["q_975"] = df[[name for name in df.columns if name.startswith("m_")]].quantile(0.975, axis=1)
+    df["q_25"] = df[[name for name in df.columns if name.startswith("m_")]].quantile(0.25, axis=1)
+    df["q_75"] = df[[name for name in df.columns if name.startswith("m_")]].quantile(0.75, axis=1)
+
     # Compute the mean, min, max and stddev of the predictions
     df["p_mean"] = df[[name for name in df.columns if name.startswith("m_")]].mean(axis=1)
     df["p_min"] = df[[name for name in df.columns if name.startswith("m_")]].min(axis=1)
     df["p_max"] = df[[name for name in df.columns if name.startswith("m_")]].max(axis=1)
-    df["p_stddev"] = df[[name for name in df.columns if name.startswith("m_")]].std(axis=1)
+    df["prediction_std"] = df[[name for name in df.columns if name.startswith("m_")]].std(axis=1)
 
     # Reorganize the columns so they are in alphabetical order
     df = df.reindex(sorted(df.columns), axis=1)

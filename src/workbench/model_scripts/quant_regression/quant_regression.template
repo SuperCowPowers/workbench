@@ -83,7 +83,7 @@ if __name__ == "__main__":
     target = TEMPLATE_PARAMS["target_column"]
     feature_list = TEMPLATE_PARAMS["feature_list"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
-    quantiles = [0.10, 0.25, 0.50, 0.75, 0.90]
+    quantiles = [0.025, 0.25, 0.50, 0.75, 0.975]
     q_models = {}
 
     # Script arguments for input/output directories
@@ -148,19 +148,12 @@ if __name__ == "__main__":
     for name, preds in quantile_predictions.items():
         result_df[name] = preds
 
-    # Add the Inner Quartile Range (IQR) to the DataFrame
-    result_df["iqr"] = result_df["q_75"] - result_df["q_25"]
-
-    # Add the Inter Decile Range (IDR) range between the 10th and 90th percentiles
-    result_df["idr"] = result_df["q_90"] - result_df["q_10"]
-
     # Add the RMSE predictions to the DataFrame
     result_df["prediction"] = rmse_model.predict(X)
 
     # Now compute residuals on the rmse prediction
     result_df["residual"] = result_df[target] - result_df["prediction"]
     result_df["residual_abs"] = result_df["residual"].abs()
-
 
     # Save the results dataframe to S3
     wr.s3.to_csv(
@@ -284,12 +277,6 @@ def predict_fn(df, models) -> pd.DataFrame:
             df["prediction"] = model.predict(matched_df[model_features])
         else:
             df[name] = model.predict(matched_df[model_features])
-
-    # Add the Inner Quartile Range (IQR) to the DataFrame
-    df["iqr"] = df["q_75"] - df["q_25"]
-
-    # Add the Inter Decile Range (IDR) range between the 10th and 90th percentiles
-    df["idr"] = df["q_90"] - df["q_10"]
 
     # Reorganize the columns so they are in alphabetical order
     df = df.reindex(sorted(df.columns), axis=1)

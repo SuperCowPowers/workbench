@@ -109,9 +109,9 @@ if __name__ == "__main__":
     # Create MAPIE CQR predictor - it will create quantile versions internally
     model = MapieQuantileRegressor(
         estimator=base_estimator,
-        method="quantile",  # Only valid method for CQR
-        cv="split",  # Use train/calibration split
-        alpha=0.1  # For 90% coverage
+        method="quantile",
+        cv="split",
+        alpha=0.05  # For 95% coverage
     )
 
     # Prepare features and targets for training
@@ -182,27 +182,18 @@ def predict_fn(df, model):
     X_pred = matched_df[model_features]
     y_pred, y_pis = model.predict(X_pred)
 
-    # Add predictions to dataframe
+    # Add predictions to dataframe with 95% intervals
     df["prediction"] = y_pred
+    df["q_025"] = y_pis[:, 0, 0]  # Lower bound (2.5th percentile)
+    df["q_975"] = y_pis[:, 1, 0]  # Upper bound (97.5th percentile)
 
-    # CQR gives adaptive intervals
-    df["q_05"] = y_pis[:, 0, 0]  # Lower bound (5th percentile)
-    df["q_95"] = y_pis[:, 1, 0]  # Upper bound (95th percentile)
+    # Calculate std estimate from 95% interval
+    interval_width_95 = df["q_975"] - df["q_025"]
+    df["prediction_std"] = interval_width_95 / 3.92  # 95% CI = ±1.96σ, so width = 3.92σ
 
-    # Calculate interval width and std estimate
-    interval_width = df["q_95"] - df["q_05"]
-    df["prediction_std"] = interval_width / 3.29
-
-    # For compatibility, approximate other percentiles using interval scaling
-    # These are rough approximations since CQR primarily gives 5th/95th
-    df["q_25"] = y_pred - interval_width * 0.25
-    df["q_75"] = y_pred + interval_width * 0.25
-    df["q_10"] = y_pred - interval_width * 0.4
-    df["q_90"] = y_pred + interval_width * 0.4
-
-    # IQR and IDR calculations
-    df["iqr"] = df["q_75"] - df["q_25"]
-    df["idr"] = df["q_90"] - df["q_10"]
+    # Calculate 50% intervals using normal approximation
+    df["q_25"] = df["prediction"] - 0.674 * df["prediction_std"]
+    df["q_75"] = df["prediction"] + 0.674 * df["prediction_std"]
 
     # Return the modified DataFrame
     return df

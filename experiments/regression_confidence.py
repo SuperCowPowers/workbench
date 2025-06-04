@@ -87,7 +87,7 @@ unit_test.run()
 
 
 # Columns that we want to show when we hover above a point
-hover_columns = ["q_10", "q_25", "q_50", "q_75", "q_90", "prediction"]
+hover_columns = ["q_025", "q_25", "q_50", "q_75", "q_975", "prediction"]
 
 # PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y", color="confidence", hover_columns=hover_columns).run()
 unit_test = PluginUnitTest(ScatterPlot, input_data=df, x="x", y="y").run()
