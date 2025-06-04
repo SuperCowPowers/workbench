@@ -3,10 +3,7 @@ from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model, ModelType
 from workbench.utils.model_utils import get_custom_script_path
 
-# Grab a FeatureSet
-my_features = FeatureSet("aqsol_features")
-
-# Grab our AQSol Regression Model
+# Grab our existing AQSol Regression Model
 model = Model("aqsol-regression")
 
 # Get the custom script path for the proximity model
@@ -17,7 +14,7 @@ features = model.features()
 target = model.target()
 
 # Create the BayesianRidge Model from our FeatureSet
-fs = FeatureSet(model.get_input())
+fs = FeatureSet("aqsol_features")
 my_model = fs.to_model(
     name="aqsol-bayesian-reg",
     model_type=ModelType.REGRESSOR,
@@ -27,12 +24,9 @@ my_model = fs.to_model(
     tags=["aqsol", "bayesian", "regression"],
     custom_script=script_path,
 )
-# Print the details of the created model
-pprint(my_model.details())
-my_model = Model("aqsol-bayesian-reg")
 
 # Deploy an Endpoint for the Model
-endpoint = my_model.to_endpoint(tags=["aqsol", "bayesian"])
+end = my_model.to_endpoint(tags=["aqsol", "bayesian"])
 
 # Run auto-inference on the Endpoint
-endpoint.auto_inference(capture=True)
+end.auto_inference(capture=True)

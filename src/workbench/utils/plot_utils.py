@@ -101,7 +101,7 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
     Parameters:
     -----------
     df : pandas.DataFrame
-        Dataframe containing the data with percentile columns
+        A Dataframe containing the data with percentile columns
     figure : plotly.graph_objects.Figure
         Plotly figure to add the prediction intervals to
     x_col : str
