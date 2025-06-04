@@ -10,7 +10,7 @@ my_features = FeatureSet("aqsol_features")
 model = Model("aqsol-regression")
 
 # Get the custom script path for the proximity model
-script_path = get_custom_script_path("confidence", "mapie_xgb.template")
+script_path = get_custom_script_path("uq_models", "mapie_xgb.template")
 
 # Get Feature and Target Columns from the existing given Model
 features = model.features()
