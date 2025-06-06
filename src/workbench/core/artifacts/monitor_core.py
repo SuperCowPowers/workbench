@@ -581,59 +581,63 @@ class MonitorCore:
             # Extract the execution details
             execution_details = []
             for execution in executions.get("MonitoringExecutionSummaries", []):
-                execution_arn = execution.get("MonitoringExecutionArn")
-                if execution_arn:
-                    detail = {
-                        "execution_arn": execution_arn,
-                        "status": execution.get("MonitoringExecutionStatus"),
-                        "scheduled_time": execution.get("ScheduledTime"),
-                        "creation_time": execution.get("CreationTime"),
-                        "last_modified_time": execution.get("LastModifiedTime"),
-                        "failure_reason": execution.get("FailureReason"),
-                        "monitoring_type": execution.get("MonitoringType"),
-                    }
+                # Handle status - make "no data" failures more user-friendly
+                status = execution.get("MonitoringExecutionStatus")
+                failure_reason = execution.get("FailureReason")
+                if status == "Failed" and failure_reason == "Job inputs had no data":
+                    display_status = "No Data"
+                else:
+                    display_status = status
 
-                    # For failure cases, get additional details
-                    if detail["status"] == "Failed":
-                        try:
-                            exec_details = self.sagemaker_client.describe_monitoring_execution(
-                                MonitoringExecutionArn=execution_arn
-                            )
-                            detail.update(
-                                {
-                                    "failure_details": exec_details.get("FailureReason", ""),
-                                    "processing_job_arn": exec_details.get("ProcessingJobArn"),
-                                }
-                            )
-                        except Exception as e:
-                            self.log.error(f"Error getting failure details: {e}")
+                detail = {
+                    "status": display_status,
+                    "scheduled_time": execution.get("ScheduledTime").strftime('%m/%d %H:%M') if execution.get("ScheduledTime") else None,
+                    "job_start_time": execution.get("CreationTime").strftime('%m/%d %H:%M') if execution.get("CreationTime") else None,
+                    "failure_reason": failure_reason,
+                    "monitoring_type": execution.get("MonitoringType"),
+                    "processing_job_arn": execution.get("ProcessingJobArn"),
+                }
 
-                    # Get violation details if available
-                    if detail["status"] == "Completed":
-                        try:
-                            # Check for violations
-                            result_path = f"{self.monitoring_path}/{detail['creation_time'].strftime('%Y/%m/%d')}"
-                            result_path += "/constraint_violations.json"
-                            if wr.s3.does_object_exist(result_path):
-                                violations_json = read_content_from_s3(result_path)
-                                violations = parse_monitoring_results(violations_json)
-                                detail["violations"] = violations.get("constraint_violations", [])
-                                detail["violation_count"] = len(detail["violations"])
-                            else:
-                                detail["violations"] = []
-                                detail["violation_count"] = 0
-                        except Exception as e:
-                            self.log.warning(f"Error getting violations: {e}")
+                # For completed executions, get violation details
+                if status == "Completed" and detail["processing_job_arn"]:
+                    try:
+                        result_path = f"{self.monitoring_path}/{execution.get('CreationTime').strftime('%Y/%m/%d')}"
+                        result_path += "/constraint_violations.json"
+                        if wr.s3.does_object_exist(result_path):
+                            violations_json = read_content_from_s3(result_path)
+                            violations = parse_monitoring_results(violations_json)
+                            detail["violations"] = violations.get("constraint_violations", [])
+                            detail["violation_count"] = len(detail["violations"])
+                        else:
                             detail["violations"] = []
-                            detail["violation_count"] = -1
+                            detail["violation_count"] = 0
+                    except Exception as e:
+                        self.log.warning(f"Error getting violations: {e}")
+                        detail["violations"] = []
+                        detail["violation_count"] = -1
+                else:
+                    detail["violations"] = []
+                    detail["violation_count"] = 0 if display_status in ["Failed", "No Data"] else None
 
-                    execution_details.append(detail)
+                execution_details.append(detail)
 
             return pd.DataFrame(execution_details)
-
         except Exception as e:
             self.log.error(f"Error getting monitoring results: {e}")
             return pd.DataFrame()
+
+    def get_execution_details(self, processing_job_arn):
+        """Get detailed information about a specific monitoring execution using processing job ARN"""
+        try:
+            # Extract just the job name from the ARN
+            job_name = processing_job_arn.split('/')[-1]
+            details = self.sagemaker_client.describe_processing_job(
+                ProcessingJobName=job_name
+            )
+            return details
+        except Exception as e:
+            self.log.error(f"Error getting execution details for {processing_job_arn}: {e}")
+            return None
 
     def setup_alerts(self, notification_email, threshold=1):
         """Set up CloudWatch alarms for monitoring violations with email notifications
@@ -719,6 +723,7 @@ if __name__ == "__main__":
 
     # Create the Class and test it out
     endpoint_name = "abalone-regression-rt"
+    endpoint_name = "logd-dev-reg-rt"
     my_endpoint = EndpointCore(endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")
@@ -757,8 +762,8 @@ if __name__ == "__main__":
     #
 
     # Make predictions on the Endpoint using the FeatureSet evaluation data
-    pred_df = my_endpoint.auto_inference()
-    print(pred_df.head())
+    # pred_df = my_endpoint.auto_inference()
+    # print(pred_df.head())
 
     # Check that data capture is working
     input_df, output_df = mm.get_captured_data()
@@ -771,19 +776,30 @@ if __name__ == "__main__":
         print("Output")
         print(output_df.head())
 
-    # Test update_constraints
-    print("\nTesting constraint updates...")
-    custom_constraints = {"sex": {"allowed_values": ["M", "F", "I"]}, "length": {"min": 0.0, "max": 1.0}}
-    mm.update_constraints(custom_constraints)
+    # Test update_constraints (commented out for now)
+    # print("\nTesting constraint updates...")
+    # custom_constraints = {"sex": {"allowed_values": ["M", "F", "I"]}, "length": {"min": 0.0, "max": 1.0}}
+    # mm.update_constraints(custom_constraints)
 
     # Test monitoring results retrieval
     print("\nTesting monitoring results retrieval...")
     results_df = mm.get_monitoring_results(max_results=5)
     if not results_df.empty:
         print(f"Found {len(results_df)} monitoring executions")
-        print(results_df[["status", "scheduled_time", "violation_count"]].head())
+        print(results_df.head())
     else:
         print("No monitoring results found yet")
+
+    # Test getting execution details
+    print("\nTesting execution details retrieval...")
+    if not results_df.empty:
+        latest_execution_arn = results_df.iloc[0]["processing_job_arn"]
+        execution_details = mm.get_execution_details(latest_execution_arn)
+        if execution_details:
+            print(f"Execution details for {latest_execution_arn}:")
+            pprint(execution_details)
+        else:
+            print(f"No details found for execution {latest_execution_arn}")
 
     # Test alert setup
     print("\nTesting alert setup...")
