@@ -1519,9 +1519,7 @@ if __name__ == "__main__":
     print(f"Compounds with salts: {result_df['has_salt'].sum()}")
 
     # Test the SDF file writing
-    my_sdf_file = "test_salts.sdf"
-    weird_smile = r"CCCCCCCCCCCCCCCCN(CCCCCCCCCCCCCCCC)C(=O)[C@H](C)/N=C(\O)[C@H](CC1=CNC=N1)NC(=O)CCCCC[N+](C)(C)C"
-    test_df.at[0, "smiles"] = weird_smile
+    my_sdf_file = "test_compounds.sdf"
     df_to_sdf_file(test_df, my_sdf_file, skip_invalid=False)
 
     # Test the SDF file reading

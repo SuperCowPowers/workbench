@@ -116,78 +116,69 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
         Updated figure with prediction intervals
     """
     required_cols = ["q_025", "q_25", "q_75", "q_975"]
-    if all(col in df.columns for col in required_cols):
-        # Sort dataframe by x_col for connected lines
-        sorted_df = df.sort_values(by=x_col)
+    if not all(col in df.columns for col in required_cols):
+        # Check for a prediction_std column and compute quantiles if needed
+        if "prediction_std" not in df.columns:
+            return figure  # No quantiles to plot
 
-        # Apply smoothing if requested
-        if smoothing > 0:
-            # Use odd window size for centered smoothing
-            smoothing = smoothing if smoothing % 2 == 1 else smoothing + 1
+        # Calculate quantiles based on standard deviation
+        df["q_025"] = df["solubility"] - 1.96 * df["prediction_std"]
+        df["q_975"] = df["solubility"] + 1.96 * df["prediction_std"]
+        df["q_25"] = df["solubility"] - 0.674 * df["prediction_std"]
+        df["q_75"] = df["solubility"] + 0.674 * df["prediction_std"]
 
-            # Apply appropriate aggregation for each percentile
-            # Lower percentiles use min to avoid underestimating lower bounds
-            sorted_df["q_025"] = sorted_df["q_025"].rolling(window=smoothing, center=True, min_periods=1).min()
-            sorted_df["q_025"] = sorted_df["q_025"].ewm(span=smoothing, min_periods=1).mean()
-            sorted_df["q_25"] = sorted_df["q_25"].rolling(window=smoothing, center=True, min_periods=1).min()
-            sorted_df["q_25"] = sorted_df["q_25"].ewm(span=smoothing, min_periods=1).mean()
+    # Sort dataframe by x_col for connected lines
+    sorted_df = df.sort_values(by=x_col)
 
-            # Upper percentiles use max to avoid overestimating upper bounds
-            sorted_df["q_75"] = sorted_df["q_75"].rolling(window=smoothing, center=True, min_periods=1).max()
-            sorted_df["q_75"] = sorted_df["q_75"].ewm(span=smoothing, min_periods=1).mean()
-            sorted_df["q_975"] = sorted_df["q_975"].rolling(window=smoothing, center=True, min_periods=1).max()
-            sorted_df["q_975"] = sorted_df["q_975"].ewm(span=smoothing, min_periods=1).mean()
-
-        # Add outer band (q_025 to q_975) - more transparent
-        figure.add_trace(
-            go.Scatter(
-                x=sorted_df[x_col],
-                y=sorted_df["q_025"],
-                mode="lines",
-                line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
-                name="10th Percentile",
-                hoverinfo="none",
-            )
+    # Add outer band (q_025 to q_975) - more transparent
+    figure.add_trace(
+        go.Scatter(
+            x=sorted_df[x_col],
+            y=sorted_df["q_025"],
+            mode="lines",
+            line=dict(width=1, color="rgba(99, 110, 250, 0.5)"),
+            name="2.5 Percentile",
+            hoverinfo="none",
         )
-
-        figure.add_trace(
-            go.Scatter(
-                x=sorted_df[x_col],
-                y=sorted_df["q_975"],
-                mode="lines",
-                line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
-                name="90th Percentile",
-                hoverinfo="none",
-                fill="tonexty",
-                fillcolor="rgba(99, 110, 250, 0.2)",
-            )
+    )
+    figure.add_trace(
+        go.Scatter(
+            x=sorted_df[x_col],
+            y=sorted_df["q_975"],
+            mode="lines",
+            line=dict(width=1, color="rgba(99, 110, 250, 0.5)"),
+            name="97.5 Percentile",
+            hoverinfo="none",
+            fill="tonexty",
+            fillcolor="rgba(99, 110, 250, 0.2)",
         )
+    )
 
-        # Add inner band (q_25 to q_75) - less transparent
-        figure.add_trace(
-            go.Scatter(
-                x=sorted_df[x_col],
-                y=sorted_df["q_25"],
-                mode="lines",
-                line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
-                name="25th Percentile",
-                hoverinfo="none",
-            )
+    # Add inner band (q_25 to q_75) - less transparent
+    figure.add_trace(
+        go.Scatter(
+            x=sorted_df[x_col],
+            y=sorted_df["q_25"],
+            mode="lines",
+            line=dict(width=1, color="rgba(99, 110, 250, 0.5)"),
+            name="25 Percentile",
+            hoverinfo="none",
         )
-
-        figure.add_trace(
-            go.Scatter(
-                x=sorted_df[x_col],
-                y=sorted_df["q_75"],
-                mode="lines",
-                line=dict(width=1, color="rgba(99, 110, 250, 0.5)", dash="dash"),
-                name="75th Percentile",
-                hoverinfo="none",
-                fill="tonexty",
-                fillcolor="rgba(99, 110, 250, 0.2)",
-            )
+    )
+    figure.add_trace(
+        go.Scatter(
+            x=sorted_df[x_col],
+            y=sorted_df["q_75"],
+            mode="lines",
+            line=dict(width=1, color="rgba(99, 110, 250, 0.5)"),
+            name="75 Percentile",
+            hoverinfo="none",
+            fill="tonexty",
+            fillcolor="rgba(99, 110, 250, 0.2)",
         )
+    )
 
+    # Now return the updated figure
     return figure
 
 
