@@ -591,8 +591,14 @@ class MonitorCore:
 
                 detail = {
                     "status": display_status,
-                    "scheduled_time": execution.get("ScheduledTime").strftime('%m/%d %H:%M') if execution.get("ScheduledTime") else None,
-                    "job_start_time": execution.get("CreationTime").strftime('%m/%d %H:%M') if execution.get("CreationTime") else None,
+                    "scheduled_time": (
+                        execution.get("ScheduledTime").strftime("%m/%d %H:%M")
+                        if execution.get("ScheduledTime")
+                        else None
+                    ),
+                    "job_start_time": (
+                        execution.get("CreationTime").strftime("%m/%d %H:%M") if execution.get("CreationTime") else None
+                    ),
                     "failure_reason": failure_reason,
                     "monitoring_type": execution.get("MonitoringType"),
                     "processing_job_arn": execution.get("ProcessingJobArn"),
@@ -630,10 +636,8 @@ class MonitorCore:
         """Get detailed information about a specific monitoring execution using processing job ARN"""
         try:
             # Extract just the job name from the ARN
-            job_name = processing_job_arn.split('/')[-1]
-            details = self.sagemaker_client.describe_processing_job(
-                ProcessingJobName=job_name
-            )
+            job_name = processing_job_arn.split("/")[-1]
+            details = self.sagemaker_client.describe_processing_job(ProcessingJobName=job_name)
             return details
         except Exception as e:
             self.log.error(f"Error getting execution details for {processing_job_arn}: {e}")
