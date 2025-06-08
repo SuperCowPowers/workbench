@@ -3,13 +3,13 @@ TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
     "target_column": "{{target_column}}",
     "feature_list": "{{feature_list}}",
-    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "train_all_data": "{{train_all_data}}"
+    "model_metrics_s3_path": "{{model_metrics_s3_path}}"
 }
 
 # Imports for XGB Model
 import xgboost as xgb
 import awswrangler as wr
+import numpy as np
 
 # Model Performance Scores
 from sklearn.metrics import (
@@ -17,7 +17,6 @@ from sklearn.metrics import (
     r2_score,
     root_mean_squared_error
 )
-from sklearn.model_selection import train_test_split
 
 from io import StringIO
 import json
@@ -118,25 +117,21 @@ if __name__ == "__main__":
     y = df[target]
     X = df[feature_list]
 
-    # Train 10 models with random 80/20 splits of the data
-    for model_id in range(10):
+    # Train 50 models with random 70/30 splits of the data
+    for model_id in range(50):
         # Model Name
         model_name = f"m_{model_id:02}"
 
-        # Randomly split the data into train and test sets
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+        # Bootstrap sample (50% with replacement)
+        sample_size = int(0.5 * len(X))
+        bootstrap_indices = np.random.choice(len(X), size=sample_size, replace=True)
+        X_train, y_train = X.iloc[bootstrap_indices], y.iloc[bootstrap_indices]
         print(f"Training Model {model_name} with {len(X_train)} rows")
-        params = {"objective": "reg:squarederror"}
-        model = xgb.XGBRegressor(**params)
+        model = xgb.XGBRegressor(reg_alpha=0.1, reg_lambda=1.0)
         model.fit(X_train, y_train)
 
         # Store the model
         models[model_name] = model
-
-    # Train one model with ALL the data
-    params = {"objective": "reg:squarederror"}
-    full_model = xgb.XGBRegressor(**params)
-    full_model.fit(X, y)
 
     # Run predictions for each model
     all_predictions = {model_name: model.predict(X) for model_name, model in models.items()}
@@ -148,8 +143,8 @@ if __name__ == "__main__":
     for name, preds in all_predictions.items():
         result_df[name] = preds
 
-    # Add the 'All Model' predictions to the DataFrame
-    result_df["prediction"] = full_model.predict(X)
+    # Add the main prediction to the DataFrame (mean of all models)
+    result_df["prediction"] = result_df[[name for name in result_df.columns if name.startswith("m_")]].mean(axis=1)
 
     # Now compute residuals on the rmse prediction
     result_df["residual"] = result_df[target] - result_df["prediction"]
@@ -177,11 +172,6 @@ if __name__ == "__main__":
         model_path = os.path.join(args.model_dir, f"{name}.json")
         print(f"Saving model:  {model_path}")
         model.save_model(model_path)
-
-    # Save the full model
-    model_path = os.path.join(args.model_dir, "model.json")
-    print(f"Saving model:  {model_path}")
-    full_model.save_model(model_path)
 
     # Also save the features (this will validate input during predictions)
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
@@ -211,12 +201,6 @@ def model_fn(model_dir) -> dict:
             # Store the model
             m_name = os.path.splitext(file)[0]
             models[m_name] = model
-
-    # Load the full model
-    model_path = os.path.join(model_dir, "model.json")
-    print(f"Loading model: {model_path}")
-    models["full"] = xgb.XGBRegressor()
-    models["full"].load_model(model_path)
 
     # Return all the models
     return models
@@ -274,10 +258,7 @@ def predict_fn(df, models) -> pd.DataFrame:
 
     # Predict the features against all the models
     for name, model in models.items():
-        if name == "full":
-            df["prediction"] = model.predict(matched_df[model_features])
-        else:
-            df[name] = model.predict(matched_df[model_features])
+        df[name] = model.predict(matched_df[model_features])
 
     # Add quantiles for consistency with other UQ models
     df["q_025"] = df[[name for name in df.columns if name.startswith("m_")]].quantile(0.025, axis=1)
@@ -286,7 +267,7 @@ def predict_fn(df, models) -> pd.DataFrame:
     df["q_75"] = df[[name for name in df.columns if name.startswith("m_")]].quantile(0.75, axis=1)
 
     # Compute the mean, min, max and stddev of the predictions
-    df["p_mean"] = df[[name for name in df.columns if name.startswith("m_")]].mean(axis=1)
+    df["prediction"] = df[[name for name in df.columns if name.startswith("m_")]].mean(axis=1)
     df["p_min"] = df[[name for name in df.columns if name.startswith("m_")]].min(axis=1)
     df["p_max"] = df[[name for name in df.columns if name.startswith("m_")]].max(axis=1)
     df["prediction_std"] = df[[name for name in df.columns if name.startswith("m_")]].std(axis=1)

@@ -2,13 +2,6 @@
 from sklearn.linear_model import BayesianRidge
 from sklearn.model_selection import train_test_split
 
-# Template Placeholders
-TEMPLATE_PARAMS = {
-    "features": "{{feature_list}}",
-    "target": "{{target_column}}",
-    "train_all_data": "{{train_all_data}}"
-}
-
 from io import StringIO
 import json
 import argparse
@@ -17,9 +10,23 @@ import os
 import pandas as pd
 
 
+# Template Placeholders
+TEMPLATE_PARAMS = {
+    "features": "{{feature_list}}",
+    "target": "{{target_column}}",
+    "train_all_data": "{{train_all_data}}"
+}
+
+
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
-    """Check if the DataFrame is empty and raise an error if so."""
+    """
+    Check if the provided dataframe is empty and raise an exception if it is.
+
+    Args:
+        df (pd.DataFrame): DataFrame to check
+        df_name (str): Name of the DataFrame
+    """
     if df.empty:
         msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
         print(msg)
