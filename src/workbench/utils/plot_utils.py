@@ -94,7 +94,7 @@ def generate_heteroskedastic_data(n=1000, noise_factor=1.0, x_range=(0, 10)):
     return pd.DataFrame({"id": range(n), "x": x, "y": y})
 
 
-def prediction_intervals(df, figure, x_col, smoothing=0):
+def prediction_intervals(df, figure, x_col):
     """
     Add prediction interval bands to a plotly figure based on percentile columns.
 
@@ -106,9 +106,6 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
         Plotly figure to add the prediction intervals to
     x_col : str
         Name of the x-axis column
-    smoothing : int, default=0
-        Size of the rolling window for smoothing
-        0 = no smoothing, larger values create smoother bands
 
     Returns:
     --------
@@ -122,10 +119,10 @@ def prediction_intervals(df, figure, x_col, smoothing=0):
             return figure  # No quantiles to plot
 
         # Calculate quantiles based on standard deviation
-        df["q_025"] = df["solubility"] - 1.96 * df["prediction_std"]
-        df["q_975"] = df["solubility"] + 1.96 * df["prediction_std"]
-        df["q_25"] = df["solubility"] - 0.674 * df["prediction_std"]
-        df["q_75"] = df["solubility"] + 0.674 * df["prediction_std"]
+        df["q_025"] = df["prediction"] - 1.96 * df["prediction_std"]
+        df["q_975"] = df["prediction"] + 1.96 * df["prediction_std"]
+        df["q_25"] = df["prediction"] - 0.674 * df["prediction_std"]
+        df["q_75"] = df["prediction"] + 0.674 * df["prediction_std"]
 
     # Sort dataframe by x_col for connected lines
     sorted_df = df.sort_values(by=x_col)

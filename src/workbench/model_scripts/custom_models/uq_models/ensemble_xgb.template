@@ -1,0 +1,350 @@
+# Imports for XGB Model
+import xgboost as xgb
+import awswrangler as wr
+import numpy as np
+
+# Model Performance Scores
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    root_mean_squared_error
+)
+from sklearn.model_selection import KFold
+from scipy.optimize import minimize
+
+from io import StringIO
+import json
+import argparse
+import os
+import pandas as pd
+
+# Template Placeholders
+TEMPLATE_PARAMS = {
+    "features": "{{feature_list}}",
+    "target": "{{target_column}}",
+    "train_all_data": "{{train_all_data}}",
+    "model_metrics_s3_path": "{{model_metrics_s3_path}}"
+}
+
+
+# Function to check if dataframe is empty
+def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
+    """
+    Check if the provided dataframe is empty and raise an exception if it is.
+
+    Args:
+        df (pd.DataFrame): DataFrame to check
+        df_name (str): Name of the DataFrame
+    """
+    if df.empty:
+        msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
+        print(msg)
+        raise ValueError(msg)
+
+
+# Function to match DataFrame columns to model features (case-insensitive)
+def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
+    """Match and rename DataFrame columns to match the model's features, case-insensitively."""
+    # Create a set of exact matches from the DataFrame columns
+    exact_match_set = set(df.columns)
+
+    # Create a case-insensitive map of DataFrame columns
+    column_map = {col.lower(): col for col in df.columns}
+    rename_dict = {}
+
+    # Build a dictionary for renaming columns based on case-insensitive matching
+    for feature in model_features:
+        if feature in exact_match_set:
+            rename_dict[feature] = feature
+        elif feature.lower() in column_map:
+            rename_dict[column_map[feature.lower()]] = feature
+
+    # Rename columns in the DataFrame to match model features
+    return df.rename(columns=rename_dict)
+
+
+# TRAINING SECTION
+#
+# This section (__main__) is where SageMaker will execute the training job
+# and save the model artifacts to the model directory.
+#
+if __name__ == "__main__":
+    # Template Parameters
+    features = TEMPLATE_PARAMS["features"]
+    target = TEMPLATE_PARAMS["target"]
+    model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
+    models = {}
+
+    # Script arguments for input/output directories
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
+    args = parser.parse_args()
+
+    # Load training data from the specified directory
+    training_files = [
+        os.path.join(args.train, file)
+        for file in os.listdir(args.train) if file.endswith(".csv")
+    ]
+    df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
+
+    # Check if the DataFrame is empty
+    check_dataframe(df, "training_df")
+
+    # Features/Target output
+    print(f"Target: {target}")
+    print(f"Features: {str(features)}")
+    print(f"Data Shape: {df.shape}")
+    print("NEW STUFF!")
+
+    # Grab our Features and Target with traditional X, y handles
+    y = df[target]
+    X = df[features]
+
+    # Train 100 models with random 30% bootstrap splits of the data
+    num_models = 100
+    for model_id in range(num_models):
+        # Model Name
+        model_name = f"m_{model_id:02}"
+
+        # Bootstrap sample (20% with replacement)
+        sample_size = int(0.1 * len(X))
+        bootstrap_indices = np.random.choice(len(X), size=sample_size, replace=True)
+        X_train, y_train = X.iloc[bootstrap_indices], y.iloc[bootstrap_indices]
+        print(f"Training Model {model_name} with {len(X_train)} rows")
+        model = xgb.XGBRegressor(reg_alpha=0.5, reg_lambda=1.0)
+        model.fit(X_train, y_train)
+
+        # Store the model
+        models[model_name] = model
+
+    # Compute calibration parameters using cross-validation
+    print("Computing calibration parameters...")
+
+    # Use 5-fold CV to get residuals and uncalibrated uncertainties
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    cv_residuals = []
+    cv_uncertainties = []
+
+    for fold_idx, (train_idx, val_idx) in enumerate(kf.split(X)):
+        print(f"Processing calibration fold {fold_idx + 1}/5...")
+        X_cv_train = X.iloc[train_idx].reset_index(drop=True)
+        X_cv_val = X.iloc[val_idx].reset_index(drop=True)
+        y_cv_train = y.iloc[train_idx].reset_index(drop=True)
+        y_cv_val = y.iloc[val_idx].reset_index(drop=True)
+
+        # Train ensemble on CV training data
+        cv_models = {}
+        for model_id in range(num_models):
+            sample_size = int(0.1 * len(X_cv_train))
+            bootstrap_indices = np.random.choice(len(X_cv_train), size=sample_size, replace=True)
+            X_boot, y_boot = X_cv_train.iloc[bootstrap_indices], y_cv_train.iloc[bootstrap_indices]
+            model = xgb.XGBRegressor(reg_alpha=0.5, reg_lambda=1.0)
+            model.fit(X_boot, y_boot)
+            cv_models[f"m_{model_id:02}"] = model
+
+        # Get predictions on validation set
+        cv_preds = pd.DataFrame({name: model.predict(X_cv_val) for name, model in cv_models.items()})
+        cv_mean = cv_preds.mean(axis=1)
+        cv_std = cv_preds.std(axis=1)
+
+        # Store residuals and uncertainties
+        fold_residuals = (y_cv_val - cv_mean).values
+        fold_uncertainties = cv_std.values
+
+        print(f"Fold {fold_idx + 1}: {len(fold_residuals)} residuals, {len(fold_uncertainties)} uncertainties")
+
+        cv_residuals.extend(fold_residuals.tolist())
+        cv_uncertainties.extend(fold_uncertainties.tolist())
+
+        # Add after converting to numpy arrays:
+        print(f"Total: {len(cv_residuals)} residuals, {len(cv_uncertainties)} uncertainties")
+
+    # Convert to numpy arrays
+    cv_residuals = np.array(cv_residuals)
+    cv_uncertainties = np.array(cv_uncertainties)
+
+
+    # Optimize calibration parameters: σ_cal = a * σ_uc + b
+    def neg_log_likelihood(params):
+        a, b = params
+        sigma_cal = a * cv_uncertainties + b
+        sigma_cal = np.maximum(sigma_cal, 1e-8)  # Prevent division by zero
+        return np.sum(0.5 * np.log(2 * np.pi * sigma_cal ** 2) + 0.5 * (cv_residuals ** 2) / (sigma_cal ** 2))
+
+
+    result = minimize(neg_log_likelihood, x0=[1.0, 0.1], method='Nelder-Mead')
+    cal_a, cal_b = result.x
+
+    print(f"Calibration parameters: a={cal_a:.4f}, b={cal_b:.4f}")
+
+    # Save calibration parameters
+    cal_params = {"a": float(cal_a), "b": float(cal_b)}
+    with open(os.path.join(args.model_dir, "calibration_params.json"), "w") as fp:
+        json.dump(cal_params, fp)
+
+    # Run predictions for each model on full dataset for evaluation
+    all_predictions = {model_name: model.predict(X) for model_name, model in models.items()}
+
+    # Create a copy of the provided DataFrame and add the new columns
+    result_df = df[[target]].copy()
+
+    # Add the model predictions to the DataFrame
+    for name, preds in all_predictions.items():
+        result_df[name] = preds
+
+    # Add the main prediction to the DataFrame (mean of all models)
+    result_df["prediction"] = result_df[[name for name in result_df.columns if name.startswith("m_")]].mean(axis=1)
+
+    # Compute uncalibrated uncertainty
+    result_df["prediction_std_uc"] = result_df[[name for name in result_df.columns if name.startswith("m_")]].std(axis=1)
+
+    # Apply calibration to uncertainty
+    result_df["prediction_std"] = cal_a * result_df["prediction_std_uc"] + cal_b
+
+    # Now compute residuals on the prediction
+    result_df["residual"] = result_df[target] - result_df["prediction"]
+    result_df["residual_abs"] = result_df["residual"].abs()
+
+    # Save the results dataframe to S3
+    wr.s3.to_csv(
+        result_df,
+        path=f"{model_metrics_s3_path}/validation_predictions.csv",
+        index=False,
+    )
+
+    # Report Performance Metrics
+    rmse = root_mean_squared_error(result_df[target], result_df["prediction"])
+    mae = mean_absolute_error(result_df[target], result_df["prediction"])
+    r2 = r2_score(result_df[target], result_df["prediction"])
+    print(f"RMSE: {rmse:.3f}")
+    print(f"MAE: {mae:.3f}")
+    print(f"R2: {r2:.3f}")
+    print(f"NumRows: {len(result_df)}")
+
+    # Now save the models
+    for name, model in models.items():
+        model_path = os.path.join(args.model_dir, f"{name}.json")
+        print(f"Saving model:  {model_path}")
+        model.save_model(model_path)
+
+    # Also save the features (this will validate input during predictions)
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
+        json.dump(features, fp)
+
+
+def model_fn(model_dir) -> dict:
+    """Deserialized and return all the fitted models from the model directory.
+
+    Args:
+        model_dir (str): The directory where the models are stored.
+
+    Returns:
+        dict: A dictionary of the models.
+    """
+
+    # Load ALL the models from the model directory
+    models = {}
+    for file in os.listdir(model_dir):
+        if file.startswith("m_") and file.endswith(".json"):  # The Quantile models
+            # Load the model
+            model_path = os.path.join(model_dir, file)
+            print(f"Loading model: {model_path}")
+            model = xgb.XGBRegressor()
+            model.load_model(model_path)
+
+            # Store the model
+            m_name = os.path.splitext(file)[0]
+            models[m_name] = model
+
+    # Return all the models
+    return models
+
+
+def input_fn(input_data, content_type):
+    """Parse input data and return a DataFrame."""
+    if not input_data:
+        raise ValueError("Empty input data is not supported!")
+
+    # Decode bytes to string if necessary
+    if isinstance(input_data, bytes):
+        input_data = input_data.decode("utf-8")
+
+    if "text/csv" in content_type:
+        return pd.read_csv(StringIO(input_data))
+    elif "application/json" in content_type:
+        return pd.DataFrame(json.loads(input_data))  # Assumes JSON array of records
+    else:
+        raise ValueError(f"{content_type} not supported!")
+
+
+def output_fn(output_df, accept_type):
+    """Supports both CSV and JSON output formats."""
+    if "text/csv" in accept_type:
+        csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
+        return csv_output, "text/csv"
+    elif "application/json" in accept_type:
+        return output_df.to_json(orient="records"), "application/json"  # JSON array of records (NaNs -> null)
+    else:
+        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
+
+
+def predict_fn(df, models) -> pd.DataFrame:
+    """Make Predictions with our XGB Bootstrap Ensemble with Calibrated Uncertainty
+
+    Args:
+        df (pd.DataFrame): The input DataFrame
+        models (dict): The dictionary of models to use for predictions
+
+    Returns:
+        pd.DataFrame: The DataFrame with the predictions added
+    """
+
+    # Grab our feature columns (from training)
+    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
+    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
+        model_features = json.load(fp)
+    print(f"Model Features: {model_features}")
+
+    # Load calibration parameters
+    with open(os.path.join(model_dir, "calibration_params.json")) as fp:
+        cal_params = json.load(fp)
+    cal_a, cal_b = cal_params["a"], cal_params["b"]
+    print(f"Calibration parameters: a={cal_a:.4f}, b={cal_b:.4f}")
+
+    # We're going match features in a case-insensitive manner, accounting for all the permutations
+    matched_df = match_features_case_insensitive(df, model_features)
+
+    # Predict the features against all the models
+    for name, model in models.items():
+        df[name] = model.predict(matched_df[model_features])
+
+    # Compute uncalibrated standard deviation
+    prediction_std_uc = df[[name for name in df.columns if name.startswith("m_")]].std(axis=1)
+
+    # Apply calibration to get calibrated uncertainty
+    df["prediction_std"] = cal_a * prediction_std_uc + cal_b
+
+    # Add quantiles for consistency with other UQ models (using calibrated uncertainty)
+    # For quantiles, we'll use the empirical quantiles from the bootstrap ensemble
+    df["q_025"] = df[[name for name in df.columns if name.startswith("m_")]].quantile(0.025, axis=1)
+    df["q_975"] = df[[name for name in df.columns if name.startswith("m_")]].quantile(0.975, axis=1)
+    df["q_25"] = df[[name for name in df.columns if name.startswith("m_")]].quantile(0.25, axis=1)
+    df["q_75"] = df[[name for name in df.columns if name.startswith("m_")]].quantile(0.75, axis=1)
+
+    # Compute the mean, min, max of the predictions
+    df["prediction"] = df[[name for name in df.columns if name.startswith("m_")]].mean(axis=1)
+    df["p_min"] = df[[name for name in df.columns if name.startswith("m_")]].min(axis=1)
+    df["p_max"] = df[[name for name in df.columns if name.startswith("m_")]].max(axis=1)
+
+    # Keep the uncalibrated std for comparison if needed
+    df["prediction_std_uc"] = prediction_std_uc
+
+    # Reorganize the columns so they are in alphabetical order
+    df = df.reindex(sorted(df.columns), axis=1)
+
+    # All done, return the DataFrame
+    return df
