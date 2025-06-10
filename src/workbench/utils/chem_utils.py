@@ -918,12 +918,32 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=
     )
 
     # Add the fingerprints to the DataFrame
-    df["morgan_fingerprint"] = fingerprints
+    df["fingerprint"] = fingerprints
 
     # Drop the intermediate 'molecule' column if it was added
     if delete_mol_column:
         del df["molecule"]
     return df
+
+
+def fingerprints_to_matrix(fingerprints, dtype=np.uint8, sparse=True):
+    """
+    Convert bitstring fingerprints to numpy matrix.
+
+    Args:
+        fingerprints: pandas Series or list of bitstring fingerprints
+        dtype: numpy data type (uint8 is default: np.bool_ is good for Jaccard computations
+        sparse: return scipy sparse matrix if True
+
+    Returns:
+        numpy array or scipy sparse matrix of shape (n_molecules, n_bits)
+    """
+    if sparse:
+        from scipy.sparse import csr_matrix
+        matrix = np.array([list(fp) for fp in fingerprints], dtype=dtype)
+        return csr_matrix(matrix)
+
+    return np.array([list(fp) for fp in fingerprints], dtype=dtype)
 
 
 def project_fingerprints(df: pd.DataFrame, projection: str = "UMAP") -> pd.DataFrame:
@@ -942,10 +962,12 @@ def project_fingerprints(df: pd.DataFrame, projection: str = "UMAP") -> pd.DataF
         raise ValueError("Input DataFrame must have a fingerprint column")
 
     # Convert the bitstring fingerprint into a NumPy array of bools (bits)
-    df["fingerprint_bits"] = df[fingerprint_column].apply(lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_))
+    # OLD WAY
+    # df["fingerprint_bits"] = df[fingerprint_column].apply(lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_))
+    # Z = np.vstack(df["fingerprint_bits"].values)
 
     # Create a matrix of fingerprints
-    X = np.vstack(df["fingerprint_bits"].values)
+    X = fingerprints_to_matrix(df[fingerprint_column])
 
     # Check for UMAP availability
     if projection == "UMAP" and umap is None:

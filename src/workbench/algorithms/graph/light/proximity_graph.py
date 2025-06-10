@@ -214,7 +214,7 @@ if __name__ == "__main__":
 
     # Compute FingerprintProximity Graph
     print("\nComputing FingerprintProximity Graph for Tox21 Data...")
-    prox = FingerprintProximity(tox_df, fingerprint_column="morgan_fingerprint", id_column=id_column, n_neighbors=5)
+    prox = FingerprintProximity(tox_df, fingerprint_column="fingerprint", id_column=id_column, n_neighbors=5)
     fingerprint_graph = ProximityGraph()
     fingerprint_graph.build_graph(prox)
     nx_graph = fingerprint_graph.nx_graph

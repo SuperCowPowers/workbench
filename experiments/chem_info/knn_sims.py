@@ -11,7 +11,7 @@ tox_df = DFStore().get("/datasets/chem_info/tox21_10")
 tox_df = compute_morgan_fingerprints(tox_df)
 
 # Compute FingerprintProximity
-prox = FingerprintProximity(tox_df, fingerprint_column="morgan_fingerprint", id_column="id", n_neighbors=5)
+prox = FingerprintProximity(tox_df, fingerprint_column="fingerprint", id_column="id", n_neighbors=5)
 
 # Get all the neighbors for all the compounds
 neighbors_df = prox.all_neighbors()

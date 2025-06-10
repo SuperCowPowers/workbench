@@ -12,7 +12,7 @@ tox_df = DFStore().get("/datasets/chem_info/tox21_10")
 tox_df = compute_morgan_fingerprints(tox_df)
 
 # Extract fingerprints and IDs
-fingerprint_column = "morgan_fingerprint"
+fingerprint_column = "fingerprint"
 id_column = "id"
 fingerprints = tox_df[fingerprint_column].tolist()
 compound_ids = tox_df[id_column].tolist()
