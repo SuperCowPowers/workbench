@@ -304,7 +304,7 @@ class MonitorCore:
                     if add_timestamp:
                         # Get file metadata to extract last modified time
                         file_metadata = wr.s3.describe_objects(path=file_path)
-                        timestamp = file_metadata[file_path]['LastModified']
+                        timestamp = file_metadata[file_path]["LastModified"]
                         print(f"Timestamp: {timestamp}")
                         output_df["timestamp"] = timestamp
 
