@@ -266,7 +266,7 @@ def dict_to_aws_tags(meta_data: dict) -> list:
 
         # Too long to store in AWS Tags
         else:
-            log.error(f"Metadata for key '{key}' is quite big {len(value)} and shouldn't be stored in AWS Tags!")
+            log.error(f"Metadata for key '{key}' is large {len(value)} and cannot be stored in AWS Tags!")
 
     # Now add the chunked data to the output data
     output_data.update(chunked_data)

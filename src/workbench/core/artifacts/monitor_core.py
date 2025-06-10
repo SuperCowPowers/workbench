@@ -260,14 +260,14 @@ class MonitorCore:
             self.log.error(f"Error checking data capture percentage: {e}")
             return None
 
-    def get_captured_data(self, max_files=1) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def get_captured_data(self, max_files=None, add_timestamp=True) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Read and process captured data from S3.
 
         Args:
             max_files (int, optional): Maximum number of files to process.
-                                      Defaults to 1 (most recent only).
-                                      Set to None to process all files.
+                                       Defaults to None to process all files.
+            add_timestamp (bool, optional): Whether to add a timestamp column to the DataFrame.
 
         Returns:
             Tuple[pd.DataFrame, pd.DataFrame]: Processed input and output DataFrames.
@@ -298,9 +298,17 @@ class MonitorCore:
             try:
                 # Read the JSON lines file
                 df = wr.s3.read_json(path=file_path, lines=True)
-
                 if not df.empty:
                     input_df, output_df = process_data_capture(df)
+                    # Generate a timestamp column if requested
+                    if add_timestamp:
+                        # Get file metadata to extract last modified time
+                        file_metadata = wr.s3.describe_objects(path=file_path)
+                        timestamp = file_metadata[file_path]['LastModified']
+                        print(f"Timestamp: {timestamp}")
+                        output_df["timestamp"] = timestamp
+
+                    # Append the processed DataFrames to the lists
                     all_input_dfs.append(input_df)
                     all_output_dfs.append(output_df)
             except Exception as e:
