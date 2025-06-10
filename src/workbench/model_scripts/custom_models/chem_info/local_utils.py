@@ -2,6 +2,7 @@
 
 import logging
 import pandas as pd
+import numpy as np
 from typing import List, Optional
 
 # Molecular Descriptor Imports
@@ -586,25 +587,20 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=
     return df
 
 
-def fingerprints_to_matrix(fingerprints, dtype=np.uint8, sparse=True):
+def fingerprints_to_matrix(fingerprints, dtype=np.uint8):
     """
     Convert bitstring fingerprints to numpy matrix.
 
     Args:
         fingerprints: pandas Series or list of bitstring fingerprints
         dtype: numpy data type (uint8 is default: np.bool_ is good for Jaccard computations
-        sparse: return scipy sparse matrix if True
 
     Returns:
-        numpy array or scipy sparse matrix of shape (n_molecules, n_bits)
+        dense numpy array of shape (n_molecules, n_bits)
     """
-    if sparse:
-        from scipy.sparse import csr_matrix
-        matrix = np.array([list(fp) for fp in fingerprints], dtype=dtype)
-        return csr_matrix(matrix)
 
+    # Dense matrix representation (we might support sparse in the future)
     return np.array([list(fp) for fp in fingerprints], dtype=dtype)
-
 
 
 def canonicalize(df: pd.DataFrame, remove_mol_col: bool = True) -> pd.DataFrame:
