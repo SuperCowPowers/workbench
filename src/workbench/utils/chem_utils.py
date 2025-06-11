@@ -1446,7 +1446,7 @@ if __name__ == "__main__":
     # Debug a few compounds that have issues
     debug_smiles = {
         "id": ["B-1579", "B-1866"],
-        "smiles": ["CC1=CC=C[NH++]([O-])[CH-]1", "OC(=O)C1=C[NH++]([O-])[CH-]C=C1"]
+        "smiles": ["CC1=CC=C[NH++]([O-])[CH-]1", "OC(=O)C1=C[NH++]([O-])[CH-]C=C1"],
     }
     debug_df = pd.DataFrame(debug_smiles)
     debug_df = compute_morgan_fingerprints(debug_df)
