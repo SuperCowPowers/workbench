@@ -221,3 +221,47 @@ if __name__ == "__main__":
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)
+
+    # Fingerprint FeatureSet
+    if recreate or not FeatureSet("aqsol_fingerprints").exists():
+
+        # Run the smiles through the fingerprint feature endpoint
+        end = Endpoint("smiles-to-fingerprints-v0")
+        feature_set = FeatureSet("aqsol_features")
+        input_df = feature_set.pull_dataframe()
+        fingerprint_df = end.inference(input_df)
+        to_features = PandasToFeatures("aqsol_fingerprints")
+        to_features.set_output_tags(["aqsol", "public", "fingerprints"])
+        to_features.set_input(fingerprint_df, id_column="id")
+        to_features.transform()
+
+    # Fingerprint Model
+    if recreate or not Model("aqsol-fingerprints").exists():
+
+        # Create the Fingerprint Model
+        feature_set = FeatureSet("aqsol_fingerprints")
+        feature_set.to_model(
+            name="aqsol-fingerprints",
+            model_type=ModelType.REGRESSOR,
+            feature_list=["fingerprint"],
+            target_column="solubility",
+            description="Morgan Fingerprints Model",
+            tags=["smiles", "fingerprints"],
+        )
+
+    # Fingerprint + Other Features Model
+    if recreate or not Model("aqsol-fingerprints-plus").exists():
+
+        # Grab the features from an existing model
+        features = Model("aqsol-regression").features()
+
+        # Create the Fingerprint Model
+        feature_set = FeatureSet("aqsol_fingerprints")
+        feature_set.to_model(
+            name="aqsol-fingerprints-plus",
+            model_type=ModelType.REGRESSOR,
+            feature_list=features,
+            target_column="solubility",
+            description="Morgan Fingerprints + Features Model",
+            tags=["smiles", "fingerprints", "plus"],
+        )
