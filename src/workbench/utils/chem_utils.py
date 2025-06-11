@@ -377,6 +377,8 @@ def remove_disconnected_fragments(mol: Chem.Mol) -> Chem.Mol:
     Returns:
         Mol: The fragment with the most heavy atoms, or None if no such fragment exists.
     """
+    if mol is None or mol.GetNumAtoms() == 0:
+        return None
     fragments = Chem.GetMolFrags(mol, asMols=True)
     return max(fragments, key=lambda frag: frag.GetNumHeavyAtoms()) if fragments else None
 
@@ -903,6 +905,11 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=
         log.info("Converting SMILES to RDKit Molecules...")
         delete_mol_column = True
         df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
+        # Make sure our molecules are not None
+        failed_smiles = df[df["molecule"].isnull()][smiles_column].tolist()
+        if failed_smiles:
+            log.error(f"Failed to convert the following SMILES to molecules: {failed_smiles}")
+        df = df.dropna(subset=["molecule"])
 
     # If we have fragments in our compounds, get the largest fragment before computing fingerprints
     largest_frags = df["molecule"].apply(remove_disconnected_fragments)
@@ -1435,6 +1442,15 @@ if __name__ == "__main__":
     # Compute Morgan Fingerprints
     df = compute_morgan_fingerprints(df)
     print(df)
+
+    # Debug a few compounds that have issues
+    debug_smiles = {
+        "id": ["B-1579", "B-1866"],
+        "smiles": ["CC1=CC=C[NH++]([O-])[CH-]1", "OC(=O)C1=C[NH++]([O-])[CH-]C=C1"]
+    }
+    debug_df = pd.DataFrame(debug_smiles)
+    debug_df = compute_morgan_fingerprints(debug_df)
+    print(debug_df)
 
     # Project Fingerprints
     df = project_fingerprints(df, projection="UMAP")
