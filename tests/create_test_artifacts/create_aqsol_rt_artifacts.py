@@ -64,7 +64,9 @@ if __name__ == "__main__":
         m = Model("smiles-to-taut-md-stereo-v0")
         m.set_owner("BW")
         end = m.to_endpoint(
-            name="smiles-to-taut-md-stereo-v0-rt", tags=["smiles", "molecular descriptors", "realtime"], serverless=False
+            name="smiles-to-taut-md-stereo-v0-rt",
+            tags=["smiles", "molecular descriptors", "realtime"],
+            serverless=False,
         )
 
         # Run inference on the endpoint
