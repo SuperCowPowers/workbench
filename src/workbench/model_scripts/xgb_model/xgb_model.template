@@ -1,15 +1,7 @@
-# Template Placeholders
-TEMPLATE_PARAMS = {
-    "model_type": "{{model_type}}",
-    "target_column": "{{target_column}}",
-    "feature_list": "{{feature_list}}",
-    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "train_all_data": "{{train_all_data}}"
-}
-
 # Imports for XGB Model
 import xgboost as xgb
 import awswrangler as wr
+import numpy as np
 
 # Model Performance Scores
 from sklearn.metrics import (
@@ -34,6 +26,14 @@ import os
 import pandas as pd
 from typing import List
 
+# Template Parameters
+TEMPLATE_PARAMS = {
+    "model_type": "{{model_type}}",
+    "target_column": "{{target_column}}",
+    "feature_list": "{{feature_list}}",
+    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
+    "train_all_data": "{{train_all_data}}"
+}
 
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
@@ -150,6 +150,29 @@ def convert_categorical_types(df: pd.DataFrame, category_mappings={}) -> tuple:
     return df, category_mappings
 
 
+def prepare_features(df, features):
+    """If we have fingerprints in our features, we need to 'split' them out into a matrix of bits"""
+    if "fingerprint" not in features:
+        return df[features]
+
+    # Convert fingerprints to individual bit columns
+    fp_matrix = np.array([list(fp) for fp in df["fingerprint"]], dtype=np.uint8)
+    fp_df = pd.DataFrame(
+        fp_matrix,
+        columns=[f"bit_{i}" for i in range(fp_matrix.shape[1])],
+        index=df.index
+    )
+
+    # Get other features (excluding fingerprint)
+    other_features = [f for f in features if f != "fingerprint"]
+    if other_features:
+        # Combine fingerprint bits with other features
+        other_df = df[other_features].copy()
+        return pd.concat([other_df, fp_df], axis=1)
+    else:
+        return fp_df
+
+
 if __name__ == "__main__":
     """The main function is for training the XGBoost model"""
 
@@ -226,7 +249,7 @@ if __name__ == "__main__":
 
     # Grab our Features, Target and Train the Model
     y = df_train[target]
-    X = df_train[feature_list]
+    X = prepare_features(df_train[feature_list], feature_list)
     xgb_model.fit(X, y)
 
     # Make Predictions on the Validation Set
@@ -399,7 +422,8 @@ def predict_fn(df, model) -> pd.DataFrame:
     matched_df, _ = convert_categorical_types(matched_df, category_mappings)
 
     # Predict the features against our XGB Model
-    predictions = model.predict(matched_df[model_features])
+    X = prepare_features(matched_df[model_features], model_features)
+    predictions = model.predict(X)
 
     # If we have a label encoder, decode the predictions
     if label_encoder:
