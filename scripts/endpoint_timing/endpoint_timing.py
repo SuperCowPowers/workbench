@@ -25,7 +25,7 @@ print(f"After: {total_df.shape}")
 # First let's dump the information about all the endpoints
 end_1 = Endpoint("tautomerize-v0-rt")
 print(f"Endpoint: {end_1.uuid}, Instance: {end_1.instance_type}")
-end_2 = Endpoint("smiles-to-md-v0-rt")
+end_2 = Endpoint("smiles-to-taut-md-stereo-v0-rt")
 print(f"Endpoint: {end_2.uuid}, Instance: {end_2.instance_type}")
 end_3 = Endpoint("aqsol-mol-class-rt")
 print(f"Endpoint: {end_3.uuid}, Instance: {end_3.instance_type}")
@@ -53,7 +53,7 @@ for n in [10, 100, 500, 1000, 10000]:
 
     # Molecular Descriptors
     start = time.time()
-    # end_2 = Endpoint("smiles-to-md-v0-rt")
+    # end_2 = Endpoint("smiles-to-taut-md-stereo-v0-rt")
     # df = end_2.fast_inference(df)
     df = fast_inference(end_2.uuid, df, session)
     time_md = time.time() - start

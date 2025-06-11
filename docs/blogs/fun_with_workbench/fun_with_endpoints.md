@@ -7,7 +7,7 @@ This is a blog about timing, combining, and choosing AWS® endpoints.
 | Endpoint                | Instance      | Price/Hour |
 |-------------------------|--------------|-------|
 | tautomerize-v0-rt      | ml.t2.medium | $0.06 |
-| smiles-to-md-v0-rt     | ml.t2.medium | $0.06 |
+| smiles-to-taut-md-stereo-v0-rt     | ml.t2.medium | $0.06 |
 | aqsol-mol-class-rt     | ml.t2.medium | $0.06 |
 | pipeline-model         | ml.t2.medium | $0.06 |
 | pipeline-model-fast    | ml.c7i.xlarge | $0.21 |

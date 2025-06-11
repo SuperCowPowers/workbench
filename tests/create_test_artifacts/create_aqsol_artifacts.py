@@ -11,7 +11,7 @@ Models:
     - aqsol-regression
     - aqsol-mol-regression
     - aqsol-mol-class
-    - smiles-to-md-v0
+    - smiles-to-taut-md-stereo-v0
     - smiles-to-fingerprints-v0
     - tautomerize-v0
 
@@ -19,7 +19,7 @@ Endpoints:
     - aqsol-regression
     - aqsol-mol-regression
     - aqsol-mol-class
-    - smiles-to-md-v0
+    - smiles-to-taut-md-stereo-v0
     - smiles-to-fingerprints-v0
     - tautomerize-v0
 """
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     # Create the rdkit FeatureSet (this is an example of using lower level classes)
     if recreate or not FeatureSet("aqsol_mol_descriptors").exists():
         df = DataSource("aqsol_data").pull_dataframe()
-        end = Endpoint("smiles-to-md-stereo")
+        end = Endpoint("smiles-to-taut-md-stereo-v0")
         mol_df = end.inference(df)
         to_features = PandasToFeatures("aqsol_mol_descriptors")
         to_features.set_output_tags(["aqsol", "public"])
@@ -182,11 +182,11 @@ if __name__ == "__main__":
         end.auto_inference(capture=True)
 
     # A 'Model' to Compute Molecular Descriptors Features
-    if recreate or not Model("smiles-to-md-stereo").exists():
+    if recreate or not Model("smiles-to-taut-md-stereo-v0").exists():
         script_path = get_custom_script_path("chem_info", "molecular_descriptors.py")
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
-            name="smiles-to-md-stereo",
+            name="smiles-to-taut-md-stereo-v0",
             model_type=ModelType.TRANSFORMER,
             feature_list=["smiles"],
             description="Smiles to Molecular Descriptors",
@@ -195,11 +195,11 @@ if __name__ == "__main__":
         )
 
     # A 'Model' to Compute Morgan Fingerprints Features
-    if recreate or not Model("smiles-to-fingerprints").exists():
+    if recreate or not Model("smiles-to-fingerprints-v0").exists():
         script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
-            name="smiles-to-fingerprints",
+            name="smiles-to-fingerprints-v0",
             model_type=ModelType.TRANSFORMER,
             feature_list=["smiles"],
             description="Smiles to Morgan Fingerprints",
@@ -208,8 +208,8 @@ if __name__ == "__main__":
         )
 
     # Endpoints for our Transformer/Custom Models
-    if recreate or not Endpoint("smiles-to-md-stereo").exists():
-        m = Model("smiles-to-md-stereo")
+    if recreate or not Endpoint("smiles-to-taut-md-stereo-v0").exists():
+        m = Model("smiles-to-taut-md-stereo-v0")
         end = m.to_endpoint(tags=["smiles", "molecular descriptors", "stereo"])
 
         # Run inference on the endpoint
@@ -217,7 +217,7 @@ if __name__ == "__main__":
 
     if recreate or not Endpoint("smiles-to-fingerprints-v0").exists():
         m = Model("smiles-to-fingerprints-v0")
-        end = m.to_endpoint(name="smiles-to-fingerprints-v0", tags=["smiles", "morgan fingerprints"])
+        end = m.to_endpoint(tags=["smiles", "morgan fingerprints"])
 
         # Run inference on the endpoint
         end.auto_inference(capture=True)

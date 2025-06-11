@@ -20,7 +20,7 @@ total_df = df[[id_column, "smiles"]]
 
 end_1 = Endpoint("tautomerize-v0-rt")
 print(f"Endpoint: {end_1.uuid}, Instance: {end_1.instance_type}")
-end_2 = Endpoint("smiles-to-md-v0-rt")
+end_2 = Endpoint("smiles-to-taut-md-stereo-v0-rt")
 print(f"Endpoint: {end_2.uuid}, Instance: {end_2.instance_type}")
 
 # Run all the smiles through normal inference (will mark the bad ones)
