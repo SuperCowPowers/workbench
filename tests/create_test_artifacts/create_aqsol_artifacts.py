@@ -249,11 +249,19 @@ if __name__ == "__main__":
             tags=["smiles", "fingerprints"],
         )
 
+    # Fingerprint Endpoint
+    if recreate or not Endpoint("aqsol-fingerprints").exists():
+        m = Model("aqsol-fingerprints")
+        end = m.to_endpoint(tags=["smiles", "fingerprints"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
+
     # Fingerprint + Other Features Model
     if recreate or not Model("aqsol-fingerprints-plus").exists():
 
         # Grab the features from an existing model
-        features = Model("aqsol-regression").features()
+        features = Model("aqsol-regression").features() + ["fingerprint"]
 
         # Create the Fingerprint Model
         feature_set = FeatureSet("aqsol_fingerprints")
@@ -265,3 +273,11 @@ if __name__ == "__main__":
             description="Morgan Fingerprints + Features Model",
             tags=["smiles", "fingerprints", "plus"],
         )
+
+    # Fingerprint + Other Features Endpoint
+    if recreate or not Endpoint("aqsol-fingerprints-plus").exists():
+        m = Model("aqsol-fingerprints-plus")
+        end = m.to_endpoint(tags=["smiles", "fingerprints", "plus"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
