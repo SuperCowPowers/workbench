@@ -212,7 +212,7 @@ class TestDataGenerator:
         df["Food"] = df["Food"].apply(lambda x: food_list[x])
 
         # Randomly apply some NaNs to the Food column
-        # df["Food"] = df["Food"].apply(lambda x: np.nan if np.random.random() < 0.1 else x)
+        df["Food"] = df["Food"].apply(lambda x: np.nan if np.random.random() < 0.1 else x)
 
         # Boolean column for liking dogs (correlated to IQ)
         df["Likes_Dogs"] = self.generate_correlated_series(df["IQ_Score"], 0.75, -0.5, 1.5)
