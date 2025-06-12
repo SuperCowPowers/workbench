@@ -171,9 +171,9 @@ def decompress_features(df: pd.DataFrame, features: List[str], compressed_featur
     missing_counts = df[features].isna().sum()
     if missing_counts.any():
         missing_features = missing_counts[missing_counts > 0]
-        raise ValueError(
-            f"Found missing values in features: {missing_features.to_dict()}. "
-            f"Please remove/replace all NaN values before processing."
+        print(
+            f"WARNING: Found missing values in features: {missing_features.to_dict()}. "
+            f"WARNING: Please remove/replace all NaN values before processing."
         )
 
     # Decompress the specified compressed features

@@ -235,6 +235,10 @@ if __name__ == "__main__":
         to_features.set_input(fingerprint_df, id_column="id")
         to_features.transform()
 
+        # Set our compressed features
+        feature_set = FeatureSet("aqsol_fingerprints")
+        feature_set.set_compressed_features(["fingerprint"])
+
     # Fingerprint Model
     if recreate or not Model("aqsol-fingerprints").exists():
 
