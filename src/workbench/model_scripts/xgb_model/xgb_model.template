@@ -150,23 +150,44 @@ def convert_categorical_types(df: pd.DataFrame, category_mappings={}) -> tuple:
     return df, category_mappings
 
 
-def prepare_features(df, features):
-    """If we have fingerprints in our features, we need to 'split' them out into a matrix of bits"""
+def prepare_features(df, features: List[str]) -> pd.DataFrame:
+    """Prepare features for the XGBoost model
+
+    Args:
+        df (pd.DataFrame): The input DataFrame containing features
+        features (List[str]): List of feature names to prepare
+
+    Returns:
+        pd.DataFrame: DataFrame with the prepared features
+
+    Raises:
+        ValueError: If any missing values are found in the specified features
+    """
+
+    # Check for any missing values in the required features
+    missing_counts = df[features].isna().sum()
+    if missing_counts.any():
+        missing_features = missing_counts[missing_counts > 0]
+        raise ValueError(
+            f"Found missing values in features: {missing_features.to_dict()}. "
+            f"Please remove/replace all NaN values before processing."
+        )
+
+    # Handle fingerprints if present
     if "fingerprint" not in features:
-        return df[features]
+        return df[features].copy()
 
     # Convert fingerprints to individual bit columns
     fp_matrix = np.array([list(fp) for fp in df["fingerprint"]], dtype=np.uint8)
     fp_df = pd.DataFrame(
         fp_matrix,
-        columns=[f"bit_{i}" for i in range(fp_matrix.shape[1])],
+        columns=[f"fp_{i}" for i in range(fp_matrix.shape[1])],
         index=df.index
     )
 
     # Get other features (excluding fingerprint)
     other_features = [f for f in features if f != "fingerprint"]
     if other_features:
-        # Combine fingerprint bits with other features
         other_df = df[other_features].copy()
         return pd.concat([other_df, fp_df], axis=1)
     else:
@@ -248,17 +269,19 @@ if __name__ == "__main__":
         label_encoder = None  # We don't need this for regression
 
     # Grab our Features, Target and Train the Model
-    y = df_train[target]
-    X = prepare_features(df_train[feature_list], feature_list)
-    xgb_model.fit(X, y)
+    y_train = df_train[target]
+    X_train= prepare_features(df_train[feature_list], feature_list)
+    xgb_model.fit(X_train, y_train)
 
     # Make Predictions on the Validation Set
     print(f"Making Predictions on Validation Set...")
-    preds = xgb_model.predict(df_val[feature_list])
+    y_validate = df_val[target]
+    X_validate = prepare_features(df_val[feature_list], feature_list)
+    preds = xgb_model.predict(X_validate)
     if model_type == "classifier":
         # Also get the probabilities for each class
         print("Processing Probabilities...")
-        probs = xgb_model.predict_proba(df_val[feature_list])
+        probs = xgb_model.predict_proba(X_validate)
         df_val["pred_proba"] = [p.tolist() for p in probs]
 
         # Expand the pred_proba column into separate columns for each class
@@ -267,7 +290,7 @@ if __name__ == "__main__":
         print(df_val.columns)
 
         # Decode the target and prediction labels
-        df_val[target] = label_encoder.inverse_transform(df_val[target])
+        y_validate = label_encoder.inverse_transform(y_validate)
         preds = label_encoder.inverse_transform(preds)
 
     # Save predictions to S3 (just the target, prediction, and '_proba' columns)
@@ -287,7 +310,7 @@ if __name__ == "__main__":
 
         # Calculate various model performance metrics
         scores = precision_recall_fscore_support(
-            df_val[target], preds, average=None, labels=label_names
+            y_validate, preds, average=None, labels=label_names
         )
 
         # Put the scores into a dataframe
@@ -309,7 +332,7 @@ if __name__ == "__main__":
                 print(f"Metrics:{t}:{m} {value}")
 
         # Compute and output the confusion matrix
-        conf_mtx = confusion_matrix(df_val[target], preds, labels=label_names)
+        conf_mtx = confusion_matrix(y_validate, preds, labels=label_names)
         for i, row_name in enumerate(label_names):
             for j, col_name in enumerate(label_names):
                 value = conf_mtx[i, j]
@@ -317,9 +340,9 @@ if __name__ == "__main__":
 
     else:
         # Calculate various model performance metrics (regression)
-        rmse = root_mean_squared_error(df_val[target], preds)
-        mae = mean_absolute_error(df_val[target], preds)
-        r2 = r2_score(df_val[target], preds)
+        rmse = root_mean_squared_error(y_validate, preds)
+        mae = mean_absolute_error(y_validate, preds)
+        r2 = r2_score(y_validate, preds)
         print(f"RMSE: {rmse:.3f}")
         print(f"MAE: {mae:.3f}")
         print(f"R2: {r2:.3f}")
