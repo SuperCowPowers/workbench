@@ -28,13 +28,17 @@ def shap_feature_importance(workbench_model) -> Optional[List[Tuple[str, float]]
     """
     # Compute the SHAP values
     log.important("Calculating SHAP values...")
-    shap_data = shap_values_data(workbench_model)
+    shap_data, feature_df = shap_values_data(workbench_model)
     if shap_data is None:
         log.error("No SHAP data found.")
         return None
 
-    # Get feature names directly from the model
-    features = workbench_model.features()
+    # Okay, we need the feature list (first column is ID, last column is bias)
+    if isinstance(shap_data, dict):
+        first_class_df = next(iter(shap_data.values()))
+        features = first_class_df.columns.tolist()[1:-1]
+    else:
+        features = shap_data.columns.tolist()[1:-1]
 
     # Check if multi-class (dictionary of DataFrames) or single-class (DataFrame)
     is_multiclass = isinstance(shap_data, dict)
@@ -53,7 +57,7 @@ def shap_feature_importance(workbench_model) -> Optional[List[Tuple[str, float]]
     return sorted_importance
 
 
-def shap_values_data(workbench_model, sample_df: pd.DataFrame = None) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
+def shap_values_data(workbench_model, sample_df: pd.DataFrame = None) -> Tuple[Union[pd.DataFrame, Dict[str, pd.DataFrame]], pd.DataFrame]:
     """
     Get SHAP explanation data for all instances in the training data.
     Handles both regression/binary classification and multi-class models.
@@ -64,13 +68,16 @@ def shap_values_data(workbench_model, sample_df: pd.DataFrame = None) -> Union[p
 
     Returns:
         For regression/binary: DataFrame with SHAP values, one row per instance, columns are features
+        OR
         For multi-class: Dictionary of DataFrames, one per class, each with SHAP values
+        AND
+        Feature DataFrame with all features used for explanation
 
     Note:
         The ID column is always included as the first column of each DataFrame.
     """
     # Get all shap data from internal function
-    features, shap_values, _, ids = _calculate_shap_values(workbench_model, sample_df=sample_df)
+    features, shap_values, feature_df, ids = _calculate_shap_values(workbench_model, sample_df=sample_df)
     if features is None:
         return None
 
@@ -84,14 +91,14 @@ def shap_values_data(workbench_model, sample_df: pd.DataFrame = None) -> Union[p
         if num_classes != len(class_labels):
             log.error("Mismatch between number of classes in SHAP values and Workbench model.")
             return None
-        result = {}
 
         # Create a DataFrame for EACH class
+        result_dict = {}
         for idx, label in enumerate(class_labels):
             class_df = pd.DataFrame(shap_values[:, idx, :], columns=features)
             class_df.insert(0, ids.name, ids.reset_index(drop=True))
-            result[label] = class_df
-        return result
+            result_dict[label] = class_df
+        return result_dict, feature_df
 
     # For regression or binary classification models (single class)
     else:
@@ -99,7 +106,59 @@ def shap_values_data(workbench_model, sample_df: pd.DataFrame = None) -> Union[p
         single_class_values = shap_values[:, 0, :]
         result_df = pd.DataFrame(single_class_values, columns=features)
         result_df.insert(0, ids.name, ids.reset_index(drop=True))
-        return result_df
+        return result_df, feature_df
+
+
+def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+    """Prepare features for the XGBoost model
+
+    Args:
+        df (pd.DataFrame): The features DataFrame
+        features (List[str]): Full list of feature names
+        compressed_features (List[str]): List of feature names to decompress (bitstrings)
+
+    Returns:
+        pd.DataFrame: DataFrame with the decompressed features
+        List[str]: Updated list of feature names after decompression
+
+    Raises:
+        ValueError: If any missing values are found in the specified features
+    """
+
+    # Check for any missing values in the required features
+    missing_counts = df[features].isna().sum()
+    if missing_counts.any():
+        missing_features = missing_counts[missing_counts > 0]
+        raise ValueError(
+            f"Found missing values in features: {missing_features.to_dict()}. "
+            f"Please remove/replace all NaN values before processing."
+        )
+
+    # Decompress the specified compressed features
+    new_features = features
+    for feature in compressed_features:
+        if feature not in df.columns:
+            raise ValueError(f"Compressed feature '{feature}' not found in DataFrame columns.")
+
+        # Remove the feature from the list of features to avoid duplication
+        new_features.remove(feature)
+
+        # Handle all compressed features as bitstrings
+        bit_matrix = np.array([list(bitstring) for bitstring in df[feature]], dtype=np.uint8)
+        prefix = feature[:3]
+
+        # Create all new columns at once - avoids fragmentation
+        new_col_names = [f"{prefix}_{i}" for i in range(bit_matrix.shape[1])]
+        new_df = pd.DataFrame(bit_matrix, columns=new_col_names, index=df.index)
+
+        # Add to features list
+        new_features.extend(new_col_names)
+
+        # Drop original column and concatenate new ones
+        df = df.drop(columns=[feature])
+        df = pd.concat([df, new_df], axis=1)
+
+    return df, new_features
 
 
 def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
@@ -113,12 +172,12 @@ def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
         sample_df: Optional DataFrame to sample from (default: None)
 
     Note:
-        If you set sample=True, the model must have 'shap_importance' already computed
+        If you set sample_df, the model must have 'shap_importance' already computed
 
     Returns:
         - list of feature names
         - raw shap values
-        - input data used for explanation
+        - feature data used for explanation
         - ids of the input data
         or (None, None, None, None) if there was an error
     """
@@ -156,6 +215,12 @@ def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
         log.info("Category mappings found. Applying categorical conversions.")
         X = convert_categorical_types(X, category_mappings)
 
+    # Check if we have compressed features to decompress
+    compressed_features = fs.get_compressed_features()
+    if compressed_features:
+        log.info("Decompressing compressed features...")
+        X, features = decompress_features(X, features, compressed_features)
+
     # Create a DMatrix with categorical support
     dmatrix = xgb.DMatrix(X, enable_categorical=True)
 
@@ -177,8 +242,11 @@ def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
         # Update features list to match
         features_with_bias = [features[i] for i in top_indices] + ["bias"]
 
-    # Return the feature names, SHAP values, input data, and IDs
-    return features_with_bias, shap_values, X, ids
+    # For the feature dataframe we're going to add the id column as the first column
+    feature_df = pd.concat([ids.reset_index(drop=True), X.reset_index(drop=True)], axis=1)
+
+    # Return the feature names, SHAP values, feature dataframe, and IDs
+    return features_with_bias, shap_values, feature_df, ids
 
 
 if __name__ == "__main__":
@@ -192,6 +260,8 @@ if __name__ == "__main__":
 
     # Test a regression model
     model = Model("test-regression")
+    model = Model("aqsol-fingerprints")
+    model.compute_shap_values()
 
     # Example 1: Get feature importance data
     print("\n=== Feature Importance Example ===")
@@ -204,7 +274,7 @@ if __name__ == "__main__":
 
     # Get instance explanation data
     print("\n=== Instance Explanation Data Example (Regression) ===")
-    shap_df = shap_values_data(model)
+    shap_df, feature_df = shap_values_data(model)
     print(shap_df.head())
 
     # Test a classification model
@@ -215,7 +285,7 @@ if __name__ == "__main__":
 
     # Get instance explanation data
     print("\n=== Instance Explanation Data Example (Classification) ===")
-    shap_df_dict = shap_values_data(cmodel)
+    shap_df_dict, feature_df = shap_values_data(cmodel)
     for class_name, df in shap_df_dict.items():
         print(f"\nClass: {class_name}")
         print(df.head())
@@ -224,14 +294,14 @@ if __name__ == "__main__":
     model = Model("abalone-regression")
     my_sample_df = FeatureSet(model.get_input()).pull_dataframe().sample(1000)
     print("\n=== SHAP Values Data with Sampling (regression) ===")
-    shap_df_sample = shap_values_data(model, sample_df=my_sample_df)
+    shap_df_sample, feature_df = shap_values_data(model, sample_df=my_sample_df)
     print(shap_df_sample.head())
 
     # Test SHAP values data with sampling (classification)
     model = Model("wine-classification")
     my_sample_df = FeatureSet(model.get_input()).pull_dataframe().sample(100)
     print("\n=== SHAP Values Data with Sampling (classification) ===")
-    shap_df_sample = shap_values_data(model, sample_df=my_sample_df)
+    shap_df_sample, feature_df = shap_values_data(model, sample_df=my_sample_df)
     for class_name, df in shap_df_sample.items():
         print(f"\nClass: {class_name}")
         print(df.head())

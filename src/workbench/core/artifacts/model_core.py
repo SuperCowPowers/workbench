@@ -802,13 +802,13 @@ class ModelCore(Artifact):
             from workbench.api import FeatureSet
 
             fs = FeatureSet(self.get_input())
-            shap_sample = fs.query(f"SELECT * FROM {fs.table} ORDER BY RAND() LIMIT 500")
+            shap_sample_input = fs.query(f"SELECT * FROM {fs.table} ORDER BY RAND() LIMIT 500")
 
             # Now we recompute the SHAP values using our sample rows
-            shap_data = shap_values_data(self, sample_df=shap_sample)
+            shap_data, feature_df = shap_values_data(self, sample_df=shap_sample_input)
 
-            # Store the SHAP sample data in the DataFrame Cache (just the top 10 shap values)
-            shap_sample = shap_sample[[fs.id_column] + [f[0] for f in shap_importance[:10]]]
+            # Store the SHAP feature dataframe in the DataFrame Cache (just the top 10 shap values)
+            shap_sample = feature_df[[fs.id_column] + [f[0] for f in shap_importance[:10]]]
             self.df_store.upsert(f"/workbench/models/{self.uuid}/shap_sample", shap_sample)
 
             # Shap Data might be a DataFrame or a dict of DataFrames
