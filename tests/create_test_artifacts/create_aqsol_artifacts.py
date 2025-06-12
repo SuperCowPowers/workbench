@@ -268,8 +268,8 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="aqsol-fingerprints-plus",
             model_type=ModelType.REGRESSOR,
-            feature_list=features,
             target_column="solubility",
+            feature_list=features,
             description="Morgan Fingerprints + Features Model",
             tags=["smiles", "fingerprints", "plus"],
         )
@@ -277,6 +277,31 @@ if __name__ == "__main__":
     # Fingerprint + Other Features Endpoint
     if recreate or not Endpoint("aqsol-fingerprints-plus").exists():
         m = Model("aqsol-fingerprints-plus")
+        end = m.to_endpoint(tags=["smiles", "fingerprints", "plus"])
+
+        # Run inference on the endpoint
+        end.auto_inference(capture=True)
+
+    # Fingerprint + Other Features CLASSIFICATION Model
+    if recreate or not Model("aqsol-fingerprints-plus-class").exists():
+
+        # Grab the features from an existing model
+        features = Model("aqsol-regression").features() + ["fingerprint"]
+
+        # Create the Fingerprint Model
+        feature_set = FeatureSet("aqsol_fingerprints")
+        feature_set.to_model(
+            name="aqsol-fingerprints-plus-class",
+            model_type=ModelType.CLASSIFIER,
+            target_column="solubility_class",
+            feature_list=features,
+            description="Morgan Fingerprints + Features Classification Model",
+            tags=["smiles", "fingerprints", "plus"],
+        )
+
+    # Fingerprint + Other Features CLASSIFICATION Endpoint
+    if recreate or not Endpoint("aqsol-fingerprints-plus-class").exists():
+        m = Model("aqsol-fingerprints-plus-class")
         end = m.to_endpoint(tags=["smiles", "fingerprints", "plus"])
 
         # Run inference on the endpoint
