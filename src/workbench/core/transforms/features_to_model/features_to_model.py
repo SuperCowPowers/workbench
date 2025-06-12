@@ -157,6 +157,7 @@ class FeaturesToModel(Transform):
             "model_class": self.model_class,
             "target_column": self.target_column,
             "feature_list": self.model_feature_list,
+            "compressed_features": feature_set.get_compressed_features(),
             "model_metrics_s3_path": self.model_training_root,
             "train_all_data": train_all_data,
             "id_column": feature_set.id_column,

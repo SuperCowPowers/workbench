@@ -231,6 +231,32 @@ class FeatureSetCore(Artifact):
         if reset_display:
             self.set_display_columns(computation_columns)
 
+    def set_compressed_features(self, compressed_columns: list[str]):
+        """Set the compressed features for this FeatureSet
+
+        Args:
+            compressed_columns (list[str]): The compressed columns for this FeatureSet
+        """
+        # Ensure that the compressed features are a subset of the columns
+        if not set(compressed_columns).issubset(set(self.columns)):
+            self.log.warning(
+                f"Compressed columns {compressed_columns} are not a subset of the columns {self.columns}. "
+            )
+            return
+
+        # Set the compressed features in our FeatureSet metadata
+        self.log.important(f"Setting Compressed Columns...{compressed_columns}")
+        self.upsert_workbench_meta({"comp_features": compressed_columns})
+
+    def get_compressed_features(self) -> list[str]:
+        """Get the compressed features for this FeatureSet
+
+        Returns:
+            list[str]: The compressed columns for this FeatureSet
+        """
+        # Get the compressed features from our FeatureSet metadata
+        return self.workbench_meta().get("comp_features", [])
+
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""
         return len(self.columns)

@@ -24,13 +24,14 @@ import argparse
 import joblib
 import os
 import pandas as pd
-from typing import List
+from typing import List, Tuple
 
 # Template Parameters
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
     "target_column": "{{target_column}}",
-    "feature_list": "{{feature_list}}",
+    "features": "{{feature_list}}",
+    "compressed_features": "{{compressed_features}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "train_all_data": "{{train_all_data}}"
 }
@@ -150,15 +151,17 @@ def convert_categorical_types(df: pd.DataFrame, category_mappings={}) -> tuple:
     return df, category_mappings
 
 
-def prepare_features(df, features: List[str]) -> pd.DataFrame:
+def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the XGBoost model
 
     Args:
-        df (pd.DataFrame): The input DataFrame containing features
-        features (List[str]): List of feature names to prepare
+        df (pd.DataFrame): The features DataFrame
+        features (List[str]): Full list of feature names
+        compressed_features (List[str]): List of feature names to decompress (bitstrings)
 
     Returns:
-        pd.DataFrame: DataFrame with the prepared features
+        pd.DataFrame: DataFrame with the decompressed features
+        List[str]: Updated list of feature names after decompression
 
     Raises:
         ValueError: If any missing values are found in the specified features
@@ -173,25 +176,31 @@ def prepare_features(df, features: List[str]) -> pd.DataFrame:
             f"Please remove/replace all NaN values before processing."
         )
 
-    # Handle fingerprints if present
-    if "fingerprint" not in features:
-        return df[features].copy()
+    # Decompress the specified compressed features
+    new_features = features
+    for feature in compressed_features:
+        if feature not in df.columns:
+            raise ValueError(f"Compressed feature '{feature}' not found in DataFrame columns.")
 
-    # Convert fingerprints to individual bit columns
-    fp_matrix = np.array([list(fp) for fp in df["fingerprint"]], dtype=np.uint8)
-    fp_df = pd.DataFrame(
-        fp_matrix,
-        columns=[f"fp_{i}" for i in range(fp_matrix.shape[1])],
-        index=df.index
-    )
+        # Remove the feature from the list of features to avoid duplication
+        new_features.remove(feature)
 
-    # Get other features (excluding fingerprint)
-    other_features = [f for f in features if f != "fingerprint"]
-    if other_features:
-        other_df = df[other_features].copy()
-        return pd.concat([other_df, fp_df], axis=1)
-    else:
-        return fp_df
+        # Handle all compressed features as bitstrings
+        bit_matrix = np.array([list(bitstring) for bitstring in df[feature]], dtype=np.uint8)
+        prefix = feature[:3]
+
+        # Create all new columns at once - avoids fragmentation
+        new_col_names = [f"{prefix}_{i}" for i in range(bit_matrix.shape[1])]
+        new_df = pd.DataFrame(bit_matrix, columns=new_col_names, index=df.index)
+
+        # Add to features list
+        new_features.extend(new_col_names)
+
+        # Drop original column and concatenate new ones
+        df = df.drop(columns=[feature])
+        df = pd.concat([df, new_df], axis=1)
+
+    return df, new_features
 
 
 if __name__ == "__main__":
@@ -199,7 +208,9 @@ if __name__ == "__main__":
 
     # Harness Template Parameters
     target = TEMPLATE_PARAMS["target_column"]
-    feature_list = TEMPLATE_PARAMS["feature_list"]
+    features = TEMPLATE_PARAMS["features"]
+    orig_features = features.copy()
+    compressed_features = TEMPLATE_PARAMS["compressed_features"]
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
@@ -230,22 +241,27 @@ if __name__ == "__main__":
 
     # Features/Target output
     print(f"Target: {target}")
-    print(f"Features: {str(feature_list)}")
+    print(f"Features: {str(features)}")
 
     # Convert any features that might be categorical to 'category' type
     all_df, category_mappings = convert_categorical_types(all_df)
 
+    # If we have compressed features, decompress them
+    if compressed_features:
+        print("Decompressing features...")
+        all_df, features = decompress_features(all_df, features, compressed_features)
+
     # Do we want to train on all the data?
     if train_all_data:
         print("Training on ALL of the data")
-        df_train = all_df.copy()
-        df_val = all_df.copy()
+        df_train = all_df
+        df_val = all_df
 
     # Does the dataframe have a training column?
     elif "training" in all_df.columns:
         print("Found training column, splitting data based on training column")
-        df_train = all_df[all_df["training"]].copy()
-        df_val = all_df[~all_df["training"]].copy()
+        df_train = all_df[all_df["training"]]
+        df_val = all_df[~all_df["training"]]
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
@@ -270,13 +286,13 @@ if __name__ == "__main__":
 
     # Grab our Features, Target and Train the Model
     y_train = df_train[target]
-    X_train= prepare_features(df_train[feature_list], feature_list)
+    X_train= df_train[features]
     xgb_model.fit(X_train, y_train)
 
     # Make Predictions on the Validation Set
     print(f"Making Predictions on Validation Set...")
     y_validate = df_val[target]
-    X_validate = prepare_features(df_val[feature_list], feature_list)
+    X_validate = df_val[features]
     preds = xgb_model.predict(X_validate)
     if model_type == "classifier":
         # Also get the probabilities for each class
@@ -355,7 +371,7 @@ if __name__ == "__main__":
 
     # Save the features (this will validate input during predictions)
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
-        json.dump(feature_list, fp)
+        json.dump(orig_features, fp)  # We save the original features, not the decompressed ones
 
     # Save the category mappings
     with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
@@ -420,12 +436,13 @@ def predict_fn(df, model) -> pd.DataFrame:
     Returns:
         pd.DataFrame: The DataFrame with the predictions added
     """
+    compressed_features = TEMPLATE_PARAMS["compressed_features"]
 
     # Grab our feature columns (from training)
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
-        model_features = json.load(fp)
-    print(f"Model Features: {model_features}")
+        features = json.load(fp)
+    print(f"Model Features: {features}")
 
     # Load the category mappings (from training)
     with open(os.path.join(model_dir, "category_mappings.json")) as fp:
@@ -439,13 +456,18 @@ def predict_fn(df, model) -> pd.DataFrame:
     # We're going match features in a case-insensitive manner, accounting for all the permutations
     # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
     # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
-    matched_df = match_features_case_insensitive(df, model_features)
+    matched_df = match_features_case_insensitive(df, features)
 
     # Detect categorical types in the incoming DataFrame
     matched_df, _ = convert_categorical_types(matched_df, category_mappings)
 
+    # If we have compressed features, decompress them
+    if compressed_features:
+        print("Decompressing features for prediction...")
+        matched_df, features = decompress_features(matched_df, features, compressed_features)
+
     # Predict the features against our XGB Model
-    X = prepare_features(matched_df[model_features], model_features)
+    X = matched_df[features]
     predictions = model.predict(X)
 
     # If we have a label encoder, decode the predictions
@@ -457,7 +479,7 @@ def predict_fn(df, model) -> pd.DataFrame:
 
     # Does our model have a 'predict_proba' method? If so we will call it and add the results to the DataFrame
     if getattr(model, "predict_proba", None):
-        probs = model.predict_proba(matched_df[model_features])
+        probs = model.predict_proba(matched_df[features])
         df["pred_proba"] = [p.tolist() for p in probs]
 
         # Expand the pred_proba column into separate columns for each class
