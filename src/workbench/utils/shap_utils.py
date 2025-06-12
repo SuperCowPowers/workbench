@@ -57,7 +57,9 @@ def shap_feature_importance(workbench_model) -> Optional[List[Tuple[str, float]]
     return sorted_importance
 
 
-def shap_values_data(workbench_model, sample_df: pd.DataFrame = None) -> Tuple[Union[pd.DataFrame, Dict[str, pd.DataFrame]], pd.DataFrame]:
+def shap_values_data(
+    workbench_model, sample_df: pd.DataFrame = None
+) -> Tuple[Union[pd.DataFrame, Dict[str, pd.DataFrame]], pd.DataFrame]:
     """
     Get SHAP explanation data for all instances in the training data.
     Handles both regression/binary classification and multi-class models.
@@ -109,7 +111,9 @@ def shap_values_data(workbench_model, sample_df: pd.DataFrame = None) -> Tuple[U
         return result_df, feature_df
 
 
-def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+def decompress_features(
+    df: pd.DataFrame, features: List[str], compressed_features: List[str]
+) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the XGBoost model
 
     Args:
