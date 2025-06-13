@@ -121,12 +121,13 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     return df.rename(columns=rename_dict)
 
 
-def convert_categorical_types(df: pd.DataFrame, category_mappings={}) -> tuple:
+def convert_categorical_types(df: pd.DataFrame, features: list, category_mappings={}) -> tuple:
     """
     Converts appropriate columns to categorical type with consistent mappings.
 
     Args:
         df (pd.DataFrame): The DataFrame to process.
+        features (list): List of feature names to consider for conversion.
         category_mappings (dict, optional): Existing category mappings. If empty dict, we're in
                                             training mode. If populated, we're in inference mode.
 
@@ -136,7 +137,7 @@ def convert_categorical_types(df: pd.DataFrame, category_mappings={}) -> tuple:
     # Training mode
     if category_mappings == {}:
         for col in df.select_dtypes(include=["object", "string"]):
-            if df[col].nunique() < 20:
+            if col in features and df[col].nunique() < 20:
                 print(f"Training mode: Converting {col} to category")
                 df[col] = df[col].astype("category")
                 category_mappings[col] = df[col].cat.categories.tolist()  # Store category mappings
@@ -244,18 +245,18 @@ if __name__ == "__main__":
     print(f"Features: {str(features)}")
 
     # Convert any features that might be categorical to 'category' type
-    all_df, category_mappings = convert_categorical_types(all_df)
+    all_df, category_mappings = convert_categorical_types(all_df, features)
 
     # If we have compressed features, decompress them
     if compressed_features:
-        print("Decompressing features...")
+        print(f"Decompressing features {compressed_features}...")
         all_df, features = decompress_features(all_df, features, compressed_features)
 
     # Do we want to train on all the data?
     if train_all_data:
         print("Training on ALL of the data")
-        df_train = all_df
-        df_val = all_df
+        df_train = all_df.copy()
+        df_val = all_df.copy()
 
     # Does the dataframe have a training column?
     elif "training" in all_df.columns:
@@ -459,7 +460,7 @@ def predict_fn(df, model) -> pd.DataFrame:
     matched_df = match_features_case_insensitive(df, features)
 
     # Detect categorical types in the incoming DataFrame
-    matched_df, _ = convert_categorical_types(matched_df, category_mappings)
+    matched_df, _ = convert_categorical_types(matched_df, features, category_mappings)
 
     # If we have compressed features, decompress them
     if compressed_features:

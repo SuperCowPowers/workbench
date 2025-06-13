@@ -88,7 +88,7 @@ class FeaturesToModel(Transform):
             train_all_data (bool): Train on ALL (100%) of the data (default False)
         """
         # Delete the existing model (if it exists)
-        self.log.important("Trying to delete existing model...")
+        self.log.important(f"Trying to delete existing model {self.output_uuid}...")
         ModelCore.managed_delete(self.output_uuid)
 
         # Set our model description
