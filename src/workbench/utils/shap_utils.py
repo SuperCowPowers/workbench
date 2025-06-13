@@ -141,9 +141,7 @@ def decompress_features(
     # Decompress the specified compressed features
     decompressed_features = features
     for feature in compressed_features:
-        if feature not in df.columns:
-            raise ValueError(f"Compressed feature '{feature}' not found in DataFrame columns.")
-        if feature not in features:
+        if (feature not in df.columns) or (feature not in features):
             print(f"Feature '{feature}' not in the features list, skipping decompression.")
             continue
 
