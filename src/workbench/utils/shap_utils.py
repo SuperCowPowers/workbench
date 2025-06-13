@@ -111,7 +111,9 @@ def shap_values_data(
         return result_df, feature_df
 
 
-def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+def decompress_features(
+    df: pd.DataFrame, features: List[str], compressed_features: List[str]
+) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the XGBoost model
 
     Args:
