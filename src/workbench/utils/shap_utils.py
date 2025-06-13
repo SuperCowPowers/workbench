@@ -111,9 +111,7 @@ def shap_values_data(
         return result_df, feature_df
 
 
-def decompress_features(
-    df: pd.DataFrame, features: List[str], compressed_features: List[str]
-) -> Tuple[pd.DataFrame, List[str]]:
+def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the XGBoost model
 
     Args:
@@ -133,17 +131,22 @@ def decompress_features(
     missing_counts = df[features].isna().sum()
     if missing_counts.any():
         missing_features = missing_counts[missing_counts > 0]
-        log.warning(f"Found missing values in features: {missing_features.to_dict()}")
-        log.warning("Please remove/replace all NaN values before processing")
+        print(
+            f"WARNING: Found missing values in features: {missing_features.to_dict()}. "
+            "WARNING: You might want to remove/replace all NaN values before processing."
+        )
 
     # Decompress the specified compressed features
-    new_features = features
+    decompressed_features = features
     for feature in compressed_features:
         if feature not in df.columns:
             raise ValueError(f"Compressed feature '{feature}' not found in DataFrame columns.")
+        if feature not in features:
+            print(f"Feature '{feature}' not in the features list, skipping decompression.")
+            continue
 
         # Remove the feature from the list of features to avoid duplication
-        new_features.remove(feature)
+        decompressed_features.remove(feature)
 
         # Handle all compressed features as bitstrings
         bit_matrix = np.array([list(bitstring) for bitstring in df[feature]], dtype=np.uint8)
@@ -154,13 +157,13 @@ def decompress_features(
         new_df = pd.DataFrame(bit_matrix, columns=new_col_names, index=df.index)
 
         # Add to features list
-        new_features.extend(new_col_names)
+        decompressed_features.extend(new_col_names)
 
         # Drop original column and concatenate new ones
         df = df.drop(columns=[feature])
         df = pd.concat([df, new_df], axis=1)
 
-    return df, new_features
+    return df, decompressed_features
 
 
 def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
