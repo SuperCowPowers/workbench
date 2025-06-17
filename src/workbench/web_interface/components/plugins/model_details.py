@@ -6,11 +6,11 @@ from typing import Union
 from dash import html, callback, dcc, Input, Output, State
 
 # Workbench Imports
-from workbench.api import ModelType
+from workbench.api import ModelType, ParameterStore
 from workbench.cached.cached_model import CachedModel
 from workbench.utils.markdown_utils import health_tag_markdown
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.utils.markdown_utils import tags_to_markdown
+from workbench.utils.markdown_utils import tags_to_markdown, dict_to_markdown
 
 
 class ModelDetails(PluginInterface):
@@ -19,6 +19,7 @@ class ModelDetails(PluginInterface):
     # Initialize this Plugin Class with required attributes
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.MODEL
+    params = ParameterStore()
 
     def __init__(self):
         """Initialize the ModelDetails plugin class"""
@@ -112,15 +113,15 @@ class ModelDetails(PluginInterface):
             "input",
             "workbench_registered_endpoints",
             "workbench_model_type",
-            "workbench_tags",
             "workbench_model_target",
             "workbench_model_features",
+            "param_meta",
+            "workbench_tags",
         ]
 
         # Construct the markdown string
         summary = self.current_model.summary()
         markdown = ""
-        tag_markdown = ""
         for key in show_fields:
 
             # Special case for the health tags
@@ -136,10 +137,18 @@ class ModelDetails(PluginInterface):
                 markdown += f"**{key}:** {value}  \n"
                 continue
 
+            # Special case for Parameter Store Metadata
+            if key == "param_meta":
+                model_name = summary["uuid"]
+                meta_data = self.params.get(f"/workbench/models/{model_name}/meta", warn=False)
+                if meta_data:
+                    markdown += dict_to_markdown(meta_data, title="Additional Metadata")
+                continue
+
             # Special case for tags
             if key == "workbench_tags":
                 tags = summary.get(key, "")
-                tag_markdown = tags_to_markdown(tags)
+                markdown += tags_to_markdown(tags)
                 continue
 
             # Get the value
@@ -155,7 +164,7 @@ class ModelDetails(PluginInterface):
             # Add to markdown string
             markdown += f"**{key}:** {value}  \n"
 
-        return markdown + tag_markdown
+        return markdown
 
     def inference_metrics(self, inference_run: Union[str, None]) -> str:
         """Construct the markdown string for the model metrics
@@ -235,4 +244,4 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ModelDetails, theme="ideaya").run()
+    PluginUnitTest(ModelDetails, theme="dark").run()
