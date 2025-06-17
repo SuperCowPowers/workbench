@@ -137,10 +137,7 @@ if __name__ == "__main__":
     # Print the dict to markdown
     sample_dict = {
         "key1": "value1",
-        "key2": {
-            "subkey1": "subvalue1",
-            "subkey2": ["item1", "item2"]
-        },
-        "key3": ["list_item1", "list_item2"]
+        "key2": {"subkey1": "subvalue1", "subkey2": ["item1", "item2"]},
+        "key3": ["list_item1", "list_item2"],
     }
     print(dict_to_markdown(sample_dict, title="Sample Dictionary", indent=0))
