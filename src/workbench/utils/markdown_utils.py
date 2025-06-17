@@ -82,6 +82,39 @@ def tags_to_markdown(tags: str) -> str:
     return tag_markdown
 
 
+def dict_to_markdown(data: dict, title: str = None, indent: int = 0) -> str:
+    """Convert a dictionary to pretty Markdown format.
+
+    Args:
+        data (dict): Dictionary to convert
+        title (str, optional): Optional title for the dictionary
+        indent (int): Indentation level for nested dicts
+
+    Returns:
+        str: Markdown formatted string
+    """
+    markdown = ""
+    indent_str = "  " * indent
+
+    # Add title if provided and at root level
+    if title and indent == 0:
+        markdown += f"**{title}**\n\n"
+
+    for key, value in data.items():
+        if isinstance(value, dict):
+            # Nested dictionary
+            markdown += f"{indent_str}* *{key}:*\n"
+            markdown += dict_to_markdown(value, indent=indent + 1)
+        elif isinstance(value, list):
+            # List values
+            markdown += f"{indent_str}* *{key}:* {', '.join(map(str, value))}\n"
+        else:
+            # Simple key-value pair
+            markdown += f"{indent_str}* *{key}:* {value}\n"
+
+    return markdown + ("\n" if indent == 0 else "")
+
+
 if __name__ == "__main__":
     """Exercise the Markdown Utilities"""
     from workbench.api.model import Model
@@ -100,3 +133,14 @@ if __name__ == "__main__":
     # Print the tag markdown
     tag_str = "key1:value1::key2:value2::key3:value3"
     print(tags_to_markdown(tag_str))
+
+    # Print the dict to markdown
+    sample_dict = {
+        "key1": "value1",
+        "key2": {
+            "subkey1": "subvalue1",
+            "subkey2": ["item1", "item2"]
+        },
+        "key3": ["list_item1", "list_item2"]
+    }
+    print(dict_to_markdown(sample_dict, title="Sample Dictionary", indent=0))
