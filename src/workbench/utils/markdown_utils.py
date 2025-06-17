@@ -74,11 +74,13 @@ def tags_to_markdown(tags: str) -> str:
         without_colon = ", ".join(without_colon)
         ordered_tag_list += [without_colon]
     tag_markdown = "**Tags:**\n"
+    markdown_tag_list = []
     for tag in ordered_tag_list:
         if ":" in tag:
-            tag_markdown += f"- *{tag.split(':')[0]}:* {tag.split(':')[1]}\n"
+            markdown_tag_list.append(f"*{tag.split(':')[0]}:*{tag.split(':')[1]}")
         else:
-            tag_markdown += f"- {tag}\n"
+            markdown_tag_list.append(tag)
+    tag_markdown += ", ".join(markdown_tag_list)
     return tag_markdown
 
 
