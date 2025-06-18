@@ -10,7 +10,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType  # noqa: F401
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from workbench.api.endpoint import Endpoint
-from workbench.utils.model_utils import proximity_model
+from workbench.utils.model_utils import proximity_model, uq_model
 
 
 class Model(ModelCore):
@@ -93,6 +93,19 @@ class Model(ModelCore):
         if prox_model_name is None:
             prox_model_name = self.model_name + "-prox"
         return proximity_model(self, prox_model_name, track_columns=track_columns)
+
+    def uq_model(self, uq_model_name: str = None) -> "Model":
+        """Create a Uncertainty Quantification Model for this Model
+
+        Args:
+            uq_model_name (str, optional): Name of the UQ Model (if not specified, a name will be generated)
+
+        Returns:
+            Model: The UQ Model
+        """
+        if uq_model_name is None:
+            uq_model_name = self.model_name + "-uq"
+        return uq_model(self, uq_model_name)
 
 
 if __name__ == "__main__":

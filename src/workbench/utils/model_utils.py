@@ -125,6 +125,39 @@ def proximity_model(model: "Model", prox_model_name: str, track_columns: list = 
     return prox_model
 
 
+def uq_model(model: "Model", uq_model_name: str) -> "Model":
+    """Create a Uncertainty Quantification (UQ) model based on the given model
+
+    Args:
+        model (Model): The model to create the UQ model from
+        uq_model_name (str): The name of the UQ model to create
+
+    Returns:
+        Model: The UQ model
+    """
+    from workbench.api import Model, ModelType, FeatureSet  # noqa: F401 (avoid circular import)
+
+    # Get the custom script path for the UQ model
+    script_path = get_custom_script_path("uq_models", "ngboost.template")
+
+    # Get Feature and Target Columns from the existing given Model
+    features = model.features()
+    target = model.target()
+
+    # Create the Proximity Model from our FeatureSet
+    fs = FeatureSet(model.get_input())
+    uq_model = fs.to_model(
+        name=uq_model_name,
+        model_type=ModelType.UQ_REGRESSOR,
+        feature_list=features,
+        target_column=target,
+        description=f"UQ Model for {model.uuid}",
+        tags=["uq", model.uuid],
+        custom_script=script_path,
+    )
+    return uq_model
+
+
 def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
     """
     Download and extract category mappings from a model artifact in S3.
@@ -242,3 +275,7 @@ if __name__ == "__main__":
     m = Model("abalone-regression")
     prox_model = proximity_model(m, "abalone-prox")
     print(prox_model)
+
+    # Test the UQ model
+    uq_model_instance = uq_model(m, "abalone-uq")
+    print(uq_model_instance)
