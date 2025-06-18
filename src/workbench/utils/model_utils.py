@@ -193,11 +193,7 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
     return category_mappings
 
 
-def evaluate_uq_model(
-        df: pd.DataFrame,
-        target_col: str = "solubility",
-        model_name: str = "Model"
-) -> Dict[str, Any]:
+def evaluate_uq_model(df: pd.DataFrame, target_col: str = "solubility", model_name: str = "Model") -> Dict[str, Any]:
     """
     Evaluate uncertainty quantification model performance.
 
@@ -217,8 +213,11 @@ def evaluate_uq_model(
     uncertainty_error_corr = np.corrcoef(df["prediction_std"], abs_residuals)[0, 1]
 
     # Negative Log-Likelihood assuming Gaussian distribution
-    nll = 0.5 * np.log(2 * np.pi) + np.log(df["prediction_std"]) + \
-          (df[target_col] - df["prediction"]) ** 2 / (2 * df["prediction_std"] ** 2)
+    nll = (
+        0.5 * np.log(2 * np.pi)
+        + np.log(df["prediction_std"])
+        + (df[target_col] - df["prediction"]) ** 2 / (2 * df["prediction_std"] ** 2)
+    )
     mean_nll = nll.mean()
 
     # Handle both quantile-based and std-based models
@@ -244,14 +243,18 @@ def evaluate_uq_model(
 
     # Interval Score - proper scoring rule combining coverage and sharpness
     alpha_95, alpha_50 = 0.05, 0.50
-    is_95 = (upper_95 - lower_95) + \
-            (2 / alpha_95) * (lower_95 - df[target_col]) * (df[target_col] < lower_95) + \
-            (2 / alpha_95) * (df[target_col] - upper_95) * (df[target_col] > upper_95)
+    is_95 = (
+        (upper_95 - lower_95)
+        + (2 / alpha_95) * (lower_95 - df[target_col]) * (df[target_col] < lower_95)
+        + (2 / alpha_95) * (df[target_col] - upper_95) * (df[target_col] > upper_95)
+    )
     mean_is_95 = is_95.mean()
 
-    is_50 = (upper_50 - lower_50) + \
-            (2 / alpha_50) * (lower_50 - df[target_col]) * (df[target_col] < lower_50) + \
-            (2 / alpha_50) * (df[target_col] - upper_50) * (df[target_col] > upper_50)
+    is_50 = (
+        (upper_50 - lower_50)
+        + (2 / alpha_50) * (lower_50 - df[target_col]) * (df[target_col] < lower_50)
+        + (2 / alpha_50) * (df[target_col] - upper_50) * (df[target_col] > upper_50)
+    )
     mean_is_50 = is_50.mean()
     results = {
         "model": model_name,
@@ -312,4 +315,3 @@ if __name__ == "__main__":
     df = end.auto_inference()
     results = evaluate_uq_model(df, target_col="class_number_of_rings", model_name="Abalone UQ Model")
     pprint(results)
-
