@@ -125,12 +125,13 @@ def proximity_model(model: "Model", prox_model_name: str, track_columns: list = 
     return prox_model
 
 
-def uq_model(model: "Model", uq_model_name: str) -> "Model":
+def uq_model(model: "Model", uq_model_name: str, train_all_data: bool = False) -> "Model":
     """Create a Uncertainty Quantification (UQ) model based on the given model
 
     Args:
         model (Model): The model to create the UQ model from
         uq_model_name (str): The name of the UQ model to create
+        train_all_data (bool, optional): Whether to train the UQ model on all data (default: False)
 
     Returns:
         Model: The UQ model
@@ -153,7 +154,8 @@ def uq_model(model: "Model", uq_model_name: str) -> "Model":
         target_column=target,
         description=f"UQ Model for {model.uuid}",
         tags=["uq", model.uuid],
-        custom_script=script_path,
+        train_all_data=train_all_data,
+        custom_script=script_path
     )
     return uq_model
 
@@ -302,16 +304,17 @@ if __name__ == "__main__":
     print(get_custom_script_path("chem_info", "molecular_descriptors.py"))
 
     # Test the proximity model
-    # m = Model("abalone-regression")
-    # prox_model = proximity_model(m, "abalone-prox")
+    m = Model("aqsol-regression")
+    # prox_model = proximity_model(m, "aqsol-prox")
     # print(prox_model)#
 
     # Test the UQ model
-    # uq_model_instance = uq_model(m, "abalone-uq")
+    # uq_model_instance = uq_model(m, "aqsol-uq")
     # print(uq_model_instance)
+    # uq_model_instance.to_endpoint()
 
     # Test the evaluate_uq_model function
-    end = Endpoint(Model("abalone-uq").endpoints()[0])
+    end = Endpoint("aqsol-uq")
     df = end.auto_inference()
     results = evaluate_uq_model(df, target_col="class_number_of_rings", model_name="Abalone UQ Model")
     pprint(results)

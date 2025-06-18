@@ -94,18 +94,19 @@ class Model(ModelCore):
             prox_model_name = self.model_name + "-prox"
         return proximity_model(self, prox_model_name, track_columns=track_columns)
 
-    def uq_model(self, uq_model_name: str = None) -> "Model":
+    def uq_model(self, uq_model_name: str = None, train_all_data: bool = False) -> "Model":
         """Create a Uncertainty Quantification Model for this Model
 
         Args:
             uq_model_name (str, optional): Name of the UQ Model (if not specified, a name will be generated)
+            train_all_data (bool, optional): Whether to train the UQ Model on all data (default: False)
 
         Returns:
             Model: The UQ Model
         """
         if uq_model_name is None:
             uq_model_name = self.model_name + "-uq"
-        return uq_model(self, uq_model_name)
+        return uq_model(self, uq_model_name, train_all_data=train_all_data)
 
 
 if __name__ == "__main__":
