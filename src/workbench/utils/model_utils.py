@@ -10,7 +10,7 @@ import json
 import tempfile
 import tarfile
 import awswrangler as wr
-from typing import Optional
+from typing import Optional, Dict, Any
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -193,70 +193,97 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
     return category_mappings
 
 
-def evaluate_uq_model(df, target_col="solubility", model_name="Model"):
+def evaluate_uq_model(
+        df: pd.DataFrame,
+        target_col: str = "solubility",
+        model_name: str = "Model"
+) -> Dict[str, Any]:
     """
-    Evaluate uncertainty quantification model performance
+    Evaluate uncertainty quantification model performance.
 
     Args:
         df: DataFrame with predictions and uncertainty columns
-        target_col: name of true target column
-        model_name: name for display
+        target_col: Name of true target column
+        model_name: Name for display
 
     Returns:
-        dict: metrics results
+        Dictionary of computed metrics
     """
-
-    # Calculate absolute residuals
     abs_residuals = np.abs(df[target_col] - df["prediction"])
+    squared_residuals = (df[target_col] - df["prediction"]) ** 2
+    rmse = np.sqrt(squared_residuals.mean())
 
-    # Correlation between uncertainty and actual errors
+    # Correlation between predicted uncertainty and actual errors
     uncertainty_error_corr = np.corrcoef(df["prediction_std"], abs_residuals)[0, 1]
 
-    # Check if we have quantile columns or need to create them from std
+    # Negative Log-Likelihood assuming Gaussian distribution
+    nll = 0.5 * np.log(2 * np.pi) + np.log(df["prediction_std"]) + \
+          (df[target_col] - df["prediction"]) ** 2 / (2 * df["prediction_std"] ** 2)
+    mean_nll = nll.mean()
+
+    # Handle both quantile-based and std-based models
     if "q_025" in df.columns and "q_975" in df.columns:
-        # Quantile-based models (NGBoost, MAPIE, Quantile Regression, Bootstrap)
         coverage_95 = ((df[target_col] >= df["q_025"]) & (df[target_col] <= df["q_975"])).mean()
         coverage_50 = ((df[target_col] >= df["q_25"]) & (df[target_col] <= df["q_75"])).mean()
         avg_width_95 = (df["q_975"] - df["q_025"]).mean()
         avg_width_50 = (df["q_75"] - df["q_25"]).mean()
+        lower_95, upper_95 = df["q_025"], df["q_975"]
+        lower_50, upper_50 = df["q_25"], df["q_75"]
     else:
-        # Std-based models (Bayesian, Gaussian) - assume normal distribution
-        q_025 = df["prediction"] - 1.96 * df["prediction_std"]  # 95% interval
+        # Convert std to prediction intervals assuming normal distribution
+        q_025 = df["prediction"] - 1.96 * df["prediction_std"]
         q_975 = df["prediction"] + 1.96 * df["prediction_std"]
-        q_25 = df["prediction"] - 0.674 * df["prediction_std"]  # 50% interval
+        q_25 = df["prediction"] - 0.674 * df["prediction_std"]
         q_75 = df["prediction"] + 0.674 * df["prediction_std"]
-
         coverage_95 = ((df[target_col] >= q_025) & (df[target_col] <= q_975)).mean()
         coverage_50 = ((df[target_col] >= q_25) & (df[target_col] <= q_75)).mean()
         avg_width_95 = (q_975 - q_025).mean()
         avg_width_50 = (q_75 - q_25).mean()
+        lower_95, upper_95 = q_025, q_975
+        lower_50, upper_50 = q_25, q_75
 
-    # Compile results
+    # Interval Score - proper scoring rule combining coverage and sharpness
+    alpha_95, alpha_50 = 0.05, 0.50
+    is_95 = (upper_95 - lower_95) + \
+            (2 / alpha_95) * (lower_95 - df[target_col]) * (df[target_col] < lower_95) + \
+            (2 / alpha_95) * (df[target_col] - upper_95) * (df[target_col] > upper_95)
+    mean_is_95 = is_95.mean()
+
+    is_50 = (upper_50 - lower_50) + \
+            (2 / alpha_50) * (lower_50 - df[target_col]) * (df[target_col] < lower_50) + \
+            (2 / alpha_50) * (df[target_col] - upper_50) * (df[target_col] > upper_50)
+    mean_is_50 = is_50.mean()
     results = {
         "model": model_name,
         "coverage_95": coverage_95,
         "coverage_50": coverage_50,
-        "uncertainty_correlation": uncertainty_error_corr,
         "avg_width_95": avg_width_95,
         "avg_width_50": avg_width_50,
+        "uncertainty_correlation": uncertainty_error_corr,
+        "negative_log_likelihood": mean_nll,
+        "interval_score_95": mean_is_95,
+        "interval_score_50": mean_is_50,
+        "rmse": rmse,
         "n_samples": len(df),
     }
-
-    # Print formatted results
     print(f"\n=== {model_name} UQ Evaluation ===")
-    print(f"Coverage @ 95%: {coverage_95:.3f} (target: 0.950)")
-    print(f"Coverage @ 50%: {coverage_50:.3f} (target: 0.500)")
+    print(f"RMSE: {rmse:.3f}")
+    print(f"Coverage @ 95%: {coverage_95:.3f} (target: 0.95)")
+    print(f"Coverage @ 50%: {coverage_50:.3f} (target: 0.50)")
+    print(f"Average 95% Width: {avg_width_95:.3f}")
+    print(f"Average 50% Width: {avg_width_50:.3f}")
     print(f"Uncertainty-Error Correlation: {uncertainty_error_corr:.3f}")
-    print(f"Average 95% Interval Width: {avg_width_95:.3f}")
-    print(f"Average 50% Interval Width: {avg_width_50:.3f}")
+    print(f"Negative Log-Likelihood: {mean_nll:.3f}")
+    print(f"Interval Score 95%: {mean_is_95:.3f}")
+    print(f"Interval Score 50%: {mean_is_50:.3f}")
     print(f"Samples: {len(df)}")
-
     return results
 
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
-    from workbench.api import Model
+    from pprint import pprint
+    from workbench.api import Model, Endpoint
 
     # Get the instance information
     print(model_instance_info())
@@ -272,10 +299,17 @@ if __name__ == "__main__":
     print(get_custom_script_path("chem_info", "molecular_descriptors.py"))
 
     # Test the proximity model
-    m = Model("abalone-regression")
-    prox_model = proximity_model(m, "abalone-prox")
-    print(prox_model)
+    # m = Model("abalone-regression")
+    # prox_model = proximity_model(m, "abalone-prox")
+    # print(prox_model)#
 
     # Test the UQ model
-    uq_model_instance = uq_model(m, "abalone-uq")
-    print(uq_model_instance)
+    # uq_model_instance = uq_model(m, "abalone-uq")
+    # print(uq_model_instance)
+
+    # Test the evaluate_uq_model function
+    end = Endpoint(Model("abalone-uq").endpoints()[0])
+    df = end.auto_inference()
+    results = evaluate_uq_model(df, target_col="class_number_of_rings", model_name="Abalone UQ Model")
+    pprint(results)
+
