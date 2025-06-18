@@ -41,7 +41,7 @@ if __name__ == "__main__":
         feature_set = FeatureSet("test_quantile")
         feature_set.to_model(
             name="test-quantile",
-            model_type=ModelType.QUANTILE_REGRESSOR,
+            model_type=ModelType.UQ_REGRESSOR,
             target_column="y",
             description="Test Quantile Regression",
             tags=["test", "quantiles"],
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         feature_set = FeatureSet("abalone_features")
         feature_set.to_model(
             name="abalone-quantile",
-            model_type=ModelType.QUANTILE_REGRESSOR,
+            model_type=ModelType.UQ_REGRESSOR,
             target_column="class_number_of_rings",
             description="Abalone Quantile Regression",
             tags=["abalone", "quantiles"],
@@ -104,7 +104,7 @@ if __name__ == "__main__":
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
             name="aqsol-quantiles",
-            model_type=ModelType.QUANTILE_REGRESSOR,
+            model_type=ModelType.UQ_REGRESSOR,
             target_column="solubility",
             feature_list=features,
             description="AQSol Quantile Regression",

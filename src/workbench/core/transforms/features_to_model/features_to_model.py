@@ -178,7 +178,7 @@ class FeaturesToModel(Transform):
             script_path = generate_model_script(template_params)
 
         # Metric Definitions for Regression
-        if self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
+        if self.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
             metric_definitions = [
                 {"Name": "RMSE", "Regex": "RMSE: ([0-9.]+)"},
                 {"Name": "MAE", "Regex": "MAE: ([0-9.]+)"},
@@ -332,7 +332,7 @@ if __name__ == "__main__":
     # Quantile Regression Model (Abalone)
     input_uuid = "abalone_features"
     output_uuid = "abalone-quantile-reg"
-    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.QUANTILE_REGRESSOR)
+    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.UQ_REGRESSOR)
     to_model.set_output_tags(["abalone", "quantiles"])
     to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
 

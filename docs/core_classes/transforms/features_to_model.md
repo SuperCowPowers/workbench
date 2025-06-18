@@ -28,7 +28,7 @@ to_model.transform(target_column="wine_class", description="Wine Classification"
 # Quantile Regression Model (Abalone)
 input_uuid = "abalone_features"
 output_uuid = "abalone-quantile-reg"
-to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.QUANTILE_REGRESSOR)
+to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.UQ_REGRESSOR)
 to_model.set_output_tags(["abalone", "quantiles"])
 to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
 ```

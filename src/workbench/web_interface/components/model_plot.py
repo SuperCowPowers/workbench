@@ -31,7 +31,7 @@ class ModelPlot(ComponentInterface):
         # Based on the model type, we'll generate a different plot
         if model.model_type == ModelType.CLASSIFIER:
             return ConfusionMatrix().update_properties(model, inference_run=inference_run)[0]
-        elif model.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR]:
+        elif model.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR]:
             df = model.get_inference_predictions(inference_run)
             if df is None:
                 return self.display_text("No Data")

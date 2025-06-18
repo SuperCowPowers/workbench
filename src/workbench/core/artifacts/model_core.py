@@ -32,7 +32,7 @@ class ModelType(Enum):
     TRANSFORMER = "transformer"
     PROXIMITY = "proximity"
     PROJECTION = "projection"
-    QUANTILE_REGRESSOR = "quantile_regressor"
+    UQ_REGRESSOR = "uq_regressor"
     ENSEMBLE_REGRESSOR = "ensemble_regressor"
     UNKNOWN = "unknown"
 
@@ -186,7 +186,7 @@ class ModelCore(Artifact):
         # Model Performance Metrics
         needs_metrics = self.model_type in {
             ModelType.REGRESSOR,
-            ModelType.QUANTILE_REGRESSOR,
+            ModelType.UQ_REGRESSOR,
             ModelType.ENSEMBLE_REGRESSOR,
             ModelType.CLASSIFIER,
         }
@@ -572,7 +572,7 @@ class ModelCore(Artifact):
         if self.model_type == ModelType.CLASSIFIER:
             details["confusion_matrix"] = self.confusion_matrix()
             details["predictions"] = None
-        elif self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
+        elif self.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
             details["confusion_matrix"] = None
             details["predictions"] = self.get_inference_predictions()
         else:
@@ -612,13 +612,13 @@ class ModelCore(Artifact):
 
     def _determine_model_type(self):
         """Internal: Determine the Model Type"""
-        model_type = input("Model Type? (classifier, regressor, quantile_regressor, unsupervised, transformer): ")
+        model_type = input("Model Type? (classifier, regressor, uq_regressor, unsupervised, transformer): ")
         if model_type == "classifier":
             self._set_model_type(ModelType.CLASSIFIER)
         elif model_type == "regressor":
             self._set_model_type(ModelType.REGRESSOR)
-        elif model_type == "quantile_regressor":
-            self._set_model_type(ModelType.QUANTILE_REGRESSOR)
+        elif model_type == "uq_regressor":
+            self._set_model_type(ModelType.UQ_REGRESSOR)
         elif model_type == "ensemble_regressor":
             self._set_model_type(ModelType.ENSEMBLE_REGRESSOR)
         elif model_type == "proxmity":
@@ -960,7 +960,7 @@ class ModelCore(Artifact):
                 self.log.important(f"No training job metrics found for {self.training_job_name}")
                 self.upsert_workbench_meta({"workbench_training_metrics": None, "workbench_training_cm": None})
                 return
-            if self.model_type in [ModelType.REGRESSOR, ModelType.QUANTILE_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
+            if self.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
                 if "timestamp" in df.columns:
                     df = df.drop(columns=["timestamp"])
 
@@ -1057,7 +1057,7 @@ class ModelCore(Artifact):
         has_predictions = self.model_type in [
             ModelType.CLASSIFIER,
             ModelType.REGRESSOR,
-            ModelType.QUANTILE_REGRESSOR,
+            ModelType.UQ_REGRESSOR,
             ModelType.ENSEMBLE_REGRESSOR,
         ]
         if not has_predictions:
