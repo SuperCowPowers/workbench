@@ -155,7 +155,7 @@ def uq_model(model: "Model", uq_model_name: str, train_all_data: bool = False) -
         description=f"UQ Model for {model.uuid}",
         tags=["uq", model.uuid],
         train_all_data=train_all_data,
-        custom_script=script_path
+        custom_script=script_path,
     )
     return uq_model
 
