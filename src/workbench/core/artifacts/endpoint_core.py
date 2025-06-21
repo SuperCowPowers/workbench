@@ -277,10 +277,8 @@ class EndpointCore(Artifact):
             True if monitoring is enabled, False otherwise.
         """
         try:
-            response = self.sm_client.list_monitoring_schedules(
-                EndpointName=self.uuid
-            )
-            return bool(response.get('MonitoringScheduleSummaries', []))
+            response = self.sm_client.list_monitoring_schedules(EndpointName=self.uuid)
+            return bool(response.get("MonitoringScheduleSummaries", []))
         except ClientError:
             return False
 

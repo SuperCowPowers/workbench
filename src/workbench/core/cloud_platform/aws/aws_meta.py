@@ -321,7 +321,7 @@ class AWSMeta:
                     "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
                     "Samp(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
                     "Tags": aws_tags.get("workbench_tags", "-"),
-                    "Monitored": endpoint_monitored
+                    "Monitored": endpoint_monitored,
                 }
                 data_summary.append(summary)
 

@@ -157,10 +157,8 @@ def is_monitored(endpoint_name: str, sagemaker_client: boto3.Session.client) -> 
         True if monitoring is enabled, False otherwise.
     """
     try:
-        response = sagemaker_client.list_monitoring_schedules(
-            EndpointName=endpoint_name
-        )
-        return bool(response.get('MonitoringScheduleSummaries', []))
+        response = sagemaker_client.list_monitoring_schedules(EndpointName=endpoint_name)
+        return bool(response.get("MonitoringScheduleSummaries", []))
     except ClientError:
         return False
 
