@@ -270,6 +270,20 @@ class EndpointCore(Artifact):
         # Return the details
         return details
 
+    def is_monitored(self) -> bool:
+        """Is monitoring enabled for this Endpoint?
+
+        Returns:
+            True if monitoring is enabled, False otherwise.
+        """
+        try:
+            response = self.sm_client.list_monitoring_schedules(
+                EndpointName=self.uuid
+            )
+            return bool(response.get('MonitoringScheduleSummaries', []))
+        except ClientError:
+            return False
+
     def onboard(self, interactive: bool = False) -> bool:
         """This is a BLOCKING method that will onboard the Endpoint (make it ready)
         Args:

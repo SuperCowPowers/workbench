@@ -267,6 +267,8 @@ class AWSMeta:
         Returns:
             pd.DataFrame: A summary of the Endpoints in AWS.
         """
+        from workbench.utils.endpoint_utils import is_monitored  # noqa: E402
+
         # Initialize the SageMaker client and list all endpoints
         sagemaker_client = self.boto3_session.client("sagemaker")
         paginator = sagemaker_client.get_paginator("list_endpoints")
@@ -302,6 +304,9 @@ class AWSMeta:
                     production_variant = {}
                     instance_type = "Unknown"
 
+                # Check if the endpoint has monitoring enabled
+                endpoint_monitored = is_monitored(endpoint_name, sagemaker_client)
+
                 # Compile endpoint summary
                 summary = {
                     "Name": endpoint_name,
@@ -316,6 +321,7 @@ class AWSMeta:
                     "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
                     "Samp(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
                     "Tags": aws_tags.get("workbench_tags", "-"),
+                    "Monitored": endpoint_monitored
                 }
                 data_summary.append(summary)
 

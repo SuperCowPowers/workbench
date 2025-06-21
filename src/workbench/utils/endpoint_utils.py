@@ -1,6 +1,7 @@
 """Endpoint Utilities for Workbench endpoints"""
 
 import boto3
+from botocore.exceptions import ClientError
 import logging
 from typing import Union, Optional
 import pandas as pd
@@ -145,6 +146,25 @@ def backtrack_to_fs(end: Endpoint) -> Union[FeatureSet, None]:
     return fs
 
 
+def is_monitored(endpoint_name: str, sagemaker_client: boto3.Session.client) -> bool:
+    """Is monitoring enabled for this Endpoint?
+
+    Args:
+        endpoint_name: The name of the SageMaker Endpoint.
+        sagemaker_client: Boto3 SageMaker client instance.
+
+    Returns:
+        True if monitoring is enabled, False otherwise.
+    """
+    try:
+        response = sagemaker_client.list_monitoring_schedules(
+            EndpointName=endpoint_name
+        )
+        return bool(response.get('MonitoringScheduleSummaries', []))
+    except ClientError:
+        return False
+
+
 if __name__ == "__main__":
     """Exercise the Endpoint Utilities"""
 
@@ -172,9 +192,11 @@ if __name__ == "__main__":
     print(my_fs)
 
     # Also test for realtime endpoints
-    """
     rt_endpoint = Endpoint("abalone-regression-end-rt")
     if rt_endpoint.exists():
         model_data_url = internal_model_data_url(rt_endpoint.endpoint_config_name(), rt_endpoint.boto3_session)
         print(model_data_url)
-    """
+
+    # Check if the endpoint is monitored
+    is_monitored_status = is_monitored(my_endpoint.uuid, my_endpoint.sm_client)
+    print(f"Is the endpoint '{my_endpoint.uuid}' monitored? {is_monitored_status}")
