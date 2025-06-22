@@ -133,7 +133,7 @@ def prediction_intervals(df, figure, x_col):
             x=sorted_df[x_col],
             y=sorted_df["q_025"],
             mode="lines",
-            line=dict(width=1, color="rgba(99, 110, 250, 0.5)"),
+            line=dict(width=1, color="rgba(99, 110, 250, 0.25)"),
             name="2.5 Percentile",
             hoverinfo="none",
         )
@@ -143,7 +143,7 @@ def prediction_intervals(df, figure, x_col):
             x=sorted_df[x_col],
             y=sorted_df["q_975"],
             mode="lines",
-            line=dict(width=1, color="rgba(99, 110, 250, 0.5)"),
+            line=dict(width=1, color="rgba(99, 110, 250, 0.25)"),
             name="97.5 Percentile",
             hoverinfo="none",
             fill="tonexty",
@@ -157,7 +157,7 @@ def prediction_intervals(df, figure, x_col):
             x=sorted_df[x_col],
             y=sorted_df["q_25"],
             mode="lines",
-            line=dict(width=1, color="rgba(99, 110, 250, 0.5)"),
+            line=dict(width=1, color="rgba(99, 250, 110, 0.25)"),
             name="25 Percentile",
             hoverinfo="none",
         )
@@ -167,11 +167,11 @@ def prediction_intervals(df, figure, x_col):
             x=sorted_df[x_col],
             y=sorted_df["q_75"],
             mode="lines",
-            line=dict(width=1, color="rgba(99, 110, 250, 0.5)"),
+            line=dict(width=1, color="rgba(99, 250, 100, 0.25)"),
             name="75 Percentile",
             hoverinfo="none",
             fill="tonexty",
-            fillcolor="rgba(99, 110, 250, 0.2)",
+            fillcolor="rgba(99, 250, 110, 0.2)",
         )
     )
 

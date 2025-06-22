@@ -240,7 +240,7 @@ class ScatterPlot(PluginInterface):
                 go.Scattergl(
                     x=df[x_col],
                     y=df[y_col],
-                    mode="markers+text" if show_labels else "markers",
+                    mode="markers",
                     text=df[label_col].astype(str) if show_labels else None,
                     textposition="top center",
                     hoverinfo=hoverinfo,
@@ -271,7 +271,7 @@ class ScatterPlot(PluginInterface):
                 trace = go.Scattergl(
                     x=sub_df[x_col],
                     y=sub_df[y_col],
-                    mode="markers+text" if show_labels else "markers",  # Add text mode if labels enabled
+                    mode="markers",
                     text=sub_df[label_col] if show_labels else None,  # Add text if labels enabled
                     textposition="top center",  # Position labels above points
                     name=cat,
@@ -416,5 +416,13 @@ if __name__ == "__main__":
     }
     df = pd.DataFrame(data)
 
+    # Get a UQ regressor model
+    from workbench.api import Endpoint, DFStore
+    # end = Endpoint("aqsol-uq")
+    # df = end.auto_inference()
+    # DFStore().upsert("/workbench/models/aqsol-uq/auto_inference", df)
+    df = DFStore().get("/workbench/models/aqsol-uq/auto_inference")
+
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ScatterPlot, input_data=df, theme="dark", suppress_hover_display=True).run()
+    PluginUnitTest(ScatterPlot, input_data=df, theme="dark", x="solubility", y="prediction",
+                   color="residuals_abs", suppress_hover_display=True).run()
