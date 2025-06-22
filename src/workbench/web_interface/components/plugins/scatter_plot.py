@@ -2,6 +2,7 @@ import base64
 import pandas as pd
 from dash import dcc, html, callback, Input, Output, no_update
 import plotly.graph_objects as go
+import plotly.express as px
 from dash.exceptions import PreventUpdate
 
 # Workbench Imports
@@ -260,13 +261,8 @@ class ScatterPlot(PluginInterface):
         else:
             # For categorical data, create one trace per category so that a legend appears.
             categories = sorted(df[color_col].astype(str).unique())
-            # Hack for low, medium, high
-            if categories == ["high", "low", "medium"]:
-                categories = ["low", "high", "medium"]
-            # Use the provided colorscale as a discrete palette.
-            # Hardcode a discrete colorscale using Plotly Express's qualitative palette.
-            import plotly.express as px
 
+            # Discrete colorscale using Plotly Express's qualitative palette.
             discrete_colors = px.colors.qualitative.Plotly
             data = []
             for i, cat in enumerate(categories):
