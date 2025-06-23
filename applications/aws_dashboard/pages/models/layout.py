@@ -50,10 +50,7 @@ def models_layout(
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px", "height": "400px"},
                             ),
-                            dbc.Row(
-                                shap_plot,
-                                className="workbench-container",
-                                style={"margin": "20px 0px 10px 20px"}),
+                            dbc.Row(shap_plot, className="workbench-container", style={"margin": "20px 0px 10px 20px"}),
                         ],
                         width=7,
                         style={"padding": "0px"},
