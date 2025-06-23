@@ -55,7 +55,7 @@ def data_sources_layout(
                     # Column 1: Data Source Details
                     dbc.Col(
                         data_source_details,
-                        width=5,
+                        width=4,
                         className="text-break workbench-container",
                         style={"margin": "20px 0px 0px 0px", "padding": "20px"},
                     ),
@@ -64,11 +64,12 @@ def data_sources_layout(
                     dbc.Col(
                         [
                             dbc.Row(violin_plot, className="workbench-container",
-                                    style={"margin": "20px 0px 10px 0px"}),
+                                    style={"margin": "20px 0px 10px 20px"}),
                             dbc.Row(correlation_matrix, className="workbench-container",
-                                    style={"margin": "20px 0px 10px 0px"}),
+                                    style={"margin": "20px 0px 10px 20px"}),
                         ],
-                        width=7,
+                        width=8,
+                        style={"padding": "0px"},
                     ),
                 ]
             ),

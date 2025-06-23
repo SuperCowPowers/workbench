@@ -36,34 +36,32 @@ def feature_sets_layout(
             dbc.Row(feature_sets_table),
             # Sample Rows for the selected Feature Set
             dbc.Row(
-                html.H3("Sampled Rows", id="feature_sample_rows_header"),
-                style={"padding": "30px 0px 10px 0px"},
+                html.H3("Sampled Rows", id="feature_sample_rows_header", style={"margin": "30px 0px 10px 0px"}),
             ),
             dbc.Row(
                 feature_set_sample_rows,
-                style={"padding": "0px 0px 30px 0px"},
             ),
             # Column1: Data Source Details, Column2: Violin Plots, Correlation Matrix
             dbc.Row(
                 [
                     # Column 1: Feature Set Details
                     dbc.Col(
-                        [
-                            dbc.Row(
-                                feature_set_details,
-                                style={"padding": "0px 0px 30px 0px"},
-                            ),
-                        ],
-                        width=5,
-                        className="text-break",
+                        feature_set_details,
+                        width=4,
+                        className="text-break workbench-container",
+                        style={"margin": "20px 0px 0px 0px", "padding": "20px"},
                     ),
-                    # Column 2: Violin Plots (Correlation Matrix + Outliers)
+
+                    # Column 2: Violin Plots and Correlation Matrix
                     dbc.Col(
                         [
-                            dbc.Row(violin_plot, style={"padding": "0px 0px 30px 0px"}),
-                            dbc.Row(correlation_matrix, style={"padding": "0px 0px 30px 0px"}),
+                            dbc.Row(violin_plot, className="workbench-container",
+                                    style={"margin": "20px 0px 10px 20px"}),
+                            dbc.Row(correlation_matrix, className="workbench-container",
+                                    style={"margin": "20px 0px 10px 20px"}),
                         ],
-                        width=7,
+                        width=8,
+                        style={"padding": "0px"},
                     ),
                 ]
             ),
