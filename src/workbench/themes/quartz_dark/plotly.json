@@ -527,8 +527,8 @@
         "mapbox": {
             "style": "dark"
         },
-        "paper_bgcolor": "#212529",
-        "plot_bgcolor": "#212529",
+        "paper_bgcolor": "rgba(0, 0, 0, 0.0)",
+        "plot_bgcolor": "rgba(0, 0, 0, 0.0)",
         "polar": {
             "angularaxis": {
                 "gridcolor": "#506784",
