@@ -50,10 +50,6 @@ def feature_sets_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                html.H3("Details", id="feature_details_header"),
-                                style={"padding": "0px 0px 10px 0px"},
-                            ),
-                            dbc.Row(
                                 feature_set_details,
                                 style={"padding": "0px 0px 30px 0px"},
                             ),

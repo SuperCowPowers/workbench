@@ -54,7 +54,6 @@ class GraphPlot(PluginInterface):
         # - A Graph Node/Edge Component
         # - Dropdown for Node Labels and Colors
         return html.Div(
-            className="workbench-container",
             children=[
                 # Main Scatter Plot Graph
                 dcc.Graph(

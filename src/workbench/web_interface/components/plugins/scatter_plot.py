@@ -63,7 +63,6 @@ class ScatterPlot(PluginInterface):
         # - Dropdowns for X, Y, Color, and Label
         # - Checkbox for Regression Line
         return html.Div(
-            className="workbench-container",
             children=[
                 # Main Scatter Plot Graph
                 dcc.Graph(

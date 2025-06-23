@@ -38,7 +38,6 @@ class ConfusionMatrix(PluginInterface):
         self.component_id = component_id
         self.container = dcc.Graph(
             id=component_id,
-            className="workbench-container",
             figure=self.display_text("Waiting for Data..."),
             config={"scrollZoom": False, "doubleClick": "reset"},
         )

@@ -40,7 +40,7 @@ def models_layout(
                         model_details,
                         width=5,
                         className="text-break workbench-container",
-                        style={"margin": "20px 0px 0px 0px", "padding": "20px 20px 20px 20px"},
+                        style={"margin": "20px 0px 0px 0px", "padding": "20px"},
                     ),
                     # Column 2: Model Plot and Shap Summary
                     dbc.Col(
@@ -48,14 +48,17 @@ def models_layout(
                             dbc.Row(
                                 model_plot,
                                 className="workbench-container",
-                                style={"margin": "20px 0px 10px 0px", "height": "400px"},
+                                style={"margin": "20px 0px 10px 20px", "height": "400px"},
                             ),
-                            dbc.Row(shap_plot, style={"margin": "20px 0px 10px 0px"}),
+                            dbc.Row(
+                                shap_plot,
+                                className="workbench-container",
+                                style={"margin": "20px 0px 10px 20px"}),
                         ],
                         width=7,
-                        style={"padding": "0px 0px 0px 20px"},
+                        style={"padding": "0px"},
                     ),
-                ]
+                ],
             ),
         ],
         style={"margin": "30px"},

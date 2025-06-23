@@ -40,14 +40,12 @@ def data_sources_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                html.H3("Sampled Rows", id="sample_rows_header"),
-                                style={"padding": "30px 0px 10px 0px"},
+                                html.H3("Sampled Rows", id="sample_rows_header", style={"margin": "30px 0px 10px 0px"}),
                             ),
                             dbc.Row(
                                 data_source_sample_rows,
-                                style={"padding": "0px 0px 30px 0px"},
                             ),
-                        ]
+                        ],
                     ),
                 ]
             ),
@@ -56,27 +54,19 @@ def data_sources_layout(
                 [
                     # Column 1: Data Source Details
                     dbc.Col(
-                        [
-                            dbc.Row(
-                                html.H3("Details", id="data_details_header"),
-                                style={"padding": "0px 0px 10px 0px"},
-                            ),
-                            dbc.Row(
-                                data_source_details,
-                                style={"padding": "0px 0px 30px 0px"},
-                            ),
-                        ],
+                        data_source_details,
                         width=5,
-                        className="text-break",
+                        className="text-break workbench-container",
+                        style={"margin": "20px 0px 0px 0px", "padding": "20px"},
                     ),
-                    # Column 2: Violin Plots (Correlation Matrix + Outliers)
+
+                    # Column 2: Violin Plots and Correlation Matrix
                     dbc.Col(
                         [
-                            dbc.Row(violin_plot),
-                            dbc.Row(
-                                [dbc.Col(correlation_matrix)],
-                                style={"padding": "0px 0px 0px 0px"},
-                            ),
+                            dbc.Row(violin_plot, className="workbench-container",
+                                    style={"margin": "20px 0px 10px 0px"}),
+                            dbc.Row(correlation_matrix, className="workbench-container",
+                                    style={"margin": "20px 0px 10px 0px"}),
                         ],
                         width=7,
                     ),

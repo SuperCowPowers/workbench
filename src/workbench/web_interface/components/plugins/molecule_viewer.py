@@ -85,7 +85,6 @@ class MoleculeViewer(PluginInterface):
                     id=f"{self.component_id}-summary", dangerously_allow_html=True, children="**Summary Loading...**"
                 ),
             ],
-            className="workbench-container",
             style={"padding": "10px"},
         )
 
