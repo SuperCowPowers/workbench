@@ -24,7 +24,7 @@ def get_catalog_summary():
         # Who created this database and when?
         created_by = db.get("CreatedBy", "Unknown")
         created_date = db.get("CreateTime", "Unknown")
-        # print(f"{db['Name']}: created by {created_by} on {created_date}")
+        print(f"{db['Name']}: created by {created_by} on {created_date}")
 
         # Get all tables in this database
         table_paginator = glue.get_paginator("get_tables")

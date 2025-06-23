@@ -1,16 +1,10 @@
 # Workbench DataFrame Storage
-
-!!! tip inline end "Examples"
-    Examples of using the Parameter Storage class are listed at the bottom of this page [Examples](#examples).
     
 ## Why DataFrame Storage?
 Great question, there's a couple of reasons. The first is that the Parameter Store in AWS has a 4KB limit, so that won't support any kind of 'real data'. The second reason is that DataFrames are commonly used as part of the data engineering, science, and ML pipeline construction process. Providing storage of **named** DataFrames in an accessible location that can be inspected and used by your ML Team comes in super handy.
 
 ## Efficient Storage
 All DataFrames are stored in the Parquet format using 'snappy' storage. Parquet is a columnar storage format that efficiently handles large datasets, and using Snappy compression reduces file size while maintaining fast read/write speeds.
-    
-::: workbench.api.df_store
-
 
 ## Examples
 These example show how to use the `DFStore()` class to list, add, and get dataframes from AWS Storage.
@@ -19,7 +13,7 @@ These example show how to use the `DFStore()` class to list, add, and get datafr
     If you'd like to experiment with listing, adding, and getting dataframe with the `DFStore()` class, you can spin up the Workbench REPL, use the class and test out all the methods. Try it out! [Workbench REPL](../repl/index.md)
 
 ```py title="Using DataFrame Store"
-from workbench.api.df_store import DFStore
+from workbench.api mport DFStore
 df_store = DFStore()
 
 # List DataFrames
@@ -63,3 +57,5 @@ df_store.delete("test/test_df")
 
 !!! note "Compressed Storage is Automatic"
     All DataFrames are stored in the Parquet format using 'snappy' storage. Parquet is a columnar storage format that efficiently handles large datasets, and using Snappy compression reduces file size while maintaining fast read/write speeds.
+    
+::: workbench.api.df_store
