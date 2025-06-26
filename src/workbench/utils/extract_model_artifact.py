@@ -205,7 +205,7 @@ if __name__ == "__main__":
     """Exercise the ExtractModelArtifact class"""
 
     # Create the Class and test it out
-    my_endpoint = "abalone-regression"
+    my_endpoint = "aqsol-uq"
     ema = ExtractModelArtifact(my_endpoint)
 
     # Test the lower level methods

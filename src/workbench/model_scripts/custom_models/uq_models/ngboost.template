@@ -3,12 +3,12 @@ from ngboost import NGBRegressor
 from xgboost import XGBRegressor  # Base Estimator
 from sklearn.model_selection import train_test_split
 
-# Template Placeholders
-TEMPLATE_PARAMS = {
-    "features": "{{feature_list}}",
-    "target": "{{target_column}}",
-    "train_all_data": "{{train_all_data}}"
-}
+# Model Performance Scores
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    root_mean_squared_error
+)
 
 from io import StringIO
 import json
@@ -18,33 +18,51 @@ import os
 import pandas as pd
 
 
+# Template Placeholders
+TEMPLATE_PARAMS = {
+    "features": "{{feature_list}}",
+    "target": "{{target_column}}",
+    "train_all_data": "{{train_all_data}}"
+}
+
+
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
-    """Check if the DataFrame is empty and raise an error if so."""
+    """
+    Check if the provided dataframe is empty and raise an exception if it is.
+
+    Args:
+        df (pd.DataFrame): DataFrame to check
+        df_name (str): Name of the DataFrame
+    """
     if df.empty:
         msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
         print(msg)
         raise ValueError(msg)
 
 
-# Function to match DataFrame columns to model features (case-insensitive)
 def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
-    """Match and rename DataFrame columns to match the model's features, case-insensitively."""
-    # Create a set of exact matches from the DataFrame columns
-    exact_match_set = set(df.columns)
+    """
+    Matches and renames DataFrame columns to match model feature names (case-insensitive).
+    Prioritizes exact matches, then case-insensitive matches.
 
-    # Create a case-insensitive map of DataFrame columns
-    column_map = {col.lower(): col for col in df.columns}
+    Raises ValueError if any model features cannot be matched.
+    """
+    df_columns_lower = {col.lower(): col for col in df.columns}
     rename_dict = {}
+    missing = []
 
-    # Build a dictionary for renaming columns based on case-insensitive matching
     for feature in model_features:
-        if feature in exact_match_set:
-            rename_dict[feature] = feature
-        elif feature.lower() in column_map:
-            rename_dict[column_map[feature.lower()]] = feature
+        if feature in df.columns:
+            continue  # Exact match
+        elif feature.lower() in df_columns_lower:
+            rename_dict[df_columns_lower[feature.lower()]] = feature
+        else:
+            missing.append(feature)
 
-    # Rename columns in the DataFrame to match model features
+    if missing:
+        raise ValueError(f"Features not found: {missing}")
+
     return df.rename(columns=rename_dict)
 
 
@@ -95,9 +113,9 @@ if __name__ == "__main__":
         print("Splitting data randomly...")
         df_train, df_val = train_test_split(df, test_size=validation_split, random_state=42)
 
-    # Example of using XGBoost as a base learner
-    xgb_base = XGBRegressor()
-    model = NGBRegressor(Base=xgb_base)
+    # We're using XGBoost for point predictions and NGBoost for uncertainty quantification
+    xgb_model = XGBRegressor()
+    ngb_model = NGBRegressor()
 
     # Prepare features and targets for training
     X_train = df_train[features]
@@ -105,15 +123,30 @@ if __name__ == "__main__":
     y_train = df_train[target]
     y_val = df_val[target]
 
-    # Train the model using the training data
-    model.fit(X_train, y_train)
+    # Train both models using the training data
+    xgb_model.fit(X_train, y_train)
+    ngb_model.fit(X_train, y_train, X_val=X_val, Y_val=y_val)
 
-    # Save the trained model and any necessary assets
-    joblib.dump(model, os.path.join(args.model_dir, "model.joblib"))
+    # Make Predictions on the Validation Set
+    print(f"Making Predictions on Validation Set...")
+    y_validate = df_val[target]
+    X_validate = df_val[features]
+    preds = xgb_model.predict(X_validate)
 
-    # Also save the XGBoost base estimator model
-    xgb_model = model.base_models[0]
+    # Calculate various model performance metrics (regression)
+    rmse = root_mean_squared_error(y_validate, preds)
+    mae = mean_absolute_error(y_validate, preds)
+    r2 = r2_score(y_validate, preds)
+    print(f"RMSE: {rmse:.3f}")
+    print(f"MAE: {mae:.3f}")
+    print(f"R2: {r2:.3f}")
+    print(f"NumRows: {len(df_val)}")
+
+    # Save the trained XGBoost model
     joblib.dump(xgb_model, os.path.join(args.model_dir, "xgboost_model.joblib"))
+
+    # Save the trained NGBoost model
+    joblib.dump(ngb_model, os.path.join(args.model_dir, "ngboost_model.joblib"))
 
     # Save the feature list to validate input during predictions
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
@@ -125,7 +158,7 @@ if __name__ == "__main__":
 #
 def model_fn(model_dir):
     """Load and return the model from the specified directory."""
-    return joblib.load(os.path.join(model_dir, "model.joblib"))
+    return joblib.load(os.path.join(model_dir, "ngboost_model.joblib"))
 
 
 def input_fn(input_data, content_type):

@@ -39,42 +39,30 @@ def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
         print(msg)
         raise ValueError(msg)
 
+
 def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
     """
-    Matches and renames the DataFrame's column names to match the model's feature names (case-insensitive).
-    Prioritizes exact case matches first, then falls back to case-insensitive matching if no exact match exists.
-
-    Args:
-        df (pd.DataFrame): The DataFrame with the original columns.
-        model_features (list): The desired list of feature names (mixed case allowed).
-
-    Returns:
-        pd.DataFrame: The DataFrame with renamed columns to match the model's feature names.
+    Matches and renames DataFrame columns to match model feature names (case-insensitive).
+    Prioritizes exact matches, then case-insensitive matches.
+    
+    Raises ValueError if any model features cannot be matched.
     """
-    # Create a mapping for exact and case-insensitive matching
-    exact_match_set = set(df.columns)
-    column_map = {}
-
-    # Build the case-insensitive map (if we have any duplicate columns, the first one wins)
-    for col in df.columns:
-        lower_col = col.lower()
-        if lower_col not in column_map:
-            column_map[lower_col] = col
-
-    # Create a dictionary for renaming
+    df_columns_lower = {col.lower(): col for col in df.columns}
     rename_dict = {}
+    missing = []
+    
     for feature in model_features:
-        # Check for an exact match first
-        if feature in exact_match_set:
-            rename_dict[feature] = feature
-
-        # If not an exact match, fall back to case-insensitive matching
-        elif feature.lower() in column_map:
-            rename_dict[column_map[feature.lower()]] = feature
-
-    # Rename the columns in the DataFrame to match the model's feature names
+        if feature in df.columns:
+            continue  # Exact match
+        elif feature.lower() in df_columns_lower:
+            rename_dict[df_columns_lower[feature.lower()]] = feature
+        else:
+            missing.append(feature)
+    
+    if missing:
+        raise ValueError(f"Features not found: {missing}")
+    
     return df.rename(columns=rename_dict)
-
 
 if __name__ == "__main__":
     """The main function is for training the XGBoost Quantile Regression models"""

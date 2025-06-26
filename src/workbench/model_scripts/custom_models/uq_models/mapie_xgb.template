@@ -28,24 +28,28 @@ def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
         raise ValueError(msg)
 
 
-# Function to match DataFrame columns to model features (case-insensitive)
 def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
-    """Match and rename DataFrame columns to match the model's features, case-insensitively."""
-    # Create a set of exact matches from the DataFrame columns
-    exact_match_set = set(df.columns)
-
-    # Create a case-insensitive map of DataFrame columns
-    column_map = {col.lower(): col for col in df.columns}
+    """
+    Matches and renames DataFrame columns to match model feature names (case-insensitive).
+    Prioritizes exact matches, then case-insensitive matches.
+    
+    Raises ValueError if any model features cannot be matched.
+    """
+    df_columns_lower = {col.lower(): col for col in df.columns}
     rename_dict = {}
-
-    # Build a dictionary for renaming columns based on case-insensitive matching
+    missing = []
+    
     for feature in model_features:
-        if feature in exact_match_set:
-            rename_dict[feature] = feature
-        elif feature.lower() in column_map:
-            rename_dict[column_map[feature.lower()]] = feature
-
-    # Rename columns in the DataFrame to match model features
+        if feature in df.columns:
+            continue  # Exact match
+        elif feature.lower() in df_columns_lower:
+            rename_dict[df_columns_lower[feature.lower()]] = feature
+        else:
+            missing.append(feature)
+    
+    if missing:
+        raise ValueError(f"Features not found: {missing}")
+    
     return df.rename(columns=rename_dict)
 
 
