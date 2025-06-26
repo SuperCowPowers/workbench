@@ -228,6 +228,14 @@ if __name__ == "__main__":
     print("Feature Importance:")
     print(features)
 
+    # Test the XGBoost model loading from S3
+    model_artifact_uri = model.model_data_url()
+    xgb_model = xgboost_model_from_s3(model_artifact_uri)
+
+    # Test with UQ Model
+    uq_model = Model("aqsol-uq")
+    xgb_model = xgboost_model_from_s3(uq_model.model_data_url())
+
     # Test XGBoost add_leaf_hash
     input_df = FeatureSet(model.get_input()).pull_dataframe()
     leaf_df = add_leaf_hash(model, input_df)
