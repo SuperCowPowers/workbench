@@ -1,5 +1,6 @@
 # Model: NGBoost Regressor with Distribution output
 from ngboost import NGBRegressor
+from xgboost import XGBRegressor  # Base Estimator
 from sklearn.model_selection import train_test_split
 
 # Template Placeholders
@@ -94,16 +95,9 @@ if __name__ == "__main__":
         print("Splitting data randomly...")
         df_train, df_val = train_test_split(df, test_size=validation_split, random_state=42)
 
-    # Create and train the NGBoost Regression model optimized for noisy molecular data
-    model = NGBRegressor(
-        n_estimators=1000,  # More trees for noisy data (default 500)
-        learning_rate=0.01,  # Slower learning to avoid overfitting (default 0.01)
-        minibatch_frac=0.8,  # Use 80% of data per iteration for robustness (default 1.0)
-        col_sample=0.8,  # Use 80% of features per tree (helps with 17 features)
-        tol=1e-5,  # Tighter convergence tolerance (default 1e-4)
-        random_state=42,  # For reproducibility
-        verbose=False
-    )
+    # Example of using XGBoost as a base learner
+    xgb_base = XGBRegressor()
+    model = NGBRegressor(Base=xgb_base)
 
     # Prepare features and targets for training
     X_train = df_train[features]
@@ -116,6 +110,10 @@ if __name__ == "__main__":
 
     # Save the trained model and any necessary assets
     joblib.dump(model, os.path.join(args.model_dir, "model.joblib"))
+
+    # Also save the XGBoost base estimator model
+    xgb_model = model.base_models[0]
+    joblib.dump(xgb_model, os.path.join(args.model_dir, "xgboost_model.joblib"))
 
     # Save the feature list to validate input during predictions
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:

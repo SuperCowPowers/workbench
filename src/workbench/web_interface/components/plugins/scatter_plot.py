@@ -304,7 +304,7 @@ class ScatterPlot(PluginInterface):
             )
 
         # Add prediction interval bands when y_col is "prediction"
-        if y_col == "prediction":
+        if y_col == "prediction" or x_col == "prediction":
             figure = prediction_intervals(df, figure, x_col)
 
         # Set up axes.
