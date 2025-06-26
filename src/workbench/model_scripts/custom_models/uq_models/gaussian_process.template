@@ -39,7 +39,6 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     df_columns_lower = {col.lower(): col for col in df.columns}
     rename_dict = {}
     missing = []
-    
     for feature in model_features:
         if feature in df.columns:
             continue  # Exact match
@@ -50,7 +49,8 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     
     if missing:
         raise ValueError(f"Features not found: {missing}")
-    
+
+    # Rename the DataFrame columns to match the model features
     return df.rename(columns=rename_dict)
 
 

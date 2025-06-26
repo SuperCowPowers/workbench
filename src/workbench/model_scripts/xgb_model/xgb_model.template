@@ -369,22 +369,20 @@ if __name__ == "__main__":
 
 
 def model_fn(model_dir):
-    """Deserialized and return fitted model"""
+    """Deserialize and return fitted XGBoost model"""
 
-    # Load our XGBoost model from the model directory
     model_path = os.path.join(model_dir, "xgb_model.json")
+
     with open(model_path, "r") as f:
         model_json = json.load(f)
-    saved_model_type = json.loads(model_json.get('learner').get('attributes').get('scikit_learn')).get('_estimator_type')
-    if saved_model_type == "classifier":
-        model = xgb.XGBClassifier(enable_categorical=True)
-    elif saved_model_type == "regressor":
-        model = xgb.XGBRegressor(enable_categorical=True)
-    else:
-        msg = f"Model type ({saved_model_type}) not recognized. Expected 'classifier' or 'regressor'"
-        raise ValueError(msg)
 
+    sklearn_data = model_json['learner']['attributes']['scikit_learn']
+    model_type = json.loads(sklearn_data)['_estimator_type']
+
+    model_class = xgb.XGBClassifier if model_type == "classifier" else xgb.XGBRegressor
+    model = model_class(enable_categorical=True)
     model.load_model(model_path)
+
     return model
 
 

@@ -44,13 +44,12 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     """
     Matches and renames DataFrame columns to match model feature names (case-insensitive).
     Prioritizes exact matches, then case-insensitive matches.
-    
+
     Raises ValueError if any model features cannot be matched.
     """
     df_columns_lower = {col.lower(): col for col in df.columns}
     rename_dict = {}
     missing = []
-    
     for feature in model_features:
         if feature in df.columns:
             continue  # Exact match
@@ -58,10 +57,11 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
             rename_dict[df_columns_lower[feature.lower()]] = feature
         else:
             missing.append(feature)
-    
+
     if missing:
         raise ValueError(f"Features not found: {missing}")
-    
+
+    # Rename the DataFrame columns to match the model features
     return df.rename(columns=rename_dict)
 
 if __name__ == "__main__":
@@ -85,18 +85,17 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # Read the training data into DataFrames
+    # Load training data from the specified directory
     training_files = [
         os.path.join(args.train, file)
-        for file in os.listdir(args.train)
-        if file.endswith(".csv")
+        for file in os.listdir(args.train) if file.endswith(".csv")
     ]
     print(f"Training Files: {training_files}")
 
     # Combine files and read them all into a single pandas dataframe
     df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
 
-    # Check if the dataframe is empty
+    # Check if the DataFrame is empty
     check_dataframe(df, "training_df")
 
     # Training data split logic
@@ -217,7 +216,7 @@ def input_fn(input_data, content_type):
     """Parse input data and return a DataFrame."""
     if not input_data:
         raise ValueError("Empty input data is not supported!")
-    
+
     # Decode bytes to string if necessary
     if isinstance(input_data, bytes):
         input_data = input_data.decode("utf-8")
