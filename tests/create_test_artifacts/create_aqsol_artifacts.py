@@ -156,7 +156,7 @@ if __name__ == "__main__":
             "sd",
         ]
         feature_list = [f for f in feature_set.columns if f not in exclude]
-        feature_set.to_model(
+        m = feature_set.to_model(
             name="aqsol-mol-class",
             model_type=ModelType.CLASSIFIER,
             target_column="solubility_class",
@@ -164,6 +164,7 @@ if __name__ == "__main__":
             description="AQSol Descriptor Classification Model",
             tags=["aqsol", "classification"],
         )
+        m.set_class_labels(["low", "medium", "high"])
 
     # Create the Molecular Descriptor Regression Endpoint
     if recreate or not Endpoint("aqsol-mol-regression").exists():
