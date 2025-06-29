@@ -154,6 +154,7 @@ if __name__ == "__main__":
             "rotratio",  # rotratio is often string type
             "ocurrences",
             "sd",
+            "has_stereo"
         ]
         feature_list = [f for f in feature_set.columns if f not in exclude]
         m = feature_set.to_model(
