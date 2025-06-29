@@ -42,43 +42,34 @@ def endpoints_layout(
             ),
             # A table that lists out all the Models
             dbc.Row(endpoints_table),
-            # Model Details, and Plugins
+            # Row: Column1: Endpoint Details, Column2: Endpoint Metrics and Plugins
             dbc.Row(
                 [
                     # Column 1: Endpoint Details
                     dbc.Col(
-                        [
-                            dbc.Row(
-                                html.H3("Details", id="endpoint_details_header"),
-                                style={"padding": "30px 0px 10px 0px"},
-                            ),
-                            dbc.Row(
-                                endpoint_details,
-                                style={"padding": "0px 0px 30px 0px"},
-                            ),
-                        ],
+                        endpoint_details,
                         width=4,
-                        className="text-break",
+                        className="text-break workbench-container",
+                        style={"margin": "20px 0px 0px 0px", "padding": "20px"},
                     ),
+
                     # Column 2: Endpoint Metrics and Plugins
                     dbc.Col(
                         [
                             dbc.Row(
-                                html.H3("Endpoint Metrics", id="endpoint_metrics_header"),
-                                style={"padding": "30px 0px 0px 0px"},
-                            ),
-                            dbc.Row(
                                 endpoint_metrics,
-                                style={"padding": "0px 0px 0px 0px"},
+                                className="workbench-container",
+                                style={"margin": "20px 0px 10px 20px"},
                             ),
                             dbc.Row(
                                 html.H3("Plugins", id="plugins_header"),
-                                style={"padding": "30px 0px 10px 0px"},
+                                style={"margin": "20px 0px 10px 20px"},
                             ),
                             # Add the dynamically generated Plugin rows
                             *plugin_rows,
                         ],
                         width=8,
+                        style={"padding": "0px"}
                     ),
                 ]
             ),
