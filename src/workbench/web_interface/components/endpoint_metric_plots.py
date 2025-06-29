@@ -24,7 +24,9 @@ class EndpointMetricPlots(ComponentInterface):
         Returns:
             dcc.Graph: The Endpoint Metrics Component
         """
-        return dcc.Graph(id=component_id, figure=self.display_text("Waiting for Data..."), config={'displayModeBar': False})
+        return dcc.Graph(
+            id=component_id, figure=self.display_text("Waiting for Data..."), config={"displayModeBar": False}
+        )
 
     def update_properties(self, endpoint_details: dict) -> go.Figure:
         """Create a Endpoint Metrics Figure for the numeric columns in the dataframe.

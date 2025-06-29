@@ -52,7 +52,6 @@ def endpoints_layout(
                         className="text-break workbench-container",
                         style={"margin": "20px 0px 0px 0px", "padding": "20px"},
                     ),
-
                     # Column 2: Endpoint Metrics and Plugins
                     dbc.Col(
                         [
@@ -69,7 +68,7 @@ def endpoints_layout(
                             *plugin_rows,
                         ],
                         width=8,
-                        style={"padding": "0px"}
+                        style={"padding": "0px"},
                     ),
                 ]
             ),
