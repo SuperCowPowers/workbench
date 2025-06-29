@@ -248,6 +248,40 @@ def remove_middle_colors(colorscale, min_threshold=0.3, max_threshold=0.7):
     return sorted(new_colorscale, key=lambda x: x[0])
 
 
+def seaborn_to_plotly_colorscale(seaborn_palette: str) -> list:
+    """
+    Convert a seaborn colorscale to a Plotly-compatible colorscale.
+    Args:
+        seaborn_palette (str): The name of the seaborn color palette (e.g., "Blues", "Reds").
+    Returns:
+        list: A Plotly-compatible colorscale as a list of [position, rgba color] pairs.
+    """
+    import seaborn as sns
+    import numpy as np
+    import json
+
+    # Get the seaborn color palette (default discrete colors)
+    colors = sns.color_palette(seaborn_palette)
+
+    # Create evenly spaced positions from 0 to 1
+    positions = np.linspace(0, 1, len(colors))
+
+    plotly_scale = []
+    for pos, color in zip(positions, colors):
+        r, g, b = color  # seaborn returns RGB values between 0-1
+        plotly_scale.append([round(pos, 2), f"rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, 1.0)"])
+
+    # Print JSON-formatted output for easy copy/paste
+    print("Copy/paste ready format:")
+    print("[")
+    for i, sublist in enumerate(plotly_scale):
+        comma = "," if i < len(plotly_scale) - 1 else ""
+        print(f"  {json.dumps(sublist)}{comma}")
+    print("]")
+
+    return plotly_scale
+
+
 if __name__ == "__main__":
     """Exercise the Color Utilities"""
 
