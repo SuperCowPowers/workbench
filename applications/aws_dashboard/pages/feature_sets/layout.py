@@ -41,7 +41,7 @@ def feature_sets_layout(
             dbc.Row(
                 feature_set_sample_rows,
             ),
-            # Column1: Data Source Details, Column2: Violin Plots, Correlation Matrix
+            # Row: Data Source Details, Column2: Violin Plots, Correlation Matrix
             dbc.Row(
                 [
                     # Column 1: Feature Set Details
