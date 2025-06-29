@@ -937,34 +937,22 @@ def stratified_split(df, column_name, test_size=0.2, random_state=42):
         pd.DataFrame, pd.DataFrame: Train and Test DataFrames
 
     """
-    # Temporarily replace NaNs with a placeholder to treat them as a category
     df_temp = df.copy()
-    df_temp.loc[:, column_name] = df_temp[column_name].fillna("NaN")  # Use .loc to avoid SettingWithCopyWarning
+    df_temp[column_name] = df_temp[column_name].fillna("NaN_PLACEHOLDER")
 
-    # Determine minimum number of samples per group in the test set
-    min_test_samples = 1
+    # Ensure at least 1 sample per group in test
+    test_counts = (df_temp[column_name].value_counts() * test_size).clip(lower=1).astype(int)
 
-    # Calculate the number of samples each group should ideally have in the test set
-    group_counts = df_temp[column_name].value_counts()
+    test_indices = df_temp.groupby(column_name).apply(
+        lambda x: x.sample(n=test_counts[x.name], random_state=random_state)
+    ).index.get_level_values(1)
 
-    # This ensures at least one sample per group
-    test_counts = (group_counts * test_size).clip(lower=min_test_samples).astype(int)
+    train_df = df_temp.drop(test_indices)
+    test_df = df_temp.loc[test_indices]
 
-    # Create a mask to identify test samples
-    test_mask = pd.Series(False, index=df_temp.index)
-
-    # Assign samples to test set ensuring each group has at least one sample
-    grouped = df_temp.groupby(column_name)
-    for name, group in grouped:
-        test_indices = group.sample(n=test_counts[name], random_state=random_state).index
-        test_mask.loc[test_indices] = True
-
-    train_df = df_temp[~test_mask]
-    test_df = df_temp[test_mask]
-
-    # Convert 'NaN' placeholders back to actual NaNs, using .loc to ensure direct modification
-    train_df.loc[:, column_name] = train_df[column_name].replace("NaN", np.nan)
-    test_df.loc[:, column_name] = test_df[column_name].replace("NaN", np.nan)
+    # Restore NaNs
+    for df_split in [train_df, test_df]:
+        df_split[column_name] = df_split[column_name].replace("NaN_PLACEHOLDER", np.nan)
 
     return train_df, test_df
 
