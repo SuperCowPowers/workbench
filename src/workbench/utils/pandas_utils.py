@@ -943,9 +943,11 @@ def stratified_split(df, column_name, test_size=0.2, random_state=42):
     # Ensure at least 1 sample per group in test
     test_counts = (df_temp[column_name].value_counts() * test_size).clip(lower=1).astype(int)
 
-    test_indices = df_temp.groupby(column_name).apply(
-        lambda x: x.sample(n=test_counts[x.name], random_state=random_state)
-    ).index.get_level_values(1)
+    test_indices = (
+        df_temp.groupby(column_name)
+        .apply(lambda x: x.sample(n=test_counts[x.name], random_state=random_state))
+        .index.get_level_values(1)
+    )
 
     train_df = df_temp.drop(test_indices)
     test_df = df_temp.loc[test_indices]
