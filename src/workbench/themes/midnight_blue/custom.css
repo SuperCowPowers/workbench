@@ -1,5 +1,5 @@
 h1, h2, h3, h4 {
-    color: rgb(150, 210, 150);
+    color: rgb(210, 210, 210);
 }
 body {
     color: rgb(210, 210, 210);
@@ -44,19 +44,18 @@ a:hover {
 
 /* Adjust cell background */
 .ag-cell {
-    background-color: rgb(45, 51, 84);
+    background-color: rgb(57, 63, 96);
 }
 
 /* Alternate row colors */
 .ag-row:nth-child(even) .ag-cell {
-    background-color: rgb(50, 56, 89);
+    background-color: rgb(62, 68, 101);
 }
 
 /* Selection color for the entire row */
 .ag-row.ag-row-selected .ag-cell {
     background-color: rgb(32, 75, 105);
 }
-
 
 
 
