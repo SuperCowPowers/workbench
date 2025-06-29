@@ -1,0 +1,155 @@
+h1, h2, h3, h4 {
+    color: rgb(150, 210, 150);
+}
+body {
+    color: rgb(210, 210, 210);
+    background: linear-gradient(90deg, rgb(62, 68, 101) 0%, rgb(45, 41, 76) 100%);
+}
+
+/* Custom CSS to style bold text */
+b, strong {
+    color: rgb(130, 130, 250);
+}
+
+/* Custom CSS to style italic text */
+i, em {
+    color: rgb(160, 120, 240);
+}
+
+/* Default link color */
+a {
+    color: rgb(120, 120, 240);
+}
+
+/* Reduce spacing around lists */
+p {
+    margin-bottom: 0 !important;
+}
+ul, ol {
+    margin-top: 0 !important;
+    margin-bottom: 0.25em !important;
+}
+
+/* Hover effect */
+a:hover {
+    color: rgb(160, 160, 255); /* Change hover color */
+}
+
+/* AgGrid custom CSS */
+
+/* Adjust header background color */
+.ag-header {
+    --ag-header-background-color: rgb(42, 85, 115);
+}
+
+/* Adjust cell background */
+.ag-cell {
+    background-color: rgb(45, 51, 84);
+}
+
+/* Alternate row colors */
+.ag-row:nth-child(even) .ag-cell {
+    background-color: rgb(50, 56, 89);
+}
+
+/* Selection color for the entire row */
+.ag-row.ag-row-selected .ag-cell {
+    background-color: rgb(32, 75, 105);
+}
+
+
+
+
+/* There's a one pixel border around the grid that we want to remove */
+.ag-root-wrapper {
+    border: none !important; /* Force removal with !important */
+}
+
+
+/* Box shadow and rounded corners for all AgGrid themes */
+[class*="ag-theme-"] {
+    box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
+    border-radius: 12px; /* Rounded corners */
+    border: 0.5px solid rgba(0, 0, 0, 0.5);
+    margin: 0;
+    padding: 0;
+}
+
+/* Apply styling to Workbench containers */
+.workbench-container {
+    box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
+    border-radius: 12px; /* Rounded corners */
+    background-color: rgba(45, 41, 76, 0.5); /* Dark background */
+}
+
+/* Apply styling to Workbench Offsets */
+.workbench-offset {
+    box-shadow: 1px 1px 3px 2px rgba(0, 0, 0, 0.25);
+    border-radius: 12px; /* Rounded corners */
+}
+
+/* Apply styling to custom tooltips */
+.custom-tooltip {
+    background-color: rgba(40, 40, 40, 1.0);
+    box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
+    border-radius: 25px; /* Rounded corners */
+    overflow: hidden; /* Ensure contents fit inside the rounded corners */
+    border: 2px solid rgba(128, 128, 128, 1); /* 1-pixel grey */
+}
+
+/* Some of the HTML/Markdown will use color hints like 'green-text' or 'blue-text' */
+.green-text {
+    color: rgb(140, 255, 140);
+}
+
+.blue-text {
+    color: rgb(140, 140, 255);
+}
+
+.pink-text {
+    color: rgb(240, 140, 240);
+}
+
+.red-text {
+    color: rgb(255, 140, 140);
+}
+
+.orange-text {
+    color: rgb(255, 195, 140);
+}
+
+.purple-text {
+    color: rgb(160, 120, 240);
+}
+
+.alert {
+    color: rgb(255, 100, 140);
+}
+
+.warning {
+    color: rgb(255, 165, 110);
+}
+
+.good {
+    color: rgb(100, 255, 100);
+}
+
+/* Table styling */
+table {
+    width: 100%;
+}
+
+th {
+    padding: 10px;
+    border: 1px solid #444;
+    background-color: rgb(40, 40, 40);
+    color: rgb(160, 120, 240);
+    font-weight: bold;
+    text-align: center !important;
+}
+
+td {
+    padding: 5px;
+    border: 0.5px solid #444;
+    text-align: center !important;
+}
