@@ -97,7 +97,6 @@ if __name__ == "__main__":
 
     # Create my Data Loader
     input_path = "s3://" + workbench_bucket + "/incoming-data/aqsol_public_data.csv"
-    input_path = "s3://ideaya-workbench-bucket/incoming-data/hlm_phase2_Reg_0_230830_full.csv"
     output_uuid = "test"
     my_loader = S3ToDataSourceLight(input_path, output_uuid)
     my_loader.set_output_tags(["test"])
