@@ -9,7 +9,7 @@ my_features = FeatureSet("aqsol_features")
 # Grab our AQSol Regression Model
 model = Model("aqsol-regression")
 
-# Get the custom script path for the proximity model
+# Get the custom script path for the UQ model
 script_path = get_custom_script_path("uq_models", "ngboost.template")
 
 # Get Feature and Target Columns from the existing given Model
