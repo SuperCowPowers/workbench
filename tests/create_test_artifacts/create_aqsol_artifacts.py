@@ -253,6 +253,7 @@ if __name__ == "__main__":
             target_column="solubility",
             description="Morgan Fingerprints Model",
             tags=["smiles", "fingerprints"],
+            train_all_data=True,
         )
 
     # Fingerprint Endpoint
@@ -271,13 +272,14 @@ if __name__ == "__main__":
 
         # Create the Fingerprint Model
         feature_set = FeatureSet("aqsol_fingerprints")
-        feature_set.to_model(
+        model = feature_set.to_model(
             name="aqsol-fingerprints-plus",
             model_type=ModelType.REGRESSOR,
             target_column="solubility",
             feature_list=features,
             description="Morgan Fingerprints + Features Model",
             tags=["smiles", "fingerprints", "plus"],
+            train_all_data=True,
         )
 
     # Fingerprint + Other Features Endpoint
@@ -296,14 +298,16 @@ if __name__ == "__main__":
 
         # Create the Fingerprint Model
         feature_set = FeatureSet("aqsol_fingerprints")
-        feature_set.to_model(
+        model = feature_set.to_model(
             name="aqsol-fingerprints-plus-class",
             model_type=ModelType.CLASSIFIER,
             target_column="solubility_class",
             feature_list=features,
             description="Morgan Fingerprints + Features Classification Model",
             tags=["smiles", "fingerprints", "plus"],
+            train_all_data=True,
         )
+        model.set_class_labels(["low", "medium", "high"])
 
     # Fingerprint + Other Features CLASSIFICATION Endpoint
     if recreate or not Endpoint("aqsol-fingerprints-plus-class").exists():
