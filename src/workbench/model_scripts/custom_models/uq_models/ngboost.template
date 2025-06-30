@@ -116,8 +116,7 @@ if __name__ == "__main__":
         print("Splitting data randomly...")
         df_train, df_val = train_test_split(df, test_size=validation_split, random_state=42)
 
-    # We're using XGBoost for point predictions and NGBoost for uncertainty quantification
-    xgb_model = XGBRegressor()
+    # We're using NGBoost for uncertainty quantification
     ngb_model = NGBRegressor()
 
     # Prepare features and targets for training
@@ -126,15 +125,14 @@ if __name__ == "__main__":
     y_train = df_train[target]
     y_val = df_val[target]
 
-    # Train both models using the training data
-    xgb_model.fit(X_train, y_train)
+    # Train the NGBoost model
     ngb_model.fit(X_train, y_train, X_val=X_val, Y_val=y_val)
 
     # Make Predictions on the Validation Set
     print(f"Making Predictions on Validation Set...")
     y_validate = df_val[target]
     X_validate = df_val[features]
-    preds = xgb_model.predict(X_validate)
+    preds = ngb_model.predict(X_validate)
 
     # Calculate various model performance metrics (regression)
     rmse = root_mean_squared_error(y_validate, preds)
@@ -144,9 +142,6 @@ if __name__ == "__main__":
     print(f"MAE: {mae:.3f}")
     print(f"R2: {r2:.3f}")
     print(f"NumRows: {len(df_val)}")
-
-    # Save the trained XGBoost model
-    xgb_model.save_model(os.path.join(args.model_dir, "xgb_model.json"))
 
     # Save the trained NGBoost model
     joblib.dump(ngb_model, os.path.join(args.model_dir, "ngb_model.joblib"))
@@ -159,18 +154,9 @@ if __name__ == "__main__":
 #
 # Inference Section
 #
-def model_fn(model_dir) -> dict:
-    """Load and return XGBoost and NGBoost regressors from model directory."""
-
-    # Load XGBoost regressor
-    xgb_path = os.path.join(model_dir, "xgb_model.json")
-    xgb_model = XGBRegressor(enable_categorical=True)
-    xgb_model.load_model(xgb_path)
-
-    return {
-        "xgboost": xgb_model,
-        "ngboost": joblib.load(os.path.join(model_dir, "ngb_model.joblib"))
-    }
+def model_fn(model_dir):
+    """Load and return the NGBoost regressor from model directory."""
+    return joblib.load(os.path.join(model_dir, "ngb_model.joblib"))
 
 
 def input_fn(input_data, content_type):
@@ -201,12 +187,12 @@ def output_fn(output_df, accept_type):
         raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
 
-def predict_fn(df, models) -> pd.DataFrame:
+def predict_fn(df, model) -> pd.DataFrame:
     """Make Predictions with our XGB Quantile Regression Model
 
     Args:
         df (pd.DataFrame): The input DataFrame
-        models (dict): The dictionary of models to use for predictions
+        model (model): The NGBoost model to use for UQ predictions
 
     Returns:
         pd.DataFrame: The DataFrame with the predictions added
@@ -220,17 +206,14 @@ def predict_fn(df, models) -> pd.DataFrame:
     # Match features in a case-insensitive manner
     matched_df = match_features_case_insensitive(df, model_features)
 
-    # Use XGBoost for point predictions
-    df["prediction"] = models["xgboost"].predict(matched_df[model_features])
-
     # NGBoost predict returns distribution objects
-    y_dists = models["ngboost"].pred_dist(matched_df[model_features])
+    y_dists = model.pred_dist(matched_df[model_features])
 
     # Extract parameters from distribution
     dist_params = y_dists.params
 
     # Extract mean and std from distribution parameters
-    df["ngb_prediction"] = dist_params['loc']  # mean
+    df["prediction"] = dist_params['loc']  # mean
     df["prediction_std"] = dist_params['scale']  # standard deviation
 
     # Add 95% prediction intervals using ppf (percent point function)
