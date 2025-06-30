@@ -24,7 +24,7 @@ class Proximity:
     def __init__(
         self,
         df: pd.DataFrame,
-        id_column: Union[int, str],
+        id_column: str,
         features: List[str],
         target: str = None,
         track_columns: List[str] = None,
@@ -35,7 +35,7 @@ class Proximity:
 
         Args:
             df (pd.DataFrame): DataFrame containing data for neighbor computations.
-            id_column (Union[int, str]): Name of the column used as an identifier.
+            id_column (str): Name of the column used as the identifier.
             features (List[str]): List of feature column names to be used for neighbor computations.
             target (str, optional): Name of the target column. Defaults to None.
             track_columns (List[str], optional): Additional columns to track in results. Defaults to None.
