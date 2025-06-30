@@ -1,0 +1,245 @@
+# Model: NGBoost Regressor with Distribution output
+from ngboost import NGBRegressor
+from xgboost import XGBRegressor  # Base Estimator
+from sklearn.model_selection import train_test_split
+
+# Model Performance Scores
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    root_mean_squared_error
+)
+
+from io import StringIO
+import json
+import argparse
+import joblib
+import os
+import pandas as pd
+
+
+# Template Placeholders
+TEMPLATE_PARAMS = {
+    "features": "{{feature_list}}",
+    "target": "{{target_column}}",
+    "train_all_data": "{{train_all_data}}"
+}
+
+
+# Function to check if dataframe is empty
+def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
+    """
+    Check if the provided dataframe is empty and raise an exception if it is.
+
+    Args:
+        df (pd.DataFrame): DataFrame to check
+        df_name (str): Name of the DataFrame
+    """
+    if df.empty:
+        msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
+        print(msg)
+        raise ValueError(msg)
+
+
+def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
+    """
+    Matches and renames DataFrame columns to match model feature names (case-insensitive).
+    Prioritizes exact matches, then case-insensitive matches.
+
+    Raises ValueError if any model features cannot be matched.
+    """
+    df_columns_lower = {col.lower(): col for col in df.columns}
+    rename_dict = {}
+    missing = []
+    for feature in model_features:
+        if feature in df.columns:
+            continue  # Exact match
+        elif feature.lower() in df_columns_lower:
+            rename_dict[df_columns_lower[feature.lower()]] = feature
+        else:
+            missing.append(feature)
+
+    if missing:
+        raise ValueError(f"Features not found: {missing}")
+
+    # Rename the DataFrame columns to match the model features
+    return df.rename(columns=rename_dict)
+
+
+# TRAINING SECTION
+#
+# This section (__main__) is where SageMaker will execute the training job
+# and save the model artifacts to the model directory.
+#
+if __name__ == "__main__":
+    # Template Parameters
+    features = TEMPLATE_PARAMS["features"]
+    target = TEMPLATE_PARAMS["target"]
+    train_all_data = TEMPLATE_PARAMS["train_all_data"]
+    validation_split = 0.2
+
+    # Script arguments for input/output directories
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
+    args = parser.parse_args()
+
+    # Load training data from the specified directory
+    training_files = [
+        os.path.join(args.train, file)
+        for file in os.listdir(args.train) if file.endswith(".csv")
+    ]
+    print(f"Training Files: {training_files}")
+
+    # Combine files and read them all into a single pandas dataframe
+    df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
+
+    # Check if the DataFrame is empty
+    check_dataframe(df, "training_df")
+
+    # Training data split logic
+    if train_all_data:
+        # Use all data for both training and validation
+        print("Training on all data...")
+        df_train = df.copy()
+        df_val = df.copy()
+    elif "training" in df.columns:
+        # Split data based on a 'training' column if it exists
+        print("Splitting data based on 'training' column...")
+        df_train = df[df["training"]].copy()
+        df_val = df[~df["training"]].copy()
+    else:
+        # Perform a random split if no 'training' column is found
+        print("Splitting data randomly...")
+        df_train, df_val = train_test_split(df, test_size=validation_split, random_state=42)
+
+    # We're using XGBoost for point predictions and NGBoost for uncertainty quantification
+    xgb_model = XGBRegressor()
+    ngb_model = NGBRegressor()
+
+    # Prepare features and targets for training
+    X_train = df_train[features]
+    X_val = df_val[features]
+    y_train = df_train[target]
+    y_val = df_val[target]
+
+    # Train both models using the training data
+    xgb_model.fit(X_train, y_train)
+    ngb_model.fit(X_train, y_train, X_val=X_val, Y_val=y_val)
+
+    # Make Predictions on the Validation Set
+    print(f"Making Predictions on Validation Set...")
+    y_validate = df_val[target]
+    X_validate = df_val[features]
+    preds = xgb_model.predict(X_validate)
+
+    # Calculate various model performance metrics (regression)
+    rmse = root_mean_squared_error(y_validate, preds)
+    mae = mean_absolute_error(y_validate, preds)
+    r2 = r2_score(y_validate, preds)
+    print(f"RMSE: {rmse:.3f}")
+    print(f"MAE: {mae:.3f}")
+    print(f"R2: {r2:.3f}")
+    print(f"NumRows: {len(df_val)}")
+
+    # Save the trained XGBoost model
+    xgb_model.save_model(os.path.join(args.model_dir, "xgb_model.json"))
+
+    # Save the trained NGBoost model
+    joblib.dump(ngb_model, os.path.join(args.model_dir, "ngb_model.joblib"))
+
+    # Save the feature list to validate input during predictions
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
+        json.dump(features, fp)
+
+
+#
+# Inference Section
+#
+def model_fn(model_dir) -> dict:
+    """Load and return XGBoost and NGBoost regressors from model directory."""
+
+    # Load XGBoost regressor
+    xgb_path = os.path.join(model_dir, "xgb_model.json")
+    xgb_model = XGBRegressor(enable_categorical=True)
+    xgb_model.load_model(xgb_path)
+
+    return {
+        "xgboost": xgb_model,
+        "ngboost": joblib.load(os.path.join(model_dir, "ngb_model.joblib"))
+    }
+
+
+def input_fn(input_data, content_type):
+    """Parse input data and return a DataFrame."""
+    if not input_data:
+        raise ValueError("Empty input data is not supported!")
+
+    # Decode bytes to string if necessary
+    if isinstance(input_data, bytes):
+        input_data = input_data.decode("utf-8")
+
+    if "text/csv" in content_type:
+        return pd.read_csv(StringIO(input_data))
+    elif "application/json" in content_type:
+        return pd.DataFrame(json.loads(input_data))  # Assumes JSON array of records
+    else:
+        raise ValueError(f"{content_type} not supported!")
+
+
+def output_fn(output_df, accept_type):
+    """Supports both CSV and JSON output formats."""
+    if "text/csv" in accept_type:
+        csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
+        return csv_output, "text/csv"
+    elif "application/json" in accept_type:
+        return output_df.to_json(orient="records"), "application/json"  # JSON array of records (NaNs -> null)
+    else:
+        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
+
+
+def predict_fn(df, models) -> pd.DataFrame:
+    """Make Predictions with our XGB Quantile Regression Model
+
+    Args:
+        df (pd.DataFrame): The input DataFrame
+        models (dict): The dictionary of models to use for predictions
+
+    Returns:
+        pd.DataFrame: The DataFrame with the predictions added
+    """
+
+    # Grab our feature columns (from training)
+    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
+    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
+        model_features = json.load(fp)
+
+    # Match features in a case-insensitive manner
+    matched_df = match_features_case_insensitive(df, model_features)
+
+    # Use XGBoost for point predictions
+    df["prediction"] = models["xgboost"].predict(matched_df[model_features])
+
+    # NGBoost predict returns distribution objects
+    y_dists = models["ngboost"].pred_dist(matched_df[model_features])
+
+    # Extract parameters from distribution
+    dist_params = y_dists.params
+
+    # Extract mean and std from distribution parameters
+    df["prediction_uq"] = dist_params['loc']  # mean
+    df["prediction_std"] = dist_params['scale']  # standard deviation
+
+    # Add 95% prediction intervals using ppf (percent point function)
+    df["q_025"] = y_dists.ppf(0.025)  # 2.5th percentile
+    df["q_975"] = y_dists.ppf(0.975)  # 97.5th percentile
+
+    # Add 50% prediction intervals
+    df["q_25"] = y_dists.ppf(0.25)   # 25th percentile
+    df["q_75"] = y_dists.ppf(0.75)   # 75th percentile
+
+    # Return the modified DataFrame
+    return df

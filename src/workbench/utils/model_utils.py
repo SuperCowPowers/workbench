@@ -139,7 +139,7 @@ def uq_model(model: "Model", uq_model_name: str, train_all_data: bool = False) -
     from workbench.api import Model, ModelType, FeatureSet  # noqa: F401 (avoid circular import)
 
     # Get the custom script path for the UQ model
-    script_path = get_custom_script_path("uq_models", "ngboost.template")
+    script_path = get_custom_script_path("uq_models", "meta_uq.template")
 
     # Get Feature and Target Columns from the existing given Model
     features = model.features()
