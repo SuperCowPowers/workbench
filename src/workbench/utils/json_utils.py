@@ -12,9 +12,13 @@ from workbench.utils.datetime_utils import datetime_to_iso8601, iso8601_to_datet
 log = logging.getLogger("workbench")
 
 
-# Custom JSON Encoder (see matched decoder below)
+# Custom JSON Encoder with optional precision reduction (see matched decoder below)
 class CustomEncoder(json.JSONEncoder):
-    def default(self, obj) -> object:
+    def __init__(self, precision=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.precision = precision
+
+    def default(self, obj):
         try:
             if isinstance(obj, np.integer):
                 return int(obj)
@@ -27,15 +31,29 @@ class CustomEncoder(json.JSONEncoder):
             elif isinstance(obj, (datetime, date)):
                 return {"__datetime__": True, "datetime": datetime_to_iso8601(obj)}
             elif isinstance(obj, pd.DataFrame):
-                data = {"__dataframe__": True, "df": obj.to_dict()}
-                data["index"] = obj.index.tolist()
-                data["index_name"] = obj.index.name
-                return data
-            else:
-                return super(CustomEncoder, self).default(obj)
+                return {
+                    "__dataframe__": True,
+                    "df": obj.to_dict(),
+                    "index": obj.index.tolist(),
+                    "index_name": obj.index.name
+                }
+            return super().default(obj)
         except Exception as e:
             log.error(f"Failed to encode object: {e}")
-            return super(CustomEncoder, self).default(obj)
+            return super().default(obj)
+
+    def encode(self, obj):
+        return super().encode(self._reduce_precision(obj) if self.precision else obj)
+
+    def _reduce_precision(self, obj):
+        if isinstance(obj, float):
+            return round(obj, self.precision)
+        elif isinstance(obj, dict):
+            return {k: self._reduce_precision(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            result = [self._reduce_precision(item) for item in obj]
+            return tuple(result) if isinstance(obj, tuple) else result
+        return obj
 
 
 # Custom JSON Decoder (see matched encoder above)
@@ -83,6 +101,16 @@ if __name__ == "__main__":
     print(decoded["dataframe"])
     print("\nDecoded DataFrame Columns:")
     print(decoded["dataframe"].columns)
+
+    # Test the precision reduction
+    print("\nTesting precision reduction:")
+    precision_test_dict = {
+        "float": 3.141592653589793,
+        "np_float": np.float64(2.718281828459045),
+    }
+    encoded_precision = json.dumps(precision_test_dict, cls=CustomEncoder, precision=3)
+    print("Encoded with precision reduction:")
+    print(encoded_precision)
 
     # Test DataFrame with named index
     print("\nTesting DataFrame with named index:")

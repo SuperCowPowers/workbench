@@ -9,28 +9,7 @@ from botocore.exceptions import ClientError
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_session import AWSSession
-
-
-# Helper class to reduce precision of floating-point numbers in JSON serialization
-class PrecisionReducedEncoder(json.JSONEncoder):
-    def __init__(self, precision=2, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.precision = precision
-
-    def encode(self, obj):
-        return super().encode(self._reduce_precision(obj))
-
-    def _reduce_precision(self, obj):
-        if isinstance(obj, float):
-            return round(obj, self.precision)
-        elif isinstance(obj, dict):
-            return {key: self._reduce_precision(value) for key, value in obj.items()}
-        elif isinstance(obj, list):
-            return [self._reduce_precision(item) for item in obj]
-        elif isinstance(obj, tuple):
-            return tuple(self._reduce_precision(item) for item in obj)
-        else:
-            return obj
+from workbench.utils.json_utils import CustomEncoder
 
 
 class AWSParameterStore:
@@ -158,15 +137,16 @@ class AWSParameterStore:
                 self.log.error(f"Failed to get parameter '{name}': {e}")
             return None
 
-    def upsert(self, name: str, value):
+    def upsert(self, name: str, value, precision: int = 3):
         """Insert or update a parameter in the AWS Parameter Store.
         Args:
             name (str): The name of the parameter.
             value (str | list | dict): The value of the parameter.
+            precision (int): The precision for float values in the JSON encoding.
         """
         try:
             # Convert to JSON and check if compression is needed
-            json_value = json.dumps(value)
+            json_value = json.dumps(value, cls=CustomEncoder, precision=precision)
 
             if len(json_value) <= 4096:
                 # Store normally if under 4KB
@@ -203,13 +183,15 @@ class AWSParameterStore:
             self.log.critical(f"Failed to add/update parameter '{name}': {e}")
             raise
 
-    def _compress_value(self, value) -> str:
+    @staticmethod
+    def _compress_value(value) -> str:
         """Compress a value with precision reduction."""
-        json_value = json.dumps(value, cls=PrecisionReducedEncoder)
+        json_value = json.dumps(value, cls=CustomEncoder, precision=3)
         compressed = zlib.compress(json_value.encode("utf-8"), level=9)
         return "COMPRESSED:" + base64.b64encode(compressed).decode("utf-8")
 
-    def _clip_data(self, value):
+    @staticmethod
+    def _clip_data(value):
         """Clip data to reduce size, clip to first 100 items/elements."""
         if isinstance(value, dict):
             return dict(list(value.items())[:100])
