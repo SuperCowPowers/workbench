@@ -139,6 +139,7 @@ class AWSParameterStore:
 
     def upsert(self, name: str, value, precision: int = 3):
         """Insert or update a parameter in the AWS Parameter Store.
+
         Args:
             name (str): The name of the parameter.
             value (str | list | dict): The value of the parameter.
@@ -147,7 +148,6 @@ class AWSParameterStore:
         try:
             # Convert to JSON and check if compression is needed
             json_value = json.dumps(value, cls=CustomEncoder, precision=precision)
-
             if len(json_value) <= 4096:
                 # Store normally if under 4KB
                 self._store_parameter(name, json_value)
