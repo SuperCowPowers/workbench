@@ -80,15 +80,25 @@ def test_4k_limit():
     return_value = param_store.get("/workbench/test_large_value")
     assert return_value == large_value
 
-    # Now a harder test, a large dictionary with float values
+    # Now a medium dictionary with float values
     large_dict = {''.join(choices('abcdefghijklmnopqrst', k=12)): random() for _ in range(250)}
     param_store.upsert("/workbench/test_large_value", large_dict)
 
     # Retrieve the parameter
     return_value = param_store.get("/workbench/test_large_value")
 
-    # Note: In this case, the value may not be exactly the same due to compression (precision reduction)
-    assert isinstance(return_value, dict)
+    # Note: In this case, the value will not be the same due to compression (precision reduction)
+    assert isinstance(return_value, dict)  # Just check that we got a dict back
+
+    # Now a large dictionary with float values
+    large_dict = {''.join(choices('abcdefghijklmnopqrst', k=12)): random() for _ in range(1000)}
+    param_store.upsert("/workbench/test_large_value", large_dict)
+
+    # Retrieve the parameter
+    return_value = param_store.get("/workbench/test_large_value")
+
+    # Note: In this case, the value will not be the same due to compression (precision reduction)
+    assert isinstance(return_value, dict)  # Just check that we got a dict back
 
 
 def test_compressed_failure():
@@ -96,8 +106,8 @@ def test_compressed_failure():
     param_store = ParameterStore()
 
     # Create some data that will exceed the 4KB limit even after compression
-    # Dictionary with 12 character random string keys and 500 random float values
-    large_incompressible_value = {''.join(choices('abcdefghijklmnopqrst', k=12)): random() for _ in range(500)}
+    # Dictionary with 50 keys that are 500 character random string keys with random float values
+    large_incompressible_value = {''.join(choices('abcdefghijklmnopqrst', k=500)): random() for _ in range(50)}
 
     try:
         # Try adding a parameter that exceeds the 4KB limit
