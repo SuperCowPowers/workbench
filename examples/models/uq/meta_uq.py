@@ -26,7 +26,7 @@ my_model = fs.to_model(
     description=f"Meta UQ Model for AQSol",
     tags=["aqsol", "meta-uq", "regression"],
     custom_script=script_path,
-    custom_args={"id_column": "id", "track_columns": "solubility"}
+    custom_args={"id_column": "id", "track_columns": "solubility"},
 )
 # Print the details of the created model
 pprint(my_model.details())

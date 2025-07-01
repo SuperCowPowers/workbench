@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
-from typing import Union, List, Dict
+from typing import List, Dict
 import logging
 import pickle
 import os

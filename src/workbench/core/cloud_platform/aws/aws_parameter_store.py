@@ -175,7 +175,9 @@ class AWSParameterStore:
                 return
 
             # Need compression - log warning
-            self.log.important(f"Parameter {name} exceeds 4KB ({len(json_value)} bytes): compressing and reducing precision...")
+            self.log.important(
+                f"Parameter {name} exceeds 4KB ({len(json_value)} bytes): compressing and reducing precision..."
+            )
 
             # Try compression with precision reduction
             compressed_value = self._compress_value(value)
@@ -189,7 +191,9 @@ class AWSParameterStore:
             compressed_clipped = self._compress_value(clipped_value)
 
             if len(compressed_clipped) <= 4096:
-                self.log.warning(f"Parameter {name} data clipped to 100 items/elements: ({len(compressed_clipped)} bytes)")
+                self.log.warning(
+                    f"Parameter {name} data clipped to 100 items/elements: ({len(compressed_clipped)} bytes)"
+                )
                 self._store_parameter(name, compressed_clipped, overwrite, compressed=True)
                 return
 

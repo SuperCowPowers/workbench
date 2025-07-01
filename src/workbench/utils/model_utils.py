@@ -274,15 +274,20 @@ def uq_metrics(df: pd.DataFrame, target_col: str, model_name: Optional[str] = "U
 
     # --- Continuous Ranked Probability Score (CRPS) ---
     if "prediction_std" in df.columns:
-        crps = norm.cdf((df[target_col] - df["prediction"]) / df["prediction_std"]) - (df[target_col] - df["prediction"]) / df["prediction_std"]
+        crps = (
+            norm.cdf((df[target_col] - df["prediction"]) / df["prediction_std"])
+            - (df[target_col] - df["prediction"]) / df["prediction_std"]
+        )
         mean_crps = np.mean(crps)
     else:
         mean_crps = np.nan
 
     # --- Calibration Error ---
     # Group predictions by decile and check if the observed frequency matches the expected
-    df['quantile'] = pd.qcut(df['prediction'], q=10, labels=False)  # Assign deciles
-    calibration_error = np.mean(np.abs(df.groupby('quantile')[target_col].mean() - df.groupby('quantile')['prediction'].mean()))
+    df["quantile"] = pd.qcut(df["prediction"], q=10, labels=False)  # Assign deciles
+    calibration_error = np.mean(
+        np.abs(df.groupby("quantile")[target_col].mean() - df.groupby("quantile")["prediction"].mean())
+    )
     results = {
         "model": model_name,
         "coverage_95": coverage_95,
