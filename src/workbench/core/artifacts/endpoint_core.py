@@ -35,6 +35,7 @@ from workbench.utils.endpoint_metrics import EndpointMetrics
 from workbench.utils.fast_inference import fast_inference
 from workbench.utils.cache import Cache
 from workbench.utils.s3_utils import compute_s3_object_hash
+from workbench.utils.model_utils import uq_metrics
 
 
 class EndpointCore(Artifact):
@@ -416,6 +417,14 @@ class EndpointCore(Artifact):
                 self._capture_inference_results(
                     capture_uuid, prediction_df, target_column, model_type, metrics, description, features, id_column
                 )
+
+                # For UQ Models we also capture the uncertainty metrics
+                if model_type in [ModelType.UQ_REGRESSOR]:
+                    metrics = uq_metrics(prediction_df, target_column)
+
+                    # Now put into the Parameter Store Model Namespace
+                    model_name = model.uuid
+                    self.param_store.upsert(f"/workbench/models/{model_name}/inference/{capture_uuid}", metrics)
 
         # Return the prediction DataFrame
         return prediction_df
