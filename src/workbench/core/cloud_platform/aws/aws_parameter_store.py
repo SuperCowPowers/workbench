@@ -11,6 +11,28 @@ from botocore.exceptions import ClientError
 from workbench.core.cloud_platform.aws.aws_session import AWSSession
 
 
+# Helper class to reduce precision of floating-point numbers in JSON serialization
+class PrecisionReducedEncoder(json.JSONEncoder):
+    def __init__(self, precision=2, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.precision = precision
+
+    def encode(self, obj):
+        return super().encode(self._reduce_precision(obj))
+
+    def _reduce_precision(self, obj):
+        if isinstance(obj, float):
+            return round(obj, self.precision)
+        elif isinstance(obj, dict):
+            return {key: self._reduce_precision(value) for key, value in obj.items()}
+        elif isinstance(obj, list):
+            return [self._reduce_precision(item) for item in obj]
+        elif isinstance(obj, tuple):
+            return tuple(self._reduce_precision(item) for item in obj)
+        else:
+            return obj
+
+
 class AWSParameterStore:
     """AWSParameterStore: Manages Workbench parameters in AWS Systems Manager Parameter Store.
 
@@ -125,7 +147,7 @@ class AWSParameterStore:
                 parsed_value = json.loads(value)
                 return parsed_value
             except (json.JSONDecodeError, TypeError):
-                # If parsing fails, return the value as is (assumed to be a simple string)
+                # If parsing fails, return the value as is "hope for the best"
                 return value
 
         except ClientError as e:
@@ -146,18 +168,18 @@ class AWSParameterStore:
         """
         try:
 
-            # Anything that's not a string gets converted to JSON
-            if not isinstance(value, str):
-                value = json.dumps(value)
+            # Convert to JSON
+            json_value = json.dumps(value)
 
             # Check size and compress if necessary
-            if len(value) > 4096:
-                self.log.warning(f"Parameter {name} exceeds 4KB ({len(value)} Bytes)  Compressing...")
-                compressed_value = zlib.compress(value.encode("utf-8"), level=9)
+            if len(json_value) > 4096:
+                self.log.warning(f"Parameter {name} exceeds 4KB ({len(json_value)} Bytes)  Compressing...")
+                json_value = json.dumps(value, cls=PrecisionReducedEncoder)
+                compressed_value = zlib.compress(json_value.encode("utf-8"), level=9)
                 encoded_value = "COMPRESSED:" + base64.b64encode(compressed_value).decode("utf-8")
 
                 # Report on the size of the compressed value
-                compressed_size = len(compressed_value)
+                compressed_size = len(encoded_value)
                 if compressed_size > 4096:
                     doc_link = "https://supercowpowers.github.io/workbench/api_classes/df_store"
                     self.log.error(f"Compressed size {compressed_size} bytes, cannot store > 4KB")
@@ -175,7 +197,7 @@ class AWSParameterStore:
                     raise
 
             # Insert or update the parameter normally if under 4KB
-            self.ssm_client.put_parameter(Name=name, Value=value, Type="String", Overwrite=overwrite)
+            self.ssm_client.put_parameter(Name=name, Value=json_value, Type="String", Overwrite=overwrite)
             self.log.info(f"Parameter '{name}' added/updated successfully.")
 
         except Exception as e:
