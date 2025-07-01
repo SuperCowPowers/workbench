@@ -214,7 +214,12 @@ class ModelDetails(PluginInterface):
                     metrics = metrics.reindex(class_labels)
             markdown += metrics.to_markdown()
 
-        print(markdown)
+        # Get additional inference metrics if they exist
+        model_name = self.current_model.uuid
+        inference_data = self.params.get(f"/workbench/models/{model_name}/inference/{inference_run}", warn=False)
+        if inference_data:
+            markdown += "\n\n"
+            markdown += dict_to_markdown(inference_data, title="Additional Inference Metrics")
         return markdown
 
     def get_inference_runs(self):
