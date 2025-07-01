@@ -157,6 +157,7 @@ def uq_model(model: "Model", uq_model_name: str, train_all_data: bool = False) -
         tags=["uq", model.uuid],
         train_all_data=train_all_data,
         custom_script=script_path,
+        custom_args={"id_column": fs.id_column, "track_columns": [target]}
     )
     return uq_model
 
