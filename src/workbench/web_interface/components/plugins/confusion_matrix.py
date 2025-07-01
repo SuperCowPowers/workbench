@@ -95,9 +95,9 @@ class ConfusionMatrix(PluginInterface):
 
         # Apply theme-based layout updates
         fig.update_layout(
-            margin=dict(l=60, r=0, t=15, b=70, pad=5),  # Custom margins
-            xaxis=dict(title=dict(text="Predicted", standoff=20)),
-            yaxis=dict(title=dict(text="Actual", standoff=20)),
+            margin=dict(l=60, r=0, t=15, b=80, pad=5),  # Custom margins
+            xaxis=dict(title=dict(text="Predicted")),
+            yaxis=dict(title=dict(text="Actual")),
             title_font_size=14,
         )
 
@@ -108,7 +108,7 @@ class ConfusionMatrix(PluginInterface):
             tickangle=30,  # Rotate labels for better readability
             tickfont_size=12,  # Font size for tick labels
             automargin=True,  # Automatically manage margins
-            title_standoff=10,  # Add space between axis title and labels
+            title_standoff=20,  # Add space between axis title and labels
             title_font={"size": 18},
             showgrid=False,  # Hide gridlines
         )
@@ -119,7 +119,7 @@ class ConfusionMatrix(PluginInterface):
             ticktext=df.index,  # Display readable row names
             tickfont_size=12,  # Font size for tick labels
             automargin=True,  # Automatically manage margins
-            title_standoff=10,  # Add space between axis title and labels
+            title_standoff=20,  # Add space between axis title and labels
             title_font={"size": 18},
             showgrid=False,  # Hide gridlines
         )
