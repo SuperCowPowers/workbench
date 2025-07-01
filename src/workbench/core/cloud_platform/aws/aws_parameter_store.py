@@ -158,12 +158,11 @@ class AWSParameterStore:
                 self.log.error(f"Failed to get parameter '{name}': {e}")
             return None
 
-    def upsert(self, name: str, value, overwrite: bool = True):
+    def upsert(self, name: str, value):
         """Insert or update a parameter in the AWS Parameter Store.
         Args:
             name (str): The name of the parameter.
             value (str | list | dict): The value of the parameter.
-            overwrite (bool): Whether to overwrite an existing parameter (default: True)
         """
         try:
             # Convert to JSON and check if compression is needed
@@ -171,7 +170,7 @@ class AWSParameterStore:
 
             if len(json_value) <= 4096:
                 # Store normally if under 4KB
-                self._store_parameter(name, json_value, overwrite)
+                self._store_parameter(name, json_value)
                 return
 
             # Need compression - log warning
@@ -183,7 +182,7 @@ class AWSParameterStore:
             compressed_value = self._compress_value(value)
 
             if len(compressed_value) <= 4096:
-                self._store_parameter(name, compressed_value, overwrite, compressed=True)
+                self._store_parameter(name, compressed_value)
                 return
 
             # Try clipping the data
@@ -194,7 +193,7 @@ class AWSParameterStore:
                 self.log.warning(
                     f"Parameter {name} data clipped to 100 items/elements: ({len(compressed_clipped)} bytes)"
                 )
-                self._store_parameter(name, compressed_clipped, overwrite, compressed=True)
+                self._store_parameter(name, compressed_clipped)
                 return
 
             # Still too large - give up
@@ -218,11 +217,10 @@ class AWSParameterStore:
             return value[:100]
         return value
 
-    def _store_parameter(self, name: str, value: str, overwrite: bool, compressed: bool = False):
+    def _store_parameter(self, name: str, value: str):
         """Store parameter in AWS Parameter Store."""
-        self.ssm_client.put_parameter(Name=name, Value=value, Type="String", Overwrite=overwrite)
-        status = "with compression" if compressed else "successfully"
-        self.log.info(f"Parameter '{name}' added/updated {status}.")
+        self.ssm_client.put_parameter(Name=name, Value=value, Type="String", Overwrite=True)
+        self.log.info(f"Parameter '{name}' added/updated successfully.")
 
     def _handle_oversized_data(self, name: str, size: int):
         """Handle data that's too large even after compression and clipping."""
@@ -270,14 +268,14 @@ if __name__ == "__main__":
     print(param_store.list())
 
     # Add a new parameter
-    param_store.upsert("/workbench/test", "value", overwrite=True)
+    param_store.upsert("/workbench/test", "value")
 
     # Get the parameter
     print(f"Getting parameter 'test': {param_store.get('/workbench/test')}")
 
     # Add a dictionary as a parameter
     sample_dict = {"key": "str_value", "awesome_value": 4.2}
-    param_store.upsert("/workbench/my_data", sample_dict, overwrite=True)
+    param_store.upsert("/workbench/my_data", sample_dict)
 
     # Retrieve the parameter as a dictionary
     retrieved_value = param_store.get("/workbench/my_data")

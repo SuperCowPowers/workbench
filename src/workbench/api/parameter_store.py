@@ -72,15 +72,14 @@ class ParameterStore(AWSParameterStore):
         """
         return super().get(name=name, warn=warn, decrypt=decrypt)
 
-    def upsert(self, name: str, value, overwrite: bool = True):
+    def upsert(self, name: str, value):
         """Insert or update a parameter in the AWS Parameter Store.
 
         Args:
             name (str): The name of the parameter.
             value (str | list | dict): The value of the parameter.
-            overwrite (bool): Whether to overwrite an existing parameter (default: True)
         """
-        super().upsert(name=name, value=value, overwrite=overwrite)
+        super().upsert(name=name, value=value)
 
     def delete(self, name: str):
         """Delete a parameter from the AWS Parameter Store.
@@ -106,14 +105,14 @@ if __name__ == "__main__":
     print(param_store.list())
 
     # Add a new parameter
-    param_store.upsert("/workbench/test", "value", overwrite=True)
+    param_store.upsert("/workbench/test", "value")
 
     # Get the parameter
     print(f"Getting parameter 'test': {param_store.get('/workbench/test')}")
 
     # Add a dictionary as a parameter
     sample_dict = {"key": "str_value", "awesome_value": 4.2}
-    param_store.upsert("/workbench/my_data", sample_dict, overwrite=True)
+    param_store.upsert("/workbench/my_data", sample_dict)
 
     # Retrieve the parameter as a dictionary
     retrieved_value = param_store.get("/workbench/my_data")
