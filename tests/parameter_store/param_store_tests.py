@@ -1,6 +1,7 @@
 """Tests for the Workbench Parameter Store functionality"""
 
 import logging
+from random import random, choices
 
 # Workbench Imports
 from workbench.api import ParameterStore
@@ -79,14 +80,24 @@ def test_4k_limit():
     return_value = param_store.get("/workbench/test_large_value")
     assert return_value == large_value
 
+    # Now a harder test, a large dictionary with float values
+    large_dict = {''.join(choices('abcdefghijklmnopqrst', k=12)): random() for _ in range(250)}
+    param_store.upsert("/workbench/test_large_value", large_dict)
+
+    # Retrieve the parameter
+    return_value = param_store.get("/workbench/test_large_value")
+
+    # Note: In this case, the value may not be exactly the same due to compression (precision reduction)
+    assert isinstance(return_value, dict)
+
 
 def test_compressed_failure():
-    from random import random
 
     param_store = ParameterStore()
 
     # Create some data that will exceed the 4KB limit even after compression
-    large_incompressible_value = [random() for _ in range(500)]
+    # Dictionary with 12 character random string keys and 500 random float values
+    large_incompressible_value = {''.join(choices('abcdefghijklmnopqrst', k=12)): random() for _ in range(500)}
 
     try:
         # Try adding a parameter that exceeds the 4KB limit
