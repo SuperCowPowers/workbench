@@ -35,7 +35,7 @@ class CustomEncoder(json.JSONEncoder):
                     "__dataframe__": True,
                     "df": obj.to_dict(),
                     "index": obj.index.tolist(),
-                    "index_name": obj.index.name
+                    "index_name": obj.index.name,
                 }
             return super().default(obj)
         except Exception as e:
