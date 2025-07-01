@@ -11,6 +11,7 @@ import tempfile
 import tarfile
 import awswrangler as wr
 from typing import Optional, Dict, Any
+from scipy.stats import norm
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -195,69 +196,93 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
     return category_mappings
 
 
-def evaluate_uq_model(df: pd.DataFrame, target_col: str = "solubility", model_name: str = "Model") -> Dict[str, Any]:
+def uq_metrics(df: pd.DataFrame, target_col: str, model_name: Optional[str] = "UQ Model") -> Dict[str, Any]:
     """
-    Evaluate uncertainty quantification model performance.
-
+    Evaluate uncertainty quantification model with standard metrics, including coverage,
+    interval width, correlation between uncertainty and error, CRPS, and calibration error.
     Args:
-        df: DataFrame with predictions and uncertainty columns
-        target_col: Name of true target column
-        model_name: Name for display
-
+        df: DataFrame with predictions and uncertainty estimates.
+            Must contain the target column, a prediction column ("prediction"), and either
+            quantile columns ("q_025", "q_975", "q_25", "q_75") or a standard deviation
+            column ("prediction_std").
+        target_col: Name of the true target column in the DataFrame.
+        model_name: Optional name of the model for reporting purposes.
     Returns:
-        Dictionary of computed metrics
+        Dictionary of computed metrics.
+    Raises:
+        ValueError: If required columns are missing or if the input DataFrame is empty.
     """
-    abs_residuals = np.abs(df[target_col] - df["prediction"])
-    squared_residuals = (df[target_col] - df["prediction"]) ** 2
-    rmse = np.sqrt(squared_residuals.mean())
+    # Input Validation
+    if df.empty:
+        raise ValueError("Input DataFrame is empty.")
+    if target_col not in df.columns:
+        raise ValueError(f"Target column '{target_col}' not found in DataFrame.")
+    if "prediction" not in df.columns:
+        raise ValueError("Prediction column 'prediction' not found in DataFrame.")
 
-    # Correlation between predicted uncertainty and actual errors
-    uncertainty_error_corr = np.corrcoef(df["prediction_std"], abs_residuals)[0, 1]
+    # --- Basic Statistics ---
+    residuals = df[target_col] - df["prediction"]
+    abs_residuals = np.abs(residuals)
+    rmse = np.sqrt(np.mean(residuals**2))
 
-    # Negative Log-Likelihood assuming Gaussian distribution
-    nll = (
-        0.5 * np.log(2 * np.pi)
-        + np.log(df["prediction_std"])
-        + (df[target_col] - df["prediction"]) ** 2 / (2 * df["prediction_std"] ** 2)
-    )
-    mean_nll = nll.mean()
+    # --- Uncertainty-Error Correlation ---
+    if "prediction_std" in df.columns:
+        uncertainty_error_corr = np.corrcoef(df["prediction_std"], abs_residuals)[0, 1]
+    else:
+        uncertainty_error_corr = np.nan  # or skip this metric
 
-    # Handle both quantile-based and std-based models
+    # --- Coverage and Interval Width ---
     if "q_025" in df.columns and "q_975" in df.columns:
-        coverage_95 = ((df[target_col] >= df["q_025"]) & (df[target_col] <= df["q_975"])).mean()
-        coverage_50 = ((df[target_col] >= df["q_25"]) & (df[target_col] <= df["q_75"])).mean()
-        avg_width_95 = (df["q_975"] - df["q_025"]).mean()
-        avg_width_50 = (df["q_75"] - df["q_25"]).mean()
         lower_95, upper_95 = df["q_025"], df["q_975"]
         lower_50, upper_50 = df["q_25"], df["q_75"]
+    elif "prediction_std" in df.columns:
+        # Using standard deviation to define intervals
+        lower_95 = df["prediction"] - 1.96 * df["prediction_std"]
+        upper_95 = df["prediction"] + 1.96 * df["prediction_std"]
+        lower_50 = df["prediction"] - 0.674 * df["prediction_std"]
+        upper_50 = df["prediction"] + 0.674 * df["prediction_std"]
     else:
-        # Convert std to prediction intervals assuming normal distribution
-        q_025 = df["prediction"] - 1.96 * df["prediction_std"]
-        q_975 = df["prediction"] + 1.96 * df["prediction_std"]
-        q_25 = df["prediction"] - 0.674 * df["prediction_std"]
-        q_75 = df["prediction"] + 0.674 * df["prediction_std"]
-        coverage_95 = ((df[target_col] >= q_025) & (df[target_col] <= q_975)).mean()
-        coverage_50 = ((df[target_col] >= q_25) & (df[target_col] <= q_75)).mean()
-        avg_width_95 = (q_975 - q_025).mean()
-        avg_width_50 = (q_75 - q_25).mean()
-        lower_95, upper_95 = q_025, q_975
-        lower_50, upper_50 = q_25, q_75
+        raise ValueError(
+            "Either quantile columns (q_025, q_975, q_25, q_75) or 'prediction_std' column must be present."
+        )
+    coverage_95 = np.mean((df[target_col] >= lower_95) & (df[target_col] <= upper_95))
+    coverage_50 = np.mean((df[target_col] >= lower_50) & (df[target_col] <= upper_50))
+    avg_width_95 = np.mean(upper_95 - lower_95)
+    avg_width_50 = np.mean(upper_50 - lower_50)
 
-    # Interval Score - proper scoring rule combining coverage and sharpness
+    # --- Interval Score ---
     alpha_95, alpha_50 = 0.05, 0.50
     is_95 = (
         (upper_95 - lower_95)
         + (2 / alpha_95) * (lower_95 - df[target_col]) * (df[target_col] < lower_95)
         + (2 / alpha_95) * (df[target_col] - upper_95) * (df[target_col] > upper_95)
     )
-    mean_is_95 = is_95.mean()
-
+    mean_is_95 = np.mean(is_95)
     is_50 = (
         (upper_50 - lower_50)
         + (2 / alpha_50) * (lower_50 - df[target_col]) * (df[target_col] < lower_50)
         + (2 / alpha_50) * (df[target_col] - upper_50) * (df[target_col] > upper_50)
     )
-    mean_is_50 = is_50.mean()
+    mean_is_50 = np.mean(is_50)
+
+    # --- Negative Log-Likelihood (NLL) ---
+    if "prediction_std" in df.columns:
+        nll = 0.5 * np.log(2 * np.pi) + np.log(df["prediction_std"]) + (residuals**2) / (2 * df["prediction_std"] ** 2)
+        mean_nll = np.mean(nll)
+    else:
+        mean_nll = np.nan
+
+    # --- Continuous Ranked Probability Score (CRPS) ---
+    if "prediction_std" in df.columns:
+        crps = norm.cdf((df[target_col] - df["prediction"]) / df["prediction_std"]) - (df[target_col] - df["prediction"]) / df["prediction_std"]
+        mean_crps = np.mean(crps)
+    else:
+        mean_crps = np.nan
+
+    # --- Calibration Error ---
+    # Group predictions by decile and check if the observed frequency matches the expected
+    df['quantile'] = pd.qcut(df['prediction'], q=10, labels=False)  # Assign deciles
+    calibration_error = np.mean(np.abs(df.groupby('quantile')[target_col].mean() - df.groupby('quantile')['prediction'].mean()))
     results = {
         "model": model_name,
         "coverage_95": coverage_95,
@@ -269,6 +294,8 @@ def evaluate_uq_model(df: pd.DataFrame, target_col: str = "solubility", model_na
         "interval_score_95": mean_is_95,
         "interval_score_50": mean_is_50,
         "rmse": rmse,
+        "crps": mean_crps,
+        "calibration_error": calibration_error,
         "n_samples": len(df),
     }
     print(f"\n=== {model_name} UQ Evaluation ===")
@@ -277,10 +304,13 @@ def evaluate_uq_model(df: pd.DataFrame, target_col: str = "solubility", model_na
     print(f"Coverage @ 50%: {coverage_50:.3f} (target: 0.50)")
     print(f"Average 95% Width: {avg_width_95:.3f}")
     print(f"Average 50% Width: {avg_width_50:.3f}")
-    print(f"Uncertainty-Error Correlation: {uncertainty_error_corr:.3f}")
-    print(f"Negative Log-Likelihood: {mean_nll:.3f}")
+    if "prediction_std" in df.columns:
+        print(f"Uncertainty-Error Correlation: {uncertainty_error_corr:.3f}")
+        print(f"Negative Log-Likelihood: {mean_nll:.3f}")
+        print(f"CRPS: {mean_crps:.3f}")
     print(f"Interval Score 95%: {mean_is_95:.3f}")
     print(f"Interval Score 50%: {mean_is_50:.3f}")
+    print(f"Calibration Error: {calibration_error:.3f}")
     print(f"Samples: {len(df)}")
     return results
 
@@ -313,8 +343,8 @@ if __name__ == "__main__":
     # print(uq_model_instance)
     # uq_model_instance.to_endpoint()
 
-    # Test the evaluate_uq_model function
+    # Test the uq_metrics function
     end = Endpoint("aqsol-uq")
     df = end.auto_inference()
-    results = evaluate_uq_model(df, target_col="class_number_of_rings", model_name="Abalone UQ Model")
+    results = uq_metrics(df, target_col="solubility")
     pprint(results)
