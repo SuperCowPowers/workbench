@@ -37,7 +37,7 @@ if __name__ == "__main__":
     # Check if the Endpoint already exists
     if recreate or not Endpoint("aqsol-uq").exists():
         uq_model = Model("aqsol-uq")
-        end = uq_model.to_endpoint(name="aqsol-uq", tags=["aqsol", "uq"])
+        end = uq_model.to_endpoint(tags=["aqsol", "uq"])
 
         # Run auto-inference on the Endpoint
         end.auto_inference(capture=True)
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     # Check if the Endpoint already exists
     if recreate or not Endpoint("aqsol-uq-100").exists():
         uq_model = Model("aqsol-uq-100")
-        end = uq_model.to_endpoint(name="aqsol-uq", tags=["aqsol", "uq"])
+        end = uq_model.to_endpoint(tags=["aqsol", "uq"])
 
         # Run auto-inference on the Endpoint
         end.auto_inference(capture=True)
