@@ -200,14 +200,12 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
 def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     """
     Evaluate uncertainty quantification model with essential metrics.
-
     Args:
         df: DataFrame with predictions and uncertainty estimates.
             Must contain the target column, a prediction column ("prediction"), and either
             quantile columns ("q_025", "q_975", "q_25", "q_75") or a standard deviation
             column ("prediction_std").
         target_col: Name of the true target column in the DataFrame.
-
     Returns:
         Dictionary of computed metrics.
     """
@@ -232,7 +230,6 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         raise ValueError(
             "Either quantile columns (q_025, q_975, q_25, q_75) or 'prediction_std' column must be present."
         )
-
     coverage_95 = np.mean((df[target_col] >= lower_95) & (df[target_col] <= upper_95))
     coverage_50 = np.mean((df[target_col] >= lower_50) & (df[target_col] <= upper_50))
     avg_width_95 = np.mean(upper_95 - lower_95)
@@ -254,6 +251,13 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
             + (2 / alpha_95) * (df[target_col] - upper_95) * (df[target_col] > upper_95)
     )
     mean_is_95 = np.mean(is_95)
+
+    # --- Adaptive Calibration (correlation between errors and uncertainty) ---
+    abs_residuals = np.abs(df[target_col] - df["prediction"])
+    width_95 = upper_95 - lower_95
+    adaptive_calibration = np.corrcoef(abs_residuals, width_95)[0, 1]
+
+    # Collect results
     results = {
         "coverage_95": coverage_95,
         "coverage_50": coverage_50,
@@ -261,8 +265,10 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         "avg_width_50": avg_width_50,
         "crps": mean_crps,
         "interval_score_95": mean_is_95,
+        "adaptive_calibration": adaptive_calibration,
         "n_samples": len(df),
     }
+
     print(f"\n=== UQ Metrics ===")
     print(f"Coverage @ 95%: {coverage_95:.3f} (target: 0.95)")
     print(f"Coverage @ 50%: {coverage_50:.3f} (target: 0.50)")
@@ -270,8 +276,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     print(f"Average 50% Width: {avg_width_50:.3f}")
     print(f"CRPS: {mean_crps:.3f} (lower is better)")
     print(f"Interval Score 95%: {mean_is_95:.3f} (lower is better)")
+    print(f"Adaptive Calibration: {adaptive_calibration:.3f} (higher is better, target: >0.5)")
     print(f"Samples: {len(df)}")
-
     return results
 
 
