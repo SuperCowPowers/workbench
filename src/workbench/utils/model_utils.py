@@ -246,9 +246,9 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     # --- Interval Score @ 95% (penalizes miscoverage) ---
     alpha_95 = 0.05
     is_95 = (
-            (upper_95 - lower_95)
-            + (2 / alpha_95) * (lower_95 - df[target_col]) * (df[target_col] < lower_95)
-            + (2 / alpha_95) * (df[target_col] - upper_95) * (df[target_col] > upper_95)
+        (upper_95 - lower_95)
+        + (2 / alpha_95) * (lower_95 - df[target_col]) * (df[target_col] < lower_95)
+        + (2 / alpha_95) * (df[target_col] - upper_95) * (df[target_col] > upper_95)
     )
     mean_is_95 = np.mean(is_95)
 
@@ -269,7 +269,7 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         "n_samples": len(df),
     }
 
-    print(f"\n=== UQ Metrics ===")
+    print("\n=== UQ Metrics ===")
     print(f"Coverage @ 95%: {coverage_95:.3f} (target: 0.95)")
     print(f"Coverage @ 50%: {coverage_50:.3f} (target: 0.50)")
     print(f"Average 95% Width: {avg_width_95:.3f}")
