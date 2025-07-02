@@ -340,10 +340,13 @@ class MonitorCore:
         """
         return wr.s3.does_object_exist(self.preprocessing_script_file)
 
-    def create_baseline(self, recreate: bool = False):
+    def create_baseline(self, recreate: bool = False, baseline_csv: str = None):
         """Code to create a baseline for monitoring
+
         Args:
             recreate (bool): If True, recreate the baseline even if it already exists
+            baseline_csv (str): Optional path to a custom baseline CSV file. If provided,
+                                this will be used instead of pulling from the FeatureSet.
         Notes:
             This will create/write three files to the baseline_dir:
             - baseline.csv
@@ -354,18 +357,32 @@ class MonitorCore:
         if self.endpoint.is_serverless():
             self.log.warning("You can create a baseline but Model monitoring won't work for serverless endpoints")
 
+        # Check if the baseline already exists
         if self.baseline_exists() and not recreate:
             self.log.info(f"Baseline already exists for {self.endpoint_name}.")
             self.log.info("If you want to recreate it, set recreate=True.")
             return
 
-        # Create a baseline for monitoring (all rows from the FeatureSet)
+        # Get the features from the Model
         model = Model(self.endpoint.get_input())
-        fs = FeatureSet(model.get_input())
-        baseline_df = fs.pull_dataframe()
+        features = model.features()
+
+        # If a custom baseline CSV is provided, use it instead of pulling from the FeatureSet
+        if baseline_csv:
+            self.log.info(f"Using custom baseline CSV: {baseline_csv}")
+            # Ensure the file exists
+            if not wr.s3.does_object_exist(baseline_csv):
+                self.log.error(f"Custom baseline CSV does not exist: {baseline_csv}")
+                return
+            baseline_df = wr.s3.read_csv(baseline_csv)
+
+        # Create a baseline for monitoring (all rows from the FeatureSet)
+        else:
+            self.log.important(f"Creating baseline for {self.endpoint_name} --> {self.baseline_dir}")
+            fs = FeatureSet(model.get_input())
+            baseline_df = fs.pull_dataframe()
 
         # We only want the model features for our baseline
-        features = model.features()
         baseline_df = baseline_df[features]
 
         # Sort the columns to ensure consistent ordering (AWS/Spark needs this)
