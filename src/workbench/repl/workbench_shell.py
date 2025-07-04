@@ -160,6 +160,7 @@ class WorkbenchShell:
             "workbench.core.cloud_platform.aws.aws_secrets_manager"
         ).AWSSecretsManager()
         self.commands["df_store"] = importlib.import_module("workbench.api.df_store").DFStore()
+        self.commands["inf_store"] = importlib.import_module("workbench_bridges.api.inference_store").InferenceStore()
         self.commands["graph_store"] = importlib.import_module("workbench.api.graph_store").GraphStore()
         self.commands["version"] = lambda: print(version)
         self.commands["cached_meta"] = self.switch_to_cached_meta
