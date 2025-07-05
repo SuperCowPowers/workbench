@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # Now we'll run inference on the endpoint
     endpoint = Endpoint("abalone-regression")
 
-    # Get a DataFrame of data (not used to train) and run predictions
+    # Run inference on the Endpoint
     athena_table = fs.view("training").table
     df = fs.query(f"SELECT * FROM {athena_table} where training = FALSE")
     results = endpoint.inference(df)

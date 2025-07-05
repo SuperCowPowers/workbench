@@ -45,7 +45,7 @@ model.to_endpoint(name="abalone-regression-end", tags=["abalone", "regression"])
 # Now we'll run inference on the endpoint
 endpoint = Endpoint("abalone-regression-end")
 
-# Get a DataFrame of data (not used to train) and run predictions
+# Run inference on the Endpoint
 athena_table = fs.view("training").table
 df = fs.query(f"SELECT * FROM {athena_table} where training = FALSE")
 results = endpoint.predict(df)
