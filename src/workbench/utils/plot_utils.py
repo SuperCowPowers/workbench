@@ -97,7 +97,6 @@ def generate_heteroskedastic_data(n=1000, noise_factor=1.0, x_range=(0, 10)):
 def prediction_intervals(df, figure, x_col):
     """
     Add prediction interval bands to a plotly figure based on percentile columns.
-
     Parameters:
     -----------
     df : pandas.DataFrame
@@ -106,12 +105,13 @@ def prediction_intervals(df, figure, x_col):
         Plotly figure to add the prediction intervals to
     x_col : str
         Name of the x-axis column
-
     Returns:
     --------
     plotly.graph_objects.Figure
         Updated figure with prediction intervals
     """
+
+    # Does the dataframe have the quantiles computed already?
     required_cols = ["q_025", "q_25", "q_75", "q_975"]
     if not all(col in df.columns for col in required_cols):
         # Check for a prediction_std column and compute quantiles if needed
@@ -126,7 +126,6 @@ def prediction_intervals(df, figure, x_col):
 
     # Sort dataframe by x_col for connected lines
     sorted_df = df.sort_values(by=x_col)
-
     # Add outer band (q_025 to q_975) - more transparent
     figure.add_trace(
         go.Scatter(
@@ -135,7 +134,8 @@ def prediction_intervals(df, figure, x_col):
             mode="lines",
             line=dict(width=1, color="rgba(99, 110, 250, 0.25)"),
             name="2.5 Percentile",
-            hoverinfo="none",
+            hoverinfo="skip",
+            showlegend=False,
         )
     )
     figure.add_trace(
@@ -145,12 +145,12 @@ def prediction_intervals(df, figure, x_col):
             mode="lines",
             line=dict(width=1, color="rgba(99, 110, 250, 0.25)"),
             name="97.5 Percentile",
-            hoverinfo="none",
+            hoverinfo="skip",
+            showlegend=False,
             fill="tonexty",
             fillcolor="rgba(99, 110, 250, 0.2)",
         )
     )
-
     # Add inner band (q_25 to q_75) - less transparent
     figure.add_trace(
         go.Scatter(
@@ -159,7 +159,8 @@ def prediction_intervals(df, figure, x_col):
             mode="lines",
             line=dict(width=1, color="rgba(99, 250, 110, 0.25)"),
             name="25 Percentile",
-            hoverinfo="none",
+            hoverinfo="skip",
+            showlegend=False,
         )
     )
     figure.add_trace(
@@ -169,13 +170,12 @@ def prediction_intervals(df, figure, x_col):
             mode="lines",
             line=dict(width=1, color="rgba(99, 250, 100, 0.25)"),
             name="75 Percentile",
-            hoverinfo="none",
+            hoverinfo="skip",
+            showlegend=False,
             fill="tonexty",
             fillcolor="rgba(99, 250, 110, 0.2)",
         )
     )
-
-    # Now return the updated figure
     return figure
 
 
