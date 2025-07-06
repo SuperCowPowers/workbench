@@ -426,6 +426,7 @@ if __name__ == "__main__":
     # DFStore().upsert("/workbench/models/aqsol-uq/auto_inference", df)
 
     from workbench.api import DFStore
+
     df = DFStore().get("/workbench/models/aqsol-uq/auto_inference")
 
     # Run the Unit Test on the Plugin
