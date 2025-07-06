@@ -416,19 +416,19 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
 
     # Get a UQ regressor model
-    # from workbench.api import Endpoint
+    # from workbench.api import Endpoint, DFStore
     # end = Endpoint("aqsol-uq")
     # df = end.auto_inference()
     # DFStore().upsert("/workbench/models/aqsol-uq/auto_inference", df)
-    from workbench.api import DFStore
 
+    from workbench.api import DFStore
     df = DFStore().get("/workbench/models/aqsol-uq/auto_inference")
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(
         ScatterPlot,
         input_data=df,
-        theme="dark",
+        theme="midnight_blue",
         x="solubility",
         y="prediction",
         color="residuals_abs",
