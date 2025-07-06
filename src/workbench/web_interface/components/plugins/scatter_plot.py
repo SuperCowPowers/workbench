@@ -288,7 +288,12 @@ class ScatterPlot(PluginInterface):
                 data.append(trace)
             showlegend = True
 
-        figure = go.Figure(data=data)
+        # Okay we have the data, now create the figure.
+        # Note: We're going to add the prediction interval bands and regression line before
+        #       the scatter plot data to ensure they appear below the scatter points.
+        figure = go.Figure()
+        if y_col == "prediction" or x_col == "prediction":
+            figure = prediction_intervals(df, figure, x_col)
 
         # Add regression line if enabled.
         if regression_line:
@@ -303,9 +308,8 @@ class ScatterPlot(PluginInterface):
                 y1=axis_max,
             )
 
-        # Add prediction interval bands when y_col is "prediction"
-        if y_col == "prediction" or x_col == "prediction":
-            figure = prediction_intervals(df, figure, x_col)
+        # Now add the scatter plot data on last (on top)
+        figure.add_traces(data)
 
         # Set up axes.
         if self.show_axes:
