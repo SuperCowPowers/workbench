@@ -3625,7 +3625,7 @@
 <h3 id="api-changes">API Changes</h3>
 <ul>
 <li>
-<p><strong>delete() --&gt; class.delete(uuid)</strong></p>
+<p><strong>delete() --&gt; class.delete(name)</strong></p>
 <p>We've changed the API for deleting artifacts in AWS (DataSource, FeatureSet, etc). This is part of our efforts to minimize race-conditions when objects are deleted. </p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>my_model = Model(&quot;xyz&quot;)  # Creating object
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>my_model.delete()        # just to delete

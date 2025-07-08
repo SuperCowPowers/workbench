@@ -3602,7 +3602,7 @@ A column name cannot be longer than 255 characters.</p>
 </blockquote>
 <p>For more info see: <a href="https://docs.aws.amazon.com/athena/latest/ug/glue-best-practices.html#schema-names">Glue Best Practices</a></p>
 <h2 id="datasourcefeatureset-use-_-and-modelendpoint-use-">DataSource/FeatureSet use '_'  and Model/Endpoint use '-'</h2>
-<p>You may notice that DataSource and FeatureSet uuid/name examples have underscores but the model and endpoints have dashes. Yes, it’s super annoying to have one convention for DataSources and FeatureSets and another for Models and Endpoints but this is an AWS restriction and not something that Workbench can control.</p>
+<p>You may notice that DataSource and FeatureSet names have underscores but the model and endpoints have dashes. Yes, it’s super annoying to have one convention for DataSources and FeatureSets and another for Models and Endpoints but this is an AWS restriction and not something that Workbench can control.</p>
 <p><strong>DataSources and FeatureSet:</strong> Underscores. You cannot use a dash because both classes use Athena for Storage and Athena tables names cannot have a dash.</p>
 <p><strong>Models and Endpoints:</strong> Dashes. You cannot use an underscores because AWS imposes a restriction on the naming.</p>
 <h2 id="additional-information-on-the-lower-case-issue">Additional information on the lower case issue</h2>

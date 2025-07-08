@@ -1916,9 +1916,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#workbench.core.transforms.transform.Transform.set_input_uuid" class="md-nav__link">
+  <a href="#workbench.core.transforms.transform.Transform.set_input_name" class="md-nav__link">
     <span class="md-ellipsis">
-      set_input_uuid
+      set_input_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workbench.core.transforms.transform.Transform.set_output_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_output_name
     </span>
   </a>
   
@@ -1928,15 +1937,6 @@
   <a href="#workbench.core.transforms.transform.Transform.set_output_tags" class="md-nav__link">
     <span class="md-ellipsis">
       set_output_tags
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.core.transforms.transform.Transform.set_output_uuid" class="md-nav__link">
-    <span class="md-ellipsis">
-      set_output_uuid
     </span>
   </a>
   
@@ -3770,9 +3770,18 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#workbench.core.transforms.transform.Transform.set_input_uuid" class="md-nav__link">
+  <a href="#workbench.core.transforms.transform.Transform.set_input_name" class="md-nav__link">
     <span class="md-ellipsis">
-      set_input_uuid
+      set_input_name
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workbench.core.transforms.transform.Transform.set_output_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      set_output_name
     </span>
   </a>
   
@@ -3782,15 +3791,6 @@
   <a href="#workbench.core.transforms.transform.Transform.set_output_tags" class="md-nav__link">
     <span class="md-ellipsis">
       set_output_tags
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.core.transforms.transform.Transform.set_output_uuid" class="md-nav__link">
-    <span class="md-ellipsis">
-      set_output_uuid
     </span>
   </a>
   
@@ -4028,12 +4028,12 @@ must implement the abstract transform_impl() method</p>
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform: Abstract Base Class for all transforms within Workbench. Inherited Classes</span>
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="sd">    must implement the abstract transform_impl() method&quot;&quot;&quot;</span>
 </span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">catalog_db</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;workbench&quot;</span><span class="p">):</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">catalog_db</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;workbench&quot;</span><span class="p">):</span>
 </span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Transform Initialization</span>
 </span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>
 </span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">        Args:</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">            input_uuid (str): The UUID of the Input Artifact</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">            output_uuid (str): The UUID of the Output Artifact</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">            input_name (str): The Name of the Input Artifact</span>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">            output_name (str): The Name of the Output Artifact</span>
 </span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="sd">            catalog_db (str): The AWS Data Catalog Database to use (default: &quot;workbench&quot;)</span>
 </span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>
@@ -4041,9 +4041,9 @@ must implement the abstract transform_impl() method</p>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_tags</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_uuid</span><span class="p">)</span>  <span class="c1"># Occasionally we get a pathlib.Path object</span>
-</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>  <span class="c1"># Occasionally we get a pathlib.Path object</span>
-</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_meta</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;workbench_input&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">}</span>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_name</span><span class="p">)</span>  <span class="c1"># Occasionally we get a pathlib.Path object</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_name</span><span class="p">)</span>  <span class="c1"># Occasionally we get a pathlib.Path object</span>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_meta</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;workbench_input&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span><span class="p">}</span>
 </span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">data_catalog_db</span> <span class="o">=</span> <span class="n">catalog_db</span>
 </span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>
 </span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>        <span class="c1"># Grab our Workbench Bucket</span>
@@ -4127,13 +4127,13 @@ must implement the abstract transform_impl() method</p>
 </span><span id="__span-0-138"><a id="__codelineno-0-138" name="__codelineno-0-138"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;What Output Type does this Transform Produce&quot;&quot;&quot;</span>
 </span><span id="__span-0-139"><a id="__codelineno-0-139" name="__codelineno-0-139"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span>
 </span><span id="__span-0-140"><a id="__codelineno-0-140" name="__codelineno-0-140"></a>
-</span><span id="__span-0-141"><a id="__codelineno-0-141" name="__codelineno-0-141"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_input_uuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the Input UUID (Name) for this Transform&quot;&quot;&quot;</span>
-</span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span> <span class="o">=</span> <span class="n">input_uuid</span>
+</span><span id="__span-0-141"><a id="__codelineno-0-141" name="__codelineno-0-141"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_input_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the Input Name (Name) for this Transform&quot;&quot;&quot;</span>
+</span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span> <span class="o">=</span> <span class="n">input_name</span>
 </span><span id="__span-0-144"><a id="__codelineno-0-144" name="__codelineno-0-144"></a>
-</span><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_output_uuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-0-146"><a id="__codelineno-0-146" name="__codelineno-0-146"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the Output UUID (Name) for this Transform&quot;&quot;&quot;</span>
-</span><span id="__span-0-147"><a id="__codelineno-0-147" name="__codelineno-0-147"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span> <span class="o">=</span> <span class="n">output_uuid</span>
+</span><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_output_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-0-146"><a id="__codelineno-0-146" name="__codelineno-0-146"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the Output Name (Name) for this Transform&quot;&quot;&quot;</span>
+</span><span id="__span-0-147"><a id="__codelineno-0-147" name="__codelineno-0-147"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_name</span> <span class="o">=</span> <span class="n">output_name</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -4153,7 +4153,7 @@ must implement the abstract transform_impl() method</p>
 
 
 <h3 id="workbench.core.transforms.transform.Transform.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">input_uuid</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">,</span> <span class="n">catalog_db</span><span class="o">=</span><span class="s1">&#39;workbench&#39;</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">input_name</span><span class="p">,</span> <span class="n">output_name</span><span class="p">,</span> <span class="n">catalog_db</span><span class="o">=</span><span class="s1">&#39;workbench&#39;</span><span class="p">)</span></code>
 
 </h3>
 
@@ -4176,14 +4176,14 @@ must implement the abstract transform_impl() method</p>
       <tbody>
           <tr class="doc-section-item">
             <td>
-                <code>input_uuid</code>
+                <code>input_name</code>
             </td>
             <td>
                   <code><span title="str">str</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The UUID of the Input Artifact</p>
+                <p>The Name of the Input Artifact</p>
               </div>
             </td>
             <td>
@@ -4192,14 +4192,14 @@ must implement the abstract transform_impl() method</p>
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>output_uuid</code>
+                <code>output_name</code>
             </td>
             <td>
                   <code><span title="str">str</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>The UUID of the Output Artifact</p>
+                <p>The Name of the Output Artifact</p>
               </div>
             </td>
             <td>
@@ -4266,12 +4266,12 @@ must implement the abstract transform_impl() method</p>
 <span class="normal"><a href="#__codelineno-0-77">77</a></span>
 <span class="normal"><a href="#__codelineno-0-78">78</a></span>
 <span class="normal"><a href="#__codelineno-0-79">79</a></span>
-<span class="normal"><a href="#__codelineno-0-80">80</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">catalog_db</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;workbench&quot;</span><span class="p">):</span>
+<span class="normal"><a href="#__codelineno-0-80">80</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">catalog_db</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;workbench&quot;</span><span class="p">):</span>
 </span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform Initialization</span>
 </span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a>
 </span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">    Args:</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">        input_uuid (str): The UUID of the Input Artifact</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">        output_uuid (str): The UUID of the Output Artifact</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a><span class="sd">        input_name (str): The Name of the Input Artifact</span>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a><span class="sd">        output_name (str): The Name of the Output Artifact</span>
 </span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="sd">        catalog_db (str): The AWS Data Catalog Database to use (default: &quot;workbench&quot;)</span>
 </span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a>
@@ -4279,9 +4279,9 @@ must implement the abstract transform_impl() method</p>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_type</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_type</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_tags</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_uuid</span><span class="p">)</span>  <span class="c1"># Occasionally we get a pathlib.Path object</span>
-</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span>  <span class="c1"># Occasionally we get a pathlib.Path object</span>
-</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_meta</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;workbench_input&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span><span class="p">}</span>
+</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">input_name</span><span class="p">)</span>  <span class="c1"># Occasionally we get a pathlib.Path object</span>
+</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">output_name</span><span class="p">)</span>  <span class="c1"># Occasionally we get a pathlib.Path object</span>
+</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_meta</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;workbench_input&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span><span class="p">}</span>
 </span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">data_catalog_db</span> <span class="o">=</span> <span class="n">catalog_db</span>
 </span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a>
 </span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>    <span class="c1"># Grab our Workbench Bucket</span>
@@ -4534,24 +4534,51 @@ Args:
 <div class="doc doc-object doc-function">
 
 
-<h3 id="workbench.core.transforms.transform.Transform.set_input_uuid" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">set_input_uuid</span><span class="p">(</span><span class="n">input_uuid</span><span class="p">)</span></code>
+<h3 id="workbench.core.transforms.transform.Transform.set_input_name" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_input_name</span><span class="p">(</span><span class="n">input_name</span><span class="p">)</span></code>
 
 </h3>
 
 
     <div class="doc doc-contents ">
 
-        <p>Set the Input UUID (Name) for this Transform</p>
+        <p>Set the Input Name (Name) for this Transform</p>
 
 
             <details class="quote">
               <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-141">141</a></span>
 <span class="normal"><a href="#__codelineno-0-142">142</a></span>
-<span class="normal"><a href="#__codelineno-0-143">143</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-141"><a id="__codelineno-0-141" name="__codelineno-0-141"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_input_uuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the Input UUID (Name) for this Transform&quot;&quot;&quot;</span>
-</span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_uuid</span> <span class="o">=</span> <span class="n">input_uuid</span>
+<span class="normal"><a href="#__codelineno-0-143">143</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-141"><a id="__codelineno-0-141" name="__codelineno-0-141"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_input_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-0-142"><a id="__codelineno-0-142" name="__codelineno-0-142"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the Input Name (Name) for this Transform&quot;&quot;&quot;</span>
+</span><span id="__span-0-143"><a id="__codelineno-0-143" name="__codelineno-0-143"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">input_name</span> <span class="o">=</span> <span class="n">input_name</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="workbench.core.transforms.transform.Transform.set_output_name" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">set_output_name</span><span class="p">(</span><span class="n">output_name</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set the Output Name (Name) for this Transform</p>
+
+
+            <details class="quote">
+              <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-145">145</a></span>
+<span class="normal"><a href="#__codelineno-0-146">146</a></span>
+<span class="normal"><a href="#__codelineno-0-147">147</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_output_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-0-146"><a id="__codelineno-0-146" name="__codelineno-0-146"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the Output Name (Name) for this Transform&quot;&quot;&quot;</span>
+</span><span id="__span-0-147"><a id="__codelineno-0-147" name="__codelineno-0-147"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_name</span> <span class="o">=</span> <span class="n">output_name</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -4591,33 +4618,6 @@ Args:
 </span><span id="__span-0-101"><a id="__codelineno-0-101" name="__codelineno-0-101"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_tags</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tag_delimiter</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
 </span><span id="__span-0-102"><a id="__codelineno-0-102" name="__codelineno-0-102"></a>    <span class="k">else</span><span class="p">:</span>
 </span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_tags</span> <span class="o">=</span> <span class="n">tags</span>
-</span></code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="workbench.core.transforms.transform.Transform.set_output_uuid" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">set_output_uuid</span><span class="p">(</span><span class="n">output_uuid</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Set the Output UUID (Name) for this Transform</p>
-
-
-            <details class="quote">
-              <summary>Source code in <code>src/workbench/core/transforms/transform.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-145">145</a></span>
-<span class="normal"><a href="#__codelineno-0-146">146</a></span>
-<span class="normal"><a href="#__codelineno-0-147">147</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-145"><a id="__codelineno-0-145" name="__codelineno-0-145"></a><span class="k">def</span><span class="w"> </span><span class="nf">set_output_uuid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-0-146"><a id="__codelineno-0-146" name="__codelineno-0-146"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Set the Output UUID (Name) for this Transform&quot;&quot;&quot;</span>
-</span><span id="__span-0-147"><a id="__codelineno-0-147" name="__codelineno-0-147"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_uuid</span> <span class="o">=</span> <span class="n">output_uuid</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
