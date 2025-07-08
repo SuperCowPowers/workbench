@@ -322,6 +322,21 @@ def aws_tags_to_dict(aws_tags) -> dict:
     return regular_tags
 
 
+def parse_sagemaker_arn(arn: str) -> tuple:
+    """Parse a SageMaker ARN to extract the resource type and name.
+
+    Args:
+        arn (str): The ARN of the SageMaker resource.
+
+    Returns:
+        tuple: A tuple containing the resource type and resource name.
+    """
+    parts = arn.split(':')
+    resource_part = parts[-1]  # "resource-type/resource-name"
+    resource_type, resource_name = resource_part.split('/', 1)
+    return resource_type, resource_name
+
+
 def _chunk_data(base_key: str, data: str) -> dict:
     # Initialize variables
     chunk_size = 256  # Max size for AWS tag value
