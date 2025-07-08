@@ -60,7 +60,7 @@ class PluginPage2:
         def _populate_models_table(_n_intervals):
             """Callback to Populate the models table with data"""
             models = self.meta.models(details=True)
-            models["uuid"] = models["Model Group"]
+            models["name"] = models["Model Group"]
             return self.models_table.update_properties(models)
 
 

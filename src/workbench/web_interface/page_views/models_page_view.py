@@ -43,14 +43,14 @@ class ModelsPageView(PageView):
         return self.models_df
 
     @staticmethod
-    def model_details(self, model_uuid: str) -> (dict, None):
-        """Get all the details for the given Model UUID
+    def model_details(self, model_name: str) -> (dict, None):
+        """Get all the details for the given Model Name
         Args:
-            model_uuid(str): The UUID of the Model
+            model_name(str): The Name of the Model
         Returns:
             dict: The details for the given Model (or None if not found)
         """
-        model = CachedModel(model_uuid)
+        model = CachedModel(model_name)
         if not model.exists():
             return {"Status": "Not Found"}
         elif not model.ready():
@@ -74,9 +74,9 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first Model
-    my_model_uuid = summary["Model Group"].iloc[0]
+    my_model_name = summary["Model Group"].iloc[0]
     print("\nModelDetails:")
-    details = model_view.model_details(my_model_uuid)
+    details = model_view.model_details(my_model_name)
     pprint(details)
 
     # Give any broker threads time to finish

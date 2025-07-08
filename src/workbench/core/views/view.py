@@ -58,7 +58,7 @@ class View:
         self.auto_id_column = artifact.id_column if self.is_feature_set else None
 
         # Get the data_source from the artifact
-        self.artifact_name = artifact.uuid
+        self.artifact_name = artifact.name
         self.data_source = artifact.data_source if self.is_feature_set else artifact
         self.database = self.data_source.database
 
@@ -230,18 +230,18 @@ class View:
 
         # First if we're going to auto-create, we need to make sure the data source exists
         if not self.data_source.exists():
-            self.log.error(f"Data Source {self.data_source.uuid} does not exist...")
+            self.log.error(f"Data Source {self.data_source.name} does not exist...")
             return False
 
         # DisplayView
         if self.view_name == "display":
-            self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
+            self.log.important(f"Auto creating View {self.view_name} for {self.data_source.name}...")
             DisplayView.create(self.data_source)
             return True
 
         # ComputationView
         if self.view_name == "computation":
-            self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
+            self.log.important(f"Auto creating View {self.view_name} for {self.data_source.name}...")
             ComputationView.create(self.data_source)
             return True
 
@@ -249,7 +249,7 @@ class View:
         if self.view_name == "training":
             # We're only going to create training views for FeatureSets
             if self.is_feature_set:
-                self.log.important(f"Auto creating View {self.view_name} for {self.data_source.uuid}...")
+                self.log.important(f"Auto creating View {self.view_name} for {self.data_source.name}...")
                 TrainingView.create(self.data_source, id_column=self.auto_id_column)
                 return True
             else:

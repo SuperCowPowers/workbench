@@ -138,7 +138,7 @@ pprint(my_model.details())
  'size': 0.0,
  'status': 'Completed',
  'transform_types': ['ml.m5.large'],
- 'uuid': 'test-model',
+ 'name': 'test-model',
  'version': 1}
 ```
 

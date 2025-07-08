@@ -15,23 +15,23 @@ class DataToFeaturesChunk(Transform):
 
     Common Usage:
         ```python
-        data_to_features = DataToFeaturesChunk(input_uuid, output_uuid, 50000)
+        data_to_features = DataToFeaturesChunk(input_name, output_name, 50000)
         data_to_features.set_output_tags(["heavy", "whatever"])
         data_to_features.transform(query, id_column, event_time_column=None)
         ```
     """
 
-    def __init__(self, input_uuid: str, output_uuid: str, chunk_size: int = 50000):
+    def __init__(self, input_name: str, output_name: str, chunk_size: int = 50000):
         """DataToFeaturesChunk Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(input_name, output_name)
 
         # Set up all my instance attributes
         self.id_column = None
         self.event_time_column = None
         self.chunk_size = chunk_size
-        self.input_data_source = DataSourceFactory(input_uuid)
+        self.input_data_source = DataSourceFactory(input_name)
         self.ds_database = "workbench"
         self.cat_column_info = {}
         self.chunked_to_features = None
@@ -71,7 +71,7 @@ class DataToFeaturesChunk(Transform):
         """Convert the Data Source into a Feature Set using Chunking"""
 
         # Create our PandasToFeaturesChunked class
-        self.chunked_to_features = PandasToFeaturesChunked(self.output_uuid, id_column, event_time_column)
+        self.chunked_to_features = PandasToFeaturesChunked(self.output_name, id_column, event_time_column)
         self.chunked_to_features.set_output_tags(self.output_tags)
         self.chunked_to_features.set_categorical_info(self.cat_column_info)
         self.chunked_to_features.pre_transform()

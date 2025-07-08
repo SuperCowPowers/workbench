@@ -93,7 +93,7 @@ pprint(endpoint.details())
 499                     13   10.637320
  'workbench_tags': ['abalone', 'regression'],
  'status': 'InService',
- 'uuid': 'abalone-regression-end',
+ 'name': 'abalone-regression-end',
  'variant': 'AllTraffic'}
 ```
 

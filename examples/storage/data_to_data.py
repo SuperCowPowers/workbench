@@ -6,11 +6,11 @@ from workbench.utils import pandas_utils
 
 
 class DataToDataExample(DataToDataLight):
-    def __init__(self, input_uuid: str, output_uuid: str):
+    def __init__(self, input_name: str, output_name: str):
         """DataToDataExample: Example Class that demonstrates a Data Source to Data Source Transform"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(input_name, output_name)
 
     def transform_impl(self, drop_na="any"):
         """Just dropping NaNs, but you could do anything that you want, simply take the
@@ -25,9 +25,9 @@ def test():
     """Test the DataToDataExample Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "test_data"
-    output_uuid = "test_data_clean"
-    DataToDataExample(input_uuid, output_uuid).transform(drop_na="any")
+    input_name = "test_data"
+    output_name = "test_data_clean"
+    DataToDataExample(input_name, output_name).transform(drop_na="any")
 
 
 if __name__ == "__main__":

@@ -18,22 +18,22 @@ class MolecularDescriptors(DataToFeaturesLight):
 
     Common Usage:
         ```python
-        to_features = MolecularDescriptors(data_uuid, feature_uuid)
+        to_features = MolecularDescriptors(data_name, feature_name)
         to_features.set_output_tags(["aqsol", "whatever"])
         to_features.transform()
         ```
     """
 
-    def __init__(self, data_uuid: str, feature_uuid: str):
+    def __init__(self, data_name: str, feature_name: str):
         """MolecularDescriptors Initialization
 
         Args:
-            data_uuid (str): The UUID of the Workbench DataSource to be transformed
-            feature_uuid (str): The UUID of the Workbench FeatureSet to be created
+            data_name (str): The Name of the Workbench DataSource to be transformed
+            feature_name (str): The Name of the Workbench FeatureSet to be created
         """
 
         # Call superclass init
-        super().__init__(data_uuid, feature_uuid)
+        super().__init__(data_name, feature_name)
 
     def transform_impl(self, **kwargs):
         """Compute a Feature Set based on RDKit Descriptors"""

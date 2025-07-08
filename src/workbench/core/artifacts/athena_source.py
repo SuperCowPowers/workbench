@@ -25,29 +25,29 @@ class AthenaSource(DataSourceAbstract):
 
     Common Usage:
         ```python
-        my_data = AthenaSource(data_uuid, database="workbench")
+        my_data = AthenaSource(data_name, database="workbench")
         my_data.summary()
         my_data.details()
-        df = my_data.query(f"select * from {data_uuid} limit 5")
+        df = my_data.query(f"select * from {data_name} limit 5")
         ```
     """
 
-    def __init__(self, data_uuid, database="workbench", **kwargs):
+    def __init__(self, data_name, database="workbench", **kwargs):
         """AthenaSource Initialization
 
         Args:
-            data_uuid (str): Name of Athena Table
+            data_name (str): Name of Athena Table
             database (str): Athena Database Name (default: workbench)
         """
-        # Ensure the data_uuid is a valid name/id
-        self.is_name_valid(data_uuid)
+        # Ensure the data_name is a valid name/id
+        self.is_name_valid(data_name)
 
         # Call superclass init
-        super().__init__(data_uuid, database, **kwargs)
+        super().__init__(data_name, database, **kwargs)
 
         # Grab our metadata from the Meta class
-        self.log.info(f"Retrieving metadata for: {self.uuid}...")
-        self.data_source_meta = self.meta.data_source(data_uuid, database=database)
+        self.log.info(f"Retrieving metadata for: {self.name}...")
+        self.data_source_meta = self.meta.data_source(data_name, database=database)
         if self.data_source_meta is None:
             self.log.error(f"Unable to find {database}:{self.table} in Glue Catalogs...")
             return
@@ -60,7 +60,7 @@ class AthenaSource(DataSourceAbstract):
 
     def refresh_meta(self):
         """Refresh our internal AWS Broker catalog metadata"""
-        self.data_source_meta = self.meta.data_source(self.uuid, database=self.database)
+        self.data_source_meta = self.meta.data_source(self.name, database=self.database)
 
     def exists(self) -> bool:
         """Validation Checks for this Data Source"""
@@ -86,7 +86,7 @@ class AthenaSource(DataSourceAbstract):
         # Sanity Check if we have invalid AWS Metadata
         if self.data_source_meta is None:
             if not self.exists():
-                self.log.error(f"DataSource {self.uuid} doesn't appear to exist...")
+                self.log.error(f"DataSource {self.name} doesn't appear to exist...")
             else:
                 self.log.critical(f"Unable to get AWS Metadata for {self.table}")
                 self.log.critical("Malformed Artifact! Delete this Artifact and recreate it!")
@@ -102,7 +102,7 @@ class AthenaSource(DataSourceAbstract):
         Args:
             new_meta (dict): Dictionary of new metadata to add
         """
-        self.log.important(f"Upserting Workbench Metadata {self.uuid}:{str(new_meta)[:50]}...")
+        self.log.important(f"Upserting Workbench Metadata {self.name}:{str(new_meta)[:50]}...")
 
         # Give a warning message for keys that don't start with workbench_
         for key in new_meta.keys():
@@ -139,10 +139,10 @@ class AthenaSource(DataSourceAbstract):
                 )
             else:
                 self.log.critical(f"Failed to upsert metadata: {e}")
-                self.log.critical(f"{self.uuid} is Malformed! Delete this Artifact and recreate it!")
+                self.log.critical(f"{self.name} is Malformed! Delete this Artifact and recreate it!")
         except Exception as e:
             self.log.critical(f"Failed to upsert metadata: {e}")
-            self.log.critical(f"{self.uuid} is Malformed! Delete this Artifact and recreate it!")
+            self.log.critical(f"{self.name} is Malformed! Delete this Artifact and recreate it!")
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""
@@ -364,7 +364,7 @@ class AthenaSource(DataSourceAbstract):
         """
 
         # Compute/recompute the smart sample
-        self.log.important(f"Computing Smart Sample {self.uuid}...")
+        self.log.important(f"Computing Smart Sample {self.name}...")
 
         # Outliers DataFrame
         outlier_rows = self.outliers()
@@ -461,7 +461,7 @@ class AthenaSource(DataSourceAbstract):
         Returns:
             dict(dict): A dictionary of details about this AthenaSource
         """
-        self.log.info(f"Computing DataSource Details ({self.uuid})...")
+        self.log.info(f"Computing DataSource Details ({self.name})...")
 
         # Get the details from the base class
         details = super().details()
@@ -496,10 +496,10 @@ class AthenaSource(DataSourceAbstract):
 
         # Make sure the AthenaSource exists
         if not self.exists():
-            self.log.warning(f"Trying to delete an AthenaSource that doesn't exist: {self.uuid}")
+            self.log.warning(f"Trying to delete an AthenaSource that doesn't exist: {self.name}")
 
         # Call the Class Method to delete the AthenaSource
-        AthenaSource.managed_delete(self.uuid, database=self.database)
+        AthenaSource.managed_delete(self.name, database=self.database)
 
     @classmethod
     def managed_delete(cls, data_source_name: str, database: str = "workbench"):
@@ -568,8 +568,8 @@ if __name__ == "__main__":
     # Are we ready?
     print(f"Ready: {my_data.ready()}")
 
-    # What's my Workbench UUID
-    print(f"UUID: {my_data.uuid}")
+    # What's my Workbench Name
+    print(f"Name: {my_data.name}")
 
     # What's my AWS ARN
     print(f"AWS ARN: {my_data.arn()}")

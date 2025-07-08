@@ -34,7 +34,7 @@ class ViolinPlots(ComponentInterface):
         """
 
         # Sanity check the dataframe
-        if df is None or df.empty or list(df.columns) == ["uuid", "status"]:
+        if df is None or df.empty or list(df.columns) == ["name", "status"]:
             return self.display_text("No Data Found", figure_height=200)
 
         numeric_columns = list(df.select_dtypes("number").columns)
@@ -45,7 +45,7 @@ class ViolinPlots(ComponentInterface):
             "id",
             "Id",
             "ID",
-            "uuid",
+            "name",
             "write_time",
             "api_invocation_time",
             "is_deleted",

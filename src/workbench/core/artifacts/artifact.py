@@ -54,16 +54,16 @@ class Artifact(ABC):
     param_store = ParameterStore()
     df_store = DFStore()
 
-    def __init__(self, uuid: str, use_cached_meta: bool = False):
+    def __init__(self, name: str, use_cached_meta: bool = False):
         """Initialize the Artifact Base Class
 
         Args:
-            uuid (str): The UUID of this artifact
+            name (str): The Name of this artifact
             use_cached_meta (bool): Should we use cached metadata? (default: False)
         """
-        self.uuid = uuid
+        self.name = name
         if use_cached_meta:
-            self.log.info(f"Using Cached Metadata for {self.uuid}")
+            self.log.info(f"Using Cached Metadata for {self.name}")
             self.meta = CachedMeta()
         else:
             self.meta = CloudMeta()
@@ -73,22 +73,22 @@ class Artifact(ABC):
 
         # Do I exist? (very metaphysical)
         if not self.exists():
-            self.log.debug(f"Artifact {self.uuid} does not exist")
+            self.log.debug(f"Artifact {self.name} does not exist")
             return
 
         # Conduct a Health Check on this Artifact
         health_issues = self.health_check()
         if health_issues:
             if "needs_onboard" in health_issues:
-                self.log.important(f"Artifact {self.uuid} needs to be onboarded")
+                self.log.important(f"Artifact {self.name} needs to be onboarded")
             elif health_issues == ["no_activity"]:
-                self.log.debug(f"Artifact {self.uuid} has no activity, which is fine")
+                self.log.debug(f"Artifact {self.name} has no activity, which is fine")
             else:
-                self.log.warning(f"Health Check Failed {self.uuid}: {health_issues}")
+                self.log.warning(f"Health Check Failed {self.name}: {health_issues}")
             for issue in health_issues:
                 self.add_health_tag(issue)
         else:
-            self.log.info(f"Health Check Passed {self.uuid}")
+            self.log.info(f"Health Check Passed {self.name}")
 
     @classmethod
     def is_name_valid(cls, name: str, delimiter: str = "_", lower_case: bool = True) -> bool:
@@ -239,11 +239,11 @@ class Artifact(ABC):
         # Sanity check
         aws_arn = self.arn()
         if aws_arn is None:
-            self.log.error(f"ARN is None for {self.uuid}!")
+            self.log.error(f"ARN is None for {self.name}!")
             return
 
         # Add the new metadata to the existing metadata
-        self.log.info(f"Adding Tags to {self.uuid}:{str(new_meta)[:50]}...")
+        self.log.info(f"Adding Tags to {self.name}:{str(new_meta)[:50]}...")
         aws_tags = dict_to_aws_tags(new_meta)
         try:
             self.sm_client.add_tags(ResourceArn=aws_arn, Tags=aws_tags)
@@ -266,7 +266,7 @@ class Artifact(ABC):
 
         # If we don't have health tags, create the storage and return an empty list
         if health_tags is None:
-            self.log.important(f"{self.uuid} creating workbench_health_tags storage...")
+            self.log.important(f"{self.name} creating workbench_health_tags storage...")
             self.upsert_workbench_meta({"workbench_health_tags": ""})
             return []
 
@@ -344,7 +344,7 @@ class Artifact(ABC):
         Note:
             This breaks the official provenance of the artifact, so use with caution.
         """
-        self.log.important(f"{self.uuid}: Setting input to {input_data}...")
+        self.log.important(f"{self.name}: Setting input to {input_data}...")
         self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
         self.upsert_workbench_meta({"workbench_input": input_data})
 
@@ -377,7 +377,7 @@ class Artifact(ABC):
         want to get more detailed information, call the details() method
         which is implemented by the specific Artifact class"""
         basic = {
-            "uuid": self.uuid,
+            "name": self.name,
             "health_tags": self.get_health_tags(),
             "aws_arn": self.arn(),
             "size": self.size(),
@@ -397,7 +397,7 @@ class Artifact(ABC):
 
         # If the artifact does not exist, return a message
         if not self.exists():
-            return f"{self.__class__.__name__}: {self.uuid} does not exist"
+            return f"{self.__class__.__name__}: {self.name} does not exist"
 
         summary_dict = self.summary()
         display_keys = [
@@ -411,7 +411,7 @@ class Artifact(ABC):
             "workbench_tags",
         ]
         summary_items = [f"  {repr(key)}: {repr(value)}" for key, value in summary_dict.items() if key in display_keys]
-        summary_str = f"{self.__class__.__name__}: {self.uuid}\n" + ",\n".join(summary_items)
+        summary_str = f"{self.__class__.__name__}: {self.name}\n" + ",\n".join(summary_items)
         return summary_str
 
     def delete_metadata(self, key_to_delete: str):
@@ -453,7 +453,7 @@ if __name__ == "__main__":
     # Just some random tests
     assert data_source.exists()
 
-    print(f"UUID: {data_source.uuid}")
+    print(f"Name: {data_source.name}")
     print(f"Ready: {data_source.ready()}")
     print(f"Status: {data_source.get_status()}")
     print(f"Input: {data_source.get_input()}")
@@ -464,7 +464,7 @@ if __name__ == "__main__":
     # Just some random tests
     assert fs.exists()
 
-    print(f"UUID: {fs.uuid}")
+    print(f"Name: {fs.name}")
     print(f"Ready: {fs.ready()}")
     print(f"Status: {fs.get_status()}")
     print(f"Input: {fs.get_input()}")

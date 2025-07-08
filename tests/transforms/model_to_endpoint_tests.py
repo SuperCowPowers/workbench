@@ -13,14 +13,14 @@ def test():
     """Tests for the Model to Endpoint Transforms"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "abalone-regression"
-    output_uuid = "abalone-regression"
-    to_endpoint = ModelToEndpoint(input_uuid, output_uuid)
+    input_name = "abalone-regression"
+    output_name = "abalone-regression"
+    to_endpoint = ModelToEndpoint(input_name, output_name)
     to_endpoint.set_output_tags(["abalone", "public"])
     to_endpoint.transform()
 
     # Now run inference on the endpoint
-    endpoint = Endpoint(output_uuid)
+    endpoint = Endpoint(output_name)
     endpoint.auto_inference()
 
 

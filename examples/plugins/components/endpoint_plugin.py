@@ -46,8 +46,8 @@ class MyEndpointPlugin(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        log.important(f"Updating Model Plugin with Model: {endpoint.uuid} and kwargs: {kwargs}")
-        endpoint_name = f"Endpoint: {endpoint.uuid}"
+        log.important(f"Updating Model Plugin with Model: {endpoint.name} and kwargs: {kwargs}")
+        endpoint_name = f"Endpoint: {endpoint.name}"
         text_figure = self.display_text(endpoint_name, figure_height=100)
 
         # Return the updated property values

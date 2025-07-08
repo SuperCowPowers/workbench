@@ -35,12 +35,12 @@ def on_page_load():
         if parsed.path != "/endpoints":
             raise PreventUpdate
 
-        selected_uuid = parse_qs(parsed.query).get("uuid", [None])[0]
-        if not selected_uuid:
+        selected_name = parse_qs(parsed.query).get("name", [None])[0]
+        if not selected_name:
             return [row_data[0]], True
 
         for row in row_data:
-            if row.get("uuid") == selected_uuid:
+            if row.get("name") == selected_name:
                 return [row], True
 
         raise PreventUpdate
@@ -55,7 +55,7 @@ def endpoint_table_refresh(page_view: EndpointsPageView, table: AGTable):
         """Return the table data for the Endpoints Table"""
         page_view.refresh()
         endpoints = page_view.endpoints()
-        endpoints["uuid"] = endpoints["Name"]
+        endpoints["name"] = endpoints["Name"]
         endpoints["id"] = range(len(endpoints))
         return table.update_properties(endpoints)
 
@@ -72,13 +72,13 @@ def update_endpoint_metrics(page_view: EndpointsPageView):
         if not selected_rows or selected_rows[0] is None:
             return no_update
 
-        # Get the selected row data and grab the uuid
+        # Get the selected row data and grab the name
         selected_row_data = selected_rows[0]
-        endpoint_uuid = selected_row_data["uuid"]
-        print(f"Endpoint UUID: {endpoint_uuid}")
+        endpoint_name = selected_row_data["name"]
+        print(f"Endpoint Name: {endpoint_name}")
 
         # Endpoint Details
-        endpoint_details = page_view.endpoint_details(endpoint_uuid)
+        endpoint_details = page_view.endpoint_details(endpoint_name)
 
         # Endpoint Metrics
         endpoint_metrics_figure = endpoint_metric_plots.EndpointMetricPlots().update_properties(endpoint_details)
@@ -105,12 +105,12 @@ def setup_plugin_callbacks(plugins):
         if not selected_rows or selected_rows[0] is None:
             raise PreventUpdate
 
-        # Get the selected row data and grab the uuid
+        # Get the selected row data and grab the name
         selected_row_data = selected_rows[0]
-        object_uuid = selected_row_data["uuid"]
+        object_name = selected_row_data["name"]
 
         # Create the Endpoint object
-        endpoint = CachedEndpoint(object_uuid)
+        endpoint = CachedEndpoint(object_name)
 
         # Update all the properties for each plugin
         all_props = []

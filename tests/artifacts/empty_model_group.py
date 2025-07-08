@@ -22,22 +22,22 @@ def test_performance_metrics():
     pprint(model.get_inference_metadata())
 
 
-def test_retrieval_with_capture_uuid():
-    """Test the retrieval of the model metrics using capture UUID"""
+def test_retrieval_with_capture_name():
+    """Test the retrieval of the model metrics using capture Name"""
     capture_list = model.list_inference_runs()
-    for capture_uuid in capture_list:
-        print(f"\n\n*** Retrieval with Capture UUID ({capture_uuid}) ***")
-        pprint(model.get_inference_metadata(capture_uuid).head())
-        pprint(model.get_inference_metrics(capture_uuid).head())
-        pprint(model.get_inference_predictions(capture_uuid).head())
-        pprint(model.confusion_matrix(capture_uuid))
+    for capture_name in capture_list:
+        print(f"\n\n*** Retrieval with Capture Name ({capture_name}) ***")
+        pprint(model.get_inference_metadata(capture_name).head())
+        pprint(model.get_inference_metrics(capture_name).head())
+        pprint(model.get_inference_predictions(capture_name).head())
+        pprint(model.confusion_matrix(capture_name))
 
 
 def test_validation_predictions():
     print("\n\n*** Validation Predictions ***")
     val_predictions = model._get_validation_predictions()
     if val_predictions is None:
-        print(f"Model {model.uuid} has no validation predictions!")
+        print(f"Model {model.name} has no validation predictions!")
     else:
         pprint(val_predictions.head())
 
@@ -47,10 +47,10 @@ def test_confusion_matrix():
     pprint(model.confusion_matrix())
 
 
-def test_metrics_with_capture_uuid():
-    """Test the Performance Metrics using a Capture UUID"""
+def test_metrics_with_capture_name():
+    """Test the Performance Metrics using a Capture Name"""
     metrics = model.get_inference_metrics("auto_inference")
-    print("\n\n*** Performance Metrics with Capture UUID ***")
+    print("\n\n*** Performance Metrics with Capture Name ***")
     pprint(metrics)
 
 
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # Run the tests
     test_list_inference_runs()
     test_performance_metrics()
-    test_retrieval_with_capture_uuid()
+    test_retrieval_with_capture_name()
     test_validation_predictions()
     test_confusion_matrix()
-    test_metrics_with_capture_uuid()
+    test_metrics_with_capture_name()

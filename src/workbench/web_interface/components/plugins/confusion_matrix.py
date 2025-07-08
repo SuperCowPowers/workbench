@@ -55,7 +55,7 @@ class ConfusionMatrix(PluginInterface):
         Args:
             model (CachedModel): Workbench instantiated CachedModel object
             **kwargs:
-                - inference_run (str): Inference capture UUID
+                - inference_run (str): Inference capture Name
         Returns:
             list: A list containing the updated Plotly figure.
         """

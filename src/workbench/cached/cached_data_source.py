@@ -23,9 +23,9 @@ class CachedDataSource(CachedArtifactMixin, AthenaSource):
         ```
     """
 
-    def __init__(self, data_uuid: str, database: str = "workbench"):
+    def __init__(self, data_name: str, database: str = "workbench"):
         """CachedDataSource Initialization"""
-        AthenaSource.__init__(self, data_uuid=data_uuid, database=database, use_cached_meta=True)
+        AthenaSource.__init__(self, data_name=data_name, database=database, use_cached_meta=True)
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:

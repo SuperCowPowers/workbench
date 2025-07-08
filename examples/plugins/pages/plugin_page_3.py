@@ -84,7 +84,7 @@ class PluginPage3:
         def _populate_models_table(_n_intervals):
             """Callback to Populate the models table with data"""
             models = self.meta.models(details=True)
-            models["uuid"] = models["Model Group"]
+            models["name"] = models["Model Group"]
             return self.models_table.update_properties(models)
 
     def page_callbacks(self):
@@ -101,10 +101,10 @@ class PluginPage3:
             if not selected_rows or selected_rows[0] is None:
                 return no_update
 
-            # Get the selected row data and grab the uuid
+            # Get the selected row data and grab the name
             selected_row_data = selected_rows[0]
-            model_uuid = selected_row_data["uuid"]
-            m = CachedModel(model_uuid)
+            model_name = selected_row_data["name"]
+            m = CachedModel(model_name)
 
             # Model Details Markdown component
             model_plot_fig = self.model_plot.update_properties(m, inference_run)
@@ -124,12 +124,12 @@ class PluginPage3:
             if not selected_rows or selected_rows[0] is None:
                 raise PreventUpdate
 
-            # Get the selected row data and grab the uuid
+            # Get the selected row data and grab the name
             selected_row_data = selected_rows[0]
-            object_uuid = selected_row_data["uuid"]
+            object_name = selected_row_data["name"]
 
             # Create the Model object
-            model = CachedModel(object_uuid)
+            model = CachedModel(object_name)
 
             # Update all the properties for each plugin
             all_props = []

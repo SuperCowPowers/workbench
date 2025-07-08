@@ -109,8 +109,8 @@ def navigate_to_subpage():
     )
     def navigate_data_sources(selected_rows):
         if selected_rows:
-            row_uuid = selected_rows[0].get("uuid", 0)
-            return f"/data_sources?uuid={row_uuid}"
+            row_name = selected_rows[0].get("name", 0)
+            return f"/data_sources?name={row_name}"
         raise PreventUpdate
 
     @callback(
@@ -120,8 +120,8 @@ def navigate_to_subpage():
     )
     def navigate_feature_sets(selected_rows):
         if selected_rows:
-            row_uuid = selected_rows[0].get("uuid", 0)
-            return f"/feature_sets?uuid={row_uuid}"
+            row_name = selected_rows[0].get("name", 0)
+            return f"/feature_sets?name={row_name}"
         raise PreventUpdate
 
     @callback(
@@ -131,8 +131,8 @@ def navigate_to_subpage():
     )
     def navigate_models(selected_rows):
         if selected_rows:
-            row_uuid = selected_rows[0].get("uuid", 0)
-            return f"/models?uuid={row_uuid}"
+            row_name = selected_rows[0].get("name", 0)
+            return f"/models?name={row_name}"
         raise PreventUpdate
 
     @callback(
@@ -142,6 +142,6 @@ def navigate_to_subpage():
     )
     def navigate_predictions(selected_rows):
         if selected_rows:
-            row_uuid = selected_rows[0].get("uuid", 0)
-            return f"/endpoints?uuid={row_uuid}"
+            row_name = selected_rows[0].get("name", 0)
+            return f"/endpoints?name={row_name}"
         raise PreventUpdate

@@ -14,8 +14,8 @@ def test():
     # Verify that the Athena Data Source exists
     assert my_data.exists()
 
-    # What's my Workbench UUID
-    print(f"UUID: {my_data.uuid}")
+    # What's my Workbench Name
+    print(f"Name: {my_data.name}")
 
     # What's my AWS ARN
     print(f"AWS ARN: {my_data.arn()}")

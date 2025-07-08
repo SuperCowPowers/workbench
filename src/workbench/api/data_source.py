@@ -96,7 +96,7 @@ class DataSource(AthenaSource):
         """
 
         # Get the table associated with the data
-        self.log.info(f"Pulling data from {self.uuid}...")
+        self.log.info(f"Pulling data from {self.name}...")
         table = super().table
         pull_query = f'SELECT * FROM "{table}" LIMIT {limit}'
         df = self.query(pull_query)
@@ -138,7 +138,7 @@ class DataSource(AthenaSource):
         tags = [name] if tags is None else tags
 
         # Transform the DataSource to a FeatureSet
-        data_to_features = DataToFeaturesLight(self.uuid, name)
+        data_to_features = DataToFeaturesLight(self.name, name)
         data_to_features.set_output_tags(tags)
         data_to_features.transform(
             id_column=id_column,

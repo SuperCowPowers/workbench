@@ -14,23 +14,23 @@ class S3ToDataSourceLight(Transform):
 
     Common Usage:
         ```python
-        s3_to_data = S3ToDataSourceLight(s3_path, data_uuid, datatype="csv/json")
+        s3_to_data = S3ToDataSourceLight(s3_path, data_name, datatype="csv/json")
         s3_to_data.set_output_tags(["abalone", "whatever"])
         s3_to_data.transform()
         ```
     """
 
-    def __init__(self, s3_path: str, data_uuid: str, datatype: str = "csv"):
+    def __init__(self, s3_path: str, data_name: str, datatype: str = "csv"):
         """S3ToDataSourceLight Initialization
 
         Args:
             s3_path (str): The S3 Path to the file to be transformed
-            data_uuid (str): The UUID of the Workbench DataSource to be created
+            data_name (str): The Name of the Workbench DataSource to be created
             datatype (str): The datatype of the file to be transformed (defaults to "csv")
         """
 
         # Call superclass init
-        super().__init__(s3_path, data_uuid)
+        super().__init__(s3_path, data_name)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.S3_OBJECT
@@ -39,7 +39,7 @@ class S3ToDataSourceLight(Transform):
 
     def input_size_mb(self) -> int:
         """Get the size of the input S3 object in MBytes"""
-        size_in_bytes = wr.s3.size_objects(self.input_uuid, boto3_session=self.boto3_session)[self.input_uuid]
+        size_in_bytes = wr.s3.size_objects(self.input_name, boto3_session=self.boto3_session)[self.input_name]
         size_in_mb = round(size_in_bytes / 1_000_000)
         return size_in_mb
 
@@ -56,26 +56,26 @@ class S3ToDataSourceLight(Transform):
 
         # Read in the S3 CSV as a Pandas DataFrame
         if self.datatype == "csv":
-            df = wr.s3.read_csv(self.input_uuid, low_memory=False, boto3_session=self.boto3_session)
+            df = wr.s3.read_csv(self.input_name, low_memory=False, boto3_session=self.boto3_session)
         else:
-            df = wr.s3.read_json(self.input_uuid, lines=True, boto3_session=self.boto3_session)
+            df = wr.s3.read_json(self.input_name, lines=True, boto3_session=self.boto3_session)
 
         # Temporary hack to limit the number of columns in the dataframe
         if len(df.columns) > 40:
-            self.log.warning(f"{self.input_uuid} Too Many Columns! Talk to Workbench Support...")
+            self.log.warning(f"{self.input_name} Too Many Columns! Talk to Workbench Support...")
 
         # Convert object columns before sending to Workbench Data Source
         df = convert_object_columns(df)
 
         # Use the Workbench Pandas to Data Source class
-        pandas_to_data = PandasToData(self.output_uuid)
+        pandas_to_data = PandasToData(self.output_name)
         pandas_to_data.set_input(df)
         pandas_to_data.set_output_tags(self.output_tags)
         pandas_to_data.add_output_meta(self.output_meta)
         pandas_to_data.transform()
 
         # Report the transformation results
-        self.log.info(f"{self.input_uuid} -->  DataSource: {self.output_uuid} Complete!")
+        self.log.info(f"{self.input_name} -->  DataSource: {self.output_name} Complete!")
 
     def post_transform(self, **kwargs):
         """Post-Transform"""
@@ -97,8 +97,8 @@ if __name__ == "__main__":
 
     # Create my Data Loader
     input_path = "s3://" + workbench_bucket + "/incoming-data/aqsol_public_data.csv"
-    output_uuid = "test"
-    my_loader = S3ToDataSourceLight(input_path, output_uuid)
+    output_name = "test"
+    my_loader = S3ToDataSourceLight(input_path, output_name)
     my_loader.set_output_tags(["test"])
 
     # Store this data as a Workbench DataSource

@@ -10,17 +10,17 @@ class CleanData(DataToDataLight):
 
     Common Usage:
         ```python
-        clean_data = CleanData(input_data_uuid, output_data_uuid)
+        clean_data = CleanData(input_data_name, output_data_name)
         clean_data.set_output_tags(["abalone", "clean", "whatever"])
         clean_data.transform(drop_na="any", drop_outliers=True, drop_duplicates=True)
         ```
     """
 
-    def __init__(self, input_data_uuid: str, output_data_uuid: str):
+    def __init__(self, input_data_name: str, output_data_name: str):
         """CleanData Initialization"""
 
         # Call superclass init
-        super().__init__(input_data_uuid, output_data_uuid)
+        super().__init__(input_data_name, output_data_name)
 
     def transform_impl(self, drop_na="any", drop_duplicates=True, drop_outliers=True, **kwargs):
         """Simple Clean Data, will improve later"""
@@ -56,8 +56,8 @@ if __name__ == "__main__":
     """Exercise the CleanData Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "test_data"
-    output_uuid = "test_data_clean"
-    data_to_data = CleanData(input_uuid, output_uuid)
+    input_name = "test_data"
+    output_name = "test_data_clean"
+    data_to_data = CleanData(input_name, output_name)
     data_to_data.set_output_tags(["test", "clean"])
     data_to_data.transform(drop_na="any")

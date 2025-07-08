@@ -87,25 +87,25 @@ class ModelCore(Artifact):
 
     Common Usage:
         ```python
-        my_model = ModelCore(model_uuid)
+        my_model = ModelCore(model_name)
         my_model.summary()
         my_model.details()
         ```
     """
 
-    def __init__(self, model_uuid: str, model_type: ModelType = None, **kwargs):
+    def __init__(self, model_name: str, model_type: ModelType = None, **kwargs):
         """ModelCore Initialization
         Args:
-            model_uuid (str): Name of Model in Workbench.
+            model_name (str): Name of Model in Workbench.
             model_type (ModelType, optional): Set this for newly created Models. Defaults to None.
             **kwargs: Additional keyword arguments
         """
 
         # Make sure the model name is valid
-        self.is_name_valid(model_uuid, delimiter="-", lower_case=False)
+        self.is_name_valid(model_name, delimiter="-", lower_case=False)
 
         # Call SuperClass Initialization
-        super().__init__(model_uuid, **kwargs)
+        super().__init__(model_name, **kwargs)
 
         # Initialize our class attributes
         self.latest_model = None
@@ -114,7 +114,7 @@ class ModelCore(Artifact):
         self.endpoint_inference_path = None
 
         # Grab an Cloud Platform Meta object and pull information for this Model
-        self.model_name = model_uuid
+        self.model_name = model_name
         self.model_meta = self.meta.model(self.model_name)
         if self.model_meta is None:
             self.log.warning(f"Could not find model {self.model_name} within current visibility scope")
@@ -239,45 +239,45 @@ class ModelCore(Artifact):
             inference_runs.append("model_training")
         return inference_runs
 
-    def delete_inference_run(self, inference_run_uuid: str):
+    def delete_inference_run(self, inference_run_name: str):
         """Delete the inference run for this model
 
         Args:
-            inference_run_uuid (str): UUID of the inference run
+            inference_run_name (str): Name of the inference run
         """
-        if inference_run_uuid == "model_training":
+        if inference_run_name == "model_training":
             self.log.warning("Cannot delete model training data!")
             return
 
         if self.endpoint_inference_path:
-            full_path = f"{self.endpoint_inference_path}/{inference_run_uuid}"
+            full_path = f"{self.endpoint_inference_path}/{inference_run_name}"
             # Check if there are any objects at the path
             if wr.s3.list_objects(full_path):
                 wr.s3.delete_objects(path=full_path)
-                self.log.important(f"Deleted inference run {inference_run_uuid} for {self.model_name}")
+                self.log.important(f"Deleted inference run {inference_run_name} for {self.model_name}")
             else:
-                self.log.warning(f"Inference run {inference_run_uuid} not found for {self.model_name}!")
+                self.log.warning(f"Inference run {inference_run_name} not found for {self.model_name}!")
         else:
             self.log.important(f"No inference data found for {self.model_name}!")
 
-    def get_inference_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
+    def get_inference_metrics(self, capture_name: str = "latest") -> Union[pd.DataFrame, None]:
         """Retrieve the inference performance metrics for this model
 
         Args:
-            capture_uuid (str, optional): Specific capture_uuid or "training" (default: "latest")
+            capture_name (str, optional): Specific capture_name or "training" (default: "latest")
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
 
         Note:
-            If a capture_uuid isn't specified this will try to return something reasonable
+            If a capture_name isn't specified this will try to return something reasonable
         """
         # Try to get the auto_capture 'training_holdout' or the training
-        if capture_uuid == "latest":
+        if capture_name == "latest":
             metrics_df = self.get_inference_metrics("auto_inference")
             return metrics_df if metrics_df is not None else self.get_inference_metrics("model_training")
 
         # Grab the metrics captured during model training (could return None)
-        if capture_uuid == "model_training":
+        if capture_name == "model_training":
             # Sanity check the workbench metadata
             if self.workbench_meta() is None:
                 error_msg = f"Model {self.model_name} has no workbench_meta(). Either onboard() or delete this model!"
@@ -287,20 +287,20 @@ class ModelCore(Artifact):
             metrics = self.workbench_meta().get("workbench_training_metrics")
             return pd.DataFrame.from_dict(metrics) if metrics else None
 
-        else:  # Specific capture_uuid (could return None)
-            s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_metrics.csv"
+        else:  # Specific capture_name (could return None)
+            s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_metrics.csv"
             metrics = pull_s3_data(s3_path, embedded_index=True)
             if metrics is not None:
                 return metrics
             else:
-                self.log.warning(f"Performance metrics {capture_uuid} not found for {self.model_name}!")
+                self.log.warning(f"Performance metrics {capture_name} not found for {self.model_name}!")
                 return None
 
-    def confusion_matrix(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
+    def confusion_matrix(self, capture_name: str = "latest") -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
 
         Args:
-            capture_uuid (str, optional): Specific capture_uuid or "training" (default: "latest")
+            capture_name (str, optional): Specific capture_name or "training" (default: "latest")
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
@@ -312,22 +312,22 @@ class ModelCore(Artifact):
             raise ValueError(error_msg)
 
         # Grab the metrics from the Workbench Metadata (try inference first, then training)
-        if capture_uuid == "latest":
+        if capture_name == "latest":
             cm = self.confusion_matrix("auto_inference")
             return cm if cm is not None else self.confusion_matrix("model_training")
 
         # Grab the confusion matrix captured during model training (could return None)
-        if capture_uuid == "model_training":
+        if capture_name == "model_training":
             cm = self.workbench_meta().get("workbench_training_cm")
             return pd.DataFrame.from_dict(cm) if cm else None
 
-        else:  # Specific capture_uuid
-            s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_cm.csv"
+        else:  # Specific capture_name
+            s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_cm.csv"
             cm = pull_s3_data(s3_path, embedded_index=True)
             if cm is not None:
                 return cm
             else:
-                self.log.warning(f"Confusion Matrix {capture_uuid} not found for {self.model_name}!")
+                self.log.warning(f"Confusion Matrix {capture_name} not found for {self.model_name}!")
                 return None
 
     def set_input(self, input: str, force: bool = False):
@@ -340,11 +340,11 @@ class ModelCore(Artifact):
             We're going to not allow this to be used for Models
         """
         if not force:
-            self.log.warning(f"Model {self.uuid}: Does not allow manual override of the input!")
+            self.log.warning(f"Model {self.name}: Does not allow manual override of the input!")
             return
 
         # Okay we're going to allow this to be set
-        self.log.important(f"{self.uuid}: Setting input to {input}...")
+        self.log.important(f"{self.name}: Setting input to {input}...")
         self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
         self.upsert_workbench_meta({"workbench_input": input})
 
@@ -409,7 +409,7 @@ class ModelCore(Artifact):
         Args:
             endpoint_name (str): Name of the endpoint
         """
-        self.log.important(f"Registering Endpoint {endpoint_name} with Model {self.uuid}...")
+        self.log.important(f"Registering Endpoint {endpoint_name} with Model {self.name}...")
         registered_endpoints = set(self.workbench_meta().get("workbench_registered_endpoints", []))
         registered_endpoints.add(endpoint_name)
         self.upsert_workbench_meta({"workbench_registered_endpoints": list(registered_endpoints)})
@@ -427,13 +427,13 @@ class ModelCore(Artifact):
         Args:
             endpoint_name (str): Name of the endpoint
         """
-        self.log.important(f"Removing Endpoint {endpoint_name} from Model {self.uuid}...")
+        self.log.important(f"Removing Endpoint {endpoint_name} from Model {self.name}...")
         try:
             registered_endpoints = set(self.workbench_meta().get("workbench_registered_endpoints", []))
             registered_endpoints.discard(endpoint_name)
             self.upsert_workbench_meta({"workbench_registered_endpoints": list(registered_endpoints)})
         except AttributeError:
-            self.log.warning(f"Model {self.uuid} probably doesn't exist, skipping endpoint removal")
+            self.log.warning(f"Model {self.name} probably doesn't exist, skipping endpoint removal")
             return
 
         # If we have NO endpionts, then set a health tags
@@ -795,7 +795,7 @@ class ModelCore(Artifact):
             shap_importance = shap_feature_importance(self)
 
             # Store the Shap Importance dictionary in the Parameter Store
-            self.param_store.upsert(f"/workbench/models/{self.uuid}/shap_importance", shap_importance)
+            self.param_store.upsert(f"/workbench/models/{self.name}/shap_importance", shap_importance)
 
             # We're going to create sample rows for our SHAP plots
             from workbench.api import FeatureSet
@@ -806,16 +806,16 @@ class ModelCore(Artifact):
             # Now we recompute the SHAP values using our sample rows
             shap_data, feature_df = shap_values_data(self, sample_df=shap_sample_input)
 
-            # Store the SHAP feature dataframe in the DataFrame Cache (just the top 10 shap values)
+            # Store the SHAP feature dataframe in the DataFrame Store (just the top 10 shap values)
             shap_sample = feature_df[[fs.id_column] + [f[0] for f in shap_importance[:10]]]
-            self.df_store.upsert(f"/workbench/models/{self.uuid}/shap_sample", shap_sample)
+            self.df_store.upsert(f"/workbench/models/{self.name}/shap_sample", shap_sample)
 
             # Shap Data might be a DataFrame or a dict of DataFrames
             if isinstance(shap_data, dict):
                 for key, df in shap_data.items():
-                    self.df_store.upsert(f"/workbench/models/{self.uuid}/shap_data/{key}", df)
+                    self.df_store.upsert(f"/workbench/models/{self.name}/shap_data/{key}", df)
             else:
-                self.df_store.upsert(f"/workbench/models/{self.uuid}/shap_data", shap_data)
+                self.df_store.upsert(f"/workbench/models/{self.name}/shap_data", shap_data)
         except Exception as e:
             self.log.warning(f"SHAP Feature Importance failed: {e}")
 
@@ -825,7 +825,7 @@ class ModelCore(Artifact):
         Returns:
             Optional[List[Tuple[str, float]]]: List of tuples containing feature names and their importance scores
         """
-        shap_features = self.param_store.get(f"/workbench/models/{self.uuid}/shap_importance")
+        shap_features = self.param_store.get(f"/workbench/models/{self.name}/shap_importance")
         return [tuple(e) for e in shap_features] if shap_features else None
 
     def shap_sample(self) -> Optional[pd.DataFrame]:
@@ -834,7 +834,7 @@ class ModelCore(Artifact):
         Returns:
             Optional[pd.DataFrame]: SHAP sample data (DataFrame)
         """
-        shap_sample = self.df_store.get(f"/workbench/models/{self.uuid}/shap_sample")
+        shap_sample = self.df_store.get(f"/workbench/models/{self.name}/shap_sample")
         return shap_sample if shap_sample is not None else None
 
     def shap_data(self) -> Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]:
@@ -844,11 +844,11 @@ class ModelCore(Artifact):
             Optional[Union[pd.DataFrame, dict]]: SHAP data (DataFrame or dict of DataFrames)
         """
         # Check if the SHAP data is one DataFrame or a dict of DataFrames
-        if self.df_store.check(f"/workbench/models/{self.uuid}/shap_data"):
-            return self.df_store.get(f"/workbench/models/{self.uuid}/shap_data")
+        if self.df_store.check(f"/workbench/models/{self.name}/shap_data"):
+            return self.df_store.get(f"/workbench/models/{self.name}/shap_data")
         else:
             # Loop over the SHAP data and return a dict of DataFrames
-            shap_dfs = self.df_store.list_subfiles(f"/workbench/models/{self.uuid}/shap_data")
+            shap_dfs = self.df_store.list_subfiles(f"/workbench/models/{self.name}/shap_data")
             shap_data = {}
             for df_location in shap_dfs:
                 key = df_location.split("/")[-1]
@@ -870,10 +870,10 @@ class ModelCore(Artifact):
     def delete(self):
         """Delete the Model Packages and the Model Group"""
         if not self.exists():
-            self.log.warning(f"Trying to delete an Model that doesn't exist: {self.uuid}")
+            self.log.warning(f"Trying to delete an Model that doesn't exist: {self.name}")
 
         # Call the Class Method to delete the Model Group
-        ModelCore.managed_delete(model_group_name=self.uuid)
+        ModelCore.managed_delete(model_group_name=self.name)
 
     @classmethod
     def managed_delete(cls, model_group_name: str):
@@ -987,27 +987,27 @@ class ModelCore(Artifact):
                 {"workbench_training_metrics": metrics_df.to_dict(), "workbench_training_cm": cm_df.to_dict()}
             )
 
-    def _load_inference_metrics(self, capture_uuid: str = "auto_inference"):
+    def _load_inference_metrics(self, capture_name: str = "auto_inference"):
         """Internal: Retrieve the inference model metrics for this model
                      and load the data into the Workbench Metadata
 
         Args:
-            capture_uuid (str, optional): A specific capture_uuid (default: "auto_inference")
+            capture_name (str, optional): A specific capture_name (default: "auto_inference")
         Notes:
             This may or may not exist based on whether an Endpoint ran Inference
         """
-        s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_metrics.csv"
+        s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_metrics.csv"
         inference_metrics = pull_s3_data(s3_path)
 
         # Store data into the Workbench Metadata
         metrics_storage = None if inference_metrics is None else inference_metrics.to_dict("records")
         self.upsert_workbench_meta({"workbench_inference_metrics": metrics_storage})
 
-    def get_inference_metadata(self, capture_uuid: str = "auto_inference") -> Union[pd.DataFrame, None]:
+    def get_inference_metadata(self, capture_name: str = "auto_inference") -> Union[pd.DataFrame, None]:
         """Retrieve the inference metadata for this model
 
         Args:
-            capture_uuid (str, optional): A specific capture_uuid (default: "auto_inference")
+            capture_name (str, optional): A specific capture_name (default: "auto_inference")
 
         Returns:
             dict: Dictionary of the inference metadata (might be None)
@@ -1018,8 +1018,8 @@ class ModelCore(Artifact):
         if self.endpoint_inference_path is None:
             return None
 
-        # Check for model_training capture_uuid
-        if capture_uuid == "model_training":
+        # Check for model_training capture_name
+        if capture_name == "model_training":
             # Create a DataFrame with the training metadata
             meta_df = pd.DataFrame(
                 [
@@ -1035,22 +1035,22 @@ class ModelCore(Artifact):
 
         # Pull the inference metadata
         try:
-            s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_meta.json"
+            s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_meta.json"
             return wr.s3.read_json(s3_path)
         except NoFilesFound:
             self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
 
-    def get_inference_predictions(self, capture_uuid: str = "auto_inference") -> Union[pd.DataFrame, None]:
+    def get_inference_predictions(self, capture_name: str = "auto_inference") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_uuid (str, optional): Specific capture_uuid (default: training_holdout)
+            capture_name (str, optional): Specific capture_name (default: training_holdout)
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
-        self.log.important(f"Grabbing {capture_uuid} predictions for {self.model_name}...")
+        self.log.important(f"Grabbing {capture_name} predictions for {self.model_name}...")
 
         # Sanity check that the model should have predictions
         has_predictions = self.model_type in [
@@ -1064,11 +1064,11 @@ class ModelCore(Artifact):
             return None
 
         # Special case for model_training
-        if capture_uuid == "model_training":
+        if capture_name == "model_training":
             return self._get_validation_predictions()
 
         # Construct the S3 path for the Inference Predictions
-        s3_path = f"{self.endpoint_inference_path}/{capture_uuid}/inference_predictions.csv"
+        s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_predictions.csv"
         return pull_s3_data(s3_path)
 
     def _get_validation_predictions(self) -> Union[pd.DataFrame, None]:

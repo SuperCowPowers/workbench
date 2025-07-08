@@ -43,7 +43,7 @@ class EndpointCore(Artifact):
 
     Common Usage:
         ```python
-        my_endpoint = EndpointCore(endpoint_uuid)
+        my_endpoint = EndpointCore(endpoint_name)
         prediction_df = my_endpoint.predict(test_df)
         metrics = my_endpoint.regression_metrics(target_column, prediction_df)
         for metric, value in metrics.items():
@@ -51,37 +51,37 @@ class EndpointCore(Artifact):
         ```
     """
 
-    def __init__(self, endpoint_uuid, **kwargs):
+    def __init__(self, endpoint_name, **kwargs):
         """EndpointCore Initialization
 
         Args:
-            endpoint_uuid (str): Name of Endpoint in Workbench
+            endpoint_name (str): Name of Endpoint in Workbench
         """
 
-        # Make sure the endpoint_uuid is a valid name
-        self.is_name_valid(endpoint_uuid, delimiter="-", lower_case=False)
+        # Make sure the endpoint_name is a valid name
+        self.is_name_valid(endpoint_name, delimiter="-", lower_case=False)
 
         # Call SuperClass Initialization
-        super().__init__(endpoint_uuid, **kwargs)
+        super().__init__(endpoint_name, **kwargs)
 
         # Grab an Cloud Metadata object and pull information for Endpoints
-        self.endpoint_name = endpoint_uuid
+        self.endpoint_name = endpoint_name
         self.endpoint_meta = self.meta.endpoint(self.endpoint_name)
 
         # Sanity check that we found the endpoint
         if self.endpoint_meta is None:
-            self.log.important(f"Could not find endpoint {self.uuid} within current visibility scope")
+            self.log.important(f"Could not find endpoint {self.name} within current visibility scope")
             return
 
         # Sanity check the Endpoint state
         if self.endpoint_meta["EndpointStatus"] == "Failed":
-            self.log.critical(f"Endpoint {self.uuid} is in a failed state")
+            self.log.critical(f"Endpoint {self.name} is in a failed state")
             reason = self.endpoint_meta["FailureReason"]
             self.log.critical(f"Failure Reason: {reason}")
             self.log.critical("Please delete this endpoint and re-deploy...")
 
         # Set the Inference, Capture, and Monitoring S3 Paths
-        base_endpoint_path = f"{self.endpoints_s3_path}/{self.uuid}"
+        base_endpoint_path = f"{self.endpoints_s3_path}/{self.name}"
         self.endpoint_inference_path = f"{base_endpoint_path}/inference"
         self.endpoint_data_capture_path = f"{base_endpoint_path}/data_capture"
         self.endpoint_monitoring_path = f"{base_endpoint_path}/monitoring"
@@ -229,7 +229,7 @@ class EndpointCore(Artifact):
         """
 
         # Do we have it cached?
-        metrics_key = f"endpoint:{self.uuid}:endpoint_metrics"
+        metrics_key = f"endpoint:{self.name}:endpoint_metrics"
         endpoint_metrics = self.temp_storage.get(metrics_key)
         if endpoint_metrics is not None:
             return endpoint_metrics
@@ -239,7 +239,7 @@ class EndpointCore(Artifact):
             return None
         self.log.important("Updating endpoint metrics...")
         variant = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
-        endpoint_metrics = EndpointMetrics().get_metrics(self.uuid, variant=variant)
+        endpoint_metrics = EndpointMetrics().get_metrics(self.name, variant=variant)
         self.temp_storage.set(metrics_key, endpoint_metrics)
         return endpoint_metrics
 
@@ -278,7 +278,7 @@ class EndpointCore(Artifact):
             True if monitoring is enabled, False otherwise.
         """
         try:
-            response = self.sm_client.list_monitoring_schedules(EndpointName=self.uuid)
+            response = self.sm_client.list_monitoring_schedules(EndpointName=self.name)
             return bool(response.get("MonitoringScheduleSummaries", []))
         except ClientError:
             return False
@@ -351,17 +351,17 @@ class EndpointCore(Artifact):
         # Grab the evaluation data from the FeatureSet
         table = fs.view("training").table
         eval_df = fs.query(f'SELECT * FROM "{table}" where training = FALSE')
-        capture_uuid = "auto_inference" if capture else None
-        return self.inference(eval_df, capture_uuid, id_column=fs.id_column)
+        capture_name = "auto_inference" if capture else None
+        return self.inference(eval_df, capture_name, id_column=fs.id_column)
 
     def inference(
-        self, eval_df: pd.DataFrame, capture_uuid: str = None, id_column: str = None, drop_error_rows: bool = False
+        self, eval_df: pd.DataFrame, capture_name: str = None, id_column: str = None, drop_error_rows: bool = False
     ) -> pd.DataFrame:
         """Run inference and compute performance metrics with optional capture
 
         Args:
             eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
-            capture_uuid (str, optional): UUID of the inference capture (default=None)
+            capture_name (str, optional): Name of the inference capture (default=None)
             id_column (str, optional): Name of the ID column (default=None)
             drop_error_rows (bool, optional): If True, drop rows that had endpoint errors/issues (default=False)
 
@@ -407,15 +407,15 @@ class EndpointCore(Artifact):
 
         # Print out the metrics
         if not metrics.empty:
-            print(f"Performance Metrics for {self.model_name} on {self.uuid}")
+            print(f"Performance Metrics for {self.model_name} on {self.name}")
             print(metrics.head())
 
             # Capture the inference results and metrics
-            if capture_uuid is not None:
-                description = capture_uuid.replace("_", " ").title()
+            if capture_name is not None:
+                description = capture_name.replace("_", " ").title()
                 features = model.features()
                 self._capture_inference_results(
-                    capture_uuid, prediction_df, target_column, model_type, metrics, description, features, id_column
+                    capture_name, prediction_df, target_column, model_type, metrics, description, features, id_column
                 )
 
                 # For UQ Models we also capture the uncertainty metrics
@@ -423,8 +423,8 @@ class EndpointCore(Artifact):
                     metrics = uq_metrics(prediction_df, target_column)
 
                     # Now put into the Parameter Store Model Namespace
-                    model_name = model.uuid
-                    self.param_store.upsert(f"/workbench/models/{model_name}/inference/{capture_uuid}", metrics)
+                    model_name = model.name
+                    self.param_store.upsert(f"/workbench/models/{model_name}/inference/{capture_name}", metrics)
 
         # Return the prediction DataFrame
         return prediction_df
@@ -442,7 +442,7 @@ class EndpointCore(Artifact):
         Note:
             There's no sanity checks or error handling... just FAST Inference!
         """
-        return fast_inference(self.uuid, eval_df, self.sm_session, threads=threads)
+        return fast_inference(self.name, eval_df, self.sm_session, threads=threads)
 
     def _predict(self, eval_df: pd.DataFrame, drop_error_rows: bool = False) -> pd.DataFrame:
         """Internal: Run prediction on the given observations in the given DataFrame
@@ -636,7 +636,7 @@ class EndpointCore(Artifact):
 
     def _capture_inference_results(
         self,
-        capture_uuid: str,
+        capture_name: str,
         pred_results_df: pd.DataFrame,
         target_column: str,
         model_type: ModelType,
@@ -648,7 +648,7 @@ class EndpointCore(Artifact):
         """Internal: Capture the inference results and metrics to S3
 
         Args:
-            capture_uuid (str): UUID of the inference capture
+            capture_name (str): Name of the inference capture
             pred_results_df (pd.DataFrame): DataFrame with the prediction results
             target_column (str): Name of the target column
             model_type (ModelType): Type of the model (e.g. REGRESSOR, CLASSIFIER)
@@ -663,14 +663,14 @@ class EndpointCore(Artifact):
 
         # Metadata for the model inference
         inference_meta = {
-            "name": capture_uuid,
+            "name": capture_name,
             "data_hash": data_hash,
             "num_rows": len(pred_results_df),
             "description": description,
         }
 
         # Create the S3 Path for the Inference Capture
-        inference_capture_path = f"{self.endpoint_inference_path}/{capture_uuid}"
+        inference_capture_path = f"{self.endpoint_inference_path}/{capture_name}"
 
         # Write the metadata dictionary and metrics to our S3 Model Inference Folder
         wr.s3.to_json(
@@ -713,11 +713,11 @@ class EndpointCore(Artifact):
         # Now recompute the details for our Model
         self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
         model = ModelCore(self.model_name)
-        model._load_inference_metrics(capture_uuid)
+        model._load_inference_metrics(capture_name)
         model.details()
 
         # Recompute the details so that inference model metrics are updated
-        self.log.important(f"Recomputing Details for {self.uuid} to show latest Inference Results...")
+        self.log.important(f"Recomputing Details for {self.name} to show latest Inference Results...")
         self.details()
 
     def regression_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
@@ -917,25 +917,25 @@ class EndpointCore(Artifact):
             We're going to not allow this to be used for Models
         """
         if not force:
-            self.log.warning(f"Endpoint {self.uuid}: Does not allow manual override of the input!")
+            self.log.warning(f"Endpoint {self.name}: Does not allow manual override of the input!")
             return
 
         # Okay we're going to allow this to be set
-        self.log.important(f"{self.uuid}: Setting input to {input}...")
+        self.log.important(f"{self.name}: Setting input to {input}...")
         self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
         self.upsert_workbench_meta({"workbench_input": input})
 
     def delete(self):
         """ "Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
         if not self.exists():
-            self.log.warning(f"Trying to delete an Model that doesn't exist: {self.uuid}")
+            self.log.warning(f"Trying to delete an Model that doesn't exist: {self.name}")
 
         # Remove this endpoint from the list of registered endpoints
-        self.log.info(f"Removing {self.uuid} from the list of registered endpoints...")
-        ModelCore(self.model_name).remove_endpoint(self.uuid)
+        self.log.info(f"Removing {self.name} from the list of registered endpoints...")
+        ModelCore(self.model_name).remove_endpoint(self.name)
 
         # Call the Class Method to delete the Endpoint
-        EndpointCore.managed_delete(endpoint_name=self.uuid)
+        EndpointCore.managed_delete(endpoint_name=self.name)
 
     @classmethod
     def managed_delete(cls, endpoint_name: str):
@@ -1099,7 +1099,7 @@ if __name__ == "__main__":
 
     # Now set capture=True to save inference results and metrics
     my_eval_df = fs_evaluation_data(my_endpoint)
-    pred_results = my_endpoint.inference(my_eval_df, capture_uuid="holdout_xyz")
+    pred_results = my_endpoint.inference(my_eval_df, capture_name="holdout_xyz")
 
     # Run Inference and metrics for a Classification Endpoint
     class_endpoint = EndpointCore("wine-classification")

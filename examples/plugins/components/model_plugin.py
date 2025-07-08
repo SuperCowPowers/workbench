@@ -46,8 +46,8 @@ class ModelPlugin(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        log.important(f"Updating Model Plugin with Model: {model.uuid} and kwargs: {kwargs}")
-        model_name = f"Model: {model.uuid}"
+        log.important(f"Updating Model Plugin with Model: {model.name} and kwargs: {kwargs}")
+        model_name = f"Model: {model.name}"
 
         # Generate random values for the pie chart
         pie_values = [random.randint(10, 30) for _ in range(4)]

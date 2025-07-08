@@ -28,7 +28,7 @@ class MyViewPlugin(PageView):
             pd.DataFrame: DataFrame of the Models Data
         """
         models = self.meta.models()
-        models["uuid"] = models["Model Group"]  # uuid is needed for identifying the model
+        models["name"] = models["Model Group"]  # name is needed for identifying the model
         return models
 
 

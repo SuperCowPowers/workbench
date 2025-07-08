@@ -56,10 +56,10 @@ class MyModelMarkdown(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        log.important(f"Updating Model Markdown Plugin with Model: {model.uuid} and kwargs: {kwargs}")
+        log.important(f"Updating Model Markdown Plugin with Model: {model.name} and kwargs: {kwargs}")
 
         # Update the html header
-        header = f"Model: {model.uuid}"
+        header = f"Model: {model.name}"
 
         # Make Markdown for the model summary
         summary = model.summary()

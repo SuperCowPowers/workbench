@@ -18,26 +18,26 @@ class PandasToData(Transform):
 
     Common Usage:
         ```python
-        df_to_data = PandasToData(output_uuid)
+        df_to_data = PandasToData(output_name)
         df_to_data.set_output_tags(["test", "small"])
         df_to_data.set_input(test_df)
         df_to_data.transform()
         ```
     """
 
-    def __init__(self, output_uuid: str, output_format: str = "parquet", catalog_db: str = "workbench"):
+    def __init__(self, output_name: str, output_format: str = "parquet", catalog_db: str = "workbench"):
         """PandasToData Initialization
         Args:
-            output_uuid (str): The UUID of the DataSource to create
+            output_name (str): The Name of the DataSource to create
             output_format (str): The file format to store the S3 object data in (default: "parquet")
             catalog_db (str): The AWS Data Catalog Database to use (default: "workbench")
         """
 
-        # Make sure the output_uuid is a valid name/id
-        Artifact.is_name_valid(output_uuid)
+        # Make sure the output_name is a valid name/id
+        Artifact.is_name_valid(output_name)
 
         # Call superclass init
-        super().__init__("DataFrame", output_uuid, catalog_db)
+        super().__init__("DataFrame", output_name, catalog_db)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
@@ -55,8 +55,8 @@ class PandasToData(Transform):
 
     def delete_existing(self):
         # Delete the existing FeatureSet if it exists
-        self.log.info(f"Deleting the {self.output_uuid} DataSource...")
-        AthenaSource.managed_delete(self.output_uuid)
+        self.log.info(f"Deleting the {self.output_name} DataSource...")
+        AthenaSource.managed_delete(self.output_name)
         time.sleep(1)
 
     def convert_object_to_string(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -98,14 +98,14 @@ class PandasToData(Transform):
         Args:
             overwrite (bool): Overwrite the existing data in the Workbench S3 Bucket (default: True)
         """
-        self.log.info(f"DataFrame to Workbench DataSource: {self.output_uuid}...")
+        self.log.info(f"DataFrame to Workbench DataSource: {self.output_name}...")
 
         # Set up our metadata storage
         workbench_meta = {"workbench_tags": self.output_tags}
         workbench_meta.update(self.output_meta)
 
         # Create the Output Parquet file S3 Storage Path
-        s3_storage_path = f"{self.data_sources_s3_path}/{self.output_uuid}"
+        s3_storage_path = f"{self.data_sources_s3_path}/{self.output_name}"
 
         # Convert columns names to lowercase, Athena will not work with uppercase column names
         if str(self.output_df.columns) != str(self.output_df.columns.str.lower()):
@@ -127,7 +127,7 @@ class PandasToData(Transform):
         """
 
         # Write out the DataFrame to AWS Data Catalog in either Parquet or JSONL format
-        description = f"Workbench data source: {self.output_uuid}"
+        description = f"Workbench data source: {self.output_name}"
         glue_table_settings = {"description": description, "parameters": workbench_meta}
         if self.output_format == "parquet":
             wr.s3.to_parquet(
@@ -136,8 +136,8 @@ class PandasToData(Transform):
                 dataset=True,
                 mode="overwrite",
                 database=self.data_catalog_db,
-                table=self.output_uuid,
-                filename_prefix=f"{self.output_uuid}_",
+                table=self.output_name,
+                filename_prefix=f"{self.output_name}_",
                 boto3_session=self.boto3_session,
                 partition_cols=None,
                 glue_table_settings=glue_table_settings,
@@ -160,8 +160,8 @@ class PandasToData(Transform):
                 dataset=True,
                 mode="overwrite",
                 database=self.data_catalog_db,
-                table=self.output_uuid,
-                filename_prefix=f"{self.output_uuid}_",
+                table=self.output_name,
+                filename_prefix=f"{self.output_name}_",
                 boto3_session=self.boto3_session,
                 partition_cols=None,
                 glue_table_settings=glue_table_settings,
@@ -174,7 +174,7 @@ class PandasToData(Transform):
         self.log.info("Post-Transform: Calling onboard() for the DataSource...")
 
         # Onboard the DataSource
-        output_data_source = DataSourceFactory(self.output_uuid)
+        output_data_source = DataSourceFactory(self.output_name)
         output_data_source.onboard()
 
 
@@ -187,12 +187,12 @@ if __name__ == "__main__":
     df = test_data.person_data()
 
     # Create my Pandas to DataSource Transform
-    test_uuid = "test_data"
-    df_to_data = PandasToData(test_uuid)
+    test_name = "test_data"
+    df_to_data = PandasToData(test_name)
     df_to_data.set_input(df)
     df_to_data.set_output_tags(["test", "small"])
     df_to_data.transform()
-    print(f"{test_uuid} stored as a Workbench DataSource")
+    print(f"{test_name} stored as a Workbench DataSource")
 
     # Test column names with uppercase
     df.rename(columns={"iq_score": "IQ_Score"}, inplace=True)
@@ -203,12 +203,12 @@ if __name__ == "__main__":
     """
     data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "test_data.json"
     test_df = pd.read_json(data_path, orient="records", lines=True)
-    output_uuid = "test_data_json"
-    df_to_data = PandasToData(output_uuid)
+    output_name = "test_data_json"
+    df_to_data = PandasToData(output_name)
     df_to_data.set_input(test_df)
     df_to_data.set_output_tags(["test", "json"])
 
     # Store this data into a Workbench DataSource
     df_to_data.transform()
-    print(f"{output_uuid} stored as a Workbench DataSource")
+    print(f"{output_name} stored as a Workbench DataSource")
     """

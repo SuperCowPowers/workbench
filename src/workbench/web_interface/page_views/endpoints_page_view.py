@@ -42,14 +42,14 @@ class EndpointsPageView(PageView):
         return self.endpoints_df
 
     @staticmethod
-    def endpoint_details(endpoint_uuid: str) -> (dict, None):
-        """Get all the details for the given Endpoint UUID
+    def endpoint_details(endpoint_name: str) -> (dict, None):
+        """Get all the details for the given Endpoint Name
          Args:
-            endpoint_uuid(str): The UUID of the Endpoint
+            endpoint_name(str): The Name of the Endpoint
         Returns:
             dict: The details for the given Model (or None if not found)
         """
-        endpoint = CachedEndpoint(endpoint_uuid)
+        endpoint = CachedEndpoint(endpoint_name)
         if not endpoint.exists():
             return {"Status": "Not Found"}
         elif not endpoint.ready():
@@ -73,9 +73,9 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first Endpoint
-    my_endpoint_uuid = summary["Name"].iloc[0]
+    my_endpoint_name = summary["Name"].iloc[0]
     print("\nEndpointDetails:")
-    details = endpoint_view.endpoint_details(my_endpoint_uuid)
+    details = endpoint_view.endpoint_details(my_endpoint_name)
     pprint(details)
 
     # Give any broker threads time to finish

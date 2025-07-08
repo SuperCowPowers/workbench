@@ -13,22 +13,22 @@ class JSONToDataSource(Transform):
 
     Common Usage:
         ```python
-        json_to_data = JSONToDataSource(json_file_path, data_uuid)
+        json_to_data = JSONToDataSource(json_file_path, data_name)
         json_to_data.set_output_tags(["abalone", "json", "whatever"])
         json_to_data.transform()
         ```
     """
 
-    def __init__(self, json_file_path: str, data_uuid: str):
+    def __init__(self, json_file_path: str, data_name: str):
         """JSONToDataSource: Class to move local JSON Files into a Workbench DataSource
 
         Args:
             json_file_path (str): The path to the JSON file to be transformed
-            data_uuid (str): The UUID of the Workbench DataSource to be created
+            data_name (str): The Name of the Workbench DataSource to be created
         """
 
         # Call superclass init
-        super().__init__(json_file_path, data_uuid)
+        super().__init__(json_file_path, data_name)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.LOCAL_FILE
@@ -40,21 +40,21 @@ class JSONToDataSource(Transform):
         """
 
         # Report the transformation initiation
-        json_file = os.path.basename(self.input_uuid)
-        self.log.info(f"Starting {json_file} -->  DataSource: {self.output_uuid}...")
+        json_file = os.path.basename(self.input_name)
+        self.log.info(f"Starting {json_file} -->  DataSource: {self.output_name}...")
 
         # Read in the Local JSON as a Pandas DataFrame
-        df = pd.read_json(self.input_uuid, lines=True)
+        df = pd.read_json(self.input_name, lines=True)
 
         # Use the Workbench Pandas to Data Source class
-        pandas_to_data = PandasToData(self.output_uuid)
+        pandas_to_data = PandasToData(self.output_name)
         pandas_to_data.set_input(df)
         pandas_to_data.set_output_tags(self.output_tags)
         pandas_to_data.add_output_meta(self.output_meta)
         pandas_to_data.transform()
 
         # Report the transformation results
-        self.log.info(f"{json_file} -->  DataSource: {self.output_uuid} Complete!")
+        self.log.info(f"{json_file} -->  DataSource: {self.output_name} Complete!")
 
     def post_transform(self, **kwargs):
         """Post-Transform"""

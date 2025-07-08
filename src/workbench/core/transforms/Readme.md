@@ -22,8 +22,8 @@ def set_input(self, resource_url: str):
     pass
 
 @abstractmethod
-def set_output_name(self, uuid: str):
-    """Set the Output Name (uuid) for this Transform"""
+def set_output_name(self, name: str):
+    """Set the Output Name (name) for this Transform"""
     pass
 
 @abstractmethod

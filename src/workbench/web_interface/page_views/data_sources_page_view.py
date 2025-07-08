@@ -40,19 +40,19 @@ class DataSourcesPageView(PageView):
         return self.data_sources_df
 
     @staticmethod
-    def data_source_smart_sample(data_uuid: str) -> pd.DataFrame:
+    def data_source_smart_sample(data_name: str) -> pd.DataFrame:
         """Get a smart-sample dataframe (sample + outliers) for the given DataSource Index
         Args:
-            data_uuid(str): The UUID of the DataSource
+            data_name(str): The Name of the DataSource
         Returns:
             pd.DataFrame: The smart-sample DataFrame
         """
-        ds = CachedDataSource(data_uuid)
+        ds = CachedDataSource(data_name)
         if not ds.exists():
-            return pd.DataFrame({"uuid": [data_uuid], "status": ["NOT FOUND"]})
+            return pd.DataFrame({"name": [data_name], "status": ["NOT FOUND"]})
         if not ds.ready():
             status = ds.get_status()
-            return pd.DataFrame({"uuid": [data_uuid], "status": [f"{status}"]})
+            return pd.DataFrame({"name": [data_name], "status": [f"{status}"]})
         else:
             # Get the display columns
             display_columns = ds.view("display").columns
@@ -62,15 +62,15 @@ class DataSourcesPageView(PageView):
             return smart_sample[[col for col in display_columns if col in smart_sample.columns]]
 
     @staticmethod
-    def data_source_details(data_uuid: str) -> (dict, None):
-        """Get all the details for the given DataSource UUID
+    def data_source_details(data_name: str) -> (dict, None):
+        """Get all the details for the given DataSource Name
         Args:
-            data_uuid(str): The UUID of the DataSource
+            data_name(str): The Name of the DataSource
         Returns:
             dict: The details for the given DataSource (or None if not found)
         """
         # Grab the DataSource, if it exists and is ready
-        ds = CachedDataSource(data_uuid)
+        ds = CachedDataSource(data_name)
         if not ds.exists() or not ds.ready():
             return None
 
@@ -111,14 +111,14 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first DataSource
-    my_data_uuid = summary["Name"].iloc[0]
-    print(f"\nDataSourceDetails: {my_data_uuid}")
-    details = data_view.data_source_details(my_data_uuid)
+    my_data_name = summary["Name"].iloc[0]
+    print(f"\nDataSourceDetails: {my_data_name}")
+    details = data_view.data_source_details(my_data_name)
     pprint(details)
 
     # Get a sample dataframe for the given DataSources
-    print(f"\nSampleDataFrame: {my_data_uuid}")
-    sample_df = data_view.data_source_smart_sample(my_data_uuid)
+    print(f"\nSampleDataFrame: {my_data_name}")
+    sample_df = data_view.data_source_smart_sample(my_data_name)
     print(sample_df.shape)
     print(sample_df.head())
 

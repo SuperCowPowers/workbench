@@ -17,22 +17,22 @@ class DataToFeaturesHeavy(Transform):
 
     Common Usage:
         ```python`
-        to_features = DataToFeaturesHeavy(output_uuid)
+        to_features = DataToFeaturesHeavy(output_name)
         to_features.set_output_tags(["heavy", "whatever"])
         to_features.transform(query, id_column, event_time_column=None)
         ```
     """
 
-    def __init__(self, input_uuid: str, output_uuid: str):
+    def __init__(self, input_name: str, output_name: str):
         """DataToFeaturesHeavy Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, output_uuid)
+        super().__init__(input_name, output_name)
 
         # Set up all my instance attributes
         self.id_column = None
         self.event_time_column = None
-        self.input_data_source = DataSourceFactory(input_uuid)
+        self.input_data_source = DataSourceFactory(input_name)
         self.output_database = "sagemaker_featurestore"
 
     @staticmethod
@@ -53,7 +53,7 @@ class DataToFeaturesHeavy(Transform):
         """
 
         # Delete the existing FeatureSet (if it exists)
-        FeatureSetCore.managed_delete(self.output_uuid)
+        FeatureSetCore.managed_delete(self.output_name)
         time.sleep(5)
 
         # Set the ID and Event Time Columns
@@ -68,7 +68,7 @@ class DataToFeaturesHeavy(Transform):
         info = wr.athena.create_ctas_table(
             sql=query,
             database=self.input_data_source.data_catalog_db,
-            ctas_table=self.output_uuid,
+            ctas_table=self.output_name,
             ctas_database=self.output_database,
             s3_output=s3_storage_path,
             write_compression="snappy",
@@ -88,8 +88,8 @@ class DataToFeaturesHeavy(Transform):
         sample_df = self.convert_column_types(sample_df)
 
         # Create a Feature Group and load our Feature Definitions
-        self.log.info(f"Creating FeatureGroup: {self.output_uuid}")
-        my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
+        self.log.info(f"Creating FeatureGroup: {self.output_name}")
+        my_feature_group = FeatureGroup(name=self.output_name, sagemaker_session=self.sm_session)
         my_feature_group.load_feature_definitions(data_frame=sample_df)
 
         # Get the metadata/tags to push into AWS
@@ -97,7 +97,7 @@ class DataToFeaturesHeavy(Transform):
 
         # Data Catalog Config
         my_config = DataCatalogConfig(
-            table_name=self.output_uuid,
+            table_name=self.output_name,
             catalog="AwsDataCatalog",
             database=self.output_database,
         )
@@ -118,8 +118,8 @@ class DataToFeaturesHeavy(Transform):
         self.ensure_feature_group_created(my_feature_group)
 
         # Create the FeatureSet Object
-        self.log.info(f"Creating FeatureSet Object: {self.output_uuid}")
-        my_feature_set = FeatureSetCore(self.output_uuid)
+        self.log.info(f"Creating FeatureSet Object: {self.output_name}")
+        my_feature_set = FeatureSetCore(self.output_name)
 
         # Compute Details, Descriptive Stats, and SampleDF from the Feature Group
         my_feature_set.details()

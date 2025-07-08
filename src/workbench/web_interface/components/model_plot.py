@@ -23,7 +23,7 @@ class ModelPlot(ComponentInterface):
         """Create a Model Plot Figure based on the model type.
         Args:
             model (Model): Workbench Model object
-            inference_run (str): Inference run capture UUID
+            inference_run (str): Inference run capture Name
         Returns:
             go.Figure: A Plotly Figure (either a Confusion Matrix or Scatter Plot)
         """

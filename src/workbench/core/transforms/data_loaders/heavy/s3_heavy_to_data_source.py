@@ -15,20 +15,20 @@ from pyspark.sql.functions import col, to_timestamp
 
 
 class S3HeavyToDataSource:
-    def __init__(self, glue_context: GlueContext, input_uuid: str, output_uuid: str):
+    def __init__(self, glue_context: GlueContext, input_name: str, output_name: str):
         """S3HeavyToDataSource: Class to move HEAVY S3 Files into a Workbench DataSource
 
         Args:
             glue_context: GlueContext, AWS Glue Specific wrapper around SparkContext
-            input_uuid (str): The S3 Path to the files to be loaded
-            output_uuid (str): The UUID of the Workbench DataSource to be created
+            input_name (str): The S3 Path to the files to be loaded
+            output_name (str): The Name of the Workbench DataSource to be created
         """
         self.log = glue_context.get_logger()
 
         # FIXME: Pull these from Parameter Store or Config
-        self.input_uuid = input_uuid
-        self.output_uuid = output_uuid
-        self.output_meta = {"workbench_input": self.input_uuid}
+        self.input_name = input_name
+        self.output_name = output_name
+        self.output_meta = {"workbench_input": self.input_name}
         workbench_bucket = "s3://sandbox-workbench-artifacts"
         self.data_sources_s3_path = workbench_bucket + "/data-sources"
 
@@ -106,14 +106,14 @@ class S3HeavyToDataSource:
         tags = ["heavy"]
 
         # Create the Output Parquet file S3 Storage Path
-        s3_storage_path = f"{self.data_sources_s3_path}/{self.output_uuid}"
+        s3_storage_path = f"{self.data_sources_s3_path}/{self.output_name}"
 
         # Read JSONL files from S3 and infer schema dynamically
-        self.log.info(f"Reading JSONL files from {self.input_uuid}...")
+        self.log.info(f"Reading JSONL files from {self.input_name}...")
         input_dyf = self.glue_context.create_dynamic_frame.from_options(
             connection_type="s3",
             connection_options={
-                "paths": [self.input_uuid],
+                "paths": [self.input_name],
                 "recurse": True,
                 "gzip": True,
             },
@@ -161,13 +161,13 @@ class S3HeavyToDataSource:
         )
 
         # Set up our Workbench metadata (description, tags, etc)
-        description = f"Workbench data source: {self.output_uuid}"
+        description = f"Workbench data source: {self.output_name}"
         workbench_meta = {"workbench_tags": self.tag_delimiter.join(tags)}
         for key, value in self.output_meta.items():
             workbench_meta[key] = value
 
         # Create a new table in the AWS Data Catalog
-        self.log.info(f"Creating Data Catalog Table: {self.output_uuid}...")
+        self.log.info(f"Creating Data Catalog Table: {self.output_name}...")
 
         # Converting the Spark Types to Athena Types
         def to_athena_type(col):
@@ -188,7 +188,7 @@ class S3HeavyToDataSource:
             serialization_library = "org.apache.hadoop.hive.ql.io.orc.OrcSerde"
 
         table_input = {
-            "Name": self.output_uuid,
+            "Name": self.output_name,
             "Description": description,
             "Parameters": workbench_meta,
             "TableType": "EXTERNAL_TABLE",
@@ -207,17 +207,17 @@ class S3HeavyToDataSource:
         # Delete the Data Catalog Table if it already exists
         glue_client = boto3.client("glue")
         try:
-            glue_client.delete_table(DatabaseName="workbench", Name=self.output_uuid)
-            self.log.info(f"Deleting Data Catalog Table: {self.output_uuid}...")
+            glue_client.delete_table(DatabaseName="workbench", Name=self.output_name)
+            self.log.info(f"Deleting Data Catalog Table: {self.output_name}...")
         except ClientError as e:
             if e.response["Error"]["Code"] != "EntityNotFoundException":
                 raise e
 
-        self.log.info(f"Creating Data Catalog Table: {self.output_uuid}...")
+        self.log.info(f"Creating Data Catalog Table: {self.output_name}...")
         glue_client.create_table(DatabaseName="workbench", TableInput=table_input)
 
         # All done!
-        self.log.info(f"{self.input_uuid} --> {self.output_uuid} complete!")
+        self.log.info(f"{self.input_name} --> {self.output_name} complete!")
 
 
 if __name__ == "__main__":
@@ -235,8 +235,8 @@ if __name__ == "__main__":
 
     # Test the Heavy Data Loader
     input_path = "s3://sandbox-workbench-artifacts/incoming-data/dns/"
-    data_output_uuid = "heavy_dns"
-    my_loader = S3HeavyToDataSource(glueContext, input_path, data_output_uuid)
+    data_output_name = "heavy_dns"
+    my_loader = S3HeavyToDataSource(glueContext, input_path, data_output_name)
 
     # Store this data as a Workbench DataSource
     my_loader.transform(timestamp_columns=["timestamp"])

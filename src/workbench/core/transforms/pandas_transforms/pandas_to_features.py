@@ -18,25 +18,25 @@ class PandasToFeatures(Transform):
 
     Common Usage:
         ```python
-        to_features = PandasToFeatures(output_uuid)
+        to_features = PandasToFeatures(output_name)
         to_features.set_output_tags(["my", "awesome", "data"])
         to_features.set_input(df, id_column="my_id")
         to_features.transform()
         ```
     """
 
-    def __init__(self, output_uuid: str):
+    def __init__(self, output_name: str):
         """PandasToFeatures Initialization
 
         Args:
-            output_uuid (str): The UUID of the FeatureSet to create
+            output_name (str): The Name of the FeatureSet to create
         """
 
-        # Make sure the output_uuid is a valid name
-        Artifact.is_name_valid(output_uuid)
+        # Make sure the output_name is a valid name
+        Artifact.is_name_valid(output_name)
 
         # Call superclass init
-        super().__init__("DataFrame", output_uuid)
+        super().__init__("DataFrame", output_name)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.PANDAS_DF
@@ -73,8 +73,8 @@ class PandasToFeatures(Transform):
 
     def delete_existing(self):
         # Delete the existing FeatureSet if it exists
-        self.log.info(f"Deleting the {self.output_uuid} FeatureSet...")
-        FeatureSetCore.managed_delete(self.output_uuid)
+        self.log.info(f"Deleting the {self.output_name} FeatureSet...")
+        FeatureSetCore.managed_delete(self.output_name)
         time.sleep(1)
 
     def _ensure_id_column(self):
@@ -298,11 +298,11 @@ class PandasToFeatures(Transform):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
 
         # Create a Feature Group and load our Feature Definitions
-        my_feature_group = FeatureGroup(name=self.output_uuid, sagemaker_session=self.sm_session)
+        my_feature_group = FeatureGroup(name=self.output_name, sagemaker_session=self.sm_session)
         my_feature_group.load_feature_definitions(data_frame=self.output_df)
 
         # Create the Output S3 Storage Path for this Feature Set
-        s3_storage_path = f"{self.feature_sets_s3_path}/{self.output_uuid}"
+        s3_storage_path = f"{self.feature_sets_s3_path}/{self.output_name}"
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
@@ -331,7 +331,7 @@ class PandasToFeatures(Transform):
         """Transform Implementation: Ingest the data into the Feature Group"""
 
         # Now we actually push the data into the Feature Group (called ingestion)
-        self.log.important(f"Ingesting rows into Feature Group {self.output_uuid}...")
+        self.log.important(f"Ingesting rows into Feature Group {self.output_name}...")
         ingest_manager = self.output_feature_group.ingest(self.output_df, max_workers=8, max_processes=4, wait=False)
         try:
             ingest_manager.wait()
@@ -354,7 +354,7 @@ class PandasToFeatures(Transform):
         self.log.info(f"Total rows ingested: {self.expected_rows}")
 
         # We often need to wait a bit for AWS to fully register the new Feature Group
-        self.log.important(f"Waiting for AWS to register the new Feature Group {self.output_uuid}...")
+        self.log.important(f"Waiting for AWS to register the new Feature Group {self.output_name}...")
         time.sleep(30)
 
     def post_transform(self, **kwargs):
@@ -362,7 +362,7 @@ class PandasToFeatures(Transform):
         self.log.info("Post-Transform: Populating Offline Storage and onboard()...")
 
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
-        self.output_feature_set = FeatureSetCore(self.output_uuid)
+        self.output_feature_set = FeatureSetCore(self.output_name)
         self.log.important("Waiting for AWS Feature Group Offline storage to be ready...")
         self.log.important("This will often take 10-20 minutes...go have coffee or lunch :)")
         self.output_feature_set.set_status("initializing")
@@ -391,7 +391,7 @@ class PandasToFeatures(Transform):
         rows = self.output_feature_set.num_rows()
 
         # Wait for the rows to be populated
-        self.log.info(f"Waiting for AWS Feature Group {self.output_uuid} Offline Storage...")
+        self.log.info(f"Waiting for AWS Feature Group {self.output_name} Offline Storage...")
         max_retry = 20
         num_retry = 0
         sleep_time = 30
@@ -399,7 +399,7 @@ class PandasToFeatures(Transform):
             num_retry += 1
             time.sleep(sleep_time)
             rows = self.output_feature_set.num_rows()
-            self.log.info(f"Checking Offline Storage {self.output_uuid}: {rows}/{expected_rows} rows")
+            self.log.info(f"Checking Offline Storage {self.output_name}: {rows}/{expected_rows} rows")
         if rows == expected_rows:
             self.log.important(f"Success: Reached Expected Rows ({rows} rows)...")
         else:
@@ -434,7 +434,7 @@ if __name__ == "__main__":
     df_to_features.set_output_tags(["test", "small"])
     df_to_features.transform()
 
-    # Test non-compliant output UUID
+    # Test non-compliant output Name
     df_to_features = PandasToFeatures("test_features-123")
 
     #

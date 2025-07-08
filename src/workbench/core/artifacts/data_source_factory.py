@@ -7,10 +7,10 @@ from workbench.core.artifacts.athena_source import AthenaSource
 class DataSourceFactory:
     """DataSourceFactory: Workbench DataSource is the best source for your data"""
 
-    def __new__(cls, uuid, data_source_type: str = "athena", force_refresh: bool = False):
+    def __new__(cls, name, data_source_type: str = "athena", force_refresh: bool = False):
         """DataSourceFactory: A Factory for DataSources (Athena, RDS, etc)
         Args:
-            uuid: The UUID of the DataSource
+            name: The Name of the DataSource
             data_source_type: The type of DataSource (athena, rds, etc)
             force_refresh: Force a refresh of the AWS Broker (default: False)
         Returns:
@@ -19,11 +19,11 @@ class DataSourceFactory:
         if data_source_type == "athena":
             # We're going to check both regular DataSources and DataSources
             # that are storage locations for FeatureSets
-            ds = AthenaSource(uuid)
+            ds = AthenaSource(name)
             if ds.exists():
                 return ds
             else:
-                return AthenaSource(uuid, "sagemaker_featurestore")
+                return AthenaSource(name, "sagemaker_featurestore")
         else:
             raise NotImplementedError(f"DataSource type {data_source_type} not implemented")
 
@@ -38,8 +38,8 @@ if __name__ == "__main__":
     # Verify that the Athena DataSource exists
     assert my_data.exists()
 
-    # What's my Workbench UUID
-    print(f"UUID: {my_data.uuid}")
+    # What's my Workbench Name
+    print(f"Name: {my_data.name}")
 
     # What's my AWS ARN and URL
     print(f"AWS ARN: {my_data.arn()}")

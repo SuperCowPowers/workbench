@@ -8,9 +8,9 @@ from workbench.core.transforms.data_to_features.heavy.chunk.data_to_features_chu
 
 
 # Create the DataToFeaturesChunk Class
-input_uuid = "heavy_dns"
-output_uuid = "dns_features_0"
-data_to_features = DataToFeaturesChunk(input_uuid, output_uuid)
+input_name = "heavy_dns"
+output_name = "dns_features_0"
+data_to_features = DataToFeaturesChunk(input_name, output_name)
 
 # Set the output tags
 data_to_features.set_output_tags(["dns", "heavy"])
