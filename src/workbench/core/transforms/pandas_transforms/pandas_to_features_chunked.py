@@ -15,7 +15,7 @@ class PandasToFeaturesChunked(Transform):
 
     Common Usage:
         ```python
-        to_features = PandasToFeaturesChunked(output_uuid, id_column="id"/None, event_time_column="date"/None)
+        to_features = PandasToFeaturesChunked(output_name, id_column="id"/None, event_time_column="date"/None)
         to_features.set_output_tags(["abalone", "public", "whatever"])
         cat_column_info = {"sex": ["M", "F", "I"]}
         to_features.set_categorical_info(cat_column_info)
@@ -26,20 +26,20 @@ class PandasToFeaturesChunked(Transform):
         ```
     """
 
-    def __init__(self, output_uuid: str, id_column=None, event_time_column=None):
+    def __init__(self, output_name: str, id_column=None, event_time_column=None):
         """PandasToFeaturesChunked Initialization"""
 
-        # Make sure the output_uuid is a valid name
-        Artifact.is_name_valid(output_uuid)
+        # Make sure the output_name is a valid name
+        Artifact.is_name_valid(output_name)
 
         # Call superclass init
-        super().__init__("DataFrame", output_uuid)
+        super().__init__("DataFrame", output_name)
 
         # Set up all my instance attributes
         self.id_column = id_column
         self.event_time_column = event_time_column
         self.first_chunk = None
-        self.pandas_to_features = PandasToFeatures(output_uuid)
+        self.pandas_to_features = PandasToFeatures(output_name)
 
     def set_categorical_info(self, cat_column_info: dict[list[str]]):
         """Set the Categorical Columns
@@ -74,7 +74,7 @@ class PandasToFeaturesChunked(Transform):
         """Pre-Transform: Create the Feature Group with Chunked Data"""
 
         # Loading data into a Feature Group takes a while, so set status to loading
-        FeatureSetCore(self.output_uuid).set_status("loading")
+        FeatureSetCore(self.output_name).set_status("loading")
 
     def transform_impl(self):
         """Required implementation of the Transform interface"""

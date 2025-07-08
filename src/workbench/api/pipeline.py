@@ -26,12 +26,12 @@ class Pipeline:
     def __init__(self, name: str):
         """Pipeline Init Method"""
         self.log = logging.getLogger("workbench")
-        self.uuid = name
+        self.name = name
 
         # Spin up a Parameter Store for Pipelines
         self.prefix = "/workbench/pipelines"
         self.params = ParameterStore()
-        self.pipeline = self.params.get(f"{self.prefix}/{self.uuid}")
+        self.pipeline = self.params.get(f"{self.prefix}/{self.name}")
 
     def summary(self, **kwargs) -> dict:
         """Retrieve the Pipeline Summary.
@@ -107,7 +107,7 @@ class Pipeline:
         """
         # Grab the entire pipeline if not provided (first call)
         if not pipeline:
-            self.log.important(f"Checking Pipeline: {self.uuid}...")
+            self.log.important(f"Checking Pipeline: {self.name}...")
             pipeline = self.pipeline
         for key, value in pipeline.items():
             if isinstance(value, dict):
@@ -120,8 +120,8 @@ class Pipeline:
 
     def delete(self):
         """Pipeline Deletion"""
-        self.log.info(f"Deleting Pipeline: {self.uuid}...")
-        self.params.delete(f"{self.prefix}/{self.uuid}")
+        self.log.info(f"Deleting Pipeline: {self.name}...")
+        self.params.delete(f"{self.prefix}/{self.name}")
 
     def __repr__(self) -> str:
         """String representation of this pipeline

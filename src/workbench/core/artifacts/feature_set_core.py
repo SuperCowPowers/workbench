@@ -30,31 +30,31 @@ class FeatureSetCore(Artifact):
 
     Common Usage:
         ```python
-        my_features = FeatureSetCore(feature_uuid)
+        my_features = FeatureSetCore(feature_name)
         my_features.summary()
         my_features.details()
         ```
     """
 
-    def __init__(self, feature_set_uuid: str, **kwargs):
+    def __init__(self, feature_set_name: str, **kwargs):
         """FeatureSetCore Initialization
 
         Args:
-            feature_set_uuid (str): Name of Feature Set
+            feature_set_name (str): Name of Feature Set
         """
 
         # Make sure the feature_set name is valid
-        self.is_name_valid(feature_set_uuid)
+        self.is_name_valid(feature_set_name)
 
         # Call superclass init
-        super().__init__(feature_set_uuid, **kwargs)
+        super().__init__(feature_set_name, **kwargs)
 
         # Get our FeatureSet metadata
-        self.feature_meta = self.meta.feature_set(self.uuid)
+        self.feature_meta = self.meta.feature_set(self.name)
 
         # Sanity check and then set up our FeatureSet attributes
         if self.feature_meta is None:
-            self.log.warning(f"Could not find feature set {self.uuid} within current visibility scope")
+            self.log.warning(f"Could not find feature set {self.name} within current visibility scope")
             self.data_source = None
             return
         else:
@@ -84,7 +84,7 @@ class FeatureSetCore(Artifact):
         super().__post_init__()
 
         # All done
-        self.log.info(f"FeatureSet Initialized: {self.uuid}...")
+        self.log.info(f"FeatureSet Initialized: {self.name}...")
 
     @property
     def table(self) -> str:
@@ -93,21 +93,21 @@ class FeatureSetCore(Artifact):
 
     def refresh_meta(self):
         """Internal: Refresh our internal AWS Feature Store metadata"""
-        self.log.info(f"Calling refresh_meta() on the FeatureSet {self.uuid}")
-        self.feature_meta = self.meta.feature_set(self.uuid)
+        self.log.info(f"Calling refresh_meta() on the FeatureSet {self.name}")
+        self.feature_meta = self.meta.feature_set(self.name)
         self.id_column = self.feature_meta["RecordIdentifierFeatureName"]
         self.event_time = self.feature_meta["EventTimeFeatureName"]
         self.athena_table = self.feature_meta["workbench_meta"]["athena_table"]
         self.athena_database = self.feature_meta["workbench_meta"]["athena_database"]
         self.s3_storage = self.feature_meta["workbench_meta"].get("s3_storage")
         self.data_source = AthenaSource(self.athena_table, self.athena_database)
-        self.log.info(f"Calling refresh_meta() on the DataSource {self.data_source.uuid}")
+        self.log.info(f"Calling refresh_meta() on the DataSource {self.data_source.name}")
         self.data_source.refresh_meta()
 
     def exists(self) -> bool:
         """Does the feature_set_name exist in the AWS Metadata?"""
         if self.feature_meta is None:
-            self.log.debug(f"FeatureSet {self.uuid} not found in AWS Metadata!")
+            self.log.debug(f"FeatureSet {self.name} not found in AWS Metadata!")
             return False
         return True
 
@@ -126,7 +126,7 @@ class FeatureSetCore(Artifact):
 
         # Check our DataSource
         if not self.data_source.exists():
-            self.log.critical(f"Data Source check failed for {self.uuid}")
+            self.log.critical(f"Data Source check failed for {self.name}")
             self.log.critical("Delete this Feature Set and recreate it to fix this issue")
             health_issues.append("data_source_missing")
         return health_issues
@@ -276,7 +276,7 @@ class FeatureSetCore(Artifact):
             pd.DataFrame: The results of the query
         """
         if overwrite:
-            query = query.replace(" " + self.uuid + " ", " " + self.athena_table + " ")
+            query = query.replace(" " + self.name + " ", " " + self.athena_table + " ")
         return self.data_source.query(query)
 
     def aws_url(self):
@@ -322,12 +322,12 @@ class FeatureSetCore(Artifact):
 
         # Set up the S3 Query results path
         date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
-        s3_output_path = self.feature_sets_s3_path + f"/{self.uuid}/datasets/all_{date_time}"
+        s3_output_path = self.feature_sets_s3_path + f"/{self.name}/datasets/all_{date_time}"
 
         # Make the query
         table = self.view("training").table
         query = f'SELECT * FROM "{table}"'
-        athena_query = FeatureGroup(name=self.uuid, sagemaker_session=self.sm_session).athena_query()
+        athena_query = FeatureGroup(name=self.name, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()
         query_execution = athena_query.get_query_execution()
@@ -376,7 +376,7 @@ class FeatureSetCore(Artifact):
             dict(dict): A dictionary of details about this FeatureSet
         """
 
-        self.log.info(f"Computing FeatureSet Details ({self.uuid})...")
+        self.log.info(f"Computing FeatureSet Details ({self.name})...")
         details = self.summary()
         details["aws_url"] = self.aws_url()
 
@@ -400,7 +400,7 @@ class FeatureSetCore(Artifact):
 
         # Underlying Storage Details
         details["storage_type"] = "athena"  # TODO: Add RDS support
-        details["storage_uuid"] = self.data_source.uuid
+        details["storage_name"] = self.data_source.name
 
         # Add the column details and column stats
         details["column_details"] = self.column_details()
@@ -413,10 +413,10 @@ class FeatureSetCore(Artifact):
         """Instance Method: Delete the Feature Set: Feature Group, Catalog Table, and S3 Storage Objects"""
         # Make sure the AthenaSource exists
         if not self.exists():
-            self.log.warning(f"Trying to delete an FeatureSet that doesn't exist: {self.uuid}")
+            self.log.warning(f"Trying to delete an FeatureSet that doesn't exist: {self.name}")
 
         # Call the Class Method to delete the FeatureSet
-        FeatureSetCore.managed_delete(self.uuid)
+        FeatureSetCore.managed_delete(self.name)
 
     @classmethod
     def managed_delete(cls, feature_set_name: str):
@@ -437,7 +437,7 @@ class FeatureSetCore(Artifact):
         offline_config = response.get("OfflineStoreConfig", {})
         database = offline_config.get("DataCatalogConfig", {}).get("Database")
         offline_table = offline_config.get("DataCatalogConfig", {}).get("TableName")
-        data_source_uuid = offline_table  # Our offline storage IS a DataSource
+        data_source_name = offline_table  # Our offline storage IS a DataSource
 
         # Delete the Feature Group and ensure that it gets deleted
         cls.log.important(f"Deleting FeatureSet {feature_set_name}...")
@@ -445,7 +445,7 @@ class FeatureSetCore(Artifact):
         cls.ensure_feature_group_deleted(remove_fg)
 
         # Delete our underlying DataSource (Data Catalog Table and S3 Storage Objects)
-        AthenaSource.managed_delete(data_source_uuid, database=database)
+        AthenaSource.managed_delete(data_source_name, database=database)
 
         # Delete any views associated with this FeatureSet
         cls.delete_views(offline_table, database)
@@ -621,7 +621,7 @@ class FeatureSetCore(Artifact):
         existing_meta = self.workbench_meta()
         feature_set_ready = set(existing_meta.keys()).issuperset(expected_meta)
         if not feature_set_ready:
-            self.log.info(f"FeatureSet {self.uuid} is not ready!")
+            self.log.info(f"FeatureSet {self.name} is not ready!")
             return False
 
         # Okay now call/return the DataSource ready() method
@@ -631,14 +631,14 @@ class FeatureSetCore(Artifact):
         """This is a BLOCKING method that will onboard the FeatureSet (make it ready)"""
 
         # Set our status to onboarding
-        self.log.important(f"Onboarding {self.uuid}...")
+        self.log.important(f"Onboarding {self.name}...")
         self.set_status("onboarding")
         self.remove_health_tag("needs_onboard")
 
         # Call our underlying DataSource onboard method
         self.data_source.refresh_meta()
         if not self.data_source.exists():
-            self.log.critical(f"Data Source check failed for {self.uuid}")
+            self.log.critical(f"Data Source check failed for {self.name}")
             self.log.critical("Delete this Feature Set and recreate it to fix this issue")
             return False
         if not self.data_source.ready():
@@ -656,7 +656,7 @@ class FeatureSetCore(Artifact):
         """This is a BLOCKING method that will recompute the stats for the FeatureSet"""
 
         # Call our underlying DataSource recompute stats method
-        self.log.important(f"Recomputing Stats {self.uuid}...")
+        self.log.important(f"Recomputing Stats {self.name}...")
         self.data_source.recompute_stats()
         self.details()
         return True

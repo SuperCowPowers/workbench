@@ -74,7 +74,7 @@ class ColumnSubsetView(CreateView):
 
         # Sanity check the columns
         if not sql_columns:
-            instance.log.critical(f"{artifact.uuid} No columns to create view...")
+            instance.log.critical(f"{artifact.name} No columns to create view...")
             return None
 
         # Create the view query

@@ -42,7 +42,7 @@ def sample_rows(data_source: DataSourceAbstract, rows: int = 100) -> pd.DataFram
 
     # Sanity Check
     if sample_df is None:
-        log.error(f"Error pulling sample rows from {data_source.uuid}")
+        log.error(f"Error pulling sample rows from {data_source.name}")
         return None
 
     # Grab the first N rows (this clamps the sample_df to the desired number of rows)
@@ -67,8 +67,8 @@ if __name__ == "__main__":
     # Verify that the Athena Data Source exists
     assert my_data.exists()
 
-    # What's my Workbench UUID
-    print(f"UUID: {my_data.uuid}")
+    # What's my Workbench Name
+    print(f"Name: {my_data.name}")
 
     # Sample rows for this DataSource
     my_sample_df = sample_rows(my_data)

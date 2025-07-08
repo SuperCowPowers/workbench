@@ -39,12 +39,12 @@ class Transform(ABC):
     """Transform: Abstract Base Class for all transforms within Workbench. Inherited Classes
     must implement the abstract transform_impl() method"""
 
-    def __init__(self, input_uuid: str, output_uuid: str, catalog_db: str = "workbench"):
+    def __init__(self, input_name: str, output_name: str, catalog_db: str = "workbench"):
         """Transform Initialization
 
         Args:
-            input_uuid (str): The UUID of the Input Artifact
-            output_uuid (str): The UUID of the Output Artifact
+            input_name (str): The Name of the Input Artifact
+            output_name (str): The Name of the Output Artifact
             catalog_db (str): The AWS Data Catalog Database to use (default: "workbench")
         """
 
@@ -52,9 +52,9 @@ class Transform(ABC):
         self.input_type = None
         self.output_type = None
         self.output_tags = ""
-        self.input_uuid = str(input_uuid)  # Occasionally we get a pathlib.Path object
-        self.output_uuid = str(output_uuid)  # Occasionally we get a pathlib.Path object
-        self.output_meta = {"workbench_input": self.input_uuid}
+        self.input_name = str(input_name)  # Occasionally we get a pathlib.Path object
+        self.output_name = str(output_name)  # Occasionally we get a pathlib.Path object
+        self.output_meta = {"workbench_input": self.input_name}
         self.data_catalog_db = catalog_db
 
         # Grab our Workbench Bucket
@@ -138,10 +138,10 @@ class Transform(ABC):
         """What Output Type does this Transform Produce"""
         return self.output_type
 
-    def set_input_uuid(self, input_uuid: str):
-        """Set the Input UUID (Name) for this Transform"""
-        self.input_uuid = input_uuid
+    def set_input_name(self, input_name: str):
+        """Set the Input Name (Name) for this Transform"""
+        self.input_name = input_name
 
-    def set_output_uuid(self, output_uuid: str):
-        """Set the Output UUID (Name) for this Transform"""
-        self.output_uuid = output_uuid
+    def set_output_name(self, output_name: str):
+        """Set the Output Name (Name) for this Transform"""
+        self.output_name = output_name

@@ -12,7 +12,7 @@ class DataToPandas(Transform):
 
     Common Usage:
         ```python
-        data_to_df = DataToPandas(data_source_uuid)
+        data_to_df = DataToPandas(data_source_name)
         data_to_df.transform(query=<optional SQL query to filter/process data>)
         data_to_df.transform(max_rows=<optional max rows to sample>)
         my_df = data_to_df.get_output()
@@ -21,11 +21,11 @@ class DataToPandas(Transform):
         ```
     """
 
-    def __init__(self, input_uuid: str):
+    def __init__(self, input_name: str):
         """DataToPandas Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid, "DataFrame")
+        super().__init__(input_name, "DataFrame")
 
         # Set up all my instance attributes
         self.input_type = TransformInput.DATA_SOURCE
@@ -40,14 +40,14 @@ class DataToPandas(Transform):
         """
 
         # Grab the Input (Data Source)
-        input_data = DataSourceFactory(self.input_uuid)
+        input_data = DataSourceFactory(self.input_name)
         if not input_data.exists():
-            self.log.critical(f"Data Check on {self.input_uuid} failed!")
+            self.log.critical(f"Data Check on {self.input_name} failed!")
             return
 
         # If a query is provided, that overrides the queries below
         if query:
-            self.log.info(f"Querying {self.input_uuid} with {query}...")
+            self.log.info(f"Querying {self.input_name} with {query}...")
             self.output_df = input_data.query(query)
             return
 
@@ -56,9 +56,9 @@ class DataToPandas(Transform):
         if num_rows > max_rows:
             percentage = round(max_rows * 100.0 / num_rows)
             self.log.important(f"DataSource has {num_rows} rows.. sampling down to {max_rows}...")
-            query = f"SELECT * FROM {self.input_uuid} TABLESAMPLE BERNOULLI({percentage})"
+            query = f"SELECT * FROM {self.input_name} TABLESAMPLE BERNOULLI({percentage})"
         else:
-            query = f"SELECT * FROM {self.input_uuid}"
+            query = f"SELECT * FROM {self.input_name}"
 
         # Mark the transform as complete and set the output DataFrame
         self.output_df = input_data.query(query)
@@ -82,10 +82,10 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Grab a Data Source
-    data_uuid = "abalone_data"
+    data_name = "abalone_data"
 
     # Create the DataSource to DF Transform
-    data_to_df = DataToPandas(data_uuid)
+    data_to_df = DataToPandas(data_name)
 
     # Transform the DataSource into a Pandas DataFrame (with max_rows = 1000)
     data_to_df.transform(max_rows=1000)
@@ -95,6 +95,6 @@ if __name__ == "__main__":
     print(my_df)
 
     # Now test the query functionality
-    data_to_df.transform(query=f"SELECT * from {data_uuid} limit 100")
+    data_to_df.transform(query=f"SELECT * from {data_name} limit 100")
     my_df = data_to_df.get_output()
     print(my_df)

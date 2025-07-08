@@ -38,7 +38,7 @@ class ModelPluginView(PageView):
     def models_summary(self) -> pd.DataFrame:
         """Get summary data about the Workbench Models"""
         models = self.meta.models()
-        models["uuid"] = models["Model Group"]
+        models["name"] = models["Model Group"]
         return models
 
 

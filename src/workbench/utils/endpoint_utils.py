@@ -196,5 +196,5 @@ if __name__ == "__main__":
         print(model_data_url)
 
     # Check if the endpoint is monitored
-    is_monitored_status = is_monitored(my_endpoint.uuid, my_endpoint.sm_client)
-    print(f"Is the endpoint '{my_endpoint.uuid}' monitored? {is_monitored_status}")
+    is_monitored_status = is_monitored(my_endpoint.name, my_endpoint.sm_client)
+    print(f"Is the endpoint '{my_endpoint.name}' monitored? {is_monitored_status}")

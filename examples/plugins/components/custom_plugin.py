@@ -41,7 +41,7 @@ class CustomPlugin(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        model_name = f"Model: {model.uuid}"
+        model_name = f"Model: {model.name}"
         text_figure = self.display_text(model_name, figure_height=100)
         return [text_figure]
 

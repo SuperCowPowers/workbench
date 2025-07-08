@@ -30,7 +30,7 @@ def create_from_endpoint(endpoint_name: str) -> dict:
     s3_source = data_source.get_input()
     for name in ["data_source", "feature_set", "model", "endpoint"]:
         artifact = locals()[name]
-        pipeline[name] = {"name": artifact.uuid, "tags": artifact.get_tags(), "input": artifact.get_input()}
+        pipeline[name] = {"name": artifact.name, "tags": artifact.get_tags(), "input": artifact.get_input()}
         if name == "model":
             pipeline[name]["model_type"] = artifact.model_type.value
             pipeline[name]["target_column"] = artifact.target()

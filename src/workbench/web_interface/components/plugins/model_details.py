@@ -71,11 +71,11 @@ class ModelDetails(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        self.log.important(f"Updating Plugin with Model: {model.uuid} and kwargs: {kwargs}")
+        self.log.important(f"Updating Plugin with Model: {model.name} and kwargs: {kwargs}")
 
         # Update the header and the details
         self.current_model = model
-        header = f"{self.current_model.uuid}"
+        header = f"{self.current_model.name}"
         details = self.model_summary()
 
         # Populate the inference runs dropdown
@@ -139,7 +139,7 @@ class ModelDetails(PluginInterface):
 
             # Special case for Parameter Store Metadata
             if key == "param_meta":
-                model_name = summary["uuid"]
+                model_name = summary["name"]
                 meta_data = self.params.get(f"/workbench/models/{model_name}/meta", warn=False)
                 if meta_data:
                     markdown += dict_to_markdown(meta_data, title="Additional Metadata")
@@ -199,7 +199,7 @@ class ModelDetails(PluginInterface):
         markdown += f"**Description:** {description}  \n"
 
         # Grab the Metrics from the model details
-        metrics = self.current_model.get_inference_metrics(capture_uuid=inference_run)
+        metrics = self.current_model.get_inference_metrics(capture_name=inference_run)
         if metrics is None:
             markdown += "  \nNo Data  \n"
         else:
@@ -215,7 +215,7 @@ class ModelDetails(PluginInterface):
             markdown += metrics.to_markdown()
 
         # Get additional inference metrics if they exist
-        model_name = self.current_model.uuid
+        model_name = self.current_model.name
         inference_data = self.params.get(f"/workbench/models/{model_name}/inference/{inference_run}", warn=False)
         if inference_data:
             markdown += "\n\n"

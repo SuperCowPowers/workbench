@@ -57,7 +57,7 @@ class MDQView:
         features = model_input.features()
 
         # Pull in data from the source table
-        df = fs.data_source.query(f"SELECT * FROM {fs.data_source.uuid}")
+        df = fs.data_source.query(f"SELECT * FROM {fs.data_source.name}")
 
         # Check if the target and features are available in the data source
         missing_columns = [col for col in [target] + features if col not in df.columns]

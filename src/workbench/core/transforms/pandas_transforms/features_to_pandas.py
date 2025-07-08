@@ -12,7 +12,7 @@ class FeaturesToPandas(Transform):
 
     Common Usage:
         ```python
-        feature_to_df = FeaturesToPandas(feature_set_uuid)
+        feature_to_df = FeaturesToPandas(feature_set_name)
         feature_to_df.transform(max_rows=<optional max rows to sample>)
         my_df = feature_to_df.get_output()
         ```
@@ -22,7 +22,7 @@ class FeaturesToPandas(Transform):
         """FeaturesToPandas Initialization"""
 
         # Call superclass init
-        super().__init__(input_uuid=feature_set_name, output_uuid="DataFrame")
+        super().__init__(input_name=feature_set_name, output_name="DataFrame")
 
         # Set up all my instance attributes
         self.input_type = TransformInput.FEATURE_SET
@@ -34,9 +34,9 @@ class FeaturesToPandas(Transform):
         """Convert the FeatureSet into a Pandas DataFrame"""
 
         # Grab the Input (Feature Set)
-        input_data = FeatureSetCore(self.input_uuid)
+        input_data = FeatureSetCore(self.input_name)
         if not input_data.exists():
-            self.log.critical(f"Feature Set Check on {self.input_uuid} failed!")
+            self.log.critical(f"Feature Set Check on {self.input_name} failed!")
             return
 
         # Grab the table for this Feature Set

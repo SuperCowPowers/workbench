@@ -20,7 +20,7 @@ end = CachedEndpoint("abalone-regression")
 # Get the Details
  end.details()
 
-{'uuid': 'abalone-regression-end',
+{'name': 'abalone-regression-end',
  'health_tags': [],
  'status': 'InService',
  'instance': 'Serverless (2GB/5)',

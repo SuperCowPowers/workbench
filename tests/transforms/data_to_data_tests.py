@@ -11,9 +11,9 @@ def test():
     """Tests for the Data to Data (light) Transforms"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "abalone_data"
-    output_uuid = "abalone_long_tags"
-    data_to_data = DataToDataLight(input_uuid, output_uuid)
+    input_name = "abalone_data"
+    output_name = "abalone_long_tags"
+    data_to_data = DataToDataLight(input_name, output_name)
     tags = ["test", "public"]
     data_to_data.set_output_tags(tags)
     data_to_data.transform()

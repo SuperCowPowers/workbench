@@ -11,22 +11,22 @@ class DataToFeaturesLight(Transform):
 
     Common Usage:
         ```python
-        to_features = DataToFeaturesLight(data_uuid, feature_uuid)
+        to_features = DataToFeaturesLight(data_name, feature_name)
         to_features.set_output_tags(["abalone", "public", "whatever"])
         to_features.transform(id_column="id"/None, event_time_column="date"/None, query=str/None)
         ```
     """
 
-    def __init__(self, data_uuid: str, feature_uuid: str):
+    def __init__(self, data_name: str, feature_name: str):
         """DataToFeaturesLight Initialization
 
         Args:
-            data_uuid (str): The UUID of the Workbench DataSource to be transformed
-            feature_uuid (str): The UUID of the Workbench FeatureSet to be created
+            data_name (str): The Name of the Workbench DataSource to be transformed
+            feature_name (str): The Name of the Workbench FeatureSet to be created
         """
 
         # Call superclass init
-        super().__init__(data_uuid, feature_uuid)
+        super().__init__(data_name, feature_name)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.DATA_SOURCE
@@ -41,7 +41,7 @@ class DataToFeaturesLight(Transform):
         """
 
         # Grab the Input (Data Source)
-        data_to_pandas = DataToPandas(self.input_uuid)
+        data_to_pandas = DataToPandas(self.input_name)
         data_to_pandas.transform(query=query)
         self.input_df = data_to_pandas.get_output()
 
@@ -65,7 +65,7 @@ class DataToFeaturesLight(Transform):
             one_hot_columns (list, optional): The list of columns to one-hot encode (default: None).
         """
         # Now publish to the output location
-        output_features = PandasToFeatures(self.output_uuid)
+        output_features = PandasToFeatures(self.output_name)
         output_features.set_input(
             self.output_df, id_column=id_column, event_time_column=event_time_column, one_hot_columns=one_hot_columns
         )

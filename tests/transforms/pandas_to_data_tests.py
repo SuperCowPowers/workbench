@@ -13,12 +13,12 @@ def test():
     df = test_data.person_data()
 
     # Create my Pandas to DataSource Transform
-    test_uuid = "test_data"
-    df_to_data = PandasToData(test_uuid)
+    test_name = "test_data"
+    df_to_data = PandasToData(test_name)
     df_to_data.set_input(df)
     df_to_data.set_output_tags(["test", "small"])
     df_to_data.transform()
-    print(f"{test_uuid} stored as a Workbench DataSource")
+    print(f"{test_name} stored as a Workbench DataSource")
 
 
 if __name__ == "__main__":

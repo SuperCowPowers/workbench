@@ -21,7 +21,7 @@ class FeaturesToModel(Transform):
     Common Usage:
         ```python
         from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
-        to_model = FeaturesToModel(feature_uuid, model_uuid, model_type=ModelType)
+        to_model = FeaturesToModel(feature_name, model_name, model_type=ModelType)
         to_model.set_output_tags(["abalone", "public", "whatever"])
         to_model.transform(target_column="class_number_of_rings",
                            feature_list=["my", "best", "features"])
@@ -30,8 +30,8 @@ class FeaturesToModel(Transform):
 
     def __init__(
         self,
-        feature_uuid: str,
-        model_uuid: str,
+        feature_name: str,
+        model_name: str,
         model_type: ModelType,
         model_class=None,
         model_import_str=None,
@@ -42,8 +42,8 @@ class FeaturesToModel(Transform):
     ):
         """FeaturesToModel Initialization
         Args:
-            feature_uuid (str): UUID of the FeatureSet to use as input
-            model_uuid (str): UUID of the Model to create as output
+            feature_name (str): Name of the FeatureSet to use as input
+            model_name (str): Name of the Model to create as output
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
             model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)
             model_import_str (str, optional): The import string for the model (default None)
@@ -53,11 +53,11 @@ class FeaturesToModel(Transform):
             inference_image (str, optional): Inference image (default "inference")
         """
 
-        # Make sure the model_uuid is a valid name
-        Artifact.is_name_valid(model_uuid, delimiter="-", lower_case=False)
+        # Make sure the model_name is a valid name
+        Artifact.is_name_valid(model_name, delimiter="-", lower_case=False)
 
         # Call superclass init
-        super().__init__(feature_uuid, model_uuid)
+        super().__init__(feature_name, model_name)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.FEATURE_SET
@@ -69,7 +69,7 @@ class FeaturesToModel(Transform):
         self.custom_args = custom_args if custom_args else {}
         self.estimator = None
         self.model_description = None
-        self.model_training_root = f"{self.models_s3_path}/{self.output_uuid}/training"
+        self.model_training_root = f"{self.models_s3_path}/{self.output_name}/training"
         self.model_feature_list = None
         self.target_column = None
         self.class_labels = None
@@ -88,14 +88,14 @@ class FeaturesToModel(Transform):
             train_all_data (bool): Train on ALL (100%) of the data (default False)
         """
         # Delete the existing model (if it exists)
-        self.log.important(f"Trying to delete existing model {self.output_uuid}...")
-        ModelCore.managed_delete(self.output_uuid)
+        self.log.important(f"Trying to delete existing model {self.output_name}...")
+        ModelCore.managed_delete(self.output_name)
 
         # Set our model description
-        self.model_description = description if description is not None else f"Model created from {self.input_uuid}"
+        self.model_description = description if description is not None else f"Model created from {self.input_name}"
 
         # Get our Feature Set and create an S3 CSV Training dataset
-        feature_set = FeatureSetCore(self.input_uuid)
+        feature_set = FeatureSetCore(self.input_name)
         s3_training_path = feature_set.create_s3_training_data()
         self.log.info(f"Created new training data {s3_training_path}...")
 
@@ -238,9 +238,9 @@ class FeaturesToModel(Transform):
             metric_definitions=metric_definitions,
         )
 
-        # Training Job Name based on the Model UUID and today's date
+        # Training Job Name based on the Model Name and today's date
         training_date_time_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M")
-        training_job_name = f"{self.output_uuid}-{training_date_time_utc}"
+        training_job_name = f"{self.output_name}-{training_date_time_utc}"
 
         # Train the estimator
         self.estimator.fit({"train": s3_training_path}, job_name=training_job_name)
@@ -253,7 +253,7 @@ class FeaturesToModel(Transform):
         )
 
         # Create Model and officially Register
-        self.log.important(f"Creating new model {self.output_uuid}...")
+        self.log.important(f"Creating new model {self.output_name}...")
         self.create_and_register_model(**kwargs)
 
     def post_transform(self, **kwargs):
@@ -262,7 +262,7 @@ class FeaturesToModel(Transform):
         time.sleep(3)  # Give AWS time to complete Model register
 
         # Store the model feature_list and target_column in the workbench_meta
-        output_model = ModelCore(self.output_uuid, model_type=self.model_type)
+        output_model = ModelCore(self.output_name, model_type=self.model_type)
         output_model.upsert_workbench_meta({"workbench_model_features": self.model_feature_list})
         output_model.upsert_workbench_meta({"workbench_model_target": self.target_column})
 
@@ -285,7 +285,7 @@ class FeaturesToModel(Transform):
 
         # Create model group (if it doesn't already exist)
         self.sm_client.create_model_package_group(
-            ModelPackageGroupName=self.output_uuid,
+            ModelPackageGroupName=self.output_name,
             ModelPackageGroupDescription=self.model_description,
             Tags=aws_tags,
         )
@@ -294,13 +294,13 @@ class FeaturesToModel(Transform):
         image = ModelImages.get_image_uri(
             self.sm_session.boto_region_name, self.inference_image, "0.1", self.inference_arch
         )
-        self.log.important(f"Registering model {self.output_uuid} with image {image}...")
+        self.log.important(f"Registering model {self.output_name} with image {image}...")
         model = self.estimator.create_model(role=self.workbench_role_arn)
         if aws_region:
-            self.log.important(f"Setting AWS Region: {aws_region} for model {self.output_uuid}...")
+            self.log.important(f"Setting AWS Region: {aws_region} for model {self.output_name}...")
             model.env = {"AWS_REGION": aws_region}
         model.register(
-            model_package_group_name=self.output_uuid,
+            model_package_group_name=self.output_name,
             image_uri=image,
             content_types=["text/csv"],
             response_types=["text/csv"],
@@ -315,33 +315,33 @@ if __name__ == "__main__":
     """Exercise the FeaturesToModel Class"""
 
     # Regression Model
-    input_uuid = "abalone_features"
-    output_uuid = "abalone-regression"
-    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.REGRESSOR)
+    input_name = "abalone_features"
+    output_name = "abalone-regression"
+    to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.REGRESSOR)
     to_model.set_output_tags(["abalone", "public"])
     to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
 
     """
     # Classification Model
-    input_uuid = "wine_features"
-    output_uuid = "wine-classification"
-    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.CLASSIFIER)
+    input_name = "wine_features"
+    output_name = "wine-classification"
+    to_model = FeaturesToModel(input_name, output_name, ModelType.CLASSIFIER)
     to_model.set_output_tags(["wine", "public"])
     to_model.transform(target_column="wine_class", description="Wine Classification")
 
     # Quantile Regression Model (Abalone)
-    input_uuid = "abalone_features"
-    output_uuid = "abalone-quantile-reg"
-    to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.UQ_REGRESSOR)
+    input_name = "abalone_features"
+    output_name = "abalone-quantile-reg"
+    to_model = FeaturesToModel(input_name, output_name, ModelType.UQ_REGRESSOR)
     to_model.set_output_tags(["abalone", "quantiles"])
     to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
 
     # Scikit-Learn Kmeans Clustering Model
-    input_uuid = "wine_features"
-    output_uuid = "wine-clusters"
+    input_name = "wine_features"
+    output_name = "wine-clusters"
     to_model = FeaturesToModel(
-        input_uuid,
-        output_uuid,
+        input_name,
+        output_name,
         model_class="KMeans",  # Clustering algorithm
         model_import_str="from sklearn.cluster import KMeans",  # Import statement for KMeans
         model_type=ModelType.CLUSTERER,
@@ -350,11 +350,11 @@ if __name__ == "__main__":
     to_model.transform(target_column=None, description="Wine Clustering", train_all_data=True)
 
     # Scikit-Learn HDBSCAN Clustering Model
-    input_uuid = "wine_features"
-    output_uuid = "wine-clusters-hdbscan"
+    input_name = "wine_features"
+    output_name = "wine-clusters-hdbscan"
     to_model = FeaturesToModel(
-        input_uuid,
-        output_uuid,
+        input_name,
+        output_name,
         model_class="HDBSCAN",  # Density-based clustering algorithm
         model_import_str="from sklearn.cluster import HDBSCAN",
         model_type=ModelType.CLUSTERER,
@@ -363,11 +363,11 @@ if __name__ == "__main__":
     to_model.transform(target_column=None, description="Wine Clustering with HDBSCAN", train_all_data=True)
 
     # Scikit-Learn 2D Projection Model using UMAP
-    input_uuid = "wine_features"
-    output_uuid = "wine-2d-projection"
+    input_name = "wine_features"
+    output_name = "wine-2d-projection"
     to_model = FeaturesToModel(
-        input_uuid,
-        output_uuid,
+        input_name,
+        output_name,
         model_class="UMAP",
         model_import_str="from umap import UMAP",
         model_type=ModelType.PROJECTION,
@@ -378,36 +378,36 @@ if __name__ == "__main__":
     # Custom Script Models
     scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
     my_custom_script = scripts_root / "custom_script_example" / "custom_model_script.py"
-    input_uuid = "wine_features"
-    output_uuid = "wine-custom"
-    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.CLASSIFIER, custom_script=my_custom_script)
+    input_name = "wine_features"
+    output_name = "wine-custom"
+    to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.CLASSIFIER, custom_script=my_custom_script)
     to_model.set_output_tags(["wine", "custom"])
     to_model.transform(target_column="wine_class", description="Wine Custom Classification")
 
     # Molecular Descriptors Model
     scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
     my_script = scripts_root / "custom_models" / "chem_info" / "molecular_descriptors.py"
-    input_uuid = "aqsol_features"
-    output_uuid = "smiles-to-taut-md-stereo-v0"
-    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_script)
+    input_name = "aqsol_features"
+    output_name = "smiles-to-taut-md-stereo-v0"
+    to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.TRANSFORMER, custom_script=my_script)
     to_model.set_output_tags(["smiles", "molecular descriptors"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Molecular Descriptors")
 
     # Molecular Fingerprints Model
     scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
     my_script = scripts_root / "custom_models" / "chem_info" / "morgan_fingerprints.py"
-    input_uuid = "aqsol_features"
-    output_uuid = "smiles-to-fingerprints-v0"
-    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_script)
+    input_name = "aqsol_features"
+    output_name = "smiles-to-fingerprints-v0"
+    to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.TRANSFORMER, custom_script=my_script)
     to_model.set_output_tags(["smiles", "morgan fingerprints"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Morgan Fingerprints")
 
     # Tautomerization Model
     scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
     my_script = scripts_root / "custom_models" / "chem_info" / "tautomerize.py"
-    input_uuid = "aqsol_features"
-    output_uuid = "tautomerize-v0"
-    to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.TRANSFORMER, custom_script=my_script)
+    input_name = "aqsol_features"
+    output_name = "tautomerize-v0"
+    to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.TRANSFORMER, custom_script=my_script)
     to_model.set_output_tags(["smiles", "tautomerization"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Tautomerize Smiles")
     """

@@ -22,7 +22,7 @@ ds.details()
 
 > ds.details()
 
-{'uuid': 'abalone_data',
+{'name': 'abalone_data',
  'health_tags': [],
  'aws_arn': 'arn:aws:glue:x:table/workbench/abalone_data',
  'size': 0.070272,

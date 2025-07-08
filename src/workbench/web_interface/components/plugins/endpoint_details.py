@@ -61,11 +61,11 @@ class EndpointDetails(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        log.important(f"Updating Plugin with Endpoint: {endpoint.uuid} and kwargs: {kwargs}")
+        log.important(f"Updating Plugin with Endpoint: {endpoint.name} and kwargs: {kwargs}")
 
         # Update the header and the details
         self.current_endpoint = endpoint
-        header = f"{self.current_endpoint.uuid}"
+        header = f"{self.current_endpoint.name}"
         details = self.endpoint_details()
 
         # Return the updated property values for the plugin

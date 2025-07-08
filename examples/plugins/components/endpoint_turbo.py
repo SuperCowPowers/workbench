@@ -89,7 +89,7 @@ class EndpointTurbo(PluginInterface):
         ]
 
         # Create the nested pie chart plot with custom settings
-        endpoint_name = f"Endpoint: {endpoint.uuid}"
+        endpoint_name = f"Endpoint: {endpoint.name}"
         turbo_figure = go.Figure(data=data)
         turbo_figure.update_layout(
             margin={"t": 30, "b": 10, "r": 10, "l": 10, "pad": 10}, title=endpoint_name, height=400

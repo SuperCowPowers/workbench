@@ -65,7 +65,7 @@ class FeatureSet(FeatureSetCore):
         """
 
         # Get the table associated with the data
-        self.log.info(f"Pulling data from {self.uuid}...")
+        self.log.info(f"Pulling data from {self.name}...")
         pull_query = f'SELECT * FROM "{self.athena_table}" LIMIT {limit}'
         df = self.query(pull_query)
 
@@ -119,7 +119,7 @@ class FeatureSet(FeatureSetCore):
 
         # If the model_name wasn't given generate it
         else:
-            name = self.uuid.replace("_features", "") + "-model"
+            name = self.name.replace("_features", "") + "-model"
             name = Artifact.generate_valid_name(name, delimiter="-")
 
         # Create the Model Tags
@@ -127,8 +127,8 @@ class FeatureSet(FeatureSetCore):
 
         # Transform the FeatureSet into a Model
         features_to_model = FeaturesToModel(
-            feature_uuid=self.uuid,
-            model_uuid=name,
+            feature_name=self.name,
+            model_name=name,
             model_type=model_type,
             model_class=model_class,
             model_import_str=model_import_str,

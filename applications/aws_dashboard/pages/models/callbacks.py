@@ -36,12 +36,12 @@ def on_page_load():
         if parsed.path != "/models":
             raise PreventUpdate
 
-        selected_uuid = parse_qs(parsed.query).get("uuid", [None])[0]
-        if not selected_uuid:
+        selected_name = parse_qs(parsed.query).get("name", [None])[0]
+        if not selected_name:
             return [row_data[0]], True
 
         for row in row_data:
-            if row.get("uuid") == selected_uuid:
+            if row.get("name") == selected_name:
                 return [row], True
 
         raise PreventUpdate
@@ -56,7 +56,7 @@ def model_table_refresh(page_view: ModelsPageView, table: AGTable):
         """Return the table data for the Models Table"""
         page_view.refresh()
         models = page_view.models()
-        models["uuid"] = models["Model Group"]
+        models["name"] = models["Model Group"]
         models["id"] = range(len(models))
         return table.update_properties(models)
 
@@ -74,10 +74,10 @@ def update_model_plot_component():
         if not selected_rows or selected_rows[0] is None:
             return no_update
 
-        # Get the selected row data and grab the uuid
+        # Get the selected row data and grab the name
         selected_row_data = selected_rows[0]
-        model_uuid = selected_row_data["uuid"]
-        m = CachedModel(model_uuid)
+        model_name = selected_row_data["name"]
+        m = CachedModel(model_name)
 
         # Model Details Markdown component
         model_plot_fig = model_plot.ModelPlot().update_properties(m, inference_run)
@@ -104,12 +104,12 @@ def setup_plugin_callbacks(plugins):
         if not selected_rows or selected_rows[0] is None:
             raise PreventUpdate
 
-        # Get the selected row data and grab the uuid
+        # Get the selected row data and grab the name
         selected_row_data = selected_rows[0]
-        object_uuid = selected_row_data["uuid"]
+        object_name = selected_row_data["name"]
 
         # Create the Model object
-        model = CachedModel(object_uuid)
+        model = CachedModel(object_name)
 
         # Update all the properties for each plugin
         all_props = []

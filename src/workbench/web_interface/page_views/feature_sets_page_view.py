@@ -35,19 +35,19 @@ class FeatureSetsPageView(PageView):
         return self.feature_sets_df
 
     @staticmethod
-    def feature_set_smart_sample(feature_uuid: str) -> pd.DataFrame:
+    def feature_set_smart_sample(feature_name: str) -> pd.DataFrame:
         """Get a smart-sample dataframe (sample + outliers) for the given FeatureSet Index
         Args:
-            feature_uuid(str): The UUID of the DataSource
+            feature_name(str): The Name of the DataSource
         Returns:
             pd.DataFrame: The smart-sample DataFrame
         """
-        fs = CachedFeatureSet(feature_uuid)
+        fs = CachedFeatureSet(feature_name)
         if not fs.exists():
-            return pd.DataFrame({"uuid": [feature_uuid], "status": ["NOT FOUND"]})
+            return pd.DataFrame({"name": [feature_name], "status": ["NOT FOUND"]})
         if not fs.ready():
             status = fs.get_status()
-            return pd.DataFrame({"uuid": [feature_uuid], "status": [f"{status}"]})
+            return pd.DataFrame({"name": [feature_name], "status": [f"{status}"]})
         else:
             # Get the display columns
             display_columns = fs.view("display").columns
@@ -57,14 +57,14 @@ class FeatureSetsPageView(PageView):
             return smart_sample[[col for col in display_columns if col in smart_sample.columns]]
 
     @staticmethod
-    def feature_set_details(feature_uuid: str) -> (dict, None):
-        """Get all the details for the given FeatureSet UUID
+    def feature_set_details(feature_name: str) -> (dict, None):
+        """Get all the details for the given FeatureSet Name
         Args:
-            feature_uuid(str): The UUID of the FeatureSet
+            feature_name(str): The Name of the FeatureSet
         Returns:
             dict: The details for the given FeatureSet (or None if not found)
         """
-        fs = CachedFeatureSet(feature_uuid)
+        fs = CachedFeatureSet(feature_name)
         if not fs.exists() or not fs.ready():
             return None
 
@@ -105,14 +105,14 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first FeatureSet
-    my_feature_uuid = summary["Feature Group"].iloc[0]
+    my_feature_name = summary["Feature Group"].iloc[0]
     print("\nFeatureSetDetails:")
-    details = feature_view.feature_set_details(my_feature_uuid)
+    details = feature_view.feature_set_details(my_feature_name)
     pprint(details)
 
     # Get a sample dataframe for the given FeatureSets
     print("\nSampleDataFrame:")
-    sample_df = feature_view.feature_set_smart_sample(my_feature_uuid)
+    sample_df = feature_view.feature_set_smart_sample(my_feature_name)
     print(sample_df.shape)
     print(sample_df.head())
 

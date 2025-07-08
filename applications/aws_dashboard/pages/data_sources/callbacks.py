@@ -43,12 +43,12 @@ def on_page_load():
         if parsed.path != "/data_sources":
             raise PreventUpdate
 
-        selected_uuid = parse_qs(parsed.query).get("uuid", [None])[0]
-        if not selected_uuid:
+        selected_name = parse_qs(parsed.query).get("name", [None])[0]
+        if not selected_name:
             return [row_data[0]], True
 
         for row in row_data:
-            if row.get("uuid") == selected_uuid:
+            if row.get("name") == selected_name:
                 return [row], True
 
         raise PreventUpdate
@@ -63,7 +63,7 @@ def data_sources_refresh(page_view: DataSourcesPageView, ds_table: AGTable):
         """Pull the latest data sources from the DataSourcesPageView and update the table"""
         page_view.refresh()
         data_sources = page_view.data_sources()
-        data_sources["uuid"] = data_sources["Name"]
+        data_sources["name"] = data_sources["Name"]
         data_sources["id"] = range(len(data_sources))
         return ds_table.update_properties(data_sources)
 
@@ -84,11 +84,11 @@ def update_data_source_details(data_details: DataDetails):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
-        # Get the selected row data and grab the uuid
+        # Get the selected row data and grab the name
         selected_row_data = selected_rows[0]
-        data_source_uuid = selected_row_data["uuid"]
-        log.debug(f"DataSource UUID: {data_source_uuid}")
-        ds = CachedDataSource(data_source_uuid)
+        data_source_name = selected_row_data["name"]
+        log.debug(f"DataSource Name: {data_source_name}")
+        ds = CachedDataSource(data_source_name)
 
         # DataSource Details Markdown component
         header, details_markdown = data_details.update_properties(ds)
@@ -116,17 +116,17 @@ def update_data_source_sample_rows(samples_table: AGTable):
         if not selected_rows or selected_rows[0] is None:
             return dash.no_update
 
-        # Get the selected row data and grab the uuid
+        # Get the selected row data and grab the name
         selected_row_data = selected_rows[0]
-        data_source_uuid = selected_row_data["uuid"]
-        log.debug(f"DataSource UUID: {data_source_uuid}")
-        ds = CachedDataSource(data_source_uuid)
+        data_source_name = selected_row_data["name"]
+        log.debug(f"DataSource Name: {data_source_name}")
+        ds = CachedDataSource(data_source_name)
 
         log.info("Calling DataSource Smart Sample Rows...")
         smart_sample_rows = ds.smart_sample()
 
         # Header Text
-        header = f"Sample/Outlier Rows: {data_source_uuid}"
+        header = f"Sample/Outlier Rows: {data_source_name}"
 
         # Grab column definitions and row data from our Samples Table
         [column_defs, _, _] = samples_table.update_properties(smart_sample_rows)

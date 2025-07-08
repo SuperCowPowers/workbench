@@ -21,7 +21,7 @@ For more info see: [Glue Best Practices](https://docs.aws.amazon.com/athena/late
 
 ## DataSource/FeatureSet use '_'  and Model/Endpoint use '-'
 
-You may notice that DataSource and FeatureSet uuid/name examples have underscores but the model and endpoints have dashes. Yes, it’s super annoying to have one convention for DataSources and FeatureSets and another for Models and Endpoints but this is an AWS restriction and not something that Workbench can control.
+You may notice that DataSource and FeatureSet name/name examples have underscores but the model and endpoints have dashes. Yes, it’s super annoying to have one convention for DataSources and FeatureSets and another for Models and Endpoints but this is an AWS restriction and not something that Workbench can control.
 
 **DataSources and FeatureSet:** Underscores. You cannot use a dash because both classes use Athena for Storage and Athena tables names cannot have a dash.
 

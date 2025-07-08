@@ -138,8 +138,8 @@ if __name__ == "__main__":
     # Verify that the Athena Data Source exists
     assert my_data.exists()
 
-    # What's my Workbench UUID
-    print(f"UUID: {my_data.uuid}")
+    # What's my Workbench Name
+    print(f"Name: {my_data.name}")
 
     # Get column stats for computation columns
     my_column_stats = column_stats(my_data)

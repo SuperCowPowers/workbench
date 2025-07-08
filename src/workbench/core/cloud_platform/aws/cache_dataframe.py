@@ -19,12 +19,12 @@ def flatten_args_kwargs(args, kwargs):
 
 
 def cache_dataframe(location: str):
-    """Decorator to cache DataFrame results in DFStore at a location based on `self.uuid`.
+    """Decorator to cache DataFrame results in DFStore at a location based on `self.name`.
 
     Args:
         location (str): The final part of the cache path (e.g., 'sample', 'features').
 
-    This decorator assumes it is applied to a Workbench Artifact class (has self.uuid and self.df_cache).
+    This decorator assumes it is applied to a Workbench Artifact class (has self.name and self.df_cache).
     """
 
     def decorator(method):
@@ -34,7 +34,7 @@ def cache_dataframe(location: str):
             args_hash = flatten_args_kwargs(args, kwargs)
 
             # Construct the full cache location with args hash
-            df_path = f"{self.uuid}/{location}{args_hash}"
+            df_path = f"{self.name}/{location}{args_hash}"
             full_path = f"{self.df_cache.path_prefix}/{df_path}"
 
             # Check for cached data at the specified location

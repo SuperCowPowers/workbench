@@ -29,15 +29,15 @@ def test_performance_metrics():
     pprint(model_class.get_inference_metrics())
 
 
-def test_retrieval_with_capture_uuid():
-    """Test the retrieval of the model metrics using capture UUID"""
+def test_retrieval_with_capture_name():
+    """Test the retrieval of the model metrics using capture Name"""
     capture_list = model_class.list_inference_runs()
-    for capture_uuid in capture_list:
-        print(f"\n\n*** Retrieval with Capture UUID ({capture_uuid}) ***")
-        pprint(model_class.get_inference_metadata(capture_uuid).head())
-        pprint(model_class.get_inference_metrics(capture_uuid).head())
-        pprint(model_class.get_inference_predictions(capture_uuid).head())
-        pprint(model_class.confusion_matrix(capture_uuid))
+    for capture_name in capture_list:
+        print(f"\n\n*** Retrieval with Capture Name ({capture_name}) ***")
+        pprint(model_class.get_inference_metadata(capture_name).head())
+        pprint(model_class.get_inference_metrics(capture_name).head())
+        pprint(model_class.get_inference_predictions(capture_name).head())
+        pprint(model_class.confusion_matrix(capture_name))
 
 
 def test_validation_predictions():
@@ -60,11 +60,11 @@ def test_inference_predictions():
     # Retrieve the inference predictions
     model_reg = Model("abalone-regression")
     if model_reg.get_inference_predictions() is None:
-        print(f"Model {model_reg.uuid} has no inference predictions!")
+        print(f"Model {model_reg.name} has no inference predictions!")
         exit(1)
     pprint(model_reg.get_inference_predictions().head())
     if model_class.get_inference_predictions() is None:
-        print(f"Model {model_class.uuid} has no inference predictions!")
+        print(f"Model {model_class.name} has no inference predictions!")
         exit(1)
     pprint(model_class.get_inference_predictions().head())
 
@@ -79,28 +79,28 @@ def test_shap_values():
     print("\n\n*** SHAP Features (regression) ***")
     shap_features = model_reg.shap_importance()
     if shap_features is None:
-        print(f"Model {model_reg.uuid} has no SHAP features!")
+        print(f"Model {model_reg.name} has no SHAP features!")
     else:
         pprint(shap_features)
 
     print("\n\n*** SHAP Data (regression) ***")
     shap_data = model_reg.shap_data()
     if shap_data is None:
-        print(f"Model {model_reg.uuid} has no SHAP data!")
+        print(f"Model {model_reg.name} has no SHAP data!")
     else:
         pprint(shap_features)
 
     print("\n\n*** SHAP Features (classification) ***")
     shap_features = model_class.shap_importance()
     if shap_features is None:
-        print(f"Model {model_class.uuid} has no SHAP features!")
+        print(f"Model {model_class.name} has no SHAP features!")
     else:
         pprint(shap_features)
 
     print("\n\n*** SHAP Data (classification) ***")
     shap_data = model_class.shap_data()
     if shap_data is None:
-        print(f"Model {model_class.uuid} has no SHAP data!")
+        print(f"Model {model_class.name} has no SHAP data!")
     else:
         # Classifiers have a dictionary of dataframes
         for key, df in shap_data.items():
@@ -108,10 +108,10 @@ def test_shap_values():
             print(df.head())
 
 
-def test_metrics_with_capture_uuid():
-    """Test the Performance Metrics using a Capture UUID"""
+def test_metrics_with_capture_name():
+    """Test the Performance Metrics using a Capture Name"""
     metrics = model_reg.get_inference_metrics("auto_inference")
-    print("\n\n*** Performance Metrics with Capture UUID ***")
+    print("\n\n*** Performance Metrics with Capture Name ***")
     pprint(metrics)
     metrics = model_class.get_inference_metrics("auto_inference")
     pprint(metrics)
@@ -131,9 +131,9 @@ def test_auto_inference():
 
 
 @pytest.mark.long
-def test_inference_with_capture_uuid():
+def test_inference_with_capture_name():
     # Run inference on the model
-    capture_uuid = "my_holdout_test"
+    capture_name = "my_holdout_test"
 
     # Grab a dataframe for inference
     my_features = FeatureSet("abalone_features")
@@ -142,7 +142,7 @@ def test_inference_with_capture_uuid():
 
     # Run inference
     my_endpoint = Endpoint("abalone-regression")
-    pred_results = my_endpoint.inference(df, capture_uuid)
+    pred_results = my_endpoint.inference(df, capture_name)
     pprint(pred_results.head())
 
 
@@ -172,13 +172,13 @@ if __name__ == "__main__":
     # Run the tests
     test_list_inference_runs()
     test_performance_metrics()
-    test_retrieval_with_capture_uuid()
+    test_retrieval_with_capture_name()
     test_validation_predictions()
     test_inference_predictions()
     test_confusion_matrix()
     test_shap_values()
-    test_metrics_with_capture_uuid()
+    test_metrics_with_capture_name()
 
     # These are longer tests (commented out for now)
     # test_auto_inference()
-    # test_inference_with_capture_uuid("my_holdout_test")
+    # test_inference_with_capture_name("my_holdout_test")

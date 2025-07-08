@@ -38,8 +38,8 @@ class MainPage(PageView):
         if s3_data_df.empty:
             return s3_data_df
 
-        # Add a UUID column
-        s3_data_df["uuid"] = s3_data_df["Name"]
+        # Add a Name column
+        s3_data_df["name"] = s3_data_df["Name"]
 
         # Drop the AWS URL column and return the dataframe
         s3_data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
@@ -63,8 +63,8 @@ class MainPage(PageView):
         if glue_df.empty:
             return glue_df
 
-        # Add a UUID column
-        glue_df["uuid"] = glue_df["Name"]
+        # Add a Name column
+        glue_df["name"] = glue_df["Name"]
 
         # Drop the AWS URL column and return the dataframe
         glue_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
@@ -88,8 +88,8 @@ class MainPage(PageView):
         if data_df.empty:
             return data_df
 
-        # Add a UUID column
-        data_df["uuid"] = data_df["Name"]
+        # Add a Name column
+        data_df["name"] = data_df["Name"]
 
         # Drop the AWS URL column and return the dataframe
         data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
@@ -113,8 +113,8 @@ class MainPage(PageView):
         if feature_df.empty:
             return feature_df
 
-        # Add a UUID column
-        feature_df["uuid"] = feature_df["Feature Group"]
+        # Add a Name column
+        feature_df["name"] = feature_df["Feature Group"]
 
         # Drop the AWS URL column and return the dataframe
         feature_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
@@ -138,8 +138,8 @@ class MainPage(PageView):
         if model_df.empty:
             return model_df
 
-        # Add a UUID column
-        model_df["uuid"] = model_df["Model Group"]
+        # Add a Name column
+        model_df["name"] = model_df["Model Group"]
 
         # Drop some columns
         model_df.drop(columns=["Ver", "Status", "_aws_url"], inplace=True, errors="ignore")
@@ -168,8 +168,8 @@ class MainPage(PageView):
         if endpoint_df.empty:
             return endpoint_df
 
-        # Add a UUID column
-        endpoint_df["uuid"] = endpoint_df["Name"]
+        # Add a Name column
+        endpoint_df["name"] = endpoint_df["Name"]
 
         # Drop the AWS URL column
         endpoint_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")

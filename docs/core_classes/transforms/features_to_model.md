@@ -12,23 +12,23 @@ Currently Workbench supports XGBoost (classifier/regressor), and Scikit Learn mo
 from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 
 # XGBoost Regression Model
-input_uuid = "abalone_features"
-output_uuid = "abalone-regression"
-to_model = FeaturesToModel(input_uuid, output_uuid, model_type=ModelType.REGRESSOR)
+input_name = "abalone_features"
+output_name = "abalone-regression"
+to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.REGRESSOR)
 to_model.set_output_tags(["abalone", "public"])
 to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
 
 # XGBoost Classification Model
-input_uuid = "wine_features"
-output_uuid = "wine-classification"
-to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.CLASSIFIER)
+input_name = "wine_features"
+output_name = "wine-classification"
+to_model = FeaturesToModel(input_name, output_name, ModelType.CLASSIFIER)
 to_model.set_output_tags(["wine", "public"])
 to_model.transform(target_column="wine_class", description="Wine Classification")
 
 # Quantile Regression Model (Abalone)
-input_uuid = "abalone_features"
-output_uuid = "abalone-quantile-reg"
-to_model = FeaturesToModel(input_uuid, output_uuid, ModelType.UQ_REGRESSOR)
+input_name = "abalone_features"
+output_name = "abalone-quantile-reg"
+to_model = FeaturesToModel(input_name, output_name, ModelType.UQ_REGRESSOR)
 to_model.set_output_tags(["abalone", "quantiles"])
 to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
 ```
@@ -37,11 +37,11 @@ to_model.transform(target_column="class_number_of_rings", description="Abalone Q
 from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 
 # Scikit-Learn Kmeans Clustering Model
-input_uuid = "wine_features"
-output_uuid = "wine-clusters"
+input_name = "wine_features"
+output_name = "wine-clusters"
 to_model = FeaturesToModel(
-    input_uuid,
-    output_uuid,
+    input_name,
+    output_name,
     model_class="KMeans",  # Clustering algorithm
     model_import_str="from sklearn.cluster import KMeans",  # Import statement for KMeans
     model_type=ModelType.CLUSTERER,
@@ -50,11 +50,11 @@ to_model.set_output_tags(["wine", "clustering"])
 to_model.transform(target_column=None, description="Wine Clustering", train_all_data=True)
 
 # Scikit-Learn HDBSCAN Clustering Model
-input_uuid = "wine_features"
-output_uuid = "wine-clusters-hdbscan"
+input_name = "wine_features"
+output_name = "wine-clusters-hdbscan"
 to_model = FeaturesToModel(
-    input_uuid,
-    output_uuid,
+    input_name,
+    output_name,
     model_class="HDBSCAN",  # Density-based clustering algorithm
     model_import_str="from sklearn.cluster import HDBSCAN",
     model_type=ModelType.CLUSTERER,
@@ -63,11 +63,11 @@ to_model.set_output_tags(["wine", "density-based clustering"])
 to_model.transform(target_column=None, description="Wine Clustering with HDBSCAN", train_all_data=True)
 
 # Scikit-Learn 2D Projection Model using UMAP
-input_uuid = "wine_features"
-output_uuid = "wine-2d-projection"
+input_name = "wine_features"
+output_name = "wine-2d-projection"
 to_model = FeaturesToModel(
-    input_uuid,
-    output_uuid,
+    input_name,
+    output_name,
     model_class="UMAP",
     model_import_str="from umap import UMAP",
     model_type=ModelType.PROJECTION,
@@ -98,10 +98,10 @@ from workbench.core.transforms.features_to_model.features_to_model import Featur
 
 # Note this directory should also have a requirements.txt in it
 my_custom_script = "/full/path/to/my/directory/my_custom_script.py"
-input_uuid = "wine_features"    # FeatureSet you want to use
-output_uuid = "my-custom-model" # change to whatever
+input_name = "wine_features"    # FeatureSet you want to use
+output_name = "my-custom-model" # change to whatever
 target_column = "wine-class"    # change to whatever
-to_model = FeaturesToModel(input_uuid, output_uuid,
+to_model = FeaturesToModel(input_name, output_name,
                            model_type=ModelType.CLASSIFIER, 
                            custom_script=my_custom_script)
 to_model.set_output_tags(["your", "tags"])

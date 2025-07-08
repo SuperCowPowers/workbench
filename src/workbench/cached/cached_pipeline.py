@@ -18,9 +18,9 @@ class CachedPipeline(CachedArtifactMixin, Pipeline):
         ```
     """
 
-    def __init__(self, pipeline_uuid: str):
+    def __init__(self, pipeline_name: str):
         """CachedPipeline Initialization"""
-        Pipeline.__init__(self, name=pipeline_uuid)
+        Pipeline.__init__(self, name=pipeline_name)
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:

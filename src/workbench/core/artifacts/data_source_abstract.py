@@ -15,19 +15,19 @@ if TYPE_CHECKING:
 
 
 class DataSourceAbstract(Artifact):
-    def __init__(self, data_uuid: str, database: str = "workbench", **kwargs):
+    def __init__(self, data_name: str, database: str = "workbench", **kwargs):
         """DataSourceAbstract: Abstract Base Class for all data sources
         Args:
-            data_uuid(str): The UUID for this Data Source
+            data_name(str): The Name for this Data Source
             database(str): The database to use for this Data Source (default: workbench)
         """
 
         # Call superclass init
-        super().__init__(data_uuid, **kwargs)
+        super().__init__(data_name, **kwargs)
 
         # Set up our instance attributes
         self._database = database
-        self._table_name = data_uuid
+        self._table_name = data_name
 
     def __post_init__(self):
         # Call superclass post_init
@@ -264,8 +264,8 @@ class DataSourceAbstract(Artifact):
             return False
 
         # If we don't have a smart_sample we're probably not ready
-        if not self.df_cache.check(f"{self.uuid}/smart_sample"):
-            self.log.warning(f"DataSource {self.uuid} not ready...")
+        if not self.df_cache.check(f"{self.name}/smart_sample"):
+            self.log.warning(f"DataSource {self.name} not ready...")
             return False
 
         # Okay so we have sample, outliers, and smart_sample so we are ready
@@ -277,7 +277,7 @@ class DataSourceAbstract(Artifact):
         Returns:
             bool: True if the DataSource was onboarded successfully
         """
-        self.log.important(f"Onboarding {self.uuid}...")
+        self.log.important(f"Onboarding {self.name}...")
         self.set_status("onboarding")
         self.remove_health_tag("needs_onboard")
 
@@ -301,18 +301,18 @@ class DataSourceAbstract(Artifact):
         Returns:
             bool: True if the DataSource stats were recomputed successfully
         """
-        self.log.important(f"Recomputing Stats {self.uuid}...")
+        self.log.important(f"Recomputing Stats {self.name}...")
 
         # Make sure our computation view actually exists
         self.view("computation").ensure_exists()
 
         # Compute the sample, column stats, outliers, and smart_sample
-        self.df_cache.delete(f"{self.uuid}/sample")
+        self.df_cache.delete(f"{self.name}/sample")
         self.sample()
         self.column_stats()
         self.refresh_meta()  # Refresh the meta since outliers needs descriptive_stats and value_counts
-        self.df_cache.delete(f"{self.uuid}/outliers")
+        self.df_cache.delete(f"{self.name}/outliers")
         self.outliers()
-        self.df_cache.delete(f"{self.uuid}/smart_sample")
+        self.df_cache.delete(f"{self.name}/smart_sample")
         self.smart_sample()
         return True

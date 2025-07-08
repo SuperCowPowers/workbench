@@ -63,11 +63,11 @@ class PipelineDetails(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        log.important(f"Updating Plugin with Pipeline: {pipeline.uuid} and kwargs: {kwargs}")
+        log.important(f"Updating Plugin with Pipeline: {pipeline.name} and kwargs: {kwargs}")
 
         # Update the header and the details
         self.current_pipeline = pipeline
-        header = f"{self.current_pipeline.uuid}"
+        header = f"{self.current_pipeline.name}"
         details = self.pipeline_details()
 
         # Return the updated property values for the plugin
@@ -98,17 +98,17 @@ class PipelineDetails(PluginInterface):
 
         # Each pipeline will have Workbench Artifact keys (data_source, feature_set, model, etc.)
         for key, value in pipeline_details.items():
-            uuid = value.get("name")
-            markdown += f"- {self._hyperlink(key, uuid)}\n"
+            name = value.get("name")
+            markdown += f"- {self._hyperlink(key, name)}\n"
 
         return markdown
 
-    def _hyperlink(self, artifact_type: str, uuid: str) -> str:
+    def _hyperlink(self, artifact_type: str, name: str) -> str:
         """Create a hyperlink for a Workbench artifact type and name.
 
         Args:
             artifact_type (str): The type of Workbench artifact (e.g., "data_source").
-            uuid (str): The unique identifier for the artifact.
+            name (str): The unique identifier for the artifact.
 
         Returns:
             str: A markdown hyperlink string.
@@ -117,7 +117,7 @@ class PipelineDetails(PluginInterface):
         artifact_type_display = artifact_type.title().replace("_", "")
 
         # Return the markdown hyperlink string (relative to the root)
-        return f"[{artifact_type_display}({uuid})]({artifact_type}s?uuid={uuid})"
+        return f"[{artifact_type_display}({name})]({artifact_type}s?name={name})"
 
     def _dict_to_markdown(self, dictionary: dict, indent: int = 0) -> str:
         """Convert a dictionary to a markdown string with nested list formatting.

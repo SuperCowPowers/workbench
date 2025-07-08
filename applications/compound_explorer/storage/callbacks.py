@@ -125,12 +125,12 @@ def setup_plugin_callbacks(plugins):
         if not selected_rows or selected_rows[0] is None:
             raise PreventUpdate
 
-        # Get the selected row data and grab the uuid
+        # Get the selected row data and grab the name
         # selected_row_data = selected_rows[0]
-        # object_uuid = selected_row_data["uuid"]
+        # object_name = selected_row_data["name"]
 
         # Create the Model object
-        model = {}  # CachedModel(object_uuid)
+        model = {}  # CachedModel(object_name)
 
         # Update all the properties for each plugin
         all_props = []

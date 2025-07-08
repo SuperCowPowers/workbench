@@ -65,11 +65,11 @@ class DataDetails(PluginInterface):
         Returns:
             list: A list of the updated property values for the plugin
         """
-        log.important(f"Updating Plugin with Artifact: {artifact.uuid} and kwargs: {kwargs}")
+        log.important(f"Updating Plugin with Artifact: {artifact.name} and kwargs: {kwargs}")
 
         # Update the header and the details
         self.data_source = artifact.data_source if isinstance(artifact, FeatureSet) else artifact
-        header = f"{self.data_source.uuid}"
+        header = f"{self.data_source.name}"
         data_details_markdown = self.data_details_markdown(self.data_source.details())
 
         return [header, data_details_markdown]

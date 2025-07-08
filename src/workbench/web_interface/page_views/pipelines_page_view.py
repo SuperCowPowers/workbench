@@ -42,14 +42,14 @@ class PipelinesPageView(PageView):
         return self.pipelines_df
 
     @staticmethod
-    def pipeline_details(pipeline_uuid: str) -> (dict, None):
-        """Get all the details for the given Pipeline UUID
+    def pipeline_details(pipeline_name: str) -> (dict, None):
+        """Get all the details for the given Pipeline Name
          Args:
-            pipeline_uuid(str): The UUID of the Pipeline
+            pipeline_name(str): The Name of the Pipeline
         Returns:
             dict: The details for the given Model (or None if not found)
         """
-        pipeline = CachedPipeline(pipeline_uuid)
+        pipeline = CachedPipeline(pipeline_name)
         if pipeline is None:
             return {"Status": "Not Found"}
 
@@ -71,9 +71,9 @@ if __name__ == "__main__":
     print(summary.head())
 
     # Get the details for the first Pipeline
-    my_pipeline_uuid = summary["Name"].iloc[0]
+    my_pipeline_name = summary["Name"].iloc[0]
     print("\nPipelineDetails:")
-    details = pipeline_view.pipeline_details(my_pipeline_uuid)
+    details = pipeline_view.pipeline_details(my_pipeline_name)
     pprint(details)
 
     # Give any broker threads time to finish

@@ -29,9 +29,9 @@ class CachedArtifactMixin:
 
         @wraps(method)
         def wrapper(self, *args, **kwargs):
-            # Cache key includes the class name, instance UUID, and method args/kwargs
+            # Cache key includes the class name, instance Name, and method args/kwargs
             class_name = self.__class__.__name__.lower()
-            cache_key = f"{class_name}_{self.uuid}_{cls._flatten_redis_key(method, *args, **kwargs)}"
+            cache_key = f"{class_name}_{self.name}_{cls._flatten_redis_key(method, *args, **kwargs)}"
 
             # Get the cached value and check if a refresh is needed
             cached_value = cls.artifact_cache.get(cache_key)

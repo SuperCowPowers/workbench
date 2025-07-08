@@ -17,15 +17,15 @@ def test():
     df = test_data.person_data()
 
     # Create my Pandas to DataSource Transform
-    test_uuid = "test_features"
-    df_to_data = PandasToFeatures(test_uuid)
+    test_name = "test_features"
+    df_to_data = PandasToFeatures(test_name)
     df_to_data.set_input(df, id_column="id")
     df_to_data.set_output_tags(["test", "small"])
     df_to_data.transform()
-    print(f"{test_uuid} stored as a Workbench FeatureSet")
+    print(f"{test_name} stored as a Workbench FeatureSet")
 
     # Set holdout ids
-    fs = FeatureSet(test_uuid)
+    fs = FeatureSet(test_name)
     fs.set_training_holdouts("id", [1, 2, 3])
 
 

@@ -36,12 +36,12 @@ def on_page_load():
         if parsed.path != "/pipelines":
             raise PreventUpdate
 
-        selected_uuid = parse_qs(parsed.query).get("uuid", [None])[0]
-        if not selected_uuid:
+        selected_name = parse_qs(parsed.query).get("name", [None])[0]
+        if not selected_name:
             return [row_data[0]], True
 
         for row in row_data:
-            if row.get("uuid") == selected_uuid:
+            if row.get("name") == selected_name:
                 return [row], True
 
         raise PreventUpdate
@@ -56,7 +56,7 @@ def pipeline_table_refresh(page_view: PipelinesPageView, table: AGTable):
         """Return the table data for the Pipelines Table"""
         page_view.refresh()
         pipelines = page_view.pipelines()
-        pipelines["uuid"] = pipelines["Name"]
+        pipelines["name"] = pipelines["Name"]
         pipelines["id"] = range(len(pipelines))
         return table.update_properties(pipelines)
 

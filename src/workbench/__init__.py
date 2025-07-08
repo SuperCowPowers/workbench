@@ -20,12 +20,12 @@ Workbench Main Classes
 
 
       class JSONToDataSource(workbench.core.transforms.transform.Transform)
-     |  JSONToDataSource(json_file_path: str, data_uuid: str)
+     |  JSONToDataSource(json_file_path: str, data_name: str)
      |
      |  JSONToDataSource: Class to move local JSON Files into a Workbench DataSource
      |
      |  Common Usage:
-     |      json_to_data = JSONToDataSource(json_file_path, data_uuid)
+     |      json_to_data = JSONToDataSource(json_file_path, data_name)
      |      json_to_data.set_output_tags(["abalone", "json", "whatever"])
      |      json_to_data.transform()
 """

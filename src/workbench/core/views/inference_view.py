@@ -71,7 +71,7 @@ class InferenceView:
             df["residuals_abs"] = 0
 
         # Save the inference results to an inference view
-        view_name = f"inf_{model.uuid.replace('-', '_')}"
+        view_name = f"inf_{model.name.replace('-', '_')}"
         return PandasToView.create(view_name, fs, df=df, id_column=fs.id_column)
 
 

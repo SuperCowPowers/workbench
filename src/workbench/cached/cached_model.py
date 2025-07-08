@@ -22,9 +22,9 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         ```
     """
 
-    def __init__(self, uuid: str):
+    def __init__(self, name: str):
         """CachedModel Initialization"""
-        ModelCore.__init__(self, model_uuid=uuid, use_cached_meta=True)
+        ModelCore.__init__(self, model_name=name, use_cached_meta=True)
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:
@@ -72,45 +72,45 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().list_inference_runs()
 
     @CachedArtifactMixin.cache_result
-    def get_inference_metrics(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
+    def get_inference_metrics(self, capture_name: str = "latest") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_uuid (str, optional): Specific capture_uuid (default: latest)
+            capture_name (str, optional): Specific capture_name (default: latest)
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Metrics (might be None)
         """
-        return super().get_inference_metrics(capture_uuid=capture_uuid)
+        return super().get_inference_metrics(capture_name=capture_name)
 
     @CachedArtifactMixin.cache_result
-    def get_inference_predictions(self, capture_uuid: str = "auto_inference") -> Union[pd.DataFrame, None]:
+    def get_inference_predictions(self, capture_name: str = "auto_inference") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_uuid (str, optional): Specific capture_uuid (default: training_holdout)
+            capture_name (str, optional): Specific capture_name (default: training_holdout)
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
         # Note: This method can generate larger dataframes, so we'll sample if needed
-        df = super().get_inference_predictions(capture_uuid=capture_uuid)
+        df = super().get_inference_predictions(capture_name=capture_name)
         if df is not None and len(df) > 5000:
-            self.log.warning(f"{self.uuid}:{capture_uuid} Sampling Inference Predictions to 5000 rows")
+            self.log.warning(f"{self.name}:{capture_name} Sampling Inference Predictions to 5000 rows")
             return df.sample(5000)
         return df
 
     @CachedArtifactMixin.cache_result
-    def confusion_matrix(self, capture_uuid: str = "latest") -> Union[pd.DataFrame, None]:
+    def confusion_matrix(self, capture_name: str = "latest") -> Union[pd.DataFrame, None]:
         """Retrieve the confusion matrix for the model
 
         Args:
-            capture_uuid (str, optional): Specific capture_uuid (default: latest)
+            capture_name (str, optional): Specific capture_name (default: latest)
 
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
-        return super().confusion_matrix(capture_uuid=capture_uuid)
+        return super().confusion_matrix(capture_name=capture_name)
 
 
 if __name__ == "__main__":

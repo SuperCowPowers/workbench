@@ -61,14 +61,14 @@ class Model(ModelCore):
 
         # If the endpoint_name wasn't given generate it
         else:
-            name = self.uuid.replace("_features", "") + ""
+            name = self.name.replace("_features", "") + ""
             name = Artifact.generate_valid_name(name, delimiter="-")
 
         # Create the Endpoint Tags
         tags = [name] if tags is None else tags
 
         # Create an Endpoint from the Model
-        model_to_endpoint = ModelToEndpoint(self.uuid, name, serverless=serverless, instance=instance)
+        model_to_endpoint = ModelToEndpoint(self.name, name, serverless=serverless, instance=instance)
         model_to_endpoint.set_output_tags(tags)
         model_to_endpoint.transform(
             mem_size=mem_size,

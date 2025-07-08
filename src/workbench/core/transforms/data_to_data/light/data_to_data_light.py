@@ -11,7 +11,7 @@ class DataToDataLight(Transform):
 
     Common Usage:
         ```python
-        to_data = DataToDataLight(input_data_uuid, output_data_uuid)
+        to_data = DataToDataLight(input_data_name, output_data_name)
         to_data.set_output_tags(["abalone", "public", "whatever"])
         to_data.transform(query=<optional SQL query to filter/process data>)
 
@@ -19,11 +19,11 @@ class DataToDataLight(Transform):
         ```
     """
 
-    def __init__(self, input_data_uuid: str, output_data_uuid: str):
+    def __init__(self, input_data_name: str, output_data_name: str):
         """DataToDataLight Initialization"""
 
         # Call superclass init
-        super().__init__(input_data_uuid, output_data_uuid)
+        super().__init__(input_data_name, output_data_name)
 
         # Set up all my instance attributes
         self.input_type = TransformInput.DATA_SOURCE
@@ -38,7 +38,7 @@ class DataToDataLight(Transform):
         """
 
         # Grab the Input (Data Source)
-        data_to_pandas = DataToPandas(self.input_uuid)
+        data_to_pandas = DataToPandas(self.input_name)
         data_to_pandas.transform(query=query)
         self.input_df = data_to_pandas.get_output()
 
@@ -50,7 +50,7 @@ class DataToDataLight(Transform):
         """At this point the output DataFrame should be populated, so publish it as a DataSource"""
 
         # Now publish to the output location
-        output_data_source = PandasToData(self.output_uuid)
+        output_data_source = PandasToData(self.output_name)
         output_data_source.set_input(self.output_df)
         output_data_source.set_output_tags(self.output_tags)
         output_data_source.add_output_meta(self.output_meta)
@@ -61,8 +61,8 @@ if __name__ == "__main__":
     """Exercise the DataToDataLight Class"""
 
     # Create the class with inputs and outputs and invoke the transform
-    input_uuid = "abalone_data"
-    output_uuid = "abalone_data_copy"
-    data_to_data = DataToDataLight(input_uuid, output_uuid)
+    input_name = "abalone_data"
+    output_name = "abalone_data_copy"
+    data_to_data = DataToDataLight(input_name, output_name)
     data_to_data.set_output_tags(["abalone", "public"])
-    data_to_data.transform(query=f"SELECT * from {input_uuid} limit 100")
+    data_to_data.transform(query=f"SELECT * from {input_name} limit 100")
