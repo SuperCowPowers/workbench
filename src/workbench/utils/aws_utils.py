@@ -331,9 +331,9 @@ def parse_sagemaker_arn(arn: str) -> tuple:
     Returns:
         tuple: A tuple containing the resource type and resource name.
     """
-    parts = arn.split(':')
+    parts = arn.split(":")
     resource_part = parts[-1]  # "resource-type/resource-name"
-    resource_type, resource_name = resource_part.split('/', 1)
+    resource_type, resource_name = resource_part.split("/", 1)
     return resource_type, resource_name
 
 
