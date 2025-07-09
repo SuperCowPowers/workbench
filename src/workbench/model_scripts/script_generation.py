@@ -128,10 +128,10 @@ def generate_model_script(template_params: dict) -> str:
     # Fill in the template and write out the generated model script
     output_path = fill_template(template_path, template_params, "generated_model_script.py")
 
-    # Ensure the model script directory only contains the template, model script, and a requirements file
+    # Report on any additional files in the model script directory
     for file in os.listdir(model_script_dir):
         if file not in ["generated_model_script.py", "requirements.txt"] and not file.endswith(".template"):
-            log.warning(f"Unexpected file {file} found in model_script_dir...")
+            log.info(f"Additional file {file} found in model_script_dir...")
 
     return output_path
 
