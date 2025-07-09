@@ -37,6 +37,11 @@ def test_class_to_reg():
 
 if __name__ == "__main__":
 
+    # Set Pandas Display Options
+    import pandas as pd
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.width", 1000)
+
     # Run the tests
     test_reg_to_reg()
     test_reg_to_class()
