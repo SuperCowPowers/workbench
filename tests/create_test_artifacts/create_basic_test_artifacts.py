@@ -87,6 +87,7 @@ if __name__ == "__main__":
             description="Test Classification Model",
         )
         m.set_owner("test")
+        m.set_class_labels(["low", "medium", "high"])
 
     # Create the Test Endpoint
     if recreate or not Endpoint("test-classification").exists():
