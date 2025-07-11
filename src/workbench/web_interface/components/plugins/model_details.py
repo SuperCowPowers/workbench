@@ -42,10 +42,10 @@ class ModelDetails(PluginInterface):
             children=[
                 html.H4(id=f"{self.component_id}-header", children="Model: Loading..."),
                 dcc.Markdown(id=f"{self.component_id}-summary"),
-                html.H5(children="Inference Metrics", style={'marginTop': '20px'}),
+                html.H5(children="Inference Metrics", style={"marginTop": "20px"}),
                 dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
                 dcc.Markdown(id=f"{self.component_id}-metrics"),
-                html.H5(children="Cross Fold Metrics", style={'marginTop': '20px'}),
+                html.H5(children="Cross Fold Metrics", style={"marginTop": "20px"}),
                 dcc.Markdown(id=f"{self.component_id}-cross-metrics", dangerously_allow_html=True),
             ],
         )

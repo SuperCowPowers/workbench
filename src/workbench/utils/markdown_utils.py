@@ -135,11 +135,16 @@ def dict_to_collapsible_html(data: dict, title: str = None) -> str:
     Returns:
         str: HTML formatted string with collapsible sections
     """
+
     def _convert_dict_html(data: dict, indent_level: int = 0) -> str:
         html = ""
         indent_style = f'style="margin-left: {indent_level * 20}px;"' if indent_level > 0 else ""
         # Leaf nodes get slightly less indentation to align with content
-        leaf_indent_style = f'style="margin-left: {max(0, indent_level - 1) * 10 + 10}px;"' if indent_level > 0 else 'style="margin-left: 10px;"'
+        leaf_indent_style = (
+            f'style="margin-left: {max(0, indent_level - 1) * 10 + 10}px;"'
+            if indent_level > 0
+            else 'style="margin-left: 10px;"'
+        )
         for key, value in data.items():
             if isinstance(value, dict):
                 html += f"<details {indent_style}><summary><b>{key}</b></summary>\n"
@@ -149,7 +154,8 @@ def dict_to_collapsible_html(data: dict, title: str = None) -> str:
                 if value and all(isinstance(item, dict) for item in value):
                     html += f"<details {indent_style}><summary><b>{key}</b></summary>\n"
                     for i, dict_item in enumerate(value):
-                        html += f"<details style=\"margin-left: {(indent_level + 1) * 20}px;\"><summary>Item {i + 1}</summary>\n"
+                        html += f'<details style="margin-left: {(indent_level + 1) * 20}px;">'
+                        html += f"<summary>Item {i + 1}</summary>\n"
                         html += _convert_dict_html(dict_item, indent_level + 2)
                         html += "</details>\n"
                     html += "</details>\n"
@@ -160,6 +166,7 @@ def dict_to_collapsible_html(data: dict, title: str = None) -> str:
                 # Leaf node - use bullet with reduced indentation
                 html += f"<div {leaf_indent_style}>• <em>{key}:</em> {value}</div>\n"
         return html
+
     # Add title and content
     result = ""
     if title:
