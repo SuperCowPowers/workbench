@@ -21,6 +21,7 @@ from sklearn.metrics import (
     mean_absolute_error,
     r2_score,
 )
+from sklearn.preprocessing import LabelEncoder
 
 # Workbench Imports
 from workbench.utils.model_utils import load_category_mappings_from_s3
@@ -236,127 +237,112 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Dict[str, Any
         nfolds: Number of folds for cross-validation (default is 5)
     Returns:
         Dictionary containing:
-            - fold_results: List of metrics for each fold
-            - aggregated_metrics: Aggregated metrics across folds
+            - folds: Dictionary of formatted strings for each fold
+            - summary_metrics: Summary metrics across folds
             - overall_metrics: Overall metrics for all folds
-            - model_type: Type of model ('classification' or 'regression')
-            - nfolds: Number of folds used
     """
     from workbench.api import FeatureSet
-    from sklearn.preprocessing import LabelEncoder
-
-    # Grab the XGBoost model
+    # Load model
     model_type = workbench_model.model_type.value
     model_artifact_uri = workbench_model.model_data_url()
-    loaded_booster = xgboost_model_from_s3(model_artifact_uri)  # Keep the loaded booster
+    loaded_booster = xgboost_model_from_s3(model_artifact_uri)
     if loaded_booster is None:
         log.error("No XGBoost model found in the artifact.")
         return {}
-    # Create sklearn wrapper for the loaded booster
-    if model_type == "classifier":
-        xgb_model = xgb.XGBClassifier(enable_categorical=True)
-    else:
-        xgb_model = xgb.XGBRegressor(enable_categorical=True)
-    xgb_model._Booster = loaded_booster  # Assign the loaded booster to the wrapper
-    # Determine model type
-    model_type = workbench_model.model_type.value
-
-    # Grab all the training data
+    # Create the model wrapper
+    is_classifier = model_type == "classifier"
+    xgb_model = xgb.XGBClassifier(enable_categorical=True) if is_classifier else xgb.XGBRegressor(enable_categorical=True)
+    xgb_model._Booster = loaded_booster
+    # Prepare data
     fs = FeatureSet(workbench_model.get_input())
     df = fs.pull_dataframe()
-    # Convert string feature columns to categorical (not target)
     feature_cols = workbench_model.features()
+    # Convert string features to categorical
     for col in feature_cols:
         if df[col].dtype in ["object", "string"]:
             df[col] = df[col].astype("category")
-    # Split features and target
+    # Split X and y
     X = df[workbench_model.features()]
     y = df[workbench_model.target()]
 
-    # For classification, encode the target variable
-    label_encoder = None
-    if model_type == "classifier":
-        label_encoder = LabelEncoder()
-        _y = label_encoder.fit_transform(y)
-        y = pd.Series(_y, name=workbench_model.target())
+    # Encode target if it's a classification problem
+    label_encoder = LabelEncoder() if is_classifier else None
+    if label_encoder:
+        y = pd.Series(label_encoder.fit_transform(y), name=workbench_model.target())
 
-    # Use StratifiedKFold for classification, KFold for regression
-    if model_type == "classifier":
-        kfold = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=42)
-    else:
-        kfold = KFold(n_splits=nfolds, shuffle=True, random_state=42)
-    fold_results = []
+    # Prepare KFold
+    kfold = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=42) if is_classifier else KFold(n_splits=nfolds, shuffle=True,
+                                                                                                        random_state=42)
+    fold_results = {}
     all_predictions = []
     all_actuals = []
     for fold_idx, (train_idx, val_idx) in enumerate(kfold.split(X, y)):
-        # Split data
         X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
         y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
 
-        # Train and predict on this fold
+        # Train the model
         xgb_model.fit(X_train, y_train)
         preds = xgb_model.predict(X_val)
-
-        # Storage for overall calculations
         all_predictions.extend(preds)
         all_actuals.extend(y_val)
 
-        # Calculate fold metrics
-        fold_metrics = {"fold": fold_idx + 1}
-        if model_type == "classifier":
-            # For classification, decode back to original labels for metrics
+        # Roll up the fold results
+        fold_key = f"Fold {fold_idx + 1}"
+        if is_classifier:
             y_val_original = label_encoder.inverse_transform(y_val)
             preds_original = label_encoder.inverse_transform(preds.astype(int))
-
-            scores = precision_recall_fscore_support(
-                y_val_original, preds_original, average="weighted", zero_division=0
-            )
-            fold_metrics.update({"precision": float(scores[0]), "recall": float(scores[1]), "fscore": float(scores[2])})
+            scores = precision_recall_fscore_support(y_val_original, preds_original, average="weighted", zero_division=0)
+            fold_results[fold_key] = f"precision: {float(scores[0]):.3f}, recall: {float(scores[1]):.3f}, fscore: {float(scores[2]):.3f}"
         else:
-            fold_metrics.update(
-                {
-                    "rmse": float(np.sqrt(mean_squared_error(y_val, preds))),
-                    "mae": float(mean_absolute_error(y_val, preds)),
-                    "r2": float(r2_score(y_val, preds)),
-                }
-            )
-        fold_results.append(fold_metrics)
+            rmse = float(np.sqrt(mean_squared_error(y_val, preds)))
+            mae = float(mean_absolute_error(y_val, preds))
+            r2 = float(r2_score(y_val, preds))
+            fold_results[fold_key] = f"rmse: {rmse:.3f}   mae: {mae:.3f}   r2: {r2:.3f}"
+
     # Calculate overall metrics
     overall_metrics = {}
-    if model_type == "classifier":
-        # Decode back to original labels for overall metrics
+    if is_classifier:
         all_actuals_original = label_encoder.inverse_transform(all_actuals)
         all_predictions_original = label_encoder.inverse_transform(all_predictions)
-
-        scores = precision_recall_fscore_support(
-            all_actuals_original, all_predictions_original, average="weighted", zero_division=0
-        )
-        overall_metrics.update({"precision": float(scores[0]), "recall": float(scores[1]), "fscore": float(scores[2])})
-        # Confusion matrix with original labels
-        label_names = label_encoder.classes_
-        conf_mtx = confusion_matrix(all_actuals_original, all_predictions_original, labels=label_names)
-        overall_metrics["confusion_matrix"] = conf_mtx.tolist()
-        overall_metrics["label_names"] = list(label_names)
+        scores = precision_recall_fscore_support(all_actuals_original, all_predictions_original, average="weighted", zero_division=0)
+        overall_metrics.update({
+            "precision": float(scores[0]),
+            "recall": float(scores[1]),
+            "fscore": float(scores[2]),
+            "confusion_matrix": confusion_matrix(all_actuals_original, all_predictions_original, labels=label_encoder.classes_).tolist(),
+            "label_names": list(label_encoder.classes_)
+        })
     else:
-        overall_metrics.update(
-            {
-                "rmse": float(np.sqrt(mean_squared_error(all_actuals, all_predictions))),
-                "mae": float(mean_absolute_error(all_actuals, all_predictions)),
-                "r2": float(r2_score(all_actuals, all_predictions)),
-            }
-        )
-    # Aggregate metrics across folds
-    metrics_to_aggregate = ["precision", "recall", "fscore"] if model_type == "classifier" else ["rmse", "mae", "r2"]
-    aggregated_metrics = {}
+        overall_metrics.update({
+            "rmse": float(np.sqrt(mean_squared_error(all_actuals, all_predictions))),
+            "mae": float(mean_absolute_error(all_actuals, all_predictions)),
+            "r2": float(r2_score(all_actuals, all_predictions)),
+        })
+    # Aggregate metrics across folds (for summary)
+    summary_metrics = {}
+    metrics_to_aggregate = ["precision", "recall", "fscore"] if is_classifier else ["rmse", "mae", "r2"]
+
+    # Extract numeric values from fold results for aggregation
+    fold_values = {}
+    for fold_key, fold_string in fold_results.items():
+        for metric in metrics_to_aggregate:
+            if metric not in fold_values:
+                fold_values[metric] = []
+            # Extract the numeric value from the formatted string
+            metric_part = [part for part in fold_string.split(", ") if part.startswith(metric)]
+            if metric_part:
+                value = float(metric_part[0].split(": ")[1])
+                fold_values[metric].append(value)
+
     for metric in metrics_to_aggregate:
-        values = [fold[metric] for fold in fold_results]
-        aggregated_metrics[metric] = {"mean": float(np.mean(values)), "std": float(np.std(values))}
+        if metric in fold_values:
+            values = fold_values[metric]
+            summary_metrics[metric] = f"{float(np.mean(values)):.3f} ±{float(np.std(values)):.3f}"
+    # Return the results
     return {
-        "fold_results": fold_results,
-        "aggregated_metrics": aggregated_metrics,
-        "overall_metrics": overall_metrics,
-        "model_type": model_type,
-        "nfolds": nfolds,
+        "summary_metrics": summary_metrics,
+        # "overall_metrics": overall_metrics,
+        "folds": fold_results,
     }
 
 
@@ -364,6 +350,7 @@ if __name__ == "__main__":
     """Exercise the Model Utilities"""
     from workbench.api import Model, FeatureSet
     from pprint import pprint
+    """
 
     # Test the XGBoost model loading and feature importance
     model = Model("abalone-regression")
@@ -396,13 +383,14 @@ if __name__ == "__main__":
     stats_df = leaf_stats(leaf_df, target_col)
     print("DataFrame with Leaf Statistics:")
     print(stats_df)
+    """
 
-    print("\n=== REGRESSION EXAMPLE ===")
+    print("\n=== CROSS FOLD REGRESSION EXAMPLE ===")
     model = Model("abalone-regression")
     results = cross_fold_inference(model)
     pprint(results)
 
-    print("\n=== CLASSIFICATION EXAMPLE ===")
+    print("\n=== CROSS FOLD CLASSIFICATION EXAMPLE ===")
     model = Model("wine-classification")
     results = cross_fold_inference(model)
     pprint(results)
