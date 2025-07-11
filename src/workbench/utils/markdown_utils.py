@@ -127,11 +127,12 @@ def dict_to_markdown(data: dict, title: str = None) -> str:
     return result
 
 
-def dict_to_collapsible_html(data: dict, title: str = None) -> str:
+def dict_to_collapsible_html(data: dict, title: str = None, collapse_all: bool = False) -> str:
     """Convert a dictionary to collapsible HTML format.
     Args:
         data (dict): Dictionary to convert
         title (str, optional): Optional title for the dictionary
+        collapse_all (bool): Whether to collapse all sections by default. Defaults to False.
     Returns:
         str: HTML formatted string with collapsible sections
     """
@@ -145,16 +146,20 @@ def dict_to_collapsible_html(data: dict, title: str = None) -> str:
             if indent_level > 0
             else 'style="margin-left: 10px;"'
         )
+
+        # Determine if details should be open or closed
+        open_attr = "" if collapse_all else "open"
+
         for key, value in data.items():
             if isinstance(value, dict):
-                html += f"<details {indent_style}><summary><b>{key}</b></summary>\n"
+                html += f"<details {open_attr} {indent_style}><summary><b>{key}</b></summary>\n"
                 html += _convert_dict_html(value, indent_level + 1)
                 html += "</details>\n"
             elif isinstance(value, list):
                 if value and all(isinstance(item, dict) for item in value):
-                    html += f"<details {indent_style}><summary><b>{key}</b></summary>\n"
+                    html += f"<details {open_attr} {indent_style}><summary><b>{key}</b></summary>\n"
                     for i, dict_item in enumerate(value):
-                        html += f'<details style="margin-left: {(indent_level + 1) * 20}px;">'
+                        html += f'<details {open_attr} style="margin-left: {(indent_level + 1) * 20}px;">'
                         html += f"<summary>Item {i + 1}</summary>\n"
                         html += _convert_dict_html(dict_item, indent_level + 2)
                         html += "</details>\n"
@@ -169,8 +174,10 @@ def dict_to_collapsible_html(data: dict, title: str = None) -> str:
 
     # Add title and content
     result = ""
+    open_attr = "" if collapse_all else "open"
+
     if title:
-        result += f"<details><summary><strong>{title}</strong></summary>\n"
+        result += f"<details {open_attr}><summary><strong>{title}</strong></summary>\n"
         result += _convert_dict_html(data, 1)  # Start with indent level 1 under title
         result += "</details>\n"
     else:
