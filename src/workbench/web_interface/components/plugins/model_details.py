@@ -10,7 +10,7 @@ from workbench.api import ModelType, ParameterStore
 from workbench.cached.cached_model import CachedModel
 from workbench.utils.markdown_utils import health_tag_markdown
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.utils.markdown_utils import tags_to_markdown, dict_to_markdown
+from workbench.utils.markdown_utils import tags_to_markdown, dict_to_markdown, dict_to_collapsible_html
 
 
 class ModelDetails(PluginInterface):
@@ -40,11 +40,13 @@ class ModelDetails(PluginInterface):
         self.container = html.Div(
             id=self.component_id,
             children=[
-                html.H3(id=f"{self.component_id}-header", children="Model: Loading..."),
+                html.H4(id=f"{self.component_id}-header", children="Model: Loading..."),
                 dcc.Markdown(id=f"{self.component_id}-summary"),
-                html.H4(children="Inference Metrics"),
+                html.H5(children="Inference Metrics", style={'marginTop': '20px'}),
                 dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
                 dcc.Markdown(id=f"{self.component_id}-metrics"),
+                html.H5(children="Cross Fold Metrics", style={'marginTop': '20px'}),
+                dcc.Markdown(id=f"{self.component_id}-cross-metrics", dangerously_allow_html=True),
             ],
         )
 
@@ -55,6 +57,7 @@ class ModelDetails(PluginInterface):
             (f"{self.component_id}-dropdown", "options"),
             (f"{self.component_id}-dropdown", "value"),
             (f"{self.component_id}-metrics", "children"),
+            (f"{self.component_id}-cross-metrics", "children"),
         ]
         self.signals = [(f"{self.component_id}-dropdown", "value")]
 
@@ -81,9 +84,10 @@ class ModelDetails(PluginInterface):
         # Populate the inference runs dropdown
         inference_runs, default_run = self.get_inference_runs()
         metrics = self.inference_metrics(default_run)
+        cross_metrics = self.cross_metrics()
 
         # Return the updated property values for the plugin
-        return [header, details, inference_runs, default_run, metrics]
+        return [header, details, inference_runs, default_run, metrics, cross_metrics]
 
     def register_internal_callbacks(self):
         @callback(
@@ -174,7 +178,7 @@ class ModelDetails(PluginInterface):
         Returns:
             str: A markdown string
         """
-        # Model Metrics
+        # Inference Metrics
         if self.current_model is None:
             meta_df = None
         else:
@@ -182,21 +186,18 @@ class ModelDetails(PluginInterface):
         if meta_df is None:
             test_data = "Inference Metadata Not Found"
             test_data_hash = " - "
-            test_rows = " - "
-            description = " - "
+            description = None
         else:
             inference_meta = meta_df.to_dict(orient="records")[0]
             test_data = inference_meta.get("name", " - ")
             test_data_hash = inference_meta.get("data_hash", " - ")
-            test_rows = inference_meta.get("num_rows", " - ")
-            description = inference_meta.get("description", " - ")
+            description = inference_meta.get("description")
 
         # Add the markdown for the model test metrics
         markdown = "\n"
-        markdown += f"**Test Data:** {test_data}  \n"
-        markdown += f"**Data Hash:** {test_data_hash}  \n"
-        markdown += f"**Test Rows:** {test_rows}  \n"
-        markdown += f"**Description:** {description}  \n"
+        markdown += f"**Test Data:** {test_data} ({test_data_hash})  \n"
+        if description:
+            markdown += f"**Description:** {description}  \n"
 
         # Grab the Metrics from the model details
         metrics = self.current_model.get_inference_metrics(capture_name=inference_run)
@@ -221,6 +222,17 @@ class ModelDetails(PluginInterface):
             markdown += "\n\n"
             markdown += dict_to_markdown(inference_data, title="Additional Inference Metrics")
         return markdown
+
+    def cross_metrics(self) -> str:
+        # Get cross fold metrics if they exist
+        model_name = self.current_model.name
+        cross_fold_data = self.params.get(f"/workbench/models/{model_name}/inference/cross_fold", warn=False)
+        if not cross_fold_data:
+            return "**No Cross Fold Data**"
+
+        # Convert the cross fold data to a markdown string
+        html = dict_to_collapsible_html(cross_fold_data)
+        return html
 
     def get_inference_runs(self):
         """Get the inference runs for the model
@@ -249,4 +261,4 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(ModelDetails, theme="dark").run()
+    PluginUnitTest(ModelDetails, theme="midnight_blue").run()
