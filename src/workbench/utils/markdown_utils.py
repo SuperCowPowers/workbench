@@ -84,37 +84,91 @@ def tags_to_markdown(tags: str) -> str:
     return tag_markdown
 
 
-def dict_to_markdown(data: dict, title: str = None, indent: int = 0) -> str:
+def dict_to_markdown(data: dict, title: str = None) -> str:
     """Convert a dictionary to pretty Markdown format.
-
     Args:
         data (dict): Dictionary to convert
         title (str, optional): Optional title for the dictionary
-        indent (int): Indentation level for nested dicts
-
     Returns:
         str: Markdown formatted string
     """
-    markdown = ""
-    indent_str = "  " * indent
 
-    # Add title if provided and at root level
-    if title and indent == 0:
-        markdown += f"**{title}**\n\n"
+    def _convert_dict(data: dict, indent_level: int = 0) -> str:
+        markdown = ""
+        indent_str = "    " * indent_level  # 4 spaces per level
 
-    for key, value in data.items():
-        if isinstance(value, dict):
-            # Nested dictionary
-            markdown += f"{indent_str}* *{key}:*\n"
-            markdown += dict_to_markdown(value, indent=indent + 1)
-        elif isinstance(value, list):
-            # List values
-            markdown += f"{indent_str}* *{key}:* {', '.join(map(str, value))}\n"
-        else:
-            # Simple key-value pair
-            markdown += f"{indent_str}* *{key}:* {value}\n"
+        for key, value in data.items():
+            if isinstance(value, dict):
+                # Nested dictionary
+                markdown += f"{indent_str}* *{key}:*\n"
+                markdown += _convert_dict(value, indent_level + 1)
+            elif isinstance(value, list):
+                # Check if it's a list of dictionaries
+                if value and all(isinstance(item, dict) for item in value):
+                    # List of dictionaries
+                    markdown += f"{indent_str}* *{key}:*\n"
+                    for i, dict_item in enumerate(value):
+                        markdown += f"{indent_str}    * Item {i + 1}:\n"
+                        markdown += _convert_dict(dict_item, indent_level + 2)
+                else:
+                    # Regular list values
+                    markdown += f"{indent_str}* *{key}:* {', '.join(map(str, value))}\n"
+            else:
+                # Simple key-value pair
+                markdown += f"{indent_str}* *{key}:* {value}\n"
 
-    return markdown + ("\n" if indent == 0 else "")
+        return markdown
+
+    # Add title if provided (always at root level, no indentation)
+    result = ""
+    if title:
+        result += f"**{title}**\n\n"
+    result += _convert_dict(data)
+    return result
+
+
+def dict_to_collapsible_html(data: dict, title: str = None) -> str:
+    """Convert a dictionary to collapsible HTML format.
+    Args:
+        data (dict): Dictionary to convert
+        title (str, optional): Optional title for the dictionary
+    Returns:
+        str: HTML formatted string with collapsible sections
+    """
+    def _convert_dict_html(data: dict, indent_level: int = 0) -> str:
+        html = ""
+        indent_style = f'style="margin-left: {indent_level * 20}px;"' if indent_level > 0 else ""
+        # Leaf nodes get slightly less indentation to align with content
+        leaf_indent_style = f'style="margin-left: {max(0, indent_level - 1) * 10 + 10}px;"' if indent_level > 0 else 'style="margin-left: 10px;"'
+        for key, value in data.items():
+            if isinstance(value, dict):
+                html += f"<details {indent_style}><summary><b>{key}</b></summary>\n"
+                html += _convert_dict_html(value, indent_level + 1)
+                html += "</details>\n"
+            elif isinstance(value, list):
+                if value and all(isinstance(item, dict) for item in value):
+                    html += f"<details {indent_style}><summary><b>{key}</b></summary>\n"
+                    for i, dict_item in enumerate(value):
+                        html += f"<details style=\"margin-left: {(indent_level + 1) * 20}px;\"><summary>Item {i + 1}</summary>\n"
+                        html += _convert_dict_html(dict_item, indent_level + 2)
+                        html += "</details>\n"
+                    html += "</details>\n"
+                else:
+                    # Leaf node - use bullet with reduced indentation
+                    html += f"<div {leaf_indent_style}>• <em>{key}:</em> {', '.join(map(str, value))}</div>\n"
+            else:
+                # Leaf node - use bullet with reduced indentation
+                html += f"<div {leaf_indent_style}>• <em>{key}:</em> {value}</div>\n"
+        return html
+    # Add title and content
+    result = ""
+    if title:
+        result += f"<details><summary><strong>{title}</strong></summary>\n"
+        result += _convert_dict_html(data, 1)  # Start with indent level 1 under title
+        result += "</details>\n"
+    else:
+        result += _convert_dict_html(data, 0)  # Start with no indent
+    return result
 
 
 if __name__ == "__main__":
@@ -141,5 +195,7 @@ if __name__ == "__main__":
         "key1": "value1",
         "key2": {"subkey1": "subvalue1", "subkey2": ["item1", "item2"]},
         "key3": ["list_item1", "list_item2"],
+        "key4": [{"nested_key": "nested_value"}, {"another_key": "another_value"}],
     }
-    print(dict_to_markdown(sample_dict, title="Sample Dictionary", indent=0))
+    print(dict_to_markdown(sample_dict, title="Sample Dictionary"))
+    print(dict_to_collapsible_html(sample_dict, title="Sample Dictionary"))
