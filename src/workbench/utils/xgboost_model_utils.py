@@ -352,7 +352,9 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Dict[str, Any
         fold_key = f"Fold {fold_data['fold']}"
         if is_classifier:
             formatted_folds[fold_key] = (
-                f"precision: {fold_data['precision']:.3f}  recall: {fold_data['recall']:.3f}  fscore: {fold_data['fscore']:.3f}"
+                f"precision: {fold_data['precision']:.3f}  "
+                f"recall: {fold_data['recall']:.3f}  "
+                f"fscore: {fold_data['fscore']:.3f}"
             )
         else:
             formatted_folds[fold_key] = (
