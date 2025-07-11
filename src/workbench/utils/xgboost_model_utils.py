@@ -242,6 +242,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Dict[str, Any
             - overall_metrics: Overall metrics for all folds
     """
     from workbench.api import FeatureSet
+
     # Load model
     model_type = workbench_model.model_type.value
     model_artifact_uri = workbench_model.model_data_url()
@@ -251,7 +252,9 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Dict[str, Any
         return {}
     # Create the model wrapper
     is_classifier = model_type == "classifier"
-    xgb_model = xgb.XGBClassifier(enable_categorical=True) if is_classifier else xgb.XGBRegressor(enable_categorical=True)
+    xgb_model = (
+        xgb.XGBClassifier(enable_categorical=True) if is_classifier else xgb.XGBRegressor(enable_categorical=True)
+    )
     xgb_model._Booster = loaded_booster
     # Prepare data
     fs = FeatureSet(workbench_model.get_input())
@@ -270,8 +273,11 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Dict[str, Any
     if label_encoder:
         y = pd.Series(label_encoder.fit_transform(y), name=workbench_model.target())
     # Prepare KFold
-    kfold = StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=42) if is_classifier else KFold(n_splits=nfolds, shuffle=True,
-                                                                                                        random_state=42)
+    kfold = (
+        StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=42)
+        if is_classifier
+        else KFold(n_splits=nfolds, shuffle=True, random_state=42)
+    )
 
     fold_results = []
     all_predictions = []
@@ -292,18 +298,18 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Dict[str, Any
         if is_classifier:
             y_val_original = label_encoder.inverse_transform(y_val)
             preds_original = label_encoder.inverse_transform(preds.astype(int))
-            scores = precision_recall_fscore_support(y_val_original, preds_original, average="weighted", zero_division=0)
-            fold_metrics.update({
-                "precision": float(scores[0]),
-                "recall": float(scores[1]),
-                "fscore": float(scores[2])
-            })
+            scores = precision_recall_fscore_support(
+                y_val_original, preds_original, average="weighted", zero_division=0
+            )
+            fold_metrics.update({"precision": float(scores[0]), "recall": float(scores[1]), "fscore": float(scores[2])})
         else:
-            fold_metrics.update({
-                "rmse": float(np.sqrt(mean_squared_error(y_val, preds))),
-                "mae": float(mean_absolute_error(y_val, preds)),
-                "r2": float(r2_score(y_val, preds))
-            })
+            fold_metrics.update(
+                {
+                    "rmse": float(np.sqrt(mean_squared_error(y_val, preds))),
+                    "mae": float(mean_absolute_error(y_val, preds)),
+                    "r2": float(r2_score(y_val, preds)),
+                }
+            )
 
         fold_results.append(fold_metrics)
     # Calculate overall metrics
@@ -311,20 +317,28 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Dict[str, Any
     if is_classifier:
         all_actuals_original = label_encoder.inverse_transform(all_actuals)
         all_predictions_original = label_encoder.inverse_transform(all_predictions)
-        scores = precision_recall_fscore_support(all_actuals_original, all_predictions_original, average="weighted", zero_division=0)
-        overall_metrics.update({
-            "precision": float(scores[0]),
-            "recall": float(scores[1]),
-            "fscore": float(scores[2]),
-            "confusion_matrix": confusion_matrix(all_actuals_original, all_predictions_original, labels=label_encoder.classes_).tolist(),
-            "label_names": list(label_encoder.classes_)
-        })
+        scores = precision_recall_fscore_support(
+            all_actuals_original, all_predictions_original, average="weighted", zero_division=0
+        )
+        overall_metrics.update(
+            {
+                "precision": float(scores[0]),
+                "recall": float(scores[1]),
+                "fscore": float(scores[2]),
+                "confusion_matrix": confusion_matrix(
+                    all_actuals_original, all_predictions_original, labels=label_encoder.classes_
+                ).tolist(),
+                "label_names": list(label_encoder.classes_),
+            }
+        )
     else:
-        overall_metrics.update({
-            "rmse": float(np.sqrt(mean_squared_error(all_actuals, all_predictions))),
-            "mae": float(mean_absolute_error(all_actuals, all_predictions)),
-            "r2": float(r2_score(all_actuals, all_predictions))
-        })
+        overall_metrics.update(
+            {
+                "rmse": float(np.sqrt(mean_squared_error(all_actuals, all_predictions))),
+                "mae": float(mean_absolute_error(all_actuals, all_predictions)),
+                "r2": float(r2_score(all_actuals, all_predictions)),
+            }
+        )
     # Calculate summary metrics across folds
     summary_metrics = {}
     metrics_to_aggregate = ["precision", "recall", "fscore"] if is_classifier else ["rmse", "mae", "r2"]
@@ -337,15 +351,18 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Dict[str, Any
     for fold_data in fold_results:
         fold_key = f"Fold {fold_data['fold']}"
         if is_classifier:
-            formatted_folds[
-                fold_key] = f"precision: {fold_data['precision']:.3f}  recall: {fold_data['recall']:.3f}  fscore: {fold_data['fscore']:.3f}"
+            formatted_folds[fold_key] = (
+                f"precision: {fold_data['precision']:.3f}  recall: {fold_data['recall']:.3f}  fscore: {fold_data['fscore']:.3f}"
+            )
         else:
-            formatted_folds[fold_key] = f"rmse: {fold_data['rmse']:.3f}  mae: {fold_data['mae']:.3f}  r2: {fold_data['r2']:.3f}"
+            formatted_folds[fold_key] = (
+                f"rmse: {fold_data['rmse']:.3f}  mae: {fold_data['mae']:.3f}  r2: {fold_data['r2']:.3f}"
+            )
     # Return the results
     return {
         "summary_metrics": summary_metrics,
         # "overall_metrics": overall_metrics,
-        "folds": formatted_folds
+        "folds": formatted_folds,
     }
 
 
@@ -353,8 +370,6 @@ if __name__ == "__main__":
     """Exercise the Model Utilities"""
     from workbench.api import Model, FeatureSet
     from pprint import pprint
-
-    """
 
     # Test the XGBoost model loading and feature importance
     model = Model("abalone-regression")
@@ -387,7 +402,6 @@ if __name__ == "__main__":
     stats_df = leaf_stats(leaf_df, target_col)
     print("DataFrame with Leaf Statistics:")
     print(stats_df)
-    """
 
     print("\n=== CROSS FOLD REGRESSION EXAMPLE ===")
     model = Model("abalone-regression")
