@@ -211,18 +211,20 @@ def subnormal_check(df):
         print("No subnormal floats found in the DataFrame.")
 
 
-def binary_accuracy(conf_matrix: pd.DataFrame, positive_classes: list, negative_classes: list) -> float:
+def binary_accuracy(conf_matrix: pd.DataFrame, positive_classes: list) -> float:
     """
     Computes binary accuracy from a confusion matrix.
 
     Parameters:
         conf_matrix (pd.DataFrame): Confusion matrix as a DataFrame.
         positive_classes (list): List of class labels considered as 'positive'.
-        negative_classes (list): List of class labels considered as 'negative'.
 
     Returns:
         float: Binary accuracy score.
     """
+    # Negative class are the classes that are not in positive_classes
+    negative_classes = [cls for cls in conf_matrix.index if cls not in positive_classes]
+
     # True Positives (TP) - Correctly classified as Positive
     tps = conf_matrix.loc[positive_classes, positive_classes].values.sum()
 
