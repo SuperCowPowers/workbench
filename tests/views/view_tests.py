@@ -58,7 +58,7 @@ def test_training_holdouts():
     fs = FeatureSet("test_features")
     df = fs.get_training_data()
     print(f"Before setting holdouts: {df['training'].value_counts()}")
-    fs.set_training_holdouts("id", [1, 2, 3])
+    fs.set_training_holdouts([1, 2, 3])
     training_view = fs.view("training")
     df = training_view.pull_dataframe()
     print(f"After setting holdouts: {df['training'].value_counts()}")

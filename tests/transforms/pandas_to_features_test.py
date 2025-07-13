@@ -26,7 +26,7 @@ def test():
 
     # Set holdout ids
     fs = FeatureSet(test_name)
-    fs.set_training_holdouts("id", [1, 2, 3])
+    fs.set_training_holdouts([1, 2, 3])
 
 
 if __name__ == "__main__":
