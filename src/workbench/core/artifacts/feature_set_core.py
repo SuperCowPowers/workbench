@@ -504,7 +504,9 @@ class FeatureSetCore(Artifact):
         # Create a NEW training view
         self.log.important("Getting Training Holdouts...")
         table = self.view("training").table
-        hold_out_ids = self.query(f'SELECT {self.id_column} FROM "{table}" where training = FALSE')[self.id_column].tolist()
+        hold_out_ids = self.query(f'SELECT {self.id_column} FROM "{table}" where training = FALSE')[
+            self.id_column
+        ].tolist()
         return hold_out_ids
 
     @classmethod
