@@ -482,24 +482,20 @@ class FeatureSetCore(Artifact):
             time.sleep(1)
         cls.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
-    def set_training_holdouts(self, id_column: str, holdout_ids: list[str]):
+    def set_training_holdouts(self, holdout_ids: list[str]):
         """Set the hold out ids for the training view for this FeatureSet
 
         Args:
-            id_column (str): The name of the id column.
             holdout_ids (list[str]): The list of holdout ids.
         """
         from workbench.core.views import TrainingView
 
         # Create a NEW training view
         self.log.important(f"Setting Training Holdouts: {len(holdout_ids)} ids...")
-        TrainingView.create(self, id_column=id_column, holdout_ids=holdout_ids)
+        TrainingView.create(self, id_column=self.id_column, holdout_ids=holdout_ids)
 
-    def get_training_holdouts(self, id_column: str) -> list[str]:
+    def get_training_holdouts(self) -> list[str]:
         """Get the hold out ids for the training view for this FeatureSet
-
-        Args:
-            id_column (str): The name of the id column.
 
         Returns:
             list[str]: The list of holdout ids.
@@ -508,7 +504,7 @@ class FeatureSetCore(Artifact):
         # Create a NEW training view
         self.log.important("Getting Training Holdouts...")
         table = self.view("training").table
-        hold_out_ids = self.query(f'SELECT {id_column} FROM "{table}" where training = FALSE')[id_column].tolist()
+        hold_out_ids = self.query(f'SELECT {self.id_column} FROM "{table}" where training = FALSE')[self.id_column].tolist()
         return hold_out_ids
 
     @classmethod
