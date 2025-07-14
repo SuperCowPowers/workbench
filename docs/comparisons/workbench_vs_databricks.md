@@ -1,5 +1,5 @@
 !!! tip inline end "Visibility and Control"
-    Workbench provides AWS ML Pipeline visibility [Workbench Dashboard](../index.md) [Workbench REPL](../repl/index.md) and control over the creation, modification, and deletion of artifacts through the Python API.
+    Workbench provides AWS ML Pipeline visibility [Workbench Dashboard](../index.md) and control over the creation, modification, and deletion of artifacts through the Python API [Workbench REPL](../repl/index.md).
     
 # Workbench vs Databricks
 Databricks is a mature and comprehensive platform offering an extensive suite of functionality for data management, collaborative notebooks, and the full machine learning lifecycle. It’s widely regarded as the “Rolls-Royce” of ML pipeline systems—robust, feature-rich, and designed for scalable, enterprise-grade workloads. 
@@ -27,7 +27,7 @@ In contrast, Workbench is a more specialized tool focused on the AWS ecosystem, 
 
 - Using Workbench for ML Pipelines: [Workbench API Classes](../api_classes/overview.md)
 
-<img align="right" src="../images/scp.png" width="180">
+<img align="right" src="../../images/scp.png" width="180">
 
 - Workbench Core Classes: [Core Classes](../core_classes/overview.md)
 - Consulting Available: [SuperCowPowers LLC](https://www.supercowpowers.com)
