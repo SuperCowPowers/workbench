@@ -1,5 +1,5 @@
 !!! tip inline end "Visibility and Control"
-    The Workbench REPL provides AWS ML Pipeline visibility just like the [Workbench Dashboard](../aws_setup/dashboard_stack.md) but also provides control over the creation, modification, and deletion of artifacts through the Python API.
+    The Workbench REPL provides AWS ML Pipeline visibility just like the [Workbench Dashboard](../index.md) but also provides control over the creation, modification, and deletion of artifacts through the Python API.
 
 The Workbench REPL is a customized iPython shell. It provides tailored functionality for easy interaction with Workbench objects and since it's based on iPython developers will feel right at home using autocomplete, history, help, etc. Both easy and powerful, the Workbench REPL puts control of AWS ML Pipelines at your fingertips.
 
