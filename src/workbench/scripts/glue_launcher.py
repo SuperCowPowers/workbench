@@ -128,7 +128,7 @@ def run_glue_job(job_name: str) -> Dict[str, Any]:
         "start_time": job_run_details.get("StartedOn"),
         "end_time": job_run_details.get("CompletedOn"),
         "execution_time": job_run_details.get("ExecutionTime"),
-        "error_message": job_run_details.get("ErrorMessage")
+        "error_message": job_run_details.get("ErrorMessage"),
     }
 
 
@@ -144,7 +144,7 @@ def emit_eventbridge_event(job_result: Dict[str, Any]):
         "startTime": job_result["start_time"].isoformat() if job_result["start_time"] else None,
         "endTime": job_result["end_time"].isoformat() if job_result["end_time"] else None,
         "executionTime": job_result["execution_time"],
-        "errorMessage": job_result["error_message"]
+        "errorMessage": job_result["error_message"],
     }
 
     try:
@@ -154,7 +154,7 @@ def emit_eventbridge_event(job_result: Dict[str, Any]):
                     "Source": "workbench.glue",
                     "DetailType": "Glue Job Execution Completed",
                     "Detail": json.dumps(event_detail),
-                    "Resources": [f"arn:aws:glue:*:*:job/{job_result['job_name']}"]
+                    "Resources": [f"arn:aws:glue:*:*:job/{job_result['job_name']}"],
                 }
             ]
         )
@@ -181,12 +181,13 @@ def cleanup_job_if_ephemeral(job_name: str, ephemeral: bool = False):
 def main():
     parser = argparse.ArgumentParser(description="Create or update AWS Glue job")
     parser.add_argument("script_file", help="Local path to script for the Glue job")
-    parser.add_argument("--run", action="store_true", default=False,
-                        help="Run the Glue job immediately after creation/update")
-    parser.add_argument("--ephemeral", action="store_true", default=False,
-                        help="Delete the job after running (only works with --run)")
-    parser.add_argument("--trigger", action="store_true", default=False,
-                        help="Create a nightly trigger for the job")
+    parser.add_argument(
+        "--run", action="store_true", default=False, help="Run the Glue job immediately after creation/update"
+    )
+    parser.add_argument(
+        "--ephemeral", action="store_true", default=False, help="Delete the job after running (only works with --run)"
+    )
+    parser.add_argument("--trigger", action="store_true", default=False, help="Create a nightly trigger for the job")
     args = parser.parse_args()
     s3_location = upload_script_to_s3(args.script_file)
     job_name = "workbench_" + os.path.basename(args.script_file).split(".")[0]
@@ -211,7 +212,7 @@ def main():
             cleanup_job_if_ephemeral(job_name, args.ephemeral)
 
             # Exit with the job's exit code
-            exit(job_result['exit_code'])
+            exit(job_result["exit_code"])
 
         except Exception as e:
             log.error(f"Error running job: {e}")
