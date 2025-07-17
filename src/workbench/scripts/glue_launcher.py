@@ -54,10 +54,10 @@ def create_or_update_glue_job(s3_script_location: str, job_name: str, create_tri
         "Role": "Workbench-GlueRole",
         "Command": {"Name": "glueetl", "ScriptLocation": s3_script_location, "PythonVersion": "3"},
         "DefaultArguments": {
-            "—job-language": "python",
-            "—TempDir": "s3://aws-glue-temporary/",
-            "—additional-python-modules": "workbench",
-            "—workbench-bucket": workbench_bucket,
+            "--job-language": "python",
+            "--TempDir": "s3://aws-glue-temporary/",
+            "--additional-python-modules": "workbench",
+            "--workbench-bucket": workbench_bucket,
         },
         "ExecutionProperty": {"MaxConcurrentRuns": 1},
         "MaxRetries": 0,
@@ -73,6 +73,7 @@ def create_or_update_glue_job(s3_script_location: str, job_name: str, create_tri
         log.info(f"Creating new Glue job: {job_name}")
         glue_client.create_job(Name=job_name, **job_args)
     result = {"job_name": job_name}
+
     # Only create trigger if requested
     if create_trigger:
         try:
@@ -103,7 +104,6 @@ def get_detailed_job_info(job_name: str, job_run_id: str) -> Dict[str, Any]:
 
     # Get job definition
     job_def = glue_client.get_job(JobName=job_name)
-
     return {
         "job_definition": job_def["Job"],
         "job_run_details": job_run_details,
@@ -168,11 +168,9 @@ def emit_eventbridge_event(job_result: Dict[str, Any]):
         "executionTime": job_result["execution_time"],
         "errorMessage": job_result["error_message"],
     }
-
     # Include detailed failure info if available
     if job_result.get("detailed_failure_info"):
         event_detail["detailedFailureInfo"] = job_result["detailed_failure_info"]
-
     try:
         event_bridge = WorkbenchEventBridge()
         response = event_bridge.send_event(event_detail, "Glue Job Execution Completed")
