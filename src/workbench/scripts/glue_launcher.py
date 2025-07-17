@@ -4,6 +4,7 @@ import logging
 import time
 import json
 from typing import Dict, Any
+
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.config_manager import ConfigManager
@@ -225,15 +226,15 @@ def main():
             print(f"Job execution completed with state: {job_result['state']}")
             print(f"Exit code: {job_result['exit_code']}")
             # If job failed, dump detailed information
-            if job_result['state'] != 'SUCCEEDED':
+            if job_result["state"] != "SUCCEEDED":
                 print("\n=== JOB FAILURE DETAILS ===")
                 print(f"Error Message: {job_result['error_message']}")
-                if job_result.get('detailed_failure_info'):
-                    print(f"Detailed failure info: {json.dumps(job_result['detailed_failure_info'], indent=2, default=str)}")
+                if job_result.get("detailed_failure_info"):
+                    print(f"Failure info: {json.dumps(job_result['detailed_failure_info'], indent=2, default=str)}")
             # Emit EventBridge event
             emit_eventbridge_event(job_result)
             # Cleanup if ephemeral and successful
-            job_succeeded = job_result['state'] == 'SUCCEEDED'
+            job_succeeded = job_result["state"] == "SUCCEEDED"
             cleanup_job_if_ephemeral(job_name, args.ephemeral, job_succeeded)
             # Exit with the job's exit code
             exit(job_result["exit_code"])
