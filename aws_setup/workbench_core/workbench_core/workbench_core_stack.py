@@ -128,6 +128,7 @@ class WorkbenchCoreStack(Stack):
             actions=[
                 "glue:GetJobs",
                 "glue:GetJob",
+                "glue:GetJobRun",
                 "glue:GetJobRuns",
             ],
             resources=[
@@ -143,6 +144,7 @@ class WorkbenchCoreStack(Stack):
                 "glue:UpdateJob",
                 "glue:StartJobRun",
                 "glue:StopJobRun",
+                "glue:DeleteJob",
                 "glue:CreateTrigger",
             ],
             resources=[
@@ -222,6 +224,18 @@ class WorkbenchCoreStack(Stack):
                 sagemaker_table_arn,
                 inf_store_database_arn,
                 inf_store_table_arn,
+            ],
+        )
+
+    def eventbridge_policy(self) -> iam.PolicyStatement:
+        """Policy for EventBridge events."""
+        return iam.PolicyStatement(
+            actions=[
+                "events:PutEvents",
+                "events:DescribeEventBus",
+            ],
+            resources=[
+                f"arn:aws:events:{self.region}:{self.account_id}:event-bus/workbench",
             ],
         )
 
@@ -707,6 +721,7 @@ class WorkbenchCoreStack(Stack):
             self.athena_policy_statement(),
             self.athena_workgroup_policy_statement(),
             self.parameter_store_policy_statement(),
+            self.eventbridge_policy(),
             # self.secrets_read_policy_statement(),
         ]
 
