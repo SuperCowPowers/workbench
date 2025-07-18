@@ -103,6 +103,14 @@ class MonitorCore:
         Returns:
             dict: The monitoring details for the endpoint
         """
+        # Get the actual data capture path
+        actual_capture_path = self.data_capture_config()["DestinationS3Uri"]
+        if actual_capture_path != self.data_capture_path:
+            self.log.warning(
+                f"Data capture path mismatch: Expected {self.data_capture_path}, "
+                f"but found {actual_capture_path}. Using the actual path."
+            )
+            self.data_capture_path = actual_capture_path
         result = self.summary()
         info = {
             "data_capture_path": self.data_capture_path if self.data_capture_enabled() else None,
@@ -154,19 +162,20 @@ class MonitorCore:
 
         return result
 
-    def enable_data_capture(self, capture_percentage=100):
+    def enable_data_capture(self, capture_percentage=100, force=False):
         """
         Enable data capture for the SageMaker endpoint.
 
         Args:
             capture_percentage (int): Percentage of data to capture. Defaults to 100.
+            force (bool): If True, force reconfiguration even if data capture is already enabled.
         """
         # Early returns for cases where we can't/don't need to add data capture
         if self.endpoint.is_serverless():
             self.log.warning("Data capture is not supported for serverless endpoints.")
             return
 
-        if self.data_capture_enabled():
+        if self.data_capture_enabled() and not force:
             self.log.important(f"Data capture already configured for {self.endpoint_name}.")
             return
 
@@ -191,6 +200,22 @@ class MonitorCore:
 
         # Clean up old endpoint configuration
         self.sagemaker_client.delete_endpoint_config(EndpointConfigName=current_endpoint_config_name)
+
+    def data_capture_config(self):
+        """
+        Returns the complete data capture configuration from the endpoint config.
+        Returns:
+            dict: Complete DataCaptureConfig from AWS, or None if not configured
+        """
+        config_name = self.endpoint.endpoint_config_name()
+        response = self.sagemaker_client.describe_endpoint_config(
+            EndpointConfigName=config_name
+        )
+        data_capture_config = response.get('DataCaptureConfig')
+        if not data_capture_config:
+            self.log.error(f"No data capture configuration found for endpoint config {config_name}")
+            return None
+        return data_capture_config
 
     def disable_data_capture(self):
         """
