@@ -208,10 +208,8 @@ class MonitorCore:
             dict: Complete DataCaptureConfig from AWS, or None if not configured
         """
         config_name = self.endpoint.endpoint_config_name()
-        response = self.sagemaker_client.describe_endpoint_config(
-            EndpointConfigName=config_name
-        )
-        data_capture_config = response.get('DataCaptureConfig')
+        response = self.sagemaker_client.describe_endpoint_config(EndpointConfigName=config_name)
+        data_capture_config = response.get("DataCaptureConfig")
         if not data_capture_config:
             self.log.error(f"No data capture configuration found for endpoint config {config_name}")
             return None
