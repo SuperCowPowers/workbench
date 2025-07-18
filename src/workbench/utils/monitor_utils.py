@@ -64,49 +64,59 @@ def pull_data_capture(data_capture_path, max_files=1) -> Union[pd.DataFrame, Non
 def process_data_capture(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Process the captured data DataFrame to extract input and output data.
-
+    Continues processing even if individual files are malformed.
     Args:
         df (DataFrame): DataFrame with captured data.
-
     Returns:
         tuple[DataFrame, DataFrame]: Input and output DataFrames.
     """
     input_dfs = []
     output_dfs = []
 
-    for _, row in df.iterrows():
-        capture_data = row["captureData"]
+    for idx, row in df.iterrows():
+        try:
+            capture_data = row["captureData"]
 
-        # Extract and process input data
-        if "endpointInput" not in capture_data:
-            log.warning("No endpointInput found in capture data.")
-        else:
+            # Check if this capture has the required fields (all or nothing)
+            if "endpointInput" not in capture_data:
+                log.warning(f"Row {idx}: No endpointInput found in capture data.")
+                continue
+
+            if "endpointOutput" not in capture_data:
+                log.critical(
+                    f"Row {idx}: No endpointOutput found in capture data. DataCapture needs to include Output capture!"
+                )
+                continue
+
+            # Process input data
             input_data = capture_data["endpointInput"]
             if input_data["encoding"].upper() == "CSV":
-                input_dfs.append(pd.read_csv(StringIO(input_data["data"])))
+                input_df = pd.read_csv(StringIO(input_data["data"]))
             elif input_data["encoding"].upper() == "JSON":
                 json_data = json.loads(input_data["data"])
                 if isinstance(json_data, dict):
-                    input_dfs.append(pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()}))
+                    input_df = pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()})
                 else:
-                    input_dfs.append(pd.DataFrame(json_data))
+                    input_df = pd.DataFrame(json_data)
 
-        # Extract and process output data
-        if "endpointOutput" not in capture_data:
-            log.critical("No endpointOutput found in capture data. DataCapture needs to include Output capture!")
+            # Process output data
+            output_data = capture_data["endpointOutput"]
+            if output_data["encoding"].upper() == "CSV":
+                output_df = pd.read_csv(StringIO(output_data["data"]))
+            elif output_data["encoding"].upper() == "JSON":
+                json_data = json.loads(output_data["data"])
+                if isinstance(json_data, dict):
+                    output_df = pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()})
+                else:
+                    output_df = pd.DataFrame(json_data)
+
+            # If we get here, both processed successfully
+            input_dfs.append(input_df)
+            output_dfs.append(output_df)
+
+        except Exception as e:
+            log.error(f"Row {idx}: Failed to process row: {e}")
             continue
-        output_data = capture_data["endpointOutput"]
-        if output_data["encoding"].upper() == "CSV":
-            output_dfs.append(pd.read_csv(StringIO(output_data["data"])))
-        elif output_data["encoding"].upper() == "JSON":
-            json_data = json.loads(output_data["data"])
-            if isinstance(json_data, dict):
-                output_dfs.append(
-                    pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()})
-                )
-            else:
-                output_dfs.append(pd.DataFrame(json_data))
-
     # Combine and return results
     return (
         pd.concat(input_dfs, ignore_index=True) if input_dfs else pd.DataFrame(),

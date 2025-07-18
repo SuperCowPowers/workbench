@@ -320,6 +320,7 @@ class MonitorCore:
         all_input_dfs = []
         all_output_dfs = []
         for file_path in files_to_process:
+            self.log.info(f"Processing {file_path}...")
             try:
                 # Read the JSON lines file
                 df = wr.s3.read_json(path=file_path, lines=True)
@@ -330,7 +331,6 @@ class MonitorCore:
                         # Get file metadata to extract last modified time
                         file_metadata = wr.s3.describe_objects(path=file_path)
                         timestamp = file_metadata[file_path]["LastModified"]
-                        print(f"Timestamp: {timestamp}")
                         output_df["timestamp"] = timestamp
 
                     # Append the processed DataFrames to the lists
