@@ -78,17 +78,23 @@ def process_data_capture(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         capture_data = row["captureData"]
 
         # Extract and process input data
-        input_data = capture_data["endpointInput"]
-        if input_data["encoding"].upper() == "CSV":
-            input_dfs.append(pd.read_csv(StringIO(input_data["data"])))
-        elif input_data["encoding"].upper() == "JSON":
-            json_data = json.loads(input_data["data"])
-            if isinstance(json_data, dict):
-                input_dfs.append(pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()}))
-            else:
-                input_dfs.append(pd.DataFrame(json_data))
+        if "endpointInput" not in capture_data:
+            log.warning("No endpointInput found in capture data.")
+        else:
+            input_data = capture_data["endpointInput"]
+            if input_data["encoding"].upper() == "CSV":
+                input_dfs.append(pd.read_csv(StringIO(input_data["data"])))
+            elif input_data["encoding"].upper() == "JSON":
+                json_data = json.loads(input_data["data"])
+                if isinstance(json_data, dict):
+                    input_dfs.append(pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()}))
+                else:
+                    input_dfs.append(pd.DataFrame(json_data))
 
         # Extract and process output data
+        if "endpointOutput" not in capture_data:
+            log.critical("No endpointOutput found in capture data. DataCapture needs to include Output capture!")
+            continue
         output_data = capture_data["endpointOutput"]
         if output_data["encoding"].upper() == "CSV":
             output_dfs.append(pd.read_csv(StringIO(output_data["data"])))
@@ -229,7 +235,7 @@ if __name__ == "__main__":
     from workbench.api.monitor import Monitor
 
     # Test pulling data capture
-    mon = Monitor("abalone-regression-rt")
+    mon = Monitor("caco2-pappab-class-0")
     df = pull_data_capture(mon.data_capture_path)
     print("Data Capture:")
     print(df.head())
