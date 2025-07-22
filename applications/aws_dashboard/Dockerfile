@@ -7,7 +7,7 @@ EXPOSE 8000
 ENV PYTHONHASHSEED=0
 
 # Define workbench version
-ARG WORKBENCH_VERSION=0.8.155
+ARG WORKBENCH_VERSION=0.8.156
 
 # Install system packages and gunicorn in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -21,14 +21,14 @@ RUN pip install --no-cache-dir "workbench[ui]==${WORKBENCH_VERSION}" && \
     pip uninstall -y workbench && \
     pip cache purge
 
-# Copy app code and configuration
+# Install workbench[ui] in separate layer (dependencies already satisfied)
+RUN pip install --no-cache-dir "workbench[ui]==${WORKBENCH_VERSION}"
+
+# Copy app code and configuration (after pip installs to avoid cache invalidation)
 COPY . /app
 ARG WORKBENCH_CONFIG
 COPY $WORKBENCH_CONFIG /app/workbench_config.json
 ENV WORKBENCH_CONFIG=/app/workbench_config.json
-
-# Install workbench[ui] in separate layer (dependencies already satisfied)
-RUN pip install --no-cache-dir "workbench[ui]==${WORKBENCH_VERSION}"
 
 # Configure Nginx and Supervisor
 COPY nginx.conf /etc/nginx/sites-available/default
