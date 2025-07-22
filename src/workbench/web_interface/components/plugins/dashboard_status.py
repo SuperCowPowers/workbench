@@ -1,4 +1,5 @@
 """A Markdown Component for details/information about the status of the Workbench Dashboard"""
+
 import importlib.metadata
 import sys
 import logging
@@ -51,7 +52,6 @@ class DashboardStatus(PluginInterface):
         # Return the container
         return container
 
-
     def update_properties(self, config_info: dict, **kwargs) -> list:
         """Update the properties for the plugin.
 
@@ -91,8 +91,20 @@ class DashboardStatus(PluginInterface):
 
         # Key packages relevant to Workbench
         key_packages = [
-            "boto3", "botocore", "pandas", "numpy", "redis", "sagemaker", "dash", "dash_ag_grid",
-            "dash-bootstrap-components", "plotly", "scikit-learn", "awswrangler", "rdkit", "mordredcommunity"
+            "boto3",
+            "botocore",
+            "pandas",
+            "numpy",
+            "redis",
+            "sagemaker",
+            "dash",
+            "dash_ag_grid",
+            "dash-bootstrap-components",
+            "plotly",
+            "scikit-learn",
+            "awswrangler",
+            "rdkit",
+            "mordredcommunity",
         ]
 
         support_details += "- **Package Versions:**\n"
