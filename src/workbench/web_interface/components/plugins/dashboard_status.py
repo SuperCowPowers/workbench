@@ -1,5 +1,6 @@
 """A Markdown Component for details/information about the status of the Workbench Dashboard"""
-
+import importlib.metadata
+import sys
 import logging
 
 # Dash Imports
@@ -50,6 +51,7 @@ class DashboardStatus(PluginInterface):
         # Return the container
         return container
 
+
     def update_properties(self, config_info: dict, **kwargs) -> list:
         """Update the properties for the plugin.
 
@@ -83,6 +85,27 @@ class DashboardStatus(PluginInterface):
         support_header = "Support Information"
         support_details = "- **Email:** [support@supercowpowers.com](mailto:support@supercowpowers.com)\n"
         support_details += "- **Chat:** [Discord](https://discord.gg/WHAJuz8sw8)\n"
+
+        # Add Python and package information
+        support_details += f"- **Python Version:** {sys.version.split()[0]}\n"
+
+        # Key packages relevant to Workbench
+        key_packages = [
+            'boto3', 'botocore', 'pandas', 'numpy', 'redis', 'dash',
+            'dash-bootstrap-components', 'plotly', 'scikit-learn', 'awswrangler'
+        ]
+
+        support_details += "- **Package Versions:**\n"
+        try:
+            for package_name in key_packages:
+                try:
+                    version = importlib.metadata.version(package_name)
+                    support_details += f"  - {package_name}: {version}\n"
+                except importlib.metadata.PackageNotFoundError:
+                    support_details += f"  - {package_name}: Not Installed\n"
+
+        except Exception as e:
+            support_details += f"  - Error retrieving package information: {str(e)}\n"
 
         # Return the updated property values for the plugin
         return [header, details, support_header, support_details]
