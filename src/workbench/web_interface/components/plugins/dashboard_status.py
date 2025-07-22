@@ -91,8 +91,8 @@ class DashboardStatus(PluginInterface):
 
         # Key packages relevant to Workbench
         key_packages = [
-            'boto3', 'botocore', 'pandas', 'numpy', 'redis', 'dash',
-            'dash-bootstrap-components', 'plotly', 'scikit-learn', 'awswrangler'
+            "boto3", "botocore", "pandas", "numpy", "redis", "sagemaker", "dash", "dash_ag_grid",
+            "dash-bootstrap-components", "plotly", "scikit-learn", "awswrangler", "rdkit", "mordredcommunity"
         ]
 
         support_details += "- **Package Versions:**\n"
