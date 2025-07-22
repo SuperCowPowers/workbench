@@ -174,7 +174,7 @@ if __name__ == "__main__":
 # Inference Section
 #
 def model_fn(model_dir) -> dict:
-    """Load and return XGBoost and NGBoost regressors from model directory."""
+    """Load and return XGBoost, NGBoost, and Prox Model from model directory."""
 
     # Load XGBoost regressor
     xgb_path = os.path.join(model_dir, "xgb_model.json")

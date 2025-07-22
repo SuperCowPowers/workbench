@@ -1,6 +1,5 @@
 # Model: NGBoost Regressor with Distribution output
 from ngboost import NGBRegressor
-from xgboost import XGBRegressor  # Base Estimator
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
