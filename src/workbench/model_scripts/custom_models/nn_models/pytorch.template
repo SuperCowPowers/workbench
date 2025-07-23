@@ -1,9 +1,14 @@
 # Imports for PyTorch Tabular Model
+import os
+import awswrangler as wr
+import numpy as np
+
+# PyTorch 2.6+ compatibility: pytorch-tabular saves complex objects, not just tensors
+# Use legacy loading behavior for compatibility (recommended by PyTorch docs for this scenario)
+os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
 from pytorch_tabular import TabularModel
 from pytorch_tabular.config import DataConfig, OptimizerConfig, TrainerConfig
 from pytorch_tabular.models import CategoryEmbeddingModelConfig, TabNetModelConfig
-import awswrangler as wr
-import numpy as np
 
 # Model Performance Scores
 from sklearn.metrics import (
@@ -284,10 +289,7 @@ if __name__ == "__main__":
         max_epochs=100,
         early_stopping="valid_loss",
         early_stopping_patience=20,
-        checkpoints="valid_loss",
-        load_best=True,
         progress_bar="none",
-        trainer_kwargs=dict(enable_checkpointing=False),
     )
 
     optimizer_config = OptimizerConfig()
@@ -331,19 +333,27 @@ if __name__ == "__main__":
     # Make Predictions on the Validation Set
     print(f"Making Predictions on Validation Set...")
     result = tabular_model.predict(df_val)
-    preds = result["prediction"].values
+
+    # For regression: pytorch-tabular returns predictions using the target column name
+    # For classification: pytorch-tabular returns predictions using "prediction" column
+    if model_type == "classifier":
+        preds = result["prediction"].values
+    else:
+        # Regression: use the target column name
+        preds = result[target].values
 
     if model_type == "classifier":
         # Get probabilities for classification
         print("Processing Probabilities...")
         prob_cols = [col for col in result.columns if col.endswith("_probability")]
-        probs = result[prob_cols].values
-        df_val["pred_proba"] = [p.tolist() for p in probs]
+        if prob_cols:
+            probs = result[prob_cols].values
+            df_val["pred_proba"] = [p.tolist() for p in probs]
 
-        # Expand the pred_proba column into separate columns for each class
-        print(df_val.columns)
-        df_val = expand_proba_column(df_val, label_encoder.classes_)
-        print(df_val.columns)
+            # Expand the pred_proba column into separate columns for each class
+            print(df_val.columns)
+            df_val = expand_proba_column(df_val, label_encoder.classes_)
+            print(df_val.columns)
 
         # Decode the target and prediction labels
         y_validate = label_encoder.inverse_transform(df_val[target])
@@ -497,7 +507,19 @@ def predict_fn(df, model) -> pd.DataFrame:
 
     # Make predictions using the TabularModel
     result = model.predict(matched_df)
-    predictions = result["prediction"].values
+
+    # Extract predictions based on model type
+    # For regression: pytorch-tabular uses target column name
+    # For classification: pytorch-tabular uses "prediction" column
+    if "prediction" in result.columns:
+        predictions = result["prediction"].values
+    else:
+        # For regression, find the new column (not in original dataframe)
+        pred_cols = [col for col in result.columns if col not in matched_df.columns]
+        if pred_cols:
+            predictions = result[pred_cols[0]].values
+        else:
+            raise ValueError(f"Cannot find prediction column in: {result.columns.tolist()}")
 
     # If we have a label encoder, decode the predictions
     if label_encoder:
