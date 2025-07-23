@@ -1,0 +1,4 @@
+# Note: PyTorch-Tabular is not included in the default inference image, so it must be specified here.
+#       PyTorch-Tabular also implicitly requires requests
+requests
+pytorch-tabular
