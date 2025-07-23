@@ -7,21 +7,15 @@ from sklearn.metrics import (
     confusion_matrix,
     mean_absolute_error,
     r2_score,
-    root_mean_squared_error
+    root_mean_squared_error,
 )
+
 # Import pytorch-tabular components
 # Set this before importing any PyTorch-related modules to fix weight loading issues
 os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
-from pytorch_tabular import TabularModel
-from pytorch_tabular.models import (
-    TabNetModelConfig,
-    CategoryEmbeddingModelConfig
-)
-from pytorch_tabular.config import (
-    DataConfig,
-    OptimizerConfig,
-    TrainerConfig
-)
+from pytorch_tabular import TabularModel  # noqa: E402
+from pytorch_tabular.models import TabNetModelConfig, CategoryEmbeddingModelConfig  # noqa: E402
+from pytorch_tabular.config import DataConfig, OptimizerConfig, TrainerConfig  # noqa: E402
 
 
 def process_predictions(result, target_name, label_encoder=None, model_type="classifier"):
@@ -36,7 +30,9 @@ def process_predictions(result, target_name, label_encoder=None, model_type="cla
         preds = df_result[pred_col].values
 
         # Get probability columns - they should be {target}_0_probability, {target}_1_probability, etc.
-        prob_cols = [col for col in df_result.columns if col.startswith(f"{target_name}_") and col.endswith("_probability")]
+        prob_cols = [
+            col for col in df_result.columns if col.startswith(f"{target_name}_") and col.endswith("_probability")
+        ]
         prob_cols.sort()  # Ensure consistent ordering
 
         if prob_cols and label_encoder:
@@ -78,22 +74,18 @@ def create_sample_data(model_type="classifier", n_samples=5000):
 
     # Create sample features
     data = {
-        'feature1': np.random.randn(n_samples),
-        'feature2': np.random.randn(n_samples),
-        'feature3': np.random.choice(['A', 'B', 'C'], n_samples),
-        'feature4': np.random.randint(0, 100, n_samples).astype(float),
+        "feature1": np.random.randn(n_samples),
+        "feature2": np.random.randn(n_samples),
+        "feature3": np.random.choice(["A", "B", "C"], n_samples),
+        "feature4": np.random.randint(0, 100, n_samples).astype(float),
     }
 
     if model_type == "classifier":
         # Create binary classification target
-        data['target'] = np.random.choice(['Class1', 'Class2'], n_samples)
+        data["target"] = np.random.choice(["Class1", "Class2"], n_samples)
     else:
         # Create regression target
-        data['target'] = (
-                2 * data['feature1'] +
-                1.5 * data['feature2'] +
-                np.random.randn(n_samples) * 0.1
-        )
+        data["target"] = 2 * data["feature1"] + 1.5 * data["feature2"] + np.random.randn(n_samples) * 0.1
 
     df = pd.DataFrame(data)
 
@@ -116,8 +108,8 @@ def test_model_training(model_type="classifier"):
     target = "target"
 
     # Configure data settings - minimal required config
-    continuous_cols = ['feature1', 'feature2', 'feature4']
-    categorical_cols = ['feature3']
+    continuous_cols = ["feature1", "feature2", "feature4"]
+    categorical_cols = ["feature3"]
 
     data_config = DataConfig(
         target=[target],
@@ -207,16 +199,16 @@ def test_model_training(model_type="classifier"):
     # Report Performance Metrics
     if model_type == "classifier":
         label_names = label_encoder.classes_
-        scores = precision_recall_fscore_support(
-            y_validate, preds, average=None, labels=label_names
+        scores = precision_recall_fscore_support(y_validate, preds, average=None, labels=label_names)
+        score_df = pd.DataFrame(
+            {
+                target: label_names,
+                "precision": scores[0],
+                "recall": scores[1],
+                "fscore": scores[2],
+                "support": scores[3],
+            }
         )
-        score_df = pd.DataFrame({
-            target: label_names,
-            "precision": scores[0],
-            "recall": scores[1],
-            "fscore": scores[2],
-            "support": scores[3],
-        })
         print("\nClassification Metrics:")
         metrics = ["precision", "recall", "fscore", "support"]
         for t in label_names:
@@ -235,7 +227,7 @@ def test_model_training(model_type="classifier"):
         rmse = root_mean_squared_error(y_validate, preds)
         mae = mean_absolute_error(y_validate, preds)
         r2 = r2_score(y_validate, preds)
-        print(f"\nRegression Metrics:")
+        print("\nRegression Metrics:")
         print(f"  RMSE: {rmse:.3f}")
         print(f"  MAE: {mae:.3f}")
         print(f"  R2: {r2:.3f}")
