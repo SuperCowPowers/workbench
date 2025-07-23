@@ -167,6 +167,9 @@ class FeaturesToModel(Transform):
         if self.custom_script:
             script_path = self.custom_script
             if self.custom_script.endswith(".template"):
+                # Model Type is an enumerated type, so we need to convert it to a string
+                template_params["model_type"] = template_params["model_type"].value
+
                 # Fill in the custom script template with specific parameters (include any custom args)
                 template_params.update(self.custom_args)
                 script_path = fill_template(self.custom_script, template_params, "generated_model_script.py")
@@ -316,10 +319,10 @@ if __name__ == "__main__":
 
     # Regression Model
     input_name = "abalone_features"
-    output_name = "abalone-regression"
+    output_name = "test-abalone-regression"
     to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.REGRESSOR)
-    to_model.set_output_tags(["abalone", "public"])
-    to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
+    to_model.set_output_tags(["test"])
+    to_model.transform(target_column="class_number_of_rings", description="Test Abalone Regression")
 
     """
     # Classification Model
