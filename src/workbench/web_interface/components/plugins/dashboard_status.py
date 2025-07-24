@@ -91,6 +91,8 @@ class DashboardStatus(PluginInterface):
 
         # Key packages relevant to Workbench
         key_packages = [
+            "workbench",
+            "workbench-bridges",
             "boto3",
             "botocore",
             "pandas",
