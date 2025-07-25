@@ -29,7 +29,7 @@ class WorkbenchCoreStack(Stack):
         super().__init__(scope, construct_id, description=desc, **kwargs)
 
         # Grab our properties
-        self.account_id = env.account
+        self.account = env.account
         self.workbench_bucket = props.workbench_bucket
         self.workbench_role_name = props.workbench_role_name
         self.sso_group = props.sso_group
@@ -60,7 +60,7 @@ class WorkbenchCoreStack(Stack):
         arns = []
         for bucket_name_template in bucket_list:
             # Dynamically construct the bucket name
-            bucket_name = bucket_name_template.format(region=self.region, account_id=self.account_id)
+            bucket_name = bucket_name_template.format(region=self.region, account_id=self.account)
             bucket_arn = f"arn:aws:s3:::{bucket_name}"
             arns.append(bucket_arn)
             arns.append(f"{bucket_arn}/*")
@@ -118,7 +118,7 @@ class WorkbenchCoreStack(Stack):
         """Allow passing the specific Glue role to AWS Glue."""
         return iam.PolicyStatement(
             actions=["iam:PassRole"],
-            resources=[f"arn:aws:iam::{self.account_id}:role/Workbench-GlueRole"],
+            resources=[f"arn:aws:iam::{self.account}:role/Workbench-GlueRole"],
             conditions={"StringEquals": {"iam:PassedToService": "glue.amazonaws.com"}},
         )
 
@@ -144,12 +144,11 @@ class WorkbenchCoreStack(Stack):
                 "glue:UpdateJob",
                 "glue:StartJobRun",
                 "glue:StopJobRun",
-                "glue:DeleteJob",
                 "glue:CreateTrigger",
             ],
             resources=[
-                f"arn:aws:glue:{self.region}:{self.account_id}:job/*",
-                f"arn:aws:glue:{self.region}:{self.account_id}:trigger/*",
+                f"arn:aws:glue:{self.region}:{self.account}:job/*",
+                f"arn:aws:glue:{self.region}:{self.account}:trigger/*",
             ],
         )
 
@@ -235,7 +234,7 @@ class WorkbenchCoreStack(Stack):
                 "events:DescribeEventBus",
             ],
             resources=[
-                f"arn:aws:events:{self.region}:{self.account_id}:event-bus/workbench",
+                f"arn:aws:events:{self.region}:{self.account}:event-bus/workbench",
             ],
         )
 
@@ -829,13 +828,13 @@ class WorkbenchCoreStack(Stack):
         # If sso_group is provided, add the condition to the trust relationship
         if self.sso_group:
             sso_group_arn_1 = (
-                f"arn:aws:iam::{self.account_id}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_{self.sso_group}_*"
+                f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_{self.sso_group}_*"
             )
-            sso_group_arn_2 = f"arn:aws:iam::{self.account_id}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_{self.sso_group}_*"
+            sso_group_arn_2 = f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_{self.sso_group}_*"
             condition = {"ArnLike": {"aws:PrincipalArn": [sso_group_arn_1, sso_group_arn_2]}}
-            assumed_by.add_principals(iam.AccountPrincipal(self.account_id).with_conditions(condition))
+            assumed_by.add_principals(iam.AccountPrincipal(self.account).with_conditions(condition))
         else:
-            assumed_by.add_principals(iam.AccountPrincipal(self.account_id))
+            assumed_by.add_principals(iam.AccountPrincipal(self.account))
 
         # Create the role with the trust relationships
         api_execution_role = iam.Role(
