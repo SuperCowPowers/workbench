@@ -142,7 +142,6 @@ class WorkbenchCoreStack(Stack):
                 "glue:CreateJob",
                 "glue:UpdateJob",
                 "glue:StartJobRun",
-                "glue:StopJobRun",
                 "glue:CreateTrigger",
             ],
             resources=[
