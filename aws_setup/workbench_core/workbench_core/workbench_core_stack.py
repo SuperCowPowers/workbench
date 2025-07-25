@@ -29,7 +29,6 @@ class WorkbenchCoreStack(Stack):
         super().__init__(scope, construct_id, description=desc, **kwargs)
 
         # Grab our properties
-        self.account = env.account
         self.workbench_bucket = props.workbench_bucket
         self.workbench_role_name = props.workbench_role_name
         self.sso_group = props.sso_group
