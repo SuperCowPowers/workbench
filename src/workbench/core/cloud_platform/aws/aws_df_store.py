@@ -192,7 +192,7 @@ class AWSDFStore:
         # Update/Insert the DataFrame to S3
         s3_uri = self._generate_s3_uri(location)
         try:
-            wr.s3.to_parquet(df=data, path=s3_uri, dataset=True, mode="overwrite")
+            wr.s3.to_parquet(df=data, path=s3_uri, dataset=True, mode="overwrite", index=True)
             self.log.info(f"Dataframe cached {s3_uri}...")
         except Exception as e:
             self.log.error(f"Failed to cache dataframe '{s3_uri}': {e}")
