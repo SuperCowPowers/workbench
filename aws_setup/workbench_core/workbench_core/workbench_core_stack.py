@@ -828,7 +828,9 @@ class WorkbenchCoreStack(Stack):
             sso_group_arn_1 = (
                 f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_{self.sso_group}_*"
             )
-            sso_group_arn_2 = f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_{self.sso_group}_*"
+            sso_group_arn_2 = (
+                f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_{self.sso_group}_*"
+            )
             condition = {"ArnLike": {"aws:PrincipalArn": [sso_group_arn_1, sso_group_arn_2]}}
             assumed_by.add_principals(iam.AccountPrincipal(self.account).with_conditions(condition))
         else:
