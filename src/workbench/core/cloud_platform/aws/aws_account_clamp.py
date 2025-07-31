@@ -105,12 +105,20 @@ class AWSAccountClamp:
             self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
             return info
 
-    def check_s3_access(self) -> bool:
-        s3 = self.boto3_session.client("s3")
-        results = s3.list_buckets()
-        for bucket in results["Buckets"]:
-            self.log.info(f"\t{bucket['Name']}")
-        return True
+    def check_workbench_bucket(self) -> bool:
+        """Check if the Workbench S3 Bucket is set up correctly"""
+        s3 = self.boto3_session.resource("s3")
+        try:
+            bucket = s3.Bucket(self.workbench_bucket_name)
+            if bucket.creation_date is None:
+                self.log.critical(f"The {self.workbench_bucket_name} bucket does not exist")
+                return False
+            else:
+                self.log.info(f"The {self.workbench_bucket_name} bucket exists")
+                return True
+        except ClientError as e:
+            self.log.error(f"Error checking S3 bucket: {e}")
+            return False
 
     def sagemaker_session(self) -> "SageSession":
         """Create a workbench SageMaker session (using our boto3 refreshable session)
@@ -145,9 +153,9 @@ if __name__ == "__main__":
     aws_account_clamp.check_assumed_role()
     print("Assumed Role Check Success...")
 
-    print("\n\n*** AWS S3 Access Check ***")
-    aws_account_clamp.check_s3_access()
-    print("S3 Access Check Success...")
+    print("\n\n*** AWS Workbench Bucket Check ***")
+    aws_account_clamp.check_workbench_bucket()
+    print("Workbench Bucket Check Success...")
 
     print("\n\n*** AWS Sagemaker Session/Client Check ***")
     sm_client = aws_account_clamp.sagemaker_client()

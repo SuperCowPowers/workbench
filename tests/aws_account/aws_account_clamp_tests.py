@@ -19,9 +19,9 @@ def test():
     print("*** AWS Assumed Role Check ***")
     aws_account_clamp.check_assumed_role()
 
-    print("*** AWS S3 Access Check ***")
-    aws_account_clamp.check_s3_access()
-    print("S3 Access Check Success...")
+    print("*** AWS Workbench Bucket Check ***")
+    aws_account_clamp.check_workbench_bucket()
+    print("Workbench Bucket Check Success...")
 
     print("*** AWS Sagemaker Session/Client Check ***")
     sm_client = aws_account_clamp.sagemaker_client()

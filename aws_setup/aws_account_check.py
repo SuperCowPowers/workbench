@@ -45,7 +45,7 @@ class AWSAccountCheck:
                 self.log.error(f"Unexpected error: {e}")
                 sys.exit(1)
 
-    def check_s3_bucket_subfolders(self):
+    def check_workbench_bucket(self):
         """Check if the Workbench S3 Bucket is set up and has the correct sub-folders"""
 
         self.log.info("*** AWS Workbench Bucket Check ***")
@@ -59,22 +59,6 @@ class AWSAccountCheck:
         else:
             self.log.info(f"The {self.workbench_bucket} bucket exists")
 
-        # Check if the sub-folders exists
-        sub_folders = ["incoming-data", "data-sources", "feature-sets", "athena-queries"]
-
-        # Get all object prefixes in the bucket
-        prefixes = set()
-        for obj in bucket.objects.all():
-            prefix = obj.key.split("/")[0]
-            prefixes.add(prefix)
-
-        # Check for the existence of the sub-folders
-        for folder in sub_folders:
-            if folder in prefixes:
-                self.log.info(f"The {folder} prefix exists")
-            else:
-                self.log.info(f"The {folder} prefix does not exist...which is fine...")
-
     def check(self):
         """Check if the AWS Account is set up Correctly"""
         self.log.info("*** Caller/Base AWS Identity Check ***")
@@ -85,12 +69,9 @@ class AWSAccountCheck:
         self.aws_clamp.check_assumed_role()
         print("\n")
 
-        self.log.info("*** AWS S3 Access Check ***")
-        self.aws_clamp.check_s3_access()
+        self.log.info("*** AWS Workbench Bucket Check ***")
+        self.aws_clamp.check_workbench_bucket()
         print("\n")
-
-        # Check that the Workbench S3 Bucket and Sub-folders are created
-        self.check_s3_bucket_subfolders()
 
         self.log.info("*** AWS Sagemaker Session/Client Check ***")
         sm_client = self.aws_clamp.sagemaker_client()
