@@ -113,10 +113,10 @@ class AWSAccountClamp:
             self.log.info(f"The {self.workbench_bucket_name} bucket exists and is accessible")
             return True
         except ClientError as e:
-            error_code = e.response['Error']['Code']
-            if error_code == '404':
+            error_code = e.response["Error"]["Code"]
+            if error_code == "404":
                 self.log.critical(f"The {self.workbench_bucket_name} bucket does not exist")
-            elif error_code == '403':
+            elif error_code == "403":
                 self.log.critical(f"Access denied to {self.workbench_bucket_name} bucket")
             else:
                 self.log.error(f"Error checking S3 bucket: {e}")
