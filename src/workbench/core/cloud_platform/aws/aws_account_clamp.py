@@ -106,18 +106,20 @@ class AWSAccountClamp:
             return info
 
     def check_workbench_bucket(self) -> bool:
-        """Check if the Workbench S3 Bucket is set up correctly"""
-        s3 = self.boto3_session.resource("s3")
+        """Check if the Workbench S3 Bucket exists and is accessible"""
+        s3 = self.boto3_session.client("s3")  # Use client, not resource
         try:
-            bucket = s3.Bucket(self.workbench_bucket_name)
-            if bucket.creation_date is None:
-                self.log.critical(f"The {self.workbench_bucket_name} bucket does not exist")
-                return False
-            else:
-                self.log.info(f"The {self.workbench_bucket_name} bucket exists")
-                return True
+            s3.head_bucket(Bucket=self.workbench_bucket_name)
+            self.log.info(f"The {self.workbench_bucket_name} bucket exists and is accessible")
+            return True
         except ClientError as e:
-            self.log.error(f"Error checking S3 bucket: {e}")
+            error_code = e.response['Error']['Code']
+            if error_code == '404':
+                self.log.critical(f"The {self.workbench_bucket_name} bucket does not exist")
+            elif error_code == '403':
+                self.log.critical(f"Access denied to {self.workbench_bucket_name} bucket")
+            else:
+                self.log.error(f"Error checking S3 bucket: {e}")
             return False
 
     def sagemaker_session(self) -> "SageSession":

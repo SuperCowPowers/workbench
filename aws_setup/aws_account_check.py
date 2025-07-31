@@ -45,20 +45,6 @@ class AWSAccountCheck:
                 self.log.error(f"Unexpected error: {e}")
                 sys.exit(1)
 
-    def check_workbench_bucket(self):
-        """Check if the Workbench S3 Bucket is set up and has the correct sub-folders"""
-
-        self.log.info("*** AWS Workbench Bucket Check ***")
-        s3 = self.aws_clamp.boto3_session.resource("s3")
-        bucket = s3.Bucket(self.workbench_bucket)
-
-        # Check if the bucket exists
-        if bucket.creation_date is None:
-            self.log.critical(f"The {self.workbench_bucket} bucket does not exist")
-            sys.exit(1)
-        else:
-            self.log.info(f"The {self.workbench_bucket} bucket exists")
-
     def check(self):
         """Check if the AWS Account is set up Correctly"""
         self.log.info("*** Caller/Base AWS Identity Check ***")
