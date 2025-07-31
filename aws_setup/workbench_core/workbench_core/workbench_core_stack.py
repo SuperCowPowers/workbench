@@ -65,19 +65,6 @@ class WorkbenchCoreStack(Stack):
             arns.append(f"{bucket_arn}/*")
         return arns
 
-    @staticmethod
-    def s3_list_policy_statement() -> iam.PolicyStatement:
-        """Create policy statement for listing S3 buckets
-
-        Returns:
-           iam.PolicyStatement: A policy statements for listing S3 buckets
-        """
-        list_all_buckets_policy = iam.PolicyStatement(
-            actions=["s3:ListAllMyBuckets"],
-            resources=["*"],  # ListAllMyBuckets applies to all buckets
-        )
-        return list_all_buckets_policy
-
     def s3_policy_statement(self) -> iam.PolicyStatement:
         """Create a policy statement for S3 access.
 
@@ -707,7 +694,6 @@ class WorkbenchCoreStack(Stack):
     def workbench_datasource_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench DataSources"""
         policy_statements = [
-            self.s3_list_policy_statement(),
             self.s3_policy_statement(),
             self.s3_public_policy_statement(),
             self.glue_job_read_policy(),
