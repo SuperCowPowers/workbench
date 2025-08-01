@@ -42,7 +42,7 @@ Powered by AWS® to accelerate your Machine Learning Pipelines development with 
 
 ### Coming Soon: `v0.9`
 
-We're getting ready for our `v0.9` release. Folks should use the `v0.8.157` release until the new release come out. Here's a road map for `v0.9` [Workbench RoadMaps](https://supercowpowers.github.io/workbench/road_maps/0_9_0/) 
+We're getting ready for our `v0.9` release. Here's the road map: [Workbench RoadMaps](https://supercowpowers.github.io/workbench/road_maps/0_9_0/) 
 
 # Welcome to Workbench
 The Workbench framework makes AWS® both easier to use and more powerful. Workbench handles all the details around updating and managing a complex set of AWS Services. With a simple-to-use Python API and a beautiful set of web interfaces, Workbench makes creating AWS ML pipelines a snap. It also dramatically improves both the usability and visibility across the entire spectrum of services: Glue Job, Athena, Feature Store, Models, and Endpoints, Workbench makes it easy to build production ready, AWS powered, machine learning pipelines.

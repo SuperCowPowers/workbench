@@ -65,18 +65,11 @@ class WorkbenchCoreStack(Stack):
             arns.append(f"{bucket_arn}/*")
         return arns
 
-    def s3_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for S3 access.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for S3 access.
-        """
+    def s3_read(self) -> iam.PolicyStatement:
+        """Create a policy statement for S3 read access."""
         return iam.PolicyStatement(
             actions=[
-                # Define the S3 actions you need
                 "s3:GetObject",
-                "s3:PutObject",
-                "s3:DeleteObject",
                 "s3:ListBucket",
                 "s3:GetBucketLocation",
                 "s3:GetBucketAcl",
@@ -84,8 +77,19 @@ class WorkbenchCoreStack(Stack):
             resources=self.bucket_arns,
         )
 
+    def s3_full(self) -> iam.PolicyStatement:
+        """Create a policy statement for S3 full access."""
+        read_statement = self.s3_read()
+        return iam.PolicyStatement(
+            actions=read_statement.actions + [
+                "s3:PutObject",
+                "s3:DeleteObject",
+            ],
+            resources=self.bucket_arns,
+        )
+
     @staticmethod
-    def s3_public_policy_statement() -> iam.PolicyStatement:
+    def s3_public() -> iam.PolicyStatement:
         """Create a policy statement for access to PUBLIC S3 buckets.
 
         Returns:
@@ -100,8 +104,8 @@ class WorkbenchCoreStack(Stack):
             resources=["arn:aws:s3:::*"],
         )
 
-    def glue_pass_role_policy_statement(self) -> iam.PolicyStatement:
-        """Allow passing the specific Glue role to AWS Glue."""
+    def glue_pass_role(self) -> iam.PolicyStatement:
+        """Allows us to specify the Workbench-Glue role when creating a Glue Job"""
         return iam.PolicyStatement(
             actions=["iam:PassRole"],
             resources=[f"arn:aws:iam::{self.account}:role/Workbench-GlueRole"],
@@ -678,8 +682,8 @@ class WorkbenchCoreStack(Stack):
     def workbench_datasource_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench DataSources"""
         policy_statements = [
-            self.s3_policy_statement(),
-            self.s3_public_policy_statement(),
+            self.s3_full(),
+            self.s3_public(),
             self.glue_job_read_policy(),
             self.glue_job_create_policy(),
             self.glue_job_connections_policy_statement(),
@@ -701,7 +705,7 @@ class WorkbenchCoreStack(Stack):
     def workbench_featureset_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench FeatureSets"""
         policy_statements = [
-            self.s3_policy_statement(),
+            self.s3_full(),
             self.glue_catalog_policy_statement(),
             self.glue_database_policy_statement(),
             self.athena_policy_statement(),
@@ -814,7 +818,7 @@ class WorkbenchCoreStack(Stack):
         )
 
         # Create and attach the Workbench managed policies to the role
-        api_execution_role.add_to_policy(self.glue_pass_role_policy_statement())
+        api_execution_role.add_to_policy(self.glue_pass_role())
         api_execution_role.add_managed_policy(self.datasource_policy)
         api_execution_role.add_managed_policy(self.featureset_policy)
         api_execution_role.add_managed_policy(self.model_policy)
