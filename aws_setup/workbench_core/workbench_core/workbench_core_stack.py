@@ -109,69 +109,34 @@ class WorkbenchCoreStack(Stack):
         )
 
     ##############################
-    #    Glue Catalog/Database   #
+    #    Glue Data Catalog       #
     ##############################
     def glue_catalog_read(self) -> iam.PolicyStatement:
-        """Read-only discovery across the entire Glue Data Catalog."""
+        """Read-only access to the entire Glue Data Catalog."""
         return iam.PolicyStatement(
             actions=[
                 "glue:GetDatabases",
                 "glue:GetTable",
                 "glue:GetTables",
                 "glue:SearchTables",
+                "glue:GetPartition",
+                "glue:GetPartitions",
             ],
             resources=[f"arn:aws:glue:{self.region}:{self.account}:catalog"],
         )
 
     def glue_catalog_full(self) -> iam.PolicyStatement:
-        """Full catalog access including database creation."""
+        """Full access to the Glue Data Catalog including CRUD operations."""
         read_statement = self.glue_catalog_read()
         return iam.PolicyStatement(
             actions=read_statement.actions + [
                 "glue:CreateDatabase",
-            ],
-            resources=[f"arn:aws:glue:{self.region}:{self.account}:catalog"],
-        )
-
-    def glue_databases_read(self) -> iam.PolicyStatement:
-        """Read-only access to Workbench-managed databases and tables."""
-        return iam.PolicyStatement(
-            actions=[
-                "glue:GetDatabase",
-                "glue:GetTable",
-                "glue:GetTables",
-                "glue:GetPartition",
-                "glue:GetPartitions",
-            ],
-            resources=self._workbench_database_arns(),
-        )
-
-    def glue_databases_full(self) -> iam.PolicyStatement:
-        """Full access to Workbench-managed databases and tables."""
-        return iam.PolicyStatement(
-            actions=[
-                "glue:GetDatabase",
-                "glue:GetTable",
-                "glue:GetTables",
                 "glue:CreateTable",
                 "glue:UpdateTable",
                 "glue:DeleteTable",
-                "glue:GetPartition",
-                "glue:GetPartitions",
             ],
-            resources=self._workbench_database_arns(),
+            resources=[f"arn:aws:glue:{self.region}:{self.account}:catalog"],
         )
-
-    def _workbench_database_arns(self) -> list[str]:
-        """Helper to get all Workbench-managed database/table ARNs."""
-        return [
-            f"arn:aws:glue:{self.region}:{self.account}:database/workbench",
-            f"arn:aws:glue:{self.region}:{self.account}:table/workbench/*",
-            f"arn:aws:glue:{self.region}:{self.account}:database/sagemaker_featurestore",
-            f"arn:aws:glue:{self.region}:{self.account}:table/sagemaker_featurestore/*",
-            f"arn:aws:glue:{self.region}:{self.account}:database/inference_store",
-            f"arn:aws:glue:{self.region}:{self.account}:table/inference_store/*",
-        ]
 
     def glue_pass_role(self) -> iam.PolicyStatement:
         """Allows us to specify the Workbench-Glue role when creating a Glue Job"""
@@ -697,11 +662,10 @@ class WorkbenchCoreStack(Stack):
         policy_statements = [
             self.s3_full(),
             self.s3_public(),
+            self.glue_catalog_full(),
             self.glue_job_read_policy(),
             self.glue_job_create_policy(),
             self.glue_job_connections_policy_statement(),
-            self.glue_catalog_full(),
-            self.glue_databases_full(),
             self.athena_policy_statement(),
             self.athena_workgroup_policy_statement(),
             self.parameter_store_policy_statement(),
@@ -720,7 +684,6 @@ class WorkbenchCoreStack(Stack):
         policy_statements = [
             self.s3_full(),
             self.glue_catalog_full(),
-            self.glue_databases_full(),
             self.athena_policy_statement(),
             self.athena_workgroup_policy_statement(),
             self.featurestore_list_policy_statement(),
