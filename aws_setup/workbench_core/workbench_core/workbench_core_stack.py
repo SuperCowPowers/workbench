@@ -117,6 +117,7 @@ class WorkbenchCoreStack(Stack):
             actions=[
                 "glue:GetDatabases",
                 "glue:GetTable",
+                "glue:GetTables",
                 "glue:SearchTables",
             ],
             resources=[f"arn:aws:glue:{self.region}:{self.account}:catalog"],
