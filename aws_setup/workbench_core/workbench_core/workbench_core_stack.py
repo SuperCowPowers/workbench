@@ -54,6 +54,9 @@ class WorkbenchCoreStack(Stack):
         self.workbench_lambda_role = self.create_lambda_role()
         self.workbench_glue_role = self.create_glue_role()
 
+    ####################
+    #    S3 Section    #
+    ####################
     def _bucket_names_to_arns(self, bucket_list: list[str]) -> list[str]:
         """Convert a list of dynamic bucket names to ARNs."""
         arns = []
@@ -103,6 +106,70 @@ class WorkbenchCoreStack(Stack):
             ],
             resources=["arn:aws:s3:::*"],
         )
+
+    ##############################
+    #    Glue Catalog/Database   #
+    ##############################
+    def glue_catalog_read(self) -> iam.PolicyStatement:
+        """Read-only discovery across the entire Glue Data Catalog."""
+        return iam.PolicyStatement(
+            actions=[
+                "glue:GetDatabases",
+                "glue:SearchTables",
+            ],
+            resources=[f"arn:aws:glue:{self.region}:{self.account}:catalog"],
+        )
+
+    def glue_catalog_full(self) -> iam.PolicyStatement:
+        """Full catalog access including database creation."""
+        return iam.PolicyStatement(
+            actions=[
+                "glue:GetDatabases",
+                "glue:SearchTables",
+                "glue:CreateDatabase",
+            ],
+            resources=[f"arn:aws:glue:{self.region}:{self.account}:catalog"],
+        )
+
+    def glue_databases_read(self) -> iam.PolicyStatement:
+        """Read-only access to Workbench-managed databases and tables."""
+        return iam.PolicyStatement(
+            actions=[
+                "glue:GetDatabase",
+                "glue:GetTable",
+                "glue:GetTables",
+                "glue:GetPartition",
+                "glue:GetPartitions",
+            ],
+            resources=self._workbench_database_arns(),
+        )
+
+    def glue_databases_full(self) -> iam.PolicyStatement:
+        """Full access to Workbench-managed databases and tables."""
+        return iam.PolicyStatement(
+            actions=[
+                "glue:GetDatabase",
+                "glue:GetTable",
+                "glue:GetTables",
+                "glue:CreateTable",
+                "glue:UpdateTable",
+                "glue:DeleteTable",
+                "glue:GetPartition",
+                "glue:GetPartitions",
+            ],
+            resources=self._workbench_database_arns(),
+        )
+
+    def _workbench_database_arns(self) -> list[str]:
+        """Helper to get all Workbench-managed database/table ARNs."""
+        return [
+            f"arn:aws:glue:{self.region}:{self.account}:database/workbench",
+            f"arn:aws:glue:{self.region}:{self.account}:table/workbench/*",
+            f"arn:aws:glue:{self.region}:{self.account}:database/sagemaker_featurestore",
+            f"arn:aws:glue:{self.region}:{self.account}:table/sagemaker_featurestore/*",
+            f"arn:aws:glue:{self.region}:{self.account}:database/inference_store",
+            f"arn:aws:glue:{self.region}:{self.account}:table/inference_store/*",
+        ]
 
     def glue_pass_role(self) -> iam.PolicyStatement:
         """Allows us to specify the Workbench-Glue role when creating a Glue Job"""
@@ -157,62 +224,6 @@ class WorkbenchCoreStack(Stack):
                 "ec2:CreateTags",
             ],
             resources=["*"],  # Broad permissions for Glue connections and VPC network queries
-        )
-
-    def glue_catalog_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for Glue Data Catalog-wide permissions."""
-        catalog_arn = f"arn:aws:glue:{self.region}:{self.account}:catalog"
-
-        return iam.PolicyStatement(
-            actions=[
-                # Catalog-wide permissions
-                "glue:GetDatabases",
-                "glue:GetDatabase",
-                "glue:CreateDatabase",
-                "glue:SearchTables",
-                "glue:GetTables",
-                "glue:GetTable",
-                "glue:CreateTable",
-                "glue:UpdateTable",
-                "glue:DeleteTable",
-                "glue:GetPartitions",
-            ],
-            resources=[catalog_arn],
-        )
-
-    def glue_database_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for specific Glue databases and tables."""
-        # ARNs for the databases and tables
-        workbench_database_arn = f"arn:aws:glue:{self.region}:{self.account}:database/workbench"
-        workbench_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/workbench/*"
-        sagemaker_featurestore_database_arn = (
-            f"arn:aws:glue:{self.region}:{self.account}:database/sagemaker_featurestore"
-        )
-        sagemaker_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/sagemaker_featurestore/*"
-        inf_store_database_arn = f"arn:aws:glue:{self.region}:{self.account}:database/inference_store"
-        inf_store_table_arn = f"arn:aws:glue:{self.region}:{self.account}:table/inference_store/*"
-
-        return iam.PolicyStatement(
-            actions=[
-                # Database-specific permissions
-                "glue:GetDatabase",
-                "glue:GetTable",
-                "glue:GetTables",
-                "glue:UpdateTable",
-                "glue:CreateTable",
-                "glue:DeleteTable",
-                # Partition-specific actions
-                "glue:GetPartition",
-                "glue:GetPartitions",
-            ],
-            resources=[
-                workbench_database_arn,
-                workbench_table_arn,
-                sagemaker_featurestore_database_arn,
-                sagemaker_table_arn,
-                inf_store_database_arn,
-                inf_store_table_arn,
-            ],
         )
 
     def eventbridge_policy(self) -> iam.PolicyStatement:
@@ -687,8 +698,8 @@ class WorkbenchCoreStack(Stack):
             self.glue_job_read_policy(),
             self.glue_job_create_policy(),
             self.glue_job_connections_policy_statement(),
-            self.glue_catalog_policy_statement(),
-            self.glue_database_policy_statement(),
+            self.glue_catalog_full(),
+            self.glue_databases_full(),
             self.athena_policy_statement(),
             self.athena_workgroup_policy_statement(),
             self.parameter_store_policy_statement(),
@@ -706,8 +717,8 @@ class WorkbenchCoreStack(Stack):
         """Create a managed policy for the Workbench FeatureSets"""
         policy_statements = [
             self.s3_full(),
-            self.glue_catalog_policy_statement(),
-            self.glue_database_policy_statement(),
+            self.glue_catalog_full(),
+            self.glue_databases_full(),
             self.athena_policy_statement(),
             self.athena_workgroup_policy_statement(),
             self.featurestore_list_policy_statement(),
