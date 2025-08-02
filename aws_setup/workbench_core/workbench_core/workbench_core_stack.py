@@ -84,7 +84,8 @@ class WorkbenchCoreStack(Stack):
         """Create a policy statement for S3 full access."""
         read_statement = self.s3_read()
         return iam.PolicyStatement(
-            actions=read_statement.actions + [
+            actions=read_statement.actions
+            + [
                 "s3:PutObject",
                 "s3:DeleteObject",
             ],
