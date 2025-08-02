@@ -116,6 +116,7 @@ class WorkbenchCoreStack(Stack):
         return iam.PolicyStatement(
             actions=[
                 "glue:GetDatabases",
+                "glue:GetTable",
                 "glue:SearchTables",
             ],
             resources=[f"arn:aws:glue:{self.region}:{self.account}:catalog"],
@@ -123,10 +124,9 @@ class WorkbenchCoreStack(Stack):
 
     def glue_catalog_full(self) -> iam.PolicyStatement:
         """Full catalog access including database creation."""
+        read_statement = self.glue_catalog_read()
         return iam.PolicyStatement(
-            actions=[
-                "glue:GetDatabases",
-                "glue:SearchTables",
+            actions=read_statement.actions + [
                 "glue:CreateDatabase",
             ],
             resources=[f"arn:aws:glue:{self.region}:{self.account}:catalog"],
