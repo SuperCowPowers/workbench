@@ -15,9 +15,9 @@ def test():
 
     # Create the class with inputs and outputs and invoke the transform
     input_name = "abalone_features"
-    output_name = "abalone-regression"
+    output_name = "abalone-regression-temp"
     to_model = FeaturesToModel(input_name, output_name, ModelType.REGRESSOR)
-    to_model.set_output_tags(["abalone", "public"])
+    to_model.set_output_tags(["temp", "abalone", "public"])
     to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
 
 
@@ -29,11 +29,11 @@ def test_categorical():
     features = ["height", "weight", "salary", "age", "iq_score", "likes_dogs", "food"]  # Food is categorical
     fs = FeatureSet("test_features")
     m = fs.to_model(
-        name="test-regression",
+        name="test-regression-temp",
         model_type=ModelType.REGRESSOR,
         feature_list=features,
         target_column="iq_score",
-        tags=["test", "regression"],
+        tags=["temp", "test", "regression"],
         description="Test Model with Categorical Features",
     )
     m.set_owner("test")

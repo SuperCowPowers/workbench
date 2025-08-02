@@ -17,10 +17,10 @@ def test():
     df = test_data.person_data()
 
     # Create my Pandas to DataSource Transform
-    test_name = "test_features"
+    test_name = "test_features_temp"
     df_to_data = PandasToFeatures(test_name)
     df_to_data.set_input(df, id_column="id")
-    df_to_data.set_output_tags(["test", "small"])
+    df_to_data.set_output_tags(["temp", "test", "small"])
     df_to_data.transform()
     print(f"{test_name} stored as a Workbench FeatureSet")
 

@@ -14,9 +14,9 @@ def transform_test():
 
     # Create the class with inputs and outputs and invoke the transform
     input_name = "test_data"
-    output_name = "test_features"
+    output_name = "test_features_temp"
     data_to_features = DataToFeaturesLight(input_name, output_name)
-    data_to_features.set_output_tags(["test", "small"])
+    data_to_features.set_output_tags(["temp", "test", "small"])
     data_to_features.transform(id_column="id", event_time_column="date")
 
 
@@ -25,7 +25,7 @@ def transform_test():
 def to_features_test():
 
     ds = DataSource("wine_data")
-    ds.to_features("wine_features", tags=["wine", "classification"])
+    ds.to_features("wine_features_temp", tags=["temp", "wine", "classification"])
 
 
 if __name__ == "__main__":
