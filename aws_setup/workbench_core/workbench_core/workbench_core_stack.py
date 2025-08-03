@@ -220,50 +220,30 @@ class WorkbenchCoreStack(Stack):
             resources=[f"arn:aws:glue:{self.region}:{self.account}:job/*"],
         )
 
-    def eventbridge_policy(self) -> iam.PolicyStatement:
-        """Policy for EventBridge events."""
+    ####################
+    #      Athena      #
+    ####################
+    @staticmethod
+    def athena_read() -> iam.PolicyStatement:
+        """Read-only access to Athena queries and workgroups."""
         return iam.PolicyStatement(
             actions=[
-                "events:PutEvents",
-                "events:DescribeEventBus",
-            ],
-            resources=[
-                f"arn:aws:events:{self.region}:{self.account}:event-bus/workbench",
-            ],
-        )
-
-    def athena_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for Athena actions that involve S3 buckets.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for Athena S3 bucket access.
-        """
-        return iam.PolicyStatement(
-            actions=[
+                # Query actions
                 "athena:ListQueryExecutions",
                 "athena:StartQueryExecution",
                 "athena:GetQueryExecution",
                 "athena:GetQueryResults",
                 "athena:StopQueryExecution",
-            ],
-            resources=["*"],  # Athena Actions are not resource-specific in IAM policies
-        )
-
-    @staticmethod
-    def athena_workgroup_policy_statement() -> iam.PolicyStatement:
-        """Create a policy statement for Athena WorkGroup actions.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for Athena WorkGroup access.
-        """
-        return iam.PolicyStatement(
-            actions=[
+                # Workgroup actions
                 "athena:GetWorkGroup",
                 "athena:ListWorkGroups",
             ],
-            resources=["*"],  # Listing WorkGroups not S3 bucket specific
+            resources=["*"],
         )
 
+    ######################
+    #    FeatureStore    #
+    ######################
     @staticmethod
     def featurestore_list_policy_statement() -> iam.PolicyStatement:
         """Create a policy statement for listing SageMaker feature groups.
@@ -432,6 +412,21 @@ class WorkbenchCoreStack(Stack):
             resources=[
                 endpoint_arn,
                 endpoint_config_arn,
+            ],
+        )
+
+    #####################
+    #    EventBridge    #
+    #####################
+    def eventbridge_policy(self) -> iam.PolicyStatement:
+        """Policy for EventBridge events."""
+        return iam.PolicyStatement(
+            actions=[
+                "events:PutEvents",
+                "events:DescribeEventBus",
+            ],
+            resources=[
+                f"arn:aws:events:{self.region}:{self.account}:event-bus/workbench",
             ],
         )
 
@@ -691,8 +686,7 @@ class WorkbenchCoreStack(Stack):
             self.s3_public(),
             self.glue_catalog_full(),
             self.glue_databases_full(),
-            self.athena_policy_statement(),
-            self.athena_workgroup_policy_statement(),
+            self.athena_read(),
             self.parameter_store_policy_statement(),
             self.eventbridge_policy(),
         ]
@@ -710,8 +704,7 @@ class WorkbenchCoreStack(Stack):
             self.s3_full(),
             self.glue_catalog_full(),
             self.glue_databases_full(),
-            self.athena_policy_statement(),
-            self.athena_workgroup_policy_statement(),
+            self.athena_read(),
             self.featurestore_list_policy_statement(),
             self.featurestore_policy_statement(),
             self.parameter_store_policy_statement(),
