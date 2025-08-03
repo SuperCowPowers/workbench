@@ -378,13 +378,18 @@ class PandasToFeatures(Transform):
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")
         while status == "Creating":
-            self.log.debug("FeatureSet being Created...")
+            self.log.debug("FeatureSet being Created…")
             time.sleep(5)
             status = feature_group.describe().get("FeatureGroupStatus")
+
         if status == "Created":
             self.log.info(f"FeatureSet {feature_group.name} successfully created")
         else:
+            # Get the detailed failure reason
+            description = feature_group.describe()
+            failure_reason = description.get("FailureReason", "No failure reason provided")
             self.log.critical(f"FeatureSet {feature_group.name} creation failed with status: {status}")
+            self.log.critical(f"Failure reason: {failure_reason}")
 
     def wait_for_rows(self, expected_rows: int):
         """Wait for AWS Feature Group to fully populate the Offline Storage"""
