@@ -220,24 +220,6 @@ class WorkbenchCoreStack(Stack):
             resources=[f"arn:aws:glue:{self.region}:{self.account}:job/*"],
         )
 
-    @staticmethod
-    def glue_job_connections_policy_statement() -> iam.PolicyStatement:
-        """Create a policy statement for Glue job network and connection permissions."""
-        return iam.PolicyStatement(
-            actions=[
-                # Glue connection actions
-                "glue:GetConnection",
-                "glue:GetConnections",
-                # EC2 network actions for VPC access and ENI management
-                "ec2:Describe*",
-                "ec2:CreateNetworkInterface",
-                "ec2:DeleteNetworkInterface",
-                "ec2:DescribeNetworkInterfaces",
-                "ec2:CreateTags",
-            ],
-            resources=["*"],  # Broad permissions for Glue connections and VPC network queries
-        )
-
     def eventbridge_policy(self) -> iam.PolicyStatement:
         """Policy for EventBridge events."""
         return iam.PolicyStatement(
@@ -709,9 +691,6 @@ class WorkbenchCoreStack(Stack):
             self.s3_public(),
             self.glue_catalog_full(),
             self.glue_databases_full(),
-            self.glue_jobs_discover(),
-            self.glue_jobs_full(),
-            self.glue_job_connections_policy_statement(),
             self.athena_policy_statement(),
             self.athena_workgroup_policy_statement(),
             self.parameter_store_policy_statement(),
@@ -842,6 +821,8 @@ class WorkbenchCoreStack(Stack):
 
         # Create and attach the Workbench managed policies to the role
         api_execution_role.add_to_policy(self.glue_pass_role())
+        api_execution_role.add_to_policy(self.glue_jobs_discover())
+        api_execution_role.add_to_policy(self.glue_jobs_full())
         api_execution_role.add_managed_policy(self.datasource_policy)
         api_execution_role.add_managed_policy(self.featureset_policy)
         api_execution_role.add_managed_policy(self.model_policy)
