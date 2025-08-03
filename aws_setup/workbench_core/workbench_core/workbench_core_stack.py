@@ -279,60 +279,57 @@ class WorkbenchCoreStack(Stack):
             resources=read_statement.resources,
         )
 
+    ######################
+    #       Models       #
+    ######################
     @staticmethod
-    def model_list_policy_statement() -> iam.PolicyStatement:
-        """Create a policy statement for listing SageMaker models.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for listing SageMaker models.
-        """
+    def models_discovery() -> iam.PolicyStatement:
+        """Discovery - list all SageMaker models, model packages, and model package groups."""
         return iam.PolicyStatement(
             actions=[
-                "sagemaker:ListModelPackageGroups",
-                "sagemaker:ListModelPackages",
                 "sagemaker:ListModels",
+                "sagemaker:ListModelPackages",
+                "sagemaker:ListModelPackageGroups",
             ],
-            resources=["*"],  # Broad permission necessary for listing operations
+            resources=["*"],  # Required for listing operations
         )
 
-    def model_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for accessing SageMaker model package groups and model packages.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for SageMaker model resources access.
-        """
-        # Define the SageMaker Model Package Group and Model Package ARNs
-        model_package_group_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:model-package-group/*"
-        model_package_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:model-package/*/*"
-        model_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:model/*"
-
-        # Sagemaker Pipelines
-        processing_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:processing-job/*"
-
+    def models_read(self) -> iam.PolicyStatement:
+        """Read-only access to SageMaker models and model packages."""
         return iam.PolicyStatement(
             actions=[
-                # Actions for model package groups
-                "sagemaker:CreateModelPackageGroup",
-                "sagemaker:DeleteModelPackageGroup",
-                "sagemaker:DescribeModelPackageGroup",
-                "sagemaker:GetModelPackageGroup",
-                "sagemaker:UpdateModelPackageGroup",
-                # Actions for model packages
-                "sagemaker:CreateModelPackage",
-                "sagemaker:DeleteModelPackage",
-                "sagemaker:DescribeModelPackage",
-                "sagemaker:GetModelPackage",
-                "sagemaker:UpdateModelPackage",
-                # Actions for models
-                "sagemaker:CreateModel",
-                "sagemaker:DeleteModel",
                 "sagemaker:DescribeModel",
-                # Additional actions
+                "sagemaker:DescribeModelPackage",
+                "sagemaker:DescribeModelPackageGroup",
+                "sagemaker:GetModelPackage",
+                "sagemaker:GetModelPackageGroup",
                 "sagemaker:ListTags",
+            ],
+            resources=[
+                f"arn:aws:sagemaker:{self.region}:{self.account}:model/*",
+                f"arn:aws:sagemaker:{self.region}:{self.account}:model-package/*/*",
+                f"arn:aws:sagemaker:{self.region}:{self.account}:model-package-group/*",
+            ],
+        )
+
+    def models_full(self) -> iam.PolicyStatement:
+        """Full CRUD access to SageMaker models and model packages."""
+        read_statement = self.models_read()
+        return iam.PolicyStatement(
+            actions=read_statement.actions
+            + [
+                "sagemaker:CreateModel",
+                "sagemaker:CreateModelPackage",
+                "sagemaker:CreateModelPackageGroup",
+                "sagemaker:DeleteModel",
+                "sagemaker:DeleteModelPackage",
+                "sagemaker:DeleteModelPackageGroup",
+                "sagemaker:UpdateModelPackage",
+                "sagemaker:UpdateModelPackageGroup",
                 "sagemaker:AddTags",
                 "sagemaker:DeleteTags",
             ],
-            resources=[model_package_group_arn, model_package_arn, model_arn, processing_arn],
+            resources=read_statement.resources,
         )
 
     def model_training_statement(self) -> iam.PolicyStatement:
@@ -732,8 +729,8 @@ class WorkbenchCoreStack(Stack):
     def workbench_model_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Models"""
         policy_statements = [
-            self.model_list_policy_statement(),
-            self.model_policy_statement(),
+            self.models_discovery(),
+            self.models_full(),
             self.model_training_statement(),
             self.model_training_log_statement(),
             self.ecr_policy_statement(),
