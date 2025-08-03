@@ -115,6 +115,7 @@ class WorkbenchCoreStack(Stack):
         """Read-only discovery across the entire Glue Data Catalog."""
         return iam.PolicyStatement(
             actions=[
+                "glue:GetDatabase",
                 "glue:GetDatabases",
                 "glue:GetTable",
                 "glue:GetTables",
@@ -154,16 +155,12 @@ class WorkbenchCoreStack(Stack):
 
     def glue_databases_full(self) -> iam.PolicyStatement:
         """Full access to Workbench-managed databases and tables."""
+        read_statement = self.glue_databases_read()
         return iam.PolicyStatement(
-            actions=[
-                "glue:GetDatabase",
-                "glue:GetTable",
-                "glue:GetTables",
+            actions=read_statement.actions + [
                 "glue:CreateTable",
                 "glue:UpdateTable",
                 "glue:DeleteTable",
-                "glue:GetPartition",
-                "glue:GetPartitions",
             ],
             resources=self._workbench_database_arns(),
         )
