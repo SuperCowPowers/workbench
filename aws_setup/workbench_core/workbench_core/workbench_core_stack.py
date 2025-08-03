@@ -178,6 +178,9 @@ class WorkbenchCoreStack(Stack):
             f"arn:aws:glue:{self.region}:{self.account}:table/inference_store/*",
         ]
 
+    #####################
+    #     Glue Jobs     #
+    #####################
     def glue_pass_role(self) -> iam.PolicyStatement:
         """Allows us to specify the Workbench-Glue role when creating a Glue Job"""
         return iam.PolicyStatement(
@@ -186,33 +189,35 @@ class WorkbenchCoreStack(Stack):
             conditions={"StringEquals": {"iam:PassedToService": "glue.amazonaws.com"}},
         )
 
-    def glue_job_read_policy(self) -> iam.PolicyStatement:
-        """Policy for read-only Glue job actions."""
+    @staticmethod
+    def glue_jobs_discover() -> iam.PolicyStatement:
+        """Discovery access to list all Glue jobs."""
+        return iam.PolicyStatement(
+            actions=["glue:GetJobs"],
+            resources=["*"],
+        )
+
+    def glue_jobs_read(self) -> iam.PolicyStatement:
+        """Read-only access to specific Glue jobs."""
         return iam.PolicyStatement(
             actions=[
-                "glue:GetJobs",
                 "glue:GetJob",
                 "glue:GetJobRun",
                 "glue:GetJobRuns",
             ],
-            resources=[
-                "*",  # Needed for GetJobs
-            ],
+            resources=[f"arn:aws:glue:{self.region}:{self.account}:job/*"],
         )
 
-    def glue_job_create_policy(self) -> iam.PolicyStatement:
-        """Policy for create/update Glue jobs and triggers."""
+    def glue_jobs_full(self) -> iam.PolicyStatement:
+        """Full access to specific Glue jobs."""
         return iam.PolicyStatement(
             actions=[
+                *self.glue_jobs_read().actions,
                 "glue:CreateJob",
                 "glue:UpdateJob",
                 "glue:StartJobRun",
-                "glue:CreateTrigger",
             ],
-            resources=[
-                f"arn:aws:glue:{self.region}:{self.account}:job/*",
-                f"arn:aws:glue:{self.region}:{self.account}:trigger/*",
-            ],
+            resources=[f"arn:aws:glue:{self.region}:{self.account}:job/*"],
         )
 
     @staticmethod
@@ -704,8 +709,8 @@ class WorkbenchCoreStack(Stack):
             self.s3_public(),
             self.glue_catalog_full(),
             self.glue_databases_full(),
-            self.glue_job_read_policy(),
-            self.glue_job_create_policy(),
+            self.glue_jobs_discover(),
+            self.glue_jobs_full(),
             self.glue_job_connections_policy_statement(),
             self.athena_policy_statement(),
             self.athena_workgroup_policy_statement(),
