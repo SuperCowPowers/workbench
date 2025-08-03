@@ -628,19 +628,56 @@ class WorkbenchCoreStack(Stack):
             resources=["*"],  # Typically, resources are set to "*" for ECR actions
         )
 
+    ########################
+    #    CloudWatch        #
+    ########################
     @staticmethod
-    def cloudwatch_policy_statement() -> iam.PolicyStatement:
-        """Create a policy statement for accessing CloudWatch metric data.
-
+    def cloudwatch_metrics() -> iam.PolicyStatement:
+        """CloudWatch metrics permissions.
         Returns:
-            iam.PolicyStatement: The policy statement for CloudWatch GetMetricData access.
+            iam.PolicyStatement: The policy statement for CloudWatch metrics.
         """
         return iam.PolicyStatement(
             actions=[
                 "cloudwatch:GetMetricData",
                 "cloudwatch:PutMetricData",
             ],
-            resources=["*"],  # Cloudwatch does not support specific resources
+            resources=["*"],  # CloudWatch metrics don't support specific resources
+        )
+
+    @staticmethod
+    def cloudwatch_logs_output() -> iam.PolicyStatement:
+        """CloudWatch logs permissions - just for putting log messages.
+        Returns:
+            iam.PolicyStatement: The policy statement for basic logging.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "logs:PutLogEvents",
+            ],
+            resources=[
+                "arn:aws:logs:*:*:log-group:WorkbenchLogGroup:*",
+            ],
+        )
+
+    @staticmethod
+    def cloudwatch_logs_full() -> iam.PolicyStatement:
+        """Full CloudWatch logs permissions - creating groups/streams and logging.
+        Returns:
+            iam.PolicyStatement: The policy statement for full log management.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogGroups",
+                "logs:DescribeLogStreams",
+            ],
+            resources=[
+                "arn:aws:logs:*:*:log-group:WorkbenchLogGroup",
+                "arn:aws:logs:*:*:log-group:WorkbenchLogGroup:*",
+            ],
         )
 
     def dashboard_policy_statement(self) -> iam.PolicyStatement:
@@ -685,6 +722,7 @@ class WorkbenchCoreStack(Stack):
             self.glue_catalog_full(),
             self.glue_databases_full(),
             self.athena_read(),
+            self.cloudwatch_logs_full(),
             self.parameter_store_policy_statement(),
             self.eventbridge_policy(),
         ]
@@ -705,6 +743,7 @@ class WorkbenchCoreStack(Stack):
             self.athena_read(),
             self.featurestore_discovery(),
             self.featurestore_full(),
+            self.cloudwatch_logs_full(),
             self.parameter_store_policy_statement(),
         ]
         return iam.ManagedPolicy(
@@ -738,7 +777,8 @@ class WorkbenchCoreStack(Stack):
             self.model_training(),
             self.model_training_logs(),
             self.ecr_policy_statement(),
-            self.cloudwatch_policy_statement(),
+            self.cloudwatch_metrics(),
+            self.cloudwatch_logs_full(),
             self.sagemaker_pass_role_policy_statement(),
             self.parameter_store_policy_statement(),
         ]
@@ -754,7 +794,8 @@ class WorkbenchCoreStack(Stack):
         policy_statements = [
             self.endpoint_discover(),
             self.endpoint_full(),
-            self.cloudwatch_policy_statement(),
+            self.cloudwatch_metrics(),
+            self.cloudwatch_logs_full(),
             self.parameter_store_policy_statement(),
         ]
         # Add the monitoring policy statements to the endpoint policy
