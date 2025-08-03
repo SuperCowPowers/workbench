@@ -332,26 +332,22 @@ class WorkbenchCoreStack(Stack):
             resources=read_statement.resources,
         )
 
-    def model_training_statement(self) -> iam.PolicyStatement:
+    def model_training(self) -> iam.PolicyStatement:
         """Create a policy statement for training SageMaker models.
-
         Returns:
             iam.PolicyStatement: The policy statement for SageMaker model training.
         """
-
         return iam.PolicyStatement(
             actions=["sagemaker:CreateTrainingJob", "sagemaker:DescribeTrainingJob"],
             resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:training-job/*"],
         )
 
     @staticmethod
-    def model_training_log_statement() -> iam.PolicyStatement:
+    def model_training_logs() -> iam.PolicyStatement:
         """Create a policy statement for log interactions when training SageMaker models.
-
         Returns:
             iam.PolicyStatement: The policy statement for log interactions when training SageMaker models.
         """
-
         return iam.PolicyStatement(
             actions=[
                 "logs:DescribeLogStreams",
@@ -361,52 +357,60 @@ class WorkbenchCoreStack(Stack):
                 "logs:CreateLogStream",
                 "logs:PutLogEvents",
             ],
-            resources=["*"],  # Broad permission necessary for log operations
+            resources=["arn:aws:logs:*:*:log-group:/aws/sagemaker/*", "arn:aws:logs:*:*:log-group:/aws/sagemaker/*:*"],
         )
 
+    #####################
+    #     Endpoints     #
+    #####################
     @staticmethod
-    def endpoint_list_policy_statement() -> iam.PolicyStatement:
-        """Create a policy statement for listing SageMaker endpoints.
-
+    def endpoint_discover() -> iam.PolicyStatement:
+        """Discover SageMaker endpoints.
         Returns:
-            iam.PolicyStatement: The policy statement for listing SageMaker endpoints.
+            iam.PolicyStatement: The policy statement for discovering SageMaker endpoints.
         """
         return iam.PolicyStatement(
-            actions=[
-                "sagemaker:ListEndpoints",
-            ],
-            resources=["*"],  # Broad permission necessary for listing operations
+            actions=["sagemaker:ListEndpoints"],
+            resources=["*"],
         )
 
-    def endpoint_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for accessing SageMaker endpoints.
-
+    def endpoint_read(self) -> iam.PolicyStatement:
+        """Read SageMaker endpoints and configurations.
         Returns:
-            iam.PolicyStatement: The policy statement for SageMaker endpoint access.
+            iam.PolicyStatement: The policy statement for reading SageMaker endpoints.
         """
-        # Define the SageMaker Endpoint ARN
-        endpoint_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/*"
-        endpoint_config_arn = f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint-config/*"
-
         return iam.PolicyStatement(
             actions=[
-                # Actions for endpoints
+                "sagemaker:DescribeEndpoint",
+                "sagemaker:DescribeEndpointConfig",
+                "sagemaker:InvokeEndpoint",
+                "sagemaker:ListTags",
+            ],
+            resources=[
+                f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/*",
+                f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint-config/*",
+            ],
+        )
+
+    def endpoint_full(self) -> iam.PolicyStatement:
+        """Full access to SageMaker endpoints and configurations.
+        Returns:
+            iam.PolicyStatement: The policy statement for full SageMaker endpoint access.
+        """
+        read_statement = self.endpoint_read()
+
+        return iam.PolicyStatement(
+            actions=read_statement.actions
+            + [
                 "sagemaker:CreateEndpoint",
                 "sagemaker:DeleteEndpoint",
                 "sagemaker:UpdateEndpoint",
-                "sagemaker:DescribeEndpoint",
-                "sagemaker:DescribeEndpointConfig",
                 "sagemaker:CreateEndpointConfig",
                 "sagemaker:DeleteEndpointConfig",
-                "sagemaker:InvokeEndpoint",
-                "sagemaker:ListTags",
                 "sagemaker:AddTags",
                 "sagemaker:DeleteTags",
             ],
-            resources=[
-                endpoint_arn,
-                endpoint_config_arn,
-            ],
+            resources=read_statement.resources,
         )
 
     #####################
@@ -731,8 +735,8 @@ class WorkbenchCoreStack(Stack):
         policy_statements = [
             self.models_discovery(),
             self.models_full(),
-            self.model_training_statement(),
-            self.model_training_log_statement(),
+            self.model_training(),
+            self.model_training_logs(),
             self.ecr_policy_statement(),
             self.cloudwatch_policy_statement(),
             self.sagemaker_pass_role_policy_statement(),
@@ -748,8 +752,8 @@ class WorkbenchCoreStack(Stack):
     def workbench_endpoint_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Models"""
         policy_statements = [
-            self.endpoint_list_policy_statement(),
-            self.endpoint_policy_statement(),
+            self.endpoint_discover(),
+            self.endpoint_full(),
             self.cloudwatch_policy_statement(),
             self.parameter_store_policy_statement(),
         ]
