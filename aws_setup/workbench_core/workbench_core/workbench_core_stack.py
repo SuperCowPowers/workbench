@@ -210,14 +210,15 @@ class WorkbenchCoreStack(Stack):
 
     def glue_jobs_full(self) -> iam.PolicyStatement:
         """Full access to specific Glue jobs."""
+        read_statement = self.glue_jobs_read()
         return iam.PolicyStatement(
-            actions=[
-                *self.glue_jobs_read().actions,
+            actions=read_statement.actions
+            + [
                 "glue:CreateJob",
                 "glue:UpdateJob",
                 "glue:StartJobRun",
             ],
-            resources=[f"arn:aws:glue:{self.region}:{self.account}:job/*"],
+            resources=read_statement.resources,
         )
 
     ####################
@@ -245,41 +246,37 @@ class WorkbenchCoreStack(Stack):
     #    FeatureStore    #
     ######################
     @staticmethod
-    def featurestore_list_policy_statement() -> iam.PolicyStatement:
-        """Create a policy statement for listing SageMaker feature groups.
-
-        Returns:
-            iam.PolicyStatement: The policy statement allowing listing of SageMaker feature groups.
-        """
+    def featurestore_discovery() -> iam.PolicyStatement:
+        """Discovery - list all SageMaker feature groups."""
         return iam.PolicyStatement(
-            actions=[
-                "sagemaker:ListFeatureGroups",  # Action for listing feature groups
-            ],
-            resources=["*"],  # Broad permission necessary for listing operations
+            actions=["sagemaker:ListFeatureGroups"],
+            resources=["*"],  # Required for listing operations
         )
 
-    def featurestore_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for broad SageMaker Feature Store access using self attributes for region and account.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for broad SageMaker Feature Store access.
-        """
-        # Define the SageMaker Feature Store resources
-        resources = [f"arn:aws:sagemaker:{self.region}:{self.account}:feature-group/*"]
-
+    def featurestore_read(self) -> iam.PolicyStatement:
+        """Read-only access to SageMaker feature groups."""
         return iam.PolicyStatement(
             actions=[
-                # Define the SageMaker Feature Store actions you need
-                "sagemaker:CreateFeatureGroup",
-                "sagemaker:DeleteFeatureGroup",
                 "sagemaker:DescribeFeatureGroup",
                 "sagemaker:GetRecord",
-                "sagemaker:PutRecord",
                 "sagemaker:ListTags",
+            ],
+            resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:feature-group/*"],
+        )
+
+    def featurestore_full(self) -> iam.PolicyStatement:
+        """Full CRUD access to SageMaker feature groups."""
+        read_statement = self.featurestore_read()
+        return iam.PolicyStatement(
+            actions=read_statement.actions
+            + [
+                "sagemaker:CreateFeatureGroup",
+                "sagemaker:DeleteFeatureGroup",
+                "sagemaker:PutRecord",
                 "sagemaker:AddTags",
                 "sagemaker:DeleteTags",
             ],
-            resources=resources,
+            resources=read_statement.resources,
         )
 
     @staticmethod
@@ -705,8 +702,8 @@ class WorkbenchCoreStack(Stack):
             self.glue_catalog_full(),
             self.glue_databases_full(),
             self.athena_read(),
-            self.featurestore_list_policy_statement(),
-            self.featurestore_policy_statement(),
+            self.featurestore_discovery(),
+            self.featurestore_full(),
             self.parameter_store_policy_statement(),
         ]
         return iam.ManagedPolicy(
