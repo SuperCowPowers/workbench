@@ -128,7 +128,8 @@ class WorkbenchCoreStack(Stack):
         """Full catalog access including database creation."""
         read_statement = self.glue_catalog_read()
         return iam.PolicyStatement(
-            actions=read_statement.actions + [
+            actions=read_statement.actions
+            + [
                 "glue:CreateDatabase",
                 "glue:CreateTable",
                 "glue:UpdateTable",
@@ -157,7 +158,8 @@ class WorkbenchCoreStack(Stack):
         """Full access to Workbench-managed databases and tables."""
         read_statement = self.glue_databases_read()
         return iam.PolicyStatement(
-            actions=read_statement.actions + [
+            actions=read_statement.actions
+            + [
                 "glue:CreateTable",
                 "glue:UpdateTable",
                 "glue:DeleteTable",
