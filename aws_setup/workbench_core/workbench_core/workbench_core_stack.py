@@ -2,6 +2,8 @@ from aws_cdk import (
     Environment,
     Stack,
     aws_iam as iam,
+    aws_logs as logs,
+    RemovalPolicy
 )
 from constructs import Construct
 from typing import Any, List
@@ -33,6 +35,14 @@ class WorkbenchCoreStack(Stack):
         self.workbench_role_name = props.workbench_role_name
         self.sso_group = props.sso_group
         self.additional_buckets = props.additional_buckets
+
+        # Create the WorkbenchLogGroup for CloudWatch Logs
+        self.workbench_log_group = logs.LogGroup(
+            self, "WorkbenchLogGroup",
+            log_group_name="WorkbenchLogGroup",
+            retention=logs.RetentionDays.ONE_MONTH,
+            removal_policy=RemovalPolicy.RETAIN
+        )
 
         # Create a list of buckets
         athena_bucket = "aws-athena-query-results*"
