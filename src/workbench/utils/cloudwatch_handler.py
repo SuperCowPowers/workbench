@@ -35,8 +35,7 @@ class CloudWatchHandler(logging.Handler):
         self.sequence_token = None
         self.log_group_name = "WorkbenchLogGroup"
 
-        # Create the log group and stream
-        self.check_log_group()
+        # Create the log stream
         self.create_log_stream()
 
     def emit(self, record):
@@ -93,19 +92,6 @@ class CloudWatchHandler(logging.Handler):
     def flush(self):
         """Ensure all logs are sent"""
         self.send_logs()  # Flush remaining logs in the buffer
-
-    def check_log_group(self):
-        """Check if CloudWatch Log Group exists"""
-        try:
-            response = self.cloudwatch_client.describe_log_groups(
-                logGroupNamePrefix=self.log_group_name
-            )
-            exists = any(lg['logGroupName'] == self.log_group_name for lg in response['logGroups'])
-            if not exists:
-                logging.critical(f"Log group '{self.log_group_name}' does not exist")
-
-        except Exception as e:
-            logging.critical(f"Failed to check log group '{self.log_group_name}': {e}")
 
     def create_log_stream(self):
         """Create CloudWatch Log Stream if it doesn't exist"""

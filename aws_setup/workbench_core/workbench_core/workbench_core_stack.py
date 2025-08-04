@@ -655,38 +655,19 @@ class WorkbenchCoreStack(Stack):
             resources=["*"],  # CloudWatch metrics don't support specific resources
         )
 
-    @staticmethod
-    def cloudwatch_logs_output() -> iam.PolicyStatement:
-        """CloudWatch logs permissions - just for putting log messages.
-        Returns:
-            iam.PolicyStatement: The policy statement for basic logging.
-        """
-        return iam.PolicyStatement(
-            actions=[
-                "logs:PutLogEvents",
-            ],
-            resources=[
-                "arn:aws:logs:*:*:log-group:WorkbenchLogGroup:*",
-            ],
-        )
-
-    @staticmethod
-    def cloudwatch_logs_full() -> iam.PolicyStatement:
-        """Full CloudWatch logs permissions - creating groups/streams and logging.
+    def cloudwatch_logs(self) -> iam.PolicyStatement:
+        """CloudWatch logs permissions - CreateLogStream and PutLogEvents
         Returns:
             iam.PolicyStatement: The policy statement for full log management.
         """
         return iam.PolicyStatement(
             actions=[
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
+                "logs:CreateLogStream",  # Needed for dynamically creating log streams
                 "logs:PutLogEvents",
-                "logs:DescribeLogGroups",
-                "logs:DescribeLogStreams",
             ],
             resources=[
-                "arn:aws:logs:*:*:log-group:WorkbenchLogGroup",
-                "arn:aws:logs:*:*:log-group:WorkbenchLogGroup:*",
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:WorkbenchLogGroup",
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:WorkbenchLogGroup:*",
             ],
         )
 
@@ -732,7 +713,7 @@ class WorkbenchCoreStack(Stack):
             self.glue_catalog_full(),
             self.glue_databases_full(),
             self.athena_read(),
-            self.cloudwatch_logs_full(),
+            self.cloudwatch_logs(),
             self.parameter_store_policy_statement(),
             self.eventbridge_policy(),
         ]
@@ -753,7 +734,7 @@ class WorkbenchCoreStack(Stack):
             self.athena_read(),
             self.featurestore_discovery(),
             self.featurestore_full(),
-            self.cloudwatch_logs_full(),
+            self.cloudwatch_logs(),
             self.parameter_store_policy_statement(),
         ]
         return iam.ManagedPolicy(
@@ -788,7 +769,7 @@ class WorkbenchCoreStack(Stack):
             self.model_training_logs(),
             self.ecr_policy_statement(),
             self.cloudwatch_metrics(),
-            self.cloudwatch_logs_full(),
+            self.cloudwatch_logs(),
             self.sagemaker_pass_role_policy_statement(),
             self.parameter_store_policy_statement(),
         ]
@@ -805,7 +786,7 @@ class WorkbenchCoreStack(Stack):
             self.endpoint_discover(),
             self.endpoint_full(),
             self.cloudwatch_metrics(),
-            self.cloudwatch_logs_full(),
+            self.cloudwatch_logs(),
             self.parameter_store_policy_statement(),
         ]
         # Add the monitoring policy statements to the endpoint policy
