@@ -1,10 +1,4 @@
-from aws_cdk import (
-    Environment,
-    Stack,
-    aws_iam as iam,
-    aws_logs as logs,
-    RemovalPolicy
-)
+from aws_cdk import Environment, Stack, aws_iam as iam, aws_logs as logs, RemovalPolicy
 from constructs import Construct
 from typing import Any, List
 from dataclasses import dataclass, field
@@ -38,10 +32,11 @@ class WorkbenchCoreStack(Stack):
 
         # Create the WorkbenchLogGroup for CloudWatch Logs
         self.workbench_log_group = logs.LogGroup(
-            self, "WorkbenchLogGroup",
+            self,
+            "WorkbenchLogGroup",
             log_group_name="WorkbenchLogGroup",
             retention=logs.RetentionDays.ONE_MONTH,
-            removal_policy=RemovalPolicy.RETAIN
+            removal_policy=RemovalPolicy.RETAIN,
         )
 
         # Create a list of buckets
