@@ -46,6 +46,7 @@ class WorkbenchCoreStack(Stack):
         self.bucket_arns = self._bucket_names_to_arns(self.bucket_list)
 
         # Create our managed polices
+        self.datasource_read_policy = self.workbench_datasource_read_policy()
         self.datasource_policy = self.workbench_datasource_policy()
         self.featureset_policy = self.workbench_featureset_policy()
         self.model_policy = self.workbench_model_policy()
@@ -699,8 +700,27 @@ class WorkbenchCoreStack(Stack):
             resources=read_statement.resources,
         )
 
+    def workbench_datasource_read_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench DataSources (READ-ONLY)"""
+        policy_statements = [
+            self.s3_read(),
+            self.s3_public(),
+            self.glue_catalog_read(),
+            self.glue_databases_read(),
+            self.athena_read(),
+            self.cloudwatch_logs(),
+            self.parameter_store_read(),
+        ]
+
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchDataSourceReadPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchDataSourceReadPolicy",
+        )
+
     def workbench_datasource_policy(self) -> iam.ManagedPolicy:
-        """Create a managed policy for the Workbench DataSources"""
+        """Create a managed policy for the Workbench DataSources (FULL)"""
         policy_statements = [
             self.s3_full(),
             self.s3_public(),
@@ -718,8 +738,27 @@ class WorkbenchCoreStack(Stack):
             managed_policy_name="WorkbenchDataSourcePolicy",
         )
 
+    def workbench_featureset_read_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench FeatureSets (READ-ONLY)"""
+        policy_statements = [
+            self.s3_full(),
+            self.glue_catalog_full(),
+            self.glue_databases_full(),
+            self.athena_read(),
+            self.featurestore_discovery(),
+            self.featurestore_full(),
+            self.cloudwatch_logs(),
+            self.parameter_store_full(),
+        ]
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchFeatureSetReadPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchFeatureSetReadPolicy",
+        )
+
     def workbench_featureset_policy(self) -> iam.ManagedPolicy:
-        """Create a managed policy for the Workbench FeatureSets"""
+        """Create a managed policy for the Workbench FeatureSets (FULL)"""
         policy_statements = [
             self.s3_full(),
             self.glue_catalog_full(),
@@ -737,15 +776,26 @@ class WorkbenchCoreStack(Stack):
             managed_policy_name="WorkbenchFeatureSetPolicy",
         )
 
-    """In SageMaker, certain operations, such as creating training jobs, endpoint deployments, or batch transform jobs,
-       require SageMaker to assume an IAM role. This role provides SageMaker with permissions to access AWS resources 
-       on your behalf, such as reading training data from S3, writing model artifacts, or logging to CloudWatch."""
+    def sagemaker_pass_role_policy(self) -> iam.PolicyStatement:
+        """Create a policy statement allowing SageMaker to assume specific IAM roles.
 
-    def sagemaker_pass_role_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for SageMaker to assume the Execution Role"""
+        This policy enables SageMaker services to assume IAM roles on your behalf when:
+        - Creating training jobs (assumes execution role for data access, logging, etc.)
+        - Deploying endpoints (assumes role for model loading, inference logging)
+        - Running batch transform jobs (assumes role for input/output data access)
+        - Creating processing jobs (assumes role for data processing operations)
+
+        Scoped to specific workbench roles:
+        - Workbench-ExecutionRole: Main API execution role for Workbench tasks
+
+        Returns:
+            iam.PolicyStatement: Policy allowing SageMaker to assume specific Workbench roles
+        """
         return iam.PolicyStatement(
             actions=["iam:PassRole"],
-            resources=["arn:aws:iam::*:role/*"],
+            resources=[
+                f"arn:aws:iam:{self.region}:{self.account}:role/Workbench-ExecutionRole",
+            ],
             conditions={"StringEquals": {"iam:PassedToService": "sagemaker.amazonaws.com"}},
         )
 
@@ -759,7 +809,7 @@ class WorkbenchCoreStack(Stack):
             self.ecr_policy_statement(),
             self.cloudwatch_metrics(),
             self.cloudwatch_logs(),
-            self.sagemaker_pass_role_policy_statement(),
+            self.sagemaker_pass_role_policy(),
             self.parameter_store_full(),
         ]
         return iam.ManagedPolicy(
