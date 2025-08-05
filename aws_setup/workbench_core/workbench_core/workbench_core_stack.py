@@ -418,31 +418,6 @@ class WorkbenchCoreStack(Stack):
             resources=read_statement.resources,
         )
 
-    #############################
-    #   Endpoint Data Capture   #
-    #############################
-
-    # For data capture operations
-    def data_capture_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for managing SageMaker endpoint data capture.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for endpoint data capture operations.
-        """
-        endpoint_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/*"
-        endpoint_config_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint-config/*"
-
-        return iam.PolicyStatement(
-            actions=[
-                "sagemaker:EnableCapture",
-                "sagemaker:DisableCapture",
-            ],
-            resources=[
-                endpoint_resources,
-                endpoint_config_resources,
-            ],
-        )
-
     #####################
     #    EventBridge    #
     #####################
@@ -562,7 +537,6 @@ class WorkbenchCoreStack(Stack):
         return [
             self.monitoring_list_policy_statement(),
             self.monitoring_schedule_policy_statement(),
-            self.data_capture_policy_statement(),
             self.monitoring_cloudwatch_policy_statement(),
             self.monitoring_sns_policy_statement(),
             self.data_quality_job_policy_statement(),
