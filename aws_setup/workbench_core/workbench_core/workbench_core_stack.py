@@ -794,7 +794,7 @@ class WorkbenchCoreStack(Stack):
         return iam.PolicyStatement(
             actions=["iam:PassRole"],
             resources=[
-                f"arn:aws:iam:{self.region}:{self.account}:role/Workbench-ExecutionRole",
+                f"arn:aws:iam::{self.account}:role/{self.workbench_role_name}",
             ],
             conditions={"StringEquals": {"iam:PassedToService": "sagemaker.amazonaws.com"}},
         )
