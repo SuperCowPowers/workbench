@@ -418,24 +418,12 @@ class WorkbenchCoreStack(Stack):
             resources=read_statement.resources,
         )
 
-    #####################
-    #    EventBridge    #
-    #####################
-    def eventbridge_policy(self) -> iam.PolicyStatement:
-        """Policy for EventBridge events."""
-        return iam.PolicyStatement(
-            actions=[
-                "events:PutEvents",
-                "events:DescribeEventBus",
-            ],
-            resources=[
-                f"arn:aws:events:{self.region}:{self.account}:event-bus/workbench",
-            ],
-        )
-
-    # Listing monitoring schedules and executions
-    def monitoring_list_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for listing SageMaker monitoring resources.
+    ###########################
+    #   Endpoint Monitoring   #
+    ###########################
+    @staticmethod
+    def endpoint_monitoring_discovery() -> iam.PolicyStatement:
+        """Create a policy statement for listing SageMaker endpoint monitoring resources.
 
         Returns:
             iam.PolicyStatement: The policy statement for listing operations.
@@ -448,14 +436,12 @@ class WorkbenchCoreStack(Stack):
             resources=["*"],  # List operations require "*" resource
         )
 
-    # For specific monitoring schedule operations
-    def monitoring_schedule_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for managing SageMaker monitoring schedules.
+    def endpoint_monitoring_schedules(self) -> iam.PolicyStatement:
+        """Create a policy statement for managing SageMaker endpoint monitoring schedules.
 
         Returns:
-            iam.PolicyStatement: The policy statement for monitoring schedule operations.
+            iam.PolicyStatement: The policy statement for endpoint schedule operations.
         """
-        schedule_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:monitoring-schedule/*"
         return iam.PolicyStatement(
             actions=[
                 "sagemaker:DescribeMonitoringSchedule",
@@ -467,18 +453,15 @@ class WorkbenchCoreStack(Stack):
                 "sagemaker:StopMonitoringSchedule",
                 "sagemaker:ListTags",
             ],
-            resources=[schedule_resources],
+            resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:monitoring-schedule/*"],
         )
 
-    def data_quality_job_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for managing SageMaker data quality job definitions and monitoring.
+    def endpoint_data_quality(self) -> iam.PolicyStatement:
+        """Create a policy statement for managing SageMaker endpoint data quality jobs.
 
         Returns:
-            iam.PolicyStatement: The policy statement for data quality monitoring operations.
+            iam.PolicyStatement: The policy statement for endpoint data quality monitoring operations.
         """
-        # Define resources for data quality job definitions
-        job_definition_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:data-quality-job-definition/*"
-
         return iam.PolicyStatement(
             actions=[
                 # Data quality job definition operations
@@ -488,30 +471,37 @@ class WorkbenchCoreStack(Stack):
                 "sagemaker:DeleteDataQualityJobDefinition",
                 "sagemaker:ListDataQualityJobDefinitions",
             ],
-            resources=[job_definition_resources],
+            resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:data-quality-job-definition/*"],
         )
 
-    # For CloudWatch alarm operations
-    def monitoring_cloudwatch_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for managing CloudWatch alarms for monitoring.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for CloudWatch operations.
-        """
-        cloudwatch_resources = f"arn:aws:cloudwatch:{self.region}:{self.account}:alarm:*"
-
+    #####################
+    #    EventBridge    #
+    #####################
+    def eventbridge_read(self) -> iam.PolicyStatement:
+        """Policy for EventBridge read/discovery operations."""
         return iam.PolicyStatement(
             actions=[
-                "cloudwatch:PutMetricAlarm",
-                "cloudwatch:DescribeAlarms",
-                "cloudwatch:DeleteAlarms",
+                "events:DescribeEventBus",
             ],
-            resources=[cloudwatch_resources],
+            resources=[
+                f"arn:aws:events:{self.region}:{self.account}:event-bus/workbench",
+            ],
+        )
+
+    def eventbridge_write(self) -> iam.PolicyStatement:
+        """Policy for EventBridge write operations."""
+        return iam.PolicyStatement(
+            actions=[
+                "events:PutEvents",
+            ],
+            resources=[
+                f"arn:aws:events:{self.region}:{self.account}:event-bus/workbench/*",
+            ],
         )
 
     # For SNS notification operations
-    def monitoring_sns_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for managing SNS notifications for monitoring.
+    def sns_notifications(self) -> iam.PolicyStatement:
+        """Create a policy statement for managing SNS notifications
 
         Returns:
             iam.PolicyStatement: The policy statement for SNS operations.
@@ -526,21 +516,6 @@ class WorkbenchCoreStack(Stack):
             ],
             resources=[sns_resources],
         )
-
-    # Helper method to get all monitoring policy statements
-    def all_monitoring_policy_statements(self) -> List[iam.PolicyStatement]:
-        """Get all policy statements needed for SageMaker endpoint monitoring.
-
-        Returns:
-            List[iam.PolicyStatement]: A list of all policy statements for monitoring.
-        """
-        return [
-            self.monitoring_list_policy_statement(),
-            self.monitoring_schedule_policy_statement(),
-            self.monitoring_cloudwatch_policy_statement(),
-            self.monitoring_sns_policy_statement(),
-            self.data_quality_job_policy_statement(),
-        ]
 
     @staticmethod
     def pipeline_list_policy_statement() -> iam.PolicyStatement:
@@ -631,7 +606,7 @@ class WorkbenchCoreStack(Stack):
     def cloudwatch_logs(self) -> iam.PolicyStatement:
         """CloudWatch logs permissions - CreateLogStream and PutLogEvents
         Returns:
-            iam.PolicyStatement: The policy statement for full log management.
+            iam.PolicyStatement: The policy statement for the WorkbenchLogGroup.
         """
         return iam.PolicyStatement(
             actions=[
@@ -644,6 +619,25 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
+    # For CloudWatch alarm operations
+    def cloudwatch_alarms(self) -> iam.PolicyStatement:
+        """Create a policy statement for managing CloudWatch alarms.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for CloudWatch alarms.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "cloudwatch:PutMetricAlarm",
+                "cloudwatch:DescribeAlarms",
+                "cloudwatch:DeleteAlarms",
+            ],
+            resources=[f"arn:aws:cloudwatch:{self.region}:{self.account}:alarm:*"],
+        )
+
+    ##########################
+    #   Workbench Dashboard  #
+    ##########################
     def dashboard_policy_statement(self) -> iam.PolicyStatement:
         """Create a policy statement for additional permissions needed by Workbench Dashboard.
 
@@ -660,22 +654,49 @@ class WorkbenchCoreStack(Stack):
             resources=["*"],
         )
 
-    def parameter_store_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for accessing AWS Systems Manager Parameter Store.
-
+    #####################
+    #  Parameter Store  #
+    #####################
+    @staticmethod
+    def parameter_store_discover() -> iam.PolicyStatement:
+        """Discover Parameter Store parameters.
         Returns:
-            iam.PolicyStatement: The policy statement for accessing AWS Systems Manager Parameter Store.
+            iam.PolicyStatement: The policy statement for discovering Parameter Store parameters.
+        """
+        return iam.PolicyStatement(
+            actions=["ssm:DescribeParameters"],
+            resources=["*"],
+        )
+
+    def parameter_store_read(self) -> iam.PolicyStatement:
+        """Read Parameter Store parameters.
+        Returns:
+            iam.PolicyStatement: The policy statement for reading Parameter Store parameters.
         """
         return iam.PolicyStatement(
             actions=[
-                "ssm:DescribeParameters",
                 "ssm:GetParameter",
                 "ssm:GetParameters",
                 "ssm:GetParametersByPath",
+            ],
+            resources=[
+                f"arn:aws:ssm:{self.region}:{self.account}:parameter/*",
+            ],
+        )
+
+    def parameter_store_full(self) -> iam.PolicyStatement:
+        """Full access to Parameter Store parameters.
+        Returns:
+            iam.PolicyStatement: The policy statement for full Parameter Store access.
+        """
+        read_statement = self.parameter_store_read()
+        return iam.PolicyStatement(
+            actions=read_statement.actions
+            + [
                 "ssm:PutParameter",
                 "ssm:DeleteParameter",
             ],
-            resources=["*"],  # Broad permission necessary for Parameter Store operations
+            resources=read_statement.resources,
         )
 
     def workbench_datasource_policy(self) -> iam.ManagedPolicy:
@@ -687,8 +708,7 @@ class WorkbenchCoreStack(Stack):
             self.glue_databases_full(),
             self.athena_read(),
             self.cloudwatch_logs(),
-            self.parameter_store_policy_statement(),
-            self.eventbridge_policy(),
+            self.parameter_store_full(),
         ]
 
         return iam.ManagedPolicy(
@@ -708,7 +728,7 @@ class WorkbenchCoreStack(Stack):
             self.featurestore_discovery(),
             self.featurestore_full(),
             self.cloudwatch_logs(),
-            self.parameter_store_policy_statement(),
+            self.parameter_store_full(),
         ]
         return iam.ManagedPolicy(
             self,
@@ -720,13 +740,8 @@ class WorkbenchCoreStack(Stack):
     """In SageMaker, certain operations, such as creating training jobs, endpoint deployments, or batch transform jobs,
        require SageMaker to assume an IAM role. This role provides SageMaker with permissions to access AWS resources 
        on your behalf, such as reading training data from S3, writing model artifacts, or logging to CloudWatch."""
-
     def sagemaker_pass_role_policy_statement(self) -> iam.PolicyStatement:
-        """Create a policy statement for SageMaker to assume the Execution Role
-
-        Args:
-            workbench_api_role (iam.Role): The Workbench Execution Role
-        """
+        """Create a policy statement for SageMaker to assume the Execution Role"""
         return iam.PolicyStatement(
             actions=["iam:PassRole"],
             resources=["arn:aws:iam::*:role/*"],
@@ -744,7 +759,7 @@ class WorkbenchCoreStack(Stack):
             self.cloudwatch_metrics(),
             self.cloudwatch_logs(),
             self.sagemaker_pass_role_policy_statement(),
-            self.parameter_store_policy_statement(),
+            self.parameter_store_full(),
         ]
         return iam.ManagedPolicy(
             self,
@@ -758,12 +773,13 @@ class WorkbenchCoreStack(Stack):
         policy_statements = [
             self.endpoint_discover(),
             self.endpoint_full(),
+            self.endpoint_data_quality(),
+            self.endpoint_monitoring_discovery(),
+            self.endpoint_monitoring_schedules(),
             self.cloudwatch_metrics(),
             self.cloudwatch_logs(),
-            self.parameter_store_policy_statement(),
+            self.parameter_store_full(),
         ]
-        # Add the monitoring policy statements to the endpoint policy
-        policy_statements += self.all_monitoring_policy_statements()
         return iam.ManagedPolicy(
             self,
             id="WorkbenchEndpointPolicy",
@@ -819,6 +835,8 @@ class WorkbenchCoreStack(Stack):
         api_execution_role.add_to_policy(self.glue_pass_role())
         api_execution_role.add_to_policy(self.glue_jobs_discover())
         api_execution_role.add_to_policy(self.glue_jobs_full())
+        api_execution_role.add_to_policy(self.parameter_store_discover())
+        api_execution_role.add_to_policy(self.parameter_store_full())
         api_execution_role.add_managed_policy(self.datasource_policy)
         api_execution_role.add_managed_policy(self.featureset_policy)
         api_execution_role.add_managed_policy(self.model_policy)
@@ -838,6 +856,7 @@ class WorkbenchCoreStack(Stack):
         )
 
         # Add a subset of policies for the Lambda Role
+        lambda_role.add_to_policy(self.parameter_store_full())
         lambda_role.add_managed_policy(self.datasource_policy)
         lambda_role.add_managed_policy(self.featureset_policy)
         lambda_role.add_managed_policy(self.model_policy)
@@ -856,6 +875,7 @@ class WorkbenchCoreStack(Stack):
         )
 
         # Add a subset of policies for the Glue Role
+        glue_role.add_to_policy(self.parameter_store_full())
         glue_role.add_managed_policy(self.datasource_policy)
         glue_role.add_managed_policy(self.featureset_policy)
         glue_role.add_managed_policy(self.model_policy)
