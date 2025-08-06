@@ -34,7 +34,7 @@ class WorkbenchCoreStack(Stack):
 
         # Workbench Role Names
         self.execution_role_name = "Workbench-ExecutionRole"  # Main role
-        self.readonly_role_name = "Workbench-ReadOnlyRole"    # Read only operations
+        self.readonly_role_name = "Workbench-ReadOnlyRole"  # Read only operations
         self.glue_role_name = "Workbench-GlueRole"
         self.lambda_role_name = "Workbench-LambdaRole"
         self.training_role_name = "Workbench-TrainingRole"
