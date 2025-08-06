@@ -700,6 +700,9 @@ class WorkbenchCoreStack(Stack):
             resources=read_statement.resources,
         )
 
+    ##################################
+    #   Workbench Managed Policies   #
+    ##################################
     def workbench_datasource_read_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench DataSources (READ-ONLY)"""
         policy_statements = [
@@ -799,6 +802,21 @@ class WorkbenchCoreStack(Stack):
             conditions={"StringEquals": {"iam:PassedToService": "sagemaker.amazonaws.com"}},
         )
 
+    def workbench_model_read_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench Models"""
+        policy_statements = [
+            self.models_discovery(),
+            self.models_read(),
+            self.cloudwatch_logs(),
+            self.parameter_store_read(),
+        ]
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchModelReadPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchModelReadPolicy",
+        )
+
     def workbench_model_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Models"""
         policy_statements = [
@@ -817,6 +835,22 @@ class WorkbenchCoreStack(Stack):
             id="WorkbenchModelPolicy",
             statements=policy_statements,
             managed_policy_name="WorkbenchModelPolicy",
+        )
+
+    def workbench_endpoint_read_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench Models"""
+        policy_statements = [
+            self.endpoint_discover(),
+            self.endpoint_read(),
+            self.endpoint_monitoring_discovery(),
+            self.cloudwatch_logs(),
+            self.parameter_store_read(),
+        ]
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchEndpointReadPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchEndpointReadPolicy",
         )
 
     def workbench_endpoint_policy(self) -> iam.ManagedPolicy:
