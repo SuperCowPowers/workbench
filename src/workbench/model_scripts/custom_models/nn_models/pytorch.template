@@ -3,7 +3,7 @@ import os
 import awswrangler as wr
 import numpy as np
 
-# PyTorch 2.6+ compatibility: pytorch-tabular saves complex objects, not just tensors
+# PyTorch compatibility: pytorch-tabular saves complex objects, not just tensors
 # Use legacy loading behavior for compatibility (recommended by PyTorch docs for this scenario)
 os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
 from pytorch_tabular import TabularModel
@@ -332,7 +332,7 @@ if __name__ == "__main__":
 
     # Make Predictions on the Validation Set
     print(f"Making Predictions on Validation Set...")
-    result = tabular_model.predict(df_val)
+    result = tabular_model.predict(df_val, include_input_features=True)
 
     # For regression: pytorch-tabular returns predictions using the target column name
     # For classification: pytorch-tabular returns predictions using "prediction" column
