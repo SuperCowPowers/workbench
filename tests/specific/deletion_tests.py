@@ -70,7 +70,7 @@ def test_data_source_deletion():
     create_data_source()
 
     # Now Delete the DataSource
-    DataSource("abc").delete()
+    DataSource("abc_test").delete()
 
 
 if __name__ == "__main__":
