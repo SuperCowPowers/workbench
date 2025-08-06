@@ -68,6 +68,9 @@ class WorkbenchCoreStack(Stack):
         # Create our main Workbench API Execution Role
         self.workbench_execution_role = self.create_execution_role()
 
+        # Create a read-only role for the Workbench API
+        self.workbench_readonly_role = self.create_readonly_role()
+
         # Create additional roles for Lambda and Glue
         self.workbench_lambda_role = self.create_lambda_role()
         self.workbench_glue_role = self.create_glue_role()
@@ -929,6 +932,34 @@ class WorkbenchCoreStack(Stack):
         api_execution_role.add_managed_policy(self.endpoint_policy)
         api_execution_role.add_managed_policy(self.pipeline_policy)
         return api_execution_role
+
+    def create_readonly_role(self) -> iam.Role:
+        """Create the Workbench Read-Only Role for viewing resources"""
+
+        # ECS for Dashboard (we might switch to read-only later)
+        base_principals = iam.CompositePrincipal(
+            iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+        )
+
+        # Add SSO configuration to the principals
+        assumed_by = self._create_sso_principals(base_principals)
+        readonly_role = iam.Role(
+            self,
+            id=self.readonly_role_name,
+            assumed_by=assumed_by,
+            role_name=self.readonly_role_name,
+        )
+
+        # Add our read-only policies here
+        readonly_role.add_to_policy(self.glue_jobs_discover())
+        readonly_role.add_to_policy(self.glue_jobs_read())
+        readonly_role.add_to_policy(self.parameter_store_discover())
+        readonly_role.add_to_policy(self.parameter_store_read())
+        readonly_role.add_managed_policy(self.datasource_read_policy)
+        readonly_role.add_managed_policy(self.featureset_read_policy)
+        readonly_role.add_managed_policy(self.model_read_policy)
+        readonly_role.add_managed_policy(self.endpoint_read_policy)
+        return readonly_role
 
     def create_lambda_role(self) -> iam.Role:
         """Create the Workbench Lambda Role."""
