@@ -11,23 +11,23 @@ logging.getLogger("workbench").setLevel(logging.DEBUG)
 def create_data_source():
     test_data = TestDataGenerator()
     df = test_data.person_data()
-    if not DataSource("abc").exists():
-        DataSource(df, name="abc")
+    if not DataSource("abc_test").ready():
+        DataSource(df, name="abc_test")
 
 
 def create_feature_set():
     create_data_source()
 
     # If the feature set doesn't exist, create it
-    if not FeatureSet("abc_features").exists():
-        DataSource("abc").to_features("abc_features", id_column="id")
+    if not FeatureSet("abc_features").ready():
+        DataSource("abc_test").to_features("abc_features", id_column="id")
 
 
 def create_model():
     create_feature_set()
 
     # If the model doesn't exist, create it
-    if not Model("abc-regression").exists():
+    if not Model("abc-regression").ready():
         FeatureSet("abc_features").to_model(
             name="abc-regression", model_type=ModelType.REGRESSOR, target_column="iq_score"
         )
@@ -37,8 +37,8 @@ def create_endpoint():
     create_model()
 
     # Create some new endpoints
-    if not Endpoint("abc").exists():
-        Model("abc-regression").to_endpoint(name="abc")
+    if not Endpoint("abc-regression").ready():
+        Model("abc-regression").to_endpoint(name="abc-regression")
 
 
 @pytest.mark.long
@@ -46,7 +46,7 @@ def test_endpoint_deletion():
     create_endpoint()
 
     # Now Delete the endpoint
-    Endpoint("abc").delete()
+    Endpoint("abc-regression").delete()
 
 
 @pytest.mark.long
