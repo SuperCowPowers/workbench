@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 @dataclass
 class WorkbenchCoreStackProps:
     workbench_bucket: str
-    workbench_role_name: str
     sso_group: str
     additional_buckets: List[str] = field(default_factory=list)
 
@@ -21,14 +20,24 @@ class WorkbenchCoreStack(Stack):
         props: WorkbenchCoreStackProps,
         **kwargs: Any,
     ) -> None:
-        desc = "Workbench Core: Workbench-ExecutionRole(API),  Workbench-GlueRole, and Workbench-LambdaRole"
+        desc = "Workbench Core: Defines the core Workbench resources, roles, and policies for the Workbench API."
         super().__init__(scope, construct_id, description=desc, **kwargs)
+
+        # Print the environment details
+        print("Environment")
+        print(env)
 
         # Grab our properties
         self.workbench_bucket = props.workbench_bucket
-        self.workbench_role_name = props.workbench_role_name
         self.sso_group = props.sso_group
         self.additional_buckets = props.additional_buckets
+
+        # Workbench Role Names
+        self.execution_role_name = "Workbench-ExecutionRole"  # Main role
+        self.readonly_role_name = "Workbench-ReadOnlyRole"    # Read only operations
+        self.glue_role_name = "Workbench-GlueRole"
+        self.lambda_role_name = "Workbench-LambdaRole"
+        self.training_role_name = "Workbench-TrainingRole"
 
         # Create the WorkbenchLogGroup for CloudWatch Logs
         self.workbench_log_group = logs.LogGroup(
@@ -48,13 +57,16 @@ class WorkbenchCoreStack(Stack):
         # Create our managed polices
         self.datasource_read_policy = self.workbench_datasource_read_policy()
         self.datasource_policy = self.workbench_datasource_policy()
+        self.featureset_read_policy = self.workbench_featureset_read_policy()
         self.featureset_policy = self.workbench_featureset_policy()
+        self.model_read_policy = self.workbench_model_read_policy()
         self.model_policy = self.workbench_model_policy()
+        self.endpoint_read_policy = self.workbench_endpoint_read_policy()
         self.endpoint_policy = self.workbench_endpoint_policy()
         self.pipeline_policy = self.workbench_pipeline_policy()
 
-        # Create our main Workbench Execution Role
-        self.workbench_api_execution_role = self.create_api_execution_role()
+        # Create our main Workbench API Execution Role
+        self.workbench_execution_role = self.create_execution_role()
 
         # Create additional roles for Lambda and Glue
         self.workbench_lambda_role = self.create_lambda_role()
@@ -797,7 +809,7 @@ class WorkbenchCoreStack(Stack):
         return iam.PolicyStatement(
             actions=["iam:PassRole"],
             resources=[
-                f"arn:aws:iam::{self.account}:role/{self.workbench_role_name}",
+                f"arn:aws:iam::{self.account}:role/{self.execution_role_name}",
             ],
             conditions={"StringEquals": {"iam:PassedToService": "sagemaker.amazonaws.com"}},
         )
@@ -885,35 +897,24 @@ class WorkbenchCoreStack(Stack):
             managed_policy_name="WorkbenchPipelinePolicy",
         )
 
-    def create_api_execution_role(self) -> iam.Role:
+    def create_execution_role(self) -> iam.Role:
         """Create the Workbench Execution Role for API-related tasks"""
-
-        # Define the base assumed by principals with ECS service principal
-        assumed_by = iam.CompositePrincipal(
+        # Define the base assumed by principals with service principals
+        base_principals = iam.CompositePrincipal(
             iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
             iam.ServicePrincipal("sagemaker.amazonaws.com"),
             iam.ServicePrincipal("glue.amazonaws.com"),
         )
 
-        # If sso_group is provided, add the condition to the trust relationship
-        if self.sso_group:
-            sso_group_arn_1 = (
-                f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_{self.sso_group}_*"
-            )
-            sso_group_arn_2 = (
-                f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_{self.sso_group}_*"
-            )
-            condition = {"ArnLike": {"aws:PrincipalArn": [sso_group_arn_1, sso_group_arn_2]}}
-            assumed_by.add_principals(iam.AccountPrincipal(self.account).with_conditions(condition))
-        else:
-            assumed_by.add_principals(iam.AccountPrincipal(self.account))
+        # Add SSO configuration to the principals
+        assumed_by = self._create_sso_principals(base_principals)
 
         # Create the role with the trust relationships
         api_execution_role = iam.Role(
             self,
-            id=self.workbench_role_name,
+            id=self.execution_role_name,
             assumed_by=assumed_by,
-            role_name=self.workbench_role_name,
+            role_name=self.execution_role_name,
         )
 
         # Create and attach the Workbench managed policies to the role
@@ -927,7 +928,6 @@ class WorkbenchCoreStack(Stack):
         api_execution_role.add_managed_policy(self.model_policy)
         api_execution_role.add_managed_policy(self.endpoint_policy)
         api_execution_role.add_managed_policy(self.pipeline_policy)
-
         return api_execution_role
 
     def create_lambda_role(self) -> iam.Role:
@@ -935,9 +935,9 @@ class WorkbenchCoreStack(Stack):
         lambda_assumed_by = iam.ServicePrincipal("lambda.amazonaws.com")
         lambda_role = iam.Role(
             self,
-            id="Workbench-LambdaRole",
+            id=self.lambda_role_name,
             assumed_by=lambda_assumed_by,
-            role_name="Workbench-LambdaRole",
+            role_name=self.lambda_role_name,
         )
 
         # Add a subset of policies for the Lambda Role
@@ -954,9 +954,9 @@ class WorkbenchCoreStack(Stack):
         glue_assumed_by = iam.ServicePrincipal("glue.amazonaws.com")
         glue_role = iam.Role(
             self,
-            id="Workbench-GlueRole",
+            id=self.glue_role_name,
             assumed_by=glue_assumed_by,
-            role_name="Workbench-GlueRole",
+            role_name=self.glue_role_name,
         )
 
         # Add a subset of policies for the Glue Role
@@ -967,3 +967,42 @@ class WorkbenchCoreStack(Stack):
         glue_role.add_managed_policy(self.endpoint_policy)
         glue_role.add_managed_policy(self.pipeline_policy)
         return glue_role
+
+    def _create_sso_principals(self, base_principals: iam.CompositePrincipal = None) -> iam.CompositePrincipal:
+        """
+        Create principals with SSO trust relationship configuration.
+
+        Args:
+            base_principals: Optional existing CompositePrincipal to extend
+
+        Returns:
+            CompositePrincipal with SSO configuration applied
+        """
+        assumed_by = base_principals or iam.CompositePrincipal()
+
+        # If sso_group is provided, configure trust relationship for AWS SSO integration
+        # AWS SSO creates roles with two different ARN patterns depending on configuration:
+        if self.sso_group:
+
+            # Pattern 1: Direct group-based SSO role (no permission set in path)
+            # Used when SSO groups are mapped directly to roles
+            sso_group_arn_1 = (
+                f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_{self.sso_group}_*"
+            )
+
+            # Pattern 2: Permission set-based SSO role (includes permission set ID in path)
+            # Used when SSO groups are assigned via permission sets (more common in enterprise setups)
+            # The middle wildcard (*) represents the permission set identifier
+            sso_group_arn_2 = (
+                f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_{self.sso_group}_*"
+            )
+
+            # Both patterns are required for maximum compatibility across different SSO configurations
+            # This is particularly important for Lake Formation and enterprise SSO integrations
+            condition = {"ArnLike": {"aws:PrincipalArn": [sso_group_arn_1, sso_group_arn_2]}}
+            assumed_by.add_principals(iam.AccountPrincipal(self.account).with_conditions(condition))
+        else:
+            # Fallback: Allow any principal in the account to assume this role
+            assumed_by.add_principals(iam.AccountPrincipal(self.account))
+
+        return assumed_by

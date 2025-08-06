@@ -17,7 +17,6 @@ if not workbench_bucket:
     exit(1)
 
 # Read optional configurations with defaults
-workbench_role_name = os.getenv("WORKBENCH_ROLE", "Workbench-ExecutionRole")
 sso_group = os.getenv("WORKBENCH_SSO_GROUP")  # Optional, default to None if not set
 additional_buckets = [
     bucket.strip() for bucket in os.getenv("WORKBENCH_ADDITIONAL_BUCKETS", "").split(",") if bucket.strip()
@@ -26,7 +25,6 @@ additional_buckets = [
 # Log the configuration for transparency
 print("Configuration:")
 print(f"  WORKBENCH_BUCKET: {workbench_bucket}")
-print(f"  WORKBENCH_ROLE: {workbench_role_name}")
 print(f"  WORKBENCH_SSO_GROUP: {sso_group}")
 print(f"  WORKBENCH_ADDITIONAL_BUCKETS: {additional_buckets}")
 
@@ -41,7 +39,6 @@ sandbox_stack = WorkbenchCoreStack(
     env=env,
     props=WorkbenchCoreStackProps(
         workbench_bucket=workbench_bucket,
-        workbench_role_name=workbench_role_name,
         sso_group=sso_group,
         additional_buckets=additional_buckets,
     ),
