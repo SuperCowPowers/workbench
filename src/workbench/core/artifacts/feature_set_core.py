@@ -614,12 +614,8 @@ class FeatureSetCore(Artifact):
         Note: Since FeatureSet is a composite of DataSource and FeatureGroup, we need to
            check both to see if the FeatureSet is ready."""
 
-        # Check the expected metadata for the FeatureSet
-        expected_meta = self.expected_meta()
-        existing_meta = self.workbench_meta()
-        feature_set_ready = set(existing_meta.keys()).issuperset(expected_meta)
-        if not feature_set_ready:
-            self.log.info(f"FeatureSet {self.name} is not ready!")
+        # Check if our parent class (Artifact) is ready
+        if not super().ready():
             return False
 
         # Okay now call/return the DataSource ready() method

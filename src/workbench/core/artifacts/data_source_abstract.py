@@ -259,7 +259,7 @@ class DataSourceAbstract(Artifact):
     def ready(self) -> bool:
         """Is the DataSource ready?"""
 
-        # Check if the Artifact is ready
+        # Check if our parent class (Artifact) is ready
         if not super().ready():
             return False
 
