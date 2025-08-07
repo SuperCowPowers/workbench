@@ -1,4 +1,2 @@
-# Note: PyTorch-Tabular is not included in the default inference image, so it must be specified here.
-#       PyTorch-Tabular also implicitly requires requests
-requests
-pytorch-tabular
+# Note: The training and inference images already have torch and pytorch-tabular installed.
+#       So we only need to install packages that are not already included in the images.
