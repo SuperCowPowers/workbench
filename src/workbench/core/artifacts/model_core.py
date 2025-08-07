@@ -84,7 +84,7 @@ class ModelImages:
     }
 
     @classmethod
-    def get_image_uri(cls, region, image_type="training", version="0.1", architecture="x86_64"):
+    def get_image_uri(cls, region, image_type, version="0.1", architecture="x86_64"):
         key = (region, image_type, version, architecture)
         if key in cls.image_uris:
             return cls.image_uris[key]

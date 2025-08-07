@@ -232,7 +232,7 @@ class FeaturesToModel(Transform):
         source_dir = str(Path(script_path).parent)
 
         # Create a Sagemaker Model with our script
-        image = ModelImages.get_image_uri(self.sm_session.boto_region_name, "training", "0.1")
+        image = ModelImages.get_image_uri(self.sm_session.boto_region_name, self.training_image, "0.1")
         self.estimator = Estimator(
             entry_point=entry_point,
             source_dir=source_dir,
