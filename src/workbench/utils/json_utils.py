@@ -1,6 +1,7 @@
 """JSON Utilities"""
 
 import json
+from io import StringIO
 import numpy as np
 import pandas as pd
 import logging
@@ -33,9 +34,7 @@ class CustomEncoder(json.JSONEncoder):
             elif isinstance(obj, pd.DataFrame):
                 return {
                     "__dataframe__": True,
-                    "df": obj.to_dict(),
-                    "index": obj.index.tolist(),
-                    "index_name": obj.index.name,
+                    "df": obj.to_json(orient='table'),
                 }
             return super().default(obj)
         except Exception as e:
@@ -62,10 +61,16 @@ def custom_decoder(dct):
         if "__datetime__" in dct:
             return iso8601_to_datetime(dct["datetime"])
         elif "__dataframe__" in dct:
-            df = pd.DataFrame.from_dict(dct["df"])
-            if "index" in dct:
-                df.index = dct["index"]
-                df.index.name = dct.get("index_name")
+            df_data = dct["df"]
+            if isinstance(df_data, str):
+                df = pd.read_json(StringIO(df_data), orient='table')
+            else:
+                # Old format compatibility
+                log.warning(f"Decoding old dataframe format...")
+                df = pd.DataFrame.from_dict(df_data)
+                if "index" in dct:
+                    df.index = dct["index"]
+                    df.index.name = dct.get("index_name")
             return df
         return dct
     except Exception as e:
@@ -86,6 +91,7 @@ if __name__ == "__main__":
         "datetime": datetime.now(),
         "date": date.today(),
         "dataframe": pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]}),
+        "list": [1, 2, 3],
     }
 
     # Encode the test dictionary
@@ -120,4 +126,17 @@ if __name__ == "__main__":
     decoded_df = json.loads(encoded_df, object_hook=custom_decoder)
 
     print("Original DataFrame index name:", df_with_index.index.name)
-    print("Decoded DataFrame index name:", decoded_df.index.name)  # Likely None
+    print("Decoded DataFrame index name:", decoded_df.index.name)
+
+    # Temp Testing
+    """
+    from workbench.api import DFStore, FeatureSet
+    df_store = DFStore()
+    df = df_store.get("/testing/json_encoding/smart_sample_good")
+
+    fs = FeatureSet("abalone_features")
+    df = fs.smart_sample()
+    df_store.upsert("testing/json_encoding/abalone_features_smart_sample", df)
+    pull_df = df_store.get("testing/json_encoding/abalone_features_smart_sample")
+    encoded = json.dumps(df, cls=CustomEncoder)
+    """
