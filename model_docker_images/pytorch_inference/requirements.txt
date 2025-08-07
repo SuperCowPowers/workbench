@@ -1,0 +1,11 @@
+# This file is used to install the required packages for the PyTorch Inference Docker image.
+--index-url https://download.pytorch.org/whl/cpu
+--extra-index-url https://pypi.org/simple/
+torch==2.8.0
+pandas==2.3.1
+awswrangler==3.12.1
+pytorch-tabular==1.1.1
+requests==2.32.4  # Needed by PyTorch-Tabular
+joblib==1.5.1
+fastapi==0.116.1  # FastAPI for serving the model
+uvicorn==0.35.0   # ASGI server for running FastAPI

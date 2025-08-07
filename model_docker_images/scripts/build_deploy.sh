@@ -12,6 +12,8 @@ AWS_ACCOUNT_ID="507740646243"
 declare -A REPO_MAP=(
   ["training"]="aws-ml-images/py312-sklearn-xgb-training"
   ["inference"]="aws-ml-images/py312-sklearn-xgb-inference"
+  ["pytorch_training"]="aws-ml-images/py312-pytorch-training"
+  ["pytorch_inference"]="aws-ml-images/py312-pytorch-inference"
   ["workbench_inference"]="aws-ml-images/py312-workbench-inference"
   ["meta_endpoint"]="aws-ml-images/py312-meta-endpoint"
 )
@@ -25,7 +27,7 @@ NC='\033[0m' # No Color
 usage() {
   echo "Usage: $(basename $0) IMAGE_TYPE [VERSION] [--deploy] [--latest] [--overwrite]"
   echo "  IMAGE_TYPE: One of ${!REPO_MAP[*]}"
-  echo "  VERSION: Image version (default: 0.1)"
+  echo "  VERSION: Image version"
   echo "  --deploy: Deploy to ECR"
   echo "  --latest: Also tag as latest"
   echo "  --overwrite: Overwrite existing images"

@@ -1,5 +1,5 @@
-fastapi==0.115.10
-uvicorn==0.34.0
+fastapi==0.115.10  # FastAPI for serving the model
+uvicorn==0.34.0    # ASGI server for running FastAPI
 scikit-learn==1.6.1
 xgboost==3.0.3
 pandas==2.2.3
