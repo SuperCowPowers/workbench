@@ -79,6 +79,7 @@ if __name__ == "__main__":
 
     # Retrieve an existing FeatureSet
     my_features = CachedFeatureSet("abalone_features")
+    pprint(my_features.smart_sample())
     pprint(my_features.summary())
     pprint(my_features.details())
     pprint(my_features.health_check())
