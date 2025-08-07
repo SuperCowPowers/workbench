@@ -128,15 +128,13 @@ if __name__ == "__main__":
     print("Original DataFrame index name:", df_with_index.index.name)
     print("Decoded DataFrame index name:", decoded_df.index.name)
 
-    # Temp Testing
-    """
-    from workbench.api import DFStore, FeatureSet
+    # Dataframe Testing
+    from workbench.api import DFStore
     df_store = DFStore()
-    df = df_store.get("/testing/json_encoding/smart_sample_good")
-
-    fs = FeatureSet("abalone_features")
-    df = fs.smart_sample()
-    df_store.upsert("testing/json_encoding/abalone_features_smart_sample", df)
-    pull_df = df_store.get("testing/json_encoding/abalone_features_smart_sample")
+    df = df_store.get("/testing/json_encoding/smart_sample_bad")
     encoded = json.dumps(df, cls=CustomEncoder)
-    """
+    decoded_df = json.loads(encoded, object_hook=custom_decoder)
+
+    # Compare original and decoded DataFrame
+    from workbench.utils.pandas_utils import compare_dataframes
+    compare_dataframes(df, decoded_df)

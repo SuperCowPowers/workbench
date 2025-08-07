@@ -94,14 +94,16 @@ def dataframe_delta(func_that_returns_df, previous_hash: Optional[str] = None) -
     return df, current_hash
 
 
-def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: list):
+def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: list = None):
     """Compare two DataFrames and report on differences.
 
     Args:
         df1 (pd.DataFrame): First DataFrame to compare.
         df2 (pd.DataFrame): Second DataFrame to compare.
-        display_columns (list): Columns to display when differences are found.
+        display_columns (list): Columns to display when differences are found (defaults to all columns).
     """
+    if display_columns is None:
+        display_columns = df1.columns.tolist()
 
     # Check if the entire dataframes are equal
     if df1.equals(df2):
@@ -130,7 +132,7 @@ def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: li
         # Print out the column types
         print("\nColumn Types:")
         print(f"DF1: {df1[common_columns].dtypes.value_counts()}")
-        print(f"DF2: {df2[common_columns].dtypes.value_counts()}")
+        print(f"\nDF2: {df2[common_columns].dtypes.value_counts()}")
 
     # Count the NaNs in each DataFrame individually (only show columns with > 0 NaNs)
     nan_counts_df1 = df1.isna().sum()
@@ -146,6 +148,7 @@ def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: li
 
     # Define tolerance for float comparisons
     epsilon = 1e-10
+    difference_counts = {}
 
     # Check for differences in common columns
     for column in common_columns:
@@ -161,18 +164,10 @@ def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: li
             # Other types (e.g., int) with NaNs treated as equal
             differences = ~(df1[column].fillna(0) == df2[column].fillna(0))
 
-        # Create a merged DataFrame showing values from both DataFrames
-        merged_df = pd.DataFrame(
-            {
-                **{col: df1.loc[differences, col] for col in display_columns},
-                f"{column}_1": df1.loc[differences, column],
-                f"{column}_2": df2.loc[differences, column],
-            }
-        )
-
         # If differences exist, display them
         if differences.any():
-            print(f"\nColumn {column} has differences:")
+            print(f"\nColumn {column} has {differences.sum()} differences")
+            difference_counts[column] = differences.sum()
 
             # Create a merged DataFrame showing values from both DataFrames
             merged_df = pd.DataFrame(
@@ -185,6 +180,10 @@ def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: li
 
             # Display the merged DataFrame
             print(merged_df)
+
+    # If there are no differences report that
+    if not difference_counts:
+        print(f"\nNo differences found in common columns within {epsilon}")
 
 
 def subnormal_check(df):
