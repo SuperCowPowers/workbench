@@ -10,8 +10,8 @@ AWS_ACCOUNT_ID="507740646243"
 
 # Map of image types to their repository names and directories
 declare -A REPO_MAP=(
-  ["training"]="aws-ml-images/py312-sklearn-xgb-training"
-  ["inference"]="aws-ml-images/py312-sklearn-xgb-inference"
+  ["xgb_training"]="aws-ml-images/py312-sklearn-xgb-training"
+  ["xgb_inference"]="aws-ml-images/py312-sklearn-xgb-inference"
   ["pytorch_training"]="aws-ml-images/py312-pytorch-training"
   ["pytorch_inference"]="aws-ml-images/py312-pytorch-inference"
   ["workbench_inference"]="aws-ml-images/py312-workbench-inference"
@@ -161,7 +161,7 @@ echo "======================================"
 build_image "amd64" "$IMAGE_VERSION"
 
 # For inference, also build ARM64 image
-if [ "$IMAGE_TYPE" = "inference" ]; then
+if [ "$IMAGE_TYPE" = "fixme" ]; then
   echo "======================================"
   echo "🏗️  Building $IMAGE_TYPE container (ARM64)"
   echo "======================================"
@@ -181,7 +181,7 @@ if [ "$DEPLOY" = true ]; then
   deploy_image "$IMAGE_VERSION"
 
   # For inference, also deploy ARM64 image
-  if [ "$IMAGE_TYPE" = "inference" ]; then
+  if [ "$IMAGE_TYPE" = "fixme" ]; then
     deploy_image "${IMAGE_VERSION}-arm64"
   fi
 
@@ -196,7 +196,7 @@ else
   echo "📋 Image information:"
   echo "${IMAGE_TYPE^} image: $REPO_NAME:$IMAGE_VERSION"
 
-  if [ "$IMAGE_TYPE" = "inference" ]; then
+  if [ "$IMAGE_TYPE" = "fixme" ]; then
     echo "Inference image (ARM64): $REPO_NAME:${IMAGE_VERSION}-arm64"
   fi
 

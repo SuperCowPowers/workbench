@@ -42,10 +42,10 @@ class ModelImages:
 
     image_uris = {
         # US East 1 images
-        ("us-east-1", "training", "0.1", "x86_64"): (
+        ("us-east-1", "xgb_training", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
         ),
-        ("us-east-1", "inference", "0.1", "x86_64"): (
+        ("us-east-1", "xgb_inference", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
         ("us-east-1", "pytorch_training", "0.1", "x86_64"): (
@@ -55,10 +55,10 @@ class ModelImages:
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-imagespy312-pytorch-inference:0.1"
         ),
         # US West 2 images
-        ("us-west-2", "training", "0.1", "x86_64"): (
+        ("us-west-2", "xgb_training", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
         ),
-        ("us-west-2", "inference", "0.1", "x86_64"): (
+        ("us-west-2", "xgb_inference", "0.1", "x86_64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
         ),
         ("us-west-2", "pytorch_training", "0.1", "x86_64"): (
@@ -68,10 +68,10 @@ class ModelImages:
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-pytorch-inference:0.1"
         ),
         # ARM64 images
-        ("us-east-1", "inference", "0.1", "arm64"): (
+        ("us-east-1", "xgb_inference", "0.1", "arm64"): (
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
         ),
-        ("us-west-2", "inference", "0.1", "arm64"): (
+        ("us-west-2", "xgb_inference", "0.1", "arm64"): (
             "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
         ),
         # Meta Endpoint inference images

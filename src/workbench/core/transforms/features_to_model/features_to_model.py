@@ -37,8 +37,9 @@ class FeaturesToModel(Transform):
         model_import_str=None,
         custom_script=None,
         custom_args=None,
+        training_image="xgb_training",
+        inference_image="xgb_inference",
         inference_arch="x86_64",
-        inference_image="inference",
     ):
         """FeaturesToModel Initialization
         Args:
@@ -49,8 +50,9 @@ class FeaturesToModel(Transform):
             model_import_str (str, optional): The import string for the model (default None)
             custom_script (str, optional): Custom script to use for the model (default None)
             custom_args (dict, optional): Custom arguments to pass to custom model scripts (default None)
+            training_image (str, optional): Training image (default "xgb_training")
+            inference_image (str, optional): Inference image (default "xgb_inference")
             inference_arch (str, optional): Inference architecture (default "x86_64")
-            inference_image (str, optional): Inference image (default "inference")
         """
 
         # Make sure the model_name is a valid name
@@ -73,8 +75,9 @@ class FeaturesToModel(Transform):
         self.model_feature_list = None
         self.target_column = None
         self.class_labels = None
-        self.inference_arch = inference_arch
+        self.training_image = training_image
         self.inference_image = inference_image
+        self.inference_arch = inference_arch
 
     def transform_impl(
         self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False, **kwargs
