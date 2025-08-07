@@ -37,10 +37,28 @@ from typing import List, Tuple
 TEMPLATE_PARAMS = {
     "model_type": "regressor",
     "target_column": "solubility",
-    "features": ['molwt', 'mollogp', 'molmr', 'heavyatomcount', 'numhacceptors', 'numhdonors', 'numheteroatoms', 'numrotatablebonds', 'numvalenceelectrons', 'numaromaticrings', 'numsaturatedrings', 'numaliphaticrings', 'ringcount', 'tpsa', 'labuteasa', 'balabanj', 'bertzct'],
+    "features": [
+        "molwt",
+        "mollogp",
+        "molmr",
+        "heavyatomcount",
+        "numhacceptors",
+        "numhdonors",
+        "numheteroatoms",
+        "numrotatablebonds",
+        "numvalenceelectrons",
+        "numaromaticrings",
+        "numsaturatedrings",
+        "numaliphaticrings",
+        "ringcount",
+        "tpsa",
+        "labuteasa",
+        "balabanj",
+        "bertzct",
+    ],
     "compressed_features": [],
     "model_metrics_s3_path": "s3://sandbox-sageworks-artifacts/models/aqsol-pytorch-reg/training",
-    "train_all_data": False
+    "train_all_data": False,
 }
 
 
@@ -148,7 +166,9 @@ def convert_categorical_types(df: pd.DataFrame, features: list, category_mapping
     return df, category_mappings
 
 
-def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+def decompress_features(
+    df: pd.DataFrame, features: List[str], compressed_features: List[str]
+) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the model
 
     Args:
@@ -221,6 +241,7 @@ if __name__ == "__main__":
 
     # Pull training data from a FeatureSet
     from workbench.api import FeatureSet
+
     fs = FeatureSet("aqsol_features")
     all_df = fs.pull_dataframe()
 
@@ -253,14 +274,12 @@ if __name__ == "__main__":
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(
-            all_df, test_size=validation_split, random_state=42
-        )
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
     # Determine categorical and continuous columns
-    categorical_cols = [col for col in features if df_train[col].dtype.name == 'category']
+    categorical_cols = [col for col in features if df_train[col].dtype.name == "category"]
     continuous_cols = [col for col in features if col not in categorical_cols]
 
     print(f"Categorical columns: {categorical_cols}")
@@ -367,9 +386,7 @@ if __name__ == "__main__":
         label_names = label_encoder.classes_
 
         # Calculate various model performance metrics
-        scores = precision_recall_fscore_support(
-            y_validate, preds, average=None, labels=label_names
-        )
+        scores = precision_recall_fscore_support(y_validate, preds, average=None, labels=label_names)
 
         # Put the scores into a dataframe
         score_df = pd.DataFrame(

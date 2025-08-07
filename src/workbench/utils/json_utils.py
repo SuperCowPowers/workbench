@@ -34,7 +34,7 @@ class CustomEncoder(json.JSONEncoder):
             elif isinstance(obj, pd.DataFrame):
                 return {
                     "__dataframe__": True,
-                    "df": obj.to_json(orient='table'),
+                    "df": obj.to_json(orient="table"),
                 }
             return super().default(obj)
         except Exception as e:
@@ -63,10 +63,10 @@ def custom_decoder(dct):
         elif "__dataframe__" in dct:
             df_data = dct["df"]
             if isinstance(df_data, str):
-                df = pd.read_json(StringIO(df_data), orient='table')
+                df = pd.read_json(StringIO(df_data), orient="table")
             else:
                 # Old format compatibility
-                log.warning(f"Decoding old dataframe format...")
+                log.warning("Decoding old dataframe format...")
                 df = pd.DataFrame.from_dict(df_data)
                 if "index" in dct:
                     df.index = dct["index"]
@@ -130,6 +130,7 @@ if __name__ == "__main__":
 
     # Dataframe Testing
     from workbench.api import DFStore
+
     df_store = DFStore()
     df = df_store.get("/testing/json_encoding/smart_sample_bad")
     encoded = json.dumps(df, cls=CustomEncoder)
@@ -137,4 +138,5 @@ if __name__ == "__main__":
 
     # Compare original and decoded DataFrame
     from workbench.utils.pandas_utils import compare_dataframes
+
     compare_dataframes(df, decoded_df)
