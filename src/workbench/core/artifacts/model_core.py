@@ -52,7 +52,7 @@ class ModelImages:
             "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-pytorch-training:0.1"
         ),
         ("us-east-1", "pytorch_inference", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-imagespy312-pytorch-inference:0.1"
+            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-pytorch-inference:0.1"
         ),
         # US West 2 images
         ("us-west-2", "xgb_training", "0.1", "x86_64"): (
