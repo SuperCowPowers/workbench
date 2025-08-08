@@ -556,5 +556,6 @@ if __name__ == "__main__":
     # Remove the pytorch_outputs directory if it exists
     if os.path.exists("pytorch_outputs"):
         import shutil
+
         shutil.rmtree("pytorch_outputs")
         print("Removed pytorch_outputs directory.")
