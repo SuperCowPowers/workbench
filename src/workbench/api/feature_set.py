@@ -102,7 +102,7 @@ class FeatureSet(FeatureSetCore):
             description (str, optional): Set the description for the model. If not give a description is generated.
             feature_list (list, optional): Set the feature list for the model. If not given a feature list is generated.
             target_column (str, optional): The target column for the model (use None for unsupervised model)
-            model_class (str, optional): Scikit model class to use (e.g. "KMeans", default: None)
+            model_class (str, optional): Model class to use (e.g. "KMeans", "PyTorch", default: None)
             model_import_str (str, optional): The import for the model (e.g. "from sklearn.cluster import KMeans")
             custom_script (str, optional): The custom script to use for the model (default: None)
             training_image (str, optional): The training image to use (default: "xgb_training")
@@ -126,6 +126,11 @@ class FeatureSet(FeatureSetCore):
 
         # Create the Model Tags
         tags = [name] if tags is None else tags
+
+        # If the model_class is PyTorch, ensure we set the training and inference images
+        if model_class and model_class.lower() == "pytorch":
+            training_image = "pytorch_training"
+            inference_image = "pytorch_inference"
 
         # Transform the FeatureSet into a Model
         features_to_model = FeaturesToModel(

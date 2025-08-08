@@ -1,5 +1,4 @@
 from workbench.api import FeatureSet, Model, ModelType, Endpoint
-from workbench.utils.model_utils import get_custom_script_path
 
 # Grab a FeatureSet
 my_features = FeatureSet("aqsol_features")
@@ -12,18 +11,15 @@ recreate = True
 
 # PyTorch Regression Model
 if recreate or not Model("aqsol-pytorch-reg").exists():
-    script_path = get_custom_script_path("pytorch_models", "pytorch.template")
     feature_set = FeatureSet("aqsol_features")
     m = feature_set.to_model(
         name="aqsol-pytorch-reg",
         model_type=ModelType.REGRESSOR,
+        model_class="PyTorch",
         feature_list=feature_list,
         target_column=target,
         description="PyTorch Regression Model for AQSol",
         tags=["pytorch", "molecular descriptors"],
-        custom_script=script_path,
-        training_image="pytorch_training",
-        inference_image="pytorch_inference",
     )
     m.set_owner("BW")
 
@@ -38,18 +34,15 @@ if recreate or not Endpoint("aqsol-pytorch-reg").exists():
 
 # Pytorch Classification Model
 if recreate or not Model("aqsol-pytorch-class").exists():
-    script_path = get_custom_script_path("pytorch_models", "pytorch.template")
     feature_set = FeatureSet("aqsol_features")
     m = feature_set.to_model(
         name="aqsol-pytorch-class",
         model_type=ModelType.CLASSIFIER,
+        model_class="PyTorch",
         feature_list=feature_list,
         target_column="solubility_class",
         description="PyTorch Classification Model for AQSol",
         tags=["pytorch", "molecular descriptors"],
-        custom_script=script_path,
-        training_image="pytorch_training",
-        inference_image="pytorch_inference",
     )
     m.set_owner("BW")
 

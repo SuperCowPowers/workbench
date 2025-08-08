@@ -101,8 +101,12 @@ def generate_model_script(template_params: dict) -> str:
 
     # Determine which template to use based on model type
     if template_params.get("model_class"):
-        template_name = "scikit_learn.template"
-        model_script_dir = "scikit_learn"
+        if template_params["model_class"].lower() == "pytorch":
+            template_name = "pytorch.template"
+            model_script_dir = "pytorch_model"
+        else:
+            template_name = "scikit_learn.template"
+            model_script_dir = "scikit_learn"
     elif template_params["model_type"] in [ModelType.REGRESSOR, ModelType.CLASSIFIER]:
         template_name = "xgb_model.template"
         model_script_dir = "xgb_model"
