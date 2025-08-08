@@ -179,7 +179,7 @@ class AWSMeta:
                     feature_set_details.update(self.sm_client.describe_feature_group(FeatureGroupName=name))
 
                 # Retrieve Workbench metadata from tags
-                aws_tags = self.get_aws_tags(fg["FeatureGroupArn"])
+                aws_tags = self.get_aws_tags(fg["FeatureGroupArn"]) if details else {}
                 summary = {
                     "Feature Group": name,
                     "Health": "",
@@ -258,30 +258,29 @@ class AWSMeta:
         df = pd.DataFrame(model_summary).convert_dtypes()
         return df.sort_values(by="Created", ascending=False)
 
-    def endpoints(self, refresh: bool = False) -> pd.DataFrame:
+    def endpoints(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Endpoints in AWS.
 
         Args:
-            refresh (bool, optional): Force a refresh of the metadata. Defaults to False.
+            details (bool, optional): Get additional details (Defaults to False).
 
         Returns:
             pd.DataFrame: A summary of the Endpoints in AWS.
         """
         from workbench.utils.endpoint_utils import is_monitored  # noqa: E402
 
-        # Initialize the SageMaker client and list all endpoints
-        sagemaker_client = self.boto3_session.client("sagemaker")
-        paginator = sagemaker_client.get_paginator("list_endpoints")
+        # Use our SageMaker client to list all endpoints
+        paginator = self.sm_client.get_paginator("list_endpoints")
         data_summary = []
 
         # Use the paginator to retrieve all endpoints
         for page in paginator.paginate():
             for endpoint in page["Endpoints"]:
                 endpoint_name = endpoint["EndpointName"]
-                endpoint_info = sagemaker_client.describe_endpoint(EndpointName=endpoint_name)
+                endpoint_info = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
 
                 # Retrieve Workbench metadata from tags
-                aws_tags = self.get_aws_tags(endpoint_info["EndpointArn"])
+                aws_tags = self.get_aws_tags(endpoint_info["EndpointArn"]) if details else {}
                 health_tags = aws_tags.get("workbench_health_tags", "")
 
                 # Retrieve endpoint configuration to determine instance type or serverless info
@@ -289,7 +288,7 @@ class AWSMeta:
 
                 # Getting the endpoint configuration can fail so account for that
                 try:
-                    endpoint_config = sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
+                    endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
                     production_variant = endpoint_config["ProductionVariants"][0]
                     # Determine instance type or serverless configuration
                     instance_type = production_variant.get("InstanceType")
@@ -298,14 +297,14 @@ class AWSMeta:
                         mem_size = production_variant["ServerlessConfig"]["MemorySizeInMB"]
                         concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
                         instance_type = f"Serverless ({mem_size // 1024}GB/{concurrency})"
-                except sagemaker_client.exceptions.ClientError:
+                except self.sm_client.exceptions.ClientError:
                     # If the endpoint config is not found, change the config name to reflect this
                     endpoint_config_name = f"{endpoint_config_name} (Not Found)"
                     production_variant = {}
                     instance_type = "Unknown"
 
                 # Check if the endpoint has monitoring enabled
-                endpoint_monitored = is_monitored(endpoint_name, sagemaker_client)
+                endpoint_monitored = is_monitored(endpoint_name, self.sm_client)
 
                 # Compile endpoint summary
                 summary = {
@@ -785,7 +784,6 @@ if __name__ == "__main__":
     pprint(meta.model("abalone-regression"))
     print("\n\n*** Endpoint Details ***")
     pprint(meta.endpoint("abalone-regression"))
-    pprint(meta.endpoint("test-timing-realtime"))
 
     # Test out a non-existent model
     print("\n\n*** Model Doesn't Exist ***")
