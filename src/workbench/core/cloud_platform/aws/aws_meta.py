@@ -277,56 +277,73 @@ class AWSMeta:
         for page in paginator.paginate():
             for endpoint in page["Endpoints"]:
                 endpoint_name = endpoint["EndpointName"]
-                endpoint_info = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
 
-                # Retrieve Workbench metadata from tags
-                aws_tags = self.get_aws_tags(endpoint_info["EndpointArn"]) if details else {}
-                health_tags = aws_tags.get("workbench_health_tags", "")
+                # Grab various endpoint details
+                endpoint_details = {"config": {"instance": "-", "variant": "-"}, "monitored": "-"}
+                aws_tags = {}
+                if details:
+                    endpoint_details = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
 
-                # Retrieve endpoint configuration to determine instance type or serverless info
-                endpoint_config_name = endpoint_info["EndpointConfigName"]
+                    # Retrieve AWS Tags for this Endpoint
+                    aws_tags = self.get_aws_tags(endpoint_details["EndpointArn"])
 
-                # Getting the endpoint configuration can fail so account for that
-                try:
-                    endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
-                    production_variant = endpoint_config["ProductionVariants"][0]
-                    # Determine instance type or serverless configuration
-                    instance_type = production_variant.get("InstanceType")
-                    if instance_type is None:
-                        # If no instance type, it's a serverless configuration
-                        mem_size = production_variant["ServerlessConfig"]["MemorySizeInMB"]
-                        concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
-                        instance_type = f"Serverless ({mem_size // 1024}GB/{concurrency})"
-                except self.sm_client.exceptions.ClientError:
-                    # If the endpoint config is not found, change the config name to reflect this
-                    endpoint_config_name = f"{endpoint_config_name} (Not Found)"
-                    production_variant = {}
-                    instance_type = "Unknown"
+                    # Getting the endpoint configuration
+                    config_info = self._endpoint_config_info(endpoint_details["EndpointConfigName"])
+                    endpoint_details["config"] = config_info
 
-                # Check if the endpoint has monitoring enabled
-                endpoint_monitored = is_monitored(endpoint_name, self.sm_client)
+                    # Check if the endpoint has monitoring enabled
+                    endpoint_details["monitored"] = is_monitored(endpoint_name, self.sm_client)
 
                 # Compile endpoint summary
+                created = datetime_string(endpoint_details["CreationTime"]) if "CreationTime" in endpoint_details else "-"
                 summary = {
                     "Name": endpoint_name,
-                    "Health": health_tags,
+                    "Health": aws_tags.get("workbench_health_tags", ""),
                     "Owner": aws_tags.get("workbench_owner", "-"),
-                    "Instance": instance_type,
-                    "Created": datetime_string(endpoint_info.get("CreationTime")),
+                    "Instance": endpoint_details["config"]["instance"],
+                    "Created": created,
                     "Input": aws_tags.get("workbench_input", "-"),
-                    "Status": endpoint_info["EndpointStatus"],
-                    "Config": endpoint_config_name,
-                    "Variant": production_variant.get("VariantName", "-"),
-                    "Capture": str(endpoint_info.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
-                    "Samp(%)": str(endpoint_info.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
+                    "Status": endpoint_details.get("EndpointStatus", "-"),
+                    "Config": endpoint_details.get("EndpointConfigName", "-"),
+                    "Variant": endpoint_details["config"]["variant"],
+                    "Capture": str(endpoint_details.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
+                    "Samp(%)": str(endpoint_details.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
                     "Tags": aws_tags.get("workbench_tags", "-"),
-                    "Monitored": endpoint_monitored,
+                    "Monitored": endpoint_details["monitored"],
                 }
                 data_summary.append(summary)
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(data_summary).convert_dtypes()
         return df.sort_values(by="Created", ascending=False)
+
+    def _endpoint_config_info(self, endpoint_config_name: str) -> dict:
+        """Internal: Get the Endpoint Configuration information for the given endpoint config name.
+
+        Args:
+            endpoint_config_name (str): The name of the endpoint configuration.
+
+        Returns:
+            dict: The endpoint configuration details.
+        """
+
+        # Retrieve the endpoint configuration
+        try:
+            endpoint_config = self.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
+            production_variant = endpoint_config["ProductionVariants"][0]
+
+            # Determine instance type or serverless configuration
+            instance_type = production_variant.get("InstanceType")
+            if instance_type is None:
+                # If no instance type, it's a serverless configuration
+                mem_size = production_variant["ServerlessConfig"]["MemorySizeInMB"]
+                concurrency = production_variant["ServerlessConfig"]["MaxConcurrency"]
+                instance_type = f"Serverless ({mem_size // 1024}GB/{concurrency})"
+
+            return {"instance": instance_type, "variant": production_variant.get("VariantName", "-")}
+        except self.sm_client.exceptions.ClientError as e:
+            self.log.error(f"Error retrieving endpoint config {endpoint_config_name}: {e}")
+            return {"instance": "-", "variant": "-"}
 
     def pipelines(self) -> pd.DataFrame:
         """List all the Pipelines in the S3 Bucket
@@ -711,6 +728,7 @@ if __name__ == "__main__":
     # Create the class
     meta = AWSMeta()
 
+    """
     # Test the __repr__ method
     print(meta)
 
@@ -758,10 +776,14 @@ if __name__ == "__main__":
     start_time = time.time()
     pprint(meta.models(details=True))
     print(f"Elapsed Time Model (with details): {time.time() - start_time:.2f}")
-
+    """
     # Get the Endpoints
     print("\n\n*** Endpoints ***")
     pprint(meta.endpoints())
+
+    # Get the Endpoints with Details
+    print("\n\n*** Endpoints with Details ***")
+    pprint(meta.endpoints(details=True))
 
     # List Pipelines
     print("\n\n*** Workbench Pipelines ***")
