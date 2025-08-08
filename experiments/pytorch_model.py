@@ -35,8 +35,10 @@ from typing import List, Tuple
 
 # Template Parameters
 TEMPLATE_PARAMS = {
-    "model_type": "regressor",
-    "target_column": "solubility",
+    # "model_type": "regressor",
+    "model_type": "classifier",
+    # "target_column": "solubility",
+    "target_column": "solubility_class",
     "features": [
         "molwt",
         "mollogp",
@@ -221,6 +223,114 @@ def decompress_features(
     return df, decompressed_features
 
 
+def model_fn(model_dir):
+    """Deserialize and return fitted PyTorch Tabular model"""
+    model_path = os.path.join(model_dir, "tabular_model")
+    model = TabularModel.load_model(model_path)
+    return model
+
+
+def input_fn(input_data, content_type):
+    """Parse input data and return a DataFrame."""
+    if not input_data:
+        raise ValueError("Empty input data is not supported!")
+
+    # Decode bytes to string if necessary
+    if isinstance(input_data, bytes):
+        input_data = input_data.decode("utf-8")
+
+    if "text/csv" in content_type:
+        return pd.read_csv(StringIO(input_data))
+    elif "application/json" in content_type:
+        return pd.DataFrame(json.loads(input_data))  # Assumes JSON array of records
+    else:
+        raise ValueError(f"{content_type} not supported!")
+
+
+def output_fn(output_df, accept_type):
+    """Supports both CSV and JSON output formats."""
+    if "text/csv" in accept_type:
+        csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
+        return csv_output, "text/csv"
+    elif "application/json" in accept_type:
+        return output_df.to_json(orient="records"), "application/json"  # JSON array of records (NaNs -> null)
+    else:
+        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
+
+
+def predict_fn(df, model) -> pd.DataFrame:
+    """Make Predictions with our PyTorch Tabular Model
+
+    Args:
+        df (pd.DataFrame): The input DataFrame
+        model: The TabularModel use for predictions
+
+    Returns:
+        pd.DataFrame: The DataFrame with the predictions added
+    """
+    compressed_features = TEMPLATE_PARAMS["compressed_features"]
+
+    # Grab our feature columns (from training)
+    model_dir = os.environ.get("SM_MODEL_DIR", "pytorch_outputs")
+    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
+        features = json.load(fp)
+    print(f"Model Features: {features}")
+
+    # Load the category mappings (from training)
+    with open(os.path.join(model_dir, "category_mappings.json")) as fp:
+        category_mappings = json.load(fp)
+
+    # Load our Label Encoder if we have one
+    label_encoder = None
+    if os.path.exists(os.path.join(model_dir, "label_encoder.joblib")):
+        label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.joblib"))
+
+    # We're going match features in a case-insensitive manner, accounting for all the permutations
+    # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
+    # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
+    matched_df = match_features_case_insensitive(df, features)
+
+    # Detect categorical types in the incoming DataFrame
+    matched_df, _ = convert_categorical_types(matched_df, features, category_mappings)
+
+    # If we have compressed features, decompress them
+    if compressed_features:
+        print("Decompressing features for prediction...")
+        matched_df, features = decompress_features(matched_df, features, compressed_features)
+
+    # Make predictions using the TabularModel
+    result = model.predict(matched_df[features])
+
+    # pytorch-tabular returns predictions using f"{target}_prediction" column
+    # and classification probabilities in columns ending with "_probability"
+    target = TEMPLATE_PARAMS["target_column"]
+    prediction_column = f"{target}_prediction"
+    if prediction_column in result.columns:
+        predictions = result[prediction_column].values
+    else:
+        raise ValueError(f"Cannot find prediction column in: {result.columns.tolist()}")
+
+    # If we have a label encoder, decode the predictions
+    if label_encoder:
+        predictions = label_encoder.inverse_transform(predictions.astype(int))
+
+    # Set the predictions on the DataFrame
+    df["prediction"] = predictions
+
+    # For classification, get probabilities
+    if label_encoder is not None:
+        prob_cols = [col for col in result.columns if col.endswith("_probability")]
+        if prob_cols:
+            probs = result[prob_cols].values
+            df["pred_proba"] = [p.tolist() for p in probs]
+
+            # Expand the pred_proba column into separate columns for each class
+            df = expand_proba_column(df, label_encoder.classes_)
+
+    # All done, return the DataFrame with new columns for the predictions
+    return df
+
+
 if __name__ == "__main__":
     """The main function is for training the PyTorch Tabular model"""
 
@@ -236,7 +346,7 @@ if __name__ == "__main__":
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "."))
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "pytorch_outputs"))
     args = parser.parse_args()
 
     # Pull training data from a FeatureSet
@@ -294,11 +404,14 @@ if __name__ == "__main__":
 
     trainer_config = TrainerConfig(
         auto_lr_find=True,
-        batch_size=1024,
+        batch_size=min(1024, len(df_train) // 4),
         max_epochs=100,
         early_stopping="valid_loss",
-        early_stopping_patience=20,
+        early_stopping_patience=15,
+        checkpoints="valid_loss",
+        accelerator="auto",
         progress_bar="none",
+        gradient_clip_val=1.0,
     )
 
     optimizer_config = OptimizerConfig()
@@ -306,27 +419,24 @@ if __name__ == "__main__":
     # Choose model configuration based on model type
     if model_type == "classifier":
         task = "classification"
-        # Use TabNet for classification
-        model_config = TabNetModelConfig(
-            task=task,
-            learning_rate=1e-3,
-        )
-
         # Encode the target column
         label_encoder = LabelEncoder()
         df_train[target] = label_encoder.fit_transform(df_train[target])
         df_val[target] = label_encoder.transform(df_val[target])
-
     else:
         task = "regression"
-        # Use CategoryEmbedding for regression
-        model_config = CategoryEmbeddingModelConfig(
-            task=task,
-            layers="1024-512-512",
-            activation="ReLU",
-            learning_rate=1e-3,
-        )
-        label_encoder = None  # We don't need this for regression
+        label_encoder = None
+
+    # Use CategoryEmbedding for both regression and classification tasks
+    model_config = CategoryEmbeddingModelConfig(
+        task=task,
+        layers="1024-512-512",
+        activation="ReLU",
+        learning_rate=1e-3,
+        dropout=0.1,
+        use_batch_norm=True,
+        initialization="kaiming",
+    )
 
     # Create and train the TabularModel
     tabular_model = TabularModel(
@@ -341,15 +451,15 @@ if __name__ == "__main__":
 
     # Make Predictions on the Validation Set
     print(f"Making Predictions on Validation Set...")
-    result = tabular_model.predict(df_val, include_input_features=True)
+    result = tabular_model.predict(df_val, include_input_features=False)
 
-    # For regression: pytorch-tabular returns predictions using the target column name
-    # For classification: pytorch-tabular returns predictions using "prediction" column
+    # pytorch-tabular returns predictions using f"{target}_prediction" column
+    # and classification probabilities in columns ending with "_probability"
     if model_type == "classifier":
-        preds = result["prediction"].values
+        preds = result[f"{target}_prediction"].values
     else:
         # Regression: use the target column name
-        preds = result[target].values
+        preds = result[f"{target}_prediction"].values
 
     if model_type == "classifier":
         # Get probabilities for classification
@@ -370,10 +480,10 @@ if __name__ == "__main__":
     else:
         y_validate = df_val[target].values
 
-    # Save predictions to S3 (just the target, prediction, and '_proba' columns)
+    # Save predictions to S3 (just the target, prediction, and '_probability' columns)
     df_val["prediction"] = preds
     output_columns = [target, "prediction"]
-    output_columns += [col for col in df_val.columns if col.endswith("_proba")]
+    output_columns += [col for col in df_val.columns if col.endswith("_probability")]
     wr.s3.to_csv(
         df_val[output_columns],
         path=f"{model_metrics_s3_path}/validation_predictions.csv",
@@ -436,114 +546,15 @@ if __name__ == "__main__":
     with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
         json.dump(category_mappings, fp)
 
+    # Now test the prediction function
+    model = model_fn(args.model_dir)
+    test_df = df_val
+    print(f"Testing model with {len(test_df)} rows...")
+    predictions_df = predict_fn(test_df, model)
+    print(predictions_df.head())
 
-def model_fn(model_dir):
-    """Deserialize and return fitted PyTorch Tabular model"""
-    model_path = os.path.join(model_dir, "tabular_model")
-    model = TabularModel.load_model(model_path)
-    return model
-
-
-def input_fn(input_data, content_type):
-    """Parse input data and return a DataFrame."""
-    if not input_data:
-        raise ValueError("Empty input data is not supported!")
-
-    # Decode bytes to string if necessary
-    if isinstance(input_data, bytes):
-        input_data = input_data.decode("utf-8")
-
-    if "text/csv" in content_type:
-        return pd.read_csv(StringIO(input_data))
-    elif "application/json" in content_type:
-        return pd.DataFrame(json.loads(input_data))  # Assumes JSON array of records
-    else:
-        raise ValueError(f"{content_type} not supported!")
-
-
-def output_fn(output_df, accept_type):
-    """Supports both CSV and JSON output formats."""
-    if "text/csv" in accept_type:
-        csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
-        return csv_output, "text/csv"
-    elif "application/json" in accept_type:
-        return output_df.to_json(orient="records"), "application/json"  # JSON array of records (NaNs -> null)
-    else:
-        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
-
-
-def predict_fn(df, model) -> pd.DataFrame:
-    """Make Predictions with our PyTorch Tabular Model
-
-    Args:
-        df (pd.DataFrame): The input DataFrame
-        model: The TabularModel use for predictions
-
-    Returns:
-        pd.DataFrame: The DataFrame with the predictions added
-    """
-    compressed_features = TEMPLATE_PARAMS["compressed_features"]
-
-    # Grab our feature columns (from training)
-    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
-    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
-        features = json.load(fp)
-    print(f"Model Features: {features}")
-
-    # Load the category mappings (from training)
-    with open(os.path.join(model_dir, "category_mappings.json")) as fp:
-        category_mappings = json.load(fp)
-
-    # Load our Label Encoder if we have one
-    label_encoder = None
-    if os.path.exists(os.path.join(model_dir, "label_encoder.joblib")):
-        label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.joblib"))
-
-    # We're going match features in a case-insensitive manner, accounting for all the permutations
-    # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
-    # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
-    matched_df = match_features_case_insensitive(df, features)
-
-    # Detect categorical types in the incoming DataFrame
-    matched_df, _ = convert_categorical_types(matched_df, features, category_mappings)
-
-    # If we have compressed features, decompress them
-    if compressed_features:
-        print("Decompressing features for prediction...")
-        matched_df, features = decompress_features(matched_df, features, compressed_features)
-
-    # Make predictions using the TabularModel
-    result = model.predict(matched_df)
-
-    # Extract predictions based on model type
-    # For regression: pytorch-tabular uses target column name
-    # For classification: pytorch-tabular uses "prediction" column
-    if "prediction" in result.columns:
-        predictions = result["prediction"].values
-    else:
-        # For regression, find the new column (not in original dataframe)
-        pred_cols = [col for col in result.columns if col not in matched_df.columns]
-        if pred_cols:
-            predictions = result[pred_cols[0]].values
-        else:
-            raise ValueError(f"Cannot find prediction column in: {result.columns.tolist()}")
-
-    # If we have a label encoder, decode the predictions
-    if label_encoder:
-        predictions = label_encoder.inverse_transform(predictions.astype(int))
-
-    # Set the predictions on the DataFrame
-    df["prediction"] = predictions
-
-    # For classification, get probabilities
-    if label_encoder is not None:
-        prob_cols = [col for col in result.columns if col.endswith("_probability")]
-        if prob_cols:
-            probs = result[prob_cols].values
-            df["pred_proba"] = [p.tolist() for p in probs]
-
-            # Expand the pred_proba column into separate columns for each class
-            df = expand_proba_column(df, label_encoder.classes_)
-
-    # All done, return the DataFrame with new columns for the predictions
-    return df
+    # Remove the pytorch_outputs directory if it exists
+    if os.path.exists("pytorch_outputs"):
+        import shutil
+        shutil.rmtree("pytorch_outputs")
+        print("Removed pytorch_outputs directory.")

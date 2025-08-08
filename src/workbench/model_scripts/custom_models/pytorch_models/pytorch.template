@@ -148,7 +148,9 @@ def convert_categorical_types(df: pd.DataFrame, features: list, category_mapping
     return df, category_mappings
 
 
-def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+def decompress_features(
+    df: pd.DataFrame, features: List[str], compressed_features: List[str]
+) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the model
 
     Args:
@@ -199,235 +201,6 @@ def decompress_features(df: pd.DataFrame, features: List[str], compressed_featur
         df = pd.concat([df, new_df], axis=1)
 
     return df, decompressed_features
-
-
-if __name__ == "__main__":
-    """The main function is for training the PyTorch Tabular model"""
-
-    # Harness Template Parameters
-    target = TEMPLATE_PARAMS["target_column"]
-    features = TEMPLATE_PARAMS["features"]
-    orig_features = features.copy()
-    compressed_features = TEMPLATE_PARAMS["compressed_features"]
-    model_type = TEMPLATE_PARAMS["model_type"]
-    model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
-    train_all_data = TEMPLATE_PARAMS["train_all_data"]
-    validation_split = 0.2
-
-    # Script arguments for input/output directories
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
-    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
-    parser.add_argument(
-        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
-    )
-    args = parser.parse_args()
-
-    # Read the training data into DataFrames
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train)
-        if file.endswith(".csv")
-    ]
-    print(f"Training Files: {training_files}")
-
-    # Combine files and read them all into a single pandas dataframe
-    all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
-
-    # Check if the dataframe is empty
-    check_dataframe(all_df, "training_df")
-
-    # Features/Target output
-    print(f"Target: {target}")
-    print(f"Features: {str(features)}")
-
-    # Convert any features that might be categorical to 'category' type
-    all_df, category_mappings = convert_categorical_types(all_df, features)
-
-    # If we have compressed features, decompress them
-    if compressed_features:
-        print(f"Decompressing features {compressed_features}...")
-        all_df, features = decompress_features(all_df, features, compressed_features)
-
-    # Do we want to train on all the data?
-    if train_all_data:
-        print("Training on ALL of the data")
-        df_train = all_df.copy()
-        df_val = all_df.copy()
-
-    # Does the dataframe have a training column?
-    elif "training" in all_df.columns:
-        print("Found training column, splitting data based on training column")
-        df_train = all_df[all_df["training"]]
-        df_val = all_df[~all_df["training"]]
-    else:
-        # Just do a random training Split
-        print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(
-            all_df, test_size=validation_split, random_state=42
-        )
-    print(f"FIT/TRAIN: {df_train.shape}")
-    print(f"VALIDATION: {df_val.shape}")
-
-    # Determine categorical and continuous columns
-    categorical_cols = [col for col in features if df_train[col].dtype.name == 'category']
-    continuous_cols = [col for col in features if col not in categorical_cols]
-
-    print(f"Categorical columns: {categorical_cols}")
-    print(f"Continuous columns: {continuous_cols}")
-
-    # Set up PyTorch Tabular configuration
-    data_config = DataConfig(
-        target=[target],
-        continuous_cols=continuous_cols,
-        categorical_cols=categorical_cols,
-    )
-
-    trainer_config = TrainerConfig(
-        auto_lr_find=True,
-        batch_size=1024,
-        max_epochs=100,
-        early_stopping="valid_loss",
-        early_stopping_patience=20,
-        progress_bar="none",
-    )
-
-    optimizer_config = OptimizerConfig()
-
-    # Choose model configuration based on model type
-    if model_type == "classifier":
-        task = "classification"
-        # Use TabNet for classification
-        model_config = TabNetModelConfig(
-            task=task,
-            learning_rate=1e-3,
-        )
-
-        # Encode the target column
-        label_encoder = LabelEncoder()
-        df_train[target] = label_encoder.fit_transform(df_train[target])
-        df_val[target] = label_encoder.transform(df_val[target])
-
-    else:
-        task = "regression"
-        # Use CategoryEmbedding for regression
-        model_config = CategoryEmbeddingModelConfig(
-            task=task,
-            layers="1024-512-512",
-            activation="ReLU",
-            learning_rate=1e-3,
-        )
-        label_encoder = None  # We don't need this for regression
-
-    # Create and train the TabularModel
-    tabular_model = TabularModel(
-        data_config=data_config,
-        model_config=model_config,
-        optimizer_config=optimizer_config,
-        trainer_config=trainer_config,
-    )
-
-    # Train the model
-    tabular_model.fit(train=df_train, validation=df_val)
-
-    # Make Predictions on the Validation Set
-    print(f"Making Predictions on Validation Set...")
-    result = tabular_model.predict(df_val, include_input_features=True)
-
-    # For regression: pytorch-tabular returns predictions using the target column name
-    # For classification: pytorch-tabular returns predictions using "prediction" column
-    if model_type == "classifier":
-        preds = result["prediction"].values
-    else:
-        # Regression: use the target column name
-        preds = result[target].values
-
-    if model_type == "classifier":
-        # Get probabilities for classification
-        print("Processing Probabilities...")
-        prob_cols = [col for col in result.columns if col.endswith("_probability")]
-        if prob_cols:
-            probs = result[prob_cols].values
-            df_val["pred_proba"] = [p.tolist() for p in probs]
-
-            # Expand the pred_proba column into separate columns for each class
-            print(df_val.columns)
-            df_val = expand_proba_column(df_val, label_encoder.classes_)
-            print(df_val.columns)
-
-        # Decode the target and prediction labels
-        y_validate = label_encoder.inverse_transform(df_val[target])
-        preds = label_encoder.inverse_transform(preds.astype(int))
-    else:
-        y_validate = df_val[target].values
-
-    # Save predictions to S3 (just the target, prediction, and '_proba' columns)
-    df_val["prediction"] = preds
-    output_columns = [target, "prediction"]
-    output_columns += [col for col in df_val.columns if col.endswith("_proba")]
-    wr.s3.to_csv(
-        df_val[output_columns],
-        path=f"{model_metrics_s3_path}/validation_predictions.csv",
-        index=False,
-    )
-
-    # Report Performance Metrics
-    if model_type == "classifier":
-        # Get the label names and their integer mapping
-        label_names = label_encoder.classes_
-
-        # Calculate various model performance metrics
-        scores = precision_recall_fscore_support(
-            y_validate, preds, average=None, labels=label_names
-        )
-
-        # Put the scores into a dataframe
-        score_df = pd.DataFrame(
-            {
-                target: label_names,
-                "precision": scores[0],
-                "recall": scores[1],
-                "fscore": scores[2],
-                "support": scores[3],
-            }
-        )
-
-        # We need to get creative with the Classification Metrics
-        metrics = ["precision", "recall", "fscore", "support"]
-        for t in label_names:
-            for m in metrics:
-                value = score_df.loc[score_df[target] == t, m].iloc[0]
-                print(f"Metrics:{t}:{m} {value}")
-
-        # Compute and output the confusion matrix
-        conf_mtx = confusion_matrix(y_validate, preds, labels=label_names)
-        for i, row_name in enumerate(label_names):
-            for j, col_name in enumerate(label_names):
-                value = conf_mtx[i, j]
-                print(f"ConfusionMatrix:{row_name}:{col_name} {value}")
-
-    else:
-        # Calculate various model performance metrics (regression)
-        rmse = root_mean_squared_error(y_validate, preds)
-        mae = mean_absolute_error(y_validate, preds)
-        r2 = r2_score(y_validate, preds)
-        print(f"RMSE: {rmse:.3f}")
-        print(f"MAE: {mae:.3f}")
-        print(f"R2: {r2:.3f}")
-        print(f"NumRows: {len(df_val)}")
-
-    # Save the model to the standard place/name
-    tabular_model.save_model(os.path.join(args.model_dir, "tabular_model"))
-    if label_encoder:
-        joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
-
-    # Save the features (this will validate input during predictions)
-    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
-        json.dump(orig_features, fp)  # We save the original features, not the decompressed ones
-
-    # Save the category mappings
-    with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
-        json.dump(category_mappings, fp)
 
 
 def model_fn(model_dir):
@@ -506,20 +279,16 @@ def predict_fn(df, model) -> pd.DataFrame:
         matched_df, features = decompress_features(matched_df, features, compressed_features)
 
     # Make predictions using the TabularModel
-    result = model.predict(matched_df)
+    result = model.predict(matched_df[features])
 
-    # Extract predictions based on model type
-    # For regression: pytorch-tabular uses target column name
-    # For classification: pytorch-tabular uses "prediction" column
-    if "prediction" in result.columns:
-        predictions = result["prediction"].values
+    # pytorch-tabular returns predictions using f"{target}_prediction" column
+    # and classification probabilities in columns ending with "_probability"
+    target = TEMPLATE_PARAMS["target_column"]
+    prediction_column = f"{target}_prediction"
+    if prediction_column in result.columns:
+        predictions = result[prediction_column].values
     else:
-        # For regression, find the new column (not in original dataframe)
-        pred_cols = [col for col in result.columns if col not in matched_df.columns]
-        if pred_cols:
-            predictions = result[pred_cols[0]].values
-        else:
-            raise ValueError(f"Cannot find prediction column in: {result.columns.tolist()}")
+        raise ValueError(f"Cannot find prediction column in: {result.columns.tolist()}")
 
     # If we have a label encoder, decode the predictions
     if label_encoder:
@@ -540,3 +309,228 @@ def predict_fn(df, model) -> pd.DataFrame:
 
     # All done, return the DataFrame with new columns for the predictions
     return df
+
+
+if __name__ == "__main__":
+    """The main function is for training the PyTorch Tabular model"""
+
+    # Harness Template Parameters
+    target = TEMPLATE_PARAMS["target_column"]
+    features = TEMPLATE_PARAMS["features"]
+    orig_features = features.copy()
+    compressed_features = TEMPLATE_PARAMS["compressed_features"]
+    model_type = TEMPLATE_PARAMS["model_type"]
+    model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
+    train_all_data = TEMPLATE_PARAMS["train_all_data"]
+    validation_split = 0.2
+
+    # Script arguments for input/output directories
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
+    args = parser.parse_args()
+
+    # Read the training data into DataFrames
+    training_files = [
+        os.path.join(args.train, file)
+        for file in os.listdir(args.train)
+        if file.endswith(".csv")
+    ]
+    print(f"Training Files: {training_files}")
+
+    # Combine files and read them all into a single pandas dataframe
+    all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
+
+    # Check if the dataframe is empty
+    check_dataframe(all_df, "training_df")
+
+    # Features/Target output
+    print(f"Target: {target}")
+    print(f"Features: {str(features)}")
+
+    # Convert any features that might be categorical to 'category' type
+    all_df, category_mappings = convert_categorical_types(all_df, features)
+
+    # If we have compressed features, decompress them
+    if compressed_features:
+        print(f"Decompressing features {compressed_features}...")
+        all_df, features = decompress_features(all_df, features, compressed_features)
+
+    # Do we want to train on all the data?
+    if train_all_data:
+        print("Training on ALL of the data")
+        df_train = all_df.copy()
+        df_val = all_df.copy()
+
+    # Does the dataframe have a training column?
+    elif "training" in all_df.columns:
+        print("Found training column, splitting data based on training column")
+        df_train = all_df[all_df["training"]]
+        df_val = all_df[~all_df["training"]]
+    else:
+        # Just do a random training Split
+        print("WARNING: No training column found, splitting data with random state=42")
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
+    print(f"FIT/TRAIN: {df_train.shape}")
+    print(f"VALIDATION: {df_val.shape}")
+
+    # Determine categorical and continuous columns
+    categorical_cols = [col for col in features if df_train[col].dtype.name == "category"]
+    continuous_cols = [col for col in features if col not in categorical_cols]
+
+    print(f"Categorical columns: {categorical_cols}")
+    print(f"Continuous columns: {continuous_cols}")
+
+    # Set up PyTorch Tabular configuration
+    data_config = DataConfig(
+        target=[target],
+        continuous_cols=continuous_cols,
+        categorical_cols=categorical_cols,
+    )
+
+    trainer_config = TrainerConfig(
+        auto_lr_find=True,
+        batch_size=min(1024, len(df_train) // 4),
+        max_epochs=100,
+        early_stopping="valid_loss",
+        early_stopping_patience=15,
+        checkpoints="valid_loss",
+        accelerator="auto",
+        progress_bar="none",
+        gradient_clip_val=1.0,
+    )
+
+    optimizer_config = OptimizerConfig()
+
+    # Choose model configuration based on model type
+    if model_type == "classifier":
+        task = "classification"
+        # Encode the target column
+        label_encoder = LabelEncoder()
+        df_train[target] = label_encoder.fit_transform(df_train[target])
+        df_val[target] = label_encoder.transform(df_val[target])
+    else:
+        task = "regression"
+        label_encoder = None
+
+    # Use CategoryEmbedding for both regression and classification tasks
+    model_config = CategoryEmbeddingModelConfig(
+        task=task,
+        layers="1024-512-512",
+        activation="ReLU",
+        learning_rate=1e-3,
+        dropout=0.1,
+        use_batch_norm=True,
+        initialization="kaiming",
+    )
+
+    # Create and train the TabularModel
+    tabular_model = TabularModel(
+        data_config=data_config,
+        model_config=model_config,
+        optimizer_config=optimizer_config,
+        trainer_config=trainer_config,
+    )
+
+    # Train the model
+    tabular_model.fit(train=df_train, validation=df_val)
+
+    # Make Predictions on the Validation Set
+    print(f"Making Predictions on Validation Set...")
+    result = tabular_model.predict(df_val, include_input_features=False)
+
+    # pytorch-tabular returns predictions using f"{target}_prediction" column
+    # and classification probabilities in columns ending with "_probability"
+    if model_type == "classifier":
+        preds = result[f"{target}_prediction"].values
+    else:
+        # Regression: use the target column name
+        preds = result[f"{target}_prediction"].values
+
+    if model_type == "classifier":
+        # Get probabilities for classification
+        print("Processing Probabilities...")
+        prob_cols = [col for col in result.columns if col.endswith("_probability")]
+        if prob_cols:
+            probs = result[prob_cols].values
+            df_val["pred_proba"] = [p.tolist() for p in probs]
+
+            # Expand the pred_proba column into separate columns for each class
+            print(df_val.columns)
+            df_val = expand_proba_column(df_val, label_encoder.classes_)
+            print(df_val.columns)
+
+        # Decode the target and prediction labels
+        y_validate = label_encoder.inverse_transform(df_val[target])
+        preds = label_encoder.inverse_transform(preds.astype(int))
+    else:
+        y_validate = df_val[target].values
+
+    # Save predictions to S3 (just the target, prediction, and '_probability' columns)
+    df_val["prediction"] = preds
+    output_columns = [target, "prediction"]
+    output_columns += [col for col in df_val.columns if col.endswith("_probability")]
+    wr.s3.to_csv(
+        df_val[output_columns],
+        path=f"{model_metrics_s3_path}/validation_predictions.csv",
+        index=False,
+    )
+
+    # Report Performance Metrics
+    if model_type == "classifier":
+        # Get the label names and their integer mapping
+        label_names = label_encoder.classes_
+
+        # Calculate various model performance metrics
+        scores = precision_recall_fscore_support(y_validate, preds, average=None, labels=label_names)
+
+        # Put the scores into a dataframe
+        score_df = pd.DataFrame(
+            {
+                target: label_names,
+                "precision": scores[0],
+                "recall": scores[1],
+                "fscore": scores[2],
+                "support": scores[3],
+            }
+        )
+
+        # We need to get creative with the Classification Metrics
+        metrics = ["precision", "recall", "fscore", "support"]
+        for t in label_names:
+            for m in metrics:
+                value = score_df.loc[score_df[target] == t, m].iloc[0]
+                print(f"Metrics:{t}:{m} {value}")
+
+        # Compute and output the confusion matrix
+        conf_mtx = confusion_matrix(y_validate, preds, labels=label_names)
+        for i, row_name in enumerate(label_names):
+            for j, col_name in enumerate(label_names):
+                value = conf_mtx[i, j]
+                print(f"ConfusionMatrix:{row_name}:{col_name} {value}")
+
+    else:
+        # Calculate various model performance metrics (regression)
+        rmse = root_mean_squared_error(y_validate, preds)
+        mae = mean_absolute_error(y_validate, preds)
+        r2 = r2_score(y_validate, preds)
+        print(f"RMSE: {rmse:.3f}")
+        print(f"MAE: {mae:.3f}")
+        print(f"R2: {r2:.3f}")
+        print(f"NumRows: {len(df_val)}")
+
+    # Save the model to the standard place/name
+    tabular_model.save_model(os.path.join(args.model_dir, "tabular_model"))
+    if label_encoder:
+        joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
+
+    # Save the features (this will validate input during predictions)
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
+        json.dump(orig_features, fp)  # We save the original features, not the decompressed ones
+
+    # Save the category mappings
+    with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
+        json.dump(category_mappings, fp)
