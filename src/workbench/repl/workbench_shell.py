@@ -10,7 +10,6 @@ import botocore
 import webbrowser
 import pandas as pd
 import readline  # noqa
-from distutils.version import LooseVersion
 
 try:
     import matplotlib.pyplot as plt  # noqa
@@ -34,6 +33,7 @@ from workbench.utils.repl_utils import cprint, Spinner
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.log_utils import silence_logs, log_theme
+from workbench.api import Meta
 
 # If we have RDKIT/Mordred let's pull in our cheminformatics utils
 try:
@@ -131,8 +131,8 @@ class WorkbenchShell:
             with silence_logs():
                 self.import_workbench()
 
-        # Try cached meta (if that fails it will be set to direct meta)
-        self.try_cached_meta()
+        # Use Direct Meta by default
+        self.meta = Meta()
 
         # Register our custom commands
         self.commands["help"] = self.help
@@ -196,10 +196,7 @@ class WorkbenchShell:
 
         # Start IPython with the config and commands in the namespace
         try:
-            if LooseVersion(IPython.__version__) >= LooseVersion("9.0.0"):
-                ipython_argv = ["--no-tip", "--theme", "linux"]
-            else:
-                ipython_argv = []
+            ipython_argv = ["--no-tip", "--theme", "linux"]
             start_ipython(ipython_argv, user_ns=locs, config=config)
         finally:
             spinner = self.spinner_start("Goodbye to AWS:")
@@ -474,24 +471,7 @@ class WorkbenchShell:
             cprint("lightgreen", "\t● API Key: Enterprise")
 
     # Helpers method to switch from direct Meta to Cached Meta
-    def try_cached_meta(self):
-        from workbench.api import Meta
-        from workbench.cached.cached_meta import CachedMeta
-
-        with silence_logs():
-            self.meta = CachedMeta()
-        if self.meta.check():
-            self.meta_status = "CACHED"
-            cprint("lightblue", "Using Cached Meta...")
-        else:
-            self.meta_status = "DIRECT"
-            cprint("darkyellow", "Using Direct Meta [slower]...")
-            with silence_logs():
-                self.meta.close()
-                self.meta = Meta()
-
     def switch_to_cached_meta(self):
-        from workbench.api import Meta
         from workbench.cached.cached_meta import CachedMeta
 
         self.meta = CachedMeta()
@@ -506,7 +486,6 @@ class WorkbenchShell:
             self.meta = Meta()
 
     def switch_to_direct_meta(self):
-        from workbench.api import Meta
 
         # Close the current Meta object
         if self.meta:

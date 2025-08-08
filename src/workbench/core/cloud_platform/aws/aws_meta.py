@@ -295,7 +295,9 @@ class AWSMeta:
                     endpoint_details["monitored"] = is_monitored(endpoint_name, self.sm_client)
 
                 # Compile endpoint summary
-                created = datetime_string(endpoint_details["CreationTime"]) if "CreationTime" in endpoint_details else "-"
+                created = (
+                    datetime_string(endpoint_details["CreationTime"]) if "CreationTime" in endpoint_details else "-"
+                )
                 summary = {
                     "Name": endpoint_name,
                     "Health": aws_tags.get("workbench_health_tags", ""),
@@ -718,7 +720,6 @@ class AWSMeta:
 
 if __name__ == "__main__":
     """Exercise the Workbench AWSMeta Class"""
-    import time
     from pprint import pprint
 
     # Pandas Display Options
