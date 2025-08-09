@@ -71,13 +71,15 @@ class RedisCache:
     def check(self):
         return self.redis_db is not None
 
-    def set(self, key, value):
+    def set(self, key, value, nx=False):
         """Add an item to the redis_cache, all items are JSON serialized
+
         Args:
-               key: item key
-               value: the value associated with this key
+            key: item key
+            value: the value associated with this key
+            nx: if True, set the key only if it does not already exist
         """
-        self._set(key, json.dumps(value, cls=CustomEncoder))
+        self._set(key, json.dumps(value, cls=CustomEncoder), nx=nx)
 
     def get(self, key):
         """Get an item from the redis_cache, all items are JSON deserialized
@@ -89,12 +91,12 @@ class RedisCache:
         raw_value = self._get(key)
         return json.loads(raw_value, object_hook=custom_decoder) if raw_value else None
 
-    def _set(self, key, value):
+    def _set(self, key, value, nx=False):
         """Internal Method: Add an item to the redis_cache"""
         # Never except a key or value with a 'falsey' value
         if not key or not value:
             return
-        self.redis_db.set(self.prefix + str(key) + self.postfix, value, ex=self.expire)
+        self.redis_db.set(self.prefix + str(key) + self.postfix, value, ex=self.expire, nx=nx)
 
     def _get(self, key):
         """Internal Method: Get an item from the redis_db_cache"""
@@ -165,22 +167,20 @@ class RedisCache:
     def get_memory_config(self):
         """Get Redis memory usage and configuration settings as a dictionary"""
         info = {}
-        try:
-            memory_info = self.redis_db.info("memory")
-            info["used_memory"] = memory_info.get("used_memory", "N/A")
-            info["used_memory_human"] = memory_info.get("used_memory_human", "N/A")
-            info["mem_fragmentation_ratio"] = memory_info.get("mem_fragmentation_ratio", "N/A")
-            info["maxmemory_policy"] = memory_info.get("maxmemory_policy", "N/A")
-        except redis.exceptions.RedisError as e:
-            log.error(f"Error retrieving memory info from Redis: {e}")
 
+        # Memory info about the Redis database
+        memory_info = self.redis_db.info("memory")
+        info["used_memory"] = memory_info.get("used_memory", "N/A")
+        info["used_memory_human"] = memory_info.get("used_memory_human", "N/A")
+        info["mem_fragmentation_ratio"] = memory_info.get("mem_fragmentation_ratio", "N/A")
+        info["maxmemory_policy"] = memory_info.get("maxmemory_policy", "N/A")
+        # CONFIG commands are disabled in managed Redis services like ElastiCache
         try:
             max_memory = self.redis_db.config_get("maxmemory")
             info["maxmemory"] = max_memory.get("maxmemory", "N/A")
         except redis.exceptions.RedisError as e:
-            log.error(f"Error retrieving config info from Redis (likely unsupported command): {e}")
-            info["maxmemory"] = "Not Available - Command Restricted"
-
+            log.debug(f"CONFIG GET disabled (likely managed Redis service): {e}")
+            info["maxmemory"] = "Not Available - Managed Service"
         return info
 
     def report_memory_config(self):
