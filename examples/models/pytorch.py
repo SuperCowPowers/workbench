@@ -45,6 +45,7 @@ if recreate or not Model("aqsol-pytorch-class").exists():
         tags=["pytorch", "molecular descriptors"],
     )
     m.set_owner("BW")
+    m.set_class_labels(["low", "medium", "high"])
 
 # Create an Endpoint for the Classification Model
 if recreate or not Endpoint("aqsol-pytorch-class").exists():
