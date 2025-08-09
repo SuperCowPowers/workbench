@@ -3,7 +3,6 @@ use RedisCache if it's available, and fall back to Cache if it's not.
 """
 
 from pprint import pformat
-from contextlib import contextmanager
 from workbench.utils.cache import Cache
 from workbench.utils.redis_cache import RedisCache
 
