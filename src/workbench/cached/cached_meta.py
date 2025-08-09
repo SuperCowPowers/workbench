@@ -15,6 +15,7 @@ from workbench.utils.workbench_cache import WorkbenchCache
 # Decorator to cache method results from the Meta class
 def cache_result(method):
     """Decorator to cache method results in meta_cache"""
+
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         # Create a unique cache key based on the method name and arguments
@@ -35,6 +36,7 @@ def cache_result(method):
         result = method(self, *args, **kwargs)
         self.meta_cache.set(cache_key, result)
         return result
+
     return wrapper
 
 
