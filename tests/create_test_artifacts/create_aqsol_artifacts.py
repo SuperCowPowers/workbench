@@ -9,6 +9,7 @@ FeatureSets:
 
 Models:
     - aqsol-regression
+    - aqsol-class
     - aqsol-mol-regression
     - aqsol-mol-class
     - smiles-to-taut-md-stereo-v0
@@ -17,6 +18,7 @@ Models:
 
 Endpoints:
     - aqsol-regression
+    - aqsol-class
     - aqsol-mol-regression
     - aqsol-mol-class
     - smiles-to-taut-md-stereo-v0
@@ -61,42 +63,58 @@ if __name__ == "__main__":
         ds = DataSource("aqsol_data")
         ds.to_features("aqsol_features", id_column="id", tags=["aqsol", "public"])
 
+    aqsol_features = [
+        "molwt",
+        "mollogp",
+        "molmr",
+        "heavyatomcount",
+        "numhacceptors",
+        "numhdonors",
+        "numheteroatoms",
+        "numrotatablebonds",
+        "numvalenceelectrons",
+        "numaromaticrings",
+        "numsaturatedrings",
+        "numaliphaticrings",
+        "ringcount",
+        "tpsa",
+        "labuteasa",
+        "balabanj",
+        "bertzct",
+    ]
     # Create the aqsol solubility regression Model
     if recreate or not Model("aqsol-regression").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_features")
-        feature_list = [
-            "molwt",
-            "mollogp",
-            "molmr",
-            "heavyatomcount",
-            "numhacceptors",
-            "numhdonors",
-            "numheteroatoms",
-            "numrotatablebonds",
-            "numvalenceelectrons",
-            "numaromaticrings",
-            "numsaturatedrings",
-            "numaliphaticrings",
-            "ringcount",
-            "tpsa",
-            "labuteasa",
-            "balabanj",
-            "bertzct",
-        ]
-        feature_set.to_model(
+        m = feature_set.to_model(
             name="aqsol-regression",
             model_type=ModelType.REGRESSOR,
             target_column="solubility",
-            feature_list=feature_list,
+            feature_list=aqsol_features,
             description="AQSol Regression Model",
             tags=["aqsol", "regression"],
         )
+        m.set_owner("test")
 
     # Create the aqsol regression Endpoint
     if recreate or not Endpoint("aqsol-regression").exists():
         m = Model("aqsol-regression")
         m.to_endpoint(tags=["aqsol", "regression"])
+
+    # Create the aqsol solubility classification Model
+    if recreate or not Model("aqsol-class").exists():
+        # Compute our features
+        feature_set = FeatureSet("aqsol_features")
+        m = feature_set.to_model(
+            name="aqsol-class",
+            model_type=ModelType.CLASSIFIER,
+            target_column="solubility_class",
+            feature_list=aqsol_features,
+            description="AQSol Classification Model",
+            tags=["aqsol", "classification"],
+        )
+        m.set_owner("test")
+        m.set_class_labels(["low", "medium", "high"])
 
     #
     # Molecular Descriptor Artifacts
