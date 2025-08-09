@@ -13,7 +13,7 @@ class CachedArtifactMixin:
     # Class-level caches, thread pool, and shutdown flag
     log = logging.getLogger("workbench")
     artifact_cache = WorkbenchCache(prefix="artifact_cache")
-    fresh_cache = WorkbenchCache(prefix="artifact_fresh_cache", expire=10)
+    fresh_cache = WorkbenchCache(prefix="artifact_fresh_cache", expire=120)
     thread_pool = ThreadPoolExecutor(max_workers=5)
 
     @staticmethod
@@ -86,6 +86,9 @@ if __name__ == "__main__":
     from workbench.cached.cached_model import CachedModel
 
     my_model = CachedModel("abalone-regression")
+    pprint(my_model.summary())
+    pprint(my_model.details())
+    # Second call to demonstrate caching
     pprint(my_model.summary())
     pprint(my_model.details())
     CachedArtifactMixin._shutdown()

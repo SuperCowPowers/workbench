@@ -162,7 +162,7 @@ class MainPage(PageView):
         """
 
         # We get the dataframe from our CachedMeta and hyperlink the Name column
-        endpoint_df = self.meta.endpoints()
+        endpoint_df = self.meta.endpoints(details=True)
 
         # We might get an empty dataframe
         if endpoint_df.empty:
