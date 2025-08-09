@@ -25,7 +25,7 @@ class EndpointsPageView(PageView):
     def refresh(self):
         """Refresh the endpoint data from the Cloud Platform"""
         self.log.important("Calling endpoint page view refresh()..")
-        self.endpoints_df = self.meta.endpoints()
+        self.endpoints_df = self.meta.endpoints(details=True)
 
         # Drop the AWS URL column
         self.endpoints_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
