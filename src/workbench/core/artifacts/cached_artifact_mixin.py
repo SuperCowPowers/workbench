@@ -45,8 +45,8 @@ class CachedArtifactMixin:
                 cls.artifact_cache.set(cache_key, result)
                 return result
 
-            # Stale cache: Refresh in the background if enabled and no refresh is already in progress
-            if WorkbenchCache.refresh_enabled and cache_fresh is None:
+            # Stale cache: Refresh in the background
+            if cache_fresh is None:
                 self.log.debug(f"Async: Refresh thread started: {cache_key}...")
                 cls.fresh_cache.set(cache_key, True)
                 cls.thread_pool.submit(cls._refresh_data_in_background, self, cache_key, method, *args, **kwargs)

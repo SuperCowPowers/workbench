@@ -13,8 +13,6 @@ from workbench.utils.workbench_cache import WorkbenchCache
 
 
 # Decorator to cache method results from the Meta class
-# Note: This has to be outside the class definition to work properly in Python 3.9
-#       When we deprecated support for 3.9, move this back into the class definition
 def cache_result(method):
     """Decorator to cache method results in meta_cache"""
 
@@ -24,7 +22,7 @@ def cache_result(method):
         cache_key = CachedMeta._flatten_redis_key(method, *args, **kwargs)
 
         # Check for fresh data, spawn thread to refresh if stale
-        if WorkbenchCache.refresh_enabled and self.fresh_cache.get(cache_key) is None:
+        if self.fresh_cache.get(cache_key) is None:
             self.log.debug(f"Async: Metadata for {cache_key} refresh thread started...")
             self.fresh_cache.set(cache_key, True)  # Mark as refreshed
 

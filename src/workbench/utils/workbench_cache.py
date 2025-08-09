@@ -12,20 +12,7 @@ import logging
 log = logging.getLogger("workbench")
 
 
-# Context manager for disabling refresh
-@contextmanager
-def disable_refresh():
-    log.warning("WorkbenchCache: Disabling Refresh")
-    WorkbenchCache.refresh_enabled = False
-    yield
-    log.warning("WorkbenchCache: Enabling Refresh")
-    WorkbenchCache.refresh_enabled = True
-
-
 class WorkbenchCache:
-
-    # Class attribute to control refresh treads (on/off)
-    refresh_enabled = True
 
     def __init__(self, expire=None, prefix="", postfix=""):
         """WorkbenchCache Initialization
