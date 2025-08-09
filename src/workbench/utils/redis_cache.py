@@ -71,15 +71,26 @@ class RedisCache:
     def check(self):
         return self.redis_db is not None
 
-    def set(self, key, value, nx=False):
+    def set(self, key, value):
         """Add an item to the redis_cache, all items are JSON serialized
 
         Args:
             key: item key
             value: the value associated with this key
-            nx: if True, set the key only if it does not already exist
         """
-        self._set(key, json.dumps(value, cls=CustomEncoder), nx=nx)
+        self._set(key, json.dumps(value, cls=CustomEncoder))
+
+    def atomic_set(self, key, value) -> bool:
+        """Atomically set key to value only if key doesn't exist.
+
+        Returns:
+            True if the key was set, False if it already existed.
+        """
+        # Serialize the value to JSON
+        serialized_value = json.dumps(value, cls=CustomEncoder)
+        result = self.redis_db.set(self.prefix + str(key) + self.postfix, serialized_value, ex=self.expire, nx=True)
+        log.debug(f"Atomic Set: {key} -> {value} (Result: {result})")
+        return result is True
 
     def get(self, key):
         """Get an item from the redis_cache, all items are JSON deserialized
@@ -91,12 +102,12 @@ class RedisCache:
         raw_value = self._get(key)
         return json.loads(raw_value, object_hook=custom_decoder) if raw_value else None
 
-    def _set(self, key, value, nx=False):
+    def _set(self, key, value):
         """Internal Method: Add an item to the redis_cache"""
         # Never except a key or value with a 'falsey' value
         if not key or not value:
             return
-        self.redis_db.set(self.prefix + str(key) + self.postfix, value, ex=self.expire, nx=nx)
+        self.redis_db.set(self.prefix + str(key) + self.postfix, value, ex=self.expire)
 
     def _get(self, key):
         """Internal Method: Get an item from the redis_db_cache"""
@@ -243,6 +254,10 @@ if __name__ == "__main__":
 
     # Delete anything in the test database
     my_redis_cache.clear()
+
+    # Test the atomic set
+    assert my_redis_cache.atomic_set("foo", "bar") is True
+    assert my_redis_cache.atomic_set("foo", "baz") is False
 
     # Test storage
     my_redis_cache.set("foo", "bar")
