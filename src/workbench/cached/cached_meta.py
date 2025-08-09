@@ -15,18 +15,14 @@ from workbench.utils.workbench_cache import WorkbenchCache
 # Decorator to cache method results from the Meta class
 def cache_result(method):
     """Decorator to cache method results in meta_cache"""
-
     @wraps(method)
     def wrapper(self, *args, **kwargs):
         # Create a unique cache key based on the method name and arguments
         cache_key = CachedMeta._flatten_redis_key(method, *args, **kwargs)
 
         # Check for fresh data, spawn thread to refresh if stale
-        if self.fresh_cache.get(cache_key) is None:
-            self.log.debug(f"Async: Metadata for {cache_key} refresh thread started...")
-            self.fresh_cache.set(cache_key, True)  # Mark as refreshed
-
-            # Spawn a thread to refresh data without blocking
+        if self.fresh_cache.atomic_set(cache_key, True):
+            self.log.important(f"Async: Metadata for {cache_key} refresh thread started...")
             self.thread_pool.submit(self._refresh_data_in_background, cache_key, method, *args, **kwargs)
 
         # Return data (fresh or stale) if available
@@ -39,7 +35,6 @@ def cache_result(method):
         result = method(self, *args, **kwargs)
         self.meta_cache.set(cache_key, result)
         return result
-
     return wrapper
 
 
@@ -89,7 +84,7 @@ class CachedMeta(CloudMeta):
 
         # Create both our Meta Cache and Fresh Cache (tracks if data is stale)
         self.meta_cache = WorkbenchCache(prefix="meta")
-        self.fresh_cache = WorkbenchCache(prefix="meta_fresh", expire=90)  # 90-second expiration
+        self.fresh_cache = WorkbenchCache(prefix="meta_fresh", expire=300)  # 5-minute expiration
 
         # Create a ThreadPoolExecutor for refreshing stale data
         self.thread_pool = ThreadPoolExecutor(max_workers=5)
@@ -191,13 +186,16 @@ class CachedMeta(CloudMeta):
         return super().models(details=details)
 
     @cache_result
-    def endpoints(self) -> pd.DataFrame:
+    def endpoints(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Endpoints deployed in the Cloud Platform
+
+        Args:
+            details (bool, optional): Include detailed information. Defaults to False.
 
         Returns:
             pd.DataFrame: A summary of the Endpoints in the Cloud Platform
         """
-        return super().endpoints()
+        return super().endpoints(details=details)
 
     @cache_result
     def glue_job(self, job_name: str) -> Union[dict, None]:
@@ -264,7 +262,7 @@ class CachedMeta(CloudMeta):
         """Background task to refresh AWS metadata."""
         result = method(self, *args, **kwargs)
         self.meta_cache.set(cache_key, result)
-        self.log.debug(f"Updated Metadata for {cache_key}")
+        self.log.important(f"Updated Metadata for {cache_key}")
 
     @staticmethod
     def _flatten_redis_key(method, *args, **kwargs):
