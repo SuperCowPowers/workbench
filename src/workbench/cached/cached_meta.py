@@ -62,7 +62,7 @@ class CachedMeta(CloudMeta):
        meta.data_sources()
        meta.feature_sets(details=True/False)
        meta.models(details=True/False)
-       meta.endpoints()
+       meta.endpoints(details=True/False)
        meta.views()
 
        # These are 'describe' methods
