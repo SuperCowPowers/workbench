@@ -79,9 +79,9 @@ class ModelToEndpoint(Transform):
         )
 
         # Log the image that will be used for deployment
-        inference_image = self.sm_client.describe_model_package(
-            ModelPackageName=model_package_arn
-        )['InferenceSpecification']['Containers'][0]['Image']
+        inference_image = self.sm_client.describe_model_package(ModelPackageName=model_package_arn)[
+            "InferenceSpecification"
+        ]["Containers"][0]["Image"]
         self.log.important(f"Deploying Model Package: {self.input_name} with Inference Image: {inference_image}")
 
         # Get the metadata/tags to push into AWS
