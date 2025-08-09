@@ -7,7 +7,7 @@ feature_list = model.features()
 target = model.target()
 
 # Recreate Flag in case you want to recreate the artifacts
-recreate = True
+recreate = False
 
 # PyTorch Regression Model
 if recreate or not Model("aqsol-pytorch-reg").exists():
@@ -26,7 +26,7 @@ if recreate or not Model("aqsol-pytorch-reg").exists():
 # Create an Endpoint for the Regression Model
 if recreate or not Endpoint("aqsol-pytorch-reg").exists():
     m = Model("aqsol-pytorch-reg")
-    end = m.to_endpoint(tags=["pytorch", "molecular descriptors"], serverless=False)
+    end = m.to_endpoint(tags=["pytorch", "molecular descriptors"])
     end.set_owner("BW")
 
     # Run inference on the endpoint
@@ -49,7 +49,7 @@ if recreate or not Model("aqsol-pytorch-class").exists():
 # Create an Endpoint for the Classification Model
 if recreate or not Endpoint("aqsol-pytorch-class").exists():
     m = Model("aqsol-pytorch-class")
-    end = m.to_endpoint(tags=["pytorch", "molecular descriptors"], serverless=False)
+    end = m.to_endpoint(tags=["pytorch", "molecular descriptors"])
     end.set_owner("BW")
 
     # Run inference on the endpoint
