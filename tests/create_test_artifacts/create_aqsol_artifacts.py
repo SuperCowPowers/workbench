@@ -99,7 +99,9 @@ if __name__ == "__main__":
     # Create the aqsol regression Endpoint
     if recreate or not Endpoint("aqsol-regression").exists():
         m = Model("aqsol-regression")
-        m.to_endpoint(tags=["aqsol", "regression"])
+        end = m.to_endpoint(tags=["aqsol", "regression"])
+        end.set_owner("test")
+        end.auto_inference(capture=True)
 
     # Create the aqsol solubility classification Model
     if recreate or not Model("aqsol-class").exists():
@@ -115,6 +117,13 @@ if __name__ == "__main__":
         )
         m.set_owner("test")
         m.set_class_labels(["low", "medium", "high"])
+
+    # Create the aqsol classification Endpoint
+    if recreate or not Endpoint("aqsol-class").exists():
+        m = Model("aqsol-class")
+        end = m.to_endpoint(tags=["aqsol", "classification"])
+        end.set_owner("test")
+        end.auto_inference(capture=True)
 
     #
     # Molecular Descriptor Artifacts
