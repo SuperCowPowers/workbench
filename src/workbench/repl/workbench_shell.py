@@ -1,4 +1,3 @@
-import IPython
 from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
@@ -10,7 +9,6 @@ import botocore
 import webbrowser
 import pandas as pd
 import readline  # noqa
-from distutils.version import LooseVersion
 
 try:
     import matplotlib.pyplot as plt  # noqa
@@ -34,6 +32,8 @@ from workbench.utils.repl_utils import cprint, Spinner
 from workbench.utils.workbench_logging import IMPORTANT_LEVEL_NUM, TRACE_LEVEL_NUM
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.log_utils import silence_logs, log_theme
+from workbench.api import Meta
+from workbench.cached.cached_meta import CachedMeta
 
 # If we have RDKIT/Mordred let's pull in our cheminformatics utils
 try:
@@ -196,10 +196,7 @@ class WorkbenchShell:
 
         # Start IPython with the config and commands in the namespace
         try:
-            if LooseVersion(IPython.__version__) >= LooseVersion("9.0.0"):
-                ipython_argv = ["--no-tip", "--theme", "linux"]
-            else:
-                ipython_argv = []
+            ipython_argv = ["--no-tip", "--theme", "linux"]
             start_ipython(ipython_argv, user_ns=locs, config=config)
         finally:
             spinner = self.spinner_start("Goodbye to AWS:")
@@ -255,7 +252,7 @@ class WorkbenchShell:
 
     def import_workbench(self):
         # Import all the Workbench modules
-        spinner = self.spinner_start("Importing Workbench:")
+        spinner = self.spinner_start("Spinning up Workbench:")
         try:
             # These are the classes we want to expose to the REPL
             self.commands["DataSource"] = importlib.import_module("workbench.api.data_source").DataSource
@@ -475,8 +472,6 @@ class WorkbenchShell:
 
     # Helpers method to switch from direct Meta to Cached Meta
     def try_cached_meta(self):
-        from workbench.api import Meta
-        from workbench.cached.cached_meta import CachedMeta
 
         with silence_logs():
             self.meta = CachedMeta()
