@@ -249,6 +249,7 @@ class FeaturesToModel(Transform):
         training_job_name = f"{self.output_name}-{training_date_time_utc}"
 
         # Train the estimator
+        self.log.important(f"Training the Model {self.output_name} with Training Image {image}...")
         self.estimator.fit({"train": s3_training_path}, job_name=training_job_name)
 
         # Now delete the training data
@@ -300,7 +301,7 @@ class FeaturesToModel(Transform):
         image = ModelImages.get_image_uri(
             self.sm_session.boto_region_name, self.inference_image, "0.1", self.inference_arch
         )
-        self.log.important(f"Registering model {self.output_name} with image {image}...")
+        self.log.important(f"Registering model {self.output_name} with Inference Image {image}...")
         model = self.estimator.create_model(role=self.workbench_role_arn)
         if aws_region:
             self.log.important(f"Setting AWS Region: {aws_region} for model {self.output_name}...")

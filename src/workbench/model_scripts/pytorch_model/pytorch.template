@@ -205,6 +205,8 @@ def decompress_features(
 
 def model_fn(model_dir):
     """Deserialize and return fitted PyTorch Tabular model"""
+    # Pytorch Tabular needs write access (creates a .pt_tmp directory)
+    os.environ['TMPDIR'] = '/tmp'
     model_path = os.path.join(model_dir, "tabular_model")
     model = TabularModel.load_model(model_path)
     return model
