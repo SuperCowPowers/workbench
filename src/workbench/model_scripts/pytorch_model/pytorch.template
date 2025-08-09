@@ -8,7 +8,7 @@ import numpy as np
 os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
 from pytorch_tabular import TabularModel
 from pytorch_tabular.config import DataConfig, OptimizerConfig, TrainerConfig
-from pytorch_tabular.models import CategoryEmbeddingModelConfig, TabNetModelConfig
+from pytorch_tabular.models import CategoryEmbeddingModelConfig
 
 # Model Performance Scores
 from sklearn.metrics import (
@@ -451,7 +451,7 @@ if __name__ == "__main__":
     tabular_model.fit(train=df_train, validation=df_val)
 
     # Make Predictions on the Validation Set
-    print(f"Making Predictions on Validation Set...")
+    print("Making Predictions on Validation Set...")
     result = tabular_model.predict(df_val, include_input_features=False)
 
     # pytorch-tabular returns predictions using f"{target}_prediction" column
