@@ -68,6 +68,21 @@ class WorkbenchCache:
     def clear(self):
         return self._actual_cache.clear()
 
+    def atomic_set(self, key, value) -> bool:
+        """Atomically set key to value only if key doesn't exist.
+
+        Returns:
+             True if the key was set, False if it already existed.
+        """
+        if self._using_redis:
+            return self._actual_cache.atomic_set(key, value)
+
+        # In-Memory Cache does not support atomic operations, so we simulate it
+        else:
+            key_exists = self._actual_cache.get(key) is not None
+            self._actual_cache.set(key, value)
+            return not key_exists
+
     def show_size_details(self, value):
         """Print the size of the sub-parts of the value"""
         try:
@@ -103,6 +118,10 @@ if __name__ == "__main__":
 
     # Delete anything in the test database
     my_cache.clear()
+
+    # Test the atomic set
+    assert my_cache.atomic_set("foo", "bar") is True
+    assert my_cache.atomic_set("foo", "baz") is False  # Should not overwrite
 
     # Test storage
     my_cache.set("foo", "bar")
@@ -153,3 +172,4 @@ if __name__ == "__main__":
     my_cache.set("df", df)
     df = my_cache.get("df")
     print(df)
+    my_cache.clear()
