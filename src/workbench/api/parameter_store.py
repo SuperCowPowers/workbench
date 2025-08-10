@@ -133,3 +133,8 @@ if __name__ == "__main__":
     # Out of scope tests
     param_store.upsert("test", "value")
     param_store.delete("test")
+
+    # Recursive delete test
+    param_store.upsert("/workbench/test/test1", "value1")
+    param_store.upsert("/workbench/test/test2", "value2")
+    param_store.delete_recursive(f"workbench/test/")

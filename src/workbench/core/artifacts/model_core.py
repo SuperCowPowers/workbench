@@ -926,15 +926,15 @@ class ModelCore(Artifact):
         wr.s3.delete_objects(s3_delete_path, boto3_session=cls.boto3_session)
 
         # Delete any dataframes that were stored in the Dataframe Cache
-        cls.log.info("Deleting Dataframe Cache...")
+        cls.log.info("Deleting Dataframe Cache Entries...")
         cls.df_cache.delete_recursive(model_group_name)
 
         # Delete any dataframes that were stored in the Dataframe Store
-        cls.log.info("Deleting Dataframe Store...")
+        cls.log.info("Deleting Dataframe Store Entries...")
         cls.df_store.delete_recursive(f"workbench/models/{model_group_name}")
 
         # Delete anything we might have stored in the Parameter Store
-        cls.log.info("Deleting Parameter Store...")
+        cls.log.info("Deleting Parameter Store Entries...")
         cls.param_store.delete_recursive(f"workbench/models/{model_group_name}")
 
     def _set_model_type(self, model_type: ModelType):

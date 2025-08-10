@@ -727,6 +727,7 @@ class WorkbenchCoreStack(Stack):
             self.glue_databases_read(),
             self.athena_read(),
             self.cloudwatch_logs(),
+            self.parameter_store_discover(),
             self.parameter_store_read(),
         ]
 
@@ -746,6 +747,7 @@ class WorkbenchCoreStack(Stack):
             self.glue_databases_full(),
             self.athena_read(),
             self.cloudwatch_logs(),
+            self.parameter_store_discover(),
             self.parameter_store_full(),
         ]
 
@@ -766,7 +768,8 @@ class WorkbenchCoreStack(Stack):
             self.featurestore_discovery(),
             self.featurestore_full(),
             self.cloudwatch_logs(),
-            self.parameter_store_full(),
+            self.parameter_store_discover(),
+            self.parameter_store_read(),
         ]
         return iam.ManagedPolicy(
             self,
@@ -785,6 +788,7 @@ class WorkbenchCoreStack(Stack):
             self.featurestore_discovery(),
             self.featurestore_full(),
             self.cloudwatch_logs(),
+            self.parameter_store_discover(),
             self.parameter_store_full(),
         ]
         return iam.ManagedPolicy(
@@ -823,6 +827,7 @@ class WorkbenchCoreStack(Stack):
             self.models_discovery(),
             self.models_read(),
             self.cloudwatch_logs(),
+            self.parameter_store_discover(),
             self.parameter_store_read(),
         ]
         return iam.ManagedPolicy(
@@ -843,6 +848,7 @@ class WorkbenchCoreStack(Stack):
             self.cloudwatch_metrics(),
             self.cloudwatch_logs(),
             self.sagemaker_pass_role_policy(),
+            self.parameter_store_discover(),
             self.parameter_store_full(),
         ]
         return iam.ManagedPolicy(
@@ -859,6 +865,7 @@ class WorkbenchCoreStack(Stack):
             self.endpoint_read(),
             self.endpoint_monitoring_discovery(),
             self.cloudwatch_logs(),
+            self.parameter_store_discover(),
             self.parameter_store_read(),
         ]
         return iam.ManagedPolicy(
@@ -878,6 +885,7 @@ class WorkbenchCoreStack(Stack):
             self.endpoint_monitoring_schedules(),
             self.cloudwatch_metrics(),
             self.cloudwatch_logs(),
+            self.parameter_store_discover(),
             self.parameter_store_full(),
         ]
         return iam.ManagedPolicy(
