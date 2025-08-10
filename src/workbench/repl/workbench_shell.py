@@ -69,7 +69,12 @@ if not ConfigManager().config_okay():
     onboard()
 
 # Set the log level to important
-# logging.getLogger("workbench").setLevel(IMPORTANT_LEVEL_NUM)
+log = logging.getLogger("workbench")
+log.setLevel(IMPORTANT_LEVEL_NUM)
+log.addFilter(lambda record: not (
+    record.getMessage().startswith("Async: Metadata") or
+    record.getMessage().startswith("Updated Metadata")
+))
 
 
 # We want to customize our prompt colors
