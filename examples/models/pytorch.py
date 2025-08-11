@@ -20,7 +20,7 @@ if recreate or not Model("aqsol-pytorch-reg").exists():
         target_column=target,
         description="PyTorch Regression Model for AQSol",
         tags=["pytorch", "molecular descriptors"],
-        hyperparameters={"max_epochs": 150}
+        hyperparameters={"max_epochs": 150},
     )
     m.set_owner("BW")
 

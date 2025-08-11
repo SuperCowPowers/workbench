@@ -442,8 +442,7 @@ if __name__ == "__main__":
     }
 
     # Override defaults with any provided hyperparameters for trainer
-    trainer_params = {**trainer_defaults, **{k: v for k, v in hyperparameters.items()
-                                             if k in trainer_defaults}}
+    trainer_params = {**trainer_defaults, **{k: v for k, v in hyperparameters.items() if k in trainer_defaults}}
     trainer_config = TrainerConfig(**trainer_params)
 
     # Model config defaults
@@ -456,13 +455,9 @@ if __name__ == "__main__":
         "initialization": "kaiming",
     }
     # Override defaults with any provided hyperparameters for model
-    model_params = {**model_defaults, **{k: v for k, v in hyperparameters.items()
-                                         if k in model_defaults}}
+    model_params = {**model_defaults, **{k: v for k, v in hyperparameters.items() if k in model_defaults}}
     # Use CategoryEmbedding for both regression and classification tasks
-    model_config = CategoryEmbeddingModelConfig(
-        task=task,
-        **model_params
-    )
+    model_config = CategoryEmbeddingModelConfig(task=task, **model_params)
     optimizer_config = OptimizerConfig()
 
     #####################################
