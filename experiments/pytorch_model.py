@@ -61,6 +61,17 @@ TEMPLATE_PARAMS = {
     "compressed_features": [],
     "model_metrics_s3_path": "s3://sandbox-sageworks-artifacts/models/aqsol-pytorch-reg/training",
     "train_all_data": False,
+    "hyperparameters": {
+        "learning_rate": 0.001,
+        "batch_size": 64,
+        "max_epochs": 100,
+        "early_stopping_patience": 10,
+        "layers": "512-256",
+        "activation": "ReLU",
+        "dropout": 0.1,
+        "use_batch_norm": True,
+        "initialization": "kaiming",
+    },
 }
 
 
@@ -342,6 +353,7 @@ if __name__ == "__main__":
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
+    hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
     validation_split = 0.2
 
     # Script arguments for input/output directories
@@ -402,21 +414,7 @@ if __name__ == "__main__":
         categorical_cols=categorical_cols,
     )
 
-    trainer_config = TrainerConfig(
-        auto_lr_find=True,
-        batch_size=min(1024, len(df_train) // 4),
-        max_epochs=100,
-        early_stopping="valid_loss",
-        early_stopping_patience=15,
-        checkpoints="valid_loss",
-        accelerator="auto",
-        progress_bar="none",
-        gradient_clip_val=1.0,
-    )
-
-    optimizer_config = OptimizerConfig()
-
-    # Choose model configuration based on model type
+    # Choose the 'task' based on model type also set up the label encoder if needed
     if model_type == "classifier":
         task = "classification"
         # Encode the target column
@@ -427,26 +425,55 @@ if __name__ == "__main__":
         task = "regression"
         label_encoder = None
 
+    # Use any hyperparameters to set up both the trainer and model configurations
+    print(f"Hyperparameters: {hyperparameters}")
+
+    # Set up PyTorch Tabular configuration with defaults
+    trainer_defaults = {
+        "auto_lr_find": True,
+        "batch_size": min(1024, max(32, len(df_train) // 4)),
+        "max_epochs": 100,
+        "early_stopping": "valid_loss",
+        "early_stopping_patience": 15,
+        "checkpoints": "valid_loss",
+        "accelerator": "auto",
+        "progress_bar": "none",
+        "gradient_clip_val": 1.0,
+    }
+
+    # Override defaults with any provided hyperparameters for trainer
+    trainer_params = {**trainer_defaults, **{k: v for k, v in hyperparameters.items()
+                                             if k in trainer_defaults}}
+    trainer_config = TrainerConfig(**trainer_params)
+
+    # Model config defaults
+    model_defaults = {
+        "layers": "1024-512-512",
+        "activation": "ReLU",
+        "learning_rate": 1e-3,
+        "dropout": 0.1,
+        "use_batch_norm": True,
+        "initialization": "kaiming",
+    }
+    # Override defaults with any provided hyperparameters for model
+    model_params = {**model_defaults, **{k: v for k, v in hyperparameters.items()
+                                         if k in model_defaults}}
     # Use CategoryEmbedding for both regression and classification tasks
     model_config = CategoryEmbeddingModelConfig(
         task=task,
-        layers="1024-512-512",
-        activation="ReLU",
-        learning_rate=1e-3,
-        dropout=0.1,
-        use_batch_norm=True,
-        initialization="kaiming",
+        **model_params
     )
+    optimizer_config = OptimizerConfig()
 
-    # Create and train the TabularModel
+    #####################################
+    # Create and train the TabularModel #
+    #####################################
     tabular_model = TabularModel(
         data_config=data_config,
         model_config=model_config,
         optimizer_config=optimizer_config,
         trainer_config=trainer_config,
     )
-
-    # Train the model
     tabular_model.fit(train=df_train, validation=df_val)
 
     # Make Predictions on the Validation Set

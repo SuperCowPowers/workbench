@@ -93,6 +93,7 @@ def generate_model_script(template_params: dict) -> str:
             - feature_list (list[str]): A list of columns for the features
             - model_metrics_s3_path (str): The S3 path to store the model metrics
             - train_all_data (bool): Whether to train on all (100%) of the data
+            - hyperparameters (dict, optional): Hyperparameters for the model (default: None)
 
     Returns:
         str: The name of the generated model script
@@ -104,6 +105,9 @@ def generate_model_script(template_params: dict) -> str:
         if template_params["model_class"].lower() == "pytorch":
             template_name = "pytorch.template"
             model_script_dir = "pytorch_model"
+            # Put in a default hyperparameters dict if not provided
+            if "hyperparameters" not in template_params:
+                template_params["hyperparameters"] = {}
         else:
             template_name = "scikit_learn.template"
             model_script_dir = "scikit_learn"

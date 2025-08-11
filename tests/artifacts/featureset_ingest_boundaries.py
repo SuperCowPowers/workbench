@@ -70,6 +70,9 @@ def test_underflow():
     rejected_ids = original_ids - ingested_ids
     print(f"Rejected IDs (due to underflow or ingest errors): {rejected_ids}")
 
+    # Delete the FeatureSet after testing
+    fs.delete()
+
 
 @pytest.mark.long
 def test_overflow_nan_inf():
@@ -114,6 +117,9 @@ def test_overflow_nan_inf():
     ingested_ids = set(fs_df["id"])
     rejected_ids = original_ids - ingested_ids
     print(f"Rejected IDs (due to overflow, NaN, or INF): {rejected_ids}")
+
+    # Delete the FeatureSet after testing
+    fs.delete()
 
 
 if __name__ == "__main__":

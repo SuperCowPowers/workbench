@@ -108,6 +108,7 @@ class FeatureSet(FeatureSetCore):
             training_image (str, optional): The training image to use (default: "xgb_training")
             inference_image (str, optional): The inference image to use (default: "xgb_inference")
             inference_arch (str, optional): The architecture to use for inference (default: "x86_64")
+            kwargs (dict, optional): Additional keyword arguments to pass to the model
 
         Returns:
             Model: The Model created from the FeatureSet (or None if the Model could not be created)
