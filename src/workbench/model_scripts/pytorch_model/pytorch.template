@@ -449,7 +449,10 @@ if __name__ == "__main__":
     # Override defaults with any provided hyperparameters for model
     model_params = {**model_defaults, **{k: v for k, v in hyperparameters.items()
                                          if k in model_defaults}}
-    # Use CategoryEmbedding for both regression and classification tasks
+
+    # Use CategoryEmbedding model configuration for general-purpose tabular modeling.
+    # Works effectively for both regression and classification as the foundational
+    # architecture in PyTorch Tabular
     model_config = CategoryEmbeddingModelConfig(
         task=task,
         **model_params

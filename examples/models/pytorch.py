@@ -7,7 +7,7 @@ feature_list = model.features()
 target = model.target()
 
 # Recreate Flag in case you want to recreate the artifacts
-recreate = True
+recreate = False
 
 # PyTorch Regression Model
 if recreate or not Model("aqsol-pytorch-reg").exists():
@@ -20,7 +20,7 @@ if recreate or not Model("aqsol-pytorch-reg").exists():
         target_column=target,
         description="PyTorch Regression Model for AQSol",
         tags=["pytorch", "molecular descriptors"],
-        hyperparameters={"max_epochs": 150},
+        hyperparameters={"layers": "256-512-512", "max_epochs": 150},
     )
     m.set_owner("BW")
 
@@ -44,6 +44,7 @@ if recreate or not Model("aqsol-pytorch-class").exists():
         target_column="solubility_class",
         description="PyTorch Classification Model for AQSol",
         tags=["pytorch", "molecular descriptors"],
+        hyperparameters={"layers": "1024-512", "max_epochs": 50},
     )
     m.set_owner("BW")
     m.set_class_labels(["low", "medium", "high"])
