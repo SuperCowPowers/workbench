@@ -164,6 +164,7 @@ class FeaturesToModel(Transform):
             "model_metrics_s3_path": self.model_training_root,
             "train_all_data": train_all_data,
             "id_column": feature_set.id_column,
+            "hyperparameters": kwargs.get("hyperparameters", {}),
         }
 
         # Custom Script
@@ -280,11 +281,12 @@ class FeaturesToModel(Transform):
         # Call the Model onboard method
         output_model.onboard_with_args(self.model_type, self.target_column, self.model_feature_list)
 
-    def create_and_register_model(self, aws_region=None):
+    def create_and_register_model(self, aws_region=None, **kwargs):
         """Create and Register the Model
 
         Args:
             aws_region (str, optional): AWS Region to use (default None)
+            **kwargs: Additional keyword arguments to pass to the model registration
         """
 
         # Get the metadata/tags to push into AWS

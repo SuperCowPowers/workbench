@@ -68,7 +68,7 @@ def fill_template(template_path: str, params: dict, output_script: str) -> str:
         template = template.replace(placeholder, str(value))
 
     # Sanity check to ensure all placeholders were replaced
-    if "{{" in template or "}}" in template:
+    if "{{" in template and "}}" in template:
         msg = "Not all template placeholders were replaced. Please check your params."
         log.critical(msg)
         raise ValueError(msg)
@@ -105,9 +105,6 @@ def generate_model_script(template_params: dict) -> str:
         if template_params["model_class"].lower() == "pytorch":
             template_name = "pytorch.template"
             model_script_dir = "pytorch_model"
-            # Put in a default hyperparameters dict if not provided
-            if "hyperparameters" not in template_params:
-                template_params["hyperparameters"] = {}
         else:
             template_name = "scikit_learn.template"
             model_script_dir = "scikit_learn"
