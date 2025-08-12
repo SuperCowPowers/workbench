@@ -104,7 +104,6 @@ Using Workbench will minimize the time and manpower needed to incorporate AWS ML
 
 ```
 pip install workbench             # Installs Workbench with Core Dependencies
-pip install 'workbench[ml-tools]' # + Shap and NetworkX
 pip install 'workbench[ui]'       # + Plotly/Dash
 pip install 'workbench[dev]'      # + Pytest/flake8/black
 pip install 'workbench[all]'      # + All the things :)
