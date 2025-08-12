@@ -432,9 +432,13 @@ if __name__ == "__main__":
         "gradient_clip_val": 1.0,
     }
 
-    # Override defaults with any provided hyperparameters for trainer
-    trainer_params = {**trainer_defaults, **{k: v for k, v in hyperparameters.items()
-                                             if k in trainer_defaults}}
+    # Override defaults with training_config if present
+    training_overrides = {k: v for k, v in hyperparameters.get('training_config', {}).items()
+                          if k in trainer_defaults}
+    # Print overwrites
+    for key, value in training_overrides.items():
+        print(f"TRAINING CONFIG Override: {key}: {trainer_defaults[key]} → {value}")
+    trainer_params = {**trainer_defaults, **training_overrides}
     trainer_config = TrainerConfig(**trainer_params)
 
     # Model config defaults
@@ -446,9 +450,13 @@ if __name__ == "__main__":
         "use_batch_norm": True,
         "initialization": "kaiming",
     }
-    # Override defaults with any provided hyperparameters for model
-    model_params = {**model_defaults, **{k: v for k, v in hyperparameters.items()
-                                         if k in model_defaults}}
+    # Override defaults with model_config if present
+    model_overrides = {k: v for k, v in hyperparameters.get('model_config', {}).items()
+                          if k in model_defaults}
+    # Print overwrites
+    for key, value in model_overrides.items():
+        print(f"MODEL CONFIG Override: {key}: {model_defaults[key]} → {value}")
+    model_params = {**model_defaults, **model_overrides}
 
     # Use CategoryEmbedding model configuration for general-purpose tabular modeling.
     # Works effectively for both regression and classification as the foundational
