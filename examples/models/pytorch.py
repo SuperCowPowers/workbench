@@ -20,10 +20,7 @@ if recreate or not Model("aqsol-pytorch-reg").exists():
         target_column=target,
         description="PyTorch Regression Model for AQSol",
         tags=["pytorch", "molecular descriptors"],
-        hyperparameters={
-            "training_config": {"max_epochs": 150},
-            "model_config": {"layers": "128-64-32"}
-        },
+        hyperparameters={"training_config": {"max_epochs": 150}, "model_config": {"layers": "128-64-32"}},
     )
     m.set_owner("BW")
 
@@ -47,10 +44,7 @@ if recreate or not Model("aqsol-pytorch-class").exists():
         target_column="solubility_class",
         description="PyTorch Classification Model for AQSol",
         tags=["pytorch", "molecular descriptors"],
-        hyperparameters={
-            "training_config": {"max_epochs": 150},
-            "model_config": {"layers": "256-128-64"}
-        },
+        hyperparameters={"training_config": {"max_epochs": 150}, "model_config": {"layers": "256-128-64"}},
     )
     m.set_owner("BW")
     m.set_class_labels(["low", "medium", "high"])
