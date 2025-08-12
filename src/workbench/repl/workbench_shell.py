@@ -1,4 +1,6 @@
+import IPython
 from IPython import start_ipython
+from distutils.version import LooseVersion
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
 from pygments.token import Token
@@ -202,7 +204,10 @@ class WorkbenchShell:
 
         # Start IPython with the config and commands in the namespace
         try:
-            ipython_argv = ["--no-tip", "--theme", "linux"]
+            if LooseVersion(IPython.__version__) >= LooseVersion("9.0.0"):
+                ipython_argv = ["--no-tip", "--theme", "linux"]
+            else:
+                ipython_argv = []
             start_ipython(ipython_argv, user_ns=locs, config=config)
         finally:
             spinner = self.spinner_start("Goodbye to AWS:")

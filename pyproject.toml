@@ -32,7 +32,7 @@ dependencies = [
     "awswrangler >= 3.4.0",
     "sagemaker >= 2.143",
     "cryptography >= 44.0.2",
-    "ipython >=9.0.0",
+    "ipython >=8.37.0",
     "pyreadline3; sys_platform == 'win32'",
     "scikit-learn >=1.5.2",
     "xgboost >=3.0.3",
