@@ -181,9 +181,6 @@ def logging_setup(color_logs=True):
         log.debug("Debugging enabled via WORKBENCH_DEBUG environment variable.")
     else:
         log.setLevel(logging.INFO)
-        # Note: Not using the ThrottlingFilter for now
-        # throttle_filter = ThrottlingFilter(rate_seconds=5)
-        # handler.addFilter(throttle_filter)
 
     # Suppress specific logger
     logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
