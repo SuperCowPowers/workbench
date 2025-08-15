@@ -202,6 +202,24 @@ class WorkbenchCoreStack(Stack):
     #####################
     #     Glue Jobs     #
     #####################
+    def glue_job_logs(self) -> iam.PolicyStatement:
+        """Create a policy statement for Glue job CloudWatch logs.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for Glue job log interactions.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+            ],
+            resources=[
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws-glue/*",
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws-glue/*:*",
+            ],
+        )
+
     def glue_pass_role(self) -> iam.PolicyStatement:
         """Allows us to specify the Workbench-Glue role when creating a Glue Job"""
         return iam.PolicyStatement(
@@ -363,8 +381,7 @@ class WorkbenchCoreStack(Stack):
             resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:training-job/*"],
         )
 
-    @staticmethod
-    def model_training_logs() -> iam.PolicyStatement:
+    def model_training_logs(self) -> iam.PolicyStatement:
         """Create a policy statement for log interactions when training SageMaker models.
         Returns:
             iam.PolicyStatement: The policy statement for log interactions when training SageMaker models.
@@ -378,7 +395,10 @@ class WorkbenchCoreStack(Stack):
                 "logs:CreateLogStream",
                 "logs:PutLogEvents",
             ],
-            resources=["arn:aws:logs:*:*:log-group:/aws/sagemaker/*", "arn:aws:logs:*:*:log-group:/aws/sagemaker/*:*"],
+            resources=[
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/sagemaker/*",
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/sagemaker/*:*",
+            ],
         )
 
     #####################
@@ -999,6 +1019,7 @@ class WorkbenchCoreStack(Stack):
         )
 
         # Add a subset of policies for the Glue Role
+        glue_role.add_to_policy(self.glue_job_logs())
         glue_role.add_to_policy(self.parameter_store_full())
         glue_role.add_managed_policy(self.datasource_policy)
         glue_role.add_managed_policy(self.featureset_policy)
