@@ -655,6 +655,23 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
+    def cloudwatch_monitor(self) -> iam.PolicyStatement:
+        """CloudWatch logs monitoring permissions - read and describe operations
+        Returns:
+            iam.PolicyStatement: The policy statement for monitoring WorkbenchLogGroup.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "logs:DescribeLogStreams",
+                "logs:GetLogEvents",
+                "logs:FilterLogEvents",
+            ],
+            resources=[
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:WorkbenchLogGroup",
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:WorkbenchLogGroup:*",
+            ],
+        )
+
     # For CloudWatch alarm operations
     def cloudwatch_alarms(self) -> iam.PolicyStatement:
         """Create a policy statement for managing CloudWatch alarms.
@@ -954,6 +971,7 @@ class WorkbenchCoreStack(Stack):
         api_execution_role.add_to_policy(self.glue_jobs_full())
         api_execution_role.add_to_policy(self.parameter_store_discover())
         api_execution_role.add_to_policy(self.parameter_store_full())
+        api_execution_role.add_to_policy(self.cloudwatch_monitor())
         api_execution_role.add_managed_policy(self.datasource_policy)
         api_execution_role.add_managed_policy(self.featureset_policy)
         api_execution_role.add_managed_policy(self.model_policy)
