@@ -429,8 +429,11 @@ class EndpointCore(Artifact):
         # Return the prediction DataFrame
         return prediction_df
 
-    def cross_fold_inference(self) -> dict:
-        """Run cross-fold inference (only works for XGBoost models
+    def cross_fold_inference(self, nfolds: int = 5) -> dict:
+        """Run cross-fold inference (only works for XGBoost models)
+
+        Args:
+            nfolds (int): Number of folds to use for cross-fold (default: 5)
 
         Returns:
             dict: Dictionary with the cross-fold inference results
@@ -440,7 +443,7 @@ class EndpointCore(Artifact):
         model = ModelCore(self.model_name)
 
         # Compute CrossFold Metrics
-        cross_fold_metrics = cross_fold_inference(self.model_name)
+        cross_fold_metrics = cross_fold_inference(model, nfolds=nfolds)
         if cross_fold_metrics:
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/cross_fold", cross_fold_metrics)
         return cross_fold_metrics

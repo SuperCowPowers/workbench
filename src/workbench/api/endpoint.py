@@ -70,6 +70,17 @@ class Endpoint(EndpointCore):
         """
         return super().fast_inference(eval_df, threads=threads)
 
+    def cross_fold_inference(self, nfolds: int = 5) -> dict:
+        """Run cross-fold inference (only works for XGBoost models)
+
+        Args:
+            nfolds (int): The number of folds to use for cross-validation (default: 5)
+
+        Returns:
+            dict: A dictionary with fold results
+        """
+        return super().cross_fold_inference(nfolds)
+
 
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""
