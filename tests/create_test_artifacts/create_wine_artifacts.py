@@ -44,6 +44,7 @@ if __name__ == "__main__":
             description="Wine Classification Model",
         )
         m.set_owner("test")
+        m.set_class_labels(["TypeA", "TypeB", "TypeC"])
 
     # Create the wine classification Endpoint
     if recreate or not Endpoint("wine-classification").exists():

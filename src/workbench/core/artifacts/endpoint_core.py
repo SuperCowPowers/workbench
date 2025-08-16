@@ -889,9 +889,11 @@ class EndpointCore(Artifact):
 
     def generate_confusion_matrix(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the confusion matrix for this Endpoint
+
         Args:
             target_column (str): Name of the target column
             prediction_df (pd.DataFrame): DataFrame with the prediction results
+
         Returns:
             pd.DataFrame: DataFrame with the confusion matrix
         """
@@ -900,25 +902,20 @@ class EndpointCore(Artifact):
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         y_pred = prediction_df[prediction_col]
 
-        # Check if our model has class labels, if not we'll use the unique labels in the prediction
-        class_labels = ModelCore(self.model_name).class_labels()
-        if class_labels is None:
-            class_labels = sorted(list(set(y_true) | set(y_pred)))
-
-        # Compute the confusion matrix (sklearn confusion_matrix)
-        conf_mtx = confusion_matrix(y_true, y_pred, labels=class_labels)
-
-        # Create a DataFrame
-        conf_mtx_df = pd.DataFrame(conf_mtx, index=class_labels, columns=class_labels)
-        conf_mtx_df.index.name = "labels"
-
-        # Check if our model has class labels. If so make the index and columns ordered
+        # Get model class labels
         model_class_labels = ModelCore(self.model_name).class_labels()
+
+        # Use model labels if available, otherwise infer from data
         if model_class_labels:
-            self.log.important("Reordering the confusion matrix based on model class labels...")
-            conf_mtx_df.index = pd.Categorical(conf_mtx_df.index, categories=model_class_labels, ordered=True)
-            conf_mtx_df.columns = pd.Categorical(conf_mtx_df.columns, categories=model_class_labels, ordered=True)
-            conf_mtx_df = conf_mtx_df.sort_index().sort_index(axis=1)
+            self.log.important("Using model class labels for confusion matrix ordering...")
+            labels = model_class_labels
+        else:
+            labels = sorted(list(set(y_true) | set(y_pred)))
+
+        # Compute confusion matrix and create DataFrame
+        conf_mtx = confusion_matrix(y_true, y_pred, labels=labels)
+        conf_mtx_df = pd.DataFrame(conf_mtx, index=labels, columns=labels)
+        conf_mtx_df.index.name = "labels"
         return conf_mtx_df
 
     def endpoint_config_name(self) -> str:
@@ -1120,6 +1117,9 @@ if __name__ == "__main__":
     my_eval_df = fs_evaluation_data(my_endpoint)
     pred_results = my_endpoint.inference(my_eval_df, capture_name="holdout_xyz")
 
+    # Run predictions using the fast_inference method
+    fast_results = my_endpoint.fast_inference(my_eval_df)
+
     # Run Inference and metrics for a Classification Endpoint
     class_endpoint = EndpointCore("wine-classification")
     auto_predictions = class_endpoint.auto_inference()
@@ -1127,9 +1127,6 @@ if __name__ == "__main__":
     # Generate the confusion matrix
     target = "wine_class"
     print(class_endpoint.generate_confusion_matrix(target, auto_predictions))
-
-    # Run predictions using the fast_inference method
-    fast_results = my_endpoint.fast_inference(my_eval_df)
 
     # Test the class method delete (commented out for now)
     # from workbench.api import Model
