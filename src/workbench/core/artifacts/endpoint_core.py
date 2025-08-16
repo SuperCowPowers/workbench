@@ -378,15 +378,16 @@ class EndpointCore(Artifact):
             self.log.important("No model associated with this endpoint, running 'no frills' inference...")
             return self.fast_inference(eval_df)
 
+        # Grab the model features and target column
+        model = ModelCore(self.model_name)
+        features = model.features()
+        target_column = model.target()
+
         # Run predictions on the evaluation data
-        prediction_df = self._predict(eval_df, drop_error_rows)
+        prediction_df = self._predict(eval_df, features, drop_error_rows)
         if prediction_df.empty:
             self.log.warning("No predictions were made. Returning empty DataFrame.")
             return prediction_df
-
-        # Get the target column
-        model = ModelCore(self.model_name)
-        target_column = model.target()
 
         # Sanity Check that the target column is present
         if target_column and (target_column not in prediction_df.columns):
@@ -463,11 +464,12 @@ class EndpointCore(Artifact):
         """
         return fast_inference(self.name, eval_df, self.sm_session, threads=threads)
 
-    def _predict(self, eval_df: pd.DataFrame, drop_error_rows: bool = False) -> pd.DataFrame:
-        """Internal: Run prediction on the given observations in the given DataFrame
+    def _predict(self, eval_df: pd.DataFrame, features: list[str], drop_error_rows: bool = False) -> pd.DataFrame:
+        """Internal: Run prediction on observations in the given DataFrame
 
         Args:
             eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)
+            features (list[str]): List of feature column names needed for prediction
             drop_error_rows (bool): If True, drop rows that had endpoint errors/issues (default=False)
         Returns:
             pd.DataFrame: Return the DataFrame with additional columns, prediction and any _proba columns
@@ -478,19 +480,12 @@ class EndpointCore(Artifact):
             self.log.warning("Evaluation DataFrame has 0 rows. No predictions to run.")
             return pd.DataFrame(columns=eval_df.columns)  # Return empty DataFrame with same structure
 
-        # Sanity check: Does the Model have Features?
-        features = ModelCore(self.model_name).features()
-        if not features:
-            self.log.warning("Model does not have features defined, using all columns in the DataFrame")
-        else:
-            # Sanity check: Does the DataFrame have the required features?
-            df_columns_lower = set(col.lower() for col in eval_df.columns)
-            features_lower = set(feature.lower() for feature in features)
-
-            # Check if the features are a subset of the DataFrame columns (case-insensitive)
-            if not features_lower.issubset(df_columns_lower):
-                missing_features = features_lower - df_columns_lower
-                raise ValueError(f"DataFrame does not contain required features: {missing_features}")
+        # Sanity check: Does the DataFrame have the required features?
+        df_columns_lower = set(col.lower() for col in eval_df.columns)
+        features_lower = set(feature.lower() for feature in features)
+        if not features_lower.issubset(df_columns_lower):
+            missing_features = features_lower - df_columns_lower
+            raise ValueError(f"DataFrame does not contain required features: {missing_features}")
 
         # Create our Endpoint Predictor Class
         predictor = Predictor(
@@ -726,18 +721,10 @@ class EndpointCore(Artifact):
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=True)
 
-        # Generate SHAP values for our Prediction Dataframe
-        # generate_shap_values(self.endpoint_name, model_type.value, pred_results_df, inference_capture_path)
-
         # Now recompute the details for our Model
-        self.log.important(f"Recomputing Details for {self.model_name} to show latest Inference Results...")
+        self.log.important(f"Loading inference metrics for {self.model_name}...")
         model = ModelCore(self.model_name)
         model._load_inference_metrics(capture_name)
-        model.details()
-
-        # Recompute the details so that inference model metrics are updated
-        self.log.important(f"Recomputing Details for {self.name} to show latest Inference Results...")
-        self.details()
 
     def regression_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
@@ -1096,12 +1083,19 @@ if __name__ == "__main__":
     df = fs.pull_dataframe()[:100]
     cap_df = df.copy()
     cap_df.columns = [col.upper() for col in cap_df.columns]
-    my_endpoint._predict(cap_df)
+    my_endpoint.inference(cap_df)
 
     # Boolean Type Test
     df["bool_column"] = [random.choice([True, False]) for _ in range(len(df))]
-    result_df = my_endpoint._predict(df)
+    result_df = my_endpoint.inference(df)
     assert result_df["bool_column"].dtype == bool
+
+    # Missing Feature Test
+    missing_df = df.drop(columns=["length"])
+    try:
+        my_endpoint.inference(missing_df)
+    except ValueError as e:
+        print(f"Expected error for missing feature: {e}")
 
     # Run Auto Inference on the Endpoint (uses the FeatureSet)
     print("Running Auto Inference...")
