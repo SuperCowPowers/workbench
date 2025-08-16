@@ -419,12 +419,6 @@ class EndpointCore(Artifact):
                     capture_name, prediction_df, target_column, model_type, metrics, description, features, id_column
                 )
 
-                # Capture CrossFold Inference Results
-                cross_fold_metrics = cross_fold_inference(model)
-                if cross_fold_metrics:
-                    # Now put into the Parameter Store Model Inference Namespace
-                    self.param_store.upsert(f"/workbench/models/{model.name}/inference/cross_fold", cross_fold_metrics)
-
                 # For UQ Models we also capture the uncertainty metrics
                 if model_type in [ModelType.UQ_REGRESSOR]:
                     metrics = uq_metrics(prediction_df, target_column)
@@ -434,6 +428,22 @@ class EndpointCore(Artifact):
 
         # Return the prediction DataFrame
         return prediction_df
+
+    def cross_fold_inference(self) -> dict:
+        """Run cross-fold inference (only works for XGBoost models
+
+        Returns:
+            dict: Dictionary with the cross-fold inference results
+        """
+
+        # Grab our model
+        model = ModelCore(self.model_name)
+
+        # Compute CrossFold Metrics
+        cross_fold_metrics = cross_fold_inference(self.model_name)
+        if cross_fold_metrics:
+            self.param_store.upsert(f"/workbench/models/{model.name}/inference/cross_fold", cross_fold_metrics)
+        return cross_fold_metrics
 
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
