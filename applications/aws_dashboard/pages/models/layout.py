@@ -51,23 +51,14 @@ def models_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                dcc.Loading(
-                                    model_plot,
-                                    type="graph",
-                                    delay_show=300,
-                                    style={"height": "400px"}
-                                ),
+                                dcc.Loading(model_plot, type="graph", delay_show=300, style={"height": "400px"}),
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px"},
                             ),
                             dbc.Row(
-                                dcc.Loading(
-                                    shap_plot,
-                                    type="graph",
-                                    delay_show=300
-                                ),
+                                dcc.Loading(shap_plot, type="graph", delay_show=300),
                                 className="workbench-container",
-                                style={"margin": "20px 0px 10px 20px"}
+                                style={"margin": "20px 0px 10px 20px"},
                             ),
                         ],
                         width=7,

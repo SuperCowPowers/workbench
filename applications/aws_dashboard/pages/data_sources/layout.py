@@ -68,20 +68,12 @@ def data_sources_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                dcc.Loading(
-                                    violin_plot,
-                                    type="graph",
-                                    delay_show=300
-                                ),
+                                dcc.Loading(violin_plot, type="graph", delay_show=300),
                                 className="workbench-container",
-                                style={"margin": "20px 0px 10px 20px"}
+                                style={"margin": "20px 0px 10px 20px"},
                             ),
                             dbc.Row(
-                                dcc.Loading(
-                                    correlation_matrix,
-                                    type="graph",
-                                    delay_show=300
-                                ),
+                                dcc.Loading(correlation_matrix, type="graph", delay_show=300),
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px"},
                             ),

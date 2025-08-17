@@ -47,12 +47,7 @@ def endpoints_layout(
                 [
                     # Column 1: Endpoint Details
                     dbc.Col(
-                        dcc.Loading(
-                            endpoint_details,
-                            type="dot",
-                            color="#33aa33",
-                            delay_show=300
-                        ),
+                        dcc.Loading(endpoint_details, type="dot", color="#33aa33", delay_show=300),
                         width=4,
                         className="text-break workbench-container",
                         style={"margin": "20px 0px 0px 0px", "padding": "20px"},
@@ -61,11 +56,7 @@ def endpoints_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                dcc.Loading(
-                                    endpoint_metrics,
-                                    type="graph",
-                                    delay_show=300
-                                ),
+                                dcc.Loading(endpoint_metrics, type="graph", delay_show=300),
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px"},
                             ),
