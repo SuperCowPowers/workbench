@@ -45,6 +45,12 @@ def redis_reaper(host, port, size_limit=512000, expire=7):
                 client.delete(key)
                 keys_deleted += 1
 
+        # Check if the key has the word "Crashed" in its name
+        if b"Crashed" in key:
+            print(f"Deleting key {key} (contains 'Crashed')")
+            client.delete(key)
+            keys_deleted += 1
+
     # Report
     print(f"\nTotal keys: {total_keys}")
     print("\nTop 5 largest keys (by size):")
