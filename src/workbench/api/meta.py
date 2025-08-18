@@ -113,13 +113,16 @@ class Meta(CloudMeta):
         """
         return super().models(details=details)
 
-    def endpoints(self) -> pd.DataFrame:
+    def endpoints(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Endpoints deployed in the Cloud Platform
+
+        Args:
+            details (bool, optional): Include detailed information. Defaults to False.
 
         Returns:
             pd.DataFrame: A summary of the Endpoints in the Cloud Platform
         """
-        return super().endpoints()
+        return super().endpoints(details=details)
 
     def pipelines(self) -> pd.DataFrame:
         """Get a summary of the ML Pipelines deployed in the Cloud Platform
