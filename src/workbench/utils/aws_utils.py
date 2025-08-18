@@ -64,8 +64,8 @@ def aws_throttle(func=None, retry_intervals=None):
         for attempt, delay in enumerate(intervals, start=1):
             try:
                 # Add sleep before calling AWS func if running as a service
-                if cm.running_as_service:
-                    time.sleep(service_hold_time)
+                # if cm.running_as_service:
+                #    time.sleep(service_hold_time)
                 return func(*args, **kwargs)
             except ClientError as e:
                 if e.response["Error"]["Code"] == "ThrottlingException":
