@@ -308,7 +308,7 @@ class AWSMeta:
                     "Status": endpoint_details.get("EndpointStatus", "-"),
                     "Config": endpoint_details.get("EndpointConfigName", "-"),
                     "Variant": endpoint_details["config"]["variant"],
-                    "Capture": str(endpoint_details.get("DataCaptureConfig", {}).get("EnableCapture", "False")),
+                    "Capture": str(endpoint_details.get("DataCaptureConfig", {}).get("EnableCapture", "-")),
                     "Samp(%)": str(endpoint_details.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
                     "Tags": aws_tags.get("workbench_tags", "-"),
                     "Monitored": endpoint_details["monitored"],
