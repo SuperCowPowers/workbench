@@ -303,7 +303,7 @@ class MonitorCore:
 
         # Filter by date if specified
         if from_date:
-            from_date_obj = datetime.strptime(from_date, '%Y-%m-%d').date()
+            from_date_obj = datetime.strptime(from_date, "%Y-%m-%d").date()
             files = [f for f in files if self._file_date_filter(f, from_date_obj)]
             self.log.info(f"Processing {len(files)} files from {from_date} onwards.")
         else:
@@ -335,9 +335,9 @@ class MonitorCore:
         """Extract date from S3 path and compare with from_date."""
         try:
             # Find AllTraffic and extract YYYY/MM/DD after it
-            parts = file_path.split('/')
-            traffic_idx = parts.index('AllTraffic')
-            year, month, day = parts[traffic_idx + 1:traffic_idx + 4]
+            parts = file_path.split("/")
+            traffic_idx = parts.index("AllTraffic")
+            year, month, day = parts[traffic_idx + 1 : traffic_idx + 4]
             file_date = datetime(int(year), int(month), int(day)).date()
             return file_date >= from_date_obj
         except (ValueError, IndexError):

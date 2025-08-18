@@ -46,12 +46,7 @@ def feature_sets_layout(
                 [
                     # Column 1: Feature Set Details
                     dbc.Col(
-                        dcc.Loading(
-                            feature_set_details,
-                            type="dot",
-                            color="#33aa33",
-                            delay_show=300
-                        ),
+                        dcc.Loading(feature_set_details, type="dot", color="#33aa33", delay_show=300),
                         width=4,
                         className="text-break workbench-container",
                         style={"margin": "20px 0px 0px 0px", "padding": "20px"},

@@ -37,12 +37,7 @@ def models_layout(
                 [
                     # Column 1: Model Details
                     dbc.Col(
-                        dcc.Loading(
-                            model_details,
-                            type="dot",
-                            color="#33aa33",
-                            delay_show=300
-                        ),
+                        dcc.Loading(model_details, type="dot", color="#33aa33", delay_show=300),
                         width=5,
                         className="text-break workbench-container",
                         style={"margin": "20px 0px 0px 0px", "padding": "20px"},
