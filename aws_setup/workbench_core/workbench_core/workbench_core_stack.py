@@ -220,14 +220,6 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
-    def glue_pass_role(self) -> iam.PolicyStatement:
-        """Allows us to specify the Workbench-Glue role when creating a Glue Job"""
-        return iam.PolicyStatement(
-            actions=["iam:PassRole"],
-            resources=[f"arn:aws:iam::{self.account}:role/Workbench-GlueRole"],
-            conditions={"StringEquals": {"iam:PassedToService": "glue.amazonaws.com"}},
-        )
-
     @staticmethod
     def glue_jobs_discover() -> iam.PolicyStatement:
         """Discovery access to list all Glue jobs."""
@@ -258,6 +250,14 @@ class WorkbenchCoreStack(Stack):
                 "glue:StartJobRun",
             ],
             resources=read_statement.resources,
+        )
+
+    def glue_pass_role(self) -> iam.PolicyStatement:
+        """Allows us to specify the Workbench-Glue role when creating a Glue Job"""
+        return iam.PolicyStatement(
+            actions=["iam:PassRole"],
+            resources=[f"arn:aws:iam::{self.account}:role/Workbench-GlueRole"],
+            conditions={"StringEquals": {"iam:PassedToService": "glue.amazonaws.com"}},
         )
 
     ####################
