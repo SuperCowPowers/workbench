@@ -220,6 +220,24 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
+    def glue_connections(self) -> iam.PolicyStatement:
+        """Create a policy statement for Glue connection access.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for Glue connection interactions.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "glue:GetConnection",
+            ],
+            resources=[
+                # GetConnection requires access to the catalog resource since the
+                # Glue Catalog is used for metadata storage and connection retrieval
+                f"arn:aws:glue:{self.region}:{self.account}:catalog",
+                f"arn:aws:glue:{self.region}:{self.account}:connection/*",
+            ],
+        )
+
     @staticmethod
     def glue_jobs_discover() -> iam.PolicyStatement:
         """Discovery access to list all Glue jobs."""
@@ -258,6 +276,46 @@ class WorkbenchCoreStack(Stack):
             actions=["iam:PassRole"],
             resources=[f"arn:aws:iam::{self.account}:role/Workbench-GlueRole"],
             conditions={"StringEquals": {"iam:PassedToService": "glue.amazonaws.com"}},
+        )
+
+    ####################
+    #  VPC/Networking  #
+    ####################
+    @staticmethod
+    def vpc_discovery() -> iam.PolicyStatement:
+        """Create a policy statement for VPC resource discovery.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for VPC subnet and security group discovery operations.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "ec2:DescribeSubnets",
+                "ec2:DescribeSecurityGroups",
+                "ec2:DescribeVpcEndpoints",
+                "ec2:DescribeRouteTables",
+            ],
+            resources=[
+                "*",  # EC2 describe operations require wildcard resources
+            ],
+        )
+
+    def vpc_network_interface_management(self) -> iam.PolicyStatement:
+        """Create a policy statement for VPC network interface management.
+        Returns:
+            iam.PolicyStatement: The policy statement for ENI creation and discovery in VPC.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "ec2:CreateNetworkInterface",
+                "ec2:DescribeNetworkInterfaces",
+                "ec2:CreateTags",
+            ],
+            resources=[
+                f"arn:aws:ec2:{self.region}:{self.account}:network-interface/*",
+                f"arn:aws:ec2:{self.region}:{self.account}:subnet/*",
+                f"arn:aws:ec2:{self.region}:{self.account}:security-group/*",
+            ],
         )
 
     ####################
@@ -1038,6 +1096,9 @@ class WorkbenchCoreStack(Stack):
 
         # Add a subset of policies for the Glue Role
         glue_role.add_to_policy(self.glue_job_logs())
+        glue_role.add_to_policy(self.glue_connections())
+        glue_role.add_to_policy(self.vpc_discovery())
+        glue_role.add_to_policy(self.vpc_network_interface_management())
         glue_role.add_to_policy(self.parameter_store_full())
         glue_role.add_managed_policy(self.datasource_policy)
         glue_role.add_managed_policy(self.featureset_policy)
