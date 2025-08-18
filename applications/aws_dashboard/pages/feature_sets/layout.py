@@ -50,6 +50,7 @@ def feature_sets_layout(
                             feature_set_details,
                             type="dot",
                             color="#33aa33",
+                            delay_show=300
                         ),
                         width=4,
                         className="text-break workbench-container",
@@ -59,12 +60,12 @@ def feature_sets_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                dcc.Loading(violin_plot, type="graph"),
+                                dcc.Loading(violin_plot, type="graph", delay_show=500),
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px"},
                             ),
                             dbc.Row(
-                                dcc.Loading(correlation_matrix, type="graph"),
+                                dcc.Loading(correlation_matrix, type="graph", delay_show=500),
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px"},
                             ),

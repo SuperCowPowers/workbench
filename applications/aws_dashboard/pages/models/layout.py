@@ -41,6 +41,7 @@ def models_layout(
                             model_details,
                             type="dot",
                             color="#33aa33",
+                            delay_show=300
                         ),
                         width=5,
                         className="text-break workbench-container",
@@ -50,12 +51,12 @@ def models_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                dcc.Loading(model_plot, type="graph", style={"height": "400px"}),
+                                dcc.Loading(model_plot, type="graph", delay_show=500, style={"height": "400px"}),
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px"},
                             ),
                             dbc.Row(
-                                dcc.Loading(shap_plot, type="graph"),
+                                dcc.Loading(shap_plot, type="graph", delay_show=500),
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px"},
                             ),
