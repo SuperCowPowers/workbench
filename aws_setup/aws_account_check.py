@@ -65,9 +65,9 @@ class AWSAccountCheck:
             self.log.info(str(feature_group))
         print("\n")
 
-        # Check that the Glue Database exist
-        self.log.info("*** AWS Glue Database Check ***")
-        for catalog_db in ["workbench", "sagemaker_featurestore"]:
+        # Check that the Glue Databases exist
+        self.log.info("*** AWS Glue Databases Check ***")
+        for catalog_db in ["workbench", "sagemaker_featurestore", "inference_store"]:
             self.ensure_aws_catalog_db(catalog_db)
         print("\n")
 
