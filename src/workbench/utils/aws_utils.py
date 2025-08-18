@@ -55,7 +55,8 @@ def aws_throttle(func=None, retry_intervals=None):
     if func is None:
         return lambda f: aws_throttle(f, retry_intervals=retry_intervals)
 
-    service_hold_time = 2  # Seconds to wait before calling AWS function
+    # This is currently commented out (we might want to use it later)
+    # service_hold_time = 2  # Seconds to wait before calling AWS function
     default_intervals = [2**i for i in range(1, 9)]  # Default exponential backoff: 2, 4, 8... 256 seconds
     intervals = retry_intervals or default_intervals
 

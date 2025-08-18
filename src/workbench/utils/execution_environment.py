@@ -73,6 +73,7 @@ def running_on_docker() -> bool:
 def running_as_service() -> bool:
     """
     Check if the current environment is running as a service (e.g. Docker, ECS, Glue, Lambda).
+
     Returns:
         bool: True if running as a service, False otherwise.
     """
