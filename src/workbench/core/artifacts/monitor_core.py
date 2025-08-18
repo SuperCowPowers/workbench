@@ -336,7 +336,7 @@ class MonitorCore:
         """Extract date from S3 path and compare with from_date."""
         try:
             # Match YYYY/MM/DD pattern in the path
-            date_match = re.search(r'/(\d{4})/(\d{2})/(\d{2})/', file_path)
+            date_match = re.search(r"/(\d{4})/(\d{2})/(\d{2})/", file_path)
             if date_match:
                 year, month, day = date_match.groups()
                 file_date = datetime(int(year), int(month), int(day)).date()
