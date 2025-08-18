@@ -2,6 +2,7 @@
 
 import logging
 import json
+from datetime import datetime
 from typing import Union, Tuple
 import pandas as pd
 from sagemaker import Predictor
@@ -283,66 +284,64 @@ class MonitorCore:
             self.log.error(f"Error checking data capture percentage: {e}")
             return None
 
-    def get_captured_data(self, max_files=None, add_timestamp=True) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def get_captured_data(self, from_date=None, add_timestamp=True) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Read and process captured data from S3.
 
         Args:
-            max_files (int, optional): Maximum number of files to process.
+            from_date (str, optional): Only process files from this date onwards (YYYY-MM-DD format).
                                        Defaults to None to process all files.
             add_timestamp (bool, optional): Whether to add a timestamp column to the DataFrame.
 
         Returns:
             Tuple[pd.DataFrame, pd.DataFrame]: Processed input and output DataFrames.
         """
-        # List files in the specified S3 path
         files = wr.s3.list_objects(self.data_capture_path)
         if not files:
             self.log.warning(f"No data capture files found in {self.data_capture_path}.")
             return pd.DataFrame(), pd.DataFrame()
 
-        self.log.info(f"Found {len(files)} files in {self.data_capture_path}.")
-
-        # Sort files by timestamp (assuming the naming convention includes timestamp)
+        # Filter by date if specified
+        if from_date:
+            from_date_obj = datetime.strptime(from_date, '%Y-%m-%d').date()
+            files = [f for f in files if self._file_date_filter(f, from_date_obj)]
+            self.log.info(f"Processing {len(files)} files from {from_date} onwards.")
+        else:
+            self.log.info(f"Processing all {len(files)} files.")
         files.sort()
 
-        # Select files to process
-        if max_files is None:
-            files_to_process = files
-            self.log.info(f"Processing all {len(files)} files.")
-        else:
-            files_to_process = files[-max_files:] if files else []
-            self.log.info(f"Processing the {len(files_to_process)} most recent file(s).")
-
-        # Process each file
-        all_input_dfs = []
-        all_output_dfs = []
-        for file_path in files_to_process:
-            self.log.info(f"Processing {file_path}...")
+        # Process files
+        all_input_dfs, all_output_dfs = [], []
+        for file_path in files:
             try:
-                # Read the JSON lines file
                 df = wr.s3.read_json(path=file_path, lines=True)
                 if not df.empty:
                     input_df, output_df = process_data_capture(df)
-                    # Generate a timestamp column if requested
                     if add_timestamp:
-                        # Get file metadata to extract last modified time
-                        file_metadata = wr.s3.describe_objects(path=file_path)
-                        timestamp = file_metadata[file_path]["LastModified"]
+                        timestamp = wr.s3.describe_objects(path=file_path)[file_path]["LastModified"]
                         output_df["timestamp"] = timestamp
-
-                    # Append the processed DataFrames to the lists
                     all_input_dfs.append(input_df)
                     all_output_dfs.append(output_df)
             except Exception as e:
-                self.log.warning(f"Error processing file {file_path}: {e}")
+                self.log.warning(f"Error processing {file_path}: {e}")
 
-        # Combine all DataFrames
-        if not all_input_dfs or not all_output_dfs:
-            self.log.warning("No valid data was processed from the captured files.")
+        if not all_input_dfs:
+            self.log.warning("No valid data was processed.")
             return pd.DataFrame(), pd.DataFrame()
 
         return pd.concat(all_input_dfs, ignore_index=True), pd.concat(all_output_dfs, ignore_index=True)
+
+    def _file_date_filter(self, file_path, from_date_obj):
+        """Extract date from S3 path and compare with from_date."""
+        try:
+            # Find AllTraffic and extract YYYY/MM/DD after it
+            parts = file_path.split('/')
+            traffic_idx = parts.index('AllTraffic')
+            year, month, day = parts[traffic_idx + 1:traffic_idx + 4]
+            file_date = datetime(int(year), int(month), int(day)).date()
+            return file_date >= from_date_obj
+        except (ValueError, IndexError):
+            return False  # Include file if can't parse date
 
     def baseline_exists(self) -> bool:
         """

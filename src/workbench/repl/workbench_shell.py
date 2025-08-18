@@ -72,7 +72,7 @@ if not ConfigManager().config_okay():
 
 # Set the log level to important
 log = logging.getLogger("workbench")
-log.setLevel(IMPORTANT_LEVEL_NUM)
+log.setLevel(logging.INFO)
 log.addFilter(
     lambda record: not (
         record.getMessage().startswith("Async: Metadata") or record.getMessage().startswith("Updated Metadata")
