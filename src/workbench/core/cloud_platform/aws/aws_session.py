@@ -10,7 +10,7 @@ import logging
 
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
-from workbench.utils.execution_environment import running_on_lambda, running_on_glue
+from workbench_bridges.utils.execution_environment import running_on_lambda, running_on_glue
 
 # Attempt to import IPython-related utilities
 try:

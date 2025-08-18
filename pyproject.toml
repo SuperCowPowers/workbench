@@ -40,7 +40,7 @@ dependencies = [
     "requests >= 2.26.0",
     "rdkit>=2024.9.5",
     "mordredcommunity>=2.0.6",
-    "workbench-bridges>=0.1.8",
+    "workbench-bridges>=0.1.10",
 ]
 
 [project.optional-dependencies]

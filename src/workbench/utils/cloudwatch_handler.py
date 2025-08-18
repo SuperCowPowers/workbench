@@ -5,7 +5,7 @@ import getpass
 import time  # For managing send intervals
 
 # Workbench imports
-from workbench.utils.execution_environment import (
+from workbench_bridges.utils.execution_environment import (
     running_on_lambda,
     running_on_glue,
     running_on_ecs,

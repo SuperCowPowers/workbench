@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 # Workbench imports
 from workbench.utils.license_manager import LicenseManager
-from workbench.utils.execution_environment import running_as_service
+from workbench_bridges.utils.execution_environment import running_as_service
 
 # Python 3.9 compatibility
 from workbench.utils.resource_utils import get_resource_path
