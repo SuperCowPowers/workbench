@@ -2,6 +2,7 @@
 
 import logging
 import json
+import re
 from datetime import datetime
 from typing import Union, Tuple
 import pandas as pd
@@ -334,14 +335,15 @@ class MonitorCore:
     def _file_date_filter(self, file_path, from_date_obj):
         """Extract date from S3 path and compare with from_date."""
         try:
-            # Find AllTraffic and extract YYYY/MM/DD after it
-            parts = file_path.split("/")
-            traffic_idx = parts.index("AllTraffic")
-            year, month, day = parts[traffic_idx + 1 : traffic_idx + 4]
-            file_date = datetime(int(year), int(month), int(day)).date()
-            return file_date >= from_date_obj
-        except (ValueError, IndexError):
-            return False  # Include file if can't parse date
+            # Match YYYY/MM/DD pattern in the path
+            date_match = re.search(r'/(\d{4})/(\d{2})/(\d{2})/', file_path)
+            if date_match:
+                year, month, day = date_match.groups()
+                file_date = datetime(int(year), int(month), int(day)).date()
+                return file_date >= from_date_obj
+            return False  # No date pattern found
+        except ValueError:
+            return False
 
     def baseline_exists(self) -> bool:
         """
