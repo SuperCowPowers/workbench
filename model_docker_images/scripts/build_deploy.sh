@@ -14,6 +14,7 @@ declare -A REPO_MAP=(
   ["xgb_inference"]="aws-ml-images/py312-sklearn-xgb-inference"
   ["pytorch_training"]="aws-ml-images/py312-pytorch-training"
   ["pytorch_inference"]="aws-ml-images/py312-pytorch-inference"
+  ["ml_pipelines"]="aws-ml-images/py312-ml-pipelines"
   ["workbench_inference"]="aws-ml-images/py312-workbench-inference"
   ["meta_endpoint"]="aws-ml-images/py312-meta-endpoint"
 )
@@ -83,12 +84,12 @@ build_image() {
   echo -e "${YELLOW}Building image: $name ($platform)${NC}"
 
   if [ ! -f "$DIR/Dockerfile" ]; then
-    echo "❌ Error: Dockerfile not found in $DIR"
+    echo "❌  Error: Dockerfile not found in $DIR"
     exit 1
   fi
 
   docker build --platform $platform -t $name $DIR
-  echo -e "${GREEN}✅ Successfully built: $name${NC}"
+  echo -e "${GREEN}✅  Successfully built: $name${NC}"
 }
 
 # Helper function to check if an image exists in ECR
@@ -169,13 +170,13 @@ if [ "$IMAGE_TYPE" = "fixme" ]; then
 fi
 
 echo "======================================"
-echo -e "${GREEN}✅ Build completed successfully!${NC}"
+echo -e "${GREEN}✅  Build completed successfully!${NC}"
 echo "======================================"
 
 # Deploy if requested
 if [ "$DEPLOY" = true ]; then
   echo "======================================"
-  echo "🚀 Deploying $IMAGE_TYPE container to ECR"
+  echo "🚀  Deploying $IMAGE_TYPE container to ECR"
   echo "======================================"
 
   deploy_image "$IMAGE_VERSION"
@@ -186,14 +187,14 @@ if [ "$DEPLOY" = true ]; then
   fi
 
   echo "======================================"
-  echo -e "${GREEN}✅ Deployment complete!${NC}"
+  echo -e "${GREEN}✅  Deployment complete!${NC}"
   echo "======================================"
 else
   # Print information about the built image
   echo "Local build complete. Use --deploy to push the image to AWS ECR in regions: ${REGION_LIST[*]}."
 
   echo "======================================"
-  echo "📋 Image information:"
+  echo "📋  Image information:"
   echo "${IMAGE_TYPE^} image: $REPO_NAME:$IMAGE_VERSION"
 
   if [ "$IMAGE_TYPE" = "fixme" ]; then
