@@ -14,11 +14,11 @@ def download_ml_pipeline_from_s3(s3_path: str, local_path: str):
     """Download ML Pipeline from S3 to local filesystem."""
     parsed = urlparse(s3_path)
     bucket = parsed.netloc
-    key = parsed.path.lstrip('/')
+    key = parsed.path.lstrip("/")
 
     log.info(f"Downloading {s3_path} to {local_path}")
 
-    s3_client = boto3.client('s3')
+    s3_client = boto3.client("s3")
     s3_client.download_file(bucket, key, local_path)
 
     # Make it executable
@@ -32,10 +32,7 @@ def run_ml_pipeline(script_path: str):
 
     try:
         # Run the script with python
-        result = subprocess.run([sys.executable, script_path],
-                                capture_output=True,
-                                text=True,
-                                check=True)
+        result = subprocess.run([sys.executable, script_path], capture_output=True, text=True, check=True)
 
         log.info("ML pipeline completed successfully")
         log.info(f"STDOUT: {result.stdout}")
@@ -53,7 +50,7 @@ def main():
     log.info(f"Workbench version: {workbench.__version__}")
 
     # Get the ML Pipeline S3 path from environment variable
-    ml_pipeline_s3_path = os.environ.get('ML_PIPELINE_S3_PATH')
+    ml_pipeline_s3_path = os.environ.get("ML_PIPELINE_S3_PATH")
 
     if not ml_pipeline_s3_path:
         log.error("ML_PIPELINE_S3_PATH environment variable not set")
