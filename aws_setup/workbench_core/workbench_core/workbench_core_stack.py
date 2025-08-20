@@ -64,6 +64,12 @@ class WorkbenchCoreStack(Stack):
         self.endpoint_read_policy = self.workbench_endpoint_read_policy()
         self.endpoint_policy = self.workbench_endpoint_policy()
         self.pipeline_policy = self.workbench_pipeline_policy()
+        self.dataframe_store_read_policy = self.workbench_dataframe_store_read_policy()
+        self.dataframe_store_full_policy = self.workbench_dataframe_store_full_policy()
+        self.parameter_store_read_policy = self.workbench_parameter_store_read_policy()
+        self.parameter_store_full_policy = self.workbench_parameter_store_full_policy()
+        self.inference_store_read_policy = self.workbench_inference_store_read_policy()
+        self.inference_store_full_policy = self.workbench_inference_store_full_policy()
 
         # Create our main Workbench API Execution Role
         self.workbench_execution_role = self.create_execution_role()
@@ -172,7 +178,7 @@ class WorkbenchCoreStack(Stack):
                 "glue:GetPartition",
                 "glue:GetPartitions",
             ],
-            resources=self._workbench_database_arns(),
+            resources=self._workbench_database_arns() + self._inference_database_arns(),
         )
 
     def glue_databases_full(self) -> iam.PolicyStatement:
@@ -185,16 +191,21 @@ class WorkbenchCoreStack(Stack):
                 "glue:UpdateTable",
                 "glue:DeleteTable",
             ],
-            resources=self._workbench_database_arns(),
+            resources=self._workbench_database_arns() + self._inference_database_arns(),
         )
 
     def _workbench_database_arns(self) -> list[str]:
-        """Helper to get all Workbench-managed database/table ARNs."""
+        """Helper to get Workbench-managed database/table ARNs."""
         return [
             f"arn:aws:glue:{self.region}:{self.account}:database/workbench",
             f"arn:aws:glue:{self.region}:{self.account}:table/workbench/*",
             f"arn:aws:glue:{self.region}:{self.account}:database/sagemaker_featurestore",
             f"arn:aws:glue:{self.region}:{self.account}:table/sagemaker_featurestore/*",
+        ]
+
+    def _inference_database_arns(self) -> list[str]:
+        """Helper to get inference store database/table ARNs."""
+        return [
             f"arn:aws:glue:{self.region}:{self.account}:database/inference_store",
             f"arn:aws:glue:{self.region}:{self.account}:table/inference_store/*",
         ]
@@ -276,6 +287,66 @@ class WorkbenchCoreStack(Stack):
             actions=["iam:PassRole"],
             resources=[f"arn:aws:iam::{self.account}:role/Workbench-GlueRole"],
             conditions={"StringEquals": {"iam:PassedToService": "glue.amazonaws.com"}},
+        )
+
+    #####################
+    #  DataFrame Store  #
+    #####################
+    def dataframe_store_read(self) -> iam.PolicyStatement:
+        """Create a policy statement for reading from the DataFrame Store.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for reading from the DataFrame Store.
+        """
+
+        # Just return the S3 read policy for the DataFrame Store
+        return self.s3_read()
+
+    def dataframe_store_full(self) -> iam.PolicyStatement:
+        """Create a policy statement for full access to the DataFrame Store.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for full access to the DataFrame Store.
+        """
+
+        # Just return the S3 full policy for the DataFrame Store
+        return self.s3_full()
+
+    #####################
+    #  Inference Store  #
+    #####################
+    def inference_store_read(self) -> iam.PolicyStatement:
+        """Create a policy statement for reading from the Parameter Store.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for reading from the Parameter Store.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "glue:GetDatabase",
+                "glue:GetTable",
+                "glue:GetTables",
+                "glue:GetPartition",
+                "glue:GetPartitions",
+            ],
+            resources=self._inference_database_arns(),
+        )
+
+    def inference_store_full(self) -> iam.PolicyStatement:
+        """Create a policy statement for full access to the Inference Store.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for full access to the Inference Store.
+        """
+        read_statement = self.inference_store_read()
+        return iam.PolicyStatement(
+            actions=read_statement.actions
+            + [
+                "glue:CreateTable",
+                "glue:UpdateTable",
+                "glue:DeleteTable",
+            ],
+            resources=self._inference_database_arns(),
         )
 
     ####################
@@ -1001,6 +1072,86 @@ class WorkbenchCoreStack(Stack):
             id="WorkbenchPipelinePolicy",
             statements=policy_statements,
             managed_policy_name="WorkbenchPipelinePolicy",
+        )
+
+    def workbench_dataframe_store_read_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench DataFrame Store (READ-ONLY)"""
+        policy_statements = [
+            self.dataframe_store_read(),
+        ]
+
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchDFStoreReadPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchDFStoreReadPolicy",
+        )
+
+    def workbench_dataframe_store_full_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench DataFrame Store (FULL)"""
+        policy_statements = [
+            self.dataframe_store_full(),
+        ]
+
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchDFStoreFullPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchDFStorePolicy",
+        )
+
+    def workbench_parameter_store_read_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench Parameter Store (READ-ONLY)"""
+        policy_statements = [
+            self.parameter_store_discover(),
+            self.parameter_store_read(),
+        ]
+
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchParameterStoreReadPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchParameterStoreReadPolicy",
+        )
+
+    def workbench_parameter_store_full_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench Parameter Store (FULL)"""
+        policy_statements = [
+            self.parameter_store_discover(),
+            self.parameter_store_full(),
+        ]
+
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchParameterStoreFullPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchParameterStorePolicy",
+        )
+
+    def workbench_inference_store_read_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench Inference Store (READ-ONLY)"""
+        policy_statements = [
+            self.inference_store_read(),
+        ]
+
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchInferenceStoreReadPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchInferenceStoreReadPolicy",
+        )
+
+    def workbench_inference_store_full_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench Inference Store (FULL)"""
+        policy_statements = [
+            self.inference_store_full(),
+        ]
+
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchInferenceStoreFullPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchInferenceStorePolicy",
         )
 
     def create_execution_role(self) -> iam.Role:
