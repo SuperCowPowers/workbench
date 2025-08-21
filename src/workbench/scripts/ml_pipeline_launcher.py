@@ -27,7 +27,7 @@ def get_batch_role_arn() -> str:
 
 
 def ensure_job_definition():
-    """Ensure the job definition exists (creates or updates)."""
+    """Ensure the job definition exists with network configuration."""
     batch = AWSAccountClamp().boto3_session.client("batch")
     name = "workbench-ml-pipeline-runner"
 
@@ -37,13 +37,20 @@ def ensure_job_definition():
         platformCapabilities=["FARGATE"],
         containerProperties={
             "image": get_ecr_image_uri(),
-            "resourceRequirements": [{"type": "VCPU", "value": "2"}, {"type": "MEMORY", "value": "4096"}],
+            "resourceRequirements": [
+                {"type": "VCPU", "value": "2"},
+                {"type": "MEMORY", "value": "4096"}
+            ],
             "jobRoleArn": get_batch_role_arn(),
             "executionRoleArn": get_batch_role_arn(),
             "environment": [{"name": "WORKBENCH_BUCKET", "value": workbench_bucket}],
+            "networkConfiguration": {
+                "assignPublicIp": "ENABLED"  # This is required so the ECR image can be pulled
+            }
         },
         timeout={"attemptDurationSeconds": 10800},  # 3 hours
     )
+
     log.info(f"Job definition ready: {name} (revision {response['revision']})")
     return name
 
