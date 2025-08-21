@@ -37,12 +37,12 @@ def run_ml_pipeline(script_path: str):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # Combine stderr with stdout
             text=True,
-            bufsize=1  # Line buffered
+            bufsize=1,  # Line buffered
         )
 
         # Stream output line by line
         for line in process.stdout:
-            print(line, end='', flush=True)  # Print and flush immediately
+            print(line, end="", flush=True)  # Print and flush immediately
 
         # Wait for process to complete
         return_code = process.wait()

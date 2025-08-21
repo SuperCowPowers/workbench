@@ -105,13 +105,15 @@ def run_batch_job(script_path: str, stream_logs: bool = True) -> int:
                 # Stream new log events since last check
                 event_count = 0
                 for event in stream_log_events(
-                        log_group_name="/aws/batch/job",
-                        log_stream_name=log_stream_name,
-                        start_time=last_event_time,
-                        follow=False
+                    log_group_name="/aws/batch/job",
+                    log_stream_name=log_stream_name,
+                    start_time=last_event_time,
+                    follow=False,
                 ):
                     print_log_event(event, show_stream=False, local_time=True)
-                    last_event_time = datetime.fromtimestamp(event["timestamp"] / 1000 + 1, tz=datetime.now().astimezone().tzinfo)
+                    last_event_time = datetime.fromtimestamp(
+                        event["timestamp"] / 1000 + 1, tz=datetime.now().astimezone().tzinfo
+                    )
                     event_count += 1
 
                 if event_count == 0:
@@ -128,10 +130,10 @@ def run_batch_job(script_path: str, stream_logs: bool = True) -> int:
                 try:
                     log.info("Fetching final job output...")
                     for event in stream_log_events(
-                            log_group_name="/aws/batch/job",
-                            log_stream_name=log_stream_name,
-                            start_time=last_event_time,
-                            follow=False
+                        log_group_name="/aws/batch/job",
+                        log_stream_name=log_stream_name,
+                        start_time=last_event_time,
+                        follow=False,
                     ):
                         print_log_event(event, show_stream=False, local_time=True)
                 except Exception as e:
@@ -141,7 +143,7 @@ def run_batch_job(script_path: str, stream_logs: bool = True) -> int:
             if status == "FAILED":
                 log.error(f"Job failed: {job.get('statusReason', 'Unknown reason')}")
             else:
-                log.info(f"Job completed successfully")
+                log.info("Job completed successfully")
             return exit_code
 
         time.sleep(10)
