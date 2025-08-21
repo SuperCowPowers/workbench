@@ -30,9 +30,9 @@ def get_cloudwatch_logs_url(log_group: str, log_stream: str) -> Optional[str]:
     try:
         region = AWSAccountClamp().region
 
-        # AWS Console uses double URL encoding - encode once, then replace % with $25
-        encoded_group = quote(log_group, safe="").replace("%", "$25")
-        encoded_stream = quote(log_stream, safe="").replace("%", "$25")
+        # URL encode the log group and stream
+        encoded_group = quote(log_group, safe="")
+        encoded_stream = quote(log_stream, safe="")
 
         return (
             f"https://{region}.console.aws.amazon.com/cloudwatch/home?"

@@ -113,7 +113,9 @@ def run_batch_job(script_path: str) -> int:
             log_stream_name = job.get("container", {}).get("logStreamName")
             logs_url = get_cloudwatch_logs_url(log_group="/aws/batch/job", log_stream=log_stream_name)
             if logs_url:
-                log.info(f"View logs: {logs_url}")
+                # OSC 8 hyperlink format for modern terminals
+                clickable_url = f"\033]8;;{logs_url}\033\\{logs_url}\033]8;;\033\\"
+                log.info(f"View logs: {clickable_url}")
             return exit_code
 
         # Sleep a bit before next status check
