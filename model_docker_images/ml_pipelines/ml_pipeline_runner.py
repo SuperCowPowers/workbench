@@ -31,18 +31,31 @@ def run_ml_pipeline(script_path: str):
     log.info(f"Executing ML pipeline: {script_path}")
 
     try:
-        # Run the script with python
-        result = subprocess.run([sys.executable, script_path], capture_output=True, text=True, check=True)
+        # Run the script with python, streaming output in real-time
+        process = subprocess.Popen(
+            [sys.executable, "-u", script_path],  # -u for unbuffered Python output
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # Combine stderr with stdout
+            text=True,
+            bufsize=1  # Line buffered
+        )
 
-        log.info("ML pipeline completed successfully")
-        log.info(f"STDOUT: {result.stdout}")
-        return 0
+        # Stream output line by line
+        for line in process.stdout:
+            print(line, end='', flush=True)  # Print and flush immediately
 
-    except subprocess.CalledProcessError as e:
-        log.error(f"ML pipeline failed with exit code {e.returncode}")
-        log.error(f"STDOUT: {e.stdout}")
-        log.error(f"STDERR: {e.stderr}")
-        return e.returncode
+        # Wait for process to complete
+        return_code = process.wait()
+
+        if return_code == 0:
+            log.info("ML pipeline completed successfully")
+        else:
+            log.error(f"ML pipeline failed with exit code {return_code}")
+        return return_code
+
+    except Exception as e:
+        log.error(f"ML pipeline execution error: {e}")
+        return 1
 
 
 def main():
