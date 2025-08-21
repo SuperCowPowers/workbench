@@ -9,6 +9,7 @@ try:
     # Temporarily disable logging
     # logging.disable(logging.CRITICAL)
     from workbench.utils.config_manager import ConfigManager
+
     cm = ConfigManager()
 except Exception as e:
     print(f"Workbench ConfigManager initialization failed: {e}")
