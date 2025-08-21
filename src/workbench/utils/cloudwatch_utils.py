@@ -12,10 +12,7 @@ def get_cloudwatch_client():
 
 
 def get_active_log_streams(
-        log_group_name: str,
-        start_time_ms: int,
-        stream_filter: Optional[str] = None,
-        client=None
+    log_group_name: str, start_time_ms: int, stream_filter: Optional[str] = None, client=None
 ) -> List[str]:
     """Retrieve log streams that have events after the specified start time."""
     if not client:
@@ -57,12 +54,12 @@ def get_active_log_streams(
 
 
 def stream_log_events(
-        log_group_name: str,
-        log_stream_name: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        follow: bool = False,
-        client=None
+    log_group_name: str,
+    log_stream_name: str,
+    start_time: Optional[datetime] = None,
+    end_time: Optional[datetime] = None,
+    follow: bool = False,
+    client=None,
 ) -> Generator[Dict, None, None]:
     """
     Stream log events from a specific log stream.
@@ -73,11 +70,7 @@ def stream_log_events(
     if not client:
         client = get_cloudwatch_client()
 
-    params = {
-        "logGroupName": log_group_name,
-        "logStreamName": log_stream_name,
-        "startFromHead": True
-    }
+    params = {"logGroupName": log_group_name, "logStreamName": log_stream_name, "startFromHead": True}
 
     if start_time:
         params["startTime"] = int(start_time.timestamp() * 1000)
@@ -114,10 +107,7 @@ def stream_log_events(
 
 
 def print_log_event(
-        event: dict,
-        show_stream: bool = True,
-        local_time: bool = True,
-        custom_format: Optional[str] = None
+    event: dict, show_stream: bool = True, local_time: bool = True, custom_format: Optional[str] = None
 ):
     """Print a formatted log event."""
     timestamp = datetime.fromtimestamp(event["timestamp"] / 1000, tz=timezone.utc)
@@ -128,11 +118,7 @@ def print_log_event(
 
     if custom_format:
         # Allow custom formatting
-        print(custom_format.format(
-            stream=event.get("logStreamName", ""),
-            time=timestamp,
-            message=message
-        ))
+        print(custom_format.format(stream=event.get("logStreamName", ""), time=timestamp, message=message))
     elif show_stream and "logStreamName" in event:
         print(f"[{event['logStreamName']}] [{timestamp:%Y-%m-%d %I:%M%p}] {message}")
     else:

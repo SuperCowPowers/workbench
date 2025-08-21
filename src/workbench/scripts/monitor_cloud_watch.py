@@ -7,11 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 # Workbench Imports
 from workbench.utils.repl_utils import cprint, Spinner
-from workbench.utils.cloudwatch_utils import (
-    get_cloudwatch_client,
-    get_active_log_streams,
-    stream_log_events
-)
+from workbench.utils.cloudwatch_utils import get_cloudwatch_client, get_active_log_streams, stream_log_events
 
 # Define the log levels to include all log levels above the specified level
 log_level_map = {
@@ -50,12 +46,7 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
     start_time_ms = int(start_time.timestamp() * 1000)
 
     # Use the util function to get active streams
-    active_streams = get_active_log_streams(
-        log_group_name,
-        start_time_ms,
-        stream_filter,
-        client
-    )
+    active_streams = get_active_log_streams(log_group_name, start_time_ms, stream_filter, client)
 
     if active_streams:
         print(f"Active log streams: {len(active_streams)}")
@@ -79,12 +70,7 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
 
         # Stream events using the util function
         for event in stream_log_events(
-                log_group_name,
-                log_stream_name,
-                start_time,
-                end_time,
-                follow=False,
-                client=client
+            log_group_name, log_stream_name, start_time, end_time, follow=False, client=client
         ):
             log_stream_events += 1
             log_events.append(event)
@@ -116,15 +102,15 @@ def merge_ranges(ranges):
 
 
 def monitor_log_group(
-        log_group_name,
-        start_time,
-        end_time=None,
-        poll_interval=10,
-        log_level=None,
-        search_terms=None,
-        before=10,
-        after=0,
-        stream_filter=None,
+    log_group_name,
+    start_time,
+    end_time=None,
+    poll_interval=10,
+    log_level=None,
+    search_terms=None,
+    before=10,
+    after=0,
+    stream_filter=None,
 ):
     """Continuously monitor the CloudWatch Logs group for new log messages from all log streams."""
     client = get_cloudwatch_client()
@@ -164,7 +150,7 @@ def monitor_log_group(
         # Collect filtered events based on merged ranges
         filtered_events = []
         for start, end in merged_ranges:
-            filtered_events.extend(all_log_events[start: end + 1])
+            filtered_events.extend(all_log_events[start : end + 1])
 
             # These are just blank lines to separate the log message 'groups'
             filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
