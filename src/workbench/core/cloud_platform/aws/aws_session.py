@@ -10,7 +10,7 @@ import logging
 
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
-from workbench_bridges.utils.execution_environment import running_on_lambda, running_on_glue
+from workbench_bridges.utils.execution_environment import running_as_service
 
 # Attempt to import IPython-related utilities
 try:
@@ -66,10 +66,10 @@ class AWSSession:
         return self._cached_boto3_session
 
     def _create_boto3_session(self):
-        """Internal: Get the AWS Boto3 Session, defaulting to the Workbench Role if possible."""
+        """Internal: Get the AWS Boto3 Session, assuming the Workbench Role if necessary."""
 
-        # Check the execution environment and determine if we need to assume the Workbench Role
-        if running_on_lambda() or running_on_glue() or self.is_workbench_role():
+        # Check if we're running as a service or already using the Workbench Role
+        if running_as_service() or self.is_workbench_role():
             self.log.important("Using the default Boto3 session...")
             return boto3.Session(region_name=self.region)
 
