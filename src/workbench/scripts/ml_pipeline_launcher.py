@@ -8,7 +8,6 @@ from pathlib import Path
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.s3_utils import upload_content_to_s3
-from workbench.utils.cloudwatch_utils import stream_log_events, print_log_event
 
 log = logging.getLogger("workbench")
 cm = ConfigManager()
@@ -52,50 +51,17 @@ def ensure_job_definition():
     return name
 
 
-def stream_job_logs(log_stream_name: str, last_timestamp=None):
-    """
-    Stream CloudWatch logs from the given position.
-
-    Returns:
-        tuple: (event_count, last_timestamp) where last_timestamp can be used
-               for the next call to avoid duplicates
-    """
-    event_count = 0
-
-    try:
-        for event in stream_log_events(
-            log_group_name="/aws/batch/job",
-            log_stream_name=log_stream_name,
-            start_time=last_timestamp,
-            follow=False,
-        ):
-            print_log_event(event, show_stream=False, local_time=True)
-            # Add 1ms to avoid re-reading the same event
-            last_timestamp = datetime.fromtimestamp(
-                event["timestamp"] / 1000 + 0.001, tz=datetime.now().astimezone().tzinfo
-            )
-            event_count += 1
-
-    except Exception as e:
-        # Log stream might not exist yet during job startup
-        log.debug(f"Log streaming error (may be normal during startup): {e}")
-
-    return event_count, last_timestamp
-
-
-def run_batch_job(script_path: str, stream_logs: bool = True) -> int:
+def run_batch_job(script_path: str) -> int:
     """
     Submit and monitor an AWS Batch job for ML pipeline execution.
-
     This function:
     1. Uploads the ML pipeline script to S3
     2. Submits a Batch job to run the script in a container
-    3. Monitors job status and optionally streams CloudWatch logs
+    3. Monitors job status until completion
     4. Returns the job's exit code
 
     Args:
         script_path: Local path to the ML pipeline script
-        stream_logs: If True, stream CloudWatch logs during execution
 
     Returns:
         Exit code from the batch job (0 for success, non-zero for failure)
@@ -121,48 +87,27 @@ def run_batch_job(script_path: str, stream_logs: bool = True) -> int:
             ]
         },
     )
-
     job_id = response["jobId"]
     log.info(f"Submitted job: {job_name} ({job_id})")
 
     # Monitor job execution
     last_status = None
-    log_stream_name = f"workbench-ml-pipeline-runner/default/{job_id}"
-    last_timestamp = None
-
-    # Give CloudWatch a moment to create the log stream
-    time.sleep(2)
-
     while True:
         # Check job status
         job = batch.describe_jobs(jobs=[job_id])["jobs"][0]
         status = job["status"]
-
         if status != last_status:
             log.info(f"Job status: {status}")
             last_status = status
 
-        # Stream logs for any status (not just RUNNING) to catch early logs
-        if stream_logs and status in ["RUNNING", "SUCCEEDED", "FAILED"]:
-            event_count, last_timestamp = stream_job_logs(log_stream_name, last_timestamp)
-
-            # If no new events and job is still running, wait before retrying
-            if event_count == 0 and status == "RUNNING":
-                time.sleep(3)
-
         # Check if job completed
         if status in ["SUCCEEDED", "FAILED"]:
-            # One final attempt to get any remaining logs
-            if stream_logs:
-                time.sleep(2)  # Give CloudWatch a moment to flush final logs
-                stream_job_logs(log_stream_name, last_timestamp)
-
             # Get exit code and return
             exit_code = job.get("attempts", [{}])[-1].get("exitCode", 1)
             if status == "FAILED":
                 log.error(f"Job failed: {job.get('statusReason', 'Unknown reason')}")
             else:
-                log.info("Job completed successfully")
+                log.info(f"Job completed successfully")
             return exit_code
 
         # Wait before next status check
@@ -171,13 +116,11 @@ def run_batch_job(script_path: str, stream_logs: bool = True) -> int:
 
 def main():
     """CLI entry point for running ML pipelines on AWS Batch."""
-    parser = argparse.ArgumentParser(description="Run ML pipeline script on AWS Batch with optional log streaming")
+    parser = argparse.ArgumentParser(description="Run ML pipeline script on AWS Batch")
     parser.add_argument("script_file", help="Local path to ML pipeline script")
-    parser.add_argument("--no-stream", action="store_true", help="Disable CloudWatch log streaming")
     args = parser.parse_args()
-
     try:
-        exit_code = run_batch_job(args.script_file, stream_logs=not args.no_stream)
+        exit_code = run_batch_job(args.script_file)
         exit(exit_code)
     except Exception as e:
         log.error(f"Error: {e}")
