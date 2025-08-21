@@ -68,7 +68,7 @@ def run_batch_job(script_path: str) -> int:
         jobDefinition=ensure_job_definition(),
         containerOverrides={
             "environment": [
-                {"name": "SCRIPT_S3_PATH", "value": s3_path},
+                {"name": "ML_PIPELINE_S3_PATH", "value": s3_path},
                 {"name": "WORKBENCH_BUCKET", "value": workbench_bucket},
             ]
         },
