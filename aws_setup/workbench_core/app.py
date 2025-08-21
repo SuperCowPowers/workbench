@@ -3,6 +3,17 @@ import boto3
 import aws_cdk as cdk
 from workbench_core.workbench_core_stack import WorkbenchCoreStack, WorkbenchCoreStackProps
 
+# Initialize ConfigManager with error handling
+try:
+    from workbench.utils.log_utils import silence_logs
+    with silence_logs():
+        from workbench.utils.config_manager import ConfigManager
+        cm = ConfigManager()
+except Exception as e:
+    print(f"Workbench ConfigManager initialization failed: {e}")
+    print("Falling back to environment variables only")
+    cm = None
+
 # Grab the account and region using boto3
 session = boto3.session.Session()
 aws_account = session.client("sts").get_caller_identity().get("Account")
@@ -10,17 +21,18 @@ aws_region = session.region_name
 print(f"Account: {aws_account}")
 print(f"Region: {aws_region}")
 
-# Read required configuration from environment variables
-workbench_bucket = os.getenv("WORKBENCH_BUCKET")
+# Get configurations with fallback
+workbench_bucket = (cm and cm.get_config("WORKBENCH_BUCKET")) or os.getenv("WORKBENCH_BUCKET")
 if not workbench_bucket:
-    print("Error: The environment variable WORKBENCH_BUCKET is required but not set.")
+    print("Error: WORKBENCH_BUCKET is required but not found in config or environment variables.")
     exit(1)
 
-# Read optional configurations with defaults
-sso_group = os.getenv("WORKBENCH_SSO_GROUP")  # Optional, default to None if not set
+sso_group = (cm and cm.get_config("WORKBENCH_SSO_GROUP")) or os.getenv("WORKBENCH_SSO_GROUP")
+
+additional_buckets_str = (cm and cm.get_config("WORKBENCH_ADDITIONAL_BUCKETS")) or os.getenv("WORKBENCH_ADDITIONAL_BUCKETS", "")
 additional_buckets = [
-    bucket.strip() for bucket in os.getenv("WORKBENCH_ADDITIONAL_BUCKETS", "").split(",") if bucket.strip()
-]
+    bucket.strip() for bucket in additional_buckets_str.split(",") if bucket.strip()
+] if additional_buckets_str else []
 
 # Log the configuration for transparency
 print("Configuration:")
