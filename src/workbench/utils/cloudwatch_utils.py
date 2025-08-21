@@ -33,7 +33,7 @@ def get_active_log_streams(
             log_stream_name = log_stream["logStreamName"]
             last_event_timestamp = log_stream.get("lastEventTimestamp", 0)
 
-            # Add 60 minutes buffer (as per original code comment)
+            # Add 60 minutes buffer (do we need this?)
             last_event_timestamp += 60 * 60 * 1000
             if last_event_timestamp >= start_time_ms:
                 active_streams.append(log_stream_name)
