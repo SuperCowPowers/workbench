@@ -1,10 +1,13 @@
-# cloudwatch_utils.py
+""" AWS CloudWatch utility functions for Workbench."""
 import os
 import time
+import logging
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Generator
 from urllib.parse import quote
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+
+log = logging.getLogger("workbench")
 
 
 def get_cloudwatch_client():
@@ -13,41 +16,31 @@ def get_cloudwatch_client():
     return session.client("logs")
 
 
-def get_cloudwatch_logs_url(log_group: Optional[str] = None, log_stream: Optional[str] = None) -> Optional[str]:
+def get_cloudwatch_logs_url(log_group: str, log_stream: str) -> Optional[str]:
     """
-    Generate CloudWatch logs URL for the current ECS task or specified log group/stream.
+    Generate CloudWatch logs URL for the specified log group and stream.
 
     Args:
-        log_group: Optional log group name. If not provided, uses AWS_LOGS_GROUP env var or default.
-        log_stream: Optional log stream name. If not provided, uses AWS_LOGS_STREAM env var.
+        log_group: Log group name (e.g., '/aws/batch/job')
+        log_stream: Log stream name
 
     Returns:
         CloudWatch console URL or None if unable to generate
     """
     try:
-        # Get AWS region and account from AWSAccountClamp
-        aws_clamp = AWSAccountClamp()
-        region = aws_clamp.region
+        region = AWSAccountClamp().region
 
-        # Get log group and stream
-        if not log_group:
-            log_group = os.environ.get("AWS_LOGS_GROUP", "/aws/batch/job")
-        if not log_stream:
-            log_stream = os.environ.get("AWS_LOGS_STREAM")
+        # AWS Console uses double URL encoding - encode once, then replace % with $25
+        encoded_group = quote(log_group, safe='').replace('%', '$25')
+        encoded_stream = quote(log_stream, safe='').replace('%', '$25')
 
-        if log_stream:
-            # URL encode the log stream name
-            encoded_stream = quote(log_stream, safe="")
-            encoded_group = quote(log_group, safe="")
-            url = f"https://{region}.console.aws.amazon.com/cloudwatch/home?region={region}#logsV2:log-groups/log-group/{encoded_group}/log-events/{encoded_stream}"
-        else:
-            # Fallback to log group view
-            encoded_group = quote(log_group, safe="")
-            url = f"https://{region}.console.aws.amazon.com/cloudwatch/home?region={region}#logsV2:log-groups/log-group/{encoded_group}"
-
-        return url
-    except Exception:  # noqa: BLE001
-        # Silently fail - don't want to break the main pipeline for URL generation
+        return (
+            f"https://{region}.console.aws.amazon.com/cloudwatch/home?"
+            f"region={region}#logsV2:log-groups/log-group/{encoded_group}"
+            f"/log-events/{encoded_stream}"
+        )
+    except Exception as e:  # noqa: BLE001
+        log.warning(f"Failed to generate CloudWatch logs URL: {e}")
         return None
 
 
