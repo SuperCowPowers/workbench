@@ -1,4 +1,12 @@
-from aws_cdk import Environment, Stack, aws_iam as iam, aws_logs as logs, RemovalPolicy
+from aws_cdk import (
+   Environment,
+   Stack,
+   aws_iam as iam,
+   aws_logs as logs,
+   aws_ec2 as ec2,
+   aws_batch as batch,
+   RemovalPolicy,
+)
 from constructs import Construct
 from typing import Any, List
 from dataclasses import dataclass, field
@@ -21,7 +29,7 @@ class WorkbenchCoreStack(Stack):
         **kwargs: Any,
     ) -> None:
         desc = "Workbench Core: Defines the core Workbench resources, roles, and policies for the Workbench API."
-        super().__init__(scope, construct_id, description=desc, **kwargs)
+        super().__init__(scope, construct_id, env=env, description=desc, **kwargs)
 
         # Print the environment details
         print("Environment")
@@ -81,6 +89,10 @@ class WorkbenchCoreStack(Stack):
         self.workbench_lambda_role = self.create_lambda_role()
         self.workbench_glue_role = self.create_glue_role()
         self.workbench_batch_role = self.create_batch_role()
+
+        # Batch Compute Environment and Job Queue
+        # self.batch_compute_environment = self.create_batch_compute_environment()
+        # self.batch_job_queue = self.create_batch_job_queue()
 
     ####################
     #    S3 Buckets    #
@@ -341,6 +353,30 @@ class WorkbenchCoreStack(Stack):
             actions=["iam:PassRole"],
             resources=[f"arn:aws:iam::{self.account}:role/{self.batch_role_name}"],
             conditions={"StringEquals": {"iam:PassedToService": "ecs-tasks.amazonaws.com"}},
+        )
+
+    #####################
+    #   Batch Compute   #
+    #####################
+    def create_batch_compute_environment(self) -> batch.FargateComputeEnvironment:
+        """Create the Batch compute environment - super simple with Fargate."""
+        return batch.FargateComputeEnvironment(
+            self, "WorkbenchBatchComputeEnvironment",
+            compute_environment_name="workbench-compute-env",
+            vpc=ec2.Vpc.from_lookup(self, "DefaultVpc", is_default=True),
+        )
+
+    def create_batch_job_queue(self) -> batch.JobQueue:
+        """Create the Batch job queue."""
+        return batch.JobQueue(
+            self, "WorkbenchBatchJobQueue",
+            job_queue_name="workbench-job-queue",
+            compute_environments=[
+                batch.OrderedComputeEnvironment(
+                    compute_environment=self.batch_compute_environment,
+                    order=1
+                )
+            ]
         )
 
     #####################
