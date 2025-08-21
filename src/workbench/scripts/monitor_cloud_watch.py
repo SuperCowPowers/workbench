@@ -4,8 +4,14 @@ import sys
 import time
 import argparse
 from datetime import datetime, timedelta, timezone
-from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+
+# Workbench Imports
 from workbench.utils.repl_utils import cprint, Spinner
+from workbench.utils.cloudwatch_utils import (
+    get_cloudwatch_client,
+    get_active_log_streams,
+    stream_log_events
+)
 
 # Define the log levels to include all log levels above the specified level
 log_level_map = {
@@ -33,64 +39,6 @@ def date_display(dt):
         return dt.strftime("%Y-%m-%d %I:%M%p") + "(UTC)"
 
 
-def get_cloudwatch_client():
-    """Get the CloudWatch Logs client using the Workbench assumed role session."""
-    session = AWSAccountClamp().boto3_session
-    return session.client("logs")
-
-
-def get_active_log_streams(client, log_group_name, start_time_ms, stream_filter=None):
-    """Retrieve log streams that have events after the specified start time."""
-
-    # Get all the streams in the log group
-    active_streams = []
-    stream_params = {
-        "logGroupName": log_group_name,
-        "orderBy": "LastEventTime",
-        "descending": True,
-    }
-
-    # Loop to retrieve all log streams (maximum 50 per call)
-    while True:
-        response = client.describe_log_streams(**stream_params)
-        log_streams = response.get("logStreams", [])
-
-        for log_stream in log_streams:
-            log_stream_name = log_stream["logStreamName"]
-            last_event_timestamp = log_stream.get("lastEventTimestamp")
-
-            # Include streams with events since the specified start time
-            # Note: There's some issue where the last event timestamp is 'off'
-            #       so we're going to add 60 minutes from the last event timestamp
-            last_event_timestamp += 60 * 60 * 1000
-            if last_event_timestamp >= start_time_ms:
-                active_streams.append(log_stream_name)
-            else:
-                break  # Stop if we reach streams older than the start time
-
-        # Check if there are more streams to retrieve
-        if "nextToken" in response:
-            stream_params["nextToken"] = response["nextToken"]
-        else:
-            break
-
-    # Sort and report the active log streams
-    active_streams.sort()
-    if active_streams:
-        print("Active log streams:", len(active_streams))
-
-    # Filter the active streams by a substring if provided
-    if stream_filter and active_streams:
-        print(f"Filtering active log streams by '{stream_filter}'...")
-        active_streams = [stream for stream in active_streams if stream_filter in stream]
-
-    for stream in active_streams:
-        print(f"\t - {stream}")
-
-    # Return the active log streams
-    return active_streams
-
-
 def get_latest_log_events(client, log_group_name, start_time, end_time=None, stream_filter=None):
     """Retrieve the latest log events from the active/filtered log streams in a CloudWatch Logs group."""
 
@@ -99,11 +47,20 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
         get_latest_log_events.first_run = True
 
     log_events = []
-    start_time_ms = int(start_time.timestamp() * 1000)  # Convert start_time to milliseconds
+    start_time_ms = int(start_time.timestamp() * 1000)
 
-    # Get the active log streams with events since start_time
-    active_streams = get_active_log_streams(client, log_group_name, start_time_ms, stream_filter)
+    # Use the util function to get active streams
+    active_streams = get_active_log_streams(
+        log_group_name,
+        start_time_ms,
+        stream_filter,
+        client
+    )
+
     if active_streams:
+        print(f"Active log streams: {len(active_streams)}")
+        for stream in active_streams:
+            print(f"\t - {stream}")
         print(f"Processing log events from {date_display(start_time)} on {len(active_streams)} active log streams...")
         get_latest_log_events.first_run = False
     else:
@@ -114,50 +71,27 @@ def get_latest_log_events(client, log_group_name, start_time, end_time=None, str
             print("Monitoring for new events...")
         return log_events
 
-    # Iterate over the active streams and fetch log events
+    # Use the util function to stream events from each log stream
     for log_stream_name in active_streams:
-        params = {
-            "logGroupName": log_group_name,
-            "logStreamName": log_stream_name,
-            "startTime": start_time_ms,  # Use start_time in milliseconds
-            "startFromHead": True,  # Start from the nearest event to start_time
-        }
-        next_event_token = None
-        if end_time is not None:
-            params["endTime"] = int(end_time.timestamp() * 1000)
-
-        # Process the log events from this log stream
         spinner = Spinner("lightpurple", f"Pulling events from {log_stream_name}:")
         spinner.start()
         log_stream_events = 0
 
-        # Get the log events for the active log stream
-        while True:
-            if next_event_token:
-                params["nextToken"] = next_event_token
-                params.pop("startTime", None)  # Remove startTime when using nextToken
+        # Stream events using the util function
+        for event in stream_log_events(
+                log_group_name,
+                log_stream_name,
+                start_time,
+                end_time,
+                follow=False,
+                client=client
+        ):
+            log_stream_events += 1
+            log_events.append(event)
 
-            # Fetch the log events (this call takes a while: optimize if we can)
-            events_response = client.get_log_events(**params)
+        spinner.stop()
+        print(f"Processed {log_stream_events} events from {log_stream_name} (Total: {len(log_events)})")
 
-            events = events_response.get("events", [])
-            for event in events:
-                event["logStreamName"] = log_stream_name
-
-            # Add the log stream events to our list of all log events
-            log_stream_events += len(events)
-            log_events.extend(events)
-
-            # Handle pagination for log events
-            next_event_token = events_response.get("nextForwardToken")
-
-            # Break the loop if there are no more events to fetch
-            if not next_event_token or next_event_token == params.get("nextToken"):
-                spinner.stop()
-                print(f"Processed {log_stream_events} events from {log_stream_name} (Total: {len(log_events)})")
-                break
-
-    # Return the log events
     return log_events
 
 
@@ -182,15 +116,15 @@ def merge_ranges(ranges):
 
 
 def monitor_log_group(
-    log_group_name,
-    start_time,
-    end_time=None,
-    poll_interval=10,
-    log_level=None,
-    search_terms=None,
-    before=10,
-    after=0,
-    stream_filter=None,
+        log_group_name,
+        start_time,
+        end_time=None,
+        poll_interval=10,
+        log_level=None,
+        search_terms=None,
+        before=10,
+        after=0,
+        stream_filter=None,
 ):
     """Continuously monitor the CloudWatch Logs group for new log messages from all log streams."""
     client = get_cloudwatch_client()
@@ -206,6 +140,7 @@ def monitor_log_group(
     print(f"Monitoring log group: {log_group_name} from {date_display(start_time)}")
     print(f"Log levels: {log_levels}")
     print(f"Search terms: {search_terms}")
+
     while True:
         # Get the latest log events with stream filtering if provided
         all_log_events = get_latest_log_events(client, log_group_name, start_time, end_time, stream_filter)
@@ -218,7 +153,6 @@ def monitor_log_group(
 
                 # Check the search terms
                 if not search_terms or any(term in event["message"].lower() for term in search_terms):
-
                     # Calculate the start and end index for this match
                     start_index = max(i - before, 0)
                     end_index = min(i + after, len(all_log_events) - 1)
@@ -230,7 +164,7 @@ def monitor_log_group(
         # Collect filtered events based on merged ranges
         filtered_events = []
         for start, end in merged_ranges:
-            filtered_events.extend(all_log_events[start : end + 1])
+            filtered_events.extend(all_log_events[start: end + 1])
 
             # These are just blank lines to separate the log message 'groups'
             filtered_events.append({"logStreamName": None, "timestamp": None, "message": ""})
