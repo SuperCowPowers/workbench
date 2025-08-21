@@ -149,7 +149,7 @@ class AWSSession:
             return credentials
 
         except Exception as e:
-            self.c_print(f"Error during Refresh Credentials: {e}", critical=True)
+            self.log.critical(f"Error during Refresh Credentials: {e}", critical=True)
             raise RuntimeError("Failed to refresh Workbench role session credentials")
 
     @staticmethod

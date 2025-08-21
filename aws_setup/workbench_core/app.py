@@ -1,18 +1,22 @@
 import os
 import boto3
+import logging
 import aws_cdk as cdk
 from workbench_core.workbench_core_stack import WorkbenchCoreStack, WorkbenchCoreStackProps
 
 # Initialize ConfigManager with error handling
 try:
-    from workbench.utils.log_utils import silence_logs
-    with silence_logs():
-        from workbench.utils.config_manager import ConfigManager
-        cm = ConfigManager()
+    # Temporarily disable logging
+    logging.disable(logging.CRITICAL)
+    from workbench.utils.config_manager import ConfigManager
+    cm = ConfigManager()
 except Exception as e:
     print(f"Workbench ConfigManager initialization failed: {e}")
     print("Falling back to environment variables only")
     cm = None
+finally:
+    # Re-enable logging
+    logging.disable(logging.NOTSET) 
 
 # Grab the account and region using boto3
 session = boto3.session.Session()
