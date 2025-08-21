@@ -37,7 +37,7 @@ class WorkbenchCoreStack(Stack):
         self.readonly_role_name = "Workbench-ReadOnlyRole"  # Read only operations
         self.glue_role_name = "Workbench-GlueRole"
         self.lambda_role_name = "Workbench-LambdaRole"
-        self.training_role_name = "Workbench-TrainingRole"
+        self.batch_role_name = "Workbench-BatchRole"
 
         # Create the WorkbenchLogGroup for CloudWatch Logs
         self.workbench_log_group = logs.LogGroup(
@@ -77,9 +77,10 @@ class WorkbenchCoreStack(Stack):
         # Create a read-only role for the Workbench API
         self.workbench_readonly_role = self.create_readonly_role()
 
-        # Create additional roles for Lambda and Glue
+        # Create additional roles for Lambda, Glue, and Batch
         self.workbench_lambda_role = self.create_lambda_role()
         self.workbench_glue_role = self.create_glue_role()
+        self.workbench_batch_role = self.create_batch_role()
 
     ####################
     #    S3 Buckets    #
@@ -285,8 +286,61 @@ class WorkbenchCoreStack(Stack):
         """Allows us to specify the Workbench-Glue role when creating a Glue Job"""
         return iam.PolicyStatement(
             actions=["iam:PassRole"],
-            resources=[f"arn:aws:iam::{self.account}:role/Workbench-GlueRole"],
+            resources=[f"arn:aws:iam::{self.account}:role/{self.glue_role_name}"],
             conditions={"StringEquals": {"iam:PassedToService": "glue.amazonaws.com"}},
+        )
+
+    ##################
+    #   Batch Jobs   #
+    ##################
+    @staticmethod
+    def batch_jobs_discover() -> iam.PolicyStatement:
+        """Discovery access to list all Batch jobs and job definitions."""
+        return iam.PolicyStatement(
+            actions=[
+                "batch:DescribeJobDefinitions",
+                "batch:DescribeJobQueues",
+                "batch:DescribeComputeEnvironments"
+            ],
+            resources=["*"],
+        )
+
+    def batch_jobs_read(self) -> iam.PolicyStatement:
+        """Read-only access to specific Batch jobs."""
+        return iam.PolicyStatement(
+            actions=[
+                "batch:DescribeJobs",
+                "batch:ListJobs",
+                "batch:DescribeJobDefinitions",
+            ],
+            resources=[
+                f"arn:aws:batch:{self.region}:{self.account}:job-definition/*",
+                f"arn:aws:batch:{self.region}:{self.account}:job-queue/*",
+                f"arn:aws:batch:{self.region}:{self.account}:job/*"
+            ],
+        )
+
+    def batch_jobs_full(self) -> iam.PolicyStatement:
+        """Full access to specific Batch jobs."""
+        read_statement = self.batch_jobs_read()
+        return iam.PolicyStatement(
+            actions=read_statement.actions
+                    + [
+                        "batch:RegisterJobDefinition",
+                        "batch:DeregisterJobDefinition",
+                        "batch:SubmitJob",
+                        "batch:TerminateJob",
+                        "batch:CancelJob"
+                    ],
+            resources=read_statement.resources,
+        )
+
+    def batch_pass_role(self) -> iam.PolicyStatement:
+        """Allows us to specify the Workbench-Batch role when creating a Batch Job"""
+        return iam.PolicyStatement(
+            actions=["iam:PassRole"],
+            resources=[f"arn:aws:iam::{self.account}:role/{self.batch_role_name}"],
+            conditions={"StringEquals": {"iam:PassedToService": "ecs-tasks.amazonaws.com"}},
         )
 
     #####################
@@ -1175,9 +1229,12 @@ class WorkbenchCoreStack(Stack):
         )
 
         # Create and attach the Workbench managed policies to the role
-        api_execution_role.add_to_policy(self.glue_pass_role())
         api_execution_role.add_to_policy(self.glue_jobs_discover())
         api_execution_role.add_to_policy(self.glue_jobs_full())
+        api_execution_role.add_to_policy(self.glue_pass_role())
+        api_execution_role.add_to_policy(self.batch_jobs_discover())
+        api_execution_role.add_to_policy(self.batch_jobs_full())
+        api_execution_role.add_to_policy(self.batch_pass_role())
         api_execution_role.add_to_policy(self.parameter_store_discover())
         api_execution_role.add_to_policy(self.parameter_store_full())
         api_execution_role.add_to_policy(self.cloudwatch_monitor())
@@ -1257,6 +1314,26 @@ class WorkbenchCoreStack(Stack):
         glue_role.add_managed_policy(self.endpoint_policy)
         glue_role.add_managed_policy(self.pipeline_policy)
         return glue_role
+
+    def create_batch_role(self) -> iam.Role:
+        """Create the Workbench Batch Role."""
+        batch_assumed_by = iam.ServicePrincipal("ecs-tasks.amazonaws.com")
+        batch_role = iam.Role(
+            self,
+            id=self.batch_role_name,
+            assumed_by=batch_assumed_by,
+            role_name=self.batch_role_name,
+        )
+
+        # Add policies for the Batch Role
+        batch_role.add_to_policy(self.parameter_store_full())
+        batch_role.add_to_policy(self.dataframe_store_full())
+        batch_role.add_managed_policy(self.datasource_policy)
+        batch_role.add_managed_policy(self.featureset_policy)
+        batch_role.add_managed_policy(self.model_policy)
+        batch_role.add_managed_policy(self.endpoint_policy)
+        batch_role.add_managed_policy(self.pipeline_policy)
+        return batch_role
 
     def _create_sso_principals(self, base_principals: iam.CompositePrincipal = None) -> iam.CompositePrincipal:
         """
