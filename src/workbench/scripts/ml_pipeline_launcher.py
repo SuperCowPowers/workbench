@@ -31,7 +31,6 @@ def ensure_job_definition():
     """Register or update the Batch job definition for ML pipeline runner."""
     batch = AWSAccountClamp().boto3_session.client("batch")
     name = "workbench-ml-pipeline-runner"
-
     response = batch.register_job_definition(
         jobDefinitionName=name,
         type="container",
@@ -44,12 +43,14 @@ def ensure_job_definition():
             ],
             "jobRoleArn": get_batch_role_arn(),
             "executionRoleArn": get_batch_role_arn(),
-            "environment": [{"name": "WORKBENCH_BUCKET", "value": workbench_bucket}],
-            "networkConfiguration": {"assignPublicIp": "ENABLED"},   # Required for ECR image pull
+            "environment": [
+                {"name": "WORKBENCH_BUCKET", "value": workbench_bucket},
+                {"name": "PYTHONUNBUFFERED", "value": "1"}
+            ],
+            "networkConfiguration": {"assignPublicIp": "ENABLED"},  # Required for ECR Image Pull
         },
         timeout={"attemptDurationSeconds": 10800},  # 3 hours
     )
-
     log.info(f"Job definition ready: {name} (revision {response['revision']})")
     return name
 
