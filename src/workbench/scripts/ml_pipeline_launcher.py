@@ -37,15 +37,12 @@ def ensure_job_definition():
         platformCapabilities=["FARGATE"],
         containerProperties={
             "image": get_ecr_image_uri(),
-            "resourceRequirements": [
-                {"type": "VCPU", "value": "2"},
-                {"type": "MEMORY", "value": "4096"}
-            ],
+            "resourceRequirements": [{"type": "VCPU", "value": "2"}, {"type": "MEMORY", "value": "4096"}],
             "jobRoleArn": get_batch_role_arn(),
             "executionRoleArn": get_batch_role_arn(),
             "environment": [
                 {"name": "WORKBENCH_BUCKET", "value": workbench_bucket},
-                {"name": "PYTHONUNBUFFERED", "value": "1"}
+                {"name": "PYTHONUNBUFFERED", "value": "1"},
             ],
             "networkConfiguration": {"assignPublicIp": "ENABLED"},  # Required for ECR Image Pull
         },
@@ -67,16 +64,15 @@ def stream_job_logs(log_stream_name: str, last_timestamp=None):
 
     try:
         for event in stream_log_events(
-                log_group_name="/aws/batch/job",
-                log_stream_name=log_stream_name,
-                start_time=last_timestamp,
-                follow=False,
+            log_group_name="/aws/batch/job",
+            log_stream_name=log_stream_name,
+            start_time=last_timestamp,
+            follow=False,
         ):
             print_log_event(event, show_stream=False, local_time=True)
             # Add 1ms to avoid re-reading the same event
             last_timestamp = datetime.fromtimestamp(
-                event["timestamp"] / 1000 + 0.001,
-                tz=datetime.now().astimezone().tzinfo
+                event["timestamp"] / 1000 + 0.001, tz=datetime.now().astimezone().tzinfo
             )
             event_count += 1
 
@@ -175,15 +171,9 @@ def run_batch_job(script_path: str, stream_logs: bool = True) -> int:
 
 def main():
     """CLI entry point for running ML pipelines on AWS Batch."""
-    parser = argparse.ArgumentParser(
-        description="Run ML pipeline script on AWS Batch with optional log streaming"
-    )
+    parser = argparse.ArgumentParser(description="Run ML pipeline script on AWS Batch with optional log streaming")
     parser.add_argument("script_file", help="Local path to ML pipeline script")
-    parser.add_argument(
-        "--no-stream",
-        action="store_true",
-        help="Disable CloudWatch log streaming"
-    )
+    parser.add_argument("--no-stream", action="store_true", help="Disable CloudWatch log streaming")
     args = parser.parse_args()
 
     try:

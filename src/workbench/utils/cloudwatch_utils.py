@@ -31,18 +31,18 @@ def get_cloudwatch_logs_url(log_group: Optional[str] = None, log_stream: Optiona
 
         # Get log group and stream
         if not log_group:
-            log_group = os.environ.get('AWS_LOGS_GROUP', '/aws/batch/job')
+            log_group = os.environ.get("AWS_LOGS_GROUP", "/aws/batch/job")
         if not log_stream:
-            log_stream = os.environ.get('AWS_LOGS_STREAM')
+            log_stream = os.environ.get("AWS_LOGS_STREAM")
 
         if log_stream:
             # URL encode the log stream name
-            encoded_stream = quote(log_stream, safe='')
-            encoded_group = quote(log_group, safe='')
+            encoded_stream = quote(log_stream, safe="")
+            encoded_group = quote(log_group, safe="")
             url = f"https://{region}.console.aws.amazon.com/cloudwatch/home?region={region}#logsV2:log-groups/log-group/{encoded_group}/log-events/{encoded_stream}"
         else:
             # Fallback to log group view
-            encoded_group = quote(log_group, safe='')
+            encoded_group = quote(log_group, safe="")
             url = f"https://{region}.console.aws.amazon.com/cloudwatch/home?region={region}#logsV2:log-groups/log-group/{encoded_group}"
 
         return url
@@ -52,7 +52,7 @@ def get_cloudwatch_logs_url(log_group: Optional[str] = None, log_stream: Optiona
 
 
 def get_active_log_streams(
-        log_group_name: str, start_time_ms: int, stream_filter: Optional[str] = None, client=None
+    log_group_name: str, start_time_ms: int, stream_filter: Optional[str] = None, client=None
 ) -> List[str]:
     """Retrieve log streams that have events after the specified start time."""
     if not client:
@@ -85,12 +85,12 @@ def get_active_log_streams(
 
 
 def stream_log_events(
-        log_group_name: str,
-        log_stream_name: str,
-        start_time: Optional[datetime] = None,
-        end_time: Optional[datetime] = None,
-        follow: bool = False,
-        client=None,
+    log_group_name: str,
+    log_stream_name: str,
+    start_time: Optional[datetime] = None,
+    end_time: Optional[datetime] = None,
+    follow: bool = False,
+    client=None,
 ) -> Generator[Dict, None, None]:
     """
     Stream log events from a specific log stream.
@@ -128,7 +128,7 @@ def stream_log_events(
 
 
 def print_log_event(
-        event: dict, show_stream: bool = True, local_time: bool = True, custom_format: Optional[str] = None
+    event: dict, show_stream: bool = True, local_time: bool = True, custom_format: Optional[str] = None
 ):
     """Print a formatted log event."""
     timestamp = datetime.fromtimestamp(event["timestamp"] / 1000, tz=timezone.utc)

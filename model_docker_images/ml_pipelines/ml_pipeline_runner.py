@@ -26,9 +26,7 @@ def run_ml_pipeline(script_path: str):
     try:
         # Run the script with python
         result = subprocess.run(
-            [sys.executable, script_path],
-            check=False,  # Don't raise exception on non-zero exit
-            text=True
+            [sys.executable, script_path], check=False, text=True  # Don't raise exception on non-zero exit
         )
         if result.returncode == 0:
             log.info("ML pipeline completed successfully")
