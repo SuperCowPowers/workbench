@@ -9,6 +9,7 @@ try:
     # Temporarily disable logging
     logging.disable(logging.CRITICAL)
     from workbench.utils.config_manager import ConfigManager
+
     cm = ConfigManager()
 except Exception as e:
     print(f"Workbench ConfigManager initialization failed: {e}")
@@ -16,7 +17,7 @@ except Exception as e:
     cm = None
 finally:
     # Re-enable logging
-    logging.disable(logging.NOTSET) 
+    logging.disable(logging.NOTSET)
 
 # Grab the account and region using boto3
 session = boto3.session.Session()
@@ -33,10 +34,12 @@ if not workbench_bucket:
 
 sso_group = (cm and cm.get_config("WORKBENCH_SSO_GROUP")) or os.getenv("WORKBENCH_SSO_GROUP")
 
-additional_buckets_str = (cm and cm.get_config("WORKBENCH_ADDITIONAL_BUCKETS")) or os.getenv("WORKBENCH_ADDITIONAL_BUCKETS", "")
-additional_buckets = [
-    bucket.strip() for bucket in additional_buckets_str.split(",") if bucket.strip()
-] if additional_buckets_str else []
+additional_buckets_str = (cm and cm.get_config("WORKBENCH_ADDITIONAL_BUCKETS")) or os.getenv(
+    "WORKBENCH_ADDITIONAL_BUCKETS", ""
+)
+additional_buckets = (
+    [bucket.strip() for bucket in additional_buckets_str.split(",") if bucket.strip()] if additional_buckets_str else []
+)
 
 # Log the configuration for transparency
 print("Configuration:")
