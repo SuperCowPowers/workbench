@@ -37,16 +37,11 @@ def ensure_job_definition():
         platformCapabilities=["FARGATE"],
         containerProperties={
             "image": get_ecr_image_uri(),
-            "resourceRequirements": [
-                {"type": "VCPU", "value": "2"},
-                {"type": "MEMORY", "value": "4096"}
-            ],
+            "resourceRequirements": [{"type": "VCPU", "value": "2"}, {"type": "MEMORY", "value": "4096"}],
             "jobRoleArn": get_batch_role_arn(),
             "executionRoleArn": get_batch_role_arn(),
             "environment": [{"name": "WORKBENCH_BUCKET", "value": workbench_bucket}],
-            "networkConfiguration": {
-                "assignPublicIp": "ENABLED"  # This is required so the ECR image can be pulled
-            }
+            "networkConfiguration": {"assignPublicIp": "ENABLED"},  # This is required so the ECR image can be pulled
         },
         timeout={"attemptDurationSeconds": 10800},  # 3 hours
     )

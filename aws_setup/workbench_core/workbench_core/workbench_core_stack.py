@@ -319,7 +319,7 @@ class WorkbenchCoreStack(Stack):
             ],
             resources=[
                 f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/batch/job",
-                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/batch/job:*"
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/batch/job:*",
             ],
         )
 
