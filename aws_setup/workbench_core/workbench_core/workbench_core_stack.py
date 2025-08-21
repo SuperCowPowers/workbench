@@ -305,6 +305,24 @@ class WorkbenchCoreStack(Stack):
     ##################
     #   Batch Jobs   #
     ##################
+    def batch_job_logs(self) -> iam.PolicyStatement:
+        """Create a policy statement for Glue job CloudWatch logs.
+
+        Returns:
+            iam.PolicyStatement: The policy statement for Glue job log interactions.
+        """
+        return iam.PolicyStatement(
+            actions=[
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+            ],
+            resources=[
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/batch/job",
+                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/batch/job:*"
+            ],
+        )
+
     @staticmethod
     def batch_jobs_discover() -> iam.PolicyStatement:
         """Discovery actions that absolutely require * resource."""
@@ -1361,6 +1379,8 @@ class WorkbenchCoreStack(Stack):
         )
 
         # Add policies for the Batch Role
+        batch_role.add_to_policy(self.batch_job_logs())
+        # batch_role.add_to_policy(self.ecr_policy_statement())  # Not sure we need this
         batch_role.add_to_policy(self.parameter_store_full())
         batch_role.add_to_policy(self.dataframe_store_full())
         batch_role.add_managed_policy(self.datasource_policy)
