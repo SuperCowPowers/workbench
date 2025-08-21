@@ -91,8 +91,8 @@ class WorkbenchCoreStack(Stack):
         self.workbench_batch_role = self.create_batch_role()
 
         # Batch Compute Environment and Job Queue
-        # self.batch_compute_environment = self.create_batch_compute_environment()
-        # self.batch_job_queue = self.create_batch_job_queue()
+        self.batch_compute_environment = self.create_batch_compute_environment()
+        self.batch_job_queue = self.create_batch_job_queue()
 
     ####################
     #    S3 Buckets    #
@@ -307,29 +307,33 @@ class WorkbenchCoreStack(Stack):
     ##################
     @staticmethod
     def batch_jobs_discover() -> iam.PolicyStatement:
-        """Discovery access to list all Batch jobs and job definitions."""
+        """Discovery actions that absolutely require * resource."""
         return iam.PolicyStatement(
-            actions=["batch:DescribeJobDefinitions", "batch:DescribeJobQueues", "batch:DescribeComputeEnvironments"],
+            actions=[
+                "batch:ListJobs",  # Requires * to list across all queues
+                "batch:DescribeJobs",  # Requires * even for specific job IDs (AWS API design)
+            ],
             resources=["*"],
         )
 
     def batch_jobs_read(self) -> iam.PolicyStatement:
-        """Read-only access to specific Batch jobs."""
+        """Read-only access to specific Batch resources."""
         return iam.PolicyStatement(
             actions=[
-                "batch:DescribeJobs",
-                "batch:ListJobs",
                 "batch:DescribeJobDefinitions",
+                "batch:DescribeJobQueues",
+                "batch:DescribeComputeEnvironments",
             ],
             resources=[
-                f"arn:aws:batch:{self.region}:{self.account}:job-definition/*",
-                f"arn:aws:batch:{self.region}:{self.account}:job-queue/*",
-                f"arn:aws:batch:{self.region}:{self.account}:job/*",
+                f"arn:aws:batch:{self.region}:{self.account}:job-definition/workbench-*",
+                f"arn:aws:batch:{self.region}:{self.account}:job-queue/workbench-*",
+                f"arn:aws:batch:{self.region}:{self.account}:compute-environment/workbench-*",
+                f"arn:aws:batch:{self.region}:{self.account}:job/*",  # Job IDs are random UUIDs
             ],
         )
 
     def batch_jobs_full(self) -> iam.PolicyStatement:
-        """Full access to specific Batch jobs."""
+        """Full access to specific Batch resources."""
         read_statement = self.batch_jobs_read()
         return iam.PolicyStatement(
             actions=read_statement.actions
