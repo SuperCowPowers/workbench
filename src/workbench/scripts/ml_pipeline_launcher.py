@@ -14,23 +14,22 @@ from workbench.utils.s3_utils import upload_content_to_s3
 # Set up logging
 log = logging.getLogger("workbench")
 
-# Grab our Workbench S3 Bucket
+# Grab our Workbench S3 Bucket and Account Information
 cm = ConfigManager()
 workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
 
 
-def get_ecr_image_uri(region: str) -> str:
+def get_ecr_image_uri() -> str:
     """Get the ECR image URI for the current region."""
-    account_id = "507740646243"
-    return f"{account_id}.dkr.ecr.{region}.amazonaws.com/aws-ml-images/py312-ml-pipelines:0.1"
+    workbench_ecr_account_id = "507740646243"
+    region = AWSAccountClamp().region
+    return f"{workbench_ecr_account_id}.dkr.ecr.{region}.amazonaws.com/aws-ml-images/py312-ml-pipelines:0.1"
 
 
 def get_job_role_arn() -> str:
     """Get the Batch execution role ARN."""
-    # Get current account ID
-    sts_client = AWSAccountClamp().boto3_session.client("sts")
-    account_id = sts_client.get_caller_identity()["Account"]
-    return f"arn:aws:iam::{account_id}:role/WorkbenchBatchExecutionRole"
+    account_id = AWSAccountClamp().account_id
+    return f"arn:aws:iam::{account_id}:role/Workbench-BatchRole"
 
 
 def upload_script_to_s3(local_file_path: str) -> str:
@@ -51,14 +50,13 @@ def upload_script_to_s3(local_file_path: str) -> str:
 def create_or_update_batch_job_definition():
     """Create or update the reusable Batch job definition."""
     batch_client = AWSAccountClamp().boto3_session.client("batch")
-    region = batch_client.meta.region_name
     job_definition_name = "workbench-ml-pipeline-runner"
 
     job_definition = {
         "jobDefinitionName": job_definition_name,
         "type": "container",
         "containerProperties": {
-            "image": get_ecr_image_uri(region),
+            "image": get_ecr_image_uri(),
             "vcpus": 2,
             "memory": 4096,
             "jobRoleArn": get_job_role_arn(),
@@ -90,7 +88,7 @@ def create_or_update_batch_job_definition():
     return job_definition_name
 
 
-def submit_batch_job(s3_script_path: str, script_name: str) -> Tuple(str, str):
+def submit_batch_job(s3_script_path: str, script_name: str) -> Tuple[str, str]:
     """Submit a batch job and return the job ID."""
     batch_client = AWSAccountClamp().boto3_session.client("batch")
 
