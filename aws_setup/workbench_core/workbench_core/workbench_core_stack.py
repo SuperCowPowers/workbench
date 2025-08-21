@@ -1,11 +1,11 @@
 from aws_cdk import (
-   Environment,
-   Stack,
-   aws_iam as iam,
-   aws_logs as logs,
-   aws_ec2 as ec2,
-   aws_batch as batch,
-   RemovalPolicy,
+    Environment,
+    Stack,
+    aws_iam as iam,
+    aws_logs as logs,
+    aws_ec2 as ec2,
+    aws_batch as batch,
+    RemovalPolicy,
 )
 from constructs import Construct
 from typing import Any, List
@@ -309,11 +309,7 @@ class WorkbenchCoreStack(Stack):
     def batch_jobs_discover() -> iam.PolicyStatement:
         """Discovery access to list all Batch jobs and job definitions."""
         return iam.PolicyStatement(
-            actions=[
-                "batch:DescribeJobDefinitions",
-                "batch:DescribeJobQueues",
-                "batch:DescribeComputeEnvironments"
-            ],
+            actions=["batch:DescribeJobDefinitions", "batch:DescribeJobQueues", "batch:DescribeComputeEnvironments"],
             resources=["*"],
         )
 
@@ -328,7 +324,7 @@ class WorkbenchCoreStack(Stack):
             resources=[
                 f"arn:aws:batch:{self.region}:{self.account}:job-definition/*",
                 f"arn:aws:batch:{self.region}:{self.account}:job-queue/*",
-                f"arn:aws:batch:{self.region}:{self.account}:job/*"
+                f"arn:aws:batch:{self.region}:{self.account}:job/*",
             ],
         )
 
@@ -337,13 +333,13 @@ class WorkbenchCoreStack(Stack):
         read_statement = self.batch_jobs_read()
         return iam.PolicyStatement(
             actions=read_statement.actions
-                    + [
-                        "batch:RegisterJobDefinition",
-                        "batch:DeregisterJobDefinition",
-                        "batch:SubmitJob",
-                        "batch:TerminateJob",
-                        "batch:CancelJob"
-                    ],
+            + [
+                "batch:RegisterJobDefinition",
+                "batch:DeregisterJobDefinition",
+                "batch:SubmitJob",
+                "batch:TerminateJob",
+                "batch:CancelJob",
+            ],
             resources=read_statement.resources,
         )
 
@@ -361,7 +357,8 @@ class WorkbenchCoreStack(Stack):
     def create_batch_compute_environment(self) -> batch.FargateComputeEnvironment:
         """Create the Batch compute environment - super simple with Fargate."""
         return batch.FargateComputeEnvironment(
-            self, "WorkbenchBatchComputeEnvironment",
+            self,
+            "WorkbenchBatchComputeEnvironment",
             compute_environment_name="workbench-compute-env",
             vpc=ec2.Vpc.from_lookup(self, "DefaultVpc", is_default=True),
         )
@@ -369,14 +366,12 @@ class WorkbenchCoreStack(Stack):
     def create_batch_job_queue(self) -> batch.JobQueue:
         """Create the Batch job queue."""
         return batch.JobQueue(
-            self, "WorkbenchBatchJobQueue",
+            self,
+            "WorkbenchBatchJobQueue",
             job_queue_name="workbench-job-queue",
             compute_environments=[
-                batch.OrderedComputeEnvironment(
-                    compute_environment=self.batch_compute_environment,
-                    order=1
-                )
-            ]
+                batch.OrderedComputeEnvironment(compute_environment=self.batch_compute_environment, order=1)
+            ],
         )
 
     #####################
