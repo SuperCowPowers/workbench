@@ -8,6 +8,7 @@ from pathlib import Path
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.s3_utils import upload_content_to_s3
+from workbench.utils.cloudwatch_utils import get_cloudwatch_logs_url
 
 log = logging.getLogger("workbench")
 cm = ConfigManager()
@@ -108,6 +109,12 @@ def run_batch_job(script_path: str) -> int:
                 log.error(f"Job failed: {job.get('statusReason', 'Unknown reason')}")
             else:
                 log.info(f"Job completed successfully")
+
+            # Get CloudWatch logs URL
+            log_stream_name = job.get("container", {}).get("logStreamName")
+            logs_url = get_cloudwatch_logs_url(log_group="/aws/batch/job", log_stream=log_stream_name)
+            if logs_url:
+                log.info(f"View logs: {logs_url}")
             return exit_code
 
         # Wait before next status check
