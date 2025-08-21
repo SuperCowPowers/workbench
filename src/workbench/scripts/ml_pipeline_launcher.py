@@ -103,12 +103,11 @@ def run_batch_job(script_path: str) -> int:
 
         # Check if job completed
         if status in ["SUCCEEDED", "FAILED"]:
-            # Get exit code and return
             exit_code = job.get("attempts", [{}])[-1].get("exitCode", 1)
             if status == "FAILED":
                 log.error(f"Job failed: {job.get('statusReason', 'Unknown reason')}")
             else:
-                log.info(f"Job completed successfully")
+                log.info("Job completed successfully")
 
             # Get CloudWatch logs URL
             log_stream_name = job.get("container", {}).get("logStreamName")
@@ -117,8 +116,8 @@ def run_batch_job(script_path: str) -> int:
                 log.info(f"View logs: {logs_url}")
             return exit_code
 
-        # Wait before next status check
-        time.sleep(5)
+        # Sleep a bit before next status check
+        time.sleep(10)
 
 
 def main():

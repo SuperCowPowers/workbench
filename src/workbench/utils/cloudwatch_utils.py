@@ -1,5 +1,5 @@
-""" AWS CloudWatch utility functions for Workbench."""
-import os
+"""AWS CloudWatch utility functions for Workbench."""
+
 import time
 import logging
 from datetime import datetime, timezone
@@ -31,8 +31,8 @@ def get_cloudwatch_logs_url(log_group: str, log_stream: str) -> Optional[str]:
         region = AWSAccountClamp().region
 
         # AWS Console uses double URL encoding - encode once, then replace % with $25
-        encoded_group = quote(log_group, safe='').replace('%', '$25')
-        encoded_stream = quote(log_stream, safe='').replace('%', '$25')
+        encoded_group = quote(log_group, safe="").replace("%", "$25")
+        encoded_stream = quote(log_stream, safe="").replace("%", "$25")
 
         return (
             f"https://{region}.console.aws.amazon.com/cloudwatch/home?"
