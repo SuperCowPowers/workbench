@@ -17,6 +17,7 @@ class WorkbenchCoreStackProps:
     workbench_bucket: str
     sso_group: str
     additional_buckets: List[str] = field(default_factory=list)
+    existing_vpc_id: str = None
 
 
 class WorkbenchCoreStack(Stack):
@@ -39,6 +40,7 @@ class WorkbenchCoreStack(Stack):
         self.workbench_bucket = props.workbench_bucket
         self.sso_group = props.sso_group
         self.additional_buckets = props.additional_buckets
+        self.existing_vpc_id = props.existing_vpc_id
 
         # Workbench Role Names
         self.execution_role_name = "Workbench-ExecutionRole"  # Main role
@@ -91,7 +93,7 @@ class WorkbenchCoreStack(Stack):
         self.workbench_batch_role = self.create_batch_role()
 
         # Batch Compute Environment and Job Queue
-        self.batch_compute_environment = self.create_batch_compute_environment()
+        self.batch_compute_environment = self.create_batch_compute_environment(self.existing_vpc_id)
         self.batch_job_queue = self.create_batch_job_queue()
 
     ####################
@@ -376,13 +378,19 @@ class WorkbenchCoreStack(Stack):
     #####################
     #   Batch Compute   #
     #####################
-    def create_batch_compute_environment(self) -> batch.FargateComputeEnvironment:
-        """Create the Batch compute environment - super simple with Fargate."""
+    def create_batch_compute_environment(self, existing_vpc_id=None) -> batch.FargateComputeEnvironment:
+        """Create the Batch compute environment with Fargate."""
+
+        # Do we have an existing VPC we want to use? Otherwise use a default
+        if existing_vpc_id:
+            vpc = ec2.Vpc.from_lookup(self, "ImportedVPC", vpc_id=existing_vpc_id)
+        else:
+            vpc = ec2.Vpc.from_lookup(self, "DefaultVpc", is_default=True)
         return batch.FargateComputeEnvironment(
             self,
             "WorkbenchBatchComputeEnvironment",
             compute_environment_name="workbench-compute-env",
-            vpc=ec2.Vpc.from_lookup(self, "DefaultVpc", is_default=True),
+            vpc=vpc,
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:
@@ -1380,7 +1388,6 @@ class WorkbenchCoreStack(Stack):
 
         # Add policies for the Batch Role
         batch_role.add_to_policy(self.batch_job_logs())
-        # batch_role.add_to_policy(self.ecr_policy_statement())  # Not sure we need this
         batch_role.add_to_policy(self.parameter_store_full())
         batch_role.add_to_policy(self.dataframe_store_full())
         batch_role.add_managed_policy(self.datasource_policy)
