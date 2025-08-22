@@ -60,10 +60,12 @@ def run_batch_job(script_path: str, size: str = "small") -> int:
         jobName=job_name,
         jobQueue="workbench-job-queue",
         jobDefinition=f"workbench-ml-pipeline-{size}",
-        containerOverrides={"environment": [
-            {"name": "ML_PIPELINE_S3_PATH", "value": s3_path},
-            {"name": "WORKBENCH_BUCKET", "value": workbench_bucket},
-        ]}
+        containerOverrides={
+            "environment": [
+                {"name": "ML_PIPELINE_S3_PATH", "value": s3_path},
+                {"name": "WORKBENCH_BUCKET", "value": workbench_bucket},
+            ]
+        },
     )
     job_id = response["jobId"]
     log.info(f"Submitted job: {job_name} ({job_id}) using {size} tier")
@@ -99,7 +101,11 @@ def run_batch_job(script_path: str, size: str = "small") -> int:
         # Handle completion
         if status in ["SUCCEEDED", "FAILED"]:
             exit_code = job.get("attempts", [{}])[-1].get("exitCode", 1)
-            msg = "Job completed successfully" if status == "SUCCEEDED" else f"Job failed: {job.get('statusReason', 'Unknown')}"
+            msg = (
+                "Job completed successfully"
+                if status == "SUCCEEDED"
+                else f"Job failed: {job.get('statusReason', 'Unknown')}"
+            )
             log.info(msg) if status == "SUCCEEDED" else log.error(msg)
 
             log_stream = job.get("container", {}).get("logStreamName")
