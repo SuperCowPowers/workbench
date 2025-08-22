@@ -44,7 +44,7 @@ def ensure_job_definition():
                 {"name": "WORKBENCH_BUCKET", "value": workbench_bucket},
                 {"name": "PYTHONUNBUFFERED", "value": "1"},
             ],
-            "networkConfiguration": {"assignPublicIp": "ENABLED"},  # Required for ECR Image Pull
+            # "networkConfiguration": {"assignPublicIp": "ENABLED"},  # Required for ECR Image Pull (when not in VPC)
         },
         timeout={"attemptDurationSeconds": 10800},  # 3 hours
     )

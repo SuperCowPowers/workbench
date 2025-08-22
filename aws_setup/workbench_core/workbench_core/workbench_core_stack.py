@@ -18,6 +18,7 @@ class WorkbenchCoreStackProps:
     sso_group: str
     additional_buckets: List[str] = field(default_factory=list)
     existing_vpc_id: str = None
+    subnet_ids: List[str] = field(default_factory=list)  # Optional subnets ids for the Batch compute environment
 
 
 class WorkbenchCoreStack(Stack):
@@ -41,6 +42,7 @@ class WorkbenchCoreStack(Stack):
         self.sso_group = props.sso_group
         self.additional_buckets = props.additional_buckets
         self.existing_vpc_id = props.existing_vpc_id
+        self.subnet_ids = props.subnet_ids
 
         # Workbench Role Names
         self.execution_role_name = "Workbench-ExecutionRole"  # Main role
@@ -93,7 +95,7 @@ class WorkbenchCoreStack(Stack):
         self.workbench_batch_role = self.create_batch_role()
 
         # Batch Compute Environment and Job Queue
-        self.batch_compute_environment = self.create_batch_compute_environment(self.existing_vpc_id)
+        self.batch_compute_environment = self.create_batch_compute_environment()
         self.batch_job_queue = self.create_batch_job_queue()
 
     ####################
@@ -378,19 +380,32 @@ class WorkbenchCoreStack(Stack):
     #####################
     #   Batch Compute   #
     #####################
-    def create_batch_compute_environment(self, existing_vpc_id=None) -> batch.FargateComputeEnvironment:
+    def create_batch_compute_environment(self) -> batch.FargateComputeEnvironment:
         """Create the Batch compute environment with Fargate."""
 
         # Do we have an existing VPC we want to use? Otherwise use a default
-        if existing_vpc_id:
-            vpc = ec2.Vpc.from_lookup(self, "ImportedVPC", vpc_id=existing_vpc_id)
+        if self.existing_vpc_id:
+            vpc = ec2.Vpc.from_lookup(self, "ImportedVPC", vpc_id=self.existing_vpc_id)
         else:
             vpc = ec2.Vpc.from_lookup(self, "DefaultVpc", is_default=True)
+
+        # Use specific subnets if provided, otherwise let CDK choose
+        vpc_subnets = None
+        if self.subnet_ids:
+            vpc_subnets = ec2.SubnetSelection(
+                subnets=[
+                    ec2.Subnet.from_subnet_id(self, f"BatchSubnet{i}", subnet_id)
+                    for i, subnet_id in enumerate(self.subnet_ids)
+                ]
+            )
+
         return batch.FargateComputeEnvironment(
             self,
             "WorkbenchBatchComputeEnvironment",
             compute_environment_name="workbench-compute-env",
             vpc=vpc,
+            vpc_subnets=vpc_subnets,
+            replace_compute_environment=True,
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:

@@ -39,6 +39,7 @@ additional_buckets = (
     [bucket.strip() for bucket in additional_buckets_str.split(",") if bucket.strip()] if additional_buckets_str else []
 )
 existing_vpc_id = (cm and cm.get_config("WORKBENCH_VPC_ID")) or os.getenv("WORKBENCH_VPC_ID")
+subnet_ids = (cm and cm.get_config("WORKBENCH_SUBNET_IDS")) or os.getenv("WORKBENCH_SUBNET_IDS", "")
 
 # Log the configuration for transparency
 print("Configuration:")
@@ -46,6 +47,7 @@ print(f"  WORKBENCH_BUCKET: {workbench_bucket}")
 print(f"  WORKBENCH_SSO_GROUP: {sso_group}")
 print(f"  WORKBENCH_ADDITIONAL_BUCKETS: {additional_buckets}")
 print(f"  WORKBENCH_VPC_ID: {existing_vpc_id}")
+print(f"  WORKBENCH_SUBNET_IDS: {subnet_ids}")
 
 # Our CDK App and Environment
 app = cdk.App()
@@ -61,6 +63,7 @@ sandbox_stack = WorkbenchCoreStack(
         sso_group=sso_group,
         additional_buckets=additional_buckets,
         existing_vpc_id=existing_vpc_id,
+        subnet_ids=subnet_ids,
     ),
 )
 
