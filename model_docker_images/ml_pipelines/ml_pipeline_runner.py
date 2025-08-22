@@ -51,14 +51,16 @@ def main():
         log.error("ML_PIPELINE_S3_PATH environment variable not set")
         sys.exit(1)
 
-    # Extract script name for local file
+    # Construct filename for local download
     script_name = os.path.basename(ml_pipeline_s3_path)
     local_script_path = f"/tmp/{script_name}"
     try:
         # Download the ML pipeline script from S3
         download_ml_pipeline_from_s3(ml_pipeline_s3_path, local_script_path)
+
         # Execute the ML pipeline
         exit_code = run_ml_pipeline(local_script_path)
+
         # Clean up
         os.remove(local_script_path)
         sys.exit(exit_code)
