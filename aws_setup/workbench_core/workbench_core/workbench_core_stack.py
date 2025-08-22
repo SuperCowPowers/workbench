@@ -4,12 +4,16 @@ from aws_cdk import (
     aws_iam as iam,
     aws_logs as logs,
     aws_ec2 as ec2,
+    aws_ecs as ecs,
     aws_batch as batch,
     RemovalPolicy,
+    Duration,
+    Size,
 )
 from constructs import Construct
 from typing import Any, List
 from dataclasses import dataclass, field
+from typing import Dict
 
 
 @dataclass
@@ -97,6 +101,7 @@ class WorkbenchCoreStack(Stack):
         # Batch Compute Environment and Job Queue
         self.batch_compute_environment = self.create_batch_compute_environment()
         self.batch_job_queue = self.create_batch_job_queue()
+        self.batch_job_definitions = self.create_batch_job_definitions()
 
     ####################
     #    S3 Buckets    #
@@ -405,7 +410,7 @@ class WorkbenchCoreStack(Stack):
             compute_environment_name="workbench-compute-env",
             vpc=vpc,
             vpc_subnets=vpc_subnets,
-            replace_compute_environment=True,
+            # replace_compute_environment=True,  # Only Needed if you want to replace the environment on update
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:
@@ -418,6 +423,40 @@ class WorkbenchCoreStack(Stack):
                 batch.OrderedComputeEnvironment(compute_environment=self.batch_compute_environment, order=1)
             ],
         )
+
+    def create_batch_job_definitions(self) -> Dict[str, batch.EcsJobDefinition]:
+        """Create ML pipeline job definitions in small/medium/large tiers."""
+
+        ecr_image_uri = f"507740646243.dkr.ecr.{self.region}.amazonaws.com/aws-ml-images/py312-ml-pipelines:0.1"
+        tiers = {
+            "small": (2, 4096),  # 2 vCPU, 4GB RAM
+            "medium": (4, 8192),  # 4 vCPU, 8GB RAM
+            "large": (8, 16384),  # 8 vCPU, 16GB RAM
+        }
+
+        job_definitions = {}
+        for size, (cpu, memory_mib) in tiers.items():
+            job_definitions[size] = batch.EcsJobDefinition(
+                self,
+                f"JobDef{size.capitalize()}",
+                job_definition_name=f"workbench-ml-pipeline-{size}",
+                container=batch.EcsFargateContainerDefinition(
+                    self,
+                    f"Container{size.capitalize()}",
+                    cpu=cpu,
+                    memory=Size.mebibytes(memory_mib),
+                    image=ecs.ContainerImage.from_registry(ecr_image_uri),
+                    job_role=self.workbench_batch_role,
+                    execution_role=self.workbench_batch_role,
+                    environment={
+                        "WORKBENCH_BUCKET": self.workbench_bucket,
+                        "PYTHONUNBUFFERED": "1",
+                    },
+                ),
+                timeout=Duration.hours(3),
+            )
+
+        return job_definitions
 
     #####################
     #  DataFrame Store  #
