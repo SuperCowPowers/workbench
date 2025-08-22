@@ -3819,7 +3819,7 @@ For more information on Linux installs see <a href="https://www.digitalocean.com
 <p>This stack has the <code>Workbench-Execution-Role</code> and an associated role for AWS Glue Jobs.</p>
 <p>You'll need to set some environmental vars before deploying the stack.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>export WORKBENCH_BUCKET=name-of-workbench-bucket
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>export WORKBENCH_SSO_GROUP=DataScientist (or whatever)
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>export WORKBENCH_SSO_GROUPS=DataScientists,DataEngineers (no spaces between commas)
 </span></code></pre></div>
 <p><strong>Optional ENV Vars</strong></p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>export WORKBENCH_ADDITIONAL_BUCKETS=&lt;comma separated list of buckets&gt;
