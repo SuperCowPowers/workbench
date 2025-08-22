@@ -27,6 +27,23 @@ def get_batch_role_arn() -> str:
     return f"arn:aws:iam::{account_id}:role/Workbench-BatchRole"
 
 
+def _log_cloudwatch_link(job: dict, message_prefix: str = "View logs") -> None:
+    """
+    Helper method to log CloudWatch logs link with clickable URL and full URL display.
+
+    Args:
+        job: Batch job description dictionary
+        message_prefix: Prefix for the log message (default: "View logs")
+    """
+    log_stream = job.get("container", {}).get("logStreamName")
+    logs_url = get_cloudwatch_logs_url(log_group="/aws/batch/job", log_stream=log_stream)
+    if logs_url:
+        clickable_url = f"\033]8;;{logs_url}\033\\{logs_url}\033]8;;\033\\"
+        log.info(f"{message_prefix}: {clickable_url}")
+    else:
+        log.info("Check AWS Batch console for logs")
+
+
 def run_batch_job(script_path: str, size: str = "small") -> int:
     """
     Submit and monitor an AWS Batch job for ML pipeline execution.
@@ -84,18 +101,9 @@ def run_batch_job(script_path: str, size: str = "small") -> int:
 
         # Disconnect after 2 minutes of running
         if status == "RUNNING" and running_start and (time.time() - running_start >= 120):
-            log_stream = job.get("container", {}).get("logStreamName")
-            logs_url = get_cloudwatch_logs_url(log_group="/aws/batch/job", log_stream=log_stream)
-
-            log.info("\n" + "=" * 70)
             log.info("✅  ML Pipeline is running successfully!")
-            if logs_url:
-                clickable_url = f"\033]8;;{logs_url}\033\\View CloudWatch Logs\033]8;;\033\\"
-                log.info(f"📊  Monitor logs: {clickable_url}")
-            else:
-                log.info("Check AWS Batch console for logs")
+            _log_cloudwatch_link(job, "📊  Monitor logs")
             log.info(f"Job ID: {job_id}")
-            log.info("=" * 70)
             return 0
 
         # Handle completion
@@ -107,11 +115,7 @@ def run_batch_job(script_path: str, size: str = "small") -> int:
                 else f"Job failed: {job.get('statusReason', 'Unknown')}"
             )
             log.info(msg) if status == "SUCCEEDED" else log.error(msg)
-
-            log_stream = job.get("container", {}).get("logStreamName")
-            if logs_url := get_cloudwatch_logs_url(log_group="/aws/batch/job", log_stream=log_stream):
-                clickable_url = f"\033]8;;{logs_url}\033\\{logs_url}\033]8;;\033\\"
-                log.info(f"View logs: {clickable_url}")
+            _log_cloudwatch_link(job)
             return exit_code
 
         time.sleep(10)
