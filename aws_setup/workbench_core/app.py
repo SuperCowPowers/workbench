@@ -31,7 +31,12 @@ workbench_bucket = (cm and cm.get_config("WORKBENCH_BUCKET")) or os.getenv("WORK
 if not workbench_bucket:
     print("Error: WORKBENCH_BUCKET is required but not found in config or environment variables.")
     exit(1)
-sso_group = (cm and cm.get_config("WORKBENCH_SSO_GROUP")) or os.getenv("WORKBENCH_SSO_GROUP")
+
+# SSO Groups (Groups that can assume the Workbench roles)
+sso_groups_str = (cm and cm.get_config("WORKBENCH_SSO_GROUPS")) or os.getenv("WORKBENCH_SSO_GROUPS", "")
+sso_groups = [group.strip() for group in sso_groups_str.split(",") if group.strip()] if sso_groups_str else []
+
+# Additional Buckets (Extra S3 buckets to grant access to)
 additional_buckets_str = (cm and cm.get_config("WORKBENCH_ADDITIONAL_BUCKETS")) or os.getenv(
     "WORKBENCH_ADDITIONAL_BUCKETS", ""
 )
@@ -44,7 +49,7 @@ subnet_ids = (cm and cm.get_config("WORKBENCH_SUBNET_IDS")) or os.getenv("WORKBE
 # Log the configuration for transparency
 print("Configuration:")
 print(f"  WORKBENCH_BUCKET: {workbench_bucket}")
-print(f"  WORKBENCH_SSO_GROUP: {sso_group}")
+print(f"  WORKBENCH_SSO_GROUPS: {sso_groups}")
 print(f"  WORKBENCH_ADDITIONAL_BUCKETS: {additional_buckets}")
 print(f"  WORKBENCH_VPC_ID: {existing_vpc_id}")
 print(f"  WORKBENCH_SUBNET_IDS: {subnet_ids}")
@@ -60,7 +65,7 @@ sandbox_stack = WorkbenchCoreStack(
     env=env,
     props=WorkbenchCoreStackProps(
         workbench_bucket=workbench_bucket,
-        sso_group=sso_group,
+        sso_groups=sso_groups,
         additional_buckets=additional_buckets,
         existing_vpc_id=existing_vpc_id,
         subnet_ids=subnet_ids,

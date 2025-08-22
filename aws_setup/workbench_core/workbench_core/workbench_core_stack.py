@@ -19,7 +19,7 @@ from typing import Dict
 @dataclass
 class WorkbenchCoreStackProps:
     workbench_bucket: str
-    sso_group: str
+    sso_groups: List[str] = field(default_factory=list)
     additional_buckets: List[str] = field(default_factory=list)
     existing_vpc_id: str = None
     subnet_ids: List[str] = field(default_factory=list)  # Optional subnets ids for the Batch compute environment
@@ -43,7 +43,7 @@ class WorkbenchCoreStack(Stack):
 
         # Grab our properties
         self.workbench_bucket = props.workbench_bucket
-        self.sso_group = props.sso_group
+        self.sso_groups = props.sso_groups
         self.additional_buckets = props.additional_buckets
         self.existing_vpc_id = props.existing_vpc_id
         self.subnet_ids = props.subnet_ids
@@ -410,7 +410,7 @@ class WorkbenchCoreStack(Stack):
             compute_environment_name="workbench-compute-env",
             vpc=vpc,
             vpc_subnets=vpc_subnets,
-            replace_compute_environment=True,
+            # replace_compute_environment=True,
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:
@@ -1463,26 +1463,36 @@ class WorkbenchCoreStack(Stack):
         """
         assumed_by = base_principals or iam.CompositePrincipal()
 
-        # If sso_group is provided, configure trust relationship for AWS SSO integration
+        # If sso_groups are provided, configure trust relationship for AWS SSO integration
         # AWS SSO creates roles with two different ARN patterns depending on configuration:
-        if self.sso_group:
+        if self.sso_groups:
+            # Build lists to hold all ARN patterns for all groups
+            sso_group_arns_pattern_1 = []
+            sso_group_arns_pattern_2 = []
 
-            # Pattern 1: Direct group-based SSO role (no permission set in path)
-            # Used when SSO groups are mapped directly to roles
-            sso_group_arn_1 = (
-                f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_{self.sso_group}_*"
-            )
+            # Generate ARN patterns for each SSO group
+            for sso_group in self.sso_groups:
+                # Pattern 1: Direct group-based SSO role (no permission set in path)
+                # Used when SSO groups are mapped directly to roles
+                sso_group_arn_1 = (
+                    f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_{sso_group}_*"
+                )
+                sso_group_arns_pattern_1.append(sso_group_arn_1)
 
-            # Pattern 2: Permission set-based SSO role (includes permission set ID in path)
-            # Used when SSO groups are assigned via permission sets (more common in enterprise setups)
-            # The middle wildcard (*) represents the permission set identifier
-            sso_group_arn_2 = (
-                f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_{self.sso_group}_*"
-            )
+                # Pattern 2: Permission set-based SSO role (includes permission set ID in path)
+                # Used when SSO groups are assigned via permission sets (more common in enterprise setups)
+                # The middle wildcard (*) represents the permission set identifier
+                sso_group_arn_2 = (
+                    f"arn:aws:iam::{self.account}:role/aws-reserved/sso.amazonaws.com/*/AWSReservedSSO_{sso_group}_*"
+                )
+                sso_group_arns_pattern_2.append(sso_group_arn_2)
 
+            # Combine both patterns into a single list for the condition
             # Both patterns are required for maximum compatibility across different SSO configurations
             # This is particularly important for Lake Formation and enterprise SSO integrations
-            condition = {"ArnLike": {"aws:PrincipalArn": [sso_group_arn_1, sso_group_arn_2]}}
+            all_sso_arns = sso_group_arns_pattern_1 + sso_group_arns_pattern_2
+
+            condition = {"ArnLike": {"aws:PrincipalArn": all_sso_arns}}
             assumed_by.add_principals(iam.AccountPrincipal(self.account).with_conditions(condition))
         else:
             # Fallback: Allow any principal in the account to assume this role

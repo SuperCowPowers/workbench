@@ -50,7 +50,7 @@ You'll need to set some environmental vars before deploying the stack.
 
 ```
 export WORKBENCH_BUCKET=name-of-workbench-bucket
-export WORKBENCH_SSO_GROUP=DataScientist (or whatever)
+export WORKBENCH_SSO_GROUPS=DataScientists,DataEngineers (no spaces between commas)
 ```
 
 **Optional ENV Vars**
