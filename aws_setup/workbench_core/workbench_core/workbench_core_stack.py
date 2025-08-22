@@ -410,7 +410,7 @@ class WorkbenchCoreStack(Stack):
             compute_environment_name="workbench-compute-env",
             vpc=vpc,
             vpc_subnets=vpc_subnets,
-            # replace_compute_environment=True,  # Only Needed if you want to replace the environment on update
+            replace_compute_environment=True,
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:
