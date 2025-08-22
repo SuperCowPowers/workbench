@@ -103,7 +103,6 @@ def run_batch_job(script_path: str, size: str = "small") -> int:
         if status == "RUNNING" and running_start and (time.time() - running_start >= 120):
             log.info("✅  ML Pipeline is running successfully!")
             _log_cloudwatch_link(job, "📊  Monitor logs")
-            log.info(f"Job ID: {job_id}")
             return 0
 
         # Handle completion
