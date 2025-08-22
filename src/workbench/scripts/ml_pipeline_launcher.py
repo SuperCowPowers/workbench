@@ -27,98 +27,87 @@ def get_batch_role_arn() -> str:
     return f"arn:aws:iam::{account_id}:role/Workbench-BatchRole"
 
 
-def ensure_job_definition():
-    """Register or update the Batch job definition for ML pipeline runner."""
-    batch = AWSAccountClamp().boto3_session.client("batch")
-    name = "workbench-ml-pipeline-runner"
-    response = batch.register_job_definition(
-        jobDefinitionName=name,
-        type="container",
-        platformCapabilities=["FARGATE"],
-        containerProperties={
-            "image": get_ecr_image_uri(),
-            "resourceRequirements": [{"type": "VCPU", "value": "2"}, {"type": "MEMORY", "value": "4096"}],
-            "jobRoleArn": get_batch_role_arn(),
-            "executionRoleArn": get_batch_role_arn(),
-            "environment": [
-                {"name": "WORKBENCH_BUCKET", "value": workbench_bucket},
-                {"name": "PYTHONUNBUFFERED", "value": "1"},
-            ],
-            # "networkConfiguration": {"assignPublicIp": "ENABLED"},  # Required for ECR Image Pull (when not in VPC)
-        },
-        timeout={"attemptDurationSeconds": 10800},  # 3 hours
-    )
-    log.info(f"Job definition ready: {name} (revision {response['revision']})")
-    return name
-
-
-def run_batch_job(script_path: str) -> int:
+def run_batch_job(script_path: str, size: str = "small") -> int:
     """
     Submit and monitor an AWS Batch job for ML pipeline execution.
-    This function:
-    1. Uploads the ML pipeline script to S3
-    2. Submits a Batch job to run the script in a container
-    3. Monitors job status until completion
-    4. Returns the job's exit code
+
+    Uploads script to S3, submits Batch job, monitors until completion or 2 minutes of RUNNING.
 
     Args:
         script_path: Local path to the ML pipeline script
+        size: Job size tier - "small" (default), "medium", or "large"
+          - small: 2 vCPU, 4GB RAM for lightweight processing
+          - medium: 4 vCPU, 8GB RAM for standard ML workloads
+          - large: 8 vCPU, 16GB RAM for heavy training/inference
 
     Returns:
-        Exit code from the batch job (0 for success, non-zero for failure)
+        Exit code (0 for success/disconnected, non-zero for failure)
     """
+    if size not in ["small", "medium", "large"]:
+        raise ValueError(f"Invalid size '{size}'. Must be 'small', 'medium', or 'large'")
+
     batch = AWSAccountClamp().boto3_session.client("batch")
     script_name = Path(script_path).stem
 
-    # Upload script to S3 for the container to download
+    # Upload script to S3
     s3_path = f"s3://{workbench_bucket}/batch-jobs/{Path(script_path).name}"
     log.info(f"Uploading script to {s3_path}")
     upload_content_to_s3(Path(script_path).read_text(), s3_path)
 
-    # Submit the Batch job
+    # Submit job
     job_name = f"workbench_{script_name}_{datetime.now():%Y%m%d_%H%M%S}"
     response = batch.submit_job(
         jobName=job_name,
         jobQueue="workbench-job-queue",
-        jobDefinition=ensure_job_definition(),
-        containerOverrides={
-            "environment": [
-                {"name": "ML_PIPELINE_S3_PATH", "value": s3_path},
-                {"name": "WORKBENCH_BUCKET", "value": workbench_bucket},
-            ]
-        },
+        jobDefinition=f"workbench-ml-pipeline-{size}",
+        containerOverrides={"environment": [
+            {"name": "ML_PIPELINE_S3_PATH", "value": s3_path},
+            {"name": "WORKBENCH_BUCKET", "value": workbench_bucket},
+        ]}
     )
     job_id = response["jobId"]
-    log.info(f"Submitted job: {job_name} ({job_id})")
+    log.info(f"Submitted job: {job_name} ({job_id}) using {size} tier")
 
-    # Monitor job execution
-    last_status = None
+    # Monitor job
+    last_status, running_start = None, None
     while True:
-        # Check job status
         job = batch.describe_jobs(jobs=[job_id])["jobs"][0]
         status = job["status"]
+
         if status != last_status:
             log.info(f"Job status: {status}")
             last_status = status
+            if status == "RUNNING":
+                running_start = time.time()
 
-        # Check if job completed
+        # Disconnect after 2 minutes of running
+        if status == "RUNNING" and running_start and (time.time() - running_start >= 120):
+            log_stream = job.get("container", {}).get("logStreamName")
+            logs_url = get_cloudwatch_logs_url(log_group="/aws/batch/job", log_stream=log_stream)
+
+            log.info("\n" + "=" * 70)
+            log.info("✅  ML Pipeline is running successfully!")
+            if logs_url:
+                clickable_url = f"\033]8;;{logs_url}\033\\View CloudWatch Logs\033]8;;\033\\"
+                log.info(f"📊  Monitor logs: {clickable_url}")
+            else:
+                log.info("Check AWS Batch console for logs")
+            log.info(f"Job ID: {job_id}")
+            log.info("=" * 70)
+            return 0
+
+        # Handle completion
         if status in ["SUCCEEDED", "FAILED"]:
             exit_code = job.get("attempts", [{}])[-1].get("exitCode", 1)
-            if status == "FAILED":
-                log.error(f"Job failed: {job.get('statusReason', 'Unknown reason')}")
-            else:
-                log.info("Job completed successfully")
+            msg = "Job completed successfully" if status == "SUCCEEDED" else f"Job failed: {job.get('statusReason', 'Unknown')}"
+            log.info(msg) if status == "SUCCEEDED" else log.error(msg)
 
-            # Get CloudWatch logs URL
-            log_stream_name = job.get("container", {}).get("logStreamName")
-            logs_url = get_cloudwatch_logs_url(log_group="/aws/batch/job", log_stream=log_stream_name)
-            if logs_url:
-                # OSC 8 hyperlink format for modern terminals
+            log_stream = job.get("container", {}).get("logStreamName")
+            if logs_url := get_cloudwatch_logs_url(log_group="/aws/batch/job", log_stream=log_stream):
                 clickable_url = f"\033]8;;{logs_url}\033\\{logs_url}\033]8;;\033\\"
                 log.info(f"View logs: {clickable_url}")
             return exit_code
 
-        # Sleep a bit before next status check
         time.sleep(10)
 
 
