@@ -79,7 +79,7 @@ class WorkbenchCoreStack(Stack):
         self.model_policy = self.workbench_model_policy()
         self.endpoint_read_policy = self.workbench_endpoint_read_policy()
         self.endpoint_policy = self.workbench_endpoint_policy()
-        self.pipeline_policy = self.workbench_pipeline_policy()
+        self.pipeline_full_policy = self.workbench_pipeline_full_policy()
         self.dataframe_store_read_policy = self.workbench_dataframe_store_read_policy()
         self.dataframe_store_full_policy = self.workbench_dataframe_store_full_policy()
         self.parameter_store_read_policy = self.workbench_parameter_store_read_policy()
@@ -410,7 +410,7 @@ class WorkbenchCoreStack(Stack):
             compute_environment_name="workbench-compute-env",
             vpc=vpc,
             vpc_subnets=vpc_subnets,
-            # replace_compute_environment=True, (Fixme: This is a circle back issue)
+            replace_compute_environment=True,  # (Fixme: This is a circle back issue)
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:
@@ -581,6 +581,20 @@ class WorkbenchCoreStack(Stack):
                 "athena:ListWorkGroups",
             ],
             resources=["*"],
+        )
+
+    def athena_query_results_s3(self) -> iam.PolicyStatement:
+        """S3 permissions for Athena query results bucket."""
+        return iam.PolicyStatement(
+            actions=[
+                "s3:PutObject",   # Required: Athena writes query results even for SELECT queries
+                "s3:GetObject",   # Needed to retrieve results later
+                "s3:ListBucket",  # Needed for bucket operations
+            ],
+            resources=[
+                f"arn:aws:s3:::aws-athena-query-results-{self.account}-{self.region}",
+                f"arn:aws:s3:::aws-athena-query-results-{self.account}-{self.region}/*",
+            ],
         )
 
     ######################
@@ -856,7 +870,7 @@ class WorkbenchCoreStack(Stack):
         )
 
     @staticmethod
-    def pipeline_list_policy_statement() -> iam.PolicyStatement:
+    def pipeline_list() -> iam.PolicyStatement:
         """Create a policy statement for listing SageMaker pipelines.
 
         Returns:
@@ -869,7 +883,7 @@ class WorkbenchCoreStack(Stack):
             resources=["*"],  # Broad permission necessary for listing operations
         )
 
-    def pipeline_policy_statement(self) -> iam.PolicyStatement:
+    def pipeline_full(self) -> iam.PolicyStatement:
         """Create a policy statement for inspecting and running SageMaker Pipelines.
 
         Returns:
@@ -1237,16 +1251,32 @@ class WorkbenchCoreStack(Stack):
         )
 
     def workbench_pipeline_policy(self) -> iam.ManagedPolicy:
-        """Create a managed policy for the Workbench Pipelines"""
+        """Create a managed policy for the Workbench Pipelines
+
+           Note: This needs to be removed later, but we'll have to remove all services that use it first.
+        """
         policy_statements = [
-            self.pipeline_list_policy_statement(),
-            self.pipeline_policy_statement(),
+            self.pipeline_list(),
+            self.pipeline_full(),
         ]
         return iam.ManagedPolicy(
             self,
             id="WorkbenchPipelinePolicy",
             statements=policy_statements,
             managed_policy_name="WorkbenchPipelinePolicy",
+        )
+
+    def workbench_pipeline_full_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench Pipelines (FULL)"""
+        policy_statements = [
+            self.pipeline_list(),
+            self.pipeline_full(),
+        ]
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchPipelineFullPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchPipelineFullPolicy",
         )
 
     def workbench_dataframe_store_read_policy(self) -> iam.ManagedPolicy:
@@ -1272,7 +1302,7 @@ class WorkbenchCoreStack(Stack):
             self,
             id="WorkbenchDFStoreFullPolicy",
             statements=policy_statements,
-            managed_policy_name="WorkbenchDFStorePolicy",
+            managed_policy_name="WorkbenchDFStoreFullPolicy",
         )
 
     def workbench_parameter_store_read_policy(self) -> iam.ManagedPolicy:
@@ -1300,13 +1330,14 @@ class WorkbenchCoreStack(Stack):
             self,
             id="WorkbenchParameterStoreFullPolicy",
             statements=policy_statements,
-            managed_policy_name="WorkbenchParameterStorePolicy",
+            managed_policy_name="WorkbenchParameterStoreFullPolicy",
         )
 
     def workbench_inference_store_read_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Inference Store (READ-ONLY)"""
         policy_statements = [
             self.s3_read(),
+            self.athena_query_results_s3(),
             self.glue_job_logs(),
             self.glue_catalog_read(),
             self.glue_database_read_just_inference_store(),
@@ -1323,7 +1354,8 @@ class WorkbenchCoreStack(Stack):
     def workbench_inference_store_full_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Inference Store (FULL)"""
         policy_statements = [
-            self.s3_full(),
+            self.s3_read(),
+            self.athena_query_results_s3(),
             self.glue_job_logs(),
             self.glue_catalog_read(),
             self.glue_database_full_just_inference_store(),
@@ -1334,7 +1366,7 @@ class WorkbenchCoreStack(Stack):
             self,
             id="WorkbenchInferenceStoreFullPolicy",
             statements=policy_statements,
-            managed_policy_name="WorkbenchInferenceStorePolicy",
+            managed_policy_name="WorkbenchInferenceStoreFullPolicy",
         )
 
     def create_execution_role(self) -> iam.Role:
@@ -1372,7 +1404,6 @@ class WorkbenchCoreStack(Stack):
         api_execution_role.add_managed_policy(self.featureset_policy)
         api_execution_role.add_managed_policy(self.model_policy)
         api_execution_role.add_managed_policy(self.endpoint_policy)
-        api_execution_role.add_managed_policy(self.pipeline_policy)
         return api_execution_role
 
     def create_readonly_role(self) -> iam.Role:
@@ -1421,7 +1452,6 @@ class WorkbenchCoreStack(Stack):
         lambda_role.add_managed_policy(self.featureset_policy)
         lambda_role.add_managed_policy(self.model_policy)
         lambda_role.add_managed_policy(self.endpoint_policy)
-        lambda_role.add_managed_policy(self.pipeline_policy)
         return lambda_role
 
     def create_glue_role(self) -> iam.Role:
@@ -1445,7 +1475,6 @@ class WorkbenchCoreStack(Stack):
         glue_role.add_managed_policy(self.featureset_policy)
         glue_role.add_managed_policy(self.model_policy)
         glue_role.add_managed_policy(self.endpoint_policy)
-        glue_role.add_managed_policy(self.pipeline_policy)
         return glue_role
 
     def create_batch_role(self) -> iam.Role:
@@ -1467,7 +1496,6 @@ class WorkbenchCoreStack(Stack):
         batch_role.add_managed_policy(self.featureset_policy)
         batch_role.add_managed_policy(self.model_policy)
         batch_role.add_managed_policy(self.endpoint_policy)
-        batch_role.add_managed_policy(self.pipeline_policy)
         return batch_role
 
     def _create_sso_principals(self, base_principals: iam.CompositePrincipal = None) -> iam.CompositePrincipal:
