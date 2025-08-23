@@ -903,7 +903,8 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
-    def ecr_policy_statement(self) -> iam.PolicyStatement:
+    @staticmethod
+    def ecr_policy_statement() -> iam.PolicyStatement:
         """Create a policy statement for pulling ECR Images.
 
         Returns:
@@ -993,7 +994,8 @@ class WorkbenchCoreStack(Stack):
     ##########################
     #   Workbench Dashboard  #
     ##########################
-    def dashboard_policy_statement(self) -> iam.PolicyStatement:
+    @staticmethod
+    def dashboard_policy_statement() -> iam.PolicyStatement:
         """Create a policy statement for additional permissions needed by Workbench Dashboard.
 
         Returns:
