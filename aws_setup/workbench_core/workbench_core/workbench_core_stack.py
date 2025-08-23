@@ -410,7 +410,7 @@ class WorkbenchCoreStack(Stack):
             compute_environment_name="workbench-compute-env",
             vpc=vpc,
             vpc_subnets=vpc_subnets,
-            # replace_compute_environment=True,
+            # replace_compute_environment=True, (Fixme: This is a circle back issue)
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:
@@ -484,11 +484,13 @@ class WorkbenchCoreStack(Stack):
     #####################
     #  Inference Store  #
     #####################
-    def inference_store_read(self) -> iam.PolicyStatement:
+    def glue_database_read_just_inference_store(self) -> iam.PolicyStatement:
         """Create a policy statement for reading from the Parameter Store.
 
+        Note: This is basically glue_databases_read but scoped to just the inference_store database.
+
         Returns:
-            iam.PolicyStatement: The policy statement for reading from the Parameter Store.
+            iam.PolicyStatement: The policy statement for reading from the Inference Store.
         """
         return iam.PolicyStatement(
             actions=[
@@ -501,13 +503,15 @@ class WorkbenchCoreStack(Stack):
             resources=self._inference_database_arns(),
         )
 
-    def inference_store_full(self) -> iam.PolicyStatement:
+    def glue_database_full_just_inference_store(self) -> iam.PolicyStatement:
         """Create a policy statement for full access to the Inference Store.
+
+        Note: This is basically glue_databases_full but scoped to just the inference_store database.
 
         Returns:
             iam.PolicyStatement: The policy statement for full access to the Inference Store.
         """
-        read_statement = self.inference_store_read()
+        read_statement = self.glue_database_read_just_inference_store()
         return iam.PolicyStatement(
             actions=read_statement.actions
             + [
@@ -1300,7 +1304,11 @@ class WorkbenchCoreStack(Stack):
     def workbench_inference_store_read_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Inference Store (READ-ONLY)"""
         policy_statements = [
-            self.inference_store_read(),
+            self.s3_read(),
+            self.glue_job_logs(),
+            self.glue_catalog_read(),
+            self.glue_database_read_just_inference_store(),
+            self.athena_read(),
         ]
 
         return iam.ManagedPolicy(
@@ -1313,7 +1321,11 @@ class WorkbenchCoreStack(Stack):
     def workbench_inference_store_full_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Inference Store (FULL)"""
         policy_statements = [
-            self.inference_store_full(),
+            self.s3_full(),
+            self.glue_job_logs(),
+            self.glue_catalog_read(),
+            self.glue_database_full_just_inference_store(),
+            self.athena_read(),
         ]
 
         return iam.ManagedPolicy(
@@ -1352,6 +1364,7 @@ class WorkbenchCoreStack(Stack):
         api_execution_role.add_to_policy(self.batch_pass_role())
         api_execution_role.add_to_policy(self.parameter_store_discover())
         api_execution_role.add_to_policy(self.parameter_store_full())
+        api_execution_role.add_to_policy(self.cloudwatch_logs())
         api_execution_role.add_to_policy(self.cloudwatch_monitor())
         api_execution_role.add_managed_policy(self.datasource_policy)
         api_execution_role.add_managed_policy(self.featureset_policy)
@@ -1382,6 +1395,7 @@ class WorkbenchCoreStack(Stack):
         readonly_role.add_to_policy(self.glue_jobs_read())
         readonly_role.add_to_policy(self.parameter_store_discover())
         readonly_role.add_to_policy(self.parameter_store_read())
+        readonly_role.add_to_policy(self.cloudwatch_logs())
         readonly_role.add_managed_policy(self.datasource_read_policy)
         readonly_role.add_managed_policy(self.featureset_read_policy)
         readonly_role.add_managed_policy(self.model_read_policy)
@@ -1400,6 +1414,7 @@ class WorkbenchCoreStack(Stack):
 
         # Add a subset of policies for the Lambda Role
         lambda_role.add_to_policy(self.parameter_store_full())
+        lambda_role.add_to_policy(self.cloudwatch_logs())
         lambda_role.add_managed_policy(self.datasource_policy)
         lambda_role.add_managed_policy(self.featureset_policy)
         lambda_role.add_managed_policy(self.model_policy)
@@ -1420,6 +1435,7 @@ class WorkbenchCoreStack(Stack):
         # Add a subset of policies for the Glue Role
         glue_role.add_to_policy(self.glue_job_logs())
         glue_role.add_to_policy(self.glue_connections())
+        glue_role.add_to_policy(self.cloudwatch_logs())
         glue_role.add_to_policy(self.vpc_discovery())
         glue_role.add_to_policy(self.vpc_network_interface_management())
         glue_role.add_to_policy(self.parameter_store_full())
@@ -1442,6 +1458,7 @@ class WorkbenchCoreStack(Stack):
 
         # Add policies for the Batch Role
         batch_role.add_to_policy(self.batch_job_logs())
+        batch_role.add_to_policy(self.cloudwatch_logs())
         batch_role.add_to_policy(self.parameter_store_full())
         batch_role.add_to_policy(self.dataframe_store_full())
         batch_role.add_managed_policy(self.datasource_policy)
