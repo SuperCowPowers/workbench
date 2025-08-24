@@ -5,6 +5,7 @@ from sagemaker import ModelPackage
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
 from sagemaker.serverless import ServerlessInferenceConfig
+from sagemaker.model_monitor import DataCaptureConfig
 
 # Local Imports
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput
@@ -65,8 +66,14 @@ class ModelToEndpoint(Transform):
         end = EndpointCore(self.output_name)
         self.log.important(f"Endpoint {end.name} is ready for use")
 
-    def _deploy_model(self, model_package_arn: str, mem_size: int = 2048, max_concurrency: int = 5, data_capture: bool = False,
-                      capture_percentage: int = 100):
+    def _deploy_model(
+        self,
+        model_package_arn: str,
+        mem_size: int = 2048,
+        max_concurrency: int = 5,
+        data_capture: bool = False,
+        capture_percentage: int = 100,
+    ):
         """Internal Method: Deploy the Model
 
         Args:
@@ -110,7 +117,9 @@ class ModelToEndpoint(Transform):
                 destination_s3_uri=self.data_capture_path,
             )
         elif data_capture and self.serverless:
-            self.log.warning("Data capture is not supported for serverless endpoints. Skipping data capture configuration.")
+            self.log.warning(
+                "Data capture is not supported for serverless endpoints. Skipping data capture configuration."
+            )
 
         # Deploy the Endpoint
         self.log.important(f"Deploying the Endpoint {self.output_name}...")
