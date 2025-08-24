@@ -79,7 +79,7 @@ class WorkbenchCoreStack(Stack):
         self.model_policy = self.workbench_model_policy()
         self.endpoint_read_policy = self.workbench_endpoint_read_policy()
         self.endpoint_policy = self.workbench_endpoint_policy()
-        self.pipeline_full_policy = self.workbench_pipeline_full_policy()
+        # self.sagemaker_pipeline_full_policy = self.sagemaker_pipeline_full_policy()  # Not currently used
         self.dataframe_store_read_policy = self.workbench_dataframe_store_read_policy()
         self.dataframe_store_full_policy = self.workbench_dataframe_store_full_policy()
         self.parameter_store_read_policy = self.workbench_parameter_store_read_policy()
@@ -410,7 +410,7 @@ class WorkbenchCoreStack(Stack):
             compute_environment_name="workbench-compute-env",
             vpc=vpc,
             vpc_subnets=vpc_subnets,
-            replace_compute_environment=True,  # (Fixme: This is a circle back issue)
+            # replace_compute_environment=True,  # (Fixme: This is a circle back issue)
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:
@@ -429,7 +429,7 @@ class WorkbenchCoreStack(Stack):
 
         ecr_image_uri = f"507740646243.dkr.ecr.{self.region}.amazonaws.com/aws-ml-images/py312-ml-pipelines:0.1"
         tiers = {
-            "small": (2, 4096),  # 2 vCPU, 4GB RAM
+            "small": (2, 4096),   # 2 vCPU, 4GB RAM
             "medium": (4, 8192),  # 4 vCPU, 8GB RAM
             "large": (8, 16384),  # 8 vCPU, 16GB RAM
         }
@@ -1262,23 +1262,7 @@ class WorkbenchCoreStack(Stack):
             managed_policy_name="WorkbenchEndpointPolicy",
         )
 
-    def workbench_pipeline_policy(self) -> iam.ManagedPolicy:
-        """Create a managed policy for the Workbench Pipelines
-
-        Note: This needs to be removed later, but we'll have to remove all services that use it first.
-        """
-        policy_statements = [
-            self.pipeline_list(),
-            self.pipeline_full(),
-        ]
-        return iam.ManagedPolicy(
-            self,
-            id="WorkbenchPipelinePolicy",
-            statements=policy_statements,
-            managed_policy_name="WorkbenchPipelinePolicy",
-        )
-
-    def workbench_pipeline_full_policy(self) -> iam.ManagedPolicy:
+    def sagemaker_full_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Pipelines (FULL)"""
         policy_statements = [
             self.pipeline_list(),
@@ -1286,9 +1270,9 @@ class WorkbenchCoreStack(Stack):
         ]
         return iam.ManagedPolicy(
             self,
-            id="WorkbenchPipelineFullPolicy",
+            id="WorkbenchSagemakerPipelineFullPolicy",
             statements=policy_statements,
-            managed_policy_name="WorkbenchPipelineFullPolicy",
+            managed_policy_name="WorkbenchSagemakerPipelineFullPolicy",
         )
 
     def workbench_dataframe_store_read_policy(self) -> iam.ManagedPolicy:
