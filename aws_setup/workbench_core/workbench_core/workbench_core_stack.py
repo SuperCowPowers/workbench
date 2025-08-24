@@ -238,14 +238,10 @@ class WorkbenchCoreStack(Stack):
     def glue_jobs_s3_read(self) -> iam.PolicyStatement:
         """S3 Read for Glue Jobs default script location"""
         return iam.PolicyStatement(
-            actions=[
-                "s3:GetObject",
-                "s3:GetBucketLocation",
-                "s3:ListBucket"
-            ],
+            actions=["s3:GetObject", "s3:GetBucketLocation", "s3:ListBucket"],
             resources=[
                 f"arn:aws:s3:::aws-glue-assets-{self.account}-{self.region}",
-                f"arn:aws:s3:::aws-glue-assets-{self.account}-{self.region}/*"
+                f"arn:aws:s3:::aws-glue-assets-{self.account}-{self.region}/*",
             ],
         )
 

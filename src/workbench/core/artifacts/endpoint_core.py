@@ -979,10 +979,7 @@ class EndpointCore(Artifact):
         all_s3_objects = wr.s3.list_objects(base_endpoint_path, boto3_session=cls.boto3_session)
 
         # Filter out objects that contain 'data_capture/' in their path
-        s3_objects_to_delete = [
-            obj for obj in all_s3_objects
-            if '/data_capture/' not in obj
-        ]
+        s3_objects_to_delete = [obj for obj in all_s3_objects if "/data_capture/" not in obj]
         cls.log.info(f"Found {len(all_s3_objects)} total objects at {base_endpoint_path}")
         cls.log.info(f"Filtering out data_capture files, will delete {len(s3_objects_to_delete)} objects...")
         cls.log.info(f"Objects to delete: {s3_objects_to_delete}")
