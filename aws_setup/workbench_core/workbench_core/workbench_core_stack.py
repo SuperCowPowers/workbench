@@ -410,7 +410,6 @@ class WorkbenchCoreStack(Stack):
             compute_environment_name="workbench-compute-env",
             vpc=vpc,
             vpc_subnets=vpc_subnets,
-            # replace_compute_environment=True,  # (Fixme: This is a circle back issue)
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:
@@ -429,7 +428,7 @@ class WorkbenchCoreStack(Stack):
 
         ecr_image_uri = f"507740646243.dkr.ecr.{self.region}.amazonaws.com/aws-ml-images/py312-ml-pipelines:0.1"
         tiers = {
-            "small": (2, 4096),  # 2 vCPU, 4GB RAM
+            "small": (2, 4096),   # 2 vCPU, 4GB RAM
             "medium": (4, 8192),  # 4 vCPU, 8GB RAM
             "large": (8, 16384),  # 8 vCPU, 16GB RAM
         }
@@ -1304,6 +1303,9 @@ class WorkbenchCoreStack(Stack):
     def workbench_parameter_store_read_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Parameter Store (READ-ONLY)"""
         policy_statements = [
+            self.s3_read(),
+            self.glue_job_logs(),
+            self.cloudwatch_logs(),
             self.parameter_store_discover(),
             self.parameter_store_read(),
         ]
@@ -1318,6 +1320,9 @@ class WorkbenchCoreStack(Stack):
     def workbench_parameter_store_full_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Parameter Store (FULL)"""
         policy_statements = [
+            self.s3_read(),
+            self.glue_job_logs(),
+            self.cloudwatch_logs(),
             self.parameter_store_discover(),
             self.parameter_store_full(),
         ]
@@ -1335,6 +1340,7 @@ class WorkbenchCoreStack(Stack):
             self.s3_read(),
             self.athena_query_results_s3(),
             self.glue_job_logs(),
+            self.cloudwatch_logs(),
             self.glue_catalog_read(),
             self.glue_database_read_just_inference_store(),
             self.athena_read(),
@@ -1354,10 +1360,11 @@ class WorkbenchCoreStack(Stack):
             self.s3_full_just_inference_store(),
             self.athena_query_results_s3(),
             self.glue_job_logs(),
+            self.cloudwatch_logs(),
             self.glue_catalog_read(),
             self.glue_database_full_just_inference_store(),
             self.athena_read(),
-            self.parameter_store_read(),  # Get Workbench Bucket when writing new data
+            self.parameter_store_read(),  # Get Workbench Bucket from Parameter Store
         ]
 
         return iam.ManagedPolicy(
