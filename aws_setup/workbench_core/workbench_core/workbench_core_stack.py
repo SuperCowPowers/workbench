@@ -429,7 +429,7 @@ class WorkbenchCoreStack(Stack):
 
         ecr_image_uri = f"507740646243.dkr.ecr.{self.region}.amazonaws.com/aws-ml-images/py312-ml-pipelines:0.1"
         tiers = {
-            "small": (2, 4096),   # 2 vCPU, 4GB RAM
+            "small": (2, 4096),  # 2 vCPU, 4GB RAM
             "medium": (4, 8192),  # 4 vCPU, 8GB RAM
             "large": (8, 16384),  # 8 vCPU, 16GB RAM
         }
