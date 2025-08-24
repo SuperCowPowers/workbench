@@ -65,11 +65,16 @@ class ModelToEndpoint(Transform):
         end = EndpointCore(self.output_name)
         self.log.important(f"Endpoint {end.name} is ready for use")
 
-    def _deploy_model(self, model_package_arn: str, mem_size: int = 2048, max_concurrency: int = 5):
+    def _deploy_model(self, model_package_arn: str, mem_size: int = 2048, max_concurrency: int = 5, data_capture: bool = False,
+                      capture_percentage: int = 100):
         """Internal Method: Deploy the Model
 
         Args:
             model_package_arn(str): The Model Package ARN used to deploy the Endpoint
+            mem_size(int): Memory size for serverless deployment
+            max_concurrency(int): Max concurrency for serverless deployment
+            data_capture(bool): Enable data capture during deployment
+            capture_percentage(int): Percentage of data to capture. Defaults to 100.
         """
         # Grab the specified Model Package
         model_package = ModelPackage(
@@ -95,6 +100,18 @@ class ModelToEndpoint(Transform):
                 max_concurrency=max_concurrency,
             )
 
+        # Configure data capture if requested (and not serverless)
+        data_capture_config = None
+        if data_capture and not self.serverless:
+            self.log.important(f"Configuring Data Capture at deployment --> {self.data_capture_path}")
+            data_capture_config = DataCaptureConfig(
+                enable_capture=True,
+                sampling_percentage=capture_percentage,
+                destination_s3_uri=self.data_capture_path,
+            )
+        elif data_capture and self.serverless:
+            self.log.warning("Data capture is not supported for serverless endpoints. Skipping data capture configuration.")
+
         # Deploy the Endpoint
         self.log.important(f"Deploying the Endpoint {self.output_name}...")
         model_package.deploy(
@@ -104,6 +121,7 @@ class ModelToEndpoint(Transform):
             endpoint_name=self.output_name,
             serializer=CSVSerializer(),
             deserializer=CSVDeserializer(),
+            data_capture_config=data_capture_config,
             tags=aws_tags,
         )
 
