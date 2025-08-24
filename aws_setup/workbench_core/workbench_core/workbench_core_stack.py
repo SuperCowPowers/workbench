@@ -519,7 +519,19 @@ class WorkbenchCoreStack(Stack):
                 "glue:UpdateTable",
                 "glue:DeleteTable",
             ],
-            resources=self._inference_database_arns(),
+            resources=read_statement.resources,
+        )
+
+    def s3_full_just_inference_store(self) -> iam.PolicyStatement:
+        """S3 write permissions for inference store data only."""
+        return iam.PolicyStatement(
+            actions=[
+                "s3:PutObject",  # Write inference store data
+                "s3:DeleteObject",  # Delete inference store data
+            ],
+            resources=[
+                f"arn:aws:s3:::{self.workbench_bucket}/athena/inference_store/inference_store/*",
+            ],
         )
 
     ####################
@@ -587,8 +599,8 @@ class WorkbenchCoreStack(Stack):
         """S3 permissions for Athena query results bucket."""
         return iam.PolicyStatement(
             actions=[
-                "s3:PutObject",  # Required: Athena writes query results even for SELECT queries
-                "s3:GetObject",  # Needed to retrieve results later
+                "s3:PutObject",   # Required: Athena writes query results even for SELECT queries
+                "s3:GetObject",   # Needed to retrieve results later
                 "s3:ListBucket",  # Needed for bucket operations
             ],
             resources=[
@@ -1355,11 +1367,13 @@ class WorkbenchCoreStack(Stack):
         """Create a managed policy for the Workbench Inference Store (FULL)"""
         policy_statements = [
             self.s3_read(),
+            self.s3_full_just_inference_store(),
             self.athena_query_results_s3(),
             self.glue_job_logs(),
             self.glue_catalog_read(),
             self.glue_database_full_just_inference_store(),
             self.athena_read(),
+            self.parameter_store_read(),  # Get Workbench Bucket when writing new data
         ]
 
         return iam.ManagedPolicy(
