@@ -972,12 +972,26 @@ class EndpointCore(Artifact):
             cls.log.info(f"Deleting Monitoring Schedule {schedule['MonitoringScheduleName']}...")
             cls.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule["MonitoringScheduleName"])
 
-        # Recursively delete all endpoint S3 artifacts (inference, data capture, monitoring, etc)
+        # Recursively delete all endpoint S3 artifacts (inference, etc)
+        # Note: We do not want to delete the data_capture/ files since these
+        #       might be used for collection and data drift analysis
         base_endpoint_path = f"{cls.endpoints_s3_path}/{endpoint_name}"
-        s3_objects = wr.s3.list_objects(base_endpoint_path, boto3_session=cls.boto3_session)
-        cls.log.info(f"Deleting S3 Objects at {base_endpoint_path}...")
-        cls.log.info(f"{s3_objects}")
-        wr.s3.delete_objects(s3_objects, boto3_session=cls.boto3_session)
+        all_s3_objects = wr.s3.list_objects(base_endpoint_path, boto3_session=cls.boto3_session)
+
+        # Filter out objects that contain 'data_capture/' in their path
+        s3_objects_to_delete = [
+            obj for obj in all_s3_objects
+            if '/data_capture/' not in obj
+        ]
+        cls.log.info(f"Found {len(all_s3_objects)} total objects at {base_endpoint_path}")
+        cls.log.info(f"Filtering out data_capture files, will delete {len(s3_objects_to_delete)} objects...")
+        cls.log.info(f"Objects to delete: {s3_objects_to_delete}")
+
+        if s3_objects_to_delete:
+            wr.s3.delete_objects(s3_objects_to_delete, boto3_session=cls.boto3_session)
+            cls.log.info(f"Successfully deleted {len(s3_objects_to_delete)} objects")
+        else:
+            cls.log.info("No objects to delete (only data_capture files found)")
 
         # Delete any dataframes that were stored in the Dataframe Cache
         cls.log.info("Deleting Dataframe Cache...")
