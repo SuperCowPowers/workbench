@@ -58,7 +58,7 @@ class ModelToEndpoint(Transform):
         self._deploy_model(workbench_model, **kwargs)
 
         # Add this endpoint to the set of registered endpoints for the model
-        input_model.register_endpoint(self.output_name)
+        workbench_model.register_endpoint(self.output_name)
 
         # This ensures that the endpoint is ready for use
         time.sleep(5)  # We wait for AWS Lag
