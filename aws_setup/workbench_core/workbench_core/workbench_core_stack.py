@@ -599,8 +599,8 @@ class WorkbenchCoreStack(Stack):
         """S3 permissions for Athena query results bucket."""
         return iam.PolicyStatement(
             actions=[
-                "s3:PutObject",   # Required: Athena writes query results even for SELECT queries
-                "s3:GetObject",   # Needed to retrieve results later
+                "s3:PutObject",  # Required: Athena writes query results even for SELECT queries
+                "s3:GetObject",  # Needed to retrieve results later
                 "s3:ListBucket",  # Needed for bucket operations
             ],
             resources=[
