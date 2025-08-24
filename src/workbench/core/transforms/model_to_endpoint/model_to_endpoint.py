@@ -52,11 +52,10 @@ class ModelToEndpoint(Transform):
         EndpointCore.managed_delete(self.output_name)
 
         # Get the Model Package ARN for our input model
-        input_model = ModelCore(self.input_name)
-        model_package_arn = input_model.model_package_arn()
+        workbench_model = ModelCore(self.input_name)
 
         # Deploy the model
-        self._deploy_model(model_package_arn, **kwargs)
+        self._deploy_model(workbench_model, **kwargs)
 
         # Add this endpoint to the set of registered endpoints for the model
         input_model.register_endpoint(self.output_name)
@@ -68,7 +67,7 @@ class ModelToEndpoint(Transform):
 
     def _deploy_model(
         self,
-        model_package_arn: str,
+        workbench_model: ModelCore,
         mem_size: int = 2048,
         max_concurrency: int = 5,
         data_capture: bool = False,
@@ -77,13 +76,14 @@ class ModelToEndpoint(Transform):
         """Internal Method: Deploy the Model
 
         Args:
-            model_package_arn(str): The Model Package ARN used to deploy the Endpoint
+            workbench_model(ModelCore): The Workbench ModelCore object to deploy
             mem_size(int): Memory size for serverless deployment
             max_concurrency(int): Max concurrency for serverless deployment
             data_capture(bool): Enable data capture during deployment
             capture_percentage(int): Percentage of data to capture. Defaults to 100.
         """
         # Grab the specified Model Package
+        model_package_arn = workbench_model.model_package_arn()
         model_package = ModelPackage(
             role=self.workbench_role_arn,
             model_package_arn=model_package_arn,
@@ -110,11 +110,14 @@ class ModelToEndpoint(Transform):
         # Configure data capture if requested (and not serverless)
         data_capture_config = None
         if data_capture and not self.serverless:
-            self.log.important(f"Configuring Data Capture at deployment --> {self.data_capture_path}")
+            # Set up the S3 path for data capture
+            base_endpoint_path = f"{workbench_model.endpoints_s3_path}/{self.output_name}"
+            data_capture_path = f"{base_endpoint_path}/data_capture"
+            self.log.important(f"Configuring Data Capture --> {data_capture_path}")
             data_capture_config = DataCaptureConfig(
                 enable_capture=True,
                 sampling_percentage=capture_percentage,
-                destination_s3_uri=self.data_capture_path,
+                destination_s3_uri=data_capture_path,
             )
         elif data_capture and self.serverless:
             self.log.warning(

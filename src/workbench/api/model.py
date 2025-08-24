@@ -40,6 +40,7 @@ class Model(ModelCore):
         mem_size: int = 2048,
         max_concurrency: int = 5,
         instance: str = "ml.t2.medium",
+        data_capture: bool = False,
     ) -> Endpoint:
         """Create an Endpoint from the Model.
 
@@ -50,6 +51,7 @@ class Model(ModelCore):
             mem_size (int): The memory size for the Endpoint in MB (default: 2048)
             max_concurrency (int): The maximum concurrency for the Endpoint (default: 5)
             instance (str): The instance type to use for Realtime(serverless=False) Endpoints (default: "ml.t2.medium")
+            data_capture (bool): Enable data capture for the Endpoint (default: False)
 
         Returns:
             Endpoint: The Endpoint created from the Model
@@ -73,6 +75,7 @@ class Model(ModelCore):
         model_to_endpoint.transform(
             mem_size=mem_size,
             max_concurrency=max_concurrency,
+            data_capture=data_capture,
         )
 
         # Set the Endpoint Owner and Return the Endpoint
