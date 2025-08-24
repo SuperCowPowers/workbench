@@ -186,11 +186,11 @@ class MonitorCore:
 
         # Log the data capture operation
         self.log.important(f"Enabling Data Capture for {self.endpoint_name} --> {self.data_capture_path}")
-        self.log.important("This normally redeploys the endpoint...")
+        self.log.important("This will redeploy the endpoint...")
 
         # Create and apply the data capture configuration
         data_capture_config = DataCaptureConfig(
-            enable_capture=True,  # Required parameter
+            enable_capture=True,
             sampling_percentage=capture_percentage,
             destination_s3_uri=self.data_capture_path,
         )
