@@ -9,6 +9,3 @@ meta = Meta()
 models = meta.models()
 log.info(f"Found {len(models)} models in AWS")
 log.info(models)
-
-# Test out the ml launcher disconnect
-time.sleep(120)

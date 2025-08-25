@@ -76,7 +76,7 @@ def run_batch_job(script_path: str, size: str = "small") -> int:
     response = batch.submit_job(
         jobName=job_name,
         jobQueue="workbench-job-queue",
-        jobDefinition=f"workbench-ml-pipeline-{size}",
+        jobDefinition=f"workbench-batch-{size}",
         containerOverrides={
             "environment": [
                 {"name": "ML_PIPELINE_S3_PATH", "value": s3_path},
