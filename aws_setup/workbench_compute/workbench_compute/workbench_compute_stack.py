@@ -15,6 +15,7 @@ from aws_cdk import (
 from constructs import Construct
 from typing import Any, List, Dict
 from dataclasses import dataclass, field
+from textwrap import dedent
 
 
 @dataclass
@@ -54,14 +55,14 @@ class WorkbenchComputeStack(Stack):
         # Import the Lambda role
         self.workbench_lambda_role = iam.Role.from_role_arn(self, "ImportedLambdaRole", props.lambda_role_arn)
 
-        # Batch Compute Environment and Job Queue
+        # Create Batch resources first (Lambda will reference them)
         self.batch_compute_environment = self.create_batch_compute_environment()
         self.batch_job_queue = self.create_batch_job_queue()
         self.batch_job_definitions = self.create_batch_job_definitions()
 
-        # ML Pipeline SQS Queue and Lambda
-        # self.ml_pipeline_queue = self.create_ml_pipeline_queue()
-        # self.batch_trigger_lambda = self.create_batch_trigger_lambda()
+        # Create ML Pipeline SQS Queue and Lambda (after Batch resources)
+        self.ml_pipeline_queue = self.create_ml_pipeline_queue()
+        self.batch_trigger_lambda = self.create_batch_trigger_lambda()
 
     #####################
     #   Batch Compute   #
@@ -170,12 +171,16 @@ class WorkbenchComputeStack(Stack):
             "MLPipelineQueue",
             queue_name="workbench-ml-pipeline-queue",
             visibility_timeout=Duration.minutes(15),  # Should be > Lambda timeout
-            retention_period=Duration.days(7),
-            dead_letter_queue=sqs.DeadLetterQueue(max_receive_count=3, queue=dlq),
+            retention_period=Duration.days(1),
+            dead_letter_queue=sqs.DeadLetterQueue(max_receive_count=1, queue=dlq),
         )
 
     def create_batch_trigger_lambda(self) -> lambda_.Function:
         """Create Lambda function to process SQS messages and trigger Batch jobs."""
+
+        # Create a mapping of job definition names to pass to Lambda
+        job_def_names = {size: f"workbench-batch-{size}" for size in ["small", "medium", "large"]}
+
         batch_trigger_lambda = lambda_.Function(
             self,
             "BatchTriggerLambda",
@@ -186,7 +191,10 @@ class WorkbenchComputeStack(Stack):
             timeout=Duration.minutes(5),
             environment={
                 "WORKBENCH_BUCKET": self.workbench_bucket,
-                "JOB_QUEUE": "workbench-job-queue",
+                "JOB_QUEUE": self.batch_job_queue.job_queue_name,
+                "JOB_DEF_SMALL": job_def_names["small"],
+                "JOB_DEF_MEDIUM": job_def_names["medium"],
+                "JOB_DEF_LARGE": job_def_names["large"],
             },
             role=self.workbench_lambda_role,
         )
@@ -194,7 +202,7 @@ class WorkbenchComputeStack(Stack):
         # Connect SQS to Lambda
         batch_trigger_lambda.add_event_source(
             lambda_events.SqsEventSource(
-                self.ml_pipeline_queue, batch_size=1, max_concurrency=10  # Limit parallel Batch job submissions
+                self.ml_pipeline_queue, batch_size=1, max_concurrency=5  # Limit parallel Batch job submissions
             )
         )
         return batch_trigger_lambda
@@ -202,53 +210,58 @@ class WorkbenchComputeStack(Stack):
     @staticmethod
     def _get_lambda_code() -> str:
         """Return the Lambda function code as a string."""
-        return '''
-    import json
-    import boto3
-    import os
-    from datetime import datetime
-    from pathlib import Path
+        return dedent('''
+            import json
+            import boto3
+            import os
+            from datetime import datetime
+            from pathlib import Path
 
-    batch = boto3.client('batch')
-    s3 = boto3.client('s3')
+            batch = boto3.client('batch')
+            s3 = boto3.client('s3')
 
-    WORKBENCH_BUCKET = os.environ['WORKBENCH_BUCKET']
-    JOB_QUEUE = os.environ.get('JOB_QUEUE', 'workbench-job-queue')
+            WORKBENCH_BUCKET = os.environ['WORKBENCH_BUCKET']
+            JOB_QUEUE = os.environ['JOB_QUEUE']
+            JOB_DEFINITIONS = {
+                'small': os.environ['JOB_DEF_SMALL'],
+                'medium': os.environ['JOB_DEF_MEDIUM'],
+                'large': os.environ['JOB_DEF_LARGE'],
+            }
 
-    def lambda_handler(event, context):
-        """Process SQS messages and submit Batch jobs."""
+            def lambda_handler(event, context):
+                """Process SQS messages and submit Batch jobs."""
 
-        for record in event['Records']:
-            try:
-                message = json.loads(record['body'])
-                script_path = message['script_path']  # s3://bucket/path/to/script.py
-                size = message.get('size', 'small')
-                extra_env = message.get('environment', {})
+                for record in event['Records']:
+                    try:
+                        message = json.loads(record['body'])
+                        script_path = message['script_path']  # s3://bucket/path/to/script.py
+                        size = message.get('size', 'small')
+                        extra_env = message.get('environment', {})
 
-                script_name = Path(script_path).stem
-                job_name = f"workbench_{script_name}_{datetime.now():%Y%m%d_%H%M%S}"
+                        script_name = Path(script_path).stem
+                        job_name = f"workbench_{script_name}_{datetime.now():%Y%m%d_%H%M%S}"
 
-                # Map old job definition names to new ones
-                job_def_name = f"workbench-batch-{size}"
+                        # Get job definition name from environment variables
+                        job_def_name = JOB_DEFINITIONS.get(size, JOB_DEFINITIONS['small'])
 
-                response = batch.submit_job(
-                    jobName=job_name,
-                    jobQueue=JOB_QUEUE,
-                    jobDefinition=job_def_name,
-                    containerOverrides={
-                        'environment': [
-                            {'name': 'ML_PIPELINE_S3_PATH', 'value': script_path},
-                            {'name': 'WORKBENCH_BUCKET', 'value': WORKBENCH_BUCKET},
-                            *[{'name': k, 'value': v} for k, v in extra_env.items()]
-                        ]
-                    }
-                )
+                        response = batch.submit_job(
+                            jobName=job_name,
+                            jobQueue=JOB_QUEUE,
+                            jobDefinition=job_def_name,
+                            containerOverrides={
+                                'environment': [
+                                    {'name': 'ML_PIPELINE_S3_PATH', 'value': script_path},
+                                    {'name': 'WORKBENCH_BUCKET', 'value': WORKBENCH_BUCKET},
+                                    *[{'name': k, 'value': v} for k, v in extra_env.items()]
+                                ]
+                            }
+                        )
 
-                print(f"Submitted job: {job_name} ({response['jobId']})")
+                        print(f"Submitted job: {job_name} ({response['jobId']})")
 
-            except Exception as e:
-                print(f"Error processing message: {e}")
-                raise  # Let SQS retry via DLQ
+                    except Exception as e:
+                        print(f"Error processing message: {e}")
+                        raise  # Let SQS retry via DLQ
 
-        return {'statusCode': 200}
-    '''
+                return {'statusCode': 200}
+        ''').strip()
