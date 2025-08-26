@@ -155,22 +155,25 @@ class WorkbenchComputeStack(Stack):
     #  ML Pipeline SQS Queue  #
     ###########################
     def create_ml_pipeline_queue(self) -> sqs.Queue:
-        """Create SQS queue for ML pipeline orchestration."""
+        """Create SQS FIFO queue for ML pipeline orchestration with deduplication."""
 
-        # Dead letter queue for failed messages
+        # Dead letter queue for failed messages (also FIFO)
         dlq = sqs.Queue(
             self,
             "MLPipelineDLQ",
-            queue_name="workbench-ml-pipeline-dlq",
+            queue_name="workbench-ml-pipeline-dlq.fifo",  # Must end with .fifo
+            fifo=True,
             retention_period=Duration.days(14),
         )
 
-        # Main queue
+        # Main FIFO queue with deduplication
         return sqs.Queue(
             self,
             "MLPipelineQueue",
-            queue_name="workbench-ml-pipeline-queue",
-            visibility_timeout=Duration.minutes(15),  # Should be > Lambda timeout
+            queue_name="workbench-ml-pipeline-queue.fifo",  # Must end with .fifo
+            fifo=True,
+            content_based_deduplication=True,  # Auto-dedupe based on message content
+            visibility_timeout=Duration.minutes(15),
             retention_period=Duration.days(1),
             dead_letter_queue=sqs.DeadLetterQueue(max_receive_count=1, queue=dlq),
         )
