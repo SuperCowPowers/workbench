@@ -94,18 +94,21 @@ class WorkbenchCoreStack(Stack):
         self.workbench_batch_role = self.create_batch_role()
 
         # Export role ARNs that might  be used by other stacks (like WorkbenchCompute)
-        CfnOutput(self, "LambdaRoleArn",
-                  value=self.workbench_lambda_role.role_arn,
-                  export_name=f"{self.stack_name}-LambdaRoleArn"
-                  )
-        CfnOutput(self, "GlueRoleArn",
-                  value=self.workbench_glue_role.role_arn,
-                  export_name=f"{self.stack_name}-GlueRoleArn"
-                  )
-        CfnOutput(self, "BatchRoleArn",
-                  value=self.workbench_batch_role.role_arn,
-                  export_name=f"{self.stack_name}-BatchRoleArn"
-                  )
+        CfnOutput(
+            self,
+            "LambdaRoleArn",
+            value=self.workbench_lambda_role.role_arn,
+            export_name=f"{self.stack_name}-LambdaRoleArn",
+        )
+        CfnOutput(
+            self, "GlueRoleArn", value=self.workbench_glue_role.role_arn, export_name=f"{self.stack_name}-GlueRoleArn"
+        )
+        CfnOutput(
+            self,
+            "BatchRoleArn",
+            value=self.workbench_batch_role.role_arn,
+            export_name=f"{self.stack_name}-BatchRoleArn",
+        )
 
     ####################
     #    S3 Buckets    #

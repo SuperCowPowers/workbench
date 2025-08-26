@@ -85,7 +85,7 @@ class WorkbenchComputeStack(Stack):
         else:
             raise ValueError(
                 'Please provide the Workbench Config entry: "WORKBENCH_VPC_ID":"vpc-123456789abcdef0". '
-                'Default VPC networks cannot pull ECR images for Batch jobs.'
+                "Default VPC networks cannot pull ECR images for Batch jobs."
             )
 
         return batch.FargateComputeEnvironment(
