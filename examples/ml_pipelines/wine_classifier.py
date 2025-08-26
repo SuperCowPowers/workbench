@@ -9,6 +9,7 @@ Models:
 Endpoints:
     - wine-classification-end
 """
+
 from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 
 
