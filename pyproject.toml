@@ -90,7 +90,7 @@ workbench = "workbench.repl.workbench_shell:launch_shell"
 cloud_watch = "workbench.scripts.monitor_cloud_watch:main"
 workbench_config = "workbench.scripts.show_config:main"
 glue_launcher = "workbench.scripts.glue_launcher:main"
-ml_pipeline_launcher = "workbench.scripts.ml_pipeline_launcher:main"
+ml_pipeline_batch = "workbench.scripts.ml_pipeline_batch:main"
 ml_pipeline_sqs = "workbench.scripts.ml_pipeline_sqs:main"
 
 [tool.pytest.ini_options]
