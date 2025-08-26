@@ -39,8 +39,7 @@ if not lambda_role_arn:
 
 # VPC and subnet configuration (optional)
 existing_vpc_id = cm.get_config("WORKBENCH_VPC_ID")
-subnet_ids_str = cm.get_config("WORKBENCH_SUBNET_IDS") or ""
-subnet_ids = [subnet.strip() for subnet in subnet_ids_str.split(",") if subnet.strip()] if subnet_ids_str else []
+subnet_ids = cm.get_config("WORKBENCH_SUBNET_IDS") or []
 
 # Log the configuration for transparency
 print("Configuration:")

@@ -69,20 +69,23 @@ class WorkbenchComputeStack(Stack):
     def create_batch_compute_environment(self) -> batch.FargateComputeEnvironment:
         """Create the Batch compute environment with Fargate."""
 
-        # Do we have an existing VPC we want to use? Otherwise use a default
+        # Check if we have an existing VPC to use
         if self.existing_vpc_id:
             vpc = ec2.Vpc.from_lookup(self, "ImportedVPC", vpc_id=self.existing_vpc_id)
-        else:
-            vpc = ec2.Vpc.from_lookup(self, "DefaultVpc", is_default=True)
+            vpc_subnets = None
 
-        # Use specific subnets if provided, otherwise let CDK choose
-        vpc_subnets = None
-        if self.subnet_ids:
-            vpc_subnets = ec2.SubnetSelection(
-                subnets=[
-                    ec2.Subnet.from_subnet_id(self, f"BatchSubnet{i}", subnet_id)
-                    for i, subnet_id in enumerate(self.subnet_ids)
-                ]
+            # Use specific subnets if provided
+            if self.subnet_ids:
+                vpc_subnets = ec2.SubnetSelection(
+                    subnets=[
+                        ec2.Subnet.from_subnet_id(self, f"BatchSubnet{i}", subnet_id)
+                        for i, subnet_id in enumerate(self.subnet_ids)
+                    ]
+                )
+        else:
+            raise ValueError(
+                'Please provide the Workbench Config entry: "WORKBENCH_VPC_ID":"vpc-123456789abcdef0". '
+                'Default VPC networks cannot pull ECR images for Batch jobs.'
             )
 
         return batch.FargateComputeEnvironment(
