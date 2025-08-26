@@ -1,5 +1,6 @@
 import boto3
 import aws_cdk as cdk
+from aws_cdk import Fn
 from workbench_compute.workbench_compute_stack import WorkbenchComputeStack, WorkbenchComputeStackProps
 
 # Initialize Workbench ConfigManager
@@ -25,17 +26,10 @@ if not workbench_bucket:
     print("Error: WORKBENCH_BUCKET is required but not found in config.")
     exit(1)
 
-# Get batch role ARN from config (should be output from WorkbenchCore stack)
-batch_role_arn = cm.get_config("WORKBENCH_BATCH_ROLE_ARN")
-if not batch_role_arn:
-    batch_role_arn = f"arn:aws:iam::{aws_account}:role/Workbench-BatchRole"
-    print(f"Using constructed batch role ARN: {batch_role_arn}")
 
-# Get lambda role ARN from config (should be output from WorkbenchCore stack)
-lambda_role_arn = cm.get_config("WORKBENCH_LAMBDA_ROLE_ARN")
-if not lambda_role_arn:
-    lambda_role_arn = f"arn:aws:iam::{aws_account}:role/Workbench-LambdaRole"
-    print(f"Using constructed lambda role ARN: {lambda_role_arn}")
+# Get the Batch and Lambda Roles from WorkbenchCore stack outputs
+batch_role_arn = Fn.import_value("WorkbenchCore-BatchRoleArn")
+lambda_role_arn = Fn.import_value("WorkbenchCore-LambdaRoleArn")
 
 # VPC and subnet configuration (optional)
 existing_vpc_id = cm.get_config("WORKBENCH_VPC_ID")
