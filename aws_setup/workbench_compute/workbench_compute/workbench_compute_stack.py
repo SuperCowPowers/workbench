@@ -49,14 +49,10 @@ class WorkbenchComputeStack(Stack):
         self.subnet_ids = props.subnet_ids
 
         # Import the Batch role
-        self.workbench_batch_role = iam.Role.from_role_arn(
-            self, "ImportedBatchRole", self.batch_role_arn
-        )
+        self.workbench_batch_role = iam.Role.from_role_arn(self, "ImportedBatchRole", self.batch_role_arn)
 
         # Import the Lambda role
-        self.workbench_lambda_role = iam.Role.from_role_arn(
-            self, "ImportedLambdaRole", props.lambda_role_arn
-        )
+        self.workbench_lambda_role = iam.Role.from_role_arn(self, "ImportedLambdaRole", props.lambda_role_arn)
 
         # Batch Compute Environment and Job Queue
         self.batch_compute_environment = self.create_batch_compute_environment()
@@ -114,10 +110,11 @@ class WorkbenchComputeStack(Stack):
         # Using ECR image for ML pipelines
         ecr_image = ecs.ContainerImage.from_ecr_repository(
             repository=ecr.Repository.from_repository_arn(
-                self, "MLPipelineRepo",
-                repository_arn=f"arn:aws:ecr:{self.region}:507740646243:repository/aws-ml-images/py312-ml-pipelines"
+                self,
+                "MLPipelineRepo",
+                repository_arn=f"arn:aws:ecr:{self.region}:507740646243:repository/aws-ml-images/py312-ml-pipelines",
             ),
-            tag="0.1"
+            tag="0.1",
         )
 
         # Job Definition Tiers
@@ -171,10 +168,7 @@ class WorkbenchComputeStack(Stack):
             queue_name="workbench-ml-pipeline-queue",
             visibility_timeout=Duration.minutes(15),  # Should be > Lambda timeout
             retention_period=Duration.days(7),
-            dead_letter_queue=sqs.DeadLetterQueue(
-                max_receive_count=3,
-                queue=dlq
-            )
+            dead_letter_queue=sqs.DeadLetterQueue(max_receive_count=3, queue=dlq),
         )
 
     def create_batch_trigger_lambda(self) -> lambda_.Function:
@@ -197,9 +191,7 @@ class WorkbenchComputeStack(Stack):
         # Connect SQS to Lambda
         batch_trigger_lambda.add_event_source(
             lambda_events.SqsEventSource(
-                self.ml_pipeline_queue,
-                batch_size=1,
-                max_concurrency=10  # Limit parallel Batch job submissions
+                self.ml_pipeline_queue, batch_size=1, max_concurrency=10  # Limit parallel Batch job submissions
             )
         )
         return batch_trigger_lambda

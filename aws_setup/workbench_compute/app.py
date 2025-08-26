@@ -5,6 +5,7 @@ from workbench_compute.workbench_compute_stack import WorkbenchComputeStack, Wor
 # Initialize Workbench ConfigManager
 try:
     from workbench.utils.config_manager import ConfigManager
+
     cm = ConfigManager()
 except ImportError:
     print("Workbench Configuration Manager Not Found...")
