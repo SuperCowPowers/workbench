@@ -4,7 +4,11 @@ from aws_cdk import (
     aws_iam as iam,
     aws_ec2 as ec2,
     aws_ecs as ecs,
+    aws_ecr as ecr,
     aws_batch as batch,
+    aws_sqs as sqs,
+    aws_lambda as lambda_,
+    aws_lambda_event_sources as lambda_events,
     Duration,
     Size,
 )
@@ -17,6 +21,7 @@ from dataclasses import dataclass, field
 class WorkbenchComputeStackProps:
     workbench_bucket: str
     batch_role_arn: str
+    lambda_role_arn: str
     existing_vpc_id: str = None
     subnet_ids: List[str] = field(default_factory=list)  # Optional subnets ids for the Batch compute environment
 
@@ -43,15 +48,24 @@ class WorkbenchComputeStack(Stack):
         self.existing_vpc_id = props.existing_vpc_id
         self.subnet_ids = props.subnet_ids
 
-        # Import the existing batch role
+        # Import the Batch role
         self.workbench_batch_role = iam.Role.from_role_arn(
             self, "ImportedBatchRole", self.batch_role_arn
+        )
+
+        # Import the Lambda role
+        self.workbench_lambda_role = iam.Role.from_role_arn(
+            self, "ImportedLambdaRole", props.lambda_role_arn
         )
 
         # Batch Compute Environment and Job Queue
         self.batch_compute_environment = self.create_batch_compute_environment()
         self.batch_job_queue = self.create_batch_job_queue()
         self.batch_job_definitions = self.create_batch_job_definitions()
+
+        # ML Pipeline SQS Queue and Lambda
+        # self.ml_pipeline_queue = self.create_ml_pipeline_queue()
+        # self.batch_trigger_lambda = self.create_batch_trigger_lambda()
 
     #####################
     #   Batch Compute   #
@@ -97,7 +111,16 @@ class WorkbenchComputeStack(Stack):
     def create_batch_job_definitions(self) -> Dict[str, batch.EcsJobDefinition]:
         """Create ML pipeline job definitions in small/medium/large tiers."""
 
-        ecr_image_uri = f"507740646243.dkr.ecr.{self.region}.amazonaws.com/aws-ml-images/py312-ml-pipelines:0.1"
+        # Using ECR image for ML pipelines
+        ecr_image = ecs.ContainerImage.from_ecr_repository(
+            repository=ecr.Repository.from_repository_arn(
+                self, "MLPipelineRepo",
+                repository_arn=f"arn:aws:ecr:{self.region}:507740646243:repository/aws-ml-images/py312-ml-pipelines"
+            ),
+            tag="0.1"
+        )
+
+        # Job Definition Tiers
         tiers = {
             "small": (2, 4096),  # 2 vCPU, 4GB RAM
             "medium": (4, 8192),  # 4 vCPU, 8GB RAM
@@ -115,7 +138,7 @@ class WorkbenchComputeStack(Stack):
                     f"Container{size.capitalize()}",
                     cpu=cpu,
                     memory=Size.mebibytes(memory_mib),
-                    image=ecs.ContainerImage.from_registry(ecr_image_uri),
+                    image=ecr_image,
                     job_role=self.workbench_batch_role,
                     execution_role=self.workbench_batch_role,
                     environment={
@@ -125,5 +148,112 @@ class WorkbenchComputeStack(Stack):
                 ),
                 timeout=Duration.hours(3),
             )
-
         return job_definitions
+
+    ###########################
+    #  ML Pipeline SQS Queue  #
+    ###########################
+    def create_ml_pipeline_queue(self) -> sqs.Queue:
+        """Create SQS queue for ML pipeline orchestration."""
+
+        # Dead letter queue for failed messages
+        dlq = sqs.Queue(
+            self,
+            "MLPipelineDLQ",
+            queue_name="workbench-ml-pipeline-dlq",
+            retention_period=Duration.days(14),
+        )
+
+        # Main queue
+        return sqs.Queue(
+            self,
+            "MLPipelineQueue",
+            queue_name="workbench-ml-pipeline-queue",
+            visibility_timeout=Duration.minutes(15),  # Should be > Lambda timeout
+            retention_period=Duration.days(7),
+            dead_letter_queue=sqs.DeadLetterQueue(
+                max_receive_count=3,
+                queue=dlq
+            )
+        )
+
+    def create_batch_trigger_lambda(self) -> lambda_.Function:
+        """Create Lambda function to process SQS messages and trigger Batch jobs."""
+        batch_trigger_lambda = lambda_.Function(
+            self,
+            "BatchTriggerLambda",
+            function_name="workbench-batch-trigger",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="index.lambda_handler",
+            code=lambda_.Code.from_inline(self._get_lambda_code()),
+            timeout=Duration.minutes(5),
+            environment={
+                "WORKBENCH_BUCKET": self.workbench_bucket,
+                "JOB_QUEUE": "workbench-job-queue",
+            },
+            role=self.workbench_lambda_role,
+        )
+
+        # Connect SQS to Lambda
+        batch_trigger_lambda.add_event_source(
+            lambda_events.SqsEventSource(
+                self.ml_pipeline_queue,
+                batch_size=1,
+                max_concurrency=10  # Limit parallel Batch job submissions
+            )
+        )
+        return batch_trigger_lambda
+
+    @staticmethod
+    def _get_lambda_code() -> str:
+        """Return the Lambda function code as a string."""
+        return '''
+    import json
+    import boto3
+    import os
+    from datetime import datetime
+    from pathlib import Path
+
+    batch = boto3.client('batch')
+    s3 = boto3.client('s3')
+
+    WORKBENCH_BUCKET = os.environ['WORKBENCH_BUCKET']
+    JOB_QUEUE = os.environ.get('JOB_QUEUE', 'workbench-job-queue')
+
+    def lambda_handler(event, context):
+        """Process SQS messages and submit Batch jobs."""
+
+        for record in event['Records']:
+            try:
+                message = json.loads(record['body'])
+                script_path = message['script_path']  # s3://bucket/path/to/script.py
+                size = message.get('size', 'small')
+                extra_env = message.get('environment', {})
+
+                script_name = Path(script_path).stem
+                job_name = f"workbench_{script_name}_{datetime.now():%Y%m%d_%H%M%S}"
+
+                # Map old job definition names to new ones
+                job_def_name = f"workbench-batch-{size}"
+
+                response = batch.submit_job(
+                    jobName=job_name,
+                    jobQueue=JOB_QUEUE,
+                    jobDefinition=job_def_name,
+                    containerOverrides={
+                        'environment': [
+                            {'name': 'ML_PIPELINE_S3_PATH', 'value': script_path},
+                            {'name': 'WORKBENCH_BUCKET', 'value': WORKBENCH_BUCKET},
+                            *[{'name': k, 'value': v} for k, v in extra_env.items()]
+                        ]
+                    }
+                )
+
+                print(f"Submitted job: {job_name} ({response['jobId']})")
+
+            except Exception as e:
+                print(f"Error processing message: {e}")
+                raise  # Let SQS retry via DLQ
+
+        return {'statusCode': 200}
+    '''

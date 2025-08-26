@@ -1393,14 +1393,17 @@ class WorkbenchCoreStack(Stack):
             assumed_by=lambda_assumed_by,
             role_name=self.lambda_role_name,
         )
+        # Add AWS managed policy for Lambda basic execution
+        lambda_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
+        )
 
         # Add a subset of policies for the Lambda Role
         lambda_role.add_to_policy(self.parameter_store_full())
         lambda_role.add_to_policy(self.cloudwatch_logs())
-        lambda_role.add_managed_policy(self.datasource_policy)
-        lambda_role.add_managed_policy(self.featureset_policy)
-        lambda_role.add_managed_policy(self.model_policy)
-        lambda_role.add_managed_policy(self.endpoint_policy)
+        lambda_role.add_to_policy(self.batch_jobs_discover())
+        lambda_role.add_to_policy(self.batch_jobs_full())
+        lambda_role.add_to_policy(self.batch_pass_role())
         return lambda_role
 
     def create_glue_role(self) -> iam.Role:

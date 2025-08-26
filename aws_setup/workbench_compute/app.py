@@ -26,11 +26,15 @@ if not workbench_bucket:
 
 # Get batch role ARN from config (should be output from WorkbenchCore stack)
 batch_role_arn = cm.get_config("WORKBENCH_BATCH_ROLE_ARN")
-
-# If batch role ARN isn't provided, construct it from account info
 if not batch_role_arn:
     batch_role_arn = f"arn:aws:iam::{aws_account}:role/Workbench-BatchRole"
     print(f"Using constructed batch role ARN: {batch_role_arn}")
+
+# Get lambda role ARN from config (should be output from WorkbenchCore stack)
+lambda_role_arn = cm.get_config("WORKBENCH_LAMBDA_ROLE_ARN")
+if not lambda_role_arn:
+    lambda_role_arn = f"arn:aws:iam::{aws_account}:role/Workbench-LambdaRole"
+    print(f"Using constructed lambda role ARN: {lambda_role_arn}")
 
 # VPC and subnet configuration (optional)
 existing_vpc_id = cm.get_config("WORKBENCH_VPC_ID")
@@ -41,6 +45,7 @@ subnet_ids = [subnet.strip() for subnet in subnet_ids_str.split(",") if subnet.s
 print("Configuration:")
 print(f"  WORKBENCH_BUCKET: {workbench_bucket}")
 print(f"  WORKBENCH_BATCH_ROLE_ARN: {batch_role_arn}")
+print(f"  WORKBENCH_LAMBDA_ROLE_ARN: {lambda_role_arn}")
 print(f"  WORKBENCH_VPC_ID: {existing_vpc_id}")
 print(f"  WORKBENCH_SUBNET_IDS: {subnet_ids}")
 
@@ -56,6 +61,7 @@ compute_stack = WorkbenchComputeStack(
     props=WorkbenchComputeStackProps(
         workbench_bucket=workbench_bucket,
         batch_role_arn=batch_role_arn,
+        lambda_role_arn=lambda_role_arn,
         existing_vpc_id=existing_vpc_id,
         subnet_ids=subnet_ids,
     ),
