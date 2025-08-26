@@ -399,6 +399,42 @@ class WorkbenchCoreStack(Stack):
             conditions={"StringEquals": {"iam:PassedToService": "ecs-tasks.amazonaws.com"}},
         )
 
+    ####################
+    #    SQS Queues    #
+    ####################
+    @staticmethod
+    def sqs_discover() -> iam.PolicyStatement:
+        """Discovery - list all SQS queues."""
+        return iam.PolicyStatement(
+            actions=["sqs:ListQueues"],
+            resources=["*"],  # List operations require "*" resource
+        )
+
+    def sqs_read(self) -> iam.PolicyStatement:
+        """Read-only access to SQS queues."""
+        return iam.PolicyStatement(
+            actions=[
+                "sqs:GetQueueAttributes",
+                "sqs:ReceiveMessage",
+                "sqs:DeleteMessage",
+                "sqs:GetQueueUrl",
+            ],
+            resources=[f"arn:aws:sqs:{self.region}:{self.account}:workbench-*"],
+        )
+
+    def sqs_full(self) -> iam.PolicyStatement:
+        """Full access to SQS queues."""
+        read_statement = self.sqs_read()
+        return iam.PolicyStatement(
+            actions=read_statement.actions
+            + [
+                "sqs:SendMessage",
+                "sqs:CreateQueue",
+                "sqs:PurgeQueue",
+            ],
+            resources=read_statement.resources,
+        )
+
     #####################
     #  DataFrame Store  #
     #####################
@@ -1357,6 +1393,8 @@ class WorkbenchCoreStack(Stack):
         api_execution_role.add_to_policy(self.batch_jobs_discover())
         api_execution_role.add_to_policy(self.batch_jobs_full())
         api_execution_role.add_to_policy(self.batch_pass_role())
+        api_execution_role.add_to_policy(self.sqs_discover())
+        api_execution_role.add_to_policy(self.sqs_full())
         api_execution_role.add_to_policy(self.parameter_store_discover())
         api_execution_role.add_to_policy(self.parameter_store_full())
         api_execution_role.add_to_policy(self.cloudwatch_logs())
