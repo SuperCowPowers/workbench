@@ -66,6 +66,8 @@ class WorkbenchCoreStack(Stack):
         self.bucket_arns = self._bucket_names_to_arns(self.bucket_list)
 
         # Create our managed polices
+        self.s3_read_policy = self.workbench_s3_read_policy()
+        self.glue_connections_policy = self.workbench_glue_connections_policy()
         self.datasource_read_policy = self.workbench_datasource_read_policy()
         self.datasource_policy = self.workbench_datasource_policy()
         self.featureset_read_policy = self.workbench_featureset_read_policy()
@@ -74,7 +76,6 @@ class WorkbenchCoreStack(Stack):
         self.model_policy = self.workbench_model_policy()
         self.endpoint_read_policy = self.workbench_endpoint_read_policy()
         self.endpoint_policy = self.workbench_endpoint_policy()
-        # self.sagemaker_pipeline_full_policy = self.sagemaker_pipeline_full_policy()  # Not currently used
         self.dataframe_store_read_policy = self.workbench_dataframe_store_read_policy()
         self.dataframe_store_full_policy = self.workbench_dataframe_store_full_policy()
         self.parameter_store_read_policy = self.workbench_parameter_store_read_policy()
