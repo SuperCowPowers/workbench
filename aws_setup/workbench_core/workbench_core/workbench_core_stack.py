@@ -1062,6 +1062,39 @@ class WorkbenchCoreStack(Stack):
     ##################################
     #   Workbench Managed Policies   #
     ##################################
+    def workbench_s3_read_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench S3 Read-Only access"""
+        policy_statements = [
+            self.s3_read(),
+            self.cloudwatch_logs(),
+            self.parameter_store_discover(),
+            self.parameter_store_read(),
+        ]
+
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchS3ReadPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchS3ReadPolicy",
+        )
+
+    def workbench_glue_connections_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench Glue Connections"""
+        policy_statements = [
+            self.glue_job_logs(),
+            self.glue_connections(),
+            self.vpc_discovery(),
+            self.vpc_network_interface_management(),
+            self.cloudwatch_logs(),
+        ]
+
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchGlueConnectionsPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchGlueConnectionsPolicy",
+        )
+
     def workbench_datasource_read_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench DataSources (READ-ONLY)"""
         policy_statements = [
@@ -1239,7 +1272,7 @@ class WorkbenchCoreStack(Stack):
             managed_policy_name="WorkbenchEndpointPolicy",
         )
 
-    def sagemaker_full_policy(self) -> iam.ManagedPolicy:
+    def sagemaker_full_policy_not_used(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Pipelines (FULL)"""
         policy_statements = [
             self.pipeline_list(),
