@@ -210,7 +210,8 @@ class WorkbenchComputeStack(Stack):
     @staticmethod
     def _get_lambda_code() -> str:
         """Return the Lambda function code as a string."""
-        return dedent('''
+        return dedent(
+            '''
             import json
             import boto3
             import os
@@ -264,4 +265,5 @@ class WorkbenchComputeStack(Stack):
                         raise  # Let SQS retry via DLQ
 
                 return {'statusCode': 200}
-        ''').strip()
+        '''
+        ).strip()
