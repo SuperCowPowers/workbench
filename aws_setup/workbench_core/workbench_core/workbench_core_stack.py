@@ -3,17 +3,12 @@ from aws_cdk import (
     Stack,
     aws_iam as iam,
     aws_logs as logs,
-    aws_ec2 as ec2,
-    aws_ecs as ecs,
-    aws_batch as batch,
     RemovalPolicy,
-    Duration,
-    Size,
+    CfnOutput,
 )
 from constructs import Construct
 from typing import Any, List
 from dataclasses import dataclass, field
-from typing import Dict
 
 
 @dataclass
@@ -97,6 +92,20 @@ class WorkbenchCoreStack(Stack):
         self.workbench_lambda_role = self.create_lambda_role()
         self.workbench_glue_role = self.create_glue_role()
         self.workbench_batch_role = self.create_batch_role()
+
+        # Export role ARNs that might  be used by other stacks (like WorkbenchCompute)
+        CfnOutput(self, "LambdaRoleArn",
+                  value=self.workbench_lambda_role.role_arn,
+                  export_name=f"{self.stack_name}-LambdaRoleArn"
+                  )
+        CfnOutput(self, "GlueRoleArn",
+                  value=self.workbench_glue_role.role_arn,
+                  export_name=f"{self.stack_name}-GlueRoleArn"
+                  )
+        CfnOutput(self, "BatchRoleArn",
+                  value=self.workbench_batch_role.role_arn,
+                  export_name=f"{self.stack_name}-BatchRoleArn"
+                  )
 
     ####################
     #    S3 Buckets    #
