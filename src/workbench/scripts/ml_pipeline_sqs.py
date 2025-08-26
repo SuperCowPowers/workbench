@@ -1,9 +1,8 @@
 import argparse
 import logging
 import json
-import boto3
-from datetime import datetime
 from pathlib import Path
+
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.config_manager import ConfigManager
@@ -22,7 +21,7 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
         size: Job size tier - "small" (default), "medium", or "large"
     """
     print(f"\n{'=' * 60}")
-    print(f"🚀  SUBMITTING ML PIPELINE JOB")
+    print("🚀  SUBMITTING ML PIPELINE JOB")
     print(f"{'=' * 60}")
 
     if size not in ["small", "medium", "large"]:
@@ -39,14 +38,14 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
     script_name = script_file.name
 
     # List Workbench queues
-    print(f"\n📋  Listing Workbench SQS queues...")
+    print("\n📋  Listing Workbench SQS queues...")
     try:
-        queues = sqs.list_queues(QueueNamePrefix='workbench-')
-        queue_urls = queues.get('QueueUrls', [])
+        queues = sqs.list_queues(QueueNamePrefix="workbench-")
+        queue_urls = queues.get("QueueUrls", [])
         if queue_urls:
             print(f"✅  Found {len(queue_urls)} workbench queue(s):")
             for url in queue_urls:
-                queue_name = url.split('/')[-1]
+                queue_name = url.split("/")[-1]
                 print(f"   • {queue_name}")
         else:
             print("⚠️  No workbench queues found")
@@ -55,7 +54,7 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
 
     # Upload script to S3
     s3_path = f"s3://{workbench_bucket}/batch-jobs/{script_name}"
-    print(f"\n📤  Uploading script to S3...")
+    print("\n📤  Uploading script to S3...")
     print(f"   Source: {script_path}")
     print(f"   Destination: {s3_path}")
 
@@ -67,7 +66,7 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
         raise
     # Get queue URL and info
     queue_name = "workbench-ml-pipeline-queue.fifo"
-    print(f"\n🎯  Getting queue information...")
+    print("\n🎯  Getting queue information...")
     print(f"   Queue name: {queue_name}")
 
     try:
@@ -76,11 +75,10 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
 
         # Get queue attributes for additional info
         attrs = sqs.get_queue_attributes(
-            QueueUrl=queue_url,
-            AttributeNames=['ApproximateNumberOfMessages', 'ApproximateNumberOfMessagesNotVisible']
+            QueueUrl=queue_url, AttributeNames=["ApproximateNumberOfMessages", "ApproximateNumberOfMessagesNotVisible"]
         )
-        messages_available = attrs['Attributes'].get('ApproximateNumberOfMessages', '0')
-        messages_in_flight = attrs['Attributes'].get('ApproximateNumberOfMessagesNotVisible', '0')
+        messages_available = attrs["Attributes"].get("ApproximateNumberOfMessages", "0")
+        messages_in_flight = attrs["Attributes"].get("ApproximateNumberOfMessagesNotVisible", "0")
         print(f"   Messages in queue: {messages_available}")
         print(f"   Messages in flight: {messages_in_flight}")
 
@@ -89,11 +87,8 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
         raise
 
     # Prepare message
-    message = {
-        "script_path": s3_path,
-        "size": size
-    }
-    print(f"\n📨  Sending message to SQS...")
+    message = {"script_path": s3_path, "size": size}
+    print("\n📨  Sending message to SQS...")
 
     # Send the message to SQS
     try:
@@ -102,8 +97,8 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
             MessageBody=json.dumps(message, indent=2),
             MessageGroupId="ml-pipeline-jobs",  # Required for FIFO
         )
-        message_id = response['MessageId']
-        print(f"✅  Message sent successfully!")
+        message_id = response["MessageId"]
+        print("✅  Message sent successfully!")
         print(f"   Message ID: {message_id}")
     except Exception as e:
         print(f"❌  Failed to send message: {e}")
@@ -111,25 +106,26 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
 
     # Success summary
     print(f"\n{'=' * 60}")
-    print(f"✅  JOB SUBMISSION COMPLETE")
+    print("✅  JOB SUBMISSION COMPLETE")
     print(f"{'=' * 60}")
     print(f"📄  Script: {script_name}")
     print(f"📏  Size: {size}")
     print(f"🆔  Message ID: {message_id}")
-    print(f"\n🔍  MONITORING LOCATIONS:")
+    print("\n🔍  MONITORING LOCATIONS:")
     print(f"   • SQS Queue: AWS Console → SQS → {queue_name}")
-    print(f"   • Lambda Logs: AWS Console → Lambda → Functions")
-    print(f"   • Batch Jobs: AWS Console → Batch → Jobs")
-    print(f"   • CloudWatch: AWS Console → CloudWatch → Log groups")
-    print(f"\n⏳  Your job should start processing soon...")
+    print("   • Lambda Logs: AWS Console → Lambda → Functions")
+    print("   • Batch Jobs: AWS Console → Batch → Jobs")
+    print("   • CloudWatch: AWS Console → CloudWatch → Log groups")
+    print("\n⏳  Your job should start processing soon...")
 
 
 def main():
     """CLI entry point for submitting ML pipelines via SQS."""
     parser = argparse.ArgumentParser(description="Submit ML pipeline to SQS queue for Batch processing")
     parser.add_argument("script_file", help="Local path to ML pipeline script")
-    parser.add_argument("--size", default="small", choices=["small", "medium", "large"],
-                        help="Job size tier (default: small)")
+    parser.add_argument(
+        "--size", default="small", choices=["small", "medium", "large"], help="Job size tier (default: small)"
+    )
     args = parser.parse_args()
     try:
         submit_to_sqs(args.script_file, args.size)
