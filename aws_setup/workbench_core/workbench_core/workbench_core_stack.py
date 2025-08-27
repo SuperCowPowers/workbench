@@ -67,6 +67,7 @@ class WorkbenchCoreStack(Stack):
 
         # Create our managed polices
         self.s3_read_policy = self.workbench_s3_read_policy()
+        self.s3_full_policy = self.workbench_s3_full_policy()
         self.glue_connections_policy = self.workbench_glue_connections_policy()
         self.datasource_read_policy = self.workbench_datasource_read_policy()
         self.datasource_policy = self.workbench_datasource_policy()
@@ -1077,6 +1078,22 @@ class WorkbenchCoreStack(Stack):
             id="WorkbenchS3ReadPolicy",
             statements=policy_statements,
             managed_policy_name="WorkbenchS3ReadPolicy",
+        )
+
+    def workbench_s3_full_policy(self) -> iam.ManagedPolicy:
+        """Create a managed policy for the Workbench S3 Full access"""
+        policy_statements = [
+            self.s3_full(),
+            self.cloudwatch_logs(),
+            self.parameter_store_discover(),
+            self.parameter_store_read(),
+        ]
+
+        return iam.ManagedPolicy(
+            self,
+            id="WorkbenchS3FullPolicy",
+            statements=policy_statements,
+            managed_policy_name="WorkbenchS3FullPolicy",
         )
 
     def workbench_glue_connections_policy(self) -> iam.ManagedPolicy:
