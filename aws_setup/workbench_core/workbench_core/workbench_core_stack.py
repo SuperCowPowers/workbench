@@ -1222,6 +1222,7 @@ class WorkbenchCoreStack(Stack):
             self.models_discovery(),
             self.models_read(),
             self.cloudwatch_logs(),
+            self.cloudwatch_metrics(),
             self.parameter_store_discover(),
             self.parameter_store_read(),
         ]
@@ -1240,8 +1241,8 @@ class WorkbenchCoreStack(Stack):
             self.model_training(),
             self.model_training_logs(),
             self.ecr_policy_statement(),
-            self.cloudwatch_metrics(),
             self.cloudwatch_logs(),
+            self.cloudwatch_metrics(),
             self.sagemaker_pass_role_policy(),
             self.parameter_store_discover(),
             self.parameter_store_full(),
@@ -1256,10 +1257,14 @@ class WorkbenchCoreStack(Stack):
     def workbench_endpoint_read_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Models"""
         policy_statements = [
+            self.models_discovery(),  # Endpoints get information from their internal Model(s)
+            self.models_read(),
             self.endpoint_discover(),
             self.endpoint_read(),
             self.endpoint_monitoring_discovery(),
+            self.endpoint_monitoring_schedules(),
             self.cloudwatch_logs(),
+            self.cloudwatch_metrics(),
             self.parameter_store_discover(),
             self.parameter_store_read(),
         ]
@@ -1273,13 +1278,15 @@ class WorkbenchCoreStack(Stack):
     def workbench_endpoint_policy(self) -> iam.ManagedPolicy:
         """Create a managed policy for the Workbench Models"""
         policy_statements = [
+            self.models_discovery(),  # Endpoints get information from their internal Model(s)
+            self.models_read(),
             self.endpoint_discover(),
             self.endpoint_full(),
             self.endpoint_data_quality(),
             self.endpoint_monitoring_discovery(),
             self.endpoint_monitoring_schedules(),
-            self.cloudwatch_metrics(),
             self.cloudwatch_logs(),
+            self.cloudwatch_metrics(),
             self.parameter_store_discover(),
             self.parameter_store_full(),
         ]
