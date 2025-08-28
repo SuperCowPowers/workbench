@@ -237,6 +237,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     coverage_80 = np.mean((df[target_col] >= lower_80) & (df[target_col] <= upper_80))
     coverage_50 = np.mean((df[target_col] >= lower_50) & (df[target_col] <= upper_50))
     avg_width_95 = np.mean(upper_95 - lower_95)
+    avg_width_90 = np.mean(upper_90 - lower_90)
+    avg_width_80 = np.mean(upper_80 - lower_80)
     avg_width_50 = np.mean(upper_50 - lower_50)
 
     # --- CRPS (measures calibration + sharpness) ---
@@ -281,6 +283,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     print(f"Coverage @ 80%: {coverage_80:.3f} (target: 0.80)")
     print(f"Coverage @ 50%: {coverage_50:.3f} (target: 0.50)")
     print(f"Average 95% Width: {avg_width_95:.3f}")
+    print(f"Average 90% Width: {avg_width_90:.3f}")
+    print(f"Average 80% Width: {avg_width_80:.3f}")
     print(f"Average 50% Width: {avg_width_50:.3f}")
     print(f"CRPS: {mean_crps:.3f} (lower is better)")
     print(f"Interval Score 95%: {mean_is_95:.3f} (lower is better)")
