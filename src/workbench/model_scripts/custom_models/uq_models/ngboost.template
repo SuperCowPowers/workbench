@@ -219,9 +219,22 @@ def predict_fn(df, model) -> pd.DataFrame:
     df["q_025"] = y_dists.ppf(0.025)  # 2.5th percentile
     df["q_975"] = y_dists.ppf(0.975)  # 97.5th percentile
 
+    # Add 90% prediction intervals
+    df["q_05"] = y_dists.ppf(0.05)  # 5th percentile
+    df["q_95"] = y_dists.ppf(0.95)  # 95th percentile
+
+    # Add 80% prediction intervals
+    df["q_10"] = y_dists.ppf(0.10)  # 10th percentile
+    df["q_90"] = y_dists.ppf(0.90)  # 90th percentile
+
     # Add 50% prediction intervals
-    df["q_25"] = y_dists.ppf(0.25)   # 25th percentile
-    df["q_75"] = y_dists.ppf(0.75)   # 75th percentile
+    df["q_25"] = y_dists.ppf(0.25)  # 25th percentile
+    df["q_75"] = y_dists.ppf(0.75)  # 75th percentile
+
+    # Reorder the quantile columns for easier reading
+    quantile_cols = ["q_025", "q_05", "q_10", "q_25", "q_75", "q_90", "q_95", "q_975"]
+    other_cols = [col for col in df.columns if col not in quantile_cols]
+    df = df[other_cols + quantile_cols]
 
     # Return the modified DataFrame
     return df
