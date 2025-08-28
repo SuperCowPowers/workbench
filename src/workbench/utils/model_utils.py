@@ -220,6 +220,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     # --- Coverage and Interval Width ---
     if "q_025" in df.columns and "q_975" in df.columns:
         lower_95, upper_95 = df["q_025"], df["q_975"]
+        lower_90, upper_90 = df["q_05"], df["q_95"]
+        lower_80, upper_80 = df["q_10"], df["q_90"]
         lower_50, upper_50 = df["q_25"], df["q_75"]
     elif "prediction_std" in df.columns:
         lower_95 = df["prediction"] - 1.96 * df["prediction_std"]
@@ -231,6 +233,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
             "Either quantile columns (q_025, q_975, q_25, q_75) or 'prediction_std' column must be present."
         )
     coverage_95 = np.mean((df[target_col] >= lower_95) & (df[target_col] <= upper_95))
+    coverage_90 = np.mean((df[target_col] >= lower_90) & (df[target_col] <= upper_90))
+    coverage_80 = np.mean((df[target_col] >= lower_80) & (df[target_col] <= upper_80))
     coverage_50 = np.mean((df[target_col] >= lower_50) & (df[target_col] <= upper_50))
     avg_width_95 = np.mean(upper_95 - lower_95)
     avg_width_50 = np.mean(upper_50 - lower_50)
@@ -260,6 +264,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     # Collect results
     results = {
         "coverage_95": coverage_95,
+        "coverage_90": coverage_90,
+        "coverage_80": coverage_80,
         "coverage_50": coverage_50,
         "avg_width_95": avg_width_95,
         "avg_width_50": avg_width_50,
@@ -271,6 +277,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
 
     print("\n=== UQ Metrics ===")
     print(f"Coverage @ 95%: {coverage_95:.3f} (target: 0.95)")
+    print(f"Coverage @ 90%: {coverage_90:.3f} (target: 0.90)")
+    print(f"Coverage @ 80%: {coverage_80:.3f} (target: 0.80)")
     print(f"Coverage @ 50%: {coverage_50:.3f} (target: 0.50)")
     print(f"Average 95% Width: {avg_width_95:.3f}")
     print(f"Average 50% Width: {avg_width_50:.3f}")
