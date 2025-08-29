@@ -48,7 +48,7 @@ class AWSAccountCheck:
     def ensure_athena_results_bucket(self):
         """Ensure that the Athena results S3 bucket exists"""
         bucket_name = f"aws-athena-query-results-{self.aws_clamp.account_id}-{self.aws_clamp.region}"
-        self.log.important(f"Ensuring that the Athena results bucket {bucket_name} exists...")
+        self.log.important(f"Checking if Athena results bucket {bucket_name} exists...")
 
         try:
             s3_client = self.aws_clamp.boto3_session.client("s3")
@@ -56,18 +56,10 @@ class AWSAccountCheck:
             self.log.info(f"Athena results bucket {bucket_name} already exists")
         except ClientError as e:
             if e.response["Error"]["Code"] == "404":
-                self.log.info(f"Creating Athena results bucket {bucket_name}...")
-                try:
-                    if self.aws_clamp.region == "us-east-1":
-                        s3_client.create_bucket(Bucket=bucket_name)
-                    else:
-                        s3_client.create_bucket(
-                            Bucket=bucket_name, CreateBucketConfiguration={"LocationConstraint": self.aws_clamp.region}
-                        )
-                    self.log.info(f"Successfully created bucket {bucket_name}")
-                except ClientError as create_error:
-                    self.log.error(f"Failed to create bucket {bucket_name}: {create_error}")
-                    sys.exit(1)
+                self.log.error(f"Athena results bucket {bucket_name} does not exist.")
+                self.log.error("Create the bucket manually using this AWS CLI command:")
+                self.log.error(f"aws s3 mb s3://{bucket_name}")
+                sys.exit(1)
             else:
                 self.log.error(f"Error checking bucket {bucket_name}: {e}")
                 sys.exit(1)
