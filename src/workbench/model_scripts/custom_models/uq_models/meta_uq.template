@@ -26,7 +26,7 @@ from proximity import Proximity
 # Template Placeholders
 TEMPLATE_PARAMS = {
     "id_column": "{{id_column}}",
-    "target_column": "{{target_column}}",
+    "target": "{{target_column}}",
     "features": "{{feature_list}}",
     "compressed_features": "{{compressed_features}}",
     "train_all_data": "{{train_all_data}}",
@@ -161,7 +161,7 @@ def decompress_features(df: pd.DataFrame, features: List[str], compressed_featur
 if __name__ == "__main__":
     # Template Parameters
     id_column = TEMPLATE_PARAMS["id_column"]
-    target = TEMPLATE_PARAMS["target_column"]
+    target = TEMPLATE_PARAMS["target"]
     features = TEMPLATE_PARAMS["features"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
     track_columns = TEMPLATE_PARAMS["track_columns"]  # Can be None

@@ -29,7 +29,7 @@ from typing import List, Tuple
 # Template Parameters
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
-    "target_column": "{{target_column}}",
+    "target": "{{target_column}}",
     "features": "{{feature_list}}",
     "compressed_features": "{{compressed_features}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     """The main function is for training the XGBoost model"""
 
     # Harness Template Parameters
-    target = TEMPLATE_PARAMS["target_column"]
+    target = TEMPLATE_PARAMS["target"]
     features = TEMPLATE_PARAMS["features"]
     orig_features = features.copy()
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
