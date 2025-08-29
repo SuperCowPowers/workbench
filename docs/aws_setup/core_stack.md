@@ -74,6 +74,15 @@ export WORKBENCH_ADDITIONAL_BUCKETS=<comma separated list of buckets>
   cdk deploy
   ```
   
+#### Important
+The first time you run the core stack it will **barf** a bunch of messages about not being able to assume the workbench execution role, something like this...
+
+```
+    raise RuntimeError(msg) from e
+RuntimeError: Failed to Assume Workbench Role: Check AWS_PROFILE and/or Renew SSO Token..
+```
+Please ignore this when running this for the first time. After the WorkbenchCore stack is installed this set of error messages goes away.
+  
 ### Enable Users to Assume Workbench-ExecutionRole
 Now that the `Workbench-ExecutionRole` has been deployed via AWS Stack. These guides walk you through setting up access for both SSO users and IAM users to assume the Workbench-ExecutionRole in your AWS account.
 
