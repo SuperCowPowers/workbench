@@ -45,6 +45,34 @@ class AWSAccountCheck:
                 self.log.error(f"Unexpected error: {e}")
                 sys.exit(1)
 
+    def ensure_athena_results_bucket(self):
+        """Ensure that the Athena results S3 bucket exists"""
+        bucket_name = f"aws-athena-query-results-{self.aws_clamp.account_id}-{self.aws_clamp.region}"
+        self.log.important(f"Ensuring that the Athena results bucket {bucket_name} exists...")
+
+        try:
+            s3_client = self.aws_clamp.boto3_session.client('s3')
+            s3_client.head_bucket(Bucket=bucket_name)
+            self.log.info(f"Athena results bucket {bucket_name} already exists")
+        except ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                self.log.info(f"Creating Athena results bucket {bucket_name}...")
+                try:
+                    if self.aws_clamp.region == 'us-east-1':
+                        s3_client.create_bucket(Bucket=bucket_name)
+                    else:
+                        s3_client.create_bucket(
+                            Bucket=bucket_name,
+                            CreateBucketConfiguration={'LocationConstraint': self.aws_clamp.region}
+                        )
+                    self.log.info(f"Successfully created bucket {bucket_name}")
+                except ClientError as create_error:
+                    self.log.error(f"Failed to create bucket {bucket_name}: {create_error}")
+                    sys.exit(1)
+            else:
+                self.log.error(f"Error checking bucket {bucket_name}: {e}")
+                sys.exit(1)
+
     def check(self):
         """Check if the AWS Account is set up Correctly"""
         self.log.info("*** Caller/Base AWS Identity Check ***")
@@ -69,6 +97,11 @@ class AWSAccountCheck:
         self.log.info("*** AWS Glue Databases Check ***")
         for catalog_db in ["workbench", "sagemaker_featurestore", "inference_store"]:
             self.ensure_aws_catalog_db(catalog_db)
+        print("\n")
+
+        # Check that the Athena Results Bucket exists
+        self.log.info("*** AWS Athena Results Bucket Check ***")
+        self.ensure_athena_results_bucket()
         print("\n")
 
         self.log.info("AWS Account Clamp: AOK!")
