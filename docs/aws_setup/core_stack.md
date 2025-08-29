@@ -1,4 +1,4 @@
-# Workbench AWS Stack
+# WorkbenchCore AWS Stack
 Welcome to the Workbench AWS Setup Guide. Workbench is deployed as an AWS **Stack** following the well architected system practices of AWS. 
 
 !!! warning "AWS Setup can be a bit complex"
@@ -41,7 +41,11 @@ Linux
 For more information on Linux installs see [Digital Ocean NodeJS](https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04)
 
 ## Create an S3 Bucket for Workbench
-Workbench pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a **NEW** S3 Bucket, we suggest a name like `<company-name>-workbench`
+Workbench pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a **NEW** S3 Bucket for EACH account, we suggest names like:
+
+-  `<company-name>-dev-workbench`
+-  `<company-name>-stage-workbench`
+-  `<company-name>-prod-workbench`
 
 ## Deploying the Workbench Core Stack
 This stack has the `Workbench-Execution-Role` and an associated role for AWS Glue Jobs.
