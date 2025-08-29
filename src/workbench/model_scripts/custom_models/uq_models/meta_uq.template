@@ -17,6 +17,7 @@ import joblib
 import os
 import numpy as np
 import pandas as pd
+from typing import List, Tuple
 
 # Local Imports
 from proximity import Proximity
@@ -163,6 +164,8 @@ if __name__ == "__main__":
     id_column = TEMPLATE_PARAMS["id_column"]
     target = TEMPLATE_PARAMS["target"]
     features = TEMPLATE_PARAMS["features"]
+    orig_features = features.copy()
+    compressed_features = TEMPLATE_PARAMS["compressed_features"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
     track_columns = TEMPLATE_PARAMS["track_columns"]  # Can be None
     validation_split = 0.2
@@ -255,9 +258,9 @@ if __name__ == "__main__":
     # Save the trained NGBoost model
     joblib.dump(ngb_model, os.path.join(args.model_dir, "ngb_model.joblib"))
 
-    # Save the feature list to validate input during predictions
+    # Save the features (this will validate input during predictions)
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
-        json.dump(features, fp)
+        json.dump(orig_features, fp)  # We save the original features, not the decompressed ones
 
     # Now the Proximity model
     model = Proximity(df_train, id_column, features, target, track_columns=track_columns)
