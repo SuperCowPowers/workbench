@@ -72,7 +72,9 @@ class DashboardStatus(PluginInterface):
             details = "**Redis:** 🔴 Failed to Connect<br>"
 
         # Fill in the license details
-        details += f"**Redis Server:** {config_info['REDIS_HOST']}:{config_info.get('REDIS_PORT', 6379)}<br>"
+        redis_host = config_info.get("REDIS_HOST", "NOT SET")
+        redis_port = config_info.get("REDIS_PORT", "NOT SET")
+        details += f"**Redis Server:** {redis_host}:{redis_port}<br>"
         details += f"**Workbench S3 Bucket:** {config_info['WORKBENCH_BUCKET']}<br>"
         details += f"**Plugin Path:** {config_info.get('WORKBENCH_PLUGINS', 'unknown')}<br>"
         details += f"**Themes Path:** {config_info.get('WORKBENCH_THEMES', 'unknown')}<br>"
