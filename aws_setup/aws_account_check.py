@@ -39,7 +39,7 @@ class AWSAccountCheck:
                 self.log.error(f"AccessDeniedException {e}")
                 self.log.error(f"Access denied while trying to create/access the catalog database '{catalog_db}'.")
                 self.log.error("Create the database manually in the AWS Glue Console, or run this command:")
-                self.log.error('aws glue create-database --database-input \'{"Name": "workbench"}\'')
+                self.log.error(f'aws glue create-database --database-input \'{{"Name": "{catalog_db}"}}\'')
                 sys.exit(1)
             else:
                 self.log.error(f"Unexpected error: {e}")
