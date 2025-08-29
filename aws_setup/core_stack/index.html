@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#workbench-aws-stack" class="md-skip">
+        <a href="#workbenchcore-aws-stack" class="md-skip">
           Skip to content
         </a>
       
@@ -3780,7 +3780,7 @@
 
 
 
-<h1 id="workbench-aws-stack">Workbench AWS Stack</h1>
+<h1 id="workbenchcore-aws-stack">WorkbenchCore AWS Stack</h1>
 <p>Welcome to the Workbench AWS Setup Guide. Workbench is deployed as an AWS <strong>Stack</strong> following the well architected system practices of AWS. </p>
 <div class="admonition warning">
 <p class="admonition-title">AWS Setup can be a bit complex</p>
@@ -3814,7 +3814,12 @@ Linux</p>
 </span></code></pre></div>
 For more information on Linux installs see <a href="https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-ubuntu-20-04">Digital Ocean NodeJS</a></p>
 <h2 id="create-an-s3-bucket-for-workbench">Create an S3 Bucket for Workbench</h2>
-<p>Workbench pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a <strong>NEW</strong> S3 Bucket, we suggest a name like <code>&lt;company-name&gt;-workbench</code></p>
+<p>Workbench pushes and pulls data from AWS, it will use this S3 Bucket for storage and processing. You should create a <strong>NEW</strong> S3 Bucket for EACH account, we suggest names like:</p>
+<ul>
+<li><code>&lt;company-name&gt;-dev-workbench</code></li>
+<li><code>&lt;company-name&gt;-stage-workbench</code></li>
+<li><code>&lt;company-name&gt;-prod-workbench</code></li>
+</ul>
 <h2 id="deploying-the-workbench-core-stack">Deploying the Workbench Core Stack</h2>
 <p>This stack has the <code>Workbench-Execution-Role</code> and an associated role for AWS Glue Jobs.</p>
 <p>You'll need to set some environmental vars before deploying the stack.</p>
