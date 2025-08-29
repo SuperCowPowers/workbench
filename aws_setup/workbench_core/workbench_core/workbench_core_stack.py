@@ -3,6 +3,7 @@ from aws_cdk import (
     Stack,
     aws_iam as iam,
     aws_logs as logs,
+    aws_athena as athena,
     RemovalPolicy,
     CfnOutput,
 )
@@ -64,6 +65,10 @@ class WorkbenchCoreStack(Stack):
         sagemaker_bucket = "sagemaker-{region}-{account_id}*"
         self.bucket_list = [self.workbench_bucket, athena_bucket, sagemaker_bucket] + self.additional_buckets
         self.bucket_arns = self._bucket_names_to_arns(self.bucket_list)
+
+        # Add our Athena workgroup
+        # Note: This is currently not used, as we are using the default workgroup
+        # self.athena_workgroup = self.create_athena_workgroup()
 
         # Create our managed polices
         self.s3_read_policy = self.workbench_s3_read_policy()
@@ -586,6 +591,22 @@ class WorkbenchCoreStack(Stack):
                 f"arn:aws:s3:::aws-athena-query-results-{self.account}-{self.region}",
                 f"arn:aws:s3:::aws-athena-query-results-{self.account}-{self.region}/*",
             ],
+        )
+
+    # Add this method to your class
+    def create_athena_workgroup(self) -> athena.CfnWorkGroup:
+        """Create workbench-specific Athena workgroup with S3 output location."""
+        athena_results_bucket = f"aws-athena-query-results-{self.account}-{self.region}"
+
+        return athena.CfnWorkGroup(
+            self,
+            "WorkbenchAthenaWorkGroup",
+            name="workbench-workgroup",
+            work_group_configuration=athena.CfnWorkGroup.WorkGroupConfigurationProperty(
+                result_configuration=athena.CfnWorkGroup.ResultConfigurationProperty(
+                    output_location=f"s3://{athena_results_bucket}/workbench/"
+                )
+            )
         )
 
     ######################
