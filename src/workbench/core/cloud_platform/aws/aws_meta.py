@@ -196,7 +196,9 @@ class AWSMeta:
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(data_summary).convert_dtypes()
-        return df.sort_values(by="Created", ascending=False)
+        if not df.empty:
+            df.sort_values(by="Created", ascending=False, inplace=True)
+        return df
 
     def models(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Models in AWS.
@@ -256,7 +258,9 @@ class AWSMeta:
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(model_summary).convert_dtypes()
-        return df.sort_values(by="Created", ascending=False)
+        if not df.empty:
+            df.sort_values(by="Created", ascending=False, inplace=True)
+        return df
 
     def endpoints(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Endpoints in AWS.
@@ -317,7 +321,9 @@ class AWSMeta:
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(data_summary).convert_dtypes()
-        return df.sort_values(by="Created", ascending=False)
+        if not df.empty:
+            df.sort_values(by="Created", ascending=False, inplace=True)
+        return df
 
     def _endpoint_config_info(self, endpoint_config_name: str) -> dict:
         """Internal: Get the Endpoint Configuration information for the given endpoint config name.
@@ -657,7 +663,8 @@ class AWSMeta:
         df = pd.DataFrame(data_summary).convert_dtypes()
 
         # Sort by the Modified column
-        df = df.sort_values(by="Modified", ascending=False)
+        if not df.empty:
+            df = df.sort_values(by="Modified", ascending=False)
         return df
 
     def _aws_pipelines(self) -> pd.DataFrame:
