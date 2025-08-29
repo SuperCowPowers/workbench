@@ -90,13 +90,13 @@ Now that the `Workbench-ExecutionRole` has been deployed via AWS Stack. These gu
 - [Set up IAM Users](iam_assume_role.md) (not recommend, but contact us we'll help you out)
 
 
-## AWS Account Setup Check
-After deploying the Workbench Core Stack and setting up users to assume that Role, you can run this test/checking script. If the results ends with `INFO AWS Account Clamp: AOK!` you're in good shape. If not feel free to contact us on [Discord](https://discord.gg/WHAJuz8sw8) and we'll get it straightened out for you :)
+## AWS Account Setup 
+After deploying the Workbench Core Stack and setting up users to assume that Role, you can run this account setup script. If the results ends with `INFO AWS Account Clamp: AOK!` you're in good shape. If not feel free to contact us on [Discord](https://discord.gg/WHAJuz8sw8) and we'll get it straightened out for you :)
 
 ```bash
 pip install workbench (if not already installed)
 cd workbench/aws_setup
-python aws_account_check.py
+python aws_account_setup.py
 <lot of print outs for various checks>
 INFO AWS Account Clamp: AOK!
 ```
