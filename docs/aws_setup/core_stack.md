@@ -101,6 +101,21 @@ python aws_account_check.py
 INFO AWS Account Clamp: AOK!
 ```
 
+#### Important
+The first time your run this it will barf some error messages at you. These are just ensuring that certain Glue Catalogs exist. Just cut/paste the last error message into your console to create these databases.
+
+```
+ERROR Access denied while trying to create/access the catalog database 'workbench'.
+ERROR Create the database manually in the AWS Glue Console, or run this command:
+ERROR aws glue create-database --database-input '{"Name": "workbench"}'
+```
+So for this message you would just cut/paste this into your command line
+
+```
+aws glue create-database --database-input '{"Name": "workbench"}'
+```
+Just rerun the script after doing this and after (2 or 3) of these you should see the script run successfully and give a message `AWS Account Clamp: AOK!`
+
 !!! success
     Congratulations: Workbench is now deployed to your AWS Account. Deploying the AWS Stack only needs to be done once. Now that this is complete your developers can simply `pip install workbench` and start using the API.
     
