@@ -67,8 +67,7 @@ class WorkbenchCoreStack(Stack):
         self.bucket_arns = self._bucket_names_to_arns(self.bucket_list)
 
         # Add our Athena workgroup
-        # Note: This is currently not used, as we are using the default workgroup
-        # self.athena_workgroup = self.create_athena_workgroup()
+        self.athena_workgroup = self.create_athena_workgroup()
 
         # Create our managed polices
         self.s3_read_policy = self.workbench_s3_read_policy()
@@ -593,7 +592,9 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
-    # Add this method to your class
+    # Create our Athena workgroup
+    # Note: We don't create the Athena results bucket here, just the workgroup
+    # The bucket will be created as part of th aws_account_setup.py script
     def create_athena_workgroup(self) -> athena.CfnWorkGroup:
         """Create workbench-specific Athena workgroup with S3 output location."""
         athena_results_bucket = f"aws-athena-query-results-{self.account}-{self.region}"
