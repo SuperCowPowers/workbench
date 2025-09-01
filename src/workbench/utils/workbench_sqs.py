@@ -12,7 +12,7 @@ class WorkbenchSQS:
         self.log = logging.getLogger("workbench")
         self.queue_url = queue_url
 
-        # Grab a Workbench Session (this allows us to assume the Workbench-ExecutionRole)
+        # Grab a Workbench Session
         self.boto3_session = AWSAccountClamp().boto3_session
         print(self.boto3_session)
 
