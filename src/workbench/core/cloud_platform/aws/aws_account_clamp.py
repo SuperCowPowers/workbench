@@ -54,7 +54,10 @@ class AWSAccountClamp:
 
         # Check our Assume Role
         self.log.info("Checking Workbench Assumed Role...")
-        self.aws_session.assumed_role_info()
+        role_info = self.aws_session.assumed_role_info()
+
+        # Check if the Role is a 'ReadOnly' role
+        self.read_only_role = "readonly" in role_info["AssumedRoleArn"].lower()
 
         # Check our Workbench API Key and Load the License
         self.log.info("Checking Workbench API License...")

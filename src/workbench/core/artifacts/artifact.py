@@ -236,6 +236,12 @@ class Artifact(ABC):
             This functionality will work for FeatureSets, Models, and Endpoints
             but not for DataSources. The DataSource class overrides this method.
         """
+
+        # Check for ReadOnly Role
+        if self.aws_account_clamp.read_only_role:
+            self.log.info("Cannot add metadata with a ReadOnly Role...")
+            return
+
         # Sanity check
         aws_arn = self.arn()
         if aws_arn is None:
@@ -444,10 +450,12 @@ class Artifact(ABC):
 
 if __name__ == "__main__":
     """Exercise the Artifact Class"""
-    from workbench.api.data_source import DataSource
-    from workbench.api.feature_set import FeatureSet
+    from workbench.api import DataSource, FeatureSet, Endpoint
 
-    # Create a DataSource (which is a subclass of Artifact)
+    # Grab an Endpoint (which is a subclass of Artifact)
+    end = Endpoint("wine-classification")
+
+    # Grab a DataSource (which is a subclass of Artifact)
     data_source = DataSource("test_data")
 
     # Just some random tests
