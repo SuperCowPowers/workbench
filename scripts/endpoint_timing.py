@@ -5,33 +5,13 @@ import sys
 import time
 import pandas as pd
 import logging
-import boto3
-import sagemaker
 
-# Workbench Imports
-os.environ["WORKBENCH_SKIP_LOGGING"] = "True"  # For extra speed :p
-from workbench.utils.fast_inference import fast_inference
+# Workbench-Bridge Imports
+from workbench_bridges.endpoints.fast_inference import fast_inference
 
 
 # Set up logging
 log = logging.getLogger()
-
-
-def get_sagemaker_session() -> sagemaker.Session:
-
-    # Create a SageMaker session
-    session = sagemaker.Session()
-
-    # Get the SageMaker role
-    role = "Workbench-ExecutionRole"
-
-    # Attach the role to the session
-    boto3.client("sts").assume_role(
-        RoleArn=f'arn:aws:iam::{session.boto_session.client("sts").get_caller_identity()["Account"]}:role/{role}',
-        RoleSessionName="WorkbenchSession",
-    )
-
-    return session
 
 
 def download_data(endpoint_name: str):
@@ -59,9 +39,6 @@ if __name__ == "__main__":
         download_data(test_endpoint_name)
         sys.exit(1)
 
-    # Get out Sagemaker Session
-    sm_session = get_sagemaker_session()
-
     # Local data this will duplicate a launch from an App like LiveDesign/StarDrop
     data = pd.read_csv("test_evaluation_data.csv")
 
@@ -69,7 +46,7 @@ if __name__ == "__main__":
     data_sample = data.sample(n=num_rows, replace=True)
     print(f"\nTiming Inference on {len(data_sample)} rows")
     start_time = time.time()
-    results = fast_inference(test_endpoint_name, data_sample, sm_session)
+    results = fast_inference(test_endpoint_name, data_sample)
     inference_time = time.time() - start_time
     print(f"Inference Time: {inference_time} on Endpoint: {test_endpoint_name}")
 
