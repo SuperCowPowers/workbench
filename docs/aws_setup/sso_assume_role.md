@@ -35,12 +35,26 @@ This guide provides step-by-step instructions to configure AWS SSO users to assu
                 "Effect": "Allow",
                 "Action": "sts:AssumeRole",
                 "Resource": "arn:aws:iam::<account-id>:role/Workbench-ExecutionRole"
+                "Resource": "arn:aws:iam::<account-id>:role/Workbench-ReadOnlyRole"
             }
         ]
     }
     ```
 
-    - Replace `<account-id>` with your AWS account ID.
+Replace `<account-id>` with your AWS account ID, OR for SSO Groups that span multiple accounts you can add both lines for each account.
+
+```
+    "Resource": "arn:aws:iam::<account-1>:role/Workbench-ExecutionRole"
+    "Resource": "arn:aws:iam::<account-1>:role/Workbench-ReadOnlyRole"
+
+    "Resource": "arn:aws:iam::<account-2>:role/Workbench-ExecutionRole"
+    "Resource": "arn:aws:iam::<account-2>:role/Workbench-ReadOnlyRole"\
+
+    "Resource": "arn:aws:iam::<account-3>:role/Workbench-ExecutionRole"
+    "Resource": "arn:aws:iam::<account-3>:role/Workbench-ReadOnlyRole"
+```
+
+**Please consult with your AWS SSO Administrator for guidance on this process.**
 
 ### 4. Save Changes
 
@@ -50,18 +64,22 @@ This guide provides step-by-step instructions to configure AWS SSO users to assu
 
 ## Verifying Access for SSO Users
 
-1. Log in to the AWS Management Console as a user in the configured group.
+1. Activate an AWS Profile for the configured SSO group.
 2. Use the following CLI command to test access:
 
     ```bash
     aws sts assume-role \
         --role-arn arn:aws:iam::<account-id>:role/Workbench-ExecutionRole \
         --role-session-name TestSession
+     
+    aws sts assume-role \
+        --role-arn arn:aws:iam::<account-id>:role/Workbench-ReadOnlyRole \
+        --role-session-name TestSession
     ```
 
-    - Replace `<account-id>` with your AWS account ID.
+    Replace `<account-id>` with your AWS account ID.
 
-3. If successful, you will receive temporary credentials for the `Workbench-ExecutionRole`.
+3. If successful, you will receive temporary credentials.
 
 
 ## Troubleshooting

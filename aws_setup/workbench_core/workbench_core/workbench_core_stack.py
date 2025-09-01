@@ -88,11 +88,10 @@ class WorkbenchCoreStack(Stack):
         self.inference_store_read_policy = self.workbench_inference_store_read_policy()
         self.inference_store_full_policy = self.workbench_inference_store_full_policy()
 
-        # Create our main Workbench API Execution Role
+        # Create our main Workbench API Execution Role and Read Only Role
         self.workbench_execution_role = self.create_execution_role()
-
-        # Create a read-only role for the Workbench API
         self.workbench_readonly_role = self.create_readonly_role()
+        self._create_sso_instructions(self.workbench_execution_role, self.workbench_readonly_role)
 
         # Create additional roles for Lambda, Glue, and Batch
         self.workbench_lambda_role = self.create_lambda_role()
@@ -1451,8 +1450,7 @@ class WorkbenchCoreStack(Stack):
         # Define the base assumed by principals with service principals
         base_principals = iam.CompositePrincipal(
             iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-            iam.ServicePrincipal("sagemaker.amazonaws.com"),
-            iam.ServicePrincipal("glue.amazonaws.com"),
+            iam.ServicePrincipal("sagemaker.amazonaws.com")
         )
 
         # Add SSO configuration to the principals
@@ -1490,7 +1488,7 @@ class WorkbenchCoreStack(Stack):
 
         # ECS for Dashboard (we might switch to read-only later)
         base_principals = iam.CompositePrincipal(
-            iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
+            iam.ServicePrincipal("ecs-tasks.amazonaws.com")
         )
 
         # Add SSO configuration to the principals
@@ -1513,6 +1511,25 @@ class WorkbenchCoreStack(Stack):
         readonly_role.add_managed_policy(self.model_read_policy)
         readonly_role.add_managed_policy(self.endpoint_read_policy)
         return readonly_role
+
+    def _create_sso_instructions(self, execution_role: iam.Role, readonly_role: iam.Role):
+        """Print SSO setup instructions to console"""
+        if self.sso_groups:
+            # Build ARNs manually since tokens aren't resolved yet
+            execution_arn = f"arn:aws:iam::{self.account}:role/{self.execution_role_name}"
+            readonly_arn = f"arn:aws:iam::{self.account}:role/{self.readonly_role_name}"
+
+            print("\n" + "=" * 60)
+            print("🔧  SSO SETUP REQUIRED (If not already done)  🔧")
+            print("=" * 60)
+            print("Have your SSO Administrator add these roles to your permission set:")
+            print(f"  • {execution_arn}")
+            print(f"  • {readonly_arn}")
+            print()
+            print("For multi-account deployments, you can add both lines for each account:")
+            print("  • arn:aws:iam::<account_id>:role/Workbench-ExecutionRole")
+            print("  • arn:aws:iam::<account_id>:role/Workbench-ReadOnlyRole")
+            print("=" * 60 + "\n")
 
     def create_lambda_role(self) -> iam.Role:
         """Create the Workbench Lambda Role."""
