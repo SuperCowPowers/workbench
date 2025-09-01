@@ -1449,8 +1449,7 @@ class WorkbenchCoreStack(Stack):
         """Create the Workbench Execution Role for API-related tasks"""
         # Define the base assumed by principals with service principals
         base_principals = iam.CompositePrincipal(
-            iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
-            iam.ServicePrincipal("sagemaker.amazonaws.com")
+            iam.ServicePrincipal("ecs-tasks.amazonaws.com"), iam.ServicePrincipal("sagemaker.amazonaws.com")
         )
 
         # Add SSO configuration to the principals
@@ -1487,9 +1486,7 @@ class WorkbenchCoreStack(Stack):
         """Create the Workbench Read-Only Role for viewing resources"""
 
         # ECS for Dashboard (we might switch to read-only later)
-        base_principals = iam.CompositePrincipal(
-            iam.ServicePrincipal("ecs-tasks.amazonaws.com")
-        )
+        base_principals = iam.CompositePrincipal(iam.ServicePrincipal("ecs-tasks.amazonaws.com"))
 
         # Add SSO configuration to the principals
         assumed_by = self._create_sso_principals(base_principals)
