@@ -1,5 +1,7 @@
-scikit-learn==1.6.1
-xgboost==3.0.3
-pandas==2.2.3
-awswrangler==3.11.0
-joblib==1.4.2
+scikit-learn==1.7.1
+xgboost==3.0.4
+lightgbm==4.6.0
+ngboost==0.5.6
+pandas==2.3.2
+awswrangler==3.12.1
+joblib==1.5.2
