@@ -37,8 +37,8 @@ class FeaturesToModel(Transform):
         model_import_str=None,
         custom_script=None,
         custom_args=None,
-        training_image="xgb_training",
-        inference_image="xgb_inference",
+        training_image="training",
+        inference_image="inference",
         inference_arch="x86_64",
     ):
         """FeaturesToModel Initialization
@@ -50,8 +50,8 @@ class FeaturesToModel(Transform):
             model_import_str (str, optional): The import string for the model (default None)
             custom_script (str, optional): Custom script to use for the model (default None)
             custom_args (dict, optional): Custom arguments to pass to custom model scripts (default None)
-            training_image (str, optional): Training image (default "xgb_training")
-            inference_image (str, optional): Inference image (default "xgb_inference")
+            training_image (str, optional): Training image (default "training")
+            inference_image (str, optional): Inference image (default "inference")
             inference_arch (str, optional): Inference architecture (default "x86_64")
         """
 

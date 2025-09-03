@@ -14,7 +14,7 @@ FROM python:3.12-slim
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Install vim and libgomp1 (required for LightGBM) and clean up in a single layer
+# Install vim and libgomp1 (required for LightGBM) and clean up
 RUN apt-get update && \
     apt-get install -y --no-install-recommends vim libgomp1 && \
     apt-get clean && \

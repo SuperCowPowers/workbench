@@ -87,8 +87,8 @@ class FeatureSet(FeatureSetCore):
         model_import_str: str = None,
         custom_script: Union[str, Path] = None,
         custom_args: dict = None,
-        training_image: str = "xgb_training",
-        inference_image: str = "xgb_inference",
+        training_image: str = "training",
+        inference_image: str = "inference",
         inference_arch: str = "x86_64",
         **kwargs,
     ) -> Union[Model, None]:
@@ -105,8 +105,8 @@ class FeatureSet(FeatureSetCore):
             model_class (str, optional): Model class to use (e.g. "KMeans", "PyTorch", default: None)
             model_import_str (str, optional): The import for the model (e.g. "from sklearn.cluster import KMeans")
             custom_script (str, optional): The custom script to use for the model (default: None)
-            training_image (str, optional): The training image to use (default: "xgb_training")
-            inference_image (str, optional): The inference image to use (default: "xgb_inference")
+            training_image (str, optional): The training image to use (default: "training")
+            inference_image (str, optional): The inference image to use (default: "inference")
             inference_arch (str, optional): The architecture to use for inference (default: "x86_64")
             kwargs (dict, optional): Additional keyword arguments to pass to the model
 

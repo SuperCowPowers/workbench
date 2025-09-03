@@ -9,9 +9,12 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 AWS_ACCOUNT_ID="507740646243"
 
 # Map of image types to their repository names and directories
+# Older not used images
+#   ["xgb_training"]="aws-ml-images/py312-sklearn-xgb-training"
+#   ["xgb_inference"]="aws-ml-images/py312-sklearn-xgb-inference"
 declare -A REPO_MAP=(
-  ["xgb_training"]="aws-ml-images/py312-sklearn-xgb-training"
-  ["xgb_inference"]="aws-ml-images/py312-sklearn-xgb-inference"
+  ["training"]="aws-ml-images/py312-general-ml-training"
+  ["inference"]="aws-ml-images/py312-general-ml-inference"
   ["pytorch_training"]="aws-ml-images/py312-pytorch-training"
   ["pytorch_inference"]="aws-ml-images/py312-pytorch-inference"
   ["ml_pipelines"]="aws-ml-images/py312-ml-pipelines"
