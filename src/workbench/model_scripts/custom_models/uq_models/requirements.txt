@@ -1,3 +1,4 @@
 # Note: NGBoost is not included in the default inference image, so it must be specified here.
 ngboost
 mapie
+lightgbm

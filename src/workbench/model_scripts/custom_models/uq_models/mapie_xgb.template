@@ -1,27 +1,45 @@
-# Model: HistGradientBoosting with MAPIE Conformalized Quantile Regression
+# Model: LightGBM with MAPIE Conformalized Quantile Regression (Optimized for ADMET)
 from mapie.regression import MapieQuantileRegressor
-from sklearn.ensemble import HistGradientBoostingRegressor
+from mapie.subsample import Subsample
+from lightgbm import LGBMRegressor
 from sklearn.model_selection import train_test_split
-import numpy as np
 
-# Template Placeholders
-TEMPLATE_PARAMS = {
-    "features": "{{feature_list}}",
-    "target": "{{target_column}}",
-    "train_all_data": "{{train_all_data}}"
-}
+# Model Performance Scores
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    root_mean_squared_error
+)
 
 from io import StringIO
 import json
 import argparse
 import joblib
 import os
+import numpy as np
 import pandas as pd
+from typing import List, Tuple
+
+# Template Placeholders
+TEMPLATE_PARAMS = {
+    "id_column": "{{id_column}}",
+    "target": "{{target_column}}",
+    "features": "{{feature_list}}",
+    "compressed_features": "{{compressed_features}}",
+    "train_all_data": "{{train_all_data}}",
+    "track_columns": "{{track_columns}}"
+}
 
 
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
-    """Check if the DataFrame is empty and raise an error if so."""
+    """
+    Check if the provided dataframe is empty and raise an exception if it is.
+
+    Args:
+        df (pd.DataFrame): DataFrame to check
+        df_name (str): Name of the DataFrame
+    """
     if df.empty:
         msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
         print(msg)
@@ -32,7 +50,7 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     """
     Matches and renames DataFrame columns to match model feature names (case-insensitive).
     Prioritizes exact matches, then case-insensitive matches.
-    
+
     Raises ValueError if any model features cannot be matched.
     """
     df_columns_lower = {col.lower(): col for col in df.columns}
@@ -45,7 +63,7 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
             rename_dict[df_columns_lower[feature.lower()]] = feature
         else:
             missing.append(feature)
-    
+
     if missing:
         raise ValueError(f"Features not found: {missing}")
 
@@ -53,16 +71,99 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     return df.rename(columns=rename_dict)
 
 
-# TRAINING SECTION
-#
-# This section (__main__) is where SageMaker will execute the training job
-# and save the model artifacts to the model directory.
-#
+def convert_categorical_types(df: pd.DataFrame, features: list, category_mappings={}) -> tuple:
+    """
+    Converts appropriate columns to categorical type with consistent mappings.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to process.
+        features (list): List of feature names to consider for conversion.
+        category_mappings (dict, optional): Existing category mappings. If empty dict, we're in
+                                            training mode. If populated, we're in inference mode.
+
+    Returns:
+        tuple: (processed DataFrame, category mappings dictionary)
+    """
+    # Training mode
+    if category_mappings == {}:
+        for col in df.select_dtypes(include=["object", "string"]):
+            if col in features and df[col].nunique() < 20:
+                print(f"Training mode: Converting {col} to category")
+                df[col] = df[col].astype("category")
+                category_mappings[col] = df[col].cat.categories.tolist()  # Store category mappings
+
+    # Inference mode
+    else:
+        for col, categories in category_mappings.items():
+            if col in df.columns:
+                print(f"Inference mode: Applying categorical mapping for {col}")
+                df[col] = pd.Categorical(df[col], categories=categories)  # Apply consistent categorical mapping
+
+    return df, category_mappings
+
+
+def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+    """Prepare features for the model by decompressing bitstring features
+
+    Args:
+        df (pd.DataFrame): The features DataFrame
+        features (List[str]): Full list of feature names
+        compressed_features (List[str]): List of feature names to decompress (bitstrings)
+
+    Returns:
+        pd.DataFrame: DataFrame with the decompressed features
+        List[str]: Updated list of feature names after decompression
+
+    Raises:
+        ValueError: If any missing values are found in the specified features
+    """
+
+    # Check for any missing values in the required features
+    missing_counts = df[features].isna().sum()
+    if missing_counts.any():
+        missing_features = missing_counts[missing_counts > 0]
+        print(
+            f"WARNING: Found missing values in features: {missing_features.to_dict()}. "
+            "WARNING: You might want to remove/replace all NaN values before processing."
+        )
+
+    # Decompress the specified compressed features
+    decompressed_features = features.copy()
+    for feature in compressed_features:
+        if (feature not in df.columns) or (feature not in features):
+            print(f"Feature '{feature}' not in the features list, skipping decompression.")
+            continue
+
+        # Remove the feature from the list of features to avoid duplication
+        decompressed_features.remove(feature)
+
+        # Handle all compressed features as bitstrings
+        bit_matrix = np.array([list(bitstring) for bitstring in df[feature]], dtype=np.uint8)
+        prefix = feature[:3]
+
+        # Create all new columns at once - avoids fragmentation
+        new_col_names = [f"{prefix}_{i}" for i in range(bit_matrix.shape[1])]
+        new_df = pd.DataFrame(bit_matrix, columns=new_col_names, index=df.index)
+
+        # Add to features list
+        decompressed_features.extend(new_col_names)
+
+        # Drop original column and concatenate new ones
+        df = df.drop(columns=[feature])
+        df = pd.concat([df, new_df], axis=1)
+
+    return df, decompressed_features
+
+
 if __name__ == "__main__":
     # Template Parameters
-    features = TEMPLATE_PARAMS["features"]
+    id_column = TEMPLATE_PARAMS["id_column"]
     target = TEMPLATE_PARAMS["target"]
+    features = TEMPLATE_PARAMS["features"]
+    orig_features = features.copy()
+    compressed_features = TEMPLATE_PARAMS["compressed_features"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
+    track_columns = TEMPLATE_PARAMS["track_columns"]  # Can be None
     validation_split = 0.2
 
     # Script arguments for input/output directories
@@ -74,73 +175,193 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # Load training data from the specified directory
+    # Read the training data into DataFrames
     training_files = [
         os.path.join(args.train, file)
-        for file in os.listdir(args.train) if file.endswith(".csv")
+        for file in os.listdir(args.train)
+        if file.endswith(".csv")
     ]
-    df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
+    print(f"Training Files: {training_files}")
 
-    # Check if the DataFrame is empty
-    check_dataframe(df, "training_df")
+    # Combine files and read them all into a single pandas dataframe
+    all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
 
-    # Training data split logic
+    # Check if the dataframe is empty
+    check_dataframe(all_df, "training_df")
+
+    # Features/Target output
+    print(f"Target: {target}")
+    print(f"Features: {str(features)}")
+
+    # Convert any features that might be categorical to 'category' type
+    all_df, category_mappings = convert_categorical_types(all_df, features)
+
+    # If we have compressed features, decompress them
+    if compressed_features:
+        print(f"Decompressing features {compressed_features}...")
+        all_df, features = decompress_features(all_df, features, compressed_features)
+
+    # Do we want to train on all the data?
     if train_all_data:
-        # Use all data for both training and validation
-        print("Training on all data...")
-        df_train = df.copy()
-        df_val = df.copy()
-    elif "training" in df.columns:
-        # Split data based on a 'training' column if it exists
-        print("Splitting data based on 'training' column...")
-        df_train = df[df["training"]].copy()
-        df_val = df[~df["training"]].copy()
-    else:
-        # Perform a random split if no 'training' column is found
-        print("Splitting data randomly...")
-        df_train, df_val = train_test_split(df, test_size=validation_split, random_state=42)
+        print("WARNING: Training on ALL data - still splitting 15% for calibration (required for CQR)")
+        # For MAPIE CQR, we still need a calibration set
+        df_train, df_val = train_test_split(
+            all_df, test_size=0.15, random_state=42  # Use 15% for calibration
+        )
 
-    # Create HistGradientBoosting base model configured for quantile regression
-    base_estimator = HistGradientBoostingRegressor(
-        loss='quantile',  # Required for MAPIE CQR
-        quantile=0.5,  # Will be overridden by MAPIE for different quantiles
-        max_iter=1000,
+    # Does the dataframe have a training column?
+    elif "training" in all_df.columns:
+        print("Found training column, splitting data based on training column")
+        df_train = all_df[all_df["training"]]
+        df_val = all_df[~all_df["training"]]
+    else:
+        # Just do a random training Split
+        print("WARNING: No training column found, splitting data with random state=42")
+        df_train, df_val = train_test_split(
+            all_df, test_size=validation_split, random_state=42
+        )
+    print(f"FIT/TRAIN: {df_train.shape}")
+    print(f"VALIDATION: {df_val.shape}")
+
+    # OPTIMIZED FOR ADMET: LightGBM with quantile objective
+    # Single model handles both point predictions and uncertainty
+    base_estimator = LGBMRegressor(
+        objective='quantile',
+        alpha=0.5,  # Will be overridden by MAPIE for different quantiles
+        n_estimators=1000,
         max_depth=6,
         learning_rate=0.01,
-        random_state=42
+        num_leaves=31,
+        min_child_samples=20,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        verbose=-1,
+        force_col_wise=True  # Better performance with many features
     )
 
-    # Create MAPIE CQR predictor - it will create quantile versions internally
-    model = MapieQuantileRegressor(
-        estimator=base_estimator,
-        method="quantile",
-        cv="split",
-        alpha=0.05  # For 95% coverage
-    )
+    # MAPIE CQR setup optimized for ADMET
+    # Using ensemble approach for better robustness with chemical space extrapolation
+    use_ensemble = True  # Set to False for faster training with single model
+
+    if use_ensemble:
+        # Ensemble version - better for ADMET uncertainty quantification
+        print("Using ensemble CQR for robust ADMET predictions")
+        model = MapieQuantileRegressor(
+            estimator=base_estimator,
+            method="quantile",
+            cv=Subsample(n_resamplings=30, subsample_size=0.8),  # Ensemble approach
+            alpha=[0.05, 0.1, 0.2, 0.5],  # Multiple confidence levels for different decision stages
+            symmetry=True  # Symmetric intervals often work better for ADMET
+        )
+    else:
+        # Single model version - faster but potentially less robust
+        print("Using single model CQR for faster training")
+        model = MapieQuantileRegressor(
+            estimator=base_estimator,
+            method="quantile",
+            cv="split",  # Split-conformal for calibration
+            alpha=[0.05, 0.1, 0.2, 0.5],
+            symmetry=True
+        )
 
     # Prepare features and targets for training
     X_train = df_train[features]
-    X_val = df_val[features]
+    X_validate = df_val[features]
     y_train = df_train[target]
-    y_val = df_val[target]
+    y_validate = df_val[target]
 
-    # Fit the MAPIE CQR model (train/calibration is handled internally)
-    model.fit(X_train, y_train)
+    # Fit the MAPIE CQR model (handles both point prediction and uncertainty)
+    print("Training MAPIE CQR model with LightGBM...")
+    if use_ensemble:
+        # For ensemble, MAPIE handles the train/calibration split internally
+        model.fit(X_train, y_train)
+    else:
+        # For split-conformal, we can specify calibration size
+        model.fit(
+            X_train,
+            y_train,
+            calib_size=0.3,  # 30% for calibration - important for ADMET
+            random_state=42
+        )
 
-    # Save the trained model and any necessary assets
+    # Make Predictions on the Validation Set using MAPIE
+    print(f"Making Predictions on Validation Set...")
+    y_pred_mapie, y_pis_mapie = model.predict(X_validate)
+
+    # Calculate various model performance metrics (regression)
+    rmse = root_mean_squared_error(y_validate, y_pred_mapie)
+    mae = mean_absolute_error(y_validate, y_pred_mapie)
+    r2 = r2_score(y_validate, y_pred_mapie)
+    print(f"\nPoint Prediction Performance:")
+    print(f"RMSE: {rmse:.3f}")
+    print(f"MAE: {mae:.3f}")
+    print(f"R2: {r2:.3f}")
+    print(f"NumRows: {len(df_val)}")
+
+    # Calculate empirical coverage for each confidence level
+    print("\nInterval Coverage (should match target):")
+    for i, alpha in enumerate(model.alpha):
+        coverage = np.mean((y_validate >= y_pis_mapie[:, 0, i]) & (y_validate <= y_pis_mapie[:, 1, i]))
+        print(f"  Target: {(1 - alpha) * 100:.0f}%, Empirical: {coverage * 100:.1f}%")
+
+    # Calculate average interval widths
+    print("\nAverage Interval Widths:")
+    for i, alpha in enumerate(model.alpha):
+        avg_width = np.mean(y_pis_mapie[:, 1, i] - y_pis_mapie[:, 0, i])
+        print(f"  {(1 - alpha) * 100:.0f}% interval: {avg_width:.3f}")
+
+    # Save the trained MAPIE model
     joblib.dump(model, os.path.join(args.model_dir, "model.joblib"))
 
     # Save the feature list to validate input during predictions
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
         json.dump(features, fp)
 
+    # Save category mappings if any
+    if category_mappings:
+        with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
+            json.dump(category_mappings, fp)
+
+    # Save model configuration for reference
+    model_config = {
+        "model_type": "MAPIE_CQR_LightGBM",
+        "use_ensemble": use_ensemble,
+        "alpha_levels": model.alpha.tolist() if hasattr(model.alpha, 'tolist') else model.alpha,
+        "n_features": len(features),
+        "target": target,
+        "validation_metrics": {
+            "rmse": float(rmse),
+            "mae": float(mae),
+            "r2": float(r2)
+        }
+    }
+    with open(os.path.join(args.model_dir, "model_config.json"), "w") as fp:
+        json.dump(model_config, fp, indent=2)
+
+    print(f"\nModel training complete! Saved to {args.model_dir}")
+
 
 #
 # Inference Section
 #
-def model_fn(model_dir):
-    """Load and return the model from the specified directory."""
-    return joblib.load(os.path.join(model_dir, "model.joblib"))
+def model_fn(model_dir) -> dict:
+    """Load and return the MAPIE model from the specified directory."""
+
+    # Load MAPIE Model
+    mapie_model = joblib.load(os.path.join(model_dir, "model.joblib"))
+
+    # Load category mappings if they exist
+    category_mappings = {}
+    category_path = os.path.join(model_dir, "category_mappings.json")
+    if os.path.exists(category_path):
+        with open(category_path) as fp:
+            category_mappings = json.load(fp)
+
+    return {
+        "mapie": mapie_model,
+        "category_mappings": category_mappings
+    }
 
 
 def input_fn(input_data, content_type):
@@ -171,33 +392,69 @@ def output_fn(output_df, accept_type):
         raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
 
-def predict_fn(df, model):
-    """Make predictions using MAPIE CQR and return the DataFrame with results."""
-    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
+def predict_fn(df, models) -> pd.DataFrame:
+    """Make Predictions with our optimized ADMET CQR Model using MAPIE
 
-    # Load feature columns from the saved file
+    Args:
+        df (pd.DataFrame): The input DataFrame
+        models (dict): The dictionary containing the MAPIE model
+
+    Returns:
+        pd.DataFrame: The DataFrame with predictions and uncertainty intervals
+    """
+
+    # Grab our feature columns (from training)
+    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
         model_features = json.load(fp)
 
     # Match features in a case-insensitive manner
     matched_df = match_features_case_insensitive(df, model_features)
 
-    # Get CQR predictions - returns point prediction and intervals
-    X_pred = matched_df[model_features]
-    y_pred, y_pis = model.predict(X_pred)
+    # Apply categorical mappings if they exist
+    if models.get("category_mappings"):
+        matched_df, _ = convert_categorical_types(
+            matched_df,
+            model_features,
+            models["category_mappings"]
+        )
 
-    # Add predictions to dataframe with 95% intervals
-    df["prediction"] = y_pred
-    df["q_025"] = y_pis[:, 0, 0]  # Lower bound (2.5th percentile)
-    df["q_975"] = y_pis[:, 1, 0]  # Upper bound (97.5th percentile)
+    # Get CQR predictions with multiple intervals
+    y_pred, y_pis = models["mapie"].predict(matched_df[model_features])
 
-    # Calculate std estimate from 95% interval
-    interval_width_95 = df["q_975"] - df["q_025"]
-    df["prediction_std"] = interval_width_95 / 3.92  # 95% CI = ±1.96σ, so width = 3.92σ
+    # Primary outputs
+    df["prediction"] = y_pred  # MAPIE's point prediction (median)
+    df["prediction_std"] = (y_pis[:, 1, 0] - y_pis[:, 0, 0]) / 3.92  # Std from 95% interval
 
-    # Calculate 50% intervals using normal approximation
-    df["q_25"] = df["prediction"] - 0.674 * df["prediction_std"]
-    df["q_75"] = df["prediction"] + 0.674 * df["prediction_std"]
+    # Extract all quantiles from MAPIE output
+    # The intervals are ordered by alpha values: [0.05, 0.1, 0.2, 0.5]
+    df["q_025"] = y_pis[:, 0, 0]  # 95% interval lower (alpha=0.05)
+    df["q_975"] = y_pis[:, 1, 0]  # 95% interval upper
+    df["q_05"] = y_pis[:, 0, 1]  # 90% interval lower (alpha=0.1)
+    df["q_95"] = y_pis[:, 1, 1]  # 90% interval upper
+    df["q_10"] = y_pis[:, 0, 2]  # 80% interval lower (alpha=0.2)
+    df["q_90"] = y_pis[:, 1, 2]  # 80% interval upper
+    df["q_25"] = y_pis[:, 0, 3]  # 50% interval lower (alpha=0.5)
+    df["q_75"] = y_pis[:, 1, 3]  # 50% interval upper
 
-    # Return the modified DataFrame
+    # Reorder the quantile columns for easier reading
+    quantile_cols = ["q_025", "q_05", "q_10", "q_25", "q_75", "q_90", "q_95", "q_975"]
+    other_cols = [col for col in df.columns if col not in quantile_cols]
+    df = df[other_cols + quantile_cols]
+
+    # ADMET-specific uncertainty metrics
+    # Calculate relative uncertainty (useful for decision making)
+    df["uncertainty_score"] = (df["q_975"] - df["q_025"]) / (np.abs(df["prediction"]) + 1e-6)
+
+    # Flag predictions with high uncertainty (applicability domain)
+    uncertainty_threshold = df["uncertainty_score"].quantile(0.9)
+    df["high_uncertainty"] = df["uncertainty_score"] > uncertainty_threshold
+
+    # Add confidence bands for different decision stages
+    df["confidence_band"] = pd.cut(
+        df["uncertainty_score"],
+        bins=[0, 0.5, 1.0, 2.0, np.inf],
+        labels=["high", "medium", "low", "very_low"]
+    )
+
     return df

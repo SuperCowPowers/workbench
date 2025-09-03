@@ -1,6 +1,7 @@
 # Model: NGBoost Regressor with Distribution output
 from ngboost import NGBRegressor
-from xgboost import XGBRegressor  # Base Estimator
+from ngboost.distns import Cauchy
+from xgboost import XGBRegressor  # Point Estimator
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
@@ -107,7 +108,7 @@ def convert_categorical_types(df: pd.DataFrame, features: list, category_mapping
 
 
 def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
-    """Prepare features for the XGBoost model
+    """Prepare features for the model by decompressing bitstring features
 
     Args:
         df (pd.DataFrame): The features DataFrame
@@ -132,7 +133,7 @@ def decompress_features(df: pd.DataFrame, features: List[str], compressed_featur
         )
 
     # Decompress the specified compressed features
-    decompressed_features = features
+    decompressed_features = features.copy()
     for feature in compressed_features:
         if (feature not in df.columns) or (feature not in features):
             print(f"Feature '{feature}' not in the features list, skipping decompression.")
@@ -227,7 +228,7 @@ if __name__ == "__main__":
 
     # We're using XGBoost for point predictions and NGBoost for uncertainty quantification
     xgb_model = XGBRegressor()
-    ngb_model = NGBRegressor()
+    ngb_model = NGBRegressor()  # Dist=Cauchy) Seems to give HUGE prediction intervals
 
     # Prepare features and targets for training
     X_train = df_train[features]
