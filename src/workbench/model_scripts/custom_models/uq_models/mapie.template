@@ -22,12 +22,10 @@ from typing import List, Tuple
 
 # Template Placeholders
 TEMPLATE_PARAMS = {
-    "id_column": "{{id_column}}",
     "target": "{{target_column}}",
     "features": "{{feature_list}}",
     "compressed_features": "{{compressed_features}}",
-    "train_all_data": "{{train_all_data}}",
-    "track_columns": "{{track_columns}}"
+    "train_all_data": "{{train_all_data}}"
 }
 
 

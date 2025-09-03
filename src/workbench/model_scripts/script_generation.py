@@ -70,6 +70,11 @@ def fill_template(template_path: str, params: dict, output_script: str) -> str:
     # Sanity check to ensure all placeholders were replaced
     if "{{" in template and "}}" in template:
         msg = "Not all template placeholders were replaced. Please check your params."
+
+        # Show which placeholders are still present
+        start = template.index("{{")
+        end = template.index("}}", start) + 2
+        msg += f" Unreplaced placeholder: {template[start:end]}"
         log.critical(msg)
         raise ValueError(msg)
 
