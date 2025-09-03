@@ -1,6 +1,5 @@
-# Model: LightGBM with MAPIE Conformalized Quantile Regression (Optimized for ADMET)
-from mapie.regression import MapieQuantileRegressor
-from mapie.subsample import Subsample
+# Model: LightGBM with MAPIE ConformalizedQuantileRegressor
+from mapie.regression import ConformalizedQuantileRegressor
 from lightgbm import LGBMRegressor
 from sklearn.model_selection import train_test_split
 
@@ -155,13 +154,11 @@ def decompress_features(df: pd.DataFrame, features: List[str], compressed_featur
 
 if __name__ == "__main__":
     # Template Parameters
-    id_column = TEMPLATE_PARAMS["id_column"]
     target = TEMPLATE_PARAMS["target"]
     features = TEMPLATE_PARAMS["features"]
     orig_features = features.copy()
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
-    track_columns = TEMPLATE_PARAMS["track_columns"]  # Can be None
     validation_split = 0.2
 
     # Script arguments for input/output directories
@@ -201,14 +198,11 @@ if __name__ == "__main__":
 
     # Do we want to train on all the data?
     if train_all_data:
-        print("WARNING: Training on ALL data - still splitting 15% for calibration (required for CQR)")
-        # For MAPIE CQR, we still need a calibration set
-        df_train, df_val = train_test_split(
-            all_df, test_size=0.15, random_state=42  # Use 15% for calibration
-        )
+        print("WARNING: MAPIE needs Validation data for calibration (required for CQR)")
+        print("WARNING: Setting train_all_data does nothing for MAPIE models!")
 
     # Does the dataframe have a training column?
-    elif "training" in all_df.columns:
+    if "training" in all_df.columns:
         print("Found training column, splitting data based on training column")
         df_train = all_df[all_df["training"]]
         df_val = all_df[~all_df["training"]]
@@ -221,71 +215,55 @@ if __name__ == "__main__":
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
-    # OPTIMIZED FOR ADMET: LightGBM with quantile objective
-    # Single model handles both point predictions and uncertainty
-    base_estimator = LGBMRegressor(
-        objective='quantile',
-        alpha=0.5,  # Will be overridden by MAPIE for different quantiles
-        n_estimators=1000,
-        max_depth=6,
-        learning_rate=0.01,
-        num_leaves=31,
-        min_child_samples=20,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-        verbose=-1,
-        force_col_wise=True  # Better performance with many features
-    )
-
-    # MAPIE CQR setup optimized for ADMET
-    # Using ensemble approach for better robustness with chemical space extrapolation
-    use_ensemble = True  # Set to False for faster training with single model
-
-    if use_ensemble:
-        # Ensemble version - better for ADMET uncertainty quantification
-        print("Using ensemble CQR for robust ADMET predictions")
-        model = MapieQuantileRegressor(
-            estimator=base_estimator,
-            method="quantile",
-            cv=Subsample(n_resamplings=30, subsample_size=0.8),  # Ensemble approach
-            alpha=[0.05, 0.1, 0.2, 0.5],  # Multiple confidence levels for different decision stages
-            symmetry=True  # Symmetric intervals often work better for ADMET
-        )
-    else:
-        # Single model version - faster but potentially less robust
-        print("Using single model CQR for faster training")
-        model = MapieQuantileRegressor(
-            estimator=base_estimator,
-            method="quantile",
-            cv="split",  # Split-conformal for calibration
-            alpha=[0.05, 0.1, 0.2, 0.5],
-            symmetry=True
-        )
-
     # Prepare features and targets for training
     X_train = df_train[features]
     X_validate = df_val[features]
     y_train = df_train[target]
     y_validate = df_val[target]
 
-    # Fit the MAPIE CQR model (handles both point prediction and uncertainty)
-    print("Training MAPIE CQR model with LightGBM...")
-    if use_ensemble:
-        # For ensemble, MAPIE handles the train/calibration split internally
-        model.fit(X_train, y_train)
-    else:
-        # For split-conformal, we can specify calibration size
-        model.fit(
-            X_train,
-            y_train,
-            calib_size=0.3,  # 30% for calibration - important for ADMET
-            random_state=42
+    # Train quantile models for CQR - this gives adaptive, asymmetric intervals
+    print("Training quantile models for CQR (adaptive intervals)...")
+    confidence_level = 0.95  # 95% confidence intervals
+    alpha = 1 - confidence_level  # 0.05
+
+    quantile_estimators = []
+    quantiles = [alpha / 2, 1 - alpha / 2, 0.5]  # [0.025, 0.975, 0.5] - lower, upper, median
+
+    for q in quantiles:
+        print(f"  Training model for quantile {q:.3f}...")
+        est = LGBMRegressor(
+            objective='quantile',
+            alpha=q,  # The quantile to predict
+            n_estimators=1000,
+            max_depth=6,
+            learning_rate=0.01,
+            num_leaves=31,
+            min_child_samples=20,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            random_state=42,
+            verbose=-1,
+            force_col_wise=True  # Better performance with many features
         )
+        est.fit(X_train, y_train)
+        quantile_estimators.append(est)
+
+    # Create MAPIE CQR model with pre-trained quantile models
+    print("Setting up MAPIE ConformalizedQuantileRegressor...")
+    model = ConformalizedQuantileRegressor(
+        quantile_estimators,
+        confidence_level=confidence_level,  # Single confidence level for v1.0+
+        prefit=True  # Models are already trained
+    )
+
+    # Conformalize the model using validation set
+    # This calibrates the intervals to achieve the desired coverage
+    print("Conformalizing CQR model with validation data...")
+    model.conformalize(X_validate, y_validate)
 
     # Make Predictions on the Validation Set using MAPIE
     print(f"Making Predictions on Validation Set...")
-    y_pred_mapie, y_pis_mapie = model.predict(X_validate)
+    y_pred_mapie, y_pis_mapie = model.predict_interval(X_validate)
 
     # Calculate various model performance metrics (regression)
     rmse = root_mean_squared_error(y_validate, y_pred_mapie)
@@ -297,20 +275,30 @@ if __name__ == "__main__":
     print(f"R2: {r2:.3f}")
     print(f"NumRows: {len(df_val)}")
 
-    # Calculate empirical coverage for each confidence level
-    print("\nInterval Coverage (should match target):")
-    for i, alpha in enumerate(model.alpha):
-        coverage = np.mean((y_validate >= y_pis_mapie[:, 0, i]) & (y_validate <= y_pis_mapie[:, 1, i]))
-        print(f"  Target: {(1 - alpha) * 100:.0f}%, Empirical: {coverage * 100:.1f}%")
+    # Calculate empirical coverage
+    print("\nInterval Coverage:")
+    coverage = np.mean((y_validate >= y_pis_mapie[:, 0, 0]) & (y_validate <= y_pis_mapie[:, 1, 0]))
+    print(f"  Target: {confidence_level * 100:.0f}%, Empirical: {coverage * 100:.1f}%")
 
-    # Calculate average interval widths
-    print("\nAverage Interval Widths:")
-    for i, alpha in enumerate(model.alpha):
-        avg_width = np.mean(y_pis_mapie[:, 1, i] - y_pis_mapie[:, 0, i])
-        print(f"  {(1 - alpha) * 100:.0f}% interval: {avg_width:.3f}")
+    # Calculate interval statistics - CQR should show adaptive intervals
+    interval_widths = y_pis_mapie[:, 1, 0] - y_pis_mapie[:, 0, 0]
+    print(f"\nInterval Statistics (Adaptive):")
+    print(f"  Average width: {np.mean(interval_widths):.3f}")
+    print(f"  Median width: {np.median(interval_widths):.3f}")
+    print(f"  Width std: {np.std(interval_widths):.3f}")
+    print(f"  Min width: {np.min(interval_widths):.3f}")
+    print(f"  Max width: {np.max(interval_widths):.3f}")
+
+    # Check for asymmetry in intervals
+    lower_dists = y_pred_mapie - y_pis_mapie[:, 0, 0]
+    upper_dists = y_pis_mapie[:, 1, 0] - y_pred_mapie
+    asymmetry = np.mean(upper_dists - lower_dists)
+    print(f"\nInterval Asymmetry:")
+    print(f"  Mean asymmetry: {asymmetry:.3f} (positive = upper-skewed)")
+    print(f"  % asymmetric: {np.mean(np.abs(upper_dists - lower_dists) > 0.01) * 100:.1f}%")
 
     # Save the trained MAPIE model
-    joblib.dump(model, os.path.join(args.model_dir, "model.joblib"))
+    joblib.dump(model, os.path.join(args.model_dir, "mapie_model.joblib"))
 
     # Save the feature list to validate input during predictions
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
@@ -324,14 +312,16 @@ if __name__ == "__main__":
     # Save model configuration for reference
     model_config = {
         "model_type": "MAPIE_CQR_LightGBM",
-        "use_ensemble": use_ensemble,
-        "alpha_levels": model.alpha.tolist() if hasattr(model.alpha, 'tolist') else model.alpha,
+        "confidence_level": confidence_level,
         "n_features": len(features),
         "target": target,
         "validation_metrics": {
             "rmse": float(rmse),
             "mae": float(mae),
-            "r2": float(r2)
+            "r2": float(r2),
+            "coverage": float(coverage),
+            "avg_interval_width": float(np.mean(interval_widths)),
+            "interval_width_std": float(np.std(interval_widths))
         }
     }
     with open(os.path.join(args.model_dir, "model_config.json"), "w") as fp:
@@ -347,7 +337,7 @@ def model_fn(model_dir) -> dict:
     """Load and return the MAPIE model from the specified directory."""
 
     # Load MAPIE Model
-    mapie_model = joblib.load(os.path.join(model_dir, "model.joblib"))
+    mapie_model = joblib.load(os.path.join(model_dir, "mapie_model.joblib"))
 
     # Load category mappings if they exist
     category_mappings = {}
@@ -379,9 +369,13 @@ def input_fn(input_data, content_type):
         raise ValueError(f"{content_type} not supported!")
 
 
+
 def output_fn(output_df, accept_type):
     """Supports both CSV and JSON output formats."""
     if "text/csv" in accept_type:
+        # Convert categorical columns to string to avoid fillna issues
+        for col in output_df.select_dtypes(include=['category']).columns:
+            output_df[col] = output_df[col].astype(str)
         csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
         return csv_output, "text/csv"
     elif "application/json" in accept_type:
@@ -391,14 +385,14 @@ def output_fn(output_df, accept_type):
 
 
 def predict_fn(df, models) -> pd.DataFrame:
-    """Make Predictions with our optimized ADMET CQR Model using MAPIE
+    """Make Predictions with MAPIE CQR - provides adaptive, asymmetric intervals
 
     Args:
         df (pd.DataFrame): The input DataFrame
         models (dict): The dictionary containing the MAPIE model
 
     Returns:
-        pd.DataFrame: The DataFrame with predictions and uncertainty intervals
+        pd.DataFrame: The DataFrame with predictions and adaptive uncertainty intervals
     """
 
     # Grab our feature columns (from training)
@@ -417,34 +411,25 @@ def predict_fn(df, models) -> pd.DataFrame:
             models["category_mappings"]
         )
 
-    # Get CQR predictions with multiple intervals
-    y_pred, y_pis = models["mapie"].predict(matched_df[model_features])
+    # Get CQR predictions with adaptive 95% confidence intervals
+    y_pred, y_pis = models["mapie"].predict_interval(matched_df[model_features])
 
-    # Primary outputs
-    df["prediction"] = y_pred  # MAPIE's point prediction (median)
-    df["prediction_std"] = (y_pis[:, 1, 0] - y_pis[:, 0, 0]) / 3.92  # Std from 95% interval
+    # Primary outputs - CQR provides adaptive, potentially asymmetric intervals
+    df["prediction"] = y_pred  # Median prediction from quantile model
+    df["lower_bound"] = y_pis[:, 0, 0]  # 95% interval lower bound (adaptive)
+    df["upper_bound"] = y_pis[:, 1, 0]  # 95% interval upper bound (adaptive)
 
-    # Extract all quantiles from MAPIE output
-    # The intervals are ordered by alpha values: [0.05, 0.1, 0.2, 0.5]
-    df["q_025"] = y_pis[:, 0, 0]  # 95% interval lower (alpha=0.05)
-    df["q_975"] = y_pis[:, 1, 0]  # 95% interval upper
-    df["q_05"] = y_pis[:, 0, 1]  # 90% interval lower (alpha=0.1)
-    df["q_95"] = y_pis[:, 1, 1]  # 90% interval upper
-    df["q_10"] = y_pis[:, 0, 2]  # 80% interval lower (alpha=0.2)
-    df["q_90"] = y_pis[:, 1, 2]  # 80% interval upper
-    df["q_25"] = y_pis[:, 0, 3]  # 50% interval lower (alpha=0.5)
-    df["q_75"] = y_pis[:, 1, 3]  # 50% interval upper
+    # Calculate uncertainty metrics
+    interval_width = df["upper_bound"] - df["lower_bound"]
+    df["interval_width"] = interval_width  # This varies per compound with CQR
+    df["prediction_std"] = interval_width / 3.92  # Approximate std from 95% interval
 
-    # Reorder the quantile columns for easier reading
-    quantile_cols = ["q_025", "q_05", "q_10", "q_25", "q_75", "q_90", "q_95", "q_975"]
-    other_cols = [col for col in df.columns if col not in quantile_cols]
-    df = df[other_cols + quantile_cols]
-
-    # ADMET-specific uncertainty metrics
+    # Uncertainty metrics
     # Calculate relative uncertainty (useful for decision making)
-    df["uncertainty_score"] = (df["q_975"] - df["q_025"]) / (np.abs(df["prediction"]) + 1e-6)
+    df["uncertainty_score"] = interval_width / (np.abs(df["prediction"]) + 1e-6)
 
     # Flag predictions with high uncertainty (applicability domain)
+    # With CQR, high uncertainty naturally emerges from wider intervals
     uncertainty_threshold = df["uncertainty_score"].quantile(0.9)
     df["high_uncertainty"] = df["uncertainty_score"] > uncertainty_threshold
 
@@ -454,5 +439,33 @@ def predict_fn(df, models) -> pd.DataFrame:
         bins=[0, 0.5, 1.0, 2.0, np.inf],
         labels=["high", "medium", "low", "very_low"]
     )
+
+    # Calculate interval asymmetry (unique to CQR)
+    lower_dist = df["prediction"] - df["lower_bound"]
+    upper_dist = df["upper_bound"] - df["prediction"]
+    df["interval_asymmetry"] = (upper_dist - lower_dist) / interval_width
+
+    # For backward compatibility, add approximate quantiles
+    # With CQR, we only have 95% intervals, so we approximate others
+    # These are rough approximations based on the 95% interval
+    scale_factors = {
+        "q_025": (0, 1),  # Use actual bounds
+        "q_05": (0.16, 0.84),  # ~90% interval
+        "q_10": (0.32, 0.68),  # ~80% interval
+        "q_25": (0.63, 0.37),  # ~50% interval
+    }
+
+    for q_name, (lower_scale, upper_scale) in scale_factors.items():
+        if q_name == "q_025":
+            df[q_name] = df["lower_bound"]
+        else:
+            df[q_name] = df["prediction"] - lower_scale * (df["prediction"] - df["lower_bound"])
+
+    for q_name, (lower_scale, upper_scale) in [("q_975", (0, 1)), ("q_95", (0.16, 0.84)),
+                                               ("q_90", (0.32, 0.68)), ("q_75", (0.63, 0.37))]:
+        if q_name == "q_975":
+            df[q_name] = df["upper_bound"]
+        else:
+            df[q_name] = df["prediction"] + upper_scale * (df["upper_bound"] - df["prediction"])
 
     return df
