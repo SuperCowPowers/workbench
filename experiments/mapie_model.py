@@ -4,11 +4,7 @@ from lightgbm import LGBMRegressor
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
-from sklearn.metrics import (
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error
-)
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
 from io import StringIO
 import json
@@ -222,9 +218,7 @@ if __name__ == "__main__":
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(
-            all_df, test_size=validation_split, random_state=42
-        )
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
@@ -256,7 +250,7 @@ if __name__ == "__main__":
             colsample_bytree=0.8,
             random_state=42,
             verbose=-1,
-            force_col_wise=True  # Better performance with many features
+            force_col_wise=True,  # Better performance with many features
         )
         est.fit(X_train, y_train)
         quantile_estimators.append(est)
@@ -266,7 +260,7 @@ if __name__ == "__main__":
     model = ConformalizedQuantileRegressor(
         quantile_estimators,
         confidence_level=confidence_level,  # Single confidence level for v1.0+
-        prefit=True  # Models are already trained
+        prefit=True,  # Models are already trained
     )
 
     # Conformalize the model using validation set
@@ -334,8 +328,8 @@ if __name__ == "__main__":
             "r2": float(r2),
             "coverage": float(coverage),
             "avg_interval_width": float(np.mean(interval_widths)),
-            "interval_width_std": float(np.std(interval_widths))
-        }
+            "interval_width_std": float(np.std(interval_widths)),
+        },
     }
     with open(os.path.join(args.model_dir, "model_config.json"), "w") as fp:
         json.dump(model_config, fp, indent=2)
@@ -359,10 +353,7 @@ def model_fn(model_dir) -> dict:
         with open(category_path) as fp:
             category_mappings = json.load(fp)
 
-    return {
-        "mapie": mapie_model,
-        "category_mappings": category_mappings
-    }
+    return {"mapie": mapie_model, "category_mappings": category_mappings}
 
 
 def input_fn(input_data, content_type):
@@ -386,7 +377,7 @@ def output_fn(output_df, accept_type):
     """Supports both CSV and JSON output formats."""
     if "text/csv" in accept_type:
         # Convert categorical columns to string to avoid fillna issues
-        for col in output_df.select_dtypes(include=['category']).columns:
+        for col in output_df.select_dtypes(include=["category"]).columns:
             output_df[col] = output_df[col].astype(str)
         csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
         return csv_output, "text/csv"
@@ -417,11 +408,7 @@ def predict_fn(df, models) -> pd.DataFrame:
 
     # Apply categorical mappings if they exist
     if models.get("category_mappings"):
-        matched_df, _ = convert_categorical_types(
-            matched_df,
-            model_features,
-            models["category_mappings"]
-        )
+        matched_df, _ = convert_categorical_types(matched_df, model_features, models["category_mappings"])
 
     # Get CQR predictions with adaptive 95% confidence intervals
     y_pred, y_pis = models["mapie"].predict_interval(matched_df[model_features])
@@ -462,8 +449,6 @@ def predict_fn(df, models) -> pd.DataFrame:
 
     # Confidence bands for decision stages
     df["confidence_band"] = pd.cut(
-        df["uncertainty_score"],
-        bins=[0, 0.5, 1.0, 2.0, np.inf],
-        labels=["high", "medium", "low", "very_low"]
+        df["uncertainty_score"], bins=[0, 0.5, 1.0, 2.0, np.inf], labels=["high", "medium", "low", "very_low"]
     )
     return df
