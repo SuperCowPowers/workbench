@@ -4292,8 +4292,8 @@
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="n">model_import_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>        <span class="n">custom_script</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>        <span class="n">custom_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>        <span class="n">training_image</span><span class="o">=</span><span class="s2">&quot;xgb_training&quot;</span><span class="p">,</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>        <span class="n">inference_image</span><span class="o">=</span><span class="s2">&quot;xgb_inference&quot;</span><span class="p">,</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>        <span class="n">training_image</span><span class="o">=</span><span class="s2">&quot;training&quot;</span><span class="p">,</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>        <span class="n">inference_image</span><span class="o">=</span><span class="s2">&quot;inference&quot;</span><span class="p">,</span>
 </span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>        <span class="n">inference_arch</span><span class="o">=</span><span class="s2">&quot;x86_64&quot;</span><span class="p">,</span>
 </span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a>    <span class="p">):</span>
 </span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;FeaturesToModel Initialization</span>
@@ -4305,8 +4305,8 @@
 </span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="sd">            model_import_str (str, optional): The import string for the model (default None)</span>
 </span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="sd">            custom_script (str, optional): Custom script to use for the model (default None)</span>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="sd">            custom_args (dict, optional): Custom arguments to pass to custom model scripts (default None)</span>
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="sd">            training_image (str, optional): Training image (default &quot;xgb_training&quot;)</span>
-</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">            inference_image (str, optional): Inference image (default &quot;xgb_inference&quot;)</span>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="sd">            training_image (str, optional): Training image (default &quot;training&quot;)</span>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">            inference_image (str, optional): Inference image (default &quot;inference&quot;)</span>
 </span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="sd">            inference_arch (str, optional): Inference architecture (default &quot;x86_64&quot;)</span>
 </span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>
@@ -4593,7 +4593,7 @@
 
 
 <h3 id="workbench.core.transforms.features_to_model.features_to_model.FeaturesToModel.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">feature_name</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">model_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_import_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_script</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">training_image</span><span class="o">=</span><span class="s1">&#39;xgb_training&#39;</span><span class="p">,</span> <span class="n">inference_image</span><span class="o">=</span><span class="s1">&#39;xgb_inference&#39;</span><span class="p">,</span> <span class="n">inference_arch</span><span class="o">=</span><span class="s1">&#39;x86_64&#39;</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">feature_name</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">model_class</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_import_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_script</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">training_image</span><span class="o">=</span><span class="s1">&#39;training&#39;</span><span class="p">,</span> <span class="n">inference_image</span><span class="o">=</span><span class="s1">&#39;inference&#39;</span><span class="p">,</span> <span class="n">inference_arch</span><span class="o">=</span><span class="s1">&#39;x86_64&#39;</span><span class="p">)</span></code>
 
 </h3>
 
@@ -4609,8 +4609,8 @@ Args:
     model_import_str (str, optional): The import string for the model (default None)
     custom_script (str, optional): Custom script to use for the model (default None)
     custom_args (dict, optional): Custom arguments to pass to custom model scripts (default None)
-    training_image (str, optional): Training image (default "xgb_training")
-    inference_image (str, optional): Inference image (default "xgb_inference")
+    training_image (str, optional): Training image (default "training")
+    inference_image (str, optional): Inference image (default "inference")
     inference_arch (str, optional): Inference architecture (default "x86_64")</p>
 
 
@@ -4674,8 +4674,8 @@ Args:
 </span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="n">model_import_str</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>    <span class="n">custom_script</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="n">custom_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>    <span class="n">training_image</span><span class="o">=</span><span class="s2">&quot;xgb_training&quot;</span><span class="p">,</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="n">inference_image</span><span class="o">=</span><span class="s2">&quot;xgb_inference&quot;</span><span class="p">,</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>    <span class="n">training_image</span><span class="o">=</span><span class="s2">&quot;training&quot;</span><span class="p">,</span>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="n">inference_image</span><span class="o">=</span><span class="s2">&quot;inference&quot;</span><span class="p">,</span>
 </span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="n">inference_arch</span><span class="o">=</span><span class="s2">&quot;x86_64&quot;</span><span class="p">,</span>
 </span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="p">):</span>
 </span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;FeaturesToModel Initialization</span>
@@ -4687,8 +4687,8 @@ Args:
 </span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="sd">        model_import_str (str, optional): The import string for the model (default None)</span>
 </span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a><span class="sd">        custom_script (str, optional): Custom script to use for the model (default None)</span>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="sd">        custom_args (dict, optional): Custom arguments to pass to custom model scripts (default None)</span>
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="sd">        training_image (str, optional): Training image (default &quot;xgb_training&quot;)</span>
-</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">        inference_image (str, optional): Inference image (default &quot;xgb_inference&quot;)</span>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="sd">        training_image (str, optional): Training image (default &quot;training&quot;)</span>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">        inference_image (str, optional): Inference image (default &quot;inference&quot;)</span>
 </span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a><span class="sd">        inference_arch (str, optional): Inference architecture (default &quot;x86_64&quot;)</span>
 </span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>
