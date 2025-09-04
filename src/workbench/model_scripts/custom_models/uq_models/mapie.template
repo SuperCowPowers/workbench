@@ -1,6 +1,7 @@
-# Model: LightGBM with MAPIE ConformalizedQuantileRegressor (Multiple Intervals)
+# Model: XGBoost for point predictions + LightGBM with MAPIE for conformalized intervals
 from mapie.regression import ConformalizedQuantileRegressor
 from lightgbm import LGBMRegressor
+from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
@@ -224,6 +225,30 @@ if __name__ == "__main__":
     y_train = df_train[target]
     y_validate = df_val[target]
 
+    # Train XGBoost for point predictions
+    print("\nTraining XGBoost for point predictions...")
+    xgb_model = XGBRegressor(
+        n_estimators=1000,
+        max_depth=6,
+        learning_rate=0.01,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42,
+        verbosity=0
+    )
+    xgb_model.fit(X_train, y_train)
+
+    # Evaluate XGBoost performance
+    y_pred_xgb = xgb_model.predict(X_validate)
+    xgb_rmse = root_mean_squared_error(y_validate, y_pred_xgb)
+    xgb_mae = mean_absolute_error(y_validate, y_pred_xgb)
+    xgb_r2 = r2_score(y_validate, y_pred_xgb)
+
+    print(f"\nXGBoost Point Prediction Performance:")
+    print(f"RMSE: {xgb_rmse:.3f}")
+    print(f"MAE: {xgb_mae:.3f}")
+    print(f"R2: {xgb_r2:.3f}")
+
     # Define confidence levels we want to model
     confidence_levels = [0.50, 0.80, 0.90, 0.95]  # 50%, 80%, 90%, 95% confidence intervals
 
@@ -280,17 +305,10 @@ if __name__ == "__main__":
         coverage = np.mean((y_validate >= y_pis[:, 0, 0]) & (y_validate <= y_pis[:, 1, 0]))
         print(f"  Coverage: Target={confidence_level * 100:.0f}%, Empirical={coverage * 100:.1f}%")
 
-    # Calculate overall performance metrics using the median prediction
-    y_pred_median = mapie_models["mapie_0.95"].predict_interval(X_validate)[0]
-
-    rmse = root_mean_squared_error(y_validate, y_pred_median)
-    mae = mean_absolute_error(y_validate, y_pred_median)
-    r2 = r2_score(y_validate, y_pred_median)
-
-    print(f"\nOverall Point Prediction Performance:")
-    print(f"RMSE: {rmse:.3f}")
-    print(f"MAE: {mae:.3f}")
-    print(f"R2: {r2:.3f}")
+    print(f"\nOverall Model Performance Summary:")
+    print(f"XGBoost RMSE: {xgb_rmse:.3f}")
+    print(f"XGBoost MAE: {xgb_mae:.3f}")
+    print(f"XGBoost R2: {xgb_r2:.3f}")
     print(f"NumRows: {len(df_val)}")
 
     # Analyze interval widths across confidence levels
@@ -300,6 +318,9 @@ if __name__ == "__main__":
         _, y_pis = model.predict_interval(X_validate)
         widths = y_pis[:, 1, 0] - y_pis[:, 0, 0]
         print(f"  {conf_level * 100:.0f}% CI: Mean width={np.mean(widths):.3f}, Std={np.std(widths):.3f}")
+
+    # Save XGBoost model
+    joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
 
     # Save all MAPIE models
     for model_name, model in mapie_models.items():
@@ -316,32 +337,36 @@ if __name__ == "__main__":
 
     # Save model configuration
     model_config = {
-        "model_type": "MAPIE_CQR_LightGBM_MultipleIntervals",
+        "model_type": "XGBoost_MAPIE_CQR_LightGBM",
         "confidence_levels": confidence_levels,
         "n_features": len(features),
         "target": target,
         "validation_metrics": {
-            "rmse": float(rmse),
-            "mae": float(mae),
-            "r2": float(r2),
+            "xgb_rmse": float(xgb_rmse),
+            "xgb_mae": float(xgb_mae),
+            "xgb_r2": float(xgb_r2),
             "n_validation": len(df_val)
         }
     }
     with open(os.path.join(args.model_dir, "model_config.json"), "w") as fp:
         json.dump(model_config, fp, indent=2)
 
-    print(f"\nModel training complete! Saved {len(mapie_models)} MAPIE models to {args.model_dir}")
+    print(f"\nModel training complete!")
+    print(f"Saved 1 XGBoost model and {len(mapie_models)} MAPIE models to {args.model_dir}")
 
 
 #
 # Inference Section
 #
 def model_fn(model_dir) -> dict:
-    """Load all MAPIE models from the specified directory."""
+    """Load XGBoost and all MAPIE models from the specified directory."""
 
     # Load model configuration to know which models to load
     with open(os.path.join(model_dir, "model_config.json")) as fp:
         config = json.load(fp)
+
+    # Load XGBoost model
+    xgb_model = joblib.load(os.path.join(model_dir, "xgb_model.joblib"))
 
     # Load all MAPIE models
     mapie_models = {}
@@ -357,6 +382,7 @@ def model_fn(model_dir) -> dict:
             category_mappings = json.load(fp)
 
     return {
+        "xgb_model": xgb_model,
         "mapie_models": mapie_models,
         "confidence_levels": config["confidence_levels"],
         "category_mappings": category_mappings
@@ -395,14 +421,14 @@ def output_fn(output_df, accept_type):
 
 
 def predict_fn(df, models) -> pd.DataFrame:
-    """Make conformalized predictions at multiple confidence levels
+    """Make predictions using XGBoost for point estimates and MAPIE for conformalized intervals
 
     Args:
         df (pd.DataFrame): The input DataFrame
-        models (dict): Dictionary containing MAPIE models for each confidence level
+        models (dict): Dictionary containing XGBoost and MAPIE models
 
     Returns:
-        pd.DataFrame: DataFrame with conformalized predictions at multiple confidence levels
+        pd.DataFrame: DataFrame with XGBoost predictions and conformalized intervals
     """
 
     # Grab our feature columns (from training)
@@ -424,8 +450,10 @@ def predict_fn(df, models) -> pd.DataFrame:
     # Get features for prediction
     X = matched_df[model_features]
 
-    # Get predictions from each MAPIE model
-    predictions_collected = False
+    # Get XGBoost point predictions
+    df["prediction"] = models["xgb_model"].predict(X)
+
+    # Get predictions from each MAPIE model for conformalized intervals
     for conf_level in models["confidence_levels"]:
         model_name = f"mapie_{conf_level:.2f}"
         model = models["mapie_models"][model_name]
@@ -433,17 +461,7 @@ def predict_fn(df, models) -> pd.DataFrame:
         # Get conformalized predictions
         y_pred, y_pis = model.predict_interval(X)
 
-        # Store median prediction (same across all models, but we use it once)
-        if not predictions_collected:
-            df["prediction"] = y_pred
-            predictions_collected = True
-
         # Map confidence levels to quantile names
-        alpha = 1 - conf_level
-        lower_q = alpha / 2
-        upper_q = 1 - alpha / 2
-
-        # Create column names based on quantiles
         if conf_level == 0.50:  # 50% CI
             df["q_25"] = y_pis[:, 0, 0]
             df["q_75"] = y_pis[:, 1, 0]
@@ -457,24 +475,15 @@ def predict_fn(df, models) -> pd.DataFrame:
             df["q_025"] = y_pis[:, 0, 0]
             df["q_975"] = y_pis[:, 1, 0]
 
-    # Add median (q_50) which is the same as prediction
+    # Add median (q_50) from XGBoost prediction
     df["q_50"] = df["prediction"]
 
     # Calculate uncertainty metrics based on 95% interval
     interval_width = df["q_975"] - df["q_025"]
     df["prediction_std"] = interval_width / 3.92
 
-    # Calculate asymmetry
-    lower_dist = df["prediction"] - df["q_025"]
-    upper_dist = df["q_975"] - df["prediction"]
-    df["interval_asymmetry"] = (upper_dist - lower_dist) / (interval_width + 1e-6)
-
     # Uncertainty score
     df["uncertainty_score"] = interval_width / (np.abs(df["prediction"]) + 1e-6)
-
-    # Flag high uncertainty predictions
-    uncertainty_threshold = df["uncertainty_score"].quantile(0.9)
-    df["high_uncertainty"] = df["uncertainty_score"] > uncertainty_threshold
 
     # Confidence bands
     df["confidence_band"] = pd.cut(
@@ -482,4 +491,5 @@ def predict_fn(df, models) -> pd.DataFrame:
         bins=[0, 0.5, 1.0, 2.0, np.inf],
         labels=["high", "medium", "low", "very_low"]
     )
+
     return df

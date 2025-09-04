@@ -23,7 +23,7 @@ my_model = fs.to_model(
     model_type=ModelType.UQ_REGRESSOR,
     feature_list=features,
     target_column=target,
-    description=f"Mapie XGB Model for AQSol",
+    description=f"Mapie + XGB Model for AQSol",
     tags=["aqsol", "mapie", "regression"],
     custom_script=script_path,
 )

@@ -57,6 +57,8 @@ def xgboost_model_from_s3(model_artifact_uri: str):
         patterns = [
             # Direct XGBoost model files
             os.path.join(tmpdir, "xgboost-model"),
+            os.path.join(tmpdir, "xgb_model*.joblib"),
+            os.path.join(tmpdir, "xgb_model*.json"),
             os.path.join(tmpdir, "model"),
             os.path.join(tmpdir, "*.bin"),
             os.path.join(tmpdir, "**", "*model*.json"),
