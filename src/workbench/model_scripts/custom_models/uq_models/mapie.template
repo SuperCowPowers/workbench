@@ -319,8 +319,8 @@ if __name__ == "__main__":
         widths = y_pis[:, 1, 0] - y_pis[:, 0, 0]
         print(f"  {conf_level * 100:.0f}% CI: Mean width={np.mean(widths):.3f}, Std={np.std(widths):.3f}")
 
-    # Save XGBoost model
-    joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
+    # Save the trained XGBoost model
+    xgb_model.save_model(os.path.join(args.model_dir, "xgb_model.json"))
 
     # Save all MAPIE models
     for model_name, model in mapie_models.items():
@@ -365,8 +365,10 @@ def model_fn(model_dir) -> dict:
     with open(os.path.join(model_dir, "model_config.json")) as fp:
         config = json.load(fp)
 
-    # Load XGBoost model
-    xgb_model = joblib.load(os.path.join(model_dir, "xgb_model.joblib"))
+    # Load XGBoost regressor
+    xgb_path = os.path.join(model_dir, "xgb_model.json")
+    xgb_model = XGBRegressor(enable_categorical=True)
+    xgb_model.load_model(xgb_path)
 
     # Load all MAPIE models
     mapie_models = {}
