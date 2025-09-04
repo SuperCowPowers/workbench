@@ -4,11 +4,7 @@ from lightgbm import LGBMRegressor
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
-from sklearn.metrics import (
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error
-)
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
 from io import StringIO
 import json
@@ -118,7 +114,7 @@ def convert_categorical_types(df: pd.DataFrame, features: list, category_mapping
 
 
 def decompress_features(
-        df: pd.DataFrame, features: List[str], compressed_features: List[str]
+    df: pd.DataFrame, features: List[str], compressed_features: List[str]
 ) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the model by decompressing bitstring features
 
@@ -185,9 +181,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "mapie_models"))
     parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "mapie_models"))
-    parser.add_argument(
-        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "mapie_models")
-    )
+    parser.add_argument("--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "mapie_models"))
     args = parser.parse_args()
 
     # Pull training data from a FeatureSet
@@ -225,9 +219,7 @@ if __name__ == "__main__":
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(
-            all_df, test_size=validation_split, random_state=42
-        )
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
@@ -268,7 +260,7 @@ if __name__ == "__main__":
                 colsample_bytree=0.8,
                 random_state=42,
                 verbose=-1,
-                force_col_wise=True
+                force_col_wise=True,
             )
             est.fit(X_train, y_train)
             quantile_estimators.append(est)
@@ -276,9 +268,7 @@ if __name__ == "__main__":
         # Create MAPIE CQR model for this confidence level
         print(f"  Setting up MAPIE CQR for {confidence_level * 100:.0f}% confidence...")
         mapie_model = ConformalizedQuantileRegressor(
-            quantile_estimators,
-            confidence_level=confidence_level,
-            prefit=True
+            quantile_estimators, confidence_level=confidence_level, prefit=True
         )
 
         # Conformalize the model
@@ -333,12 +323,7 @@ if __name__ == "__main__":
         "confidence_levels": confidence_levels,
         "n_features": len(features),
         "target": target,
-        "validation_metrics": {
-            "rmse": float(rmse),
-            "mae": float(mae),
-            "r2": float(r2),
-            "n_validation": len(df_val)
-        }
+        "validation_metrics": {"rmse": float(rmse), "mae": float(mae), "r2": float(r2), "n_validation": len(df_val)},
     }
     with open(os.path.join(args.model_dir, "model_config.json"), "w") as fp:
         json.dump(model_config, fp, indent=2)
@@ -372,7 +357,7 @@ def model_fn(model_dir) -> dict:
     return {
         "mapie_models": mapie_models,
         "confidence_levels": config["confidence_levels"],
-        "category_mappings": category_mappings
+        "category_mappings": category_mappings,
     }
 
 
@@ -397,7 +382,7 @@ def output_fn(output_df, accept_type):
     """Supports both CSV and JSON output formats."""
     if "text/csv" in accept_type:
         # Convert categorical columns to string to avoid fillna issues
-        for col in output_df.select_dtypes(include=['category']).columns:
+        for col in output_df.select_dtypes(include=["category"]).columns:
             output_df[col] = output_df[col].astype(str)
         csv_output = output_df.fillna("N/A").to_csv(index=False)
         return csv_output, "text/csv"
@@ -428,11 +413,7 @@ def predict_fn(df, models) -> pd.DataFrame:
 
     # Apply categorical mappings if they exist
     if models.get("category_mappings"):
-        matched_df, _ = convert_categorical_types(
-            matched_df,
-            model_features,
-            models["category_mappings"]
-        )
+        matched_df, _ = convert_categorical_types(matched_df, model_features, models["category_mappings"])
 
     # Get features for prediction
     X = matched_df[model_features]
@@ -491,8 +472,6 @@ def predict_fn(df, models) -> pd.DataFrame:
 
     # Confidence bands
     df["confidence_band"] = pd.cut(
-        df["uncertainty_score"],
-        bins=[0, 0.5, 1.0, 2.0, np.inf],
-        labels=["high", "medium", "low", "very_low"]
+        df["uncertainty_score"], bins=[0, 0.5, 1.0, 2.0, np.inf], labels=["high", "medium", "low", "very_low"]
     )
     return df
