@@ -200,8 +200,9 @@ if __name__ == "__main__":
 
     # Do we want to train on all the data?
     if train_all_data:
-        print("WARNING: MAPIE needs Validation data for calibration (required for CQR)")
-        print("WARNING: Setting train_all_data does nothing for MAPIE models!")
+        print("Training on ALL of the data")
+        df_train = all_df.copy()
+        df_val = all_df.copy()
 
     # Does the dataframe have a training column?
     if "training" in all_df.columns:

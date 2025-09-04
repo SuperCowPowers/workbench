@@ -107,7 +107,9 @@ def convert_categorical_types(df: pd.DataFrame, features: list, category_mapping
     return df, category_mappings
 
 
-def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
+def decompress_features(
+    df: pd.DataFrame, features: List[str], compressed_features: List[str]
+) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the model by decompressing bitstring features
 
     Args:
