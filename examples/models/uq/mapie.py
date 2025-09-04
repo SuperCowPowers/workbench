@@ -16,7 +16,7 @@ script_path = get_custom_script_path("uq_models", "mapie.template")
 features = model.features()
 target = model.target()
 
-# Create the Mapie XGB Model from our FeatureSet
+# Create the Mapie Model from our FeatureSet
 fs = FeatureSet(model.get_input())
 my_model = fs.to_model(
     name="aqsol-mapie-reg",

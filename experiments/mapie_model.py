@@ -1,10 +1,14 @@
-# Model: LightGBM with MAPIE ConformalizedQuantileRegressor
+# Model: LightGBM with MAPIE ConformalizedQuantileRegressor (Multiple Intervals)
 from mapie.regression import ConformalizedQuantileRegressor
 from lightgbm import LGBMRegressor
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    root_mean_squared_error
+)
 
 from io import StringIO
 import json
@@ -114,7 +118,7 @@ def convert_categorical_types(df: pd.DataFrame, features: list, category_mapping
 
 
 def decompress_features(
-    df: pd.DataFrame, features: List[str], compressed_features: List[str]
+        df: pd.DataFrame, features: List[str], compressed_features: List[str]
 ) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the model by decompressing bitstring features
 
@@ -179,9 +183,11 @@ if __name__ == "__main__":
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "."))
-    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "."))
-    parser.add_argument("--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "."))
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "mapie_models"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "mapie_models"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "mapie_models")
+    )
     args = parser.parse_args()
 
     # Pull training data from a FeatureSet
@@ -207,18 +213,21 @@ if __name__ == "__main__":
 
     # Do we want to train on all the data?
     if train_all_data:
-        print("WARNING: MAPIE needs Validation data for calibration (required for CQR)")
-        print("WARNING: Setting train_all_data does nothing for MAPIE models!")
+        print("Training on ALL of the data")
+        df_train = all_df.copy()
+        df_val = all_df.copy()
 
     # Does the dataframe have a training column?
-    if "training" in all_df.columns:
+    elif "training" in all_df.columns:
         print("Found training column, splitting data based on training column")
         df_train = all_df[all_df["training"]]
         df_val = all_df[~all_df["training"]]
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
+        df_train, df_val = train_test_split(
+            all_df, test_size=validation_split, random_state=42
+        )
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
@@ -228,86 +237,88 @@ if __name__ == "__main__":
     y_train = df_train[target]
     y_validate = df_val[target]
 
-    # Train quantile models for CQR - this gives adaptive, asymmetric intervals
-    print("Training quantile models for CQR (adaptive intervals)...")
-    confidence_level = 0.95  # 95% confidence intervals
-    alpha = 1 - confidence_level  # 0.05
+    # Define confidence levels we want to model
+    confidence_levels = [0.50, 0.80, 0.90, 0.95]  # 50%, 80%, 90%, 95% confidence intervals
 
-    quantile_estimators = []
-    quantiles = [alpha / 2, 1 - alpha / 2, 0.5]  # [0.025, 0.975, 0.5] - lower, upper, median
+    # Store MAPIE models for each confidence level
+    mapie_models = {}
 
-    for q in quantiles:
-        print(f"  Training model for quantile {q:.3f}...")
-        est = LGBMRegressor(
-            objective="quantile",
-            alpha=q,  # The quantile to predict
-            n_estimators=1000,
-            max_depth=6,
-            learning_rate=0.01,
-            num_leaves=31,
-            min_child_samples=20,
-            subsample=0.8,
-            colsample_bytree=0.8,
-            random_state=42,
-            verbose=-1,
-            force_col_wise=True,  # Better performance with many features
+    # Train models for each confidence level
+    for confidence_level in confidence_levels:
+        alpha = 1 - confidence_level
+        lower_q = alpha / 2
+        upper_q = 1 - alpha / 2
+
+        print(f"\nTraining quantile models for {confidence_level * 100:.0f}% confidence interval...")
+        print(f"  Quantiles: {lower_q:.3f}, {upper_q:.3f}, 0.500")
+
+        # Train three models for this confidence level
+        quantile_estimators = []
+        for q in [lower_q, upper_q, 0.5]:
+            print(f"    Training model for quantile {q:.3f}...")
+            est = LGBMRegressor(
+                objective="quantile",
+                alpha=q,
+                n_estimators=1000,
+                max_depth=6,
+                learning_rate=0.01,
+                num_leaves=31,
+                min_child_samples=20,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                random_state=42,
+                verbose=-1,
+                force_col_wise=True
+            )
+            est.fit(X_train, y_train)
+            quantile_estimators.append(est)
+
+        # Create MAPIE CQR model for this confidence level
+        print(f"  Setting up MAPIE CQR for {confidence_level * 100:.0f}% confidence...")
+        mapie_model = ConformalizedQuantileRegressor(
+            quantile_estimators,
+            confidence_level=confidence_level,
+            prefit=True
         )
-        est.fit(X_train, y_train)
-        quantile_estimators.append(est)
 
-    # Create MAPIE CQR model with pre-trained quantile models
-    print("Setting up MAPIE ConformalizedQuantileRegressor...")
-    model = ConformalizedQuantileRegressor(
-        quantile_estimators,
-        confidence_level=confidence_level,  # Single confidence level for v1.0+
-        prefit=True,  # Models are already trained
-    )
+        # Conformalize the model
+        print(f"  Conformalizing with validation data...")
+        mapie_model.conformalize(X_validate, y_validate)
 
-    # Conformalize the model using validation set
-    # This calibrates the intervals to achieve the desired coverage
-    print("Conformalizing CQR model with validation data...")
-    model.conformalize(X_validate, y_validate)
+        # Store the model
+        mapie_models[f"mapie_{confidence_level:.2f}"] = mapie_model
 
-    # Make Predictions on the Validation Set using MAPIE
-    print(f"Making Predictions on Validation Set...")
-    y_pred_mapie, y_pis_mapie = model.predict_interval(X_validate)
+        # Validate coverage for this confidence level
+        y_pred, y_pis = mapie_model.predict_interval(X_validate)
+        coverage = np.mean((y_validate >= y_pis[:, 0, 0]) & (y_validate <= y_pis[:, 1, 0]))
+        print(f"  Coverage: Target={confidence_level * 100:.0f}%, Empirical={coverage * 100:.1f}%")
 
-    # Calculate various model performance metrics (regression)
-    rmse = root_mean_squared_error(y_validate, y_pred_mapie)
-    mae = mean_absolute_error(y_validate, y_pred_mapie)
-    r2 = r2_score(y_validate, y_pred_mapie)
-    print(f"\nPoint Prediction Performance:")
+    # Calculate overall performance metrics using the median prediction
+    y_pred_median = mapie_models["mapie_0.95"].predict_interval(X_validate)[0]
+
+    rmse = root_mean_squared_error(y_validate, y_pred_median)
+    mae = mean_absolute_error(y_validate, y_pred_median)
+    r2 = r2_score(y_validate, y_pred_median)
+
+    print(f"\nOverall Point Prediction Performance:")
     print(f"RMSE: {rmse:.3f}")
     print(f"MAE: {mae:.3f}")
     print(f"R2: {r2:.3f}")
     print(f"NumRows: {len(df_val)}")
 
-    # Calculate empirical coverage
-    print("\nInterval Coverage:")
-    coverage = np.mean((y_validate >= y_pis_mapie[:, 0, 0]) & (y_validate <= y_pis_mapie[:, 1, 0]))
-    print(f"  Target: {confidence_level * 100:.0f}%, Empirical: {coverage * 100:.1f}%")
+    # Analyze interval widths across confidence levels
+    print(f"\nInterval Width Analysis:")
+    for conf_level in confidence_levels:
+        model = mapie_models[f"mapie_{conf_level:.2f}"]
+        _, y_pis = model.predict_interval(X_validate)
+        widths = y_pis[:, 1, 0] - y_pis[:, 0, 0]
+        print(f"  {conf_level * 100:.0f}% CI: Mean width={np.mean(widths):.3f}, Std={np.std(widths):.3f}")
 
-    # Calculate interval statistics - CQR should show adaptive intervals
-    interval_widths = y_pis_mapie[:, 1, 0] - y_pis_mapie[:, 0, 0]
-    print(f"\nInterval Statistics (Adaptive):")
-    print(f"  Average width: {np.mean(interval_widths):.3f}")
-    print(f"  Median width: {np.median(interval_widths):.3f}")
-    print(f"  Width std: {np.std(interval_widths):.3f}")
-    print(f"  Min width: {np.min(interval_widths):.3f}")
-    print(f"  Max width: {np.max(interval_widths):.3f}")
+    # Save all MAPIE models
+    for model_name, model in mapie_models.items():
+        joblib.dump(model, os.path.join(args.model_dir, f"{model_name}.joblib"))
 
-    # Check for asymmetry in intervals
-    lower_dists = y_pred_mapie - y_pis_mapie[:, 0, 0]
-    upper_dists = y_pis_mapie[:, 1, 0] - y_pred_mapie
-    asymmetry = np.mean(upper_dists - lower_dists)
-    print(f"\nInterval Asymmetry:")
-    print(f"  Mean asymmetry: {asymmetry:.3f} (positive = upper-skewed)")
-    print(f"  % asymmetric: {np.mean(np.abs(upper_dists - lower_dists) > 0.01) * 100:.1f}%")
-
-    # Save the trained MAPIE model
-    joblib.dump(model, os.path.join(args.model_dir, "mapie_model.joblib"))
-
-    # Save the feature list to validate input during predictions
+    # Save the feature list
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
         json.dump(features, fp)
 
@@ -316,35 +327,40 @@ if __name__ == "__main__":
         with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
             json.dump(category_mappings, fp)
 
-    # Save model configuration for reference
+    # Save model configuration
     model_config = {
-        "model_type": "MAPIE_CQR_LightGBM",
-        "confidence_level": confidence_level,
+        "model_type": "MAPIE_CQR_LightGBM_MultipleIntervals",
+        "confidence_levels": confidence_levels,
         "n_features": len(features),
         "target": target,
         "validation_metrics": {
             "rmse": float(rmse),
             "mae": float(mae),
             "r2": float(r2),
-            "coverage": float(coverage),
-            "avg_interval_width": float(np.mean(interval_widths)),
-            "interval_width_std": float(np.std(interval_widths)),
-        },
+            "n_validation": len(df_val)
+        }
     }
     with open(os.path.join(args.model_dir, "model_config.json"), "w") as fp:
         json.dump(model_config, fp, indent=2)
 
-    print(f"\nModel training complete! Saved to {args.model_dir}")
+    print(f"\nModel training complete! Saved {len(mapie_models)} MAPIE models to {args.model_dir}")
 
 
 #
 # Inference Section
 #
 def model_fn(model_dir) -> dict:
-    """Load and return the MAPIE model from the specified directory."""
+    """Load all MAPIE models from the specified directory."""
 
-    # Load MAPIE Model
-    mapie_model = joblib.load(os.path.join(model_dir, "mapie_model.joblib"))
+    # Load model configuration to know which models to load
+    with open(os.path.join(model_dir, "model_config.json")) as fp:
+        config = json.load(fp)
+
+    # Load all MAPIE models
+    mapie_models = {}
+    for conf_level in config["confidence_levels"]:
+        model_name = f"mapie_{conf_level:.2f}"
+        mapie_models[model_name] = joblib.load(os.path.join(model_dir, f"{model_name}.joblib"))
 
     # Load category mappings if they exist
     category_mappings = {}
@@ -353,7 +369,11 @@ def model_fn(model_dir) -> dict:
         with open(category_path) as fp:
             category_mappings = json.load(fp)
 
-    return {"mapie": mapie_model, "category_mappings": category_mappings}
+    return {
+        "mapie_models": mapie_models,
+        "confidence_levels": config["confidence_levels"],
+        "category_mappings": category_mappings
+    }
 
 
 def input_fn(input_data, content_type):
@@ -368,7 +388,7 @@ def input_fn(input_data, content_type):
     if "text/csv" in content_type:
         return pd.read_csv(StringIO(input_data))
     elif "application/json" in content_type:
-        return pd.DataFrame(json.loads(input_data))  # Assumes JSON array of records
+        return pd.DataFrame(json.loads(input_data))
     else:
         raise ValueError(f"{content_type} not supported!")
 
@@ -377,25 +397,25 @@ def output_fn(output_df, accept_type):
     """Supports both CSV and JSON output formats."""
     if "text/csv" in accept_type:
         # Convert categorical columns to string to avoid fillna issues
-        for col in output_df.select_dtypes(include=["category"]).columns:
+        for col in output_df.select_dtypes(include=['category']).columns:
             output_df[col] = output_df[col].astype(str)
-        csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
+        csv_output = output_df.fillna("N/A").to_csv(index=False)
         return csv_output, "text/csv"
     elif "application/json" in accept_type:
-        return output_df.to_json(orient="records"), "application/json"  # JSON array of records (NaNs -> null)
+        return output_df.to_json(orient="records"), "application/json"
     else:
         raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
 
 def predict_fn(df, models) -> pd.DataFrame:
-    """Make Predictions with MAPIE CQR - provides adaptive, asymmetric intervals
+    """Make conformalized predictions at multiple confidence levels
 
     Args:
         df (pd.DataFrame): The input DataFrame
-        models (dict): The dictionary containing the MAPIE model
+        models (dict): Dictionary containing MAPIE models for each confidence level
 
     Returns:
-        pd.DataFrame: The DataFrame with predictions and adaptive uncertainty intervals
+        pd.DataFrame: DataFrame with conformalized predictions at multiple confidence levels
     """
 
     # Grab our feature columns (from training)
@@ -408,47 +428,71 @@ def predict_fn(df, models) -> pd.DataFrame:
 
     # Apply categorical mappings if they exist
     if models.get("category_mappings"):
-        matched_df, _ = convert_categorical_types(matched_df, model_features, models["category_mappings"])
+        matched_df, _ = convert_categorical_types(
+            matched_df,
+            model_features,
+            models["category_mappings"]
+        )
 
-    # Get CQR predictions with adaptive 95% confidence intervals
-    y_pred, y_pis = models["mapie"].predict_interval(matched_df[model_features])
+    # Get features for prediction
+    X = matched_df[model_features]
 
-    # Primary outputs - CQR provides adaptive, asymmetric 95% intervals
-    df["prediction"] = y_pred  # Median prediction from quantile model
-    df["q_025"] = y_pis[:, 0, 0]  # 95% interval lower bound
-    df["q_975"] = y_pis[:, 1, 0]  # 95% interval upper bound
+    # Get predictions from each MAPIE model
+    predictions_collected = False
+    for conf_level in models["confidence_levels"]:
+        model_name = f"mapie_{conf_level:.2f}"
+        model = models["mapie_models"][model_name]
 
-    # Calculate uncertainty metrics
+        # Get conformalized predictions
+        y_pred, y_pis = model.predict_interval(X)
+
+        # Store median prediction (same across all models, but we use it once)
+        if not predictions_collected:
+            df["prediction"] = y_pred
+            predictions_collected = True
+
+        # Map confidence levels to quantile names
+        alpha = 1 - conf_level
+        lower_q = alpha / 2
+        upper_q = 1 - alpha / 2
+
+        # Create column names based on quantiles
+        if conf_level == 0.50:  # 50% CI
+            df["q_25"] = y_pis[:, 0, 0]
+            df["q_75"] = y_pis[:, 1, 0]
+        elif conf_level == 0.80:  # 80% CI
+            df["q_10"] = y_pis[:, 0, 0]
+            df["q_90"] = y_pis[:, 1, 0]
+        elif conf_level == 0.90:  # 90% CI
+            df["q_05"] = y_pis[:, 0, 0]
+            df["q_95"] = y_pis[:, 1, 0]
+        elif conf_level == 0.95:  # 95% CI
+            df["q_025"] = y_pis[:, 0, 0]
+            df["q_975"] = y_pis[:, 1, 0]
+
+    # Add median (q_50) which is the same as prediction
+    df["q_50"] = df["prediction"]
+
+    # Calculate uncertainty metrics based on 95% interval
     interval_width = df["q_975"] - df["q_025"]
-    df["prediction_std"] = interval_width / 3.92  # Approximate std from 95% interval
+    df["prediction_std"] = interval_width / 3.92
 
-    # Calculate asymmetry for preserving in approximations
+    # Calculate asymmetry
     lower_dist = df["prediction"] - df["q_025"]
     upper_dist = df["q_975"] - df["prediction"]
-    df["interval_asymmetry"] = (upper_dist - lower_dist) / interval_width
+    df["interval_asymmetry"] = (upper_dist - lower_dist) / (interval_width + 1e-6)
 
-    # Approximate other quantiles by scaling from 95% interval
-    # Direct mapping to avoid floating point issues
-    quantile_approximations = [
-        ("q_05", "q_95", 0.84),  # 90% confidence
-        ("q_10", "q_90", 0.68),  # 80% confidence
-        ("q_25", "q_75", 0.37),  # 50% confidence
-    ]
-
-    for lower_name, upper_name, scale in quantile_approximations:
-        # Scale each side independently to preserve asymmetry
-        df[lower_name] = df["prediction"] - scale * lower_dist
-        df[upper_name] = df["prediction"] + scale * upper_dist
-
-    # Uncertainty metrics
+    # Uncertainty score
     df["uncertainty_score"] = interval_width / (np.abs(df["prediction"]) + 1e-6)
 
     # Flag high uncertainty predictions
     uncertainty_threshold = df["uncertainty_score"].quantile(0.9)
     df["high_uncertainty"] = df["uncertainty_score"] > uncertainty_threshold
 
-    # Confidence bands for decision stages
+    # Confidence bands
     df["confidence_band"] = pd.cut(
-        df["uncertainty_score"], bins=[0, 0.5, 1.0, 2.0, np.inf], labels=["high", "medium", "low", "very_low"]
+        df["uncertainty_score"],
+        bins=[0, 0.5, 1.0, 2.0, np.inf],
+        labels=["high", "medium", "low", "very_low"]
     )
     return df
