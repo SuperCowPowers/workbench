@@ -484,6 +484,11 @@ def predict_fn(df, models) -> pd.DataFrame:
     interval_width = df["q_975"] - df["q_025"]
     df["prediction_std"] = interval_width / 3.92
 
+    # Reorder the quantile columns for easier reading
+    quantile_cols = ["q_025", "q_05", "q_10", "q_25", "q_75", "q_90", "q_95", "q_975"]
+    other_cols = [col for col in df.columns if col not in quantile_cols]
+    df = df[other_cols + quantile_cols]
+
     # Uncertainty score
     df["uncertainty_score"] = interval_width / (np.abs(df["prediction"]) + 1e-6)
 
