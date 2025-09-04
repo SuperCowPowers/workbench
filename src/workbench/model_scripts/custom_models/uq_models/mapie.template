@@ -205,7 +205,7 @@ if __name__ == "__main__":
         df_val = all_df.copy()
 
     # Does the dataframe have a training column?
-    if "training" in all_df.columns:
+    elif "training" in all_df.columns:
         print("Found training column, splitting data based on training column")
         df_train = all_df[all_df["training"]]
         df_val = all_df[~all_df["training"]]
