@@ -1554,3 +1554,31 @@ if __name__ == "__main__":
     # Test the SDF file reading
     df = sdf_file_to_df(my_sdf_file)
     print(df)
+
+    # Test Feature Resolution Issues on Multi-Component Smiles (AQSol examples)
+    test_data = {
+        "id": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+        "smiles": [
+            '[O-]C([O-])=O.[Na+].[Na+]',
+            '[Pr+3].[Pr+3].[O-]C([O-])=O.[O-]C([O-])=O.[O-]C([O-])=O',
+            '[O-]C([O-])=O.[Na+].[Na+]',
+            '[O-]C([O-])=O.[Li+].[Li+]',
+            '[Ce+3].[Ce+3].[O-]C([O-])=O.[O-]C([O-])=O.[O-]C([O-])=O',
+            '[Co++].[O-]C([O-])=O',
+            '[Mn++].[O-]C([O-])=O',
+            '[Cs+].[Cs+].[O-]C([O-])=O',
+            '[O-]C([O-])=O.[Cd++]',
+            '[O-]C([O-])=O.[NH4+].[NH4+]',
+            '[O-]C([O-])=O.[Zn++].[NH4+]',
+            '[O-]C([O-])=O.[Na+].[Na+]',
+            '[Mg++].[O-]C([O-])=O',
+            '[Nd+3].[Nd+3].[O-]C([O-])=O.[O-]C([O-])=O.[O-]C([O-])=O',
+            '[O-]C([O-])=O.[K+].[K+]'
+        ],
+    }
+    df = pd.DataFrame(test_data)
+
+    # Compute Molecular Descriptors
+    df = compute_molecular_descriptors(df)
+    print(df)
+
