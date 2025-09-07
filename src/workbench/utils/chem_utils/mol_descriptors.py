@@ -16,11 +16,12 @@ Descriptor Categories:
        - Pharmacophore (H-bond donors/acceptors, aromatic rings)
        - ADMET-specific (TPSA, QED, Lipinski descriptors)
 
-    2. Mordred Descriptors (4 selected modules)
-       - AcidBase: pKa-related features, acidic/basic group counts
-       - Aromatic: aromatic ring systems, pi-electron properties
-       - Polarizability: molecular polarizability estimates
-       - RotatableBond: flexibility measures beyond simple counts
+    2. Mordred Descriptors (~110 descriptors from 5 ADMET-relevant modules)
+       - AcidBase module: pH-dependent properties (nAcid, nBase)
+       - Aromatic module: CYP metabolism features (nAromAtom, nAromBond)
+       - Constitutional module: Structural complexity (~40 descriptors including nSpiro, nBridgehead)
+       - Chi module: Molecular connectivity indices (~42 descriptors, Chi0-Chi4 variants)
+       - CarbonTypes module: Carbon hybridization states for metabolism (~20 descriptors)
 
     3. Stereochemistry Features (10 custom descriptors)
        - Stereocenter counts (R/S, defined/undefined)
@@ -39,17 +40,18 @@ Pipeline Integration:
 
 Output:
     Returns input DataFrame with added descriptor columns:
-    - ~200 RDKit descriptors (prefix: various)
-    - ~20 Mordred descriptors (prefix: various)
-    - 10 stereochemistry descriptors (prefix: num_, stereo_, frac_)
+    - ~220 RDKit descriptors
+    - ~85 Mordred descriptors (from 5 modules)
+    - 10 stereochemistry descriptors
+    Total: ~310 descriptors
 
     Invalid molecules receive NaN values for all descriptors.
 
 Performance Notes:
     - RDKit descriptors: Fast, vectorized computation
-    - Mordred descriptors: Slower, can use multiprocessing (nproc parameter)
+    - Mordred descriptors: Moderate speed
     - Stereochemistry: Moderate speed, requires CIP labeling
-    - Memory: ~1GB per 10,000 molecules with all descriptors
+    - Memory: <1GB per 10,000 molecules with all descriptors
 
 Special Considerations:
     - Ipc descriptor excluded due to potential overflow issues
@@ -57,16 +59,17 @@ Special Considerations:
     - Stereochemistry features optional for non-chiral datasets
     - Salt information from standardization not included in descriptors
       (use separately as categorical feature if needed)
+    - Feature selection recommended due to descriptor redundancy
 
 Example Usage:
     import pandas as pd
-    from mol_standardize import standardize
+    from mol_standardize import standardize_dataframe
     from mol_descriptors import compute_descriptors
 
     # Standard pipeline
     df = pd.read_csv("molecules.csv")
-    df = standardize(df)          # Standardize first
-    df = compute_descriptors(df)  # Then compute descriptors
+    df = standardize_dataframe(df)  # Standardize first
+    df = compute_descriptors(df)    # Then compute descriptors
 
     # For achiral molecules (faster)
     df = compute_descriptors(df, include_stereochemistry=False)
@@ -91,9 +94,16 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors, rdCIPLabeler
 from rdkit.ML.Descriptors import MoleculeDescriptors
 from mordred import Calculator as MordredCalculator
-from mordred import AcidBase, Aromatic, Polarizability, RotatableBond
+from mordred import (
+    AcidBase,
+    Aromatic,
+    Constitutional,
+    Chi,
+    CarbonTypes
+)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
+logger.setLevel(logging.DEBUG)
 
 
 def compute_stereochemistry_features(mol):
@@ -207,7 +217,7 @@ def compute_stereochemistry_features(mol):
 
 
 def compute_descriptors(
-    df: pd.DataFrame, smiles_column: str = "smiles", include_stereochemistry: bool = True
+        df: pd.DataFrame, smiles_column: str = "smiles", include_stereochemistry: bool = True
 ) -> pd.DataFrame:
     """
     Compute all molecular descriptors for ADMET modeling.
@@ -276,18 +286,18 @@ def compute_descriptors(
     result = pd.concat([result, rdkit_features_df], axis=1)
 
     # Compute Mordred descriptors
-    logger.info("Computing Mordred Descriptors...")
-
-    # Initialize Mordred with specific descriptor sets for ADMET
-    descriptor_choice = [AcidBase, Aromatic, Polarizability, RotatableBond]
+    logger.info("Computing Mordred descriptors from 5 ADMET-relevant modules...")
     calc = MordredCalculator()
-    for des in descriptor_choice:
-        calc.register(des)
+
+    # Register only 5 ADMET-focused modules (avoiding overlap with RDKit)
+    calc.register(AcidBase)       # ~2 descriptors: nAcid, nBase
+    calc.register(Aromatic)       # ~2 descriptors: nAromAtom, nAromBond
+    calc.register(Constitutional) # ~40 descriptors: structural complexity
+    calc.register(Chi)            # ~42 descriptors: connectivity indices
+    calc.register(CarbonTypes)   # ~20 descriptors: carbon hybridization
 
     # Compute Mordred descriptors
-    # Filter out None molecules for Mordred computation
     valid_mols = [mol if mol is not None else Chem.MolFromSmiles("C") for mol in molecules]
-
     mordred_df = calc.pandas(valid_mols, nproc=1)
 
     # Replace values for invalid molecules with NaN
@@ -327,6 +337,11 @@ def compute_descriptors(
     total_descriptors = len(result.columns) - len(df.columns)
     logger.info(f"Computed {total_descriptors} descriptors for {valid_mols}/{len(df)} valid molecules")
 
+    # Log descriptor breakdown
+    rdkit_count = len(rdkit_features_df.columns)
+    mordred_count = len(mordred_df.columns)
+    stereo_count = len(stereo_df.columns) if include_stereochemistry else 0
+    logger.info(f"Descriptor breakdown: RDKit={rdkit_count}, Mordred={mordred_count}, Stereo={stereo_count}")
     return result
 
 
@@ -384,6 +399,21 @@ if __name__ == "__main__":
     total_descriptors = len(result.columns) - original_cols
 
     print(f"\nTotal descriptors computed: {total_descriptors}")
+
+    # Show Mordred descriptors specifically
+    print("\nMordred descriptors included:")
+    mordred_cols = [col for col in result.columns if
+                    col not in test_data.columns and col not in ['num_stereocenters', 'num_unspecified_stereocenters',
+                                                                 'num_defined_stereocenters', 'num_r_centers', 'num_s_centers',
+                                                                 'num_stereobonds', 'num_e_bonds', 'num_z_bonds', 'stereo_complexity',
+                                                                 'frac_defined_stereo']]
+    # Filter to just Mordred ones (they have distinctive names)
+    mordred_specific = ['nAcid', 'nBase', 'nAromAtom', 'nAromBond', 'nSpiro', 'nBridgehead',
+                        'Chi0', 'Chi0n', 'Chi0v', 'Chi1', 'Chi1n', 'Chi1v',
+                        'nBondsD', 'nBondsT', 'nHeteroRing', 'nRing', 'nHBDon', 'nHBAcc',
+                        'C1SP3', 'C2SP3', 'C3SP3']
+    mordred_found = [col for col in mordred_specific if col in result.columns]
+    print(f"  {mordred_found}")
 
     # Show stereochemistry features for test molecules
     print("\nStereochemistry features:")
