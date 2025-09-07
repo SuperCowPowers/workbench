@@ -94,13 +94,7 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors, rdCIPLabeler
 from rdkit.ML.Descriptors import MoleculeDescriptors
 from mordred import Calculator as MordredCalculator
-from mordred import (
-    AcidBase,
-    Aromatic,
-    Constitutional,
-    Chi,
-    CarbonTypes
-)
+from mordred import AcidBase, Aromatic, Constitutional, Chi, CarbonTypes
 
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.DEBUG)
@@ -217,7 +211,7 @@ def compute_stereochemistry_features(mol):
 
 
 def compute_descriptors(
-        df: pd.DataFrame, smiles_column: str = "smiles", include_stereochemistry: bool = True
+    df: pd.DataFrame, smiles_column: str = "smiles", include_stereochemistry: bool = True
 ) -> pd.DataFrame:
     """
     Compute all molecular descriptors for ADMET modeling.
@@ -290,11 +284,11 @@ def compute_descriptors(
     calc = MordredCalculator()
 
     # Register only 5 ADMET-focused modules (avoiding overlap with RDKit)
-    calc.register(AcidBase)       # ~2 descriptors: nAcid, nBase
-    calc.register(Aromatic)       # ~2 descriptors: nAromAtom, nAromBond
-    calc.register(Constitutional) # ~40 descriptors: structural complexity
-    calc.register(Chi)            # ~42 descriptors: connectivity indices
-    calc.register(CarbonTypes)   # ~20 descriptors: carbon hybridization
+    calc.register(AcidBase)  # ~2 descriptors: nAcid, nBase
+    calc.register(Aromatic)  # ~2 descriptors: nAromAtom, nAromBond
+    calc.register(Constitutional)  # ~40 descriptors: structural complexity
+    calc.register(Chi)  # ~42 descriptors: connectivity indices
+    calc.register(CarbonTypes)  # ~20 descriptors: carbon hybridization
 
     # Compute Mordred descriptors
     valid_mols = [mol if mol is not None else Chem.MolFromSmiles("C") for mol in molecules]
@@ -402,16 +396,48 @@ if __name__ == "__main__":
 
     # Show Mordred descriptors specifically
     print("\nMordred descriptors included:")
-    mordred_cols = [col for col in result.columns if
-                    col not in test_data.columns and col not in ['num_stereocenters', 'num_unspecified_stereocenters',
-                                                                 'num_defined_stereocenters', 'num_r_centers', 'num_s_centers',
-                                                                 'num_stereobonds', 'num_e_bonds', 'num_z_bonds', 'stereo_complexity',
-                                                                 'frac_defined_stereo']]
+    mordred_cols = [
+        col
+        for col in result.columns
+        if col not in test_data.columns
+        and col
+        not in [
+            "num_stereocenters",
+            "num_unspecified_stereocenters",
+            "num_defined_stereocenters",
+            "num_r_centers",
+            "num_s_centers",
+            "num_stereobonds",
+            "num_e_bonds",
+            "num_z_bonds",
+            "stereo_complexity",
+            "frac_defined_stereo",
+        ]
+    ]
     # Filter to just Mordred ones (they have distinctive names)
-    mordred_specific = ['nAcid', 'nBase', 'nAromAtom', 'nAromBond', 'nSpiro', 'nBridgehead',
-                        'Chi0', 'Chi0n', 'Chi0v', 'Chi1', 'Chi1n', 'Chi1v',
-                        'nBondsD', 'nBondsT', 'nHeteroRing', 'nRing', 'nHBDon', 'nHBAcc',
-                        'C1SP3', 'C2SP3', 'C3SP3']
+    mordred_specific = [
+        "nAcid",
+        "nBase",
+        "nAromAtom",
+        "nAromBond",
+        "nSpiro",
+        "nBridgehead",
+        "Chi0",
+        "Chi0n",
+        "Chi0v",
+        "Chi1",
+        "Chi1n",
+        "Chi1v",
+        "nBondsD",
+        "nBondsT",
+        "nHeteroRing",
+        "nRing",
+        "nHBDon",
+        "nHBAcc",
+        "C1SP3",
+        "C2SP3",
+        "C3SP3",
+    ]
     mordred_found = [col for col in mordred_specific if col in result.columns]
     print(f"  {mordred_found}")
 
