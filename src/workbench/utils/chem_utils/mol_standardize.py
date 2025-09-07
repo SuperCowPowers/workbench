@@ -12,16 +12,16 @@ Standardization Pipeline:
        - Removes explicit hydrogens
        - Disconnects metal atoms from organic fragments
        - Normalizes functional groups (e.g., nitro, sulfoxide representations)
-       
+
     2. Fragment Parent Selection
        - Identifies and keeps the largest organic fragment
        - Removes salts, solvents, and counterions
        - Example: [Na+].CC(=O)[O-] → CC(=O)O (keeps acetate, removes sodium)
-       
+
     3. Charge Neutralization
        - Neutralizes charges where possible
        - Example: CC(=O)[O-] → CC(=O)O
-       
+
     4. Tautomer Canonicalization (optional, default=True)
        - Generates canonical tautomer form for consistency
        - Example: Oc1ccccn1 → O=c1cccc[nH]1 (2-hydroxypyridine → 2-pyridone)
@@ -35,11 +35,11 @@ Output DataFrame Columns:
 Salt Handling:
     Salt forms can dramatically affect properties like solubility (up to 6 log units).
     This module preserves salt information to enable different modeling strategies:
-    
+
     Example - Carbonates with different counterions:
         Input: [Na+].[Na+].[O-]C([O-])=O  →  Parent: O=C(O)O, Salt: [Na+].[Na+]
         Input: [Mg++].[O-]C([O-])=O       →  Parent: O=C(O)O, Salt: [Mg+2]
-    
+
     Downstream modeling options:
     1. Use parent only (standard approach for most ADMET properties)
     2. Include salt as a categorical or computed feature
@@ -53,19 +53,19 @@ References:
 
 Usage:
     from mol_standardize import standardize
-    
+
     # Basic usage
     df_std = standardize(df, smiles_column='smiles')
-    
+
     # Without tautomer canonicalization (faster, less aggressive)
     df_std = standardize(df, canonicalize_tautomer=False)
-    
+
     # Drop failed molecules
     df_std = standardize(df, drop_invalid=True)
 """
 
 import logging
-from typing import Optional, List, Tuple
+from typing import Optional
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Mol
@@ -168,18 +168,20 @@ class MolStandardizer:
                 if frag_smiles != parent_smiles:
                     salt_frags.append(frag_smiles)
 
-            return '.'.join(salt_frags) if salt_frags else None
+            return ".".join(salt_frags) if salt_frags else None
 
         except Exception as e:
             logger.debug(f"Salt extraction failed: {e}")
             return None
 
 
-def standardize(df: pd.DataFrame,
-                          smiles_column: str = 'smiles',
-                          canonicalize_tautomer: bool = True,
-                          extract_salts: bool = True,
-                          drop_invalid: bool = False) -> pd.DataFrame:
+def standardize(
+    df: pd.DataFrame,
+    smiles_column: str = "smiles",
+    canonicalize_tautomer: bool = True,
+    extract_salts: bool = True,
+    drop_invalid: bool = False,
+) -> pd.DataFrame:
     """
     Standardize molecules in a DataFrame for ADMET modeling
 
@@ -200,8 +202,8 @@ def standardize(df: pd.DataFrame,
     result = df.copy()
 
     # Preserve original SMILES if not already saved
-    if 'orig_smiles' not in result.columns:
-        result['orig_smiles'] = result[smiles_column]
+    if "orig_smiles" not in result.columns:
+        result["orig_smiles"] = result[smiles_column]
 
     # Initialize standardizer
     standardizer = MolStandardizer(canonicalize_tautomer=canonicalize_tautomer)
@@ -209,21 +211,13 @@ def standardize(df: pd.DataFrame,
     def process_smiles(smiles):
         """Process a single SMILES string"""
         # Handle missing values
-        if pd.isna(smiles) or smiles == '':
-            return pd.Series({
-                'smiles': None,
-                'salt': None,
-                'standardization_failed': True
-            })
+        if pd.isna(smiles) or smiles == "":
+            return pd.Series({"smiles": None, "salt": None, "standardization_failed": True})
 
         # Parse molecule
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
-            return pd.Series({
-                'smiles': None,
-                'salt': None,
-                'standardization_failed': True
-            })
+            return pd.Series({"smiles": None, "salt": None, "standardization_failed": True})
 
         # Extract salt before standardization if requested
         salt_smiles = None
@@ -239,55 +233,53 @@ def standardize(df: pd.DataFrame,
         # Full standardization
         std_mol = standardizer.standardize(mol)
         if std_mol is None:
-            return pd.Series({
-                'smiles': None,
-                'salt': salt_smiles,  # May have extracted salt even if full standardization failed
-                'standardization_failed': True
-            })
+            return pd.Series(
+                {
+                    "smiles": None,
+                    "salt": salt_smiles,  # May have extracted salt even if full standardization failed
+                    "standardization_failed": True,
+                }
+            )
 
         # Convert back to SMILES
         std_smiles = Chem.MolToSmiles(std_mol, canonical=True)
 
-        return pd.Series({
-            'smiles': std_smiles,
-            'salt': salt_smiles,
-            'standardization_failed': False
-        })
+        return pd.Series({"smiles": std_smiles, "salt": salt_smiles, "standardization_failed": False})
 
     # Process molecules
     processed = result[smiles_column].apply(process_smiles)
 
     # Update the dataframe with processed results
-    result['smiles'] = processed['smiles']
-    result['standardization_failed'] = processed['standardization_failed']
+    result["smiles"] = processed["smiles"]
+    result["standardization_failed"] = processed["standardization_failed"]
 
     if extract_salts:
-        result['salt'] = processed['salt']
+        result["salt"] = processed["salt"]
 
     # Calculate success rate
-    success_count = (~result['standardization_failed']).sum()
+    success_count = (~result["standardization_failed"]).sum()
     total_count = len(result)
     success_rate = success_count / total_count * 100
 
     logger.info(f"Standardization complete: {success_count}/{total_count} ({success_rate:.1f}%) successful")
 
     if extract_salts:
-        salt_count = result['salt'].notna().sum()
+        salt_count = result["salt"].notna().sum()
         logger.info(f"Found {salt_count} molecules with salts/counterions")
 
     # Drop invalid if requested
     if drop_invalid:
         initial_count = len(result)
-        result = result[~result['standardization_failed']].copy()
+        result = result[~result["standardization_failed"]].copy()
         dropped = initial_count - len(result)
         if dropped > 0:
             logger.info(f"Dropped {dropped} molecules that failed standardization")
 
     # Reorder columns for clarity
-    cols = ['orig_smiles', 'smiles']
+    cols = ["orig_smiles", "smiles"]
     if extract_salts:
-        cols.append('salt')
-    cols.append('standardization_failed')
+        cols.append("salt")
+    cols.append("standardization_failed")
 
     # Add remaining columns
     other_cols = [c for c in result.columns if c not in cols and c != smiles_column]
@@ -298,42 +290,36 @@ def standardize(df: pd.DataFrame,
 
 if __name__ == "__main__":
     # Test with DataFrame including various salt forms
-    test_data = pd.DataFrame({
-        'smiles': [
-            # Organic salts
-            "[Na+].CC(=O)[O-]",  # Sodium acetate
-            "CC(=O)O.CCN",  # Acetic acid + ethylamine (acid-base pair)
-
-            # Tautomers
-            "CC(=O)CC(C)=O",  # Acetylacetone - tautomer
-            "c1ccc(O)nc1",  # 2-hydroxypyridine/2-pyridone - tautomer
-
-            # Multi-fragment
-            "CCO.CC",  # Ethanol + methane mixture
-
-            # Simple organics
-            "CC(C)(C)c1ccccc1",  # tert-butylbenzene
-
-            # Carbonate salts
-            "[Na+].[Na+].[O-]C([O-])=O",  # Sodium carbonate
-            "[Li+].[Li+].[O-]C([O-])=O",  # Lithium carbonate
-            "[K+].[K+].[O-]C([O-])=O",  # Potassium carbonate
-            "[Mg++].[O-]C([O-])=O",  # Magnesium carbonate
-            "[Ca++].[O-]C([O-])=O",  # Calcium carbonate
-
-            # Drug salts
-            "CC(C)NCC(O)c1ccc(O)c(O)c1.Cl",  # Isoproterenol HCl
-            "CN1CCC[C@H]1c2cccnc2.[Cl-]",  # Nicotine HCl
-
-            # Edge cases
-            None,  # Missing value
-            "INVALID",  # Invalid SMILES
-        ],
-        'compound_id': [f'C{i:03d}' for i in range(1, 16)],
-        'logS': [5.2, 4.1, 6.1, 7.3, 4.8, 5.5,
-                 0.05, -0.76, 0.95, -2.18, -3.5,
-                 3.2, 2.8, None, 6.0]
-    })
+    test_data = pd.DataFrame(
+        {
+            "smiles": [
+                # Organic salts
+                "[Na+].CC(=O)[O-]",  # Sodium acetate
+                "CC(=O)O.CCN",  # Acetic acid + ethylamine (acid-base pair)
+                # Tautomers
+                "CC(=O)CC(C)=O",  # Acetylacetone - tautomer
+                "c1ccc(O)nc1",  # 2-hydroxypyridine/2-pyridone - tautomer
+                # Multi-fragment
+                "CCO.CC",  # Ethanol + methane mixture
+                # Simple organics
+                "CC(C)(C)c1ccccc1",  # tert-butylbenzene
+                # Carbonate salts
+                "[Na+].[Na+].[O-]C([O-])=O",  # Sodium carbonate
+                "[Li+].[Li+].[O-]C([O-])=O",  # Lithium carbonate
+                "[K+].[K+].[O-]C([O-])=O",  # Potassium carbonate
+                "[Mg++].[O-]C([O-])=O",  # Magnesium carbonate
+                "[Ca++].[O-]C([O-])=O",  # Calcium carbonate
+                # Drug salts
+                "CC(C)NCC(O)c1ccc(O)c(O)c1.Cl",  # Isoproterenol HCl
+                "CN1CCC[C@H]1c2cccnc2.[Cl-]",  # Nicotine HCl
+                # Edge cases
+                None,  # Missing value
+                "INVALID",  # Invalid SMILES
+            ],
+            "compound_id": [f"C{i:03d}" for i in range(1, 16)],
+            "logS": [5.2, 4.1, 6.1, 7.3, 4.8, 5.5, 0.05, -0.76, 0.95, -2.18, -3.5, 3.2, 2.8, None, 6.0],
+        }
+    )
 
     print("Testing molecular standardization pipeline with salt extraction")
     print("=" * 70)
@@ -347,14 +333,14 @@ if __name__ == "__main__":
 
     print("\n" + "=" * 70)
     print("Output DataFrame (selected columns):")
-    display_cols = ['compound_id', 'orig_smiles', 'smiles', 'salt', 'logS', 'standardization_failed']
+    display_cols = ["compound_id", "orig_smiles", "smiles", "salt", "logS", "standardization_failed"]
     print(result_df[display_cols].to_string())
 
     # Show specific examples
     print("\n" + "=" * 70)
     print("Salt extraction examples:")
     for idx, row in result_df.iterrows():
-        if pd.notna(row['salt']):
+        if pd.notna(row["salt"]):
             print(f"{row['compound_id']}: Parent={row['smiles'][:30]:30} Salt={row['salt']}")
 
     # Summary statistics

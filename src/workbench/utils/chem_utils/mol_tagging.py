@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # Property Detection Functions (Internal)
 # ============================================================================
 
+
 def _get_metal_tags(mol: Mol) -> Set[str]:
     """Detect metal-related tags."""
     tags = set()
@@ -26,10 +27,7 @@ def _get_metal_tags(mol: Mol) -> Set[str]:
     metalloenzyme_metals = {"Zn", "Cu", "Fe", "Mn", "Co", "Ni", "Mo", "V"}
 
     # Heavy/toxic metals
-    heavy_metals = {
-        "Pb", "Hg", "Cd", "As", "Cr", "Tl", "Ba",
-        "Be", "Al", "Sb", "Se", "Bi", "Ag"
-    }
+    heavy_metals = {"Pb", "Hg", "Cd", "As", "Cr", "Tl", "Ba", "Be", "Al", "Sb", "Se", "Bi", "Ag"}
 
     for atom in mol.GetAtoms():
         symbol = atom.GetSymbol()
@@ -48,8 +46,7 @@ def _get_halogen_tags(mol: Mol) -> Set[str]:
         return tags
 
     # Count halogens
-    halogen_count = sum(1 for atom in mol.GetAtoms()
-                        if atom.GetSymbol() in ["F", "Cl", "Br", "I"])
+    halogen_count = sum(1 for atom in mol.GetAtoms() if atom.GetSymbol() in ["F", "Cl", "Br", "I"])
 
     if halogen_count > 0:
         tags.add("halogenated")
@@ -80,10 +77,14 @@ def _get_druglike_tags(mol: Mol) -> Set[str]:
 
     # Lipinski's Rule of Five
     ro5_violations = 0
-    if mw > 500: ro5_violations += 1
-    if logp > 5: ro5_violations += 1
-    if hbd > 5: ro5_violations += 1
-    if hba > 10: ro5_violations += 1
+    if mw > 500:
+        ro5_violations += 1
+    if logp > 5:
+        ro5_violations += 1
+    if hbd > 5:
+        ro5_violations += 1
+    if hba > 10:
+        ro5_violations += 1
 
     if ro5_violations <= 1:
         tags.add("ro5_pass")
@@ -134,8 +135,7 @@ def _get_structural_tags(mol: Mol) -> Set[str]:
                 break
 
     # Check for chirality
-    if any(atom.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED
-           for atom in mol.GetAtoms()):
+    if any(atom.GetChiralTag() != Chem.ChiralType.CHI_UNSPECIFIED for atom in mol.GetAtoms()):
         tags.add("chiral")
 
     return tags
@@ -145,10 +145,13 @@ def _get_structural_tags(mol: Mol) -> Set[str]:
 # Main Tagging Function
 # ============================================================================
 
-def tag_molecules(df: pd.DataFrame,
-                  smiles_column: str = "smiles",
-                  tag_column: str = "tags",
-                  tag_categories: Optional[List[str]] = None) -> pd.DataFrame:
+
+def tag_molecules(
+    df: pd.DataFrame,
+    smiles_column: str = "smiles",
+    tag_column: str = "tags",
+    tag_categories: Optional[List[str]] = None,
+) -> pd.DataFrame:
     """
     Add molecular property tags to a DataFrame.
 
@@ -230,10 +233,10 @@ def tag_molecules(df: pd.DataFrame,
 # Utility Functions
 # ============================================================================
 
-def filter_by_tags(df: pd.DataFrame,
-                   require: Optional[List[str]] = None,
-                   exclude: Optional[List[str]] = None,
-                   tag_column: str = "tags") -> pd.DataFrame:
+
+def filter_by_tags(
+    df: pd.DataFrame, require: Optional[List[str]] = None, exclude: Optional[List[str]] = None, tag_column: str = "tags"
+) -> pd.DataFrame:
     """
     Filter DataFrame rows based on tags.
 
@@ -293,24 +296,26 @@ if __name__ == "__main__":
     print("=" * 60)
 
     # Create test dataset
-    test_data = pd.DataFrame({
-        'smiles': [
-            'CC(=O)Oc1ccccc1C(=O)O',  # Aspirin
-            'CN1C=NC2=C1C(=O)N(C(=O)N2C)C',  # Caffeine
-            'C' * 50,  # Large alkane
-            'C(Cl)(Cl)(Cl)Cl',  # Carbon tetrachloride
-            '[Zn+2].[Cl-].[Cl-]',  # Zinc chloride
-            'CCC',  # Propane
-            'CC(C)CC1=CC=C(C=C1)C(C)C(=O)O',  # Ibuprofen
-            '[Pb+2].[O-]C(=O)C',  # Lead acetate
-            '',  # Empty
-            'INVALID_SMILES',  # Invalid
-        ],
-        'compound_id': [f'C{i:03d}' for i in range(1, 11)]
-    })
+    test_data = pd.DataFrame(
+        {
+            "smiles": [
+                "CC(=O)Oc1ccccc1C(=O)O",  # Aspirin
+                "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",  # Caffeine
+                "C" * 50,  # Large alkane
+                "C(Cl)(Cl)(Cl)Cl",  # Carbon tetrachloride
+                "[Zn+2].[Cl-].[Cl-]",  # Zinc chloride
+                "CCC",  # Propane
+                "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",  # Ibuprofen
+                "[Pb+2].[O-]C(=O)C",  # Lead acetate
+                "",  # Empty
+                "INVALID_SMILES",  # Invalid
+            ],
+            "compound_id": [f"C{i:03d}" for i in range(1, 11)],
+        }
+    )
 
     print("Input data:")
-    print(test_data[['compound_id', 'smiles']])
+    print(test_data[["compound_id", "smiles"]])
 
     # Apply tagging
     print("\n" + "=" * 60)
@@ -319,7 +324,7 @@ if __name__ == "__main__":
 
     print("\nTagged results:")
     for _, row in tagged_df.iterrows():
-        tags_str = ", ".join(row['tags']) if row['tags'] else "none"
+        tags_str = ", ".join(row["tags"]) if row["tags"] else "none"
         print(f"{row['compound_id']}: {tags_str}")
 
     # Test filtering
@@ -327,11 +332,11 @@ if __name__ == "__main__":
     print("Testing filters...")
 
     # Get drug-like molecules
-    druglike = filter_by_tags(tagged_df, require=['ro5_pass'])
+    druglike = filter_by_tags(tagged_df, require=["ro5_pass"])
     print(f"Drug-like molecules: {list(druglike['compound_id'])}")
 
     # Exclude problematic molecules
-    clean = filter_by_tags(tagged_df, exclude=['heavy_metal', 'highly_halogenated', 'invalid_smiles'])
+    clean = filter_by_tags(tagged_df, exclude=["heavy_metal", "highly_halogenated", "invalid_smiles"])
     print(f"Clean molecules: {list(clean['compound_id'])}")
 
     # Get tag summary

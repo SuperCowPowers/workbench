@@ -68,10 +68,7 @@ def _validate_molecule(smiles: str) -> Optional[Chem.Mol]:
         return None
 
 
-def _configure_draw_options(
-        options: Draw.MolDrawOptions,
-        background: str
-) -> None:
+def _configure_draw_options(options: Draw.MolDrawOptions, background: str) -> None:
     """Configure drawing options for molecule visualization.
 
     Args:
@@ -84,10 +81,7 @@ def _configure_draw_options(
 
 
 def img_from_smiles(
-        smiles: str,
-        width: int = 500,
-        height: int = 500,
-        background: str = "rgba(64, 64, 64, 1)"
+    smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)"
 ) -> Optional:
     """Generate an image of the molecule from SMILES.
 
@@ -113,10 +107,7 @@ def img_from_smiles(
 
 
 def svg_from_smiles(
-        smiles: str,
-        width: int = 500,
-        height: int = 500,
-        background: str = "rgba(64, 64, 64, 1)"
+    smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)"
 ) -> Optional[str]:
     """Generate an SVG image of the molecule from SMILES.
 
@@ -152,12 +143,7 @@ def svg_from_smiles(
     return f"data:image/svg+xml;base64,{encoded_svg}"
 
 
-def show(
-        smiles: str,
-        width: int = 500,
-        height: int = 500,
-        background: str = "rgba(64, 64, 64, 1)"
-) -> None:
+def show(smiles: str, width: int = 500, height: int = 500, background: str = "rgba(64, 64, 64, 1)") -> None:
     """Display an image of the molecule.
 
     Args:

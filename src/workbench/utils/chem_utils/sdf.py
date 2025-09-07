@@ -11,13 +11,13 @@ log = logging.getLogger("workbench")
 
 
 def df_to_sdf_file(
-        df: pd.DataFrame,
-        output_file: str,
-        smiles_col: str = "smiles",
-        id_col: Optional[str] = None,
-        include_cols: Optional[List[str]] = None,
-        skip_invalid: bool = True,
-        generate_3d: bool = True,
+    df: pd.DataFrame,
+    output_file: str,
+    smiles_col: str = "smiles",
+    id_col: Optional[str] = None,
+    include_cols: Optional[List[str]] = None,
+    skip_invalid: bool = True,
+    generate_3d: bool = True,
 ):
     """
     Convert DataFrame with SMILES to SDF file.
@@ -90,12 +90,12 @@ def df_to_sdf_file(
 
 
 def sdf_file_to_df(
-        sdf_file: str,
-        include_smiles: bool = True,
-        smiles_col: str = "smiles",
-        id_col: Optional[str] = None,
-        include_props: Optional[List[str]] = None,
-        exclude_props: Optional[List[str]] = None,
+    sdf_file: str,
+    include_smiles: bool = True,
+    smiles_col: str = "smiles",
+    id_col: Optional[str] = None,
+    include_props: Optional[List[str]] = None,
+    exclude_props: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """
     Convert SDF file to DataFrame.
@@ -158,19 +158,21 @@ if __name__ == "__main__":
     print("Running SDF utilities tests...")
 
     # Create test data
-    test_data = pd.DataFrame({
-        "smiles": [
-            "CCO",  # Ethanol
-            "c1ccccc1",  # Benzene
-            "CC(=O)O",  # Acetic acid
-            "INVALID_SMILES",  # Invalid
-            "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",  # Caffeine
-        ],
-        "name": ["Ethanol", "Benzene", "Acetic Acid", "Invalid", "Caffeine"],
-        "mol_weight": [46.07, 78.11, 60.05, 0, 194.19],
-        "category": ["alcohol", "aromatic", "acid", "error", "alkaloid"],
-        "mol": ["should_exclude", "should_exclude", "should_exclude", "should_exclude", "should_exclude"],
-    })
+    test_data = pd.DataFrame(
+        {
+            "smiles": [
+                "CCO",  # Ethanol
+                "c1ccccc1",  # Benzene
+                "CC(=O)O",  # Acetic acid
+                "INVALID_SMILES",  # Invalid
+                "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",  # Caffeine
+            ],
+            "name": ["Ethanol", "Benzene", "Acetic Acid", "Invalid", "Caffeine"],
+            "mol_weight": [46.07, 78.11, 60.05, 0, 194.19],
+            "category": ["alcohol", "aromatic", "acid", "error", "alkaloid"],
+            "mol": ["should_exclude", "should_exclude", "should_exclude", "should_exclude", "should_exclude"],
+        }
+    )
 
     # Test 1: Basic DataFrame to SDF conversion
     print("\n1. Testing DataFrame to SDF conversion...")
@@ -180,23 +182,13 @@ if __name__ == "__main__":
     try:
         # Test with 3D generation
         count = df_to_sdf_file(
-            test_data,
-            tmp_path,
-            smiles_col="smiles",
-            id_col="name",
-            skip_invalid=True,
-            generate_3d=True
+            test_data, tmp_path, smiles_col="smiles", id_col="name", skip_invalid=True, generate_3d=True
         )
         print(f"   ✓ Wrote {count} molecules with 3D coords (expected 4, skipped 1 invalid)")
 
         # Test without 3D generation
         count = df_to_sdf_file(
-            test_data,
-            tmp_path,
-            smiles_col="smiles",
-            id_col="name",
-            skip_invalid=True,
-            generate_3d=False
+            test_data, tmp_path, smiles_col="smiles", id_col="name", skip_invalid=True, generate_3d=False
         )
         print(f"   ✓ Wrote {count} molecules without 3D coords")
 
@@ -207,12 +199,7 @@ if __name__ == "__main__":
     print("\n2. Testing SDF to DataFrame conversion...")
     try:
         # Read back the SDF
-        df_read = sdf_file_to_df(
-            tmp_path,
-            include_smiles=True,
-            smiles_col="SMILES",
-            id_col="mol_name"
-        )
+        df_read = sdf_file_to_df(tmp_path, include_smiles=True, smiles_col="SMILES", id_col="mol_name")
         print(f"   ✓ Read {len(df_read)} molecules from SDF")
         print(f"   ✓ Columns: {list(df_read.columns)}")
 
@@ -229,7 +216,7 @@ if __name__ == "__main__":
             smiles_col="smiles",
             include_cols=["name", "mol_weight"],
             skip_invalid=True,
-            generate_3d=False
+            generate_3d=False,
         )
 
         df_filtered = sdf_file_to_df(tmp_path)
@@ -247,41 +234,23 @@ if __name__ == "__main__":
 
     # Test with skip_invalid=False
     try:
-        count = df_to_sdf_file(
-            test_data,
-            tmp_path,
-            smiles_col="smiles",
-            skip_invalid=False,
-            generate_3d=False
-        )
+        count = df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", skip_invalid=False, generate_3d=False)
         print("   ✗ Should have raised error for invalid SMILES")
-    except ValueError as e:
-        print(f"   ✓ Correctly raised error for invalid SMILES")
+    except ValueError:
+        print("   ✓ Correctly raised error for invalid SMILES")
 
     # Test 5: Property filtering on read
     print("\n5. Testing property filtering on read...")
     try:
         # Write full data
-        df_to_sdf_file(
-            test_data,
-            tmp_path,
-            smiles_col="smiles",
-            skip_invalid=True,
-            generate_3d=False
-        )
+        df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", skip_invalid=True, generate_3d=False)
 
         # Read with include filter
-        df_include = sdf_file_to_df(
-            tmp_path,
-            include_props=["mol_weight", "category"]
-        )
+        df_include = sdf_file_to_df(tmp_path, include_props=["mol_weight", "category"])
         print(f"   ✓ Include filter: {list(df_include.columns)}")
 
         # Read with exclude filter
-        df_exclude = sdf_file_to_df(
-            tmp_path,
-            exclude_props=["category"]
-        )
+        df_exclude = sdf_file_to_df(tmp_path, exclude_props=["category"])
         has_category = "category" in df_exclude.columns
         print(f"   {'✗' if has_category else '✓'} Exclude filter: 'category' excluded")
 
@@ -308,17 +277,9 @@ if __name__ == "__main__":
         print("   ✓ Correctly raised error for missing SMILES column")
 
     # Large molecule test (3D generation stress test)
-    large_mol_df = pd.DataFrame({
-        "smiles": ["C" * 50],  # Very long carbon chain
-        "name": ["Long Chain"]
-    })
+    large_mol_df = pd.DataFrame({"smiles": ["C" * 50], "name": ["Long Chain"]})  # Very long carbon chain
     try:
-        count = df_to_sdf_file(
-            large_mol_df,
-            tmp_path,
-            generate_3d=True,
-            skip_invalid=True
-        )
+        count = df_to_sdf_file(large_mol_df, tmp_path, generate_3d=True, skip_invalid=True)
         print(f"   ✓ Large molecule: wrote {count} molecule(s)")
     except Exception as e:
         print(f"   ✗ Large molecule error: {e}")

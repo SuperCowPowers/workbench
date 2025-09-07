@@ -3,6 +3,7 @@
 from typing import List, Optional, Tuple
 from rdkit import Chem
 from rdkit.Chem import Mol
+from rdkit.Chem import FunctionalGroups as FG
 
 # Precompiled SMARTS patterns for custom toxic functional groups
 toxic_smarts_patterns = [
@@ -29,8 +30,6 @@ exempt_smarts_patterns = [
 compiled_exempt_smarts = [Chem.MolFromSmarts(smarts) for smarts in exempt_smarts_patterns]
 
 # Load functional group hierarchy once during initialization
-from rdkit.Chem import FunctionalGroups as FG
-
 fgroup_hierarchy = FG.BuildFuncGroupHierarchy()
 
 
@@ -160,25 +159,20 @@ if __name__ == "__main__":
         "benzene": ("c1ccccc1", "Benzene - simple aromatic"),
         "glucose": ("C(C1C(C(C(C(O1)O)O)O)O)O", "Glucose - sugar"),
         "ethanol": ("CCO", "Ethanol - simple alcohol"),
-
         # Heavy metal containing
         "lead_acetate": ("CC(=O)[O-].CC(=O)[O-].[Pb+2]", "Lead acetate - contains Pb"),
         "mercury_chloride": ("Cl[Hg]Cl", "Mercury chloride - contains Hg"),
         "arsenic_trioxide": ("O=[As]O[As]=O", "Arsenic trioxide - contains As"),
-
         # Halogenated compounds
         "chloroform": ("C(Cl)(Cl)Cl", "Chloroform - trichloromethyl"),
         "ddt": ("c1ccc(cc1)C(c2ccc(cc2)Cl)C(Cl)(Cl)Cl", "DDT - heavily chlorinated"),
         "fluorobenzene": ("Fc1ccccc1", "Fluorobenzene - single halogen"),
-
         # Nitrogen compounds
         "nitrobenzene": ("c1ccc(cc1)[N+](=O)[O-]", "Nitrobenzene - nitro group"),
         "choline": ("C[N+](C)(C)CCO", "Choline - benign quaternary ammonium"),
         "toxic_quat": ("[N+](C)(C)(C)(C)", "Toxic quaternary ammonium"),
-
         # Phenol (exempt)
         "catechol": ("c1ccc(O)c(O)c1", "Catechol - phenol, should be exempt"),
-
         # Phosphate
         "phosphate": ("P(=O)(O)(O)O", "Phosphate ester - toxic pattern"),
     }

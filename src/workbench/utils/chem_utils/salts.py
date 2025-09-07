@@ -55,7 +55,7 @@ def _classify_salt_types(salt_frags: List[Chem.Mol]) -> Dict[str, int]:
 
 
 def extract_advanced_salt_features(
-        mol: Optional[Chem.Mol],
+    mol: Optional[Chem.Mol],
 ) -> Tuple[Optional[Dict[str, Union[int, float]]], Optional[Chem.Mol]]:
     """Extract comprehensive salt-related features from RDKit molecule"""
     if mol is None:
@@ -149,10 +149,7 @@ if __name__ == "__main__":
     # Test 1: Basic salt feature extraction
     print("\n1. Testing basic salt feature extraction...")
 
-    salt_test_df = pd.DataFrame({
-        "smiles": list(test_molecules.values()),
-        "name": list(test_molecules.keys())
-    })
+    salt_test_df = pd.DataFrame({"smiles": list(test_molecules.values()), "name": list(test_molecules.keys())})
 
     salt_test_df["molecule"] = salt_test_df["smiles"].apply(Chem.MolFromSmiles)
     salt_result = add_salt_features(salt_test_df)
@@ -161,15 +158,19 @@ if __name__ == "__main__":
     print(f"   {'Molecule':20} has_salt  metal  halide  organic  mw_ratio")
     print("   " + "-" * 65)
     for _, row in salt_result.iterrows():
-        print(f"   {row['name']:20} {row['has_salt']:^8} {row['has_metal_salt']:^6} "
-              f"{row['has_halide']:^7} {row['has_organic_salt']:^8} {row['mw_ratio']:>8.3f}")
+        print(
+            f"   {row['name']:20} {row['has_salt']:^8} {row['has_metal_salt']:^6} "
+            f"{row['has_halide']:^7} {row['has_organic_salt']:^8} {row['mw_ratio']:>8.3f}"
+        )
 
     # Test 2: Detailed feature extraction for specific cases
     print("\n2. Testing detailed salt feature extraction...")
 
-    for name, smiles in [("sodium_acetate", test_molecules["sodium_acetate"]),
-                         ("calcium_acetate", test_molecules["calcium_acetate"]),
-                         ("aspirin", test_molecules["aspirin"])]:
+    for name, smiles in [
+        ("sodium_acetate", test_molecules["sodium_acetate"]),
+        ("calcium_acetate", test_molecules["calcium_acetate"]),
+        ("aspirin", test_molecules["aspirin"]),
+    ]:
         mol = Chem.MolFromSmiles(smiles)
         features, api_mol = extract_advanced_salt_features(mol)
 
@@ -191,8 +192,10 @@ if __name__ == "__main__":
     # Single fragment (no salt)
     benzene_mol = Chem.MolFromSmiles("c1ccccc1")
     benzene_features, benzene_api = extract_advanced_salt_features(benzene_mol)
-    print(f"   Single fragment (benzene): has_salt={benzene_features['has_salt']}, "
-          f"mw_ratio={benzene_features['mw_ratio']:.3f}")
+    print(
+        f"   Single fragment (benzene): has_salt={benzene_features['has_salt']}, "
+        f"mw_ratio={benzene_features['mw_ratio']:.3f}"
+    )
 
     # Multiple organic fragments
     multi_org = Chem.MolFromSmiles("c1ccccc1.CC(=O)O")
@@ -214,23 +217,27 @@ if __name__ == "__main__":
         if mol:
             features, _ = extract_advanced_salt_features(mol)
             print(f"   {name:15} ({description})")
-            print(f"     Metal: {features['has_metal_salt']}, "
-                  f"Halide: {features['has_halide']}, "
-                  f"Organic: {features['has_organic_salt']}")
+            print(
+                f"     Metal: {features['has_metal_salt']}, "
+                f"Halide: {features['has_halide']}, "
+                f"Organic: {features['has_organic_salt']}"
+            )
 
     # Test 5: DataFrame integration
     print("\n5. Testing DataFrame integration...")
 
     # Create a mixed DataFrame
-    mixed_df = pd.DataFrame({
-        "smiles": [
-            test_molecules["aspirin"],
-            test_molecules["sodium_acetate"],
-            test_molecules["calcium_acetate"],
-        ],
-        "name": ["aspirin", "sodium_acetate", "calcium_acetate"],
-        "existing_col": [1, 2, 3]  # Test that existing columns are preserved
-    })
+    mixed_df = pd.DataFrame(
+        {
+            "smiles": [
+                test_molecules["aspirin"],
+                test_molecules["sodium_acetate"],
+                test_molecules["calcium_acetate"],
+            ],
+            "name": ["aspirin", "sodium_acetate", "calcium_acetate"],
+            "existing_col": [1, 2, 3],  # Test that existing columns are preserved
+        }
+    )
 
     mixed_df["molecule"] = mixed_df["smiles"].apply(Chem.MolFromSmiles)
     result_df = add_salt_features(mixed_df)
@@ -242,7 +249,7 @@ if __name__ == "__main__":
     if missing_cols:
         print(f"   ✗ Missing columns: {missing_cols}")
     else:
-        print(f"   ✓ All expected columns present")
+        print("   ✓ All expected columns present")
         print(f"   ✓ Original columns preserved: 'existing_col' in result = {('existing_col' in result_df.columns)}")
         print(f"   ✓ Salt features added: {len(_get_salt_feature_columns())} new columns")
 

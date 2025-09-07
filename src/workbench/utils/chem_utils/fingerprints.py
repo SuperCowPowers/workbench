@@ -1,16 +1,12 @@
 """Molecular fingerprint computation utilities"""
 
 import logging
-import numpy as np
 import pandas as pd
-from typing import Optional
 
 # Molecular Descriptor Imports
 from rdkit import Chem
 from rdkit.Chem import rdFingerprintGenerator
-
-# Import helper functions
-from molecular_screening import remove_disconnected_fragments
+from rdkit.Chem.MolStandardize import rdMolStandardize
 
 # Set up the logger
 log = logging.getLogger("workbench")
@@ -55,7 +51,9 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=
         df = df.dropna(subset=["molecule"])
 
     # If we have fragments in our compounds, get the largest fragment before computing fingerprints
-    largest_frags = df["molecule"].apply(remove_disconnected_fragments)
+    largest_frags = df["molecule"].apply(
+        lambda mol: rdMolStandardize.LargestFragmentChooser().choose(mol) if mol else None
+    )
 
     # Create a Morgan fingerprint generator
     if counts:
@@ -94,10 +92,7 @@ if __name__ == "__main__":
     # Test 1: Morgan Fingerprints
     print("\n1. Testing Morgan fingerprint generation...")
 
-    test_df = pd.DataFrame({
-        "SMILES": list(test_molecules.values()),
-        "name": list(test_molecules.keys())
-    })
+    test_df = pd.DataFrame({"SMILES": list(test_molecules.values()), "name": list(test_molecules.keys())})
 
     fp_df = compute_morgan_fingerprints(test_df.copy(), radius=2, n_bits=512, counts=False)
 

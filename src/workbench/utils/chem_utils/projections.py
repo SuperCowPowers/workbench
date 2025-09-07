@@ -119,10 +119,7 @@ if __name__ == "__main__":
     # Generate fingerprints for test
     print("\n1. Generating test fingerprints...")
 
-    test_df = pd.DataFrame({
-        "SMILES": list(test_molecules.values()),
-        "name": list(test_molecules.keys())
-    })
+    test_df = pd.DataFrame({"SMILES": list(test_molecules.values()), "name": list(test_molecules.keys())})
 
     # Generate Morgan fingerprints
     mols = [Chem.MolFromSmiles(smi) for smi in test_df["SMILES"]]
@@ -193,7 +190,7 @@ if __name__ == "__main__":
     if len(small_df) > 0:
         try:
             proj_small = project_fingerprints(small_df, projection="TSNE")
-            print(f"   Note: Small dataset projection handled")
+            print("   Note: Small dataset projection handled")
         except Exception as e:
             print(f"   Note: Small dataset appropriately failed: {type(e).__name__}")
 
@@ -205,7 +202,7 @@ if __name__ == "__main__":
         proj_test = project_fingerprints(test_df.copy(), projection="TSNE")
         has_nan = proj_test[["x", "y"]].isnull().any().any()
         print(f"   NaN values in output: {has_nan}")
-        print(f"   ✓ NaN values properly handled")
+        print("   ✓ NaN values properly handled")
     except Exception as e:
         print(f"   Note: Could not test NaN handling due to: {e}")
 

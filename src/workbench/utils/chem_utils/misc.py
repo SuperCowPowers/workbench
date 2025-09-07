@@ -4,10 +4,6 @@ import logging
 import numpy as np
 import pandas as pd
 from typing import List, Optional
-from rdkit import Chem
-from rdkit.Chem import Mol
-from rdkit.Chem.MolStandardize.rdMolStandardize import TautomerEnumerator
-from rdkit.Chem.rdMolDescriptors import CalcNumHBD, CalcExactMolWt
 
 # Set up the logger
 log = logging.getLogger("workbench")
@@ -19,7 +15,7 @@ def geometric_mean(series: pd.Series) -> float:
 
 
 def rollup_experimental_data(
-        df: pd.DataFrame, id: str, time: str, target: str, use_gmean: bool = False
+    df: pd.DataFrame, id: str, time: str, target: str, use_gmean: bool = False
 ) -> pd.DataFrame:
     """
     Rolls up a dataset by selecting the largest time per unique ID and averaging the target value
@@ -78,7 +74,7 @@ def log_to_micromolar(log_series: pd.Series) -> pd.Series:
     Returns:
     pd.Series: Series of concentrations in micromolar.
     """
-    series_mol_per_l = 10 ** log_series  # Convert log10 back to mol/L
+    series_mol_per_l = 10**log_series  # Convert log10 back to mol/L
     series_µM = series_mol_per_l * 1e6  # Convert mol/L to µM
     return series_µM
 
@@ -151,12 +147,14 @@ if __name__ == "__main__":
     print("\n3. Testing experimental data rollup...")
 
     # Create test data with multiple timepoints and replicates
-    test_data = pd.DataFrame({
-        "compound_id": ["A", "A", "A", "B", "B", "C", "C", "C"],
-        "time": [1, 2, 2, 1, 2, 1, 1, 2],
-        "activity": [10, 20, 22, 5, 8, 100, 110, 200],
-        "assay": ["kinase", "kinase", "kinase", "kinase", "kinase", "cell", "cell", "cell"]
-    })
+    test_data = pd.DataFrame(
+        {
+            "compound_id": ["A", "A", "A", "B", "B", "C", "C", "C"],
+            "time": [1, 2, 2, 1, 2, 1, 1, 2],
+            "activity": [10, 20, 22, 5, 8, 100, 110, 200],
+            "assay": ["kinase", "kinase", "kinase", "kinase", "kinase", "cell", "cell", "cell"],
+        }
+    )
 
     # Rollup with arithmetic mean
     rolled_arith = rollup_experimental_data(test_data, "compound_id", "time", "activity", use_gmean=False)
@@ -172,11 +170,13 @@ if __name__ == "__main__":
     print("\n4. Testing feature resolution identification...")
 
     # Create data with some duplicate features but different SMILES
-    resolution_df = pd.DataFrame({
-        "smiles": ["CCO", "C(C)O", "CC(C)O", "CCC(C)O", "CCCO"],
-        "assay_id": ["A1", "A1", "A2", "A2", "A3"],
-        "value": [1.0, 1.5, 2.0, 2.2, 3.0]
-    })
+    resolution_df = pd.DataFrame(
+        {
+            "smiles": ["CCO", "C(C)O", "CC(C)O", "CCC(C)O", "CCCO"],
+            "assay_id": ["A1", "A1", "A2", "A2", "A3"],
+            "value": [1.0, 1.5, 2.0, 2.2, 3.0],
+        }
+    )
 
     print("   Checking for feature collisions in 'assay_id':")
     feature_resolution_issues(resolution_df, ["assay_id"], show_cols=["smiles", "assay_id", "value"])
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     # Zero and negative concentrations
     edge_conc = pd.Series([0, -1, 1e-10])
     edge_log = micromolar_to_log(edge_conc)
-    print(f"   Edge concentration handling:")
+    print("   Edge concentration handling:")
     for c, l in zip(edge_conc, edge_log):
         print(f"      {c:6.2e} µM → {l:6.2f}")
 
