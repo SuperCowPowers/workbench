@@ -4,6 +4,7 @@ from rdkit.Chem import PandasTools
 
 # Workbench Imports
 from workbench.api.df_store import DFStore
+
 # Import the new mol_tagging module
 from workbench.utils.chem_utils.mol_tagging import tag_molecules, filter_by_tags, get_tag_summary
 from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
@@ -16,12 +17,7 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
     """
 
     # Load SDF file directly into a DataFrame
-    df = PandasTools.LoadSDF(
-        filepath,
-        smilesName="smiles",
-        molColName="molecule",
-        includeFingerprints=False
-    )
+    df = PandasTools.LoadSDF(filepath, smilesName="smiles", molColName="molecule", includeFingerprints=False)
     print(f"Loaded {len(df)} compounds from {filepath}")
     print(f"Columns: {df.columns.tolist()}")
 
@@ -64,31 +60,27 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
         df,
         smiles_column="smiles",
         tag_column="tags",
-        tag_categories=None  # This will include all: metals, halogens, druglike, structure
+        tag_categories=None,  # This will include all: metals, halogens, druglike, structure
     )
 
     # Add toxicity-specific tags
     # Add "tox21" tag for toxic compounds
-    df["tags"] = df.apply(
-        lambda row: row["tags"] + ["tox21_toxic"] if row["toxic_any"] == 1 else row["tags"],
-        axis=1
-    )
+    df["tags"] = df.apply(lambda row: row["tags"] + ["tox21_toxic"] if row["toxic_any"] == 1 else row["tags"], axis=1)
 
     # Add "tox21_clean" tag for non-toxic compounds with data
     df["tags"] = df.apply(
-        lambda row: row["tags"] + ["tox21_clean"]
-        if row["toxic_any"] == 0 and not df.loc[row.name, assay_cols].isna().all()
-        else row["tags"],
-        axis=1
+        lambda row: (
+            row["tags"] + ["tox21_clean"]
+            if row["toxic_any"] == 0 and not df.loc[row.name, assay_cols].isna().all()
+            else row["tags"]
+        ),
+        axis=1,
     )
 
     # Add specific assay tags for positive results
     for assay in assay_cols:
         assay_tag = f"positive_{assay.lower().replace('-', '_')}"
-        df["tags"] = df.apply(
-            lambda row: row["tags"] + [assay_tag] if row[assay] == 1 else row["tags"],
-            axis=1
-        )
+        df["tags"] = df.apply(lambda row: row["tags"] + [assay_tag] if row[assay] == 1 else row["tags"], axis=1)
 
     # Print tag summary
     print("\nTag Summary:")
@@ -115,18 +107,11 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
     print(f"Drug-like molecules (Ro5 pass): {len(druglike)}")
 
     # Clean, drug-like, non-toxic molecules
-    ideal = filter_by_tags(
-        df,
-        require=["ro5_pass", "tox21_clean"],
-        exclude=["heavy_metal", "highly_halogenated"]
-    )
+    ideal = filter_by_tags(df, require=["ro5_pass", "tox21_clean"], exclude=["heavy_metal", "highly_halogenated"])
     print(f"Ideal molecules (drug-like, non-toxic, no metals/heavy halogenation): {len(ideal)}")
 
     # Problematic molecules
-    problematic = filter_by_tags(
-        df,
-        require=["tox21_toxic"]
-    )
+    problematic = filter_by_tags(df, require=["tox21_toxic"])
     print(f"Toxic molecules: {len(problematic)}")
 
     return df

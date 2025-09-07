@@ -59,8 +59,9 @@ def test_tautomerization():
 
     # Test that the results match the expected canonical tautomers
     for index, row in df.iterrows():
-        assert row["standardized_smiles"] == row["expected"], \
-            f"Tautomerization failed for {row['id']}: got {row['standardized_smiles']}, expected {row['expected']}"
+        assert (
+            row["standardized_smiles"] == row["expected"]
+        ), f"Tautomerization failed for {row['id']}: got {row['standardized_smiles']}, expected {row['expected']}"
 
     print("All tests passed!")
 
