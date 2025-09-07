@@ -1,7 +1,7 @@
 """MolecularDescriptors: Compute a Feature Set based on RDKit Descriptors
 
-Note: An alternative to using this class is to use the `compute_molecular_descriptors` function directly.
-      df_features = compute_molecular_descriptors(df)
+Note: An alternative to using this class is to use the `compute_descriptors` function directly.
+      df_features = compute_descriptors(df)
       to_features = PandasToFeatures("my_feature_set")
          to_features.set_input(df_features, id_column="id")
          to_features.set_output_tags(["blah", "whatever"])
@@ -10,7 +10,7 @@ Note: An alternative to using this class is to use the `compute_molecular_descri
 
 # Local Imports
 from workbench.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
-from workbench.utils.chem_utils import compute_molecular_descriptors
+from workbench.utils.chem_utils.mol_descriptors import compute_descriptors
 
 
 class MolecularDescriptors(DataToFeaturesLight):
@@ -39,7 +39,7 @@ class MolecularDescriptors(DataToFeaturesLight):
         """Compute a Feature Set based on RDKit Descriptors"""
 
         # Compute/add all the Molecular Descriptors
-        self.output_df = compute_molecular_descriptors(self.input_df)
+        self.output_df = compute_descriptors(self.input_df)
 
 
 if __name__ == "__main__":

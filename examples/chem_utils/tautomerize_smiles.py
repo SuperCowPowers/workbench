@@ -1,7 +1,7 @@
 """Example for Tautomerizing SMILES strings"""
 
 import pandas as pd
-from workbench.utils.chem_utils import tautomerize_smiles
+from workbench.utils.chem_utils.mol_standardize import standardize
 
 pd.options.display.max_columns = None
 pd.options.display.width = 1200
@@ -32,6 +32,12 @@ test_data = [
 # Convert test data to a DataFrame
 df = pd.DataFrame(test_data)
 
-# Perform tautomerization
-result_df = tautomerize_smiles(df)
-print(result_df)
+# Perform tautomerization using standardize with tautomer canonicalization
+result_df = standardize(df)
+
+# Add comparison column
+result_df["matches_expected"] = result_df["smiles"] == result_df["expected"]
+
+# Display results
+print("Tautomerization Results:")
+print(result_df[["id", "orig_smiles", "smiles", "expected", "matches_expected"]])

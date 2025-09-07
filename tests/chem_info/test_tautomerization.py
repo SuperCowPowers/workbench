@@ -1,4 +1,4 @@
-from workbench.utils.chem_utils import tautomerize_smiles
+from workbench.utils.chem_utils.mol_standardize import MolStandardizer
 
 
 def test_tautomerization():
@@ -34,20 +34,37 @@ def test_tautomerization():
 
     # Convert test data to a DataFrame
     import pandas as pd
+    from rdkit import Chem
 
     df = pd.DataFrame(test_data)
 
-    # Perform tautomerization
-    result_df = tautomerize_smiles(df)
+    # Initialize standardizer with tautomer canonicalization enabled
+    standardizer = MolStandardizer(canonicalize_tautomer=True)
+
+    # Process each molecule
+    results = []
+    for idx, row in df.iterrows():
+        mol = Chem.MolFromSmiles(row["smiles"])
+        if mol is not None:
+            std_mol = standardizer.standardize(mol)
+            if std_mol is not None:
+                std_smiles = Chem.MolToSmiles(std_mol, canonical=True)
+                results.append(std_smiles)
+            else:
+                results.append(None)
+        else:
+            results.append(None)
+
+    df["standardized_smiles"] = results
 
     # Test that the results match the expected canonical tautomers
-    for index, row in result_df.iterrows():
-        assert row["smiles"] == row["expected"], f"Tautomerization failed for {row['id']}"
+    for index, row in df.iterrows():
+        assert row["standardized_smiles"] == row["expected"], \
+            f"Tautomerization failed for {row['id']}: got {row['standardized_smiles']}, expected {row['expected']}"
 
     print("All tests passed!")
 
 
 if __name__ == "__main__":
-
     # Run the tests
     test_tautomerization()

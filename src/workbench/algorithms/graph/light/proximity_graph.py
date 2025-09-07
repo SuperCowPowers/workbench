@@ -135,7 +135,8 @@ if __name__ == "__main__":
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
     from workbench.api import DFStore
-    from workbench.utils.chem_utils import compute_morgan_fingerprints, project_fingerprints
+    from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
+    from workbench.utils.chem_utils.projections import project_fingerprints
     from workbench.utils.graph_utils import connected_sample, graph_layout
 
     def show_graph(graph, id_column):

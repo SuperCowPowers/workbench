@@ -3,7 +3,7 @@ import logging
 from typing import List
 
 # Workbench Imports
-from workbench.utils.chem_utils import svg_from_smiles
+from workbench.utils.chem_utils.vis import svg_from_smiles
 
 
 @dataclass

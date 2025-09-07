@@ -1,6 +1,6 @@
 from rdkit import Chem
 from workbench.api.df_store import DFStore
-from workbench.utils.chem_utils import toxic_elements, toxic_groups
+from workbench.utils.chem_utils.toxicity import toxic_elements, toxic_groups
 
 # Grab the tox21 data
 tox21 = DFStore().get("/datasets/chem_info/tox21")

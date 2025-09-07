@@ -1,6 +1,6 @@
 # Workbench Imports
 from workbench.api.df_store import DFStore
-from workbench.utils.chem_utils import compute_morgan_fingerprints
+from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
 from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
 
 # Grab tox21 dataset (only 10)
