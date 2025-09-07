@@ -1,6 +1,87 @@
 """
 mol_descriptors.py - Molecular descriptor computation for ADMET modeling
-Computes all RDKit and Mordred descriptors with exact feature name compatibility
+
+Purpose:
+    Computes comprehensive molecular descriptors for ADMET (Absorption, Distribution,
+    Metabolism, Excretion, Toxicity) property prediction. Combines RDKit's full
+    descriptor set with selected Mordred descriptors and custom stereochemistry features.
+
+Descriptor Categories:
+    1. RDKit Descriptors (~200 descriptors)
+       - Constitutional (MW, heavy atom count, rotatable bonds)
+       - Topological (Balaban J, Kappa indices, Chi indices)
+       - Geometric (radius of gyration, spherocity)
+       - Electronic (HOMO/LUMO estimates, partial charges)
+       - Lipophilicity (LogP, MolLogP)
+       - Pharmacophore (H-bond donors/acceptors, aromatic rings)
+       - ADMET-specific (TPSA, QED, Lipinski descriptors)
+
+    2. Mordred Descriptors (4 selected modules)
+       - AcidBase: pKa-related features, acidic/basic group counts
+       - Aromatic: aromatic ring systems, pi-electron properties
+       - Polarizability: molecular polarizability estimates
+       - RotatableBond: flexibility measures beyond simple counts
+
+    3. Stereochemistry Features (10 custom descriptors)
+       - Stereocenter counts (R/S, defined/undefined)
+       - Stereobond counts (E/Z, defined/undefined)
+       - Stereochemical complexity and coverage metrics
+       - Critical for distinguishing drug enantiomers/diastereomers
+
+Pipeline Integration:
+    This module expects standardized SMILES from mol_standardize.py:
+
+    1. Standardize structures (mol_standardize.py)
+       ↓
+    2. Compute descriptors (this module)
+       ↓
+    3. Feature selection/ML modeling
+
+Output:
+    Returns input DataFrame with added descriptor columns:
+    - ~200 RDKit descriptors (prefix: various)
+    - ~20 Mordred descriptors (prefix: various)
+    - 10 stereochemistry descriptors (prefix: num_, stereo_, frac_)
+
+    Invalid molecules receive NaN values for all descriptors.
+
+Performance Notes:
+    - RDKit descriptors: Fast, vectorized computation
+    - Mordred descriptors: Slower, can use multiprocessing (nproc parameter)
+    - Stereochemistry: Moderate speed, requires CIP labeling
+    - Memory: ~1GB per 10,000 molecules with all descriptors
+
+Special Considerations:
+    - Ipc descriptor excluded due to potential overflow issues
+    - Molecules failing descriptor calculation get NaN (not dropped)
+    - Stereochemistry features optional for non-chiral datasets
+    - Salt information from standardization not included in descriptors
+      (use separately as categorical feature if needed)
+
+Example Usage:
+    import pandas as pd
+    from mol_standardize import standardize
+    from mol_descriptors import compute_descriptors
+
+    # Standard pipeline
+    df = pd.read_csv("molecules.csv")
+    df = standardize(df)          # Standardize first
+    df = compute_descriptors(df)  # Then compute descriptors
+
+    # For achiral molecules (faster)
+    df = compute_descriptors(df, include_stereochemistry=False)
+
+    # Custom SMILES column
+    df = compute_descriptors(df, smiles_column='canonical_smiles')
+
+    # The resulting DataFrame is ready for ML modeling
+    X = df.select_dtypes(include=[np.number])  # All numeric descriptors
+    y = df['activity']  # Your target variable
+
+References:
+    - RDKit descriptors: https://www.rdkit.org/docs/GettingStartedInPython.html#descriptors
+    - Mordred: https://github.com/mordred-descriptor/mordred
+    - Stereochemistry in drug discovery: https://doi.org/10.1021/acs.jmedchem.0c00915
 """
 
 import logging
