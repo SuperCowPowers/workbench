@@ -448,33 +448,43 @@ if __name__ == "__main__":
                 "[K+].CC(=O)[O-]",  # Potassium acetate
                 "[Ca+2].CC(=O)[O-].CC(=O)[O-]",  # Calcium acetate
                 "CC(=O)O.CCN",  # Acetic acid + ethylamine salt
-
                 # Tautomer examples
                 "Oc1ccccn1",  # 2-hydroxypyridine (tautomer 1)
                 "O=c1cccc[nH]1",  # 2-pyridone (tautomer 2)
                 "CC(O)=CC(C)=O",  # Acetylacetone enol form
                 "CC(=O)CC(C)=O",  # Acetylacetone keto form
-
                 # Isoproterenol family (drug with different salts)
                 "CC(C)NCC(O)c1ccc(O)c(O)c1",  # Isoproterenol (free base)
                 "CC(C)NCC(O)c1ccc(O)c(O)c1.Cl",  # Isoproterenol HCl
                 "CC(C)NCC(O)c1ccc(O)c(O)c1.[Br-]",  # Isoproterenol HBr
                 "CC(C)NCC(O)c1ccc(O)c(O)c1.OS(=O)(=O)O",  # Isoproterenol sulfate
-
                 # Carbonic acid family (all should give same parent)
                 "[Na+].[Na+].[O-]C([O-])=O",  # Sodium carbonate
                 "[K+].[K+].[O-]C([O-])=O",  # Potassium carbonate
                 "[Ca+2].[O-]C([O-])=O",  # Calcium carbonate
-
                 # Simple organic (no salt)
                 "CC(C)(C)c1ccccc1",  # tert-butylbenzene
             ],
             "compound_id": [f"C{i:03d}" for i in range(1, 18)],
-            "logS": [4.5, 5.2, 5.1, 4.8, 4.3,  # Acetic acid family
-                     7.3, 7.3, 6.1, 6.1,  # Tautomers (should converge)
-                     3.2, 3.5, 3.4, 2.9,  # Isoproterenol family
-                     0.05, 0.95, -2.18,  # Carbonates
-                     5.5],  # tert-butylbenzene
+            "logS": [
+                4.5,
+                5.2,
+                5.1,
+                4.8,
+                4.3,  # Acetic acid family
+                7.3,
+                7.3,
+                6.1,
+                6.1,  # Tautomers (should converge)
+                3.2,
+                3.5,
+                3.4,
+                2.9,  # Isoproterenol family
+                0.05,
+                0.95,
+                -2.18,  # Carbonates
+                5.5,
+            ],  # tert-butylbenzene
         }
     )
 
@@ -503,7 +513,7 @@ if __name__ == "__main__":
 
     # Show which compounds converged to same parent
     print("\nCompounds with identical parents:")
-    parent_groups = result_parents.groupby('smiles')['compound_id'].apply(list)
+    parent_groups = result_parents.groupby("smiles")["compound_id"].apply(list)
     for parent, compounds in parent_groups.items():
         if len(compounds) > 1:
             print(f"  {parent[:30]:30} : {', '.join(compounds)}")
@@ -533,26 +543,23 @@ if __name__ == "__main__":
 
     # Merge results for comparison
     comparison = pd.merge(
-        result_parents[['compound_id', 'MolWt', 'HeavyAtomCount', 'TPSA']],
-        result_with_salts[['compound_id', 'MolWt', 'HeavyAtomCount', 'TPSA']],
-        on='compound_id',
-        suffixes=('_parent', '_with_salt')
+        result_parents[["compound_id", "MolWt", "HeavyAtomCount", "TPSA"]],
+        result_with_salts[["compound_id", "MolWt", "HeavyAtomCount", "TPSA"]],
+        on="compound_id",
+        suffixes=("_parent", "_with_salt"),
     )
 
     # Calculate differences
-    comparison['MolWt_diff'] = comparison['MolWt_with_salt'] - comparison['MolWt_parent']
-    comparison['HeavyAtom_diff'] = comparison['HeavyAtomCount_with_salt'] - comparison['HeavyAtomCount_parent']
-    comparison['TPSA_diff'] = comparison['TPSA_with_salt'] - comparison['TPSA_parent']
+    comparison["MolWt_diff"] = comparison["MolWt_with_salt"] - comparison["MolWt_parent"]
+    comparison["HeavyAtom_diff"] = comparison["HeavyAtomCount_with_salt"] - comparison["HeavyAtomCount_parent"]
+    comparison["TPSA_diff"] = comparison["TPSA_with_salt"] - comparison["TPSA_parent"]
 
     # Show compounds with differences (i.e., those with salts)
-    significant_diff = comparison[
-        (comparison['MolWt_diff'].abs() > 0.01) |
-        (comparison['HeavyAtom_diff'] != 0)
-        ]
+    significant_diff = comparison[(comparison["MolWt_diff"].abs() > 0.01) | (comparison["HeavyAtom_diff"] != 0)]
 
     if not significant_diff.empty:
         print("\nCompounds showing descriptor changes due to salts:")
-        print(significant_diff[['compound_id', 'MolWt_diff', 'HeavyAtom_diff', 'TPSA_diff']])
+        print(significant_diff[["compound_id", "MolWt_diff", "HeavyAtom_diff", "TPSA_diff"]])
 
     # ============================================================================
     # TEST 4: Tautomer convergence check
@@ -562,15 +569,12 @@ if __name__ == "__main__":
     print("-" * 60)
 
     # Check tautomer pairs
-    tautomer_pairs = [
-        ("C006", "C007", "2-hydroxypyridine/2-pyridone"),
-        ("C008", "C009", "Acetylacetone enol/keto")
-    ]
+    tautomer_pairs = [("C006", "C007", "2-hydroxypyridine/2-pyridone"), ("C008", "C009", "Acetylacetone enol/keto")]
 
     print("\nTautomer standardization (should converge to same canonical form):")
     for id1, id2, name in tautomer_pairs:
-        smiles1 = result_parents[result_parents['compound_id'] == id1]['smiles'].values[0]
-        smiles2 = result_parents[result_parents['compound_id'] == id2]['smiles'].values[0]
+        smiles1 = result_parents[result_parents["compound_id"] == id1]["smiles"].values[0]
+        smiles2 = result_parents[result_parents["compound_id"] == id2]["smiles"].values[0]
         match = "✓ SAME" if smiles1 == smiles2 else "✗ DIFFERENT"
         print(f"  {name:30} {id1} vs {id2}: {match}")
         if smiles1 == smiles2:
@@ -586,22 +590,22 @@ if __name__ == "__main__":
     families = {
         "Acetic acid": ["C001", "C002", "C003", "C004", "C005"],
         "Isoproterenol": ["C010", "C011", "C012", "C013"],
-        "Carbonate": ["C014", "C015", "C016"]
+        "Carbonate": ["C014", "C015", "C016"],
     }
 
     for family_name, compound_ids in families.items():
-        family_data = result_parents[result_parents['compound_id'].isin(compound_ids)]
-        unique_parents = family_data['smiles'].nunique()
-        parent_smiles = family_data['smiles'].iloc[0]
+        family_data = result_parents[result_parents["compound_id"].isin(compound_ids)]
+        unique_parents = family_data["smiles"].nunique()
+        parent_smiles = family_data["smiles"].iloc[0]
 
         print(f"\n{family_name} family:")
         print(f"  Unique parent structures: {unique_parents}")
         print(f"  Parent SMILES: {parent_smiles}")
 
         # Show salt variations
-        salt_data = test_data_parents[test_data_parents['compound_id'].isin(compound_ids)]
+        salt_data = test_data_parents[test_data_parents["compound_id"].isin(compound_ids)]
         for _, row in salt_data.iterrows():
-            salt_info = f" (salt: {row['salt']})" if pd.notna(row['salt']) else " (no salt)"
+            salt_info = f" (salt: {row['salt']})" if pd.notna(row["salt"]) else " (no salt)"
             print(f"    {row['compound_id']}: {row['orig_smiles'][:40]:40}{salt_info}")
 
     print("\n" + "=" * 80)
