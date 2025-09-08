@@ -33,7 +33,7 @@ Output DataFrame Columns:
     - standardization_failed: Boolean flag indicating processing failures
 
 Salt Handling:
-    Salt forms can dramatically affect properties like solubility (up to 6 log units).
+    Salt forms can dramatically affect properties like solubility.
     This module preserves salt information to enable different modeling strategies:
 
     Example - Carbonates with different counterions:
@@ -71,7 +71,7 @@ from rdkit import Chem
 from rdkit.Chem import Mol
 from rdkit.Chem.MolStandardize import rdMolStandardize
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("workbench")
 
 
 class MolStandardizer:
@@ -326,13 +326,22 @@ if __name__ == "__main__":
     print("\nInput DataFrame (first 5 rows):")
     print(test_data.head())
 
+    # Run standardization (without salt extraction)
+    display_cols = ["compound_id", "orig_smiles", "smiles", "salt", "logS", "standardization_failed"]
+    print("\n" + "=" * 70)
+    print("Running standardization without salt extraction...")
+    result_df = standardize(test_data, extract_salts=False)
+
+    print("\n" + "=" * 70)
+    display_cols = ["compound_id", "orig_smiles", "smiles", "salt", "logS", "standardization_failed"]
+    print(result_df[display_cols].to_string())
+
     # Run standardization
     print("\n" + "=" * 70)
     print("Running standardization with salt extraction...")
     result_df = standardize(test_data, extract_salts=True)
 
     print("\n" + "=" * 70)
-    print("Output DataFrame (selected columns):")
     display_cols = ["compound_id", "orig_smiles", "smiles", "salt", "logS", "standardization_failed"]
     print(result_df[display_cols].to_string())
 
