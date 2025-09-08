@@ -75,7 +75,7 @@ def output_fn(output_df, accept_type):
 # Prediction function
 def predict_fn(df, model):
 
-    # Standard the molecule and then compute descriptors
-    df = standardize(df)
+    # Standardize the molecule (keep salts) and then compute descriptors
+    df = standardize(df, extract_salts=False)
     df = compute_descriptors(df)
     return df
