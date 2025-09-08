@@ -309,55 +309,67 @@ if __name__ == "__main__":
             # Drug salts
             "CC(C)NCC(O)c1ccc(O)c(O)c1.Cl",  # Isoproterenol HCl
             "CN1CCC[C@H]1c2cccnc2.[Cl-]",  # Nicotine HCl
+            # Tautomer with salt
+            "c1ccc(O)nc1.Cl",  # 2-hydroxypyridine with HCl
             # Edge cases
             None,  # Missing value
             "INVALID",  # Invalid SMILES
         ],
-        "compound_id": [f"C{i:03d}" for i in range(1, 16)],
-        "logS": [5.2, 4.1, 6.1, 7.3, 4.8, 5.5, 0.05, -0.76, 0.95, -2.18, -3.5, 3.2, 2.8, None, 6.0],
+        "compound_id": [f"C{i:03d}" for i in range(1, 17)],
     })
 
-    # General Test
+    # General test
     standardize(test_data)
 
-    # Now remove the last two rows to avoid errors in salt extraction
+    # Remove the last two rows to avoid errors with None and INVALID
     test_data = test_data.iloc[:-2].reset_index(drop=True)
 
     # Test WITHOUT salt removal (keeps full molecule)
-    print("\n" + "=" * 70)
-    print("Standardization KEEPING salts (extract_salts=False):")
+    print("\nStandardization KEEPING salts (extract_salts=False):")
     print("This preserves the full molecule including counterions")
-    result_keep = standardize(test_data, extract_salts=False)
-    display_cols = ["compound_id", "orig_smiles", "smiles", "salt", "logS", "standardization_failed"]
+    result_keep = standardize(test_data, extract_salts=False, canonicalize_tautomer=True)
+    display_cols = ["compound_id", "orig_smiles", "smiles", "salt", "standardization_failed"]
     print(result_keep[display_cols].to_string())
 
     # Test WITH salt removal
     print("\n" + "=" * 70)
     print("Standardization REMOVING salts (extract_salts=True):")
     print("This extracts parent molecule and records salt information")
-    result_remove = standardize(test_data, extract_salts=True)
+    result_remove = standardize(test_data, extract_salts=True, canonicalize_tautomer=True)
     print(result_remove[display_cols].to_string())
+
+    # Test WITHOUT tautomerization (keeping salts)
+    print("\n" + "=" * 70)
+    print("Standardization KEEPING salts, NO tautomerization:")
+    result_no_taut = standardize(test_data, extract_salts=False, canonicalize_tautomer=False)
+    print(result_no_taut[display_cols].to_string())
 
     # Show the difference for salt-containing molecules
     print("\n" + "=" * 70)
-    print("Comparison showing salt handling difference:")
+    print("Comparison showing differences:")
     for idx, row in result_keep.iterrows():
         if not row['standardization_failed']:
             keep_smiles = row['smiles']
             remove_smiles = result_remove.loc[idx, 'smiles']
+            no_taut_smiles = result_no_taut.loc[idx, 'smiles']
             salt = result_remove.loc[idx, 'salt']
-            if keep_smiles != remove_smiles:
+
+            # Show differences when they exist
+            if keep_smiles != remove_smiles or keep_smiles != no_taut_smiles:
                 print(f"\n{row['compound_id']} ({row['orig_smiles']}):")
-                print(f"  With salt:    {keep_smiles}")
-                print(f"  Without salt: {remove_smiles}")
+                if keep_smiles != no_taut_smiles:
+                    print(f"  With salt + taut:    {keep_smiles}")
+                    print(f"  With salt, no taut:  {no_taut_smiles}")
+                if keep_smiles != remove_smiles:
+                    print(f"  Parent only + taut:  {remove_smiles}")
                 if salt:
-                    print(f"  Extracted:    {salt}")
+                    print(f"  Extracted salt:      {salt}")
 
     # Summary statistics
     print("\n" + "=" * 70)
     print("Summary:")
     print(f"Total molecules: {len(result_remove)}")
     print(f"Successfully standardized: {(~result_remove['standardization_failed']).sum()}")
-    print(f"Molecules with salts (when extract_salts=True): {result_remove['salt'].notna().sum()}")
+    print(f"Molecules with salts: {result_remove['salt'].notna().sum()}")
     unique_salts = result_remove['salt'].dropna().unique()
-    print(f"Unique salts found: {unique_salts[:5].tolist()}...")  # First 5 unique salts
+    print(f"Unique salts found: {unique_salts[:5].tolist()}")
