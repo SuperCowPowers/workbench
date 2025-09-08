@@ -223,7 +223,6 @@ def standardize(
         salt_smiles = None
         if extract_salts:
             # Get the parent fragment for salt comparison
-            # (this duplicates some work but keeps it simple)
             cleaned = rdMolStandardize.Cleanup(mol, standardizer.params)
             if cleaned:
                 parent = rdMolStandardize.FragmentParent(cleaned, standardizer.params)
@@ -252,20 +251,7 @@ def standardize(
     # Update the dataframe with processed results
     result["smiles"] = processed["smiles"]
     result["standardization_failed"] = processed["standardization_failed"]
-
-    if extract_salts:
-        result["salt"] = processed["salt"]
-
-    # Calculate success rate
-    success_count = (~result["standardization_failed"]).sum()
-    total_count = len(result)
-    success_rate = success_count / total_count * 100
-
-    logger.info(f"Standardization complete: {success_count}/{total_count} ({success_rate:.1f}%) successful")
-
-    if extract_salts:
-        salt_count = result["salt"].notna().sum()
-        logger.info(f"Found {salt_count} molecules with salts/counterions")
+    result["salt"] = processed["salt"]
 
     # Drop invalid if requested
     if drop_invalid:
@@ -274,16 +260,6 @@ def standardize(
         dropped = initial_count - len(result)
         if dropped > 0:
             logger.info(f"Dropped {dropped} molecules that failed standardization")
-
-    # Reorder columns for clarity
-    cols = ["orig_smiles", "smiles"]
-    if extract_salts:
-        cols.append("salt")
-    cols.append("standardization_failed")
-
-    # Add remaining columns
-    other_cols = [c for c in result.columns if c not in cols and c != smiles_column]
-    result = result[cols + other_cols]
 
     return result
 
