@@ -41,7 +41,7 @@ from workbench.cached.cached_meta import CachedMeta
 try:
     import rdkit  # noqa
     import mordred  # noqa
-    from workbench.utils import chem_utils
+    from workbench.utils.chem_utils import vis
 
     HAVE_CHEM_UTILS = True
 except ImportError:
@@ -178,12 +178,12 @@ class WorkbenchShell:
 
         # Add cheminformatics utils if available
         if HAVE_CHEM_UTILS:
-            self.commands["show"] = chem_utils.show
+            self.commands["show"] = vis.show
 
     def start(self):
         """Start the Workbench IPython shell"""
         cprint("magenta", "\nWelcome to Workbench!")
-        if self.aws_status is False:
+        if not self.aws_status:
             cprint("red", "AWS Account Connection Failed...Review/Fix the Workbench Config:")
             cprint("red", f"Path: {self.cm.site_config_path}")
             self.show_config()
