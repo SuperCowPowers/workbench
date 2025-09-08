@@ -90,6 +90,7 @@ References:
 import logging
 import pandas as pd
 import numpy as np
+import re
 from rdkit import Chem
 from rdkit.Chem import Descriptors, rdCIPLabeler
 from rdkit.ML.Descriptors import MoleculeDescriptors
@@ -339,6 +340,22 @@ def compute_descriptors(
     mordred_count = len(mordred_df.columns) if include_mordred else 0
     stereo_count = len(stereo_df.columns) if include_stereo else 0
     logger.info(f"Descriptor breakdown: RDKit={rdkit_count}, Mordred={mordred_count}, Stereo={stereo_count}")
+
+    # Note: The results are often stored in an AWS Athena table.
+    # Athena has restrictions on column names:
+    # - Must be lowercase
+    # - No special characters except underscore
+    # - No spaces
+    # https://docs.aws.amazon.com/athena/latest/ug/tables-databases-columns-names.html
+    safe_columns = [re.sub(r'_+', '_', re.sub(r'[^a-z0-9_]', '_', col.lower())) for col in result.columns]
+
+    # Check for duplicates before dropping
+    if len(safe_columns) != len(set(safe_columns)):
+        logger.critical("Duplicate column names detected after sanitization - dropping duplicates!")
+
+    result.columns = safe_columns
+    result = result.loc[:, ~result.columns.duplicated()]
+
     return result
 
 
