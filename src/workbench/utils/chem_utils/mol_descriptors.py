@@ -352,31 +352,34 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1200)
 
     # Test data - stereochemistry examples
-    stereo_test_data = pd.DataFrame({
-        "smiles": [
-            "CC(=O)Oc1ccccc1C(=O)O",  # Aspirin
-            "C[C@H](N)C(=O)O",  # L-Alanine
-            "C[C@@H](N)C(=O)O",  # D-Alanine
-            "C/C=C/C=C/C",  # E,E-hexadiene
-            "CC(F)(Cl)Br",  # Unspecified chiral
-            "", "INVALID",  # Invalid cases
-        ],
-        "name": ["Aspirin", "L-Alanine", "D-Alanine",
-                 "E,E-hexadiene", "Unspecified", "Empty", "Invalid"],
-    })
+    stereo_test_data = pd.DataFrame(
+        {
+            "smiles": [
+                "CC(=O)Oc1ccccc1C(=O)O",  # Aspirin
+                "C[C@H](N)C(=O)O",  # L-Alanine
+                "C[C@@H](N)C(=O)O",  # D-Alanine
+                "C/C=C/C=C/C",  # E,E-hexadiene
+                "CC(F)(Cl)Br",  # Unspecified chiral
+                "",
+                "INVALID",  # Invalid cases
+            ],
+            "name": ["Aspirin", "L-Alanine", "D-Alanine", "E,E-hexadiene", "Unspecified", "Empty", "Invalid"],
+        }
+    )
 
     # Test data - salt handling examples
-    salt_test_data = pd.DataFrame({
-        "smiles": [
-            "CC(=O)O",  # Acetic acid
-            "[Na+].CC(=O)[O-]",  # Sodium acetate
-            "CC(C)NCC(O)c1ccc(O)c(O)c1.Cl",  # Drug HCl salt
-            "Oc1ccccn1",  # Tautomer 1
-            "O=c1cccc[nH]1",  # Tautomer 2
-        ],
-        "compound_id": [f"C{i:03d}" for i in range(1, 6)],
-    })
-
+    salt_test_data = pd.DataFrame(
+        {
+            "smiles": [
+                "CC(=O)O",  # Acetic acid
+                "[Na+].CC(=O)[O-]",  # Sodium acetate
+                "CC(C)NCC(O)c1ccc(O)c(O)c1.Cl",  # Drug HCl salt
+                "Oc1ccccn1",  # Tautomer 1
+                "O=c1cccc[nH]1",  # Tautomer 2
+            ],
+            "compound_id": [f"C{i:03d}" for i in range(1, 6)],
+        }
+    )
 
     def run_basic_tests():
         """Run basic functionality tests"""
@@ -386,22 +389,21 @@ if __name__ == "__main__":
 
         # Test stereochemistry
         result = compute_descriptors(stereo_test_data, include_stereo=True)
-        stereo_cols = ["num_stereocenters", "num_r_centers", "num_s_centers",
-                       "num_e_bonds", "num_z_bonds"]
 
         print("\nStereochemistry features (selected molecules):")
         for idx, name in enumerate(stereo_test_data["name"][:4]):
-            print(f"{name:15} - centers: {result.iloc[idx]['num_stereocenters']:.0f}, "
-                  f"R/S: {result.iloc[idx]['num_r_centers']:.0f}/"
-                  f"{result.iloc[idx]['num_s_centers']:.0f}")
+            print(
+                f"{name:15} - centers: {result.iloc[idx]['num_stereocenters']:.0f}, "
+                f"R/S: {result.iloc[idx]['num_r_centers']:.0f}/"
+                f"{result.iloc[idx]['num_s_centers']:.0f}"
+            )
 
         # Test salt handling
         print("\nSalt extraction test:")
         std_result = standardize(salt_test_data, extract_salts=True)
         for _, row in std_result.iterrows():
-            salt_info = f" → salt: {row['salt']}" if pd.notna(row['salt']) else ""
+            salt_info = f" → salt: {row['salt']}" if pd.notna(row["salt"]) else ""
             print(f"{row['compound_id']}: {row['smiles'][:30]}{salt_info}")
-
 
     def run_performance_tests(n_mols=1700):
         """Run performance timing tests"""
@@ -410,19 +412,14 @@ if __name__ == "__main__":
         print("=" * 80)
 
         # Create larger dataset
-        large_data = pd.concat([salt_test_data] * (n_mols // len(salt_test_data)),
-                               ignore_index=True)
+        large_data = pd.concat([salt_test_data] * (n_mols // len(salt_test_data)), ignore_index=True)
 
         # Test configurations
         configs = [
-            ("Standardize (full)", standardize,
-             {"extract_salts": True, "canonicalize_tautomer": True}),
-            ("Standardize (minimal)", standardize,
-             {"extract_salts": False, "canonicalize_tautomer": False}),
-            ("Descriptors (all)", compute_descriptors,
-             {"include_mordred": True, "include_stereo": True}),
-            ("Descriptors (RDKit only)", compute_descriptors,
-             {"include_mordred": False, "include_stereo": False}),
+            ("Standardize (full)", standardize, {"extract_salts": True, "canonicalize_tautomer": True}),
+            ("Standardize (minimal)", standardize, {"extract_salts": False, "canonicalize_tautomer": False}),
+            ("Descriptors (all)", compute_descriptors, {"include_mordred": True, "include_stereo": True}),
+            ("Descriptors (RDKit only)", compute_descriptors, {"include_mordred": False, "include_stereo": False}),
         ]
 
         results = []
@@ -437,15 +434,12 @@ if __name__ == "__main__":
         # Full pipeline test
         print("\nFull pipeline (standardize + all descriptors):")
         start = time.time()
-        std_data = standardize(large_data, extract_salts=True,
-                               canonicalize_tautomer=True)
-        _ = compute_descriptors(std_data, include_mordred=True,
-                                include_stereo=True)
+        std_data = standardize(large_data, extract_salts=True, canonicalize_tautomer=True)
+        _ = compute_descriptors(std_data, include_mordred=True, include_stereo=True)
         pipeline_time = time.time() - start
         print(f"  Total: {pipeline_time:.2f}s ({n_mols / pipeline_time:.1f} mol/s)")
 
         return results
-
 
     # Run tests
     run_basic_tests()
