@@ -347,7 +347,7 @@ def compute_descriptors(
     # - No special characters except underscore
     # - No spaces
     # https://docs.aws.amazon.com/athena/latest/ug/tables-databases-columns-names.html
-    safe_columns = [re.sub(r'_+', '_', re.sub(r'[^a-z0-9_]', '_', col.lower())) for col in result.columns]
+    safe_columns = [re.sub(r"_+", "_", re.sub(r"[^a-z0-9_]", "_", col.lower())) for col in result.columns]
 
     # Check for duplicates before dropping
     if len(safe_columns) != len(set(safe_columns)):
