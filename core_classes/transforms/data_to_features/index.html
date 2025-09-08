@@ -16,7 +16,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.18">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.19">
     
     
       
@@ -4375,8 +4375,8 @@ Args:
 
 
 <details class="note" open>
-  <summary>An alternative to using this class is to use the <code>compute_molecular_descriptors</code> function directly.</summary>
-  <p>df_features = compute_molecular_descriptors(df)
+  <summary>An alternative to using this class is to use the <code>compute_descriptors</code> function directly.</summary>
+  <p>df_features = compute_descriptors(df)
 to_features = PandasToFeatures("my_feature_set")
    to_features.set_input(df_features, id_column="id")
    to_features.set_output_tags(["blah", "whatever"])
@@ -4488,7 +4488,7 @@ to_features = PandasToFeatures("my_feature_set")
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute a Feature Set based on RDKit Descriptors&quot;&quot;&quot;</span>
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>
 </span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>        <span class="c1"># Compute/add all the Molecular Descriptors</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="n">compute_molecular_descriptors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="n">compute_descriptors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
               </details>
 
@@ -4617,7 +4617,7 @@ to_features = PandasToFeatures("my_feature_set")
 </span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute a Feature Set based on RDKit Descriptors&quot;&quot;&quot;</span>
 </span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>
 </span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a>    <span class="c1"># Compute/add all the Molecular Descriptors</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="n">compute_molecular_descriptors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">output_df</span> <span class="o">=</span> <span class="n">compute_descriptors</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_df</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
