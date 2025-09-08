@@ -72,7 +72,7 @@ Example Usage:
     df = compute_descriptors(df)    # Then compute descriptors
 
     # For achiral molecules (faster)
-    df = compute_descriptors(df, include_stereochemistry=False)
+    df = compute_descriptors(df, include_stereo=False)
 
     # Custom SMILES column
     df = compute_descriptors(df, smiles_column='canonical_smiles')
@@ -211,7 +211,7 @@ def compute_stereochemistry_features(mol):
 
 
 def compute_descriptors(
-    df: pd.DataFrame, smiles_column: str = "smiles", include_stereochemistry: bool = True
+    df: pd.DataFrame, smiles_column: str = "smiles", include_mordred: bool = True, include_stereo: bool = True
 ) -> pd.DataFrame:
     """
     Compute all molecular descriptors for ADMET modeling.
@@ -219,7 +219,8 @@ def compute_descriptors(
     Args:
         df: Input DataFrame with SMILES
         smiles_column: Column containing SMILES strings
-        include_stereochemistry: Whether to compute stereochemistry features (default True)
+        include_mordred: Whether to compute Mordred descriptors (default True)
+        include_stereo: Whether to compute stereochemistry features (default True)
 
     Returns:
         DataFrame with all descriptor columns added
@@ -227,7 +228,8 @@ def compute_descriptors(
     Example:
         df = standardize(df)  # First standardize
         df = compute_descriptors(df)    # Then compute descriptors with stereo
-        df = compute_descriptors(df, include_stereochemistry=False)  # Without stereo
+        df = compute_descriptors(df, include_stereo=False)  # Without stereo
+        df = compute_descriptors(df, include_mordred=False)  # RDKit only
     """
     result = df.copy()
 
@@ -280,37 +282,38 @@ def compute_descriptors(
     result = pd.concat([result, rdkit_features_df], axis=1)
 
     # Compute Mordred descriptors
-    logger.info("Computing Mordred descriptors from relevant modules...")
-    calc = MordredCalculator()
+    if include_mordred:
+        logger.info("Computing Mordred descriptors from relevant modules...")
+        calc = MordredCalculator()
 
-    # Register 5 ADMET-focused modules (avoiding overlap with RDKit)
-    calc.register(AcidBase)  # ~2 descriptors: nAcid, nBase
-    calc.register(Aromatic)  # ~2 descriptors: nAromAtom, nAromBond
-    calc.register(Constitutional)  # ~40 descriptors: structural complexity
-    calc.register(Chi)  # ~42 descriptors: connectivity indices
-    calc.register(CarbonTypes)  # ~20 descriptors: carbon hybridization
+        # Register 5 ADMET-focused modules (avoiding overlap with RDKit)
+        calc.register(AcidBase)  # ~2 descriptors: nAcid, nBase
+        calc.register(Aromatic)  # ~2 descriptors: nAromAtom, nAromBond
+        calc.register(Constitutional)  # ~40 descriptors: structural complexity
+        calc.register(Chi)  # ~42 descriptors: connectivity indices
+        calc.register(CarbonTypes)  # ~20 descriptors: carbon hybridization
 
-    # Compute Mordred descriptors
-    valid_mols = [mol if mol is not None else Chem.MolFromSmiles("C") for mol in molecules]
-    mordred_df = calc.pandas(valid_mols, nproc=1)
+        # Compute Mordred descriptors
+        valid_mols = [mol if mol is not None else Chem.MolFromSmiles("C") for mol in molecules]
+        mordred_df = calc.pandas(valid_mols, nproc=2)  # Use 2 cores
 
-    # Replace values for invalid molecules with NaN
-    for i, mol in enumerate(molecules):
-        if mol is None:
-            mordred_df.iloc[i] = np.nan
+        # Replace values for invalid molecules with NaN
+        for i, mol in enumerate(molecules):
+            if mol is None:
+                mordred_df.iloc[i] = np.nan
 
-    # Handle Mordred's special error values
-    for col in mordred_df.columns:
-        mordred_df[col] = pd.to_numeric(mordred_df[col], errors="coerce")
+        # Handle Mordred's special error values
+        for col in mordred_df.columns:
+            mordred_df[col] = pd.to_numeric(mordred_df[col], errors="coerce")
 
-    # Set index to match result DataFrame
-    mordred_df.index = result.index
+        # Set index to match result DataFrame
+        mordred_df.index = result.index
 
-    # Add Mordred features to result
-    result = pd.concat([result, mordred_df], axis=1)
+        # Add Mordred features to result
+        result = pd.concat([result, mordred_df], axis=1)
 
     # Compute stereochemistry features if requested
-    if include_stereochemistry:
+    if include_stereo:
         logger.info("Computing Stereochemistry Descriptors...")
 
         stereo_features = []
@@ -333,283 +336,119 @@ def compute_descriptors(
 
     # Log descriptor breakdown
     rdkit_count = len(rdkit_features_df.columns)
-    mordred_count = len(mordred_df.columns)
-    stereo_count = len(stereo_df.columns) if include_stereochemistry else 0
+    mordred_count = len(mordred_df.columns) if include_mordred else 0
+    stereo_count = len(stereo_df.columns) if include_stereo else 0
     logger.info(f"Descriptor breakdown: RDKit={rdkit_count}, Mordred={mordred_count}, Stereo={stereo_count}")
     return result
 
 
 if __name__ == "__main__":
-    # Test the descriptor computation
+    import time
+    from mol_standardize import standardize
+
+    # Configure pandas display
     pd.set_option("display.max_columns", None)
     pd.set_option("display.max_colwidth", 100)
     pd.set_option("display.width", 1200)
-    print("Testing molecular descriptor computation with stereochemistry")
-    print("=" * 60)
 
-    # Create test dataset with stereochemistry
-    test_data = pd.DataFrame(
-        {
-            "smiles": [
-                "CC(=O)Oc1ccccc1C(=O)O",  # Aspirin (no stereo)
-                "C[C@H](N)C(=O)O",  # L-Alanine (S, 1 chiral center)
-                "C[C@@H](N)C(=O)O",  # D-Alanine (R, 1 chiral center)
-                "C[C@@H](O)[C@@H](O)C",  # R,R-2,3-butanediol
-                "C[C@@H](O)[C@H](O)C",  # R,S-2,3-butanediol (meso)
-                "C/C=C/C=C/C",  # E,E-hexadiene (2 E bonds)
-                "C/C=C\\C=C\\C",  # Z,Z-hexadiene (2 Z bonds)
-                "C/C=C/C=C\\C",  # E,Z-hexadiene (mixed)
-                "CC(C)(C)[C@H](O)[C@@H](O)C(C)(C)C",  # Complex with 2 centers (R,S)
-                "CC(F)(Cl)Br",  # Unspecified chiral center
-                "C1C[C@H]2CC[C@@H](C1)C2",  # Bicyclic with 2 centers
-                "",  # Empty
-                "INVALID",  # Invalid
-            ],
-            "name": [
-                "Aspirin",
-                "L-Alanine",
-                "D-Alanine",
-                "R,R-butanediol",
-                "meso-butanediol",
-                "E,E-hexadiene",
-                "Z,Z-hexadiene",
-                "E,Z-hexadiene",
-                "Complex-RS",
-                "Unspecified-chiral",
-                "Bicyclic",
-                "Empty",
-                "Invalid",
-            ],
-        }
-    )
+    # Test data - stereochemistry examples
+    stereo_test_data = pd.DataFrame({
+        "smiles": [
+            "CC(=O)Oc1ccccc1C(=O)O",  # Aspirin
+            "C[C@H](N)C(=O)O",  # L-Alanine
+            "C[C@@H](N)C(=O)O",  # D-Alanine
+            "C/C=C/C=C/C",  # E,E-hexadiene
+            "CC(F)(Cl)Br",  # Unspecified chiral
+            "", "INVALID",  # Invalid cases
+        ],
+        "name": ["Aspirin", "L-Alanine", "D-Alanine",
+                 "E,E-hexadiene", "Unspecified", "Empty", "Invalid"],
+    })
 
-    print("Input data:")
-    print(test_data)
+    # Test data - salt handling examples
+    salt_test_data = pd.DataFrame({
+        "smiles": [
+            "CC(=O)O",  # Acetic acid
+            "[Na+].CC(=O)[O-]",  # Sodium acetate
+            "CC(C)NCC(O)c1ccc(O)c(O)c1.Cl",  # Drug HCl salt
+            "Oc1ccccn1",  # Tautomer 1
+            "O=c1cccc[nH]1",  # Tautomer 2
+        ],
+        "compound_id": [f"C{i:03d}" for i in range(1, 6)],
+    })
 
-    # Test descriptor computation with stereochemistry
-    print("\n" + "=" * 60)
-    print("Computing descriptors with stereochemistry...")
-    result = compute_descriptors(test_data, include_stereochemistry=True)
 
-    # Check total descriptors
-    original_cols = len(test_data.columns)
-    total_descriptors = len(result.columns) - original_cols
+    def run_basic_tests():
+        """Run basic functionality tests"""
+        print("=" * 80)
+        print("BASIC FUNCTIONALITY TESTS")
+        print("=" * 80)
 
-    print(f"\nTotal descriptors computed: {total_descriptors}")
+        # Test stereochemistry
+        result = compute_descriptors(stereo_test_data, include_stereo=True)
+        stereo_cols = ["num_stereocenters", "num_r_centers", "num_s_centers",
+                       "num_e_bonds", "num_z_bonds"]
 
-    # Show stereochemistry features for test molecules
-    print("\nStereochemistry features:")
-    stereo_cols = [
-        "num_stereocenters",
-        "num_unspecified_stereocenters",
-        "num_defined_stereocenters",
-        "num_r_centers",
-        "num_s_centers",
-        "num_stereobonds",
-        "num_e_bonds",
-        "num_z_bonds",
-        "stereo_complexity",
-        "frac_defined_stereo",
-    ]
+        print("\nStereochemistry features (selected molecules):")
+        for idx, name in enumerate(stereo_test_data["name"][:4]):
+            print(f"{name:15} - centers: {result.iloc[idx]['num_stereocenters']:.0f}, "
+                  f"R/S: {result.iloc[idx]['num_r_centers']:.0f}/"
+                  f"{result.iloc[idx]['num_s_centers']:.0f}")
 
-    for idx, name in enumerate(test_data["name"]):
-        if name not in ["Empty", "Invalid"]:
-            print(f"\n{name}:")
-            for col in stereo_cols:
-                if col in result.columns:
-                    val = result.iloc[idx][col]
-                    if not pd.isna(val):
-                        if col == "frac_defined_stereo":
-                            print(f"  {col}: {val:.2f}")
-                        else:
-                            print(f"  {col}: {val:.0f}")
+        # Test salt handling
+        print("\nSalt extraction test:")
+        std_result = standardize(salt_test_data, extract_salts=True)
+        for _, row in std_result.iterrows():
+            salt_info = f" → salt: {row['salt']}" if pd.notna(row['salt']) else ""
+            print(f"{row['compound_id']}: {row['smiles'][:30]}{salt_info}")
 
-    # Test without stereochemistry
-    print("\n" + "=" * 60)
-    print("Computing descriptors WITHOUT stereochemistry...")
-    result_no_stereo = compute_descriptors(test_data, include_stereochemistry=False)
-    total_descriptors_no_stereo = len(result_no_stereo.columns) - original_cols
-    print(f"Total descriptors without stereo: {total_descriptors_no_stereo}")
-    print(f"Difference: {total_descriptors - total_descriptors_no_stereo} stereo descriptors")
 
-    """
-    Test script for molecular standardization with salt handling
-    Demonstrates how salts affect molecular descriptors
-    """
-    from workbench.utils.chem_utils.mol_standardize import standardize
+    def run_performance_tests(n_mols=1700):
+        """Run performance timing tests"""
+        print("\n" + "=" * 80)
+        print(f"PERFORMANCE TESTS ({n_mols} molecules)")
+        print("=" * 80)
 
-    # Test with DataFrame including various salt forms
-    test_data = pd.DataFrame(
-        {
-            "smiles": [
-                # Acetic acid family (same parent, different salts)
-                "CC(=O)O",  # Acetic acid (parent)
-                "[Na+].CC(=O)[O-]",  # Sodium acetate
-                "[K+].CC(=O)[O-]",  # Potassium acetate
-                "[Ca+2].CC(=O)[O-].CC(=O)[O-]",  # Calcium acetate
-                "CC(=O)O.CCN",  # Acetic acid + ethylamine salt
-                # Tautomer examples
-                "Oc1ccccn1",  # 2-hydroxypyridine (tautomer 1)
-                "O=c1cccc[nH]1",  # 2-pyridone (tautomer 2)
-                "CC(O)=CC(C)=O",  # Acetylacetone enol form
-                "CC(=O)CC(C)=O",  # Acetylacetone keto form
-                # Isoproterenol family (drug with different salts)
-                "CC(C)NCC(O)c1ccc(O)c(O)c1",  # Isoproterenol (free base)
-                "CC(C)NCC(O)c1ccc(O)c(O)c1.Cl",  # Isoproterenol HCl
-                "CC(C)NCC(O)c1ccc(O)c(O)c1.[Br-]",  # Isoproterenol HBr
-                "CC(C)NCC(O)c1ccc(O)c(O)c1.OS(=O)(=O)O",  # Isoproterenol sulfate
-                # Carbonic acid family (all should give same parent)
-                "[Na+].[Na+].[O-]C([O-])=O",  # Sodium carbonate
-                "[K+].[K+].[O-]C([O-])=O",  # Potassium carbonate
-                "[Ca+2].[O-]C([O-])=O",  # Calcium carbonate
-                # Simple organic (no salt)
-                "CC(C)(C)c1ccccc1",  # tert-butylbenzene
-            ],
-            "compound_id": [f"C{i:03d}" for i in range(1, 18)],
-            "logS": [
-                4.5,
-                5.2,
-                5.1,
-                4.8,
-                4.3,  # Acetic acid family
-                7.3,
-                7.3,
-                6.1,
-                6.1,  # Tautomers (should converge)
-                3.2,
-                3.5,
-                3.4,
-                2.9,  # Isoproterenol family
-                0.05,
-                0.95,
-                -2.18,  # Carbonates
-                5.5,
-            ],  # tert-butylbenzene
-        }
-    )
+        # Create larger dataset
+        large_data = pd.concat([salt_test_data] * (n_mols // len(salt_test_data)),
+                               ignore_index=True)
 
-    print("=" * 80)
-    print("MOLECULAR STANDARDIZATION TEST WITH SALT EFFECTS")
-    print("=" * 80)
+        # Test configurations
+        configs = [
+            ("Standardize (full)", standardize,
+             {"extract_salts": True, "canonicalize_tautomer": True}),
+            ("Standardize (minimal)", standardize,
+             {"extract_salts": False, "canonicalize_tautomer": False}),
+            ("Descriptors (all)", compute_descriptors,
+             {"include_mordred": True, "include_stereo": True}),
+            ("Descriptors (RDKit only)", compute_descriptors,
+             {"include_mordred": False, "include_stereo": False}),
+        ]
 
-    # Define columns for display
-    show_cols = ["compound_id", "smiles", "salt"]
-    descriptor_cols = ["MolWt", "HeavyAtomCount", "NumHDonors", "NumHAcceptors", "TPSA", "MolLogP"]
+        results = []
+        for name, func, params in configs:
+            start = time.time()
+            _ = func(large_data, **params)
+            elapsed = time.time() - start
+            throughput = n_mols / elapsed
+            results.append((name, elapsed, throughput))
+            print(f"{name:25} {elapsed:6.2f}s ({throughput:6.1f} mol/s)")
 
-    # ============================================================================
-    # TEST 1: Standardization WITH salt extraction (uses parent only)
-    # ============================================================================
-    print("\n1. STANDARDIZATION WITH SALT EXTRACTION (Parent Only)")
-    print("-" * 60)
+        # Full pipeline test
+        print("\nFull pipeline (standardize + all descriptors):")
+        start = time.time()
+        std_data = standardize(large_data, extract_salts=True,
+                               canonicalize_tautomer=True)
+        _ = compute_descriptors(std_data, include_mordred=True,
+                                include_stereo=True)
+        pipeline_time = time.time() - start
+        print(f"  Total: {pipeline_time:.2f}s ({n_mols / pipeline_time:.1f} mol/s)")
 
-    test_data_parents = standardize(test_data, extract_salts=True)
-    print("\nStandardized molecules (parent forms):")
-    print(test_data_parents[["compound_id", "orig_smiles", "smiles", "salt"]])
+        return results
 
-    # Compute descriptors on parent molecules
-    result_parents = compute_descriptors(test_data_parents)
-    print("\nDescriptors computed on PARENT molecules:")
-    print(result_parents[show_cols + descriptor_cols])
 
-    # Show which compounds converged to same parent
-    print("\nCompounds with identical parents:")
-    parent_groups = result_parents.groupby("smiles")["compound_id"].apply(list)
-    for parent, compounds in parent_groups.items():
-        if len(compounds) > 1:
-            print(f"  {parent[:30]:30} : {', '.join(compounds)}")
-
-    # ============================================================================
-    # TEST 2: Standardization WITHOUT salt extraction (includes salts)
-    # ============================================================================
-    print("\n" + "=" * 80)
-    print("2. STANDARDIZATION WITHOUT SALT EXTRACTION (Including Salts)")
-    print("-" * 60)
-
-    test_data_with_salts = standardize(test_data, extract_salts=False, canonicalize_tautomer=True)
-    print("\nStandardized molecules (with salts included):")
-    print(test_data_with_salts[["compound_id", "orig_smiles", "smiles", "salt"]])
-
-    # Compute descriptors on molecules WITH salts
-    result_with_salts = compute_descriptors(test_data_with_salts)
-    print("\nDescriptors computed on molecules WITH SALTS:")
-    print(result_with_salts[show_cols + descriptor_cols])
-
-    # ============================================================================
-    # TEST 3: Compare descriptor differences
-    # ============================================================================
-    print("\n" + "=" * 80)
-    print("3. DESCRIPTOR DIFFERENCES (With Salts - Parent Only)")
-    print("-" * 60)
-
-    # Merge results for comparison
-    comparison = pd.merge(
-        result_parents[["compound_id", "MolWt", "HeavyAtomCount", "TPSA"]],
-        result_with_salts[["compound_id", "MolWt", "HeavyAtomCount", "TPSA"]],
-        on="compound_id",
-        suffixes=("_parent", "_with_salt"),
-    )
-
-    # Calculate differences
-    comparison["MolWt_diff"] = comparison["MolWt_with_salt"] - comparison["MolWt_parent"]
-    comparison["HeavyAtom_diff"] = comparison["HeavyAtomCount_with_salt"] - comparison["HeavyAtomCount_parent"]
-    comparison["TPSA_diff"] = comparison["TPSA_with_salt"] - comparison["TPSA_parent"]
-
-    # Show compounds with differences (i.e., those with salts)
-    significant_diff = comparison[(comparison["MolWt_diff"].abs() > 0.01) | (comparison["HeavyAtom_diff"] != 0)]
-
-    if not significant_diff.empty:
-        print("\nCompounds showing descriptor changes due to salts:")
-        print(significant_diff[["compound_id", "MolWt_diff", "HeavyAtom_diff", "TPSA_diff"]])
-
-    # ============================================================================
-    # TEST 4: Tautomer convergence check
-    # ============================================================================
-    print("\n" + "=" * 80)
-    print("4. TAUTOMER CONVERGENCE CHECK")
-    print("-" * 60)
-
-    # Check tautomer pairs
-    tautomer_pairs = [("C006", "C007", "2-hydroxypyridine/2-pyridone"), ("C008", "C009", "Acetylacetone enol/keto")]
-
-    print("\nTautomer standardization (should converge to same canonical form):")
-    for id1, id2, name in tautomer_pairs:
-        smiles1 = result_parents[result_parents["compound_id"] == id1]["smiles"].values[0]
-        smiles2 = result_parents[result_parents["compound_id"] == id2]["smiles"].values[0]
-        match = "✓ SAME" if smiles1 == smiles2 else "✗ DIFFERENT"
-        print(f"  {name:30} {id1} vs {id2}: {match}")
-        if smiles1 == smiles2:
-            print(f"    Canonical form: {smiles1}")
-
-    # ============================================================================
-    # TEST 5: Salt family analysis
-    # ============================================================================
-    print("\n" + "=" * 80)
-    print("5. SALT FAMILY ANALYSIS")
-    print("-" * 60)
-
-    families = {
-        "Acetic acid": ["C001", "C002", "C003", "C004", "C005"],
-        "Isoproterenol": ["C010", "C011", "C012", "C013"],
-        "Carbonate": ["C014", "C015", "C016"],
-    }
-
-    for family_name, compound_ids in families.items():
-        family_data = result_parents[result_parents["compound_id"].isin(compound_ids)]
-        unique_parents = family_data["smiles"].nunique()
-        parent_smiles = family_data["smiles"].iloc[0]
-
-        print(f"\n{family_name} family:")
-        print(f"  Unique parent structures: {unique_parents}")
-        print(f"  Parent SMILES: {parent_smiles}")
-
-        # Show salt variations
-        salt_data = test_data_parents[test_data_parents["compound_id"].isin(compound_ids)]
-        for _, row in salt_data.iterrows():
-            salt_info = f" (salt: {row['salt']})" if pd.notna(row["salt"]) else " (no salt)"
-            print(f"    {row['compound_id']}: {row['orig_smiles'][:40]:40}{salt_info}")
-
-    print("\n" + "=" * 80)
-    print("✅ All tests completed!")
-    print("=" * 80)
+    # Run tests
+    run_basic_tests()
+    timing_results = run_performance_tests()
 
     print("\n✅ All tests completed!")
