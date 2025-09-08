@@ -13,7 +13,8 @@ import pandas as pd
 import json
 
 # Local imports
-from local_utils import compute_molecular_descriptors
+from mol_standardize import standardize
+from mol_descriptors import compute_descriptors
 
 
 # TRAINING SECTION
@@ -32,15 +33,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # This model doesn't get trained, it just a feature creation 'model'
-
-    # Sagemaker seems to get upset if we don't save a model, so we'll create a placeholder model
-    placeholder_model = {}
-    joblib.dump(placeholder_model, os.path.join(args.model_dir, "model.joblib"))
+    # So we don't need to do anything here
 
 
 # Model loading and prediction functions
 def model_fn(model_dir):
-    return joblib.load(os.path.join(model_dir, "model.joblib"))
+    return None
 
 
 def input_fn(input_data, content_type):
@@ -78,6 +76,7 @@ def output_fn(output_df, accept_type):
 # Prediction function
 def predict_fn(df, model):
 
-    # Compute the Molecular Descriptors
-    df = compute_molecular_descriptors(df)
+    # Standard the molecule and then compute descriptors
+    df = standardize(df)
+    df = compute_descriptors(df)
     return df
