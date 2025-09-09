@@ -346,14 +346,11 @@ def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_
 
     # Sanitize column names for AWS Athena compatibility
     # - Must be lowercase, no special characters except underscore, no spaces
-    result.columns = [
-        re.sub(r"_+", "_", re.sub(r"[^a-z0-9_]", "_", col.lower()))
-        for col in result.columns
-    ]
+    result.columns = [re.sub(r"_+", "_", re.sub(r"[^a-z0-9_]", "_", col.lower())) for col in result.columns]
 
     # Drop duplicate columns if any exist after sanitization
     if result.columns.duplicated().any():
-        logger.warning(f"Duplicate column names after sanitization - dropping duplicates!")
+        logger.warning("Duplicate column names after sanitization - dropping duplicates!")
         result = result.loc[:, ~result.columns.duplicated()]
 
     return result

@@ -158,13 +158,11 @@ def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: li
         elif pd.api.types.is_float_dtype(df1[column]) or pd.api.types.is_float_dtype(df2[column]):
             # Float comparison within epsilon with NaNs treated as equal
             differences = ~((df1[column] - df2[column]).abs() <= epsilon) & ~(
-                    pd.isna(df1[column]) & pd.isna(df2[column])
+                pd.isna(df1[column]) & pd.isna(df2[column])
             )
         else:
             # Other types (int, Int64, etc.) - compare with NaNs treated as equal
-            differences = (df1[column] != df2[column]) & ~(
-                    pd.isna(df1[column]) & pd.isna(df2[column])
-            )
+            differences = (df1[column] != df2[column]) & ~(pd.isna(df1[column]) & pd.isna(df2[column]))
 
         # If differences exist, display them
         if differences.any():
