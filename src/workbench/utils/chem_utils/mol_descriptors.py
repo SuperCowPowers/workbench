@@ -7,7 +7,7 @@ Purpose:
     descriptor set with selected Mordred descriptors and custom stereochemistry features.
 
 Descriptor Categories:
-    1. RDKit Descriptors (~200 descriptors)
+    1. RDKit Descriptors (~220 descriptors)
        - Constitutional (MW, heavy atom count, rotatable bonds)
        - Topological (Balaban J, Kappa indices, Chi indices)
        - Geometric (radius of gyration, spherocity)
@@ -16,7 +16,7 @@ Descriptor Categories:
        - Pharmacophore (H-bond donors/acceptors, aromatic rings)
        - ADMET-specific (TPSA, QED, Lipinski descriptors)
 
-    2. Mordred Descriptors (~110 descriptors from 5 ADMET-relevant modules)
+    2. Mordred Descriptors (~80 descriptors from 5 ADMET-relevant modules)
        - AcidBase module: pH-dependent properties (nAcid, nBase)
        - Aromatic module: CYP metabolism features (nAromAtom, nAromBond)
        - Constitutional module: Structural complexity (~40 descriptors including nSpiro, nBridgehead)
@@ -97,7 +97,7 @@ from rdkit.ML.Descriptors import MoleculeDescriptors
 from mordred import Calculator as MordredCalculator
 from mordred import AcidBase, Aromatic, Constitutional, Chi, CarbonTypes
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger("workbench")
 logger.setLevel(logging.DEBUG)
 
 
@@ -212,14 +212,13 @@ def compute_stereochemistry_features(mol):
 
 
 def compute_descriptors(
-    df: pd.DataFrame, smiles_column: str = "smiles", include_mordred: bool = True, include_stereo: bool = True
+    df: pd.DataFrame, include_mordred: bool = True, include_stereo: bool = True
 ) -> pd.DataFrame:
     """
     Compute all molecular descriptors for ADMET modeling.
 
     Args:
         df: Input DataFrame with SMILES
-        smiles_column: Column containing SMILES strings
         include_mordred: Whether to compute Mordred descriptors (default True)
         include_stereo: Whether to compute stereochemistry features (default True)
 
@@ -232,6 +231,12 @@ def compute_descriptors(
         df = compute_descriptors(df, include_stereo=False)  # Without stereo
         df = compute_descriptors(df, include_mordred=False)  # RDKit only
     """
+
+    # Check for the smiles column (any capitalization)
+    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
+    if smiles_column is None:
+        raise ValueError("Input DataFrame must have a 'smiles' column")
+
     result = df.copy()
 
     # Create molecule objects
@@ -296,7 +301,7 @@ def compute_descriptors(
 
         # Compute Mordred descriptors
         valid_mols = [mol if mol is not None else Chem.MolFromSmiles("C") for mol in molecules]
-        mordred_df = calc.pandas(valid_mols, nproc=2)  # Use 2 cores
+        mordred_df = calc.pandas(valid_mols, nproc=1)  # For serverless, use nproc=1
 
         # Replace values for invalid molecules with NaN
         for i, mol in enumerate(molecules):
@@ -351,10 +356,11 @@ def compute_descriptors(
 
     # Check for duplicates before dropping
     if len(safe_columns) != len(set(safe_columns)):
-        logger.critical("Duplicate column names detected after sanitization - dropping duplicates!")
-
-    result.columns = safe_columns
-    result = result.loc[:, ~result.columns.duplicated()]
+        from collections import Counter
+        duplicates = {col for col, count in Counter(safe_columns).items() if count > 1}
+        logger.warning(f"Duplicate column names after sanitization: {duplicates} - dropping duplicates!")
+        result.columns = safe_columns
+        result = result.loc[:, ~result.columns.duplicated()]
 
     return result
 
@@ -362,6 +368,7 @@ def compute_descriptors(
 if __name__ == "__main__":
     import time
     from mol_standardize import standardize
+    from workbench.api import DataSource
 
     # Configure pandas display
     pd.set_option("display.max_columns", None)
@@ -422,14 +429,17 @@ if __name__ == "__main__":
             salt_info = f" → salt: {row['salt']}" if pd.notna(row["salt"]) else ""
             print(f"{row['compound_id']}: {row['smiles'][:30]}{salt_info}")
 
-    def run_performance_tests(n_mols=1700):
+    def run_performance_tests():
         """Run performance timing tests"""
         print("\n" + "=" * 80)
-        print(f"PERFORMANCE TESTS ({n_mols} molecules)")
+        print(f"PERFORMANCE TESTS on real world molecules")
         print("=" * 80)
 
-        # Create larger dataset
-        large_data = pd.concat([salt_test_data] * (n_mols // len(salt_test_data)), ignore_index=True)
+        # Get a real dataset from Workbench
+        ds = DataSource("aqsol_data")
+        df = ds.pull_dataframe()[["id", "smiles"]][:1000]  # Limit to 1000 for testing
+        n_mols = df.shape[0]
+        print(f"Pulled {n_mols} molecules from DataSource 'aqsol_data'")
 
         # Test configurations
         configs = [
@@ -442,7 +452,7 @@ if __name__ == "__main__":
         results = []
         for name, func, params in configs:
             start = time.time()
-            _ = func(large_data, **params)
+            _ = func(df, **params)
             elapsed = time.time() - start
             throughput = n_mols / elapsed
             results.append((name, elapsed, throughput))
@@ -451,9 +461,14 @@ if __name__ == "__main__":
         # Full pipeline test
         print("\nFull pipeline (standardize + all descriptors):")
         start = time.time()
-        std_data = standardize(large_data, extract_salts=True, canonicalize_tautomer=True)
-        _ = compute_descriptors(std_data, include_mordred=True, include_stereo=True)
-        pipeline_time = time.time() - start
+        std_data = standardize(df)
+        standardize_time = time.time() - start
+        print(f"  Standardize: {standardize_time:.2f}s ({n_mols / standardize_time:.1f} mol/s)")
+        start = time.time()
+        _ = compute_descriptors(std_data)
+        descriptor_time = time.time() - start
+        print(f"  Descriptors: {descriptor_time:.2f}s ({n_mols / descriptor_time:.1f} mol/s)")
+        pipeline_time = standardize_time + descriptor_time
         print(f"  Total: {pipeline_time:.2f}s ({n_mols / pipeline_time:.1f} mol/s)")
 
         return results

@@ -32,7 +32,6 @@ Output DataFrame Columns:
     - orig_smiles: Original input SMILES (preserved for traceability)
     - smiles: Standardized molecule (with or without salts based on extract_salts)
     - salt: Removed salt/counterion as SMILES (only populated if extract_salts=True)
-    - standardization_failed: Boolean flag indicating processing failures
 
 Salt Handling:
     Salt forms can dramatically affect properties like solubility.
@@ -47,6 +46,12 @@ Salt Handling:
     When extract_salts=False (preserve full salt form):
         - Keeps all fragments including salts/counterions
         - Preserves ionic charges (no neutralization)
+
+Mixture Detection:
+    The module detects and logs potential mixtures (vs true salt forms):
+    - Multiple large neutral organic fragments indicate a mixture
+    - Mixtures are logged but NOT recorded in the salt column
+    - True salts (small/charged fragments) are properly extracted
 
     Downstream modeling options:
     1. Use parent only (standard approach for most ADMET properties)
@@ -71,9 +76,6 @@ Usage:
 
     # Without tautomer canonicalization (faster, less aggressive)
     df_std = standardize(df, canonicalize_tautomer=False)
-
-    # Drop failed molecules
-    df_std = standardize(df, drop_invalid=True)
 """
 
 import logging
@@ -83,7 +85,10 @@ from rdkit import Chem
 from rdkit.Chem import Mol
 from rdkit.Chem.MolStandardize import rdMolStandardize
 
-logger = logging.getLogger("workbench")
+log = logging.getLogger("workbench")
+
+from rdkit import RDLogger
+RDLogger.DisableLog('rdApp.warning')
 
 
 class MolStandardizer:
@@ -156,19 +161,23 @@ class MolStandardizer:
             return mol, salt_smiles
 
         except Exception as e:
-            logger.warning(f"Standardization failed: {e}")
+            log.warning(f"Standardization failed: {e}")
             return None, None
 
     def _extract_salt(self, orig_mol: Mol, parent_mol: Mol) -> Optional[str]:
         """
-        Extract salt/counterion by comparing original and parent molecules
+        Extract salt/counterion by comparing original and parent molecules.
+
+        Detects and handles mixtures vs true salt forms:
+        - True salts: small (<= 6 heavy atoms) or charged fragments
+        - Mixtures: multiple large neutral organic fragments
 
         Args:
             orig_mol: Original molecule (before FragmentParent)
             parent_mol: Parent molecule (after FragmentParent)
 
         Returns:
-            SMILES string of salt components or None
+            SMILES string of salt components or None if no salts/mixture detected
         """
         try:
             # Get all fragments from original molecule
@@ -181,46 +190,79 @@ class MolStandardizer:
             # Get canonical SMILES of parent for comparison
             parent_smiles = Chem.MolToSmiles(parent_mol, canonical=True)
 
-            # Collect non-parent fragments (salts/counterions)
-            salt_frags = [
-                Chem.MolToSmiles(frag, canonical=True)
-                for frag in orig_frags
-                if Chem.MolToSmiles(frag, canonical=True) != parent_smiles
-            ]
+            # Separate fragments into salts vs potential mixture components
+            salt_frags = []
+            mixture_frags = []
 
+            for frag in orig_frags:
+                frag_smiles = Chem.MolToSmiles(frag, canonical=True)
+
+                # Skip the parent fragment
+                if frag_smiles == parent_smiles:
+                    continue
+
+                # Classify fragment as salt or mixture component
+                num_heavy = frag.GetNumHeavyAtoms()
+                has_charge = any(atom.GetFormalCharge() != 0 for atom in frag.GetAtoms())
+
+                # More nuanced classification
+                if has_charge and num_heavy <= 10:  # Small charged fragment - likely a salt
+                    salt_frags.append(frag_smiles)
+                elif not has_charge and num_heavy <= 6:  # Small neutral - could be solvent/salt
+                    salt_frags.append(frag_smiles)
+                else:
+                    # Large neutral fragment - likely part of a mixture
+                    mixture_frags.append(frag_smiles)
+
+            # Check if this looks like a mixture
+            if mixture_frags:
+                # Log mixture detection
+                total_frags = len(orig_frags)
+                log.warning(
+                    f"Mixture detected: {total_frags} total fragments, "
+                    f"{len(mixture_frags)} large neutral organics. "
+                    f"Removing: {'.'.join(mixture_frags + salt_frags)}"
+                )
+                # Return None for mixtures - don't pollute the salt column
+                return None
+
+            # Return actual salts only
             return ".".join(salt_frags) if salt_frags else None
 
         except Exception as e:
-            logger.debug(f"Salt extraction failed: {e}")
+            log.info(f"Salt extraction failed: {e}")
             return None
 
 
 def standardize(
-    df: pd.DataFrame,
-    smiles_column: str = "smiles",
-    canonicalize_tautomer: bool = True,
-    extract_salts: bool = True,
-    drop_invalid: bool = False,
+        df: pd.DataFrame,
+        canonicalize_tautomer: bool = True,
+        extract_salts: bool = True,
 ) -> pd.DataFrame:
     """
     Standardize molecules in a DataFrame for ADMET modeling
 
     Args:
         df: Input DataFrame with SMILES column
-        smiles_column: Name of column containing SMILES (default: 'smiles')
         canonicalize_tautomer: Whether to canonicalize tautomers (default: True)
         extract_salts: Whether to remove and extract salts (default: True)
                       If False, keeps full molecule with salts/counterions intact,
                       skipping charge neutralization to preserve ionic character
-        drop_invalid: Whether to drop rows that fail standardization (default: False)
 
     Returns:
         DataFrame with:
         - orig_smiles: Original SMILES (preserved)
         - smiles: Standardized SMILES (working column for downstream)
         - salt: Removed salt/counterion SMILES (only if extract_salts=True)
-        - standardization_failed: Boolean flag for failures
+                None for mixtures or when no true salts present
     """
+
+    # Check for the smiles column (any capitalization)
+    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
+    if smiles_column is None:
+        raise ValueError("Input DataFrame must have a 'smiles' column")
+
+    # Copy input DataFrame to avoid modifying original
     result = df.copy()
 
     # Preserve original SMILES if not already saved
@@ -230,26 +272,41 @@ def standardize(
     # Initialize standardizer with salt removal control
     standardizer = MolStandardizer(canonicalize_tautomer=canonicalize_tautomer, remove_salts=extract_salts)
 
-    def process_smiles(smiles):
-        """Process a single SMILES string"""
+    def process_smiles(smiles: str) -> pd.Series:
+        """
+        Process a single SMILES string through standardization pipeline
+
+        Args:
+            smiles: Input SMILES string
+
+        Returns:
+            Series with standardized SMILES and extracted salt (if applicable)
+        """
         # Handle missing values
         if pd.isna(smiles) or smiles == "":
-            return pd.Series({"smiles": None, "salt": None, "standardization_failed": True})
+            log.error("Encountered missing or empty SMILES string")
+            return pd.Series({"smiles": None, "salt": None})
 
         # Parse molecule
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
-            return pd.Series({"smiles": None, "salt": None, "standardization_failed": True})
+            log.error(f"Invalid SMILES: {smiles}")
+            return pd.Series({"smiles": None, "salt": None})
 
         # Full standardization with optional salt removal
         std_mol, salt_smiles = standardizer.standardize(mol)
+
+        # After standardization, validate the result
+        if std_mol is not None:
+            # Check if molecule is reasonable
+            if std_mol.GetNumAtoms() == 0 or std_mol.GetNumAtoms() > 200:  # Arbitrary limits
+                log.error(f"Unusual molecule size: {std_mol.GetNumAtoms()} atoms")
 
         if std_mol is None:
             return pd.Series(
                 {
                     "smiles": None,
                     "salt": salt_smiles,  # May have extracted salt even if full standardization failed
-                    "standardization_failed": True,
                 }
             )
 
@@ -257,8 +314,7 @@ def standardize(
         return pd.Series(
             {
                 "smiles": Chem.MolToSmiles(std_mol, canonical=True),
-                "salt": salt_smiles if extract_salts else None,
-                "standardization_failed": False,
+                "salt": salt_smiles if extract_salts else None
             }
         )
 
@@ -266,20 +322,16 @@ def standardize(
     processed = result[smiles_column].apply(process_smiles)
 
     # Update the dataframe with processed results
-    for col in ["smiles", "salt", "standardization_failed"]:
+    for col in ["smiles", "salt"]:
         result[col] = processed[col]
-
-    # Drop invalid if requested
-    if drop_invalid:
-        initial_count = len(result)
-        result = result[~result["standardization_failed"]].copy()
-        if dropped := initial_count - len(result):
-            logger.info(f"Dropped {dropped} molecules that failed standardization")
 
     return result
 
 
 if __name__ == "__main__":
+    import time
+    from workbench.api import DataSource
+
     # Test with DataFrame including various salt forms
     test_data = pd.DataFrame(
         {
@@ -323,7 +375,7 @@ if __name__ == "__main__":
     print("\nStandardization KEEPING salts (extract_salts=False):")
     print("This preserves the full molecule including counterions")
     result_keep = standardize(test_data, extract_salts=False, canonicalize_tautomer=True)
-    display_cols = ["compound_id", "orig_smiles", "smiles", "salt", "standardization_failed"]
+    display_cols = ["compound_id", "orig_smiles", "smiles", "salt"]
     print(result_keep[display_cols].to_string())
 
     # Test WITH salt removal
@@ -343,28 +395,38 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("Comparison showing differences:")
     for idx, row in result_keep.iterrows():
-        if not row["standardization_failed"]:
-            keep_smiles = row["smiles"]
-            remove_smiles = result_remove.loc[idx, "smiles"]
-            no_taut_smiles = result_no_taut.loc[idx, "smiles"]
-            salt = result_remove.loc[idx, "salt"]
+        keep_smiles = row["smiles"]
+        remove_smiles = result_remove.loc[idx, "smiles"]
+        no_taut_smiles = result_no_taut.loc[idx, "smiles"]
+        salt = result_remove.loc[idx, "salt"]
 
-            # Show differences when they exist
-            if keep_smiles != remove_smiles or keep_smiles != no_taut_smiles:
-                print(f"\n{row['compound_id']} ({row['orig_smiles']}):")
-                if keep_smiles != no_taut_smiles:
-                    print(f"  With salt + taut:    {keep_smiles}")
-                    print(f"  With salt, no taut:  {no_taut_smiles}")
-                if keep_smiles != remove_smiles:
-                    print(f"  Parent only + taut:  {remove_smiles}")
-                if salt:
-                    print(f"  Extracted salt:      {salt}")
+        # Show differences when they exist
+        if keep_smiles != remove_smiles or keep_smiles != no_taut_smiles:
+            print(f"\n{row['compound_id']} ({row['orig_smiles']}):")
+            if keep_smiles != no_taut_smiles:
+                print(f"  With salt + taut:    {keep_smiles}")
+                print(f"  With salt, no taut:  {no_taut_smiles}")
+            if keep_smiles != remove_smiles:
+                print(f"  Parent only + taut:  {remove_smiles}")
+            if salt:
+                print(f"  Extracted salt:      {salt}")
 
     # Summary statistics
     print("\n" + "=" * 70)
     print("Summary:")
     print(f"Total molecules: {len(result_remove)}")
-    print(f"Successfully standardized: {(~result_remove['standardization_failed']).sum()}")
     print(f"Molecules with salts: {result_remove['salt'].notna().sum()}")
     unique_salts = result_remove["salt"].dropna().unique()
+    print(f"Unique salts found: {unique_salts[:5].tolist()}")
+
+    # Get a real dataset from Workbench and time the standardization
+    ds = DataSource("aqsol_data")
+    df = ds.pull_dataframe()[["id", "smiles"]]
+    start_time = time.time()
+    std_df = standardize(df, extract_salts=True, canonicalize_tautomer=True)
+    end_time = time.time()
+    print(f"\nStandardized {len(std_df)} molecules from Workbench in {end_time - start_time:.2f} seconds")
+    print(std_df.head())
+    print(f"Molecules with salts: {std_df['salt'].notna().sum()}")
+    unique_salts = std_df["salt"].dropna().unique()
     print(f"Unique salts found: {unique_salts[:5].tolist()}")
