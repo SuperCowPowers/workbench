@@ -211,9 +211,7 @@ def compute_stereochemistry_features(mol):
         }
 
 
-def compute_descriptors(
-    df: pd.DataFrame, include_mordred: bool = True, include_stereo: bool = True
-) -> pd.DataFrame:
+def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_stereo: bool = True) -> pd.DataFrame:
     """
     Compute all molecular descriptors for ADMET modeling.
 
@@ -357,6 +355,7 @@ def compute_descriptors(
     # Check for duplicates before dropping
     if len(safe_columns) != len(set(safe_columns)):
         from collections import Counter
+
         duplicates = {col for col, count in Counter(safe_columns).items() if count > 1}
         logger.warning(f"Duplicate column names after sanitization: {duplicates} - dropping duplicates!")
         result.columns = safe_columns
@@ -432,7 +431,7 @@ if __name__ == "__main__":
     def run_performance_tests():
         """Run performance timing tests"""
         print("\n" + "=" * 80)
-        print(f"PERFORMANCE TESTS on real world molecules")
+        print("PERFORMANCE TESTS on real world molecules")
         print("=" * 80)
 
         # Get a real dataset from Workbench

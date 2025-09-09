@@ -84,11 +84,10 @@ import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Mol
 from rdkit.Chem.MolStandardize import rdMolStandardize
+from rdkit import RDLogger
 
 log = logging.getLogger("workbench")
-
-from rdkit import RDLogger
-RDLogger.DisableLog('rdApp.warning')
+RDLogger.DisableLog("rdApp.warning")
 
 
 class MolStandardizer:
@@ -235,9 +234,9 @@ class MolStandardizer:
 
 
 def standardize(
-        df: pd.DataFrame,
-        canonicalize_tautomer: bool = True,
-        extract_salts: bool = True,
+    df: pd.DataFrame,
+    canonicalize_tautomer: bool = True,
+    extract_salts: bool = True,
 ) -> pd.DataFrame:
     """
     Standardize molecules in a DataFrame for ADMET modeling
@@ -312,10 +311,7 @@ def standardize(
 
         # Convert back to SMILES
         return pd.Series(
-            {
-                "smiles": Chem.MolToSmiles(std_mol, canonical=True),
-                "salt": salt_smiles if extract_salts else None
-            }
+            {"smiles": Chem.MolToSmiles(std_mol, canonical=True), "salt": salt_smiles if extract_salts else None}
         )
 
     # Process molecules
