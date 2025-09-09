@@ -4,8 +4,8 @@
 from workbench.api import FeatureSet, ModelType, Model
 from workbench.utils.model_utils import get_custom_script_path
 
-fs_name = "aqsol_features"
-# fs_name = "solubility_featurized_class_0_fs"
+# fs_name = "aqsol_features"
+fs_name = "solubility_featurized_class_0_fs"
 
 
 script_path = get_custom_script_path("chem_info", "molecular_descriptors.py")

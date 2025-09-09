@@ -152,17 +152,19 @@ def compare_dataframes(df1: pd.DataFrame, df2: pd.DataFrame, display_columns: li
 
     # Check for differences in common columns
     for column in common_columns:
-        if pd.api.types.is_string_dtype(df1[column]) or pd.api.types.is_string_dtype(df2[column]):
+        if pd.api.types.is_string_dtype(df1[column]) and pd.api.types.is_string_dtype(df2[column]):
             # String comparison with NaNs treated as equal
             differences = ~(df1[column].fillna("") == df2[column].fillna(""))
         elif pd.api.types.is_float_dtype(df1[column]) or pd.api.types.is_float_dtype(df2[column]):
             # Float comparison within epsilon with NaNs treated as equal
             differences = ~((df1[column] - df2[column]).abs() <= epsilon) & ~(
-                pd.isna(df1[column]) & pd.isna(df2[column])
+                    pd.isna(df1[column]) & pd.isna(df2[column])
             )
         else:
-            # Other types (e.g., int) with NaNs treated as equal
-            differences = ~(df1[column].fillna(0) == df2[column].fillna(0))
+            # Other types (int, Int64, etc.) - compare with NaNs treated as equal
+            differences = (df1[column] != df2[column]) & ~(
+                    pd.isna(df1[column]) & pd.isna(df2[column])
+            )
 
         # If differences exist, display them
         if differences.any():
