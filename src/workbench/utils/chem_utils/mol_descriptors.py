@@ -293,8 +293,8 @@ def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_
         # Register 5 ADMET-focused modules (avoiding overlap with RDKit)
         calc.register(AcidBase)  # ~2 descriptors: nAcid, nBase
         calc.register(Aromatic)  # ~2 descriptors: nAromAtom, nAromBond
-        calc.register(Constitutional)  # ~40 descriptors: structural complexity
-        calc.register(Chi)  # ~42 descriptors: connectivity indices
+        calc.register(Constitutional)  # ~30 descriptors: structural complexity
+        calc.register(Chi)  # ~32 descriptors: connectivity indices
         calc.register(CarbonTypes)  # ~20 descriptors: carbon hybridization
 
         # Compute Mordred descriptors
