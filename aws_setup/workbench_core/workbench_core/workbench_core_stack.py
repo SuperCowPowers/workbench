@@ -820,6 +820,17 @@ class WorkbenchCoreStack(Stack):
             resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:monitoring-schedule/*"],
         )
 
+    def endpoint_monitoring_processing(self) -> iam.PolicyStatement:
+        """Processing jobs for Model Monitor baselines and executions."""
+        return iam.PolicyStatement(
+            actions=[
+                "sagemaker:CreateProcessingJob",
+                "sagemaker:DescribeProcessingJob",
+                "sagemaker:StopProcessingJob",
+            ],
+            resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:processing-job/*"],
+        )
+
     def endpoint_data_quality(self) -> iam.PolicyStatement:
         """Create a policy statement for managing SageMaker endpoint data quality jobs.
 
@@ -879,54 +890,6 @@ class WorkbenchCoreStack(Stack):
                 "sns:Publish",
             ],
             resources=[sns_resources],
-        )
-
-    @staticmethod
-    def pipeline_list() -> iam.PolicyStatement:
-        """Create a policy statement for listing SageMaker pipelines.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for listing SageMaker pipelines.
-        """
-        return iam.PolicyStatement(
-            actions=[
-                "sagemaker:ListPipelines",
-            ],
-            resources=["*"],  # Broad permission necessary for listing operations
-        )
-
-    def pipeline_full(self) -> iam.PolicyStatement:
-        """Create a policy statement for inspecting and running SageMaker Pipelines.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for inspecting and running SageMaker Pipelines.
-        """
-        pipeline_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:pipeline/*"
-        execution_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:pipeline-execution/*"
-        processing_resources = f"arn:aws:sagemaker:{self.region}:{self.account}:processing-job/*"
-
-        return iam.PolicyStatement(
-            actions=[
-                "sagemaker:DescribePipeline",
-                "sagemaker:ListPipelineExecutions",
-                "sagemaker:DescribePipelineExecution",
-                "sagemaker:ListPipelineExecutionSteps",
-                "sagemaker:StartPipelineExecution",
-                # Actions for jobs
-                "sagemaker:CreateProcessingJob",
-                "sagemaker:DescribeProcessingJob",
-                "sagemaker:ListProcessingJobs",
-                "sagemaker:StopProcessingJob",
-                # Tagging
-                "sagemaker:ListTags",
-                "sagemaker:AddTags",
-                "sagemaker:DeleteTags",
-            ],
-            resources=[
-                pipeline_resources,
-                execution_resources,
-                processing_resources,
-            ],
         )
 
     @staticmethod
@@ -1284,6 +1247,7 @@ class WorkbenchCoreStack(Stack):
             self.endpoint_read(),
             self.endpoint_monitoring_discovery(),
             self.endpoint_monitoring_schedules(),
+            self.endpoint_monitoring_processing(),
             self.cloudwatch_logs(),
             self.cloudwatch_metrics(),
             self.parameter_store_discover(),
@@ -1306,6 +1270,7 @@ class WorkbenchCoreStack(Stack):
             self.endpoint_data_quality(),
             self.endpoint_monitoring_discovery(),
             self.endpoint_monitoring_schedules(),
+            self.endpoint_monitoring_processing(),
             self.cloudwatch_logs(),
             self.cloudwatch_metrics(),
             self.parameter_store_discover(),
@@ -1316,19 +1281,6 @@ class WorkbenchCoreStack(Stack):
             id="WorkbenchEndpointPolicy",
             statements=policy_statements,
             managed_policy_name="WorkbenchEndpointPolicy",
-        )
-
-    def sagemaker_full_policy_not_used(self) -> iam.ManagedPolicy:
-        """Create a managed policy for the Workbench Pipelines (FULL)"""
-        policy_statements = [
-            self.pipeline_list(),
-            self.pipeline_full(),
-        ]
-        return iam.ManagedPolicy(
-            self,
-            id="WorkbenchSagemakerPipelineFullPolicy",
-            statements=policy_statements,
-            managed_policy_name="WorkbenchSagemakerPipelineFullPolicy",
         )
 
     def workbench_dataframe_store_read_policy(self) -> iam.ManagedPolicy:
