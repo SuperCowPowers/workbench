@@ -76,55 +76,46 @@ def process_data_capture(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     Returns:
         tuple[DataFrame, DataFrame]: Input and output DataFrames.
     """
+
+    def parse_endpoint_data(data: dict) -> pd.DataFrame:
+        """Parse endpoint data based on encoding type."""
+        encoding = data["encoding"].upper()
+
+        if encoding == "CSV":
+            return pd.read_csv(StringIO(data["data"]))
+        elif encoding == "JSON":
+            json_data = json.loads(data["data"])
+            if isinstance(json_data, dict):
+                return pd.DataFrame(
+                    {k: [v] if not isinstance(v, list) else v for k, v in json_data.items()}
+                )
+            else:
+                return pd.DataFrame(json_data)
+        else:
+            return None  # Unknown encoding
+
     input_dfs = []
     output_dfs = []
 
-    for idx, row in df.iterrows():
+    # Use itertuples() instead of iterrows() for better performance
+    for row in df.itertuples(index=True):
         try:
-            capture_data = row["captureData"]
+            capture_data = row.captureData
 
             # Process input data if present
             if "endpointInput" in capture_data:
-                input_data = capture_data["endpointInput"]
-                encoding = input_data["encoding"].upper()
-
-                if encoding == "CSV":
-                    input_df = pd.read_csv(StringIO(input_data["data"]))
-                elif encoding == "JSON":
-                    json_data = json.loads(input_data["data"])
-                    if isinstance(json_data, dict):
-                        input_df = pd.DataFrame(
-                            {k: [v] if not isinstance(v, list) else v for k, v in json_data.items()}
-                        )
-                    else:
-                        input_df = pd.DataFrame(json_data)
-                else:
-                    continue  # Skip unknown encodings
-
-                input_dfs.append(input_df)
+                input_df = parse_endpoint_data(capture_data["endpointInput"])
+                if input_df is not None:
+                    input_dfs.append(input_df)
 
             # Process output data if present
             if "endpointOutput" in capture_data:
-                output_data = capture_data["endpointOutput"]
-                encoding = output_data["encoding"].upper()
-
-                if encoding == "CSV":
-                    output_df = pd.read_csv(StringIO(output_data["data"]))
-                elif encoding == "JSON":
-                    json_data = json.loads(output_data["data"])
-                    if isinstance(json_data, dict):
-                        output_df = pd.DataFrame(
-                            {k: [v] if not isinstance(v, list) else v for k, v in json_data.items()}
-                        )
-                    else:
-                        output_df = pd.DataFrame(json_data)
-                else:
-                    continue  # Skip unknown encodings
-
-                output_dfs.append(output_df)
+                output_df = parse_endpoint_data(capture_data["endpointOutput"])
+                if output_df is not None:
+                    output_dfs.append(output_df)
 
         except Exception as e:
-            log.debug(f"Row {idx}: Failed to process row: {e}")
+            log.debug(f"Row {row.Index}: Failed to process row: {e}")
             continue
 
     # Combine and return results

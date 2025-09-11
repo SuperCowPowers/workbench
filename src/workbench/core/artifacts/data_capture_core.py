@@ -2,6 +2,7 @@
 
 import logging
 import re
+import time
 from datetime import datetime
 from typing import Tuple
 import pandas as pd
@@ -13,6 +14,9 @@ import awswrangler as wr
 from workbench.core.artifacts.endpoint_core import EndpointCore
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.monitor_utils import process_data_capture
+
+# Setup logging
+log = logging.getLogger("workbench")
 
 
 class DataCaptureCore:
@@ -226,29 +230,57 @@ class DataCaptureCore:
             files = [f for f in files if self._file_date_filter(f, from_date_obj)]
             self.log.info(f"Processing {len(files)} files from {from_date} onwards.")
         else:
-            self.log.info(f"Processing all {len(files)} files.")
+            self.log.info(f"Processing all {len(files)} files...")
         files.sort()
 
-        # Process files
-        all_input_dfs, all_output_dfs = [], []
-        for file_path in files:
+        # Get all timestamps in one batch if needed
+        timestamps = {}
+        if add_timestamp:
+            # Batch describe operation - much more efficient than per-file calls
+            timestamps = wr.s3.describe_objects(path=files)
+
+        # Process files using concurrent.futures
+        start_time = time.time()
+
+        def process_single_file(file_path):
+            """Process a single file and return input/output DataFrames."""
             try:
+                log.debug(f"Processing file: {file_path}...")
                 df = wr.s3.read_json(path=file_path, lines=True)
                 if not df.empty:
                     input_df, output_df = process_data_capture(df)
-                    if add_timestamp:
-                        timestamp = wr.s3.describe_objects(path=file_path)[file_path]["LastModified"]
-                        output_df["timestamp"] = timestamp
-                    all_input_dfs.append(input_df)
-                    all_output_dfs.append(output_df)
+                    if add_timestamp and file_path in timestamps:
+                        output_df["timestamp"] = timestamps[file_path]["LastModified"]
+                    return input_df, output_df
+                return pd.DataFrame(), pd.DataFrame()
             except Exception as e:
                 self.log.warning(f"Error processing {file_path}: {e}")
+                return pd.DataFrame(), pd.DataFrame()
+
+        # Use ThreadPoolExecutor for I/O-bound operations
+        from concurrent.futures import ThreadPoolExecutor
+        max_workers = min(32, len(files))  # Cap at 32 threads or number of files
+
+        all_input_dfs, all_output_dfs = [], []
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = [executor.submit(process_single_file, file_path) for file_path in files]
+            for future in futures:
+                input_df, output_df = future.result()
+                if not input_df.empty:
+                    all_input_dfs.append(input_df)
+                if not output_df.empty:
+                    all_output_dfs.append(output_df)
 
         if not all_input_dfs:
             self.log.warning("No valid data was processed.")
             return pd.DataFrame(), pd.DataFrame()
 
-        return pd.concat(all_input_dfs, ignore_index=True), pd.concat(all_output_dfs, ignore_index=True)
+        input_df = pd.concat(all_input_dfs, ignore_index=True)
+        output_df = pd.concat(all_output_dfs, ignore_index=True)
+
+        elapsed_time = time.time() - start_time
+        self.log.info(f"Processed {len(files)} files in {elapsed_time:.2f} seconds.")
+        return input_df, output_df
 
     def _file_date_filter(self, file_path, from_date_obj):
         """Extract date from S3 path and compare with from_date."""
@@ -279,6 +311,7 @@ class DataCaptureCore:
 if __name__ == "__main__":
     """Exercise the MonitorCore class"""
     from pprint import pprint
+    import time
 
     # Set options for actually seeing the dataframe
     pd.set_option("display.max_columns", None)
