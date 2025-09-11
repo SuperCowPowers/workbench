@@ -46,7 +46,7 @@ def test_tautomerization():
     for idx, row in df.iterrows():
         mol = Chem.MolFromSmiles(row["smiles"])
         if mol is not None:
-            std_mol = standardizer.standardize(mol)
+            std_mol, salt_smiles = standardizer.standardize(mol)
             if std_mol is not None:
                 std_smiles = Chem.MolToSmiles(std_mol, canonical=True)
                 results.append(std_smiles)
