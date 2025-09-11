@@ -207,7 +207,7 @@ class DataCaptureCore:
         modes = [opt.get("CaptureMode") for opt in capture_options]
         return ["REQUEST" if m == "Input" else "RESPONSE" for m in modes if m]
 
-    def get_captured_data(self, from_date=None, add_timestamp=True) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def get_captured_data(self, from_date: str = None, add_timestamp: bool = True) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
         Read and process captured data from S3.
 
