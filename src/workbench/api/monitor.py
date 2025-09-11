@@ -29,7 +29,6 @@ class Monitor(MonitorCore):
        baseline_df = mon.get_baseline()
        constraints_df = mon.get_constraints()
        stats_df = mon.get_statistics()
-       input_df, output_df = mon.get_captured_data()
        ```
     """
 
@@ -80,15 +79,6 @@ class Monitor(MonitorCore):
             schedule (str): The schedule for the monitoring job (hourly or daily, defaults to hourly).
         """
         super().create_monitoring_schedule(schedule)
-
-    def get_captured_data(self) -> (pd.DataFrame, pd.DataFrame):
-        """
-        Get the latest data capture input and output from S3.
-
-        Returns:
-            DataFrame (input), DataFrame(output): Flattened and processed DataFrames for input and output data.
-        """
-        return super().get_captured_data()
 
     def get_baseline(self) -> Union[pd.DataFrame, None]:
         """Code to get the baseline CSV from the S3 baseline directory
@@ -155,8 +145,3 @@ if __name__ == "__main__":
 
     print("\nStatistics...")
     print(mm.get_statistics())
-
-    # Get the latest data capture
-    input_df, output_df = mm.get_captured_data()
-    print(input_df.head())
-    print(output_df.head())

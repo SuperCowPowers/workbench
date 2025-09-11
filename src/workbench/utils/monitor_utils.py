@@ -14,7 +14,7 @@ from workbench.utils.s3_utils import read_content_from_s3
 log = logging.getLogger("workbench")
 
 
-def pull_data_capture(data_capture_path, max_files=1) -> Union[pd.DataFrame, None]:
+def pull_data_capture_for_testing(data_capture_path, max_files=1) -> Union[pd.DataFrame, None]:
     """
     Read and process captured data from S3.
 
@@ -26,7 +26,12 @@ def pull_data_capture(data_capture_path, max_files=1) -> Union[pd.DataFrame, Non
 
     Returns:
         Union[pd.DataFrame, None]: A dataframe of the captured data (or None if no data is found).
+
+    Notes:
+        This method is really only for testing and debugging.
     """
+    log.important("This method is for testing and debugging only.")
+
     # List files in the specified S3 path
     files = wr.s3.list_objects(data_capture_path)
     if not files:
@@ -234,7 +239,7 @@ if __name__ == "__main__":
 
     # Test pulling data capture
     mon = Monitor("abalone-regression-rt")
-    df = pull_data_capture(mon.data_capture_path)
+    df = pull_data_capture_for_testing(mon.data_capture_path)
     print("Data Capture:")
     print(df.head())
 
