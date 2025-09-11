@@ -15,7 +15,7 @@ class Monitor(MonitorCore):
 
     Common Usage:
        ```
-       mon = Endpoint(name).get_monitor()  # Pull from endpoint OR
+       mon = Endpoint(name).monitor()  # Pull from endpoint OR
        mon = Monitor(name)                 # Create using Endpoint Name
        mon.summary()
        mon.details()

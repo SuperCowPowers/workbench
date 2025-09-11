@@ -64,7 +64,8 @@ def pull_data_capture(data_capture_path, max_files=1) -> Union[pd.DataFrame, Non
 def process_data_capture(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Process the captured data DataFrame to extract input and output data.
-    Continues processing even if individual files are malformed.
+    Handles cases where input or output might not be captured.
+
     Args:
         df (DataFrame): DataFrame with captured data.
     Returns:
@@ -77,46 +78,50 @@ def process_data_capture(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         try:
             capture_data = row["captureData"]
 
-            # Check if this capture has the required fields (all or nothing)
-            if "endpointInput" not in capture_data:
-                log.warning(f"Row {idx}: No endpointInput found in capture data.")
-                continue
+            # Process input data if present
+            if "endpointInput" in capture_data:
+                input_data = capture_data["endpointInput"]
+                encoding = input_data["encoding"].upper()
 
-            if "endpointOutput" not in capture_data:
-                log.critical(
-                    f"Row {idx}: No endpointOutput found in capture data. DataCapture needs to include Output capture!"
-                )
-                continue
-
-            # Process input data
-            input_data = capture_data["endpointInput"]
-            if input_data["encoding"].upper() == "CSV":
-                input_df = pd.read_csv(StringIO(input_data["data"]))
-            elif input_data["encoding"].upper() == "JSON":
-                json_data = json.loads(input_data["data"])
-                if isinstance(json_data, dict):
-                    input_df = pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()})
+                if encoding == "CSV":
+                    input_df = pd.read_csv(StringIO(input_data["data"]))
+                elif encoding == "JSON":
+                    json_data = json.loads(input_data["data"])
+                    if isinstance(json_data, dict):
+                        input_df = pd.DataFrame(
+                            {k: [v] if not isinstance(v, list) else v for k, v in json_data.items()}
+                        )
+                    else:
+                        input_df = pd.DataFrame(json_data)
                 else:
-                    input_df = pd.DataFrame(json_data)
+                    continue  # Skip unknown encodings
 
-            # Process output data
-            output_data = capture_data["endpointOutput"]
-            if output_data["encoding"].upper() == "CSV":
-                output_df = pd.read_csv(StringIO(output_data["data"]))
-            elif output_data["encoding"].upper() == "JSON":
-                json_data = json.loads(output_data["data"])
-                if isinstance(json_data, dict):
-                    output_df = pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()})
+                input_dfs.append(input_df)
+
+            # Process output data if present
+            if "endpointOutput" in capture_data:
+                output_data = capture_data["endpointOutput"]
+                encoding = output_data["encoding"].upper()
+
+                if encoding == "CSV":
+                    output_df = pd.read_csv(StringIO(output_data["data"]))
+                elif encoding == "JSON":
+                    json_data = json.loads(output_data["data"])
+                    if isinstance(json_data, dict):
+                        output_df = pd.DataFrame(
+                            {k: [v] if not isinstance(v, list) else v for k, v in json_data.items()}
+                        )
+                    else:
+                        output_df = pd.DataFrame(json_data)
                 else:
-                    output_df = pd.DataFrame(json_data)
+                    continue  # Skip unknown encodings
 
-            # If we get here, both processed successfully
-            input_dfs.append(input_df)
-            output_dfs.append(output_df)
+                output_dfs.append(output_df)
 
         except Exception as e:
-            log.error(f"Row {idx}: Failed to process row: {e}")
+            log.debug(f"Row {idx}: Failed to process row: {e}")
             continue
+
     # Combine and return results
     return (
         pd.concat(input_dfs, ignore_index=True) if input_dfs else pd.DataFrame(),
@@ -178,23 +183,6 @@ def parse_monitoring_results(results_json: str) -> Dict[str, Any]:
         return {"error": str(e)}
 
 
-"""TEMP
-                # If the status is "CompletedWithViolations", we grab the lastest
-                # violation file and add it to the result
-                if status == "CompletedWithViolations":
-                    violation_file = f"{self.monitoring_path}/
-                    {last_run['CreationTime'].strftime('%Y/%m/%d')}/constraint_violations.json"
-                    if wr.s3.does_object_exist(violation_file):
-                        violations_json = read_content_from_s3(violation_file)
-                        violations = parse_monitoring_results(violations_json)
-                        result["violations"] = violations.get("constraint_violations", [])
-                        result["violation_count"] = len(result["violations"])
-                    else:
-                        result["violations"] = []
-                        result["violation_count"] = 0
-"""
-
-
 def preprocessing_script(feature_list: list[str]) -> str:
     """
     A preprocessing script for monitoring jobs.
@@ -245,7 +233,7 @@ if __name__ == "__main__":
     from workbench.api.monitor import Monitor
 
     # Test pulling data capture
-    mon = Monitor("caco2-pappab-class-0")
+    mon = Monitor("abalone-regression-rt")
     df = pull_data_capture(mon.data_capture_path)
     print("Data Capture:")
     print(df.head())
@@ -262,4 +250,4 @@ if __name__ == "__main__":
     # Test preprocessing script
     script = preprocessing_script(["feature1", "feature2", "feature3"])
     print("\nPreprocessing Script:")
-    print(script)
+    # print(script)

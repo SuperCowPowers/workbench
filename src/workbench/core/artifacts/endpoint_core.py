@@ -164,11 +164,17 @@ class EndpointCore(Artifact):
         """
         return "Serverless" in self.endpoint_meta["InstanceType"]
 
-    def add_data_capture(self):
-        """Add data capture to the endpoint"""
-        self.get_monitor().add_data_capture()
+    def data_capture(self):
+        """Get the MonitorCore class for this endpoint"""
+        from workbench.core.artifacts.data_capture_core import DataCaptureCore
 
-    def get_monitor(self):
+        return DataCaptureCore(self.endpoint_name)
+
+    def enable_data_capture(self):
+        """Add data capture to the endpoint"""
+        self.data_capture().enable()
+
+    def monitor(self):
         """Get the MonitorCore class for this endpoint"""
         from workbench.core.artifacts.monitor_core import MonitorCore
 

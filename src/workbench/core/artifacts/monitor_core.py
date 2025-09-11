@@ -2,14 +2,10 @@
 
 import logging
 import json
-import re
-from datetime import datetime
-from typing import Union, Tuple
+from typing import Union
 import pandas as pd
-from sagemaker import Predictor
 from sagemaker.model_monitor import (
     CronExpressionGenerator,
-    DataCaptureConfig,
     DefaultModelMonitor,
     DatasetFormat,
 )
@@ -17,29 +13,32 @@ import awswrangler as wr
 
 # Workbench Imports
 from workbench.core.artifacts.endpoint_core import EndpointCore
+from workbench.core.artifacts.data_capture_core import DataCaptureCore
 from workbench.api import Model, FeatureSet
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.s3_utils import read_content_from_s3, upload_content_to_s3
 from workbench.utils.datetime_utils import datetime_string
 from workbench.utils.monitor_utils import (
-    process_data_capture,
     get_monitor_json_data,
     parse_monitoring_results,
     preprocessing_script,
 )
 
-# Note: This resource might come in handy when doing code refactoring
+# Note: These resources might come in handy when doing code refactoring
 # https://github.com/aws-samples/amazon-sagemaker-from-idea-to-production/blob/master/06-monitoring.ipynb
 # https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor-pre-and-post-processing.html
 # https://github.com/aws/amazon-sagemaker-examples/blob/main/sagemaker_model_monitor/introduction/SageMaker-ModelMonitoring.ipynb
 
 
 class MonitorCore:
+    """Manages monitoring, baselines, and monitoring schedules for SageMaker endpoints"""
+
     def __init__(self, endpoint_name, instance_type="ml.m5.large"):
         """MonitorCore Class
+
         Args:
             endpoint_name (str): Name of the endpoint to set up monitoring for
-            instance_type (str): Instance type to use for monitoring. Defaults to "ml.t3.medium".
+            instance_type (str): Instance type to use for monitoring. Defaults to "ml.m5.large".
         """
         self.log = logging.getLogger("workbench")
         self.endpoint_name = endpoint_name
@@ -48,7 +47,6 @@ class MonitorCore:
         # Initialize Class Attributes
         self.sagemaker_session = self.endpoint.sm_session
         self.sagemaker_client = self.endpoint.sm_client
-        self.data_capture_path = self.endpoint.endpoint_data_capture_path
         self.monitoring_path = self.endpoint.endpoint_monitoring_path
         self.monitoring_schedule_name = f"{self.endpoint_name}-monitoring-schedule"
         self.baseline_dir = f"{self.monitoring_path}/baseline"
@@ -58,6 +56,10 @@ class MonitorCore:
         self.preprocessing_script_file = f"{self.monitoring_path}/preprocessor.py"
         self.workbench_role_arn = AWSAccountClamp().aws_session.get_workbench_execution_role_arn()
         self.instance_type = instance_type
+
+        # Create DataCaptureCore instance for composition
+        self.data_capture = DataCaptureCore(endpoint_name)
+        self.data_capture_path = self.data_capture.data_capture_path
 
         # Check if a monitoring schedule already exists for this endpoint
         existing_schedule = self.monitoring_schedule_exists()
@@ -76,23 +78,20 @@ class MonitorCore:
             self.log.info(f"Initialized new model monitor for {self.endpoint_name}")
 
     def summary(self) -> dict:
-        """Return the summary of information about the endpoint monitor
+        """Return the summary of monitoring configuration
 
         Returns:
-            dict: Summary of information about the endpoint monitor
+            dict: Summary of monitoring status
         """
         if self.endpoint.is_serverless():
             return {
                 "endpoint_type": "serverless",
-                "data_capture": "not supported",
                 "baseline": "not supported",
                 "monitoring_schedule": "not supported",
             }
         else:
             summary = {
                 "endpoint_type": "realtime",
-                "data_capture": self.data_capture_enabled(),
-                "capture_percent": self.data_capture_percent(),
                 "baseline": self.baseline_exists(),
                 "monitoring_schedule": self.monitoring_schedule_exists(),
                 "preprocessing": self.preprocessing_exists(),
@@ -105,21 +104,14 @@ class MonitorCore:
         Returns:
             dict: The monitoring details for the endpoint
         """
-        # Get the actual data capture path
-        actual_capture_path = self.data_capture_config()["DestinationS3Uri"]
-        if actual_capture_path != self.data_capture_path:
-            self.log.warning(
-                f"Data capture path mismatch: Expected {self.data_capture_path}, "
-                f"but found {actual_capture_path}. Using the actual path."
-            )
-            self.data_capture_path = actual_capture_path
         result = self.summary()
         info = {
-            "data_capture_path": self.data_capture_path if self.data_capture_enabled() else None,
-            "preprocessing_script_file": self.preprocessing_script_file if self.preprocessing_exists() else None,
             "monitoring_schedule_status": "Not Scheduled",
         }
         result.update(info)
+
+        if self.preprocessing_exists():
+            result["preprocessing_script_file"] = self.preprocessing_script_file
 
         if self.baseline_exists():
             result.update(
@@ -146,7 +138,6 @@ class MonitorCore:
 
             last_run = schedule_details.get("LastMonitoringExecutionSummary", {})
             if last_run:
-
                 # If no inference was run since the last monitoring schedule, the
                 # status will be "Failed" with reason "Job inputs had no data",
                 # so we check for that and set the status to "No New Data"
@@ -164,186 +155,22 @@ class MonitorCore:
 
         return result
 
-    def enable_data_capture(self, capture_percentage=100, force=False):
-        """
-        Enable data capture for the SageMaker endpoint.
+    def enable_data_capture(self, capture_percentage=100):
+        """Enable data capture for the endpoint
 
         Args:
-            capture_percentage (int): Percentage of data to capture. Defaults to 100.
-            force (bool): If True, force reconfiguration even if data capture is already enabled.
+            capture_percentage (int): Percentage of requests to capture (0-100, default 100)
         """
-        # Early returns for cases where we can't/don't need to add data capture
         if self.endpoint.is_serverless():
             self.log.warning("Data capture is not supported for serverless endpoints.")
             return
 
-        if self.data_capture_enabled() and not force:
-            self.log.important(f"Data capture already configured for {self.endpoint_name}.")
+        if self.data_capture.is_enabled():
+            self.log.info(f"Data capture is already enabled for {self.endpoint_name}.")
             return
 
-        # Get the current endpoint configuration name for later deletion
-        current_endpoint_config_name = self.endpoint.endpoint_config_name()
-
-        # Log the data capture operation
-        self.log.important(f"Enabling Data Capture for {self.endpoint_name} --> {self.data_capture_path}")
-        self.log.important("This will redeploy the endpoint...")
-
-        # Create and apply the data capture configuration
-        data_capture_config = DataCaptureConfig(
-            enable_capture=True,
-            sampling_percentage=capture_percentage,
-            destination_s3_uri=self.data_capture_path,
-        )
-
-        # Update endpoint with the new capture configuration
-        Predictor(self.endpoint_name, sagemaker_session=self.sagemaker_session).update_data_capture_config(
-            data_capture_config=data_capture_config
-        )
-
-        # Clean up old endpoint configuration
-        self.sagemaker_client.delete_endpoint_config(EndpointConfigName=current_endpoint_config_name)
-
-    def data_capture_config(self):
-        """
-        Returns the complete data capture configuration from the endpoint config.
-        Returns:
-            dict: Complete DataCaptureConfig from AWS, or None if not configured
-        """
-        config_name = self.endpoint.endpoint_config_name()
-        response = self.sagemaker_client.describe_endpoint_config(EndpointConfigName=config_name)
-        data_capture_config = response.get("DataCaptureConfig")
-        if not data_capture_config:
-            self.log.error(f"No data capture configuration found for endpoint config {config_name}")
-            return None
-        return data_capture_config
-
-    def disable_data_capture(self):
-        """
-        Disable data capture for the SageMaker endpoint.
-        """
-        # Early return if data capture isn't configured
-        if not self.data_capture_enabled():
-            self.log.important(f"Data capture is not currently enabled for {self.endpoint_name}.")
-            return
-
-        # Get the current endpoint configuration name for later deletion
-        current_endpoint_config_name = self.endpoint.endpoint_config_name()
-
-        # Log the operation
-        self.log.important(f"Disabling Data Capture for {self.endpoint_name}")
-        self.log.important("This normally redeploys the endpoint...")
-
-        # Create a configuration with capture disabled
-        data_capture_config = DataCaptureConfig(enable_capture=False, destination_s3_uri=self.data_capture_path)
-
-        # Update endpoint with the new configuration
-        Predictor(self.endpoint_name, sagemaker_session=self.sagemaker_session).update_data_capture_config(
-            data_capture_config=data_capture_config
-        )
-
-        # Clean up old endpoint configuration
-        self.sagemaker_client.delete_endpoint_config(EndpointConfigName=current_endpoint_config_name)
-
-    def data_capture_enabled(self):
-        """
-        Check if data capture is already configured on the endpoint.
-        Args:
-            capture_percentage (int): Expected data capture percentage.
-        Returns:
-            bool: True if data capture is already configured, False otherwise.
-        """
-        try:
-            endpoint_config_name = self.endpoint.endpoint_config_name()
-            endpoint_config = self.sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
-            data_capture_config = endpoint_config.get("DataCaptureConfig", {})
-
-            # Check if data capture is enabled and the percentage matches
-            is_enabled = data_capture_config.get("EnableCapture", False)
-            return is_enabled
-        except Exception as e:
-            self.log.error(f"Error checking data capture configuration: {e}")
-            return False
-
-    def data_capture_percent(self):
-        """
-        Get the data capture percentage from the endpoint configuration.
-
-        Returns:
-            int: Data capture percentage if enabled, None otherwise.
-        """
-        try:
-            endpoint_config_name = self.endpoint.endpoint_config_name()
-            endpoint_config = self.sagemaker_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
-            data_capture_config = endpoint_config.get("DataCaptureConfig", {})
-
-            # Check if data capture is enabled and return the percentage
-            if data_capture_config.get("EnableCapture", False):
-                return data_capture_config.get("InitialSamplingPercentage", 0)
-            else:
-                return None
-        except Exception as e:
-            self.log.error(f"Error checking data capture percentage: {e}")
-            return None
-
-    def get_captured_data(self, from_date=None, add_timestamp=True) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """
-        Read and process captured data from S3.
-
-        Args:
-            from_date (str, optional): Only process files from this date onwards (YYYY-MM-DD format).
-                                       Defaults to None to process all files.
-            add_timestamp (bool, optional): Whether to add a timestamp column to the DataFrame.
-
-        Returns:
-            Tuple[pd.DataFrame, pd.DataFrame]: Processed input and output DataFrames.
-        """
-        files = wr.s3.list_objects(self.data_capture_path)
-        if not files:
-            self.log.warning(f"No data capture files found in {self.data_capture_path}.")
-            return pd.DataFrame(), pd.DataFrame()
-
-        # Filter by date if specified
-        if from_date:
-            from_date_obj = datetime.strptime(from_date, "%Y-%m-%d").date()
-            files = [f for f in files if self._file_date_filter(f, from_date_obj)]
-            self.log.info(f"Processing {len(files)} files from {from_date} onwards.")
-        else:
-            self.log.info(f"Processing all {len(files)} files.")
-        files.sort()
-
-        # Process files
-        all_input_dfs, all_output_dfs = [], []
-        for file_path in files:
-            try:
-                df = wr.s3.read_json(path=file_path, lines=True)
-                if not df.empty:
-                    input_df, output_df = process_data_capture(df)
-                    if add_timestamp:
-                        timestamp = wr.s3.describe_objects(path=file_path)[file_path]["LastModified"]
-                        output_df["timestamp"] = timestamp
-                    all_input_dfs.append(input_df)
-                    all_output_dfs.append(output_df)
-            except Exception as e:
-                self.log.warning(f"Error processing {file_path}: {e}")
-
-        if not all_input_dfs:
-            self.log.warning("No valid data was processed.")
-            return pd.DataFrame(), pd.DataFrame()
-
-        return pd.concat(all_input_dfs, ignore_index=True), pd.concat(all_output_dfs, ignore_index=True)
-
-    def _file_date_filter(self, file_path, from_date_obj):
-        """Extract date from S3 path and compare with from_date."""
-        try:
-            # Match YYYY/MM/DD pattern in the path
-            date_match = re.search(r"/(\d{4})/(\d{2})/(\d{2})/", file_path)
-            if date_match:
-                year, month, day = date_match.groups()
-                file_date = datetime(int(year), int(month), int(day)).date()
-                return file_date >= from_date_obj
-            return False  # No date pattern found
-        except ValueError:
-            return False
+        self.data_capture.enable(capture_percentage=capture_percentage)
+        self.log.important(f"Enabled data capture for {self.endpoint_name} at {self.data_capture_path}")
 
     def baseline_exists(self) -> bool:
         """
@@ -534,6 +361,11 @@ class MonitorCore:
             self.log.warning("If you want to create another one, delete existing schedule first.")
             return
 
+        # Check if data capture is enabled, if not enable it
+        if not self.data_capture.is_enabled():
+            self.log.warning("Data capture is not enabled for this endpoint. Enabling it now...")
+            self.enable_data_capture(capture_percentage=100)
+
         # Set up a NEW monitoring schedule
         schedule_args = {
             "monitor_schedule_name": self.monitoring_schedule_name,
@@ -577,33 +409,6 @@ class MonitorCore:
         # Use the model_monitor to delete the schedule
         self.model_monitor.delete_monitoring_schedule()
         self.log.important(f"Deleted monitoring schedule for {self.endpoint_name}.")
-
-    # Put this functionality into this class
-    """
-    executions = my_monitor.list_executions()
-    latest_execution = executions[-1]
-
-    latest_execution.describe()['ProcessingJobStatus']
-    latest_execution.describe()['ExitMessage']
-    Here are the possible terminal states and what each of them means:
-
-    - Completed - This means the monitoring execution completed and no issues were found in the violations report.
-    - CompletedWithViolations - This means the execution completed, but constraint violations were detected.
-    - Failed - The monitoring execution failed, maybe due to client error
-                (perhaps incorrect role premissions) or infrastructure issues. Further
-                examination of the FailureReason and ExitMessage is necessary to identify what exactly happened.
-    - Stopped - job exceeded the max runtime or was manually stopped.
-    You can also get the S3 URI for the output with latest_execution.output.destination and analyze the results.
-
-    Visualize results
-    You can use the monitor object to gather reports for visualization:
-
-    suggested_constraints = my_monitor.suggested_constraints()
-    baseline_statistics = my_monitor.baseline_statistics()
-
-    latest_monitoring_violations = my_monitor.latest_monitoring_constraint_violations()
-    latest_monitoring_statistics = my_monitor.latest_monitoring_statistics()
-    """
 
     def get_monitoring_results(self, max_results=10) -> pd.DataFrame:
         """Get the results of monitoring executions
@@ -759,7 +564,7 @@ class MonitorCore:
         Returns:
             str: String representation of this MonitorCore object
         """
-        summary_dict = {}  # Disabling for now self.summary()
+        summary_dict = self.summary()
         summary_items = [f"  {repr(key)}: {repr(value)}" for key, value in summary_dict.items()]
         summary_str = f"{self.__class__.__name__}: {self.endpoint_name}\n" + ",\n".join(summary_items)
         return summary_str
@@ -776,7 +581,6 @@ if __name__ == "__main__":
 
     # Create the Class and test it out
     endpoint_name = "abalone-regression-rt"
-    endpoint_name = "logd-dev-reg-rt"
     my_endpoint = EndpointCore(endpoint_name)
     if not my_endpoint.exists():
         print(f"Endpoint {endpoint_name} does not exist.")
@@ -789,11 +593,10 @@ if __name__ == "__main__":
     # Check the details of the monitoring class
     pprint(mm.details())
 
-    # Enable data capture on the endpoint
-    mm.enable_data_capture()
+    # Enable data capture (if not already enabled)
+    mm.enable_data_capture(capture_percentage=100)
 
     # Create a baseline for monitoring
-    # mm.create_baseline(recreate=True)
     mm.create_baseline()
 
     # Check the monitoring outputs
@@ -805,29 +608,10 @@ if __name__ == "__main__":
     pprint(mm.get_constraints())
 
     print("\nStatistics...")
-    print(mm.get_statistics())
+    print(str(mm.get_statistics())[:1000])  # Print only first 1000 characters
 
     # Set up the monitoring schedule (if it doesn't already exist)
     mm.create_monitoring_schedule()
-
-    #
-    # Test the data capture by running some predictions
-    #
-
-    # Make predictions on the Endpoint using the FeatureSet evaluation data
-    # pred_df = my_endpoint.auto_inference()
-    # print(pred_df.head())
-
-    # Check that data capture is working
-    input_df, output_df = mm.get_captured_data()
-    if input_df.empty or output_df.empty:
-        print("No data capture files found, for a new endpoint it may take a few minutes to start capturing data")
-    else:
-        print("Found data capture files")
-        print("Input")
-        print(input_df.head())
-        print("Output")
-        print(output_df.head())
 
     # Test update_constraints (commented out for now)
     # print("\nTesting constraint updates...")
@@ -847,7 +631,7 @@ if __name__ == "__main__":
     print("\nTesting execution details retrieval...")
     if not results_df.empty:
         latest_execution_arn = results_df.iloc[0]["processing_job_arn"]
-        execution_details = mm.get_execution_details(latest_execution_arn)
+        execution_details = mm.get_execution_details(latest_execution_arn) if latest_execution_arn else None
         if execution_details:
             print(f"Execution details for {latest_execution_arn}:")
             pprint(execution_details)

@@ -3,7 +3,7 @@ from workbench.api.monitor import Monitor
 from workbench.api.endpoint import Endpoint
 
 # Construct a Monitor Class in one of Two Ways
-mon = Endpoint("abalone-regression-end-rt").get_monitor()
+mon = Endpoint("abalone-regression-end-rt").monitor()
 mon = Monitor("abalone-regression-end-rt")
 
 # Check the summary and details of the monitoring class
