@@ -259,6 +259,7 @@ class DataCaptureCore:
 
         # Use ThreadPoolExecutor for I/O-bound operations
         from concurrent.futures import ThreadPoolExecutor
+
         max_workers = min(32, len(files))  # Cap at 32 threads or number of files
 
         all_input_dfs, all_output_dfs = [], []
@@ -311,7 +312,6 @@ class DataCaptureCore:
 if __name__ == "__main__":
     """Exercise the MonitorCore class"""
     from pprint import pprint
-    import time
 
     # Set options for actually seeing the dataframe
     pd.set_option("display.max_columns", None)

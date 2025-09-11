@@ -86,9 +86,7 @@ def process_data_capture(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         elif encoding == "JSON":
             json_data = json.loads(data["data"])
             if isinstance(json_data, dict):
-                return pd.DataFrame(
-                    {k: [v] if not isinstance(v, list) else v for k, v in json_data.items()}
-                )
+                return pd.DataFrame({k: [v] if not isinstance(v, list) else v for k, v in json_data.items()})
             else:
                 return pd.DataFrame(json_data)
         else:
