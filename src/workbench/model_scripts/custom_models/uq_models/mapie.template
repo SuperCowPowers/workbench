@@ -227,15 +227,7 @@ if __name__ == "__main__":
 
     # Train XGBoost for point predictions
     print("\nTraining XGBoost for point predictions...")
-    xgb_model = XGBRegressor(
-        n_estimators=1000,
-        max_depth=6,
-        learning_rate=0.01,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        random_state=42,
-        verbosity=0
-    )
+    xgb_model = XGBRegressor(enable_categorical=True)
     xgb_model.fit(X_train, y_train)
 
     # Evaluate XGBoost performance
