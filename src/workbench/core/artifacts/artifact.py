@@ -238,8 +238,8 @@ class Artifact(ABC):
         """
 
         # Check for ReadOnly Role
-        if self.aws_account_clamp.read_only_role:
-            self.log.info("Cannot add metadata with a ReadOnly Role...")
+        if self.aws_account_clamp.read_only:
+            self.log.info("Cannot add metadata with a ReadOnly Permissions...")
             return
 
         # Sanity check

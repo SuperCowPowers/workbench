@@ -56,8 +56,8 @@ class AWSAccountClamp:
         self.log.info("Checking Workbench Assumed Role...")
         role_info = self.aws_session.assumed_role_info()
 
-        # Check if the Role is a 'ReadOnly' role
-        self.read_only_role = "readonly" in role_info["AssumedRoleArn"].lower()
+        # Check if we have tag write permissions (if we don't, we are read-only)
+        self.read_only = not self.check_tag_permissions()
 
         # Check our Workbench API Key and Load the License
         self.log.info("Checking Workbench API License...")
@@ -141,6 +141,45 @@ class AWSAccountClamp:
         """
         return self.boto3_session.client("sagemaker")
 
+    def check_tag_permissions(self):
+        """Check if current role has permission to add tags to SageMaker endpoints.
+
+        Returns:
+            bool: True if AddTags is allowed, False otherwise
+        """
+        try:
+            sagemaker = self.boto3_session.client("sagemaker")
+
+            # Use a non-existent endpoint name
+            fake_endpoint = "workbench-permission-check-dummy-endpoint"
+
+            # Try to add tags to the non-existent endpoint
+            sagemaker.add_tags(
+                ResourceArn=f"arn:aws:sagemaker:{self.region}:{self.account_id}:endpoint/{fake_endpoint}",
+                Tags=[{"Key": "PermissionCheck", "Value": "Test"}]
+            )
+
+            # If we get here, we have permission (but endpoint doesn't exist)
+            return True
+
+        except ClientError as e:
+            error_code = e.response['Error']['Code']
+
+            # AccessDeniedException = no permission
+            if error_code == 'AccessDeniedException':
+                self.log.debug("No AddTags permission (AccessDeniedException)")
+                return False
+
+            # ResourceNotFound = we have permission, but endpoint doesn't exist
+            elif error_code in ['ResourceNotFound', 'ValidationException']:
+                self.log.debug("AddTags permission verified (resource not found)")
+                return True
+
+            # Unexpected error, assume no permission for safety
+            else:
+                self.log.debug(f"Unexpected error checking permissions: {error_code}")
+                return False
+
 
 if __name__ == "__main__":
     """Exercise the AWS Account Clamp Class"""
@@ -165,3 +204,9 @@ if __name__ == "__main__":
     print("\n\n*** AWS Sagemaker Session/Client Check ***")
     sm_client = aws_account_clamp.sagemaker_client()
     print(sm_client.list_feature_groups()["FeatureGroupSummaries"])
+
+    print("\n\n*** AWS Tag Permission Check ***")
+    if aws_account_clamp.check_tag_permissions():
+        print("Tag Permission Check Success...")
+    else:
+        print("Tag Permission Check Failed...")
