@@ -231,6 +231,13 @@ class DataCaptureCore:
             self.log.info(f"Processing {len(files)} files from {from_date} onwards.")
         else:
             self.log.info(f"Processing all {len(files)} files...")
+
+        # Check if any files remain after filtering
+        if not files:
+            self.log.info(f"No files to process after date filtering.")
+            return pd.DataFrame(), pd.DataFrame()
+
+        # Sort files by name (assumed to include timestamp)
         files.sort()
 
         # Get all timestamps in one batch if needed
@@ -337,7 +344,7 @@ if __name__ == "__main__":
     # print(pred_df.head())
 
     # Check that data capture is working
-    input_df, output_df = dc.get_captured_data()
+    input_df, output_df = dc.get_captured_data(from_date="2025-09-01")
     if input_df.empty and output_df.empty:
         print("No data capture files found, for a new endpoint it may take a few minutes to start capturing data")
     else:
