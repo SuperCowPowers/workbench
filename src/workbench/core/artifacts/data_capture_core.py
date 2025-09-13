@@ -234,7 +234,7 @@ class DataCaptureCore:
 
         # Check if any files remain after filtering
         if not files:
-            self.log.info(f"No files to process after date filtering.")
+            self.log.info("No files to process after date filtering.")
             return pd.DataFrame(), pd.DataFrame()
 
         # Sort files by name (assumed to include timestamp)
