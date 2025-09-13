@@ -55,6 +55,7 @@ class AWSAccountClamp:
         # Check our Assume Role
         self.log.info("Checking Workbench Assumed Role...")
         role_info = self.aws_session.assumed_role_info()
+        self.log.info(f"Assumed Role: {role_info}")
 
         # Check if we have tag write permissions (if we don't, we are read-only)
         self.read_only = not self.check_tag_permissions()
@@ -156,22 +157,22 @@ class AWSAccountClamp:
             # Try to add tags to the non-existent endpoint
             sagemaker.add_tags(
                 ResourceArn=f"arn:aws:sagemaker:{self.region}:{self.account_id}:endpoint/{fake_endpoint}",
-                Tags=[{"Key": "PermissionCheck", "Value": "Test"}]
+                Tags=[{"Key": "PermissionCheck", "Value": "Test"}],
             )
 
             # If we get here, we have permission (but endpoint doesn't exist)
             return True
 
         except ClientError as e:
-            error_code = e.response['Error']['Code']
+            error_code = e.response["Error"]["Code"]
 
             # AccessDeniedException = no permission
-            if error_code == 'AccessDeniedException':
+            if error_code == "AccessDeniedException":
                 self.log.debug("No AddTags permission (AccessDeniedException)")
                 return False
 
             # ResourceNotFound = we have permission, but endpoint doesn't exist
-            elif error_code in ['ResourceNotFound', 'ValidationException']:
+            elif error_code in ["ResourceNotFound", "ValidationException"]:
                 self.log.debug("AddTags permission verified (resource not found)")
                 return True
 
