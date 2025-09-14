@@ -237,9 +237,9 @@ class MolStandardizer:
 
 
 def standardize(
-        df: pd.DataFrame,
-        canonicalize_tautomer: bool = True,
-        extract_salts: bool = True,
+    df: pd.DataFrame,
+    canonicalize_tautomer: bool = True,
+    extract_salts: bool = True,
 ) -> pd.DataFrame:
     """
     Standardize molecules in a DataFrame for ADMET modeling
@@ -422,13 +422,15 @@ if __name__ == "__main__":
     # Test with problematic cases specifically
     print("\n" + "=" * 70)
     print("Testing specific problematic cases:")
-    problem_cases = pd.DataFrame({
-        "smiles": [
-            "CC(=O)O.CCN",  # Should extract CC(=O)O as salt
-            "CCO.CC",  # Should return None (mixture)
-        ],
-        "compound_id": ["TEST_C002", "TEST_C005"]
-    })
+    problem_cases = pd.DataFrame(
+        {
+            "smiles": [
+                "CC(=O)O.CCN",  # Should extract CC(=O)O as salt
+                "CCO.CC",  # Should return None (mixture)
+            ],
+            "compound_id": ["TEST_C002", "TEST_C005"],
+        }
+    )
 
     problem_result = standardize(problem_cases, extract_salts=True, canonicalize_tautomer=True)
     print(problem_result[["compound_id", "orig_smiles", "smiles", "salt"]].to_string())
