@@ -32,11 +32,11 @@ from sagemaker import Predictor
 from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts import FeatureSetCore, ModelCore, ModelType
 from workbench.utils.endpoint_metrics import EndpointMetrics
-from workbench.utils.fast_inference import fast_inference
 from workbench.utils.cache import Cache
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.model_utils import uq_metrics
 from workbench.utils.xgboost_model_utils import cross_fold_inference
+from workbench_bridges.endpoints.fast_inference import fast_inference
 
 
 class EndpointCore(Artifact):
