@@ -1061,6 +1061,9 @@ if __name__ == "__main__":
     assert len(pred_results) == len(my_eval_df), "Predictions should match the number of sent rows"
 
     # Now we put in an invalid value
+    print("*"*80)
+    print("NOW TESTING ERROR CONDITIONS...")
+    print("*"*80)
     my_eval_df.at[42, "length"] = "invalid_value"
     pred_results = my_endpoint.inference(my_eval_df, drop_error_rows=True)
     print(f"Sent rows: {len(my_eval_df)}")
