@@ -116,6 +116,7 @@ class MolStandardizer:
         Pipeline:
         1. Cleanup (remove Hs, disconnect metals, normalize)
         2. Get largest fragment (optional - only if remove_salts=True)
+           2a. Extract salt information BEFORE further modifications
         3. Neutralize charges
         4. Canonicalize tautomer (optional)
 
@@ -130,18 +131,20 @@ class MolStandardizer:
 
         try:
             # Step 1: Cleanup
-            mol = rdMolStandardize.Cleanup(mol, self.params)
-            if mol is None:
+            cleaned_mol = rdMolStandardize.Cleanup(mol, self.params)
+            if cleaned_mol is None:
                 return None, None
 
             salt_smiles = None
+            mol = cleaned_mol
 
             # Step 2: Fragment handling (conditional based on remove_salts)
             if self.remove_salts:
-                # Get parent molecule and extract salt information
-                parent_mol = rdMolStandardize.FragmentParent(mol, self.params)
+                # Get parent molecule
+                parent_mol = rdMolStandardize.FragmentParent(cleaned_mol, self.params)
                 if parent_mol:
-                    salt_smiles = self._extract_salt(mol, parent_mol)
+                    # CRITICAL: Extract salt BEFORE any modifications to parent
+                    salt_smiles = self._extract_salt(cleaned_mol, parent_mol)
                     mol = parent_mol
                 else:
                     return None, None
@@ -153,7 +156,7 @@ class MolStandardizer:
                 if mol is None:
                     return None, salt_smiles
 
-            # Step 4: Canonicalize tautomer
+            # Step 4: Canonicalize tautomer (LAST STEP)
             if self.canonicalize_tautomer:
                 mol = self.tautomer_enumerator.Canonicalize(mol)
 
@@ -172,8 +175,8 @@ class MolStandardizer:
         - Mixtures: multiple large neutral organic fragments
 
         Args:
-            orig_mol: Original molecule (before FragmentParent)
-            parent_mol: Parent molecule (after FragmentParent)
+            orig_mol: Original molecule (after Cleanup, before FragmentParent)
+            parent_mol: Parent molecule (after FragmentParent, before tautomerization)
 
         Returns:
             SMILES string of salt components or None if no salts/mixture detected
@@ -234,9 +237,9 @@ class MolStandardizer:
 
 
 def standardize(
-    df: pd.DataFrame,
-    canonicalize_tautomer: bool = True,
-    extract_salts: bool = True,
+        df: pd.DataFrame,
+        canonicalize_tautomer: bool = True,
+        extract_salts: bool = True,
 ) -> pd.DataFrame:
     """
     Standardize molecules in a DataFrame for ADMET modeling
@@ -362,6 +365,7 @@ if __name__ == "__main__":
     )
 
     # General test
+    print("Testing standardization with full dataset...")
     standardize(test_data)
 
     # Remove the last two rows to avoid errors with None and INVALID
@@ -415,6 +419,20 @@ if __name__ == "__main__":
     unique_salts = result_remove["salt"].dropna().unique()
     print(f"Unique salts found: {unique_salts[:5].tolist()}")
 
+    # Test with problematic cases specifically
+    print("\n" + "=" * 70)
+    print("Testing specific problematic cases:")
+    problem_cases = pd.DataFrame({
+        "smiles": [
+            "CC(=O)O.CCN",  # Should extract CC(=O)O as salt
+            "CCO.CC",  # Should return None (mixture)
+        ],
+        "compound_id": ["TEST_C002", "TEST_C005"]
+    })
+
+    problem_result = standardize(problem_cases, extract_salts=True, canonicalize_tautomer=True)
+    print(problem_result[["compound_id", "orig_smiles", "smiles", "salt"]].to_string())
+
     # Get a real dataset from Workbench and time the standardization
     ds = DataSource("aqsol_data")
     df = ds.pull_dataframe()[["id", "smiles"]]
@@ -424,5 +442,7 @@ if __name__ == "__main__":
     print(f"\nStandardized {len(std_df)} molecules from Workbench in {end_time - start_time:.2f} seconds")
     print(std_df.head())
     print(f"Molecules with salts: {std_df['salt'].notna().sum()}")
-    unique_salts = std_df["salt"].dropna().unique()
-    print(f"Unique salts found: {unique_salts[:5].tolist()}")
+
+    # Value counts for all the salts found
+    print("\nSalt value counts:")
+    print(std_df["salt"].value_counts())
