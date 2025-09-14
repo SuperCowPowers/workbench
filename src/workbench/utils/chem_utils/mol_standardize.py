@@ -250,9 +250,9 @@ class MolStandardizer:
 
 
 def standardize(
-        df: pd.DataFrame,
-        canonicalize_tautomer: bool = True,
-        extract_salts: bool = True,
+    df: pd.DataFrame,
+    canonicalize_tautomer: bool = True,
+    extract_salts: bool = True,
 ) -> pd.DataFrame:
     """
     Standardize molecules in a DataFrame for ADMET modeling
@@ -427,7 +427,6 @@ if __name__ == "__main__":
     from workbench.api import DataSource
 
     print("\n" + "=" * 70)
-
 
     ds = DataSource("aqsol_data")
     df = ds.pull_dataframe()[["id", "smiles"]]
