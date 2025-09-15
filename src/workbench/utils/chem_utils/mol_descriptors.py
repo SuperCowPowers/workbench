@@ -91,7 +91,6 @@ import logging
 import pandas as pd
 import numpy as np
 import re
-import os
 import time
 from contextlib import contextmanager
 from rdkit import Chem
