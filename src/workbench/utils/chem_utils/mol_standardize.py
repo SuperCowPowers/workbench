@@ -91,6 +91,7 @@ from rdkit import RDLogger
 log = logging.getLogger("workbench")
 RDLogger.DisableLog("rdApp.warning")
 
+
 # Helper context manager for timing
 @contextmanager
 def timer(name):
@@ -357,7 +358,6 @@ def standardize(
 
 
 if __name__ == "__main__":
-    import time
 
     # Pandas display options for better readability
     pd.set_option("display.max_columns", None)

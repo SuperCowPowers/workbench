@@ -104,7 +104,6 @@ logger = logging.getLogger("workbench")
 logger.setLevel(logging.DEBUG)
 
 
-
 # Helper context manager for timing
 @contextmanager
 def timer(name):
@@ -369,7 +368,6 @@ def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_
 
 
 if __name__ == "__main__":
-    import time
     from mol_standardize import standardize
     from workbench.api import DataSource
 
