@@ -223,15 +223,6 @@ def compute_stereochemistry_features(mol):
         }
 
 
-def get_mordred_nproc():
-    # SageMaker serverless endpoints have this specific env var
-    if os.environ.get("SAGEMAKER_SERVERLESS_ENDPOINT"):
-        return 1  # Serverless endpoint: use single core
-    else:
-        # Realtime endpoint: use 2 CPUs
-        return 2
-
-
 def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_stereo: bool = True) -> pd.DataFrame:
     """
     Compute all molecular descriptors for ADMET modeling.
@@ -320,8 +311,7 @@ def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_
 
         # Compute Mordred descriptors
         valid_mols = [mol if mol is not None else Chem.MolFromSmiles("C") for mol in molecules]
-        nproc = get_mordred_nproc()
-        mordred_df = calc.pandas(valid_mols, nproc=nproc)
+        mordred_df = calc.pandas(valid_mols, nproc=1)  # Endpoint multiprocessing will fail with nproc>1
 
         # Replace values for invalid molecules with NaN
         for i, mol in enumerate(molecules):
