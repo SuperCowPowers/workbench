@@ -91,6 +91,7 @@ import logging
 import pandas as pd
 import numpy as np
 import re
+import os
 import time
 from contextlib import contextmanager
 from rdkit import Chem
@@ -224,7 +225,7 @@ def compute_stereochemistry_features(mol):
 
 def get_mordred_nproc():
     # SageMaker serverless endpoints have this specific env var
-    if os.environ.get('SAGEMAKER_SERVERLESS_ENDPOINT'):
+    if os.environ.get("SAGEMAKER_SERVERLESS_ENDPOINT"):
         return 1  # Serverless endpoint: use single core
     else:
         # Realtime endpoint: use 2 CPUs
