@@ -81,6 +81,8 @@ Usage:
 import logging
 from typing import Optional, Tuple
 import pandas as pd
+import time
+from contextlib import contextmanager
 from rdkit import Chem
 from rdkit.Chem import Mol
 from rdkit.Chem.MolStandardize import rdMolStandardize
@@ -88,6 +90,13 @@ from rdkit import RDLogger
 
 log = logging.getLogger("workbench")
 RDLogger.DisableLog("rdApp.warning")
+
+# Helper context manager for timing
+@contextmanager
+def timer(name):
+    start = time.time()
+    yield
+    print(f"{name}: {time.time() - start:.2f}s")
 
 
 class MolStandardizer:
@@ -429,12 +438,13 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
 
     ds = DataSource("aqsol_data")
-    df = ds.pull_dataframe()[["id", "smiles"]]
+    df = ds.pull_dataframe()[["id", "smiles"]][:1000]
 
-    for extract in [True, False]:
-        print(f"Performance test with AQSol dataset: extract_salts={extract}:")
-        start_time = time.time()
-        std_df = standardize(df, canonicalize_tautomer=True, extract_salts=extract)
-        elapsed = time.time() - start_time
-        mol_per_sec = len(df) / elapsed
-        print(f"{elapsed:.2f}s ({mol_per_sec:.0f} mol/s)")
+    for tautomer in [True, False]:
+        for extract in [True, False]:
+            print(f"Performance test with AQSol dataset: tautomer={tautomer} extract_salts={extract}:")
+            start_time = time.time()
+            std_df = standardize(df, canonicalize_tautomer=tautomer, extract_salts=extract)
+            elapsed = time.time() - start_time
+            mol_per_sec = len(df) / elapsed
+            print(f"{elapsed:.2f}s ({mol_per_sec:.0f} mol/s)")

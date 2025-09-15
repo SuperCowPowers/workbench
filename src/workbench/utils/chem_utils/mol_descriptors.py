@@ -91,14 +91,26 @@ import logging
 import pandas as pd
 import numpy as np
 import re
+import time
+from contextlib import contextmanager
 from rdkit import Chem
 from rdkit.Chem import Descriptors, rdCIPLabeler
 from rdkit.ML.Descriptors import MoleculeDescriptors
 from mordred import Calculator as MordredCalculator
 from mordred import AcidBase, Aromatic, Constitutional, Chi, CarbonTypes
 
+
 logger = logging.getLogger("workbench")
 logger.setLevel(logging.DEBUG)
+
+
+
+# Helper context manager for timing
+@contextmanager
+def timer(name):
+    start = time.time()
+    yield
+    print(f"{name}: {time.time() - start:.2f}s")
 
 
 def compute_stereochemistry_features(mol):
