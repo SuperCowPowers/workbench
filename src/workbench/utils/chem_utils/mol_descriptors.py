@@ -291,9 +291,11 @@ def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_
                 descriptor_values.append([np.nan] * len(all_descriptors))
 
     # Create RDKit features DataFrame
-    rdkit_features_df = pd.DataFrame(descriptor_values, columns=calc.GetDescriptorNames(), index=result.index)
+    rdkit_features_df = pd.DataFrame(descriptor_values, columns=calc.GetDescriptorNames())
 
     # Add RDKit features to result
+    # Remove any columns from result that exist in rdkit_features_df
+    result = result.drop(columns=result.columns.intersection(rdkit_features_df.columns))
     result = pd.concat([result, rdkit_features_df], axis=1)
 
     # Compute Mordred descriptors
@@ -321,10 +323,9 @@ def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_
         for col in mordred_df.columns:
             mordred_df[col] = pd.to_numeric(mordred_df[col], errors="coerce")
 
-        # Set index to match result DataFrame
-        mordred_df.index = result.index
-
         # Add Mordred features to result
+        # Remove any columns from result that exist in mordred
+        result = result.drop(columns=result.columns.intersection(mordred_df.columns))
         result = pd.concat([result, mordred_df], axis=1)
 
     # Compute stereochemistry features if requested
@@ -337,9 +338,10 @@ def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_
             stereo_features.append(stereo_dict)
 
         # Create stereochemistry DataFrame
-        stereo_df = pd.DataFrame(stereo_features, index=result.index)
+        stereo_df = pd.DataFrame(stereo_features)
 
         # Add stereochemistry features to result
+        result = result.drop(columns=result.columns.intersection(stereo_df.columns))
         result = pd.concat([result, stereo_df], axis=1)
 
         logger.info(f"Added {len(stereo_df.columns)} stereochemistry descriptors")

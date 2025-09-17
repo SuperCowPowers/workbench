@@ -37,35 +37,6 @@ class ModelType(Enum):
     UNKNOWN = "unknown"
 
 
-# Deprecated Images
-"""
-        # US East 1 images
-        "py312-general-ml-training"
-        ("us-east-1", "training", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
-        ),
-        ("us-east-1", "inference", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
-        ),
-
-        # US West 2 images
-        ("us-west-2", "training", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-training:0.1"
-        ),
-        ("us-west-2", "inference", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1"
-        ),
-
-        # ARM64 images
-        ("us-east-1", "inference", "0.1", "arm64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
-        ),
-        ("us-west-2", "inference", "0.1", "arm64"): (
-            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-sklearn-xgb-inference:0.1-arm64"
-        ),
-"""
-
-
 class ModelImages:
     """Class for retrieving workbench inference images"""
 
@@ -889,6 +860,14 @@ class ModelCore(Artifact):
                 key = df_location.split("/")[-1]
                 shap_data[key] = self.df_store.get(df_location)
             return shap_data or None
+
+    def cross_folds(self) -> dict:
+        """Retrieve the cross-fold inference results(only works for XGBoost models)
+
+        Returns:
+            dict: Dictionary with the cross-fold inference results
+        """
+        return self.param_store.get(f"/workbench/models/{self.name}/inference/cross_fold")
 
     def supported_inference_instances(self) -> Optional[list]:
         """Retrieve the supported endpoint inference instance types
