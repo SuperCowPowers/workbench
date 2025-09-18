@@ -232,6 +232,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         raise ValueError(
             "Either quantile columns (q_025, q_975, q_25, q_75) or 'prediction_std' column must be present."
         )
+    avg_std = df["prediction_std"].mean()
+    median_std = df["prediction_std"].median()
     coverage_95 = np.mean((df[target_col] >= lower_95) & (df[target_col] <= upper_95))
     coverage_90 = np.mean((df[target_col] >= lower_90) & (df[target_col] <= upper_90))
     coverage_80 = np.mean((df[target_col] >= lower_80) & (df[target_col] <= upper_80))
@@ -265,27 +267,33 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
 
     # Collect results
     results = {
-        "coverage_95": coverage_95,
-        "coverage_90": coverage_90,
-        "coverage_80": coverage_80,
         "coverage_50": coverage_50,
-        "avg_width_95": avg_width_95,
+        "coverage_80": coverage_80,
+        "coverage_90": coverage_90,
+        "coverage_95": coverage_95,
+        "avg_std": avg_std,
+        "median_std": median_std,
         "avg_width_50": avg_width_50,
-        "crps": mean_crps,
-        "interval_score_95": mean_is_95,
-        "adaptive_calibration": adaptive_calibration,
+        "avg_width_80": avg_width_80,
+        "avg_width_90": avg_width_90,
+        "avg_width_95": avg_width_95,
+        # "crps": mean_crps,
+        # "interval_score_95": mean_is_95,
+        # "adaptive_calibration": adaptive_calibration,
         "n_samples": len(df),
     }
 
     print("\n=== UQ Metrics ===")
-    print(f"Coverage @ 95%: {coverage_95:.3f} (target: 0.95)")
-    print(f"Coverage @ 90%: {coverage_90:.3f} (target: 0.90)")
-    print(f"Coverage @ 80%: {coverage_80:.3f} (target: 0.80)")
     print(f"Coverage @ 50%: {coverage_50:.3f} (target: 0.50)")
-    print(f"Average 95% Width: {avg_width_95:.3f}")
-    print(f"Average 90% Width: {avg_width_90:.3f}")
-    print(f"Average 80% Width: {avg_width_80:.3f}")
+    print(f"Coverage @ 80%: {coverage_80:.3f} (target: 0.80)")
+    print(f"Coverage @ 90%: {coverage_90:.3f} (target: 0.90)")
+    print(f"Coverage @ 95%: {coverage_95:.3f} (target: 0.95)")
+    print(f"Avg Prediction StdDev: {avg_std:.3f}")
+    print(f"Median Prediction StdDev: {median_std:.3f}")
     print(f"Average 50% Width: {avg_width_50:.3f}")
+    print(f"Average 80% Width: {avg_width_80:.3f}")
+    print(f"Average 90% Width: {avg_width_90:.3f}")
+    print(f"Average 95% Width: {avg_width_95:.3f}")
     print(f"CRPS: {mean_crps:.3f} (lower is better)")
     print(f"Interval Score 95%: {mean_is_95:.3f} (lower is better)")
     print(f"Adaptive Calibration: {adaptive_calibration:.3f} (higher is better, target: >0.5)")
