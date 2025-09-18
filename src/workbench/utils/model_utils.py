@@ -226,6 +226,10 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     elif "prediction_std" in df.columns:
         lower_95 = df["prediction"] - 1.96 * df["prediction_std"]
         upper_95 = df["prediction"] + 1.96 * df["prediction_std"]
+        lower_90 = df["prediction"] - 1.645 * df["prediction_std"]
+        upper_90 = df["prediction"] + 1.645 * df["prediction_std"]
+        lower_80 = df["prediction"] - 1.282 * df["prediction_std"]
+        upper_80 = df["prediction"] + 1.282 * df["prediction_std"]
         lower_50 = df["prediction"] - 0.674 * df["prediction_std"]
         upper_50 = df["prediction"] + 0.674 * df["prediction_std"]
     else:
@@ -244,12 +248,9 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     avg_width_50 = np.mean(upper_50 - lower_50)
 
     # --- CRPS (measures calibration + sharpness) ---
-    if "prediction_std" in df.columns:
-        z = (df[target_col] - df["prediction"]) / df["prediction_std"]
-        crps = df["prediction_std"] * (z * (2 * norm.cdf(z) - 1) + 2 * norm.pdf(z) - 1 / np.sqrt(np.pi))
-        mean_crps = np.mean(crps)
-    else:
-        mean_crps = np.nan
+    z = (df[target_col] - df["prediction"]) / df["prediction_std"]
+    crps = df["prediction_std"] * (z * (2 * norm.cdf(z) - 1) + 2 * norm.pdf(z) - 1 / np.sqrt(np.pi))
+    mean_crps = np.mean(crps)
 
     # --- Interval Score @ 95% (penalizes miscoverage) ---
     alpha_95 = 0.05
@@ -330,12 +331,6 @@ if __name__ == "__main__":
 
     # Test the uq_metrics function
     end = Endpoint("aqsol-uq")
-    df = end.auto_inference(capture=True)
-    results = uq_metrics(df, target_col="solubility")
-    print(results)
-
-    # Test the uq_metrics function
-    end = Endpoint("aqsol-uq-100")
     df = end.auto_inference(capture=True)
     results = uq_metrics(df, target_col="solubility")
     print(results)

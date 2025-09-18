@@ -472,9 +472,9 @@ def predict_fn(df, models) -> pd.DataFrame:
     # Add median (q_50) from XGBoost prediction
     df["q_50"] = df["prediction"]
 
-    # Calculate uncertainty metrics based on 95% interval
-    interval_width = df["q_975"] - df["q_025"]
-    df["prediction_std"] = interval_width / 3.92
+    # Calculate uncertainty metrics based on 50% interval
+    interval_width = df["q_75"] - df["q_25"]
+    df["prediction_std"] = interval_width / 1.348
 
     # Reorder the quantile columns for easier reading
     quantile_cols = ["q_025", "q_05", "q_10", "q_25", "q_75", "q_90", "q_95", "q_975"]
