@@ -92,7 +92,7 @@ def submit_to_sqs(script_path: str, size: str = "small", realtime: bool = False)
     message = {"script_path": s3_path, "size": size}
 
     # Set serverless environment variable (defaults to True, False if --realtime)
-    message["environment"] = {"serverless": "False" if realtime else "True"}
+    message["environment"] = {"SERVERLESS": "False" if realtime else "True"}
 
     print("\n📨  Sending message to SQS...")
 
@@ -116,7 +116,7 @@ def submit_to_sqs(script_path: str, size: str = "small", realtime: bool = False)
     print(f"{'=' * 60}")
     print(f"📄  Script: {script_name}")
     print(f"📏  Size: {size}")
-    print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
+    print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (SERVERLESS={'False' if realtime else 'True'})")
     print(f"🆔  Message ID: {message_id}")
     print("\n🔍  MONITORING LOCATIONS:")
     print(f"   • SQS Queue: AWS Console → SQS → {queue_name}")
