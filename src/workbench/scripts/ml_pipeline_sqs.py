@@ -136,7 +136,7 @@ def main():
     parser.add_argument(
         "--realtime",
         action="store_true",
-        help="Run in real-time mode (sets serverless=False). Default is serverless mode (serverless=True)"
+        help="Run in real-time mode (sets serverless=False). Default is serverless mode (serverless=True)",
     )
     args = parser.parse_args()
     try:
