@@ -13,12 +13,13 @@ cm = ConfigManager()
 workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
 
 
-def submit_to_sqs(script_path: str, size: str = "small") -> None:
+def submit_to_sqs(script_path: str, size: str = "small", realtime: bool = False) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
     Args:
         script_path: Local path to the ML pipeline script
         size: Job size tier - "small" (default), "medium", or "large"
+        realtime: If True, sets serverless=False for real-time processing (default: False, meaning serverless=True)
     """
     print(f"\n{'=' * 60}")
     print("🚀  SUBMITTING ML PIPELINE JOB")
@@ -33,6 +34,7 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
 
     print(f"📄  Script: {script_file.name}")
     print(f"📏  Size tier: {size}")
+    print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
     print(f"🪣  Bucket: {workbench_bucket}")
     sqs = AWSAccountClamp().boto3_session.client("sqs")
     script_name = script_file.name
@@ -88,6 +90,10 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
 
     # Prepare message
     message = {"script_path": s3_path, "size": size}
+
+    # Set serverless environment variable (defaults to True, False if --realtime)
+    message["environment"] = {"serverless": "False" if realtime else "True"}
+
     print("\n📨  Sending message to SQS...")
 
     # Send the message to SQS
@@ -110,6 +116,7 @@ def submit_to_sqs(script_path: str, size: str = "small") -> None:
     print(f"{'=' * 60}")
     print(f"📄  Script: {script_name}")
     print(f"📏  Size: {size}")
+    print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
     print(f"🆔  Message ID: {message_id}")
     print("\n🔍  MONITORING LOCATIONS:")
     print(f"   • SQS Queue: AWS Console → SQS → {queue_name}")
@@ -126,9 +133,14 @@ def main():
     parser.add_argument(
         "--size", default="small", choices=["small", "medium", "large"], help="Job size tier (default: small)"
     )
+    parser.add_argument(
+        "--realtime",
+        action="store_true",
+        help="Run in real-time mode (sets serverless=False). Default is serverless mode (serverless=True)"
+    )
     args = parser.parse_args()
     try:
-        submit_to_sqs(args.script_file, args.size)
+        submit_to_sqs(args.script_file, args.size, realtime=args.realtime)
     except Exception as e:
         print(f"\n❌  ERROR: {e}")
         log.error(f"Error: {e}")
