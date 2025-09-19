@@ -242,7 +242,7 @@ if __name__ == "__main__":
     print(f"R2: {xgb_r2:.3f}")
 
     # Define confidence levels we want to model
-    confidence_levels = [0.50, 0.80, 0.90, 0.95]  # 50%, 80%, 90%, 95% confidence intervals
+    confidence_levels = [0.50, 0.68, 0.80, 0.90, 0.95]  # 50%, 68%, 80%, 90%, 95% confidence intervals
 
     # Store MAPIE models for each confidence level
     mapie_models = {}
@@ -459,6 +459,9 @@ def predict_fn(df, models) -> pd.DataFrame:
         if conf_level == 0.50:  # 50% CI
             df["q_25"] = y_pis[:, 0, 0]
             df["q_75"] = y_pis[:, 1, 0]
+        elif conf_level == 0.68:  # 68% CI
+            df["q_16"] = y_pis[:, 0, 0]
+            df["q_84"] = y_pis[:, 1, 0]
         elif conf_level == 0.80:  # 80% CI
             df["q_10"] = y_pis[:, 0, 0]
             df["q_90"] = y_pis[:, 1, 0]
@@ -472,23 +475,16 @@ def predict_fn(df, models) -> pd.DataFrame:
     # Add median (q_50) from XGBoost prediction
     df["q_50"] = df["prediction"]
 
-    # Calculate uncertainty metrics based on 50% interval
-    interval_width = df["q_75"] - df["q_25"]
-    df["prediction_std"] = interval_width / 1.348
+    # Calculate a psueduo-standard deviation from the 68% interval width
+    df["prediction_std"] = (df["q_84"] - df["q_16"]) / 2.0
 
     # Reorder the quantile columns for easier reading
-    quantile_cols = ["q_025", "q_05", "q_10", "q_25", "q_75", "q_90", "q_95", "q_975"]
+    quantile_cols = ["q_025", "q_05", "q_10", "q_16", "q_25", "q_75", "q_84", "q_90", "q_95", "q_975"]
     other_cols = [col for col in df.columns if col not in quantile_cols]
     df = df[other_cols + quantile_cols]
 
-    # Uncertainty score
-    df["uncertainty_score"] = interval_width / (np.abs(df["prediction"]) + 1e-6)
-
-    # Confidence bands
-    df["confidence_band"] = pd.cut(
-        df["uncertainty_score"],
-        bins=[0, 0.5, 1.0, 2.0, np.inf],
-        labels=["high", "medium", "low", "very_low"]
-    )
+    # Adjust the outer quantiles to ensure they encompass the prediction
+    df["q_025"] = np.minimum(df["q_025"], df["prediction"])
+    df["q_975"] = np.maximum(df["q_975"], df["prediction"])
 
     return df
