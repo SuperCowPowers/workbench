@@ -17,7 +17,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.data_source_factory import DataSourceFactory
 from workbench.core.artifacts.athena_source import AthenaSource
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from workbench.utils.aws_utils import aws_throttle
 
@@ -509,6 +509,23 @@ class FeatureSetCore(Artifact):
         ].tolist()
         return hold_out_ids
 
+    def set_training_filter(self, filter_expression: Optional[str] = None):
+        """Set a filter expression for the training view for this FeatureSet
+
+        Args:
+            filter_expression (Optional[str]): A SQL filter expression (e.g., "age > 25 AND status = 'active'")
+                If None or empty string, will reset to default training view with no filter
+                (default: None)
+        """
+        from workbench.core.views import TrainingView
+
+        # Grab the existing holdout ids
+        holdout_ids = self.get_training_holdouts()
+
+        # Create a NEW training view
+        self.log.important(f"Setting Training Filter: {filter_expression}")
+        TrainingView.create(self, id_column=self.id_column, holdout_ids=holdout_ids, filter_expression=filter_expression)
+
     @classmethod
     def delete_views(cls, table: str, database: str):
         """Delete any views associated with this FeatureSet
@@ -707,7 +724,7 @@ if __name__ == "__main__":
 
     # Test getting the holdout ids
     print("Getting the hold out ids...")
-    holdout_ids = my_features.get_training_holdouts("id")
+    holdout_ids = my_features.get_training_holdouts()
     print(f"Holdout IDs: {holdout_ids}")
 
     # Get a sample of the data
@@ -729,16 +746,26 @@ if __name__ == "__main__":
     table = my_features.view("training").table
     df = my_features.query(f'SELECT id, name FROM "{table}"')
     my_holdout_ids = [id for id in df["id"] if id < 20]
-    my_features.set_training_holdouts("id", my_holdout_ids)
-
-    # Test the hold out set functionality with strings
-    print("Setting hold out ids (strings)...")
-    my_holdout_ids = [name for name in df["name"] if int(name.split(" ")[1]) > 80]
-    my_features.set_training_holdouts("name", my_holdout_ids)
+    my_features.set_training_holdouts(my_holdout_ids)
 
     # Get the training data
     print("Getting the training data...")
     training_data = my_features.get_training_data()
+    print(f"Training Data: {training_data.shape}")
+
+    # Test the filter expression functionality
+    print("Setting a filter expression...")
+    my_features.set_training_filter("id < 50 AND height > 65.0")
+    training_data = my_features.get_training_data()
+    print(f"Training Data: {training_data.shape}")
+    print(training_data)
+
+    # Remove training filter
+    print("Removing the filter expression...")
+    my_features.set_training_filter(None)
+    training_data = my_features.get_training_data()
+    print(f"Training Data: {training_data.shape}")
+    print(training_data)
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print("Deleting Workbench Feature Set...")

@@ -29,11 +29,12 @@ class TrainingView(CreateView):
 
     @classmethod
     def create(
-        cls,
-        feature_set: FeatureSet,
-        source_table: str = None,
-        id_column: str = None,
-        holdout_ids: Union[list[str], list[int], None] = None,
+            cls,
+            feature_set: FeatureSet,
+            source_table: str = None,
+            id_column: str = None,
+            holdout_ids: Union[list[str], list[int], None] = None,
+            filter_expression: str = None,
     ) -> Union[View, None]:
         """Factory method to create and return a TrainingView instance.
 
@@ -42,6 +43,7 @@ class TrainingView(CreateView):
             source_table (str, optional): The table/view to create the view from. Defaults to None.
             id_column (str, optional): The name of the id column. Defaults to None.
             holdout_ids (Union[list[str], list[int], None], optional): A list of holdout ids. Defaults to None.
+            filter_expression (str, optional): SQL filter expression (e.g., "age > 25 AND status = 'active'"). Defaults to None.
 
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
@@ -69,28 +71,36 @@ class TrainingView(CreateView):
                 else:
                     id_column = instance.auto_id_column
 
-        # If we don't have holdout ids, create a default training view
-        if not holdout_ids:
-            instance._default_training_view(instance.data_source, id_column)
-            return View(instance.data_source, instance.view_name, auto_create_view=False)
-
-        # Format the list of holdout ids for SQL IN clause
-        if holdout_ids and all(isinstance(id, str) for id in holdout_ids):
-            formatted_holdout_ids = ", ".join(f"'{id}'" for id in holdout_ids)
-        else:
-            formatted_holdout_ids = ", ".join(map(str, holdout_ids))
-
         # Enclose each column name in double quotes
         sql_columns = ", ".join([f'"{column}"' for column in column_list])
+
+        # Build the training assignment logic
+        if holdout_ids:
+            # Format the list of holdout ids for SQL IN clause
+            if all(isinstance(id, str) for id in holdout_ids):
+                formatted_holdout_ids = ", ".join(f"'{id}'" for id in holdout_ids)
+            else:
+                formatted_holdout_ids = ", ".join(map(str, holdout_ids))
+
+            training_logic = f"""CASE
+                WHEN {id_column} IN ({formatted_holdout_ids}) THEN False
+                ELSE True
+            END AS training"""
+        else:
+            # Default 80/20 split using modulo
+            training_logic = f"""CASE
+                WHEN MOD(ROW_NUMBER() OVER (ORDER BY {id_column}), 10) < 8 THEN True
+                ELSE False
+            END AS training"""
+
+        # Build WHERE clause if filter_expression is provided
+        where_clause = f"\nWHERE {filter_expression}" if filter_expression else ""
 
         # Construct the CREATE VIEW query
         create_view_query = f"""
         CREATE OR REPLACE VIEW {instance.table} AS
-        SELECT {sql_columns}, CASE
-            WHEN {id_column} IN ({formatted_holdout_ids}) THEN False
-            ELSE True
-        END AS training
-        FROM {instance.source_table}
+        SELECT {sql_columns}, {training_logic}
+        FROM {instance.source_table}{where_clause}
         """
 
         # Execute the CREATE VIEW query
@@ -99,43 +109,13 @@ class TrainingView(CreateView):
         # Return the View
         return View(instance.data_source, instance.view_name, auto_create_view=False)
 
-    # This is an internal method that's used to create a default training view
-    def _default_training_view(self, data_source: DataSource, id_column: str):
-        """Create a default view in Athena that assigns roughly 80% of the data to training
-
-        Args:
-            data_source (DataSource): The Workbench DataSource object
-            id_column (str): The name of the id column
-        """
-        self.log.important(f"Creating default Training View {self.table}...")
-
-        # Drop any columns generated from AWS
-        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        column_list = [col for col in data_source.columns if col not in aws_cols]
-
-        # Enclose each column name in double quotes
-        sql_columns = ", ".join([f'"{column}"' for column in column_list])
-
-        # Construct the CREATE VIEW query with a simple modulo operation for the 80/20 split
-        create_view_query = f"""
-        CREATE OR REPLACE VIEW "{self.table}" AS
-        SELECT {sql_columns}, CASE
-            WHEN MOD(ROW_NUMBER() OVER (ORDER BY {id_column}), 10) < 8 THEN True  -- Assign 80% to training
-            ELSE False  -- Assign roughly 20% to validation/test
-        END AS training
-        FROM {self.base_table_name}
-        """
-
-        # Execute the CREATE VIEW query
-        data_source.execute_statement(create_view_query)
-
 
 if __name__ == "__main__":
     """Exercise the Training View functionality"""
     from workbench.api import FeatureSet
 
     # Get the FeatureSet
-    fs = FeatureSet("test_features")
+    fs = FeatureSet("abalone_features")
 
     # Delete the existing training view
     training_view = TrainingView.create(fs)
@@ -152,9 +132,18 @@ if __name__ == "__main__":
 
     # Create a TrainingView with holdout ids
     my_holdout_ids = list(range(10))
-    training_view = TrainingView.create(fs, id_column="id", holdout_ids=my_holdout_ids)
+    training_view = TrainingView.create(fs, id_column="auto_id", holdout_ids=my_holdout_ids)
 
     # Pull the training data
     df = training_view.pull_dataframe()
     print(df.head())
     print(df["training"].value_counts())
+    print(f"Shape: {df.shape}")
+    print(f"Diameter min: {df['diameter'].min()}, max: {df['diameter'].max()}")
+
+    # Test the filter expression
+    training_view = TrainingView.create(fs, id_column="auto_id", filter_expression="diameter > 0.5")
+    df = training_view.pull_dataframe()
+    print(df.head())
+    print(f"Shape with filter: {df.shape}")
+    print(f"Diameter min: {df['diameter'].min()}, max: {df['diameter'].max()}")

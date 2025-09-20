@@ -259,7 +259,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Dict[str, Any
     xgb_model._Booster = loaded_booster
     # Prepare data
     fs = FeatureSet(workbench_model.get_input())
-    df = fs.pull_dataframe()
+    df = fs.view("training").pull_dataframe()
     feature_cols = workbench_model.features()
     # Convert string features to categorical
     for col in feature_cols:
