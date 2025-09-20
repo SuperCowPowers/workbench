@@ -222,6 +222,7 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         lower_95, upper_95 = df["q_025"], df["q_975"]
         lower_90, upper_90 = df["q_05"], df["q_95"]
         lower_80, upper_80 = df["q_10"], df["q_90"]
+        lower_68, upper_68 = df["q_16"], df["q_84"]
         lower_50, upper_50 = df["q_25"], df["q_75"]
     elif "prediction_std" in df.columns:
         lower_95 = df["prediction"] - 1.96 * df["prediction_std"]
@@ -230,6 +231,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         upper_90 = df["prediction"] + 1.645 * df["prediction_std"]
         lower_80 = df["prediction"] - 1.282 * df["prediction_std"]
         upper_80 = df["prediction"] + 1.282 * df["prediction_std"]
+        lower_68 = df["prediction"] - 1.0 * df["prediction_std"]
+        upper_68 = df["prediction"] + 1.0 * df["prediction_std"]
         lower_50 = df["prediction"] - 0.674 * df["prediction_std"]
         upper_50 = df["prediction"] + 0.674 * df["prediction_std"]
     else:
@@ -241,11 +244,13 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     coverage_95 = np.mean((df[target_col] >= lower_95) & (df[target_col] <= upper_95))
     coverage_90 = np.mean((df[target_col] >= lower_90) & (df[target_col] <= upper_90))
     coverage_80 = np.mean((df[target_col] >= lower_80) & (df[target_col] <= upper_80))
+    coverage_68 = np.mean((df[target_col] >= lower_68) & (df[target_col] <= upper_68))
     coverage_50 = np.mean((df[target_col] >= lower_50) & (df[target_col] <= upper_50))
     avg_width_95 = np.mean(upper_95 - lower_95)
     avg_width_90 = np.mean(upper_90 - lower_90)
     avg_width_80 = np.mean(upper_80 - lower_80)
     avg_width_50 = np.mean(upper_50 - lower_50)
+    avg_width_68 = np.mean(upper_68 - lower_68)
 
     # --- CRPS (measures calibration + sharpness) ---
     z = (df[target_col] - df["prediction"]) / df["prediction_std"]
@@ -269,12 +274,14 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     # Collect results
     results = {
         "coverage_50": coverage_50,
+        "coverage_68": coverage_68,
         "coverage_80": coverage_80,
         "coverage_90": coverage_90,
         "coverage_95": coverage_95,
         "median_std": median_std,
         "avg_std": avg_std,
         "avg_width_50": avg_width_50,
+        "avg_width_68": avg_width_68,
         "avg_width_80": avg_width_80,
         "avg_width_90": avg_width_90,
         "avg_width_95": avg_width_95,
@@ -286,12 +293,14 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
 
     print("\n=== UQ Metrics ===")
     print(f"Coverage @ 50%: {coverage_50:.3f} (target: 0.50)")
+    print(f"Coverage @ 68%: {coverage_68:.3f} (target: 0.68)")
     print(f"Coverage @ 80%: {coverage_80:.3f} (target: 0.80)")
     print(f"Coverage @ 90%: {coverage_90:.3f} (target: 0.90)")
     print(f"Coverage @ 95%: {coverage_95:.3f} (target: 0.95)")
-    print(f"Avg Prediction StdDev: {avg_std:.3f}")
     print(f"Median Prediction StdDev: {median_std:.3f}")
+    print(f"Avg Prediction StdDev: {avg_std:.3f}")
     print(f"Average 50% Width: {avg_width_50:.3f}")
+    print(f"Average 68% Width: {avg_width_68:.3f}")
     print(f"Average 80% Width: {avg_width_80:.3f}")
     print(f"Average 90% Width: {avg_width_90:.3f}")
     print(f"Average 95% Width: {avg_width_95:.3f}")
