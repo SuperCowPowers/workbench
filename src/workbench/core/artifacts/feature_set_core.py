@@ -524,7 +524,9 @@ class FeatureSetCore(Artifact):
 
         # Create a NEW training view
         self.log.important(f"Setting Training Filter: {filter_expression}")
-        TrainingView.create(self, id_column=self.id_column, holdout_ids=holdout_ids, filter_expression=filter_expression)
+        TrainingView.create(
+            self, id_column=self.id_column, holdout_ids=holdout_ids, filter_expression=filter_expression
+        )
 
     @classmethod
     def delete_views(cls, table: str, database: str):

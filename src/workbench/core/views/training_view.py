@@ -3,7 +3,7 @@
 from typing import Union
 
 # Workbench Imports
-from workbench.api import DataSource, FeatureSet
+from workbench.api import FeatureSet
 from workbench.core.views.view import View
 from workbench.core.views.create_view import CreateView
 from workbench.core.views.view_utils import get_column_list
@@ -29,12 +29,12 @@ class TrainingView(CreateView):
 
     @classmethod
     def create(
-            cls,
-            feature_set: FeatureSet,
-            source_table: str = None,
-            id_column: str = None,
-            holdout_ids: Union[list[str], list[int], None] = None,
-            filter_expression: str = None,
+        cls,
+        feature_set: FeatureSet,
+        source_table: str = None,
+        id_column: str = None,
+        holdout_ids: Union[list[str], list[int], None] = None,
+        filter_expression: str = None,
     ) -> Union[View, None]:
         """Factory method to create and return a TrainingView instance.
 
@@ -43,7 +43,8 @@ class TrainingView(CreateView):
             source_table (str, optional): The table/view to create the view from. Defaults to None.
             id_column (str, optional): The name of the id column. Defaults to None.
             holdout_ids (Union[list[str], list[int], None], optional): A list of holdout ids. Defaults to None.
-            filter_expression (str, optional): SQL filter expression (e.g., "age > 25 AND status = 'active'"). Defaults to None.
+            filter_expression (str, optional): SQL filter expression (e.g., "age > 25 AND status = 'active'").
+                                               Defaults to None.
 
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
