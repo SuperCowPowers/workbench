@@ -479,7 +479,7 @@ def predict_fn(df, models) -> pd.DataFrame:
     # Add median (q_50) from XGBoost prediction
     df["q_50"] = df["prediction"]
 
-    # Calculate a psueduo-standard deviation from the 68% interval width
+    # Calculate a pseudo-standard deviation from the 68% interval width
     df["prediction_std"] = (df["q_84"] - df["q_16"]) / 2.0
 
     # Reorder the quantile columns for easier reading
