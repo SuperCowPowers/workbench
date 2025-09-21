@@ -425,6 +425,10 @@ def predict_fn(df, models) -> pd.DataFrame:
         pd.DataFrame: DataFrame with XGBoost predictions and conformalized intervals
     """
 
+    # Flag for outlier stretch adjustment for the prediction intervals
+    # if the predicted values are outside the intervals
+    outlier_stretch = True
+
     # Grab our feature columns (from training)
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
     with open(os.path.join(model_dir, "feature_columns.json")) as fp:
@@ -484,7 +488,19 @@ def predict_fn(df, models) -> pd.DataFrame:
     df = df[other_cols + quantile_cols]
 
     # Adjust the outer quantiles to ensure they encompass the prediction
-    df["q_025"] = np.minimum(df["q_025"], df["prediction"])
-    df["q_975"] = np.maximum(df["q_975"], df["prediction"])
+    if outlier_stretch:
+        # Lower intervals adjustments
+        df["q_025"] = np.minimum(df["q_025"], df["prediction"])
+        df["q_05"] = np.minimum(df["q_05"], df["prediction"])
+        df["q_10"] = np.minimum(df["q_10"], df["prediction"])
+        df["q_16"] = np.minimum(df["q_16"], df["prediction"])
+        df["q_25"] = np.minimum(df["q_25"], df["prediction"])
+
+        # Upper intervals adjustments
+        df["q_75"] = np.maximum(df["q_75"], df["prediction"])
+        df["q_84"] = np.maximum(df["q_84"], df["prediction"])
+        df["q_90"] = np.maximum(df["q_90"], df["prediction"])
+        df["q_95"] = np.maximum(df["q_95"], df["prediction"])
+        df["q_975"] = np.maximum(df["q_975"], df["prediction"])
 
     return df
