@@ -545,7 +545,7 @@ class FeatureSetCore(Artifact):
             return
 
         # Build the filter expression with proper SQL quoting
-        quoted_ids = ', '.join([repr(id) for id in ids])
+        quoted_ids = ", ".join([repr(id) for id in ids])
         filter_expression = f"{column} NOT IN ({quoted_ids})"
 
         # Apply the filter
