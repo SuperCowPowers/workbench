@@ -17,7 +17,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.data_source_factory import DataSourceFactory
 from workbench.core.artifacts.athena_source import AthenaSource
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List, Union
 
 from workbench.utils.aws_utils import aws_throttle
 
@@ -514,7 +514,7 @@ class FeatureSetCore(Artifact):
 
         Args:
             filter_expression (Optional[str]): A SQL filter expression (e.g., "age > 25 AND status = 'active'")
-                If None or empty string, will reset to default training view with no filter
+                If None or empty string, will reset to training view with no filter
                 (default: None)
         """
         from workbench.core.views import TrainingView
@@ -527,6 +527,29 @@ class FeatureSetCore(Artifact):
         TrainingView.create(
             self, id_column=self.id_column, holdout_ids=holdout_ids, filter_expression=filter_expression
         )
+
+    def exclude_ids_from_training(self, ids: List[Union[str, int]], column_name: Optional[str] = None):
+        """Exclude a list of IDs from the training view
+
+        Args:
+            ids (List[Union[str, int]],): List of IDs to exclude from training
+            column_name (Optional[str]): Column name to filter on.
+                If None, uses self.id_column (default: None)
+        """
+        # Use the default id_column if not specified
+        column = column_name or self.id_column
+
+        # Handle empty list case
+        if not ids:
+            self.log.warning("No IDs provided to exclude")
+            return
+
+        # Build the filter expression with proper SQL quoting
+        quoted_ids = ', '.join([repr(id) for id in ids])
+        filter_expression = f"{column} NOT IN ({quoted_ids})"
+
+        # Apply the filter
+        self.set_training_filter(filter_expression)
 
     @classmethod
     def delete_views(cls, table: str, database: str):
@@ -765,6 +788,13 @@ if __name__ == "__main__":
     # Remove training filter
     print("Removing the filter expression...")
     my_features.set_training_filter(None)
+    training_data = my_features.get_training_data()
+    print(f"Training Data: {training_data.shape}")
+    print(training_data)
+
+    # Test excluding ids from training
+    print("Excluding ids from training...")
+    my_features.exclude_ids_from_training([1, 2, 3, 4, 5])
     training_data = my_features.get_training_data()
     print(f"Training Data: {training_data.shape}")
     print(training_data)
