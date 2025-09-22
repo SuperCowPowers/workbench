@@ -427,7 +427,7 @@ def predict_fn(df, models) -> pd.DataFrame:
 
     # Flag for outlier stretch adjustment for the prediction intervals
     # if the predicted values are outside the intervals
-    outlier_stretch = True
+    outlier_stretch = False
 
     # Grab our feature columns (from training)
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
