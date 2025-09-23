@@ -36,7 +36,7 @@ from typing import List, Tuple
 # Template Parameters
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
-    "target_column": "{{target_column}}",
+    "target": "{{target_column}}",
     "features": "{{feature_list}}",
     "compressed_features": "{{compressed_features}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
@@ -103,7 +103,6 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     df_columns_lower = {col.lower(): col for col in df.columns}
     rename_dict = {}
     missing = []
-
     for feature in model_features:
         if feature in df.columns:
             continue  # Exact match
@@ -115,6 +114,7 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     if missing:
         raise ValueError(f"Features not found: {missing}")
 
+    # Rename the DataFrame columns to match the model features
     return df.rename(columns=rename_dict)
 
 
@@ -328,7 +328,7 @@ if __name__ == "__main__":
     """The main function is for training the PyTorch Tabular model"""
 
     # Harness Template Parameters
-    target = TEMPLATE_PARAMS["target_column"]
+    target = TEMPLATE_PARAMS["target"]
     features = TEMPLATE_PARAMS["features"]
     orig_features = features.copy()
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
@@ -387,7 +387,9 @@ if __name__ == "__main__":
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
+        df_train, df_val = train_test_split(
+            all_df, test_size=validation_split, random_state=42
+        )
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
