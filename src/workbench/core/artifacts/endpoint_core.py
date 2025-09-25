@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from io import StringIO
 import awswrangler as wr
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 import hashlib
 
 # Model Performance Scores
@@ -436,24 +436,24 @@ class EndpointCore(Artifact):
         # Return the prediction DataFrame
         return prediction_df
 
-    def cross_fold_inference(self, nfolds: int = 5) -> dict:
+    def cross_fold_inference(self, nfolds: int = 5) -> Tuple[dict, pd.DataFrame]:
         """Run cross-fold inference (only works for XGBoost models)
 
         Args:
             nfolds (int): Number of folds to use for cross-fold (default: 5)
 
         Returns:
-            dict: Dictionary with the cross-fold inference results
+            Tuple[dict, pd.DataFrame]: Tuple of (cross_fold_metrics, out_of_fold_df)
         """
 
         # Grab our model
         model = ModelCore(self.model_name)
 
         # Compute CrossFold Metrics
-        cross_fold_metrics = cross_fold_inference(model, nfolds=nfolds)
+        cross_fold_metrics, out_of_fold_df = cross_fold_inference(model, nfolds=nfolds)
         if cross_fold_metrics:
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/cross_fold", cross_fold_metrics)
-        return cross_fold_metrics
+        return cross_fold_metrics, out_of_fold_df
 
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
