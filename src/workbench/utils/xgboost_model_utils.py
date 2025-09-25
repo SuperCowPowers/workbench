@@ -35,7 +35,6 @@ def xgboost_model_from_s3(model_artifact_uri: str):
     """
     Download and extract XGBoost model artifact from S3, then load the model into memory.
     Handles both direct XGBoost model files and pickled models.
-    Ensures categorical feature support is enabled.
 
     Args:
         model_artifact_uri (str): S3 URI of the model artifact.
@@ -56,7 +55,7 @@ def xgboost_model_from_s3(model_artifact_uri: str):
         # Define model file patterns to search for (in order of preference)
         patterns = [
             # Direct XGBoost model files
-            os.path.join(tmpdir, "xgboost-model"),
+            os.path.join(tmpdir, "xgb_model*.joblib"),
             os.path.join(tmpdir, "xgb_model*.json"),
             os.path.join(tmpdir, "model"),
             os.path.join(tmpdir, "*.bin"),
@@ -77,7 +76,7 @@ def xgboost_model_from_s3(model_artifact_uri: str):
                 _, ext = os.path.splitext(model_path)
 
                 try:
-                    if ext.lower() in [".pkl", ".pickle"]:
+                    if True or ext.lower() in [".pkl", ".pickle"]:
                         # Handle pickled models
                         with open(model_path, "rb") as f:
                             model = pickle.load(f)
@@ -383,6 +382,10 @@ if __name__ == "__main__":
     # Test the XGBoost model loading from S3
     model_artifact_uri = model.model_data_url()
     xgb_model = xgboost_model_from_s3(model_artifact_uri)
+
+    # Verify enable_categorical is preserved (for debugging/confidence)
+    print(f"Model parameters: {xgb_model.get_params()}")
+    print(f"enable_categorical: {xgb_model.enable_categorical}")
 
     # Test with UQ Model
     uq_model = Model("aqsol-uq")

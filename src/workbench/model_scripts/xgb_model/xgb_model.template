@@ -33,8 +33,10 @@ TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
     "compressed_features": "{{compressed_features}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "train_all_data": "{{train_all_data}}"
+    "train_all_data": "{{train_all_data}}",
+    "hyperparameters": "{{hyperparameters}}"
 }
+
 
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
@@ -75,7 +77,7 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
     proba_df = pd.DataFrame(df[proba_column].tolist(), columns=proba_splits)
 
     # Drop any proba columns and reset the index in prep for the concat
-    df = df.drop(columns=[proba_column]+proba_splits, errors="ignore")
+    df = df.drop(columns=[proba_column] + proba_splits, errors="ignore")
     df = df.reset_index(drop=True)
 
     # Concatenate the new columns with the original DataFrame
@@ -140,8 +142,10 @@ def convert_categorical_types(df: pd.DataFrame, features: list, category_mapping
     return df, category_mappings
 
 
-def decompress_features(df: pd.DataFrame, features: List[str], compressed_features: List[str]) -> Tuple[pd.DataFrame, List[str]]:
-    """Prepare features for the XGBoost model
+def decompress_features(
+    df: pd.DataFrame, features: List[str], compressed_features: List[str]
+) -> Tuple[pd.DataFrame, List[str]]:
+    """Prepare features for the model
 
     Args:
         df (pd.DataFrame): The features DataFrame
@@ -204,6 +208,7 @@ if __name__ == "__main__":
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
+    hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
     validation_split = 0.2
 
     # Script arguments for input/output directories
@@ -260,6 +265,9 @@ if __name__ == "__main__":
         )
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
+
+    # Use any hyperparameters to set up both the trainer and model configurations
+    print(f"Hyperparameters: {hyperparameters}")
 
     # Now spin up our XGB Model
     if model_type == "classifier":
@@ -355,7 +363,9 @@ if __name__ == "__main__":
         print(f"NumRows: {len(df_val)}")
 
     # Now save the model to the standard place/name
-    xgb_model.save_model(os.path.join(args.model_dir, "xgb_model.json"))
+    joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
+
+    # Save the label encoder if we have one
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
@@ -370,19 +380,8 @@ if __name__ == "__main__":
 
 def model_fn(model_dir):
     """Deserialize and return fitted XGBoost model"""
-
-    model_path = os.path.join(model_dir, "xgb_model.json")
-
-    with open(model_path, "r") as f:
-        model_json = json.load(f)
-
-    sklearn_data = model_json['learner']['attributes']['scikit_learn']
-    model_type = json.loads(sklearn_data)['_estimator_type']
-
-    model_class = xgb.XGBClassifier if model_type == "classifier" else xgb.XGBRegressor
-    model = model_class(enable_categorical=True)
-    model.load_model(model_path)
-
+    model_path = os.path.join(model_dir, "xgb_model.joblib")
+    model = joblib.load(model_path)
     return model
 
 
