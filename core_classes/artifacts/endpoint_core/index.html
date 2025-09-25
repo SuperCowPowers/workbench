@@ -5773,24 +5773,24 @@
 </span><span id="__span-0-436"><a id="__codelineno-0-436" name="__codelineno-0-436"></a>        <span class="c1"># Return the prediction DataFrame</span>
 </span><span id="__span-0-437"><a id="__codelineno-0-437" name="__codelineno-0-437"></a>        <span class="k">return</span> <span class="n">prediction_df</span>
 </span><span id="__span-0-438"><a id="__codelineno-0-438" name="__codelineno-0-438"></a>
-</span><span id="__span-0-439"><a id="__codelineno-0-439" name="__codelineno-0-439"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">cross_fold_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nfolds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span id="__span-0-439"><a id="__codelineno-0-439" name="__codelineno-0-439"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">cross_fold_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nfolds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
 </span><span id="__span-0-440"><a id="__codelineno-0-440" name="__codelineno-0-440"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Run cross-fold inference (only works for XGBoost models)</span>
 </span><span id="__span-0-441"><a id="__codelineno-0-441" name="__codelineno-0-441"></a>
 </span><span id="__span-0-442"><a id="__codelineno-0-442" name="__codelineno-0-442"></a><span class="sd">        Args:</span>
 </span><span id="__span-0-443"><a id="__codelineno-0-443" name="__codelineno-0-443"></a><span class="sd">            nfolds (int): Number of folds to use for cross-fold (default: 5)</span>
 </span><span id="__span-0-444"><a id="__codelineno-0-444" name="__codelineno-0-444"></a>
 </span><span id="__span-0-445"><a id="__codelineno-0-445" name="__codelineno-0-445"></a><span class="sd">        Returns:</span>
-</span><span id="__span-0-446"><a id="__codelineno-0-446" name="__codelineno-0-446"></a><span class="sd">            dict: Dictionary with the cross-fold inference results</span>
+</span><span id="__span-0-446"><a id="__codelineno-0-446" name="__codelineno-0-446"></a><span class="sd">            Tuple[dict, pd.DataFrame]: Tuple of (cross_fold_metrics, out_of_fold_df)</span>
 </span><span id="__span-0-447"><a id="__codelineno-0-447" name="__codelineno-0-447"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-448"><a id="__codelineno-0-448" name="__codelineno-0-448"></a>
 </span><span id="__span-0-449"><a id="__codelineno-0-449" name="__codelineno-0-449"></a>        <span class="c1"># Grab our model</span>
 </span><span id="__span-0-450"><a id="__codelineno-0-450" name="__codelineno-0-450"></a>        <span class="n">model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_name</span><span class="p">)</span>
 </span><span id="__span-0-451"><a id="__codelineno-0-451" name="__codelineno-0-451"></a>
 </span><span id="__span-0-452"><a id="__codelineno-0-452" name="__codelineno-0-452"></a>        <span class="c1"># Compute CrossFold Metrics</span>
-</span><span id="__span-0-453"><a id="__codelineno-0-453" name="__codelineno-0-453"></a>        <span class="n">cross_fold_metrics</span> <span class="o">=</span> <span class="n">cross_fold_inference</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nfolds</span><span class="o">=</span><span class="n">nfolds</span><span class="p">)</span>
+</span><span id="__span-0-453"><a id="__codelineno-0-453" name="__codelineno-0-453"></a>        <span class="n">cross_fold_metrics</span><span class="p">,</span> <span class="n">out_of_fold_df</span> <span class="o">=</span> <span class="n">cross_fold_inference</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nfolds</span><span class="o">=</span><span class="n">nfolds</span><span class="p">)</span>
 </span><span id="__span-0-454"><a id="__codelineno-0-454" name="__codelineno-0-454"></a>        <span class="k">if</span> <span class="n">cross_fold_metrics</span><span class="p">:</span>
 </span><span id="__span-0-455"><a id="__codelineno-0-455" name="__codelineno-0-455"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">param_store</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/workbench/models/</span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">/inference/cross_fold&quot;</span><span class="p">,</span> <span class="n">cross_fold_metrics</span><span class="p">)</span>
-</span><span id="__span-0-456"><a id="__codelineno-0-456" name="__codelineno-0-456"></a>        <span class="k">return</span> <span class="n">cross_fold_metrics</span>
+</span><span id="__span-0-456"><a id="__codelineno-0-456" name="__codelineno-0-456"></a>        <span class="k">return</span> <span class="n">cross_fold_metrics</span><span class="p">,</span> <span class="n">out_of_fold_df</span>
 </span><span id="__span-0-457"><a id="__codelineno-0-457" name="__codelineno-0-457"></a>
 </span><span id="__span-0-458"><a id="__codelineno-0-458" name="__codelineno-0-458"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">fast_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eval_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">threads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 </span><span id="__span-0-459"><a id="__codelineno-0-459" name="__codelineno-0-459"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Run inference on the Endpoint using the provided DataFrame</span>
@@ -7037,18 +7037,18 @@
     <table>
       <thead>
         <tr>
-<th>Name</th>          <th>Type</th>
+          <th>Type</th>
           <th>Description</th>
         </tr>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-<td><code>dict</code></td>            <td>
-                  <code><span title="dict">dict</span></code>
+            <td>
+                  <code><span title="typing.Tuple">Tuple</span>[<span title="dict">dict</span>, <span title="pandas.DataFrame">DataFrame</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Dictionary with the cross-fold inference results</p>
+                <p>Tuple[dict, pd.DataFrame]: Tuple of (cross_fold_metrics, out_of_fold_df)</p>
               </div>
             </td>
           </tr>
@@ -7075,24 +7075,24 @@
 <span class="normal"><a href="#__codelineno-0-453">453</a></span>
 <span class="normal"><a href="#__codelineno-0-454">454</a></span>
 <span class="normal"><a href="#__codelineno-0-455">455</a></span>
-<span class="normal"><a href="#__codelineno-0-456">456</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-439"><a id="__codelineno-0-439" name="__codelineno-0-439"></a><span class="k">def</span><span class="w"> </span><span class="nf">cross_fold_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nfolds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="normal"><a href="#__codelineno-0-456">456</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-439"><a id="__codelineno-0-439" name="__codelineno-0-439"></a><span class="k">def</span><span class="w"> </span><span class="nf">cross_fold_inference</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nfolds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
 </span><span id="__span-0-440"><a id="__codelineno-0-440" name="__codelineno-0-440"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run cross-fold inference (only works for XGBoost models)</span>
 </span><span id="__span-0-441"><a id="__codelineno-0-441" name="__codelineno-0-441"></a>
 </span><span id="__span-0-442"><a id="__codelineno-0-442" name="__codelineno-0-442"></a><span class="sd">    Args:</span>
 </span><span id="__span-0-443"><a id="__codelineno-0-443" name="__codelineno-0-443"></a><span class="sd">        nfolds (int): Number of folds to use for cross-fold (default: 5)</span>
 </span><span id="__span-0-444"><a id="__codelineno-0-444" name="__codelineno-0-444"></a>
 </span><span id="__span-0-445"><a id="__codelineno-0-445" name="__codelineno-0-445"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-446"><a id="__codelineno-0-446" name="__codelineno-0-446"></a><span class="sd">        dict: Dictionary with the cross-fold inference results</span>
+</span><span id="__span-0-446"><a id="__codelineno-0-446" name="__codelineno-0-446"></a><span class="sd">        Tuple[dict, pd.DataFrame]: Tuple of (cross_fold_metrics, out_of_fold_df)</span>
 </span><span id="__span-0-447"><a id="__codelineno-0-447" name="__codelineno-0-447"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-448"><a id="__codelineno-0-448" name="__codelineno-0-448"></a>
 </span><span id="__span-0-449"><a id="__codelineno-0-449" name="__codelineno-0-449"></a>    <span class="c1"># Grab our model</span>
 </span><span id="__span-0-450"><a id="__codelineno-0-450" name="__codelineno-0-450"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">ModelCore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_name</span><span class="p">)</span>
 </span><span id="__span-0-451"><a id="__codelineno-0-451" name="__codelineno-0-451"></a>
 </span><span id="__span-0-452"><a id="__codelineno-0-452" name="__codelineno-0-452"></a>    <span class="c1"># Compute CrossFold Metrics</span>
-</span><span id="__span-0-453"><a id="__codelineno-0-453" name="__codelineno-0-453"></a>    <span class="n">cross_fold_metrics</span> <span class="o">=</span> <span class="n">cross_fold_inference</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nfolds</span><span class="o">=</span><span class="n">nfolds</span><span class="p">)</span>
+</span><span id="__span-0-453"><a id="__codelineno-0-453" name="__codelineno-0-453"></a>    <span class="n">cross_fold_metrics</span><span class="p">,</span> <span class="n">out_of_fold_df</span> <span class="o">=</span> <span class="n">cross_fold_inference</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">nfolds</span><span class="o">=</span><span class="n">nfolds</span><span class="p">)</span>
 </span><span id="__span-0-454"><a id="__codelineno-0-454" name="__codelineno-0-454"></a>    <span class="k">if</span> <span class="n">cross_fold_metrics</span><span class="p">:</span>
 </span><span id="__span-0-455"><a id="__codelineno-0-455" name="__codelineno-0-455"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">param_store</span><span class="o">.</span><span class="n">upsert</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;/workbench/models/</span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">/inference/cross_fold&quot;</span><span class="p">,</span> <span class="n">cross_fold_metrics</span><span class="p">)</span>
-</span><span id="__span-0-456"><a id="__codelineno-0-456" name="__codelineno-0-456"></a>    <span class="k">return</span> <span class="n">cross_fold_metrics</span>
+</span><span id="__span-0-456"><a id="__codelineno-0-456" name="__codelineno-0-456"></a>    <span class="k">return</span> <span class="n">cross_fold_metrics</span><span class="p">,</span> <span class="n">out_of_fold_df</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
