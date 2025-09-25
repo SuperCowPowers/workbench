@@ -17,7 +17,6 @@ from typing import Dict, Any
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import (
     precision_recall_fscore_support,
-    confusion_matrix,
     mean_squared_error,
     mean_absolute_error,
     r2_score,
@@ -76,7 +75,7 @@ def xgboost_model_from_s3(model_artifact_uri: str):
             for model_path in glob.glob(pattern, recursive=True):
                 # Skip files that are clearly not XGBoost models
                 filename = os.path.basename(model_path).lower()
-                if any(skip in filename for skip in ['label_encoder', 'scaler', 'preprocessor', 'transformer']):
+                if any(skip in filename for skip in ["label_encoder", "scaler", "preprocessor", "transformer"]):
                     log.debug(f"Skipping non-model file: {model_path}")
                     continue
 
@@ -152,7 +151,7 @@ def feature_importance(workbench_model, importance_type: str = "gain") -> Option
         return None
 
     # Check if we got a full sklearn model or just a booster (for backwards compatibility)
-    if hasattr(xgb_model, 'get_booster'):
+    if hasattr(xgb_model, "get_booster"):
         # Full sklearn model - get the booster for feature importance
         booster = xgb_model.get_booster()
         all_features = booster.feature_names
@@ -290,8 +289,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         log.warning("Deprecated: Loaded model is a Booster, wrapping in sklearn model.")
         is_classifier = workbench_model.model_type.value == "classifier"
         xgb_model = (
-            xgb.XGBClassifier(enable_categorical=True) if is_classifier
-            else xgb.XGBRegressor(enable_categorical=True)
+            xgb.XGBClassifier(enable_categorical=True) if is_classifier else xgb.XGBRegressor(enable_categorical=True)
         )
         xgb_model._Booster = loaded_model
     else:
@@ -325,16 +323,11 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         y_for_cv = y
 
     # Prepare KFold
-    kfold = (StratifiedKFold if is_classifier else KFold)(
-        n_splits=nfolds, shuffle=True, random_state=42
-    )
+    kfold = (StratifiedKFold if is_classifier else KFold)(n_splits=nfolds, shuffle=True, random_state=42)
 
     # Initialize results collection
     fold_metrics = []
-    predictions_df = pd.DataFrame({
-        id_col: ids,
-        target_col: y  # Keep original values
-    })
+    predictions_df = pd.DataFrame({id_col: ids, target_col: y})  # Keep original values
     # Note: 'prediction' column will be created automatically with correct dtype
 
     # Perform cross-validation
@@ -349,38 +342,32 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         # Store predictions (decode if classifier)
         val_indices = X_val.index
         if is_classifier:
-            predictions_df.loc[val_indices, 'prediction'] = label_encoder.inverse_transform(preds.astype(int))
+            predictions_df.loc[val_indices, "prediction"] = label_encoder.inverse_transform(preds.astype(int))
         else:
-            predictions_df.loc[val_indices, 'prediction'] = preds
+            predictions_df.loc[val_indices, "prediction"] = preds
 
         # Calculate fold metrics
         if is_classifier:
             y_val_orig = label_encoder.inverse_transform(y_val)
             preds_orig = label_encoder.inverse_transform(preds.astype(int))
             prec, rec, f1, _ = precision_recall_fscore_support(
-                y_val_orig, preds_orig, average='weighted', zero_division=0
+                y_val_orig, preds_orig, average="weighted", zero_division=0
             )
-            fold_metrics.append({
-                'fold': fold_idx,
-                'precision': prec,
-                'recall': rec,
-                'fscore': f1
-            })
+            fold_metrics.append({"fold": fold_idx, "precision": prec, "recall": rec, "fscore": f1})
         else:
-            fold_metrics.append({
-                'fold': fold_idx,
-                'rmse': np.sqrt(mean_squared_error(y_val, preds)),
-                'mae': mean_absolute_error(y_val, preds),
-                'r2': r2_score(y_val, preds)
-            })
+            fold_metrics.append(
+                {
+                    "fold": fold_idx,
+                    "rmse": np.sqrt(mean_squared_error(y_val, preds)),
+                    "mae": mean_absolute_error(y_val, preds),
+                    "r2": r2_score(y_val, preds),
+                }
+            )
 
     # Calculate summary metrics (mean ± std)
     fold_df = pd.DataFrame(fold_metrics)
-    metric_names = ['precision', 'recall', 'fscore'] if is_classifier else ['rmse', 'mae', 'r2']
-    summary_metrics = {
-        metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}"
-        for metric in metric_names
-    }
+    metric_names = ["precision", "recall", "fscore"] if is_classifier else ["rmse", "mae", "r2"]
+    summary_metrics = {metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names}
 
     # Format fold results for display
     formatted_folds = {}
@@ -388,22 +375,13 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         fold_key = f"Fold {int(row['fold'])}"
         if is_classifier:
             formatted_folds[fold_key] = (
-                f"precision: {row['precision']:.3f}  "
-                f"recall: {row['recall']:.3f}  "
-                f"fscore: {row['fscore']:.3f}"
+                f"precision: {row['precision']:.3f}  " f"recall: {row['recall']:.3f}  " f"fscore: {row['fscore']:.3f}"
             )
         else:
-            formatted_folds[fold_key] = (
-                f"rmse: {row['rmse']:.3f}  "
-                f"mae: {row['mae']:.3f}  "
-                f"r2: {row['r2']:.3f}"
-            )
+            formatted_folds[fold_key] = f"rmse: {row['rmse']:.3f}  " f"mae: {row['mae']:.3f}  " f"r2: {row['r2']:.3f}"
 
     # Build return dictionary
-    metrics_dict = {
-        "summary_metrics": summary_metrics,
-        "folds": formatted_folds
-    }
+    metrics_dict = {"summary_metrics": summary_metrics, "folds": formatted_folds}
 
     return metrics_dict, predictions_df
 
