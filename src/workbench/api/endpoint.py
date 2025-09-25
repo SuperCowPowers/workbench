@@ -4,6 +4,7 @@ Endpoints can be viewed in the AWS Sagemaker interfaces or in the Workbench
 Dashboard UI, which provides additional model details and performance metrics"""
 
 import pandas as pd
+from Typing import Tuple
 
 # Workbench Imports
 from workbench.core.artifacts.endpoint_core import EndpointCore
@@ -70,14 +71,14 @@ class Endpoint(EndpointCore):
         """
         return super().fast_inference(eval_df, threads=threads)
 
-    def cross_fold_inference(self, nfolds: int = 5) -> dict:
+    def cross_fold_inference(self, nfolds: int = 5) -> Tuple(dict, pd.DataFrame):
         """Run cross-fold inference (only works for XGBoost models)
 
         Args:
             nfolds (int): The number of folds to use for cross-validation (default: 5)
 
         Returns:
-            dict: A dictionary with fold results
+            Tuple(dict, pd.DataFrame): A tuple containing a dictionary of metrics and a DataFrame with predictions
         """
         return super().cross_fold_inference(nfolds)
 

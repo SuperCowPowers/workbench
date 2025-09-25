@@ -4,6 +4,7 @@ import logging
 import os
 import tempfile
 import tarfile
+import joblib
 import pickle
 import glob
 import awswrangler as wr
@@ -34,13 +35,12 @@ log = logging.getLogger("workbench")
 def xgboost_model_from_s3(model_artifact_uri: str):
     """
     Download and extract XGBoost model artifact from S3, then load the model into memory.
-    Handles both direct XGBoost model files and pickled models.
 
     Args:
         model_artifact_uri (str): S3 URI of the model artifact.
 
     Returns:
-        Loaded XGBoost model or None if unavailable.
+        Loaded XGBoost model (XGBClassifier, XGBRegressor, or Booster) or None if unavailable.
     """
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -54,64 +54,86 @@ def xgboost_model_from_s3(model_artifact_uri: str):
 
         # Define model file patterns to search for (in order of preference)
         patterns = [
-            # Direct XGBoost model files
-            os.path.join(tmpdir, "xgb_model*.joblib"),
-            os.path.join(tmpdir, "xgb_model*.json"),
-            os.path.join(tmpdir, "model"),
-            os.path.join(tmpdir, "*.bin"),
+            # Joblib models (preferred - preserves everything)
+            os.path.join(tmpdir, "*model*.joblib"),
+            os.path.join(tmpdir, "xgb*.joblib"),
+            os.path.join(tmpdir, "**", "*model*.joblib"),
+            os.path.join(tmpdir, "**", "xgb*.joblib"),
+            # Pickle models (also preserves everything)
+            os.path.join(tmpdir, "*model*.pkl"),
+            os.path.join(tmpdir, "xgb*.pkl"),
+            os.path.join(tmpdir, "**", "*model*.pkl"),
+            os.path.join(tmpdir, "**", "xgb*.pkl"),
+            # JSON models (fallback - requires reconstruction)
+            os.path.join(tmpdir, "*model*.json"),
+            os.path.join(tmpdir, "xgb*.json"),
             os.path.join(tmpdir, "**", "*model*.json"),
-            os.path.join(tmpdir, "**", "rmse.json"),
-            # Pickled models
-            os.path.join(tmpdir, "*.pkl"),
-            os.path.join(tmpdir, "**", "*.pkl"),
-            os.path.join(tmpdir, "*.pickle"),
-            os.path.join(tmpdir, "**", "*.pickle"),
+            os.path.join(tmpdir, "**", "xgb*.json"),
         ]
 
         # Try each pattern
         for pattern in patterns:
-            # Use glob to find all matching files
             for model_path in glob.glob(pattern, recursive=True):
-                # Determine file type by extension
+                # Skip files that are clearly not XGBoost models
+                filename = os.path.basename(model_path).lower()
+                if any(skip in filename for skip in ['label_encoder', 'scaler', 'preprocessor', 'transformer']):
+                    log.debug(f"Skipping non-model file: {model_path}")
+                    continue
+
                 _, ext = os.path.splitext(model_path)
 
                 try:
-                    if True or ext.lower() in [".pkl", ".pickle"]:
-                        # Handle pickled models
+                    if ext == ".joblib":
+                        model = joblib.load(model_path)
+                        # Verify it's actually an XGBoost model
+                        if isinstance(model, (xgb.XGBClassifier, xgb.XGBRegressor, xgb.Booster)):
+                            log.important(f"Loaded XGBoost model from joblib: {model_path}")
+                            return model
+                        else:
+                            log.debug(f"Skipping non-XGBoost object from {model_path}: {type(model)}")
+
+                    elif ext in [".pkl", ".pickle"]:
                         with open(model_path, "rb") as f:
                             model = pickle.load(f)
-
-                        # Handle different model types
-                        if isinstance(model, xgb.Booster):
-                            log.important(f"Loaded XGBoost Booster from pickle: {model_path}")
+                        # Verify it's actually an XGBoost model
+                        if isinstance(model, (xgb.XGBClassifier, xgb.XGBRegressor, xgb.Booster)):
+                            log.important(f"Loaded XGBoost model from pickle: {model_path}")
                             return model
-                        elif hasattr(model, "get_booster"):
-                            log.important(f"Loaded XGBoost model from pipeline: {model_path}")
-                            booster = model.get_booster()
-                            return booster
-                    else:
-                        # Handle direct XGBoost model files
+                        else:
+                            log.debug(f"Skipping non-XGBoost object from {model_path}: {type(model)}")
+
+                    elif ext == ".json":
+                        # JSON files should be XGBoost models by definition
                         booster = xgb.Booster()
                         booster.load_model(model_path)
-                        log.important(f"Loaded XGBoost model directly: {model_path}")
+                        log.important(f"Loaded XGBoost booster from JSON: {model_path}")
                         return booster
-                except Exception as e:
-                    log.info(f"Failed to load model from {model_path}: {e}")
-                    continue  # Try the next file
 
-    # If no model found
+                except Exception as e:
+                    log.debug(f"Failed to load {model_path}: {e}")
+                    continue
+
     log.error("No XGBoost model found in the artifact.")
     return None
 
 
-def feature_importance(workbench_model, importance_type: str = "weight") -> Optional[List[Tuple[str, float]]]:
+def feature_importance(workbench_model, importance_type: str = "gain") -> Optional[List[Tuple[str, float]]]:
     """
     Get sorted feature importances from a Workbench Model object.
 
     Args:
         workbench_model: Workbench model object
-        importance_type: Type of feature importance.
-            Options: 'weight', 'gain', 'cover', 'total_gain', 'total_cover'
+        importance_type: Type of feature importance. Options:
+            - 'gain' (default): Average improvement in loss/objective when feature is used.
+                     Best for understanding predictive power of features.
+            - 'weight': Number of times a feature appears in trees (split count).
+                       Useful for understanding model complexity and feature usage frequency.
+            - 'cover': Average number of samples affected when feature is used.
+                      Shows the relative quantity of observations related to this feature.
+            - 'total_gain': Total improvement in loss/objective across all splits.
+                           Similar to 'gain' but not averaged (can be biased toward frequent features).
+            - 'total_cover': Total number of samples affected across all splits.
+                            Similar to 'cover' but not averaged.
 
     Returns:
         List of tuples (feature, importance) sorted by importance value (descending).
@@ -120,7 +142,8 @@ def feature_importance(workbench_model, importance_type: str = "weight") -> Opti
 
     Note:
         XGBoost's get_score() only returns features with non-zero importance.
-        This function ensures all model features are included in the output.
+        This function ensures all model features are included in the output,
+        adding zero values for features that weren't used in any tree splits.
     """
     model_artifact_uri = workbench_model.model_data_url()
     xgb_model = xgboost_model_from_s3(model_artifact_uri)
@@ -128,11 +151,18 @@ def feature_importance(workbench_model, importance_type: str = "weight") -> Opti
         log.error("No XGBoost model found in the artifact.")
         return None
 
-    # Get feature importances (only non-zero features)
-    importances = xgb_model.get_score(importance_type=importance_type)
+    # Check if we got a full sklearn model or just a booster (for backwards compatibility)
+    if hasattr(xgb_model, 'get_booster'):
+        # Full sklearn model - get the booster for feature importance
+        booster = xgb_model.get_booster()
+        all_features = booster.feature_names
+    else:
+        # Already a booster (legacy JSON load)
+        booster = xgb_model
+        all_features = xgb_model.feature_names
 
-    # Get all feature names from the model
-    all_features = xgb_model.feature_names
+    # Get feature importances (only non-zero features)
+    importances = booster.get_score(importance_type=importance_type)
 
     # Create complete importance dict with zeros for missing features
     complete_importances = {feat: importances.get(feat, 0.0) for feat in all_features}
@@ -229,143 +259,153 @@ def leaf_stats(df: pd.DataFrame, target_col: str) -> pd.DataFrame:
     return result_df
 
 
-def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Dict[str, Any]:
+def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[str, Any], pd.DataFrame]:
     """
     Performs K-fold cross-validation with detailed metrics.
     Args:
         workbench_model: Workbench model object
         nfolds: Number of folds for cross-validation (default is 5)
     Returns:
-        Dictionary containing:
-            - folds: Dictionary of formatted strings for each fold
-            - summary_metrics: Summary metrics across folds
-            - overall_metrics: Overall metrics for all folds
+        Tuple of:
+            - Dictionary containing:
+                - folds: Dictionary of formatted strings for each fold
+                - summary_metrics: Summary metrics across folds
+            - DataFrame with columns: id, target, prediction (out-of-fold predictions for all samples)
     """
     from workbench.api import FeatureSet
 
     # Load model
-    model_type = workbench_model.model_type.value
     model_artifact_uri = workbench_model.model_data_url()
-    loaded_booster = xgboost_model_from_s3(model_artifact_uri)
-    if loaded_booster is None:
+    loaded_model = xgboost_model_from_s3(model_artifact_uri)
+    if loaded_model is None:
         log.error("No XGBoost model found in the artifact.")
-        return {}
-    # Create the model wrapper
-    is_classifier = model_type == "classifier"
-    xgb_model = (
-        xgb.XGBClassifier(enable_categorical=True) if is_classifier else xgb.XGBRegressor(enable_categorical=True)
-    )
-    xgb_model._Booster = loaded_booster
+        return {}, pd.DataFrame()
+
+    # Check if we got a full sklearn model or need to create one
+    if isinstance(loaded_model, (xgb.XGBClassifier, xgb.XGBRegressor)):
+        xgb_model = loaded_model
+        is_classifier = isinstance(xgb_model, xgb.XGBClassifier)
+    elif isinstance(loaded_model, xgb.Booster):
+        # Legacy: got a booster, need to wrap it
+        log.warning("Deprecated: Loaded model is a Booster, wrapping in sklearn model.")
+        is_classifier = workbench_model.model_type.value == "classifier"
+        xgb_model = (
+            xgb.XGBClassifier(enable_categorical=True) if is_classifier
+            else xgb.XGBRegressor(enable_categorical=True)
+        )
+        xgb_model._Booster = loaded_model
+    else:
+        log.error(f"Unexpected model type: {type(loaded_model)}")
+        return {}, pd.DataFrame()
+
     # Prepare data
     fs = FeatureSet(workbench_model.get_input())
     df = fs.view("training").pull_dataframe()
+
+    # Get id column - assuming FeatureSet has an id_column attribute or similar
+    id_col = fs.id_column
+    target_col = workbench_model.target()
     feature_cols = workbench_model.features()
+
     # Convert string features to categorical
     for col in feature_cols:
         if df[col].dtype in ["object", "string"]:
             df[col] = df[col].astype("category")
-    # Split X and y
-    X = df[workbench_model.features()]
-    y = df[workbench_model.target()]
 
-    # Encode target if it's a classification problem
+    X = df[feature_cols]
+    y = df[target_col]
+    ids = df[id_col]
+
+    # Encode target if classifier
     label_encoder = LabelEncoder() if is_classifier else None
     if label_encoder:
-        y = pd.Series(label_encoder.fit_transform(y), name=workbench_model.target())
+        y_encoded = label_encoder.fit_transform(y)
+        y_for_cv = pd.Series(y_encoded, index=y.index, name=target_col)
+    else:
+        y_for_cv = y
+
     # Prepare KFold
-    kfold = (
-        StratifiedKFold(n_splits=nfolds, shuffle=True, random_state=42)
-        if is_classifier
-        else KFold(n_splits=nfolds, shuffle=True, random_state=42)
+    kfold = (StratifiedKFold if is_classifier else KFold)(
+        n_splits=nfolds, shuffle=True, random_state=42
     )
 
-    fold_results = []
-    all_predictions = []
-    all_actuals = []
-    for fold_idx, (train_idx, val_idx) in enumerate(kfold.split(X, y)):
-        X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
-        y_train, y_val = y.iloc[train_idx], y.iloc[val_idx]
+    # Initialize results collection
+    fold_metrics = []
+    predictions_df = pd.DataFrame({
+        id_col: ids,
+        target_col: y  # Keep original values
+    })
+    # Note: 'prediction' column will be created automatically with correct dtype
 
-        # Train the model
+    # Perform cross-validation
+    for fold_idx, (train_idx, val_idx) in enumerate(kfold.split(X, y_for_cv), 1):
+        X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
+        y_train, y_val = y_for_cv.iloc[train_idx], y_for_cv.iloc[val_idx]
+
+        # Train and predict
         xgb_model.fit(X_train, y_train)
         preds = xgb_model.predict(X_val)
-        all_predictions.extend(preds)
-        all_actuals.extend(y_val)
 
-        # Calculate metrics for this fold
-        fold_metrics = {"fold": fold_idx + 1}
-
+        # Store predictions (decode if classifier)
+        val_indices = X_val.index
         if is_classifier:
-            y_val_original = label_encoder.inverse_transform(y_val)
-            preds_original = label_encoder.inverse_transform(preds.astype(int))
-            scores = precision_recall_fscore_support(
-                y_val_original, preds_original, average="weighted", zero_division=0
-            )
-            fold_metrics.update({"precision": float(scores[0]), "recall": float(scores[1]), "fscore": float(scores[2])})
+            predictions_df.loc[val_indices, 'prediction'] = label_encoder.inverse_transform(preds.astype(int))
         else:
-            fold_metrics.update(
-                {
-                    "rmse": float(np.sqrt(mean_squared_error(y_val, preds))),
-                    "mae": float(mean_absolute_error(y_val, preds)),
-                    "r2": float(r2_score(y_val, preds)),
-                }
-            )
+            predictions_df.loc[val_indices, 'prediction'] = preds
 
-        fold_results.append(fold_metrics)
-    # Calculate overall metrics
-    overall_metrics = {}
-    if is_classifier:
-        all_actuals_original = label_encoder.inverse_transform(all_actuals)
-        all_predictions_original = label_encoder.inverse_transform(all_predictions)
-        scores = precision_recall_fscore_support(
-            all_actuals_original, all_predictions_original, average="weighted", zero_division=0
-        )
-        overall_metrics.update(
-            {
-                "precision": float(scores[0]),
-                "recall": float(scores[1]),
-                "fscore": float(scores[2]),
-                "confusion_matrix": confusion_matrix(
-                    all_actuals_original, all_predictions_original, labels=label_encoder.classes_
-                ).tolist(),
-                "label_names": list(label_encoder.classes_),
-            }
-        )
-    else:
-        overall_metrics.update(
-            {
-                "rmse": float(np.sqrt(mean_squared_error(all_actuals, all_predictions))),
-                "mae": float(mean_absolute_error(all_actuals, all_predictions)),
-                "r2": float(r2_score(all_actuals, all_predictions)),
-            }
-        )
-    # Calculate summary metrics across folds
-    summary_metrics = {}
-    metrics_to_aggregate = ["precision", "recall", "fscore"] if is_classifier else ["rmse", "mae", "r2"]
-
-    for metric in metrics_to_aggregate:
-        values = [fold[metric] for fold in fold_results]
-        summary_metrics[metric] = f"{float(np.mean(values)):.3f} ±{float(np.std(values)):.3f}"
-    # Format fold results as strings (TBD section)
-    formatted_folds = {}
-    for fold_data in fold_results:
-        fold_key = f"Fold {fold_data['fold']}"
+        # Calculate fold metrics
         if is_classifier:
-            formatted_folds[fold_key] = (
-                f"precision: {fold_data['precision']:.3f}  "
-                f"recall: {fold_data['recall']:.3f}  "
-                f"fscore: {fold_data['fscore']:.3f}"
+            y_val_orig = label_encoder.inverse_transform(y_val)
+            preds_orig = label_encoder.inverse_transform(preds.astype(int))
+            prec, rec, f1, _ = precision_recall_fscore_support(
+                y_val_orig, preds_orig, average='weighted', zero_division=0
             )
+            fold_metrics.append({
+                'fold': fold_idx,
+                'precision': prec,
+                'recall': rec,
+                'fscore': f1
+            })
         else:
-            formatted_folds[fold_key] = (
-                f"rmse: {fold_data['rmse']:.3f}  mae: {fold_data['mae']:.3f}  r2: {fold_data['r2']:.3f}"
-            )
-    # Return the results
-    return {
-        "summary_metrics": summary_metrics,
-        # "overall_metrics": overall_metrics,
-        "folds": formatted_folds,
+            fold_metrics.append({
+                'fold': fold_idx,
+                'rmse': np.sqrt(mean_squared_error(y_val, preds)),
+                'mae': mean_absolute_error(y_val, preds),
+                'r2': r2_score(y_val, preds)
+            })
+
+    # Calculate summary metrics (mean ± std)
+    fold_df = pd.DataFrame(fold_metrics)
+    metric_names = ['precision', 'recall', 'fscore'] if is_classifier else ['rmse', 'mae', 'r2']
+    summary_metrics = {
+        metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}"
+        for metric in metric_names
     }
+
+    # Format fold results for display
+    formatted_folds = {}
+    for _, row in fold_df.iterrows():
+        fold_key = f"Fold {int(row['fold'])}"
+        if is_classifier:
+            formatted_folds[fold_key] = (
+                f"precision: {row['precision']:.3f}  "
+                f"recall: {row['recall']:.3f}  "
+                f"fscore: {row['fscore']:.3f}"
+            )
+        else:
+            formatted_folds[fold_key] = (
+                f"rmse: {row['rmse']:.3f}  "
+                f"mae: {row['mae']:.3f}  "
+                f"r2: {row['r2']:.3f}"
+            )
+
+    # Build return dictionary
+    metrics_dict = {
+        "summary_metrics": summary_metrics,
+        "folds": formatted_folds
+    }
+
+    return metrics_dict, predictions_df
 
 
 if __name__ == "__main__":
@@ -411,10 +451,12 @@ if __name__ == "__main__":
 
     print("\n=== CROSS FOLD REGRESSION EXAMPLE ===")
     model = Model("abalone-regression")
-    results = cross_fold_inference(model)
+    results, df = cross_fold_inference(model)
     pprint(results)
+    print(df.head())
 
     print("\n=== CROSS FOLD CLASSIFICATION EXAMPLE ===")
     model = Model("wine-classification")
-    results = cross_fold_inference(model)
+    results, df = cross_fold_inference(model)
     pprint(results)
+    print(df.head())
