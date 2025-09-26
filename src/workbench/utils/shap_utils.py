@@ -213,7 +213,7 @@ def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
         return None, None, None, None
 
     # Get the booster (SHAP requires the booster, not the sklearn wrapper)
-    if hasattr(xgb_model, 'get_booster'):
+    if hasattr(xgb_model, "get_booster"):
         # Full sklearn model - extract the booster
         booster = xgb_model.get_booster()
     else:
