@@ -5,11 +5,7 @@ from xgboost import XGBRegressor  # Point Estimator
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
-from sklearn.metrics import (
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error
-)
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
 from io import StringIO
 import json
@@ -24,7 +20,6 @@ from typing import List, Tuple
 from proximity import Proximity
 
 
-
 # Template Placeholders
 TEMPLATE_PARAMS = {
     "id_column": "{{id_column}}",
@@ -32,7 +27,7 @@ TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
     "compressed_features": "{{compressed_features}}",
     "train_all_data": "{{train_all_data}}",
-    "track_columns": "{{track_columns}}"
+    "track_columns": "{{track_columns}}",
 }
 
 
@@ -183,11 +178,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read the training data into DataFrames
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train)
-        if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     print(f"Training Files: {training_files}")
 
     # Combine files and read them all into a single pandas dataframe
@@ -222,9 +213,7 @@ if __name__ == "__main__":
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(
-            all_df, test_size=validation_split, random_state=42
-        )
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
@@ -289,11 +278,7 @@ def model_fn(model_dir) -> dict:
     # Deserialize the proximity model
     prox_model = Proximity.deserialize(model_dir)
 
-    return {
-        "xgboost": xgb_model,
-        "ngboost": ngb_model,
-        "proximity": prox_model
-    }
+    return {"xgboost": xgb_model, "ngboost": ngb_model, "proximity": prox_model}
 
 
 def input_fn(input_data, content_type):
@@ -353,8 +338,8 @@ def predict_fn(df, models) -> pd.DataFrame:
     dist_params = y_dists.params
 
     # Extract mean and std from distribution parameters
-    df["prediction_uq"] = dist_params['loc']  # mean
-    df["prediction_std"] = dist_params['scale']  # standard deviation
+    df["prediction_uq"] = dist_params["loc"]  # mean
+    df["prediction_std"] = dist_params["scale"]  # standard deviation
 
     # Add 95% prediction intervals using ppf (percent point function)
     # Note: Our hybrid model uses XGB point prediction and NGBoost UQ

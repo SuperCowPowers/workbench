@@ -41,7 +41,7 @@ TEMPLATE_PARAMS = {
     "compressed_features": "{{compressed_features}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "train_all_data": "{{train_all_data}}",
-    "hyperparameters": "{{hyperparameters}}"
+    "hyperparameters": "{{hyperparameters}}",
 }
 
 
@@ -210,7 +210,7 @@ def model_fn(model_dir):
     original_cwd = os.getcwd()
     try:
         # Change to /tmp because Pytorch Tabular needs write access (creates a .pt_tmp directory)
-        os.chdir('/tmp')
+        os.chdir("/tmp")
 
         # Load the model
         model_path = os.path.join(model_dir, "tabular_model")
@@ -348,11 +348,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read the training data into DataFrames
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train)
-        if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     print(f"Training Files: {training_files}")
 
     # Combine files and read them all into a single pandas dataframe
@@ -387,9 +383,7 @@ if __name__ == "__main__":
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(
-            all_df, test_size=validation_split, random_state=42
-        )
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
@@ -435,8 +429,7 @@ if __name__ == "__main__":
     }
 
     # Override defaults with training_config if present
-    training_overrides = {k: v for k, v in hyperparameters.get('training_config', {}).items()
-                          if k in trainer_defaults}
+    training_overrides = {k: v for k, v in hyperparameters.get("training_config", {}).items() if k in trainer_defaults}
     # Print overwrites
     for key, value in training_overrides.items():
         print(f"TRAINING CONFIG Override: {key}: {trainer_defaults[key]} → {value}")
@@ -453,8 +446,7 @@ if __name__ == "__main__":
         "initialization": "kaiming",
     }
     # Override defaults with model_config if present
-    model_overrides = {k: v for k, v in hyperparameters.get('model_config', {}).items()
-                          if k in model_defaults}
+    model_overrides = {k: v for k, v in hyperparameters.get("model_config", {}).items() if k in model_defaults}
     # Print overwrites
     for key, value in model_overrides.items():
         print(f"MODEL CONFIG Override: {key}: {model_defaults[key]} → {value}")
@@ -463,10 +455,7 @@ if __name__ == "__main__":
     # Use CategoryEmbedding model configuration for general-purpose tabular modeling.
     # Works effectively for both regression and classification as the foundational
     # architecture in PyTorch Tabular
-    model_config = CategoryEmbeddingModelConfig(
-        task=task,
-        **model_params
-    )
+    model_config = CategoryEmbeddingModelConfig(task=task, **model_params)
     optimizer_config = OptimizerConfig()
 
     #####################################

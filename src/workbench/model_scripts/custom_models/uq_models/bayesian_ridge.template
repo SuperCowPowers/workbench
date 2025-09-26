@@ -14,7 +14,7 @@ import pandas as pd
 TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
     "target": "{{target_column}}",
-    "train_all_data": "{{train_all_data}}"
+    "train_all_data": "{{train_all_data}}",
 }
 
 
@@ -37,7 +37,7 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     """
     Matches and renames DataFrame columns to match model feature names (case-insensitive).
     Prioritizes exact matches, then case-insensitive matches.
-    
+
     Raises ValueError if any model features cannot be matched.
     """
     df_columns_lower = {col.lower(): col for col in df.columns}
@@ -81,10 +81,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load training data from the specified directory
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train) if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
 
     # Check if the DataFrame is empty
@@ -109,8 +106,10 @@ if __name__ == "__main__":
     # Create and train the Regression/Confidence model
     # model = BayesianRidge()
     model = BayesianRidge(
-        alpha_1=1e-6, alpha_2=1e-6,  # Noise precision
-        lambda_1=1e-6, lambda_2=1e-6,  # Weight precision
+        alpha_1=1e-6,
+        alpha_2=1e-6,  # Noise precision
+        lambda_1=1e-6,
+        lambda_2=1e-6,  # Weight precision
         fit_intercept=True,
     )
 

@@ -4,11 +4,7 @@ import awswrangler as wr
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
-from sklearn.metrics import (
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error
-)
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
 from io import StringIO
 import json
@@ -22,8 +18,9 @@ TEMPLATE_PARAMS = {
     "target_column": "{{target_column}}",
     "features": "{{feature_list}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "train_all_data": "{{train_all_data}}"
+    "train_all_data": "{{train_all_data}}",
 }
+
 
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
@@ -64,6 +61,7 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     # Rename the DataFrame columns to match the model features
     return df.rename(columns=rename_dict)
 
+
 if __name__ == "__main__":
     """The main function is for training the XGBoost Quantile Regression models"""
 
@@ -86,10 +84,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load training data from the specified directory
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train) if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     print(f"Training Files: {training_files}")
 
     # Combine files and read them all into a single pandas dataframe

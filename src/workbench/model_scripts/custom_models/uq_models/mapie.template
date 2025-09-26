@@ -5,11 +5,7 @@ from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
-from sklearn.metrics import (
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error
-)
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
 from io import StringIO
 import json
@@ -25,7 +21,7 @@ TEMPLATE_PARAMS = {
     "target": "{{target_column}}",
     "features": "{{feature_list}}",
     "compressed_features": "{{compressed_features}}",
-    "train_all_data": "{{train_all_data}}"
+    "train_all_data": "{{train_all_data}}",
 }
 
 
@@ -101,7 +97,7 @@ def convert_categorical_types(df: pd.DataFrame, features: list, category_mapping
 
 
 def decompress_features(
-        df: pd.DataFrame, features: List[str], compressed_features: List[str]
+    df: pd.DataFrame, features: List[str], compressed_features: List[str]
 ) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the model by decompressing bitstring features
 
@@ -174,11 +170,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read the training data into DataFrames
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train)
-        if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     print(f"Training Files: {training_files}")
 
     # Combine files and read them all into a single pandas dataframe
@@ -213,9 +205,7 @@ if __name__ == "__main__":
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(
-            all_df, test_size=validation_split, random_state=42
-        )
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
@@ -272,7 +262,7 @@ if __name__ == "__main__":
                 colsample_bytree=0.8,
                 random_state=42,
                 verbose=-1,
-                force_col_wise=True
+                force_col_wise=True,
             )
             est.fit(X_train, y_train)
             quantile_estimators.append(est)
@@ -280,9 +270,7 @@ if __name__ == "__main__":
         # Create MAPIE CQR model for this confidence level
         print(f"  Setting up MAPIE CQR for {confidence_level * 100:.0f}% confidence...")
         mapie_model = ConformalizedQuantileRegressor(
-            quantile_estimators,
-            confidence_level=confidence_level,
-            prefit=True
+            quantile_estimators, confidence_level=confidence_level, prefit=True
         )
 
         # Conformalize the model
@@ -337,8 +325,8 @@ if __name__ == "__main__":
             "xgb_rmse": float(xgb_rmse),
             "xgb_mae": float(xgb_mae),
             "xgb_r2": float(xgb_r2),
-            "n_validation": len(df_val)
-        }
+            "n_validation": len(df_val),
+        },
     }
     with open(os.path.join(args.model_dir, "model_config.json"), "w") as fp:
         json.dump(model_config, fp, indent=2)
@@ -379,7 +367,7 @@ def model_fn(model_dir) -> dict:
         "xgb_model": xgb_model,
         "mapie_models": mapie_models,
         "confidence_levels": config["confidence_levels"],
-        "category_mappings": category_mappings
+        "category_mappings": category_mappings,
     }
 
 
@@ -404,7 +392,7 @@ def output_fn(output_df, accept_type):
     """Supports both CSV and JSON output formats."""
     if "text/csv" in accept_type:
         # Convert categorical columns to string to avoid fillna issues
-        for col in output_df.select_dtypes(include=['category']).columns:
+        for col in output_df.select_dtypes(include=["category"]).columns:
             output_df[col] = output_df[col].astype(str)
         csv_output = output_df.fillna("N/A").to_csv(index=False)
         return csv_output, "text/csv"
@@ -439,11 +427,7 @@ def predict_fn(df, models) -> pd.DataFrame:
 
     # Apply categorical mappings if they exist
     if models.get("category_mappings"):
-        matched_df, _ = convert_categorical_types(
-            matched_df,
-            model_features,
-            models["category_mappings"]
-        )
+        matched_df, _ = convert_categorical_types(matched_df, model_features, models["category_mappings"])
 
     # Get features for prediction
     X = matched_df[model_features]

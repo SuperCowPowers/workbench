@@ -8,7 +8,7 @@ TEMPLATE_PARAMS = {
     "id_column": "{{id_column}}",
     "features": "{{feature_list}}",
     "target": "{{target_column}}",
-    "track_columns": "{{track_columns}}"
+    "track_columns": "{{track_columns}}",
 }
 
 from io import StringIO
@@ -73,10 +73,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load training data from the specified directory
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train) if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
 
     # Check if the DataFrame is empty
@@ -87,6 +84,7 @@ if __name__ == "__main__":
 
     # Now serialize the model
     model.serialize(args.model_dir)
+
 
 # Model loading and prediction functions
 def model_fn(model_dir):

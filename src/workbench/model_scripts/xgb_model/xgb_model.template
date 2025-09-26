@@ -34,7 +34,7 @@ TEMPLATE_PARAMS = {
     "compressed_features": "{{compressed_features}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "train_all_data": "{{train_all_data}}",
-    "hyperparameters": "{{hyperparameters}}"
+    "hyperparameters": "{{hyperparameters}}",
 }
 
 
@@ -221,11 +221,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read the training data into DataFrames
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train)
-        if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     print(f"Training Files: {training_files}")
 
     # Combine files and read them all into a single pandas dataframe
@@ -260,9 +256,7 @@ if __name__ == "__main__":
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(
-            all_df, test_size=validation_split, random_state=42
-        )
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
@@ -271,7 +265,7 @@ if __name__ == "__main__":
 
     # Now spin up our XGB Model
     if model_type == "classifier":
-        xgb_model = xgb.XGBClassifier(enable_categorical=True)
+        xgb_model = xgb.XGBClassifier(enable_categorical=True, **hyperparameters)
 
         # Encode the target column
         label_encoder = LabelEncoder()
@@ -279,12 +273,12 @@ if __name__ == "__main__":
         df_val[target] = label_encoder.transform(df_val[target])
 
     else:
-        xgb_model = xgb.XGBRegressor(enable_categorical=True)
+        xgb_model = xgb.XGBRegressor(enable_categorical=True, **hyperparameters)
         label_encoder = None  # We don't need this for regression
 
     # Grab our Features, Target and Train the Model
     y_train = df_train[target]
-    X_train= df_train[features]
+    X_train = df_train[features]
     xgb_model.fit(X_train, y_train)
 
     # Make Predictions on the Validation Set
@@ -323,9 +317,7 @@ if __name__ == "__main__":
         label_names = label_encoder.classes_
 
         # Calculate various model performance metrics
-        scores = precision_recall_fscore_support(
-            y_validate, preds, average=None, labels=label_names
-        )
+        scores = precision_recall_fscore_support(y_validate, preds, average=None, labels=label_names)
 
         # Put the scores into a dataframe
         score_df = pd.DataFrame(

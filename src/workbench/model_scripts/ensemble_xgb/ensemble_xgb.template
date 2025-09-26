@@ -3,7 +3,7 @@ TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
     "target_column": "{{target_column}}",
     "feature_list": "{{feature_list}}",
-    "model_metrics_s3_path": "{{model_metrics_s3_path}}"
+    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
 }
 
 # Imports for XGB Model
@@ -12,11 +12,7 @@ import awswrangler as wr
 import numpy as np
 
 # Model Performance Scores
-from sklearn.metrics import (
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error
-)
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
 from io import StringIO
 import json
@@ -38,6 +34,7 @@ def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
         msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
         print(msg)
         raise ValueError(msg)
+
 
 def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
     """
@@ -95,11 +92,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read the training data into DataFrames
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train)
-        if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     print(f"Training Files: {training_files}")
 
     # Combine files and read them all into a single pandas dataframe
@@ -149,7 +142,6 @@ if __name__ == "__main__":
     # Now compute residuals on the rmse prediction
     result_df["residual"] = result_df[target] - result_df["prediction"]
     result_df["residual_abs"] = result_df["residual"].abs()
-
 
     # Save the results dataframe to S3
     wr.s3.to_csv(
@@ -210,7 +202,7 @@ def input_fn(input_data, content_type):
     """Parse input data and return a DataFrame."""
     if not input_data:
         raise ValueError("Empty input data is not supported!")
-    
+
     # Decode bytes to string if necessary
     if isinstance(input_data, bytes):
         input_data = input_data.decode("utf-8")

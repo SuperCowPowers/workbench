@@ -8,7 +8,7 @@ TEMPLATE_PARAMS = {
     "feature_list": "{{feature_list}}",
     "model_class": "{{model_class}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "train_all_data": "{{train_all_data}}"
+    "train_all_data": "{{train_all_data}}",
 }
 
 import awswrangler as wr
@@ -99,10 +99,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load training data from the specified directory
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train) if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
 
     # Check if the DataFrame is empty
@@ -116,10 +113,7 @@ if __name__ == "__main__":
 
     if needs_standardization:
         # Create a pipeline with standardization and the model
-        model = Pipeline([
-            ("scaler", StandardScaler()),
-            ("model", model)
-        ])
+        model = Pipeline([("scaler", StandardScaler()), ("model", model)])
 
     # Handle logic based on the model_type
     if model_type in ["classifier", "regressor"]:
@@ -205,6 +199,7 @@ if __name__ == "__main__":
     # Save the feature list to validate input during predictions
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
         json.dump(feature_list, fp)
+
 
 #
 # Inference Section

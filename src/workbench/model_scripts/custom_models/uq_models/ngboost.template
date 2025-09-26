@@ -3,11 +3,7 @@ from ngboost import NGBRegressor
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
-from sklearn.metrics import (
-    mean_absolute_error,
-    r2_score,
-    root_mean_squared_error
-)
+from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 
 from io import StringIO
 import json
@@ -21,7 +17,7 @@ import pandas as pd
 TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
     "target": "{{target_column}}",
-    "train_all_data": "{{train_all_data}}"
+    "train_all_data": "{{train_all_data}}",
 }
 
 
@@ -87,10 +83,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load training data from the specified directory
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train) if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     print(f"Training Files: {training_files}")
 
     # Combine files and read them all into a single pandas dataframe
@@ -212,8 +205,8 @@ def predict_fn(df, model) -> pd.DataFrame:
     dist_params = y_dists.params
 
     # Extract mean and std from distribution parameters
-    df["prediction"] = dist_params['loc']  # mean
-    df["prediction_std"] = dist_params['scale']  # standard deviation
+    df["prediction"] = dist_params["loc"]  # mean
+    df["prediction_std"] = dist_params["scale"]  # standard deviation
 
     # Add 95% prediction intervals using ppf (percent point function)
     df["q_025"] = y_dists.ppf(0.025)  # 2.5th percentile

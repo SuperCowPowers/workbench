@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
     "target": "{{target_column}}",
-    "train_all_data": "{{train_all_data}}"
+    "train_all_data": "{{train_all_data}}",
 }
 
 from io import StringIO
@@ -33,7 +33,7 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     """
     Matches and renames DataFrame columns to match model feature names (case-insensitive).
     Prioritizes exact matches, then case-insensitive matches.
-    
+
     Raises ValueError if any model features cannot be matched.
     """
     df_columns_lower = {col.lower(): col for col in df.columns}
@@ -46,7 +46,7 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
             rename_dict[df_columns_lower[feature.lower()]] = feature
         else:
             missing.append(feature)
-    
+
     if missing:
         raise ValueError(f"Features not found: {missing}")
 
@@ -76,10 +76,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load training data from the specified directory
-    training_files = [
-        os.path.join(args.train, file)
-        for file in os.listdir(args.train) if file.endswith(".csv")
-    ]
+    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
     df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
 
     # Check if the DataFrame is empty
@@ -112,10 +109,7 @@ if __name__ == "__main__":
     )
 
     # Create a Pipeline with StandardScaler
-    model = Pipeline([
-        ("scaler", StandardScaler()),
-        ("model", model)
-    ])
+    model = Pipeline([("scaler", StandardScaler()), ("model", model)])
 
     # Prepare features and targets for training
     X_train = df_train[features]
