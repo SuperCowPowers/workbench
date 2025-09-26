@@ -212,6 +212,14 @@ def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
         log.error("No XGBoost model found in the artifact.")
         return None, None, None, None
 
+    # Get the booster (SHAP requires the booster, not the sklearn wrapper)
+    if hasattr(xgb_model, 'get_booster'):
+        # Full sklearn model - extract the booster
+        booster = xgb_model.get_booster()
+    else:
+        # Already a booster
+        booster = xgb_model
+
     # Load category mappings if available
     category_mappings = load_category_mappings_from_s3(model_artifact_uri)
 
@@ -229,8 +237,8 @@ def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
     # Create a DMatrix with categorical support
     dmatrix = xgb.DMatrix(X, enable_categorical=True)
 
-    # Use XGBoost's built-in SHAP calculation
-    shap_values = xgb_model.predict(dmatrix, pred_contribs=True, strict_shape=True)
+    # Use XGBoost's built-in SHAP calculation (booster method, not sklearn)
+    shap_values = booster.predict(dmatrix, pred_contribs=True, strict_shape=True)
     features_with_bias = features + ["bias"]
 
     # Now we need to subset the columns based on top 10 SHAP values
