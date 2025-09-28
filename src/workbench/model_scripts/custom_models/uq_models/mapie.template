@@ -349,9 +349,8 @@ def model_fn(model_dir) -> dict:
         config = json.load(fp)
 
     # Load XGBoost regressor
-    xgb_path = os.path.join(model_dir, "xgb_model.json")
-    xgb_model = XGBRegressor(enable_categorical=True)
-    xgb_model.load_model(xgb_path)
+    xgb_path = os.path.join(model_dir, "xgb_model.joblib")
+    xgb_model = joblib.load(xgb_path)
 
     # Load all MAPIE models
     mapie_models = {}
