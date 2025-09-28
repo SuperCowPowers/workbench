@@ -478,8 +478,7 @@ class EndpointCore(Artifact):
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
             # Identify UQ-specific columns (quantiles and prediction_std)
-            uq_columns = [col for col in full_inference_df.columns
-                          if col.startswith("q_") or col == "prediction_std"]
+            uq_columns = [col for col in full_inference_df.columns if col.startswith("q_") or col == "prediction_std"]
 
             # Merge UQ columns with out-of-fold predictions
             if uq_columns:
@@ -487,12 +486,7 @@ class EndpointCore(Artifact):
                 merge_columns = [id_column] + uq_columns
                 uq_df = full_inference_df[merge_columns]
 
-                out_of_fold_df = pd.merge(
-                    out_of_fold_df,
-                    uq_df,
-                    on=id_column,
-                    how="left"
-                )
+                out_of_fold_df = pd.merge(out_of_fold_df, uq_df, on=id_column, how="left")
                 additional_columns = uq_columns
 
                 self.log.info(f"Added UQ columns: {', '.join(additional_columns)}")
