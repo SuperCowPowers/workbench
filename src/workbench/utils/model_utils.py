@@ -3,6 +3,7 @@
 import logging
 import pandas as pd
 import numpy as np
+from scipy.stats import spearmanr
 import importlib.resources
 from pathlib import Path
 import os
@@ -222,8 +223,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         lower_95, upper_95 = df["q_025"], df["q_975"]
         lower_90, upper_90 = df["q_05"], df["q_95"]
         lower_80, upper_80 = df["q_10"], df["q_90"]
-        lower_68 = df.get("q_16", 0)
-        upper_68 = df.get("q_84", 0)
+        lower_68 = df.get("q_16", df["q_10"])  # fallback to 80% interval
+        upper_68 = df.get("q_84", df["q_90"])  # fallback to 80% interval
         lower_50, upper_50 = df["q_25"], df["q_75"]
     elif "prediction_std" in df.columns:
         lower_95 = df["prediction"] - 1.96 * df["prediction_std"]
@@ -267,10 +268,12 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     )
     mean_is_95 = np.mean(is_95)
 
-    # --- Adaptive Calibration (correlation between errors and uncertainty) ---
+    # --- Interval to Error Correlation ---
     abs_residuals = np.abs(df[target_col] - df["prediction"])
-    width_95 = upper_95 - lower_95
-    adaptive_calibration = np.corrcoef(abs_residuals, width_95)[0, 1]
+    width_68 = upper_68 - lower_68
+
+    # Spearman correlation for robustness
+    interval_to_error_corr = spearmanr(width_68, abs_residuals)[0]
 
     # Collect results
     results = {
@@ -286,9 +289,7 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         "avg_width_80": avg_width_80,
         "avg_width_90": avg_width_90,
         "avg_width_95": avg_width_95,
-        # "crps": mean_crps,
-        # "interval_score_95": mean_is_95,
-        # "adaptive_calibration": adaptive_calibration,
+        "interval_to_error_corr": interval_to_error_corr,
         "n_samples": len(df),
     }
 
@@ -307,7 +308,7 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     print(f"Average 95% Width: {avg_width_95:.3f}")
     print(f"CRPS: {mean_crps:.3f} (lower is better)")
     print(f"Interval Score 95%: {mean_is_95:.3f} (lower is better)")
-    print(f"Adaptive Calibration: {adaptive_calibration:.3f} (higher is better, target: >0.5)")
+    print(f"Interval/Error Corr: {interval_to_error_corr:.3f} (higher is better, target: >0.5)")
     print(f"Samples: {len(df)}")
     return results
 
