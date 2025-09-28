@@ -429,8 +429,6 @@ class EndpointCore(Artifact):
                 # For UQ Models we also capture the uncertainty metrics
                 if model_type in [ModelType.UQ_REGRESSOR]:
                     metrics = uq_metrics(prediction_df, target_column)
-
-                    # Now put into the Parameter Store Model Inference Namespace
                     self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
         # Return the prediction DataFrame
@@ -453,6 +451,62 @@ class EndpointCore(Artifact):
         cross_fold_metrics, out_of_fold_df = cross_fold_inference(model, nfolds=nfolds)
         if cross_fold_metrics:
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/cross_fold", cross_fold_metrics)
+
+        # Capture the results
+        capture_name = "full_cross_fold"
+        description = capture_name.replace("_", " ").title()
+        target_column = model.target()
+        model_type = model.model_type
+
+        # Get the id_column from the model's FeatureSet
+        fs = FeatureSetCore(model.get_input())
+        id_column = fs.id_column
+
+        # Is this a UQ Model? If so, run full inference and merge the results
+        additional_columns = []
+        if model_type == ModelType.UQ_REGRESSOR:
+            self.log.important("UQ Regressor detected, running full inference to get uncertainty estimates...")
+
+            # Get the training view dataframe for inference
+            training_df = fs.view("training").pull_dataframe()
+
+            # Run inference on the endpoint to get UQ outputs
+            full_inference_df = self.inference(training_df)
+
+            # Also compute UQ metrics
+            metrics = uq_metrics(full_inference_df, target_column)
+            self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
+
+            # Identify UQ-specific columns (quantiles and prediction_std)
+            uq_columns = [col for col in full_inference_df.columns
+                          if col.startswith("q_") or col == "prediction_std"]
+
+            # Merge UQ columns with out-of-fold predictions
+            if uq_columns:
+                # Keep id_column and UQ columns, drop 'prediction' to avoid conflict
+                merge_columns = [id_column] + uq_columns
+                uq_df = full_inference_df[merge_columns]
+
+                out_of_fold_df = pd.merge(
+                    out_of_fold_df,
+                    uq_df,
+                    on=id_column,
+                    how="left"
+                )
+                additional_columns = uq_columns
+
+                self.log.info(f"Added UQ columns: {', '.join(additional_columns)}")
+
+        self._capture_inference_results(
+            capture_name,
+            out_of_fold_df,
+            target_column,
+            model_type,
+            pd.DataFrame([cross_fold_metrics["summary_metrics"]]),
+            description,
+            features=additional_columns,
+            id_column=id_column,
+        )
         return cross_fold_metrics, out_of_fold_df
 
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
@@ -648,6 +702,10 @@ class EndpointCore(Artifact):
     @staticmethod
     def _hash_dataframe(df: pd.DataFrame, hash_length: int = 8):
         # Internal: Compute a data hash for the dataframe
+        if df.empty:
+            return "--hash--"
+
+        # Sort the dataframe by columns to ensure consistent ordering
         df = df.copy()
         df = df.sort_values(by=sorted(df.columns.tolist()))
         row_hashes = pd.util.hash_pandas_object(df, index=False)
@@ -702,8 +760,8 @@ class EndpointCore(Artifact):
         wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
 
         # Grab the target column, prediction column, any _proba columns, and the ID column (if present)
-        prediction_col = "prediction" if "prediction" in pred_results_df.columns else "predictions"
-        output_columns = [target_column, prediction_col]
+        output_columns = [target_column]
+        output_columns += [col for col in pred_results_df.columns if "prediction" in col]
 
         # Add any _proba columns to the output columns
         output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
@@ -1134,6 +1192,10 @@ if __name__ == "__main__":
     # Run predictions using the fast_inference method
     fast_results = my_endpoint.fast_inference(my_eval_df)
 
+    # Test the cross_fold_inference method
+    print("Running Cross-Fold Inference...")
+    metrics, all_results = my_endpoint.cross_fold_inference()
+
     # Run Inference and metrics for a Classification Endpoint
     class_endpoint = EndpointCore("wine-classification")
     auto_predictions = class_endpoint.auto_inference()
@@ -1141,6 +1203,10 @@ if __name__ == "__main__":
     # Generate the confusion matrix
     target = "wine_class"
     print(class_endpoint.generate_confusion_matrix(target, auto_predictions))
+
+    # Test the cross_fold_inference method
+    print("Running Cross-Fold Inference...")
+    metrics, all_results = class_endpoint.cross_fold_inference()
 
     # Test the class method delete (commented out for now)
     # from workbench.api import Model
