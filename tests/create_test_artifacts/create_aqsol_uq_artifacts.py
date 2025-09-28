@@ -23,7 +23,7 @@ if __name__ == "__main__":
     s3_path = "s3://workbench-public-data/comp_chem/aqsol_public_data.csv"
 
     # Recreate Flag in case you want to recreate the artifacts
-    recreate = True
+    recreate = False
 
     # Check if the Model already exist
     if recreate or not Model("aqsol-uq").exists():
@@ -41,6 +41,7 @@ if __name__ == "__main__":
 
         # Run auto-inference on the Endpoint
         end.auto_inference(capture=True)
+        end.cross_fold_inference()
 
     # Check if the Model already exist
     if recreate or not Model("aqsol-uq-100").exists():
@@ -58,3 +59,4 @@ if __name__ == "__main__":
 
         # Run auto-inference on the Endpoint
         end.auto_inference(capture=True)
+        end.cross_fold_inference()
