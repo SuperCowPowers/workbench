@@ -241,18 +241,16 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         raise ValueError(
             "Either quantile columns (q_025, q_975, q_25, q_75) or 'prediction_std' column must be present."
         )
-    avg_std = df["prediction_std"].mean()
     median_std = df["prediction_std"].median()
     coverage_95 = np.mean((df[target_col] >= lower_95) & (df[target_col] <= upper_95))
     coverage_90 = np.mean((df[target_col] >= lower_90) & (df[target_col] <= upper_90))
     coverage_80 = np.mean((df[target_col] >= lower_80) & (df[target_col] <= upper_80))
     coverage_68 = np.mean((df[target_col] >= lower_68) & (df[target_col] <= upper_68))
-    coverage_50 = np.mean((df[target_col] >= lower_50) & (df[target_col] <= upper_50))
-    avg_width_95 = np.mean(upper_95 - lower_95)
-    avg_width_90 = np.mean(upper_90 - lower_90)
-    avg_width_80 = np.mean(upper_80 - lower_80)
-    avg_width_50 = np.mean(upper_50 - lower_50)
-    avg_width_68 = np.mean(upper_68 - lower_68)
+    median_width_95 = np.median(upper_95 - lower_95)
+    median_width_90 = np.median(upper_90 - lower_90)
+    median_width_80 = np.median(upper_80 - lower_80)
+    median_width_50 = np.median(upper_50 - lower_50)
+    median_width_68 = np.median(upper_68 - lower_68)
 
     # --- CRPS (measures calibration + sharpness) ---
     z = (df[target_col] - df["prediction"]) / df["prediction_std"]
@@ -277,35 +275,31 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
 
     # Collect results
     results = {
-        "coverage_50": coverage_50,
         "coverage_68": coverage_68,
         "coverage_80": coverage_80,
         "coverage_90": coverage_90,
         "coverage_95": coverage_95,
         "median_std": median_std,
-        "avg_std": avg_std,
-        "avg_width_50": avg_width_50,
-        "avg_width_68": avg_width_68,
-        "avg_width_80": avg_width_80,
-        "avg_width_90": avg_width_90,
-        "avg_width_95": avg_width_95,
+        "median_width_50": median_width_50,
+        "median_width_68": median_width_68,
+        "median_width_80": median_width_80,
+        "median_width_90": median_width_90,
+        "median_width_95": median_width_95,
         "interval_to_error_corr": interval_to_error_corr,
         "n_samples": len(df),
     }
 
     print("\n=== UQ Metrics ===")
-    print(f"Coverage @ 50%: {coverage_50:.3f} (target: 0.50)")
     print(f"Coverage @ 68%: {coverage_68:.3f} (target: 0.68)")
     print(f"Coverage @ 80%: {coverage_80:.3f} (target: 0.80)")
     print(f"Coverage @ 90%: {coverage_90:.3f} (target: 0.90)")
     print(f"Coverage @ 95%: {coverage_95:.3f} (target: 0.95)")
     print(f"Median Prediction StdDev: {median_std:.3f}")
-    print(f"Avg Prediction StdDev: {avg_std:.3f}")
-    print(f"Average 50% Width: {avg_width_50:.3f}")
-    print(f"Average 68% Width: {avg_width_68:.3f}")
-    print(f"Average 80% Width: {avg_width_80:.3f}")
-    print(f"Average 90% Width: {avg_width_90:.3f}")
-    print(f"Average 95% Width: {avg_width_95:.3f}")
+    print(f"Median 50% Width: {median_width_50:.3f}")
+    print(f"Median 68% Width: {median_width_68:.3f}")
+    print(f"Median 80% Width: {median_width_80:.3f}")
+    print(f"Median 90% Width: {median_width_90:.3f}")
+    print(f"Median 95% Width: {median_width_95:.3f}")
     print(f"CRPS: {mean_crps:.3f} (lower is better)")
     print(f"Interval Score 95%: {mean_is_95:.3f} (lower is better)")
     print(f"Interval/Error Corr: {interval_to_error_corr:.3f} (higher is better, target: >0.5)")
