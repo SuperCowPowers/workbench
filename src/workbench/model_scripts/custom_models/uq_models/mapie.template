@@ -303,7 +303,7 @@ if __name__ == "__main__":
         print(f"  {conf_level * 100:.0f}% CI: Mean width={np.mean(widths):.3f}, Std={np.std(widths):.3f}")
 
     # Save the trained XGBoost model
-    xgb_model.save_model(os.path.join(args.model_dir, "xgb_model.json"))
+    joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
 
     # Save all MAPIE models
     for model_name, model in mapie_models.items():
