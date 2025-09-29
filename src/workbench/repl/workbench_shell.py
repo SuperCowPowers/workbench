@@ -560,7 +560,7 @@ class WorkbenchShell:
         from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
         # Get kwargs
-        theme = kwargs.get("theme", "dark")
+        theme = kwargs.get("theme", "midnight_blue")
 
         plugin_test = PluginUnitTest(plugin_class, theme=theme, input_data=data, **kwargs)
 

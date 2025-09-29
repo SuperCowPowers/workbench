@@ -159,7 +159,7 @@ class ScatterPlot(PluginInterface):
         self.df = self.df.drop(columns=aws_cols, errors="ignore")
 
         # Set hover columns and custom data
-        self.hover_columns = kwargs.get("hover_columns", self.df.columns.tolist()[:10])
+        self.hover_columns = kwargs.get("hover_columns", sorted(self.df.columns.tolist()[:15]))
         self.suppress_hover_display = kwargs.get("suppress_hover_display", False)
         self.custom_data = kwargs.get("custom_data", [])
 
@@ -427,7 +427,7 @@ if __name__ == "__main__":
 
     from workbench.api import DFStore
 
-    df = DFStore().get("/workbench/models/aqsol-uq/auto_inference")
+    df = DFStore().get("/workbench/models/aqsol-uq-100/full_cross_fold_inference")
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(
@@ -436,6 +436,6 @@ if __name__ == "__main__":
         theme="midnight_blue",
         x="solubility",
         y="prediction",
-        color="residuals_abs",
+        color="prediction_std",
         suppress_hover_display=True,
     ).run()
