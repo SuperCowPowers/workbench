@@ -420,8 +420,12 @@ class EndpointCore(Artifact):
 
             # Capture the inference results and metrics
             if capture_name is not None:
+
+                # If we don't have an id_column, we'll pull it from the model's FeatureSet
+                if id_column is None:
+                    fs = FeatureSetCore(model.get_input())
+                    id_column = fs.id_column
                 description = capture_name.replace("_", " ").title()
-                features = model.features()
                 self._capture_inference_results(
                     capture_name, prediction_df, target_column, model_type, metrics, description, features, id_column
                 )
