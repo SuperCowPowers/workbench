@@ -117,8 +117,8 @@ def generate_model_script(template_params: dict) -> str:
         template_name = "xgb_model.template"
         model_script_dir = "xgb_model"
     elif template_params["model_type"] == ModelType.UQ_REGRESSOR:
-        template_name = "quant_regression.template"
-        model_script_dir = "quant_regression"
+        template_name = "mapie.template"
+        model_script_dir = "custom_models/uq_models"
     elif template_params["model_type"] == ModelType.ENSEMBLE_REGRESSOR:
         template_name = "ensemble_xgb.template"
         model_script_dir = "ensemble_xgb"
