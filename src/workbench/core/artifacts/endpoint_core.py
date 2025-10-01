@@ -768,7 +768,7 @@ class EndpointCore(Artifact):
 
         # Add the ID column
         if id_column and id_column in pred_results_df.columns:
-            output_columns.append(id_column)
+            output_columns.insert(0, id_column)
 
         # Write the predictions to our S3 Model Inference Folder
         self.log.info(f"Writing predictions to {inference_capture_path}/inference_predictions.csv")
