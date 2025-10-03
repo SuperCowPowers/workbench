@@ -4025,7 +4025,7 @@ Dashboard UI, which provides additional model details and performance metrics</p
 </span><span id="__span-0-92"><a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="sd">        Returns:</span>
 </span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a><span class="sd">           Proximity: A local Proximity Model</span>
 </span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a>        <span class="k">return</span> <span class="n">proximity_model_local</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a>        <span class="k">return</span> <span class="n">proximity_model_local</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filtered</span><span class="o">=</span><span class="n">filtered</span><span class="p">)</span>
 </span><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a>
 </span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">uq_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uq_model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">train_all_data</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;Model&quot;</span><span class="p">:</span>
 </span><span id="__span-0-98"><a id="__codelineno-0-98" name="__codelineno-0-98"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Uncertainty Quantification Model for this Model</span>
@@ -4201,7 +4201,7 @@ Dashboard UI, which provides additional model details and performance metrics</p
 </span><span id="__span-0-92"><a id="__codelineno-0-92" name="__codelineno-0-92"></a><span class="sd">    Returns:</span>
 </span><span id="__span-0-93"><a id="__codelineno-0-93" name="__codelineno-0-93"></a><span class="sd">       Proximity: A local Proximity Model</span>
 </span><span id="__span-0-94"><a id="__codelineno-0-94" name="__codelineno-0-94"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a>    <span class="k">return</span> <span class="n">proximity_model_local</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</span><span id="__span-0-95"><a id="__codelineno-0-95" name="__codelineno-0-95"></a>    <span class="k">return</span> <span class="n">proximity_model_local</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filtered</span><span class="o">=</span><span class="n">filtered</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
