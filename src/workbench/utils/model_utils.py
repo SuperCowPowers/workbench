@@ -93,6 +93,29 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
     return script_path
 
 
+def proximity_model_local(model: "Model") -> "Proximity":
+    """Create a Proximity Model for this Model
+
+    Args:
+        model (Model): The model to create the proximity model from
+
+    Returns:
+        Proximity: The proximity model
+    """
+    from workbench.algorithms.dataframe.proximity import Proximity  # noqa: F401 (avoid circular import)
+    from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
+
+    # Get Feature and Target Columns from the existing given Model
+    features = model.features()
+    target = model.target()
+
+    # Create the Proximity Model from our FeatureSet
+    fs = FeatureSet(model.get_input())
+    df = fs.pull_dataframe()
+    id_column = fs.id_column
+    return Proximity(df, id_column, features, target, track_columns=features)
+
+
 def proximity_model(model: "Model", prox_model_name: str, track_columns: list = None) -> "Model":
     """Create a proximity model based on the given model
 
