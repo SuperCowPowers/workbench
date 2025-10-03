@@ -93,7 +93,7 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
     return script_path
 
 
-def proximity_model_local(model: "Model") -> "Proximity":
+def proximity_model_local(model: "Model"):
     """Create a Proximity Model for this Model
 
     Args:

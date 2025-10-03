@@ -4,7 +4,6 @@ Models are automatically set up and provisioned for deployment into AWS.
 Models can be viewed in the AWS Sagemaker interfaces or in the Workbench
 Dashboard UI, which provides additional model details and performance metrics
 """
-from typing import Union
 
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
@@ -84,7 +83,7 @@ class Model(ModelCore):
         end.set_owner(self.get_owner())
         return end
 
-    def prox_model(self, prox_model_name: str = None, track_columns: list = None, publish: bool = False) -> Union["Model", "Proximity"]:
+    def prox_model(self, prox_model_name: str = None, track_columns: list = None, publish: bool = False):
         """Create a Proximity Model for this Model
 
         Args:
