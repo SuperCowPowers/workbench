@@ -10,7 +10,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType  # noqa: F401
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from workbench.api.endpoint import Endpoint
-from workbench.utils.model_utils import proximity_model, proximity_model_local, uq_model
+from workbench.utils.model_utils import proximity_model_local, uq_model
 
 
 class Model(ModelCore):
@@ -83,26 +83,16 @@ class Model(ModelCore):
         end.set_owner(self.get_owner())
         return end
 
-    def prox_model(self, prox_model_name: str = None, track_columns: list = None, publish: bool = False):
-        """Create a Proximity Model for this Model
+    def prox_model(self, filtered: bool = True):
+        """Create a local Proximity Model for this Model
 
         Args:
-            prox_model_name (str, optional): Name of the Proximity Model (if not specified, a name will be generated)
-            track_columns (list, optional): List of columns to track in the Proximity Model.
-            publish (bool, optional): Whether to publish the Proximity Model (default: False)
+            filtered: bool, optional): Use filtered training data for the Proximity Model (default: True)
 
         Returns:
-            Union[Model, Proximity]: The Proximity Model (either local or published)
+           Proximity: A local Proximity Model
         """
-
-        # Many use cases want a local proximity model for investigations
-        if not publish:
-            return proximity_model_local(self)
-
-        # Otherwise create a published Proximity Model in Workbench
-        if prox_model_name is None:
-            prox_model_name = self.model_name + "-prox"
-        return proximity_model(self, prox_model_name, track_columns=track_columns)
+        return proximity_model_local(self)
 
     def uq_model(self, uq_model_name: str = None, train_all_data: bool = False) -> "Model":
         """Create a Uncertainty Quantification Model for this Model
@@ -132,6 +122,6 @@ if __name__ == "__main__":
     # my_endpoint = my_model.to_endpoint()
     # pprint(my_endpoint.summary())
 
-    # Create a Proximity Model from the Model (local version)
+    # Create a local Proximity Model for this Model
     prox_model = my_model.prox_model()
-    print(prox_model.neighbors("3398"))
+    print(prox_model.neighbors(3398))

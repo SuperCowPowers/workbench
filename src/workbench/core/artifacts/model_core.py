@@ -21,6 +21,7 @@ from workbench.utils.aws_utils import newest_path, pull_s3_data
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.shap_utils import shap_values_data, shap_feature_importance
 from workbench.utils.deprecated_utils import deprecated
+from workbench.utils.model_utils import proximity_model
 
 
 class ModelType(Enum):
@@ -880,6 +881,20 @@ class ModelCore(Artifact):
             return meta["ModelPackageList"][0]["InferenceSpecification"]["SupportedRealtimeInferenceInstanceTypes"]
         except (KeyError, IndexError, TypeError):
             return None
+
+    def publish_prox_model(self, prox_model_name: str = None, track_columns: list = None):
+        """Create and publish a Proximity Model for this Model
+
+        Args:
+            prox_model_name (str, optional): Name of the Proximity Model (if not specified, a name will be generated)
+            track_columns (list, optional): List of columns to track in the Proximity Model.
+
+        Returns:
+            Model: The published Proximity Model
+        """
+        if prox_model_name is None:
+            prox_model_name = self.model_name + "-prox"
+        return proximity_model(self, prox_model_name, track_columns=track_columns)
 
     def delete(self):
         """Delete the Model Packages and the Model Group"""
