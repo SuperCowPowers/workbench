@@ -5,7 +5,6 @@ from sklearn.neighbors import NearestNeighbors
 from typing import List, Dict, Optional
 import logging
 import pickle
-import os
 import json
 from pathlib import Path
 from enum import Enum
@@ -96,6 +95,37 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
+            self,
+            id_or_ids,
+            radius: Optional[float] = None,
+            include_self: bool = True,
+    ) -> pd.DataFrame:
+        """
+        Return neighbors for ID(s) from the existing dataset.
+
+        Args:
+            id_or_ids: Single ID or list of IDs to look up
+            radius: If provided, find all neighbors within this radius
+            include_self: Whether to include self in results (if present)
+
+        Returns:
+            DataFrame containing neighbors and distances
+        """
+        # Normalize to list
+        ids = [id_or_ids] if not isinstance(id_or_ids, list) else id_or_ids
+
+        # Validate IDs exist
+        missing_ids = set(ids) - set(self.df[self.id_column])
+        if missing_ids:
+            raise ValueError(f"IDs not found in dataset: {missing_ids}")
+
+        # Filter to requested IDs
+        query_df = self.df[self.df[self.id_column].isin(ids)]
+
+        # Use the core implementation
+        return self.find_neighbors(query_df, radius=radius, include_self=include_self)
+
+    def find_neighbors(
             self,
             query_df: pd.DataFrame,
             radius: Optional[float] = None,
@@ -298,10 +328,10 @@ if __name__ == "__main__":
     print(prox.all_neighbors())
 
     # Test the neighbors method
-    print(prox.neighbors(query_df=df.iloc[[0]]))
+    print(prox.neighbors(1))
 
     # Test the neighbors method with radius
-    print(prox.neighbors(query_df=df.iloc[0:2], radius=2.0))
+    print(prox.neighbors(1, radius=2.0))
 
     # Test with data that isn't in the 'train' dataframe
     query_data = {
@@ -311,7 +341,7 @@ if __name__ == "__main__":
         "Feature3": [2.31],
     }
     query_df = pd.DataFrame(query_data)
-    print(prox.neighbors(query_df=query_df))
+    print(prox.find_neighbors(query_df=query_df))  # For new data we use find_neighbors()
 
     # Test with Features list
     prox = Proximity(df, id_column="ID", features=["Feature1"], n_neighbors=2)
@@ -338,13 +368,13 @@ if __name__ == "__main__":
     print(prox.all_neighbors())
 
     # Test the neighbors method
-    print(prox.neighbors(query_df=df.iloc[0:2]))
+    print(prox.neighbors(["a", "b"]))
 
     # Time neighbors with all IDs versus calling all_neighbors
     import time
 
     start_time = time.time()
-    prox_df = prox.neighbors(query_df=df, include_self=False)
+    prox_df = prox.find_neighbors(query_df=df, include_self=False)
     end_time = time.time()
     print(f"Time taken for neighbors: {end_time - start_time:.4f} seconds")
     start_time = time.time()
@@ -365,7 +395,7 @@ if __name__ == "__main__":
 
     # Test querying without the id_column
     df_no_id = df.drop(columns=["foo_id"])
-    print(prox.neighbors(query_df=df_no_id, include_self=False))
+    print(prox.find_neighbors(query_df=df_no_id, include_self=False))
 
     # Test duplicate IDs
     data = {
@@ -386,4 +416,4 @@ if __name__ == "__main__":
     features = model.features()
     df = fs.pull_dataframe()
     prox = Proximity(df, id_column=fs.id_column, features=model.features(), target=model.target(), track_columns=features)
-    print(prox.neighbors(query_df=df[0:2]))
+    print(prox.find_neighbors(query_df=df[0:2]))
