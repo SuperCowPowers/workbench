@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
-from typing import List, Dict
+from typing import List, Dict, Optional
 import logging
 import pickle
 import os
@@ -14,7 +14,6 @@ from enum import Enum
 log = logging.getLogger("workbench")
 
 
-# ^Enumerated^ Proximity Types (distance or similarity)
 class ProximityType(Enum):
     DISTANCE = "distance"
     SIMILARITY = "similarity"
@@ -22,48 +21,53 @@ class ProximityType(Enum):
 
 class Proximity:
     def __init__(
-        self,
-        df: pd.DataFrame,
-        id_column: str,
-        features: List[str],
-        target: str = None,
-        track_columns: List[str] = None,
-        n_neighbors: int = 10,
+            self,
+            df: pd.DataFrame,
+            id_column: str,
+            features: List[str],
+            target: Optional[str] = None,
+            track_columns: Optional[List[str]] = None,
+            n_neighbors: int = 10,
     ):
         """
         Initialize the Proximity class.
 
         Args:
-            df (pd.DataFrame): DataFrame containing data for neighbor computations.
-            id_column (str): Name of the column used as the identifier.
-            features (List[str]): List of feature column names to be used for neighbor computations.
-            target (str, optional): Name of the target column. Defaults to None.
-            track_columns (List[str], optional): Additional columns to track in results. Defaults to None.
-            n_neighbors (int): Number of neighbors to compute. Defaults to 10.
+            df: DataFrame containing data for neighbor computations.
+            id_column: Name of the column used as the identifier.
+            features: List of feature column names to be used for neighbor computations.
+            target: Name of the target column. Defaults to None.
+            track_columns: Additional columns to track in results. Defaults to None.
+            n_neighbors: Number of neighbors to compute. Defaults to 10.
         """
-        self.df = df.dropna(subset=features).copy()
         self.id_column = id_column
-        self.n_neighbors = min(n_neighbors, len(self.df) - 1)
         self.target = target
-        self.features = features
+        self.track_columns = track_columns or []
+        self.proximity_type = None
         self.scaler = None
         self.X = None
         self.nn = None
-        self.proximity_type = None
-        self.track_columns = track_columns or []
 
-        # Right now we only support numeric features, so remove any columns that are not numeric
-        non_numeric_features = self.df[self.features].select_dtypes(exclude=["number"]).columns.tolist()
-        if non_numeric_features:
-            log.warning(f"Non-numeric features {non_numeric_features} aren't currently supported...")
-            self.features = [f for f in self.features if f not in non_numeric_features]
+        # Filter out non-numeric features
+        self.features = self._validate_features(df, features)
+
+        # Drop NaN rows and set up DataFrame
+        self.df = df.dropna(subset=self.features).copy()
+        self.n_neighbors = min(n_neighbors, len(self.df) - 1)
 
         # Build the proximity model
         self.build_proximity_model()
 
+    def _validate_features(self, df: pd.DataFrame, features: List[str]) -> List[str]:
+        """Remove non-numeric features and log warnings."""
+        non_numeric = df[features].select_dtypes(exclude=["number"]).columns.tolist()
+        if non_numeric:
+            log.warning(f"Non-numeric features {non_numeric} aren't currently supported...")
+            return [f for f in features if f not in non_numeric]
+        return features
+
     def build_proximity_model(self) -> None:
-        """Standardize features and fit Nearest Neighbors model.
-        Note: This method can be overridden in subclasses for custom behavior."""
+        """Standardize features and fit Nearest Neighbors model."""
         self.proximity_type = ProximityType.DISTANCE
         self.scaler = StandardScaler()
         self.X = self.scaler.fit_transform(self.df[self.features])
@@ -74,28 +78,28 @@ class Proximity:
         Compute nearest neighbors for all rows in the dataset.
 
         Returns:
-            pd.DataFrame: A DataFrame of neighbors and their distances.
+            DataFrame of neighbors and their distances.
         """
         distances, indices = self.nn.kneighbors(self.X)
-        results = []
 
-        for i, (dists, nbrs) in enumerate(zip(distances, indices)):
-            query_id = self.df.iloc[i][self.id_column]
-
-            # Process neighbors
-            for neighbor_idx, dist in zip(nbrs, dists):
-                # Skip self (neighbor index == current row index)
-                if neighbor_idx == i:
-                    continue
-                results.append(self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist))
+        results = [
+            self._build_neighbor_result(
+                query_id=self.df.iloc[i][self.id_column],
+                neighbor_idx=neighbor_idx,
+                distance=dist
+            )
+            for i, (dists, nbrs) in enumerate(zip(distances, indices))
+            for neighbor_idx, dist in zip(nbrs, dists)
+            if neighbor_idx != i  # Skip self
+        ]
 
         return pd.DataFrame(results)
 
     def neighbors(
-        self,
-        query_df: pd.DataFrame,
-        radius: float = None,
-        include_self: bool = True,
+            self,
+            query_df: pd.DataFrame,
+            radius: Optional[float] = None,
+            include_self: bool = True,
     ) -> pd.DataFrame:
         """
         Return neighbors for rows in a query DataFrame.
@@ -107,58 +111,58 @@ class Proximity:
 
         Returns:
             DataFrame containing neighbors and distances
-
-        Note: The query DataFrame must include the feature columns. The id_column is optional.
         """
-        # Check if all required features are present
+        # Validate features
         missing = set(self.features) - set(query_df.columns)
         if missing:
             raise ValueError(f"Query DataFrame is missing required feature columns: {missing}")
 
-        # Check if id_column is present
         id_column_present = self.id_column in query_df.columns
 
-        # None of the features can be NaNs, so report rows with NaNs and then drop them
-        rows_with_nan = query_df[self.features].isna().any(axis=1)
+        # Handle NaN rows
+        query_df = self._handle_nan_rows(query_df, id_column_present)
 
-        # Print the ID column for rows with NaNs
-        if rows_with_nan.any():
-            log.warning(f"Found {rows_with_nan.sum()} rows with NaNs in feature columns:")
-            log.warning(query_df.loc[rows_with_nan, self.id_column])
-
-        # Drop rows with NaNs in feature columns and reassign to query_df
-        query_df = query_df.dropna(subset=self.features)
-
-        # Transform the query features using the model's scaler
+        # Transform query features
         X_query = self.scaler.transform(query_df[self.features])
 
-        # Get neighbors using either radius or k-nearest neighbors
+        # Get neighbors
         if radius is not None:
             distances, indices = self.nn.radius_neighbors(X_query, radius=radius)
         else:
             distances, indices = self.nn.kneighbors(X_query)
 
         # Build results
-        all_results = []
+        results = []
         for i, (dists, nbrs) in enumerate(zip(distances, indices)):
-            # Use the ID from the query DataFrame if available, otherwise use the row index
             query_id = query_df.iloc[i][self.id_column] if id_column_present else f"query_{i}"
 
             for neighbor_idx, dist in zip(nbrs, dists):
-                # Skip if the neighbor is the query itself and include_self is False
                 neighbor_id = self.df.iloc[neighbor_idx][self.id_column]
+
+                # Skip if neighbor is self and include_self is False
                 if not include_self and neighbor_id == query_id:
                     continue
 
-                all_results.append(
+                results.append(
                     self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist)
                 )
 
-        return pd.DataFrame(all_results)
+        return pd.DataFrame(results)
+
+    def _handle_nan_rows(self, query_df: pd.DataFrame, id_column_present: bool) -> pd.DataFrame:
+        """Drop rows with NaN values in feature columns and log warnings."""
+        rows_with_nan = query_df[self.features].isna().any(axis=1)
+
+        if rows_with_nan.any():
+            log.warning(f"Found {rows_with_nan.sum()} rows with NaNs in feature columns:")
+            if id_column_present:
+                log.warning(query_df.loc[rows_with_nan, self.id_column])
+
+        return query_df.dropna(subset=self.features)
 
     def _build_neighbor_result(self, query_id, neighbor_idx: int, distance: float) -> Dict:
         """
-        Internal: Build a result dictionary for a single neighbor.
+        Build a result dictionary for a single neighbor.
 
         Args:
             query_id: ID of the query point
@@ -169,27 +173,28 @@ class Proximity:
             Dictionary containing neighbor information
         """
         neighbor_id = self.df.iloc[neighbor_idx][self.id_column]
+        neighbor_row = self.df.iloc[neighbor_idx]
 
-        # Basic neighbor info
-        neighbor_info = {
+        # Start with basic info
+        result = {
             self.id_column: query_id,
             "neighbor_id": neighbor_id,
             "distance": distance,
         }
 
-        # Determine which additional columns to include
-        relevant_cols = [self.target, "prediction"] if self.target else []
-        relevant_cols += [c for c in self.df.columns if "_proba" in c or "residual" in c]
-        relevant_cols += ["outlier"]
+        # Columns to automatically include if they exist
+        auto_include = (
+                ([self.target, "prediction"] if self.target else []) +
+                self.track_columns +
+                [col for col in self.df.columns if "_proba" in col or "residual" in col or col == "outlier"]
+        )
 
-        # Add user-specified columns
-        relevant_cols += self.track_columns
+        # Add values for existing columns
+        for col in auto_include:
+            if col in self.df.columns:
+                result[col] = neighbor_row[col]
 
-        # Add values for each relevant column that exists in the dataframe
-        for col in filter(lambda c: c in self.df.columns, relevant_cols):
-            neighbor_info[col] = self.df.iloc[neighbor_idx][col]
-
-        return neighbor_info
+        return result
 
     def serialize(self, directory: str) -> None:
         """
@@ -198,8 +203,8 @@ class Proximity:
         Args:
             directory: Directory path to save the model components
         """
-        # Create directory if it doesn't exist
-        os.makedirs(directory, exist_ok=True)
+        dir_path = Path(directory)
+        dir_path.mkdir(parents=True, exist_ok=True)
 
         # Save metadata
         metadata = {
@@ -210,17 +215,16 @@ class Proximity:
             "n_neighbors": self.n_neighbors,
         }
 
-        with open(os.path.join(directory, "metadata.json"), "w") as f:
-            json.dump(metadata, f)
+        (dir_path / "metadata.json").write_text(json.dumps(metadata))
 
-        # Save the DataFrame
-        self.df.to_pickle(os.path.join(directory, "df.pkl"))
+        # Save DataFrame
+        self.df.to_pickle(dir_path / "df.pkl")
 
-        # Save the scaler and nearest neighbors model
-        with open(os.path.join(directory, "scaler.pkl"), "wb") as f:
+        # Save models
+        with open(dir_path / "scaler.pkl", "wb") as f:
             pickle.dump(self.scaler, f)
 
-        with open(os.path.join(directory, "nn_model.pkl"), "wb") as f:
+        with open(dir_path / "nn_model.pkl", "wb") as f:
             pickle.dump(self.nn, f)
 
         log.info(f"Proximity model serialized to {directory}")
@@ -234,23 +238,22 @@ class Proximity:
             directory: Directory path containing the serialized model components
 
         Returns:
-            Proximity: A new Proximity instance
+            A new Proximity instance
         """
-        directory_path = Path(directory)
-        if not directory_path.exists() or not directory_path.is_dir():
+        dir_path = Path(directory)
+        if not dir_path.is_dir():
             raise ValueError(f"Directory {directory} does not exist or is not a directory")
 
         # Load metadata
-        with open(os.path.join(directory, "metadata.json"), "r") as f:
-            metadata = json.load(f)
+        metadata = json.loads((dir_path / "metadata.json").read_text())
 
         # Load DataFrame
-        df_path = os.path.join(directory, "df.pkl")
-        if not os.path.exists(df_path):
+        df_path = dir_path / "df.pkl"
+        if not df_path.exists():
             raise FileNotFoundError(f"DataFrame file not found at {df_path}")
         df = pd.read_pickle(df_path)
 
-        # Create instance but skip _prepare_data
+        # Create instance without calling __init__
         instance = cls.__new__(cls)
         instance.df = df
         instance.id_column = metadata["id_column"]
@@ -259,15 +262,16 @@ class Proximity:
         instance.track_columns = metadata["track_columns"]
         instance.n_neighbors = metadata["n_neighbors"]
 
-        # Load scaler and nn model
-        with open(os.path.join(directory, "scaler.pkl"), "rb") as f:
+        # Load models
+        with open(dir_path / "scaler.pkl", "rb") as f:
             instance.scaler = pickle.load(f)
 
-        with open(os.path.join(directory, "nn_model.pkl"), "rb") as f:
+        with open(dir_path / "nn_model.pkl", "rb") as f:
             instance.nn = pickle.load(f)
 
-        # Load X from scaler transform
+        # Restore X
         instance.X = instance.scaler.transform(instance.df[instance.features])
+        instance.proximity_type = ProximityType.DISTANCE
 
         log.info(f"Proximity model deserialized from {directory}")
         return instance
@@ -379,6 +383,7 @@ if __name__ == "__main__":
 
     fs = FeatureSet("abalone_features")
     model = Model("abalone-regression")
+    features = model.features()
     df = fs.pull_dataframe()
-    prox = Proximity(df, id_column=fs.id_column, features=model.features(), target=model.target())
+    prox = Proximity(df, id_column=fs.id_column, features=model.features(), target=model.target(), track_columns=features)
     print(prox.neighbors(query_df=df[0:2]))
