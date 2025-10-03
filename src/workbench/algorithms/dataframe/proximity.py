@@ -93,16 +93,18 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-        self,
-        id_or_ids,
-        radius: Optional[float] = None,
-        include_self: bool = True,
+            self,
+            id_or_ids,
+            n_neighbors: Optional[int] = 5,
+            radius: Optional[float] = None,
+            include_self: bool = True,
     ) -> pd.DataFrame:
         """
         Return neighbors for ID(s) from the existing dataset.
 
         Args:
             id_or_ids: Single ID or list of IDs to look up
+            n_neighbors: Number of neighbors to return (default: 5)
             radius: If provided, find all neighbors within this radius
             include_self: Whether to include self in results (if present)
 
@@ -117,15 +119,17 @@ class Proximity:
         if missing_ids:
             raise ValueError(f"IDs not found in dataset: {missing_ids}")
 
-        # Filter to requested IDs
+        # Filter to requested IDs and preserve order
         query_df = self.df[self.df[self.id_column].isin(ids)]
+        query_df = query_df.set_index(self.id_column).loc[ids].reset_index()
 
         # Use the core implementation
-        return self.find_neighbors(query_df, radius=radius, include_self=include_self)
+        return self.find_neighbors(query_df, n_neighbors=n_neighbors, radius=radius, include_self=include_self)
 
     def find_neighbors(
         self,
         query_df: pd.DataFrame,
+        n_neighbors: Optional[int] = 5,
         radius: Optional[float] = None,
         include_self: bool = True,
     ) -> pd.DataFrame:
@@ -134,6 +138,7 @@ class Proximity:
 
         Args:
             query_df: DataFrame containing query points
+            n_neighbors: Number of neighbors to return (default: 5)
             radius: If provided, find all neighbors within this radius
             include_self: Whether to include self in results (if present)
 
@@ -157,7 +162,7 @@ class Proximity:
         if radius is not None:
             distances, indices = self.nn.radius_neighbors(X_query, radius=radius)
         else:
-            distances, indices = self.nn.kneighbors(X_query)
+            distances, indices = self.nn.kneighbors(X_query, n_neighbors=n_neighbors)
 
         # Build results
         results = []
@@ -173,7 +178,8 @@ class Proximity:
 
                 results.append(self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist))
 
-        return pd.DataFrame(results)
+        results_df = pd.DataFrame(results).sort_values([self.id_column, "distance"]).reset_index(drop=True)
+        return results_df
 
     def _handle_nan_rows(self, query_df: pd.DataFrame, id_column_present: bool) -> pd.DataFrame:
         """Drop rows with NaN values in feature columns and log warnings."""
@@ -220,6 +226,8 @@ class Proximity:
             if col in self.df.columns:
                 result[col] = neighbor_row[col]
 
+        # Truncate very small distances to zero
+        result["distance"] = 0.0 if distance < 1e-7 else distance
         return result
 
     def serialize(self, directory: str) -> None:

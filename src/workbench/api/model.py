@@ -92,7 +92,7 @@ class Model(ModelCore):
         Returns:
            Proximity: A local Proximity Model
         """
-        return proximity_model_local(self)
+        return proximity_model_local(self, filtered=filtered)
 
     def uq_model(self, uq_model_name: str = None, train_all_data: bool = False) -> "Model":
         """Create a Uncertainty Quantification Model for this Model
