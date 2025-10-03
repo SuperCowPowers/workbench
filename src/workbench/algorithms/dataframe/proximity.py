@@ -93,11 +93,11 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-            self,
-            id_or_ids,
-            n_neighbors: Optional[int] = 5,
-            radius: Optional[float] = None,
-            include_self: bool = True,
+        self,
+        id_or_ids,
+        n_neighbors: Optional[int] = 5,
+        radius: Optional[float] = None,
+        include_self: bool = True,
     ) -> pd.DataFrame:
         """
         Return neighbors for ID(s) from the existing dataset.
