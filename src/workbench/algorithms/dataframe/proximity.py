@@ -20,13 +20,13 @@ class ProximityType(Enum):
 
 class Proximity:
     def __init__(
-            self,
-            df: pd.DataFrame,
-            id_column: str,
-            features: List[str],
-            target: Optional[str] = None,
-            track_columns: Optional[List[str]] = None,
-            n_neighbors: int = 10,
+        self,
+        df: pd.DataFrame,
+        id_column: str,
+        features: List[str],
+        target: Optional[str] = None,
+        track_columns: Optional[List[str]] = None,
+        n_neighbors: int = 10,
     ):
         """
         Initialize the Proximity class.
@@ -83,9 +83,7 @@ class Proximity:
 
         results = [
             self._build_neighbor_result(
-                query_id=self.df.iloc[i][self.id_column],
-                neighbor_idx=neighbor_idx,
-                distance=dist
+                query_id=self.df.iloc[i][self.id_column], neighbor_idx=neighbor_idx, distance=dist
             )
             for i, (dists, nbrs) in enumerate(zip(distances, indices))
             for neighbor_idx, dist in zip(nbrs, dists)
@@ -95,10 +93,10 @@ class Proximity:
         return pd.DataFrame(results)
 
     def neighbors(
-            self,
-            id_or_ids,
-            radius: Optional[float] = None,
-            include_self: bool = True,
+        self,
+        id_or_ids,
+        radius: Optional[float] = None,
+        include_self: bool = True,
     ) -> pd.DataFrame:
         """
         Return neighbors for ID(s) from the existing dataset.
@@ -126,10 +124,10 @@ class Proximity:
         return self.find_neighbors(query_df, radius=radius, include_self=include_self)
 
     def find_neighbors(
-            self,
-            query_df: pd.DataFrame,
-            radius: Optional[float] = None,
-            include_self: bool = True,
+        self,
+        query_df: pd.DataFrame,
+        radius: Optional[float] = None,
+        include_self: bool = True,
     ) -> pd.DataFrame:
         """
         Return neighbors for rows in a query DataFrame.
@@ -173,9 +171,7 @@ class Proximity:
                 if not include_self and neighbor_id == query_id:
                     continue
 
-                results.append(
-                    self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist)
-                )
+                results.append(self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist))
 
         return pd.DataFrame(results)
 
@@ -214,9 +210,9 @@ class Proximity:
 
         # Columns to automatically include if they exist
         auto_include = (
-                ([self.target, "prediction"] if self.target else []) +
-                self.track_columns +
-                [col for col in self.df.columns if "_proba" in col or "residual" in col or col == "outlier"]
+            ([self.target, "prediction"] if self.target else [])
+            + self.track_columns
+            + [col for col in self.df.columns if "_proba" in col or "residual" in col or col == "outlier"]
         )
 
         # Add values for existing columns
@@ -415,5 +411,7 @@ if __name__ == "__main__":
     model = Model("abalone-regression")
     features = model.features()
     df = fs.pull_dataframe()
-    prox = Proximity(df, id_column=fs.id_column, features=model.features(), target=model.target(), track_columns=features)
+    prox = Proximity(
+        df, id_column=fs.id_column, features=model.features(), target=model.target(), track_columns=features
+    )
     print(prox.find_neighbors(query_df=df[0:2]))
