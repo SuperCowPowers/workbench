@@ -475,17 +475,20 @@ class EndpointCore(Artifact):
             training_df = fs.view("training").pull_dataframe()
 
             # Run inference on the endpoint to get UQ outputs
-            full_inference_df = self.inference(training_df)
+            uq_df = self.inference(training_df)
 
             # Identify UQ-specific columns (quantiles and prediction_std)
-            uq_columns = [col for col in full_inference_df.columns if col.startswith("q_") or col == "prediction_std"]
+            uq_columns = [col for col in uq_df.columns if col.startswith("q_") or col == "prediction_std"]
 
             # Merge UQ columns with out-of-fold predictions
             if uq_columns:
-                # Keep id_column and UQ columns, drop 'prediction' to avoid conflict
-                merge_columns = [id_column] + uq_columns
-                uq_df = full_inference_df[merge_columns]
+                # Keep id_column and UQ columns, drop 'prediction' to avoid conflict when merging
+                uq_df = uq_df[[id_column] + uq_columns]
 
+                # Drop duplicates in uq_df based on id_column
+                uq_df = uq_df.drop_duplicates(subset=[id_column])
+
+                # Merge UQ columns into out_of_fold_df
                 out_of_fold_df = pd.merge(out_of_fold_df, uq_df, on=id_column, how="left")
                 additional_columns = uq_columns
                 self.log.info(f"Added UQ columns: {', '.join(additional_columns)}")
