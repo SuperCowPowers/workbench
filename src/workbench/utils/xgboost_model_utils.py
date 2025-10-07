@@ -22,6 +22,7 @@ from sklearn.metrics import (
     r2_score,
 )
 from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import LeaveOneOut
 
 # Workbench Imports
 from workbench.utils.model_utils import load_category_mappings_from_s3
@@ -384,6 +385,104 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
     metrics_dict = {"summary_metrics": summary_metrics, "folds": formatted_folds}
 
     return metrics_dict, predictions_df
+
+
+def leave_one_out_inference(workbench_model: Any) -> pd.DataFrame:
+    """
+    Performs leave-one-out cross-validation (parallelized).
+    For datasets > 1000 rows, first identifies top 100 worst predictions via 10-fold CV,
+    then performs true leave-one-out on those 100 samples.
+    Each model trains on ALL data except one sample.
+    """
+    from workbench.api import FeatureSet
+    from joblib import Parallel, delayed
+    from tqdm import tqdm
+
+    def train_and_predict_one(model_params, is_classifier, X, y, train_idx, val_idx):
+        """Train on train_idx, predict on val_idx."""
+        model = xgb.XGBClassifier(**model_params) if is_classifier else xgb.XGBRegressor(**model_params)
+        model.fit(X[train_idx], y[train_idx])
+        return model.predict(X[val_idx])[0]
+
+    # Load model and get params
+    model_artifact_uri = workbench_model.model_data_url()
+    loaded_model = xgboost_model_from_s3(model_artifact_uri)
+    if loaded_model is None:
+        log.error("No XGBoost model found in the artifact.")
+        return pd.DataFrame()
+
+    if isinstance(loaded_model, (xgb.XGBClassifier, xgb.XGBRegressor)):
+        is_classifier = isinstance(loaded_model, xgb.XGBClassifier)
+        model_params = loaded_model.get_params()
+    elif isinstance(loaded_model, xgb.Booster):
+        log.warning("Deprecated: Loaded model is a Booster, wrapping in sklearn model.")
+        is_classifier = workbench_model.model_type.value == "classifier"
+        model_params = {"enable_categorical": True}
+    else:
+        log.error(f"Unexpected model type: {type(loaded_model)}")
+        return pd.DataFrame()
+
+    # Load and prepare data
+    fs = FeatureSet(workbench_model.get_input())
+    df = fs.view("training").pull_dataframe()
+    id_col = fs.id_column
+    target_col = workbench_model.target()
+    feature_cols = workbench_model.features()
+
+    # Convert string features to categorical
+    for col in feature_cols:
+        if df[col].dtype in ["object", "string"]:
+            df[col] = df[col].astype("category")
+
+    # Determine which samples to run LOO on
+    if len(df) > 1000:
+        log.important(f"Dataset has {len(df)} rows. Running 10-fold CV to identify top 1000 worst predictions...")
+        _, predictions_df = cross_fold_inference(workbench_model, nfolds=10)
+        predictions_df["residual_abs"] = np.abs(predictions_df[target_col] - predictions_df["prediction"])
+        worst_samples = predictions_df.nlargest(1000, "residual_abs")
+        worst_ids = worst_samples[id_col].values
+        loo_indices = df[df[id_col].isin(worst_ids)].index.values
+        log.important(f"Running leave-one-out CV on 100 worst samples. Each model trains on {len(df)-1} rows...")
+    else:
+        log.important(f"Running leave-one-out CV on all {len(df)} samples...")
+        loo_indices = df.index.values
+
+    # Prepare full dataset for training
+    X_full = df[feature_cols].values
+    y_full = df[target_col].values
+
+    # Encode target if classifier
+    label_encoder = LabelEncoder() if is_classifier else None
+    if label_encoder:
+        y_full = label_encoder.fit_transform(y_full)
+
+    # Generate LOO splits
+    splits = []
+    for loo_idx in loo_indices:
+        train_idx = np.delete(np.arange(len(X_full)), loo_idx)
+        val_idx = np.array([loo_idx])
+        splits.append((train_idx, val_idx))
+
+    # Parallel execution
+    predictions = Parallel(n_jobs=4)(
+        delayed(train_and_predict_one)(model_params, is_classifier, X_full, y_full, train_idx, val_idx)
+        for train_idx, val_idx in tqdm(splits, desc="LOO CV")
+    )
+
+    # Build results dataframe
+    predictions_array = np.array(predictions)
+    if label_encoder:
+        predictions_array = label_encoder.inverse_transform(predictions_array.astype(int))
+
+    predictions_df = pd.DataFrame({
+        id_col: df.loc[loo_indices, id_col].values,
+        target_col: df.loc[loo_indices, target_col].values,
+        "prediction": predictions_array
+    })
+
+    predictions_df["residual_abs"] = np.abs(predictions_df[target_col] - predictions_df["prediction"])
+
+    return predictions_df
 
 
 if __name__ == "__main__":
