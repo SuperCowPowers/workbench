@@ -22,7 +22,6 @@ from sklearn.metrics import (
     r2_score,
 )
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import LeaveOneOut
 
 # Workbench Imports
 from workbench.utils.model_utils import load_category_mappings_from_s3
@@ -442,7 +441,7 @@ def leave_one_out_inference(workbench_model: Any) -> pd.DataFrame:
         worst_samples = predictions_df.nlargest(1000, "residual_abs")
         worst_ids = worst_samples[id_col].values
         loo_indices = df[df[id_col].isin(worst_ids)].index.values
-        log.important(f"Running leave-one-out CV on 100 worst samples. Each model trains on {len(df)-1} rows...")
+        log.important(f"Running leave-one-out CV on 1000 worst samples. Each model trains on {len(df)-1} rows...")
     else:
         log.important(f"Running leave-one-out CV on all {len(df)} samples...")
         loo_indices = df.index.values
@@ -474,11 +473,13 @@ def leave_one_out_inference(workbench_model: Any) -> pd.DataFrame:
     if label_encoder:
         predictions_array = label_encoder.inverse_transform(predictions_array.astype(int))
 
-    predictions_df = pd.DataFrame({
-        id_col: df.loc[loo_indices, id_col].values,
-        target_col: df.loc[loo_indices, target_col].values,
-        "prediction": predictions_array
-    })
+    predictions_df = pd.DataFrame(
+        {
+            id_col: df.loc[loo_indices, id_col].values,
+            target_col: df.loc[loo_indices, target_col].values,
+            "prediction": predictions_array,
+        }
+    )
 
     predictions_df["residual_abs"] = np.abs(predictions_df[target_col] - predictions_df["prediction"])
 
