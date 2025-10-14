@@ -9,6 +9,7 @@ from aws_cdk import (
     aws_sqs as sqs,
     aws_lambda as lambda_,
     aws_lambda_event_sources as lambda_events,
+    aws_logs as logs,
     Duration,
     Size,
 )
@@ -193,6 +194,7 @@ class WorkbenchComputeStack(Stack):
             handler="index.lambda_handler",
             code=lambda_.Code.from_inline(self._get_lambda_code()),
             timeout=Duration.minutes(5),
+            log_retention=logs.RetentionDays.ONE_WEEK,
             environment={
                 "WORKBENCH_BUCKET": self.workbench_bucket,
                 "JOB_QUEUE": self.batch_job_queue.job_queue_name,
