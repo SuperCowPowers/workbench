@@ -95,6 +95,7 @@ class WorkbenchComputeStack(Stack):
             compute_environment_name="workbench-compute-env",
             vpc=vpc,
             vpc_subnets=vpc_subnets,
+            maxv_cpus=16,  # Limit to 16 vCPU to minimize AWS Throttling issues
         )
 
     def create_batch_job_queue(self) -> batch.JobQueue:
@@ -192,7 +193,6 @@ class WorkbenchComputeStack(Stack):
             handler="index.lambda_handler",
             code=lambda_.Code.from_inline(self._get_lambda_code()),
             timeout=Duration.minutes(5),
-            reserved_concurrent_executions=5,
             environment={
                 "WORKBENCH_BUCKET": self.workbench_bucket,
                 "JOB_QUEUE": self.batch_job_queue.job_queue_name,
