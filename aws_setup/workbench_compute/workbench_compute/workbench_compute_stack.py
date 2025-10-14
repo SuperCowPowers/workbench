@@ -192,6 +192,7 @@ class WorkbenchComputeStack(Stack):
             handler="index.lambda_handler",
             code=lambda_.Code.from_inline(self._get_lambda_code()),
             timeout=Duration.minutes(5),
+            reserved_concurrent_executions=5,
             environment={
                 "WORKBENCH_BUCKET": self.workbench_bucket,
                 "JOB_QUEUE": self.batch_job_queue.job_queue_name,
