@@ -335,16 +335,19 @@ class PandasToFeatures(Transform):
         This forces spawn mode on macOS to avoid the hang.
         """
         import platform
+
         if platform.system() == "Darwin":  # macOS
             self.log.warning("macOS detected, forcing 'spawn' mode for multiprocessing (Tahoe hang workaround)")
             import multiprocessing
+
             try:
                 import multiprocess
-                multiprocess.set_start_method('spawn', force=True)
+
+                multiprocess.set_start_method("spawn", force=True)
             except (RuntimeError, ImportError):
                 pass  # Already set or multiprocess not available
             try:
-                multiprocessing.set_start_method('spawn', force=True)
+                multiprocessing.set_start_method("spawn", force=True)
             except RuntimeError:
                 pass  # Already set
 

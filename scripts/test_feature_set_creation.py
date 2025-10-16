@@ -6,9 +6,9 @@ from workbench.core.transforms.pandas_transforms import PandasToFeatures
 import multiprocessing
 import multiprocess
 
-if __name__ == '__main__':
-    multiprocessing.set_start_method('spawn', force=True)
-    multiprocess.set_start_method('spawn', force=True)
+if __name__ == "__main__":
+    multiprocessing.set_start_method("spawn", force=True)
+    multiprocess.set_start_method("spawn", force=True)
 
     s3_path = "s3://workbench-public-data/comp_chem/aqsol_public_data.csv"
     aqsol_data = wr.s3.read_csv(s3_path)
