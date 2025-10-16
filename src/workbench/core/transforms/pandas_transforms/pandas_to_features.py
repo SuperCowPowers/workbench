@@ -327,8 +327,32 @@ class PandasToFeatures(Transform):
         self.delete_existing()
         self.output_feature_group = self.create_feature_group()
 
+    def mac_spawn_hack(self):
+        """Workaround for macOS Tahoe fork/spawn issue with SageMaker FeatureStore ingest.
+
+        See: https://github.com/aws/sagemaker-python-sdk/issues/5312
+        macOS Tahoe 26+ has issues with forked processes creating boto3 sessions.
+        This forces spawn mode on macOS to avoid the hang.
+        """
+        import platform
+        if platform.system() == "Darwin":  # macOS
+            self.log.warning("macOS detected, forcing 'spawn' mode for multiprocessing (Tahoe hang workaround)")
+            import multiprocessing
+            try:
+                import multiprocess
+                multiprocess.set_start_method('spawn', force=True)
+            except (RuntimeError, ImportError):
+                pass  # Already set or multiprocess not available
+            try:
+                multiprocessing.set_start_method('spawn', force=True)
+            except RuntimeError:
+                pass  # Already set
+
     def transform_impl(self):
         """Transform Implementation: Ingest the data into the Feature Group"""
+
+        # Workaround for macOS Tahoe hang issue
+        self.mac_spawn_hack()
 
         # Now we actually push the data into the Feature Group (called ingestion)
         self.log.important(f"Ingesting rows into Feature Group {self.output_name}...")
