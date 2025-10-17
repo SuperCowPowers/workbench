@@ -899,7 +899,7 @@ class ModelCore(Artifact):
     def delete(self):
         """Delete the Model Packages and the Model Group"""
         if not self.exists():
-            self.log.warning(f"Trying to delete an Model that doesn't exist: {self.name}")
+            self.log.warning(f"Trying to delete a Model that doesn't exist: {self.name}")
 
         # Call the Class Method to delete the Model Group
         ModelCore.managed_delete(model_group_name=self.name)

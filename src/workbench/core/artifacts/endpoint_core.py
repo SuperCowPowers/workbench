@@ -993,9 +993,9 @@ class EndpointCore(Artifact):
         self.upsert_workbench_meta({"workbench_input": input})
 
     def delete(self):
-        """ "Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
+        """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
         if not self.exists():
-            self.log.warning(f"Trying to delete an Model that doesn't exist: {self.name}")
+            self.log.warning(f"Trying to delete an Endpoint that doesn't exist: {self.name}")
 
         # Remove this endpoint from the list of registered endpoints
         self.log.info(f"Removing {self.name} from the list of registered endpoints...")
