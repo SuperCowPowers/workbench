@@ -244,8 +244,6 @@ class WorkbenchComputeStack(Stack):
                         script_path = message['script_path']  # s3://bucket/path/to/script.py
                         size = message.get('size', 'small')
                         extra_env = message.get('environment', {})
-                        model_outputs = message.get('MODEL_OUTPUTS', [])
-                        endpoint_outputs = message.get('ENDPOINT_OUTPUTS', [])
 
                         script_name = Path(script_path).stem
                         job_name = f"workbench_{script_name}_{datetime.now():%Y%m%d_%H%M%S}"
@@ -260,14 +258,7 @@ class WorkbenchComputeStack(Stack):
                             *[{'name': k, 'value': v} for k, v in extra_env.items()]
                         ]
 
-                        # Add MODEL_OUTPUTS as comma-separated list if provided
-                        if model_outputs:
-                            env_vars.append({'name': 'MODEL_OUTPUTS', 'value': ','.join(model_outputs)})
-
-                        # Add ENDPOINT_OUTPUTS as comma-separated list if provided
-                        if endpoint_outputs:
-                            env_vars.append({'name': 'ENDPOINT_OUTPUTS', 'value': ','.join(endpoint_outputs)})
-
+                        # Submit Batch job to the queue
                         response = batch.submit_job(
                             jobName=job_name,
                             jobQueue=JOB_QUEUE,
