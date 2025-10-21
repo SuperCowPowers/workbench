@@ -13,14 +13,19 @@ cm = ConfigManager()
 workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
 
 
-def submit_to_sqs(script_path: str, size: str = "small", realtime: bool = False, recreate: bool = False) -> None:
+def submit_to_sqs(script_path: str, size: str = "small", realtime: bool = False, dt: bool = False, promote: bool = False) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
+
     Args:
         script_path: Local path to the ML pipeline script
         size: Job size tier - "small" (default), "medium", or "large"
-        realtime: If True, sets serverless=False for real-time processing (default: False, meaning serverless=True)
-        recreate: If True, sets RECREATE=True in environment (default: False)
+        realtime: If True, sets serverless=False for real-time processing (default: False)
+        dt: If True, sets DT=True in environment (default: False)
+        promote: If True, sets PROMOTE=True in environment (default: False)
+
+    Raises:
+        ValueError: If size is invalid or script file not found
     """
     print(f"\n{'=' * 60}")
     print("🚀  SUBMITTING ML PIPELINE JOB")
@@ -36,7 +41,8 @@ def submit_to_sqs(script_path: str, size: str = "small", realtime: bool = False,
     print(f"📄  Script: {script_file.name}")
     print(f"📏  Size tier: {size}")
     print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
-    print(f"🔄  Recreate: {recreate}")
+    print(f"🔄  DynamicTraining: {dt}")
+    print(f"🆕  Promote: {promote}")
     print(f"🪣  Bucket: {workbench_bucket}")
     sqs = AWSAccountClamp().boto3_session.client("sqs")
     script_name = script_file.name
@@ -94,14 +100,15 @@ def submit_to_sqs(script_path: str, size: str = "small", realtime: bool = False,
     message = {"script_path": s3_path, "size": size}
 
     # Set environment variables
-    message["environment"] = {"SERVERLESS": "False" if realtime else "True"}
-    if recreate:
-        message["environment"]["RECREATE"] = "True"
-
-    print("\n📨  Sending message to SQS...")
+    message["environment"] = {
+        "SERVERLESS": "False" if realtime else "True",
+        "DT": str(dt),
+        "PROMOTE": str(promote),
+    }
 
     # Send the message to SQS
     try:
+        print("\n📨  Sending message to SQS...")
         response = sqs.send_message(
             QueueUrl=queue_url,
             MessageBody=json.dumps(message, indent=2),
@@ -121,7 +128,8 @@ def submit_to_sqs(script_path: str, size: str = "small", realtime: bool = False,
     print(f"📄  Script: {script_name}")
     print(f"📏  Size: {size}")
     print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (SERVERLESS={'False' if realtime else 'True'})")
-    print(f"🔄  Recreate: {recreate}")
+    print(f"🔄  DynamicTraining: {dt}")
+    print(f"🆕  Promote: {promote}")
     print(f"🆔  Message ID: {message_id}")
     print("\n🔍  MONITORING LOCATIONS:")
     print(f"   • SQS Queue: AWS Console → SQS → {queue_name}")
@@ -144,13 +152,13 @@ def main():
         help="Create realtime endpoints (default is serverless)",
     )
     parser.add_argument(
-        "--recreate",
+        "--dt",
         action="store_true",
-        help="Set RECREATE=True (will force recreation of resources)",
+        help="Set DT=True (models and endpoints will have '-dt' suffix)",
     )
     args = parser.parse_args()
     try:
-        submit_to_sqs(args.script_file, args.size, realtime=args.realtime, recreate=args.recreate)
+        submit_to_sqs(args.script_file, args.size, realtime=args.realtime, dt=args.dt)
     except Exception as e:
         print(f"\n❌  ERROR: {e}")
         log.error(f"Error: {e}")
