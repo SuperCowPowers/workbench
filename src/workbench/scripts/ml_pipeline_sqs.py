@@ -13,7 +13,9 @@ cm = ConfigManager()
 workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
 
 
-def submit_to_sqs(script_path: str, size: str = "small", realtime: bool = False, dt: bool = False, promote: bool = False) -> None:
+def submit_to_sqs(
+    script_path: str, size: str = "small", realtime: bool = False, dt: bool = False, promote: bool = False
+) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
 
