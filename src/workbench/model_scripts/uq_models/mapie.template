@@ -466,7 +466,7 @@ def predict_fn(df, models) -> pd.DataFrame:
     df["q_50"] = df["prediction"]
 
     # Calculate a pseudo-standard deviation from the 68% interval width
-    df["prediction_std"] = (df["q_84"] - df["q_16"]) / 2.0
+    df["prediction_std"] = (df["q_84"] - df["q_16"]).abs() / 2.0
 
     # Reorder the quantile columns for easier reading
     quantile_cols = ["q_025", "q_05", "q_10", "q_16", "q_25", "q_75", "q_84", "q_90", "q_95", "q_975"]
