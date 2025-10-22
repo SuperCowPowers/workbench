@@ -158,9 +158,14 @@ def main():
         action="store_true",
         help="Set DT=True (models and endpoints will have '-dt' suffix)",
     )
+    parser.add_argument(
+        "--promote",
+        action="store_true",
+        help="Set Promote=True (models and endpoints will use promoted naming",
+    )
     args = parser.parse_args()
     try:
-        submit_to_sqs(args.script_file, args.size, realtime=args.realtime, dt=args.dt)
+        submit_to_sqs(args.script_file, args.size, realtime=args.realtime, dt=args.dt, promote=args.promote)
     except Exception as e:
         print(f"\n❌  ERROR: {e}")
         log.error(f"Error: {e}")
