@@ -6,15 +6,12 @@ import json
 import logging
 import requests
 from typing import Union
-import importlib.resources as resources  # noqa: F401 Python 3.9 compatibility
 from datetime import datetime
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
-
-# Python 3.9 compatibility
-from workbench.utils.resource_utils import get_resource_path
+from importlib.resources import files, as_file
 
 
 class FatalLicenseError(Exception):
@@ -140,8 +137,7 @@ class LicenseManager:
         Returns:
             The public key as an object.
         """
-        # Python 3.9 compatibility
-        with get_resource_path("workbench.resources", "signature_verify_pub.pem") as public_key_path:
+        with as_file(files("workbench.resources").joinpath("signature_verify_pub.pem")) as public_key_path:
             with open(public_key_path, "rb") as key_file:
                 public_key_data = key_file.read()
 

@@ -4,15 +4,12 @@ import os
 import sys
 import platform
 import logging
-import importlib.resources as resources  # noqa: F401 Python 3.9 compatibility
 from typing import Any, Dict
+from importlib.resources import files, as_file
 
 # Workbench imports
 from workbench.utils.license_manager import LicenseManager
 from workbench_bridges.utils.execution_environment import running_as_service
-
-# Python 3.9 compatibility
-from workbench.utils.resource_utils import get_resource_path
 
 
 class FatalConfigError(Exception):
@@ -172,8 +169,7 @@ class ConfigManager:
         Returns:
             str: The open source API key.
         """
-        # Python 3.9 compatibility
-        with get_resource_path("workbench.resources", "open_source_api.key") as open_source_key_path:
+        with as_file(files("workbench.resources").joinpath("open_source_api.key")) as open_source_key_path:
             with open(open_source_key_path, "r") as key_file:
                 return key_file.read().strip()
 
