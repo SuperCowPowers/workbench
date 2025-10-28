@@ -592,6 +592,24 @@ class ModelCore(Artifact):
         # Return the details
         return details
 
+    # Training View/Data for this model
+    def training_view(self) -> "View":
+        """Get the training view for this model"""
+        from workbench.core.artifacts.feature_set_core import FeatureSetCore
+        from workbench.core.views import View
+
+        # Grab our FeatureSet
+        fs = FeatureSetCore(self.get_input())
+
+        # See if we have a training view for this model
+        my_model_training_view = f"{self.name.replace("-", "_")}_training"
+        view = View(fs, my_model_training_view, auto_create_view=False)
+        if view.exists():
+            return view
+        else:
+            self.log.important(f"No specific training view {my_model_training_view}, returning default training view")
+            return fs.view("training")
+
     # Pipeline for this model
     def get_pipeline(self) -> str:
         """Get the pipeline for this model"""

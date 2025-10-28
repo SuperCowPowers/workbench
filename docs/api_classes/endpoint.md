@@ -11,19 +11,15 @@
 **Run Inference on an Endpoint**
 
 ```py title="endpoint_inference.py"
-from workbench.api.feature_set import FeatureSet
-from workbench.api.model import Model
-from workbench.api.endpoint import Endpoint
+from workbench.api import Endpoint
+from workbench.utils.endpoint_utils import get_evaluation_data
 
 # Grab an existing Endpoint
 endpoint = Endpoint("abalone-regression-end")
 
 # Workbench has full ML Pipeline provenance, so we can backtrack the inputs,
 # get a DataFrame of data (not used for training) and run inference
-model = Model(endpoint.get_input())
-fs = FeatureSet(model.get_input())
-athena_table = fs.view("training").table
-df = fs.query(f"SELECT * FROM {athena_table} where training = FALSE")
+df = get_evaluation_data(endpoint)
 
 # Run inference/predictions on the Endpoint
 results_df = endpoint.inference(df)
