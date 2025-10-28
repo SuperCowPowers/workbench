@@ -208,7 +208,7 @@ class WorkbenchComputeStack(Stack):
         # Connect SQS to Lambda
         batch_trigger_lambda.add_event_source(
             lambda_events.SqsEventSource(
-                self.ml_pipeline_queue, batch_size=1, max_concurrency=5  # Limit parallel Batch job submissions
+                self.ml_pipeline_queue, batch_size=1  # One message at a time for precise error handling
             )
         )
         return batch_trigger_lambda
