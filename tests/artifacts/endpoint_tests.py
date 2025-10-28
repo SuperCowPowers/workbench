@@ -4,7 +4,7 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.api import FeatureSet, Endpoint
-from workbench.utils.endpoint_utils import fs_evaluation_data
+from workbench.utils.endpoint_utils import get_evaluation_data
 
 reg_endpoint = Endpoint("abalone-regression")
 class_endpoint = Endpoint("wine-classification")
@@ -37,7 +37,7 @@ def test_classification_auto_inference():
 
 
 def test_classification_inference_with_subset_of_labels():
-    eval_data_df = fs_evaluation_data(class_endpoint)[:50]
+    eval_data_df = get_evaluation_data(class_endpoint)[:50]
 
     # Subset the rows to only include the first 2 classes
     print("Using only TypeA and TypeB classes")
@@ -64,7 +64,7 @@ def test_classification_inference_with_subset_of_labels():
 def test_classification_roc_auc():
 
     # Compute performance metrics for our test predictions
-    eval_data_df = fs_evaluation_data(class_endpoint)[:50]
+    eval_data_df = get_evaluation_data(class_endpoint)[:50]
     pred_df = class_endpoint.inference(eval_data_df)
 
     # Normal test ROCAUC should 1 (or close to 1)
@@ -94,7 +94,7 @@ def test_classification_roc_auc():
 
 
 def test_manual_inference():
-    eval_data_df = fs_evaluation_data(reg_endpoint)[:50]
+    eval_data_df = get_evaluation_data(reg_endpoint)[:50]
     pred_df = reg_endpoint.inference(eval_data_df)
     print(pred_df)
 
@@ -102,7 +102,7 @@ def test_manual_inference():
 def test_regression_metrics():
     # Compute performance metrics for our test predictions
     target_column = "class_number_of_rings"
-    eval_data_df = fs_evaluation_data(reg_endpoint)[:50]
+    eval_data_df = get_evaluation_data(reg_endpoint)[:50]
     pred_df = reg_endpoint.inference(eval_data_df)
     metrics = reg_endpoint.regression_metrics(target_column, pred_df)
     print(metrics)
@@ -113,7 +113,7 @@ def test_regression_metrics():
 
 
 def test_classification_metrics():
-    eval_data_df = fs_evaluation_data(class_endpoint)[:50]
+    eval_data_df = get_evaluation_data(class_endpoint)[:50]
     pred_df = class_endpoint.inference(eval_data_df)
     print(pred_df)
 
@@ -132,7 +132,7 @@ def test_classification_metrics():
 
 
 def test_fast_inference():
-    eval_data_df = fs_evaluation_data(class_endpoint)[:50]
+    eval_data_df = get_evaluation_data(class_endpoint)[:50]
     pred_df = class_endpoint.fast_inference(eval_data_df)
     print(pred_df)
 

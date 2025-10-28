@@ -44,7 +44,5 @@ if __name__ == "__main__":
     endpoint = Endpoint("abalone-regression")
 
     # Run inference on the Endpoint
-    athena_table = fs.view("training").table
-    df = fs.query(f"SELECT * FROM {athena_table} where training = FALSE")
-    results = endpoint.inference(df)
+    results = endpoint.auto_inference()
     print(results[["class_number_of_rings", "prediction"]])

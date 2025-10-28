@@ -1103,7 +1103,7 @@ class EndpointCore(Artifact):
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""
     from workbench.api import FeatureSet
-    from workbench.utils.endpoint_utils import fs_evaluation_data
+    from workbench.utils.endpoint_utils import get_evaluation_data
     import random
 
     # Grab an EndpointCore object and pull some information from it
@@ -1111,7 +1111,7 @@ if __name__ == "__main__":
 
     # Test various error conditions (set row 42 length to pd.NA)
     # Note: This test should return ALL rows
-    my_eval_df = fs_evaluation_data(my_endpoint)
+    my_eval_df = get_evaluation_data(my_endpoint)
     my_eval_df.at[42, "length"] = pd.NA
     pred_results = my_endpoint.inference(my_eval_df, drop_error_rows=True)
     print(f"Sent rows: {len(my_eval_df)}")
@@ -1182,11 +1182,11 @@ if __name__ == "__main__":
     # Run Inference where we provide the data
     # Note: This dataframe could be from a FeatureSet or any other source
     print("Running Inference...")
-    my_eval_df = fs_evaluation_data(my_endpoint)
+    my_eval_df = get_evaluation_data(my_endpoint)
     pred_results = my_endpoint.inference(my_eval_df)
 
     # Now set capture=True to save inference results and metrics
-    my_eval_df = fs_evaluation_data(my_endpoint)
+    my_eval_df = get_evaluation_data(my_endpoint)
     pred_results = my_endpoint.inference(my_eval_df, capture_name="holdout_xyz")
 
     # Run predictions using the fast_inference method

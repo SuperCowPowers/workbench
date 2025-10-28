@@ -7,9 +7,7 @@ from typing import Union, Optional
 import pandas as pd
 
 # Workbench Imports
-from workbench.api.feature_set import FeatureSet
-from workbench.api.model import Model
-from workbench.api.endpoint import Endpoint
+from workbench.api import FeatureSet, Model, Endpoint
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -77,7 +75,7 @@ def internal_model_data_url(endpoint_config_name: str, session: boto3.Session) -
         return None
 
 
-def fs_training_data(end: Endpoint) -> pd.DataFrame:
+def get_training_data(end: Endpoint) -> pd.DataFrame:
     """Code to get the training data from the FeatureSet used to train the Model
 
     Args:
@@ -100,7 +98,7 @@ def fs_training_data(end: Endpoint) -> pd.DataFrame:
     return train_df
 
 
-def fs_evaluation_data(end: Endpoint) -> pd.DataFrame:
+def get_evaluation_data(end: Endpoint) -> pd.DataFrame:
     """Code to get the evaluation data from the FeatureSet NOT used for training
 
     Args:
@@ -178,11 +176,11 @@ if __name__ == "__main__":
     print(model_data_url)
 
     # Get the training data
-    my_train_df = fs_training_data(my_endpoint)
+    my_train_df = get_training_data(my_endpoint)
     print(my_train_df)
 
     # Get the evaluation data
-    my_eval_df = fs_evaluation_data(my_endpoint)
+    my_eval_df = get_evaluation_data(my_endpoint)
     print(my_eval_df)
 
     # Backtrack to the FeatureSet

@@ -23,8 +23,9 @@ class TrainingView(CreateView):
         training_view = TrainingView.create(fs)
         df = training_view.pull_dataframe()
 
-        # Create a TrainingView with a specific set of columns
-        training_view = TrainingView.create(fs, column_list=["my_col1", "my_col2"])
+        # Create a TrainingView with a specific filter expression
+        training_view = TrainingView.create(fs, id_column="auto_id", filter_expression="age > 30")
+        df = training_view.pull_dataframe()
 
         # Query the view
         df = training_view.query(f"SELECT * FROM {training_view.table} where training = TRUE")
