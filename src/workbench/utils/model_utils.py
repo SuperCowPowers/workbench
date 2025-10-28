@@ -93,12 +93,11 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
     return script_path
 
 
-def proximity_model_local(model: "Model", filtered: bool = True):
+def proximity_model_local(model: "Model"):
     """Create a Proximity Model for this Model
 
     Args:
-        model (Model): The model to create the proximity model from
-        filtered (bool, optional): Use filtered training data for the Proximity Model (default: True)
+        model (Model): The Model/FeatureSet used to create the proximity model
 
     Returns:
         Proximity: The proximity model
@@ -110,13 +109,12 @@ def proximity_model_local(model: "Model", filtered: bool = True):
     features = model.features()
     target = model.target()
 
-    # Create the Proximity Model from our FeatureSet
+    # Backtrack our FeatureSet to get the ID column
     fs = FeatureSet(model.get_input())
-    if filtered:
-        df = fs.view("training").pull_dataframe()
-    else:
-        df = fs.pull_dataframe()
     id_column = fs.id_column
+
+    # Create the Proximity Model from our Training Data
+    df = model.training_view().pull_dataframe()
     return Proximity(df, id_column, features, target, track_columns=features)
 
 

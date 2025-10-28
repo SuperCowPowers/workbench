@@ -17,10 +17,7 @@ These classes provide high-level APIs for the Workbench package, they enable you
 ## Example ML Pipline
 
 ```py title="full_ml_pipeline.py"
-from workbench.api.data_source import DataSource
-from workbench.api.feature_set import FeatureSet
-from workbench.api.model import Model, ModelType
-from workbench.api.endpoint import Endpoint
+from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 
 # Create the abalone_data DataSource
 ds = DataSource("s3://workbench-public-data/common/abalone.csv")
@@ -46,9 +43,7 @@ model.to_endpoint(name="abalone-regression-end", tags=["abalone", "regression"])
 endpoint = Endpoint("abalone-regression-end")
 
 # Run inference on the Endpoint
-athena_table = fs.view("training").table
-df = fs.query(f"SELECT * FROM {athena_table} where training = FALSE")
-results = endpoint.predict(df)
+results = endpoint.auto_inference()
 print(results[["class_number_of_rings", "prediction"]])
 ```
 
