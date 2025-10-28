@@ -296,15 +296,15 @@ if __name__ == "__main__":
     print("View Details on the FeatureSet Table...")
     print(view_details(my_data_source.table, my_data_source.database, my_data_source.boto3_session))
 
-    print("View Details on the Training View...")
-    training_view = fs.view("training")
+    print("View Details on the Display View...")
+    training_view = fs.view("display")
     print(view_details(training_view.table, training_view.database, my_data_source.boto3_session))
 
     # Test get_column_list
     print(get_column_list(my_data_source))
 
-    # Test get_column_list (with training view)
-    training_table = fs.view("training").table
+    # Test get_column_list (with display view)
+    training_table = fs.view("display").table
     print(get_column_list(my_data_source, training_table))
 
     # Test list_views

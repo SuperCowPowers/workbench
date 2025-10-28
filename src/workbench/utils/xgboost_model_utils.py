@@ -298,7 +298,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
 
     # Prepare data
     fs = FeatureSet(workbench_model.get_input())
-    df = fs.view("training").pull_dataframe()
+    df = workbench_model.training_view().pull_dataframe()
 
     # Get id column - assuming FeatureSet has an id_column attribute or similar
     id_col = fs.id_column
@@ -423,7 +423,7 @@ def leave_one_out_inference(workbench_model: Any) -> pd.DataFrame:
 
     # Load and prepare data
     fs = FeatureSet(workbench_model.get_input())
-    df = fs.view("training").pull_dataframe()
+    df = workbench_model.training_view().pull_dataframe()
     id_col = fs.id_column
     target_col = workbench_model.target()
     feature_cols = workbench_model.features()

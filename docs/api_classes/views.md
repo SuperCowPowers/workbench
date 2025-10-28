@@ -49,10 +49,10 @@ from workbench.api.feature_set import FeatureSet
 
 # Grab a FeatureSet View
 fs = FeatureSet("abalone_features")
-t_view = fs.view("training")
+d_view = fs.view("display")
 
 # Make some queries using the Athena backend
-df = t_view(f"select * from {t_view.table} where height > .3")
+df = d_view(f"select * from {d_view.table} where height > .3")
 print(df.head())
 
 df = t_view.query("select * from abalone_features where class_number_of_rings < 3")

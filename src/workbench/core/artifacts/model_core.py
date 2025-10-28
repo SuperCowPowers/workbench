@@ -592,7 +592,7 @@ class ModelCore(Artifact):
         # Return the details
         return details
 
-    # Training View/Data for this model
+    # Training View for this model
     def training_view(self):
         """Get the training view for this model"""
         from workbench.core.artifacts.feature_set_core import FeatureSetCore

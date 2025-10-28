@@ -356,7 +356,7 @@ class EndpointCore(Artifact):
             return pd.DataFrame()
 
         # Grab the evaluation data from the FeatureSet
-        table = fs.view("training").table
+        table = model.training_view().table
         eval_df = fs.query(f'SELECT * FROM "{table}" where training = FALSE')
         capture_name = "auto_inference" if capture else None
         return self.inference(eval_df, capture_name, id_column=fs.id_column)
@@ -472,7 +472,7 @@ class EndpointCore(Artifact):
             self.log.important("UQ Regressor detected, running full inference to get uncertainty estimates...")
 
             # Get the training view dataframe for inference
-            training_df = fs.view("training").pull_dataframe()
+            training_df = model.training_view().pull_dataframe()
 
             # Run inference on the endpoint to get UQ outputs
             uq_df = self.inference(training_df)
