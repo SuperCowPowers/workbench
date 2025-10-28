@@ -196,7 +196,7 @@ class View:
 
         # The BaseView always exists
         if self.view_name == "base":
-            return True
+            return
 
         # Check the database directly
         if not self._check_database():

@@ -10,7 +10,11 @@ from workbench.core.views.view_utils import get_column_list
 
 
 class TrainingView(CreateView):
-    """TrainingView Class: A View with an additional training column that marks holdout ids
+    """TrainingView Class: A View with an additional training column (80/20 or holdout ids).
+    The TrainingView class creates a SQL view that includes all columns from the source table
+    along with an additional boolean column named "training". This view can also include
+    a SQL filter expression to filter the rows included in the view.
+
 
     Common Usage:
         ```python
@@ -31,20 +35,21 @@ class TrainingView(CreateView):
     def create(
         cls,
         feature_set: FeatureSet,
-        source_table: str = None,
+        *,  # Enforce keyword arguments after feature_set
         id_column: str = None,
         holdout_ids: Union[list[str], list[int], None] = None,
         filter_expression: str = None,
+        source_table: str = None,
     ) -> Union[View, None]:
         """Factory method to create and return a TrainingView instance.
 
         Args:
             feature_set (FeatureSet): A FeatureSet object
-            source_table (str, optional): The table/view to create the view from. Defaults to None.
             id_column (str, optional): The name of the id column. Defaults to None.
             holdout_ids (Union[list[str], list[int], None], optional): A list of holdout ids. Defaults to None.
             filter_expression (str, optional): SQL filter expression (e.g., "age > 25 AND status = 'active'").
                                                Defaults to None.
+            source_table (str, optional): The table/view to create the view from. Defaults to None.
 
         Returns:
             Union[View, None]: The created View object (or None if failed to create the view)
