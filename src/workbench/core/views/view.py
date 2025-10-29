@@ -218,9 +218,9 @@ class View:
 
         # Get the view definition
         get_view_query = f"""
-        SELECT view_definition 
-        FROM information_schema.views 
-        WHERE table_schema = '{self.database}' 
+        SELECT view_definition
+        FROM information_schema.views
+        WHERE table_schema = '{self.database}'
         AND table_name = '{self.table}'
         """
         df = self.data_source.query(get_view_query)
@@ -229,7 +229,7 @@ class View:
             self.log.error(f"View {self.table} not found")
             return None
 
-        view_definition = df.iloc[0]['view_definition']
+        view_definition = df.iloc[0]["view_definition"]
 
         # Create the new view with the destination name
         dest_table = f"{self.base_table_name}___{dest_view_name}"
