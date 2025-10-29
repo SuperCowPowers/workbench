@@ -265,7 +265,7 @@ class FeaturesToModel(Transform):
         self.create_and_register_model(**kwargs)
 
         # Make a copy of the training view, to lock-in the training data used for this model
-        model_training_view_name = f"{self.output_name.replace("-", "_")}_training"
+        model_training_view_name = f"{self.output_name.replace('-', '_')}_training"
         self.log.important(f"Creating Model Training View: {model_training_view_name}...")
         feature_set.view("training").copy(f"{model_training_view_name}")
 

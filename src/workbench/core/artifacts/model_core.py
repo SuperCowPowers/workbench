@@ -602,7 +602,7 @@ class ModelCore(Artifact):
         fs = FeatureSetCore(self.get_input())
 
         # See if we have a training view for this model
-        my_model_training_view = f"{self.name.replace("-", "_")}_training"
+        my_model_training_view = f"{self.name.replace('-', '_')}_training"
         view = View(fs, my_model_training_view, auto_create_view=False)
         if view.exists():
             return view
