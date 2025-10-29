@@ -202,6 +202,46 @@ class View:
         if not self._check_database():
             self._auto_create_view()
 
+    def copy(self, dest_view_name: str) -> "View":
+        """Copy this view to a new view with a different name
+
+        Args:
+            dest_view_name (str): The destination view name (e.g. "training_v1")
+
+        Returns:
+            View: A new View object for the destination view
+        """
+        # Can't copy the base view
+        if self.view_name == "base":
+            self.log.error("Cannot copy the base view")
+            return None
+
+        # Get the view definition
+        get_view_query = f"""
+        SELECT view_definition 
+        FROM information_schema.views 
+        WHERE table_schema = '{self.database}' 
+        AND table_name = '{self.table}'
+        """
+        df = self.data_source.query(get_view_query)
+
+        if df.empty:
+            self.log.error(f"View {self.table} not found")
+            return None
+
+        view_definition = df.iloc[0]['view_definition']
+
+        # Create the new view with the destination name
+        dest_table = f"{self.base_table_name}___{dest_view_name}"
+        create_view_query = f'CREATE OR REPLACE VIEW "{dest_table}" AS {view_definition}'
+
+        self.log.important(f"Copying view {self.table} to {dest_table}...")
+        self.data_source.execute_statement(create_view_query)
+
+        # Return a new View object for the destination
+        artifact = FeatureSet(self.artifact_name) if self.is_feature_set else DataSource(self.artifact_name)
+        return View(artifact, dest_view_name, auto_create_view=False)
+
     def _check_database(self) -> bool:
         """Internal: Check if the view exists in the database
 
@@ -324,3 +364,13 @@ if __name__ == "__main__":
     # Test supplemental data tables deletion
     view = View(fs, "test_view")
     view.delete()
+
+    # Test copying a view
+    fs = FeatureSet("test_features")
+    display_view = View(fs, "display")
+    copied_view = display_view.copy("display_copy")
+    print(copied_view)
+    print(copied_view.pull_dataframe().head())
+
+    # Clean up copied view
+    copied_view.delete()
