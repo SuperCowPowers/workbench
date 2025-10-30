@@ -1,11 +1,13 @@
 import sys
 import os
+import json
 import importlib.util
 
 
 def main():
     if len(sys.argv) != 2:
         print("Usage: lambda_launcher <handler_module_name>")
+        print("\nOptional: Create event.json with test event")
         sys.exit(1)
 
     handler_file = sys.argv[1]
@@ -19,6 +21,15 @@ def main():
         print(f"Error: File '{handler_file}' not found")
         sys.exit(1)
 
+    # Load event configuration
+    if os.path.exists("event.json"):
+        print("Loading event from event.json")
+        with open("event.json") as f:
+            event = json.load(f)
+    else:
+        print("No event.json found, using empty event")
+        event = {}
+
     # Load the module dynamically
     spec = importlib.util.spec_from_file_location("lambda_module", handler_file)
     lambda_module = importlib.util.module_from_spec(spec)
@@ -27,12 +38,14 @@ def main():
     # Call the lambda_handler
     print(f"Invoking lambda_handler from {handler_file}...")
     print("-" * 50)
+    print(f"Event: {json.dumps(event, indent=2)}")
+    print("-" * 50)
 
-    result = lambda_module.lambda_handler({}, {})
+    result = lambda_module.lambda_handler(event, {})
 
     print("-" * 50)
     print("Result:")
-    print(result)
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
