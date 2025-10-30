@@ -57,7 +57,7 @@ def submit_to_sqs(
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
     if model_names:
-        print(f"🏷️  Model names: {model_names}")
+        print(f"🏷️ Model names: {model_names}")
     print(f"🪣  Bucket: {workbench_bucket}")
     sqs = AWSAccountClamp().boto3_session.client("sqs")
     script_name = script_file.name
@@ -150,7 +150,7 @@ def submit_to_sqs(
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
     if model_names:
-        print(f"🏷️  Model names: {model_names}")
+        print(f"🏷️ Model names: {model_names}")
     print(f"🆔  Message ID: {message_id}")
     print("\n🔍  MONITORING LOCATIONS:")
     print(f"   • SQS Queue: AWS Console → SQS → {queue_name}")
