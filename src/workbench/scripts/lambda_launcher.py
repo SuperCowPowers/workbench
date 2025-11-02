@@ -8,6 +8,7 @@ def main():
     if len(sys.argv) != 2:
         print("Usage: lambda_launcher <handler_module_name>")
         print("\nOptional: Create event.json with test event")
+        print("Optional: Create env.json with environment variables")
         sys.exit(1)
 
     handler_file = sys.argv[1]
@@ -20,6 +21,16 @@ def main():
     if not os.path.exists(handler_file):
         print(f"Error: File '{handler_file}' not found")
         sys.exit(1)
+
+    # Load environment variables from env.json if it exists
+    if os.path.exists("env.json"):
+        print("Loading environment variables from env.json")
+        with open("env.json") as f:
+            env_vars = json.load(f)
+            for key, value in env_vars.items():
+                os.environ[key] = value
+                print(f"  Set {key} = {value}")
+        print()
 
     # Load event configuration
     if os.path.exists("event.json"):
