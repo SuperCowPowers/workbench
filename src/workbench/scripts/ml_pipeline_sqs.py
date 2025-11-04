@@ -19,7 +19,6 @@ def submit_to_sqs(
     realtime: bool = False,
     dt: bool = False,
     promote: bool = False,
-    model_names: str = None,
 ) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
@@ -30,21 +29,15 @@ def submit_to_sqs(
         realtime: If True, sets serverless=False for real-time processing (default: False)
         dt: If True, sets DT=True in environment (default: False)
         promote: If True, sets PROMOTE=True in environment (default: False)
-        model_names: Comma-separated model names (required if dt=True)
 
     Raises:
-        ValueError: If size is invalid, script file not found, or dt=True without model_names
+        ValueError: If size is invalid or script file not found
     """
     print(f"\n{'=' * 60}")
     print("🚀  SUBMITTING ML PIPELINE JOB")
     print(f"{'=' * 60}")
-
     if size not in ["small", "medium", "large"]:
         raise ValueError(f"Invalid size '{size}'. Must be 'small', 'medium', or 'large'")
-
-    # Validate dt requirements
-    if dt and not model_names:
-        raise ValueError("model_names is required when dt=True")
 
     # Validate script exists
     script_file = Path(script_path)
@@ -56,8 +49,6 @@ def submit_to_sqs(
     print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
-    if model_names:
-        print(f"🏷️ Model names: {model_names}")
     print(f"🪣  Bucket: {workbench_bucket}")
     sqs = AWSAccountClamp().boto3_session.client("sqs")
     script_name = script_file.name
@@ -121,10 +112,6 @@ def submit_to_sqs(
         "PROMOTE": str(promote),
     }
 
-    # Add MODEL_NAMES if provided
-    if model_names:
-        message["environment"]["MODEL_NAMES"] = model_names
-
     # Send the message to SQS
     try:
         print("\n📨  Sending message to SQS...")
@@ -149,8 +136,6 @@ def submit_to_sqs(
     print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (SERVERLESS={'False' if realtime else 'True'})")
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
-    if model_names:
-        print(f"🏷️ Model names: {model_names}")
     print(f"🆔  Message ID: {message_id}")
     print("\n🔍  MONITORING LOCATIONS:")
     print(f"   • SQS Queue: AWS Console → SQS → {queue_name}")
@@ -182,10 +167,6 @@ def main():
         action="store_true",
         help="Set Promote=True (models and endpoints will use promoted naming",
     )
-    parser.add_argument(
-        "--model-names",
-        help="Comma-separated model names (required if --dt is set)",
-    )
     args = parser.parse_args()
     try:
         submit_to_sqs(
@@ -194,7 +175,6 @@ def main():
             realtime=args.realtime,
             dt=args.dt,
             promote=args.promote,
-            model_names=args.model_names,
         )
     except Exception as e:
         print(f"\n❌  ERROR: {e}")
