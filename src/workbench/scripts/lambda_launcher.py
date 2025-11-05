@@ -7,8 +7,8 @@ import importlib.util
 def main():
     if len(sys.argv) != 2:
         print("Usage: lambda_launcher <handler_module_name>")
-        print("\nOptional: Create event.json with test event")
-        print("Optional: Create env.json with environment variables")
+        print("\nOptional: testing/event.json with test event")
+        print("Optional: testing/env.json with environment variables")
         sys.exit(1)
 
     handler_file = sys.argv[1]
@@ -23,9 +23,9 @@ def main():
         sys.exit(1)
 
     # Load environment variables from env.json if it exists
-    if os.path.exists("env.json"):
-        print("Loading environment variables from env.json")
-        with open("env.json") as f:
+    if os.path.exists("testing/env.json"):
+        print("Loading environment variables from testing/env.json")
+        with open("testing/env.json") as f:
             env_vars = json.load(f)
             for key, value in env_vars.items():
                 os.environ[key] = value
@@ -33,12 +33,12 @@ def main():
         print()
 
     # Load event configuration
-    if os.path.exists("event.json"):
-        print("Loading event from event.json")
-        with open("event.json") as f:
+    if os.path.exists("testing/event.json"):
+        print("Loading event from testing/event.json")
+        with open("testing/event.json") as f:
             event = json.load(f)
     else:
-        print("No event.json found, using empty event")
+        print("No testing/event.json found, using empty event")
         event = {}
 
     # Load the module dynamically
