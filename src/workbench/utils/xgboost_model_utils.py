@@ -20,7 +20,9 @@ from sklearn.metrics import (
     mean_squared_error,
     mean_absolute_error,
     r2_score,
+    median_absolute_error,
 )
+from scipy.stats import spearmanr
 from sklearn.preprocessing import LabelEncoder
 
 # Workbench Imports
@@ -273,6 +275,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
     """
     from workbench.api import FeatureSet
 
+
     # Load model
     model_artifact_uri = workbench_model.model_data_url()
     loaded_model = xgboost_model_from_s3(model_artifact_uri)
@@ -355,18 +358,21 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
             )
             fold_metrics.append({"fold": fold_idx, "precision": prec, "recall": rec, "fscore": f1})
         else:
+            spearman_corr, _ = spearmanr(y_val, preds)
             fold_metrics.append(
                 {
                     "fold": fold_idx,
                     "rmse": np.sqrt(mean_squared_error(y_val, preds)),
                     "mae": mean_absolute_error(y_val, preds),
+                    "medae": median_absolute_error(y_val, preds),
                     "r2": r2_score(y_val, preds),
+                    "spearmanr": spearman_corr,
                 }
             )
 
     # Calculate summary metrics (mean ± std)
     fold_df = pd.DataFrame(fold_metrics)
-    metric_names = ["precision", "recall", "fscore"] if is_classifier else ["rmse", "mae", "r2"]
+    metric_names = ["precision", "recall", "fscore"] if is_classifier else ["rmse", "mae", "medae", "r2", "spearmanr"]
     summary_metrics = {metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names}
 
     # Format fold results for display
@@ -378,7 +384,13 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
                 f"precision: {row['precision']:.3f}  " f"recall: {row['recall']:.3f}  " f"fscore: {row['fscore']:.3f}"
             )
         else:
-            formatted_folds[fold_key] = f"rmse: {row['rmse']:.3f}  " f"mae: {row['mae']:.3f}  " f"r2: {row['r2']:.3f}"
+            formatted_folds[fold_key] = (
+                f"rmse: {row['rmse']:.3f}  "
+                f"mae: {row['mae']:.3f}  "
+                f"medae: {row['medae']:.3f}  "
+                f"r2: {row['r2']:.3f}  "
+                f"spearmanr: {row['spearmanr']:.3f}"
+            )
 
     # Build return dictionary
     metrics_dict = {"summary_metrics": summary_metrics, "folds": formatted_folds}
@@ -509,7 +521,20 @@ if __name__ == "__main__":
     uq_model = Model("aqsol-uq")
     _xgb_model = xgboost_model_from_s3(uq_model.model_data_url())
 
+    print("\n=== CROSS FOLD REGRESSION EXAMPLE ===")
+    model = Model("abalone-regression")
+    results, df = cross_fold_inference(model)
+    pprint(results)
+    print(df.head())
+
+    print("\n=== CROSS FOLD CLASSIFICATION EXAMPLE ===")
+    model = Model("wine-classification")
+    results, df = cross_fold_inference(model)
+    pprint(results)
+    print(df.head())
+
     # Test XGBoost add_leaf_hash
+    """
     input_df = FeatureSet(model.get_input()).pull_dataframe()
     leaf_df = add_leaf_hash(model, input_df)
     print("DataFrame with Leaf Hash:")
@@ -526,15 +551,4 @@ if __name__ == "__main__":
     stats_df = leaf_stats(leaf_df, target_col)
     print("DataFrame with Leaf Statistics:")
     print(stats_df)
-
-    print("\n=== CROSS FOLD REGRESSION EXAMPLE ===")
-    model = Model("abalone-regression")
-    results, df = cross_fold_inference(model)
-    pprint(results)
-    print(df.head())
-
-    print("\n=== CROSS FOLD CLASSIFICATION EXAMPLE ===")
-    model = Model("wine-classification")
-    results, df = cross_fold_inference(model)
-    pprint(results)
-    print(df.head())
+    """
