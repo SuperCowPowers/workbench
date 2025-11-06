@@ -275,7 +275,6 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
     """
     from workbench.api import FeatureSet
 
-
     # Load model
     model_artifact_uri = workbench_model.model_data_url()
     loaded_model = xgboost_model_from_s3(model_artifact_uri)
@@ -500,7 +499,7 @@ def leave_one_out_inference(workbench_model: Any) -> pd.DataFrame:
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
-    from workbench.api import Model, FeatureSet
+    from workbench.api import Model
     from pprint import pprint
 
     # Test the XGBoost model loading and feature importance
