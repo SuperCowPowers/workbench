@@ -3,7 +3,6 @@
 import logging
 import os
 import tempfile
-import tarfile
 import joblib
 import pickle
 import glob

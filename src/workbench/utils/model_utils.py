@@ -196,7 +196,7 @@ def safe_extract_tarfile(tar_path: str, extract_path: str) -> None:
     as a security patch, but may not be present in older patch versions.
     """
     with tarfile.open(tar_path, "r:gz") as tar:
-        if hasattr(tarfile, 'data_filter'):
+        if hasattr(tarfile, "data_filter"):
             tar.extractall(path=extract_path, filter="data")
         else:
             tar.extractall(path=extract_path)
