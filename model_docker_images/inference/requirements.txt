@@ -1,9 +1,9 @@
-fastapi==0.115.10  # FastAPI for serving the model
-uvicorn==0.34.0    # ASGI server for running FastAPI
-scikit-learn==1.7.1
-xgboost==3.0.4
+fastapi==0.121.0       # FastAPI for serving the model
+uvicorn==0.34.0        # ASGI server for running FastAPI
+scikit-learn==1.7.2
+xgboost==3.1.1
 lightgbm==4.6.0
 ngboost==0.5.6
-pandas==2.3.2
-awswrangler==3.12.1
+pandas==2.3.3
+awswrangler==3.14.0
 joblib==1.5.2
