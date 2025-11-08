@@ -68,9 +68,7 @@ class ModelImages:
             ECR image URI string
         """
         if image_type not in cls.IMAGE_NAMES:
-            raise ValueError(
-                f"Unknown image_type: {image_type}. Valid types: {list(cls.IMAGE_NAMES.keys())}"
-            )
+            raise ValueError(f"Unknown image_type: {image_type}. Valid types: {list(cls.IMAGE_NAMES.keys())}")
 
         image_name = cls.IMAGE_NAMES[image_type]
         uri = f"{cls.ACCOUNT_ID}.dkr.ecr.{region}.amazonaws.com/aws-ml-images/{image_name}:{version}"
