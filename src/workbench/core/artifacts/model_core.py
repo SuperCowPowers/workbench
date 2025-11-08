@@ -41,52 +41,41 @@ class ModelType(Enum):
 class ModelImages:
     """Class for retrieving workbench inference images"""
 
-    image_uris = {
-        # US East 1 images
-        ("us-east-1", "training", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-general-ml-training:0.1"
-        ),
-        ("us-east-1", "inference", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-general-ml-inference:0.1"
-        ),
-        ("us-east-1", "pytorch_training", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-pytorch-training:0.1"
-        ),
-        ("us-east-1", "pytorch_inference", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-pytorch-inference:0.1"
-        ),
-        # US West 2 images
-        ("us-west-2", "training", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-general-ml-training:0.1"
-        ),
-        ("us-west-2", "inference", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-general-ml-inference:0.1"
-        ),
-        ("us-west-2", "pytorch_training", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-pytorch-training:0.1"
-        ),
-        ("us-west-2", "pytorch_inference", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-pytorch-inference:0.1"
-        ),
-        # ARM64 images
-        # Meta Endpoint inference images
-        ("us-east-1", "meta-endpoint", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-east-1.amazonaws.com/aws-ml-images/py312-meta-endpoint:0.1"
-        ),
-        ("us-west-2", "meta-endpoint", "0.1", "x86_64"): (
-            "507740646243.dkr.ecr.us-west-2.amazonaws.com/aws-ml-images/py312-meta-endpoint:0.1"
-        ),
+    # Account ID
+    ACCOUNT_ID = "507740646243"
+
+    # Image name mappings
+    IMAGE_NAMES = {
+        "training": "py312-general-ml-training",
+        "inference": "py312-general-ml-inference",
+        "pytorch_training": "py312-pytorch-training",
+        "pytorch_inference": "py312-pytorch-inference",
+        "meta-endpoint": "py312-meta-endpoint",
     }
 
     @classmethod
     def get_image_uri(cls, region, image_type, version="0.1", architecture="x86_64"):
-        key = (region, image_type, version, architecture)
-        if key in cls.image_uris:
-            return cls.image_uris[key]
-        else:
+        """
+        Dynamically construct ECR image URI.
+
+        Args:
+            region: AWS region (e.g., 'us-east-1', 'us-west-2')
+            image_type: Type of image (e.g., 'training', 'inference', 'pytorch_training')
+            version: Image version (e.g., '0.1', '0.2')
+            architecture: CPU architecture (default: 'x86_64', currently unused but kept for compatibility)
+
+        Returns:
+            ECR image URI string
+        """
+        if image_type not in cls.IMAGE_NAMES:
             raise ValueError(
-                f"No matching image found for region: {region}, image_type: {image_type}, version: {version}"
+                f"Unknown image_type: {image_type}. Valid types: {list(cls.IMAGE_NAMES.keys())}"
             )
+
+        image_name = cls.IMAGE_NAMES[image_type]
+        uri = f"{cls.ACCOUNT_ID}.dkr.ecr.{region}.amazonaws.com/aws-ml-images/{image_name}:{version}"
+
+        return uri
 
 
 class ModelCore(Artifact):
