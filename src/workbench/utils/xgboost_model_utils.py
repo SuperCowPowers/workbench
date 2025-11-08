@@ -315,16 +315,12 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
     target_col = workbench_model.target()
     feature_cols = workbench_model.features()
 
-    # Convert string dtypes to object for XGBoost compatibility
-    # NOTE: Ideally we'd use astype("category") for categorical features, but XGBoost 3.1.1
-    # has a compatibility issue with pandas 2.x string[python] dtype. When categorical columns
-    # have string[python] categories, numpy's issubdtype() in XGBoost's categorical handling code
-    # raises: "TypeError: Cannot interpret 'string[python]' as a data type"
-    # Converting to object dtype is the current workaround until XGBoost fully supports
-    # pandas 2.x string dtypes. This affects pandas 2.0+ with default string inference.
+    # Convert string[python] to object, then to category for XGBoost compatibility
+    # This avoids XGBoost's issue with pandas 2.x string[python] dtype in categorical categories
     for col in feature_cols:
         if pd.api.types.is_string_dtype(df[col]):
-            df[col] = df[col].astype("object")
+            # Double conversion: string[python] -> object -> category
+            df[col] = df[col].astype("object").astype("category")
 
     X = df[feature_cols]
     y = df[target_col]
@@ -453,16 +449,12 @@ def leave_one_out_inference(workbench_model: Any) -> pd.DataFrame:
     target_col = workbench_model.target()
     feature_cols = workbench_model.features()
 
-    # Convert string dtypes to object for XGBoost compatibility
-    # NOTE: Ideally we'd use astype("category") for categorical features, but XGBoost 3.1.1
-    # has a compatibility issue with pandas 2.x string[python] dtype. When categorical columns
-    # have string[python] categories, numpy's issubdtype() in XGBoost's categorical handling code
-    # raises: "TypeError: Cannot interpret 'string[python]' as a data type"
-    # Converting to object dtype is the current workaround until XGBoost fully supports
-    # pandas 2.x string dtypes. This affects pandas 2.0+ with default string inference.
+    # Convert string[python] to object, then to category for XGBoost compatibility
+    # This avoids XGBoost's issue with pandas 2.x string[python] dtype in categorical categories
     for col in feature_cols:
         if pd.api.types.is_string_dtype(df[col]):
-            df[col] = df[col].astype("object")
+            # Double conversion: string[python] -> object -> category
+            df[col] = df[col].astype("object").astype("category")
 
     # Determine which samples to run LOO on
     if len(df) > 1000:
