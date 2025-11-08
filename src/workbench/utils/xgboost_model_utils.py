@@ -51,7 +51,8 @@ def xgboost_model_from_s3(model_artifact_uri: str):
 
         # Extract tarball
         with tarfile.open(local_tar_path, "r:gz") as tar:
-            tar.extractall(path=tmpdir, filter="data")
+            # Note: For 3.12+, can use filter="data" argument
+            tar.extractall(path=tmpdir)
 
         # Define model file patterns to search for (in order of preference)
         patterns = [

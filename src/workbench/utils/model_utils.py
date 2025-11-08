@@ -207,7 +207,8 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
 
         # Extract tarball
         with tarfile.open(local_tar_path, "r:gz") as tar:
-            tar.extractall(path=tmpdir, filter="data")
+            # Note: For 3.12+, can use filter="data" argument
+            tar.extractall(path=tmpdir)
 
         # Look for category mappings in base directory only
         mappings_path = os.path.join(tmpdir, "category_mappings.json")
