@@ -286,7 +286,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
 
         # Get the model's hyperparameters and ensure enable_categorical=True
         params = loaded_model.get_params()
-        params['enable_categorical'] = True
+        params["enable_categorical"] = True
 
         # Create new model with same params but enable_categorical=True
         if is_classifier:
