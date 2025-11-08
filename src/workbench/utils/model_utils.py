@@ -188,6 +188,20 @@ def uq_model(model: "Model", uq_model_name: str, train_all_data: bool = False) -
     return uq_model
 
 
+def safe_extract_tarfile(tar_path: str, extract_path: str) -> None:
+    """
+    Extract a tarball safely, using data filter if available.
+
+    The filter parameter was backported to Python 3.8+, 3.9+, 3.10.13+, 3.11+
+    as a security patch, but may not be present in older patch versions.
+    """
+    with tarfile.open(tar_path, "r:gz") as tar:
+        if hasattr(tarfile, 'data_filter'):
+            tar.extractall(path=extract_path, filter="data")
+        else:
+            tar.extractall(path=extract_path)
+
+
 def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
     """
     Download and extract category mappings from a model artifact in S3.
@@ -206,9 +220,7 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
         wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
 
         # Extract tarball
-        with tarfile.open(local_tar_path, "r:gz") as tar:
-            # Note: For 3.12+, can use filter="data" argument
-            tar.extractall(path=tmpdir)
+        safe_extract_tarfile(local_tar_path, tmpdir)
 
         # Look for category mappings in base directory only
         mappings_path = os.path.join(tmpdir, "category_mappings.json")

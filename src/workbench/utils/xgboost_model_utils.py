@@ -26,7 +26,7 @@ from scipy.stats import spearmanr
 from sklearn.preprocessing import LabelEncoder
 
 # Workbench Imports
-from workbench.utils.model_utils import load_category_mappings_from_s3
+from workbench.utils.model_utils import load_category_mappings_from_s3, safe_extract_tarfile
 from workbench.utils.pandas_utils import convert_categorical_types
 
 # Set up the log
@@ -50,9 +50,7 @@ def xgboost_model_from_s3(model_artifact_uri: str):
         wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
 
         # Extract tarball
-        with tarfile.open(local_tar_path, "r:gz") as tar:
-            # Note: For 3.12+, can use filter="data" argument
-            tar.extractall(path=tmpdir)
+        safe_extract_tarfile(local_tar_path, tmpdir)
 
         # Define model file patterns to search for (in order of preference)
         patterns = [
