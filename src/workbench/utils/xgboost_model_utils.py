@@ -305,9 +305,9 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
     target_col = workbench_model.target()
     feature_cols = workbench_model.features()
 
-    # Convert string features to categorical
+    # Convert string/object features to categorical
     for col in feature_cols:
-        if df[col].dtype in ["object", "string"]:
+        if pd.api.types.is_string_dtype(df[col]) or df[col].dtype == "object":
             df[col] = df[col].astype("category")
 
     X = df[feature_cols]
@@ -437,9 +437,9 @@ def leave_one_out_inference(workbench_model: Any) -> pd.DataFrame:
     target_col = workbench_model.target()
     feature_cols = workbench_model.features()
 
-    # Convert string features to categorical
+    # Convert string/object features to categorical
     for col in feature_cols:
-        if df[col].dtype in ["object", "string"]:
+        if pd.api.types.is_string_dtype(df[col]) or df[col].dtype == "object":
             df[col] = df[col].astype("category")
 
     # Determine which samples to run LOO on
