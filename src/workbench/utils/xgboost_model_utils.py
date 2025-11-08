@@ -282,8 +282,18 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
 
     # Check if we got a full sklearn model or need to create one
     if isinstance(loaded_model, (xgb.XGBClassifier, xgb.XGBRegressor)):
-        xgb_model = loaded_model
-        is_classifier = isinstance(xgb_model, xgb.XGBClassifier)
+        is_classifier = isinstance(loaded_model, xgb.XGBClassifier)
+
+        # Get the model's hyperparameters and ensure enable_categorical=True
+        params = loaded_model.get_params()
+        params['enable_categorical'] = True
+
+        # Create new model with same params but enable_categorical=True
+        if is_classifier:
+            xgb_model = xgb.XGBClassifier(**params)
+        else:
+            xgb_model = xgb.XGBRegressor(**params)
+
     elif isinstance(loaded_model, xgb.Booster):
         # Legacy: got a booster, need to wrap it
         log.warning("Deprecated: Loaded model is a Booster, wrapping in sklearn model.")
