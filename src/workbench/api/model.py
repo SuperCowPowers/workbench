@@ -83,16 +83,13 @@ class Model(ModelCore):
         end.set_owner(self.get_owner())
         return end
 
-    def prox_model(self, filtered: bool = True):
+    def prox_model(self):
         """Create a local Proximity Model for this Model
-
-        Args:
-            filtered: bool, optional): Use filtered training data for the Proximity Model (default: True)
 
         Returns:
            Proximity: A local Proximity Model
         """
-        return proximity_model_local(self, filtered=filtered)
+        return proximity_model_local(self)
 
     def uq_model(self, uq_model_name: str = None, train_all_data: bool = False) -> "Model":
         """Create a Uncertainty Quantification Model for this Model
