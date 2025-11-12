@@ -145,28 +145,21 @@ class Proximity:
         neighbors_df = self.all_neighbors()
 
         # Exclude self-matches
-        neighbors_df = neighbors_df[neighbors_df[self.id_column] != neighbors_df['neighbor_id']]
+        neighbors_df = neighbors_df[neighbors_df[self.id_column] != neighbors_df["neighbor_id"]]
 
         # Calculate mean target for each ID's neighbors
-        neighbor_means = (
-            neighbors_df.groupby(self.id_column)[self.target]
-            .apply(lambda x: x.head(n_neighbors).mean())
-        )
+        neighbor_means = neighbors_df.groupby(self.id_column)[self.target].apply(lambda x: x.head(n_neighbors).mean())
 
         # Get closest neighbor's target value
-        closest_neighbor_target = (
-            neighbors_df.sort_values('distance')
-            .groupby(self.id_column)[self.target]
-            .first()
-        )
+        closest_neighbor_target = neighbors_df.sort_values("distance").groupby(self.id_column)[self.target].first()
 
         # Join back to original df and compute outlier flag
         result = self.df.copy()
-        result['neighbor_mean'] = result[self.id_column].map(neighbor_means)
-        result['closest_neighbor_target'] = result[self.id_column].map(closest_neighbor_target)
+        result["neighbor_mean"] = result[self.id_column].map(neighbor_means)
+        result["closest_neighbor_target"] = result[self.id_column].map(closest_neighbor_target)
 
-        mean_diff = (result[self.target] - result['neighbor_mean']).abs()
-        closest_diff = (result[self.target] - result['closest_neighbor_target']).abs()
+        mean_diff = (result[self.target] - result["neighbor_mean"]).abs()
+        closest_diff = (result[self.target] - result["closest_neighbor_target"]).abs()
 
         outliers = result[(mean_diff > delta) & (closest_diff > delta)]
 
@@ -472,7 +465,7 @@ if __name__ == "__main__":
 
     # Test outlier detection
     outlier_df = prox.find_outliers(delta=10.0)
-    print(outlier_df[[fs.id_column, model.target(), 'neighbor_mean']])
+    print(outlier_df[[fs.id_column, model.target(), "neighbor_mean"]])
     print(f"Number of Outliers detected: {len(outlier_df)}")
 
     # Get the neighbors for an outlier (just grab the first one)
