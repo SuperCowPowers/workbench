@@ -1039,7 +1039,7 @@ class EndpointCore(Artifact):
         # Recursively delete all endpoint S3 artifacts (inference, etc)
         # Note: We do not want to delete the data_capture/ files since these
         #       might be used for collection and data drift analysis
-        base_endpoint_path = f"{cls.endpoints_s3_path}/{endpoint_name}"
+        base_endpoint_path = f"{cls.endpoints_s3_path}/{endpoint_name}/"
         all_s3_objects = wr.s3.list_objects(base_endpoint_path, boto3_session=cls.boto3_session)
 
         # Filter out objects that contain 'data_capture/' in their path
