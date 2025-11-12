@@ -126,6 +126,52 @@ class Proximity:
         # Use the core implementation
         return self.find_neighbors(query_df, n_neighbors=n_neighbors, radius=radius, include_self=include_self)
 
+    def find_outliers(self, delta: float, n_neighbors: int = 5) -> pd.DataFrame:
+        """
+        Find outliers where target differs from mean of neighbors by > delta
+        AND closest neighbor is also > delta away.
+
+        Args:
+            delta: Threshold for absolute difference from neighbor mean
+            n_neighbors: Number of neighbors to use for mean calculation
+
+        Returns:
+            DataFrame with only outlier rows
+        """
+        if self.target is None:
+            raise ValueError("Target column must be specified to find outliers")
+
+        # Get all neighbors
+        neighbors_df = self.all_neighbors()
+
+        # Exclude self-matches
+        neighbors_df = neighbors_df[neighbors_df[self.id_column] != neighbors_df['neighbor_id']]
+
+        # Calculate mean target for each ID's neighbors
+        neighbor_means = (
+            neighbors_df.groupby(self.id_column)[self.target]
+            .apply(lambda x: x.head(n_neighbors).mean())
+        )
+
+        # Get closest neighbor's target value
+        closest_neighbor_target = (
+            neighbors_df.sort_values('distance')
+            .groupby(self.id_column)[self.target]
+            .first()
+        )
+
+        # Join back to original df and compute outlier flag
+        result = self.df.copy()
+        result['neighbor_mean'] = result[self.id_column].map(neighbor_means)
+        result['closest_neighbor_target'] = result[self.id_column].map(closest_neighbor_target)
+
+        mean_diff = (result[self.target] - result['neighbor_mean']).abs()
+        closest_diff = (result[self.target] - result['closest_neighbor_target']).abs()
+
+        outliers = result[(mean_diff > delta) & (closest_diff > delta)]
+
+        return outliers
+
     def find_neighbors(
         self,
         query_df: pd.DataFrame,
@@ -332,7 +378,7 @@ if __name__ == "__main__":
     print(prox.all_neighbors())
 
     # Test the neighbors method
-    print(prox.neighbors(1))
+    print(prox.neighbors(1, n_neighbors=2))
 
     # Test the neighbors method with radius
     print(prox.neighbors(1, radius=2.0))
@@ -345,7 +391,7 @@ if __name__ == "__main__":
         "Feature3": [2.31],
     }
     query_df = pd.DataFrame(query_data)
-    print(prox.find_neighbors(query_df=query_df))  # For new data we use find_neighbors()
+    print(prox.find_neighbors(query_df=query_df, n_neighbors=3))  # For new data we use find_neighbors()
 
     # Test with Features list
     prox = Proximity(df, id_column="ID", features=["Feature1"], n_neighbors=2)
@@ -423,3 +469,13 @@ if __name__ == "__main__":
         df, id_column=fs.id_column, features=model.features(), target=model.target(), track_columns=features
     )
     print(prox.find_neighbors(query_df=df[0:2]))
+
+    # Test outlier detection
+    outlier_df = prox.find_outliers(delta=10.0)
+    print(outlier_df[[fs.id_column, model.target(), 'neighbor_mean']])
+    print(f"Number of Outliers detected: {len(outlier_df)}")
+
+    # Get the neighbors for an outlier (just grab the first one)
+    outlier_id = outlier_df.iloc[0][fs.id_column]
+    print(f"Neighbors for outlier ID: {outlier_id}")
+    print(prox.neighbors(outlier_id))
