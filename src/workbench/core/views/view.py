@@ -232,7 +232,7 @@ class View:
         view_definition = df.iloc[0]["view_definition"]
 
         # Create the new view with the destination name
-        dest_table = f"{self.base_table_name}___{dest_view_name}"
+        dest_table = f"{self.base_table_name}___{dest_view_name.lower()}"
         create_view_query = f'CREATE OR REPLACE VIEW "{dest_table}" AS {view_definition}'
 
         self.log.important(f"Copying view {self.table} to {dest_table}...")

@@ -589,7 +589,7 @@ class ModelCore(Artifact):
         fs = FeatureSetCore(self.get_input())
 
         # See if we have a training view for this model
-        my_model_training_view = f"{self.name.replace('-', '_')}_training"
+        my_model_training_view = f"{self.name.replace('-', '_')}_training".lower()
         view = View(fs, my_model_training_view, auto_create_view=False)
         if view.exists():
             return view
@@ -1171,13 +1171,11 @@ if __name__ == "__main__":
     # Grab a ModelCore object and pull some information from it
     my_model = ModelCore("abalone-regression")
 
-    # Call the various methods
-
     # Let's do a check/validation of the Model
     print(f"Model Check: {my_model.exists()}")
 
     # Make sure the model is 'ready'
-    # my_model.onboard()
+    my_model.onboard()
 
     # Get the ARN of the Model Group
     print(f"Model Group ARN: {my_model.group_arn()}")
@@ -1242,6 +1240,11 @@ if __name__ == "__main__":
 
     # Delete the Model
     # ModelCore.managed_delete("wine-classification")
+
+    # Check the training view logic
+    model = ModelCore("wine-class-test-251112-BW")
+    training_view = model.training_view()
+    print(f"Training View Name: {training_view.name}")
 
     # Check for a model that doesn't exist
     my_model = ModelCore("empty-model-group")
