@@ -54,14 +54,14 @@ class ModelImages:
     }
 
     @classmethod
-    def get_image_uri(cls, region, image_type, version="0.1", architecture="x86_64"):
+    def get_image_uri(cls, region, image_type, version="latest", architecture="x86_64"):
         """
         Dynamically construct ECR image URI.
 
         Args:
             region: AWS region (e.g., 'us-east-1', 'us-west-2')
             image_type: Type of image (e.g., 'training', 'inference', 'pytorch_training')
-            version: Image version (e.g., '0.1', '0.2')
+            version: Image version (e.g., '0.1', '0.2' defaults to 'latest')
             architecture: CPU architecture (default: 'x86_64', currently unused but kept for compatibility)
 
         Returns:
