@@ -375,16 +375,18 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
             )
 
             # ROC-AUC
-            roc_auc = roc_auc_score(y_val, y_proba, multi_class='ovr', average='macro')
+            roc_auc = roc_auc_score(y_val, y_proba, multi_class="ovr", average="macro")
 
-            fold_metrics.append({
-                "fold": fold_idx,
-                "precision": prec,
-                "recall": rec,
-                "f1": f1,
-                "roc_auc": roc_auc,
-                "f1_per_class": f1_per_class  # numpy array
-            })
+            fold_metrics.append(
+                {
+                    "fold": fold_idx,
+                    "precision": prec,
+                    "recall": rec,
+                    "f1": f1,
+                    "roc_auc": roc_auc,
+                    "f1_per_class": f1_per_class,  # numpy array
+                }
+            )
         else:
             spearman_corr, _ = spearmanr(y_val, preds)
             fold_metrics.append(
@@ -404,26 +406,30 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
     if is_classifier:
         # Overall metrics
         metric_names = ["precision", "recall", "f1", "roc_auc"]
-        summary_metrics = {metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names}
+        summary_metrics = {
+            metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names
+        }
 
         # Per-class F1 aggregation
-        f1_per_class_arrays = np.array(fold_df['f1_per_class'].tolist())  # shape: (n_folds, n_classes)
+        f1_per_class_arrays = np.array(fold_df["f1_per_class"].tolist())  # shape: (n_folds, n_classes)
         f1_per_class_dict = {}
         for idx, class_name in enumerate(label_encoder.classes_):
             class_f1_scores = f1_per_class_arrays[:, idx]
             f1_per_class_dict[class_name] = f"{class_f1_scores.mean():.3f} ±{class_f1_scores.std():.3f}"
-        summary_metrics['f1_per_class'] = f1_per_class_dict
+        summary_metrics["f1_per_class"] = f1_per_class_dict
 
         # Support per class (overall counts)
         support_per_class_dict = {}
         y_orig = label_encoder.inverse_transform(y_for_cv)
         for class_name in label_encoder.classes_:
             support_per_class_dict[class_name] = int((y_orig == class_name).sum())
-        summary_metrics['support_per_class'] = support_per_class_dict
+        summary_metrics["support_per_class"] = support_per_class_dict
     else:
         metric_names = ["rmse", "mae", "medae", "r2", "spearmanr"]
-        summary_metrics = {metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names}
-        summary_metrics['support'] = len(y_for_cv)
+        summary_metrics = {
+            metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names
+        }
+        summary_metrics["support"] = len(y_for_cv)
 
     # Format fold results for display
     formatted_folds = {}
