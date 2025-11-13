@@ -20,6 +20,7 @@ from sklearn.metrics import (
     mean_absolute_error,
     r2_score,
     median_absolute_error,
+    roc_auc_score,
 )
 from scipy.stats import spearmanr
 from sklearn.preprocessing import LabelEncoder
@@ -339,8 +340,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
 
     # Initialize results collection
     fold_metrics = []
-    predictions_df = pd.DataFrame({id_col: ids, target_col: y})  # Keep original values
-    # Note: 'prediction' column will be created automatically with correct dtype
+    predictions_df = pd.DataFrame({id_col: ids, target_col: y})
 
     # Perform cross-validation
     for fold_idx, (train_idx, val_idx) in enumerate(kfold.split(X, y_for_cv), 1):
@@ -362,10 +362,29 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         if is_classifier:
             y_val_orig = label_encoder.inverse_transform(y_val)
             preds_orig = label_encoder.inverse_transform(preds.astype(int))
+            y_proba = xgb_model.predict_proba(X_val)
+
+            # Overall weighted metrics
             prec, rec, f1, _ = precision_recall_fscore_support(
                 y_val_orig, preds_orig, average="weighted", zero_division=0
             )
-            fold_metrics.append({"fold": fold_idx, "precision": prec, "recall": rec, "fscore": f1})
+
+            # Per-class F1
+            _, _, f1_per_class, _ = precision_recall_fscore_support(
+                y_val_orig, preds_orig, average=None, zero_division=0, labels=label_encoder.classes_
+            )
+
+            # ROC-AUC
+            roc_auc = roc_auc_score(y_val, y_proba, multi_class='ovr', average='macro')
+
+            fold_metrics.append({
+                "fold": fold_idx,
+                "precision": prec,
+                "recall": rec,
+                "f1": f1,
+                "roc_auc": roc_auc,
+                "f1_per_class": f1_per_class  # numpy array
+            })
         else:
             spearman_corr, _ = spearmanr(y_val, preds)
             fold_metrics.append(
@@ -379,10 +398,32 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
                 }
             )
 
-    # Calculate summary metrics (mean ± std)
+    # Calculate summary metrics
     fold_df = pd.DataFrame(fold_metrics)
-    metric_names = ["precision", "recall", "fscore"] if is_classifier else ["rmse", "mae", "medae", "r2", "spearmanr"]
-    summary_metrics = {metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names}
+
+    if is_classifier:
+        # Overall metrics
+        metric_names = ["precision", "recall", "f1", "roc_auc"]
+        summary_metrics = {metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names}
+
+        # Per-class F1 aggregation
+        f1_per_class_arrays = np.array(fold_df['f1_per_class'].tolist())  # shape: (n_folds, n_classes)
+        f1_per_class_dict = {}
+        for idx, class_name in enumerate(label_encoder.classes_):
+            class_f1_scores = f1_per_class_arrays[:, idx]
+            f1_per_class_dict[class_name] = f"{class_f1_scores.mean():.3f} ±{class_f1_scores.std():.3f}"
+        summary_metrics['f1_per_class'] = f1_per_class_dict
+
+        # Support per class (overall counts)
+        support_per_class_dict = {}
+        y_orig = label_encoder.inverse_transform(y_for_cv)
+        for class_name in label_encoder.classes_:
+            support_per_class_dict[class_name] = int((y_orig == class_name).sum())
+        summary_metrics['support_per_class'] = support_per_class_dict
+    else:
+        metric_names = ["rmse", "mae", "medae", "r2", "spearmanr"]
+        summary_metrics = {metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names}
+        summary_metrics['support'] = len(y_for_cv)
 
     # Format fold results for display
     formatted_folds = {}
@@ -390,7 +431,10 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         fold_key = f"Fold {int(row['fold'])}"
         if is_classifier:
             formatted_folds[fold_key] = (
-                f"precision: {row['precision']:.3f}  " f"recall: {row['recall']:.3f}  " f"fscore: {row['fscore']:.3f}"
+                f"precision: {row['precision']:.3f}  "
+                f"recall: {row['recall']:.3f}  "
+                f"f1: {row['f1']:.3f}  "
+                f"roc_auc: {row['roc_auc']:.3f}"
             )
         else:
             formatted_folds[fold_key] = (
