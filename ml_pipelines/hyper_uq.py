@@ -17,9 +17,6 @@ hyperparameters = {
     "scale_pos_weight": 1,  # Class weight balance
 }
 
-# Recreate Flag in case you want to recreate the artifacts
-recreate = os.environ.get("RECREATE", "False").lower() == "true"
-
 # Grab a FeatureSet
 my_features = FeatureSet("aqsol_features")
 
@@ -30,25 +27,24 @@ model = Model("aqsol-regression")
 features = model.features()
 target = model.target()
 
-# Create the Mapie Model from our FeatureSet
+# Create the UQ Model from our FeatureSet
 fs = FeatureSet(model.get_input())
-if recreate or not Model("aqsol-uq-hyper").exists():
-    my_model = fs.to_model(
-        name="aqsol-uq-hyper",
-        model_type=ModelType.UQ_REGRESSOR,
-        feature_list=features,
-        target_column=target,
-        description="Mapie + XGB Model",
-        tags=["aqsol", "mapie", "regression"],
-        hyperparameters=hyperparameters,
-    )
-    # Print the details of the created model
-    pprint(my_model.details())
-    my_model = Model("aqsol-uq-hyper")
+my_model = fs.to_model(
+    name="aqsol-uq-hyper",
+    model_type=ModelType.UQ_REGRESSOR,
+    feature_list=features,
+    target_column=target,
+    description="Mapie + XGB Model",
+    tags=["aqsol", "mapie", "regression"],
+    hyperparameters=hyperparameters,
+)
+# Print the details of the created model
+pprint(my_model.details())
+my_model = Model("aqsol-uq-hyper")
 
-    # Deploy an Endpoint for the Model
-    endpoint = my_model.to_endpoint()
+# Deploy an Endpoint for the Model
+endpoint = my_model.to_endpoint()
 
-    # Run auto-inference on the Endpoint
-    endpoint.auto_inference(capture=True)
-    endpoint.cross_fold_inference()
+# Run auto-inference on the Endpoint
+endpoint.auto_inference(capture=True)
+endpoint.cross_fold_inference()
