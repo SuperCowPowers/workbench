@@ -27,7 +27,7 @@ from sklearn.preprocessing import LabelEncoder
 
 # Workbench Imports
 from workbench.utils.model_utils import load_category_mappings_from_s3, safe_extract_tarfile
-from workbench.utils.pandas_utils import convert_categorical_types
+from workbench.utils.pandas_utils import convert_categorical_types, expand_proba_column
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -355,6 +355,8 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         val_indices = X_val.index
         if is_classifier:
             predictions_df.loc[val_indices, "prediction"] = label_encoder.inverse_transform(preds.astype(int))
+            y_proba = xgb_model.predict_proba(X_val)
+            predictions_df.loc[val_indices, "pred_proba"] = list(y_proba)
         else:
             predictions_df.loc[val_indices, "prediction"] = preds
 
@@ -362,7 +364,6 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         if is_classifier:
             y_val_orig = label_encoder.inverse_transform(y_val)
             preds_orig = label_encoder.inverse_transform(preds.astype(int))
-            y_proba = xgb_model.predict_proba(X_val)
 
             # Overall weighted metrics
             prec, rec, f1, _ = precision_recall_fscore_support(
@@ -404,6 +405,9 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
     fold_df = pd.DataFrame(fold_metrics)
 
     if is_classifier:
+        # Expand the *_proba columns into separate columns for easier handling
+        predictions_df = expand_proba_column(predictions_df, label_encoder.classes_)
+
         # Overall metrics
         metric_names = ["precision", "recall", "f1", "roc_auc"]
         summary_metrics = {
