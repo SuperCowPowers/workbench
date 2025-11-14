@@ -454,6 +454,12 @@ class EndpointCore(Artifact):
         # Compute CrossFold (Metrics and Prediction Dataframe)
         cross_fold_metrics, out_of_fold_df = cross_fold_inference(model, nfolds=nfolds)
 
+        # If the metrics dataframe isn't empty save to the param store
+        if not cross_fold_metrics.empty:
+            # Convert to list of dictionaries
+            metrics = cross_fold_metrics.to_dict(orient='records')
+            self.param_store.upsert(f"/workbench/models/{model.name}/inference/cross_fold", metrics)
+
         # Capture the results
         capture_name = "full_cross_fold"
         description = capture_name.replace("_", " ").title()
