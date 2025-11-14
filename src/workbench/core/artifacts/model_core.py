@@ -867,14 +867,6 @@ class ModelCore(Artifact):
                 shap_data[key] = self.df_store.get(df_location)
             return shap_data or None
 
-    def cross_folds(self) -> dict:
-        """Retrieve the cross-fold inference results(only works for XGBoost models)
-
-        Returns:
-            dict: Dictionary with the cross-fold inference results
-        """
-        return self.param_store.get(f"/workbench/models/{self.name}/inference/cross_fold")
-
     def supported_inference_instances(self) -> Optional[list]:
         """Retrieve the supported endpoint inference instance types
 

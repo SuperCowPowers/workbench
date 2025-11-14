@@ -438,23 +438,21 @@ class EndpointCore(Artifact):
         # Return the prediction DataFrame
         return prediction_df
 
-    def cross_fold_inference(self, nfolds: int = 5) -> Tuple[dict, pd.DataFrame]:
+    def cross_fold_inference(self, nfolds: int = 5) -> pd.DataFrame:
         """Run cross-fold inference (only works for XGBoost models)
 
         Args:
             nfolds (int): Number of folds to use for cross-fold (default: 5)
 
         Returns:
-            Tuple[dict, pd.DataFrame]: Tuple of (cross_fold_metrics, out_of_fold_df)
+            pd.DataFrame: A DataFrame with cross fold predictions
         """
 
         # Grab our model
         model = ModelCore(self.model_name)
 
-        # Compute CrossFold Metrics
+        # Compute CrossFold (Metrics and Prediction Dataframe)
         cross_fold_metrics, out_of_fold_df = cross_fold_inference(model, nfolds=nfolds)
-        if cross_fold_metrics:
-            self.param_store.upsert(f"/workbench/models/{model.name}/inference/cross_fold", cross_fold_metrics)
 
         # Capture the results
         capture_name = "full_cross_fold"
@@ -502,12 +500,12 @@ class EndpointCore(Artifact):
             out_of_fold_df,
             target_column,
             model_type,
-            pd.DataFrame([cross_fold_metrics["summary_metrics"]]),
+            cross_fold_metrics,
             description,
             features=additional_columns,
             id_column=id_column,
         )
-        return cross_fold_metrics, out_of_fold_df
+        return out_of_fold_df
 
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
@@ -1194,7 +1192,8 @@ if __name__ == "__main__":
 
     # Test the cross_fold_inference method
     print("Running Cross-Fold Inference...")
-    metrics, all_results = my_endpoint.cross_fold_inference()
+    all_results = my_endpoint.cross_fold_inference()
+    print(all_results)
 
     # Run Inference and metrics for a Classification Endpoint
     class_endpoint = EndpointCore("wine-classification")
@@ -1206,7 +1205,9 @@ if __name__ == "__main__":
 
     # Test the cross_fold_inference method
     print("Running Cross-Fold Inference...")
-    metrics, all_results = class_endpoint.cross_fold_inference()
+    all_results = class_endpoint.cross_fold_inference()
+    print(all_results)
+    print("All done...")
 
     # Test the class method delete (commented out for now)
     # from workbench.api import Model

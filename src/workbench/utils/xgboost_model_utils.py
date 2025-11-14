@@ -445,7 +445,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
             }
         )
 
-        metrics_df = pd.DataFrame(metric_rows).set_index("class")
+        metrics_df = pd.DataFrame(metric_rows)
 
     else:
         # Regression: single 'all' row
@@ -461,7 +461,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
                     "support": len(y_for_cv),
                 }
             ]
-        ).set_index("class")
+        )
 
     return metrics_df, predictions_df
 
