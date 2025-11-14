@@ -448,11 +448,10 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
         metrics_df = pd.DataFrame(metric_rows)
 
     else:
-        # Regression: single 'all' row
+        # Regression metrics
         metrics_df = pd.DataFrame(
             [
                 {
-                    "class": "all",
                     "rmse": fold_df["rmse"].mean(),
                     "mae": fold_df["mae"].mean(),
                     "medae": fold_df["medae"].mean(),
