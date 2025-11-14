@@ -259,7 +259,7 @@ def leaf_stats(df: pd.DataFrame, target_col: str) -> pd.DataFrame:
     return result_df
 
 
-def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[str, Any], pd.DataFrame]:
+def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Performs K-fold cross-validation with detailed metrics.
     Args:
@@ -267,10 +267,8 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         nfolds: Number of folds for cross-validation (default is 5)
     Returns:
         Tuple of:
-            - Dictionary containing:
-                - folds: Dictionary of formatted strings for each fold
-                - summary_metrics: Summary metrics across folds
-            - DataFrame with columns: id, target, prediction (out-of-fold predictions for all samples)
+            - DataFrame with per-class metrics (and 'all' row for overall metrics)
+            - DataFrame with columns: id, target, prediction, and *_proba columns (for classifiers)
     """
     from workbench.api import FeatureSet
 
@@ -279,7 +277,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
     loaded_model = xgboost_model_from_s3(model_artifact_uri)
     if loaded_model is None:
         log.error("No XGBoost model found in the artifact.")
-        return {}, pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame()
 
     # Check if we got a full sklearn model or need to create one
     if isinstance(loaded_model, (xgb.XGBClassifier, xgb.XGBRegressor)):
@@ -305,7 +303,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         xgb_model._Booster = loaded_model
     else:
         log.error(f"Unexpected model type: {type(loaded_model)}")
-        return {}, pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame()
 
     # Prepare data
     fs = FeatureSet(workbench_model.get_input())
@@ -356,7 +354,9 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         if is_classifier:
             predictions_df.loc[val_indices, "prediction"] = label_encoder.inverse_transform(preds.astype(int))
             y_proba = xgb_model.predict_proba(X_val)
-            predictions_df.loc[val_indices, "pred_proba"] = list(y_proba)
+            predictions_df.loc[val_indices, "pred_proba"] = pd.Series(
+                y_proba.tolist(), index=val_indices
+            )
         else:
             predictions_df.loc[val_indices, "prediction"] = preds
 
@@ -371,12 +371,13 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
             )
 
             # Per-class F1
-            _, _, f1_per_class, _ = precision_recall_fscore_support(
+            prec_per_class, rec_per_class, f1_per_class, _ = precision_recall_fscore_support(
                 y_val_orig, preds_orig, average=None, zero_division=0, labels=label_encoder.classes_
             )
 
-            # ROC-AUC
-            roc_auc = roc_auc_score(y_val, y_proba, multi_class="ovr", average="macro")
+            # ROC-AUC (overall and per-class)
+            roc_auc_overall = roc_auc_score(y_val, y_proba, multi_class="ovr", average="macro")
+            roc_auc_per_class = roc_auc_score(y_val, y_proba, multi_class="ovr", average=None)
 
             fold_metrics.append(
                 {
@@ -384,8 +385,11 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
                     "precision": prec,
                     "recall": rec,
                     "f1": f1,
-                    "roc_auc": roc_auc,
-                    "f1_per_class": f1_per_class,  # numpy array
+                    "roc_auc": roc_auc_overall,
+                    "precision_per_class": prec_per_class,
+                    "recall_per_class": rec_per_class,
+                    "f1_per_class": f1_per_class,
+                    "roc_auc_per_class": roc_auc_per_class,
                 }
             )
         else:
@@ -408,57 +412,53 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[Dict[st
         # Expand the *_proba columns into separate columns for easier handling
         predictions_df = expand_proba_column(predictions_df, label_encoder.classes_)
 
-        # Overall metrics
-        metric_names = ["precision", "recall", "f1", "roc_auc"]
-        summary_metrics = {
-            metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names
-        }
+        # Build per-class metrics DataFrame
+        metric_rows = []
 
-        # Per-class F1 aggregation
-        f1_per_class_arrays = np.array(fold_df["f1_per_class"].tolist())  # shape: (n_folds, n_classes)
-        f1_per_class_dict = {}
+        # Per-class rows
         for idx, class_name in enumerate(label_encoder.classes_):
-            class_f1_scores = f1_per_class_arrays[:, idx]
-            f1_per_class_dict[class_name] = f"{class_f1_scores.mean():.3f} ±{class_f1_scores.std():.3f}"
-        summary_metrics["f1_per_class"] = f1_per_class_dict
+            prec_scores = np.array([fold["precision_per_class"][idx] for fold in fold_metrics])
+            rec_scores = np.array([fold["recall_per_class"][idx] for fold in fold_metrics])
+            f1_scores = np.array([fold["f1_per_class"][idx] for fold in fold_metrics])
+            roc_auc_scores = np.array([fold["roc_auc_per_class"][idx] for fold in fold_metrics])
 
-        # Support per class (overall counts)
-        support_per_class_dict = {}
-        y_orig = label_encoder.inverse_transform(y_for_cv)
-        for class_name in label_encoder.classes_:
-            support_per_class_dict[class_name] = int((y_orig == class_name).sum())
-        summary_metrics["support_per_class"] = support_per_class_dict
+            y_orig = label_encoder.inverse_transform(y_for_cv)
+            support = int((y_orig == class_name).sum())
+
+            metric_rows.append({
+                "class": class_name,
+                "precision": prec_scores.mean(),
+                "recall": rec_scores.mean(),
+                "f1": f1_scores.mean(),
+                "roc_auc": roc_auc_scores.mean(),
+                "support": support,
+            })
+
+        # Overall 'all' row
+        metric_rows.append({
+            "class": "all",
+            "precision": fold_df["precision"].mean(),
+            "recall": fold_df["recall"].mean(),
+            "f1": fold_df["f1"].mean(),
+            "roc_auc": fold_df["roc_auc"].mean(),
+            "support": len(y_for_cv),
+        })
+
+        metrics_df = pd.DataFrame(metric_rows).set_index("class")
+
     else:
-        metric_names = ["rmse", "mae", "medae", "r2", "spearmanr"]
-        summary_metrics = {
-            metric: f"{fold_df[metric].mean():.3f} ±{fold_df[metric].std():.3f}" for metric in metric_names
-        }
-        summary_metrics["support"] = len(y_for_cv)
+        # Regression: single 'all' row
+        metrics_df = pd.DataFrame([{
+            "class": "all",
+            "rmse": fold_df["rmse"].mean(),
+            "mae": fold_df["mae"].mean(),
+            "medae": fold_df["medae"].mean(),
+            "r2": fold_df["r2"].mean(),
+            "spearmanr": fold_df["spearmanr"].mean(),
+            "support": len(y_for_cv),
+        }]).set_index("class")
 
-    # Format fold results for display
-    formatted_folds = {}
-    for _, row in fold_df.iterrows():
-        fold_key = f"Fold {int(row['fold'])}"
-        if is_classifier:
-            formatted_folds[fold_key] = (
-                f"precision: {row['precision']:.3f}  "
-                f"recall: {row['recall']:.3f}  "
-                f"f1: {row['f1']:.3f}  "
-                f"roc_auc: {row['roc_auc']:.3f}"
-            )
-        else:
-            formatted_folds[fold_key] = (
-                f"rmse: {row['rmse']:.3f}  "
-                f"mae: {row['mae']:.3f}  "
-                f"medae: {row['medae']:.3f}  "
-                f"r2: {row['r2']:.3f}  "
-                f"spearmanr: {row['spearmanr']:.3f}"
-            )
-
-    # Build return dictionary
-    metrics_dict = {"summary_metrics": summary_metrics, "folds": formatted_folds}
-
-    return metrics_dict, predictions_df
+    return metrics_df, predictions_df
 
 
 def leave_one_out_inference(workbench_model: Any) -> pd.DataFrame:
