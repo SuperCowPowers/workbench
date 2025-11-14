@@ -45,8 +45,6 @@ class ModelDetails(PluginInterface):
                 html.H5(children="Inference Metrics", style={"marginTop": "20px"}),
                 dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
                 dcc.Markdown(id=f"{self.component_id}-metrics"),
-                html.H5(children="Cross Fold Metrics", style={"marginTop": "20px"}),
-                dcc.Markdown(id=f"{self.component_id}-cross-metrics", dangerously_allow_html=True),
             ],
         )
 
@@ -57,7 +55,6 @@ class ModelDetails(PluginInterface):
             (f"{self.component_id}-dropdown", "options"),
             (f"{self.component_id}-dropdown", "value"),
             (f"{self.component_id}-metrics", "children"),
-            (f"{self.component_id}-cross-metrics", "children"),
         ]
         self.signals = [(f"{self.component_id}-dropdown", "value")]
 
@@ -84,10 +81,9 @@ class ModelDetails(PluginInterface):
         # Populate the inference runs dropdown
         inference_runs, default_run = self.get_inference_runs()
         metrics = self.inference_metrics(default_run)
-        cross_metrics = self.cross_metrics()
 
         # Return the updated property values for the plugin
-        return [header, details, inference_runs, default_run, metrics, cross_metrics]
+        return [header, details, inference_runs, default_run, metrics]
 
     def register_internal_callbacks(self):
         @callback(
@@ -225,6 +221,7 @@ class ModelDetails(PluginInterface):
 
     def cross_metrics(self) -> str:
         # Get cross fold metrics if they exist
+        # Note: Currently not used since we show cross fold metrics in the dropdown
         model_name = self.current_model.name
         cross_fold_data = self.params.get(f"/workbench/models/{model_name}/inference/cross_fold", warn=False)
         if not cross_fold_data:
