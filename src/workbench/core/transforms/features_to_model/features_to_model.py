@@ -210,7 +210,7 @@ class FeaturesToModel(Transform):
                 raise ValueError(msg)
 
             # Dynamically create the metric definitions
-            metrics = ["precision", "recall", "fscore"]
+            metrics = ["precision", "recall", "f1"]
             metric_definitions = []
             for t in self.class_labels:
                 for m in metrics:

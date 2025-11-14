@@ -896,7 +896,7 @@ class EndpointCore(Artifact):
         else:
             self.validate_proba_columns(prediction_df, class_labels)
 
-        # Calculate precision, recall, fscore, and support, handling zero division
+        # Calculate precision, recall, f1, and support, handling zero division
         prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         scores = precision_recall_fscore_support(
             prediction_df[target_column],
@@ -931,7 +931,7 @@ class EndpointCore(Artifact):
                 target_column: class_labels,
                 "precision": scores[0],
                 "recall": scores[1],
-                "fscore": scores[2],
+                "f1": scores[2],
                 "roc_auc": roc_auc_per_label,
                 "support": scores[3],
             }

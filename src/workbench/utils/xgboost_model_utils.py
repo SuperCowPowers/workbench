@@ -7,12 +7,11 @@ import joblib
 import pickle
 import glob
 import awswrangler as wr
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 import hashlib
 import pandas as pd
 import numpy as np
 import xgboost as xgb
-from typing import Dict, Any
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import (
     precision_recall_fscore_support,
@@ -354,9 +353,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
         if is_classifier:
             predictions_df.loc[val_indices, "prediction"] = label_encoder.inverse_transform(preds.astype(int))
             y_proba = xgb_model.predict_proba(X_val)
-            predictions_df.loc[val_indices, "pred_proba"] = pd.Series(
-                y_proba.tolist(), index=val_indices
-            )
+            predictions_df.loc[val_indices, "pred_proba"] = pd.Series(y_proba.tolist(), index=val_indices)
         else:
             predictions_df.loc[val_indices, "prediction"] = preds
 
@@ -425,38 +422,46 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
             y_orig = label_encoder.inverse_transform(y_for_cv)
             support = int((y_orig == class_name).sum())
 
-            metric_rows.append({
-                "class": class_name,
-                "precision": prec_scores.mean(),
-                "recall": rec_scores.mean(),
-                "f1": f1_scores.mean(),
-                "roc_auc": roc_auc_scores.mean(),
-                "support": support,
-            })
+            metric_rows.append(
+                {
+                    "class": class_name,
+                    "precision": prec_scores.mean(),
+                    "recall": rec_scores.mean(),
+                    "f1": f1_scores.mean(),
+                    "roc_auc": roc_auc_scores.mean(),
+                    "support": support,
+                }
+            )
 
         # Overall 'all' row
-        metric_rows.append({
-            "class": "all",
-            "precision": fold_df["precision"].mean(),
-            "recall": fold_df["recall"].mean(),
-            "f1": fold_df["f1"].mean(),
-            "roc_auc": fold_df["roc_auc"].mean(),
-            "support": len(y_for_cv),
-        })
+        metric_rows.append(
+            {
+                "class": "all",
+                "precision": fold_df["precision"].mean(),
+                "recall": fold_df["recall"].mean(),
+                "f1": fold_df["f1"].mean(),
+                "roc_auc": fold_df["roc_auc"].mean(),
+                "support": len(y_for_cv),
+            }
+        )
 
         metrics_df = pd.DataFrame(metric_rows).set_index("class")
 
     else:
         # Regression: single 'all' row
-        metrics_df = pd.DataFrame([{
-            "class": "all",
-            "rmse": fold_df["rmse"].mean(),
-            "mae": fold_df["mae"].mean(),
-            "medae": fold_df["medae"].mean(),
-            "r2": fold_df["r2"].mean(),
-            "spearmanr": fold_df["spearmanr"].mean(),
-            "support": len(y_for_cv),
-        }]).set_index("class")
+        metrics_df = pd.DataFrame(
+            [
+                {
+                    "class": "all",
+                    "rmse": fold_df["rmse"].mean(),
+                    "mae": fold_df["mae"].mean(),
+                    "medae": fold_df["medae"].mean(),
+                    "r2": fold_df["r2"].mean(),
+                    "spearmanr": fold_df["spearmanr"].mean(),
+                    "support": len(y_for_cv),
+                }
+            ]
+        ).set_index("class")
 
     return metrics_df, predictions_df
 

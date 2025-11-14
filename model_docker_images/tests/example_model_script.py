@@ -244,13 +244,13 @@ if __name__ == "__main__":
                 target: label_names,
                 "precision": scores[0],
                 "recall": scores[1],
-                "fscore": scores[2],
+                "f1": scores[2],
                 "support": scores[3],
             }
         )
 
         # We need to get creative with the Classification Metrics
-        metrics = ["precision", "recall", "fscore", "support"]
+        metrics = ["precision", "recall", "f1", "support"]
         for t in label_names:
             for m in metrics:
                 value = score_df.loc[score_df[target] == t, m].iloc[0]
