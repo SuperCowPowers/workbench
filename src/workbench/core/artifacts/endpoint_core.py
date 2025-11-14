@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 from io import StringIO
 import awswrangler as wr
-from typing import Union, Optional, Tuple
+from typing import Union, Optional
 import hashlib
 
 # Model Performance Scores

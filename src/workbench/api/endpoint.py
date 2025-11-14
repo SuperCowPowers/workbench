@@ -4,7 +4,6 @@ Endpoints can be viewed in the AWS Sagemaker interfaces or in the Workbench
 Dashboard UI, which provides additional model details and performance metrics"""
 
 import pandas as pd
-from typing import Tuple
 
 # Workbench Imports
 from workbench.core.artifacts.endpoint_core import EndpointCore
