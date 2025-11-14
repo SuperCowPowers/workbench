@@ -457,7 +457,7 @@ class EndpointCore(Artifact):
         # If the metrics dataframe isn't empty save to the param store
         if not cross_fold_metrics.empty:
             # Convert to list of dictionaries
-            metrics = cross_fold_metrics.to_dict(orient='records')
+            metrics = cross_fold_metrics.to_dict(orient="records")
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/cross_fold", metrics)
 
         # Capture the results
