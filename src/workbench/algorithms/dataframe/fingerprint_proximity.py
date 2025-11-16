@@ -5,7 +5,7 @@ from typing import Union, List
 import logging
 
 # Workbench Imports
-from workbench.algorithms.dataframe.proximity import Proximity, ProximityType
+from workbench.algorithms.dataframe.proximity import Proximity
 
 # Set up logging
 log = logging.getLogger("workbench")

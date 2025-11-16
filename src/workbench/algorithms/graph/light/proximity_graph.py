@@ -4,7 +4,7 @@ from typing import Union
 import logging
 
 # Workbench Imports
-from workbench.algorithms.dataframe import Proximity, ProximityType
+from workbench.algorithms.dataframe import Proximity
 from workbench.api.graph_store import GraphStore
 
 # Set up logging
@@ -50,12 +50,13 @@ class ProximityGraph:
         self._nx_graph.add_nodes_from(node_df.set_index(id_column, drop=False).to_dict("index").items())
 
         # Determine edge weights based on proximity type
-        if prox.proximity_type == ProximityType.SIMILARITY:
-            all_neighbors_df["weight"] = all_neighbors_df["similarity"]
-        elif prox.proximity_type == ProximityType.DISTANCE:
-            # Normalize and invert distance
-            max_distance = all_neighbors_df["distance"].max()
-            all_neighbors_df["weight"] = 1.0 - all_neighbors_df["distance"] / max_distance
+        # if prox.proximity_type == ProximityType.SIMILARITY:
+        #     all_neighbors_df["weight"] = all_neighbors_df["similarity"]
+        # elif prox.proximity_type == ProximityType.DISTANCE:
+
+        # Normalize and invert distance
+        max_distance = all_neighbors_df["distance"].max()
+        all_neighbors_df["weight"] = 1.0 - all_neighbors_df["distance"] / max_distance
 
         # Add edges to the graph
         log.info("Adding edges to the graph...")
