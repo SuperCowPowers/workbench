@@ -113,9 +113,16 @@ def proximity_model_local(model: "Model"):
     fs = FeatureSet(model.get_input())
     id_column = fs.id_column
 
-    # Create the Proximity Model from our Training Data
-    df = model.training_view().pull_dataframe()
-    return Proximity(df, id_column, features, target, track_columns=features)
+    # Create the Proximity Model from both the full FeatureSet and the Model training data
+    full_df = fs.pull_dataframe()
+    model_df = model.training_view().pull_dataframe()
+
+    # Mark rows that are in the model
+    model_ids = set(model_df[id_column])
+    full_df['in_model'] = full_df[id_column].isin(model_ids)
+
+    # Create and return the Proximity Model
+    return Proximity(full_df, id_column, features, target, track_columns=features)
 
 
 def proximity_model(model: "Model", prox_model_name: str, track_columns: list = None) -> "Model":
