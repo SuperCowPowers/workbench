@@ -11,12 +11,12 @@ log = logging.getLogger("workbench")
 
 class Proximity:
     def __init__(
-            self,
-            df: pd.DataFrame,
-            id_column: str,
-            features: List[str],
-            target: Optional[str] = None,
-            track_columns: Optional[List[str]] = None,
+        self,
+        df: pd.DataFrame,
+        id_column: str,
+        features: List[str],
+        target: Optional[str] = None,
+        track_columns: Optional[List[str]] = None,
     ):
         """
         Initialize the Proximity class.
@@ -46,7 +46,7 @@ class Proximity:
 
     def _validate_features(self, df: pd.DataFrame, features: List[str]) -> List[str]:
         """Remove non-numeric features and log warnings."""
-        non_numeric = [f for f in features if f not in df.select_dtypes(include=['number']).columns]
+        non_numeric = [f for f in features if f not in df.select_dtypes(include=["number"]).columns]
         if non_numeric:
             log.warning(f"Non-numeric features {non_numeric} aren't currently supported, excluding them")
         return [f for f in features if f not in non_numeric]
@@ -81,23 +81,20 @@ class Proximity:
         distances, indices = self.nn.kneighbors(X, n_neighbors=n_neighbors + 1)
 
         # Extract nearest neighbor (index 1, since index 0 is self)
-        self.df['nn_distance'] = distances[:, 1]
-        self.df['nn_id'] = self.df.iloc[indices[:, 1]][self.id_column].values
+        self.df["nn_distance"] = distances[:, 1]
+        self.df["nn_id"] = self.df.iloc[indices[:, 1]][self.id_column].values
 
         # If target exists, compute target-based metrics
         if self.target and self.target in self.df.columns:
             # Get target values for nearest neighbor
             nn_target_values = self.df.iloc[indices[:, 1]][self.target].values
-            self.df['nn_target'] = nn_target_values
-            self.df['nn_target_diff'] = np.abs(self.df[self.target].values - nn_target_values)
+            self.df["nn_target"] = nn_target_values
+            self.df["nn_target_diff"] = np.abs(self.df[self.target].values - nn_target_values)
 
             # Compute mean of k neighbors (excluding self at index 0)
-            neighbor_targets = np.array([
-                self.df.iloc[idx_row[1:]][self.target].mean()
-                for idx_row in indices
-            ])
-            self.df['neighbor_mean'] = neighbor_targets
-            self.df['neighbor_mean_diff'] = np.abs(self.df[self.target].values - neighbor_targets)
+            neighbor_targets = np.array([self.df.iloc[idx_row[1:]][self.target].mean() for idx_row in indices])
+            self.df["neighbor_mean"] = neighbor_targets
+            self.df["neighbor_mean_diff"] = np.abs(self.df[self.target].values - neighbor_targets)
 
         log.info("Proximity metrics precomputed successfully")
 
@@ -112,13 +109,11 @@ class Proximity:
             DataFrame of observations above the percentile threshold, sorted by distance (descending)
         """
         percentile = 100 - top_percent
-        threshold = np.percentile(self.df['nn_distance'], percentile)
-        isolated = self.df[self.df['nn_distance'] >= threshold].copy()
-        return isolated.sort_values('nn_distance', ascending=False).reset_index(drop=True)
+        threshold = np.percentile(self.df["nn_distance"], percentile)
+        isolated = self.df[self.df["nn_distance"] >= threshold].copy()
+        return isolated.sort_values("nn_distance", ascending=False).reset_index(drop=True)
 
-    def target_gradients(self,
-                         top_percent: float = 1.0,
-                         distance_percentile: float = 100.0) -> pd.DataFrame:
+    def target_gradients(self, top_percent: float = 1.0, distance_percentile: float = 100.0) -> pd.DataFrame:
         """
         Find compounds with steep target gradients (target change per unit distance).
 
@@ -141,29 +136,29 @@ class Proximity:
             raise ValueError("Target column must be specified for target gradient analysis")
 
         # Calculate distance threshold
-        distance_threshold = np.percentile(self.df['nn_distance'], distance_percentile)
+        distance_threshold = np.percentile(self.df["nn_distance"], distance_percentile)
 
         # Filter to compounds within distance threshold
-        filtered = self.df[self.df['nn_distance'] <= distance_threshold].copy()
+        filtered = self.df[self.df["nn_distance"] <= distance_threshold].copy()
 
         # Calculate gradient using neighbor mean difference (not nearest neighbor)
         # This identifies compounds that differ from their neighborhood, not just their nearest neighbor
         epsilon = 1e-10  # Avoid division by zero for duplicates
-        filtered['gradient'] = filtered['neighbor_mean_diff'] / (filtered['nn_distance'] + epsilon)
+        filtered["gradient"] = filtered["neighbor_mean_diff"] / (filtered["nn_distance"] + epsilon)
 
         # Get top X% by gradient
         percentile = 100 - top_percent
-        gradient_threshold = np.percentile(filtered['gradient'], percentile)
-        result = filtered[filtered['gradient'] >= gradient_threshold].copy()
+        gradient_threshold = np.percentile(filtered["gradient"], percentile)
+        result = filtered[filtered["gradient"] >= gradient_threshold].copy()
 
-        return result.sort_values('gradient', ascending=False).reset_index(drop=True)
+        return result.sort_values("gradient", ascending=False).reset_index(drop=True)
 
     def neighbors(
-            self,
-            id_or_ids: Union[str, int, List[Union[str, int]]],
-            n_neighbors: Optional[int] = 5,
-            radius: Optional[float] = None,
-            include_self: bool = True,
+        self,
+        id_or_ids: Union[str, int, List[Union[str, int]]],
+        n_neighbors: Optional[int] = 5,
+        radius: Optional[float] = None,
+        include_self: bool = True,
     ) -> pd.DataFrame:
         """
         Return neighbors for ID(s) from the existing dataset.
@@ -210,9 +205,7 @@ class Proximity:
                 if not include_self and neighbor_id == query_id:
                     continue
 
-                results.append(
-                    self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist)
-                )
+                results.append(self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist))
 
         return pd.DataFrame(results).sort_values([self.id_column, "distance"]).reset_index(drop=True)
 
@@ -315,8 +308,8 @@ if __name__ == "__main__":
     # Test with a categorical feature
     from workbench.api import FeatureSet, Model
 
-    fs = FeatureSet("abalone_features")
-    model = Model("abalone-regression")
+    fs = FeatureSet("aqsol_features")
+    model = Model("aqsol-regression")
     features = model.features()
     df = fs.pull_dataframe()
     prox = Proximity(
@@ -331,12 +324,12 @@ if __name__ == "__main__":
     # Test isolated data in the top 1%
     isolated_1pct = prox.isolated(top_percent=1.0)
     print(f"\nTop 1% most isolated compounds (n={len(isolated_1pct)}):")
-    print(isolated_1pct[[fs.id_column, 'nn_distance', 'nn_id']].head(10))
+    print(isolated_1pct[[fs.id_column, "nn_distance", "nn_id"]].head(10))
 
     # Test isolated data in the top 5%
     isolated_5pct = prox.isolated(top_percent=5.0)
     print(f"\nTop 5% most isolated compounds (n={len(isolated_5pct)}):")
-    print(isolated_5pct[[fs.id_column, 'nn_distance', 'nn_id']].head(10))
+    print(isolated_5pct[[fs.id_column, "nn_distance", "nn_id"]].head(10))
 
     print("\n" + "=" * 80)
     print("Testing target_gradients for data quality (distance_percentile=100)...")
@@ -345,13 +338,19 @@ if __name__ == "__main__":
     # Data quality: check gradients across all distances
     data_quality_1pct = prox.target_gradients(top_percent=1.0, distance_percentile=100.0)
     print(f"\nTop 1% data quality issues (n={len(data_quality_1pct)}):")
-    print(data_quality_1pct[[fs.id_column, model.target(), 'neighbor_mean', 'neighbor_mean_diff',
-                             'nn_distance', 'gradient']].head(10))
+    print(
+        data_quality_1pct[
+            [fs.id_column, model.target(), "neighbor_mean", "neighbor_mean_diff", "nn_distance", "gradient"]
+        ].head(10)
+    )
 
     data_quality_5pct = prox.target_gradients(top_percent=5.0, distance_percentile=100.0)
     print(f"\nTop 5% data quality issues (n={len(data_quality_5pct)}):")
-    print(data_quality_5pct[[fs.id_column, model.target(), 'neighbor_mean', 'neighbor_mean_diff',
-                             'nn_distance', 'gradient']].head(10))
+    print(
+        data_quality_5pct[
+            [fs.id_column, model.target(), "neighbor_mean", "neighbor_mean_diff", "nn_distance", "gradient"]
+        ].head(10)
+    )
 
     print("\n" + "=" * 80)
     print("Testing target_gradients for activity cliffs (distance_percentile=25)...")
@@ -360,13 +359,19 @@ if __name__ == "__main__":
     # Activity cliffs: focus on close neighbors only
     cliffs_1pct = prox.target_gradients(top_percent=1.0, distance_percentile=25.0)
     print(f"\nTop 1% activity cliffs among closest 25% (n={len(cliffs_1pct)}):")
-    print(cliffs_1pct[[fs.id_column, model.target(), 'neighbor_mean', 'neighbor_mean_diff',
-                       'nn_distance', 'gradient']].head(10))
+    print(
+        cliffs_1pct[
+            [fs.id_column, model.target(), "neighbor_mean", "neighbor_mean_diff", "nn_distance", "gradient"]
+        ].head(10)
+    )
 
     cliffs_5pct = prox.target_gradients(top_percent=5.0, distance_percentile=50.0)
     print(f"\nTop 5% activity cliffs among closest 50% (n={len(cliffs_5pct)}):")
-    print(cliffs_5pct[[fs.id_column, model.target(), 'neighbor_mean', 'neighbor_mean_diff',
-                       'nn_distance', 'gradient']].head(10))
+    print(
+        cliffs_5pct[
+            [fs.id_column, model.target(), "neighbor_mean", "neighbor_mean_diff", "nn_distance", "gradient"]
+        ].head(10)
+    )
 
     # Show detailed neighbor analysis for flagged compounds
     print("\n" + "=" * 80)
@@ -376,51 +381,27 @@ if __name__ == "__main__":
     if len(data_quality_1pct) > 0:
         suspect_id = data_quality_1pct.iloc[0][fs.id_column]
         suspect_target = data_quality_1pct.iloc[0][model.target()]
-        suspect_neighbor_mean = data_quality_1pct.iloc[0]['neighbor_mean']
-        suspect_gradient = data_quality_1pct.iloc[0]['gradient']
+        suspect_neighbor_mean = data_quality_1pct.iloc[0]["neighbor_mean"]
+        suspect_gradient = data_quality_1pct.iloc[0]["gradient"]
 
-        print(f"\n--- Data Quality Issue ---")
+        print("\n--- Data Quality Issue ---")
         print(f"Compound ID: {suspect_id}")
         print(f"Target value: {suspect_target:.2f}")
         print(f"Neighbor mean: {suspect_neighbor_mean:.2f}")
         print(f"Gradient: {suspect_gradient:.2f}")
-        print(f"\nNeighbors:")
+        print("\nNeighbors:")
 
         neighbors_df = prox.neighbors(suspect_id, n_neighbors=10)
-        print(neighbors_df[[fs.id_column, 'neighbor_id', 'distance', model.target()]])
+        print(neighbors_df[[fs.id_column, "neighbor_id", "distance", model.target()]])
 
         # Show target value distribution
-        neighbor_targets = neighbors_df[neighbors_df['neighbor_id'] != suspect_id][model.target()].values
-        print(f"\nNeighbor target statistics:")
+        neighbor_targets = neighbors_df[neighbors_df["neighbor_id"] != suspect_id][model.target()].values
+        print("\nNeighbor target statistics:")
         print(f"  Mean: {neighbor_targets.mean():.2f}")
         print(f"  Std: {neighbor_targets.std():.2f}")
         print(f"  Min: {neighbor_targets.min():.2f}")
         print(f"  Max: {neighbor_targets.max():.2f}")
-        print(
-            f"  Compound's value: {suspect_target:.2f} ({'OUTLIER' if abs(suspect_target - neighbor_targets.mean()) > 2 * neighbor_targets.std() else 'ok'})")
-
-    if len(cliffs_1pct) > 0:
-        cliff_id = cliffs_1pct.iloc[0][fs.id_column]
-        cliff_target = cliffs_1pct.iloc[0][model.target()]
-        cliff_neighbor_mean = cliffs_1pct.iloc[0]['neighbor_mean']
-        cliff_gradient = cliffs_1pct.iloc[0]['gradient']
-
-        print(f"\n--- Activity Cliff ---")
-        print(f"Compound ID: {cliff_id}")
-        print(f"Target value: {cliff_target:.2f}")
-        print(f"Neighbor mean: {cliff_neighbor_mean:.2f}")
-        print(f"Gradient: {cliff_gradient:.2f}")
-        print(f"\nNeighbors:")
-
-        neighbors_df = prox.neighbors(cliff_id, n_neighbors=10)
-        print(neighbors_df[[fs.id_column, 'neighbor_id', 'distance', model.target()]])
-
-        # Show target value distribution
-        neighbor_targets = neighbors_df[neighbors_df['neighbor_id'] != cliff_id][model.target()].values
-        print(f"\nNeighbor target statistics:")
-        print(f"  Mean: {neighbor_targets.mean():.2f}")
-        print(f"  Std: {neighbor_targets.std():.2f}")
-        print(f"  Min: {neighbor_targets.min():.2f}")
-        print(f"  Max: {neighbor_targets.max():.2f}")
-        print(
-            f"  Compound's value: {cliff_target:.2f} ({'OUTLIER' if abs(cliff_target - neighbor_targets.mean()) > 2 * neighbor_targets.std() else 'ok'})")
+        outlier_label = (
+            "OUTLIER" if abs(suspect_target - neighbor_targets.mean()) > 2 * neighbor_targets.std() else "ok"
+        )
+        print(f"  Compound's value: {suspect_target:.2f} ({outlier_label})")

@@ -119,7 +119,7 @@ def proximity_model_local(model: "Model"):
 
     # Mark rows that are in the model
     model_ids = set(model_df[id_column])
-    full_df['in_model'] = full_df[id_column].isin(model_ids)
+    full_df["in_model"] = full_df[id_column].isin(model_ids)
 
     # Create and return the Proximity Model
     return Proximity(full_df, id_column, features, target, track_columns=features)
