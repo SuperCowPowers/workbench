@@ -2,31 +2,21 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.neighbors import NearestNeighbors
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 import logging
-import pickle
-import json
-from pathlib import Path
-from enum import Enum
 
 # Set up logging
 log = logging.getLogger("workbench")
 
 
-class ProximityType(Enum):
-    DISTANCE = "distance"
-    SIMILARITY = "similarity"
-
-
 class Proximity:
     def __init__(
-        self,
-        df: pd.DataFrame,
-        id_column: str,
-        features: List[str],
-        target: Optional[str] = None,
-        track_columns: Optional[List[str]] = None,
-        n_neighbors: int = 10,
+            self,
+            df: pd.DataFrame,
+            id_column: str,
+            features: List[str],
+            target: Optional[str] = None,
+            track_columns: Optional[List[str]] = None,
     ):
         """
         Initialize the Proximity class.
@@ -37,76 +27,152 @@ class Proximity:
             features: List of feature column names to be used for neighbor computations.
             target: Name of the target column. Defaults to None.
             track_columns: Additional columns to track in results. Defaults to None.
-            n_neighbors: Number of neighbors to compute. Defaults to 10.
         """
         self.id_column = id_column
         self.target = target
         self.track_columns = track_columns or []
-        self.proximity_type = None
-        self.scaler = None
-        self.X = None
-        self.nn = None
 
         # Filter out non-numeric features
         self.features = self._validate_features(df, features)
 
         # Drop NaN rows and set up DataFrame
         self.df = df.dropna(subset=self.features).copy()
-        self.n_neighbors = min(n_neighbors, len(self.df) - 1)
 
         # Build the proximity model
-        self.build_proximity_model()
+        self._build_model()
+
+        # Precompute landscape metrics
+        self._precompute_metrics()
 
     def _validate_features(self, df: pd.DataFrame, features: List[str]) -> List[str]:
         """Remove non-numeric features and log warnings."""
-        non_numeric = df[features].select_dtypes(exclude=["number"]).columns.tolist()
+        non_numeric = [f for f in features if f not in df.select_dtypes(include=['number']).columns]
         if non_numeric:
-            log.warning(f"Non-numeric features {non_numeric} aren't currently supported...")
-            return [f for f in features if f not in non_numeric]
-        return features
+            log.warning(f"Non-numeric features {non_numeric} aren't currently supported, excluding them")
+        return [f for f in features if f not in non_numeric]
 
-    def build_proximity_model(self) -> None:
+    def _build_model(self) -> None:
         """Standardize features and fit Nearest Neighbors model."""
-        self.proximity_type = ProximityType.DISTANCE
         self.scaler = StandardScaler()
-        self.X = self.scaler.fit_transform(self.df[self.features])
-        self.nn = NearestNeighbors(n_neighbors=self.n_neighbors + 1).fit(self.X)
+        X = self.scaler.fit_transform(self.df[self.features])
+        self.nn = NearestNeighbors().fit(X)
 
-    def all_neighbors(self) -> pd.DataFrame:
+    def _precompute_metrics(self, n_neighbors: int = 10) -> None:
         """
-        Compute nearest neighbors for all rows in the dataset.
+        Precompute landscape metrics for all compounds.
+
+        Adds columns to self.df:
+        - nn_distance: Distance to nearest neighbor
+        - nn_id: ID of nearest neighbor
+
+        If target is specified, also adds:
+        - nn_target: Target value of nearest neighbor
+        - nn_target_diff: Absolute difference from nearest neighbor target
+        - neighbor_mean: Mean target of n_neighbors
+        - neighbor_mean_diff: Absolute difference from neighbor mean
+        """
+        log.info("Precomputing proximity metrics...")
+
+        # Make sure n_neighbors isn't greater than dataset size
+        n_neighbors = min(n_neighbors, len(self.df) - 1)
+
+        # Get nearest neighbors for all points (including self)
+        X = self.scaler.transform(self.df[self.features])
+        distances, indices = self.nn.kneighbors(X, n_neighbors=n_neighbors + 1)
+
+        # Extract nearest neighbor (index 1, since index 0 is self)
+        self.df['nn_distance'] = distances[:, 1]
+        self.df['nn_id'] = self.df.iloc[indices[:, 1]][self.id_column].values
+
+        # If target exists, compute target-based metrics
+        if self.target and self.target in self.df.columns:
+            # Get target values for nearest neighbor
+            nn_target_values = self.df.iloc[indices[:, 1]][self.target].values
+            self.df['nn_target'] = nn_target_values
+            self.df['nn_target_diff'] = np.abs(self.df[self.target].values - nn_target_values)
+
+            # Compute mean of k neighbors (excluding self at index 0)
+            neighbor_targets = np.array([
+                self.df.iloc[idx_row[1:]][self.target].mean()
+                for idx_row in indices
+            ])
+            self.df['neighbor_mean'] = neighbor_targets
+            self.df['neighbor_mean_diff'] = np.abs(self.df[self.target].values - neighbor_targets)
+
+        log.info("Proximity metrics precomputed successfully")
+
+    def isolated(self, top_percent: float = 1.0) -> pd.DataFrame:
+        """
+        Find isolated data points based on distance to nearest neighbor.
+
+        Args:
+            top_percent: Percentage of most isolated data points to return (e.g., 1.0 returns top 1%)
 
         Returns:
-            DataFrame of neighbors and their distances.
+            DataFrame of observations above the percentile threshold, sorted by distance (descending)
         """
-        distances, indices = self.nn.kneighbors(self.X)
+        percentile = 100 - top_percent
+        threshold = np.percentile(self.df['nn_distance'], percentile)
+        isolated = self.df[self.df['nn_distance'] >= threshold].copy()
+        return isolated.sort_values('nn_distance', ascending=False).reset_index(drop=True)
 
-        results = [
-            self._build_neighbor_result(
-                query_id=self.df.iloc[i][self.id_column], neighbor_idx=neighbor_idx, distance=dist
-            )
-            for i, (dists, nbrs) in enumerate(zip(distances, indices))
-            for neighbor_idx, dist in zip(nbrs, dists)
-            if neighbor_idx != i  # Skip self
-        ]
+    def target_gradients(self,
+                         top_percent: float = 1.0,
+                         distance_percentile: float = 100.0) -> pd.DataFrame:
+        """
+        Find compounds with steep target gradients (target change per unit distance).
 
-        return pd.DataFrame(results)
+        Identifies compounds whose target value differs significantly from their neighborhood average.
+        High gradients indicate compounds that are outliers relative to their local neighborhood.
+
+        Use cases:
+        - Activity cliffs: Real SAR discontinuities (use distance_percentile=25-50)
+        - Data quality: Potential assay errors or mislabeled data (use distance_percentile=100)
+
+        Args:
+            top_percent: Percentage of compounds with steepest gradients to return (e.g., 1.0 = top 1%)
+            distance_percentile: Only consider neighbors within this distance percentile
+                               (e.g., 25.0 = closest 25%, 100.0 = all compounds)
+
+        Returns:
+            DataFrame of compounds with steepest target gradients, sorted by gradient (descending)
+        """
+        if self.target is None:
+            raise ValueError("Target column must be specified for target gradient analysis")
+
+        # Calculate distance threshold
+        distance_threshold = np.percentile(self.df['nn_distance'], distance_percentile)
+
+        # Filter to compounds within distance threshold
+        filtered = self.df[self.df['nn_distance'] <= distance_threshold].copy()
+
+        # Calculate gradient using neighbor mean difference (not nearest neighbor)
+        # This identifies compounds that differ from their neighborhood, not just their nearest neighbor
+        epsilon = 1e-10  # Avoid division by zero for duplicates
+        filtered['gradient'] = filtered['neighbor_mean_diff'] / (filtered['nn_distance'] + epsilon)
+
+        # Get top X% by gradient
+        percentile = 100 - top_percent
+        gradient_threshold = np.percentile(filtered['gradient'], percentile)
+        result = filtered[filtered['gradient'] >= gradient_threshold].copy()
+
+        return result.sort_values('gradient', ascending=False).reset_index(drop=True)
 
     def neighbors(
-        self,
-        id_or_ids,
-        n_neighbors: Optional[int] = 5,
-        radius: Optional[float] = None,
-        include_self: bool = True,
+            self,
+            id_or_ids: Union[str, int, List[Union[str, int]]],
+            n_neighbors: Optional[int] = 5,
+            radius: Optional[float] = None,
+            include_self: bool = True,
     ) -> pd.DataFrame:
         """
         Return neighbors for ID(s) from the existing dataset.
 
         Args:
             id_or_ids: Single ID or list of IDs to look up
-            n_neighbors: Number of neighbors to return (default: 5)
+            n_neighbors: Number of neighbors to return (default: 5, ignored if radius is set)
             radius: If provided, find all neighbors within this radius
-            include_self: Whether to include self in results (if present)
+            include_self: Whether to include self in results (default: True)
 
         Returns:
             DataFrame containing neighbors and distances
@@ -123,77 +189,6 @@ class Proximity:
         query_df = self.df[self.df[self.id_column].isin(ids)]
         query_df = query_df.set_index(self.id_column).loc[ids].reset_index()
 
-        # Use the core implementation
-        return self.find_neighbors(query_df, n_neighbors=n_neighbors, radius=radius, include_self=include_self)
-
-    def find_outliers(self, delta: float, n_neighbors: int = 5) -> pd.DataFrame:
-        """
-        Find outliers where target differs from mean of neighbors by > delta
-        AND closest neighbor is also > delta away.
-
-        Args:
-            delta: Threshold for absolute difference from neighbor mean
-            n_neighbors: Number of neighbors to use for mean calculation
-
-        Returns:
-            DataFrame with only outlier rows
-        """
-        if self.target is None:
-            raise ValueError("Target column must be specified to find outliers")
-
-        # Get all neighbors
-        neighbors_df = self.all_neighbors()
-
-        # Exclude self-matches
-        neighbors_df = neighbors_df[neighbors_df[self.id_column] != neighbors_df["neighbor_id"]]
-
-        # Calculate mean target for each ID's neighbors
-        neighbor_means = neighbors_df.groupby(self.id_column)[self.target].apply(lambda x: x.head(n_neighbors).mean())
-
-        # Get closest neighbor's target value
-        closest_neighbor_target = neighbors_df.sort_values("distance").groupby(self.id_column)[self.target].first()
-
-        # Join back to original df and compute outlier flag
-        result = self.df.copy()
-        result["neighbor_mean"] = result[self.id_column].map(neighbor_means)
-        result["closest_neighbor_target"] = result[self.id_column].map(closest_neighbor_target)
-
-        mean_diff = (result[self.target] - result["neighbor_mean"]).abs()
-        closest_diff = (result[self.target] - result["closest_neighbor_target"]).abs()
-
-        outliers = result[(mean_diff > delta) & (closest_diff > delta)]
-
-        return outliers
-
-    def find_neighbors(
-        self,
-        query_df: pd.DataFrame,
-        n_neighbors: Optional[int] = 5,
-        radius: Optional[float] = None,
-        include_self: bool = True,
-    ) -> pd.DataFrame:
-        """
-        Return neighbors for rows in a query DataFrame.
-
-        Args:
-            query_df: DataFrame containing query points
-            n_neighbors: Number of neighbors to return (default: 5)
-            radius: If provided, find all neighbors within this radius
-            include_self: Whether to include self in results (if present)
-
-        Returns:
-            DataFrame containing neighbors and distances
-        """
-        # Validate features
-        missing = set(self.features) - set(query_df.columns)
-        if missing:
-            raise ValueError(f"Query DataFrame is missing required feature columns: {missing}")
-
-        id_column_present = self.id_column in query_df.columns
-
-        # Handle NaN rows
-        query_df = self._handle_nan_rows(query_df, id_column_present)
-
         # Transform query features
         X_query = self.scaler.transform(query_df[self.features])
 
@@ -206,30 +201,20 @@ class Proximity:
         # Build results
         results = []
         for i, (dists, nbrs) in enumerate(zip(distances, indices)):
-            query_id = query_df.iloc[i][self.id_column] if id_column_present else f"query_{i}"
+            query_id = query_df.iloc[i][self.id_column]
 
             for neighbor_idx, dist in zip(nbrs, dists):
                 neighbor_id = self.df.iloc[neighbor_idx][self.id_column]
 
-                # Skip if neighbor is self and include_self is False
+                # Skip self if requested
                 if not include_self and neighbor_id == query_id:
                     continue
 
-                results.append(self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist))
+                results.append(
+                    self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist)
+                )
 
-        results_df = pd.DataFrame(results).sort_values([self.id_column, "distance"]).reset_index(drop=True)
-        return results_df
-
-    def _handle_nan_rows(self, query_df: pd.DataFrame, id_column_present: bool) -> pd.DataFrame:
-        """Drop rows with NaN values in feature columns and log warnings."""
-        rows_with_nan = query_df[self.features].isna().any(axis=1)
-
-        if rows_with_nan.any():
-            log.warning(f"Found {rows_with_nan.sum()} rows with NaNs in feature columns:")
-            if id_column_present:
-                log.warning(query_df.loc[rows_with_nan, self.id_column])
-
-        return query_df.dropna(subset=self.features)
+        return pd.DataFrame(results).sort_values([self.id_column, "distance"]).reset_index(drop=True)
 
     def _build_neighbor_result(self, query_id, neighbor_idx: int, distance: float) -> Dict:
         """
@@ -243,111 +228,31 @@ class Proximity:
         Returns:
             Dictionary containing neighbor information
         """
-        neighbor_id = self.df.iloc[neighbor_idx][self.id_column]
         neighbor_row = self.df.iloc[neighbor_idx]
+        neighbor_id = neighbor_row[self.id_column]
 
         # Start with basic info
         result = {
             self.id_column: query_id,
             "neighbor_id": neighbor_id,
-            "distance": distance,
+            "distance": 0.0 if distance < 1e-7 else distance,
         }
 
-        # Columns to automatically include if they exist
-        auto_include = (
-            ([self.target, "prediction"] if self.target else [])
-            + self.track_columns
-            + [col for col in self.df.columns if "_proba" in col or "residual" in col or col == "outlier"]
-        )
+        # Add target if present
+        if self.target and self.target in self.df.columns:
+            result[self.target] = neighbor_row[self.target]
 
-        # Add values for existing columns
-        for col in auto_include:
+        # Add tracked columns
+        for col in self.track_columns:
             if col in self.df.columns:
                 result[col] = neighbor_row[col]
 
-        # Truncate very small distances to zero
-        result["distance"] = 0.0 if distance < 1e-7 else distance
+        # Add prediction/probability columns if they exist
+        for col in self.df.columns:
+            if col == "prediction" or "_proba" in col or "residual" in col or col == "outlier":
+                result[col] = neighbor_row[col]
+
         return result
-
-    def serialize(self, directory: str) -> None:
-        """
-        Serialize the Proximity model to a directory.
-
-        Args:
-            directory: Directory path to save the model components
-        """
-        dir_path = Path(directory)
-        dir_path.mkdir(parents=True, exist_ok=True)
-
-        # Save metadata
-        metadata = {
-            "id_column": self.id_column,
-            "features": self.features,
-            "target": self.target,
-            "track_columns": self.track_columns,
-            "n_neighbors": self.n_neighbors,
-        }
-
-        (dir_path / "metadata.json").write_text(json.dumps(metadata))
-
-        # Save DataFrame
-        self.df.to_pickle(dir_path / "df.pkl")
-
-        # Save models
-        with open(dir_path / "scaler.pkl", "wb") as f:
-            pickle.dump(self.scaler, f)
-
-        with open(dir_path / "nn_model.pkl", "wb") as f:
-            pickle.dump(self.nn, f)
-
-        log.info(f"Proximity model serialized to {directory}")
-
-    @classmethod
-    def deserialize(cls, directory: str) -> "Proximity":
-        """
-        Deserialize a Proximity model from a directory.
-
-        Args:
-            directory: Directory path containing the serialized model components
-
-        Returns:
-            A new Proximity instance
-        """
-        dir_path = Path(directory)
-        if not dir_path.is_dir():
-            raise ValueError(f"Directory {directory} does not exist or is not a directory")
-
-        # Load metadata
-        metadata = json.loads((dir_path / "metadata.json").read_text())
-
-        # Load DataFrame
-        df_path = dir_path / "df.pkl"
-        if not df_path.exists():
-            raise FileNotFoundError(f"DataFrame file not found at {df_path}")
-        df = pd.read_pickle(df_path)
-
-        # Create instance without calling __init__
-        instance = cls.__new__(cls)
-        instance.df = df
-        instance.id_column = metadata["id_column"]
-        instance.features = metadata["features"]
-        instance.target = metadata["target"]
-        instance.track_columns = metadata["track_columns"]
-        instance.n_neighbors = metadata["n_neighbors"]
-
-        # Load models
-        with open(dir_path / "scaler.pkl", "rb") as f:
-            instance.scaler = pickle.load(f)
-
-        with open(dir_path / "nn_model.pkl", "rb") as f:
-            instance.nn = pickle.load(f)
-
-        # Restore X
-        instance.X = instance.scaler.transform(instance.df[instance.features])
-        instance.proximity_type = ProximityType.DISTANCE
-
-        log.info(f"Proximity model deserialized from {directory}")
-        return instance
 
 
 # Testing the Proximity class
@@ -367,28 +272,15 @@ if __name__ == "__main__":
 
     # Test the Proximity class
     features = ["Feature1", "Feature2", "Feature3"]
-    prox = Proximity(df, id_column="ID", features=features, n_neighbors=3)
-    print(prox.all_neighbors())
-
-    # Test the neighbors method
+    prox = Proximity(df, id_column="ID", features=features)
     print(prox.neighbors(1, n_neighbors=2))
 
     # Test the neighbors method with radius
     print(prox.neighbors(1, radius=2.0))
 
-    # Test with data that isn't in the 'train' dataframe
-    query_data = {
-        "ID": [6],
-        "Feature1": [0.31],
-        "Feature2": [0.31],
-        "Feature3": [2.31],
-    }
-    query_df = pd.DataFrame(query_data)
-    print(prox.find_neighbors(query_df=query_df, n_neighbors=3))  # For new data we use find_neighbors()
-
     # Test with Features list
-    prox = Proximity(df, id_column="ID", features=["Feature1"], n_neighbors=2)
-    print(prox.all_neighbors())
+    prox = Proximity(df, id_column="ID", features=["Feature1"])
+    print(prox.neighbors(1))
 
     # Create a sample DataFrame
     data = {
@@ -406,39 +298,8 @@ if __name__ == "__main__":
         features=["Feature1", "Feature2"],
         target="target",
         track_columns=["Feature1", "Feature2"],
-        n_neighbors=3,
     )
-    print(prox.all_neighbors())
-
-    # Test the neighbors method
     print(prox.neighbors(["a", "b"]))
-
-    # Time neighbors with all IDs versus calling all_neighbors
-    import time
-
-    start_time = time.time()
-    prox_df = prox.find_neighbors(query_df=df, include_self=False)
-    end_time = time.time()
-    print(f"Time taken for neighbors: {end_time - start_time:.4f} seconds")
-    start_time = time.time()
-    prox_df_all = prox.all_neighbors()
-    end_time = time.time()
-    print(f"Time taken for all_neighbors: {end_time - start_time:.4f} seconds")
-
-    # Now compare the two dataframes
-    print("Neighbors DataFrame:")
-    print(prox_df)
-    print("\nAll Neighbors DataFrame:")
-    print(prox_df_all)
-    # Check for any discrepancies
-    if prox_df.equals(prox_df_all):
-        print("The two DataFrames are equal :)")
-    else:
-        print("ERROR: The two DataFrames are not equal!")
-
-    # Test querying without the id_column
-    df_no_id = df.drop(columns=["foo_id"])
-    print(prox.find_neighbors(query_df=df_no_id, include_self=False))
 
     # Test duplicate IDs
     data = {
@@ -448,7 +309,7 @@ if __name__ == "__main__":
         "target": [1, 0, 1, 0, 5],
     }
     df = pd.DataFrame(data)
-    prox = Proximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target", n_neighbors=3)
+    prox = Proximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target")
     print(df.equals(prox.df))
 
     # Test with a categorical feature
@@ -461,14 +322,105 @@ if __name__ == "__main__":
     prox = Proximity(
         df, id_column=fs.id_column, features=model.features(), target=model.target(), track_columns=features
     )
-    print(prox.find_neighbors(query_df=df[0:2]))
+    print(prox.neighbors(df[fs.id_column].tolist()[:3]))
 
-    # Test outlier detection
-    outlier_df = prox.find_outliers(delta=10.0)
-    print(outlier_df[[fs.id_column, model.target(), "neighbor_mean"]])
-    print(f"Number of Outliers detected: {len(outlier_df)}")
+    print("\n" + "=" * 80)
+    print("Testing isolated_compounds...")
+    print("=" * 80)
 
-    # Get the neighbors for an outlier (just grab the first one)
-    outlier_id = outlier_df.iloc[0][fs.id_column]
-    print(f"Neighbors for outlier ID: {outlier_id}")
-    print(prox.neighbors(outlier_id))
+    # Test isolated data in the top 1%
+    isolated_1pct = prox.isolated(top_percent=1.0)
+    print(f"\nTop 1% most isolated compounds (n={len(isolated_1pct)}):")
+    print(isolated_1pct[[fs.id_column, 'nn_distance', 'nn_id']].head(10))
+
+    # Test isolated data in the top 5%
+    isolated_5pct = prox.isolated(top_percent=5.0)
+    print(f"\nTop 5% most isolated compounds (n={len(isolated_5pct)}):")
+    print(isolated_5pct[[fs.id_column, 'nn_distance', 'nn_id']].head(10))
+
+    print("\n" + "=" * 80)
+    print("Testing target_gradients for data quality (distance_percentile=100)...")
+    print("=" * 80)
+
+    # Data quality: check gradients across all distances
+    data_quality_1pct = prox.target_gradients(top_percent=1.0, distance_percentile=100.0)
+    print(f"\nTop 1% data quality issues (n={len(data_quality_1pct)}):")
+    print(data_quality_1pct[[fs.id_column, model.target(), 'neighbor_mean', 'neighbor_mean_diff',
+                             'nn_distance', 'gradient']].head(10))
+
+    data_quality_5pct = prox.target_gradients(top_percent=5.0, distance_percentile=100.0)
+    print(f"\nTop 5% data quality issues (n={len(data_quality_5pct)}):")
+    print(data_quality_5pct[[fs.id_column, model.target(), 'neighbor_mean', 'neighbor_mean_diff',
+                             'nn_distance', 'gradient']].head(10))
+
+    print("\n" + "=" * 80)
+    print("Testing target_gradients for activity cliffs (distance_percentile=25)...")
+    print("=" * 80)
+
+    # Activity cliffs: focus on close neighbors only
+    cliffs_1pct = prox.target_gradients(top_percent=1.0, distance_percentile=25.0)
+    print(f"\nTop 1% activity cliffs among closest 25% (n={len(cliffs_1pct)}):")
+    print(cliffs_1pct[[fs.id_column, model.target(), 'neighbor_mean', 'neighbor_mean_diff',
+                       'nn_distance', 'gradient']].head(10))
+
+    cliffs_5pct = prox.target_gradients(top_percent=5.0, distance_percentile=50.0)
+    print(f"\nTop 5% activity cliffs among closest 50% (n={len(cliffs_5pct)}):")
+    print(cliffs_5pct[[fs.id_column, model.target(), 'neighbor_mean', 'neighbor_mean_diff',
+                       'nn_distance', 'gradient']].head(10))
+
+    # Show detailed neighbor analysis for flagged compounds
+    print("\n" + "=" * 80)
+    print("Detailed neighbor analysis for flagged compounds...")
+    print("=" * 80)
+
+    if len(data_quality_1pct) > 0:
+        suspect_id = data_quality_1pct.iloc[0][fs.id_column]
+        suspect_target = data_quality_1pct.iloc[0][model.target()]
+        suspect_neighbor_mean = data_quality_1pct.iloc[0]['neighbor_mean']
+        suspect_gradient = data_quality_1pct.iloc[0]['gradient']
+
+        print(f"\n--- Data Quality Issue ---")
+        print(f"Compound ID: {suspect_id}")
+        print(f"Target value: {suspect_target:.2f}")
+        print(f"Neighbor mean: {suspect_neighbor_mean:.2f}")
+        print(f"Gradient: {suspect_gradient:.2f}")
+        print(f"\nNeighbors:")
+
+        neighbors_df = prox.neighbors(suspect_id, n_neighbors=10)
+        print(neighbors_df[[fs.id_column, 'neighbor_id', 'distance', model.target()]])
+
+        # Show target value distribution
+        neighbor_targets = neighbors_df[neighbors_df['neighbor_id'] != suspect_id][model.target()].values
+        print(f"\nNeighbor target statistics:")
+        print(f"  Mean: {neighbor_targets.mean():.2f}")
+        print(f"  Std: {neighbor_targets.std():.2f}")
+        print(f"  Min: {neighbor_targets.min():.2f}")
+        print(f"  Max: {neighbor_targets.max():.2f}")
+        print(
+            f"  Compound's value: {suspect_target:.2f} ({'OUTLIER' if abs(suspect_target - neighbor_targets.mean()) > 2 * neighbor_targets.std() else 'ok'})")
+
+    if len(cliffs_1pct) > 0:
+        cliff_id = cliffs_1pct.iloc[0][fs.id_column]
+        cliff_target = cliffs_1pct.iloc[0][model.target()]
+        cliff_neighbor_mean = cliffs_1pct.iloc[0]['neighbor_mean']
+        cliff_gradient = cliffs_1pct.iloc[0]['gradient']
+
+        print(f"\n--- Activity Cliff ---")
+        print(f"Compound ID: {cliff_id}")
+        print(f"Target value: {cliff_target:.2f}")
+        print(f"Neighbor mean: {cliff_neighbor_mean:.2f}")
+        print(f"Gradient: {cliff_gradient:.2f}")
+        print(f"\nNeighbors:")
+
+        neighbors_df = prox.neighbors(cliff_id, n_neighbors=10)
+        print(neighbors_df[[fs.id_column, 'neighbor_id', 'distance', model.target()]])
+
+        # Show target value distribution
+        neighbor_targets = neighbors_df[neighbors_df['neighbor_id'] != cliff_id][model.target()].values
+        print(f"\nNeighbor target statistics:")
+        print(f"  Mean: {neighbor_targets.mean():.2f}")
+        print(f"  Std: {neighbor_targets.std():.2f}")
+        print(f"  Min: {neighbor_targets.min():.2f}")
+        print(f"  Max: {neighbor_targets.max():.2f}")
+        print(
+            f"  Compound's value: {cliff_target:.2f} ({'OUTLIER' if abs(cliff_target - neighbor_targets.mean()) > 2 * neighbor_targets.std() else 'ok'})")
