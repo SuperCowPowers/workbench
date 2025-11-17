@@ -770,8 +770,8 @@ class EndpointCore(Artifact):
         # Add any _proba columns to the output columns
         output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
 
-        # Add any quantile columns to the output columns
-        output_columns += [col for col in pred_results_df.columns if col.startswith("q_") or col.startswith("qr_")]
+        # Add any Uncertainty Quantile columns to the output columns
+        output_columns += [col for col in pred_results_df.columns if col.startswith("q_") or col == "prediction_std" or col == "confidence"]
 
         # Add the ID column
         if id_column and id_column in pred_results_df.columns:
