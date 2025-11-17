@@ -172,9 +172,6 @@ def uq_model(model: "Model", uq_model_name: str, train_all_data: bool = False) -
     """
     from workbench.api import Model, ModelType, FeatureSet  # noqa: F401 (avoid circular import)
 
-    # Get the custom script path for the UQ model
-    script_path = get_custom_script_path("uq_models", "mapie.template")
-
     # Get Feature and Target Columns from the existing given Model
     features = model.features()
     target = model.target()
@@ -189,7 +186,6 @@ def uq_model(model: "Model", uq_model_name: str, train_all_data: bool = False) -
         description=f"UQ Model for {model.name}",
         tags=["uq", model.name],
         train_all_data=train_all_data,
-        custom_script=script_path,
         custom_args={"id_column": fs.id_column, "track_columns": [target]},
     )
     return uq_model
