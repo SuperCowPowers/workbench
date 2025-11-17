@@ -38,65 +38,16 @@ class Proximity:
         # Drop NaN rows and set up DataFrame
         self.df = df.dropna(subset=self.features).copy()
 
+        # Compute target range if target is provided
+        self.target_range = None
+        if self.target and self.target in self.df.columns:
+            self.target_range = self.df[self.target].max() - self.df[self.target].min()
+
         # Build the proximity model
         self._build_model()
 
         # Precompute landscape metrics
         self._precompute_metrics()
-
-    def _validate_features(self, df: pd.DataFrame, features: List[str]) -> List[str]:
-        """Remove non-numeric features and log warnings."""
-        non_numeric = [f for f in features if f not in df.select_dtypes(include=["number"]).columns]
-        if non_numeric:
-            log.warning(f"Non-numeric features {non_numeric} aren't currently supported, excluding them")
-        return [f for f in features if f not in non_numeric]
-
-    def _build_model(self) -> None:
-        """Standardize features and fit Nearest Neighbors model."""
-        self.scaler = StandardScaler()
-        X = self.scaler.fit_transform(self.df[self.features])
-        self.nn = NearestNeighbors().fit(X)
-
-    def _precompute_metrics(self, n_neighbors: int = 10) -> None:
-        """
-        Precompute landscape metrics for all compounds.
-
-        Adds columns to self.df:
-        - nn_distance: Distance to nearest neighbor
-        - nn_id: ID of nearest neighbor
-
-        If target is specified, also adds:
-        - nn_target: Target value of nearest neighbor
-        - nn_target_diff: Absolute difference from nearest neighbor target
-        - neighbor_mean: Mean target of n_neighbors
-        - neighbor_mean_diff: Absolute difference from neighbor mean
-        """
-        log.info("Precomputing proximity metrics...")
-
-        # Make sure n_neighbors isn't greater than dataset size
-        n_neighbors = min(n_neighbors, len(self.df) - 1)
-
-        # Get nearest neighbors for all points (including self)
-        X = self.scaler.transform(self.df[self.features])
-        distances, indices = self.nn.kneighbors(X, n_neighbors=n_neighbors + 1)
-
-        # Extract nearest neighbor (index 1, since index 0 is self)
-        self.df["nn_distance"] = distances[:, 1]
-        self.df["nn_id"] = self.df.iloc[indices[:, 1]][self.id_column].values
-
-        # If target exists, compute target-based metrics
-        if self.target and self.target in self.df.columns:
-            # Get target values for nearest neighbor
-            nn_target_values = self.df.iloc[indices[:, 1]][self.target].values
-            self.df["nn_target"] = nn_target_values
-            self.df["nn_target_diff"] = np.abs(self.df[self.target].values - nn_target_values)
-
-            # Compute mean of k neighbors (excluding self at index 0)
-            neighbor_targets = np.array([self.df.iloc[idx_row[1:]][self.target].mean() for idx_row in indices])
-            self.df["neighbor_mean"] = neighbor_targets
-            self.df["neighbor_mean_diff"] = np.abs(self.df[self.target].values - neighbor_targets)
-
-        log.info("Proximity metrics precomputed successfully")
 
     def isolated(self, top_percent: float = 1.0) -> pd.DataFrame:
         """
@@ -113,7 +64,8 @@ class Proximity:
         isolated = self.df[self.df["nn_distance"] >= threshold].copy()
         return isolated.sort_values("nn_distance", ascending=False).reset_index(drop=True)
 
-    def target_gradients(self, top_percent: float = 1.0, distance_percentile: float = 100.0) -> pd.DataFrame:
+    def target_gradients(self, top_percent: float = 1.0, distance_percentile: float = 100.0,
+                         min_delta: Optional[float] = None) -> pd.DataFrame:
         """
         Find compounds with steep target gradients (target change per unit distance).
 
@@ -121,13 +73,14 @@ class Proximity:
         High gradients indicate compounds that are outliers relative to their local neighborhood.
 
         Use cases:
-        - Activity cliffs: Real SAR discontinuities (use distance_percentile=25-50)
+        - Activity cliffs: Real SAR discontinuities (use distance_percentile=5-10)
         - Data quality: Potential assay errors or mislabeled data (use distance_percentile=100)
 
         Args:
             top_percent: Percentage of compounds with steepest gradients to return (e.g., 1.0 = top 1%)
             distance_percentile: Only consider neighbors within this distance percentile
                                (e.g., 25.0 = closest 25%, 100.0 = all compounds)
+            min_delta: Minimum absolute target difference to consider. If None, defaults to target_range/100
 
         Returns:
             DataFrame of compounds with steepest target gradients, sorted by gradient (descending)
@@ -143,15 +96,24 @@ class Proximity:
 
         # Calculate gradient using neighbor mean difference (not nearest neighbor)
         # This identifies compounds that differ from their neighborhood, not just their nearest neighbor
-        epsilon = 1e-10  # Avoid division by zero for duplicates
+        epsilon = 1e-5  # Avoid division by zero for coincident points
         filtered["gradient"] = filtered["neighbor_mean_diff"] / (filtered["nn_distance"] + epsilon)
 
         # Get top X% by gradient
         percentile = 100 - top_percent
         gradient_threshold = np.percentile(filtered["gradient"], percentile)
-        result = filtered[filtered["gradient"] >= gradient_threshold].copy()
+        results = filtered[filtered["gradient"] >= gradient_threshold].copy()
 
-        return result.sort_values("gradient", ascending=False).reset_index(drop=True)
+        # Apply min_delta filter
+        if min_delta is None:
+            min_delta = self.target_range / 100.0 if self.target_range > 0 else 0.0
+
+        # Filter by minimum target difference
+        results = results[results["neighbor_mean_diff"] >= min_delta].copy()
+
+        # Sort by gradient descending
+        results = results.sort_values("gradient", ascending=False).reset_index(drop=True)
+        return results
 
     def neighbors(
         self,
@@ -209,6 +171,74 @@ class Proximity:
 
         return pd.DataFrame(results).sort_values([self.id_column, "distance"]).reset_index(drop=True)
 
+    def _validate_features(self, df: pd.DataFrame, features: List[str]) -> List[str]:
+        """Remove non-numeric features and log warnings."""
+        non_numeric = [f for f in features if f not in df.select_dtypes(include=["number"]).columns]
+        if non_numeric:
+            log.warning(f"Non-numeric features {non_numeric} aren't currently supported, excluding them")
+        return [f for f in features if f not in non_numeric]
+
+    def _build_model(self) -> None:
+        """Standardize features and fit Nearest Neighbors model."""
+        self.scaler = StandardScaler()
+        X = self.scaler.fit_transform(self.df[self.features])
+        self.nn = NearestNeighbors().fit(X)
+
+    def _precompute_metrics(self, n_neighbors: int = 10) -> None:
+        """
+        Precompute landscape metrics for all compounds.
+
+        Adds columns to self.df:
+        - nn_distance: Distance to nearest neighbor
+        - nn_id: ID of nearest neighbor
+
+        If target is specified, also adds:
+        - nn_target: Target value of nearest neighbor
+        - nn_target_diff: Absolute difference from nearest neighbor target
+        - neighbor_mean: Inverse distance weighted mean target of n_neighbors
+        - neighbor_mean_diff: Absolute difference from neighbor mean
+        """
+        log.info("Precomputing proximity metrics...")
+
+        # Make sure n_neighbors isn't greater than dataset size
+        n_neighbors = min(n_neighbors, len(self.df) - 1)
+
+        # Get nearest neighbors for all points (including self)
+        X = self.scaler.transform(self.df[self.features])
+        distances, indices = self.nn.kneighbors(X, n_neighbors=n_neighbors + 1)
+
+        # Extract nearest neighbor (index 1, since index 0 is self)
+        self.df["nn_distance"] = distances[:, 1]
+        self.df["nn_id"] = self.df.iloc[indices[:, 1]][self.id_column].values
+
+        # If target exists, compute target-based metrics
+        if self.target and self.target in self.df.columns:
+            # Get target values for nearest neighbor
+            nn_target_values = self.df.iloc[indices[:, 1]][self.target].values
+            self.df["nn_target"] = nn_target_values
+            self.df["nn_target_diff"] = np.abs(self.df[self.target].values - nn_target_values)
+
+            # Compute inverse distance weighted mean of k neighbors (excluding self at index 0)
+            neighbor_targets = []
+            for i, (dist_row, idx_row) in enumerate(zip(distances, indices)):
+                # Get distances and targets for neighbors (excluding self at index 0)
+                neighbor_dists = dist_row[1:]
+                neighbor_vals = self.df.iloc[idx_row[1:]][self.target].values
+
+                # Inverse distance weights (epsilon to handle near-zero distances)
+                weights = 1.0 / (neighbor_dists + 1e-5)
+                weighted_mean = np.average(neighbor_vals, weights=weights)
+                neighbor_targets.append(weighted_mean)
+
+            neighbor_targets = np.array(neighbor_targets)
+            self.df["neighbor_mean"] = neighbor_targets
+            self.df["neighbor_mean_diff"] = np.abs(self.df[self.target].values - neighbor_targets)
+
+            # Precompute target range for min_delta default
+            self.target_range = self.df[self.target].max() - self.df[self.target].min()
+
+        log.info("Proximity metrics precomputed successfully")
+
     def _build_neighbor_result(self, query_id, neighbor_idx: int, distance: float) -> Dict:
         """
         Build a result dictionary for a single neighbor.
@@ -228,7 +258,7 @@ class Proximity:
         result = {
             self.id_column: query_id,
             "neighbor_id": neighbor_id,
-            "distance": 0.0 if distance < 1e-7 else distance,
+            "distance": 0.0 if distance < 1e-5 else distance,
         }
 
         # Add target if present
