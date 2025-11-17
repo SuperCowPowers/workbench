@@ -26,6 +26,52 @@ TEMPLATE_PARAMS = {
 }
 
 
+def compute_confidence(
+        df: pd.DataFrame,
+        lower_q: str = "q_10",
+        upper_q: str = "q_90",
+        alpha: float = 1.0,
+        beta: float = 1.0
+) -> pd.DataFrame:
+    """
+    Compute confidence scores (0.0 to 1.0) based on prediction interval width
+    and distance from median.
+
+    Args:
+        df: DataFrame with 'prediction', 'q_50', and quantile columns
+        lower_q: Lower quantile column name (default: 'q_10')
+        upper_q: Upper quantile column name (default: 'q_90')
+        alpha: Weight for range normalization (default: 1.0)
+        beta: Weight for distance from median (default: 1.0)
+
+    Returns:
+        DataFrame with added 'confidence' column
+    """
+    # Calculate the prediction interval width
+    interval_width = (df[upper_q] - df[lower_q]).abs()
+
+    # Calculate distance from median (q_50)
+    distance_from_median = (df['prediction'] - df['q_50']).abs()
+
+    # Normalize by the overall scale of intervals and distances
+    # Using IQR-like normalization (75th - 25th percentile)
+    width_scale = interval_width.quantile(0.75) - interval_width.quantile(0.25)
+    dist_scale = distance_from_median.quantile(0.75) - distance_from_median.quantile(0.25)
+
+    # Avoid division by zero
+    width_scale = max(width_scale, 1e-6)
+    dist_scale = max(dist_scale, 1e-6)
+
+    # Compute confidence using inverse relationship
+    # Small normalized values → high confidence (→ 1.0)
+    # Large normalized values → low confidence (→ 0.0)
+    df['confidence'] = 1.0 / (
+            1.0 +
+            alpha * (interval_width / width_scale) +
+            beta * (distance_from_median / dist_scale)
+    )
+    return df
+
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
     """
@@ -489,4 +535,6 @@ def predict_fn(df, models) -> pd.DataFrame:
         df["q_95"] = np.maximum(df["q_95"], df["prediction"])
         df["q_975"] = np.maximum(df["q_975"], df["prediction"])
 
+    # Compute confidence scores
+    df = compute_confidence(df, lower_q="q_10", upper_q="q_90", alpha=1.0, beta=1.0)
     return df
