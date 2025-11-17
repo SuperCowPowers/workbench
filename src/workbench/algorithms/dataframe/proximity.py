@@ -64,8 +64,9 @@ class Proximity:
         isolated = self.df[self.df["nn_distance"] >= threshold].copy()
         return isolated.sort_values("nn_distance", ascending=False).reset_index(drop=True)
 
-    def target_gradients(self, top_percent: float = 1.0, distance_percentile: float = 100.0,
-                         min_delta: Optional[float] = None) -> pd.DataFrame:
+    def target_gradients(
+        self, top_percent: float = 1.0, distance_percentile: float = 100.0, min_delta: Optional[float] = None
+    ) -> pd.DataFrame:
         """
         Find compounds with steep target gradients (target change per unit distance).
 

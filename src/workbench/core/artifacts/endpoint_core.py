@@ -482,7 +482,9 @@ class EndpointCore(Artifact):
             uq_df = self.inference(training_df)
 
             # Identify UQ-specific columns (quantiles and prediction_std)
-            uq_columns = [col for col in uq_df.columns if col.startswith("q_") or col == "prediction_std" or col == "confidence"]
+            uq_columns = [
+                col for col in uq_df.columns if col.startswith("q_") or col == "prediction_std" or col == "confidence"
+            ]
 
             # Merge UQ columns with out-of-fold predictions
             if uq_columns:
@@ -771,7 +773,11 @@ class EndpointCore(Artifact):
         output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
 
         # Add any Uncertainty Quantile columns to the output columns
-        output_columns += [col for col in pred_results_df.columns if col.startswith("q_") or col == "prediction_std" or col == "confidence"]
+        output_columns += [
+            col
+            for col in pred_results_df.columns
+            if col.startswith("q_") or col == "prediction_std" or col == "confidence"
+        ]
 
         # Add the ID column
         if id_column and id_column in pred_results_df.columns:

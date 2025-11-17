@@ -36,7 +36,7 @@ class FingerprintProximity(Proximity):
         Converts fingerprint strings to binary arrays and initializes NearestNeighbors.
         """
         log.info("Converting fingerprints to binary feature matrix...")
-        self.proximity_type = ProximityType.SIMILARITY
+        # self.proximity_type = ProximityType.SIMILARITY
 
         # Convert fingerprint strings to binary arrays
 
