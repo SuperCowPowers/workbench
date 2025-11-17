@@ -482,7 +482,7 @@ class EndpointCore(Artifact):
             uq_df = self.inference(training_df)
 
             # Identify UQ-specific columns (quantiles and prediction_std)
-            uq_columns = [col for col in uq_df.columns if col.startswith("q_") or col == "prediction_std"]
+            uq_columns = [col for col in uq_df.columns if col.startswith("q_") or col == "prediction_std" or col == "confidence"]
 
             # Merge UQ columns with out-of-fold predictions
             if uq_columns:
