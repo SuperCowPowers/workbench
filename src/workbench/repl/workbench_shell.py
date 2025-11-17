@@ -525,7 +525,7 @@ class WorkbenchShell:
     def get_meta(self):
         return self.meta
 
-    def plot_manager(self, data, plot_type: str = "table", **kwargs):
+    def plot_manager(self, data, plot_type: str = "scatter", **kwargs):
         """Plot Manager for Workbench"""
         from workbench.web_interface.components.plugins import ag_table, graph_plot, scatter_plot
 
