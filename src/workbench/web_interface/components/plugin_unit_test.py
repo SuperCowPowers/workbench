@@ -156,10 +156,13 @@ class PluginUnitTest:
         """Run the Dash server for the plugin, handling common errors gracefully."""
         while self.is_port_in_use(self.port):
             log.info(f"Port {self.port} is in use. Trying the next one...")
-            self.port += 1  # Increment the port number until an available one is found
+            self.port += 1
 
         log.info(f"Starting Dash server on port {self.port}...")
-        self.app.run(debug=True, use_reloader=False, port=self.port)
+        try:
+            self.app.run(debug=True, use_reloader=False, port=self.port)
+        except KeyboardInterrupt:
+            log.info("Shutting down Dash server...")
 
     @staticmethod
     def is_port_in_use(port):
