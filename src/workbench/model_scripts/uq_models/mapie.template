@@ -373,8 +373,7 @@ if __name__ == "__main__":
         if conf_level == 0.50:
             temp_val_df["q_25"] = y_pis[:, 0, 0]
             temp_val_df["q_75"] = y_pis[:, 1, 0]
-            # Extract q_50 from the median quantile estimator (3rd estimator, index 2)
-            temp_val_df["q_50"] = model.quantile_estimators_[2].predict(X_validate)
+            temp_val_df["q_50"] = y_pred  # MAPIEs prediction IS the median
         elif conf_level == 0.68:
             temp_val_df["q_16"] = y_pis[:, 0, 0]
             temp_val_df["q_84"] = y_pis[:, 1, 0]
@@ -559,8 +558,7 @@ def predict_fn(df, models) -> pd.DataFrame:
         if conf_level == 0.50:  # 50% CI
             df["q_25"] = y_pis[:, 0, 0]
             df["q_75"] = y_pis[:, 1, 0]
-            # Extract q_50 from the median quantile estimator (3rd estimator, index 2)
-            df["q_50"] = model.quantile_estimators_[2].predict(X)
+            df["q_50"] = y_pred  # MAPIEs prediction IS the median
         elif conf_level == 0.68:  # 68% CI
             df["q_16"] = y_pis[:, 0, 0]
             df["q_84"] = y_pis[:, 1, 0]
