@@ -564,10 +564,10 @@ class WorkbenchShell:
 
         plugin_test = PluginUnitTest(plugin_class, theme=theme, input_data=data, **kwargs)
 
-        # Run the server and open in the browser
-        plugin_test.run()
+        # Open the browser and run the dash server
         url = f"http://127.0.0.1:{plugin_test.port}"
         webbrowser.open(url)
+        plugin_test.run()
 
 
 # Launch Shell Entry Point
