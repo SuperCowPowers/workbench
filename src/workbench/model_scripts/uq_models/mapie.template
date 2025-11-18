@@ -28,9 +28,9 @@ TEMPLATE_PARAMS = {
 
 def compute_confidence(
         df: pd.DataFrame,
-        lower_q: str = "q_10",
-        upper_q: str = "q_90",
-        alpha: float = 1.0,
+        lower_q: str = "q_025",
+        upper_q: str = "q_975",
+        alpha: float = 0.5,
         beta: float = 1.0
 ) -> pd.DataFrame:
     """
@@ -39,9 +39,9 @@ def compute_confidence(
 
     Args:
         df: DataFrame with 'prediction', 'q_50', and quantile columns
-        lower_q: Lower quantile column name (default: 'q_10')
-        upper_q: Upper quantile column name (default: 'q_90')
-        alpha: Weight for range normalization (default: 1.0)
+        lower_q: Lower quantile column name (default: 'q_025')
+        upper_q: Upper quantile column name (default: 'q_975')
+        alpha: Weight for range normalization (default: 0.5)
         beta: Weight for distance from median (default: 1.0)
 
     Returns:

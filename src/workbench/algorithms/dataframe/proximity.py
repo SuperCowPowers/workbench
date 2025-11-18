@@ -273,7 +273,7 @@ class Proximity:
 
         # Add prediction/probability columns if they exist
         for col in self.df.columns:
-            if col == "prediction" or "_proba" in col or "residual" in col or col == "outlier":
+            if col == "prediction" or "_proba" in col or "residual" in col or col == "in_model":
                 result[col] = neighbor_row[col]
 
         return result

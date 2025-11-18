@@ -776,7 +776,7 @@ class EndpointCore(Artifact):
         output_columns += [
             col
             for col in pred_results_df.columns
-            if col.startswith("q_") or col == "prediction_std" or col == "confidence"
+            if col.startswith("q_") or col == "confidence"
         ]
 
         # Add the ID column
