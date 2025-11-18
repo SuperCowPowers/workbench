@@ -30,7 +30,7 @@ def compute_confidence(
         df: pd.DataFrame,
         lower_q: str = "q_025",
         upper_q: str = "q_975",
-        alpha: float = 0.5,
+        alpha: float = 1.0,
         beta: float = 1.0,
         normalization_stats: Optional[Dict[str, float]] = None
 ) -> pd.DataFrame:
@@ -42,7 +42,7 @@ def compute_confidence(
         df: DataFrame with 'prediction', 'q_50', and quantile columns
         lower_q: Lower quantile column name (default: 'q_10')
         upper_q: Upper quantile column name (default: 'q_90')
-        alpha: Weight for range normalization (default: 0.5)
+        alpha: Weight for range normalization (default: 1.0)
         beta: Weight for distance from median (default: 1.0)
         normalization_stats: Optional pre-computed normalization stats dict with
                            'width_scale' and 'dist_scale' keys. If None, compute from batch.
@@ -373,6 +373,8 @@ if __name__ == "__main__":
         if conf_level == 0.50:
             temp_val_df["q_25"] = y_pis[:, 0, 0]
             temp_val_df["q_75"] = y_pis[:, 1, 0]
+            # Extract q_50 from the median quantile estimator (3rd estimator, index 2)
+            temp_val_df["q_50"] = model.quantile_estimators_[2].predict(X_validate)
         elif conf_level == 0.68:
             temp_val_df["q_16"] = y_pis[:, 0, 0]
             temp_val_df["q_84"] = y_pis[:, 1, 0]
@@ -385,8 +387,6 @@ if __name__ == "__main__":
         elif conf_level == 0.95:
             temp_val_df["q_025"] = y_pis[:, 0, 0]
             temp_val_df["q_975"] = y_pis[:, 1, 0]
-
-    temp_val_df["q_50"] = temp_val_df["prediction"]
 
     # Compute normalization stats using q_10 and q_90 (default range)
     interval_width = (temp_val_df["q_90"] - temp_val_df["q_10"]).abs()
@@ -559,6 +559,8 @@ def predict_fn(df, models) -> pd.DataFrame:
         if conf_level == 0.50:  # 50% CI
             df["q_25"] = y_pis[:, 0, 0]
             df["q_75"] = y_pis[:, 1, 0]
+            # Extract q_50 from the median quantile estimator (3rd estimator, index 2)
+            df["q_50"] = model.quantile_estimators_[2].predict(X)
         elif conf_level == 0.68:  # 68% CI
             df["q_16"] = y_pis[:, 0, 0]
             df["q_84"] = y_pis[:, 1, 0]
@@ -572,14 +574,11 @@ def predict_fn(df, models) -> pd.DataFrame:
             df["q_025"] = y_pis[:, 0, 0]
             df["q_975"] = y_pis[:, 1, 0]
 
-    # Add median (q_50) from XGBoost prediction
-    df["q_50"] = df["prediction"]
-
     # Calculate a pseudo-standard deviation from the 68% interval width
     df["prediction_std"] = (df["q_84"] - df["q_16"]).abs() / 2.0
 
     # Reorder the quantile columns for easier reading
-    quantile_cols = ["q_025", "q_05", "q_10", "q_16", "q_25", "q_75", "q_84", "q_90", "q_95", "q_975"]
+    quantile_cols = ["q_025", "q_05", "q_10", "q_16", "q_25", "q_50", "q_75", "q_84", "q_90", "q_95", "q_975"]
     other_cols = [col for col in df.columns if col not in quantile_cols]
     df = df[other_cols + quantile_cols]
 
