@@ -14,7 +14,7 @@ import joblib
 import os
 import numpy as np
 import pandas as pd
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Dict
 
 # Template Placeholders
 TEMPLATE_PARAMS = {
@@ -31,7 +31,8 @@ def compute_confidence(
         lower_q: str = "q_025",
         upper_q: str = "q_975",
         alpha: float = 0.5,
-        beta: float = 1.0
+        beta: float = 1.0,
+        normalization_stats: Optional[Dict[str, float]] = None
 ) -> pd.DataFrame:
     """
     Compute confidence scores (0.0 to 1.0) based on prediction interval width
@@ -39,10 +40,12 @@ def compute_confidence(
 
     Args:
         df: DataFrame with 'prediction', 'q_50', and quantile columns
-        lower_q: Lower quantile column name (default: 'q_025')
-        upper_q: Upper quantile column name (default: 'q_975')
+        lower_q: Lower quantile column name (default: 'q_10')
+        upper_q: Upper quantile column name (default: 'q_90')
         alpha: Weight for range normalization (default: 0.5)
         beta: Weight for distance from median (default: 1.0)
+        normalization_stats: Optional pre-computed normalization stats dict with
+                           'width_scale' and 'dist_scale' keys. If None, compute from batch.
 
     Returns:
         DataFrame with added 'confidence' column
@@ -53,10 +56,15 @@ def compute_confidence(
     # Calculate distance from median (q_50)
     distance_from_median = (df['prediction'] - df['q_50']).abs()
 
-    # Normalize by the overall scale of intervals and distances
-    # Using IQR-like normalization (75th - 25th percentile)
-    width_scale = interval_width.quantile(0.75) - interval_width.quantile(0.25)
-    dist_scale = distance_from_median.quantile(0.75) - distance_from_median.quantile(0.25)
+    # Use pre-computed stats if provided, otherwise compute from batch
+    if normalization_stats is not None:
+        width_scale = normalization_stats['width_scale']
+        dist_scale = normalization_stats['dist_scale']
+    else:
+        # Normalize by the overall scale of intervals and distances
+        # Using IQR-like normalization (75th - 25th percentile)
+        width_scale = interval_width.quantile(0.75) - interval_width.quantile(0.25)
+        dist_scale = distance_from_median.quantile(0.75) - distance_from_median.quantile(0.25)
 
     # Avoid division by zero
     width_scale = max(width_scale, 1e-6)
@@ -71,6 +79,7 @@ def compute_confidence(
             beta * (distance_from_median / dist_scale)
     )
     return df
+
 
 # Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
@@ -144,7 +153,7 @@ def convert_categorical_types(df: pd.DataFrame, features: list, category_mapping
 
 
 def decompress_features(
-    df: pd.DataFrame, features: List[str], compressed_features: List[str]
+        df: pd.DataFrame, features: List[str], compressed_features: List[str]
 ) -> Tuple[pd.DataFrame, List[str]]:
     """Prepare features for the model by decompressing bitstring features
 
@@ -348,6 +357,49 @@ if __name__ == "__main__":
         widths = y_pis[:, 1, 0] - y_pis[:, 0, 0]
         print(f"  {conf_level * 100:.0f}% CI: Mean width={np.mean(widths):.3f}, Std={np.std(widths):.3f}")
 
+    # Compute normalization statistics for confidence calculation
+    print(f"\nComputing normalization statistics for confidence scores...")
+
+    # Create a temporary validation dataframe with predictions
+    temp_val_df = df_val.copy()
+    temp_val_df["prediction"] = xgb_model.predict(X_validate)
+
+    # Add all quantile predictions
+    for conf_level in confidence_levels:
+        model_name = f"mapie_{conf_level:.2f}"
+        model = mapie_models[model_name]
+        y_pred, y_pis = model.predict_interval(X_validate)
+
+        if conf_level == 0.50:
+            temp_val_df["q_25"] = y_pis[:, 0, 0]
+            temp_val_df["q_75"] = y_pis[:, 1, 0]
+        elif conf_level == 0.68:
+            temp_val_df["q_16"] = y_pis[:, 0, 0]
+            temp_val_df["q_84"] = y_pis[:, 1, 0]
+        elif conf_level == 0.80:
+            temp_val_df["q_10"] = y_pis[:, 0, 0]
+            temp_val_df["q_90"] = y_pis[:, 1, 0]
+        elif conf_level == 0.90:
+            temp_val_df["q_05"] = y_pis[:, 0, 0]
+            temp_val_df["q_95"] = y_pis[:, 1, 0]
+        elif conf_level == 0.95:
+            temp_val_df["q_025"] = y_pis[:, 0, 0]
+            temp_val_df["q_975"] = y_pis[:, 1, 0]
+
+    temp_val_df["q_50"] = temp_val_df["prediction"]
+
+    # Compute normalization stats using q_10 and q_90 (default range)
+    interval_width = (temp_val_df["q_90"] - temp_val_df["q_10"]).abs()
+    distance_from_median = (temp_val_df["prediction"] - temp_val_df["q_50"]).abs()
+
+    normalization_stats = {
+        "width_scale": float(interval_width.quantile(0.75) - interval_width.quantile(0.25)),
+        "dist_scale": float(distance_from_median.quantile(0.75) - distance_from_median.quantile(0.25))
+    }
+
+    print(f"  Width scale (IQR): {normalization_stats['width_scale']:.6f}")
+    print(f"  Distance scale (IQR): {normalization_stats['dist_scale']:.6f}")
+
     # Save the trained XGBoost model
     joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
 
@@ -363,6 +415,10 @@ if __name__ == "__main__":
     if category_mappings:
         with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
             json.dump(category_mappings, fp)
+
+    # Save normalization statistics for confidence calculation
+    with open(os.path.join(args.model_dir, "confidence_normalization.json"), "w") as fp:
+        json.dump(normalization_stats, fp)
 
     # Save model configuration
     model_config = {
@@ -411,11 +467,19 @@ def model_fn(model_dir) -> dict:
         with open(category_path) as fp:
             category_mappings = json.load(fp)
 
+    # Load normalization statistics for confidence calculation
+    normalization_stats = None
+    norm_stats_path = os.path.join(model_dir, "confidence_normalization.json")
+    if os.path.exists(norm_stats_path):
+        with open(norm_stats_path) as fp:
+            normalization_stats = json.load(fp)
+
     return {
         "xgb_model": xgb_model,
         "mapie_models": mapie_models,
         "confidence_levels": config["confidence_levels"],
         "category_mappings": category_mappings,
+        "normalization_stats": normalization_stats,
     }
 
 
@@ -535,6 +599,14 @@ def predict_fn(df, models) -> pd.DataFrame:
         df["q_95"] = np.maximum(df["q_95"], df["prediction"])
         df["q_975"] = np.maximum(df["q_975"], df["prediction"])
 
-    # Compute confidence scores
-    df = compute_confidence(df, lower_q="q_10", upper_q="q_90", alpha=1.0, beta=1.0)
+    # Compute confidence scores using pre-computed normalization stats
+    df = compute_confidence(
+        df,
+        lower_q="q_10",
+        upper_q="q_90",
+        alpha=1.0,
+        beta=1.0,
+        normalization_stats=models.get("normalization_stats")
+    )
+
     return df
