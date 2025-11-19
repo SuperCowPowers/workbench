@@ -170,7 +170,10 @@ class Proximity:
 
                 results.append(self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist))
 
-        return pd.DataFrame(results).sort_values([self.id_column, "distance"]).reset_index(drop=True)
+        df_results = pd.DataFrame(results)
+        df_results["is_self"] = df_results["neighbor_id"] == df_results[self.id_column]
+        df_results = df_results.sort_values([self.id_column, "is_self", "distance"], ascending=[True, False, True])
+        return df_results.drop("is_self", axis=1).reset_index(drop=True)
 
     def _validate_features(self, df: pd.DataFrame, features: List[str]) -> List[str]:
         """Remove non-numeric features and log warnings."""
