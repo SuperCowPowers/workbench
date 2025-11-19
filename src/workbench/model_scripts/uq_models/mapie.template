@@ -28,56 +28,41 @@ TEMPLATE_PARAMS = {
 
 def compute_confidence(
         df: pd.DataFrame,
-        lower_q: str = "q_025",
-        upper_q: str = "q_975",
+        median_interval_width: float,
+        lower_q: str = "q_10",
+        upper_q: str = "q_90",
         alpha: float = 1.0,
         beta: float = 1.0,
-        normalization_stats: Optional[Dict[str, float]] = None
 ) -> pd.DataFrame:
     """
     Compute confidence scores (0.0 to 1.0) based on prediction interval width
-    and distance from median.
+    and distance from median using exponential decay.
 
     Args:
         df: DataFrame with 'prediction', 'q_50', and quantile columns
+        median_interval_width: Pre-computed median interval width from training data
         lower_q: Lower quantile column name (default: 'q_10')
         upper_q: Upper quantile column name (default: 'q_90')
-        alpha: Weight for range normalization (default: 1.0)
-        beta: Weight for distance from median (default: 1.0)
-        normalization_stats: Optional pre-computed normalization stats dict with
-                           'width_scale' and 'dist_scale' keys. If None, compute from batch.
+        alpha: Weight for interval width term (default: 1.0)
+        beta: Weight for distance from median term (default: 1.0)
 
     Returns:
         DataFrame with added 'confidence' column
     """
-    # Calculate the prediction interval width
+    # Interval width
     interval_width = (df[upper_q] - df[lower_q]).abs()
 
-    # Calculate distance from median (q_50)
+    # Distance from median, normalized by interval width
     distance_from_median = (df['prediction'] - df['q_50']).abs()
+    normalized_distance = distance_from_median / (interval_width + 1e-6)
 
-    # Use pre-computed stats if provided, otherwise compute from batch
-    if normalization_stats is not None:
-        width_scale = normalization_stats['width_scale']
-        dist_scale = normalization_stats['dist_scale']
-    else:
-        # Normalize by the overall scale of intervals and distances
-        # Using IQR-like normalization (75th - 25th percentile)
-        width_scale = interval_width.quantile(0.75) - interval_width.quantile(0.25)
-        dist_scale = distance_from_median.quantile(0.75) - distance_from_median.quantile(0.25)
+    # Cap the distance penalty at 1.0
+    normalized_distance = np.minimum(normalized_distance, 1.0)
 
-    # Avoid division by zero
-    width_scale = max(width_scale, 1e-6)
-    dist_scale = max(dist_scale, 1e-6)
+    # Confidence using exponential decay
+    interval_term = interval_width / median_interval_width
+    df['confidence'] = np.exp(-(alpha * interval_term + beta * normalized_distance))
 
-    # Compute confidence using inverse relationship
-    # Small normalized values → high confidence (→ 1.0)
-    # Large normalized values → low confidence (→ 0.0)
-    df['confidence'] = 1.0 / (
-            1.0 +
-            alpha * (interval_width / width_scale) +
-            beta * (distance_from_median / dist_scale)
-    )
     return df
 
 
@@ -373,7 +358,8 @@ if __name__ == "__main__":
         if conf_level == 0.50:
             temp_val_df["q_25"] = y_pis[:, 0, 0]
             temp_val_df["q_75"] = y_pis[:, 1, 0]
-            temp_val_df["q_50"] = y_pred  # MAPIEs prediction IS the median
+            # y_pred is the median prediction
+            temp_val_df["q_50"] = y_pred
         elif conf_level == 0.68:
             temp_val_df["q_16"] = y_pis[:, 0, 0]
             temp_val_df["q_84"] = y_pis[:, 1, 0]
@@ -389,15 +375,12 @@ if __name__ == "__main__":
 
     # Compute normalization stats using q_10 and q_90 (default range)
     interval_width = (temp_val_df["q_90"] - temp_val_df["q_10"]).abs()
-    distance_from_median = (temp_val_df["prediction"] - temp_val_df["q_50"]).abs()
+    median_interval_width = float(interval_width.median())
+    print(f"  Median interval width (q_10-q_90): {median_interval_width:.6f}")
 
-    normalization_stats = {
-        "width_scale": float(interval_width.quantile(0.75) - interval_width.quantile(0.25)),
-        "dist_scale": float(distance_from_median.quantile(0.75) - distance_from_median.quantile(0.25))
-    }
-
-    print(f"  Width scale (IQR): {normalization_stats['width_scale']:.6f}")
-    print(f"  Distance scale (IQR): {normalization_stats['dist_scale']:.6f}")
+    # Save median interval width for confidence calculation
+    with open(os.path.join(args.model_dir, "median_interval_width.json"), "w") as fp:
+        json.dump(median_interval_width, fp)
 
     # Save the trained XGBoost model
     joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
@@ -414,10 +397,6 @@ if __name__ == "__main__":
     if category_mappings:
         with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
             json.dump(category_mappings, fp)
-
-    # Save normalization statistics for confidence calculation
-    with open(os.path.join(args.model_dir, "confidence_normalization.json"), "w") as fp:
-        json.dump(normalization_stats, fp)
 
     # Save model configuration
     model_config = {
@@ -466,19 +445,19 @@ def model_fn(model_dir) -> dict:
         with open(category_path) as fp:
             category_mappings = json.load(fp)
 
-    # Load normalization statistics for confidence calculation
-    normalization_stats = None
-    norm_stats_path = os.path.join(model_dir, "confidence_normalization.json")
-    if os.path.exists(norm_stats_path):
-        with open(norm_stats_path) as fp:
-            normalization_stats = json.load(fp)
+    # Load median interval width for confidence calculation
+    median_interval_width = None
+    median_width_path = os.path.join(model_dir, "median_interval_width.json")
+    if os.path.exists(median_width_path):
+        with open(median_width_path) as fp:
+            median_interval_width = json.load(fp)
 
     return {
         "xgb_model": xgb_model,
         "mapie_models": mapie_models,
         "confidence_levels": config["confidence_levels"],
         "category_mappings": category_mappings,
-        "normalization_stats": normalization_stats,
+        "median_interval_width": median_interval_width,
     }
 
 
@@ -558,7 +537,8 @@ def predict_fn(df, models) -> pd.DataFrame:
         if conf_level == 0.50:  # 50% CI
             df["q_25"] = y_pis[:, 0, 0]
             df["q_75"] = y_pis[:, 1, 0]
-            df["q_50"] = y_pred  # MAPIEs prediction IS the median
+            # y_pred is the median prediction
+            df["q_50"] = y_pred
         elif conf_level == 0.68:  # 68% CI
             df["q_16"] = y_pis[:, 0, 0]
             df["q_84"] = y_pis[:, 1, 0]
@@ -603,7 +583,7 @@ def predict_fn(df, models) -> pd.DataFrame:
         upper_q="q_90",
         alpha=1.0,
         beta=1.0,
-        normalization_stats=models.get("normalization_stats")
+        median_interval_width=models["median_interval_width"],
     )
 
     return df
