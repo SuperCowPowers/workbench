@@ -333,6 +333,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
         y_for_cv = y
 
     # Prepare KFold
+    # Note: random_state=42 seems to not actually give us reproducible results
     kfold = (StratifiedKFold if is_classifier else KFold)(n_splits=nfolds, shuffle=True, random_state=42)
 
     # Initialize results collection
