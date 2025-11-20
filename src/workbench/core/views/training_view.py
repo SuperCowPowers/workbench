@@ -116,6 +116,57 @@ class TrainingView(CreateView):
         # Return the View
         return View(instance.data_source, instance.view_name, auto_create_view=False)
 
+    @classmethod
+    def create_with_sql(
+            cls,
+            feature_set: FeatureSet,
+            *,
+            sql_query: str,
+            id_column: str = None,
+    ) -> Union[View, None]:
+        """Factory method to create a TrainingView from a custom SQL query.
+
+        This method takes a complete SQL query and adds the default 80/20 training split.
+        Use this when you need complex queries like UNION ALL for oversampling.
+
+        Args:
+            feature_set (FeatureSet): A FeatureSet object
+            sql_query (str): Complete SELECT query (without the final semicolon)
+            id_column (str, optional): The name of the id column for training split. Defaults to None.
+
+        Returns:
+            Union[View, None]: The created View object (or None if failed)
+        """
+        # Instantiate the TrainingView
+        instance = cls("training", feature_set)
+
+        # Sanity check on the id column
+        if not id_column:
+            instance.log.important("No id column specified, using auto_id_column")
+            if not instance.auto_id_column:
+                instance.log.error("No id column specified and no auto_id_column found, aborting")
+                return None
+            id_column = instance.auto_id_column
+
+        # Default 80/20 split using modulo
+        training_logic = f"""CASE
+            WHEN MOD(ROW_NUMBER() OVER (ORDER BY {id_column}), 10) < 8 THEN True
+            ELSE False
+        END AS training"""
+
+        # Wrap the custom query and add training column
+        create_view_query = f"""
+        CREATE OR REPLACE VIEW {instance.table} AS
+        SELECT *, {training_logic}
+        FROM ({sql_query}) AS custom_source
+        """
+
+        # Execute the CREATE VIEW query
+        instance.data_source.execute_statement(create_view_query)
+
+        # Return the View
+        return View(instance.data_source, instance.view_name, auto_create_view=False)
+
 
 if __name__ == "__main__":
     """Exercise the Training View functionality"""
@@ -154,3 +205,27 @@ if __name__ == "__main__":
     print(df.head())
     print(f"Shape with filter: {df.shape}")
     print(f"Diameter min: {df['diameter'].min()}, max: {df['diameter'].max()}")
+
+    # Test create_with_sql with a custom query (UNION ALL for oversampling)
+    print("\n--- Testing create_with_sql with oversampling ---")
+    base_table = fs.table
+    replicate_ids = [0, 1, 2]  # Oversample these IDs
+
+    custom_sql = f"""
+        SELECT * FROM {base_table}
+
+        UNION ALL
+
+        SELECT * FROM {base_table}
+        WHERE auto_id IN ({', '.join(map(str, replicate_ids))})
+    """
+
+    training_view = TrainingView.create_with_sql(fs, sql_query=custom_sql, id_column="auto_id")
+    df = training_view.pull_dataframe()
+    print(f"Shape with custom SQL: {df.shape}")
+    print(df["training"].value_counts())
+
+    # Verify oversampling - check if replicated IDs appear twice
+    for rep_id in replicate_ids:
+        count = len(df[df["auto_id"] == rep_id])
+        print(f"ID {rep_id} appears {count} times")
