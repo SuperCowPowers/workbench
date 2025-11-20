@@ -111,7 +111,7 @@ class Proximity:
             cmpd_target = row[self.target]
 
             # Get k nearest neighbors (excluding self)
-            nbrs = self.neighbors(cmpd_id, n_neighbors=k_neighbors + 1, include_self=False)
+            nbrs = self.neighbors(cmpd_id, n_neighbors=k_neighbors, include_self=False)
 
             # Calculate median target of k nearest neighbors
             neighbor_median = nbrs.head(k_neighbors)[self.target].median()
