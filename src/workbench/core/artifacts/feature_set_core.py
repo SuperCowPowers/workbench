@@ -551,6 +551,75 @@ class FeatureSetCore(Artifact):
         # Apply the filter
         self.set_training_filter(filter_expression)
 
+    def set_training_sampling(
+            self,
+            exclude_ids: Optional[List[Union[str, int]]] = None,
+            replicate_ids: Optional[List[Union[str, int]]] = None,
+            replication_factor: int = 2
+    ):
+        """Configure training view with ID exclusions and replications (oversampling).
+
+        Args:
+            exclude_ids: List of IDs to exclude from training view
+            replicate_ids: List of IDs to replicate in training view for oversampling
+            replication_factor: Number of times to replicate each ID (default: 2)
+
+        Note:
+            If an ID appears in both lists, exclusion takes precedence.
+        """
+        from workbench.core.views import TrainingView
+
+        # Normalize to empty lists if None
+        exclude_ids = exclude_ids or []
+        replicate_ids = replicate_ids or []
+
+        # Remove any replicate_ids that are also in exclude_ids (exclusion wins)
+        replicate_ids = [rid for rid in replicate_ids if rid not in exclude_ids]
+
+        # If no sampling needed, just create normal view
+        if not exclude_ids and not replicate_ids:
+            self.log.important("No sampling specified, creating standard training view")
+            TrainingView.create(self, id_column=self.id_column)
+            return
+
+        # Build the custom SQL query
+        self.log.important(
+            f"Excluding {len(exclude_ids)} IDs, Replicating {len(replicate_ids)} IDs "
+            f"(factor: {replication_factor}x)"
+        )
+
+        # Helper to format IDs for SQL
+        def format_ids(ids):
+            return ", ".join([repr(id) for id in ids])
+
+        # Start with base query
+        base_query = f"SELECT * FROM {self.table}"
+
+        # Add exclusions if needed
+        if exclude_ids:
+            base_query += f"\nWHERE {self.id_column} NOT IN ({format_ids(exclude_ids)})"
+
+        # Build full query with replication
+        if replicate_ids:
+            # Generate VALUES clause for CROSS JOIN: (1), (2), ..., (N-1)
+            # We want N-1 additional copies since the original row is already in base_query
+            values_clause = ", ".join([f"({i})" for i in range(1, replication_factor)])
+
+            custom_sql = f"""{base_query}
+
+            UNION ALL
+
+            SELECT t.* 
+            FROM {self.table} t
+            CROSS JOIN (VALUES {values_clause}) AS n(num)
+            WHERE t.{self.id_column} IN ({format_ids(replicate_ids)})"""
+        else:
+            # Only exclusions, no UNION needed
+            custom_sql = base_query
+
+        # Create the training view with our custom SQL
+        TrainingView.create_with_sql(self, sql_query=custom_sql, id_column=self.id_column)
+
     @classmethod
     def delete_views(cls, table: str, database: str):
         """Delete any views associated with this FeatureSet
@@ -709,7 +778,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Grab a FeatureSet object and pull some information from it
-    my_features = LocalFeatureSetCore("test_features")
+    my_features = LocalFeatureSetCore("abalone_features")
     if not my_features.exists():
         print("FeatureSet not found!")
         sys.exit(1)
@@ -769,8 +838,8 @@ if __name__ == "__main__":
     # Set the holdout ids for the training view
     print("Setting hold out ids...")
     table = my_features.view("training").table
-    df = my_features.query(f'SELECT id, name FROM "{table}"')
-    my_holdout_ids = [id for id in df["id"] if id < 20]
+    df = my_features.query(f'SELECT auto_id, length FROM "{table}"')
+    my_holdout_ids = [id for id in df["auto_id"] if id < 20]
     my_features.set_training_holdouts(my_holdout_ids)
 
     # Get the training data
@@ -780,7 +849,7 @@ if __name__ == "__main__":
 
     # Test the filter expression functionality
     print("Setting a filter expression...")
-    my_features.set_training_filter("id < 50 AND height > 65.0")
+    my_features.set_training_filter("auto_id < 50 AND length > 65.0")
     training_data = my_features.get_training_data()
     print(f"Training Data: {training_data.shape}")
     print(training_data)
@@ -803,3 +872,60 @@ if __name__ == "__main__":
     # print("Deleting Workbench Feature Set...")
     # my_features.delete()
     # print("Done")
+
+    # Test set_training_sampling with exclusions and replications
+    print("\n--- Testing set_training_sampling ---")
+    my_features.set_training_filter(None)  # Reset any existing filters
+    original_count = num_rows
+
+    # Get valid IDs from the table
+    all_data = my_features.query(f'SELECT auto_id, length FROM "{table}"')
+    valid_ids = sorted(all_data["auto_id"].tolist())
+    print(f"Valid IDs range from {valid_ids[0]} to {valid_ids[-1]}")
+
+    exclude_list = valid_ids[0:3]  # First 3 IDs
+    replicate_list = valid_ids[10:13]  # IDs at positions 10, 11, 12
+
+    print(f"Original row count: {original_count}")
+    print(f"Excluding IDs: {exclude_list}")
+    print(f"Replicating IDs: {replicate_list}")
+
+    # Test with default replication factor (2x)
+    print("\n--- Testing with replication_factor=2 (default) ---")
+    my_features.set_training_sampling(exclude_ids=exclude_list, replicate_ids=replicate_list)
+    training_data = my_features.get_training_data()
+    print(f"Training Data after sampling: {training_data.shape}")
+
+    # Verify exclusions
+    for exc_id in exclude_list:
+        count = len(training_data[training_data["auto_id"] == exc_id])
+        print(f"Excluded ID {exc_id} appears {count} times (should be 0)")
+
+    # Verify replications
+    for rep_id in replicate_list:
+        count = len(training_data[training_data["auto_id"] == rep_id])
+        print(f"Replicated ID {rep_id} appears {count} times (should be 2)")
+
+    # Test with replication factor of 5
+    print("\n--- Testing with replication_factor=5 ---")
+    replicate_list_5x = [20, 21]
+    my_features.set_training_sampling(
+        exclude_ids=exclude_list,
+        replicate_ids=replicate_list_5x,
+        replication_factor=5
+    )
+    training_data = my_features.get_training_data()
+    print(f"Training Data after sampling: {training_data.shape}")
+
+    # Verify 5x replication
+    for rep_id in replicate_list_5x:
+        count = len(training_data[training_data["auto_id"] == rep_id])
+        print(f"Replicated ID {rep_id} appears {count} times (should be 5)")
+
+    # Test with large replication list (simulate 100 IDs)
+    print("\n--- Testing with large ID list (100 IDs) ---")
+    large_replicate_list = list(range(30, 130))  # 100 IDs
+    my_features.set_training_sampling(replicate_ids=large_replicate_list, replication_factor=3)
+    training_data = my_features.get_training_data()
+    print(f"Training Data after sampling: {training_data.shape}")
+    print(f"Expected extra rows: {len(large_replicate_list) * 3}")
