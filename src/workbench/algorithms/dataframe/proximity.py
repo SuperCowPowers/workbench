@@ -68,7 +68,7 @@ class Proximity:
         self,
         top_percent: float = 1.0,
         min_delta: Optional[float] = None,
-        k_neighbors: int = 5,
+        k_neighbors: int = 4,
     ) -> pd.DataFrame:
         """
         Find compounds with steep target gradients (data quality issues and activity cliffs).
@@ -80,7 +80,7 @@ class Proximity:
         Args:
             top_percent: Percentage of compounds with steepest gradients to return (e.g., 1.0 = top 1%)
             min_delta: Minimum absolute target difference to consider. If None, defaults to target_range/100
-            k_neighbors: Number of neighbors to use for median calculation (default: 5)
+            k_neighbors: Number of neighbors to use for median calculation (default: 4)
 
         Returns:
             DataFrame of compounds with steepest gradients, sorted by gradient (descending)
@@ -113,23 +113,23 @@ class Proximity:
             # Get k nearest neighbors (excluding self)
             nbrs = self.neighbors(cmpd_id, n_neighbors=k_neighbors, include_self=False)
 
-            # Calculate median target of k nearest neighbors
-            neighbor_median = nbrs.head(k_neighbors)[self.target].median()
+            # Calculate median target of k neighbors, excluding the nearest neighbor (index 0)
+            neighbor_median = nbrs.iloc[1:k_neighbors][self.target].median()
             median_diff = abs(cmpd_target - neighbor_median)
 
             # Only keep if compound differs from neighborhood median
             # This filters out cases where the nearest neighbor is the outlier
             if median_diff >= min_delta:
-                mean_distance = nbrs.head(k_neighbors)["distance"].mean()
-
                 results.append(
                     {
                         self.id_column: cmpd_id,
                         self.target: cmpd_target,
+                        "nn_target": row["nn_target"],
+                        "nn_target_diff": row["nn_target_diff"],
+                        "nn_distance": row["nn_distance"],
+                        "gradient": row["gradient"],  # Keep Phase 1 gradient
                         "neighbor_median": neighbor_median,
                         "neighbor_median_diff": median_diff,
-                        "mean_distance": mean_distance,
-                        "gradient": median_diff / (mean_distance + epsilon),
                     }
                 )
 
