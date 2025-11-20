@@ -312,6 +312,8 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
     id_col = fs.id_column
     target_col = workbench_model.target()
     feature_cols = workbench_model.features()
+    print(f"Target column: {target_col}")
+    print(f"Feature columns: {len(feature_cols)} features")
 
     # Convert string[python] to object, then to category for XGBoost compatibility
     # This avoids XGBoost's issue with pandas 2.x string[python] dtype in categorical categories
