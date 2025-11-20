@@ -552,10 +552,10 @@ class FeatureSetCore(Artifact):
         self.set_training_filter(filter_expression)
 
     def set_training_sampling(
-            self,
-            exclude_ids: Optional[List[Union[str, int]]] = None,
-            replicate_ids: Optional[List[Union[str, int]]] = None,
-            replication_factor: int = 2
+        self,
+        exclude_ids: Optional[List[Union[str, int]]] = None,
+        replicate_ids: Optional[List[Union[str, int]]] = None,
+        replication_factor: int = 2,
     ):
         """Configure training view with ID exclusions and replications (oversampling).
 
@@ -609,7 +609,7 @@ class FeatureSetCore(Artifact):
 
             UNION ALL
 
-            SELECT t.* 
+            SELECT t.*
             FROM {self.table} t
             CROSS JOIN (VALUES {values_clause}) AS n(num)
             WHERE t.{self.id_column} IN ({format_ids(replicate_ids)})"""
@@ -909,11 +909,7 @@ if __name__ == "__main__":
     # Test with replication factor of 5
     print("\n--- Testing with replication_factor=5 ---")
     replicate_list_5x = [20, 21]
-    my_features.set_training_sampling(
-        exclude_ids=exclude_list,
-        replicate_ids=replicate_list_5x,
-        replication_factor=5
-    )
+    my_features.set_training_sampling(exclude_ids=exclude_list, replicate_ids=replicate_list_5x, replication_factor=5)
     training_data = my_features.get_training_data()
     print(f"Training Data after sampling: {training_data.shape}")
 

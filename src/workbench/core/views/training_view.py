@@ -118,11 +118,11 @@ class TrainingView(CreateView):
 
     @classmethod
     def create_with_sql(
-            cls,
-            feature_set: FeatureSet,
-            *,
-            sql_query: str,
-            id_column: str = None,
+        cls,
+        feature_set: FeatureSet,
+        *,
+        sql_query: str,
+        id_column: str = None,
     ) -> Union[View, None]:
         """Factory method to create a TrainingView from a custom SQL query.
 

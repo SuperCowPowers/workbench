@@ -11,12 +11,12 @@ log = logging.getLogger("workbench")
 
 class Proximity:
     def __init__(
-            self,
-            df: pd.DataFrame,
-            id_column: str,
-            features: List[str],
-            target: Optional[str] = None,
-            track_columns: Optional[List[str]] = None,
+        self,
+        df: pd.DataFrame,
+        id_column: str,
+        features: List[str],
+        target: Optional[str] = None,
+        track_columns: Optional[List[str]] = None,
     ):
         """
         Initialize the Proximity class.
@@ -65,10 +65,10 @@ class Proximity:
         return isolated.sort_values("nn_distance", ascending=False).reset_index(drop=True)
 
     def target_gradients(
-            self,
-            top_percent: float = 1.0,
-            min_delta: Optional[float] = None,
-            k_neighbors: int = 5,
+        self,
+        top_percent: float = 1.0,
+        min_delta: Optional[float] = None,
+        k_neighbors: int = 5,
     ) -> pd.DataFrame:
         """
         Find compounds with steep target gradients (data quality issues and activity cliffs).
@@ -92,17 +92,17 @@ class Proximity:
 
         # Phase 1: Quick filter using precomputed nearest neighbor
         candidates = self.df.copy()
-        candidates['gradient'] = candidates['nn_target_diff'] / (candidates['nn_distance'] + epsilon)
+        candidates["gradient"] = candidates["nn_target_diff"] / (candidates["nn_distance"] + epsilon)
 
         # Apply min_delta
         if min_delta is None:
             min_delta = self.target_range / 100.0 if self.target_range > 0 else 0.0
-        candidates = candidates[candidates['nn_target_diff'] >= min_delta]
+        candidates = candidates[candidates["nn_target_diff"] >= min_delta]
 
         # Get top X% by initial gradient
         percentile = 100 - top_percent
-        threshold = np.percentile(candidates['gradient'], percentile)
-        candidates = candidates[candidates['gradient'] >= threshold].copy()
+        threshold = np.percentile(candidates["gradient"], percentile)
+        candidates = candidates[candidates["gradient"] >= threshold].copy()
 
         # Phase 2: Verify with k-neighbor median to filter out cases where nearest neighbor is the outlier
         results = []
@@ -120,32 +120,42 @@ class Proximity:
             # Only keep if compound differs from neighborhood median
             # This filters out cases where the nearest neighbor is the outlier
             if median_diff >= min_delta:
-                mean_distance = nbrs.head(k_neighbors)['distance'].mean()
+                mean_distance = nbrs.head(k_neighbors)["distance"].mean()
 
-                results.append({
-                    self.id_column: cmpd_id,
-                    self.target: cmpd_target,
-                    'neighbor_median': neighbor_median,
-                    'neighbor_median_diff': median_diff,
-                    'mean_distance': mean_distance,
-                    'gradient': median_diff / (mean_distance + epsilon)
-                })
+                results.append(
+                    {
+                        self.id_column: cmpd_id,
+                        self.target: cmpd_target,
+                        "neighbor_median": neighbor_median,
+                        "neighbor_median_diff": median_diff,
+                        "mean_distance": mean_distance,
+                        "gradient": median_diff / (mean_distance + epsilon),
+                    }
+                )
 
         # Handle empty results
         if not results:
-            return pd.DataFrame(columns=[self.id_column, self.target, 'neighbor_median',
-                                         'neighbor_median_diff', 'mean_distance', 'gradient'])
+            return pd.DataFrame(
+                columns=[
+                    self.id_column,
+                    self.target,
+                    "neighbor_median",
+                    "neighbor_median_diff",
+                    "mean_distance",
+                    "gradient",
+                ]
+            )
 
         results_df = pd.DataFrame(results)
-        results_df = results_df.sort_values('gradient', ascending=False).reset_index(drop=True)
+        results_df = results_df.sort_values("gradient", ascending=False).reset_index(drop=True)
         return results_df
 
     def neighbors(
-            self,
-            id_or_ids: Union[str, int, List[Union[str, int]]],
-            n_neighbors: Optional[int] = 5,
-            radius: Optional[float] = None,
-            include_self: bool = True,
+        self,
+        id_or_ids: Union[str, int, List[Union[str, int]]],
+        n_neighbors: Optional[int] = 5,
+        radius: Optional[float] = None,
+        include_self: bool = True,
     ) -> pd.DataFrame:
         """
         Return neighbors for ID(s) from the existing dataset.
