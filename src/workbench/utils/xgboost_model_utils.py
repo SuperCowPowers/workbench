@@ -308,6 +308,9 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
     fs = FeatureSet(workbench_model.get_input())
     df = workbench_model.training_view().pull_dataframe()
 
+    # Note: Some training views oversample the rows (minority class), so remove duplicates
+    df = df.drop_duplicates(subset=fs.id_column)
+
     # Get id column - assuming FeatureSet has an id_column attribute or similar
     id_col = fs.id_column
     target_col = workbench_model.target()
