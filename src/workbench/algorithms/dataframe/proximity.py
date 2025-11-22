@@ -69,6 +69,7 @@ class Proximity:
         top_percent: float = 1.0,
         min_delta: Optional[float] = None,
         k_neighbors: int = 4,
+        only_coincident: bool = False,
     ) -> pd.DataFrame:
         """
         Find compounds with steep target gradients (data quality issues and activity cliffs).
@@ -81,6 +82,7 @@ class Proximity:
             top_percent: Percentage of compounds with steepest gradients to return (e.g., 1.0 = top 1%)
             min_delta: Minimum absolute target difference to consider. If None, defaults to target_range/100
             k_neighbors: Number of neighbors to use for median calculation (default: 4)
+            only_coincident: If True, only consider compounds that are coincident (default: False)
 
         Returns:
             DataFrame of compounds with steepest gradients, sorted by gradient (descending)
@@ -99,10 +101,15 @@ class Proximity:
             min_delta = self.target_range / 100.0 if self.target_range > 0 else 0.0
         candidates = candidates[candidates["nn_target_diff"] >= min_delta]
 
-        # Get top X% by initial gradient
-        percentile = 100 - top_percent
-        threshold = np.percentile(candidates["gradient"], percentile)
-        candidates = candidates[candidates["gradient"] >= threshold].copy()
+        # Filter based on mode
+        if only_coincident:
+            # Only keep coincident points (nn_distance ~= 0)
+            candidates = candidates[candidates["nn_distance"] < epsilon].copy()
+        else:
+            # Get top X% by initial gradient
+            percentile = 100 - top_percent
+            threshold = np.percentile(candidates["gradient"], percentile)
+            candidates = candidates[candidates["gradient"] >= threshold].copy()
 
         # Phase 2: Verify with k-neighbor median to filter out cases where nearest neighbor is the outlier
         results = []
