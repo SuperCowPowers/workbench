@@ -31,7 +31,7 @@ dependencies = [
     "numpy >= 1.26.4",
     "pandas >= 2.2.1",
     "awswrangler >= 3.4.0",
-    "sagemaker >= 2.143",
+    "sagemaker >= 2.143, < 3.0",
     "cryptography >= 44.0.2",
     "ipython >=8.37.0",
     "pyreadline3; sys_platform == 'win32'",
