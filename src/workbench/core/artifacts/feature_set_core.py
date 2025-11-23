@@ -16,8 +16,9 @@ from sagemaker.feature_store.feature_store import FeatureStore
 from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.data_source_factory import DataSourceFactory
 from workbench.core.artifacts.athena_source import AthenaSource
+from workbench.utils.deprecated_utils import deprecated
 
-from typing import TYPE_CHECKING, Optional, List, Union
+from typing import TYPE_CHECKING, Optional, List, Dict, Union
 
 from workbench.utils.aws_utils import aws_throttle
 
@@ -509,6 +510,60 @@ class FeatureSetCore(Artifact):
         ].tolist()
         return hold_out_ids
 
+    def set_sample_weights(
+            self,
+            weight_dict: Dict[Union[str, int], float],
+            default_weight: float = 1.0,
+    ):
+        """Configure training view with sample weights for each ID.
+
+        Args:
+            weight_dict: Mapping of ID to sample weight
+                - weight > 1.0: oversample/emphasize
+                - weight = 1.0: normal (default)
+                - 0 < weight < 1.0: downweight/de-emphasize
+                - weight = 0.0: exclude from training
+            default_weight: Weight for IDs not in weight_dict (default: 1.0)
+
+        Example:
+            weights = {
+                'compound_42': 3.0,  # oversample 3x
+                'compound_99': 0.1,  # noisy, downweight
+                'compound_123': 0.0, # exclude from training
+            }
+            model.set_sample_weights(weights)
+        """
+        from workbench.core.views import TrainingView
+
+        if not weight_dict:
+            self.log.important("Empty weight_dict, creating standard training view")
+            TrainingView.create(self, id_column=self.id_column)
+            return
+
+        self.log.important(f"Setting sample weights for {len(weight_dict)} IDs")
+
+        # Helper to format IDs for SQL
+        def format_id(id_val):
+            return repr(id_val)
+
+        # Build CASE statement for sample_weight
+        case_conditions = [
+            f"WHEN {self.id_column} = {format_id(id_val)} THEN {weight}"
+            for id_val, weight in weight_dict.items()
+        ]
+        case_statement = "\n        ".join(case_conditions)
+
+        custom_sql = f"""SELECT 
+            *,
+            CASE 
+                {case_statement}
+                ELSE {default_weight}
+            END AS sample_weight
+        FROM {self.table}"""
+
+        TrainingView.create_with_sql(self, sql_query=custom_sql, id_column=self.id_column)
+
+    @deprecated(version=0.9)
     def set_training_filter(self, filter_expression: Optional[str] = None):
         """Set a filter expression for the training view for this FeatureSet
 
@@ -528,6 +583,7 @@ class FeatureSetCore(Artifact):
             self, id_column=self.id_column, holdout_ids=holdout_ids, filter_expression=filter_expression
         )
 
+    @deprecated(version="0.9")
     def exclude_ids_from_training(self, ids: List[Union[str, int]], column_name: Optional[str] = None):
         """Exclude a list of IDs from the training view
 
@@ -551,6 +607,7 @@ class FeatureSetCore(Artifact):
         # Apply the filter
         self.set_training_filter(filter_expression)
 
+    @deprecated(version="0.9")
     def set_training_sampling(
         self,
         exclude_ids: Optional[List[Union[str, int]]] = None,
