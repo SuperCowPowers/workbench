@@ -251,6 +251,14 @@ if __name__ == "__main__":
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
+    # Extract sample weights if present
+    sample_weights = None
+    if 'sample_weight' in df_train.columns:
+        sample_weights = df_train['sample_weight']
+        print(f"Using sample weights: min={sample_weights.min():.2f}, max={sample_weights.max():.2f}, mean={sample_weights.mean():.2f}")
+    else:
+        print("No sample weights found, training with equal weights")
+
     # Prepare features and targets for training
     X_train = df_train[features]
     X_validate = df_val[features]
@@ -261,7 +269,7 @@ if __name__ == "__main__":
     print("\nTraining XGBoost for point predictions...")
     print(f"  Hyperparameters: {hyperparameters}")
     xgb_model = XGBRegressor(enable_categorical=True, **hyperparameters)
-    xgb_model.fit(X_train, y_train)
+    xgb_model.fit(X_train, y_train, sample_weight=sample_weights)
 
     # Evaluate XGBoost performance
     y_pred_xgb = xgb_model.predict(X_validate)
