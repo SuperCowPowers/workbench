@@ -311,9 +311,11 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
     # Extract sample weights if present, filter out zero-weighted samples
     has_weights = "sample_weight" in df.columns
     if has_weights:
+        log.info(f"Using sample weights: min={sample_weights.min():.2f}, max={sample_weights.max():.2f}")
+
+        # Remove zero-weight samples
         df = df[df["sample_weight"] > 0].copy()
         sample_weights = df["sample_weight"]
-        log.info(f"Using sample weights: min={sample_weights.min():.2f}, max={sample_weights.max():.2f}")
     else:
         sample_weights = None
 
