@@ -511,9 +511,9 @@ class FeatureSetCore(Artifact):
         return hold_out_ids
 
     def set_sample_weights(
-            self,
-            weight_dict: Dict[Union[str, int], float],
-            default_weight: float = 1.0,
+        self,
+        weight_dict: Dict[Union[str, int], float],
+        default_weight: float = 1.0,
     ):
         """Configure training view with sample weights for each ID.
 
@@ -548,14 +548,13 @@ class FeatureSetCore(Artifact):
 
         # Build CASE statement for sample_weight
         case_conditions = [
-            f"WHEN {self.id_column} = {format_id(id_val)} THEN {weight}"
-            for id_val, weight in weight_dict.items()
+            f"WHEN {self.id_column} = {format_id(id_val)} THEN {weight}" for id_val, weight in weight_dict.items()
         ]
         case_statement = "\n        ".join(case_conditions)
 
-        custom_sql = f"""SELECT 
+        custom_sql = f"""SELECT
             *,
-            CASE 
+            CASE
                 {case_statement}
                 ELSE {default_weight}
             END AS sample_weight
