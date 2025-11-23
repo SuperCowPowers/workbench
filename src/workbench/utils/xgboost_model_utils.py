@@ -308,10 +308,16 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
     fs = FeatureSet(workbench_model.get_input())
     df = workbench_model.training_view().pull_dataframe()
 
-    # Note: Some training views oversample the rows (minority class), so remove duplicates
-    df = df.drop_duplicates(subset=fs.id_column)
+    # Extract sample weights if present, filter out zero-weighted samples
+    has_weights = 'sample_weight' in df.columns
+    if has_weights:
+        df = df[df['sample_weight'] > 0].copy()
+        sample_weights = df['sample_weight']
+        log.info(f"Using sample weights: min={sample_weights.min():.2f}, max={sample_weights.max():.2f}")
+    else:
+        sample_weights = None
 
-    # Get id column - assuming FeatureSet has an id_column attribute or similar
+    # Get columns
     id_col = fs.id_column
     target_col = workbench_model.target()
     feature_cols = workbench_model.features()
@@ -319,10 +325,8 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
     print(f"Feature columns: {len(feature_cols)} features")
 
     # Convert string[python] to object, then to category for XGBoost compatibility
-    # This avoids XGBoost's issue with pandas 2.x string[python] dtype in categorical categories
     for col in feature_cols:
         if pd.api.types.is_string_dtype(df[col]):
-            # Double conversion: string[python] -> object -> category
             df[col] = df[col].astype("object").astype("category")
 
     X = df[feature_cols]
@@ -338,7 +342,6 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
         y_for_cv = y
 
     # Prepare KFold
-    # Note: random_state=42 seems to not actually give us reproducible results
     kfold = (StratifiedKFold if is_classifier else KFold)(n_splits=nfolds, shuffle=True, random_state=42)
 
     # Initialize results collection
@@ -350,8 +353,11 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
         X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
         y_train, y_val = y_for_cv.iloc[train_idx], y_for_cv.iloc[val_idx]
 
+        # Get sample weights for training fold
+        weights_train = sample_weights.iloc[train_idx] if has_weights else None
+
         # Train and predict
-        xgb_model.fit(X_train, y_train)
+        xgb_model.fit(X_train, y_train, sample_weight=weights_train)
         preds = xgb_model.predict(X_val)
 
         # Store predictions (decode if classifier)
