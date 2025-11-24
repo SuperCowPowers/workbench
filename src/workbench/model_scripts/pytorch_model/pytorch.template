@@ -279,8 +279,6 @@ def predict_fn(df, model) -> pd.DataFrame:
         label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.joblib"))
 
     # We're going match features in a case-insensitive manner, accounting for all the permutations
-    # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
-    # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
     matched_df = match_features_case_insensitive(df, features)
 
     # Detect categorical types in the incoming DataFrame
@@ -291,12 +289,25 @@ def predict_fn(df, model) -> pd.DataFrame:
         print("Decompressing features for prediction...")
         matched_df, features = decompress_features(matched_df, features, compressed_features)
 
+    # Track rows with missing features
+    missing_mask = matched_df[features].isna().any(axis=1)
+    if missing_mask.any():
+        print(f"Warning: {missing_mask.sum()} rows have missing features, will return NaN predictions")
+
+    # Initialize prediction column with NaN
+    df["prediction"] = np.nan
+
+    # Only predict on complete rows
+    complete_df = matched_df[~missing_mask]
+    if len(complete_df) == 0:
+        print("Warning: No complete rows to predict on")
+        return df
+
     # Make predictions using the TabularModel
-    result = model.predict(matched_df[features])
+    result = model.predict(complete_df[features])
 
     # pytorch-tabular returns predictions using f"{target}_prediction" column
-    # and classification probabilities in columns ending with "_probability"
-    target = TEMPLATE_PARAMS["target_column"]
+    target = TEMPLATE_PARAMS["target"]
     prediction_column = f"{target}_prediction"
     if prediction_column in result.columns:
         predictions = result[prediction_column].values
@@ -307,15 +318,18 @@ def predict_fn(df, model) -> pd.DataFrame:
     if label_encoder:
         predictions = label_encoder.inverse_transform(predictions.astype(int))
 
-    # Set the predictions on the DataFrame
-    df["prediction"] = predictions
+    # Set predictions only for complete rows
+    df.loc[~missing_mask, "prediction"] = predictions
 
     # For classification, get probabilities
     if label_encoder is not None:
         prob_cols = [col for col in result.columns if col.endswith("_probability")]
         if prob_cols:
             probs = result[prob_cols].values
-            df["pred_proba"] = [p.tolist() for p in probs]
+
+            # Initialize proba column with None for all rows
+            df["pred_proba"] = None
+            df.loc[~missing_mask, "pred_proba"] = [p.tolist() for p in probs]
 
             # Expand the pred_proba column into separate columns for each class
             df = expand_proba_column(df, label_encoder.classes_)
@@ -354,8 +368,20 @@ if __name__ == "__main__":
     # Combine files and read them all into a single pandas dataframe
     all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
 
+    # Print out some info about the dataframe
+    print(f"All Data Shape: {all_df.shape}")
+    print(f"Feature dtypes:\n{all_df[features].dtypes.value_counts()}")
+    print(f"Int64 columns: {all_df[features].select_dtypes(include=['int64']).columns.tolist()}")
+
     # Check if the dataframe is empty
     check_dataframe(all_df, "training_df")
+
+    # Drop any rows with missing feature values
+    initial_row_count = all_df.shape[0]
+    all_df = all_df.dropna(subset=features)
+    dropped_rows = initial_row_count - all_df.shape[0]
+    if dropped_rows > 0:
+        print(f"Dropped {dropped_rows} rows due to missing feature values.")
 
     # Features/Target output
     print(f"Target: {target}")
@@ -364,10 +390,24 @@ if __name__ == "__main__":
     # Convert any features that might be categorical to 'category' type
     all_df, category_mappings = convert_categorical_types(all_df, features)
 
+    # Print out some info about the dataframe
+    print(f"All Data Shape: {all_df.shape}")
+    print(f"Feature dtypes:\n{all_df[features].dtypes.value_counts()}")
+    print(f"Int64 columns: {all_df[features].select_dtypes(include=['int64']).columns.tolist()}")
+
     # If we have compressed features, decompress them
     if compressed_features:
         print(f"Decompressing features {compressed_features}...")
         all_df, features = decompress_features(all_df, features, compressed_features)
+
+    # Determine categorical and continuous columns
+    categorical_cols = [col for col in features if all_df[col].dtype.name == "category"]
+    continuous_cols = [col for col in features if col not in categorical_cols]
+    print(f"Categorical columns: {categorical_cols}")
+    print(f"Continuous columns: {continuous_cols}")
+
+    # Cast continuous columns to float
+    all_df[continuous_cols] = all_df[continuous_cols].astype('float64')
 
     # Do we want to train on all the data?
     if train_all_data:
@@ -386,13 +426,6 @@ if __name__ == "__main__":
         df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
     print(f"FIT/TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
-
-    # Determine categorical and continuous columns
-    categorical_cols = [col for col in features if df_train[col].dtype.name == "category"]
-    continuous_cols = [col for col in features if col not in categorical_cols]
-
-    print(f"Categorical columns: {categorical_cols}")
-    print(f"Continuous columns: {continuous_cols}")
 
     # Set up PyTorch Tabular configuration
     data_config = DataConfig(
@@ -417,11 +450,12 @@ if __name__ == "__main__":
 
     # Set up PyTorch Tabular configuration with defaults
     trainer_defaults = {
-        "auto_lr_find": True,
-        "batch_size": min(1024, max(32, len(df_train) // 4)),
+        "auto_lr_find": False,
+        "batch_size": min(128, max(32, len(df_train) // 16)),
         "max_epochs": 100,
+        "min_epochs": 10,
         "early_stopping": "valid_loss",
-        "early_stopping_patience": 15,
+        "early_stopping_patience": 10,
         "checkpoints": "valid_loss",
         "accelerator": "auto",
         "progress_bar": "none",
@@ -438,10 +472,10 @@ if __name__ == "__main__":
 
     # Model config defaults
     model_defaults = {
-        "layers": "1024-512-512",
-        "activation": "ReLU",
+        "layers": "256-128-64",
+        "activation": "LeakyReLU",
         "learning_rate": 1e-3,
-        "dropout": 0.1,
+        "dropout": 0.3,
         "use_batch_norm": True,
         "initialization": "kaiming",
     }
