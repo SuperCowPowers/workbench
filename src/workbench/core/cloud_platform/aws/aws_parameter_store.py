@@ -4,6 +4,7 @@ from typing import Union
 import logging
 import json
 import zlib
+import time
 import base64
 from botocore.exceptions import ClientError
 
@@ -77,7 +78,7 @@ class AWSParameterStore:
             all_parameters = []
 
             # Make the initial call to describe parameters
-            response = self.ssm_client.describe_parameters(**params)
+            response = self._call_with_retry(self.ssm_client.describe_parameters, **params)
 
             # Aggregate the names from the initial response
             all_parameters.extend(param["Name"] for param in response["Parameters"])
@@ -86,7 +87,7 @@ class AWSParameterStore:
             while "NextToken" in response:
                 # Update the parameters with the NextToken for subsequent calls
                 params["NextToken"] = response["NextToken"]
-                response = self.ssm_client.describe_parameters(**params)
+                response = self._call_with_retry(self.ssm_client.describe_parameters, **params)
 
                 # Aggregate the names from the subsequent responses
                 all_parameters.extend(param["Name"] for param in response["Parameters"])
@@ -182,6 +183,21 @@ class AWSParameterStore:
         except Exception as e:
             self.log.critical(f"Failed to add/update parameter '{name}': {e}")
             raise
+
+    def _call_with_retry(self, func, **kwargs):
+        """Call AWS API with exponential backoff on throttling."""
+        max_retries = 5
+        base_delay = 1
+        for attempt in range(max_retries):
+            try:
+                return func(**kwargs)
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'ThrottlingException' and attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)
+                    self.log.warning(f"Throttled, retrying in {delay}s...")
+                    time.sleep(delay)
+                else:
+                    raise
 
     @staticmethod
     def _compress_value(value) -> str:
