@@ -460,6 +460,11 @@ class EndpointCore(Artifact):
             metrics = cross_fold_metrics.to_dict(orient="records")
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/cross_fold", metrics)
 
+        # If the out_of_fold_df is empty return it
+        if out_of_fold_df.empty:
+            self.log.warning("No out-of-fold predictions were made. Returning empty DataFrame.")
+            return out_of_fold_df
+
         # Capture the results
         capture_name = "full_cross_fold"
         description = capture_name.replace("_", " ").title()
@@ -810,10 +815,19 @@ class EndpointCore(Artifact):
             self.log.warning("No predictions were made. Returning empty DataFrame.")
             return pd.DataFrame()
 
+        # Check for NaN values in target or prediction columns
+        prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
+        if prediction_df[target_column].isnull().any() or prediction_df[prediction_col].isnull().any():
+            # Compute the number of NaN values in each column
+            num_nan_target = prediction_df[target_column].isnull().sum()
+            num_nan_prediction = prediction_df[prediction_col].isnull().sum()
+            self.log.warning(f"NaNs Found: {target_column} {num_nan_target} and {prediction_col}: {num_nan_prediction}.")
+            self.log.warning("NaN values found in target or prediction columns. Dropping NaN rows for metric computation.")
+            prediction_df = prediction_df.dropna(subset=[target_column, prediction_col])
+
         # Compute the metrics
         try:
             y_true = prediction_df[target_column]
-            prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
             y_pred = prediction_df[prediction_col]
 
             mae = mean_absolute_error(y_true, y_pred)
