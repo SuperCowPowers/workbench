@@ -821,8 +821,12 @@ class EndpointCore(Artifact):
             # Compute the number of NaN values in each column
             num_nan_target = prediction_df[target_column].isnull().sum()
             num_nan_prediction = prediction_df[prediction_col].isnull().sum()
-            self.log.warning(f"NaNs Found: {target_column} {num_nan_target} and {prediction_col}: {num_nan_prediction}.")
-            self.log.warning("NaN values found in target or prediction columns. Dropping NaN rows for metric computation.")
+            self.log.warning(
+                f"NaNs Found: {target_column} {num_nan_target} and {prediction_col}: {num_nan_prediction}."
+            )
+            self.log.warning(
+                "NaN values found in target or prediction columns. Dropping NaN rows for metric computation."
+            )
             prediction_df = prediction_df.dropna(subset=[target_column, prediction_col])
 
         # Compute the metrics
