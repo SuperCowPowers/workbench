@@ -288,6 +288,19 @@ if __name__ == "__main__":
     # Store MAPIE models for each confidence level
     mapie_models = {}
 
+    # For the LGBM/MAPIE models, remove any rows with sample weights = 0
+    if sample_weights is not None:
+        # Filter training data
+        train_mask = sample_weights > 0
+        X_train = X_train[train_mask]
+        y_train = y_train[train_mask]
+
+        # Filter validation data using validation's sample_weight
+        val_weights = df_val['sample_weight']
+        val_mask = val_weights > 0
+        X_validate = X_validate[val_mask]
+        y_validate = y_validate[val_mask]
+
     # Train models for each confidence level
     for confidence_level in confidence_levels:
         alpha = 1 - confidence_level
@@ -353,8 +366,8 @@ if __name__ == "__main__":
     # Compute normalization statistics for confidence calculation
     print(f"\nComputing normalization statistics for confidence scores...")
 
-    # Create a temporary validation dataframe with predictions
-    temp_val_df = df_val.copy()
+    # Create a temporary validation dataframe with predictions (filtered)
+    temp_val_df = df_val[df_val['sample_weight'] > 0].copy() if sample_weights is not None else df_val.copy()
     temp_val_df["prediction"] = xgb_model.predict(X_validate)
 
     # Add all quantile predictions
@@ -416,7 +429,7 @@ if __name__ == "__main__":
             "xgb_rmse": float(xgb_rmse),
             "xgb_mae": float(xgb_mae),
             "xgb_r2": float(xgb_r2),
-            "n_validation": len(df_val),
+            "n_validation": len(temp_val_df),
         },
     }
     with open(os.path.join(args.model_dir, "model_config.json"), "w") as fp:
