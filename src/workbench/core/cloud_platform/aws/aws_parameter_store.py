@@ -192,8 +192,8 @@ class AWSParameterStore:
             try:
                 return func(**kwargs)
             except ClientError as e:
-                if e.response['Error']['Code'] == 'ThrottlingException' and attempt < max_retries - 1:
-                    delay = base_delay * (2 ** attempt)
+                if e.response["Error"]["Code"] == "ThrottlingException" and attempt < max_retries - 1:
+                    delay = base_delay * (2**attempt)
                     self.log.warning(f"Throttled, retrying in {delay}s...")
                     time.sleep(delay)
                 else:
