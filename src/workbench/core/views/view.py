@@ -91,11 +91,11 @@ class View:
             self.table, self.data_source.database, self.data_source.boto3_session
         )
 
-    def pull_dataframe(self, limit: int = 50000) -> Union[pd.DataFrame, None]:
+    def pull_dataframe(self, limit: int = 100000) -> Union[pd.DataFrame, None]:
         """Pull a DataFrame based on the view type
 
         Args:
-            limit (int): The maximum number of rows to pull (default: 50000)
+            limit (int): The maximum number of rows to pull (default: 100000)
 
         Returns:
             Union[pd.DataFrame, None]: The DataFrame for the view or None if it doesn't exist

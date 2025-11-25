@@ -308,16 +308,10 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
     fs = FeatureSet(workbench_model.get_input())
     df = workbench_model.training_view().pull_dataframe()
 
-    # Extract sample weights if present, filter out zero-weighted samples
-    has_weights = "sample_weight" in df.columns
-    if has_weights:
-        sample_weights = df["sample_weight"]
+    # Extract sample weights if present
+    sample_weights = df.get("sample_weight")
+    if sample_weights is not None:
         log.info(f"Using sample weights: min={sample_weights.min():.2f}, max={sample_weights.max():.2f}")
-
-        # Remove zero-weight samples
-        df = df[df["sample_weight"] > 0].copy()
-    else:
-        sample_weights = None
 
     # Get columns
     id_col = fs.id_column
@@ -356,7 +350,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
         y_train, y_val = y_for_cv.iloc[train_idx], y_for_cv.iloc[val_idx]
 
         # Get sample weights for training fold
-        weights_train = sample_weights.iloc[train_idx] if has_weights else None
+        weights_train = sample_weights.iloc[train_idx] if sample_weights is not None else None
 
         # Train and predict
         xgb_model.fit(X_train, y_train, sample_weight=weights_train)
