@@ -566,8 +566,9 @@ class FeatureSetCore(Artifact):
 
         # Optionally filter out zero weights
         if exclude_zero_weights:
+            zero_count = sum(1 for weight in weight_dict.values() if weight == 0.0)
             custom_sql = f"SELECT * FROM ({inner_sql}) WHERE sample_weight > 0"
-            self.log.important("Filtering out rows with sample_weight = 0")
+            self.log.important(f"Filtering out {zero_count} rows with sample_weight = 0")
         else:
             custom_sql = inner_sql
 
