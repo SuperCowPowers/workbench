@@ -514,6 +514,7 @@ class FeatureSetCore(Artifact):
         self,
         weight_dict: Dict[Union[str, int], float],
         default_weight: float = 1.0,
+        exclude_zero_weights: bool = True,
     ):
         """Configure training view with sample weights for each ID.
 
@@ -524,6 +525,7 @@ class FeatureSetCore(Artifact):
                 - 0 < weight < 1.0: downweight/de-emphasize
                 - weight = 0.0: exclude from training
             default_weight: Weight for IDs not in weight_dict (default: 1.0)
+            exclude_zero_weights: If True, filter out rows with sample_weight=0 (default: True)
 
         Example:
             weights = {
@@ -531,7 +533,8 @@ class FeatureSetCore(Artifact):
                 'compound_99': 0.1,  # noisy, downweight
                 'compound_123': 0.0, # exclude from training
             }
-            model.set_sample_weights(weights)
+            model.set_sample_weights(weights)  # zeros automatically excluded
+            model.set_sample_weights(weights, exclude_zero_weights=False)  # keep zeros
         """
         from workbench.core.views import TrainingView
 
@@ -552,13 +555,21 @@ class FeatureSetCore(Artifact):
         ]
         case_statement = "\n        ".join(case_conditions)
 
-        custom_sql = f"""SELECT
+        # Build inner query with sample weights
+        inner_sql = f"""SELECT
             *,
             CASE
                 {case_statement}
                 ELSE {default_weight}
             END AS sample_weight
         FROM {self.table}"""
+
+        # Optionally filter out zero weights
+        if exclude_zero_weights:
+            custom_sql = f"SELECT * FROM ({inner_sql}) WHERE sample_weight > 0"
+            self.log.important("Filtering out rows with sample_weight = 0")
+        else:
+            custom_sql = inner_sql
 
         TrainingView.create_with_sql(self, sql_query=custom_sql, id_column=self.id_column)
 

@@ -252,11 +252,11 @@ if __name__ == "__main__":
     print(f"VALIDATION: {df_val.shape}")
 
     # Extract sample weights if present
-    sample_weights = None
     if 'sample_weight' in df_train.columns:
         sample_weights = df_train['sample_weight']
         print(f"Using sample weights: min={sample_weights.min():.2f}, max={sample_weights.max():.2f}, mean={sample_weights.mean():.2f}")
     else:
+        sample_weights = None
         print("No sample weights found, training with equal weights")
 
     # Prepare features and targets for training
@@ -287,19 +287,6 @@ if __name__ == "__main__":
 
     # Store MAPIE models for each confidence level
     mapie_models = {}
-
-    # For the LGBM/MAPIE models, remove any rows with sample weights = 0
-    if sample_weights is not None:
-        # Filter training data
-        train_mask = sample_weights > 0
-        X_train = X_train[train_mask]
-        y_train = y_train[train_mask]
-
-        # Filter validation data using validation's sample_weight
-        val_weights = df_val['sample_weight']
-        val_mask = val_weights > 0
-        X_validate = X_validate[val_mask]
-        y_validate = y_validate[val_mask]
 
     # Train models for each confidence level
     for confidence_level in confidence_levels:
@@ -366,9 +353,8 @@ if __name__ == "__main__":
     # Compute normalization statistics for confidence calculation
     print(f"\nComputing normalization statistics for confidence scores...")
 
-    # Create a temporary validation dataframe with predictions (filtered)
-    temp_val_df = df_val[df_val['sample_weight'] > 0].copy() if sample_weights is not None else df_val.copy()
-    temp_val_df["prediction"] = xgb_model.predict(X_validate)
+    # Add predictions directly to validation dataframe
+    df_val["prediction"] = xgb_model.predict(X_validate)
 
     # Add all quantile predictions
     for conf_level in confidence_levels:
@@ -377,25 +363,25 @@ if __name__ == "__main__":
         y_pred, y_pis = model.predict_interval(X_validate)
 
         if conf_level == 0.50:
-            temp_val_df["q_25"] = y_pis[:, 0, 0]
-            temp_val_df["q_75"] = y_pis[:, 1, 0]
+            df_val["q_25"] = y_pis[:, 0, 0]
+            df_val["q_75"] = y_pis[:, 1, 0]
             # y_pred is the median prediction
-            temp_val_df["q_50"] = y_pred
+            df_val["q_50"] = y_pred
         elif conf_level == 0.68:
-            temp_val_df["q_16"] = y_pis[:, 0, 0]
-            temp_val_df["q_84"] = y_pis[:, 1, 0]
+            df_val["q_16"] = y_pis[:, 0, 0]
+            df_val["q_84"] = y_pis[:, 1, 0]
         elif conf_level == 0.80:
-            temp_val_df["q_10"] = y_pis[:, 0, 0]
-            temp_val_df["q_90"] = y_pis[:, 1, 0]
+            df_val["q_10"] = y_pis[:, 0, 0]
+            df_val["q_90"] = y_pis[:, 1, 0]
         elif conf_level == 0.90:
-            temp_val_df["q_05"] = y_pis[:, 0, 0]
-            temp_val_df["q_95"] = y_pis[:, 1, 0]
+            df_val["q_05"] = y_pis[:, 0, 0]
+            df_val["q_95"] = y_pis[:, 1, 0]
         elif conf_level == 0.95:
-            temp_val_df["q_025"] = y_pis[:, 0, 0]
-            temp_val_df["q_975"] = y_pis[:, 1, 0]
+            df_val["q_025"] = y_pis[:, 0, 0]
+            df_val["q_975"] = y_pis[:, 1, 0]
 
     # Compute normalization stats using q_10 and q_90 (default range)
-    interval_width = (temp_val_df["q_90"] - temp_val_df["q_10"]).abs()
+    interval_width = (df_val["q_90"] - df_val["q_10"]).abs()
     median_interval_width = float(interval_width.median())
     print(f"  Median interval width (q_10-q_90): {median_interval_width:.6f}")
 
@@ -429,7 +415,7 @@ if __name__ == "__main__":
             "xgb_rmse": float(xgb_rmse),
             "xgb_mae": float(xgb_mae),
             "xgb_r2": float(xgb_r2),
-            "n_validation": len(temp_val_df),
+            "n_validation": len(df_val),
         },
     }
     with open(os.path.join(args.model_dir, "model_config.json"), "w") as fp:
