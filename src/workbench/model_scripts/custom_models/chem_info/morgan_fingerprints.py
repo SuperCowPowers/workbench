@@ -15,7 +15,7 @@ import pandas as pd
 import json
 
 # Local imports
-from local_utils import compute_morgan_fingerprints
+from fingerprints import compute_morgan_fingerprints
 
 
 # TRAINING SECTION
