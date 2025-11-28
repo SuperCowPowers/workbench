@@ -335,9 +335,10 @@ def predict_fn(df: pd.DataFrame, model: TabularModel) -> pd.DataFrame:
         if prob_cols:
             probs = result[prob_cols].values
 
-            # Initialize proba column with None for all rows
-            df["pred_proba"] = None
-            df.loc[~missing_mask, "pred_proba"] = [p.tolist() for p in probs]
+            # Build full proba Series with None for missing rows
+            all_proba = pd.Series([None] * len(df), index=df.index, dtype=object)
+            all_proba.loc[~missing_mask] = [p.tolist() for p in probs]
+            df["pred_proba"] = all_proba
 
             # Expand the pred_proba column into separate columns for each class
             df = expand_proba_column(df, label_encoder.classes_)

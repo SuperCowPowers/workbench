@@ -40,6 +40,7 @@ class ModelType(Enum):
 
 class ModelFramework(Enum):
     """Enumerated Types for Workbench Model Frameworks"""
+
     SKLEARN = "sklearn"
     XGBOOST = "xgboost"
     LIGHTGBM = "lightgbm"

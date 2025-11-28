@@ -13,17 +13,7 @@ Evaluation data is automatically pulled from the FeatureSet (training = FALSE ro
 Optional: testing/env.json with additional environment variables
 """
 
-# Force CPU mode BEFORE any PyTorch imports to avoid MPS/CUDA issues on Mac
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
-os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-
-import torch
-torch.set_default_device('cpu')
-# Disable MPS entirely
-if hasattr(torch.backends, 'mps'):
-    torch.backends.mps.is_available = lambda: False
-
 import sys
 import json
 import importlib.util
@@ -31,16 +21,19 @@ import tempfile
 import tarfile
 import shutil
 import pandas as pd
+import boto3
+import torch
 
 # Workbench Imports
 from workbench.api import Model, FeatureSet
 
-# We'll need boto3 for S3 access
-try:
-    import boto3
-except ImportError:
-    print("Error: boto3 is required. Install with: pip install boto3")
-    sys.exit(1)
+# Force CPU mode BEFORE any PyTorch imports to avoid MPS/CUDA issues on Mac
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+torch.set_default_device("cpu")
+# Disable MPS entirely
+if hasattr(torch.backends, "mps"):
+    torch.backends.mps.is_available = lambda: False
 
 
 def download_and_extract_model(workbench_model: Model, model_dir: str) -> None:
