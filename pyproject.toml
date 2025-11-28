@@ -93,7 +93,8 @@ workbench_config = "workbench.scripts.show_config:main"
 glue_launcher = "workbench.scripts.glue_launcher:main"
 ml_pipeline_batch = "workbench.scripts.ml_pipeline_batch:main"
 ml_pipeline_sqs = "workbench.scripts.ml_pipeline_sqs:main"
-lambda_launcher = "workbench.scripts.lambda_launcher:main"
+lambda_test = "workbench.scripts.lambda_test:main"
+endpoint_test = "workbench.scripts.endpoint_test:main"
 
 [tool.pytest.ini_options]
 addopts = "-v --cov-report term-missing"
