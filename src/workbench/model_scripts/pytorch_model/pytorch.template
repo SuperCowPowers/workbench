@@ -29,9 +29,7 @@ from io import StringIO
 import json
 import argparse
 import joblib
-import os
 import pandas as pd
-from typing import List, Tuple
 
 # Template Parameters
 TEMPLATE_PARAMS = {
@@ -45,7 +43,6 @@ TEMPLATE_PARAMS = {
 }
 
 
-# Function to check if dataframe is empty
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
     """
     Check if the provided dataframe is empty and raise an exception if it is.
@@ -60,19 +57,17 @@ def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
         raise ValueError(msg)
 
 
-def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFrame:
+def expand_proba_column(df: pd.DataFrame, class_labels: list[str]) -> pd.DataFrame:
     """
     Expands a column in a DataFrame containing a list of probabilities into separate columns.
 
     Args:
         df (pd.DataFrame): DataFrame containing a "pred_proba" column
-        class_labels (List[str]): List of class labels
+        class_labels (list[str]): List of class labels
 
     Returns:
         pd.DataFrame: DataFrame with the "pred_proba" expanded into separate columns
     """
-
-    # Sanity check
     proba_column = "pred_proba"
     if proba_column not in df.columns:
         raise ValueError('DataFrame does not contain a "pred_proba" column')
@@ -89,11 +84,10 @@ def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFra
 
     # Concatenate the new columns with the original DataFrame
     df = pd.concat([df, proba_df], axis=1)
-    print(df)
     return df
 
 
-def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
+def match_features_case_insensitive(df: pd.DataFrame, model_features: list[str]) -> pd.DataFrame:
     """
     Matches and renames DataFrame columns to match model feature names (case-insensitive).
     Prioritizes exact matches, then case-insensitive matches.
@@ -118,55 +112,60 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
     return df.rename(columns=rename_dict)
 
 
-def convert_categorical_types(df: pd.DataFrame, features: list, category_mappings={}) -> tuple:
+def convert_categorical_types(
+    df: pd.DataFrame, features: list[str], category_mappings: dict[str, list[str]] | None = None
+) -> tuple[pd.DataFrame, dict[str, list[str]]]:
     """
     Converts appropriate columns to categorical type with consistent mappings.
 
     Args:
         df (pd.DataFrame): The DataFrame to process.
         features (list): List of feature names to consider for conversion.
-        category_mappings (dict, optional): Existing category mappings. If empty dict, we're in
-                                            training mode. If populated, we're in inference mode.
+        category_mappings (dict, optional): Existing category mappings. If None or empty,
+                                            we're in training mode. If populated, we're in
+                                            inference mode.
 
     Returns:
         tuple: (processed DataFrame, category mappings dictionary)
     """
+    if category_mappings is None:
+        category_mappings = {}
+
     # Training mode
-    if category_mappings == {}:
+    if not category_mappings:
         for col in df.select_dtypes(include=["object", "string"]):
             if col in features and df[col].nunique() < 20:
                 print(f"Training mode: Converting {col} to category")
                 df[col] = df[col].astype("category")
-                category_mappings[col] = df[col].cat.categories.tolist()  # Store category mappings
+                category_mappings[col] = df[col].cat.categories.tolist()
 
     # Inference mode
     else:
         for col, categories in category_mappings.items():
             if col in df.columns:
                 print(f"Inference mode: Applying categorical mapping for {col}")
-                df[col] = pd.Categorical(df[col], categories=categories)  # Apply consistent categorical mapping
+                df[col] = pd.Categorical(df[col], categories=categories)
 
     return df, category_mappings
 
 
 def decompress_features(
-    df: pd.DataFrame, features: List[str], compressed_features: List[str]
-) -> Tuple[pd.DataFrame, List[str]]:
+    df: pd.DataFrame, features: list[str], compressed_features: list[str]
+) -> tuple[pd.DataFrame, list[str]]:
     """Prepare features for the model
 
     Args:
         df (pd.DataFrame): The features DataFrame
-        features (List[str]): Full list of feature names
-        compressed_features (List[str]): List of feature names to decompress (bitstrings)
+        features (list[str]): Full list of feature names
+        compressed_features (list[str]): List of feature names to decompress (bitstrings)
 
     Returns:
         pd.DataFrame: DataFrame with the decompressed features
-        List[str]: Updated list of feature names after decompression
+        list[str]: Updated list of feature names after decompression
 
     Raises:
         ValueError: If any missing values are found in the specified features
     """
-
     # Check for any missing values in the required features
     missing_counts = df[features].isna().sum()
     if missing_counts.any():
@@ -176,10 +175,11 @@ def decompress_features(
             "WARNING: You might want to remove/replace all NaN values before processing."
         )
 
-    # Decompress the specified compressed features
-    decompressed_features = features
+    # Make a copy to avoid mutating the original list
+    decompressed_features = features.copy()
+
     for feature in compressed_features:
-        if (feature not in df.columns) or (feature not in features):
+        if (feature not in df.columns) or (feature not in decompressed_features):
             print(f"Feature '{feature}' not in the features list, skipping decompression.")
             continue
 
@@ -204,8 +204,15 @@ def decompress_features(
     return df, decompressed_features
 
 
-def model_fn(model_dir):
+def model_fn(model_dir: str) -> TabularModel:
+    """Load the PyTorch Tabular model from the specified directory.
 
+    Args:
+        model_dir: Directory containing the saved model
+
+    Returns:
+        Loaded TabularModel instance
+    """
     # Save current working directory
     original_cwd = os.getcwd()
     try:
@@ -216,14 +223,14 @@ def model_fn(model_dir):
         model_path = os.path.join(model_dir, "tabular_model")
         model = TabularModel.load_model(model_path)
 
-    # Restore the original working directory
     finally:
+        # Restore the original working directory
         os.chdir(original_cwd)
 
     return model
 
 
-def input_fn(input_data, content_type):
+def input_fn(input_data, content_type: str) -> pd.DataFrame:
     """Parse input data and return a DataFrame."""
     if not input_data:
         raise ValueError("Empty input data is not supported!")
@@ -240,18 +247,18 @@ def input_fn(input_data, content_type):
         raise ValueError(f"{content_type} not supported!")
 
 
-def output_fn(output_df, accept_type):
+def output_fn(output_df: pd.DataFrame, accept_type: str) -> tuple[str, str]:
     """Supports both CSV and JSON output formats."""
     if "text/csv" in accept_type:
-        csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
+        csv_output = output_df.fillna("N/A").to_csv(index=False)
         return csv_output, "text/csv"
     elif "application/json" in accept_type:
-        return output_df.to_json(orient="records"), "application/json"  # JSON array of records (NaNs -> null)
+        return output_df.to_json(orient="records"), "application/json"
     else:
         raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
 
-def predict_fn(df, model) -> pd.DataFrame:
+def predict_fn(df: pd.DataFrame, model: TabularModel) -> pd.DataFrame:
     """Make Predictions with our PyTorch Tabular Model
 
     Args:
@@ -275,10 +282,11 @@ def predict_fn(df, model) -> pd.DataFrame:
 
     # Load our Label Encoder if we have one
     label_encoder = None
-    if os.path.exists(os.path.join(model_dir, "label_encoder.joblib")):
-        label_encoder = joblib.load(os.path.join(model_dir, "label_encoder.joblib"))
+    label_encoder_path = os.path.join(model_dir, "label_encoder.joblib")
+    if os.path.exists(label_encoder_path):
+        label_encoder = joblib.load(label_encoder_path)
 
-    # We're going match features in a case-insensitive manner, accounting for all the permutations
+    # Match features in a case-insensitive manner
     matched_df = match_features_case_insensitive(df, features)
 
     # Detect categorical types in the incoming DataFrame
@@ -334,7 +342,6 @@ def predict_fn(df, model) -> pd.DataFrame:
             # Expand the pred_proba column into separate columns for each class
             df = expand_proba_column(df, label_encoder.classes_)
 
-    # All done, return the DataFrame with new columns for the predictions
     return df
 
 
@@ -407,7 +414,7 @@ if __name__ == "__main__":
     print(f"Continuous columns: {continuous_cols}")
 
     # Cast continuous columns to float
-    all_df[continuous_cols] = all_df[continuous_cols].astype('float64')
+    all_df[continuous_cols] = all_df[continuous_cols].astype("float64")
 
     # Do we want to train on all the data?
     if train_all_data:
@@ -418,8 +425,8 @@ if __name__ == "__main__":
     # Does the dataframe have a training column?
     elif "training" in all_df.columns:
         print("Found training column, splitting data based on training column")
-        df_train = all_df[all_df["training"]]
-        df_val = all_df[~all_df["training"]]
+        df_train = all_df[all_df["training"]].copy()
+        df_val = all_df[~all_df["training"]].copy()
     else:
         # Just do a random training Split
         print("WARNING: No training column found, splitting data with random state=42")
@@ -464,7 +471,6 @@ if __name__ == "__main__":
 
     # Override defaults with training_config if present
     training_overrides = {k: v for k, v in hyperparameters.get("training_config", {}).items() if k in trainer_defaults}
-    # Print overwrites
     for key, value in training_overrides.items():
         print(f"TRAINING CONFIG Override: {key}: {trainer_defaults[key]} → {value}")
     trainer_params = {**trainer_defaults, **training_overrides}
@@ -481,14 +487,11 @@ if __name__ == "__main__":
     }
     # Override defaults with model_config if present
     model_overrides = {k: v for k, v in hyperparameters.get("model_config", {}).items() if k in model_defaults}
-    # Print overwrites
     for key, value in model_overrides.items():
         print(f"MODEL CONFIG Override: {key}: {model_defaults[key]} → {value}")
     model_params = {**model_defaults, **model_overrides}
 
     # Use CategoryEmbedding model configuration for general-purpose tabular modeling.
-    # Works effectively for both regression and classification as the foundational
-    # architecture in PyTorch Tabular
     model_config = CategoryEmbeddingModelConfig(task=task, **model_params)
     optimizer_config = OptimizerConfig()
 
@@ -508,36 +511,34 @@ if __name__ == "__main__":
     result = tabular_model.predict(df_val, include_input_features=False)
 
     # pytorch-tabular returns predictions using f"{target}_prediction" column
-    # and classification probabilities in columns ending with "_probability"
-    if model_type == "classifier":
-        preds = result[f"{target}_prediction"].values
-    else:
-        # Regression: use the target column name
-        preds = result[f"{target}_prediction"].values
+    preds = result[f"{target}_prediction"].values
 
     if model_type == "classifier":
         # Get probabilities for classification
         print("Processing Probabilities...")
-        prob_cols = [col for col in result.columns if col.endswith("_probability")]
+        prob_cols = sorted([col for col in result.columns if col.endswith("_probability")])
         if prob_cols:
             probs = result[prob_cols].values
+            df_val = df_val.copy()  # Avoid SettingWithCopyWarning
             df_val["pred_proba"] = [p.tolist() for p in probs]
 
             # Expand the pred_proba column into separate columns for each class
-            print(df_val.columns)
+            print(df_val.columns.tolist())
             df_val = expand_proba_column(df_val, label_encoder.classes_)
-            print(df_val.columns)
+            print(df_val.columns.tolist())
 
         # Decode the target and prediction labels
         y_validate = label_encoder.inverse_transform(df_val[target])
-        preds = label_encoder.inverse_transform(preds.astype(int))
+        preds_decoded = label_encoder.inverse_transform(preds.astype(int))
     else:
         y_validate = df_val[target].values
+        preds_decoded = preds
 
-    # Save predictions to S3 (just the target, prediction, and '_probability' columns)
-    df_val["prediction"] = preds
+    # Save predictions to S3
+    df_val = df_val.copy()
+    df_val["prediction"] = preds_decoded
     output_columns = [target, "prediction"]
-    output_columns += [col for col in df_val.columns if col.endswith("_probability")]
+    output_columns += [col for col in df_val.columns if col.endswith("_proba")]
     wr.s3.to_csv(
         df_val[output_columns],
         path=f"{model_metrics_s3_path}/validation_predictions.csv",
@@ -550,7 +551,7 @@ if __name__ == "__main__":
         label_names = label_encoder.classes_
 
         # Calculate various model performance metrics
-        scores = precision_recall_fscore_support(y_validate, preds, average=None, labels=label_names)
+        scores = precision_recall_fscore_support(y_validate, preds_decoded, average=None, labels=label_names)
 
         # Put the scores into a dataframe
         score_df = pd.DataFrame(
@@ -563,7 +564,7 @@ if __name__ == "__main__":
             }
         )
 
-        # We need to get creative with the Classification Metrics
+        # Output metrics per class
         metrics = ["precision", "recall", "fscore", "support"]
         for t in label_names:
             for m in metrics:
@@ -571,7 +572,7 @@ if __name__ == "__main__":
                 print(f"Metrics:{t}:{m} {value}")
 
         # Compute and output the confusion matrix
-        conf_mtx = confusion_matrix(y_validate, preds, labels=label_names)
+        conf_mtx = confusion_matrix(y_validate, preds_decoded, labels=label_names)
         for i, row_name in enumerate(label_names):
             for j, col_name in enumerate(label_names):
                 value = conf_mtx[i, j]
@@ -579,9 +580,9 @@ if __name__ == "__main__":
 
     else:
         # Calculate various model performance metrics (regression)
-        rmse = root_mean_squared_error(y_validate, preds)
-        mae = mean_absolute_error(y_validate, preds)
-        r2 = r2_score(y_validate, preds)
+        rmse = root_mean_squared_error(y_validate, preds_decoded)
+        mae = mean_absolute_error(y_validate, preds_decoded)
+        r2 = r2_score(y_validate, preds_decoded)
         print(f"RMSE: {rmse:.3f}")
         print(f"MAE: {mae:.3f}")
         print(f"R2: {r2:.3f}")
@@ -594,7 +595,7 @@ if __name__ == "__main__":
 
     # Save the features (this will validate input during predictions)
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
-        json.dump(orig_features, fp)  # We save the original features, not the decompressed ones
+        json.dump(orig_features, fp)
 
     # Save the category mappings
     with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
