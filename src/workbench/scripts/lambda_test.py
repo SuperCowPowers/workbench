@@ -1,3 +1,13 @@
+"""
+Local test harness for AWS Lambda scripts.
+
+Usage:
+    lambda_test <lambda_script.py>
+
+Required: testing/event.json with the event definition
+Options: testing/env.json with a set of ENV vars
+"""
+
 import sys
 import os
 import json
