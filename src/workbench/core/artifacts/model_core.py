@@ -38,6 +38,16 @@ class ModelType(Enum):
     UNKNOWN = "unknown"
 
 
+class ModelFramework(Enum):
+    """Enumerated Types for Workbench Model Frameworks"""
+    SKLEARN = "sklearn"
+    XGBOOST = "xgboost"
+    LIGHTGBM = "lightgbm"
+    PYTORCH_TABULAR = "pytorch_tabular"
+    CHEMPROP = "chemprop"
+    UNKNOWN = "unknown"
+
+
 class ModelImages:
     """Class for retrieving workbench inference images"""
 
@@ -971,6 +981,27 @@ class ModelCore(Artifact):
         except ValueError:
             self.log.warning(f"Could not determine model type for {self.model_name}!")
             return ModelType.UNKNOWN
+
+    def _set_model_framework(self, model_framework: ModelFramework):
+        """Internal: Set the Model Framework for this Model"""
+        self.model_framework = model_framework
+        self.upsert_workbench_meta({"workbench_model_framework": self.model_framework.value})
+        self.remove_health_tag("model_framework_unknown")
+
+    def _get_model_framework(self) -> ModelFramework:
+        """Internal: Query the Workbench Metadata to get the model framework
+        Returns:
+            ModelFramework: The ModelFramework of this Model
+        Notes:
+            This is an internal method that should not be called directly
+            Use the model_framework attribute instead
+        """
+        model_framework = self.workbench_meta().get("workbench_model_framework")
+        try:
+            return ModelFramework(model_framework)
+        except ValueError:
+            self.log.warning(f"Could not determine model framework for {self.model_name}!")
+            return ModelFramework.UNKNOWN
 
     def _load_training_metrics(self):
         """Internal: Retrieve the training metrics and Confusion Matrix for this model
