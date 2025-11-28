@@ -30,11 +30,11 @@ class ModelType(Enum):
     CLASSIFIER = "classifier"
     REGRESSOR = "regressor"
     CLUSTERER = "clusterer"
-    TRANSFORMER = "transformer"
     PROXIMITY = "proximity"
     PROJECTION = "projection"
     UQ_REGRESSOR = "uq_regressor"
     ENSEMBLE_REGRESSOR = "ensemble_regressor"
+    TRANSFORMER = "transformer"
     UNKNOWN = "unknown"
 
 
@@ -46,6 +46,7 @@ class ModelFramework(Enum):
     LIGHTGBM = "lightgbm"
     PYTORCH_TABULAR = "pytorch_tabular"
     CHEMPROP = "chemprop"
+    TRANSFORMER = "transformer"
     UNKNOWN = "unknown"
 
 

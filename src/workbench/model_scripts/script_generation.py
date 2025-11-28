@@ -93,6 +93,7 @@ def generate_model_script(template_params: dict) -> str:
         template_params (dict): Dictionary containing the parameters:
             - model_imports (str): Import string for the model class
             - model_type (ModelType): The enumerated type of model to generate
+            - model_framework (str): The enumerated model framework to use
             - model_class (str): The model class to use (e.g., "RandomForestRegressor")
             - target_column (str): Column name of the target variable
             - feature_list (list[str]): A list of columns for the features
@@ -103,16 +104,15 @@ def generate_model_script(template_params: dict) -> str:
     Returns:
         str: The name of the generated model script
     """
-    from workbench.api import ModelType  # Avoid circular import
+    from workbench.api import ModelType, ModelFramework  # Avoid circular import
 
     # Determine which template to use based on model type
     if template_params.get("model_class"):
-        if template_params["model_class"].lower() == "pytorch":
-            template_name = "pytorch.template"
-            model_script_dir = "pytorch_model"
-        else:
-            template_name = "scikit_learn.template"
-            model_script_dir = "scikit_learn"
+        template_name = "scikit_learn.template"
+        model_script_dir = "scikit_learn"
+    elif template_params["model_framework"] == ModelFramework.PYTORCH_TABULAR:
+        template_name = "pytorch.template"
+        model_script_dir = "pytorch_model"
     elif template_params["model_type"] in [ModelType.REGRESSOR, ModelType.CLASSIFIER]:
         template_name = "xgb_model.template"
         model_script_dir = "xgb_model"

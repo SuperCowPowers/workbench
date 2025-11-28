@@ -160,6 +160,7 @@ class FeaturesToModel(Transform):
         template_params = {
             "model_imports": self.model_import_str,
             "model_type": self.model_type,
+            "model_framework": self.model_framework,
             "model_class": self.model_class,
             "target_column": self.target_column,
             "feature_list": self.model_feature_list,
