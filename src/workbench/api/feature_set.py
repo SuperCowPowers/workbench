@@ -12,7 +12,7 @@ import pandas as pd
 from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
-from workbench.api.model import Model, ModelType
+from workbench.api.model import Model, ModelType, ModelFramework
 
 
 class FeatureSet(FeatureSetCore):
@@ -79,6 +79,7 @@ class FeatureSet(FeatureSetCore):
         self,
         name: str,
         model_type: ModelType,
+        model_framework: ModelFramework = ModelFramework.XGBOOST,
         tags: list = None,
         description: str = None,
         feature_list: list = None,
@@ -98,11 +99,12 @@ class FeatureSet(FeatureSetCore):
 
             name (str): The name of the Model to create
             model_type (ModelType): The type of model to create (See workbench.model.ModelType)
+            model_framework (ModelFramework, optional): The framework to use for the model (default: XGBOOST)
             tags (list, optional): Set the tags for the model.  If not given tags will be generated.
             description (str, optional): Set the description for the model. If not give a description is generated.
             feature_list (list, optional): Set the feature list for the model. If not given a feature list is generated.
             target_column (str, optional): The target column for the model (use None for unsupervised model)
-            model_class (str, optional): Model class to use (e.g. "KMeans", "PyTorch", default: None)
+            model_class (str, optional): Model class to use (e.g. "KMeans", default: None)
             model_import_str (str, optional): The import for the model (e.g. "from sklearn.cluster import KMeans")
             custom_script (str, optional): The custom script to use for the model (default: None)
             training_image (str, optional): The training image to use (default: "training")
@@ -128,8 +130,8 @@ class FeatureSet(FeatureSetCore):
         # Create the Model Tags
         tags = [name] if tags is None else tags
 
-        # If the model_class is PyTorch, ensure we set the training and inference images
-        if model_class and model_class.lower() == "pytorch":
+        # If the model framework is PyTorch, ensure we set the training and inference images
+        if model_framework == ModelFramework.PYTORCH_TABULAR:
             training_image = "pytorch_training"
             inference_image = "pytorch_inference"
 
@@ -138,6 +140,7 @@ class FeatureSet(FeatureSetCore):
             feature_name=self.name,
             model_name=name,
             model_type=model_type,
+            model_framework=model_framework,
             model_class=model_class,
             model_import_str=model_import_str,
             custom_script=custom_script,

@@ -14,7 +14,7 @@ These class provide high-level APIs for the Workbench package, offering easy acc
 
 from .data_source import DataSource
 from .feature_set import FeatureSet
-from .model import Model, ModelType
+from .model import Model, ModelType, ModelFramework
 from .endpoint import Endpoint
 from .meta import Meta
 from .parameter_store import ParameterStore
@@ -25,6 +25,7 @@ __all__ = [
     "FeatureSet",
     "Model",
     "ModelType",
+    "ModelFramework",
     "Endpoint",
     "Meta",
     "ParameterStore",

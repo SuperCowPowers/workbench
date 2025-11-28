@@ -98,11 +98,10 @@ class ModelCore(Artifact):
         ```
     """
 
-    def __init__(self, model_name: str, model_type: ModelType = None, **kwargs):
+    def __init__(self, model_name: str, **kwargs):
         """ModelCore Initialization
         Args:
             model_name (str): Name of Model in Workbench.
-            model_type (ModelType, optional): Set this for newly created Models. Defaults to None.
             **kwargs: Additional keyword arguments
         """
 
@@ -136,10 +135,8 @@ class ModelCore(Artifact):
                 self.latest_model = self.model_meta["ModelPackageList"][0]
                 self.description = self.latest_model.get("ModelPackageDescription", "-")
                 self.training_job_name = self._extract_training_job_name()
-                if model_type:
-                    self._set_model_type(model_type)
-                else:
-                    self.model_type = self._get_model_type()
+                self.model_type = self._get_model_type()
+                self.model_framework = self._get_model_framework()
             except (IndexError, KeyError):
                 self.log.critical(f"Model {self.model_name} appears to be malformed. Delete and recreate it!")
                 return

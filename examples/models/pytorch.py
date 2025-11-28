@@ -1,4 +1,4 @@
-from workbench.api import FeatureSet, Model, ModelType, Endpoint
+from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
 
 # Grab a FeatureSet
 my_features = FeatureSet("aqsol_features")
@@ -15,7 +15,7 @@ if recreate or not Model("aqsol-pytorch-reg").exists():
     m = feature_set.to_model(
         name="aqsol-pytorch-reg",
         model_type=ModelType.REGRESSOR,
-        model_class="PyTorch",
+        model_framework=ModelFramework.PYTORCH_TABULAR,
         feature_list=feature_list,
         target_column=target,
         description="PyTorch Regression Model for AQSol",
@@ -39,7 +39,7 @@ if recreate or not Model("aqsol-pytorch-class").exists():
     m = feature_set.to_model(
         name="aqsol-pytorch-class",
         model_type=ModelType.CLASSIFIER,
-        model_class="PyTorch",
+        model_framework=ModelFramework.PYTORCH_TABULAR,
         feature_list=feature_list,
         target_column="solubility_class",
         description="PyTorch Classification Model for AQSol",

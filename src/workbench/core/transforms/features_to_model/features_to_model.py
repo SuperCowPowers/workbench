@@ -277,8 +277,10 @@ class FeaturesToModel(Transform):
         self.log.info("Post-Transform: Calling onboard() on the Model...")
         time.sleep(3)  # Give AWS time to complete Model register
 
-        # Store the model feature_list and target_column in the workbench_meta
-        output_model = ModelCore(self.output_name, model_type=self.model_type)
+        # Store the model metadata information
+        output_model = ModelCore(self.output_name)
+        output_model._set_model_type(self.model_type)
+        output_model._set_model_framework(self.model_framework)
         output_model.upsert_workbench_meta({"workbench_model_features": self.model_feature_list})
         output_model.upsert_workbench_meta({"workbench_model_target": self.target_column})
 
@@ -333,12 +335,11 @@ if __name__ == "__main__":
 
     # Regression Model
     input_name = "abalone_features"
-    output_name = "test-abalone-regression"
+    output_name = "abalone-regression"
     to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.REGRESSOR)
     to_model.set_output_tags(["test"])
     to_model.transform(target_column="class_number_of_rings", description="Test Abalone Regression")
 
-    """
     # Classification Model
     input_name = "wine_features"
     output_name = "wine-classification"
@@ -348,10 +349,10 @@ if __name__ == "__main__":
 
     # Quantile Regression Model (Abalone)
     input_name = "abalone_features"
-    output_name = "abalone-quantile-reg"
+    output_name = "abalone-regression-uq"
     to_model = FeaturesToModel(input_name, output_name, ModelType.UQ_REGRESSOR)
-    to_model.set_output_tags(["abalone", "quantiles"])
-    to_model.transform(target_column="class_number_of_rings", description="Abalone Quantile Regression")
+    to_model.set_output_tags(["abalone", "uq"])
+    to_model.transform(target_column="class_number_of_rings", description="Abalone UQ Regression")
 
     # Scikit-Learn Kmeans Clustering Model
     input_name = "wine_features"
@@ -405,7 +406,7 @@ if __name__ == "__main__":
     scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
     my_script = scripts_root / "custom_models" / "chem_info" / "molecular_descriptors.py"
     input_name = "aqsol_features"
-    output_name = "smiles-to-taut-md-stereo-v0"
+    output_name = "test-smiles-to-taut-md-stereo"
     to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.TRANSFORMER, custom_script=my_script)
     to_model.set_output_tags(["smiles", "molecular descriptors"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Molecular Descriptors")
@@ -418,13 +419,3 @@ if __name__ == "__main__":
     to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.TRANSFORMER, custom_script=my_script)
     to_model.set_output_tags(["smiles", "morgan fingerprints"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Morgan Fingerprints")
-
-    # Tautomerization Model
-    scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
-    my_script = scripts_root / "custom_models" / "chem_info" / "tautomerize.py"
-    input_name = "aqsol_features"
-    output_name = "tautomerize-v0"
-    to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.TRANSFORMER, custom_script=my_script)
-    to_model.set_output_tags(["smiles", "tautomerization"])
-    to_model.transform(target_column=None, feature_list=["smiles"], description="Tautomerize Smiles")
-    """
