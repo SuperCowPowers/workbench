@@ -13,8 +13,18 @@ Evaluation data is automatically pulled from the FeatureSet (training = FALSE ro
 Optional: testing/env.json with additional environment variables
 """
 
-import sys
+# Force CPU mode BEFORE any PyTorch imports to avoid MPS/CUDA issues on Mac
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+
+import torch
+torch.set_default_device('cpu')
+# Disable MPS entirely
+if hasattr(torch.backends, 'mps'):
+    torch.backends.mps.is_available = lambda: False
+
+import sys
 import json
 import importlib.util
 import tempfile
@@ -187,11 +197,6 @@ def main():
         print(f"Output columns: {result.columns.tolist()}")
         print()
         print(result.head(10).to_string())
-
-        # Save result
-        output_path = "harness_output.csv"
-        result.to_csv(output_path, index=False)
-        print(f"\nFull results saved to: {output_path}")
 
     finally:
         # Cleanup
