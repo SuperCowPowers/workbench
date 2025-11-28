@@ -9,7 +9,7 @@ import time
 # Local Imports
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
-from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelImages
+from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework, ModelImages
 from workbench.core.artifacts.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script, fill_template
 from workbench.utils.model_utils import supported_instance_types
@@ -33,6 +33,7 @@ class FeaturesToModel(Transform):
         feature_name: str,
         model_name: str,
         model_type: ModelType,
+        model_framework=ModelFramework.XGBOOST,
         model_class=None,
         model_import_str=None,
         custom_script=None,
@@ -46,6 +47,7 @@ class FeaturesToModel(Transform):
             feature_name (str): Name of the FeatureSet to use as input
             model_name (str): Name of the Model to create as output
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
+            model_framework (ModelFramework, optional): The model framework (default ModelFramework.XGBOOST)
             model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)
             model_import_str (str, optional): The import string for the model (default None)
             custom_script (str, optional): Custom script to use for the model (default None)
@@ -65,6 +67,7 @@ class FeaturesToModel(Transform):
         self.input_type = TransformInput.FEATURE_SET
         self.output_type = TransformOutput.MODEL
         self.model_type = model_type
+        self.model_framework = model_framework
         self.model_class = model_class
         self.model_import_str = model_import_str
         self.custom_script = str(custom_script) if custom_script else None
