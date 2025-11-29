@@ -130,8 +130,8 @@ class FeatureSet(FeatureSetCore):
         # Create the Model Tags
         tags = [name] if tags is None else tags
 
-        # If the model framework is PyTorch, ensure we set the training and inference images
-        if model_framework == ModelFramework.PYTORCH_TABULAR:
+        # If the model framework is PyTorch or ChemProp, ensure we set the training and inference images
+        if model_framework in (ModelFramework.PYTORCH_TABULAR, ModelFramework.CHEMPROP):
             training_image = "pytorch_training"
             inference_image = "pytorch_inference"
 
