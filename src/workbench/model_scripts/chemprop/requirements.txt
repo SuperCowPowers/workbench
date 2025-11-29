@@ -1,0 +1,11 @@
+# Requirements for ChemProp model scripts
+# Note: These are the local dev requirements. The Docker images have their own requirements.txt
+chemprop==2.2.1
+rdkit==2025.9.1
+torch>=2.0.0
+lightning>=2.0.0
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+awswrangler>=3.0.0
+joblib>=1.3.0

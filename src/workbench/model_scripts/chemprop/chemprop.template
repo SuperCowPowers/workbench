@@ -1,0 +1,497 @@
+# ChemProp Model Template for Workbench
+# Uses ChemProp 2.x Message Passing Neural Networks for molecular property prediction
+import os
+import argparse
+import json
+from io import StringIO
+
+import awswrangler as wr
+import numpy as np
+import pandas as pd
+import torch
+from lightning import pytorch as pl
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import (
+    mean_absolute_error,
+    r2_score,
+    root_mean_squared_error,
+    precision_recall_fscore_support,
+    confusion_matrix,
+)
+import joblib
+
+# ChemProp imports
+from chemprop import data, featurizers, models, nn
+
+# Template Parameters
+TEMPLATE_PARAMS = {
+    "model_type": "{{model_type}}",
+    "target": "{{target_column}}",
+    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
+    "train_all_data": "{{train_all_data}}",
+    "hyperparameters": "{{hyperparameters}}",
+}
+
+
+def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
+    """Check if the provided dataframe is empty and raise an exception if it is."""
+    if df.empty:
+        msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
+        print(msg)
+        raise ValueError(msg)
+
+
+def find_smiles_column(df: pd.DataFrame) -> str:
+    """Find the SMILES column in a DataFrame (any capitalization)."""
+    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
+    if smiles_column is None:
+        raise ValueError("Input DataFrame must have a 'smiles' column")
+    return smiles_column
+
+
+def expand_proba_column(df: pd.DataFrame, class_labels: list[str]) -> pd.DataFrame:
+    """Expands a column containing a list of probabilities into separate columns."""
+    proba_column = "pred_proba"
+    if proba_column not in df.columns:
+        raise ValueError('DataFrame does not contain a "pred_proba" column')
+
+    proba_splits = [f"{label}_proba" for label in class_labels]
+    proba_df = pd.DataFrame(df[proba_column].tolist(), columns=proba_splits)
+
+    df = df.drop(columns=[proba_column] + proba_splits, errors="ignore")
+    df = df.reset_index(drop=True)
+    df = pd.concat([df, proba_df], axis=1)
+    return df
+
+
+def create_molecule_datapoints(
+    smiles_list: list[str], targets: list[float] | None = None
+) -> list[data.MoleculeDatapoint]:
+    """Create ChemProp MoleculeDatapoints from SMILES strings.
+
+    Args:
+        smiles_list: List of SMILES strings
+        targets: Optional list of target values (for training)
+
+    Returns:
+        List of MoleculeDatapoint objects
+    """
+    datapoints = []
+    for i, smi in enumerate(smiles_list):
+        if targets is not None:
+            # Training: include target value
+            dp = data.MoleculeDatapoint.from_smi(smi, y=[targets[i]])
+        else:
+            # Inference: no target
+            dp = data.MoleculeDatapoint.from_smi(smi)
+        datapoints.append(dp)
+    return datapoints
+
+
+def build_mpnn_model(
+    hyperparameters: dict,
+    task: str = "regression",
+    num_classes: int | None = None,
+) -> models.MPNN:
+    """Build an MPNN model with the specified hyperparameters.
+
+    Args:
+        hyperparameters: Dictionary of model hyperparameters
+        task: Either "regression" or "classification"
+        num_classes: Number of classes for classification tasks
+
+    Returns:
+        Configured MPNN model
+    """
+    # Model hyperparameters with defaults
+    hidden_dim = hyperparameters.get("hidden_dim", 300)
+    depth = hyperparameters.get("depth", 3)
+    dropout = hyperparameters.get("dropout", 0.0)
+    ffn_hidden_dim = hyperparameters.get("ffn_hidden_dim", 300)
+    ffn_num_layers = hyperparameters.get("ffn_num_layers", 2)
+
+    # Message passing component
+    mp = nn.BondMessagePassing(d_h=hidden_dim, depth=depth, dropout=dropout)
+
+    # Aggregation
+    agg = nn.MeanAggregation()
+
+    # Build FFN based on task type
+    if task == "classification" and num_classes is not None:
+        # For classification, output size is num_classes
+        output_transform = nn.modules.SoftmaxTransform(dim=1)
+        ffn = nn.RegressionFFN(
+            input_dim=hidden_dim,
+            hidden_dim=ffn_hidden_dim,
+            n_layers=ffn_num_layers,
+            dropout=dropout,
+            output_transform=output_transform,
+            n_targets=num_classes,
+        )
+        # Use CrossEntropy criterion for classification
+        criterion = nn.CrossEntropyLoss()
+    else:
+        # Regression
+        ffn = nn.RegressionFFN(
+            input_dim=hidden_dim,
+            hidden_dim=ffn_hidden_dim,
+            n_layers=ffn_num_layers,
+            dropout=dropout,
+        )
+        criterion = nn.MSELoss()
+
+    # Create the MPNN model
+    mpnn = models.MPNN(
+        message_passing=mp,
+        agg=agg,
+        ffn=ffn,
+        batch_norm=True,
+        metrics=None,
+    )
+
+    return mpnn
+
+
+def model_fn(model_dir: str) -> models.MPNN:
+    """Load the ChemProp MPNN model from the specified directory.
+
+    Args:
+        model_dir: Directory containing the saved model
+
+    Returns:
+        Loaded MPNN model
+    """
+    model_path = os.path.join(model_dir, "chemprop_model.pt")
+    model = models.MPNN.load_from_file(model_path)
+    model.eval()
+    return model
+
+
+def input_fn(input_data, content_type: str) -> pd.DataFrame:
+    """Parse input data and return a DataFrame."""
+    if not input_data:
+        raise ValueError("Empty input data is not supported!")
+
+    if isinstance(input_data, bytes):
+        input_data = input_data.decode("utf-8")
+
+    if "text/csv" in content_type:
+        return pd.read_csv(StringIO(input_data))
+    elif "application/json" in content_type:
+        return pd.DataFrame(json.loads(input_data))
+    else:
+        raise ValueError(f"{content_type} not supported!")
+
+
+def output_fn(output_df: pd.DataFrame, accept_type: str) -> tuple[str, str]:
+    """Supports both CSV and JSON output formats."""
+    if "text/csv" in accept_type:
+        csv_output = output_df.fillna("N/A").to_csv(index=False)
+        return csv_output, "text/csv"
+    elif "application/json" in accept_type:
+        return output_df.to_json(orient="records"), "application/json"
+    else:
+        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
+
+
+def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
+    """Make predictions with the ChemProp MPNN model.
+
+    Args:
+        df: Input DataFrame containing SMILES column
+        model: The loaded MPNN model
+
+    Returns:
+        DataFrame with predictions added
+    """
+    model_type = TEMPLATE_PARAMS["model_type"]
+    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
+
+    # Load label encoder if present (classification)
+    label_encoder = None
+    label_encoder_path = os.path.join(model_dir, "label_encoder.joblib")
+    if os.path.exists(label_encoder_path):
+        label_encoder = joblib.load(label_encoder_path)
+
+    # Find SMILES column
+    smiles_column = find_smiles_column(df)
+
+    smiles_list = df[smiles_column].tolist()
+
+    # Track invalid SMILES
+    valid_mask = []
+    valid_smiles = []
+    for smi in smiles_list:
+        if smi and isinstance(smi, str) and len(smi.strip()) > 0:
+            valid_mask.append(True)
+            valid_smiles.append(smi.strip())
+        else:
+            valid_mask.append(False)
+
+    valid_mask = np.array(valid_mask)
+    print(f"Valid SMILES: {sum(valid_mask)} / {len(smiles_list)}")
+
+    # Initialize prediction column with NaN
+    df["prediction"] = np.nan
+
+    if sum(valid_mask) == 0:
+        print("Warning: No valid SMILES to predict on")
+        return df
+
+    # Create datapoints for prediction
+    datapoints = create_molecule_datapoints(valid_smiles)
+    dataset = data.MoleculeDataset(datapoints)
+    dataloader = data.build_dataloader(dataset, shuffle=False)
+
+    # Make predictions
+    trainer = pl.Trainer(
+        accelerator="auto",
+        logger=False,
+        enable_progress_bar=False,
+    )
+
+    with torch.inference_mode():
+        predictions = trainer.predict(model, dataloader)
+
+    # Concatenate batch predictions
+    preds = np.concatenate([p.numpy() for p in predictions], axis=0)
+
+    if model_type == "classifier" and label_encoder is not None:
+        # For classification, get class predictions and probabilities
+        if preds.ndim == 2 and preds.shape[1] > 1:
+            # Multi-class: preds are probabilities
+            class_preds = np.argmax(preds, axis=1)
+            decoded_preds = label_encoder.inverse_transform(class_preds)
+            df.loc[valid_mask, "prediction"] = decoded_preds
+
+            # Add probability columns
+            proba_series = pd.Series([None] * len(df), index=df.index, dtype=object)
+            proba_series.loc[valid_mask] = [p.tolist() for p in preds]
+            df["pred_proba"] = proba_series
+            df = expand_proba_column(df, label_encoder.classes_)
+        else:
+            # Binary or single output
+            class_preds = (preds.flatten() > 0.5).astype(int)
+            decoded_preds = label_encoder.inverse_transform(class_preds)
+            df.loc[valid_mask, "prediction"] = decoded_preds
+    else:
+        # Regression: direct predictions
+        df.loc[valid_mask, "prediction"] = preds.flatten()
+
+    return df
+
+
+if __name__ == "__main__":
+    """Training script for ChemProp MPNN model"""
+
+    # Template Parameters
+    target = TEMPLATE_PARAMS["target"]
+    model_type = TEMPLATE_PARAMS["model_type"]
+    model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
+    train_all_data = TEMPLATE_PARAMS["train_all_data"]
+    hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
+    validation_split = 0.2
+
+    # Script arguments for input/output directories
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
+    args = parser.parse_args()
+
+    # Read the training data
+    training_files = [os.path.join(args.train, f) for f in os.listdir(args.train) if f.endswith(".csv")]
+    print(f"Training Files: {training_files}")
+
+    all_df = pd.concat([pd.read_csv(f, engine="python") for f in training_files])
+    print(f"All Data Shape: {all_df.shape}")
+
+    check_dataframe(all_df, "training_df")
+
+    # Find SMILES column
+    smiles_column = find_smiles_column(all_df)
+
+    # Drop rows with missing SMILES or target values
+    initial_count = len(all_df)
+    all_df = all_df.dropna(subset=[smiles_column, target])
+    dropped = initial_count - len(all_df)
+    if dropped > 0:
+        print(f"Dropped {dropped} rows with missing SMILES or target values")
+
+    print(f"Target: {target}")
+    print(f"SMILES Column: {smiles_column}")
+    print(f"Data Shape after cleaning: {all_df.shape}")
+
+    # Set up label encoder for classification
+    label_encoder = None
+    if model_type == "classifier":
+        label_encoder = LabelEncoder()
+        all_df[target] = label_encoder.fit_transform(all_df[target])
+        num_classes = len(label_encoder.classes_)
+        print(f"Classification task with {num_classes} classes: {label_encoder.classes_}")
+    else:
+        num_classes = None
+
+    # Split data
+    if train_all_data:
+        print("Training on ALL of the data")
+        df_train = all_df.copy()
+        df_val = all_df.copy()
+    elif "training" in all_df.columns:
+        print("Found training column, splitting data based on training column")
+        df_train = all_df[all_df["training"]].copy()
+        df_val = all_df[~all_df["training"]].copy()
+    else:
+        print("WARNING: No training column found, splitting data with random state=42")
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
+
+    print(f"TRAIN: {df_train.shape}")
+    print(f"VALIDATION: {df_val.shape}")
+
+    # Create ChemProp datasets
+    train_datapoints = create_molecule_datapoints(
+        df_train[smiles_column].tolist(),
+        df_train[target].tolist(),
+    )
+    val_datapoints = create_molecule_datapoints(
+        df_val[smiles_column].tolist(),
+        df_val[target].tolist(),
+    )
+
+    train_dataset = data.MoleculeDataset(train_datapoints)
+    val_dataset = data.MoleculeDataset(val_datapoints)
+
+    # Get batch size from hyperparameters
+    batch_size = hyperparameters.get("batch_size", min(64, max(16, len(df_train) // 16)))
+
+    train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False)
+
+    # Build the model
+    print(f"Hyperparameters: {hyperparameters}")
+    task = "classification" if model_type == "classifier" else "regression"
+    mpnn = build_mpnn_model(hyperparameters, task=task, num_classes=num_classes)
+
+    # Training configuration
+    max_epochs = hyperparameters.get("max_epochs", 50)
+    patience = hyperparameters.get("patience", 10)
+
+    # Set up trainer
+    callbacks = [
+        pl.callbacks.EarlyStopping(monitor="val_loss", patience=patience, mode="min"),
+        pl.callbacks.ModelCheckpoint(
+            dirpath=args.model_dir,
+            filename="best_model",
+            monitor="val_loss",
+            mode="min",
+            save_top_k=1,
+        ),
+    ]
+
+    trainer = pl.Trainer(
+        accelerator="auto",
+        max_epochs=max_epochs,
+        callbacks=callbacks,
+        logger=False,
+        enable_progress_bar=True,
+    )
+
+    # Train the model
+    print("Starting training...")
+    trainer.fit(mpnn, train_loader, val_loader)
+    print("Training complete!")
+
+    # Load best checkpoint for validation predictions
+    best_ckpt = os.path.join(args.model_dir, "best_model.ckpt")
+    if os.path.exists(best_ckpt):
+        mpnn = models.MPNN.load_from_checkpoint(best_ckpt)
+        print("Loaded best checkpoint for evaluation")
+
+    mpnn.eval()
+
+    # Make predictions on validation set
+    print("Making Predictions on Validation Set...")
+    with torch.inference_mode():
+        val_predictions = trainer.predict(mpnn, val_loader)
+
+    preds = np.concatenate([p.numpy() for p in val_predictions], axis=0)
+    y_validate = df_val[target].values
+
+    if model_type == "classifier":
+        # Classification metrics
+        if preds.ndim == 2 and preds.shape[1] > 1:
+            class_preds = np.argmax(preds, axis=1)
+        else:
+            class_preds = (preds.flatten() > 0.5).astype(int)
+
+        # Decode labels for metrics
+        y_validate_decoded = label_encoder.inverse_transform(y_validate.astype(int))
+        preds_decoded = label_encoder.inverse_transform(class_preds)
+
+        # Calculate metrics
+        label_names = label_encoder.classes_
+        scores = precision_recall_fscore_support(y_validate_decoded, preds_decoded, average=None, labels=label_names)
+
+        score_df = pd.DataFrame({
+            target: label_names,
+            "precision": scores[0],
+            "recall": scores[1],
+            "f1": scores[2],
+            "support": scores[3],
+        })
+
+        # Output metrics per class
+        metrics = ["precision", "recall", "f1", "support"]
+        for t in label_names:
+            for m in metrics:
+                value = score_df.loc[score_df[target] == t, m].iloc[0]
+                print(f"Metrics:{t}:{m} {value}")
+
+        # Confusion matrix
+        conf_mtx = confusion_matrix(y_validate_decoded, preds_decoded, labels=label_names)
+        for i, row_name in enumerate(label_names):
+            for j, col_name in enumerate(label_names):
+                value = conf_mtx[i, j]
+                print(f"ConfusionMatrix:{row_name}:{col_name} {value}")
+
+        # Save validation predictions
+        df_val = df_val.copy()
+        df_val["prediction"] = preds_decoded
+        if preds.ndim == 2 and preds.shape[1] > 1:
+            df_val["pred_proba"] = [p.tolist() for p in preds]
+            df_val = expand_proba_column(df_val, label_names)
+
+    else:
+        # Regression metrics
+        preds_flat = preds.flatten()
+        rmse = root_mean_squared_error(y_validate, preds_flat)
+        mae = mean_absolute_error(y_validate, preds_flat)
+        r2 = r2_score(y_validate, preds_flat)
+        print(f"RMSE: {rmse:.3f}")
+        print(f"MAE: {mae:.3f}")
+        print(f"R2: {r2:.3f}")
+        print(f"NumRows: {len(df_val)}")
+
+        df_val = df_val.copy()
+        df_val["prediction"] = preds_flat
+
+    # Save validation predictions to S3
+    output_columns = [target, "prediction"]
+    output_columns += [col for col in df_val.columns if col.endswith("_proba")]
+    wr.s3.to_csv(
+        df_val[output_columns],
+        path=f"{model_metrics_s3_path}/validation_predictions.csv",
+        index=False,
+    )
+
+    # Save the model
+    model_path = os.path.join(args.model_dir, "chemprop_model.pt")
+    models.save_model(model_path, mpnn)
+    print(f"Model saved to {model_path}")
+
+    # Save label encoder if classification
+    if label_encoder is not None:
+        joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
