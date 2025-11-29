@@ -67,7 +67,7 @@ def expand_proba_column(df: pd.DataFrame, class_labels: list[str]) -> pd.DataFra
 
 def create_molecule_datapoints(
     smiles_list: list[str], targets: list[float] | None = None
-) -> list[data.MoleculeDatapoint]:
+) -> tuple[list[data.MoleculeDatapoint], list[int]]:
     """Create ChemProp MoleculeDatapoints from SMILES strings.
 
     Args:
@@ -75,18 +75,32 @@ def create_molecule_datapoints(
         targets: Optional list of target values (for training)
 
     Returns:
-        List of MoleculeDatapoint objects
+        Tuple of (list of MoleculeDatapoint objects, list of valid indices)
     """
+    from rdkit import Chem
+
     datapoints = []
+    valid_indices = []
+    invalid_count = 0
+
     for i, smi in enumerate(smiles_list):
+        # Validate SMILES with RDKit first
+        mol = Chem.MolFromSmiles(smi)
+        if mol is None:
+            invalid_count += 1
+            continue
+
         if targets is not None:
-            # Training: include target value
             dp = data.MoleculeDatapoint.from_smi(smi, y=[targets[i]])
         else:
-            # Inference: no target
             dp = data.MoleculeDatapoint.from_smi(smi)
         datapoints.append(dp)
-    return datapoints
+        valid_indices.append(i)
+
+    if invalid_count > 0:
+        print(f"Warning: Skipped {invalid_count} invalid SMILES strings")
+
+    return datapoints, valid_indices
 
 
 def build_mpnn_model(
@@ -109,7 +123,7 @@ def build_mpnn_model(
     depth = hyperparameters.get("depth", 3)
     dropout = hyperparameters.get("dropout", 0.0)
     ffn_hidden_dim = hyperparameters.get("ffn_hidden_dim", 300)
-    ffn_num_layers = hyperparameters.get("ffn_num_layers", 2)
+    ffn_num_layers = hyperparameters.get("ffn_num_layers", 1)
 
     # Message passing component
     mp = nn.BondMessagePassing(d_h=hidden_dim, depth=depth, dropout=dropout)
@@ -119,27 +133,22 @@ def build_mpnn_model(
 
     # Build FFN based on task type
     if task == "classification" and num_classes is not None:
-        # For classification, output size is num_classes
-        output_transform = nn.modules.SoftmaxTransform(dim=1)
-        ffn = nn.RegressionFFN(
+        # Multi-class classification
+        ffn = nn.MulticlassClassificationFFN(
+            n_classes=num_classes,
             input_dim=hidden_dim,
             hidden_dim=ffn_hidden_dim,
             n_layers=ffn_num_layers,
             dropout=dropout,
-            output_transform=output_transform,
-            n_targets=num_classes,
         )
-        # Use CrossEntropy criterion for classification
-        criterion = nn.CrossEntropyLoss()
     else:
-        # Regression
+        # Regression (uses MSE loss by default)
         ffn = nn.RegressionFFN(
             input_dim=hidden_dim,
             hidden_dim=ffn_hidden_dim,
             n_layers=ffn_num_layers,
             dropout=dropout,
         )
-        criterion = nn.MSELoss()
 
     # Create the MPNN model
     mpnn = models.MPNN(
@@ -239,8 +248,13 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
         print("Warning: No valid SMILES to predict on")
         return df
 
-    # Create datapoints for prediction
-    datapoints = create_molecule_datapoints(valid_smiles)
+    # Create datapoints for prediction (filter out invalid SMILES)
+    datapoints, rdkit_valid_indices = create_molecule_datapoints(valid_smiles)
+
+    if len(datapoints) == 0:
+        print("Warning: No valid SMILES after RDKit validation")
+        return df
+
     dataset = data.MoleculeDataset(datapoints)
     dataloader = data.build_dataloader(dataset, shuffle=False)
 
@@ -256,6 +270,12 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
 
     # Concatenate batch predictions
     preds = np.concatenate([p.numpy() for p in predictions], axis=0)
+
+    # Map predictions back to valid_mask positions (accounting for RDKit-invalid SMILES)
+    # rdkit_valid_indices tells us which of the valid_smiles were actually valid
+    valid_positions = np.where(valid_mask)[0][rdkit_valid_indices]
+    valid_mask = np.zeros(len(df), dtype=bool)
+    valid_mask[valid_positions] = True
 
     if model_type == "classifier" and label_encoder is not None:
         # For classification, get class predictions and probabilities
@@ -351,15 +371,21 @@ if __name__ == "__main__":
     print(f"TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
-    # Create ChemProp datasets
-    train_datapoints = create_molecule_datapoints(
+    # Create ChemProp datasets (invalid SMILES are filtered out)
+    train_datapoints, train_valid_idx = create_molecule_datapoints(
         df_train[smiles_column].tolist(),
         df_train[target].tolist(),
     )
-    val_datapoints = create_molecule_datapoints(
+    val_datapoints, val_valid_idx = create_molecule_datapoints(
         df_val[smiles_column].tolist(),
         df_val[target].tolist(),
     )
+
+    # Update dataframes to only include valid molecules
+    df_train = df_train.iloc[train_valid_idx].reset_index(drop=True)
+    df_val = df_val.iloc[val_valid_idx].reset_index(drop=True)
+    print(f"TRAIN (after SMILES validation): {df_train.shape}")
+    print(f"VALIDATION (after SMILES validation): {df_val.shape}")
 
     train_dataset = data.MoleculeDataset(train_datapoints)
     val_dataset = data.MoleculeDataset(val_datapoints)

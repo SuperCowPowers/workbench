@@ -11,6 +11,7 @@ if recreate or not Model("aqsol-chemprop-reg").exists():
         model_type=ModelType.REGRESSOR,
         model_framework=ModelFramework.CHEMPROP,
         target_column="solubility",
+        feature_list=["smiles"],  # Chemprop uses SMILES as input
         description="Chemprop Regression Model for AQSol",
         tags=["chemprop", "aqsol"],
         # ChemProp hyperparameters: hidden_dim, depth, dropout, ffn_hidden_dim, ffn_num_layers, batch_size, max_epochs, patience
@@ -35,6 +36,7 @@ if recreate or not Model("aqsol-chemprop-class").exists():
         model_type=ModelType.CLASSIFIER,
         model_framework=ModelFramework.CHEMPROP,
         target_column="solubility_class",
+        feature_list=["smiles"],  # Chemprop uses SMILES as input
         description="Chemprop Classification Model for AQSol",
         tags=["chemprop", "aqsol"],
         hyperparameters={"max_epochs": 100, "hidden_dim": 300, "depth": 3},
