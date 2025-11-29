@@ -1,5 +1,6 @@
 """PyTorch Tabular utilities for Workbench models."""
 
+# flake8: noqa: E402
 import logging
 import os
 import tempfile
@@ -231,7 +232,9 @@ def cross_fold_inference(
         nan_mask = df[feature_cols].isna().any(axis=1) | df[target_col].isna()
         if nan_mask.any():
             n_nan_rows = nan_mask.sum()
-            log.warning(f"Dropping {n_nan_rows} rows ({100*n_nan_rows/len(df):.1f}%) with NaN values for cross-validation")
+            log.warning(
+                f"Dropping {n_nan_rows} rows ({100*n_nan_rows/len(df):.1f}%) with NaN values for cross-validation"
+            )
             df = df[~nan_mask].reset_index(drop=True)
 
         X = df[feature_cols]
