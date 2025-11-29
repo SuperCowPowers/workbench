@@ -118,7 +118,10 @@ def _extract_model_configs(loaded_model: Any, n_train: int) -> dict:
 
     trainer_config = {}
     for key, default in trainer_defaults.items():
-        trainer_config[key] = getattr(config, key, default)
+        value = getattr(config, key, default)
+        if value == default and not hasattr(config, key):
+            log.warning(f"Trainer config '{key}' not found in loaded model, using default: {default}")
+        trainer_config[key] = value
 
     # Model config - extract from loaded model, matching template defaults
     model_defaults = {
@@ -132,7 +135,10 @@ def _extract_model_configs(loaded_model: Any, n_train: int) -> dict:
 
     model_config = {}
     for key, default in model_defaults.items():
-        model_config[key] = getattr(config, key, default)
+        value = getattr(config, key, default)
+        if value == default and not hasattr(config, key):
+            log.warning(f"Model config '{key}' not found in loaded model, using default: {default}")
+        model_config[key] = value
 
     return {"trainer": trainer_config, "model": model_config}
 
@@ -215,6 +221,13 @@ def cross_fold_inference(
         if continuous_cols:
             df[continuous_cols] = df[continuous_cols].astype("float64")
 
+        # Drop rows with NaN features or target (PyTorch Tabular cannot handle NaN values)
+        nan_mask = df[feature_cols].isna().any(axis=1) | df[target_col].isna()
+        if nan_mask.any():
+            n_nan_rows = nan_mask.sum()
+            log.warning(f"Dropping {n_nan_rows} rows ({100*n_nan_rows/len(df):.1f}%) with NaN values for cross-validation")
+            df = df[~nan_mask].reset_index(drop=True)
+
         X = df[feature_cols]
         y = df[target_col]
         ids = df[id_col]
@@ -261,7 +274,7 @@ def cross_fold_inference(
                 df_train[target_col] = label_encoder.transform(df_train[target_col])
                 df_val[target_col] = label_encoder.transform(df_val[target_col])
 
-            # Create configs for this fold - replicating the original model's setup
+            # Create configs for this fold - matching the training template exactly
             data_config = DataConfig(
                 target=[target_col],
                 continuous_cols=continuous_cols,
@@ -276,7 +289,7 @@ def cross_fold_inference(
                 early_stopping=trainer_params["early_stopping"],
                 early_stopping_patience=trainer_params["early_stopping_patience"],
                 gradient_clip_val=trainer_params["gradient_clip_val"],
-                checkpoints=None,
+                checkpoints="valid_loss",  # Save best model based on validation loss
                 accelerator="cpu",
             )
 
@@ -304,6 +317,10 @@ def cross_fold_inference(
             original_cwd = os.getcwd()
             try:
                 os.chdir("/tmp")
+                # Clean up checkpoint directory from previous fold
+                checkpoint_dir = "/tmp/saved_models"
+                if os.path.exists(checkpoint_dir):
+                    shutil.rmtree(checkpoint_dir)
                 tabular_model.fit(train=df_train, validation=df_val)
             finally:
                 os.chdir(original_cwd)
@@ -446,12 +463,14 @@ def cross_fold_inference(
         shutil.rmtree(model_dir, ignore_errors=True)
 
 
-def main():
+if __name__ == "__main__":
+
     # Tests for the PyTorch utilities
     from workbench.api import Model, Endpoint
 
     # Initialize Workbench model
     model_name = "caco2-er-reg-pytorch-test"
+    # model_name = "aqsol-pytorch-reg"
     print(f"Loading Workbench model: {model_name}")
     model = Model(model_name)
     print(f"Model Framework: {model.model_framework}")
@@ -459,7 +478,3 @@ def main():
     # Perform cross-fold inference
     end = Endpoint(model.endpoints()[0])
     end.cross_fold_inference()
-
-
-if __name__ == "__main__":
-    main()
