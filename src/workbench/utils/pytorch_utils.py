@@ -5,6 +5,12 @@ import os
 import tempfile
 from typing import Any, Tuple
 
+# Disable OpenMP parallelism to avoid segfaults on macOS with conflicting OpenMP runtimes
+# (libomp from LLVM vs libiomp from Intel). Must be set before importing numpy/sklearn/torch.
+# See: https://github.com/scikit-learn/scikit-learn/issues/21302
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
