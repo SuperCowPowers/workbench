@@ -18,14 +18,13 @@ import sys
 import json
 import importlib.util
 import tempfile
-import tarfile
 import shutil
 import pandas as pd
-import boto3
 import torch
 
 # Workbench Imports
 from workbench.api import Model, FeatureSet
+from workbench.utils.pytorch_utils import download_and_extract_model
 
 # Force CPU mode BEFORE any PyTorch imports to avoid MPS/CUDA issues on Mac
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
@@ -34,45 +33,6 @@ torch.set_default_device("cpu")
 # Disable MPS entirely
 if hasattr(torch.backends, "mps"):
     torch.backends.mps.is_available = lambda: False
-
-
-def download_and_extract_model(workbench_model: Model, model_dir: str) -> None:
-    """Download model artifact from S3 and extract it."""
-    s3_uri = workbench_model.model_data_url()
-    print(f"Downloading model from {s3_uri}...")
-
-    # Parse S3 URI
-    if not s3_uri.startswith("s3://"):
-        raise ValueError(f"Invalid S3 URI: {s3_uri}")
-
-    parts = s3_uri[5:].split("/", 1)
-    bucket = parts[0]
-    key = parts[1] if len(parts) > 1 else ""
-
-    # Download to temp file
-    s3 = boto3.client("s3")
-    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp:
-        tmp_path = tmp.name
-        s3.download_file(bucket, key, tmp_path)
-        print(f"Downloaded to {tmp_path}")
-
-    # Extract
-    print(f"Extracting to {model_dir}...")
-    with tarfile.open(tmp_path, "r:gz") as tar:
-        tar.extractall(model_dir)
-
-    # Cleanup temp file
-    os.unlink(tmp_path)
-
-    # List contents
-    print("Model directory contents:")
-    for root, dirs, files in os.walk(model_dir):
-        level = root.replace(model_dir, "").count(os.sep)
-        indent = "  " * level
-        print(f"{indent}{os.path.basename(root)}/")
-        sub_indent = "  " * (level + 1)
-        for file in files:
-            print(f"{sub_indent}{file}")
 
 
 def get_eval_data(workbench_model: Model) -> pd.DataFrame:
@@ -127,7 +87,7 @@ def main():
     # Initialize Workbench model
     print(f"Loading Workbench model: {model_name}")
     workbench_model = Model(model_name)
-    print(f"Model type: {workbench_model.model_type}")
+    print(f"Model Framework: {workbench_model.model_framework}")
     print()
 
     # Create a temporary model directory
@@ -150,7 +110,8 @@ def main():
         print(f"Set SM_MODEL_DIR = {model_dir}")
 
         # Download and extract model artifacts
-        download_and_extract_model(workbench_model, model_dir)
+        s3_uri = workbench_model.model_data_url()
+        download_and_extract_model(s3_uri, model_dir)
         print()
 
         # Load the LOCAL model script
