@@ -19,8 +19,6 @@ from sklearn.metrics import (
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
-import torch
-
 from workbench.utils.model_utils import safe_extract_tarfile
 from workbench.utils.pandas_utils import expand_proba_column
 

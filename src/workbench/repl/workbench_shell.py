@@ -1,6 +1,14 @@
+# flake8: noqa: E402
+import os
+import sys
+import logging
+import importlib
+import webbrowser
+import readline  # noqa: F401
+
 # Disable OpenMP parallelism to avoid segfaults with PyTorch in iPython
 # This is a known issue on macOS where libomp crashes during thread synchronization
-import os
+# Must be set before importing numpy/pandas/torch or any library that uses OpenMP
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
@@ -10,13 +18,8 @@ from distutils.version import LooseVersion
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
 from pygments.token import Token
-import sys
-import logging
-import importlib
 import botocore
-import webbrowser
 import pandas as pd
-import readline  # noqa
 
 try:
     import matplotlib.pyplot as plt  # noqa
