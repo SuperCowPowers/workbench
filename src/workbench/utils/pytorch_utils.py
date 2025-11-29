@@ -451,7 +451,7 @@ def main():
     from workbench.api import Model, Endpoint
 
     # Initialize Workbench model
-    model_name = "aqsol-pytorch-class"
+    model_name = "caco2-er-reg-pytorch-test"
     print(f"Loading Workbench model: {model_name}")
     model = Model(model_name)
     print(f"Model Framework: {model.model_framework}")
