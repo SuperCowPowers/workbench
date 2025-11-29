@@ -248,6 +248,10 @@ def cross_fold_inference(
         fold_metrics = []
         predictions_df = pd.DataFrame({id_col: ids, target_col: y})
 
+        # Initialize pred_proba column for classifiers (will be filled fold by fold)
+        if is_classifier:
+            predictions_df["pred_proba"] = pd.Series([None] * len(predictions_df), index=predictions_df.index, dtype=object)
+
         # Perform cross-validation
         for fold_idx, (train_idx, val_idx) in enumerate(kfold.split(X, y_for_cv), 1):
             print(f"\n{'='*50}")
@@ -282,7 +286,7 @@ def cross_fold_inference(
                 checkpoints=None,  # Disable checkpointing for cross-validation
                 accelerator="cpu",  # Force CPU
                 devices=1,
-                progress_bar="rich",  # Show progress
+                progress_bar="simple",  # Avoid rich conflicts with IPython/Jupyter
                 gradient_clip_val=config.get("gradient_clip_val", 1.0),
                 trainer_kwargs={"enable_model_summary": False},  # Reduce output noise
             )
@@ -461,7 +465,7 @@ def main():
     from workbench.api import Model, Endpoint
 
     # Initialize Workbench model
-    model_name = "aqsol-pytorch-class"
+    model_name = "aqsol-pytorch-reg"
     print(f"Loading Workbench model: {model_name}")
     model = Model(model_name)
     print(f"Model Framework: {model.model_framework}")
