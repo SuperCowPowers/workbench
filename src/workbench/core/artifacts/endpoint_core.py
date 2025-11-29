@@ -30,12 +30,13 @@ from sagemaker import Predictor
 
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
-from workbench.core.artifacts import FeatureSetCore, ModelCore, ModelType
+from workbench.core.artifacts import FeatureSetCore, ModelCore, ModelType, ModelFramework
 from workbench.utils.endpoint_metrics import EndpointMetrics
 from workbench.utils.cache import Cache
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.model_utils import uq_metrics
-from workbench.utils.xgboost_model_utils import cross_fold_inference
+from workbench.utils.xgboost_model_utils import cross_fold_inference as xgboost_cross_fold
+from workbench.utils.pytorch_utils import cross_fold_inference as pytorch_cross_fold
 from workbench_bridges.endpoints.fast_inference import fast_inference
 
 
@@ -452,7 +453,15 @@ class EndpointCore(Artifact):
         model = ModelCore(self.model_name)
 
         # Compute CrossFold (Metrics and Prediction Dataframe)
-        cross_fold_metrics, out_of_fold_df = cross_fold_inference(model, nfolds=nfolds)
+        if model.model_framework in [ModelFramework.UNKNOWN, ModelFramework.XGBOOST]:
+            cross_fold_metrics, out_of_fold_df = xgboost_cross_fold(model, nfolds=nfolds)
+        elif model.model_framework == ModelFramework.PYTORCH_TABULAR:
+            cross_fold_metrics, out_of_fold_df = pytorch_cross_fold(model, nfolds=nfolds)
+        else:
+            self.log.error(
+                f"Cross-Fold Inference not supported for Model Framework: {model.model_framework}. Returning empty DataFrame."
+            )
+            return pd.DataFrame()
 
         # If the metrics dataframe isn't empty save to the param store
         if not cross_fold_metrics.empty:
