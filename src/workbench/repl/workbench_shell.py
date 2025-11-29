@@ -1,3 +1,9 @@
+# Disable OpenMP parallelism to avoid segfaults with PyTorch in iPython
+# This is a known issue on macOS where libomp crashes during thread synchronization
+import os
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
 import IPython
 from IPython import start_ipython
 from distutils.version import LooseVersion
