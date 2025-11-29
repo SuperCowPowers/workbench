@@ -18,5 +18,13 @@ from .feature_set_core import FeatureSetCore
 from .model_core import ModelCore, ModelType, ModelFramework
 from .endpoint_core import EndpointCore
 
-__all__ = ["Artifact", "AthenaSource", "DataSourceAbstract", "FeatureSetCore",
-           "ModelCore", "ModelType", "ModelFramework", "EndpointCore"]
+__all__ = [
+    "Artifact",
+    "AthenaSource",
+    "DataSourceAbstract",
+    "FeatureSetCore",
+    "ModelCore",
+    "ModelType",
+    "ModelFramework",
+    "EndpointCore",
+]

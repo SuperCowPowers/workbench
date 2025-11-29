@@ -458,9 +458,7 @@ class EndpointCore(Artifact):
         elif model.model_framework == ModelFramework.PYTORCH_TABULAR:
             cross_fold_metrics, out_of_fold_df = pytorch_cross_fold(model, nfolds=nfolds)
         else:
-            self.log.error(
-                f"Cross-Fold Inference not supported for Model Framework: {model.model_framework}. Returning empty DataFrame."
-            )
+            self.log.error(f"Cross-Fold Inference not supported for Model Framework: {model.model_framework}.")
             return pd.DataFrame()
 
         # If the metrics dataframe isn't empty save to the param store

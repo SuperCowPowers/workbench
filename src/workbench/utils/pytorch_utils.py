@@ -105,11 +105,58 @@ def load_pytorch_model_artifacts(model_dir: str) -> tuple[Any, dict]:
     return model, artifacts
 
 
+def _extract_model_configs(loaded_model: Any, n_train: int) -> dict:
+    """Extract trainer and model configs from a loaded PyTorch Tabular model.
+
+    Args:
+        loaded_model: Loaded TabularModel instance
+        n_train: Number of training samples (used for batch_size calculation)
+
+    Returns:
+        Dictionary with 'trainer' and 'model' config dictionaries
+    """
+    config = loaded_model.config
+
+    # Trainer config - extract from loaded model, matching template defaults
+    trainer_defaults = {
+        "auto_lr_find": False,
+        "batch_size": min(128, max(32, n_train // 16)),
+        "max_epochs": 100,
+        "min_epochs": 10,
+        "early_stopping": "valid_loss",
+        "early_stopping_patience": 10,
+        "gradient_clip_val": 1.0,
+    }
+
+    trainer_config = {}
+    for key, default in trainer_defaults.items():
+        trainer_config[key] = getattr(config, key, default)
+
+    # Model config - extract from loaded model, matching template defaults
+    model_defaults = {
+        "layers": "256-128-64",
+        "activation": "LeakyReLU",
+        "learning_rate": 1e-3,
+        "dropout": 0.3,
+        "use_batch_norm": True,
+        "initialization": "kaiming",
+    }
+
+    model_config = {}
+    for key, default in model_defaults.items():
+        model_config[key] = getattr(config, key, default)
+
+    return {"trainer": trainer_config, "model": model_config}
+
+
 def cross_fold_inference(
     workbench_model: Any,
     nfolds: int = 5,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Performs K-fold cross-validation for PyTorch Tabular models.
+
+    Replicates the training setup from the original model to ensure
+    cross-validation results are comparable to the deployed model.
 
     Args:
         workbench_model: Workbench model object
@@ -138,10 +185,9 @@ def cross_fold_inference(
         # Load model and artifacts
         loaded_model, artifacts = load_pytorch_model_artifacts(model_dir)
         category_mappings = artifacts.get("category_mappings", {})
-        config = loaded_model.config
 
-        # Determine if classifier
-        is_classifier = config.task == "classification"
+        # Determine if classifier from the loaded model's config
+        is_classifier = loaded_model.config.task == "classification"
 
         # Use saved label encoder if available, otherwise create fresh one
         if is_classifier:
@@ -192,6 +238,15 @@ def cross_fold_inference(
         else:
             y_for_cv = y
 
+        # Extract configs from loaded model (pass approx train size for batch_size calculation)
+        n_train_approx = int(len(df) * (1 - 1 / nfolds))
+        configs = _extract_model_configs(loaded_model, n_train_approx)
+        trainer_params = configs["trainer"]
+        model_params = configs["model"]
+
+        log.info(f"Trainer config: {trainer_params}")
+        log.info(f"Model config: {model_params}")
+
         # Prepare KFold
         kfold = (StratifiedKFold if is_classifier else KFold)(n_splits=nfolds, shuffle=True, random_state=42)
 
@@ -216,7 +271,7 @@ def cross_fold_inference(
                 df_train[target_col] = label_encoder.transform(df_train[target_col])
                 df_val[target_col] = label_encoder.transform(df_val[target_col])
 
-            # Create fresh configs for this fold
+            # Create configs for this fold - replicating the original model's setup
             data_config = DataConfig(
                 target=[target_col],
                 continuous_cols=continuous_cols,
@@ -226,17 +281,17 @@ def cross_fold_inference(
             )
 
             trainer_config = TrainerConfig(
-                auto_lr_find=getattr(config, "auto_lr_find", False),
-                batch_size=getattr(config, "batch_size", 64),
-                max_epochs=getattr(config, "max_epochs", 100),
-                min_epochs=getattr(config, "min_epochs", 10),
-                early_stopping=getattr(config, "early_stopping", "valid_loss"),
-                early_stopping_patience=getattr(config, "early_stopping_patience", 10),
-                checkpoints=None,
-                accelerator="cpu",
+                auto_lr_find=trainer_params["auto_lr_find"],
+                batch_size=trainer_params["batch_size"],
+                max_epochs=trainer_params["max_epochs"],
+                min_epochs=trainer_params["min_epochs"],
+                early_stopping=trainer_params["early_stopping"],
+                early_stopping_patience=trainer_params["early_stopping_patience"],
+                gradient_clip_val=trainer_params["gradient_clip_val"],
+                checkpoints=None,  # Disable for CV
+                accelerator="cpu",  # Force CPU for local CV
                 devices=1,
                 progress_bar="simple",
-                gradient_clip_val=getattr(config, "gradient_clip_val", 1.0),
                 trainer_kwargs={"enable_model_summary": False},
             )
 
@@ -244,12 +299,12 @@ def cross_fold_inference(
 
             model_config = CategoryEmbeddingModelConfig(
                 task="classification" if is_classifier else "regression",
-                layers=getattr(config, "layers", "256-128-64"),
-                activation=getattr(config, "activation", "LeakyReLU"),
-                learning_rate=getattr(config, "learning_rate", 1e-3),
-                dropout=getattr(config, "dropout", 0.3),
-                use_batch_norm=getattr(config, "use_batch_norm", True),
-                initialization=getattr(config, "initialization", "kaiming"),
+                layers=model_params["layers"],
+                activation=model_params["activation"],
+                learning_rate=model_params["learning_rate"],
+                dropout=model_params["dropout"],
+                use_batch_norm=model_params["use_batch_norm"],
+                initialization=model_params["initialization"],
             )
 
             # Create and train fresh model
@@ -307,17 +362,19 @@ def cross_fold_inference(
                 roc_auc_overall = roc_auc_score(y_val_encoded, probs, multi_class="ovr", average="macro")
                 roc_auc_per_class = roc_auc_score(y_val_encoded, probs, multi_class="ovr", average=None)
 
-                fold_metrics.append({
-                    "fold": fold_idx,
-                    "precision": prec,
-                    "recall": rec,
-                    "f1": f1,
-                    "roc_auc": roc_auc_overall,
-                    "precision_per_class": prec_per_class,
-                    "recall_per_class": rec_per_class,
-                    "f1_per_class": f1_per_class,
-                    "roc_auc_per_class": roc_auc_per_class,
-                })
+                fold_metrics.append(
+                    {
+                        "fold": fold_idx,
+                        "precision": prec,
+                        "recall": rec,
+                        "f1": f1,
+                        "roc_auc": roc_auc_overall,
+                        "precision_per_class": prec_per_class,
+                        "recall_per_class": rec_per_class,
+                        "f1_per_class": f1_per_class,
+                        "roc_auc_per_class": roc_auc_per_class,
+                    }
+                )
 
                 print(f"Fold {fold_idx} - F1: {f1:.4f}, ROC-AUC: {roc_auc_overall:.4f}")
             else:
@@ -325,14 +382,16 @@ def cross_fold_inference(
                 spearman_corr, _ = spearmanr(y_val, preds)
                 rmse = np.sqrt(mean_squared_error(y_val, preds))
 
-                fold_metrics.append({
-                    "fold": fold_idx,
-                    "rmse": rmse,
-                    "mae": mean_absolute_error(y_val, preds),
-                    "medae": median_absolute_error(y_val, preds),
-                    "r2": r2_score(y_val, preds),
-                    "spearmanr": spearman_corr,
-                })
+                fold_metrics.append(
+                    {
+                        "fold": fold_idx,
+                        "rmse": rmse,
+                        "mae": mean_absolute_error(y_val, preds),
+                        "medae": median_absolute_error(y_val, preds),
+                        "r2": r2_score(y_val, preds),
+                        "spearmanr": spearman_corr,
+                    }
+                )
 
                 print(f"Fold {fold_idx} - RMSE: {rmse:.4f}, R2: {fold_metrics[-1]['r2']:.4f}")
 
@@ -353,34 +412,42 @@ def cross_fold_inference(
                 y_orig = label_encoder.inverse_transform(y_for_cv)
                 support = int((y_orig == class_name).sum())
 
-                metric_rows.append({
-                    "class": class_name,
-                    "precision": prec_scores.mean(),
-                    "recall": rec_scores.mean(),
-                    "f1": f1_scores.mean(),
-                    "roc_auc": roc_auc_scores.mean(),
-                    "support": support,
-                })
+                metric_rows.append(
+                    {
+                        "class": class_name,
+                        "precision": prec_scores.mean(),
+                        "recall": rec_scores.mean(),
+                        "f1": f1_scores.mean(),
+                        "roc_auc": roc_auc_scores.mean(),
+                        "support": support,
+                    }
+                )
 
-            metric_rows.append({
-                "class": "all",
-                "precision": fold_df["precision"].mean(),
-                "recall": fold_df["recall"].mean(),
-                "f1": fold_df["f1"].mean(),
-                "roc_auc": fold_df["roc_auc"].mean(),
-                "support": len(y_for_cv),
-            })
+            metric_rows.append(
+                {
+                    "class": "all",
+                    "precision": fold_df["precision"].mean(),
+                    "recall": fold_df["recall"].mean(),
+                    "f1": fold_df["f1"].mean(),
+                    "roc_auc": fold_df["roc_auc"].mean(),
+                    "support": len(y_for_cv),
+                }
+            )
 
             metrics_df = pd.DataFrame(metric_rows)
         else:
-            metrics_df = pd.DataFrame([{
-                "rmse": fold_df["rmse"].mean(),
-                "mae": fold_df["mae"].mean(),
-                "medae": fold_df["medae"].mean(),
-                "r2": fold_df["r2"].mean(),
-                "spearmanr": fold_df["spearmanr"].mean(),
-                "support": len(y_for_cv),
-            }])
+            metrics_df = pd.DataFrame(
+                [
+                    {
+                        "rmse": fold_df["rmse"].mean(),
+                        "mae": fold_df["mae"].mean(),
+                        "medae": fold_df["medae"].mean(),
+                        "r2": fold_df["r2"].mean(),
+                        "spearmanr": fold_df["spearmanr"].mean(),
+                        "support": len(y_for_cv),
+                    }
+                ]
+            )
 
         print(f"\n{'='*50}")
         print("Cross-Validation Summary")
