@@ -86,7 +86,7 @@ wine-classification
 	Description: Wine Classification Model
 	Tags: wine::classification
 	Performance Metrics:
-		[{'wine_class': 'TypeA', 'precision': 1.0, 'recall': 1.0, 'f1': 1.0, 'roc_auc': 1.0, 'support': 12}, {'wine_class': 'TypeB', 'precision': 1.0, 'recall': 1.0, 'fscore': 1.0, 'roc_auc': 1.0, 'support': 14}, {'wine_class': 'TypeC', 'precision': 1.0, 'recall': 1.0, 'fscore': 1.0, 'roc_auc': 1.0, 'support': 9}]
+		[{'wine_class': 'TypeA', 'precision': 1.0, 'recall': 1.0, 'f1': 1.0, 'roc_auc': 1.0, 'support': 12}, {'wine_class': 'TypeB', 'precision': 1.0, 'recall': 1.0, 'f1': 1.0, 'roc_auc': 1.0, 'support': 14}, {'wine_class': 'TypeC', 'precision': 1.0, 'recall': 1.0, 'f1': 1.0, 'roc_auc': 1.0, 'support': 9}]
 
 abalone-regression
 	ARN: arn:aws:sagemaker:us-west-2:507740646243:model-package-group/abalone-regression
