@@ -24,9 +24,6 @@ import torch
 from workbench.utils.model_utils import safe_extract_tarfile
 from workbench.utils.pandas_utils import expand_proba_column
 
-# Force CPU to avoid MPS segfaults on Apple Silicon
-torch.set_default_device("cpu")
-
 log = logging.getLogger("workbench")
 
 
@@ -282,9 +279,7 @@ def cross_fold_inference(
                 early_stopping_patience=trainer_params["early_stopping_patience"],
                 gradient_clip_val=trainer_params["gradient_clip_val"],
                 checkpoints=None,
-                accelerator="cpu",  # MPS causes segfaults on Mac
-                progress_bar="none",
-                trainer_kwargs={"enable_model_summary": False},
+                accelerator="cpu",
             )
 
             optimizer_config = OptimizerConfig()
