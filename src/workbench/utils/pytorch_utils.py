@@ -1,39 +1,31 @@
 """PyTorch Tabular utilities for Workbench models."""
 
+import logging
 import os
+import tempfile
+from typing import Any, Tuple
 
-# Force CPU mode BEFORE any PyTorch imports to avoid MPS/CUDA issues on Mac
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
-os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+import numpy as np
+import pandas as pd
+from scipy.stats import spearmanr
+from sklearn.metrics import (
+    mean_absolute_error,
+    mean_squared_error,
+    median_absolute_error,
+    precision_recall_fscore_support,
+    r2_score,
+    roc_auc_score,
+)
+from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.preprocessing import LabelEncoder
 
 import torch
 
-torch.set_default_device("cpu")
-if hasattr(torch.backends, "mps"):
-    torch.backends.mps.is_available = lambda: False
-
-import logging
-import tempfile
-import numpy as np
-import pandas as pd
-from typing import Any, Tuple
-
-# Sklearn imports
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import StratifiedKFold, KFold
-from sklearn.metrics import (
-    precision_recall_fscore_support,
-    roc_auc_score,
-    mean_squared_error,
-    mean_absolute_error,
-    median_absolute_error,
-    r2_score,
-)
-from scipy.stats import spearmanr
-
-# Workbench imports
-from workbench.utils.pandas_utils import expand_proba_column
 from workbench.utils.model_utils import safe_extract_tarfile
+from workbench.utils.pandas_utils import expand_proba_column
+
+# Force CPU to avoid MPS segfaults on Apple Silicon
+torch.set_default_device("cpu")
 
 log = logging.getLogger("workbench")
 
@@ -61,7 +53,7 @@ def download_and_extract_model(s3_uri: str, model_dir: str) -> None:
     os.unlink(local_tar_path)
 
 
-def load_pytorch_model_artifacts(model_dir: str) -> tuple[Any, dict]:
+def load_pytorch_model_artifacts(model_dir: str) -> Tuple[Any, dict]:
     """Load PyTorch Tabular model and artifacts from an extracted model directory.
 
     Args:
@@ -72,17 +64,18 @@ def load_pytorch_model_artifacts(model_dir: str) -> tuple[Any, dict]:
         artifacts_dict contains 'label_encoder' and 'category_mappings' if present.
     """
     import json
+
     import joblib
 
+    # pytorch-tabular saves complex objects, use legacy loading behavior
     os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
     from pytorch_tabular import TabularModel
 
-    # Load the TabularModel
     model_path = os.path.join(model_dir, "tabular_model")
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"No tabular_model directory found in {model_dir}")
 
-    # Change to /tmp for PyTorch Tabular (needs write access)
+    # PyTorch Tabular needs write access, so chdir to /tmp
     original_cwd = os.getcwd()
     try:
         os.chdir("/tmp")
@@ -167,11 +160,13 @@ def cross_fold_inference(
             - DataFrame with per-class metrics (and 'all' row for overall metrics)
             - DataFrame with columns: id, target, prediction, and *_proba columns (for classifiers)
     """
-    from workbench.api import FeatureSet
+    import shutil
+
     from pytorch_tabular import TabularModel
     from pytorch_tabular.config import DataConfig, OptimizerConfig, TrainerConfig
     from pytorch_tabular.models import CategoryEmbeddingModelConfig
-    import shutil
+
+    from workbench.api import FeatureSet
 
     # Create a temporary model directory
     model_dir = tempfile.mkdtemp(prefix="pytorch_cv_")
@@ -276,8 +271,6 @@ def cross_fold_inference(
                 target=[target_col],
                 continuous_cols=continuous_cols,
                 categorical_cols=categorical_cols,
-                num_workers=0,
-                pin_memory=False,
             )
 
             trainer_config = TrainerConfig(
@@ -288,10 +281,9 @@ def cross_fold_inference(
                 early_stopping=trainer_params["early_stopping"],
                 early_stopping_patience=trainer_params["early_stopping_patience"],
                 gradient_clip_val=trainer_params["gradient_clip_val"],
-                checkpoints=None,  # Disable for CV
-                accelerator="cpu",  # Force CPU for local CV
-                devices=1,
-                progress_bar="simple",
+                checkpoints=None,
+                accelerator="cpu",  # MPS causes segfaults on Mac
+                progress_bar="none",
                 trainer_kwargs={"enable_model_summary": False},
             )
 
