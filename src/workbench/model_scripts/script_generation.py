@@ -113,6 +113,9 @@ def generate_model_script(template_params: dict) -> str:
     elif template_params["model_framework"] == ModelFramework.PYTORCH_TABULAR:
         template_name = "pytorch.template"
         model_script_dir = "pytorch_model"
+    elif template_params["model_framework"] == ModelFramework.CHEMPROP:
+        template_name = "chemprop.template"
+        model_script_dir = "chemprop_model"
     elif template_params["model_type"] in [ModelType.REGRESSOR, ModelType.CLASSIFIER]:
         template_name = "xgb_model.template"
         model_script_dir = "xgb_model"
