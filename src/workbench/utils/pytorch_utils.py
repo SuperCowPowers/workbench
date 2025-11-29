@@ -4,6 +4,7 @@
 import logging
 import os
 import tempfile
+from pprint import pformat
 from typing import Any, Tuple
 
 # Disable OpenMP parallelism to avoid segfaults on macOS with conflicting OpenMP runtimes
@@ -256,8 +257,8 @@ def cross_fold_inference(
         trainer_params = configs["trainer"]
         model_params = configs["model"]
 
-        log.info(f"Trainer config: {trainer_params}")
-        log.info(f"Model config: {model_params}")
+        log.info(f"Trainer config:\n{pformat(trainer_params)}")
+        log.info(f"Model config:\n{pformat(model_params)}")
 
         # Prepare KFold
         kfold = (StratifiedKFold if is_classifier else KFold)(n_splits=nfolds, shuffle=True, random_state=42)
