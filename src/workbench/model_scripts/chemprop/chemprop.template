@@ -28,6 +28,7 @@ from chemprop import data, featurizers, models, nn
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
     "target": "{{target_column}}",
+    "feature_list": "{{feature_list}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "train_all_data": "{{train_all_data}}",
     "hyperparameters": "{{hyperparameters}}",
@@ -78,14 +79,22 @@ def expand_proba_column(df: pd.DataFrame, class_labels: list[str]) -> pd.DataFra
     return df
 
 
+def get_extra_features(feature_list: list[str]) -> list[str]:
+    """Get the list of extra descriptor features (excludes 'smiles')."""
+    return [f for f in feature_list if f.lower() != "smiles"]
+
+
 def create_molecule_datapoints(
-    smiles_list: list[str], targets: list[float] | None = None
+    smiles_list: list[str],
+    targets: list[float] | None = None,
+    extra_descriptors: np.ndarray | None = None,
 ) -> tuple[list[data.MoleculeDatapoint], list[int]]:
     """Create ChemProp MoleculeDatapoints from SMILES strings.
 
     Args:
         smiles_list: List of SMILES strings
         targets: Optional list of target values (for training)
+        extra_descriptors: Optional array of extra features (n_samples, n_features)
 
     Returns:
         Tuple of (list of MoleculeDatapoint objects, list of valid indices)
@@ -103,10 +112,11 @@ def create_molecule_datapoints(
             invalid_count += 1
             continue
 
-        if targets is not None:
-            dp = data.MoleculeDatapoint.from_smi(smi, y=[targets[i]])
-        else:
-            dp = data.MoleculeDatapoint.from_smi(smi)
+        # Build datapoint with optional target and extra descriptors
+        y = [targets[i]] if targets is not None else None
+        x_d = extra_descriptors[i] if extra_descriptors is not None else None
+
+        dp = data.MoleculeDatapoint.from_smi(smi, y=y, x_d=x_d)
         datapoints.append(dp)
         valid_indices.append(i)
 
@@ -120,6 +130,8 @@ def build_mpnn_model(
     hyperparameters: dict,
     task: str = "regression",
     num_classes: int | None = None,
+    n_extra_descriptors: int = 0,
+    x_d_transform: nn.ScaleTransform | None = None,
 ) -> models.MPNN:
     """Build an MPNN model with the specified hyperparameters.
 
@@ -127,6 +139,8 @@ def build_mpnn_model(
         hyperparameters: Dictionary of model hyperparameters
         task: Either "regression" or "classification"
         num_classes: Number of classes for classification tasks
+        n_extra_descriptors: Number of extra descriptor features (for hybrid mode)
+        x_d_transform: Optional transform for extra descriptors (scaling)
 
     Returns:
         Configured MPNN model
@@ -144,12 +158,15 @@ def build_mpnn_model(
     # Aggregation
     agg = nn.MeanAggregation()
 
+    # FFN input_dim = message passing output + extra descriptors
+    ffn_input_dim = hidden_dim + n_extra_descriptors
+
     # Build FFN based on task type
     if task == "classification" and num_classes is not None:
         # Multi-class classification
         ffn = nn.MulticlassClassificationFFN(
             n_classes=num_classes,
-            input_dim=hidden_dim,
+            input_dim=ffn_input_dim,
             hidden_dim=ffn_hidden_dim,
             n_layers=ffn_num_layers,
             dropout=dropout,
@@ -157,7 +174,7 @@ def build_mpnn_model(
     else:
         # Regression (uses MSE loss by default)
         ffn = nn.RegressionFFN(
-            input_dim=hidden_dim,
+            input_dim=ffn_input_dim,
             hidden_dim=ffn_hidden_dim,
             n_layers=ffn_num_layers,
             dropout=dropout,
@@ -170,6 +187,7 @@ def build_mpnn_model(
         predictor=ffn,
         batch_norm=True,
         metrics=None,
+        X_d_transform=x_d_transform,
     )
 
     return mpnn
@@ -221,7 +239,7 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
     """Make predictions with the ChemProp MPNN model.
 
     Args:
-        df: Input DataFrame containing SMILES column
+        df: Input DataFrame containing SMILES column (and extra features if hybrid mode)
         model: The loaded MPNN model
 
     Returns:
@@ -236,6 +254,16 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
     if os.path.exists(label_encoder_path):
         label_encoder = joblib.load(label_encoder_path)
 
+    # Load feature metadata and scaler if present (hybrid mode)
+    feature_metadata = None
+    x_d_scaler = None
+    feature_metadata_path = os.path.join(model_dir, "feature_metadata.joblib")
+    x_d_scaler_path = os.path.join(model_dir, "x_d_scaler.joblib")
+    if os.path.exists(feature_metadata_path):
+        feature_metadata = joblib.load(feature_metadata_path)
+        x_d_scaler = joblib.load(x_d_scaler_path)
+        print(f"Hybrid mode: using {len(feature_metadata['extra_feature_cols'])} extra features")
+
     # Find SMILES column
     smiles_column = find_smiles_column(df)
 
@@ -244,10 +272,12 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
     # Track invalid SMILES
     valid_mask = []
     valid_smiles = []
-    for smi in smiles_list:
+    valid_indices = []
+    for i, smi in enumerate(smiles_list):
         if smi and isinstance(smi, str) and len(smi.strip()) > 0:
             valid_mask.append(True)
             valid_smiles.append(smi.strip())
+            valid_indices.append(i)
         else:
             valid_mask.append(False)
 
@@ -264,8 +294,35 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
         print("Warning: No valid SMILES to predict on")
         return df
 
+    # Prepare extra features if in hybrid mode
+    extra_features = None
+    if feature_metadata is not None:
+        extra_feature_cols = feature_metadata["extra_feature_cols"]
+        col_means = np.array(feature_metadata["col_means"])
+
+        # Check columns exist
+        missing_cols = [col for col in extra_feature_cols if col not in df.columns]
+        if missing_cols:
+            print(f"Warning: Missing extra feature columns: {missing_cols}. Using mean values.")
+
+        # Extract features for valid SMILES rows
+        extra_features = np.zeros((len(valid_indices), len(extra_feature_cols)), dtype=np.float32)
+        for j, col in enumerate(extra_feature_cols):
+            if col in df.columns:
+                values = df.iloc[valid_indices][col].values.astype(np.float32)
+                # Fill NaN with training column means
+                nan_mask = np.isnan(values)
+                values[nan_mask] = col_means[j]
+                extra_features[:, j] = values
+            else:
+                # Column missing, use training mean
+                extra_features[:, j] = col_means[j]
+
+        # Scale features using the saved scaler
+        extra_features = x_d_scaler.transform(extra_features)
+
     # Create datapoints for prediction (filter out invalid SMILES)
-    datapoints, rdkit_valid_indices = create_molecule_datapoints(valid_smiles)
+    datapoints, rdkit_valid_indices = create_molecule_datapoints(valid_smiles, extra_descriptors=extra_features)
 
     if len(datapoints) == 0:
         print("Warning: No valid SMILES after RDKit validation")
@@ -330,14 +387,22 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
 
 if __name__ == "__main__":
     """Training script for ChemProp MPNN model"""
+    from sklearn.preprocessing import StandardScaler
 
     # Template Parameters
     target = TEMPLATE_PARAMS["target"]
     model_type = TEMPLATE_PARAMS["model_type"]
+    feature_list = TEMPLATE_PARAMS["feature_list"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
     hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
     validation_split = 0.2
+
+    # Determine extra features (all features except smiles)
+    extra_feature_cols = get_extra_features(feature_list)
+    use_extra_features = len(extra_feature_cols) > 0
+    print(f"Feature List: {feature_list}")
+    print(f"Extra Features (hybrid mode): {extra_feature_cols if use_extra_features else 'None (SMILES only)'}")
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
@@ -397,14 +462,51 @@ if __name__ == "__main__":
     print(f"TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
+    # Extract and scale extra features if using hybrid mode
+    x_d_scaler = None
+    x_d_transform = None
+    train_extra_features = None
+    val_extra_features = None
+
+    if use_extra_features:
+        # Check that all extra feature columns exist
+        missing_cols = [col for col in extra_feature_cols if col not in df_train.columns]
+        if missing_cols:
+            raise ValueError(f"Missing extra feature columns in training data: {missing_cols}")
+
+        # Extract features and handle NaN values
+        train_extra_features = df_train[extra_feature_cols].values.astype(np.float32)
+        val_extra_features = df_val[extra_feature_cols].values.astype(np.float32)
+
+        # Fill NaN with column means from training data
+        col_means = np.nanmean(train_extra_features, axis=0)
+        for i in range(train_extra_features.shape[1]):
+            train_nan_mask = np.isnan(train_extra_features[:, i])
+            val_nan_mask = np.isnan(val_extra_features[:, i])
+            train_extra_features[train_nan_mask, i] = col_means[i]
+            val_extra_features[val_nan_mask, i] = col_means[i]
+
+        # Scale extra features (we pre-scale here, so don't use X_d_transform in model)
+        x_d_scaler = StandardScaler()
+        train_extra_features = x_d_scaler.fit_transform(train_extra_features)
+        val_extra_features = x_d_scaler.transform(val_extra_features)
+
+        # Note: We set x_d_transform=None because we pre-scale the features ourselves
+        # The scaler is saved for inference to apply the same scaling
+        x_d_transform = None
+
+        print(f"Extra features shape: train={train_extra_features.shape}, val={val_extra_features.shape}")
+
     # Create ChemProp datasets (invalid SMILES are filtered out)
     train_datapoints, train_valid_idx = create_molecule_datapoints(
         df_train[smiles_column].tolist(),
         df_train[target].tolist(),
+        train_extra_features,
     )
     val_datapoints, val_valid_idx = create_molecule_datapoints(
         df_val[smiles_column].tolist(),
         df_val[target].tolist(),
+        val_extra_features,
     )
 
     # Update dataframes to only include valid molecules
@@ -425,7 +527,14 @@ if __name__ == "__main__":
     # Build the model
     print(f"Hyperparameters: {hyperparameters}")
     task = "classification" if model_type == "classifier" else "regression"
-    mpnn = build_mpnn_model(hyperparameters, task=task, num_classes=num_classes)
+    n_extra = len(extra_feature_cols) if use_extra_features else 0
+    mpnn = build_mpnn_model(
+        hyperparameters,
+        task=task,
+        num_classes=num_classes,
+        n_extra_descriptors=n_extra,
+        x_d_transform=x_d_transform,
+    )
 
     # Training configuration
     max_epochs = hyperparameters.get("max_epochs", 50)
@@ -571,3 +680,13 @@ if __name__ == "__main__":
     # Save label encoder if classification
     if label_encoder is not None:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
+
+    # Save extra feature metadata for inference (hybrid mode)
+    if use_extra_features:
+        feature_metadata = {
+            "extra_feature_cols": extra_feature_cols,
+            "col_means": col_means.tolist(),
+        }
+        joblib.dump(feature_metadata, os.path.join(args.model_dir, "feature_metadata.joblib"))
+        joblib.dump(x_d_scaler, os.path.join(args.model_dir, "x_d_scaler.joblib"))
+        print(f"Saved feature metadata for {len(extra_feature_cols)} extra features")
