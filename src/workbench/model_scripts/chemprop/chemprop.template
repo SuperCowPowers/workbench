@@ -51,13 +51,26 @@ def find_smiles_column(df: pd.DataFrame) -> str:
 
 
 def expand_proba_column(df: pd.DataFrame, class_labels: list[str]) -> pd.DataFrame:
-    """Expands a column containing a list of probabilities into separate columns."""
+    """Expands a column containing a list of probabilities into separate columns.
+
+    Handles None values for rows where predictions couldn't be made.
+    """
     proba_column = "pred_proba"
     if proba_column not in df.columns:
         raise ValueError('DataFrame does not contain a "pred_proba" column')
 
     proba_splits = [f"{label}_proba" for label in class_labels]
-    proba_df = pd.DataFrame(df[proba_column].tolist(), columns=proba_splits)
+    n_classes = len(class_labels)
+
+    # Handle None values by replacing with list of NaNs
+    proba_values = []
+    for val in df[proba_column]:
+        if val is None:
+            proba_values.append([np.nan] * n_classes)
+        else:
+            proba_values.append(val)
+
+    proba_df = pd.DataFrame(proba_values, columns=proba_splits)
 
     df = df.drop(columns=[proba_column] + proba_splits, errors="ignore")
     df = df.reset_index(drop=True)
@@ -154,7 +167,7 @@ def build_mpnn_model(
     mpnn = models.MPNN(
         message_passing=mp,
         agg=agg,
-        ffn=ffn,
+        predictor=ffn,
         batch_norm=True,
         metrics=None,
     )
@@ -241,8 +254,11 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
     valid_mask = np.array(valid_mask)
     print(f"Valid SMILES: {sum(valid_mask)} / {len(smiles_list)}")
 
-    # Initialize prediction column with NaN
-    df["prediction"] = np.nan
+    # Initialize prediction column (use object dtype for classifiers to avoid FutureWarning)
+    if model_type == "classifier":
+        df["prediction"] = pd.Series([None] * len(df), dtype=object)
+    else:
+        df["prediction"] = np.nan
 
     if sum(valid_mask) == 0:
         print("Warning: No valid SMILES to predict on")
@@ -268,8 +284,18 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
     with torch.inference_mode():
         predictions = trainer.predict(model, dataloader)
 
+    # Debug: check prediction shapes
+    print(f"Inference: Number of prediction batches: {len(predictions)}")
+    print(f"Inference: First batch shape: {predictions[0].shape}")
+
     # Concatenate batch predictions
     preds = np.concatenate([p.numpy() for p in predictions], axis=0)
+    print(f"Inference: Predictions shape after concat: {preds.shape}")
+
+    # ChemProp returns (n_samples, 1, n_classes) for multiclass - squeeze middle dim
+    if preds.ndim == 3 and preds.shape[1] == 1:
+        preds = preds.squeeze(axis=1)
+        print(f"Inference: Squeezed predictions shape: {preds.shape}")
 
     # Map predictions back to valid_mask positions (accounting for RDKit-invalid SMILES)
     # rdkit_valid_indices tells us which of the valid_smiles were actually valid
@@ -430,11 +456,12 @@ if __name__ == "__main__":
     trainer.fit(mpnn, train_loader, val_loader)
     print("Training complete!")
 
-    # Load best checkpoint for validation predictions
-    best_ckpt = os.path.join(args.model_dir, "best_model.ckpt")
-    if os.path.exists(best_ckpt):
-        mpnn = models.MPNN.load_from_checkpoint(best_ckpt)
-        print("Loaded best checkpoint for evaluation")
+    # Load the best checkpoint (PyTorch 2.6+ requires weights_only=False for Lightning checkpoints)
+    if trainer.checkpoint_callback and trainer.checkpoint_callback.best_model_path:
+        best_ckpt_path = trainer.checkpoint_callback.best_model_path
+        print(f"Loading best checkpoint from {best_ckpt_path}")
+        checkpoint = torch.load(best_ckpt_path, weights_only=False)
+        mpnn.load_state_dict(checkpoint["state_dict"])
 
     mpnn.eval()
 
@@ -443,15 +470,38 @@ if __name__ == "__main__":
     with torch.inference_mode():
         val_predictions = trainer.predict(mpnn, val_loader)
 
+    # Debug: check prediction shapes
+    print(f"Number of prediction batches: {len(val_predictions)}")
+    print(f"First batch shape: {val_predictions[0].shape}")
+    print(f"First batch ndim: {val_predictions[0].ndim}")
+
     preds = np.concatenate([p.numpy() for p in val_predictions], axis=0)
     y_validate = df_val[target].values
 
+    print(f"Predictions shape after concat: {preds.shape}, y_validate shape: {y_validate.shape}")
+
+    # ChemProp may return (n_samples, 1, n_classes) for multiclass - squeeze middle dim
+    if preds.ndim == 3 and preds.shape[1] == 1:
+        preds = preds.squeeze(axis=1)
+        print(f"Squeezed predictions shape: {preds.shape}")
+
     if model_type == "classifier":
-        # Classification metrics
+        # Classification metrics - handle multi-class output
         if preds.ndim == 2 and preds.shape[1] > 1:
+            # Multi-class: preds is (n_samples, n_classes), take argmax
             class_preds = np.argmax(preds, axis=1)
+        elif preds.ndim == 1:
+            # Binary with single output
+            class_preds = (preds > 0.5).astype(int)
         else:
-            class_preds = (preds.flatten() > 0.5).astype(int)
+            # Squeeze extra dimensions if needed
+            preds = preds.squeeze()
+            if preds.ndim == 2:
+                class_preds = np.argmax(preds, axis=1)
+            else:
+                class_preds = (preds > 0.5).astype(int)
+
+        print(f"class_preds shape: {class_preds.shape}")
 
         # Decode labels for metrics
         y_validate_decoded = label_encoder.inverse_transform(y_validate.astype(int))
