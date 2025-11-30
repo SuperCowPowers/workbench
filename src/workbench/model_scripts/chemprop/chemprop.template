@@ -43,11 +43,11 @@ def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
         raise ValueError(msg)
 
 
-def find_smiles_column(df: pd.DataFrame) -> str:
-    """Find the SMILES column in a DataFrame (any capitalization)."""
-    smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
+def find_smiles_column(columns: list[str]) -> str:
+    """Find the SMILES column name from a list (case-insensitive match for 'smiles')."""
+    smiles_column = next((col for col in columns if col.lower() == "smiles"), None)
     if smiles_column is None:
-        raise ValueError("Input DataFrame must have a 'smiles' column")
+        raise ValueError("Column list must contain a 'smiles' column (case-insensitive)")
     return smiles_column
 
 
@@ -77,11 +77,6 @@ def expand_proba_column(df: pd.DataFrame, class_labels: list[str]) -> pd.DataFra
     df = df.reset_index(drop=True)
     df = pd.concat([df, proba_df], axis=1)
     return df
-
-
-def get_extra_features(feature_list: list[str]) -> list[str]:
-    """Get the list of extra descriptor features (excludes 'smiles')."""
-    return [f for f in feature_list if f.lower() != "smiles"]
 
 
 def create_molecule_datapoints(
@@ -262,8 +257,8 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
         feature_metadata = joblib.load(feature_metadata_path)
         print(f"Hybrid mode: using {len(feature_metadata['extra_feature_cols'])} extra features")
 
-    # Find SMILES column
-    smiles_column = find_smiles_column(df)
+    # Find SMILES column in input DataFrame
+    smiles_column = find_smiles_column(df.columns.tolist())
 
     smiles_list = df[smiles_column].tolist()
 
@@ -393,10 +388,12 @@ if __name__ == "__main__":
     hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
     validation_split = 0.2
 
-    # Determine extra features (all features except smiles)
-    extra_feature_cols = get_extra_features(feature_list)
+    # Get the SMILES column name from feature_list (user defines this, so we use their exact name)
+    smiles_column = find_smiles_column(feature_list)
+    extra_feature_cols = [f for f in feature_list if f != smiles_column]
     use_extra_features = len(extra_feature_cols) > 0
     print(f"Feature List: {feature_list}")
+    print(f"SMILES Column: {smiles_column}")
     print(f"Extra Features (hybrid mode): {extra_feature_cols if use_extra_features else 'None (SMILES only)'}")
 
     # Script arguments for input/output directories
@@ -417,9 +414,6 @@ if __name__ == "__main__":
 
     check_dataframe(all_df, "training_df")
 
-    # Find SMILES column
-    smiles_column = find_smiles_column(all_df)
-
     # Drop rows with missing SMILES or target values
     initial_count = len(all_df)
     all_df = all_df.dropna(subset=[smiles_column, target])
@@ -428,7 +422,6 @@ if __name__ == "__main__":
         print(f"Dropped {dropped} rows with missing SMILES or target values")
 
     print(f"Target: {target}")
-    print(f"SMILES Column: {smiles_column}")
     print(f"Data Shape after cleaning: {all_df.shape}")
 
     # Set up label encoder for classification
