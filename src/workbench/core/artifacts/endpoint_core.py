@@ -916,6 +916,14 @@ class EndpointCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame with the performance metrics
         """
+        # Drop rows with NaN predictions (can't compute metrics on missing predictions)
+        prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
+        nan_mask = prediction_df[prediction_col].isna()
+        if nan_mask.any():
+            n_nan = nan_mask.sum()
+            self.log.warning(f"Dropping {n_nan} rows with NaN predictions for metrics calculation")
+            prediction_df = prediction_df[~nan_mask].copy()
+
         # Get the class labels from the model
         class_labels = ModelCore(self.model_name).class_labels()
         if class_labels is None:
@@ -928,7 +936,6 @@ class EndpointCore(Artifact):
             self.validate_proba_columns(prediction_df, class_labels)
 
         # Calculate precision, recall, f1, and support, handling zero division
-        prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         scores = precision_recall_fscore_support(
             prediction_df[target_column],
             prediction_df[prediction_col],
@@ -979,9 +986,15 @@ class EndpointCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame with the confusion matrix
         """
+        # Drop rows with NaN predictions (can't include in confusion matrix)
+        prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
+        nan_mask = prediction_df[prediction_col].isna()
+        if nan_mask.any():
+            n_nan = nan_mask.sum()
+            self.log.warning(f"Dropping {n_nan} rows with NaN predictions for confusion matrix")
+            prediction_df = prediction_df[~nan_mask].copy()
 
         y_true = prediction_df[target_column]
-        prediction_col = "prediction" if "prediction" in prediction_df.columns else "predictions"
         y_pred = prediction_df[prediction_col]
 
         # Get model class labels
