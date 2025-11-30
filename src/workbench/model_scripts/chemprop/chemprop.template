@@ -22,7 +22,7 @@ from sklearn.metrics import (
 import joblib
 
 # ChemProp imports
-from chemprop import data, featurizers, models, nn
+from chemprop import data, models, nn
 
 # Template Parameters
 TEMPLATE_PARAMS = {
@@ -47,7 +47,9 @@ def find_smiles_column(columns: list[str]) -> str:
     """Find the SMILES column name from a list (case-insensitive match for 'smiles')."""
     smiles_column = next((col for col in columns if col.lower() == "smiles"), None)
     if smiles_column is None:
-        raise ValueError("Column list must contain a 'smiles' column (case-insensitive)")
+        raise ValueError(
+            "Column list must contain a 'smiles' column (case-insensitive)"
+        )
     return smiles_column
 
 
@@ -227,7 +229,9 @@ def output_fn(output_df: pd.DataFrame, accept_type: str) -> tuple[str, str]:
     elif "application/json" in accept_type:
         return output_df.to_json(orient="records"), "application/json"
     else:
-        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
+        raise RuntimeError(
+            f"{accept_type} accept type is not supported by this script."
+        )
 
 
 def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
@@ -255,7 +259,9 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
     feature_metadata_path = os.path.join(model_dir, "feature_metadata.joblib")
     if os.path.exists(feature_metadata_path):
         feature_metadata = joblib.load(feature_metadata_path)
-        print(f"Hybrid mode: using {len(feature_metadata['extra_feature_cols'])} extra features")
+        print(
+            f"Hybrid mode: using {len(feature_metadata['extra_feature_cols'])} extra features"
+        )
 
     # Find SMILES column in input DataFrame
     smiles_column = find_smiles_column(df.columns.tolist())
@@ -297,10 +303,14 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
         # Check columns exist
         missing_cols = [col for col in extra_feature_cols if col not in df.columns]
         if missing_cols:
-            print(f"Warning: Missing extra feature columns: {missing_cols}. Using mean values.")
+            print(
+                f"Warning: Missing extra feature columns: {missing_cols}. Using mean values."
+            )
 
         # Extract features for valid SMILES rows
-        extra_features = np.zeros((len(valid_indices), len(extra_feature_cols)), dtype=np.float32)
+        extra_features = np.zeros(
+            (len(valid_indices), len(extra_feature_cols)), dtype=np.float32
+        )
         for j, col in enumerate(extra_feature_cols):
             if col in df.columns:
                 values = df.iloc[valid_indices][col].values.astype(np.float32)
@@ -313,7 +323,9 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
                 extra_features[:, j] = col_means[j]
 
     # Create datapoints for prediction (filter out invalid SMILES)
-    datapoints, rdkit_valid_indices = create_molecule_datapoints(valid_smiles, extra_descriptors=extra_features)
+    datapoints, rdkit_valid_indices = create_molecule_datapoints(
+        valid_smiles, extra_descriptors=extra_features
+    )
 
     if len(datapoints) == 0:
         print("Warning: No valid SMILES after RDKit validation")
@@ -394,19 +406,33 @@ if __name__ == "__main__":
     use_extra_features = len(extra_feature_cols) > 0
     print(f"Feature List: {feature_list}")
     print(f"SMILES Column: {smiles_column}")
-    print(f"Extra Features (hybrid mode): {extra_feature_cols if use_extra_features else 'None (SMILES only)'}")
+    print(
+        f"Extra Features (hybrid mode): {extra_feature_cols if use_extra_features else 'None (SMILES only)'}"
+    )
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
-    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
     parser.add_argument(
-        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+        "--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
+    )
+    parser.add_argument(
+        "--train",
+        type=str,
+        default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"),
+    )
+    parser.add_argument(
+        "--output-data-dir",
+        type=str,
+        default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data"),
     )
     args = parser.parse_args()
 
     # Read the training data
-    training_files = [os.path.join(args.train, f) for f in os.listdir(args.train) if f.endswith(".csv")]
+    training_files = [
+        os.path.join(args.train, f)
+        for f in os.listdir(args.train)
+        if f.endswith(".csv")
+    ]
     print(f"Training Files: {training_files}")
 
     all_df = pd.concat([pd.read_csv(f, engine="python") for f in training_files])
@@ -430,7 +456,9 @@ if __name__ == "__main__":
         label_encoder = LabelEncoder()
         all_df[target] = label_encoder.fit_transform(all_df[target])
         num_classes = len(label_encoder.classes_)
-        print(f"Classification task with {num_classes} classes: {label_encoder.classes_}")
+        print(
+            f"Classification task with {num_classes} classes: {label_encoder.classes_}"
+        )
     else:
         num_classes = None
 
@@ -445,7 +473,9 @@ if __name__ == "__main__":
         df_val = all_df[~all_df["training"]].copy()
     else:
         print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
+        df_train, df_val = train_test_split(
+            all_df, test_size=validation_split, random_state=42
+        )
 
     print(f"TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
@@ -459,9 +489,13 @@ if __name__ == "__main__":
 
     if use_extra_features:
         # Check that all extra feature columns exist
-        missing_cols = [col for col in extra_feature_cols if col not in df_train.columns]
+        missing_cols = [
+            col for col in extra_feature_cols if col not in df_train.columns
+        ]
         if missing_cols:
-            raise ValueError(f"Missing extra feature columns in training data: {missing_cols}")
+            raise ValueError(
+                f"Missing extra feature columns in training data: {missing_cols}"
+            )
 
         # Extract features and handle NaN values
         train_extra_features = df_train[extra_feature_cols].values.astype(np.float32)
@@ -475,7 +509,9 @@ if __name__ == "__main__":
             train_extra_features[train_nan_mask, i] = col_means[i]
             val_extra_features[val_nan_mask, i] = col_means[i]
 
-        print(f"Extra features shape: train={train_extra_features.shape}, val={val_extra_features.shape}")
+        print(
+            f"Extra features shape: train={train_extra_features.shape}, val={val_extra_features.shape}"
+        )
 
     # Create ChemProp datasets (invalid SMILES are filtered out)
     train_datapoints, train_valid_idx = create_molecule_datapoints(
@@ -509,13 +545,21 @@ if __name__ == "__main__":
         val_dataset.normalize_inputs("X_d", x_d_scaler)
         # Create transform for the model to apply at inference time
         x_d_transform = nn.ScaleTransform.from_standard_scaler(x_d_scaler)
-        print(f"Applied ChemProp X_d scaling (mean={x_d_scaler.mean_[:3]}..., scale={x_d_scaler.scale_[:3]}...)")
+        print(
+            f"Applied ChemProp X_d scaling (mean={x_d_scaler.mean_[:3]}..., scale={x_d_scaler.scale_[:3]}...)"
+        )
 
     # Get batch size from hyperparameters
-    batch_size = hyperparameters.get("batch_size", min(64, max(16, len(df_train) // 16)))
+    batch_size = hyperparameters.get(
+        "batch_size", min(64, max(16, len(df_train) // 16))
+    )
 
-    train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = data.build_dataloader(
+        train_dataset, batch_size=batch_size, shuffle=True
+    )
+    val_loader = data.build_dataloader(
+        val_dataset, batch_size=batch_size, shuffle=False
+    )
 
     # Build the model
     print(f"Hyperparameters: {hyperparameters}")
@@ -580,7 +624,9 @@ if __name__ == "__main__":
     preds = np.concatenate([p.numpy() for p in val_predictions], axis=0)
     y_validate = df_val[target].values
 
-    print(f"Predictions shape after concat: {preds.shape}, y_validate shape: {y_validate.shape}")
+    print(
+        f"Predictions shape after concat: {preds.shape}, y_validate shape: {y_validate.shape}"
+    )
 
     # ChemProp may return (n_samples, 1, n_classes) for multiclass - squeeze middle dim
     if preds.ndim == 3 and preds.shape[1] == 1:
@@ -611,15 +657,19 @@ if __name__ == "__main__":
 
         # Calculate metrics
         label_names = label_encoder.classes_
-        scores = precision_recall_fscore_support(y_validate_decoded, preds_decoded, average=None, labels=label_names)
+        scores = precision_recall_fscore_support(
+            y_validate_decoded, preds_decoded, average=None, labels=label_names
+        )
 
-        score_df = pd.DataFrame({
-            target: label_names,
-            "precision": scores[0],
-            "recall": scores[1],
-            "f1": scores[2],
-            "support": scores[3],
-        })
+        score_df = pd.DataFrame(
+            {
+                target: label_names,
+                "precision": scores[0],
+                "recall": scores[1],
+                "f1": scores[2],
+                "support": scores[3],
+            }
+        )
 
         # Output metrics per class
         metrics = ["precision", "recall", "f1", "support"]
@@ -629,7 +679,9 @@ if __name__ == "__main__":
                 print(f"Metrics:{t}:{m} {value}")
 
         # Confusion matrix
-        conf_mtx = confusion_matrix(y_validate_decoded, preds_decoded, labels=label_names)
+        conf_mtx = confusion_matrix(
+            y_validate_decoded, preds_decoded, labels=label_names
+        )
         for i, row_name in enumerate(label_names):
             for j, col_name in enumerate(label_names):
                 value = conf_mtx[i, j]
@@ -682,5 +734,7 @@ if __name__ == "__main__":
             "extra_feature_cols": extra_feature_cols,
             "col_means": col_means.tolist(),
         }
-        joblib.dump(feature_metadata, os.path.join(args.model_dir, "feature_metadata.joblib"))
+        joblib.dump(
+            feature_metadata, os.path.join(args.model_dir, "feature_metadata.joblib")
+        )
         print(f"Saved feature metadata for {len(extra_feature_cols)} extra features")
