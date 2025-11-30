@@ -557,6 +557,9 @@ if __name__ == "__main__":
     train_dataset = data.MoleculeDataset(train_datapoints)
     val_dataset = data.MoleculeDataset(val_datapoints)
 
+    # Save raw validation features before scaling (for validation predictions later)
+    val_extra_raw = val_extra_features.copy() if val_extra_features is not None else None
+
     # Scale extra descriptors using ChemProp's standard pattern:
     # 1. normalize_inputs() scales data in-place and returns a sklearn StandardScaler
     # 2. Create X_d_transform from the scaler and pass to MPNN
@@ -633,10 +636,19 @@ if __name__ == "__main__":
 
     mpnn.eval()
 
-    # Make predictions on validation set (data is already scaled via normalize_inputs)
+    # Make predictions on validation set using RAW (unscaled) features
+    # The model's X_d_transform will handle scaling during prediction
     print("Making Predictions on Validation Set...")
+    val_datapoints_raw, _ = create_molecule_datapoints(
+        df_val[smiles_column].tolist(),
+        df_val[target].tolist(),
+        val_extra_raw,
+    )
+    val_dataset_raw = data.MoleculeDataset(val_datapoints_raw)
+    val_loader_pred = data.build_dataloader(val_dataset_raw, batch_size=batch_size, shuffle=False)
+
     with torch.inference_mode():
-        val_predictions = trainer.predict(mpnn, val_loader)
+        val_predictions = trainer.predict(mpnn, val_loader_pred)
 
     # Debug: check prediction shapes
     print(f"Number of prediction batches: {len(val_predictions)}")
