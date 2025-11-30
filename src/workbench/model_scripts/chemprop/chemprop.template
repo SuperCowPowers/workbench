@@ -1,5 +1,28 @@
 # ChemProp Model Template for Workbench
 # Uses ChemProp 2.x Message Passing Neural Networks for molecular property prediction
+#
+# === CHEMPROP REVIEW NOTES ===
+# This script runs on AWS SageMaker. Key areas for ChemProp review:
+#
+# 1. Model Architecture (build_mpnn_model function)
+#    - BondMessagePassing, MeanAggregation, FFN configuration
+#
+# 2. Data Handling (create_molecule_datapoints function)
+#    - MoleculeDatapoint creation with x_d (extra descriptors)
+#    - RDKit validation of SMILES
+#
+# 3. Feature Scaling (training section, search for "normalize_inputs")
+#    - Standard ChemProp pattern: normalize_inputs() + X_d_transform in model
+#    - At inference: pass RAW features, X_d_transform handles scaling
+#
+# 4. Training Loop (search for "pl.Trainer")
+#    - PyTorch Lightning Trainer with ChemProp MPNN
+#
+# AWS/SageMaker boilerplate (can skip):
+# - input_fn, output_fn, model_fn: SageMaker serving interface
+# - argparse, file loading, S3 writes
+# =============================
+
 import os
 import argparse
 import json
@@ -254,7 +277,7 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
         label_encoder = joblib.load(label_encoder_path)
 
     # Load feature metadata if present (hybrid mode)
-    # Note: The model's X_d_transform handles scaling, we just need col names and NaN fill values
+    # Contains column names, NaN fill values, and scaler for feature scaling
     feature_metadata = None
     feature_metadata_path = os.path.join(model_dir, "feature_metadata.joblib")
     if os.path.exists(feature_metadata_path):
@@ -294,7 +317,7 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
         return df
 
     # Prepare extra features if in hybrid mode
-    # Note: We pass raw (unscaled) features - the model's X_d_transform handles scaling
+    # NOTE: We pass RAW (unscaled) features here - the model's X_d_transform handles scaling
     extra_features = None
     if feature_metadata is not None:
         extra_feature_cols = feature_metadata["extra_feature_cols"]
@@ -307,14 +330,14 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
                 f"Warning: Missing extra feature columns: {missing_cols}. Using mean values."
             )
 
-        # Extract features for valid SMILES rows
+        # Extract features for valid SMILES rows (raw, unscaled)
         extra_features = np.zeros(
             (len(valid_indices), len(extra_feature_cols)), dtype=np.float32
         )
         for j, col in enumerate(extra_feature_cols):
             if col in df.columns:
                 values = df.iloc[valid_indices][col].values.astype(np.float32)
-                # Fill NaN with training column means
+                # Fill NaN with training column means (unscaled means)
                 nan_mask = np.isnan(values)
                 values[nan_mask] = col_means[j]
                 extra_features[:, j] = values
@@ -481,8 +504,8 @@ if __name__ == "__main__":
     print(f"VALIDATION: {df_val.shape}")
 
     # Extract extra features if using hybrid mode
-    # Note: We pass raw (unscaled) features to MoleculeDatapoint and let ChemProp's
-    # normalize_inputs() handle scaling - this is the recommended approach per ChemProp docs
+    # Note: We pass raw features to MoleculeDatapoint, then call normalize_inputs()
+    # on the datasets to scale them for training (see scaling section below)
     train_extra_features = None
     val_extra_features = None
     col_means = None
@@ -534,19 +557,18 @@ if __name__ == "__main__":
     train_dataset = data.MoleculeDataset(train_datapoints)
     val_dataset = data.MoleculeDataset(val_datapoints)
 
-    # Use ChemProp's built-in scaling for extra descriptors (X_d)
-    # This is the recommended approach per ChemProp docs:
-    # https://chemprop.readthedocs.io/en/latest/tutorial/python/scaling.html
+    # Scale extra descriptors using ChemProp's standard pattern:
+    # 1. normalize_inputs() scales data in-place and returns a sklearn StandardScaler
+    # 2. Create X_d_transform from the scaler and pass to MPNN
+    # 3. At inference, pass RAW (unscaled) features - X_d_transform handles scaling
+    feature_scaler = None
     x_d_transform = None
-    x_d_scaler = None
     if use_extra_features:
-        # Fit scaler on training data, apply to validation data
-        x_d_scaler = train_dataset.normalize_inputs("X_d")
-        val_dataset.normalize_inputs("X_d", x_d_scaler)
-        # Create transform for the model to apply at inference time
-        x_d_transform = nn.ScaleTransform.from_standard_scaler(x_d_scaler)
+        feature_scaler = train_dataset.normalize_inputs("X_d")
+        val_dataset.normalize_inputs("X_d", feature_scaler)
+        x_d_transform = nn.ScaleTransform.from_standard_scaler(feature_scaler)
         print(
-            f"Applied ChemProp X_d scaling (mean={x_d_scaler.mean_[:3]}..., scale={x_d_scaler.scale_[:3]}...)"
+            f"Feature scaling (mean={feature_scaler.mean_[:3]}..., scale={feature_scaler.scale_[:3]}...)"
         )
 
     # Get batch size from hyperparameters
@@ -561,7 +583,7 @@ if __name__ == "__main__":
         val_dataset, batch_size=batch_size, shuffle=False
     )
 
-    # Build the model
+    # Build the model with X_d_transform (handles scaling at inference)
     print(f"Hyperparameters: {hyperparameters}")
     task = "classification" if model_type == "classifier" else "regression"
     n_extra = len(extra_feature_cols) if use_extra_features else 0
@@ -611,7 +633,7 @@ if __name__ == "__main__":
 
     mpnn.eval()
 
-    # Make predictions on validation set
+    # Make predictions on validation set (data is already scaled via normalize_inputs)
     print("Making Predictions on Validation Set...")
     with torch.inference_mode():
         val_predictions = trainer.predict(mpnn, val_loader)
@@ -727,12 +749,11 @@ if __name__ == "__main__":
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
     # Save extra feature metadata for inference (hybrid mode)
-    # Note: The X_d_transform is embedded in the model itself, so we only need to save
-    # the feature column names and NaN fill values for preprocessing at inference time
+    # Note: We don't need to save the scaler - X_d_transform is embedded in the model
     if use_extra_features:
         feature_metadata = {
             "extra_feature_cols": extra_feature_cols,
-            "col_means": col_means.tolist(),
+            "col_means": col_means.tolist(),  # Unscaled means for NaN imputation
         }
         joblib.dump(
             feature_metadata, os.path.join(args.model_dir, "feature_metadata.joblib")
