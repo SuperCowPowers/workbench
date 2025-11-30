@@ -5,15 +5,17 @@
 # This script runs on AWS SageMaker. Key areas for ChemProp review:
 #
 # 1. Model Architecture (build_mpnn_model function)
-#    - BondMessagePassing, MeanAggregation, FFN configuration
+#    - BondMessagePassing, NormAggregation, FFN configuration
+#    - Regression uses output_transform (UnscaleTransform) for target scaling
 #
 # 2. Data Handling (create_molecule_datapoints function)
 #    - MoleculeDatapoint creation with x_d (extra descriptors)
 #    - RDKit validation of SMILES
 #
-# 3. Feature Scaling (training section, search for "normalize_inputs")
-#    - Standard ChemProp pattern: normalize_inputs() + X_d_transform in model
-#    - At inference: pass RAW features, X_d_transform handles scaling
+# 3. Scaling (training section)
+#    - Extra descriptors: normalize_inputs("X_d") + X_d_transform in model
+#    - Targets (regression): normalize_targets() + UnscaleTransform in FFN
+#    - At inference: pass RAW features, transforms handle scaling automatically
 #
 # 4. Training Loop (search for "pl.Trainer")
 #    - PyTorch Lightning Trainer with ChemProp MPNN
@@ -152,6 +154,7 @@ def build_mpnn_model(
     num_classes: int | None = None,
     n_extra_descriptors: int = 0,
     x_d_transform: nn.ScaleTransform | None = None,
+    output_transform: nn.UnscaleTransform | None = None,
 ) -> models.MPNN:
     """Build an MPNN model with the specified hyperparameters.
 
@@ -161,6 +164,7 @@ def build_mpnn_model(
         num_classes: Number of classes for classification tasks
         n_extra_descriptors: Number of extra descriptor features (for hybrid mode)
         x_d_transform: Optional transform for extra descriptors (scaling)
+        output_transform: Optional transform for regression output (unscaling targets)
 
     Returns:
         Configured MPNN model
@@ -175,8 +179,8 @@ def build_mpnn_model(
     # Message passing component
     mp = nn.BondMessagePassing(d_h=hidden_dim, depth=depth, dropout=dropout)
 
-    # Aggregation
-    agg = nn.MeanAggregation()
+    # Aggregation - NormAggregation normalizes output, recommended when using extra descriptors
+    agg = nn.NormAggregation()
 
     # FFN input_dim = message passing output + extra descriptors
     ffn_input_dim = hidden_dim + n_extra_descriptors
@@ -192,12 +196,13 @@ def build_mpnn_model(
             dropout=dropout,
         )
     else:
-        # Regression (uses MSE loss by default)
+        # Regression with optional output transform to unscale predictions
         ffn = nn.RegressionFFN(
             input_dim=ffn_input_dim,
             hidden_dim=ffn_hidden_dim,
             n_layers=ffn_num_layers,
             dropout=dropout,
+            output_transform=output_transform,
         )
 
     # Create the MPNN model
@@ -576,6 +581,18 @@ if __name__ == "__main__":
             f"Feature scaling (mean={feature_scaler.mean_[:3]}..., scale={feature_scaler.scale_[:3]}...)"
         )
 
+    # Scale targets for regression (improves training stability)
+    # The model's output_transform will unscale predictions automatically
+    target_scaler = None
+    output_transform = None
+    if model_type == "regressor":
+        target_scaler = train_dataset.normalize_targets()
+        val_dataset.normalize_targets(target_scaler)
+        output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
+        print(
+            f"Target scaling (mean={target_scaler.mean_[0]:.3f}, scale={target_scaler.scale_[0]:.3f})"
+        )
+
     # Get batch size from hyperparameters
     batch_size = hyperparameters.get(
         "batch_size", min(64, max(16, len(df_train) // 16))
@@ -588,7 +605,7 @@ if __name__ == "__main__":
         val_dataset, batch_size=batch_size, shuffle=False
     )
 
-    # Build the model with X_d_transform (handles scaling at inference)
+    # Build the model with transforms
     print(f"Hyperparameters: {hyperparameters}")
     task = "classification" if model_type == "classifier" else "regression"
     n_extra = len(extra_feature_cols) if use_extra_features else 0
@@ -598,6 +615,7 @@ if __name__ == "__main__":
         num_classes=num_classes,
         n_extra_descriptors=n_extra,
         x_d_transform=x_d_transform,
+        output_transform=output_transform,
     )
 
     # Training configuration
