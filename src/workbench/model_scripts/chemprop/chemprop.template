@@ -254,14 +254,12 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
     if os.path.exists(label_encoder_path):
         label_encoder = joblib.load(label_encoder_path)
 
-    # Load feature metadata and scaler if present (hybrid mode)
+    # Load feature metadata if present (hybrid mode)
+    # Note: The model's X_d_transform handles scaling, we just need col names and NaN fill values
     feature_metadata = None
-    x_d_scaler = None
     feature_metadata_path = os.path.join(model_dir, "feature_metadata.joblib")
-    x_d_scaler_path = os.path.join(model_dir, "x_d_scaler.joblib")
     if os.path.exists(feature_metadata_path):
         feature_metadata = joblib.load(feature_metadata_path)
-        x_d_scaler = joblib.load(x_d_scaler_path)
         print(f"Hybrid mode: using {len(feature_metadata['extra_feature_cols'])} extra features")
 
     # Find SMILES column
@@ -295,6 +293,7 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
         return df
 
     # Prepare extra features if in hybrid mode
+    # Note: We pass raw (unscaled) features - the model's X_d_transform handles scaling
     extra_features = None
     if feature_metadata is not None:
         extra_feature_cols = feature_metadata["extra_feature_cols"]
@@ -317,9 +316,6 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
             else:
                 # Column missing, use training mean
                 extra_features[:, j] = col_means[j]
-
-        # Scale features using the saved scaler
-        extra_features = x_d_scaler.transform(extra_features)
 
     # Create datapoints for prediction (filter out invalid SMILES)
     datapoints, rdkit_valid_indices = create_molecule_datapoints(valid_smiles, extra_descriptors=extra_features)
@@ -387,7 +383,6 @@ def predict_fn(df: pd.DataFrame, model: models.MPNN) -> pd.DataFrame:
 
 if __name__ == "__main__":
     """Training script for ChemProp MPNN model"""
-    from sklearn.preprocessing import StandardScaler
 
     # Template Parameters
     target = TEMPLATE_PARAMS["target"]
@@ -462,11 +457,12 @@ if __name__ == "__main__":
     print(f"TRAIN: {df_train.shape}")
     print(f"VALIDATION: {df_val.shape}")
 
-    # Extract and scale extra features if using hybrid mode
-    x_d_scaler = None
-    x_d_transform = None
+    # Extract extra features if using hybrid mode
+    # Note: We pass raw (unscaled) features to MoleculeDatapoint and let ChemProp's
+    # normalize_inputs() handle scaling - this is the recommended approach per ChemProp docs
     train_extra_features = None
     val_extra_features = None
+    col_means = None
 
     if use_extra_features:
         # Check that all extra feature columns exist
@@ -478,22 +474,13 @@ if __name__ == "__main__":
         train_extra_features = df_train[extra_feature_cols].values.astype(np.float32)
         val_extra_features = df_val[extra_feature_cols].values.astype(np.float32)
 
-        # Fill NaN with column means from training data
+        # Fill NaN with column means from training data (must do before ChemProp scaling)
         col_means = np.nanmean(train_extra_features, axis=0)
         for i in range(train_extra_features.shape[1]):
             train_nan_mask = np.isnan(train_extra_features[:, i])
             val_nan_mask = np.isnan(val_extra_features[:, i])
             train_extra_features[train_nan_mask, i] = col_means[i]
             val_extra_features[val_nan_mask, i] = col_means[i]
-
-        # Scale extra features (we pre-scale here, so don't use X_d_transform in model)
-        x_d_scaler = StandardScaler()
-        train_extra_features = x_d_scaler.fit_transform(train_extra_features)
-        val_extra_features = x_d_scaler.transform(val_extra_features)
-
-        # Note: We set x_d_transform=None because we pre-scale the features ourselves
-        # The scaler is saved for inference to apply the same scaling
-        x_d_transform = None
 
         print(f"Extra features shape: train={train_extra_features.shape}, val={val_extra_features.shape}")
 
@@ -517,6 +504,19 @@ if __name__ == "__main__":
 
     train_dataset = data.MoleculeDataset(train_datapoints)
     val_dataset = data.MoleculeDataset(val_datapoints)
+
+    # Use ChemProp's built-in scaling for extra descriptors (X_d)
+    # This is the recommended approach per ChemProp docs:
+    # https://chemprop.readthedocs.io/en/latest/tutorial/python/scaling.html
+    x_d_transform = None
+    x_d_scaler = None
+    if use_extra_features:
+        # Fit scaler on training data, apply to validation data
+        x_d_scaler = train_dataset.normalize_inputs("X_d")
+        val_dataset.normalize_inputs("X_d", x_d_scaler)
+        # Create transform for the model to apply at inference time
+        x_d_transform = nn.ScaleTransform.from_standard_scaler(x_d_scaler)
+        print(f"Applied ChemProp X_d scaling (mean={x_d_scaler.mean_[:3]}..., scale={x_d_scaler.scale_[:3]}...)")
 
     # Get batch size from hyperparameters
     batch_size = hyperparameters.get("batch_size", min(64, max(16, len(df_train) // 16)))
@@ -682,11 +682,12 @@ if __name__ == "__main__":
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
     # Save extra feature metadata for inference (hybrid mode)
+    # Note: The X_d_transform is embedded in the model itself, so we only need to save
+    # the feature column names and NaN fill values for preprocessing at inference time
     if use_extra_features:
         feature_metadata = {
             "extra_feature_cols": extra_feature_cols,
             "col_means": col_means.tolist(),
         }
         joblib.dump(feature_metadata, os.path.join(args.model_dir, "feature_metadata.joblib"))
-        joblib.dump(x_d_scaler, os.path.join(args.model_dir, "x_d_scaler.joblib"))
         print(f"Saved feature metadata for {len(extra_feature_cols)} extra features")
