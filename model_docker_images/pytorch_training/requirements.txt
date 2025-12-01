@@ -1,6 +1,6 @@
 # This file is used to install the required packages for the PyTorch Training Docker image.
-# Using PyTorch CUDA 12.8 index (matches SageMaker GPU instance drivers)
---index-url https://download.pytorch.org/whl/cu128
+# Using PyTorch CUDA 13.0 index (matches our Base Training image)
+--index-url https://download.pytorch.org/whl/cu130
 --extra-index-url https://pypi.org/simple/
 torch==2.9.1
 pandas==2.3.3
