@@ -37,6 +37,7 @@ from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.model_utils import uq_metrics
 from workbench.utils.xgboost_model_utils import cross_fold_inference as xgboost_cross_fold
 from workbench.utils.pytorch_utils import cross_fold_inference as pytorch_cross_fold
+from workbench.utils.chemprop_utils import cross_fold_inference as chemprop_cross_fold
 from workbench_bridges.endpoints.fast_inference import fast_inference
 
 
@@ -400,41 +401,41 @@ class EndpointCore(Artifact):
         if target_column and (target_column not in prediction_df.columns):
             self.log.important(f"Target Column {target_column} not found in prediction_df!")
             self.log.important("In order to compute metrics, the target column must be present!")
-            return prediction_df
-
-        # Compute the standard performance metrics for this model
-        model_type = model.model_type
-        if model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
-            prediction_df = self.residuals(target_column, prediction_df)
-            metrics = self.regression_metrics(target_column, prediction_df)
-        elif model_type == ModelType.CLASSIFIER:
-            metrics = self.classification_metrics(target_column, prediction_df)
-        else:
-            # For other model types, we don't compute metrics
-            self.log.info(f"Model Type: {model_type} doesn't have metrics...")
             metrics = pd.DataFrame()
 
+        # Compute the standard performance metrics for this model
+        else:
+            model_type = model.model_type
+            if model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
+                prediction_df = self.residuals(target_column, prediction_df)
+                metrics = self.regression_metrics(target_column, prediction_df)
+            elif model_type == ModelType.CLASSIFIER:
+                metrics = self.classification_metrics(target_column, prediction_df)
+            else:
+                # For other model types, we don't compute metrics
+                self.log.info(f"Model Type: {model_type} doesn't have metrics...")
+                metrics = pd.DataFrame()
+
         # Print out the metrics
-        if not metrics.empty:
-            print(f"Performance Metrics for {self.model_name} on {self.name}")
-            print(metrics.head())
+        print(f"Performance Metrics for {self.model_name} on {self.name}")
+        print(metrics.head())
 
-            # Capture the inference results and metrics
-            if capture_name is not None:
+        # Capture the inference results and metrics
+        if capture_name is not None:
 
-                # If we don't have an id_column, we'll pull it from the model's FeatureSet
-                if id_column is None:
-                    fs = FeatureSetCore(model.get_input())
-                    id_column = fs.id_column
-                description = capture_name.replace("_", " ").title()
-                self._capture_inference_results(
-                    capture_name, prediction_df, target_column, model_type, metrics, description, features, id_column
-                )
+            # If we don't have an id_column, we'll pull it from the model's FeatureSet
+            if id_column is None:
+                fs = FeatureSetCore(model.get_input())
+                id_column = fs.id_column
+            description = capture_name.replace("_", " ").title()
+            self._capture_inference_results(
+                capture_name, prediction_df, target_column, model_type, metrics, description, features, id_column
+            )
 
-                # For UQ Models we also capture the uncertainty metrics
-                if model_type in [ModelType.UQ_REGRESSOR]:
-                    metrics = uq_metrics(prediction_df, target_column)
-                    self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
+            # For UQ Models we also capture the uncertainty metrics
+            if model_type in [ModelType.UQ_REGRESSOR]:
+                metrics = uq_metrics(prediction_df, target_column)
+                self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
         # Return the prediction DataFrame
         return prediction_df
@@ -457,6 +458,8 @@ class EndpointCore(Artifact):
             cross_fold_metrics, out_of_fold_df = xgboost_cross_fold(model, nfolds=nfolds)
         elif model.model_framework == ModelFramework.PYTORCH_TABULAR:
             cross_fold_metrics, out_of_fold_df = pytorch_cross_fold(model, nfolds=nfolds)
+        elif model.model_framework == ModelFramework.CHEMPROP:
+            cross_fold_metrics, out_of_fold_df = chemprop_cross_fold(model, nfolds=nfolds)
         else:
             self.log.error(f"Cross-Fold Inference not supported for Model Framework: {model.model_framework}.")
             return pd.DataFrame()

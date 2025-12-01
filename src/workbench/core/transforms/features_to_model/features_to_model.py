@@ -241,10 +241,8 @@ class FeaturesToModel(Transform):
 
         # Use GPU instance for ChemProp/PyTorch, CPU for others
         if self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH_TABULAR]:
-            # Note: This is placeholder code for when our training images supports GPU
-            train_instance_type = "ml.m5.xlarge"
-            # train_instance_type = "ml.g4dn.xlarge"  # NVIDIA T4 GPU, ~$0.74/hr
-            # self.log.important(f"Using GPU instance {train_instance_type} for {self.model_framework.value}")
+            train_instance_type = "ml.g6.xlarge"  # NVIDIA L4 GPU, ~$0.80/hr
+            self.log.important(f"Using GPU instance {train_instance_type} for {self.model_framework.value}")
         else:
             train_instance_type = "ml.m5.xlarge"
 

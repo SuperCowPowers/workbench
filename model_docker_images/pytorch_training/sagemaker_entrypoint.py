@@ -41,7 +41,7 @@ def install_requirements(requirements_path):
     if os.path.exists(requirements_path):
         logger.info(f"Installing dependencies from {requirements_path}...")
         try:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_path])
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "--break-system-packages", "-r", requirements_path])
             logger.info("Requirements installed successfully.")
         except subprocess.CalledProcessError as e:
             logger.error(f"Error installing requirements: {e}")
