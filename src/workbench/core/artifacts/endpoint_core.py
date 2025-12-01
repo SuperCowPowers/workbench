@@ -405,15 +405,14 @@ class EndpointCore(Artifact):
 
         # Compute the standard performance metrics for this model
         else:
-            model_type = model.model_type
-            if model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
+            if model.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
                 prediction_df = self.residuals(target_column, prediction_df)
                 metrics = self.regression_metrics(target_column, prediction_df)
-            elif model_type == ModelType.CLASSIFIER:
+            elif model.model_type == ModelType.CLASSIFIER:
                 metrics = self.classification_metrics(target_column, prediction_df)
             else:
                 # For other model types, we don't compute metrics
-                self.log.info(f"Model Type: {model_type} doesn't have metrics...")
+                self.log.info(f"Model Type: {model.model_type} doesn't have metrics...")
                 metrics = pd.DataFrame()
 
         # Print out the metrics
@@ -429,11 +428,11 @@ class EndpointCore(Artifact):
                 id_column = fs.id_column
             description = capture_name.replace("_", " ").title()
             self._capture_inference_results(
-                capture_name, prediction_df, target_column, model_type, metrics, description, features, id_column
+                capture_name, prediction_df, target_column, model.model_type, metrics, description, features, id_column
             )
 
             # For UQ Models we also capture the uncertainty metrics
-            if model_type in [ModelType.UQ_REGRESSOR]:
+            if model.model_type in [ModelType.UQ_REGRESSOR]:
                 metrics = uq_metrics(prediction_df, target_column)
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
@@ -780,19 +779,17 @@ class EndpointCore(Artifact):
         self.log.info(f"Writing metrics to {inference_capture_path}/inference_metrics.csv")
         wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
 
-        # Grab the target column, prediction column, any _proba columns, and the ID column (if present)
-        output_columns = [target_column]
-        output_columns += [col for col in pred_results_df.columns if "prediction" in col]
-
-        # Add any _proba columns to the output columns
-        output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
-
-        # Add any Uncertainty Quantile columns to the output columns
-        output_columns += [col for col in pred_results_df.columns if col.startswith("q_") or col == "confidence"]
-
-        # Add the ID column
+        # Grab the ID column and target column if they are present
+        output_columns = []
         if id_column and id_column in pred_results_df.columns:
-            output_columns.insert(0, id_column)
+            output_columns.append(id_column)
+        if target_column in pred_results_df.columns:
+            output_columns.append(target_column)
+
+        # Grab the prediction column, any _proba columns, and UQ columns
+        output_columns += [col for col in pred_results_df.columns if "prediction" in col]
+        output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
+        output_columns += [col for col in pred_results_df.columns if col.startswith("q_") or col == "confidence"]
 
         # Write the predictions to our S3 Model Inference Folder
         self.log.info(f"Writing predictions to {inference_capture_path}/inference_predictions.csv")
