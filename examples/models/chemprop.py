@@ -15,7 +15,7 @@ if recreate or not Model("aqsol-chemprop-reg").exists():
         description="Chemprop Regression Model for AQSol",
         tags=["chemprop", "aqsol"],
         # ChemProp hyperparameters: hidden_dim, depth, dropout, ffn_hidden_dim, ffn_num_layers, batch_size, max_epochs, patience
-        hyperparameters={"max_epochs": 100, "hidden_dim": 300, "depth": 3},
+        hyperparameters={"max_epochs": 400, "hidden_dim": 300, "depth": 3, "n_folds": 5},
     )
     m.set_owner("BW")
 
@@ -39,7 +39,7 @@ if recreate or not Model("aqsol-chemprop-class").exists():
         feature_list=["smiles"],  # Chemprop uses SMILES as input
         description="Chemprop Classification Model for AQSol",
         tags=["chemprop", "aqsol"],
-        hyperparameters={"max_epochs": 100, "hidden_dim": 300, "depth": 3},
+        hyperparameters={"max_epochs": 400, "hidden_dim": 300, "depth": 3, "n_folds": 5},
     )
     m.set_owner("BW")
     m.set_class_labels(["low", "medium", "high"])

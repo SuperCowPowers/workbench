@@ -219,9 +219,9 @@ def model_fn(model_dir: str) -> TabularModel:
         # Change to /tmp because Pytorch Tabular needs write access (creates a .pt_tmp directory)
         os.chdir("/tmp")
 
-        # Load the model
+        # Load the model (map_location="cpu" ensures GPU-trained models work on CPU endpoints)
         model_path = os.path.join(model_dir, "tabular_model")
-        model = TabularModel.load_model(model_path)
+        model = TabularModel.load_model(model_path, map_location="cpu")
 
     finally:
         # Restore the original working directory
