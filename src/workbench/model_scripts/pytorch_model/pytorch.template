@@ -219,8 +219,14 @@ def model_fn(model_dir: str) -> TabularModel:
         # Change to /tmp because Pytorch Tabular needs write access (creates a .pt_tmp directory)
         os.chdir("/tmp")
 
-        # Load the model (map_location="cpu" ensures GPU-trained models work on CPU endpoints)
+        # Remove callbacks.sav if it exists - it's not needed for inference and causes
+        # GPU->CPU loading issues (joblib.load doesn't support map_location)
         model_path = os.path.join(model_dir, "tabular_model")
+        callbacks_path = os.path.join(model_path, "callbacks.sav")
+        if os.path.exists(callbacks_path):
+            os.remove(callbacks_path)
+
+        # Load the model (map_location="cpu" ensures GPU-trained models work on CPU endpoints)
         model = TabularModel.load_model(model_path, map_location="cpu")
 
     finally:
