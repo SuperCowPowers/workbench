@@ -78,11 +78,18 @@ def load_pytorch_model_artifacts(model_dir: str) -> Tuple[Any, dict]:
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"No tabular_model directory found in {model_dir}")
 
+    # Remove callbacks.sav if it exists - it's not needed for inference and causes
+    # GPU->CPU loading issues (joblib.load doesn't support map_location)
+    callbacks_path = os.path.join(model_path, "callbacks.sav")
+    if os.path.exists(callbacks_path):
+        os.remove(callbacks_path)
+
     # PyTorch Tabular needs write access, so chdir to /tmp
     original_cwd = os.getcwd()
     try:
         os.chdir("/tmp")
-        model = TabularModel.load_model(model_path)
+        # map_location="cpu" ensures GPU-trained models work on CPU
+        model = TabularModel.load_model(model_path, map_location="cpu")
     finally:
         os.chdir(original_cwd)
 
