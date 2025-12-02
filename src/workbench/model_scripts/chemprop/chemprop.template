@@ -528,8 +528,8 @@ if __name__ == "__main__":
     print(f"Hyperparameters: {hyperparameters}")
     task = "classification" if model_type == "classifier" else "regression"
     n_extra = len(extra_feature_cols) if use_extra_features else 0
-    max_epochs = hyperparameters.get("max_epochs", 50)
-    patience = hyperparameters.get("patience", 10)
+    max_epochs = hyperparameters.get("max_epochs", 200)
+    patience = hyperparameters.get("patience", 20)
     n_folds = hyperparameters.get("n_folds", 1)  # Number of CV folds (default: 1 = no CV)
     batch_size = hyperparameters.get("batch_size", min(64, max(16, len(all_df) // 16)))
 
