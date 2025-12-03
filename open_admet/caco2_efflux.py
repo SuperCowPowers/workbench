@@ -59,18 +59,15 @@ if __name__ == "__main__":
         "n_estimators": 200,  # More trees for better signal capture with ~320 features
         "max_depth": 6,  # Medium depth - you have good signal (top features with SHAP >1.0)
         "learning_rate": 0.05,  # Lower rate with more estimators for smoother learning
-
         # Sampling parameters
         "subsample": 0.7,  # Moderate row sampling to reduce overfitting
         "colsample_bytree": 0.6,  # More aggressive feature sampling given 320 features
         "colsample_bylevel": 0.8,  # Additional feature sampling at each tree level
-
         # Regularization
         "min_child_weight": 5,  # Higher to prevent overfitting on small groups
         "gamma": 0.2,  # Moderate pruning - you have real signal so don't over-prune
         "reg_alpha": 0.5,  # L1 for feature selection (useful with 320 features)
         "reg_lambda": 2.0,  # Strong L2 to smooth predictions
-
         # Random seed
         "random_state": 42,
     }
