@@ -567,9 +567,13 @@ if __name__ == "__main__":
         print(f"Fold {fold_idx + 1} - Train: {len(df_train)}, Val: {len(df_val)}")
 
         # Set up PyTorch Tabular trainer configuration (per-fold for batch_size)
+        # Calculate batch size that avoids single-sample last batch (batch norm requires >1)
+        batch_size = min(128, max(32, len(df_train) // 16))
+        if len(df_train) % batch_size == 1:
+            batch_size += 1  # Adjust to avoid last batch of size 1
         trainer_defaults = {
             "auto_lr_find": False,
-            "batch_size": min(128, max(32, len(df_train) // 16)),
+            "batch_size": batch_size,
             "max_epochs": 200,
             "min_epochs": 10,
             "early_stopping": "valid_loss",

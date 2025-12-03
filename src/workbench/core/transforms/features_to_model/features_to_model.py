@@ -188,13 +188,15 @@ class FeaturesToModel(Transform):
             # Generate our model script
             script_path = generate_model_script(template_params)
 
-        # Metric Definitions for Regression
+        # Metric Definitions for Regression (matches model script output format)
         if self.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
             metric_definitions = [
-                {"Name": "RMSE", "Regex": "RMSE: ([0-9.]+)"},
-                {"Name": "MAE", "Regex": "MAE: ([0-9.]+)"},
-                {"Name": "R2", "Regex": "R2: ([0-9.]+)"},
-                {"Name": "NumRows", "Regex": "NumRows: ([0-9]+)"},
+                {"Name": "rmse", "Regex": r"rmse: ([0-9.]+)"},
+                {"Name": "mae", "Regex": r"mae: ([0-9.]+)"},
+                {"Name": "medae", "Regex": r"medae: ([0-9.]+)"},
+                {"Name": "r2", "Regex": r"r2: ([0-9.-]+)"},
+                {"Name": "spearmanr", "Regex": r"spearmanr: ([0-9.-]+)"},
+                {"Name": "support", "Regex": r"support: ([0-9]+)"},
             ]
 
         # Metric Definitions for Classification

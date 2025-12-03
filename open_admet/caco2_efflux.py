@@ -22,6 +22,7 @@ if __name__ == "__main__":
     features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
 
     # Create an XGBoost reference model to get feature importances
+    """
     ref_model = fs.to_model(
         name="caco2-efflux-reg-xgb",
         model_type=ModelType.UQ_REGRESSOR,
@@ -36,6 +37,7 @@ if __name__ == "__main__":
     end.set_owner("BW")
     end.auto_inference(capture=True)
     end.cross_fold_inference()
+    """
 
     # Get feature importances from the reference model
     ref_model = Model("caco2-efflux-reg-xgb")
