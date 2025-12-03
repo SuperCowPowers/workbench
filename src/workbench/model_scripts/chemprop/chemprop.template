@@ -342,6 +342,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     if model_type == "classifier":
         df["prediction"] = pd.Series([None] * len(df), dtype=object)
     else:
+        # Regression (includes uq_regressor)
         df["prediction"] = np.nan
         df["prediction_std"] = np.nan
 
@@ -631,7 +632,7 @@ if __name__ == "__main__":
             x_d_transform = nn.ScaleTransform.from_standard_scaler(feature_scaler)
 
         output_transform = None
-        if model_type == "regressor":
+        if model_type in ["regressor", "uq_regressor"]:
             target_scaler = train_dataset.normalize_targets()
             val_dataset.normalize_targets(target_scaler)
             output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
@@ -712,7 +713,7 @@ if __name__ == "__main__":
     # Compute prediction_std by running all ensemble models on validation data
     # For n_folds=1, std will be 0 (only one model). For n_folds>1, std shows ensemble disagreement.
     preds_std = None
-    if model_type == "regressor" and len(ensemble_models) > 0:
+    if model_type in ["regressor", "uq_regressor"] and len(ensemble_models) > 0:
         print("Computing prediction_std from ensemble predictions on validation data...")
         val_datapoints_for_std, _ = create_molecule_datapoints(
             df_val[smiles_column].tolist(),
