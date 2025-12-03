@@ -495,7 +495,7 @@ if __name__ == "__main__":
 
     # Use any hyperparameters to set up both the trainer and model configurations
     print(f"Hyperparameters: {hyperparameters}")
-    n_folds = hyperparameters.get("n_folds", 1)  # Number of CV folds (default: 1 = no CV)
+    n_folds = hyperparameters.get("n_folds", 5)  # Number of CV folds (default: 5)
 
     # =========================================================================
     # UNIFIED TRAINING: Works for n_folds=1 (single model) or n_folds>1 (K-fold CV)
