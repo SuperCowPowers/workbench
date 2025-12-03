@@ -41,7 +41,6 @@ TEMPLATE_PARAMS = {
     "id_column": "{{id_column}}",
     "compressed_features": "{{compressed_features}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "train_all_data": "{{train_all_data}}",
     "hyperparameters": "{{hyperparameters}}",
 }
 
@@ -420,9 +419,7 @@ if __name__ == "__main__":
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
-    train_all_data = TEMPLATE_PARAMS["train_all_data"]
     hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
-    validation_split = 0.2
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
@@ -504,19 +501,15 @@ if __name__ == "__main__":
 
     # Create fold splits
     if n_folds == 1:
-        # Single fold: use train/val split
-        if train_all_data:
-            print("Training on ALL of the data")
-            train_idx = np.arange(len(all_df))
-            val_idx = np.arange(len(all_df))
-        elif "training" in all_df.columns:
+        # Single fold: use train/val split from "training" column or random split
+        if "training" in all_df.columns:
             print("Found training column, splitting data based on training column")
             train_idx = np.where(all_df["training"])[0]
             val_idx = np.where(~all_df["training"])[0]
         else:
-            print("WARNING: No training column found, splitting data with random state=42")
+            print("WARNING: No training column found, splitting data with random 80/20 split")
             indices = np.arange(len(all_df))
-            train_idx, val_idx = train_test_split(indices, test_size=validation_split, random_state=42)
+            train_idx, val_idx = train_test_split(indices, test_size=0.2, random_state=42)
         folds = [(train_idx, val_idx)]
     else:
         # K-Fold CV

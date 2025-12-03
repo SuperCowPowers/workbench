@@ -88,6 +88,25 @@ if __name__ == "__main__":
     end.auto_inference(capture=True)
     end.cross_fold_inference()
 
+    # Now create a hybrid ChemProp model with top 50 features
+    features = ["smiles"] + top_50_features
+    model = fs.to_model(
+        name="caco2-efflux-reg-chemprop-hybrid",
+        model_type=ModelType.UQ_REGRESSOR,
+        model_framework=ModelFramework.CHEMPROP,
+        target_column="caco_2_efflux",
+        feature_list=features,
+        description="ChemProp D-MPNN Hybrid for CACO-2 ER prediction",
+        tags=["caco2", "er", "regression", "chemprop", "hybrid"],
+        hyperparameters=hyperparameters,
+        train_all_data=True,
+    )
+    model.set_owner("BW")
+    end = model.to_endpoint(tags=["caco2", "chemprop", "hybrid"])
+    end.set_owner("BW")
+    end.auto_inference(capture=True)
+    end.cross_fold_inference()
+
     # Read in the blind test data and run inference
     # test_df = pd.read_csv("test_data_blind.csv")
     # end.inference(test_df, capture_name="blind_test")
