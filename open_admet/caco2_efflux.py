@@ -1,8 +1,8 @@
 # Description: Create a ChemProp model for CACO-2 Efflux Ratio prediction with exclusions.
 # Prediction Target: CACO-2 ER
-import pandas as pd
 from workbench.api import FeatureSet, Model, ModelType, ModelFramework
 from workbench_bridges.api import ParameterStore
+from workbench.algorithms.dataframe.proximity import Proximity
 
 
 if __name__ == "__main__":
@@ -12,16 +12,30 @@ if __name__ == "__main__":
     df = fs.pull_dataframe()
     target = "caco_2_efflux"
 
-    # Exclusions: We're not interesting an any compounds with ratios > 200
-    range_cond = df[target] > 200
-    excludes = df[range_cond][fs.id_column].tolist()
-    fs.set_sample_weights({id: 0.0 for id in excludes})
-
     # Pull features from Parameter Store
     params = ParameterStore()
     features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
 
-    # Create an XGBoost reference model to get feature importances
+    # Find "High Target Gradients" with a Proximity Model
+    """
+    df = fs.pull_dataframe()
+    prox = Proximity(df, fs.id_column, features, target, track_columns=features)
+    htg_df = prox.target_gradients(top_percent=20.0, min_delta=8.0)
+    htg_ids = htg_df[fs.id_column].tolist()
+    print(f"HTG Top 20% (min_delta 8.0): {len(htg_ids)}")
+
+    # Print out the neighbors and their deltas
+    show_cols = ["molecule_name", "neighbor_id", "distance", "caco_2_efflux"]
+    for id in htg_ids:
+        print(prox.neighbors(id)[show_cols])
+
+    # Set sample weights to 0.0 for HTG compounds to exclude them from training
+    fs.set_sample_weights({id: 0.0 for id in htg_ids})
+
+    exit(0)
+    """
+
+    # Create an XGBoost reference model
     """
     ref_model = fs.to_model(
         name="caco2-efflux-reg-xgb",
@@ -39,8 +53,47 @@ if __name__ == "__main__":
     end.cross_fold_inference()
     """
 
+    # Create an XGBoost model with hyperparameter tuning
+    hyperparameters = {
+        # Core tree parameters
+        "n_estimators": 200,  # More trees for better signal capture with ~320 features
+        "max_depth": 6,  # Medium depth - you have good signal (top features with SHAP >1.0)
+        "learning_rate": 0.05,  # Lower rate with more estimators for smoother learning
+
+        # Sampling parameters
+        "subsample": 0.7,  # Moderate row sampling to reduce overfitting
+        "colsample_bytree": 0.6,  # More aggressive feature sampling given 320 features
+        "colsample_bylevel": 0.8,  # Additional feature sampling at each tree level
+
+        # Regularization
+        "min_child_weight": 5,  # Higher to prevent overfitting on small groups
+        "gamma": 0.2,  # Moderate pruning - you have real signal so don't over-prune
+        "reg_alpha": 0.5,  # L1 for feature selection (useful with 320 features)
+        "reg_lambda": 2.0,  # Strong L2 to smooth predictions
+
+        # Random seed
+        "random_state": 42,
+    }
+    ref_model = fs.to_model(
+        name="caco2-efflux-reg-xgb-hp",
+        model_type=ModelType.UQ_REGRESSOR,
+        target_column=target,
+        feature_list=features,
+        description="XGBoost reference model with hyperparameter tuning for CACO-2 Efflux Ratio",
+        tags=["caco2", "er", "regression", "xgboost", "reference", "hp"],
+        hyperparameters=hyperparameters,
+        train_all_data=True,
+    )
+    ref_model.set_owner("BW")
+    end = ref_model.to_endpoint(tags=["caco2", "xgboost", "tuned"])
+    end.set_owner("BW")
+    end.auto_inference(capture=True)
+    end.cross_fold_inference()
+
+    exit(0)
+
     # Get feature importances from the reference model
-    ref_model = Model("caco2-efflux-reg-xgb")
+    ref_model = Model("caco2-efflux-reg-hp")
     importances = ref_model.shap_importance()
     non_zero_shap = [feat for feat, imp in importances if imp != 0.0]
     top_50_features = non_zero_shap[:50]
