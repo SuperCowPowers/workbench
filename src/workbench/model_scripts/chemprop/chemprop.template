@@ -54,6 +54,7 @@ TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
     "target": "{{target_column}}",
     "feature_list": "{{feature_list}}",
+    "id_column": "{{id_column}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "train_all_data": "{{train_all_data}}",
     "hyperparameters": "{{hyperparameters}}",
@@ -453,6 +454,7 @@ if __name__ == "__main__":
     target = TEMPLATE_PARAMS["target"]
     model_type = TEMPLATE_PARAMS["model_type"]
     feature_list = TEMPLATE_PARAMS["feature_list"]
+    id_column = TEMPLATE_PARAMS["id_column"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
     hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
@@ -708,8 +710,7 @@ if __name__ == "__main__":
         val_extra_features = all_extra_features
 
     # Compute prediction_std by running all ensemble models on validation data
-    # OOF predictions can't have std since each sample was predicted by only 1 fold model
-    # Here we run ALL models on the same validation samples to get ensemble std
+    # For n_folds=1, std will be 0 (only one model). For n_folds>1, std shows ensemble disagreement.
     preds_std = None
     if model_type == "regressor" and len(ensemble_models) > 0:
         print("Computing prediction_std from ensemble predictions on validation data...")
@@ -799,13 +800,19 @@ if __name__ == "__main__":
         df_val = df_val.copy()
         df_val["prediction"] = preds_flat
 
-        # Add prediction_std for ensemble models
+        # Add prediction_std (always present for regressors, 0 for single model)
         if preds_std is not None:
             df_val["prediction_std"] = preds_std.flatten()
-            print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
+        else:
+            df_val["prediction_std"] = 0.0
+        print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
 
     # Save validation predictions to S3
-    output_columns = [target, "prediction"]
+    # Include id_column if it exists in df_val
+    output_columns = []
+    if id_column in df_val.columns:
+        output_columns.append(id_column)
+    output_columns += [target, "prediction"]
     if "prediction_std" in df_val.columns:
         output_columns.append("prediction_std")
     output_columns += [col for col in df_val.columns if col.endswith("_proba")]

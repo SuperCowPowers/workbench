@@ -36,6 +36,7 @@ TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
     "target": "{{target_column}}",
     "features": "{{feature_list}}",
+    "id_column": "{{id_column}}",
     "compressed_features": "{{compressed_features}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "train_all_data": "{{train_all_data}}",
@@ -413,6 +414,7 @@ if __name__ == "__main__":
     target = TEMPLATE_PARAMS["target"]
     features = TEMPLATE_PARAMS["features"]
     orig_features = features.copy()
+    id_column = TEMPLATE_PARAMS["id_column"]
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
@@ -632,8 +634,7 @@ if __name__ == "__main__":
         df_val = all_df.copy()
 
     # Compute prediction_std by running all ensemble models on validation data
-    # OOF predictions can't have std since each sample was predicted by only 1 fold model
-    # Here we run ALL models on the same validation samples to get ensemble std
+    # For n_folds=1, std will be 0 (only one model). For n_folds>1, std shows ensemble disagreement.
     preds_std = None
     if model_type == "regressor" and len(ensemble_models) > 0:
         print("Computing prediction_std from ensemble predictions on validation data...")
@@ -664,11 +665,19 @@ if __name__ == "__main__":
     # Save predictions to S3
     df_val = df_val.copy()
     df_val["prediction"] = preds_decoded
-    output_columns = [target, "prediction"]
 
-    # Add prediction_std for regression models
-    if preds_std is not None:
-        df_val["prediction_std"] = preds_std
+    # Build output columns - include id_column if it exists
+    output_columns = []
+    if id_column in df_val.columns:
+        output_columns.append(id_column)
+    output_columns += [target, "prediction"]
+
+    # Add prediction_std for regression models (always present, 0 for single model)
+    if model_type == "regressor":
+        if preds_std is not None:
+            df_val["prediction_std"] = preds_std
+        else:
+            df_val["prediction_std"] = 0.0
         output_columns.append("prediction_std")
         print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
 
