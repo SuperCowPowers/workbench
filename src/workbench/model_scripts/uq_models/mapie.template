@@ -5,7 +5,8 @@ from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 
 # Model Performance Scores
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+from sklearn.metrics import mean_absolute_error, median_absolute_error, r2_score, root_mean_squared_error
+from scipy.stats import spearmanr
 
 from io import StringIO
 import json
@@ -277,10 +278,15 @@ if __name__ == "__main__":
     xgb_mae = mean_absolute_error(y_validate, y_pred_xgb)
     xgb_r2 = r2_score(y_validate, y_pred_xgb)
 
+    xgb_medae = median_absolute_error(y_validate, y_pred_xgb)
+    xgb_spearman = spearmanr(y_validate, y_pred_xgb).correlation
+
     print(f"\nXGBoost Point Prediction Performance:")
-    print(f"RMSE: {xgb_rmse:.3f}")
-    print(f"MAE: {xgb_mae:.3f}")
-    print(f"R2: {xgb_r2:.3f}")
+    print(f"rmse: {xgb_rmse:.3f}")
+    print(f"mae: {xgb_mae:.3f}")
+    print(f"medae: {xgb_medae:.3f}")
+    print(f"r2: {xgb_r2:.3f}")
+    print(f"spearmanr: {xgb_spearman:.3f}")
 
     # Define confidence levels we want to model
     confidence_levels = [0.50, 0.68, 0.80, 0.90, 0.95]  # 50%, 68%, 80%, 90%, 95% confidence intervals
@@ -336,11 +342,14 @@ if __name__ == "__main__":
         coverage = np.mean((y_validate >= y_pis[:, 0, 0]) & (y_validate <= y_pis[:, 1, 0]))
         print(f"  Coverage: Target={confidence_level * 100:.0f}%, Empirical={coverage * 100:.1f}%")
 
+    support = len(df_val)
     print(f"\nOverall Model Performance Summary:")
-    print(f"XGBoost RMSE: {xgb_rmse:.3f}")
-    print(f"XGBoost MAE: {xgb_mae:.3f}")
-    print(f"XGBoost R2: {xgb_r2:.3f}")
-    print(f"NumRows: {len(df_val)}")
+    print(f"rmse: {xgb_rmse:.3f}")
+    print(f"mae: {xgb_mae:.3f}")
+    print(f"medae: {xgb_medae:.3f}")
+    print(f"r2: {xgb_r2:.3f}")
+    print(f"spearmanr: {xgb_spearman:.3f}")
+    print(f"support: {support}")
 
     # Analyze interval widths across confidence levels
     print(f"\nInterval Width Analysis:")

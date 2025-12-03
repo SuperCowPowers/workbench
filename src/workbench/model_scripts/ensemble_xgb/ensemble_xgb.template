@@ -12,7 +12,8 @@ import awswrangler as wr
 import numpy as np
 
 # Model Performance Scores
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+from sklearn.metrics import mean_absolute_error, median_absolute_error, r2_score, root_mean_squared_error
+from scipy.stats import spearmanr
 
 from io import StringIO
 import json
@@ -153,11 +154,16 @@ if __name__ == "__main__":
     # Report Performance Metrics
     rmse = root_mean_squared_error(result_df[target], result_df["prediction"])
     mae = mean_absolute_error(result_df[target], result_df["prediction"])
+    medae = median_absolute_error(result_df[target], result_df["prediction"])
     r2 = r2_score(result_df[target], result_df["prediction"])
-    print(f"RMSE: {rmse:.3f}")
-    print(f"MAE: {mae:.3f}")
-    print(f"R2: {r2:.3f}")
-    print(f"NumRows: {len(result_df)}")
+    spearman_corr = spearmanr(result_df[target], result_df["prediction"]).correlation
+    support = len(result_df)
+    print(f"rmse: {rmse:.3f}")
+    print(f"mae: {mae:.3f}")
+    print(f"medae: {medae:.3f}")
+    print(f"r2: {r2:.3f}")
+    print(f"spearmanr: {spearman_corr:.3f}")
+    print(f"support: {support}")
 
     # Now save the models
     for name, model in models.items():

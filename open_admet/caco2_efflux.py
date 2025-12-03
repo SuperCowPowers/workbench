@@ -54,6 +54,7 @@ if __name__ == "__main__":
         feature_list=non_zero_shap,
         description="PyTorch Tabular reference model for CACO-2 Efflux Ratio",
         tags=["caco2", "er", "regression", "pytorch", "reference"],
+        hyperparameters={"n_folds": 10},
     )
     model.set_owner("BW")
     end = model.to_endpoint(tags=["caco2", "pytorch"])
@@ -63,7 +64,7 @@ if __name__ == "__main__":
 
     # Create ChemProp Model
     hyperparameters = {
-        "n_folds": 5,
+        "n_folds": 10,
         "hidden_dim": 300,
         "depth": 4,
         "dropout": 0.10,
