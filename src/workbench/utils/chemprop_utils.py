@@ -22,6 +22,7 @@ from sklearn.preprocessing import LabelEncoder
 
 from workbench.utils.model_utils import safe_extract_tarfile
 from workbench.utils.pandas_utils import expand_proba_column
+from workbench.utils.aws_utils import pull_s3_data
 
 log = logging.getLogger("workbench")
 
@@ -281,6 +282,68 @@ def _get_n_extra_descriptors(loaded_model: Any) -> int:
         return len(x_d_transform.scaler.mean_)
 
     return 0
+
+
+def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Pull cross-validation results from AWS training artifacts.
+
+    This retrieves the validation predictions and training metrics that were
+    saved during model training (when n_folds > 1 was used). This is much faster
+    than re-running cross-validation locally.
+
+    Args:
+        workbench_model: Workbench model object
+
+    Returns:
+        Tuple of:
+            - DataFrame with metrics (regression: rmse, mae, r2, etc. or classification: per-class metrics)
+            - DataFrame with columns: target, prediction, and optionally prediction_std or *_proba columns
+    """
+    from workbench.core.artifacts.model_core import ModelType
+
+    # Get the validation predictions from S3
+    s3_path = f"{workbench_model.model_training_path}/validation_predictions.csv"
+    predictions_df = pull_s3_data(s3_path)
+
+    if predictions_df is None:
+        raise ValueError(f"No validation predictions found at {s3_path}")
+
+    log.info(f"Pulled {len(predictions_df)} validation predictions from {s3_path}")
+
+    # Get training metrics from model metadata
+    training_metrics = workbench_model.workbench_meta().get("workbench_training_metrics")
+
+    if training_metrics is None:
+        raise ValueError(f"No training metrics found in model metadata for {workbench_model.model_name}")
+
+    # Convert metrics to DataFrame based on model type
+    if workbench_model.model_type == ModelType.CLASSIFIER:
+        # Classification metrics are stored per-class
+        metrics_df = pd.DataFrame.from_dict(training_metrics)
+    else:
+        # Regression metrics - single row
+        metrics_df = pd.DataFrame.from_dict(training_metrics)
+
+        # Rename columns to match cross_fold_inference output format
+        column_mapping = {
+            "RMSE": "rmse",
+            "MAE": "mae",
+            "R2": "r2",
+            "NumRows": "support",
+        }
+        metrics_df = metrics_df.rename(columns=column_mapping)
+
+        # Add missing columns with NaN if not present
+        for col in ["rmse", "mae", "medae", "r2", "spearmanr", "support"]:
+            if col not in metrics_df.columns:
+                metrics_df[col] = np.nan
+
+        # Reorder to match expected format
+        metrics_df = metrics_df[["rmse", "mae", "medae", "r2", "spearmanr", "support"]]
+
+    log.info(f"Metrics summary:\n{metrics_df.to_string(index=False)}")
+
+    return metrics_df, predictions_df
 
 
 def cross_fold_inference(

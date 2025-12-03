@@ -36,8 +36,8 @@ from workbench.utils.cache import Cache
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.model_utils import uq_metrics
 from workbench.utils.xgboost_model_utils import cross_fold_inference as xgboost_cross_fold
-from workbench.utils.pytorch_utils import cross_fold_inference as pytorch_cross_fold
-from workbench.utils.chemprop_utils import cross_fold_inference as chemprop_cross_fold
+from workbench.utils.pytorch_utils import pull_cv_results as pytorch_pull_cv
+from workbench.utils.chemprop_utils import pull_cv_results as chemprop_pull_cv
 from workbench_bridges.endpoints.fast_inference import fast_inference
 
 
@@ -453,12 +453,13 @@ class EndpointCore(Artifact):
         model = ModelCore(self.model_name)
 
         # Compute CrossFold (Metrics and Prediction Dataframe)
+        # For PyTorch and ChemProp, pull pre-computed CV results from training
         if model.model_framework in [ModelFramework.UNKNOWN, ModelFramework.XGBOOST]:
             cross_fold_metrics, out_of_fold_df = xgboost_cross_fold(model, nfolds=nfolds)
         elif model.model_framework == ModelFramework.PYTORCH_TABULAR:
-            cross_fold_metrics, out_of_fold_df = pytorch_cross_fold(model, nfolds=nfolds)
+            cross_fold_metrics, out_of_fold_df = pytorch_pull_cv(model)
         elif model.model_framework == ModelFramework.CHEMPROP:
-            cross_fold_metrics, out_of_fold_df = chemprop_cross_fold(model, nfolds=nfolds)
+            cross_fold_metrics, out_of_fold_df = chemprop_pull_cv(model)
         else:
             self.log.error(f"Cross-Fold Inference not supported for Model Framework: {model.model_framework}.")
             return pd.DataFrame()
@@ -486,7 +487,7 @@ class EndpointCore(Artifact):
 
         # Is this a UQ Model? If so, run full inference and merge the results
         additional_columns = []
-        if model_type == ModelType.UQ_REGRESSOR:
+        if model.model_framework == ModelFramework.XGBOOST and model_type == ModelType.UQ_REGRESSOR:
             self.log.important("UQ Regressor detected, running full inference to get uncertainty estimates...")
 
             # Get the training view dataframe for inference
