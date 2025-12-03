@@ -342,8 +342,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df["prediction"] = pd.Series([None] * len(df), dtype=object)
     else:
         df["prediction"] = np.nan
-        if n_ensemble > 1:
-            df["prediction_std"] = np.nan
+        df["prediction_std"] = np.nan
 
     if sum(valid_mask) == 0:
         print("Warning: No valid SMILES to predict on")
@@ -408,10 +407,10 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             ens_preds = ens_preds.squeeze(axis=1)
         all_ensemble_preds.append(ens_preds)
 
-    # Stack and compute mean/std
+    # Stack and compute mean/std (std is 0 for single model)
     ensemble_preds = np.stack(all_ensemble_preds, axis=0)
     preds = np.mean(ensemble_preds, axis=0)
-    preds_std = np.std(ensemble_preds, axis=0) if n_ensemble > 1 else None
+    preds_std = np.std(ensemble_preds, axis=0)  # Will be 0s for n_ensemble=1
 
     print(f"Inference: Ensemble predictions shape: {preds.shape}")
 
@@ -442,10 +441,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     else:
         # Regression: direct predictions
         df.loc[valid_mask, "prediction"] = preds.flatten()
-
-        # Add prediction_std for ensemble models
-        if preds_std is not None:
-            df.loc[valid_mask, "prediction_std"] = preds_std.flatten()
+        df.loc[valid_mask, "prediction_std"] = preds_std.flatten()
 
     return df
 
@@ -708,7 +704,10 @@ if __name__ == "__main__":
         preds = oof_predictions
         df_val = all_df.copy()
         y_validate = all_df[target].values
-    preds_std = None  # Will compute from ensemble at inference time
+    # Note: preds_std is None during training because OOF predictions come from single models
+    # (each validation sample was predicted by only 1 fold model). Std is computed at inference
+    # when all ensemble models predict the same samples.
+    preds_std = None
 
     if model_type == "classifier":
         # Classification metrics - preds contains class indices from OOF predictions

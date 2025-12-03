@@ -336,7 +336,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 
     # Initialize prediction columns
     df["prediction"] = np.nan
-    if model_type == "regressor" and n_ensemble > 1:
+    if model_type == "regressor":
         df["prediction_std"] = np.nan
 
     # Only predict on complete rows
@@ -369,10 +369,10 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             if prob_cols:
                 all_ensemble_probs.append(result[prob_cols].values)
 
-    # Stack and compute mean/std
+    # Stack and compute mean/std (std is 0 for single model)
     ensemble_preds = np.stack(all_ensemble_preds, axis=0)  # (n_ensemble, n_samples)
     preds = np.mean(ensemble_preds, axis=0)
-    preds_std = np.std(ensemble_preds, axis=0) if n_ensemble > 1 else None
+    preds_std = np.std(ensemble_preds, axis=0)  # Will be 0s for n_ensemble=1
 
     print(f"Inference: Ensemble predictions shape: {preds.shape}, n_ensemble: {n_ensemble}")
 
@@ -398,8 +398,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     else:
         # Regression
         predictions = preds
-        if preds_std is not None:
-            df.loc[~missing_mask, "prediction_std"] = preds_std
+        df.loc[~missing_mask, "prediction_std"] = preds_std
 
     # Set predictions only for complete rows
     df.loc[~missing_mask, "prediction"] = predictions
@@ -546,7 +545,7 @@ if __name__ == "__main__":
         "layers": "256-128-64",
         "activation": "LeakyReLU",
         "learning_rate": 1e-3,
-        "dropout": 0.3,
+        "dropout": 0.1,
         "use_batch_norm": True,
         "initialization": "kaiming",
     }
