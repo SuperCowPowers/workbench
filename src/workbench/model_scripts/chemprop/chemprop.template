@@ -170,7 +170,7 @@ def build_mpnn_model(
     Returns:
         Configured MPNN model
     """
-    # Model hyperparameters with defaults (based on OpenADMET baseline with slight improvements)
+    # Model hyperparameters with defaults
     hidden_dim = hyperparameters.get("hidden_dim", 300)
     depth = hyperparameters.get("depth", 4)
     dropout = hyperparameters.get("dropout", 0.10)
