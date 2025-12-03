@@ -696,10 +696,19 @@ if __name__ == "__main__":
     print(f"\nTraining complete! Trained {len(ensemble_models)} model(s).")
 
     # Use out-of-fold predictions for metrics
-    preds = oof_predictions
+    # For n_folds=1, we only have predictions for val_idx, so filter to those rows
+    if n_folds == 1:
+        val_mask = ~np.isnan(oof_predictions)
+        preds = oof_predictions[val_mask]
+        df_val = all_df[val_mask].copy()
+        y_validate = df_val[target].values
+        if oof_proba is not None:
+            oof_proba = oof_proba[val_mask]
+    else:
+        preds = oof_predictions
+        df_val = all_df.copy()
+        y_validate = all_df[target].values
     preds_std = None  # Will compute from ensemble at inference time
-    y_validate = all_df[target].values
-    df_val = all_df  # For saving predictions
 
     if model_type == "classifier":
         # Classification metrics - preds contains class indices from OOF predictions
