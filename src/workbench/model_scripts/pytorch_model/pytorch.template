@@ -631,6 +631,22 @@ if __name__ == "__main__":
         preds = oof_predictions
         df_val = all_df.copy()
 
+    # Compute prediction_std by running all ensemble models on validation data
+    # OOF predictions can't have std since each sample was predicted by only 1 fold model
+    # Here we run ALL models on the same validation samples to get ensemble std
+    preds_std = None
+    if model_type == "regressor" and len(ensemble_models) > 0:
+        print("Computing prediction_std from ensemble predictions on validation data...")
+        all_ensemble_preds_for_std = []
+        for ens_model in ensemble_models:
+            result = ens_model.predict(df_val[features], include_input_features=False)
+            ens_preds = result[f"{target}_prediction"].values.flatten()
+            all_ensemble_preds_for_std.append(ens_preds)
+
+        ensemble_preds_stacked = np.stack(all_ensemble_preds_for_std, axis=0)
+        preds_std = np.std(ensemble_preds_stacked, axis=0)
+        print(f"Ensemble prediction_std - mean: {np.mean(preds_std):.4f}, max: {np.max(preds_std):.4f}")
+
     if model_type == "classifier":
         # Get probabilities for classification
         if oof_proba is not None:
@@ -649,6 +665,13 @@ if __name__ == "__main__":
     df_val = df_val.copy()
     df_val["prediction"] = preds_decoded
     output_columns = [target, "prediction"]
+
+    # Add prediction_std for regression models
+    if preds_std is not None:
+        df_val["prediction_std"] = preds_std
+        output_columns.append("prediction_std")
+        print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
+
     output_columns += [col for col in df_val.columns if col.endswith("_proba")]
     wr.s3.to_csv(
         df_val[output_columns],

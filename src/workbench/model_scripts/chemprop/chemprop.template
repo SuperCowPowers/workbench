@@ -700,14 +700,40 @@ if __name__ == "__main__":
         y_validate = df_val[target].values
         if oof_proba is not None:
             oof_proba = oof_proba[val_mask]
+        val_extra_features = all_extra_features[val_mask] if all_extra_features is not None else None
     else:
         preds = oof_predictions
         df_val = all_df.copy()
         y_validate = all_df[target].values
-    # Note: preds_std is None during training because OOF predictions come from single models
-    # (each validation sample was predicted by only 1 fold model). Std is computed at inference
-    # when all ensemble models predict the same samples.
+        val_extra_features = all_extra_features
+
+    # Compute prediction_std by running all ensemble models on validation data
+    # OOF predictions can't have std since each sample was predicted by only 1 fold model
+    # Here we run ALL models on the same validation samples to get ensemble std
     preds_std = None
+    if model_type == "regressor" and len(ensemble_models) > 0:
+        print("Computing prediction_std from ensemble predictions on validation data...")
+        val_datapoints_for_std, _ = create_molecule_datapoints(
+            df_val[smiles_column].tolist(),
+            df_val[target].tolist(),
+            val_extra_features
+        )
+        val_dataset_for_std = data.MoleculeDataset(val_datapoints_for_std)
+        val_loader_for_std = data.build_dataloader(val_dataset_for_std, batch_size=batch_size, shuffle=False)
+
+        all_ensemble_preds_for_std = []
+        trainer_pred = pl.Trainer(accelerator="auto", logger=False, enable_progress_bar=False)
+        for ens_model in ensemble_models:
+            with torch.inference_mode():
+                ens_preds = trainer_pred.predict(ens_model, val_loader_for_std)
+            ens_preds = np.concatenate([p.numpy() for p in ens_preds], axis=0)
+            if ens_preds.ndim == 3 and ens_preds.shape[1] == 1:
+                ens_preds = ens_preds.squeeze(axis=1)
+            all_ensemble_preds_for_std.append(ens_preds.flatten())
+
+        ensemble_preds_stacked = np.stack(all_ensemble_preds_for_std, axis=0)
+        preds_std = np.std(ensemble_preds_stacked, axis=0)
+        print(f"Ensemble prediction_std - mean: {np.mean(preds_std):.4f}, max: {np.max(preds_std):.4f}")
 
     if model_type == "classifier":
         # Classification metrics - preds contains class indices from OOF predictions
