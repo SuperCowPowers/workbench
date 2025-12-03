@@ -213,6 +213,9 @@ def model_fn(model_dir: str) -> dict:
     Returns:
         Dictionary with ensemble models and metadata
     """
+    import torch
+    from functools import partial
+
     # Load ensemble metadata if present
     ensemble_metadata_path = os.path.join(model_dir, "ensemble_metadata.joblib")
     if os.path.exists(ensemble_metadata_path):
@@ -220,6 +223,15 @@ def model_fn(model_dir: str) -> dict:
         n_ensemble = ensemble_metadata["n_ensemble"]
     else:
         n_ensemble = 1
+
+    # Determine map_location for loading models (handle CUDA trained models on CPU inference)
+    map_location = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Patch torch.load globally to use map_location (needed for joblib-loaded callbacks)
+    # This handles the case where pytorch-tabular loads callbacks.sav via joblib,
+    # which internally calls torch.load without map_location
+    original_torch_load = torch.load
+    torch.load = partial(original_torch_load, map_location=map_location)
 
     # Save current working directory
     original_cwd = os.getcwd()
@@ -234,11 +246,12 @@ def model_fn(model_dir: str) -> dict:
             model_path = os.path.join(model_dir, f"tabular_model_{ens_idx}")
             if not os.path.exists(model_path):
                 model_path = os.path.join(model_dir, "tabular_model")
-            model = TabularModel.load_model(model_path)
+            model = TabularModel.load_model(model_path, map_location=map_location)
             ensemble_models.append(model)
 
     finally:
-        # Restore the original working directory
+        # Restore torch.load and working directory
+        torch.load = original_torch_load
         os.chdir(original_cwd)
 
     return {"ensemble_models": ensemble_models, "n_ensemble": n_ensemble}

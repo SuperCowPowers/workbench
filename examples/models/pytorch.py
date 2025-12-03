@@ -14,7 +14,7 @@ if recreate or not Model("aqsol-pytorch-reg").exists():
     feature_set = FeatureSet("aqsol_features")
     m = feature_set.to_model(
         name="aqsol-pytorch-reg",
-        model_type=ModelType.REGRESSOR,
+        model_type=ModelType.UQ_REGRESSOR,
         model_framework=ModelFramework.PYTORCH_TABULAR,
         feature_list=feature_list,
         target_column=target,
