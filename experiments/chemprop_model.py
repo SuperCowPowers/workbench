@@ -104,7 +104,7 @@ def create_chemprop_model(model_type: str, hyperparameters: dict, n_classes: int
     # Message passing
     mp = nn.BondMessagePassing(
         depth=hyperparameters.get("depth", 3),
-        dropout=hyperparameters.get("dropout", 0.0),
+        dropout=hyperparameters.get("dropout", 0.1),
     )
 
     # Aggregation

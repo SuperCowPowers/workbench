@@ -39,11 +39,13 @@ from sklearn.model_selection import train_test_split, KFold, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import (
     mean_absolute_error,
+    median_absolute_error,
     r2_score,
     root_mean_squared_error,
     precision_recall_fscore_support,
     confusion_matrix,
 )
+from scipy.stats import spearmanr
 import joblib
 
 # ChemProp imports
@@ -173,7 +175,7 @@ def build_mpnn_model(
     # Model hyperparameters with defaults
     hidden_dim = hyperparameters.get("hidden_dim", 300)
     depth = hyperparameters.get("depth", 4)
-    dropout = hyperparameters.get("dropout", 0.10)
+    dropout = hyperparameters.get("dropout", 0.1)
     ffn_hidden_dim = hyperparameters.get("ffn_hidden_dim", 300)
     ffn_num_layers = hyperparameters.get("ffn_num_layers", 2)
 
@@ -529,7 +531,7 @@ if __name__ == "__main__":
     n_extra = len(extra_feature_cols) if use_extra_features else 0
     max_epochs = hyperparameters.get("max_epochs", 200)
     patience = hyperparameters.get("patience", 20)
-    n_folds = hyperparameters.get("n_folds", 1)  # Number of CV folds (default: 1 = no CV)
+    n_folds = hyperparameters.get("n_folds", 5)  # Number of CV folds (default: 5)
     batch_size = hyperparameters.get("batch_size", min(64, max(16, len(all_df) // 16)))
 
     # Check extra feature columns exist
@@ -792,11 +794,16 @@ if __name__ == "__main__":
         preds_flat = preds.flatten()
         rmse = root_mean_squared_error(y_validate, preds_flat)
         mae = mean_absolute_error(y_validate, preds_flat)
+        medae = median_absolute_error(y_validate, preds_flat)
         r2 = r2_score(y_validate, preds_flat)
-        print(f"RMSE: {rmse:.3f}")
-        print(f"MAE: {mae:.3f}")
-        print(f"R2: {r2:.3f}")
-        print(f"NumRows: {len(df_val)}")
+        spearman_corr = spearmanr(y_validate, preds_flat).correlation
+        support = len(df_val)
+        print(f"rmse: {rmse:.3f}")
+        print(f"mae: {mae:.3f}")
+        print(f"medae: {medae:.3f}")
+        print(f"r2: {r2:.3f}")
+        print(f"spearmanr: {spearman_corr:.3f}")
+        print(f"support: {support}")
 
         df_val = df_val.copy()
         df_val["prediction"] = preds_flat

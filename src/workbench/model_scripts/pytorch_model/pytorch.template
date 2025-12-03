@@ -13,11 +13,13 @@ from pytorch_tabular.models import CategoryEmbeddingModelConfig
 # Model Performance Scores
 from sklearn.metrics import (
     mean_absolute_error,
+    median_absolute_error,
     r2_score,
     root_mean_squared_error,
     precision_recall_fscore_support,
     confusion_matrix,
 )
+from scipy.stats import spearmanr
 
 # Classification Encoder
 from sklearn.preprocessing import LabelEncoder
@@ -725,11 +727,16 @@ if __name__ == "__main__":
         # Calculate various model performance metrics (regression)
         rmse = root_mean_squared_error(y_validate, preds_decoded)
         mae = mean_absolute_error(y_validate, preds_decoded)
+        medae = median_absolute_error(y_validate, preds_decoded)
         r2 = r2_score(y_validate, preds_decoded)
-        print(f"RMSE: {rmse:.3f}")
-        print(f"MAE: {mae:.3f}")
-        print(f"R2: {r2:.3f}")
-        print(f"NumRows: {len(df_val)}")
+        spearman_corr = spearmanr(y_validate, preds_decoded).correlation
+        support = len(df_val)
+        print(f"rmse: {rmse:.3f}")
+        print(f"mae: {mae:.3f}")
+        print(f"medae: {medae:.3f}")
+        print(f"r2: {r2:.3f}")
+        print(f"spearmanr: {spearman_corr:.3f}")
+        print(f"support: {support}")
 
     # Save ensemble models
     for model_idx, ens_model in enumerate(ensemble_models):

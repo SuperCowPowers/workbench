@@ -161,7 +161,7 @@ def _build_mpnn_model(
     # Model hyperparameters with defaults
     hidden_dim = hyperparameters.get("hidden_dim", 300)
     depth = hyperparameters.get("depth", 3)
-    dropout = hyperparameters.get("dropout", 0.0)
+    dropout = hyperparameters.get("dropout", 0.1)
     ffn_hidden_dim = hyperparameters.get("ffn_hidden_dim", 300)
     ffn_num_layers = hyperparameters.get("ffn_num_layers", 1)
 
