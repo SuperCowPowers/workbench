@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     # Create an XGBoost reference model to get feature importances
     ref_model = fs.to_model(
-        name="caco2-efflux-ref-xgb",
+        name="caco2-efflux-reg-xgb",
         model_type=ModelType.UQ_REGRESSOR,
         target_column=target,
         feature_list=features,
@@ -52,7 +52,6 @@ if __name__ == "__main__":
         feature_list=non_zero_shap,
         description="PyTorch Tabular reference model for CACO-2 Efflux Ratio",
         tags=["caco2", "er", "regression", "pytorch", "reference"],
-        train_all_data=True,
     )
     model.set_owner("BW")
     end = model.to_endpoint(tags=["caco2", "pytorch"])
@@ -78,7 +77,6 @@ if __name__ == "__main__":
         description="ChemProp D-MPNN for CACO-2 ER prediction",
         tags=["caco2", "er", "regression", "chemprop"],
         hyperparameters=hyperparameters,
-        train_all_data=True,
     )
     model.set_owner("BW")
 
