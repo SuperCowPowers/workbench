@@ -540,60 +540,92 @@ if __name__ == "__main__":
             raise ValueError(f"Missing extra feature columns in training data: {missing_cols}")
 
     # =========================================================================
-    # SINGLE MODEL TRAINING (n_folds=1) - uses train/val split
+    # UNIFIED TRAINING: Works for n_folds=1 (single model) or n_folds>1 (K-fold CV)
     # =========================================================================
-    if n_folds == 1:
-        print("Training single model (no cross-validation)...")
+    print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold cross-validation ensemble'}...")
 
-        # Split data
+    # Prepare extra features and validate SMILES upfront
+    all_extra_features = None
+    col_means = None
+    if use_extra_features:
+        all_extra_features = all_df[extra_feature_cols].values.astype(np.float32)
+        col_means = np.nanmean(all_extra_features, axis=0)
+        for i in range(all_extra_features.shape[1]):
+            all_extra_features[np.isnan(all_extra_features[:, i]), i] = col_means[i]
+
+    # Filter invalid SMILES from the full dataset
+    _, valid_indices = create_molecule_datapoints(
+        all_df[smiles_column].tolist(), all_df[target].tolist(), all_extra_features
+    )
+    all_df = all_df.iloc[valid_indices].reset_index(drop=True)
+    if all_extra_features is not None:
+        all_extra_features = all_extra_features[valid_indices]
+    print(f"Data after SMILES validation: {all_df.shape}")
+
+    # Create fold splits
+    if n_folds == 1:
+        # Single fold: use train/val split
         if train_all_data:
             print("Training on ALL of the data")
-            df_train = all_df.copy()
-            df_val = all_df.copy()
+            train_idx = np.arange(len(all_df))
+            val_idx = np.arange(len(all_df))
         elif "training" in all_df.columns:
             print("Found training column, splitting data based on training column")
-            df_train = all_df[all_df["training"]].copy()
-            df_val = all_df[~all_df["training"]].copy()
+            train_idx = np.where(all_df["training"])[0]
+            val_idx = np.where(~all_df["training"])[0]
         else:
             print("WARNING: No training column found, splitting data with random state=42")
-            df_train, df_val = train_test_split(
-                all_df, test_size=validation_split, random_state=42
-            )
+            indices = np.arange(len(all_df))
+            train_idx, val_idx = train_test_split(indices, test_size=validation_split, random_state=42)
+        folds = [(train_idx, val_idx)]
+    else:
+        # K-Fold CV
+        if model_type == "classifier":
+            kfold = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
+            split_target = all_df[target]
+        else:
+            kfold = KFold(n_splits=n_folds, shuffle=True, random_state=42)
+            split_target = None
+        folds = list(kfold.split(all_df, split_target))
 
-        print(f"TRAIN: {df_train.shape}")
-        print(f"VALIDATION: {df_val.shape}")
+    # Initialize storage for out-of-fold predictions
+    oof_predictions = np.full(len(all_df), np.nan, dtype=np.float64)
+    if model_type == "classifier" and num_classes and num_classes > 1:
+        oof_proba = np.full((len(all_df), num_classes), np.nan, dtype=np.float64)
+    else:
+        oof_proba = None
 
-        # Extract and prepare extra features
-        train_extra_features = None
-        val_extra_features = None
-        col_means = None
+    ensemble_models = []
 
-        if use_extra_features:
-            train_extra_features = df_train[extra_feature_cols].values.astype(np.float32)
-            val_extra_features = df_val[extra_feature_cols].values.astype(np.float32)
-            col_means = np.nanmean(train_extra_features, axis=0)
-            for i in range(train_extra_features.shape[1]):
-                train_extra_features[np.isnan(train_extra_features[:, i]), i] = col_means[i]
-                val_extra_features[np.isnan(val_extra_features[:, i]), i] = col_means[i]
+    for fold_idx, (train_idx, val_idx) in enumerate(folds):
+        print(f"\n{'='*50}")
+        print(f"Training Fold {fold_idx + 1}/{len(folds)}")
+        print(f"{'='*50}")
 
-        # Create ChemProp datasets
-        train_datapoints, train_valid_idx = create_molecule_datapoints(
-            df_train[smiles_column].tolist(), df_train[target].tolist(), train_extra_features
+        # Split data for this fold
+        df_train = all_df.iloc[train_idx].reset_index(drop=True)
+        df_val = all_df.iloc[val_idx].reset_index(drop=True)
+
+        train_extra = all_extra_features[train_idx] if all_extra_features is not None else None
+        val_extra = all_extra_features[val_idx] if all_extra_features is not None else None
+
+        print(f"Fold {fold_idx + 1} - Train: {len(df_train)}, Val: {len(df_val)}")
+
+        # Create ChemProp datasets for this fold
+        train_datapoints, _ = create_molecule_datapoints(
+            df_train[smiles_column].tolist(), df_train[target].tolist(), train_extra
         )
-        val_datapoints, val_valid_idx = create_molecule_datapoints(
-            df_val[smiles_column].tolist(), df_val[target].tolist(), val_extra_features
+        val_datapoints, _ = create_molecule_datapoints(
+            df_val[smiles_column].tolist(), df_val[target].tolist(), val_extra
         )
-
-        df_train = df_train.iloc[train_valid_idx].reset_index(drop=True)
-        df_val = df_val.iloc[val_valid_idx].reset_index(drop=True)
 
         train_dataset = data.MoleculeDataset(train_datapoints)
         val_dataset = data.MoleculeDataset(val_datapoints)
 
-        # Save raw validation features for predictions later
-        val_extra_raw = val_extra_features[val_valid_idx] if val_extra_features is not None else None
+        # Save raw val features for prediction
+        val_extra_raw = val_extra.copy() if val_extra is not None else None
 
-        # Scale features and targets
+        # Scale features and targets for this fold
         x_d_transform = None
         if use_extra_features:
             feature_scaler = train_dataset.normalize_inputs("X_d")
@@ -609,8 +641,8 @@ if __name__ == "__main__":
         train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False)
 
-        # Build and train single model
-        pl.seed_everything(42)
+        # Build and train model for this fold
+        pl.seed_everything(42 + fold_idx)
         mpnn = build_mpnn_model(
             hyperparameters, task=task, num_classes=num_classes,
             n_extra_descriptors=n_extra, x_d_transform=x_d_transform, output_transform=output_transform,
@@ -619,7 +651,7 @@ if __name__ == "__main__":
         callbacks = [
             pl.callbacks.EarlyStopping(monitor="val_loss", patience=patience, mode="min"),
             pl.callbacks.ModelCheckpoint(
-                dirpath=args.model_dir, filename="best_model_0",
+                dirpath=args.model_dir, filename=f"best_model_{fold_idx}",
                 monitor="val_loss", mode="min", save_top_k=1,
             ),
         ]
@@ -636,9 +668,9 @@ if __name__ == "__main__":
             mpnn.load_state_dict(checkpoint["state_dict"])
 
         mpnn.eval()
-        ensemble_models = [mpnn]
+        ensemble_models.append(mpnn)
 
-        # Make predictions on validation set
+        # Make out-of-fold predictions using raw features
         val_datapoints_raw, _ = create_molecule_datapoints(
             df_val[smiles_column].tolist(), df_val[target].tolist(), val_extra_raw
         )
@@ -646,186 +678,33 @@ if __name__ == "__main__":
         val_loader_pred = data.build_dataloader(val_dataset_raw, batch_size=batch_size, shuffle=False)
 
         with torch.inference_mode():
-            val_predictions = trainer.predict(mpnn, val_loader_pred)
-        preds = np.concatenate([p.numpy() for p in val_predictions], axis=0)
-        if preds.ndim == 3 and preds.shape[1] == 1:
-            preds = preds.squeeze(axis=1)
+            fold_predictions = trainer.predict(mpnn, val_loader_pred)
+        fold_preds = np.concatenate([p.numpy() for p in fold_predictions], axis=0)
+        if fold_preds.ndim == 3 and fold_preds.shape[1] == 1:
+            fold_preds = fold_preds.squeeze(axis=1)
 
-        preds_std = None
-        y_validate = df_val[target].values
-
-    # =========================================================================
-    # K-FOLD CROSS-VALIDATION (n_folds > 1) - trains n_folds models
-    # =========================================================================
-    else:
-        print(f"Training {n_folds}-fold cross-validation ensemble...")
-
-        # Validate all SMILES upfront and filter invalid ones
-        all_extra_features = None
-        if use_extra_features:
-            all_extra_features = all_df[extra_feature_cols].values.astype(np.float32)
-            col_means = np.nanmean(all_extra_features, axis=0)
-            for i in range(all_extra_features.shape[1]):
-                all_extra_features[np.isnan(all_extra_features[:, i]), i] = col_means[i]
+        # Store out-of-fold predictions
+        if model_type == "classifier" and fold_preds.ndim == 2:
+            oof_predictions[val_idx] = np.argmax(fold_preds, axis=1)
+            if oof_proba is not None:
+                oof_proba[val_idx] = fold_preds
         else:
-            col_means = None
+            oof_predictions[val_idx] = fold_preds.flatten()
 
-        # Filter invalid SMILES from the full dataset
-        _, valid_indices = create_molecule_datapoints(
-            all_df[smiles_column].tolist(), all_df[target].tolist(), all_extra_features
-        )
-        all_df = all_df.iloc[valid_indices].reset_index(drop=True)
-        if all_extra_features is not None:
-            all_extra_features = all_extra_features[valid_indices]
-        print(f"Data after SMILES validation: {all_df.shape}")
+        print(f"Fold {fold_idx + 1} complete!")
 
-        # Set up K-Fold
-        if model_type == "classifier":
-            kfold = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
-            split_target = all_df[target]
-        else:
-            kfold = KFold(n_splits=n_folds, shuffle=True, random_state=42)
-            split_target = None
+    print(f"\nTraining complete! Trained {len(ensemble_models)} model(s).")
 
-        # Initialize storage for out-of-fold predictions
-        oof_predictions = np.full(len(all_df), np.nan, dtype=np.float64)
-        if model_type == "classifier" and num_classes and num_classes > 1:
-            oof_proba = np.full((len(all_df), num_classes), np.nan, dtype=np.float64)
-        else:
-            oof_proba = None
-
-        ensemble_models = []
-
-        for fold_idx, (train_idx, val_idx) in enumerate(kfold.split(all_df, split_target)):
-            print(f"\n{'='*50}")
-            print(f"Training Fold {fold_idx + 1}/{n_folds}")
-            print(f"{'='*50}")
-
-            # Split data for this fold
-            df_train = all_df.iloc[train_idx].reset_index(drop=True)
-            df_val = all_df.iloc[val_idx].reset_index(drop=True)
-
-            train_extra = all_extra_features[train_idx] if all_extra_features is not None else None
-            val_extra = all_extra_features[val_idx] if all_extra_features is not None else None
-
-            print(f"Fold {fold_idx + 1} - Train: {len(df_train)}, Val: {len(df_val)}")
-
-            # Create ChemProp datasets for this fold
-            train_datapoints, _ = create_molecule_datapoints(
-                df_train[smiles_column].tolist(), df_train[target].tolist(), train_extra
-            )
-            val_datapoints, _ = create_molecule_datapoints(
-                df_val[smiles_column].tolist(), df_val[target].tolist(), val_extra
-            )
-
-            train_dataset = data.MoleculeDataset(train_datapoints)
-            val_dataset = data.MoleculeDataset(val_datapoints)
-
-            # Save raw val features for prediction
-            val_extra_raw = val_extra.copy() if val_extra is not None else None
-
-            # Scale features and targets for this fold
-            x_d_transform = None
-            if use_extra_features:
-                feature_scaler = train_dataset.normalize_inputs("X_d")
-                val_dataset.normalize_inputs("X_d", feature_scaler)
-                x_d_transform = nn.ScaleTransform.from_standard_scaler(feature_scaler)
-
-            output_transform = None
-            if model_type == "regressor":
-                target_scaler = train_dataset.normalize_targets()
-                val_dataset.normalize_targets(target_scaler)
-                output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
-
-            train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True)
-            val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False)
-
-            # Build and train model for this fold
-            pl.seed_everything(42 + fold_idx)
-            mpnn = build_mpnn_model(
-                hyperparameters, task=task, num_classes=num_classes,
-                n_extra_descriptors=n_extra, x_d_transform=x_d_transform, output_transform=output_transform,
-            )
-
-            callbacks = [
-                pl.callbacks.EarlyStopping(monitor="val_loss", patience=patience, mode="min"),
-                pl.callbacks.ModelCheckpoint(
-                    dirpath=args.model_dir, filename=f"best_model_{fold_idx}",
-                    monitor="val_loss", mode="min", save_top_k=1,
-                ),
-            ]
-
-            trainer = pl.Trainer(
-                accelerator="auto", max_epochs=max_epochs, callbacks=callbacks,
-                logger=False, enable_progress_bar=True,
-            )
-
-            trainer.fit(mpnn, train_loader, val_loader)
-
-            if trainer.checkpoint_callback and trainer.checkpoint_callback.best_model_path:
-                checkpoint = torch.load(trainer.checkpoint_callback.best_model_path, weights_only=False)
-                mpnn.load_state_dict(checkpoint["state_dict"])
-
-            mpnn.eval()
-            ensemble_models.append(mpnn)
-
-            # Make out-of-fold predictions using raw features
-            val_datapoints_raw, _ = create_molecule_datapoints(
-                df_val[smiles_column].tolist(), df_val[target].tolist(), val_extra_raw
-            )
-            val_dataset_raw = data.MoleculeDataset(val_datapoints_raw)
-            val_loader_pred = data.build_dataloader(val_dataset_raw, batch_size=batch_size, shuffle=False)
-
-            with torch.inference_mode():
-                fold_predictions = trainer.predict(mpnn, val_loader_pred)
-            fold_preds = np.concatenate([p.numpy() for p in fold_predictions], axis=0)
-            if fold_preds.ndim == 3 and fold_preds.shape[1] == 1:
-                fold_preds = fold_preds.squeeze(axis=1)
-
-            # Store out-of-fold predictions
-            if model_type == "classifier" and fold_preds.ndim == 2:
-                oof_predictions[val_idx] = np.argmax(fold_preds, axis=1)
-                if oof_proba is not None:
-                    oof_proba[val_idx] = fold_preds
-            else:
-                oof_predictions[val_idx] = fold_preds.flatten()
-
-            print(f"Fold {fold_idx + 1} complete!")
-
-        print(f"\nCross-validation complete! Trained {len(ensemble_models)} models.")
-
-        # Use out-of-fold predictions for metrics
-        preds = oof_predictions
-        preds_std = None  # Will compute from ensemble at inference time
-        y_validate = all_df[target].values
-        df_val = all_df  # For saving predictions
+    # Use out-of-fold predictions for metrics
+    preds = oof_predictions
+    preds_std = None  # Will compute from ensemble at inference time
+    y_validate = all_df[target].values
+    df_val = all_df  # For saving predictions
 
     if model_type == "classifier":
-        # Classification metrics - handle multi-class output
-        # For CV mode, preds already contains class indices; for single model, preds are probabilities
-        if preds.ndim == 2 and preds.shape[1] > 1:
-            # Multi-class probabilities: (n_samples, n_classes), take argmax
-            class_preds = np.argmax(preds, axis=1)
-            has_proba = True
-        elif preds.ndim == 1:
-            # Either class indices (CV mode) or binary probabilities
-            if n_folds > 1:
-                # CV mode: preds are already class indices
-                class_preds = preds.astype(int)
-                has_proba = False
-            else:
-                # Single model: preds are probabilities
-                class_preds = (preds > 0.5).astype(int)
-                has_proba = False
-        else:
-            # Squeeze extra dimensions if needed
-            preds = preds.squeeze()
-            if preds.ndim == 2:
-                class_preds = np.argmax(preds, axis=1)
-                has_proba = True
-            else:
-                class_preds = (preds > 0.5).astype(int)
-                has_proba = False
+        # Classification metrics - preds contains class indices from OOF predictions
+        class_preds = preds.astype(int)
+        has_proba = oof_proba is not None
 
         print(f"class_preds shape: {class_preds.shape}")
 
@@ -868,8 +747,8 @@ if __name__ == "__main__":
         # Save validation predictions
         df_val = df_val.copy()
         df_val["prediction"] = preds_decoded
-        if has_proba and preds.ndim == 2 and preds.shape[1] > 1:
-            df_val["pred_proba"] = [p.tolist() for p in preds]
+        if has_proba and oof_proba is not None:
+            df_val["pred_proba"] = [p.tolist() for p in oof_proba]
             df_val = expand_proba_column(df_val, label_names)
 
     else:
