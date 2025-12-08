@@ -17,12 +17,12 @@ if __name__ == "__main__":
     features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
 
     # Find "High Target Gradients" with a Proximity Model
-    """
+    """ Note: Currently not used, but kept for reference
     df = fs.pull_dataframe()
     prox = Proximity(df, fs.id_column, features, target, track_columns=features)
-    htg_df = prox.target_gradients(top_percent=20.0, min_delta=8.0)
+    htg_df = prox.target_gradients(top_percent=10.0, min_delta=8.0)
     htg_ids = htg_df[fs.id_column].tolist()
-    print(f"HTG Top 20% (min_delta 8.0): {len(htg_ids)}")
+    print(f"HTG Top 10% (min_delta 8.0): {len(htg_ids)}")
 
     # Print out the neighbors and their deltas
     show_cols = ["molecule_name", "neighbor_id", "distance", "caco_2_efflux"]
@@ -31,26 +31,6 @@ if __name__ == "__main__":
 
     # Set sample weights to 0.0 for HTG compounds to exclude them from training
     fs.set_sample_weights({id: 0.0 for id in htg_ids})
-
-    exit(0)
-    """
-
-    # Create an XGBoost reference model
-    """
-    ref_model = fs.to_model(
-        name="caco2-efflux-reg-xgb",
-        model_type=ModelType.UQ_REGRESSOR,
-        target_column=target,
-        feature_list=features,
-        description="XGBoost reference model for CACO-2 Efflux Ratio",
-        tags=["caco2", "er", "regression", "xgboost", "reference"],
-        train_all_data=True,
-    )
-    ref_model.set_owner("BW")
-    end = ref_model.to_endpoint(tags=["caco2", "xgboost"])
-    end.set_owner("BW")
-    end.auto_inference(capture=True)
-    end.cross_fold_inference()
     """
 
     # Create an XGBoost model with hyperparameter tuning
@@ -86,8 +66,6 @@ if __name__ == "__main__":
     end.set_owner("BW")
     end.auto_inference(capture=True)
     end.cross_fold_inference()
-
-    exit(0)
 
     # Get feature importances from the reference model
     ref_model = Model("caco2-efflux-reg-hp")
