@@ -43,16 +43,17 @@ class DFStore(AWSDFStore):
         # Initialize the SuperClass
         super().__init__(path_prefix=path_prefix)
 
-    def list(self, include_cache: bool = False) -> list:
+    def list(self, prefix: str = None, include_cache: bool = False) -> list:
         """List all the objects in the data_store prefix.
 
         Args:
+            prefix (str, optional): Prefix to filter the listed objects (Defaults to None).
             include_cache (bool, optional): Include cache objects in the list (Defaults to False).
 
         Returns:
             list: A list of all the objects in the data_store prefix.
         """
-        return super().list(include_cache=include_cache)
+        return super().list(prefix=prefix, include_cache=include_cache)
 
     def summary(self, include_cache: bool = False) -> pd.DataFrame:
         """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates.

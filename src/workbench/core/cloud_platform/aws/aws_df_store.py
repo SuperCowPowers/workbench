@@ -56,16 +56,19 @@ class AWSDFStore:
         self.boto3_session = AWSAccountClamp().boto3_session
         self.s3_client = self.boto3_session.client("s3")
 
-    def list(self, include_cache: bool = False) -> list:
+    def list(self, prefix: str = None, include_cache: bool = False) -> list:
         """List all objects in the data_store prefix
 
         Args:
+            prefix (str, optional): Only include objects with the given prefix
             include_cache (bool, optional): Include cache objects in the list (Defaults to False)
 
         Returns:
             list: A list of all the objects in the data_store prefix.
         """
         df = self.summary(include_cache=include_cache)
+        if prefix:
+            df = df[df["location"].str.startswith(prefix)]
         return df["location"].tolist()
 
     def last_modified(self, location: str) -> Union[datetime, None]:
@@ -252,32 +255,6 @@ class AWSDFStore:
         except Exception as e:
             self.log.error(f"Failed to delete data recursively at '{location}': {e}")
 
-    def list_subfiles(self, prefix: str) -> list:
-        """Return a list of file locations with the given prefix.
-
-        Args:
-            prefix (str, optional): Only include files with the given prefix
-
-        Returns:
-            list: List of file locations (paths)
-        """
-        try:
-            full_prefix = f"{self.path_prefix}{prefix.lstrip('/')}"
-            response = self.s3_client.list_objects_v2(Bucket=self.workbench_bucket, Prefix=full_prefix)
-            if "Contents" not in response:
-                return []
-
-            locations = []
-            for obj in response["Contents"]:
-                full_key = obj["Key"]
-                location = full_key.replace(f"{self.path_prefix}", "/").split(".parquet")[0]
-                locations.append(location)
-            return locations
-
-        except Exception as e:
-            self.log.error(f"Failed to list subfiles: {e}")
-            return []
-
     def _generate_s3_uri(self, location: str) -> str:
         """Generate the S3 URI for the given location."""
         s3_path = f"{self.workbench_bucket}/{self.path_prefix}/{location}.parquet"
@@ -364,7 +341,7 @@ if __name__ == "__main__":
 
     # Test list_subfiles
     print("List Subfiles:")
-    print(df_store.list_subfiles("/testing"))
+    print(df_store.list("/testing"))
 
     # Now delete the test data
     df_store.delete("/testing/test_data")
