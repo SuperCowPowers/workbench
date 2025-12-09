@@ -1,7 +1,38 @@
 """Load the Open ADMET data using Workbench API"""
 
+import numpy as np
+import pandas as pd
 from workbench.api import DataSource, Endpoint, ParameterStore, DFStore
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
+
+# Log transformation config from OpenADMET tutorial
+# Format: column -> {log_transform, multiplier}
+TRANSFORM_CONFIG = {
+    "logd": {"log_transform": False, "multiplier": 1.0},
+    "ksol": {"log_transform": True, "multiplier": 1e-6},
+    "hlm_clint": {"log_transform": True, "multiplier": 1.0},
+    "mlm_clint": {"log_transform": True, "multiplier": 1.0},
+    "caco_2_papp_a_b": {"log_transform": True, "multiplier": 1e-6},
+    "caco_2_efflux": {"log_transform": True, "multiplier": 1.0},
+    "mppb": {"log_transform": True, "multiplier": 1.0},
+    "mbpb": {"log_transform": True, "multiplier": 1.0},
+    "mgmb": {"log_transform": True, "multiplier": 1.0},
+}
+
+
+def apply_log_transforms(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply log10 transformations to assay columns based on OpenADMET tutorial."""
+    df_transformed = df.copy()
+
+    for col, config in TRANSFORM_CONFIG.items():
+        if col not in df_transformed.columns:
+            continue
+
+        if config["log_transform"]:
+            # Apply: log10((value + 1) * multiplier)
+            df_transformed[col] = np.log10((df_transformed[col] + 1) * config["multiplier"])
+
+    return df_transformed
 
 
 def main():
@@ -9,28 +40,37 @@ def main():
     params = ParameterStore()
     df_store = DFStore()
 
-    # First load the training data into a DataSource (AWS Athena)
-    # ds = DataSource("train_data.csv", name="open_admet")
-    ds = DataSource("open_admet")
-    """
+    # Load the original training data
+    df = pd.read_csv("train_data.csv")
+    print(f"Loaded {len(df)} rows from train_data.csv")
+
+    # Apply log transformations to assay columns
+    print("Applying log transformations...")
+    df_transformed = apply_log_transforms(df)
+    print(f"Transformed columns: {list(TRANSFORM_CONFIG.keys())}")
+
+    # Save transformed data to CSV for DataSource creation
+    df_transformed.to_csv("train_data_xformed.csv", index=False)
+    print("Saved transformed data to train_data_xformed.csv")
+
+    # Create a new DataSource with transformed data
+    ds = DataSource("train_data_xformed.csv", name="open_admet_xformed")
     df = ds.pull_dataframe()
-    
+
     # Run the data through our RDKit+Mordred Feature Endpoint
     rdkit_end = Endpoint("smiles-to-taut-md-stereo-v1")
     df_features = rdkit_end.inference(df)
-    
-    # Temp: Shove this into the DFStore for inspection/use later
-    df_store.upsert("/workbench/datasets/open_admet_featurized", df_features)
-    """
-    df_features = df_store.get("/workbench/datasets/open_admet_featurized")
+
+    # Shove this into the DFStore for inspection/use later
+    df_store.upsert("/workbench/datasets/open_admet_xformed_featurized", df_features)
 
     # Grab the Feature List created by the Endpoint
     features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
 
+    # Get assay column names (same names, just transformed values)
+    assay_columns = list(TRANSFORM_CONFIG.keys())
+
     # Now Split these into separate FeatureSets for each assay
-    # Note: There are two columns molecule_name and smiles in the DataSource that aren't assays
-    #       every other column is an assay that we want to create a FeatureSet for
-    assay_columns = [col for col in ds.columns if col not in ["molecule_name", "smiles"]]
     for assay in assay_columns:
         fs_name = f"open_admet_{assay}"
 
@@ -41,10 +81,7 @@ def main():
         keep_columns = ["molecule_name", "smiles", assay] + features
         df_assay = df_assay[keep_columns]
 
-        # Write out the CSV file locally to csv_files/ directory
-        # df_assay[["molecule_name", "smiles", assay]].to_csv(f"csv_files/{fs_name}.csv", index=False)
-
-        # Create a Feature Set (takes a while)
+        # Create a Feature Set
         print(f"Creating FeatureSet: {fs_name} with {len(df_assay)} entries")
         to_features = PandasToFeatures(fs_name)
         to_features.set_input(df_assay, id_column="molecule_name")
