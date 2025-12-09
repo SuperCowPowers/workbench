@@ -57,42 +57,42 @@ MODEL_TO_TARGET = {
 
 # List of all available models
 model_list = [
-    'caco-2-efflux-reg-chemprop',
-    'caco-2-efflux-reg-chemprop-hybrid',
-    'caco-2-efflux-reg-pytorch',
-    'caco-2-efflux-reg-xgb',
-    'caco-2-papp-a-b-reg-chemprop',
-    'caco-2-papp-a-b-reg-chemprop-hybrid',
-    'caco-2-papp-a-b-reg-pytorch',
-    'caco-2-papp-a-b-reg-xgb',
-    'hlm-clint-reg-chemprop',
-    'hlm-clint-reg-chemprop-hybrid',
-    'hlm-clint-reg-pytorch',
-    'hlm-clint-reg-xgb',
-    'ksol-reg-chemprop',
-    'ksol-reg-chemprop-hybrid',
-    'ksol-reg-pytorch',
-    'ksol-reg-xgb',
-    'logd-reg-chemprop',
-    'logd-reg-chemprop-hybrid',
-    'logd-reg-pytorch',
-    'logd-reg-xgb',
-    'mbpb-reg-chemprop',
-    'mbpb-reg-chemprop-hybrid',
-    'mbpb-reg-pytorch',
-    'mbpb-reg-xgb',
-    'mgmb-reg-chemprop',
-    'mgmb-reg-chemprop-hybrid',
-    'mgmb-reg-pytorch',
-    'mgmb-reg-xgb',
-    'mlm-clint-reg-chemprop',
-    'mlm-clint-reg-chemprop-hybrid',
-    'mlm-clint-reg-pytorch',
-    'mlm-clint-reg-xgb',
-    'mppb-reg-chemprop',
-    'mppb-reg-chemprop-hybrid',
-    'mppb-reg-pytorch',
-    'mppb-reg-xgb'
+    "caco-2-efflux-reg-chemprop",
+    "caco-2-efflux-reg-chemprop-hybrid",
+    "caco-2-efflux-reg-pytorch",
+    "caco-2-efflux-reg-xgb",
+    "caco-2-papp-a-b-reg-chemprop",
+    "caco-2-papp-a-b-reg-chemprop-hybrid",
+    "caco-2-papp-a-b-reg-pytorch",
+    "caco-2-papp-a-b-reg-xgb",
+    "hlm-clint-reg-chemprop",
+    "hlm-clint-reg-chemprop-hybrid",
+    "hlm-clint-reg-pytorch",
+    "hlm-clint-reg-xgb",
+    "ksol-reg-chemprop",
+    "ksol-reg-chemprop-hybrid",
+    "ksol-reg-pytorch",
+    "ksol-reg-xgb",
+    "logd-reg-chemprop",
+    "logd-reg-chemprop-hybrid",
+    "logd-reg-pytorch",
+    "logd-reg-xgb",
+    "mbpb-reg-chemprop",
+    "mbpb-reg-chemprop-hybrid",
+    "mbpb-reg-pytorch",
+    "mbpb-reg-xgb",
+    "mgmb-reg-chemprop",
+    "mgmb-reg-chemprop-hybrid",
+    "mgmb-reg-pytorch",
+    "mgmb-reg-xgb",
+    "mlm-clint-reg-chemprop",
+    "mlm-clint-reg-chemprop-hybrid",
+    "mlm-clint-reg-pytorch",
+    "mlm-clint-reg-xgb",
+    "mppb-reg-chemprop",
+    "mppb-reg-chemprop-hybrid",
+    "mppb-reg-pytorch",
+    "mppb-reg-xgb",
 ]
 
 xgb_models = [name for name in model_list if name.endswith("-xgb")]
@@ -156,7 +156,9 @@ def run_inference_and_create_submission(models: list[str], output_file: str):
 
         submission_df[submission_col] = original_scale_predictions
         config = INVERSE_TRANSFORM_CONFIG.get(internal_target, {})
-        print(f"  Mapped {internal_target} -> {submission_col} (inverse transform applied: {config.get('log_transform', False)})")
+        print(
+            f"  Mapped {internal_target} -> {submission_col} (inverse transform applied: {config.get('log_transform', False)})"
+        )
 
     # Reorder columns to match submission format
     submission_cols = [
@@ -225,7 +227,9 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
         submission_col = COLUMN_MAP[internal_target]
         submission_df[submission_col] = original_scale_predictions
         config = INVERSE_TRANSFORM_CONFIG.get(internal_target, {})
-        print(f"  Mapped {internal_target} -> {submission_col} (inverse transform applied: {config.get('log_transform', False)})")
+        print(
+            f"  Mapped {internal_target} -> {submission_col} (inverse transform applied: {config.get('log_transform', False)})"
+        )
 
     # Reorder columns to match submission format
     submission_cols = [
