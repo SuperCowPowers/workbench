@@ -18,26 +18,33 @@ FS_LIST = [
 
 # XGBoost hyperparameters
 XGB_HYPERPARAMETERS = {
+    # Objective: optimize for MAE
+    "objective": "reg:absoluteerror",
     # Core tree parameters
-    "n_estimators": 200,
+    "n_estimators": 300,  # More trees for better convergence
     "max_depth": 6,
-    "learning_rate": 0.05,
+    "learning_rate": 0.03,  # Lower rate with more estimators
     # Sampling parameters
-    "subsample": 0.7,
+    "subsample": 0.8,
     "colsample_bytree": 0.6,
     "colsample_bylevel": 0.8,
     # Regularization
     "min_child_weight": 5,
-    "gamma": 0.2,
-    "reg_alpha": 0.5,
-    "reg_lambda": 2.0,
+    "gamma": 0.1,  # Slightly less aggressive pruning
+    "reg_alpha": 0.3,  # L1 regularization
+    "reg_lambda": 1.5,  # L2 regularization
     # Random seed
     "random_state": 42,
 }
 
+# PyTorch hyperparameters
+PYTORCH_HYPERPARAMETERS = {
+    "n_folds": 5,
+}
+
 # ChemProp hyperparameters
 CHEMPROP_HYPERPARAMETERS = {
-    "n_folds": 10,
+    "n_folds": 5,
     "hidden_dim": 300,
     "depth": 4,
     "dropout": 0.10,
@@ -52,7 +59,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
     # Load the FeatureSet and get target column
     fs = FeatureSet(fs_name)
 
-    # Target is just the last part of the FeatureSet name
+    # Target is just the last part of the FeatureSet name (after "open_admet_")
     target = fs_name.replace("open_admet_", "")
 
     # Derive base name from featureset name (remove "open_admet_" prefix)
@@ -103,7 +110,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
             feature_list=non_zero_shap,
             description=f"PyTorch Tabular model for {base_name} prediction",
             tags=["open_admet", base_name, "regression", "pytorch"],
-            hyperparameters={"n_folds": 10},
+            hyperparameters=PYTORCH_HYPERPARAMETERS,
         )
         pytorch_model.set_owner("BW")
         end = pytorch_model.to_endpoint(tags=["open_admet", base_name, "pytorch"], max_concurrency=1)
@@ -145,7 +152,6 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
             description=f"ChemProp D-MPNN Hybrid for {base_name} prediction",
             tags=["open_admet", base_name, "regression", "chemprop", "hybrid"],
             hyperparameters=CHEMPROP_HYPERPARAMETERS,
-            train_all_data=True,
         )
         hybrid_model.set_owner("BW")
         end = hybrid_model.to_endpoint(tags=["open_admet", base_name, "chemprop", "hybrid"], max_concurrency=1)
