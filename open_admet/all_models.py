@@ -2,6 +2,8 @@
 from workbench.api import FeatureSet, Model, ModelType, ModelFramework
 from workbench_bridges.api import ParameterStore
 
+# Set to True to recreate models even if they already exist
+RECREATE = True
 
 # FeatureSet List
 FS_LIST = [
@@ -74,7 +76,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
 
     # 1. Create XGBoost model
     xgb_model_name = f"{short_name}-reg-xgb"
-    if not Model(xgb_model_name).exists():
+    if RECREATE or not Model(xgb_model_name).exists():
         print(f"\nCreating XGBoost model: {xgb_model_name}")
         xgb_model = fs.to_model(
             name=xgb_model_name,
@@ -100,7 +102,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
 
     # 2. Create PyTorch model using non-zero SHAP features
     pytorch_model_name = f"{short_name}-reg-pytorch"
-    if not Model(pytorch_model_name).exists():
+    if RECREATE or not Model(pytorch_model_name).exists():
         print(f"Creating PyTorch model: {pytorch_model_name}")
         pytorch_model = fs.to_model(
             name=pytorch_model_name,
@@ -120,7 +122,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
 
     # 3. Create ChemProp model (SMILES only)
     chemprop_model_name = f"{short_name}-reg-chemprop"
-    if not Model(chemprop_model_name).exists():
+    if RECREATE or not Model(chemprop_model_name).exists():
         print(f"Creating ChemProp model: {chemprop_model_name}")
         chemprop_model = fs.to_model(
             name=chemprop_model_name,
@@ -140,7 +142,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
 
     # 4. Create hybrid ChemProp model with top 50 features
     hybrid_model_name = f"{short_name}-reg-chemprop-hybrid"
-    if not Model(hybrid_model_name).exists():
+    if RECREATE or not Model(hybrid_model_name).exists():
         print(f"Creating ChemProp Hybrid model: {hybrid_model_name}")
         hybrid_features = ["smiles"] + top_50_features
         hybrid_model = fs.to_model(
