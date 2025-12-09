@@ -115,6 +115,7 @@ df_store.upsert("/workbench/datasets/open_admet_test_featurized", df_features)
 # Grab featurized test data from DFStore
 df_features = df_store.get("/workbench/datasets/open_admet_test_featurized")
 
+
 def get_model_prefix(model_name: str) -> str:
     """Extract the target prefix from model name (e.g., 'caco-2-efflux-reg-xgb' -> 'caco-2-efflux')"""
     # Remove the model type suffix
@@ -134,14 +135,8 @@ def get_predictions_for_model(model_name: str) -> tuple[str, np.ndarray]:
     model_prefix = get_model_prefix(model_name)
     internal_target = MODEL_TO_TARGET[model_prefix]
 
-    # The prediction column is named after the target with _pred suffix (or just the target name)
-    pred_col = f"{internal_target}_pred" if f"{internal_target}_pred" in result_df.columns else internal_target
-    if pred_col not in result_df.columns:
-        print(f"  Available columns: {result_df.columns.tolist()}")
-        pred_col = [c for c in result_df.columns if "pred" in c.lower()][0]
-
-    # Return predictions in log-space (no inverse transform yet)
-    return internal_target, result_df[pred_col].values
+    # Return predictions in log-space (target column always exists in inference output)
+    return internal_target, result_df[internal_target].values
 
 
 def run_inference_and_create_submission(models: list[str], output_file: str):
