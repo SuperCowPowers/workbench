@@ -6,7 +6,7 @@ from workbench.api import DataSource, Endpoint, ParameterStore, DFStore
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 # Log transformation config from OpenADMET tutorial
-# Format: column -> {log_transform, multiplier}
+# Uses lowercase column names (matching what RDKit endpoint outputs)
 TRANSFORM_CONFIG = {
     "logd": {"log_transform": False, "multiplier": 1.0},
     "ksol": {"log_transform": True, "multiplier": 1e-6},
@@ -35,6 +35,13 @@ def apply_log_transforms(df: pd.DataFrame) -> pd.DataFrame:
     return df_transformed
 
 
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize column names: lowercase, replace spaces and special chars with underscores."""
+    df = df.copy()
+    df.columns = df.columns.str.lower().str.replace(" ", "_").str.replace("-", "_").str.replace(">", "_")
+    return df
+
+
 def main():
     # Access the Parameter Store and DataFrame Store
     params = ParameterStore()
@@ -43,6 +50,10 @@ def main():
     # Load the original training data
     df = pd.read_csv("train_data.csv")
     print(f"Loaded {len(df)} rows from train_data.csv")
+
+    # Normalize column names first (lowercase, underscores)
+    df = normalize_columns(df)
+    print(f"Normalized column names: {list(df.columns)}")
 
     # Apply log transformations to assay columns
     print("Applying log transformations...")
@@ -67,11 +78,8 @@ def main():
     # Grab the Feature List created by the Endpoint
     features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
 
-    # Get assay column names (same names, just transformed values)
-    assay_columns = list(TRANSFORM_CONFIG.keys())
-
     # Now Split these into separate FeatureSets for each assay
-    for assay in assay_columns:
+    for assay in TRANSFORM_CONFIG.keys():
         fs_name = f"open_admet_{assay}"
 
         # Pull all rows with non-null values for this assay
