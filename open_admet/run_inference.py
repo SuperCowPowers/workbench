@@ -215,28 +215,21 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
         ]
 
         # Collect predictions and stds from all models (in log-space)
-        all_predictions = []
-        all_stds = []
+        preds_df = pd.DataFrame()
+        stds_df = pd.DataFrame()
         for model_name in model_names:
             _, predictions, prediction_std = get_predictions_for_model(model_name)
-            all_predictions.append(predictions)
-            all_stds.append(prediction_std)
-
-        # Stack into arrays: shape (n_models, n_samples)
-        preds = np.stack(all_predictions, axis=0)
-        stds = np.stack(all_stds, axis=0)
+            preds_df[model_name] = predictions
+            stds_df[model_name] = prediction_std
 
         # Inverse-variance weighting: weight = 1 / variance = 1 / std^2
-        # Add small epsilon to avoid division by zero
-        variances = stds**2 + 1e-8
+        variances = stds_df**2 + 1e-8
         weights = 1.0 / variances
+        weights_normalized = weights.div(weights.sum(axis=1), axis=0)
 
-        # Normalize weights per sample so they sum to 1
-        weights_normalized = weights / weights.sum(axis=0, keepdims=True)
-
-        # Weighted average: sum(weight * prediction) for each sample
-        weighted_predictions = (weights_normalized * preds).sum(axis=0)
-        print(f"  Inverse-variance weighted predictions from {len(all_predictions)} models")
+        # Weighted average: sum(weight * prediction) per row
+        weighted_predictions = (weights_normalized * preds_df).sum(axis=1)
+        print(f"  Inverse-variance weighted predictions from {len(model_names)} models")
 
         # Apply inverse transform to the weighted prediction
         original_scale_predictions = inverse_transform(weighted_predictions, internal_target)
