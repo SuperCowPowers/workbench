@@ -165,12 +165,14 @@ class FeaturesToModel(Transform):
         self.log.important(f"Feature List for Modeling: {self.model_feature_list}")
 
         # Set up our parameters for the model script
+        # ChemProp expects target_column as a list; other templates expect a string
+        target_for_template = target_list if self.model_framework == ModelFramework.CHEMPROP else self.target_column
         template_params = {
             "model_imports": self.model_import_str,
             "model_type": self.model_type,
             "model_framework": self.model_framework,
             "model_class": self.model_class,
-            "target_column": self.target_column,
+            "target_column": target_for_template,
             "feature_list": self.model_feature_list,
             "compressed_features": feature_set.get_compressed_features(),
             "model_metrics_s3_path": self.model_training_root,
