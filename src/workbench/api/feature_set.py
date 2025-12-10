@@ -83,7 +83,7 @@ class FeatureSet(FeatureSetCore):
         tags: list = None,
         description: str = None,
         feature_list: list = None,
-        target_column: str = None,
+        target_column: Union[str, list[str]] = None,
         model_class: str = None,
         model_import_str: str = None,
         custom_script: Union[str, Path] = None,
@@ -103,7 +103,7 @@ class FeatureSet(FeatureSetCore):
             tags (list, optional): Set the tags for the model.  If not given tags will be generated.
             description (str, optional): Set the description for the model. If not give a description is generated.
             feature_list (list, optional): Set the feature list for the model. If not given a feature list is generated.
-            target_column (str, optional): The target column for the model (use None for unsupervised model)
+            target_column (str or list[str], optional): Target column(s) for the model (use None for unsupervised model)
             model_class (str, optional): Model class to use (e.g. "KMeans", default: None)
             model_import_str (str, optional): The import for the model (e.g. "from sklearn.cluster import KMeans")
             custom_script (str, optional): The custom script to use for the model (default: None)

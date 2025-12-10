@@ -1,6 +1,7 @@
 """FeaturesToModel: Train/Create a Model from a Feature Set"""
 
 from pathlib import Path
+from typing import Union
 from sagemaker.estimator import Estimator
 import awswrangler as wr
 from datetime import datetime, timezone
@@ -83,12 +84,17 @@ class FeaturesToModel(Transform):
         self.inference_arch = inference_arch
 
     def transform_impl(
-        self, target_column: str, description: str = None, feature_list: list = None, train_all_data=False, **kwargs
+        self,
+        target_column: Union[str, list[str]],
+        description: str = None,
+        feature_list: list = None,
+        train_all_data=False,
+        **kwargs,
     ):
         """Generic Features to Model: Note you should create a new class and inherit from
         this one to include specific logic for your Feature Set/Model
         Args:
-            target_column (str): Column name of the target variable
+            target_column (str or list[str]): Column name(s) of the target variable(s)
             description (str): Description of the model (optional)
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
             train_all_data (bool): Train on ALL (100%) of the data (default False)
@@ -105,9 +111,11 @@ class FeaturesToModel(Transform):
         s3_training_path = feature_set.create_s3_training_data()
         self.log.info(f"Created new training data {s3_training_path}...")
 
-        # Report the target column
+        # Report the target column(s)
         self.target_column = target_column
-        self.log.info(f"Target column: {self.target_column}")
+        # Normalize target_column to a list for internal use
+        target_list = [target_column] if isinstance(target_column, str) else (target_column or [])
+        self.log.info(f"Target column(s): {self.target_column}")
 
         # Did they specify a feature list?
         if feature_list:
@@ -134,7 +142,7 @@ class FeaturesToModel(Transform):
                 "is_deleted",
                 "event_time",
                 "training",
-            ] + [self.target_column]
+            ] + target_list
             feature_list = [c for c in all_columns if c not in filter_list]
 
             # AWS Feature Store has 3 user column types (String, Integral, Fractional)
@@ -202,11 +210,13 @@ class FeaturesToModel(Transform):
         # Metric Definitions for Classification
         elif self.model_type == ModelType.CLASSIFIER:
             # We need to get creative with the Classification Metrics
+            # Note: Classification only supports single target
+            class_target = target_list[0] if target_list else self.target_column
 
             # Grab all the target column class values (class labels)
             table = feature_set.data_source.table
-            self.class_labels = feature_set.query(f'select DISTINCT {self.target_column} FROM "{table}"')[
-                self.target_column
+            self.class_labels = feature_set.query(f'select DISTINCT {class_target} FROM "{table}"')[
+                class_target
             ].to_list()
 
             # Sanity check on the targets
