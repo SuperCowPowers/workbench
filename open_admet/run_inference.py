@@ -125,8 +125,8 @@ def get_model_prefix(model_name: str) -> str:
     return model_name
 
 
-def get_predictions_for_model(model_name: str) -> tuple[str, np.ndarray]:
-    """Run inference for a single model and return (target_name, predictions in log-space)."""
+def get_predictions_for_model(model_name: str) -> tuple[str, np.ndarray, np.ndarray]:
+    """Run inference for a single model and return (target_name, predictions, prediction_std)."""
     print(f"Running inference for: {model_name}")
     end = Endpoint(model_name)
     result_df = end.inference(df_features)
@@ -135,8 +135,11 @@ def get_predictions_for_model(model_name: str) -> tuple[str, np.ndarray]:
     model_prefix = get_model_prefix(model_name)
     internal_target = MODEL_TO_TARGET[model_prefix]
 
-    # Return predictions in log-space (target column always exists in inference output)
-    return internal_target, result_df[internal_target].values
+    # Return predictions and std in log-space
+    predictions = result_df["prediction"].values
+    prediction_std = result_df["prediction_std"].values
+
+    return internal_target, predictions, prediction_std
 
 
 def run_inference_and_create_submission(models: list[str], output_file: str):
@@ -148,7 +151,7 @@ def run_inference_and_create_submission(models: list[str], output_file: str):
 
     # Run inference for each model and collect predictions
     for model_name in models:
-        internal_target, predictions = get_predictions_for_model(model_name)
+        internal_target, predictions, _ = get_predictions_for_model(model_name)
         submission_col = COLUMN_MAP[internal_target]
 
         # Apply inverse transform
@@ -183,15 +186,16 @@ def run_inference_and_create_submission(models: list[str], output_file: str):
 
 
 def run_meta_model_inference(output_file: str = "submission_meta.csv"):
-    """Run inference using all 4 model types and average predictions (meta-model ensemble).
+    """Run inference using all 4 model types with inverse-variance weighted averaging.
 
     For each endpoint, we:
-    1. Get predictions from XGBoost, PyTorch, ChemProp, and ChemProp Hybrid models
-    2. Average the predictions in log-space (before inverse transform)
-    3. Apply inverse transform to the averaged prediction
+    1. Get predictions and prediction_std from XGBoost, PyTorch, ChemProp, and ChemProp Hybrid models
+    2. Weight each model's prediction by 1/variance (inverse-variance weighting)
+    3. Compute weighted average in log-space (before inverse transform)
+    4. Apply inverse transform to the weighted prediction
     """
     print("=" * 60)
-    print("Creating META-MODEL submission (ensemble of all 4 model types)")
+    print("Creating META-MODEL submission (inverse-variance weighted ensemble)")
     print("=" * 60)
 
     # Start with molecule name and smiles from test data
@@ -210,19 +214,32 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
             f"{target_prefix}-reg-chemprop-hybrid",
         ]
 
-        # Collect predictions from all models (in log-space)
+        # Collect predictions and stds from all models (in log-space)
         all_predictions = []
+        all_stds = []
         for model_name in model_names:
-            _, predictions = get_predictions_for_model(model_name)
+            _, predictions, prediction_std = get_predictions_for_model(model_name)
             all_predictions.append(predictions)
+            all_stds.append(prediction_std)
 
-        # Average predictions in log-space
-        stacked = np.stack(all_predictions, axis=0)
-        averaged_predictions = np.mean(stacked, axis=0)
-        print(f"  Averaged predictions from {len(all_predictions)} models")
+        # Stack into arrays: shape (n_models, n_samples)
+        preds = np.stack(all_predictions, axis=0)
+        stds = np.stack(all_stds, axis=0)
 
-        # Apply inverse transform to the averaged prediction
-        original_scale_predictions = inverse_transform(averaged_predictions, internal_target)
+        # Inverse-variance weighting: weight = 1 / variance = 1 / std^2
+        # Add small epsilon to avoid division by zero
+        variances = stds**2 + 1e-8
+        weights = 1.0 / variances
+
+        # Normalize weights per sample so they sum to 1
+        weights_normalized = weights / weights.sum(axis=0, keepdims=True)
+
+        # Weighted average: sum(weight * prediction) for each sample
+        weighted_predictions = (weights_normalized * preds).sum(axis=0)
+        print(f"  Inverse-variance weighted predictions from {len(all_predictions)} models")
+
+        # Apply inverse transform to the weighted prediction
+        original_scale_predictions = inverse_transform(weighted_predictions, internal_target)
 
         submission_col = COLUMN_MAP[internal_target]
         submission_df[submission_col] = original_scale_predictions
