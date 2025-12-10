@@ -54,7 +54,7 @@ from chemprop import data, models, nn
 # Template Parameters
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
-    "targets": "{{target_columns}}",  # List of target columns (single or multi-task)
+    "targets": "{{target_column}}",  # List of target columns (single or multi-task)
     "feature_list": "{{feature_list}}",
     "id_column": "{{id_column}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
