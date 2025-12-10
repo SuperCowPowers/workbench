@@ -131,6 +131,9 @@ def get_predictions_for_model(model_name: str) -> tuple[str, np.ndarray, np.ndar
     end = Endpoint(model_name)
     result_df = end.inference(df_features)
 
+    # Save inference results to DFStore
+    df_store.upsert(f"/workbench/open_admet/inference_runs/{model_name}", result_df)
+
     # Get the target column name from model name
     model_prefix = get_model_prefix(model_name)
     internal_target = MODEL_TO_TARGET[model_prefix]
