@@ -505,9 +505,10 @@ class EndpointCore(Artifact):
             # Run inference on the endpoint to get UQ outputs
             uq_df = self.inference(training_df)
 
-            # Identify UQ-specific columns (quantiles and prediction_std)
+            # Identify UQ-specific columns (quantiles, prediction_std, *_pred_std)
             uq_columns = [
-                col for col in uq_df.columns if col.startswith("q_") or col == "prediction_std" or col == "confidence"
+                col for col in uq_df.columns
+                if col.startswith("q_") or col == "prediction_std" or col.endswith("_pred_std") or col == "confidence"
             ]
 
             # Merge UQ columns with out-of-fold predictions
@@ -820,8 +821,8 @@ class EndpointCore(Artifact):
         if target_column and target_column in pred_results_df.columns:
             output_columns.append(target_column)
 
-        # Grab prediction columns: 'prediction', '*_pred', '*_pred_std'
-        output_columns += [col for col in pred_results_df.columns if col == "prediction"]
+        # Grab prediction columns: 'prediction', 'prediction_std', '*_pred', '*_pred_std'
+        output_columns += [col for col in pred_results_df.columns if col in ["prediction", "prediction_std"]]
         output_columns += [col for col in pred_results_df.columns if col.endswith("_pred")]
         output_columns += [col for col in pred_results_df.columns if col.endswith("_pred_std")]
         # Also grab any _proba columns and UQ columns
