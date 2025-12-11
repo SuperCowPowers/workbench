@@ -28,6 +28,28 @@ import os
 import pandas as pd
 from typing import List, Tuple
 
+# Default Hyperparameters for XGBoost
+DEFAULT_HYPERPARAMETERS = {
+    # Core tree parameters
+    "n_estimators": 200,  # More trees for better signal capture when we have lots of features
+    "max_depth": 6,  # Medium depth
+    "learning_rate": 0.05,  # Lower rate with more estimators for smoother learning
+
+    # Sampling parameters
+    "subsample": 0.7,  # Moderate row sampling to reduce overfitting
+    "colsample_bytree": 0.6,  # More aggressive feature sampling given lots of features
+    "colsample_bylevel": 0.8,  # Additional feature sampling at each tree level
+
+    # Regularization
+    "min_child_weight": 5,  # Higher to prevent overfitting on small groups
+    "gamma": 0.2,  # Moderate pruning - you have real signal so don't over-prune
+    "reg_alpha": 0.5,  # L1 for feature selection (useful with many features)
+    "reg_lambda": 2.0,  # Strong L2 to smooth predictions
+
+    # Random seed
+    "random_state": 42,
+}
+
 # Template Parameters
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
@@ -210,7 +232,7 @@ if __name__ == "__main__":
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
-    hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
+    hyperparameters = {**DEFAULT_HYPERPARAMETERS, **TEMPLATE_PARAMS["hyperparameters"]}
     validation_split = 0.2
 
     # Script arguments for input/output directories
