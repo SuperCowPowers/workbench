@@ -133,7 +133,7 @@ def get_predictions_for_model(model_name: str, regenerate: bool = False) -> tupl
 
     # Check if results already exist in DFStore
     store_path = f"/workbench/open_admet/inference_runs/{model_name}"
-    if not regenerate and df_store.exists(store_path):
+    if not regenerate and df_store.get(store_path) is not None:
         print(f"Loading cached inference results for: {model_name}")
         result_df = df_store.get(store_path)
     else:
