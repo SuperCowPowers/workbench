@@ -839,9 +839,17 @@ if __name__ == "__main__":
             if len(y_true) > 0:
                 rmse = root_mean_squared_error(y_true, y_pred)
                 mae = mean_absolute_error(y_true, y_pred)
+                medae = median_absolute_error(y_true, y_pred)
                 r2 = r2_score(y_true, y_pred)
                 spearman_corr = spearmanr(y_true, y_pred).correlation
-                print(f"{t_name}: rmse={rmse:.3f}, mae={mae:.3f}, r2={r2:.3f}, spearmanr={spearman_corr:.3f}, n={len(y_true)}")
+                support = len(y_true)
+                # Print metrics in format expected by SageMaker metric definitions
+                print(f"rmse: {rmse:.3f}")
+                print(f"mae: {mae:.3f}")
+                print(f"medae: {medae:.3f}")
+                print(f"r2: {r2:.3f}")
+                print(f"spearmanr: {spearman_corr:.3f}")
+                print(f"support: {support}")
 
             # Store predictions in dataframe
             df_val[f"{t_name}_pred"] = preds[:, t_idx]
