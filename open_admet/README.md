@@ -19,7 +19,7 @@ The challenge covers 9 key ADMET properties:
 | MGMB | Mouse gut microbiome binding | % bound |
 
 ## Our Approach
-We train 5 different model types for each ADMET endpoint. The [Workbench Toolkit](https://github.com/SuperCowPowers/workbench) suports all 5 of these model types and makes creation, training, and deployment into AWS a snap.
+We train 5 different model types for each ADMET endpoint. The [Workbench AWS Dashboard](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo) supports all 5 of these model types and makes the creation, training, and deployment of models into your production AWS accounts a snap.
 
 1. **XGBoost** - Gradient boosted trees on RDKit molecular descriptors
 2. **PyTorch** - Neural network on RDKit molecular descriptors
@@ -69,6 +69,7 @@ This approach:
 - **Chemprop**: <https://github.com/chemprop/chemprop>
 - **R-applet ADMET Challenge**: <https://github.com/R-applet/ADMET_Challenge_2025>
 - **Workbench**: <https://github.com/SuperCowPowers/workbench>
+- **Workbench Dashboard**: <https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo>
 
 ### Questions/Consulting
 <img align="right" src="../docs/images/scp.png" width="180">
