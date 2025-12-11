@@ -165,6 +165,7 @@ def build_mpnn_model(
     n_extra_descriptors: int = 0,
     x_d_transform: nn.ScaleTransform | None = None,
     output_transform: nn.UnscaleTransform | None = None,
+    task_weights: np.ndarray | None = None,
 ) -> models.MPNN:
     """Build an MPNN model with the specified hyperparameters.
 
@@ -176,15 +177,16 @@ def build_mpnn_model(
         n_extra_descriptors: Number of extra descriptor features (for hybrid mode)
         x_d_transform: Optional transform for extra descriptors (scaling)
         output_transform: Optional transform for regression output (unscaling targets)
+        task_weights: Optional array of weights for each task (multi-task learning)
 
     Returns:
         Configured MPNN model
     """
     # Model hyperparameters with defaults
-    hidden_dim = hyperparameters.get("hidden_dim", 300)
-    depth = hyperparameters.get("depth", 4)
-    dropout = hyperparameters.get("dropout", 0.1)
-    ffn_hidden_dim = hyperparameters.get("ffn_hidden_dim", 300)
+    hidden_dim = hyperparameters.get("hidden_dim", 700)
+    depth = hyperparameters.get("depth", 6)
+    dropout = hyperparameters.get("dropout", 0.25)
+    ffn_hidden_dim = hyperparameters.get("ffn_hidden_dim", 2000)
     ffn_num_layers = hyperparameters.get("ffn_num_layers", 2)
 
     # Message passing component
@@ -209,6 +211,11 @@ def build_mpnn_model(
     else:
         # Regression with optional output transform to unscale predictions
         # n_tasks controls the number of output heads for multi-task learning
+        # task_weights goes here (in RegressionFFN) to weight loss per task
+        weights_tensor = None
+        if task_weights is not None:
+            weights_tensor = torch.tensor(task_weights, dtype=torch.float32)
+
         ffn = nn.RegressionFFN(
             input_dim=ffn_input_dim,
             hidden_dim=ffn_hidden_dim,
@@ -216,6 +223,7 @@ def build_mpnn_model(
             dropout=dropout,
             n_tasks=n_targets,
             output_transform=output_transform,
+            task_weights=weights_tensor,
         )
 
     # Create the MPNN model
@@ -554,10 +562,10 @@ if __name__ == "__main__":
     print(f"Hyperparameters: {hyperparameters}")
     task = "classification" if model_type == "classifier" else "regression"
     n_extra = len(extra_feature_cols) if use_extra_features else 0
-    max_epochs = hyperparameters.get("max_epochs", 200)
-    patience = hyperparameters.get("patience", 20)
+    max_epochs = hyperparameters.get("max_epochs", 400)
+    patience = hyperparameters.get("patience", 40)
     n_folds = hyperparameters.get("n_folds", 5)  # Number of CV folds (default: 5)
-    batch_size = hyperparameters.get("batch_size", min(64, max(16, len(all_df) // 16)))
+    batch_size = hyperparameters.get("batch_size", 16)
 
     # Check extra feature columns exist
     if use_extra_features:
@@ -591,6 +599,20 @@ if __name__ == "__main__":
     if all_extra_features is not None:
         all_extra_features = all_extra_features[valid_indices]
     print(f"Data after SMILES validation: {all_df.shape}")
+
+    # Compute dynamic task weights for multi-task regression
+    # Weight = inverse of sample count (normalized so min weight = 1.0)
+    # This gives higher weight to targets with fewer samples
+    task_weights = None
+    if n_targets > 1 and model_type != "classifier":
+        sample_counts = np.array([np.sum(~np.isnan(all_targets[:, t])) for t in range(n_targets)])
+        # Inverse weighting: fewer samples = higher weight
+        inverse_counts = 1.0 / sample_counts
+        # Normalize so minimum weight is 1.0
+        task_weights = inverse_counts / inverse_counts.min()
+        print(f"Task weights (inverse sample count):")
+        for t_idx, t_name in enumerate(target_columns):
+            print(f"  {t_name}: {task_weights[t_idx]:.3f} (n={sample_counts[t_idx]})")
 
     # Create fold splits
     if n_folds == 1:
@@ -674,6 +696,7 @@ if __name__ == "__main__":
         mpnn = build_mpnn_model(
             hyperparameters, task=task, num_classes=num_classes, n_targets=n_targets,
             n_extra_descriptors=n_extra, x_d_transform=x_d_transform, output_transform=output_transform,
+            task_weights=task_weights,
         )
 
         callbacks = [
