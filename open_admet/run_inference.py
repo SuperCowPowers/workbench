@@ -100,6 +100,9 @@ pytorch_models = [name for name in model_list if name.endswith("-pytorch")]
 chemprop_models = [name for name in model_list if name.endswith("-chemprop")]
 chemprop_hybrid_models = [name for name in model_list if name.endswith("-chemprop-hybrid")]
 
+# Multi-target model
+MULTI_TARGET_MODEL = "open-admet-chemprop-mt"
+
 # Grab test data
 test_df = pd.read_csv("test_data_blind.csv")
 
@@ -125,14 +128,19 @@ def get_model_prefix(model_name: str) -> str:
     return model_name
 
 
-def get_predictions_for_model(model_name: str) -> tuple[str, np.ndarray, np.ndarray]:
+def get_predictions_for_model(model_name: str, regenerate: bool = False) -> tuple[str, np.ndarray, np.ndarray]:
     """Run inference for a single model and return (target_name, predictions, prediction_std)."""
-    print(f"Running inference for: {model_name}")
-    end = Endpoint(model_name)
-    result_df = end.inference(df_features)
 
-    # Save inference results to DFStore
-    df_store.upsert(f"/workbench/open_admet/inference_runs/{model_name}", result_df)
+    # Check if results already exist in DFStore
+    store_path = f"/workbench/open_admet/inference_runs/{model_name}"
+    if not regenerate and df_store.exists(store_path):
+        print(f"Loading cached inference results for: {model_name}")
+        result_df = df_store.get(store_path)
+    else:
+        print(f"Running inference for: {model_name}")
+        end = Endpoint(model_name)
+        result_df = end.inference(df_features)
+        df_store.upsert(store_path, result_df)
 
     # Get the target column name from model name
     model_prefix = get_model_prefix(model_name)
@@ -188,11 +196,25 @@ def run_inference_and_create_submission(models: list[str], output_file: str):
     return submission_df
 
 
+def get_multi_target_predictions() -> dict[str, tuple[np.ndarray, np.ndarray]]:
+    """Run inference for the multi-target model and return predictions for all targets."""
+    print(f"Running inference for: {MULTI_TARGET_MODEL}")
+    end = Endpoint(MULTI_TARGET_MODEL)
+    result_df = end.inference(df_features)
+    df_store.upsert(f"/workbench/open_admet/inference_runs/{MULTI_TARGET_MODEL}", result_df)
+
+    # Extract predictions for each target (column names are {target}_pred and {target}_pred_std)
+    return {
+        target: (result_df[f"{target}_pred"].values, result_df[f"{target}_pred_std"].values)
+        for target in MODEL_TO_TARGET.values()
+    }
+
+
 def run_meta_model_inference(output_file: str = "submission_meta.csv"):
-    """Run inference using all 4 model types with inverse-variance weighted averaging.
+    """Run inference using all 5 model types with inverse-variance weighted averaging.
 
     For each endpoint, we:
-    1. Get predictions and prediction_std from XGBoost, PyTorch, ChemProp, and ChemProp Hybrid models
+    1. Get predictions and prediction_std from XGBoost, PyTorch, ChemProp, ChemProp Hybrid, and Multi-Target models
     2. Weight each model's prediction by 1/variance (inverse-variance weighting)
     3. Compute weighted average in log-space (before inverse transform)
     4. Apply inverse transform to the weighted prediction
@@ -205,11 +227,14 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
     submission_df = df_features[["Molecule_Name", "SMILES"]].copy()
     submission_df = submission_df.rename(columns={"Molecule_Name": "Molecule Name"})
 
+    # Get multi-target model predictions once (covers all targets)
+    mt_predictions = get_multi_target_predictions()
+
     # Process each target endpoint
     for target_prefix, internal_target in MODEL_TO_TARGET.items():
         print(f"\nProcessing target: {internal_target}")
 
-        # Build model names for all 4 model types
+        # Build model names for the 4 single-target model types
         model_names = [
             f"{target_prefix}-reg-xgb",
             f"{target_prefix}-reg-pytorch",
@@ -217,13 +242,18 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
             f"{target_prefix}-reg-chemprop-hybrid",
         ]
 
-        # Collect predictions and stds from all models (in log-space)
+        # Collect predictions and stds from single-target models (in log-space)
         preds_df = pd.DataFrame()
         stds_df = pd.DataFrame()
         for model_name in model_names:
             _, predictions, prediction_std = get_predictions_for_model(model_name)
             preds_df[model_name] = predictions
             stds_df[model_name] = prediction_std
+
+        # Add multi-target model predictions for this target
+        mt_preds, mt_std = mt_predictions[internal_target]
+        preds_df[MULTI_TARGET_MODEL] = mt_preds
+        stds_df[MULTI_TARGET_MODEL] = mt_std
 
         # Inverse-variance weighting: weight = 1 / variance = 1 / std^2
         variances = stds_df**2 + 1e-8
@@ -232,7 +262,7 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
 
         # Weighted average: sum(weight * prediction) per row
         weighted_predictions = (weights_normalized * preds_df).sum(axis=1)
-        print(f"  Inverse-variance weighted predictions from {len(model_names)} models")
+        print(f"  Inverse-variance weighted predictions from {len(preds_df.columns)} models")
 
         # Apply inverse transform to the weighted prediction
         original_scale_predictions = inverse_transform(weighted_predictions, internal_target)
@@ -267,7 +297,7 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
 
 
 if __name__ == "__main__":
-    # Create META-MODEL submission (ensemble of all 4 model types)
+    # Create META-MODEL submission (ensemble of all 5 model types including multi-target)
     run_meta_model_inference("submission_meta.csv")
 
     # Optionally create individual model type submissions
