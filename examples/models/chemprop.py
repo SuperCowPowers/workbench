@@ -50,7 +50,7 @@ ADMET_TARGETS = [
 if recreate or not Model("open-admet-chemprop-mt").exists():
     feature_set = FeatureSet("open_admet_all")
     m = feature_set.to_model(
-        name="open-admet-chemprop-mtp",
+        name="open-admet-chemprop-mt",
         model_type=ModelType.REGRESSOR,
         model_framework=ModelFramework.CHEMPROP,
         target_column=ADMET_TARGETS,  # Multi-task: list of 9 targets
@@ -69,7 +69,7 @@ if recreate or not Model("open-admet-chemprop-mt").exists():
 
 # Create an Endpoint for the Multi-Task Regression Model
 if recreate or not Endpoint("open-admet-chemprop-mt").exists():
-    m = Model("open-admet-chemprop-mtp")
+    m = Model("open-admet-chemprop-mt")
     end = m.to_endpoint(tags=["chemprop", "open_admet", "multitask"])
     end.set_owner("BW")
     end.auto_inference(capture=True)

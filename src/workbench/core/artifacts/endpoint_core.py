@@ -389,13 +389,7 @@ class EndpointCore(Artifact):
         # Grab the model features and target column
         model = ModelCore(self.model_name)
         features = model.features()
-        target_column = model.target()
-
-        # Run predictions on the evaluation data
-        prediction_df = self._predict(eval_df, features, drop_error_rows)
-        if prediction_df.empty:
-            self.log.warning("No predictions were made. Returning empty DataFrame.")
-            return prediction_df
+        target_column = model.target()  # Note: We have multi-target models (so this could be a list)
 
         # FIXME: Multi-target support - currently uses first target for metrics
         # Normalize target_column to handle both string and list formats
@@ -403,6 +397,12 @@ class EndpointCore(Artifact):
             primary_target = target_column[0] if target_column else None
         else:
             primary_target = target_column
+
+        # Run predictions on the evaluation data
+        prediction_df = self._predict(eval_df, features, drop_error_rows)
+        if prediction_df.empty:
+            self.log.warning("No predictions were made. Returning empty DataFrame.")
+            return prediction_df
 
         # Sanity Check that the target column is present
         if primary_target and (primary_target not in prediction_df.columns):
@@ -487,8 +487,9 @@ class EndpointCore(Artifact):
         # Capture the results
         capture_name = "full_cross_fold"
         description = capture_name.replace("_", " ").title()
-        target_column = model.target()
         model_type = model.model_type
+        target_column = model.target()  # Note: We have multi-target models (so this could be a list)
+        primary_target = target_column[0] if isinstance(target_column, list) else target_column
 
         # Get the id_column from the model's FeatureSet
         fs = FeatureSetCore(model.get_input())
@@ -507,8 +508,7 @@ class EndpointCore(Artifact):
 
             # Identify UQ-specific columns (quantiles, prediction_std, *_pred_std)
             uq_columns = [
-                col
-                for col in uq_df.columns
+                col for col in uq_df.columns
                 if col.startswith("q_") or col == "prediction_std" or col.endswith("_pred_std") or col == "confidence"
             ]
 
@@ -526,13 +526,13 @@ class EndpointCore(Artifact):
                 self.log.info(f"Added UQ columns: {', '.join(additional_columns)}")
 
                 # Also compute UQ metrics
-                metrics = uq_metrics(out_of_fold_df, target_column)
+                metrics = uq_metrics(out_of_fold_df, primary_target)
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
         self._capture_inference_results(
             capture_name,
             out_of_fold_df,
-            target_column,
+            primary_target,
             model_type,
             cross_fold_metrics,
             description,
@@ -815,12 +815,16 @@ class EndpointCore(Artifact):
         self.log.info(f"Writing metrics to {inference_capture_path}/inference_metrics.csv")
         wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
 
-        # Grab the ID column and target column if they are present
+        # Grab the ID column and target column(s) if they are present
         output_columns = []
         if id_column and id_column in pred_results_df.columns:
             output_columns.append(id_column)
-        if target_column and target_column in pred_results_df.columns:
-            output_columns.append(target_column)
+        # Handle both single target (str) and multi-target (list) cases
+        if target_column:
+            target_columns = target_column if isinstance(target_column, list) else [target_column]
+            for tc in target_columns:
+                if tc in pred_results_df.columns:
+                    output_columns.append(tc)
 
         # Grab prediction columns: 'prediction', 'prediction_std', '*_pred', '*_pred_std'
         output_columns += [col for col in pred_results_df.columns if col in ["prediction", "prediction_std"]]
