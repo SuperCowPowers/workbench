@@ -107,7 +107,7 @@ end.set_owner("Jill")
 test_df = pd.read_csv("/my/test/data.csv")
 results_df = end.inference(test_df)  # This hits the deployed AWS Endpoint
 ```
-see [Hello World Example](hello_world.py)
+See full code here: [Hello World Example](hello_world.py)
 
 ## Individual Model Results
 For individual model results on the test set, please see the [Model Metrics](model_metrics.md) document that breakdown the performace for each of the individual models used as part of our 'meta-model'.
