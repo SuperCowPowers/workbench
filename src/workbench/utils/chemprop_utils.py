@@ -311,10 +311,11 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
     training_metrics = workbench_model.workbench_meta().get("workbench_training_metrics")
 
     if training_metrics is None:
-        raise ValueError(f"No training metrics found in model metadata for {workbench_model.model_name}")
-
-    metrics_df = pd.DataFrame.from_dict(training_metrics)
-    log.info(f"Metrics summary:\n{metrics_df.to_string(index=False)}")
+        log.warning(f"No training metrics found in model metadata for {workbench_model.model_name}")
+        metrics_df = pd.DataFrame({"error": [f"No training metrics found for {workbench_model.model_name}"]})
+    else:
+        metrics_df = pd.DataFrame.from_dict(training_metrics)
+        log.info(f"Metrics summary:\n{metrics_df.to_string(index=False)}")
 
     return metrics_df, predictions_df
 
