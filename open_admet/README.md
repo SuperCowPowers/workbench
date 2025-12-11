@@ -64,6 +64,9 @@ This approach:
 - Naturally handles model disagreement
 - Produces robust predictions across diverse chemical space
 
+## Individual Model Results
+For individual model results on the test set, please see the [Model Metrics](model_metrics.md) document that breakdown the performace for each of the individual models used as part of our 'meta-model'.
+
 ## References
 
 - **Chemprop**: <https://github.com/chemprop/chemprop>
