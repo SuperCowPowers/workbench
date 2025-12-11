@@ -65,7 +65,7 @@ This approach:
 - Produces robust predictions across diverse chemical space
 
 ## Deploying a ChemProp Model to AWS using Workbench
-This is a hello world example of how to deploy a ChemProp model to AWS using Workbench. For more detailed instructions, please see the [Workbench Documentation](
+This is a hello world example of how to deploy a ChemProp model to AWS using Workbench. For more detailed instructions, please see the [Workbench Documentation](https://supercowpowers.github.io/workbench/)
 
 ```python
 # An example script demonstrating how to create multi-task Chemprop model in Workbench.
