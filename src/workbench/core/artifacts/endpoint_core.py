@@ -508,7 +508,8 @@ class EndpointCore(Artifact):
 
             # Identify UQ-specific columns (quantiles, prediction_std, *_pred_std)
             uq_columns = [
-                col for col in uq_df.columns
+                col
+                for col in uq_df.columns
                 if col.startswith("q_") or col == "prediction_std" or col.endswith("_pred_std") or col == "confidence"
             ]
 
