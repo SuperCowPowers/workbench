@@ -19,12 +19,12 @@ The challenge covers 9 key ADMET properties:
 | MGMB | Mouse gut microbiome binding | % bound |
 
 ## Our Approach
-We train 5 different model types for each ADMET endpoint:
+We train 5 different model types for each ADMET endpoint. The [Workbench Toolkit](https://github.com/SuperCowPowers/workbench) suports all 5 of these model types and makes creation, training, and deployment into AWS a snap.
 
 1. **XGBoost** - Gradient boosted trees on RDKit molecular descriptors
-2. **PyTorch Tabular** - Neural network on RDKit molecular descriptors
+2. **PyTorch** - Neural network on RDKit molecular descriptors
 3. **ChemProp** - Message Passing Neural Network (MPNN) on molecular graphs
-4. **ChemProp Hybrid** - MPNN + RDKit descriptors combined
+4. **ChemProp Hybrid** - MPNN + Top RDKit descriptors combined
 5. **ChemProp Multi-Task** - Single MPNN predicting all 9 endpoints simultaneously
 
 ### ChemProp Configuration
@@ -43,6 +43,7 @@ For our chemprop setup we use R-applet's GitHub as a reference:
 | Batch size | 16 |
 
 For multi-task models, we use **dynamic task weights** computed as inverse sample counts:
+
 ```
 weight[task] = (1 / sample_count[task]) / min(1 / sample_counts)
 ```
@@ -58,18 +59,10 @@ Our final submission uses **inverse-variance weighted averaging** across all 5 m
 4. Final predictions are transformed back to original scale
 
 This approach:
+
 - Gives more weight to confident predictions
 - Naturally handles model disagreement
 - Produces robust predictions across diverse chemical space
-
-### Running Inference
-
-```python
-from run_inference import run_meta_model_inference
-
-# Generate submission with 5-model ensemble
-run_meta_model_inference("submission_meta.csv")
-```
 
 ## References
 
@@ -77,9 +70,10 @@ run_meta_model_inference("submission_meta.csv")
 - **R-applet ADMET Challenge**: <https://github.com/R-applet/ADMET_Challenge_2025>
 - **Workbench**: <https://github.com/SuperCowPowers/workbench>
 
-### Contributions
-If you'd like to contribute to the Workbench project, you're more than welcome. All contributions will fall under the existing project [license](https://github.com/SuperCowPowers/workbench/blob/main/LICENSE). If you are interested in contributing or have questions please feel free to contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com).
-
+### Questions/Consulting
 <img align="right" src="../docs/images/scp.png" width="180">
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
-® Amazon Web Services, AWS, the Powered by AWS logo, are trademarks of Amazon.com, Inc. or its affiliates
+
+
+<i>® Amazon Web Services, AWS, the Powered by AWS logo, are trademarks of Amazon.com, Inc. or its affiliates</i>
