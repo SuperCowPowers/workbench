@@ -820,10 +820,12 @@ class EndpointCore(Artifact):
         target_list = targets if isinstance(targets, list) else [targets]
         is_multi_task = len(target_list) > 1
 
-        # For multi-task models, save separate inference runs per target (cv_{target}/)
+        # For multi-task models, save separate inference runs per target
+        # Use cv_{target} for cross-fold, auto_{target} for auto_inference
         if is_multi_task:
+            prefix = "cv_" if "cross_fold" in capture_name else "auto_"
             for target in target_list:
-                target_path = f"{self.endpoint_inference_path}/cv_{target}"
+                target_path = f"{self.endpoint_inference_path}/{prefix}{target}"
                 # Drop rows with NaN target values for metrics/plots
                 target_df = pred_results_df.dropna(subset=[target])
                 # Compute per-target metrics and save predictions
