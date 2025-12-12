@@ -461,7 +461,14 @@ class EndpointCore(Artifact):
                     target_metrics = pd.DataFrame()
 
                 self._capture_inference_results(
-                    target_capture_name, target_df, target, model.model_type, target_metrics, description, features, id_column
+                    target_capture_name,
+                    target_df,
+                    target,
+                    model.model_type,
+                    target_metrics,
+                    description,
+                    features,
+                    id_column,
                 )
 
             # For UQ Models we also capture the uncertainty metrics
