@@ -507,7 +507,8 @@ class EndpointCore(Artifact):
 
             # Identify UQ-specific columns (quantiles, prediction_std, *_pred_std)
             uq_columns = [
-                col for col in uq_df.columns
+                col
+                for col in uq_df.columns
                 if col.startswith("q_") or col == "prediction_std" or col.endswith("_pred_std") or col == "confidence"
             ]
 
@@ -831,9 +832,7 @@ class EndpointCore(Artifact):
                 self._save_target_inference(target_path, pred_results_df, target, id_column)
         else:
             # Single target - maintain backward compatibility (no prefix)
-            self._save_target_inference(
-                inference_capture_path, pred_results_df, target_list[0], id_column, prefix=""
-            )
+            self._save_target_inference(inference_capture_path, pred_results_df, target_list[0], id_column, prefix="")
 
         # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
         if model_type == ModelType.CLASSIFIER:
