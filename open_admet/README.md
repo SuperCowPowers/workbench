@@ -29,7 +29,7 @@ We train 5 different model types for each ADMET endpoint. The [Workbench AWS Das
 
 ### ChemProp Configuration
 For our chemprop setup we use R-applet's GitHub as a reference:
-[ADMET Challenge 2025 reference](https://github.com/R-applet/ADMET_Challenge_2025). So all credit for the good chemprop setup goes to R-applet (<https://github.com/R-applet>)
+[ADMET Challenge 2025 reference](https://github.com/R-applet/ADMET_Challenge_2025).
 
 | Parameter | Value |
 |-----------|-------|
