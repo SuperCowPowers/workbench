@@ -36,8 +36,14 @@ class ModelPlot(ComponentInterface):
             if df is None:
                 return self.display_text("No Data")
 
-            # Calculate the distance from the diagonal for each point
+            # Grab the target(s) for this model
             target = model.target()
+
+            # For multi-task models, match target to inference_run name or default to first
+            if isinstance(target, list):
+                target = next((t for t in target if t in inference_run), target[0])
+
+            # Compute error for coloring
             df["error"] = abs(df["prediction"] - df[target])
             return ScatterPlot().update_properties(
                 df,

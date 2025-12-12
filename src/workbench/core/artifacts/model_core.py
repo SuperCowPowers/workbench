@@ -869,7 +869,7 @@ class ModelCore(Artifact):
             return self.df_store.get(f"/workbench/models/{self.name}/shap_data")
         else:
             # Loop over the SHAP data and return a dict of DataFrames
-            shap_dfs = self.df_store.list_subfiles(f"/workbench/models/{self.name}/shap_data")
+            shap_dfs = self.df_store.list(f"/workbench/models/{self.name}/shap_data")
             shap_data = {}
             for df_location in shap_dfs:
                 key = df_location.split("/")[-1]

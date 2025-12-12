@@ -389,20 +389,20 @@ class EndpointCore(Artifact):
         # Grab the model features and target column
         model = ModelCore(self.model_name)
         features = model.features()
-        target_column = model.target()  # Note: We have multi-target models (so this could be a list)
-
-        # FIXME: Multi-target support - currently uses first target for metrics
-        # Normalize target_column to handle both string and list formats
-        if isinstance(target_column, list):
-            primary_target = target_column[0] if target_column else None
-        else:
-            primary_target = target_column
+        targets = model.target()  # Note: We have multi-target models (so this could be a list)
 
         # Run predictions on the evaluation data
         prediction_df = self._predict(eval_df, features, drop_error_rows)
         if prediction_df.empty:
             self.log.warning("No predictions were made. Returning empty DataFrame.")
             return prediction_df
+
+        # FIXME: Multi-target support - currently uses first target for metrics
+        # Normalize targets to handle both string and list formats
+        if isinstance(targets, list):
+            primary_target = targets[0] if targets else None
+        else:
+            primary_target = targets
 
         # Sanity Check that the target column is present
         if primary_target and (primary_target not in prediction_df.columns):
@@ -434,9 +434,9 @@ class EndpointCore(Artifact):
                 fs = FeatureSetCore(model.get_input())
                 id_column = fs.id_column
             description = capture_name.replace("_", " ").title()
-            # FIXME: Multi-target support - passing primary_target for now
+            # Pass targets which can be a string or list for multi-task models
             self._capture_inference_results(
-                capture_name, prediction_df, primary_target, model.model_type, metrics, description, features, id_column
+                capture_name, prediction_df, targets, model.model_type, metrics, description, features, id_column
             )
 
             # For UQ Models we also capture the uncertainty metrics
@@ -487,9 +487,8 @@ class EndpointCore(Artifact):
         # Capture the results
         capture_name = "full_cross_fold"
         description = capture_name.replace("_", " ").title()
+        targets = model.target()  # Note: We have multi-target models (so this could be a list)
         model_type = model.model_type
-        target_column = model.target()  # Note: We have multi-target models (so this could be a list)
-        primary_target = target_column[0] if isinstance(target_column, list) else target_column
 
         # Get the id_column from the model's FeatureSet
         fs = FeatureSetCore(model.get_input())
@@ -508,8 +507,7 @@ class EndpointCore(Artifact):
 
             # Identify UQ-specific columns (quantiles, prediction_std, *_pred_std)
             uq_columns = [
-                col
-                for col in uq_df.columns
+                col for col in uq_df.columns
                 if col.startswith("q_") or col == "prediction_std" or col.endswith("_pred_std") or col == "confidence"
             ]
 
@@ -526,14 +524,15 @@ class EndpointCore(Artifact):
                 additional_columns = uq_columns
                 self.log.info(f"Added UQ columns: {', '.join(additional_columns)}")
 
-                # Also compute UQ metrics
+                # Also compute UQ metrics (use first target for multi-target models)
+                primary_target = targets[0] if isinstance(targets, list) else targets
                 metrics = uq_metrics(out_of_fold_df, primary_target)
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
         self._capture_inference_results(
             capture_name,
             out_of_fold_df,
-            primary_target,
+            targets,
             model_type,
             cross_fold_metrics,
             description,
@@ -773,7 +772,7 @@ class EndpointCore(Artifact):
         self,
         capture_name: str,
         pred_results_df: pd.DataFrame,
-        target_column: str,
+        targets: str | list[str],
         model_type: ModelType,
         metrics: pd.DataFrame,
         description: str,
@@ -785,7 +784,7 @@ class EndpointCore(Artifact):
         Args:
             capture_name (str): Name of the inference capture
             pred_results_df (pd.DataFrame): DataFrame with the prediction results
-            target_column (str): Name of the target column
+            targets (str | list[str]): Target column name(s) - single string or list for multi-task
             model_type (ModelType): Type of the model (e.g. REGRESSOR, CLASSIFIER)
             metrics (pd.DataFrame): DataFrame with the performance metrics
             description (str): Description of the inference results
@@ -816,33 +815,30 @@ class EndpointCore(Artifact):
         self.log.info(f"Writing metrics to {inference_capture_path}/inference_metrics.csv")
         wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
 
-        # Grab the ID column and target column(s) if they are present
-        output_columns = []
-        if id_column and id_column in pred_results_df.columns:
-            output_columns.append(id_column)
-        # Handle both single target (str) and multi-target (list) cases
-        if target_column:
-            target_columns = target_column if isinstance(target_column, list) else [target_column]
-            for tc in target_columns:
-                if tc in pred_results_df.columns:
-                    output_columns.append(tc)
+        # Normalize targets to a list
+        target_list = targets if isinstance(targets, list) else [targets]
+        is_multi_task = len(target_list) > 1
 
-        # Grab prediction columns: 'prediction', 'prediction_std', '*_pred', '*_pred_std'
-        output_columns += [col for col in pred_results_df.columns if col in ["prediction", "prediction_std"]]
-        output_columns += [col for col in pred_results_df.columns if col.endswith("_pred")]
-        output_columns += [col for col in pred_results_df.columns if col.endswith("_pred_std")]
-        # Also grab any _proba columns and UQ columns
-        output_columns += [col for col in pred_results_df.columns if col.endswith("_proba")]
-        output_columns += [col for col in pred_results_df.columns if col.startswith("q_") or col == "confidence"]
-
-        # Write the predictions to our S3 Model Inference Folder
-        self.log.info(f"Writing predictions to {inference_capture_path}/inference_predictions.csv")
-        subset_df = pred_results_df[output_columns]
-        wr.s3.to_csv(subset_df, f"{inference_capture_path}/inference_predictions.csv", index=False)
+        # For multi-task models, save separate inference runs per target (cv_{target}/)
+        if is_multi_task:
+            for target in target_list:
+                target_path = f"{self.endpoint_inference_path}/cv_{target}"
+                # Compute per-target metrics
+                target_metrics = self.regression_metrics(target, pred_results_df)
+                wr.s3.to_csv(target_metrics, f"{target_path}/inference_metrics.csv", index=False)
+                self.log.info(f"Writing metrics to {target_path}/inference_metrics.csv")
+                # Save predictions
+                self._save_target_inference(target_path, pred_results_df, target, id_column)
+        else:
+            # Single target - maintain backward compatibility (no prefix)
+            self._save_target_inference(
+                inference_capture_path, pred_results_df, target_list[0], id_column, prefix=""
+            )
 
         # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
         if model_type == ModelType.CLASSIFIER:
-            conf_mtx = self.generate_confusion_matrix(target_column, pred_results_df)
+            # For classifiers, use the first target (multi-task classifiers not yet supported)
+            conf_mtx = self.generate_confusion_matrix(target_list[0], pred_results_df)
             self.log.info(f"Writing confusion matrix to {inference_capture_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=True)
@@ -851,6 +847,61 @@ class EndpointCore(Artifact):
         self.log.important(f"Loading inference metrics for {self.model_name}...")
         model = ModelCore(self.model_name)
         model._load_inference_metrics(capture_name)
+
+    def _save_target_inference(
+        self,
+        inference_capture_path: str,
+        pred_results_df: pd.DataFrame,
+        target: str,
+        id_column: str = None,
+        prefix: str = "",
+        is_multi_task: bool = False,
+    ):
+        """Save inference results for a single target.
+
+        Args:
+            inference_capture_path (str): S3 path for inference capture
+            pred_results_df (pd.DataFrame): DataFrame with prediction results
+            target (str): Target column name
+            id_column (str, optional): Name of the ID column
+            prefix (str): Prefix for the output filename (legacy, not used for multi-task)
+            is_multi_task (bool): Whether this is a multi-task model
+        """
+        # Start with ID column if present
+        output_columns = []
+        if id_column and id_column in pred_results_df.columns:
+            output_columns.append(id_column)
+
+        # Add target column if present
+        if target and target in pred_results_df.columns:
+            output_columns.append(target)
+
+        # Build the output DataFrame
+        output_df = pred_results_df[output_columns].copy() if output_columns else pd.DataFrame()
+
+        # For multi-task: map {target}_pred -> prediction, {target}_pred_std -> prediction_std
+        # For single-task: just grab prediction and prediction_std columns directly
+        pred_col = f"{target}_pred"
+        std_col = f"{target}_pred_std"
+        if pred_col in pred_results_df.columns:
+            # Multi-task columns exist
+            output_df["prediction"] = pred_results_df[pred_col]
+            if std_col in pred_results_df.columns:
+                output_df["prediction_std"] = pred_results_df[std_col]
+        else:
+            # Single-task: grab standard prediction columns
+            for col in ["prediction", "prediction_std"]:
+                if col in pred_results_df.columns:
+                    output_df[col] = pred_results_df[col]
+            # Also grab any _proba columns and UQ columns
+            for col in pred_results_df.columns:
+                if col.endswith("_proba") or col.startswith("q_") or col == "confidence":
+                    output_df[col] = pred_results_df[col]
+
+        # Write the predictions to S3
+        output_file = f"{inference_capture_path}/inference_predictions.csv"
+        self.log.info(f"Writing predictions to {output_file}")
+        wr.s3.to_csv(output_df, output_file, index=False)
 
     def regression_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint

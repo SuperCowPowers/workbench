@@ -316,6 +316,12 @@ if __name__ == "__main__":
     # Get the DataFrame
     print(f"Getting data 'test_data':\n{df_store.get('/testing/test_data')}")
 
+    # Test a dataframe with a custom index
+    my_df_with_index = pd.DataFrame({"A": [1, 2], "B": [3, 4]}, index=["row1", "row2"])
+    my_df_with_index.index.name = "CustomIndex"
+    df_store.upsert("/testing/test_data_with_index", my_df_with_index)
+    print(f"Getting data 'test_data_with_index':\n{df_store.get('/testing/test_data_with_index')}")
+
     # Now let's test adding a Series
     series = pd.Series([1, 2, 3, 4], name="Series")
     df_store.upsert("/testing/test_series", series)

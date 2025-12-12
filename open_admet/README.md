@@ -122,7 +122,7 @@ For individual model results on the test set, please see the [Model Metrics](mod
 ### Questions/Consulting
 <img align="right" src="../docs/images/scp.png" width="180">
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please visit our website: <www.supercowpowers.com> or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please visit our website www.supercowpowers.com or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 
 
