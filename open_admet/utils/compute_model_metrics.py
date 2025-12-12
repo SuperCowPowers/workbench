@@ -41,6 +41,29 @@ model_list = [
     "mppb-reg-chemprop-hybrid",
 ]
 
+# First pull/store metrics from the multi-task model
+runs = [
+    "cv_caco_2_efflux",
+    "cv_caco_2_papp_a_b",
+    "cv_hlm_clint",
+    "cv_ksol",
+    "cv_logd",
+    "cv_mbpb",
+    "cv_mgmb",
+    "cv_mlm_clint",
+    "cv_mppb"
+]
+model = Model("open-admet-chemprop-mt")
+mt_metrics = {}
+for run in runs:
+    metrics = model.get_inference_metrics(run).reset_index()
+    print(f"Metrics for run {run}:")
+    print(metrics)
+    model_name = run.replace("cv_", "").replace("_", "-") + "-mt"
+    mt_metrics[model_name] = metrics
+    print(model_name)
+    print(metrics)
+
 # For each model, load it and get its full cross-fold inference metrics
 metric_rows = []
 for model_name in model_list:
@@ -52,6 +75,7 @@ for model_name in model_list:
     row = {"model_name": model_name}
     row.update(metrics.iloc[0].to_dict())
     metric_rows.append(row)
+
 
 # Create a DataFrame of all metrics
 metrics_df = pd.DataFrame(metric_rows)
