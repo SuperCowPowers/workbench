@@ -51,7 +51,7 @@ runs = [
     "cv_mbpb",
     "cv_mgmb",
     "cv_mlm_clint",
-    "cv_mppb"
+    "cv_mppb",
 ]
 model = Model("open-admet-chemprop-mt")
 mt_metrics = {}
