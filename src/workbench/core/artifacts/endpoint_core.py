@@ -433,15 +433,39 @@ class EndpointCore(Artifact):
             if id_column is None:
                 fs = FeatureSetCore(model.get_input())
                 id_column = fs.id_column
-            description = capture_name.replace("_", " ").title()
-            # Pass targets which can be a string or list for multi-task models
-            self._capture_inference_results(
-                capture_name, prediction_df, targets, model.model_type, metrics, description, features, id_column
-            )
+
+            # Normalize targets to a list for iteration
+            target_list = targets if isinstance(targets, list) else [targets]
+
+            # For multi-target models, use target-specific capture names (e.g., auto_target1, auto_target2)
+            # For single-target models, use the original capture name for backward compatibility
+            for target in target_list:
+                # Determine capture name: use prefix for multi-target, original name for single-target
+                if len(target_list) > 1:
+                    prefix = "auto" if "auto" in capture_name else capture_name
+                    target_capture_name = f"{prefix}_{target}"
+                else:
+                    target_capture_name = capture_name
+
+                description = target_capture_name.replace("_", " ").title()
+
+                # Drop rows with NaN target values for metrics/plots
+                target_df = prediction_df.dropna(subset=[target])
+
+                # Compute per-target metrics
+                if model.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
+                    target_metrics = self.regression_metrics(target, target_df)
+                elif model.model_type == ModelType.CLASSIFIER:
+                    target_metrics = self.classification_metrics(target, target_df)
+                else:
+                    target_metrics = pd.DataFrame()
+
+                self._capture_inference_results(
+                    target_capture_name, target_df, target, model.model_type, target_metrics, description, features, id_column
+                )
 
             # For UQ Models we also capture the uncertainty metrics
             if model.model_type in [ModelType.UQ_REGRESSOR]:
-                # FIXME: Multi-target support - using primary_target for UQ metrics
                 metrics = uq_metrics(prediction_df, primary_target)
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
@@ -485,8 +509,6 @@ class EndpointCore(Artifact):
             return out_of_fold_df
 
         # Capture the results
-        capture_name = "full_cross_fold"
-        description = capture_name.replace("_", " ").title()
         targets = model.target()  # Note: We have multi-target models (so this could be a list)
         model_type = model.model_type
 
@@ -528,18 +550,39 @@ class EndpointCore(Artifact):
                 # Also compute UQ metrics (use first target for multi-target models)
                 primary_target = targets[0] if isinstance(targets, list) else targets
                 metrics = uq_metrics(out_of_fold_df, primary_target)
-                self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
+                self.param_store.upsert(f"/workbench/models/{model.name}/inference/full_cross_fold", metrics)
 
-        self._capture_inference_results(
-            capture_name,
-            out_of_fold_df,
-            targets,
-            model_type,
-            cross_fold_metrics,
-            description,
-            features=additional_columns,
-            id_column=id_column,
-        )
+        # Normalize targets to a list for iteration
+        target_list = targets if isinstance(targets, list) else [targets]
+
+        # For multi-target models, use target-specific capture names (e.g., cv_target1, cv_target2)
+        # For single-target models, use "full_cross_fold" for backward compatibility
+        for target in target_list:
+            capture_name = f"cv_{target}"
+            description = capture_name.replace("_", " ").title()
+
+            # Drop rows with NaN target values for metrics/plots
+            target_df = out_of_fold_df.dropna(subset=[target])
+
+            # Compute per-target metrics
+            if model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
+                target_metrics = self.regression_metrics(target, target_df)
+            elif model_type == ModelType.CLASSIFIER:
+                target_metrics = self.classification_metrics(target, target_df)
+            else:
+                target_metrics = pd.DataFrame()
+
+            self._capture_inference_results(
+                capture_name,
+                target_df,
+                target,
+                model_type,
+                target_metrics,
+                description,
+                features=additional_columns,
+                id_column=id_column,
+            )
+
         return out_of_fold_df
 
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
@@ -773,19 +816,19 @@ class EndpointCore(Artifact):
         self,
         capture_name: str,
         pred_results_df: pd.DataFrame,
-        targets: str | list[str],
+        target: str,
         model_type: ModelType,
         metrics: pd.DataFrame,
         description: str,
         features: list,
         id_column: str = None,
     ):
-        """Internal: Capture the inference results and metrics to S3
+        """Internal: Capture the inference results and metrics to S3 for a single target
 
         Args:
             capture_name (str): Name of the inference capture
             pred_results_df (pd.DataFrame): DataFrame with the prediction results
-            targets (str | list[str]): Target column name(s) - single string or list for multi-task
+            target (str): Target column name
             model_type (ModelType): Type of the model (e.g. REGRESSOR, CLASSIFIER)
             metrics (pd.DataFrame): DataFrame with the performance metrics
             description (str): Description of the inference results
@@ -816,31 +859,12 @@ class EndpointCore(Artifact):
         self.log.info(f"Writing metrics to {inference_capture_path}/inference_metrics.csv")
         wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
 
-        # Normalize targets to a list
-        target_list = targets if isinstance(targets, list) else [targets]
-        is_multi_task = len(target_list) > 1
-
-        # For multi-task models, save separate inference runs per target
-        # Use cv_{target} for cross-fold, auto_{target} for auto_inference
-        if is_multi_task:
-            prefix = "cv_" if "cross_fold" in capture_name else "auto_"
-            for target in target_list:
-                target_path = f"{self.endpoint_inference_path}/{prefix}{target}"
-                # Drop rows with NaN target values for metrics/plots
-                target_df = pred_results_df.dropna(subset=[target])
-                # Compute per-target metrics and save predictions
-                target_metrics = self.regression_metrics(target, target_df)
-                wr.s3.to_csv(target_metrics, f"{target_path}/inference_metrics.csv", index=False)
-                self.log.info(f"Writing metrics to {target_path}/inference_metrics.csv")
-                self._save_target_inference(target_path, target_df, target, id_column)
-        else:
-            # Single target - maintain backward compatibility (no prefix)
-            self._save_target_inference(inference_capture_path, pred_results_df, target_list[0], id_column, prefix="")
+        # Save the inference predictions for this target
+        self._save_target_inference(inference_capture_path, pred_results_df, target, id_column)
 
         # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
         if model_type == ModelType.CLASSIFIER:
-            # For classifiers, use the first target (multi-task classifiers not yet supported)
-            conf_mtx = self.generate_confusion_matrix(target_list[0], pred_results_df)
+            conf_mtx = self.generate_confusion_matrix(target, pred_results_df)
             self.log.info(f"Writing confusion matrix to {inference_capture_path}/inference_cm.csv")
             # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
             wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=True)
@@ -856,8 +880,6 @@ class EndpointCore(Artifact):
         pred_results_df: pd.DataFrame,
         target: str,
         id_column: str = None,
-        prefix: str = "",
-        is_multi_task: bool = False,
     ):
         """Save inference results for a single target.
 
@@ -866,8 +888,6 @@ class EndpointCore(Artifact):
             pred_results_df (pd.DataFrame): DataFrame with prediction results
             target (str): Target column name
             id_column (str, optional): Name of the ID column
-            prefix (str): Prefix for the output filename (legacy, not used for multi-task)
-            is_multi_task (bool): Whether this is a multi-task model
         """
         # Start with ID column if present
         output_columns = []
