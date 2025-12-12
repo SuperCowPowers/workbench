@@ -263,21 +263,25 @@ class ModelCore(Artifact):
         else:
             self.log.important(f"No inference data found for {self.model_name}!")
 
-    def get_inference_metrics(self, capture_name: str = "latest") -> Union[pd.DataFrame, None]:
+    def get_inference_metrics(self, capture_name: str = "any") -> Union[pd.DataFrame, None]:
         """Retrieve the inference performance metrics for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name or "training" (default: "latest")
+            capture_name (str, optional): Specific capture_name (default: "any")
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
 
         Note:
-            If a capture_name isn't specified this will try to return something reasonable
+            If a capture_name isn't specified this will try to the 'first' available metrics
         """
         # Try to get the auto_capture 'training_holdout' or the training
-        if capture_name == "latest":
-            metrics_df = self.get_inference_metrics("auto_inference")
-            return metrics_df if metrics_df is not None else self.get_inference_metrics("model_training")
+        if capture_name == "any":
+            metric_list = self.list_inference_runs()
+            if metric_list:
+                return self.get_inference_metrics(metric_list[0])
+            else:
+                self.log.warning(f"No performance metrics found for {self.model_name}!")
+                return None
 
         # Grab the metrics captured during model training (could return None)
         if capture_name == "model_training":
