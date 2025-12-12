@@ -824,12 +824,13 @@ class EndpointCore(Artifact):
         if is_multi_task:
             for target in target_list:
                 target_path = f"{self.endpoint_inference_path}/cv_{target}"
-                # Compute per-target metrics
-                target_metrics = self.regression_metrics(target, pred_results_df)
+                # Drop rows with NaN target values for metrics/plots
+                target_df = pred_results_df.dropna(subset=[target])
+                # Compute per-target metrics and save predictions
+                target_metrics = self.regression_metrics(target, target_df)
                 wr.s3.to_csv(target_metrics, f"{target_path}/inference_metrics.csv", index=False)
                 self.log.info(f"Writing metrics to {target_path}/inference_metrics.csv")
-                # Save predictions
-                self._save_target_inference(target_path, pred_results_df, target, id_column)
+                self._save_target_inference(target_path, target_df, target, id_column)
         else:
             # Single target - maintain backward compatibility (no prefix)
             self._save_target_inference(inference_capture_path, pred_results_df, target_list[0], id_column, prefix="")
