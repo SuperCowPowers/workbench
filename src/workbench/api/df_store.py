@@ -14,24 +14,24 @@ from workbench_bridges.api import DFStore as BridgesDFStore
 class DFStore(BridgesDFStore):
     """DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy
 
-    Common Usage:
-```python
-        df_store = DFStore()
+        Common Usage:
+    ```python
+            df_store = DFStore()
 
-        # List Data
-        df_store.list()
+            # List Data
+            df_store.list()
 
-        # Add DataFrame
-        df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-        df_store.upsert("/test/my_data", df)
+            # Add DataFrame
+            df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+            df_store.upsert("/test/my_data", df)
 
-        # Retrieve DataFrame
-        df = df_store.get("/test/my_data")
-        print(df)
+            # Retrieve DataFrame
+            df = df_store.get("/test/my_data")
+            print(df)
 
-        # Delete Data
-        df_store.delete("/test/my_data")
-```
+            # Delete Data
+            df_store.delete("/test/my_data")
+    ```
     """
 
     def __init__(self, path_prefix: Union[str, None] = None):

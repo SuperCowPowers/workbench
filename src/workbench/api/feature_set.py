@@ -190,7 +190,7 @@ if __name__ == "__main__":
     print(df.head())
 
     # Create a Proximity Model from the FeatureSet
-    features = ['height', 'weight', 'age', 'iq_score', 'likes_dogs', 'food']
+    features = ["height", "weight", "age", "iq_score", "likes_dogs", "food"]
     my_prox = my_features.prox_model(target="income", features=features)
     neighbors = my_prox.neighbors(42)
     print("Neighbors for ID 42:")
