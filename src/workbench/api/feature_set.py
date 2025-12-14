@@ -13,7 +13,6 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 from workbench.api.model import Model, ModelType, ModelFramework
-from workbench.utils.feature_set_utils import proximity_model_local
 
 
 class FeatureSet(FeatureSetCore):
@@ -158,7 +157,7 @@ class FeatureSet(FeatureSetCore):
         # Return the Model
         return Model(name)
 
-    def prox_model(self, target: str, features: list) -> "Proximity":
+    def prox_model(self, target: str, features: list) -> "Proximity":  # noqa: F821
         """Create a local Proximity Model for this Model
 
         Args:
@@ -168,7 +167,13 @@ class FeatureSet(FeatureSetCore):
         Returns:
            Proximity: A local Proximity Model
         """
-        return proximity_model_local(self, target, features)
+        from workbench.algorithms.dataframe.proximity import Proximity  # noqa: F401 (avoid circular import)
+
+        # Create the Proximity Model from the full FeatureSet dataframe
+        full_df = self.pull_dataframe()
+
+        # Create and return the Proximity Model
+        return Proximity(full_df, self.id_column, features, target, track_columns=features)
 
 
 if __name__ == "__main__":
@@ -180,5 +185,12 @@ if __name__ == "__main__":
     pprint(my_features.summary())
     pprint(my_features.details())
 
+    # Pull the full DataFrame
+    df = my_features.pull_dataframe()
+    print(df.head())
+
+    # Create a Proximity Model from the FeatureSet
+    my_prox = my_features.prox_model(target="iq_score", features=["feature1", "feature2", "feature3"])
+
     # Create a Model from the FeatureSet
-    my_model = my_features.to_model(name="test-model", model_type=ModelType.REGRESSOR, target_column="iq_score")
+    # my_model = my_features.to_model(name="test-model", model_type=ModelType.REGRESSOR, target_column="iq_score")
