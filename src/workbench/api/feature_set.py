@@ -194,4 +194,12 @@ if __name__ == "__main__":
     print(neighbors)
 
     # Create a Model from the FeatureSet
-    # my_model = my_features.to_model(name="test-model", model_type=ModelType.REGRESSOR, target_column="iq_score")
+    """
+    my_model = my_features.to_model(
+        name="test-model",
+        model_type=ModelType.REGRESSOR,
+        target_column="salary",
+        feature_list=features
+    )
+    pprint(my_model.summary())
+    """
