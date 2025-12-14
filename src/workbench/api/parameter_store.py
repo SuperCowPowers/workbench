@@ -1,13 +1,15 @@
 """ParameterStore: Manages Workbench parameters in a Cloud Based Parameter Store."""
 
-from typing import Union
 import logging
 
 # Workbench Imports
-from workbench.core.cloud_platform.aws.aws_parameter_store import AWSParameterStore
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+
+# Workbench Bridges Import
+from workbench_bridges.api import ParameterStore as BridgesParameterStore
 
 
-class ParameterStore(AWSParameterStore):
+class ParameterStore(BridgesParameterStore):
     """ParameterStore: Manages Workbench parameters in a Cloud Based Parameter Store.
 
     Common Usage:
@@ -43,55 +45,11 @@ class ParameterStore(AWSParameterStore):
 
     def __init__(self):
         """ParameterStore Init Method"""
+        session = AWSAccountClamp().boto3_session
+
+        # Initialize parent with workbench config
+        super().__init__(boto3_session=session)
         self.log = logging.getLogger("workbench")
-
-        # Initialize the SuperClass
-        super().__init__()
-
-    def list(self, prefix: str = None) -> list:
-        """List all parameters in the AWS Parameter Store, optionally filtering by a prefix.
-
-        Args:
-            prefix (str, optional): A prefix to filter the parameters by. Defaults to None.
-
-        Returns:
-            list: A list of parameter names and details.
-        """
-        return super().list(prefix=prefix)
-
-    def get(self, name: str, warn: bool = True, decrypt: bool = True) -> Union[str, list, dict, None]:
-        """Retrieve a parameter value from the AWS Parameter Store.
-
-        Args:
-            name (str): The name of the parameter to retrieve.
-            warn (bool): Whether to log a warning if the parameter is not found.
-            decrypt (bool): Whether to decrypt secure string parameters.
-
-        Returns:
-            Union[str, list, dict, None]: The value of the parameter or None if not found.
-        """
-        return super().get(name=name, warn=warn, decrypt=decrypt)
-
-    def upsert(self, name: str, value):
-        """Insert or update a parameter in the AWS Parameter Store.
-
-        Args:
-            name (str): The name of the parameter.
-            value (str | list | dict): The value of the parameter.
-        """
-        super().upsert(name=name, value=value)
-
-    def delete(self, name: str):
-        """Delete a parameter from the AWS Parameter Store.
-
-        Args:
-            name (str): The name of the parameter to delete.
-        """
-        super().delete(name=name)
-
-    def __repr__(self):
-        """Return a string representation of the ParameterStore object."""
-        return super().__repr__()
 
 
 if __name__ == "__main__":
