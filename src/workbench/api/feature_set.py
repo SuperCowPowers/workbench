@@ -13,6 +13,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 from workbench.api.model import Model, ModelType, ModelFramework
+from workbench.utils.feature_set_utils import proximity_model_local
 
 
 class FeatureSet(FeatureSetCore):
@@ -156,6 +157,18 @@ class FeatureSet(FeatureSetCore):
 
         # Return the Model
         return Model(name)
+
+    def prox_model(self, target: str, features: list) -> "Proximity":
+        """Create a local Proximity Model for this Model
+
+        Args:
+           target (str): The target column name
+           features (list): The list of feature column names
+
+        Returns:
+           Proximity: A local Proximity Model
+        """
+        return proximity_model_local(self, target, features)
 
 
 if __name__ == "__main__":

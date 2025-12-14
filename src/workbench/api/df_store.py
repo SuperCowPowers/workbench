@@ -1,19 +1,21 @@
 """DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy"""
 
-from datetime import datetime
-from typing import Union
 import logging
-import pandas as pd
+from typing import Union
 
 # Workbench Imports
-from workbench.core.cloud_platform.aws.aws_df_store import AWSDFStore
+from workbench.utils.config_manager import ConfigManager
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+
+# Workbench Bridges Import
+from workbench_bridges.api import DFStore as BridgesDFStore
 
 
-class DFStore(AWSDFStore):
+class DFStore(BridgesDFStore):
     """DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy
 
     Common Usage:
-        ```python
+```python
         df_store = DFStore()
 
         # List Data
@@ -29,7 +31,7 @@ class DFStore(AWSDFStore):
 
         # Delete Data
         df_store.delete("/test/my_data")
-        ```
+```
     """
 
     def __init__(self, path_prefix: Union[str, None] = None):
@@ -38,102 +40,19 @@ class DFStore(AWSDFStore):
         Args:
             path_prefix (Union[str, None], optional): Add a path prefix to storage locations (Defaults to None)
         """
+        # Get config from workbench's systems
+        bucket = ConfigManager().get_config("WORKBENCH_BUCKET")
+        session = AWSAccountClamp().boto3_session
+
+        # Initialize parent with workbench config
+        super().__init__(path_prefix=path_prefix, s3_bucket=bucket, boto3_session=session)
         self.log = logging.getLogger("workbench")
-
-        # Initialize the SuperClass
-        super().__init__(path_prefix=path_prefix)
-
-    def list(self, prefix: str = None, include_cache: bool = False) -> list:
-        """List all the objects in the data_store prefix.
-
-        Args:
-            prefix (str, optional): Prefix to filter the listed objects (Defaults to None).
-            include_cache (bool, optional): Include cache objects in the list (Defaults to False).
-
-        Returns:
-            list: A list of all the objects in the data_store prefix.
-        """
-        return super().list(prefix=prefix, include_cache=include_cache)
-
-    def summary(self, include_cache: bool = False) -> pd.DataFrame:
-        """Return a nicely formatted summary of object locations, sizes (in MB), and modified dates.
-
-        Args:
-            include_cache (bool, optional): Include cache objects in the summary (Defaults to False).
-
-        Returns:
-            pd.DataFrame: A formatted DataFrame with the summary details.
-        """
-        return super().summary(include_cache=include_cache)
-
-    def details(self, include_cache: bool = False) -> pd.DataFrame:
-        """Return a DataFrame with detailed metadata for all objects in the data_store prefix.
-
-        Args:
-            include_cache (bool, optional): Include cache objects in the details (Defaults to False).
-
-        Returns:
-            pd.DataFrame: A DataFrame with detailed metadata for all objects in the data_store prefix.
-        """
-        return super().details(include_cache=include_cache)
-
-    def check(self, location: str) -> bool:
-        """Check if a DataFrame exists at the specified location
-
-        Args:
-            location (str): The location of the data to check.
-
-        Returns:
-            bool: True if the data exists, False otherwise.
-        """
-        return super().check(location)
-
-    def get(self, location: str) -> Union[pd.DataFrame, None]:
-        """Retrieve a DataFrame from AWS S3.
-
-        Args:
-            location (str): The location of the data to retrieve.
-
-        Returns:
-            pd.DataFrame: The retrieved DataFrame or None if not found.
-        """
-        _df = super().get(location)
-        if _df is None:
-            self.log.error(f"Dataframe not found at location: {location}")
-        return _df
-
-    def upsert(self, location: str, data: Union[pd.DataFrame, pd.Series]):
-        """Insert or update a DataFrame or Series in the AWS S3.
-
-        Args:
-            location (str): The location of the data.
-            data (Union[pd.DataFrame, pd.Series]): The data to be stored.
-        """
-        super().upsert(location, data)
-
-    def last_modified(self, location: str) -> Union[datetime, None]:
-        """Get the last modified date of the DataFrame at the specified location.
-
-        Args:
-            location (str): The location of the data to check.
-
-        Returns:
-            Union[datetime, None]: The last modified date of the DataFrame or None if not found.
-        """
-        return super().last_modified(location)
-
-    def delete(self, location: str):
-        """Delete a DataFrame from the AWS S3.
-
-        Args:
-            location (str): The location of the data to delete.
-        """
-        super().delete(location)
 
 
 if __name__ == "__main__":
     """Exercise the DFStore Class"""
     import time
+    import pandas as pd
 
     # Create a DFStore manager
     df_store = DFStore()
