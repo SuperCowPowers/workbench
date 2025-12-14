@@ -1,15 +1,20 @@
-"""ParameterStore: Manages Workbench parameters in a Cloud Based Parameter Store."""
+"""ParameterStoreCore: Manages Workbench parameters in a Cloud Based Parameter Store."""
+
+import logging
 
 # Workbench Imports
-from workbench.core.artifacts.parameter_store_core import ParameterStoreCore
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+
+# Workbench Bridges Import
+from workbench_bridges.api import ParameterStore as BridgesParameterStore
 
 
-class ParameterStore(ParameterStoreCore):
-    """ParameterStore: Manages Workbench parameters in a Cloud Based Parameter Store.
+class ParameterStoreCore(BridgesParameterStore):
+    """ParameterStoreCore: Manages Workbench parameters in a Cloud Based Parameter Store.
 
     Common Usage:
         ```python
-        params = ParameterStore()
+        params = ParameterStoreCore()
 
         # List Parameters
         params.list()
@@ -39,17 +44,19 @@ class ParameterStore(ParameterStoreCore):
     """
 
     def __init__(self):
-        """ParameterStore Init Method"""
+        """ParameterStoreCore Init Method"""
+        session = AWSAccountClamp().boto3_session
 
-        # Initialize parent class
-        super().__init__()
+        # Initialize parent with workbench config
+        super().__init__(boto3_session=session)
+        self.log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":
-    """Exercise the ParameterStore Class"""
+    """Exercise the ParameterStoreCore Class"""
 
-    # Create a ParameterStore manager
-    param_store = ParameterStore()
+    # Create a ParameterStoreCore manager
+    param_store = ParameterStoreCore()
 
     # List the parameters
     print("Listing Parameters...")

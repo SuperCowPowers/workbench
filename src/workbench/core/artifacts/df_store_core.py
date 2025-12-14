@@ -1,17 +1,22 @@
-"""DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy"""
+"""DFStoreCore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy"""
 
+import logging
 from typing import Union
 
 # Workbench Imports
-from workbench.core.artifacts.df_store_core import DFStoreCore
+from workbench.utils.config_manager import ConfigManager
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+
+# Workbench Bridges Import
+from workbench_bridges.api import DFStore as BridgesDFStore
 
 
-class DFStore(DFStoreCore):
-    """DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy
+class DFStoreCore(BridgesDFStore):
+    """DFStoreCore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy
 
         Common Usage:
     ```python
-            df_store = DFStore()
+            df_store = DFStoreCore()
 
             # List Data
             df_store.list()
@@ -30,21 +35,27 @@ class DFStore(DFStoreCore):
     """
 
     def __init__(self, path_prefix: Union[str, None] = None):
-        """DFStore Init Method
+        """DFStoreCore Init Method
 
         Args:
             path_prefix (Union[str, None], optional): Add a path prefix to storage locations (Defaults to None)
         """
-        super().__init__(path_prefix=path_prefix)
+        # Get config from workbench's systems
+        bucket = ConfigManager().get_config("WORKBENCH_BUCKET")
+        session = AWSAccountClamp().boto3_session
+
+        # Initialize parent with workbench config
+        super().__init__(path_prefix=path_prefix, s3_bucket=bucket, boto3_session=session)
+        self.log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":
-    """Exercise the DFStore Class"""
+    """Exercise the DFStoreCore Class"""
     import time
     import pandas as pd
 
-    # Create a DFStore manager
-    df_store = DFStore()
+    # Create a DFStoreCore manager
+    df_store = DFStoreCore()
 
     # Details of the Dataframe Store
     print("Detailed Data...")
@@ -66,8 +77,8 @@ if __name__ == "__main__":
     print("Summary Data...")
     print(df_store.summary())
 
-    # Repr of the DFStore object
-    print("DFStore Object:")
+    # Repr of the DFStoreCore object
+    print("DFStoreCore Object:")
     print(df_store)
 
     # Check if the data exists

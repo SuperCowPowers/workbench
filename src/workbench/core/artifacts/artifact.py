@@ -8,8 +8,8 @@ from typing import Union
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from workbench.api.parameter_store import ParameterStore
-from workbench.api.df_store import DFStore
+from workbench.core.artifacts.parameter_store_core import ParameterStoreCore
+from workbench.core.artifacts.df_store_core import DFStoreCore
 from workbench.utils.aws_utils import dict_to_aws_tags
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
 from workbench.core.cloud_platform.cloud_meta import CloudMeta
@@ -48,11 +48,11 @@ class Artifact(ABC):
     tag_delimiter = "::"
 
     # Grab our Dataframe Cache Storage
-    df_cache = DFStore(path_prefix="/workbench/dataframe_cache")
+    df_cache = DFStoreCore(path_prefix="/workbench/dataframe_cache")
 
     # Artifact may want to use the Parameter Store or Dataframe Store
-    param_store = ParameterStore()
-    df_store = DFStore()
+    param_store = ParameterStoreCore()
+    df_store = DFStoreCore()
 
     def __init__(self, name: str, use_cached_meta: bool = False):
         """Initialize the Artifact Base Class

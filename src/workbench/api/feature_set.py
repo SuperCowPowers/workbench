@@ -58,10 +58,7 @@ class FeatureSet(FeatureSetCore):
             include_aws_columns (bool): Include the AWS columns in the DataFrame (default: False)
 
         Returns:
-            pd.DataFrame: A DataFrame of ALL the data from this FeatureSet
-
-        Note:
-            Obviously this is not recommended for large datasets :)
+            pd.DataFrame: A DataFrame of all the data from this FeatureSet up to the limit
         """
 
         # Get the table associated with the data
@@ -191,7 +188,7 @@ if __name__ == "__main__":
 
     # Create a Proximity Model from the FeatureSet
     features = ["height", "weight", "age", "iq_score", "likes_dogs", "food"]
-    my_prox = my_features.prox_model(target="income", features=features)
+    my_prox = my_features.prox_model(target="salary", features=features)
     neighbors = my_prox.neighbors(42)
     print("Neighbors for ID 42:")
     print(neighbors)
