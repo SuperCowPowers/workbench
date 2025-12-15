@@ -469,6 +469,11 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             df.loc[valid_mask, f"{tc}_pred"] = preds[:, t_idx]
             df.loc[valid_mask, f"{tc}_pred_std"] = preds_std[:, t_idx]
 
+        # Add prediction/prediction_std aliases for first target
+        first_target = target_columns[0]
+        df["prediction"] = df[f"{first_target}_pred"]
+        df["prediction_std"] = df[f"{first_target}_pred_std"]
+
     return df
 
 
@@ -882,6 +887,11 @@ if __name__ == "__main__":
             else:
                 df_val[f"{t_name}_pred_std"] = 0.0
 
+        # Add prediction/prediction_std aliases for first target
+        first_target = target_columns[0]
+        df_val["prediction"] = df_val[f"{first_target}_pred"]
+        df_val["prediction_std"] = df_val[f"{first_target}_pred_std"]
+
     # Save validation predictions to S3
     # Include id_column if it exists in df_val
     output_columns = []
@@ -891,6 +901,7 @@ if __name__ == "__main__":
     output_columns += target_columns
     output_columns += [f"{t}_pred" for t in target_columns]
     output_columns += [f"{t}_pred_std" for t in target_columns]
+    output_columns += ["prediction", "prediction_std"]
     # Add proba columns for classifiers
     output_columns += [col for col in df_val.columns if col.endswith("_proba")]
     # Filter to only columns that exist
