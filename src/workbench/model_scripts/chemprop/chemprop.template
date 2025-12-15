@@ -25,6 +25,7 @@
 # - argparse, file loading, S3 writes
 # =============================
 
+import glob
 import os
 import argparse
 import json
@@ -185,7 +186,7 @@ def build_mpnn_model(
     # Model hyperparameters with defaults
     hidden_dim = hyperparameters.get("hidden_dim", 700)
     depth = hyperparameters.get("depth", 6)
-    dropout = hyperparameters.get("dropout", 0.25)
+    dropout = hyperparameters.get("dropout", 0.15)
     ffn_hidden_dim = hyperparameters.get("ffn_hidden_dim", 2000)
     ffn_num_layers = hyperparameters.get("ffn_num_layers", 2)
 
@@ -905,6 +906,11 @@ if __name__ == "__main__":
         model_path = os.path.join(args.model_dir, f"chemprop_model_{model_idx}.pt")
         models.save_model(model_path, ens_model)
         print(f"Saved model {model_idx + 1} to {model_path}")
+
+    # Clean up checkpoint files (not needed for inference, reduces artifact size)
+    for ckpt_file in glob.glob(os.path.join(args.model_dir, "best_model_*.ckpt")):
+        os.remove(ckpt_file)
+        print(f"Removed checkpoint: {ckpt_file}")
 
     # Save ensemble metadata (n_ensemble = number of models for inference)
     n_ensemble = len(ensemble_models)
