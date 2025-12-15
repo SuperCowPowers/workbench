@@ -795,30 +795,6 @@ class EndpointCore(Artifact):
         combined = row_hashes.values.tobytes()
         return hashlib.md5(combined).hexdigest()[:hash_length]
 
-    @staticmethod
-    def _find_prediction_column(df: pd.DataFrame, target_column: str) -> Optional[str]:
-        """Find the prediction column in a DataFrame.
-
-        Looks for 'prediction' column first, then '{target}_pred' pattern.
-
-        Args:
-            df: DataFrame to search
-            target_column: Name of the target column (used for {target}_pred pattern)
-
-        Returns:
-            Name of the prediction column, or None if not found
-        """
-        # Check for 'prediction' column first (legacy/standard format)
-        if "prediction" in df.columns:
-            return "prediction"
-
-        # Check for '{target}_pred' format (multi-target format)
-        target_pred_col = f"{target_column}_pred"
-        if target_pred_col in df.columns:
-            return target_pred_col
-
-        return None
-
     def _capture_inference_results(
         self,
         capture_name: str,
@@ -946,29 +922,23 @@ class EndpointCore(Artifact):
             self.log.warning("No predictions were made. Returning empty DataFrame.")
             return pd.DataFrame()
 
-        # Find the prediction column: "prediction" or "{target}_pred"
-        prediction_col = self._find_prediction_column(prediction_df, target_column)
-        if prediction_col is None:
-            self.log.warning(f"No prediction column found for target '{target_column}'")
+        # Check for prediction column
+        if "prediction" not in prediction_df.columns:
+            self.log.warning("No 'prediction' column found in DataFrame")
             return pd.DataFrame()
 
         # Check for NaN values in target or prediction columns
-        if prediction_df[target_column].isnull().any() or prediction_df[prediction_col].isnull().any():
-            # Compute the number of NaN values in each column
+        if prediction_df[target_column].isnull().any() or prediction_df["prediction"].isnull().any():
             num_nan_target = prediction_df[target_column].isnull().sum()
-            num_nan_prediction = prediction_df[prediction_col].isnull().sum()
-            self.log.warning(
-                f"NaNs Found: {target_column} {num_nan_target} and {prediction_col}: {num_nan_prediction}."
-            )
-            self.log.warning(
-                "NaN values found in target or prediction columns. Dropping NaN rows for metric computation."
-            )
-            prediction_df = prediction_df.dropna(subset=[target_column, prediction_col])
+            num_nan_prediction = prediction_df["prediction"].isnull().sum()
+            self.log.warning(f"NaNs Found: {target_column} {num_nan_target} and prediction: {num_nan_prediction}.")
+            self.log.warning("Dropping NaN rows for metric computation.")
+            prediction_df = prediction_df.dropna(subset=[target_column, "prediction"])
 
         # Compute the metrics
         try:
             y_true = prediction_df[target_column]
-            y_pred = prediction_df[prediction_col]
+            y_pred = prediction_df["prediction"]
 
             mae = mean_absolute_error(y_true, y_pred)
             rmse = np.sqrt(mean_squared_error(y_true, y_pred))
@@ -1000,17 +970,13 @@ class EndpointCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame with two new columns called 'residuals' and 'residuals_abs'
         """
-
-        # Compute the residuals
-        y_true = prediction_df[target_column]
-
-        # Find the prediction column: "prediction" or "{target}_pred"
-        prediction_col = self._find_prediction_column(prediction_df, target_column)
-        if prediction_col is None:
-            self.log.warning(f"No prediction column found for target '{target_column}'. Cannot compute residuals.")
+        # Check for prediction column
+        if "prediction" not in prediction_df.columns:
+            self.log.warning("No 'prediction' column found. Cannot compute residuals.")
             return prediction_df
 
-        y_pred = prediction_df[prediction_col]
+        y_true = prediction_df[target_column]
+        y_pred = prediction_df["prediction"]
 
         # Check for classification scenario
         if not pd.api.types.is_numeric_dtype(y_true) or not pd.api.types.is_numeric_dtype(y_pred):
@@ -1051,14 +1017,13 @@ class EndpointCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame with the performance metrics
         """
-        # Find the prediction column: "prediction" or "{target}_pred"
-        prediction_col = self._find_prediction_column(prediction_df, target_column)
-        if prediction_col is None:
-            self.log.warning(f"No prediction column found for target '{target_column}'")
+        # Check for prediction column
+        if "prediction" not in prediction_df.columns:
+            self.log.warning("No 'prediction' column found in DataFrame")
             return pd.DataFrame()
 
         # Drop rows with NaN predictions (can't compute metrics on missing predictions)
-        nan_mask = prediction_df[prediction_col].isna()
+        nan_mask = prediction_df["prediction"].isna()
         if nan_mask.any():
             n_nan = nan_mask.sum()
             self.log.warning(f"Dropping {n_nan} rows with NaN predictions for metrics calculation")
@@ -1078,7 +1043,7 @@ class EndpointCore(Artifact):
         # Calculate precision, recall, f1, and support, handling zero division
         scores = precision_recall_fscore_support(
             prediction_df[target_column],
-            prediction_df[prediction_col],
+            prediction_df["prediction"],
             average=None,
             labels=class_labels,
             zero_division=0,
@@ -1126,21 +1091,20 @@ class EndpointCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame with the confusion matrix
         """
-        # Find the prediction column: "prediction" or "{target}_pred"
-        prediction_col = self._find_prediction_column(prediction_df, target_column)
-        if prediction_col is None:
-            self.log.warning(f"No prediction column found for target '{target_column}'")
+        # Check for prediction column
+        if "prediction" not in prediction_df.columns:
+            self.log.warning("No 'prediction' column found in DataFrame")
             return pd.DataFrame()
 
         # Drop rows with NaN predictions (can't include in confusion matrix)
-        nan_mask = prediction_df[prediction_col].isna()
+        nan_mask = prediction_df["prediction"].isna()
         if nan_mask.any():
             n_nan = nan_mask.sum()
             self.log.warning(f"Dropping {n_nan} rows with NaN predictions for confusion matrix")
             prediction_df = prediction_df[~nan_mask].copy()
 
         y_true = prediction_df[target_column]
-        y_pred = prediction_df[prediction_col]
+        y_pred = prediction_df["prediction"]
 
         # Get model class labels
         model_class_labels = ModelCore(self.model_name).class_labels()
