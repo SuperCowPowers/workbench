@@ -400,7 +400,7 @@ class PandasToFeatures(Transform):
 
         # Set Hold Out Ids (if we got them during creation)
         if self.incoming_hold_out_ids:
-            self.output_feature_set.set_training_holdouts(self.id_column, self.incoming_hold_out_ids)
+            self.output_feature_set.set_training_holdouts(self.incoming_hold_out_ids)
 
     def ensure_feature_group_created(self, feature_group):
         status = feature_group.describe().get("FeatureGroupStatus")
@@ -462,7 +462,7 @@ if __name__ == "__main__":
 
     # Create my DF to Feature Set Transform (with one-hot encoding)
     df_to_features = PandasToFeatures("test_features")
-    df_to_features.set_input(data_df, id_column="id", one_hot_columns=["food"])
+    df_to_features.set_input(data_df, id_column="id", event_time_column="date", one_hot_columns=["food"])
     df_to_features.set_output_tags(["test", "small"])
     df_to_features.transform()
 
