@@ -104,7 +104,7 @@ class ModelToEndpoint(Transform):
         if self.serverless:
             # For PyTorch or ChemProp we need at least 4GB of memory
             from workbench.api import ModelFramework
-
+            self.log.info(f"Model Framework: {workbench_model.model_framework}")
             if workbench_model.model_framework in [ModelFramework.PYTORCH_TABULAR, ModelFramework.CHEMPROP]:
                 if mem_size < 4096:
                     self.log.important(
@@ -115,6 +115,7 @@ class ModelToEndpoint(Transform):
                 memory_size_in_mb=mem_size,
                 max_concurrency=max_concurrency,
             )
+            self.log.important(f"Serverless Config: Memory={mem_size}MB, MaxConcurrency={max_concurrency}")
 
         # Configure data capture if requested (and not serverless)
         data_capture_config = None
