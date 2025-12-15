@@ -68,6 +68,15 @@ class PandasToFeatures(Transform):
         self.output_df = input_df.copy()
         self.one_hot_columns = one_hot_columns or []
 
+        # Warn about known AWS Iceberg bug with event_time_column
+        if event_time_column is not None:
+            self.log.warning(
+                f"event_time_column='{event_time_column}' specified. Note: AWS has a known bug with "
+                "Iceberg FeatureGroups where varying event times across multiple days can cause "
+                "duplicate rows in the offline store. Setting event_time_column=None."
+            )
+            self.event_time_column = None
+
         # Now Prepare the DataFrame for its journey into an AWS FeatureGroup
         self.prep_dataframe()
 
