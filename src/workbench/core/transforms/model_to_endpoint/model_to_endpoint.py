@@ -104,6 +104,7 @@ class ModelToEndpoint(Transform):
         if self.serverless:
             # For PyTorch or ChemProp we need at least 4GB of memory
             from workbench.api import ModelFramework
+
             self.log.info(f"Model Framework: {workbench_model.model_framework}")
             if workbench_model.model_framework in [ModelFramework.PYTORCH_TABULAR, ModelFramework.CHEMPROP]:
                 if mem_size < 4096:
