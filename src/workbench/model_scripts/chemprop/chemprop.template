@@ -901,7 +901,6 @@ if __name__ == "__main__":
     output_columns += target_columns
     output_columns += [f"{t}_pred" for t in target_columns]
     output_columns += [f"{t}_pred_std" for t in target_columns]
-    # Add prediction/prediction_std aliases (regression only)
     output_columns += ["prediction", "prediction_std"]
     # Add proba columns for classifiers
     output_columns += [col for col in df_val.columns if col.endswith("_proba")]
