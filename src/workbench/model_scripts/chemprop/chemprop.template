@@ -486,7 +486,7 @@ if __name__ == "__main__":
     feature_list = TEMPLATE_PARAMS["feature_list"]
     id_column = TEMPLATE_PARAMS["id_column"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
-    hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
+    hyperparameters = TEMPLATE_PARAMS["hyperparameters"] or {}
 
     # Validate target_columns
     if not target_columns or not isinstance(target_columns, list) or len(target_columns) == 0:
@@ -901,6 +901,7 @@ if __name__ == "__main__":
     output_columns += target_columns
     output_columns += [f"{t}_pred" for t in target_columns]
     output_columns += [f"{t}_pred_std" for t in target_columns]
+    # Add prediction/prediction_std aliases (regression only)
     output_columns += ["prediction", "prediction_std"]
     # Add proba columns for classifiers
     output_columns += [col for col in df_val.columns if col.endswith("_proba")]

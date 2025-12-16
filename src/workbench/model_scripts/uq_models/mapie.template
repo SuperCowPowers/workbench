@@ -200,7 +200,7 @@ if __name__ == "__main__":
     orig_features = features.copy()
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
-    hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
+    hyperparameters = TEMPLATE_PARAMS["hyperparameters"] or {}
     validation_split = 0.2
 
     # Script arguments for input/output directories

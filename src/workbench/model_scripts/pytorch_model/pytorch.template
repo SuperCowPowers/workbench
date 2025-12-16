@@ -419,7 +419,7 @@ if __name__ == "__main__":
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
-    hyperparameters = TEMPLATE_PARAMS["hyperparameters"]
+    hyperparameters = TEMPLATE_PARAMS["hyperparameters"] or {}
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()

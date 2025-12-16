@@ -232,7 +232,7 @@ if __name__ == "__main__":
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
-    hyperparameters = {**DEFAULT_HYPERPARAMETERS, **TEMPLATE_PARAMS["hyperparameters"]}
+    hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
     validation_split = 0.2
 
     # Script arguments for input/output directories
