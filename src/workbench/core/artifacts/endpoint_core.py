@@ -531,38 +531,12 @@ class EndpointCore(Artifact):
         fs = FeatureSetCore(model.get_input())
         id_column = fs.id_column
 
-        # Is this a UQ Model? If so, run full inference and merge the results
-        additional_columns = []
+        # For UQ models, compute UQ metrics from the training CV results
+        # Note: XGBoost training now saves all UQ columns (q_*, confidence, prediction_std)
         if model.model_framework == ModelFramework.XGBOOST and model_type == ModelType.UQ_REGRESSOR:
-            self.log.important("UQ Regressor detected, running full inference to get uncertainty estimates...")
-
-            # Get the training view dataframe for inference
-            training_df = model.training_view().pull_dataframe()
-
-            # Run inference on the endpoint to get UQ outputs
-            uq_df = self.inference(training_df)
-
-            # Identify UQ-specific columns (quantiles, prediction_std, *_pred_std)
-            uq_columns = [
-                col
-                for col in uq_df.columns
-                if col.startswith("q_") or col == "prediction_std" or col.endswith("_pred_std") or col == "confidence"
-            ]
-
-            # Merge UQ columns with out-of-fold predictions
+            uq_columns = [col for col in out_of_fold_df.columns if col.startswith("q_") or col == "confidence"]
             if uq_columns:
-                # Keep id_column and UQ columns, drop 'prediction' to avoid conflict when merging
-                uq_df = uq_df[[id_column] + uq_columns]
-
-                # Drop duplicates in uq_df based on id_column
-                uq_df = uq_df.drop_duplicates(subset=[id_column])
-
-                # Merge UQ columns into out_of_fold_df
-                out_of_fold_df = pd.merge(out_of_fold_df, uq_df, on=id_column, how="left")
-                additional_columns = uq_columns
-                self.log.info(f"Added UQ columns: {', '.join(additional_columns)}")
-
-                # Also compute UQ metrics (use first target for multi-target models)
+                self.log.info(f"UQ columns from training: {', '.join(uq_columns)}")
                 primary_target = targets[0] if isinstance(targets, list) else targets
                 metrics = uq_metrics(out_of_fold_df, primary_target)
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/full_cross_fold", metrics)

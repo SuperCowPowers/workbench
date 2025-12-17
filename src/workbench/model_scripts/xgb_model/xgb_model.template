@@ -281,11 +281,6 @@ if __name__ == "__main__":
         print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
 
     output_columns += [col for col in df_val.columns if col.endswith("_proba")]
-    wr.s3.to_csv(
-        df_val[output_columns],
-        path=f"{model_metrics_s3_path}/validation_predictions.csv",
-        index=False,
-    )
 
     # Report Performance Metrics
     if model_type == "classifier":
@@ -307,6 +302,21 @@ if __name__ == "__main__":
         X_all = all_df[features]
         y_all = all_df[target]
         uq_models, uq_metadata = train_uq_models(X_all, y_all, df_val[features], y_validate)
+
+        # Add UQ columns to validation predictions
+        df_val = predict_intervals(df_val, df_val[features], uq_models, uq_metadata)
+        df_val = compute_confidence(df_val, uq_metadata["median_interval_width"])
+
+        # Add UQ columns to output
+        uq_cols = [c for c in df_val.columns if c.startswith("q_") or c == "confidence"]
+        output_columns += uq_cols
+
+    # Save validation predictions to S3
+    wr.s3.to_csv(
+        df_val[output_columns],
+        path=f"{model_metrics_s3_path}/validation_predictions.csv",
+        index=False,
+    )
 
     # Save ensemble models
     for model_idx, ens_model in enumerate(ensemble_models):
