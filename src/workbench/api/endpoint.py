@@ -70,16 +70,13 @@ class Endpoint(EndpointCore):
         """
         return super().fast_inference(eval_df, threads=threads)
 
-    def cross_fold_inference(self, nfolds: int = 5) -> pd.DataFrame:
-        """Run cross-fold inference (only works for XGBoost models)
-
-        Args:
-            nfolds (int): The number of folds to use for cross-validation (default: 5)
+    def cross_fold_inference(self) -> pd.DataFrame:
+        """Pull cross-fold inference from model associated with this Endpoint
 
         Returns:
             pd.DataFrame: A DataFrame with cross fold predictions
         """
-        return super().cross_fold_inference(nfolds)
+        return super().cross_fold_inference()
 
 
 if __name__ == "__main__":
