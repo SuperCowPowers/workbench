@@ -10,7 +10,6 @@ import awswrangler as wr
 from typing import Optional, List, Tuple, Any
 import hashlib
 import pandas as pd
-import numpy as np
 import xgboost as xgb
 
 # Workbench Imports
@@ -288,7 +287,6 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
     from workbench.api import Model
-    from pprint import pprint
 
     # Test the XGBoost model loading and feature importance
     model = Model("abalone-regression")
