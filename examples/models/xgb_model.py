@@ -37,10 +37,7 @@ if recreate or not Model("aqsol-regression").exists():
         target_column=target,
         description="XGBoost Regression Model for AQSol",
         tags=["xgboost", "molecular descriptors"],
-        hyperparameters={
-            "training_config": {"max_epochs": 150},
-            "model_config": {"layers": "128-64-32"},
-        },
+        hyperparameters={"n_estimators": 200, "max_depth": 6},
     )
     m.set_owner("BW")
 
@@ -64,10 +61,6 @@ if recreate or not Model("aqsol-class").exists():
         target_column="solubility_class",
         description="XGBoost Classification Model for AQSol",
         tags=["xgboost", "molecular descriptors"],
-        hyperparameters={
-            "training_config": {"max_epochs": 150},
-            "model_config": {"layers": "256-128-64"},
-        },
     )
     m.set_owner("BW")
     m.set_class_labels(["low", "medium", "high"])
