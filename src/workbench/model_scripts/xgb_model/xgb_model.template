@@ -3,30 +3,33 @@ import xgboost as xgb
 import awswrangler as wr
 import numpy as np
 
-# Model Performance Scores
-from sklearn.metrics import (
-    mean_absolute_error,
-    median_absolute_error,
-    r2_score,
-    root_mean_squared_error,
-    precision_recall_fscore_support,
-    confusion_matrix,
-)
-from scipy.stats import spearmanr
-
 # Classification Encoder
 from sklearn.preprocessing import LabelEncoder
 
 # Scikit Learn Imports
 from sklearn.model_selection import train_test_split
 
-from io import StringIO
 import json
 import argparse
 import joblib
 import os
 import pandas as pd
-from typing import List, Tuple
+
+# Shared model script utilities
+from model_script_utils import (
+    check_dataframe,
+    expand_proba_column,
+    match_features_case_insensitive,
+    convert_categorical_types,
+    decompress_features,
+    input_fn,
+    output_fn,
+    compute_regression_metrics,
+    print_regression_metrics,
+    compute_classification_metrics,
+    print_classification_metrics,
+    print_confusion_matrix,
+)
 
 # Default Hyperparameters for XGBoost
 DEFAULT_HYPERPARAMETERS = {
@@ -60,165 +63,6 @@ TEMPLATE_PARAMS = {
     "train_all_data": "{{train_all_data}}",
     "hyperparameters": "{{hyperparameters}}",
 }
-
-
-# Function to check if dataframe is empty
-def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
-    """
-    Check if the provided dataframe is empty and raise an exception if it is.
-
-    Args:
-        df (pd.DataFrame): DataFrame to check
-        df_name (str): Name of the DataFrame
-    """
-    if df.empty:
-        msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
-        print(msg)
-        raise ValueError(msg)
-
-
-def expand_proba_column(df: pd.DataFrame, class_labels: List[str]) -> pd.DataFrame:
-    """
-    Expands a column in a DataFrame containing a list of probabilities into separate columns.
-
-    Args:
-        df (pd.DataFrame): DataFrame containing a "pred_proba" column
-        class_labels (List[str]): List of class labels
-
-    Returns:
-        pd.DataFrame: DataFrame with the "pred_proba" expanded into separate columns
-    """
-
-    # Sanity check
-    proba_column = "pred_proba"
-    if proba_column not in df.columns:
-        raise ValueError('DataFrame does not contain a "pred_proba" column')
-
-    # Construct new column names with '_proba' suffix
-    proba_splits = [f"{label}_proba" for label in class_labels]
-
-    # Expand the proba_column into separate columns for each probability
-    proba_df = pd.DataFrame(df[proba_column].tolist(), columns=proba_splits)
-
-    # Drop any proba columns and reset the index in prep for the concat
-    df = df.drop(columns=[proba_column] + proba_splits, errors="ignore")
-    df = df.reset_index(drop=True)
-
-    # Concatenate the new columns with the original DataFrame
-    df = pd.concat([df, proba_df], axis=1)
-    print(df)
-    return df
-
-
-def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> pd.DataFrame:
-    """
-    Matches and renames DataFrame columns to match model feature names (case-insensitive).
-    Prioritizes exact matches, then case-insensitive matches.
-
-    Raises ValueError if any model features cannot be matched.
-    """
-    df_columns_lower = {col.lower(): col for col in df.columns}
-    rename_dict = {}
-    missing = []
-    for feature in model_features:
-        if feature in df.columns:
-            continue  # Exact match
-        elif feature.lower() in df_columns_lower:
-            rename_dict[df_columns_lower[feature.lower()]] = feature
-        else:
-            missing.append(feature)
-
-    if missing:
-        raise ValueError(f"Features not found: {missing}")
-
-    # Rename the DataFrame columns to match the model features
-    return df.rename(columns=rename_dict)
-
-
-def convert_categorical_types(df: pd.DataFrame, features: list, category_mappings={}) -> tuple:
-    """
-    Converts appropriate columns to categorical type with consistent mappings.
-
-    Args:
-        df (pd.DataFrame): The DataFrame to process.
-        features (list): List of feature names to consider for conversion.
-        category_mappings (dict, optional): Existing category mappings. If empty dict, we're in
-                                            training mode. If populated, we're in inference mode.
-
-    Returns:
-        tuple: (processed DataFrame, category mappings dictionary)
-    """
-    # Training mode
-    if category_mappings == {}:
-        for col in df.select_dtypes(include=["object", "string"]):
-            if col in features and df[col].nunique() < 20:
-                print(f"Training mode: Converting {col} to category")
-                df[col] = df[col].astype("category")
-                category_mappings[col] = df[col].cat.categories.tolist()  # Store category mappings
-
-    # Inference mode
-    else:
-        for col, categories in category_mappings.items():
-            if col in df.columns:
-                print(f"Inference mode: Applying categorical mapping for {col}")
-                df[col] = pd.Categorical(df[col], categories=categories)  # Apply consistent categorical mapping
-
-    return df, category_mappings
-
-
-def decompress_features(
-    df: pd.DataFrame, features: List[str], compressed_features: List[str]
-) -> Tuple[pd.DataFrame, List[str]]:
-    """Prepare features for the model by decompressing bitstring features
-
-    Args:
-        df (pd.DataFrame): The features DataFrame
-        features (List[str]): Full list of feature names
-        compressed_features (List[str]): List of feature names to decompress (bitstrings)
-
-    Returns:
-        pd.DataFrame: DataFrame with the decompressed features
-        List[str]: Updated list of feature names after decompression
-
-    Raises:
-        ValueError: If any missing values are found in the specified features
-    """
-
-    # Check for any missing values in the required features
-    missing_counts = df[features].isna().sum()
-    if missing_counts.any():
-        missing_features = missing_counts[missing_counts > 0]
-        print(
-            f"WARNING: Found missing values in features: {missing_features.to_dict()}. "
-            "WARNING: You might want to remove/replace all NaN values before processing."
-        )
-
-    # Decompress the specified compressed features
-    decompressed_features = features.copy()
-    for feature in compressed_features:
-        if (feature not in df.columns) or (feature not in features):
-            print(f"Feature '{feature}' not in the features list, skipping decompression.")
-            continue
-
-        # Remove the feature from the list of features to avoid duplication
-        decompressed_features.remove(feature)
-
-        # Handle all compressed features as bitstrings
-        bit_matrix = np.array([list(bitstring) for bitstring in df[feature]], dtype=np.uint8)
-        prefix = feature[:3]
-
-        # Create all new columns at once - avoids fragmentation
-        new_col_names = [f"{prefix}_{i}" for i in range(bit_matrix.shape[1])]
-        new_df = pd.DataFrame(bit_matrix, columns=new_col_names, index=df.index)
-
-        # Add to features list
-        decompressed_features.extend(new_col_names)
-
-        # Drop original column and concatenate new ones
-        df = df.drop(columns=[feature])
-        df = pd.concat([df, new_df], axis=1)
-
-    return df, decompressed_features
 
 
 if __name__ == "__main__":
@@ -354,51 +198,15 @@ if __name__ == "__main__":
 
     # Report Performance Metrics
     if model_type == "classifier":
-        # Get the label names and their integer mapping
         label_names = label_encoder.classes_
-
-        # Calculate various model performance metrics
-        scores = precision_recall_fscore_support(y_validate, preds, average=None, labels=label_names)
-
-        # Put the scores into a dataframe
-        score_df = pd.DataFrame(
-            {
-                target: label_names,
-                "precision": scores[0],
-                "recall": scores[1],
-                "f1": scores[2],
-                "support": scores[3],
-            }
-        )
-
-        # We need to get creative with the Classification Metrics
-        metrics = ["precision", "recall", "f1", "support"]
-        for t in label_names:
-            for m in metrics:
-                value = score_df.loc[score_df[target] == t, m].iloc[0]
-                print(f"Metrics:{t}:{m} {value}")
-
-        # Compute and output the confusion matrix
-        conf_mtx = confusion_matrix(y_validate, preds, labels=label_names)
-        for i, row_name in enumerate(label_names):
-            for j, col_name in enumerate(label_names):
-                value = conf_mtx[i, j]
-                print(f"ConfusionMatrix:{row_name}:{col_name} {value}")
+        score_df = compute_classification_metrics(y_validate, preds, label_names, target)
+        print_classification_metrics(score_df, target, label_names)
+        print_confusion_matrix(y_validate, preds, label_names)
 
     else:
-        # Calculate various model performance metrics (regression)
-        rmse = root_mean_squared_error(y_validate, preds)
-        mae = mean_absolute_error(y_validate, preds)
-        medae = median_absolute_error(y_validate, preds)
-        r2 = r2_score(y_validate, preds)
-        spearman_corr = spearmanr(y_validate, preds).correlation
-        support = len(df_val)
-        print(f"rmse: {rmse:.3f}")
-        print(f"mae: {mae:.3f}")
-        print(f"medae: {medae:.3f}")
-        print(f"r2: {r2:.3f}")
-        print(f"spearmanr: {spearman_corr:.3f}")
-        print(f"support: {support}")
+        # Calculate and print regression metrics
+        metrics = compute_regression_metrics(y_validate, preds)
+        print_regression_metrics(metrics)
 
     # Now save the model to the standard place/name
     joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
@@ -426,34 +234,6 @@ def model_fn(model_dir):
     model_path = os.path.join(model_dir, "xgb_model.joblib")
     model = joblib.load(model_path)
     return model
-
-
-def input_fn(input_data, content_type):
-    """Parse input data and return a DataFrame."""
-    if not input_data:
-        raise ValueError("Empty input data is not supported!")
-
-    # Decode bytes to string if necessary
-    if isinstance(input_data, bytes):
-        input_data = input_data.decode("utf-8")
-
-    if "text/csv" in content_type:
-        return pd.read_csv(StringIO(input_data))
-    elif "application/json" in content_type:
-        return pd.DataFrame(json.loads(input_data))  # Assumes JSON array of records
-    else:
-        raise ValueError(f"{content_type} not supported!")
-
-
-def output_fn(output_df, accept_type):
-    """Supports both CSV and JSON output formats."""
-    if "text/csv" in accept_type:
-        csv_output = output_df.fillna("N/A").to_csv(index=False)  # CSV with N/A for missing values
-        return csv_output, "text/csv"
-    elif "application/json" in accept_type:
-        return output_df.to_json(orient="records"), "application/json"  # JSON array of records (NaNs -> null)
-    else:
-        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
 
 def predict_fn(df, model) -> pd.DataFrame:

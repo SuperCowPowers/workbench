@@ -29,7 +29,6 @@ import glob
 import os
 import argparse
 import json
-from io import StringIO
 
 import awswrangler as wr
 import numpy as np
@@ -38,19 +37,23 @@ import torch
 from lightning import pytorch as pl
 from sklearn.model_selection import train_test_split, KFold, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import (
-    mean_absolute_error,
-    median_absolute_error,
-    r2_score,
-    root_mean_squared_error,
-    precision_recall_fscore_support,
-    confusion_matrix,
-)
-from scipy.stats import spearmanr
 import joblib
 
 # ChemProp imports
 from chemprop import data, models, nn
+
+# Shared model script utilities
+from model_script_utils import (
+    check_dataframe,
+    expand_proba_column,
+    input_fn,
+    output_fn,
+    compute_regression_metrics,
+    print_regression_metrics,
+    compute_classification_metrics,
+    print_classification_metrics,
+    print_confusion_matrix,
+)
 
 # Template Parameters
 TEMPLATE_PARAMS = {
@@ -63,14 +66,6 @@ TEMPLATE_PARAMS = {
 }
 
 
-def check_dataframe(df: pd.DataFrame, df_name: str) -> None:
-    """Check if the provided dataframe is empty and raise an exception if it is."""
-    if df.empty:
-        msg = f"*** The training data {df_name} has 0 rows! ***STOPPING***"
-        print(msg)
-        raise ValueError(msg)
-
-
 def find_smiles_column(columns: list[str]) -> str:
     """Find the SMILES column name from a list (case-insensitive match for 'smiles')."""
     smiles_column = next((col for col in columns if col.lower() == "smiles"), None)
@@ -79,34 +74,6 @@ def find_smiles_column(columns: list[str]) -> str:
             "Column list must contain a 'smiles' column (case-insensitive)"
         )
     return smiles_column
-
-
-def expand_proba_column(df: pd.DataFrame, class_labels: list[str]) -> pd.DataFrame:
-    """Expands a column containing a list of probabilities into separate columns.
-
-    Handles None values for rows where predictions couldn't be made.
-    """
-    proba_column = "pred_proba"
-    if proba_column not in df.columns:
-        raise ValueError('DataFrame does not contain a "pred_proba" column')
-
-    proba_splits = [f"{label}_proba" for label in class_labels]
-    n_classes = len(class_labels)
-
-    # Handle None values by replacing with list of NaNs
-    proba_values = []
-    for val in df[proba_column]:
-        if val is None:
-            proba_values.append([np.nan] * n_classes)
-        else:
-            proba_values.append(val)
-
-    proba_df = pd.DataFrame(proba_values, columns=proba_splits)
-
-    df = df.drop(columns=[proba_column] + proba_splits, errors="ignore")
-    df = df.reset_index(drop=True)
-    df = pd.concat([df, proba_df], axis=1)
-    return df
 
 
 def create_molecule_datapoints(
@@ -270,35 +237,6 @@ def model_fn(model_dir: str) -> dict:
         "n_ensemble": n_ensemble,
         "target_columns": target_columns,
     }
-
-
-def input_fn(input_data, content_type: str) -> pd.DataFrame:
-    """Parse input data and return a DataFrame."""
-    if not input_data:
-        raise ValueError("Empty input data is not supported!")
-
-    if isinstance(input_data, bytes):
-        input_data = input_data.decode("utf-8")
-
-    if "text/csv" in content_type:
-        return pd.read_csv(StringIO(input_data))
-    elif "application/json" in content_type:
-        return pd.DataFrame(json.loads(input_data))
-    else:
-        raise ValueError(f"{content_type} not supported!")
-
-
-def output_fn(output_df: pd.DataFrame, accept_type: str) -> tuple[str, str]:
-    """Supports both CSV and JSON output formats."""
-    if "text/csv" in accept_type:
-        csv_output = output_df.fillna("N/A").to_csv(index=False)
-        return csv_output, "text/csv"
-    elif "application/json" in accept_type:
-        return output_df.to_json(orient="records"), "application/json"
-    else:
-        raise RuntimeError(
-            f"{accept_type} accept type is not supported by this script."
-        )
 
 
 def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
@@ -816,37 +754,11 @@ if __name__ == "__main__":
         y_validate_decoded = label_encoder.inverse_transform(y_validate[:, 0].astype(int))
         preds_decoded = label_encoder.inverse_transform(class_preds)
 
-        # Calculate metrics
+        # Calculate and print metrics
         label_names = label_encoder.classes_
-        scores = precision_recall_fscore_support(
-            y_validate_decoded, preds_decoded, average=None, labels=label_names
-        )
-
-        score_df = pd.DataFrame(
-            {
-                target_name: label_names,
-                "precision": scores[0],
-                "recall": scores[1],
-                "f1": scores[2],
-                "support": scores[3],
-            }
-        )
-
-        # Output metrics per class
-        metrics = ["precision", "recall", "f1", "support"]
-        for t in label_names:
-            for m in metrics:
-                value = score_df.loc[score_df[target_name] == t, m].iloc[0]
-                print(f"Metrics:{t}:{m} {value}")
-
-        # Confusion matrix
-        conf_mtx = confusion_matrix(
-            y_validate_decoded, preds_decoded, labels=label_names
-        )
-        for i, row_name in enumerate(label_names):
-            for j, col_name in enumerate(label_names):
-                value = conf_mtx[i, j]
-                print(f"ConfusionMatrix:{row_name}:{col_name} {value}")
+        score_df = compute_classification_metrics(y_validate_decoded, preds_decoded, label_names, target_name)
+        print_classification_metrics(score_df, target_name, label_names)
+        print_confusion_matrix(y_validate_decoded, preds_decoded, label_names)
 
         # Save validation predictions
         df_val = df_val.copy()
@@ -866,19 +778,8 @@ if __name__ == "__main__":
             y_pred = preds[target_valid_mask, t_idx]
 
             if len(y_true) > 0:
-                rmse = root_mean_squared_error(y_true, y_pred)
-                mae = mean_absolute_error(y_true, y_pred)
-                medae = median_absolute_error(y_true, y_pred)
-                r2 = r2_score(y_true, y_pred)
-                spearman_corr = spearmanr(y_true, y_pred).correlation
-                support = len(y_true)
-                # Print metrics in format expected by SageMaker metric definitions
-                print(f"rmse: {rmse:.3f}")
-                print(f"mae: {mae:.3f}")
-                print(f"medae: {medae:.3f}")
-                print(f"r2: {r2:.3f}")
-                print(f"spearmanr: {spearman_corr:.3f}")
-                print(f"support: {support}")
+                metrics = compute_regression_metrics(y_true, y_pred)
+                print_regression_metrics(metrics)
 
             # Store predictions in dataframe
             df_val[f"{t_name}_pred"] = preds[:, t_idx]
