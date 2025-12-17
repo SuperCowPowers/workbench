@@ -207,6 +207,63 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
     return category_mappings
 
 
+def load_hyperparameters_from_s3(model_artifact_uri: str) -> Optional[dict]:
+    """
+    Download and extract hyperparameters from a model artifact in S3.
+
+    Args:
+        model_artifact_uri (str): S3 URI of the model artifact (model.tar.gz).
+
+    Returns:
+        dict: The loaded hyperparameters or None if not found.
+    """
+    hyperparameters = None
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # Download model artifact
+        local_tar_path = os.path.join(tmpdir, "model.tar.gz")
+        wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
+
+        # Extract tarball
+        safe_extract_tarfile(local_tar_path, tmpdir)
+
+        # Look for hyperparameters in base directory only
+        hyperparameters_path = os.path.join(tmpdir, "hyperparameters.json")
+
+        if os.path.exists(hyperparameters_path):
+            try:
+                with open(hyperparameters_path, "r") as f:
+                    hyperparameters = json.load(f)
+                log.info(f"Loaded hyperparameters from {hyperparameters_path}")
+            except Exception as e:
+                log.warning(f"Failed to load hyperparameters from {hyperparameters_path}: {e}")
+
+    return hyperparameters
+
+
+def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:
+    """Get the hyperparameters used to train a Workbench model.
+
+    This retrieves the hyperparameters.json file from the model artifacts
+    that was saved during model training.
+
+    Args:
+        workbench_model: Workbench model object
+
+    Returns:
+        dict: The hyperparameters used during training, or None if not found
+    """
+    # Get the model artifact URI
+    model_artifact_uri = workbench_model.model_data_url()
+
+    if model_artifact_uri is None:
+        log.warning(f"No model artifact found for {workbench_model.uuid}")
+        return None
+
+    log.info(f"Loading hyperparameters from {model_artifact_uri}")
+    return load_hyperparameters_from_s3(model_artifact_uri)
+
+
 def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     """
     Evaluate uncertainty quantification model with essential metrics.
@@ -333,7 +390,12 @@ if __name__ == "__main__":
     # Get the custom script path
     print(get_custom_script_path("chem_info", "molecular_descriptors.py"))
 
-    # Test the proximity model
+    # Test loading hyperparameters
     m = Model("aqsol-regression")
+    hyperparams = get_model_hyperparameters(m)
+    print(hyperparams)
+
+    # Test the proximity model
     # prox_model = proximity_model(m, "aqsol-prox")
     # print(prox_model)#
+
