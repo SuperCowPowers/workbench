@@ -23,7 +23,7 @@ my_model = fs.to_model(
     model_type=ModelType.UQ_REGRESSOR,
     feature_list=features,
     target_column=target,
-    description=f"NGBoost Model for AQSol",
+    description="NGBoost Model for AQSol",
     tags=["aqsol", "ngboost", "regression"],
     custom_script=script_path,
 )

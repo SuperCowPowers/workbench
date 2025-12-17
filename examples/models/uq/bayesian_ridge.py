@@ -19,7 +19,7 @@ my_model = fs.to_model(
     model_type=ModelType.REGRESSOR,
     feature_list=features,
     target_column=target,
-    description=f"Bayesian Ridge Model for AQSol",
+    description="Bayesian Ridge Model for AQSol",
     tags=["aqsol", "bayesian", "regression"],
     custom_script=script_path,
 )

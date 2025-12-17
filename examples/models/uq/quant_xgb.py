@@ -1,5 +1,5 @@
 from workbench.api.feature_set import FeatureSet
-from workbench.api.model import Model, ModelType, Endpoint
+from workbench.api.model import Model, ModelType
 
 # Grab our existing AQSol Regression Model
 model = Model("aqsol-regression")
