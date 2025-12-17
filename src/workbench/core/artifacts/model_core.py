@@ -21,7 +21,7 @@ from workbench.utils.aws_utils import newest_path, pull_s3_data
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.shap_utils import shap_values_data, shap_feature_importance
 from workbench.utils.deprecated_utils import deprecated
-from workbench.utils.model_utils import proximity_model
+from workbench.utils.model_utils import proximity_model, get_model_hyperparameters
 
 
 class ModelType(Enum):
@@ -565,6 +565,7 @@ class ModelCore(Artifact):
         details["status"] = self.latest_model["ModelPackageStatus"]
         details["approval_status"] = self.latest_model.get("ModelApprovalStatus", "unknown")
         details["image"] = self.container_image().split("/")[-1]  # Shorten the image uri
+        details["hyperparameters"] = get_model_hyperparameters(self)
 
         # Grab the inference and container info
         inference_spec = self.latest_model["InferenceSpecification"]
@@ -575,16 +576,6 @@ class ModelCore(Artifact):
         details["transform_types"] = inference_spec["SupportedTransformInstanceTypes"]
         details["content_types"] = inference_spec["SupportedContentTypes"]
         details["response_types"] = inference_spec["SupportedResponseMIMETypes"]
-        details["model_metrics"] = self.get_inference_metrics()
-        if self.model_type == ModelType.CLASSIFIER:
-            details["confusion_matrix"] = self.confusion_matrix()
-            details["predictions"] = None
-        elif self.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
-            details["confusion_matrix"] = None
-            details["predictions"] = self.get_inference_predictions()
-        else:
-            details["confusion_matrix"] = None
-            details["predictions"] = None
 
         # Grab the inference metadata
         details["inference_meta"] = self.get_inference_metadata()
