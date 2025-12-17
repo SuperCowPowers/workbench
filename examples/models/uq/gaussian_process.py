@@ -23,7 +23,7 @@ my_model = fs.to_model(
     model_type=ModelType.REGRESSOR,
     feature_list=features,
     target_column=target,
-    description=f"GaussianProcessRegressor Model for AQSol",
+    description="GaussianProcessRegressor Model for AQSol",
     tags=["aqsol", "gaussian", "regression"],
     custom_script=script_path,
 )

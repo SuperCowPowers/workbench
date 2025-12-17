@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import DBSCAN, HDBSCAN
+from sklearn.cluster import HDBSCAN
 from sklearn.cluster import MeanShift
 
 # Workbench Imports
@@ -16,7 +16,7 @@ def run_dbscan(df: pd.DataFrame, feature_list: list, eps: float = 0.5, min_sampl
         df (pd.DataFrame): The input DataFrame.
         feature_list (list): The list of features to use for clustering.
         eps (float): The maximum distance between two samples for them to be considered as in the same neighborhood.
-        min_samples (int): The number of samples (or total weight) in a neighborhood for a point to be considered a core point.
+        min_samples (int): The samples (or total weight) in a neighborhood for a point to be considered a core point.
 
     Returns:
         pd.Series: Cluster labels assigned by DBSCAN.

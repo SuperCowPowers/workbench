@@ -1,7 +1,5 @@
-import json
-import sagemaker
 import boto3
-from sagemaker.huggingface import HuggingFaceModel, get_huggingface_llm_image_uri
+from sagemaker.huggingface import HuggingFaceModel
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
@@ -21,7 +19,8 @@ hub = {
 
 
 region = boto3.Session().region_name
-image_uri = f"763104351884.dkr.ecr.{region}.amazonaws.com/huggingface-pytorch-tgi-inference:2.1.2-optimum0.0.27-neuronx-py310-ubuntu22.04"
+model = "huggingface-pytorch-tgi-inference:2.1.2-optimum0.0.27-neuronx-py310-ubuntu22.04"
+image_uri = f"763104351884.dkr.ecr.{region}.amazonaws.com/{model}"
 
 # create Hugging Face Model Class
 huggingface_model = HuggingFaceModel(

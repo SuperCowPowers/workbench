@@ -1,24 +1,5 @@
-# Template Placeholders
-TEMPLATE_PARAMS = {
-    "model_type": "regressor",
-    "target_column": "class_number_of_rings",
-    "feature_list": [
-        "length",
-        "diameter",
-        "height",
-        "whole_weight",
-        "shucked_weight",
-        "viscera_weight",
-        "shell_weight",
-        "auto_id",
-    ],
-    "model_metrics_s3_path": "s3://sandbox-sageworks-artifacts/models/training/abalone-regression",
-    "train_all_data": False,
-}
-
 # Imports for XGB Model
 import xgboost as xgb
-import awswrangler as wr
 
 # Model Performance Scores
 from sklearn.metrics import (
@@ -42,6 +23,24 @@ import joblib
 import os
 import pandas as pd
 from typing import List
+
+# Template Placeholders
+TEMPLATE_PARAMS = {
+    "model_type": "regressor",
+    "target_column": "class_number_of_rings",
+    "feature_list": [
+        "length",
+        "diameter",
+        "height",
+        "whole_weight",
+        "shucked_weight",
+        "viscera_weight",
+        "shell_weight",
+        "auto_id",
+    ],
+    "model_metrics_s3_path": "s3://sandbox-sageworks-artifacts/models/training/abalone-regression",
+    "train_all_data": False,
+}
 
 
 # Function to check if dataframe is empty
@@ -200,7 +199,7 @@ if __name__ == "__main__":
     xgb_model.fit(X, y)
 
     # Make Predictions on the Validation Set
-    print(f"Making Predictions on Validation Set...")
+    print("Making Predictions on Validation Set...")
     preds = xgb_model.predict(df_val[feature_list])
     if model_type == "classifier":
         # Also get the probabilities for each class

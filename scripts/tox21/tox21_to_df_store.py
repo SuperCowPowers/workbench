@@ -178,7 +178,7 @@ if __name__ == "__main__":
     # Store in DFStore
     df_store = DFStore()
     df_store.upsert("/datasets/chem_info/tox21_training", df)
-    print(f"\nStored training data to /datasets/chem_info/tox21_training")
+    print("\nStored training data to /datasets/chem_info/tox21_training")
 
     # Optionally process test data
     # print("\nProcessing test data...")

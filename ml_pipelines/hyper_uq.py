@@ -1,4 +1,3 @@
-import os
 from pprint import pprint
 from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model, ModelType

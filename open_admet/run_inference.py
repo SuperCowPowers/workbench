@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from workbench.api import Model, Endpoint, DFStore
+from workbench.api import Endpoint, DFStore
 
 df_store = DFStore()
 
@@ -171,7 +171,7 @@ def run_inference_and_create_submission(models: list[str], output_file: str):
         submission_df[submission_col] = original_scale_predictions
         config = INVERSE_TRANSFORM_CONFIG.get(internal_target, {})
         print(
-            f"  Mapped {internal_target} -> {submission_col} (inverse transform applied: {config.get('log_transform', False)})"
+            f"  Mapped {internal_target} -> {submission_col} (inverse transform: {config.get('log_transform', False)})"
         )
 
     # Reorder columns to match submission format
@@ -271,7 +271,7 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
         submission_df[submission_col] = original_scale_predictions
         config = INVERSE_TRANSFORM_CONFIG.get(internal_target, {})
         print(
-            f"  Mapped {internal_target} -> {submission_col} (inverse transform applied: {config.get('log_transform', False)})"
+            f"  Mapped {internal_target} -> {submission_col} (inverse transform: {config.get('log_transform', False)})"
         )
 
     # Reorder columns to match submission format

@@ -1,5 +1,5 @@
 import time
-from workbench.api import Meta, Model, ModelType
+from workbench.api import Meta, Model
 
 meta = Meta()
 

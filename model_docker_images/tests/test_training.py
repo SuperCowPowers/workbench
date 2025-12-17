@@ -51,7 +51,7 @@ class MockEstimator:
                 for file in os.listdir(self.source_dir):
                     if file.endswith(".py"):
                         shutil.copy2(os.path.join(self.source_dir, file), f"{self.temp_dir}/code")
-                print(f"Copied source files to code directory")
+                print("Copied source files to code directory")
 
             # Create hyperparameters.json
             all_hyperparams = {
@@ -92,10 +92,12 @@ class MockEstimator:
                 cmd.insert(2, "--platform")
                 cmd.insert(3, "linux/amd64")
 
-            print(f"Running training container...")
+            print("Running training container...")
 
             start_time = time.time()
             result = subprocess.run(cmd, check=True, capture_output=not logs)
+            print(result.stdout.decode("utf-8") if result.stdout else "")
+            print(result.stderr.decode("utf-8") if result.stderr else "")
             training_time = time.time() - start_time
             print(f"Training completed in {training_time:.2f} seconds")
 
