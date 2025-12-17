@@ -52,6 +52,7 @@ if recreate or not Endpoint("aqsol-regression").exists():
 
     # Run inference on the endpoint
     end.auto_inference(capture=True)
+    end.cross_fold_inference()
 
 # Pytorch Classification Model
 if recreate or not Model("aqsol-class").exists():
