@@ -159,38 +159,6 @@ def proximity_model(model: "Model", prox_model_name: str, track_columns: list = 
     return prox_model
 
 
-def uq_model(model: "Model", uq_model_name: str, train_all_data: bool = False) -> "Model":
-    """Create a Uncertainty Quantification (UQ) model based on the given model
-
-    Args:
-        model (Model): The model to create the UQ model from
-        uq_model_name (str): The name of the UQ model to create
-        train_all_data (bool, optional): Whether to train the UQ model on all data (default: False)
-
-    Returns:
-        Model: The UQ model
-    """
-    from workbench.api import Model, ModelType, FeatureSet  # noqa: F401 (avoid circular import)
-
-    # Get Feature and Target Columns from the existing given Model
-    features = model.features()
-    target = model.target()
-
-    # Create the Proximity Model from our FeatureSet
-    fs = FeatureSet(model.get_input())
-    uq_model = fs.to_model(
-        name=uq_model_name,
-        model_type=ModelType.UQ_REGRESSOR,
-        feature_list=features,
-        target_column=target,
-        description=f"UQ Model for {model.name}",
-        tags=["uq", model.name],
-        train_all_data=train_all_data,
-        custom_args={"id_column": fs.id_column, "track_columns": [target]},
-    )
-    return uq_model
-
-
 def safe_extract_tarfile(tar_path: str, extract_path: str) -> None:
     """
     Extract a tarball safely, using data filter if available.
@@ -369,14 +337,3 @@ if __name__ == "__main__":
     m = Model("aqsol-regression")
     # prox_model = proximity_model(m, "aqsol-prox")
     # print(prox_model)#
-
-    # Test the UQ model
-    # uq_model_instance = uq_model(m, "aqsol-uq")
-    # print(uq_model_instance)
-    # uq_model_instance.to_endpoint()
-
-    # Test the uq_metrics function
-    end = Endpoint("aqsol-uq")
-    df = end.auto_inference(capture=True)
-    results = uq_metrics(df, target_col="solubility")
-    print(results)

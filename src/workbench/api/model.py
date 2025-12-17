@@ -10,7 +10,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework  # noqa: F401
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from workbench.api.endpoint import Endpoint
-from workbench.utils.model_utils import proximity_model_local, uq_model
+from workbench.utils.model_utils import proximity_model_local
 
 
 class Model(ModelCore):
@@ -90,20 +90,6 @@ class Model(ModelCore):
            Proximity: A local Proximity Model
         """
         return proximity_model_local(self)
-
-    def uq_model(self, uq_model_name: str = None, train_all_data: bool = False) -> "Model":
-        """Create a Uncertainty Quantification Model for this Model
-
-        Args:
-            uq_model_name (str, optional): Name of the UQ Model (if not specified, a name will be generated)
-            train_all_data (bool, optional): Whether to train the UQ Model on all data (default: False)
-
-        Returns:
-            Model: The UQ Model
-        """
-        if uq_model_name is None:
-            uq_model_name = self.model_name + "-uq"
-        return uq_model(self, uq_model_name, train_all_data=train_all_data)
 
 
 if __name__ == "__main__":

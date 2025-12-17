@@ -594,10 +594,6 @@ if __name__ == "__main__":
     print(f"Model parameters: {xgb_model.get_params()}")
     print(f"enable_categorical: {xgb_model.enable_categorical}")
 
-    # Test with UQ Model
-    uq_model = Model("aqsol-uq")
-    _xgb_model = xgboost_model_from_s3(uq_model.model_data_url())
-
     print("\n=== CROSS FOLD REGRESSION EXAMPLE ===")
     model = Model("abalone-regression")
     results, df = cross_fold_inference(model)
