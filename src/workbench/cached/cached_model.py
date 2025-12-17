@@ -72,11 +72,11 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().list_inference_runs()
 
     @CachedArtifactMixin.cache_result
-    def get_inference_metrics(self, capture_name: str = "latest") -> Union[pd.DataFrame, None]:
+    def get_inference_metrics(self, capture_name: str = "auto") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: latest)
+            capture_name (str, optional): Specific capture_name (default: auto)
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Metrics (might be None)
@@ -101,11 +101,11 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return df
 
     @CachedArtifactMixin.cache_result
-    def confusion_matrix(self, capture_name: str = "latest") -> Union[pd.DataFrame, None]:
+    def confusion_matrix(self, capture_name: str = "auto") -> Union[pd.DataFrame, None]:
         """Retrieve the confusion matrix for the model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: latest)
+            capture_name (str, optional): Specific capture_name (default: auto)
 
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
