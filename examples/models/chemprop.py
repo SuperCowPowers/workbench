@@ -6,7 +6,7 @@ recreate = True
 # =============================================================================
 # Single-Target Chemprop Regression Model
 # =============================================================================
-if not Model("open-admet-chemprop-logd").exists():
+if recreate or not Model("open-admet-chemprop-logd").exists():
     feature_set = FeatureSet("open_admet_all")
     m = feature_set.to_model(
         name="open-admet-chemprop-logd",
@@ -21,7 +21,7 @@ if not Model("open-admet-chemprop-logd").exists():
     m.set_owner("BW")
 
 # Create an Endpoint for the Regression Model
-if not Endpoint("open-admet-chemprop-logd").exists():
+if recreate or not Endpoint("open-admet-chemprop-logd").exists():
     m = Model("open-admet-chemprop-logd")
     end = m.to_endpoint(tags=["chemprop", "open_admet"])
     end.set_owner("BW")

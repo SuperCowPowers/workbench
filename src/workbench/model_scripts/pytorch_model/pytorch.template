@@ -2,6 +2,10 @@
 import os
 import awswrangler as wr
 import numpy as np
+import torch
+
+# Enable Tensor Core optimization for GPUs that support it (e.g., NVIDIA L4, A100, etc.)
+torch.set_float32_matmul_precision("medium")
 
 # PyTorch compatibility: pytorch-tabular saves complex objects, not just tensors
 # Use legacy loading behavior for compatibility (recommended by PyTorch docs for this scenario)
