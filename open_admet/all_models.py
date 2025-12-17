@@ -86,7 +86,6 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
             description=f"XGBoost model for {base_name} prediction",
             tags=["open_admet", base_name, "regression", "xgboost"],
             hyperparameters=XGB_HYPERPARAMETERS,
-            train_all_data=True,
         )
         xgb_model.set_owner("BW")
         end = xgb_model.to_endpoint(tags=["open_admet", base_name, "xgboost"], max_concurrency=1)

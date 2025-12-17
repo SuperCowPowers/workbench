@@ -280,7 +280,6 @@ if __name__ == "__main__":
             target_column="solubility",
             description="Morgan Fingerprints Model",
             tags=["smiles", "fingerprints"],
-            train_all_data=True,
         )
 
     # Fingerprint Endpoint
@@ -306,7 +305,6 @@ if __name__ == "__main__":
             feature_list=features,
             description="Morgan Fingerprints + Features Model",
             tags=["smiles", "fingerprints", "plus"],
-            train_all_data=True,
         )
 
     # Fingerprint + Other Features Endpoint
@@ -332,7 +330,6 @@ if __name__ == "__main__":
             feature_list=features,
             description="Morgan Fingerprints + Features Classification Model",
             tags=["smiles", "fingerprints", "plus"],
-            train_all_data=True,
         )
         model.set_class_labels(["low", "medium", "high"])
 
