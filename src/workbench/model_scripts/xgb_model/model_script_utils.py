@@ -1,1 +1,1 @@
-../../utils/model_script_utils.py
+../../model_script_utils/model_script_utils.py
