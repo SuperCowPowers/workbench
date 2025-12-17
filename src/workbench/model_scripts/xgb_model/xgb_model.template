@@ -140,11 +140,6 @@ if __name__ == "__main__":
     # Use any hyperparameters to set up both the trainer and model configurations
     print(f"Hyperparameters: {hyperparameters}")
 
-    # Check for target transform (e.g., "log" for log1p/expm1 transform)
-    target_transform = hyperparameters.pop("target_transform", None)
-    if target_transform:
-        print(f"Target transform: {target_transform}")
-
     # Now spin up our XGB Model
     if model_type == "classifier":
         xgb_model = xgb.XGBClassifier(enable_categorical=True, **hyperparameters)
@@ -169,12 +164,6 @@ if __name__ == "__main__":
     # Grab our Features, Target and Train the Model
     y_train = df_train[target].copy()
     X_train = df_train[features]
-
-    # Apply target transform for training (regression only)
-    if target_transform == "log" and model_type != "classifier":
-        print("Applying log1p transform to target for training...")
-        y_train = np.log1p(y_train)
-
     xgb_model.fit(X_train, y_train, sample_weight=sample_weights)
 
     # Make Predictions on the Validation Set
@@ -182,11 +171,6 @@ if __name__ == "__main__":
     y_validate = df_val[target]
     X_validate = df_val[features]
     preds = xgb_model.predict(X_validate)
-
-    # Reverse transform predictions for regression
-    if target_transform == "log" and model_type != "classifier":
-        print("Applying expm1 (reverse log) transform to predictions...")
-        preds = np.expm1(preds)
 
     if model_type == "classifier":
         # Also get the probabilities for each class
@@ -248,10 +232,9 @@ if __name__ == "__main__":
     with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
         json.dump(category_mappings, fp)
 
-    # Save the target transform if we have one
-    if target_transform:
-        with open(os.path.join(args.model_dir, "target_transform.json"), "w") as fp:
-            json.dump({"transform": target_transform}, fp)
+    # Save hyperparameters (merged defaults + user overrides) for reproducibility
+    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as fp:
+        json.dump(hyperparameters, fp, indent=2)
 
     # Save UQ models for regression
     if model_type != "classifier":
@@ -283,13 +266,6 @@ def model_fn(model_dir) -> dict:
         with open(category_path) as fp:
             category_mappings = json.load(fp)
 
-    # Load target transform if it exists
-    target_transform = None
-    transform_path = os.path.join(model_dir, "target_transform.json")
-    if os.path.exists(transform_path):
-        with open(transform_path) as fp:
-            target_transform = json.load(fp).get("transform")
-
     # Load UQ models if they exist (regression only)
     uq_models = None
     uq_metadata = None
@@ -301,7 +277,6 @@ def model_fn(model_dir) -> dict:
         "xgb_model": xgb_model,
         "label_encoder": label_encoder,
         "category_mappings": category_mappings,
-        "target_transform": target_transform,
         "uq_models": uq_models,
         "uq_metadata": uq_metadata,
     }
@@ -329,12 +304,8 @@ def predict_fn(df, models) -> pd.DataFrame:
     xgb_model = models["xgb_model"]
     label_encoder = models.get("label_encoder")
     category_mappings = models.get("category_mappings", {})
-    target_transform = models.get("target_transform")
     uq_models = models.get("uq_models")
     uq_metadata = models.get("uq_metadata")
-
-    if target_transform:
-        print(f"Target transform: {target_transform}")
 
     # We're going match features in a case-insensitive manner, accounting for all the permutations
     # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
@@ -352,11 +323,6 @@ def predict_fn(df, models) -> pd.DataFrame:
     # Predict the features against our XGB Model
     X = matched_df[features]
     predictions = xgb_model.predict(X)
-
-    # Reverse transform predictions if needed
-    if target_transform == "log":
-        print("Applying expm1 (reverse log) transform to predictions...")
-        predictions = np.expm1(predictions)
 
     # If we have a label encoder, decode the predictions (classifier)
     if label_encoder:

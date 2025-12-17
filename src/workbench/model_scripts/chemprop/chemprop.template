@@ -862,6 +862,10 @@ if __name__ == "__main__":
     if label_encoder is not None:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
+    # Save hyperparameters (merged defaults + user overrides) for reproducibility
+    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as fp:
+        json.dump(hyperparameters, fp, indent=2)
+
     # Save extra feature metadata for inference (hybrid mode)
     # Note: We don't need to save the scaler - X_d_transform is embedded in the model
     if use_extra_features:

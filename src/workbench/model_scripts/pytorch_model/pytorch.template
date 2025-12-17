@@ -550,3 +550,7 @@ if __name__ == "__main__":
     # Save the category mappings
     with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
         json.dump(category_mappings, fp)
+
+    # Save hyperparameters (merged defaults + user overrides) for reproducibility
+    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as fp:
+        json.dump(hyperparameters, fp, indent=2)
