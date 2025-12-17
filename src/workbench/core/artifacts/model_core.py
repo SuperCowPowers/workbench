@@ -263,11 +263,11 @@ class ModelCore(Artifact):
         else:
             self.log.important(f"No inference data found for {self.model_name}!")
 
-    def get_inference_metrics(self, capture_name: str = "any") -> Union[pd.DataFrame, None]:
+    def get_inference_metrics(self, capture_name: str = "auto") -> Union[pd.DataFrame, None]:
         """Retrieve the inference performance metrics for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: "any")
+            capture_name (str, optional): Specific capture_name (default: "auto")
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
 
@@ -275,7 +275,7 @@ class ModelCore(Artifact):
             If a capture_name isn't specified this will try to the 'first' available metrics
         """
         # Try to get the auto_capture 'training_holdout' or the training
-        if capture_name == "any":
+        if capture_name == "auto":
             metric_list = self.list_inference_runs()
             if metric_list:
                 return self.get_inference_metrics(metric_list[0])
@@ -303,11 +303,11 @@ class ModelCore(Artifact):
                 self.log.warning(f"Performance metrics {capture_name} not found for {self.model_name}!")
                 return None
 
-    def confusion_matrix(self, capture_name: str = "latest") -> Union[pd.DataFrame, None]:
+    def confusion_matrix(self, capture_name: str = "auto") -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name or "training" (default: "latest")
+            capture_name (str, optional): Specific capture_name or "training" (default: "auto")
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
@@ -319,7 +319,7 @@ class ModelCore(Artifact):
             raise ValueError(error_msg)
 
         # Grab the metrics from the Workbench Metadata (try inference first, then training)
-        if capture_name == "latest":
+        if capture_name == "auto":
             cm = self.confusion_matrix("auto_inference")
             return cm if cm is not None else self.confusion_matrix("model_training")
 
@@ -540,6 +540,17 @@ class ModelCore(Artifact):
             self.upsert_workbench_meta({"class_labels": labels})
         else:
             self.log.error(f"Model {self.model_name} is not a classifier!")
+
+    def summary(self) -> dict:
+        """Summary information about this Model
+
+        Returns:
+            dict: Dictionary of summary information about this Model
+        """
+        self.log.info("Computing Model Summary...")
+        summary = super().summary()
+        summary["hyperparameters"] = get_model_hyperparameters(self)
+        return summary
 
     def details(self) -> dict:
         """Additional Details about this Model

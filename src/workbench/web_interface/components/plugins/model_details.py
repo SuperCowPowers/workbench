@@ -41,7 +41,7 @@ class ModelDetails(PluginInterface):
             id=self.component_id,
             children=[
                 html.H4(id=f"{self.component_id}-header", children="Model: Loading..."),
-                dcc.Markdown(id=f"{self.component_id}-summary"),
+                dcc.Markdown(id=f"{self.component_id}-summary", dangerously_allow_html=True),
                 html.H5(children="Inference Metrics", style={"marginTop": "20px"}),
                 dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
                 dcc.Markdown(id=f"{self.component_id}-metrics"),
@@ -106,63 +106,37 @@ class ModelDetails(PluginInterface):
         Returns:
             str: A markdown string
         """
-
-        # Get these fields from the model
-        show_fields = [
-            "health_tags",
-            "input",
-            "workbench_registered_endpoints",
-            "workbench_model_type",
-            "workbench_model_target",
-            "workbench_model_features",
-            "param_meta",
-            "workbench_tags",
-        ]
-
-        # Construct the markdown string
         summary = self.current_model.summary()
         markdown = ""
-        for key in show_fields:
 
-            # Special case for the health tags
-            if key == "health_tags":
-                markdown += health_tag_markdown(summary.get(key, []))
-                continue
+        # Health tags
+        markdown += health_tag_markdown(summary.get("health_tags", []))
 
-            # Special case for the features
-            if key == "workbench_model_features":
-                value = summary.get(key, [])
-                key = "features"
-                value = f"({len(value)}) {', '.join(value)[:100]}..."
-                markdown += f"**{key}:** {value}  \n"
-                continue
+        # Simple fields
+        markdown += f"**input:** {summary.get('input', '-')}  \n"
+        endpoints = ", ".join(summary.get("workbench_registered_endpoints", []))
+        markdown += f"**registered_endpoints:** {endpoints or '-'}  \n"
+        markdown += f"**model_type:** {summary.get('workbench_model_type', '-')}  \n"
+        markdown += f"**model_target:** {summary.get('workbench_model_target', '-')}  \n"
 
-            # Special case for Parameter Store Metadata
-            if key == "param_meta":
-                model_name = summary["name"]
-                meta_data = self.params.get(f"/workbench/models/{model_name}/meta", warn=False)
-                if meta_data:
-                    markdown += dict_to_markdown(meta_data, title="Additional Metadata")
-                continue
+        # Features (truncated)
+        features = summary.get("workbench_model_features", [])
+        features_str = f"({len(features)}) {', '.join(features)[:100]}..."
+        markdown += f"**features:** {features_str}  \n"
 
-            # Special case for tags
-            if key == "workbench_tags":
-                tags = summary.get(key, "")
-                markdown += tags_to_markdown(tags)
-                continue
+        # Parameter Store metadata
+        model_name = summary["name"]
+        meta_data = self.params.get(f"/workbench/models/{model_name}/meta", warn=False)
+        if meta_data:
+            markdown += dict_to_markdown(meta_data, title="Additional Metadata")
 
-            # Get the value
-            value = summary.get(key, "-")
+        # Tags
+        markdown += tags_to_markdown(summary.get("workbench_tags", "")) + "  \n"
 
-            # If the value is a list, convert it to a comma-separated string
-            if isinstance(value, list):
-                value = ", ".join(value)
-
-            # Chop off the "workbench_" prefix
-            key = key.replace("workbench_", "")
-
-            # Add to markdown string
-            markdown += f"**{key}:** {value}  \n"
+        # Hyperparameters
+        hyperparams = summary.get("hyperparameters")
+        if hyperparams and isinstance(hyperparams, dict):
+            markdown += dict_to_collapsible_html(hyperparams, title="Hyperparameters", collapse_all=True)
 
         return markdown
 
@@ -218,18 +192,6 @@ class ModelDetails(PluginInterface):
             markdown += "\n\n"
             markdown += dict_to_markdown(inference_data, title="Additional Inference Metrics")
         return markdown
-
-    def cross_metrics(self) -> str:
-        # Get cross fold metrics if they exist
-        # Note: Currently not used since we show cross fold metrics in the dropdown
-        model_name = self.current_model.name
-        cross_fold_data = self.params.get(f"/workbench/models/{model_name}/inference/cross_fold", warn=False)
-        if not cross_fold_data:
-            return "**No Cross Fold Data**"
-
-        # Convert the cross fold data to a markdown string
-        html = dict_to_collapsible_html(cross_fold_data)
-        return html
 
     def get_inference_runs(self):
         """Get the inference runs for the model
