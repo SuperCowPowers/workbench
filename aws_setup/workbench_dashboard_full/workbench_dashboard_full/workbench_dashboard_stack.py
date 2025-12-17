@@ -8,7 +8,6 @@ from aws_cdk import (
     aws_elasticache as elasticache,
     aws_logs as logs,
 )
-from aws_cdk.aws_ec2 import Subnet
 from aws_cdk.aws_certificatemanager import Certificate
 from aws_cdk.aws_ecs_patterns import ApplicationLoadBalancedFargateService
 from constructs import Construct

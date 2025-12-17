@@ -1,7 +1,7 @@
 """Create the SMILES to Standardize + Tautomer + Molecular Descriptors + Stereo Model and Endpoint"""
 
 # Workbench Imports
-from workbench.api import FeatureSet, ModelType, Model
+from workbench.api import FeatureSet, ModelType
 from workbench.utils.model_utils import get_custom_script_path
 
 # fs_name = "aqsol_features"

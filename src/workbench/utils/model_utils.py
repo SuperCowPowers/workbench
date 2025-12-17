@@ -375,7 +375,7 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
-    from workbench.api import Model, Endpoint
+    from workbench.api import Model
 
     # Get the instance information
     print(model_instance_info())
@@ -398,4 +398,3 @@ if __name__ == "__main__":
     # Test the proximity model
     # prox_model = proximity_model(m, "aqsol-prox")
     # print(prox_model)#
-

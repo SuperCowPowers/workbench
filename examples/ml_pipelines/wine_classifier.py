@@ -10,7 +10,7 @@ Endpoints:
     - wine-classification-end
 """
 
-from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
+from workbench.api import DataSource, FeatureSet, Model, ModelType
 
 
 if __name__ == "__main__":

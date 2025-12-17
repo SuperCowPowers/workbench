@@ -13,7 +13,7 @@ cm = ConfigManager()
 cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 
 # Important Note: This import needs to happen after the WORKBENCH_BUCKET is set
-from workbench.api import DataSource
+from workbench.api import DataSource  # noqa: E402
 
 # Grab a test DataSource
 ds = DataSource("abalone_data")

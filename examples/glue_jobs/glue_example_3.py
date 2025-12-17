@@ -13,7 +13,7 @@ cm = ConfigManager()
 cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 
 # Important Note: This import needs to happen after the WORKBENCH_BUCKET is set
-from workbench.api import Endpoint
+from workbench.api import Endpoint  # noqa: E402
 
 # Run Inference on a particular model (using its endpoint)
 end = Endpoint("abalone-regression")

@@ -13,7 +13,7 @@ cm = ConfigManager()
 cm.set_config("WORKBENCH_BUCKET", glue_args["workbench-bucket"])
 
 # Important Note: This import needs to happen after the WORKBENCH_BUCKET is set
-from workbench.api import Meta
+from workbench.api import Meta  # noqa: E402
 
 # List all the models in AWS
 meta = Meta()
