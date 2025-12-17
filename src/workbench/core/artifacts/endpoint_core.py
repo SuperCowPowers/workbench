@@ -35,7 +35,7 @@ from workbench.utils.endpoint_metrics import EndpointMetrics
 from workbench.utils.cache import Cache
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.model_utils import uq_metrics
-from workbench.utils.xgboost_model_utils import cross_fold_inference as xgboost_cross_fold
+from workbench.utils.xgboost_model_utils import pull_cv_results as xgboost_pull_cv
 from workbench.utils.pytorch_utils import pull_cv_results as pytorch_pull_cv
 from workbench.utils.chemprop_utils import pull_cv_results as chemprop_pull_cv
 from workbench_bridges.endpoints.fast_inference import fast_inference
@@ -490,11 +490,8 @@ class EndpointCore(Artifact):
         # Return the prediction DataFrame
         return prediction_df
 
-    def cross_fold_inference(self, nfolds: int = 5) -> pd.DataFrame:
-        """Run cross-fold inference (only works for XGBoost models)
-
-        Args:
-            nfolds (int): Number of folds to use for cross-fold (default: 5)
+    def cross_fold_inference(self) -> pd.DataFrame:
+        """Pull cross-fold inference training results for this Endpoint's model
 
         Returns:
             pd.DataFrame: A DataFrame with cross fold predictions
@@ -506,7 +503,7 @@ class EndpointCore(Artifact):
         # Compute CrossFold (Metrics and Prediction Dataframe)
         # For PyTorch and ChemProp, pull pre-computed CV results from training
         if model.model_framework in [ModelFramework.UNKNOWN, ModelFramework.XGBOOST]:
-            cross_fold_metrics, out_of_fold_df = xgboost_cross_fold(model, nfolds=nfolds)
+            cross_fold_metrics, out_of_fold_df = xgboost_pull_cv(model)
         elif model.model_framework == ModelFramework.PYTORCH_TABULAR:
             cross_fold_metrics, out_of_fold_df = pytorch_pull_cv(model)
         elif model.model_framework == ModelFramework.CHEMPROP:

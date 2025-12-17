@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 
 # Scikit Learn Imports
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold, StratifiedKFold
 
 import json
 import argparse
@@ -42,6 +42,9 @@ from uq_harness import (
 
 # Default Hyperparameters for XGBoost
 DEFAULT_HYPERPARAMETERS = {
+    # Training parameters
+    "n_folds": 5,  # Number of CV folds (1 = single train/val split)
+
     # Core tree parameters
     "n_estimators": 200,  # More trees for better signal capture when we have lots of features
     "max_depth": 6,  # Medium depth
@@ -62,31 +65,33 @@ DEFAULT_HYPERPARAMETERS = {
     "random_state": 42,
 }
 
+# Workbench-specific hyperparameters (these are used by the training harness, not passed to XGBoost)
+WORKBENCH_PARAMS = {"n_folds"}
+
 # Template Parameters
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
     "target": "{{target_column}}",
     "features": "{{feature_list}}",
+    "id_column": "{{id_column}}",
     "compressed_features": "{{compressed_features}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "train_all_data": "{{train_all_data}}",
     "hyperparameters": "{{hyperparameters}}",
 }
 
 
 if __name__ == "__main__":
-    """The main function is for training the XGBoost model"""
+    """The main function is for training the XGBoost model ensemble"""
 
     # Harness Template Parameters
     target = TEMPLATE_PARAMS["target"]
     features = TEMPLATE_PARAMS["features"]
     orig_features = features.copy()
+    id_column = TEMPLATE_PARAMS["id_column"]
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
-    train_all_data = TEMPLATE_PARAMS["train_all_data"]
     hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
-    validation_split = 0.2
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
@@ -119,77 +124,162 @@ if __name__ == "__main__":
         print(f"Decompressing features {compressed_features}...")
         all_df, features = decompress_features(all_df, features, compressed_features)
 
-    # Do we want to train on all the data?
-    if train_all_data:
-        print("Training on ALL of the data")
-        df_train = all_df.copy()
-        df_val = all_df.copy()
-
-    # Does the dataframe have a training column?
-    elif "training" in all_df.columns:
-        print("Found training column, splitting data based on training column")
-        df_train = all_df[all_df["training"]]
-        df_val = all_df[~all_df["training"]]
-    else:
-        # Just do a random training Split
-        print("WARNING: No training column found, splitting data with random state=42")
-        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
-    print(f"FIT/TRAIN: {df_train.shape}")
-    print(f"VALIDATION: {df_val.shape}")
-
-    # Use any hyperparameters to set up both the trainer and model configurations
+    # Use hyperparameters (merged with defaults)
     print(f"Hyperparameters: {hyperparameters}")
+    n_folds = hyperparameters["n_folds"]
 
-    # Now spin up our XGB Model
+    # Filter out Workbench-specific parameters, pass the rest to XGBoost
+    xgb_params = {k: v for k, v in hyperparameters.items() if k not in WORKBENCH_PARAMS}
+    print(f"XGBoost params: {xgb_params}")
+
+    # Set up label encoder for classification
     if model_type == "classifier":
-        xgb_model = xgb.XGBClassifier(enable_categorical=True, **hyperparameters)
-
-        # Encode the target column
         label_encoder = LabelEncoder()
-        df_train[target] = label_encoder.fit_transform(df_train[target])
-        df_val[target] = label_encoder.transform(df_val[target])
-
+        all_df[target] = label_encoder.fit_transform(all_df[target])
+        num_classes = len(label_encoder.classes_)
     else:
-        xgb_model = xgb.XGBRegressor(enable_categorical=True, **hyperparameters)
-        label_encoder = None  # We don't need this for regression
+        label_encoder = None
+        num_classes = None
 
-    # Extract sample weights if present
-    if "sample_weight" in df_train.columns:
-        sample_weights = df_train["sample_weight"]
-        print(f"Using sample weights: min={sample_weights.min():.2f}, max={sample_weights.max():.2f}, mean={sample_weights.mean():.2f}")
+    # =========================================================================
+    # UNIFIED TRAINING: Works for n_folds=1 (single model) or n_folds>1 (K-fold CV)
+    # =========================================================================
+    print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold cross-validation ensemble'}...")
+
+    # Create fold splits
+    if n_folds == 1:
+        # Single fold: use train/val split from "training" column or random split
+        if "training" in all_df.columns:
+            print("Found training column, splitting data based on training column")
+            train_idx = np.where(all_df["training"])[0]
+            val_idx = np.where(~all_df["training"])[0]
+        else:
+            print("WARNING: No training column found, splitting data with random 80/20 split")
+            indices = np.arange(len(all_df))
+            train_idx, val_idx = train_test_split(indices, test_size=0.2, random_state=42)
+        folds = [(train_idx, val_idx)]
     else:
-        sample_weights = None
+        # K-Fold CV
+        if model_type == "classifier":
+            kfold = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
+            split_target = all_df[target]
+        else:
+            kfold = KFold(n_splits=n_folds, shuffle=True, random_state=42)
+            split_target = None
+        folds = list(kfold.split(all_df, split_target))
+
+    # Initialize storage for out-of-fold predictions
+    oof_predictions = np.full(len(all_df), np.nan, dtype=np.float64)
+    if model_type == "classifier" and num_classes and num_classes > 1:
+        oof_proba = np.full((len(all_df), num_classes), np.nan, dtype=np.float64)
+    else:
+        oof_proba = None
+
+    ensemble_models = []
+
+    # Check for sample weights
+    if "sample_weight" in all_df.columns:
+        has_sample_weights = True
+        print(f"Using sample weights: min={all_df['sample_weight'].min():.2f}, "
+              f"max={all_df['sample_weight'].max():.2f}, mean={all_df['sample_weight'].mean():.2f}")
+    else:
+        has_sample_weights = False
         print("No sample weights found, training with equal weights")
 
-    # Grab our Features, Target and Train the Model
-    y_train = df_train[target].copy()
-    X_train = df_train[features]
-    xgb_model.fit(X_train, y_train, sample_weight=sample_weights)
+    for fold_idx, (train_idx, val_idx) in enumerate(folds):
+        print(f"\n{'='*50}")
+        print(f"Training Fold {fold_idx + 1}/{len(folds)}")
+        print(f"{'='*50}")
 
-    # Make Predictions on the Validation Set
-    print(f"Making Predictions on Validation Set...")
-    y_validate = df_val[target]
-    X_validate = df_val[features]
-    preds = xgb_model.predict(X_validate)
+        # Split data for this fold
+        df_train = all_df.iloc[train_idx]
+        df_val = all_df.iloc[val_idx]
+        print(f"Fold {fold_idx + 1} - Train: {len(df_train)}, Val: {len(df_val)}")
 
+        # Get training data
+        X_train = df_train[features]
+        y_train = df_train[target]
+        sample_weights = df_train["sample_weight"] if has_sample_weights else None
+
+        # Create and train XGBoost model for this fold
+        # Use different random state per fold for ensemble diversity
+        fold_params = {**xgb_params, "random_state": xgb_params.get("random_state", 42) + fold_idx}
+
+        if model_type == "classifier":
+            xgb_model = xgb.XGBClassifier(enable_categorical=True, **fold_params)
+        else:
+            xgb_model = xgb.XGBRegressor(enable_categorical=True, **fold_params)
+
+        xgb_model.fit(X_train, y_train, sample_weight=sample_weights)
+        ensemble_models.append(xgb_model)
+
+        # Make out-of-fold predictions
+        X_val = df_val[features]
+        fold_preds = xgb_model.predict(X_val)
+
+        if model_type == "classifier":
+            oof_predictions[val_idx] = fold_preds.astype(int)
+            if oof_proba is not None:
+                oof_proba[val_idx] = xgb_model.predict_proba(X_val)
+        else:
+            oof_predictions[val_idx] = fold_preds
+
+        print(f"Fold {fold_idx + 1} complete!")
+
+    print(f"\nTraining complete! Trained {len(ensemble_models)} model(s).")
+
+    # Compute validation metrics and predictions
+    if n_folds == 1:
+        # Single fold - use validation predictions
+        val_mask = ~np.isnan(oof_predictions)
+        preds = oof_predictions[val_mask]
+        df_val = all_df[val_mask].copy()
+        if oof_proba is not None:
+            oof_proba = oof_proba[val_mask]
+        # Compute prediction_std (will be 0 for single model)
+        preds_std = np.zeros_like(preds)
+    else:
+        # K-fold CV - use out-of-fold predictions
+        preds = oof_predictions
+        df_val = all_df.copy()
+        # Compute prediction_std by running all ensemble models on all data
+        print("Computing prediction_std from ensemble predictions...")
+        all_ensemble_preds = [m.predict(all_df[features]) for m in ensemble_models]
+        ensemble_preds = np.stack(all_ensemble_preds, axis=0)
+        preds_std = np.std(ensemble_preds, axis=0)
+        print(f"Ensemble prediction_std - mean: {np.mean(preds_std):.4f}, max: {np.max(preds_std):.4f}")
+
+    # Process predictions for output
     if model_type == "classifier":
-        # Also get the probabilities for each class
-        print("Processing Probabilities...")
-        probs = xgb_model.predict_proba(X_validate)
-        df_val["pred_proba"] = [p.tolist() for p in probs]
-
-        # Expand the pred_proba column into separate columns for each class
-        print(df_val.columns)
-        df_val = expand_proba_column(df_val, label_encoder.classes_)
-        print(df_val.columns)
+        # Get probabilities for classification
+        if oof_proba is not None:
+            df_val = df_val.copy()
+            df_val["pred_proba"] = [p.tolist() for p in oof_proba]
+            df_val = expand_proba_column(df_val, label_encoder.classes_)
 
         # Decode the target and prediction labels
-        y_validate = label_encoder.inverse_transform(y_validate)
-        preds = label_encoder.inverse_transform(preds)
+        y_validate = label_encoder.inverse_transform(df_val[target])
+        preds_decoded = label_encoder.inverse_transform(preds.astype(int))
+    else:
+        y_validate = df_val[target].values
+        preds_decoded = preds
 
-    # Save predictions to S3 (just the target, prediction, and '_proba' columns)
-    df_val["prediction"] = preds
-    output_columns = [target, "prediction"]
+    # Save predictions to S3
+    df_val = df_val.copy()
+    df_val["prediction"] = preds_decoded
+
+    # Build output columns - include id_column if it exists
+    output_columns = []
+    if id_column in df_val.columns:
+        output_columns.append(id_column)
+    output_columns += [target, "prediction"]
+
+    # Add prediction_std for regression models
+    if model_type != "classifier":
+        df_val["prediction_std"] = preds_std
+        output_columns.append("prediction_std")
+        print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
+
     output_columns += [col for col in df_val.columns if col.endswith("_proba")]
     wr.s3.to_csv(
         df_val[output_columns],
@@ -200,13 +290,12 @@ if __name__ == "__main__":
     # Report Performance Metrics
     if model_type == "classifier":
         label_names = label_encoder.classes_
-        score_df = compute_classification_metrics(y_validate, preds, label_names, target)
+        score_df = compute_classification_metrics(y_validate, preds_decoded, label_names, target)
         print_classification_metrics(score_df, target, label_names)
-        print_confusion_matrix(y_validate, preds, label_names)
-
+        print_confusion_matrix(y_validate, preds_decoded, label_names)
     else:
         # Calculate and print regression metrics
-        metrics = compute_regression_metrics(y_validate, preds)
+        metrics = compute_regression_metrics(y_validate, preds_decoded)
         print_regression_metrics(metrics)
 
         # ==========================================
@@ -215,10 +304,22 @@ if __name__ == "__main__":
         print("\n" + "=" * 50)
         print("Training UQ Models for Uncertainty Quantification")
         print("=" * 50)
-        uq_models, uq_metadata = train_uq_models(X_train, y_train, X_validate, y_validate)
+        X_all = all_df[features]
+        y_all = all_df[target]
+        uq_models, uq_metadata = train_uq_models(X_all, y_all, df_val[features], y_validate)
 
-    # Now save the model to the standard place/name
-    joblib.dump(xgb_model, os.path.join(args.model_dir, "xgb_model.joblib"))
+    # Save ensemble models
+    for model_idx, ens_model in enumerate(ensemble_models):
+        model_path = os.path.join(args.model_dir, f"xgb_model_{model_idx}.joblib")
+        joblib.dump(ens_model, model_path)
+        print(f"Saved model {model_idx + 1} to {model_path}")
+
+    # Save ensemble metadata
+    n_ensemble = len(ensemble_models)
+    ensemble_metadata = {"n_ensemble": n_ensemble, "n_folds": n_folds}
+    with open(os.path.join(args.model_dir, "ensemble_metadata.json"), "w") as fp:
+        json.dump(ensemble_metadata, fp)
+    print(f"Saved ensemble metadata (n_ensemble={n_ensemble}, n_folds={n_folds})")
 
     # Save the label encoder if we have one
     if label_encoder:
@@ -240,18 +341,33 @@ if __name__ == "__main__":
     if model_type != "classifier":
         save_uq_models(uq_models, uq_metadata, args.model_dir)
         print(f"\nModel training complete!")
-        print(f"Saved XGBoost model and {len(uq_models)} UQ models to {args.model_dir}")
+        print(f"Saved {n_ensemble} XGBoost model(s) and {len(uq_models)} UQ models to {args.model_dir}")
 
 
 def model_fn(model_dir) -> dict:
-    """Load XGBoost model and UQ models (if regression) from the specified directory.
+    """Load XGBoost ensemble models and UQ models (if regression) from the specified directory.
 
     Returns:
-        dict: Dictionary containing the XGBoost model and optionally UQ models
+        dict: Dictionary containing ensemble models and optionally UQ models
     """
-    # Load XGBoost model
-    model_path = os.path.join(model_dir, "xgb_model.joblib")
-    xgb_model = joblib.load(model_path)
+    # Load ensemble metadata
+    ensemble_metadata_path = os.path.join(model_dir, "ensemble_metadata.json")
+    if os.path.exists(ensemble_metadata_path):
+        with open(ensemble_metadata_path) as fp:
+            ensemble_metadata = json.load(fp)
+        n_ensemble = ensemble_metadata["n_ensemble"]
+    else:
+        # Legacy single model
+        n_ensemble = 1
+
+    # Load ensemble models
+    ensemble_models = []
+    for ens_idx in range(n_ensemble):
+        # Try numbered model path first, fall back to legacy path
+        model_path = os.path.join(model_dir, f"xgb_model_{ens_idx}.joblib")
+        if not os.path.exists(model_path):
+            model_path = os.path.join(model_dir, "xgb_model.joblib")
+        ensemble_models.append(joblib.load(model_path))
 
     # Load label encoder if it exists (classifier)
     label_encoder = None
@@ -274,7 +390,8 @@ def model_fn(model_dir) -> dict:
         uq_models, uq_metadata = load_uq_models(model_dir)
 
     return {
-        "xgb_model": xgb_model,
+        "ensemble_models": ensemble_models,
+        "n_ensemble": n_ensemble,
         "label_encoder": label_encoder,
         "category_mappings": category_mappings,
         "uq_models": uq_models,
@@ -283,14 +400,14 @@ def model_fn(model_dir) -> dict:
 
 
 def predict_fn(df, models) -> pd.DataFrame:
-    """Make Predictions with our XGB Model
+    """Make Predictions with our XGBoost Model ensemble.
 
     Args:
         df (pd.DataFrame): The input DataFrame
-        models (dict): Dictionary containing XGBoost model and optionally UQ models
+        models (dict): Dictionary containing ensemble models and optionally UQ models
 
     Returns:
-        pd.DataFrame: The DataFrame with the predictions added
+        pd.DataFrame: The DataFrame with predictions (and prediction_std for regression)
     """
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
 
@@ -301,15 +418,14 @@ def predict_fn(df, models) -> pd.DataFrame:
     print(f"Model Features: {features}")
 
     # Extract components from models dict
-    xgb_model = models["xgb_model"]
+    ensemble_models = models["ensemble_models"]
+    n_ensemble = models["n_ensemble"]
     label_encoder = models.get("label_encoder")
     category_mappings = models.get("category_mappings", {})
     uq_models = models.get("uq_models")
     uq_metadata = models.get("uq_metadata")
 
-    # We're going match features in a case-insensitive manner, accounting for all the permutations
-    # - Model has a feature list that's any case ("Id", "taCos", "cOunT", "likes_tacos")
-    # - Incoming data has columns that are mixed case ("ID", "Tacos", "Count", "Likes_Tacos")
+    # Match features in a case-insensitive manner
     matched_df = match_features_case_insensitive(df, features)
 
     # Detect categorical types in the incoming DataFrame
@@ -320,36 +436,58 @@ def predict_fn(df, models) -> pd.DataFrame:
         print("Decompressing features for prediction...")
         matched_df, features = decompress_features(matched_df, features, compressed_features)
 
-    # Predict the features against our XGB Model
+    # Get feature matrix
     X = matched_df[features]
-    predictions = xgb_model.predict(X)
 
-    # If we have a label encoder, decode the predictions (classifier)
-    if label_encoder:
-        predictions = label_encoder.inverse_transform(predictions)
+    # Collect predictions from all ensemble members
+    all_ensemble_preds = []
+    all_ensemble_probs = []
 
-    # Set the predictions on the DataFrame
-    df["prediction"] = predictions
+    for ens_model in ensemble_models:
+        ens_preds = ens_model.predict(X)
+        all_ensemble_preds.append(ens_preds)
 
-    # Does our model have a 'predict_proba' method? (classifier)
-    if getattr(xgb_model, "predict_proba", None) and label_encoder:
-        probs = xgb_model.predict_proba(X)
-        df["pred_proba"] = [p.tolist() for p in probs]
+        # For classification, collect probabilities
+        if label_encoder is not None and hasattr(ens_model, "predict_proba"):
+            all_ensemble_probs.append(ens_model.predict_proba(X))
 
-        # Expand the pred_proba column into separate columns for each class
-        df = expand_proba_column(df, label_encoder.classes_)
+    # Stack and compute mean/std
+    ensemble_preds = np.stack(all_ensemble_preds, axis=0)  # (n_ensemble, n_samples)
+    preds = np.mean(ensemble_preds, axis=0)
+    preds_std = np.std(ensemble_preds, axis=0)  # Will be 0s for n_ensemble=1
 
-    # Add UQ prediction intervals for regression models
-    elif uq_models and uq_metadata:
-        df = predict_intervals(df, X, uq_models, uq_metadata)
+    print(f"Inference: Ensemble predictions shape: {preds.shape}, n_ensemble: {n_ensemble}")
 
-        # Compute confidence scores
-        df = compute_confidence(
-            df,
-            median_interval_width=uq_metadata["median_interval_width"],
-            lower_q="q_10",
-            upper_q="q_90",
-        )
+    # Handle classification vs regression
+    if label_encoder is not None:
+        # For classification, average probabilities then take argmax
+        if all_ensemble_probs:
+            ensemble_probs = np.stack(all_ensemble_probs, axis=0)  # (n_ensemble, n_samples, n_classes)
+            avg_probs = np.mean(ensemble_probs, axis=0)  # (n_samples, n_classes)
+            class_preds = np.argmax(avg_probs, axis=1)
+            predictions = label_encoder.inverse_transform(class_preds)
 
-    # All done, return the DataFrame with new columns for the predictions
+            df["pred_proba"] = [p.tolist() for p in avg_probs]
+            df = expand_proba_column(df, label_encoder.classes_)
+        else:
+            predictions = label_encoder.inverse_transform(preds.astype(int))
+
+        df["prediction"] = predictions
+    else:
+        # Regression
+        df["prediction"] = preds
+        df["prediction_std"] = preds_std
+
+        # Add UQ prediction intervals for regression models
+        if uq_models and uq_metadata:
+            df = predict_intervals(df, X, uq_models, uq_metadata)
+
+            # Compute confidence scores
+            df = compute_confidence(
+                df,
+                median_interval_width=uq_metadata["median_interval_width"],
+                lower_q="q_10",
+                upper_q="q_90",
+            )
+
     return df
