@@ -58,6 +58,27 @@ from model_script_utils import (
     print_confusion_matrix,
 )
 
+# Default Hyperparameters for ChemProp MPNN
+DEFAULT_HYPERPARAMETERS = {
+    # Training parameters
+    "n_folds": 5,  # Number of CV folds (1 = single train/val split)
+    "max_epochs": 400,  # Maximum training epochs
+    "patience": 40,  # Early stopping patience
+    "batch_size": 16,  # Batch size for training
+
+    # Model architecture parameters (Message Passing)
+    "hidden_dim": 700,  # Hidden dimension for message passing
+    "depth": 6,  # Number of message passing steps
+    "dropout": 0.15,  # Dropout rate
+
+    # FFN parameters
+    "ffn_hidden_dim": 2000,  # Hidden dimension for feed-forward network
+    "ffn_num_layers": 2,  # Number of FFN layers
+
+    # Random seed
+    "seed": 42,
+}
+
 # Template Parameters
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
@@ -153,12 +174,12 @@ def build_mpnn_model(
     Returns:
         Configured MPNN model
     """
-    # Model hyperparameters with defaults
-    hidden_dim = hyperparameters.get("hidden_dim", 700)
-    depth = hyperparameters.get("depth", 6)
-    dropout = hyperparameters.get("dropout", 0.15)
-    ffn_hidden_dim = hyperparameters.get("ffn_hidden_dim", 2000)
-    ffn_num_layers = hyperparameters.get("ffn_num_layers", 2)
+    # Model hyperparameters (from merged defaults)
+    hidden_dim = hyperparameters["hidden_dim"]
+    depth = hyperparameters["depth"]
+    dropout = hyperparameters["dropout"]
+    ffn_hidden_dim = hyperparameters["ffn_hidden_dim"]
+    ffn_num_layers = hyperparameters["ffn_num_layers"]
 
     # Message passing component
     mp = nn.BondMessagePassing(d_h=hidden_dim, depth=depth, dropout=dropout)
@@ -427,7 +448,7 @@ if __name__ == "__main__":
     feature_list = TEMPLATE_PARAMS["feature_list"]
     id_column = TEMPLATE_PARAMS["id_column"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
-    hyperparameters = TEMPLATE_PARAMS["hyperparameters"] or {}
+    hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
 
     # Validate target_columns
     if not target_columns or not isinstance(target_columns, list) or len(target_columns) == 0:
@@ -505,14 +526,14 @@ if __name__ == "__main__":
     else:
         num_classes = None
 
-    # Model and training configuration
+    # Model and training configuration (from merged defaults)
     print(f"Hyperparameters: {hyperparameters}")
     task = "classification" if model_type == "classifier" else "regression"
     n_extra = len(extra_feature_cols) if use_extra_features else 0
-    max_epochs = hyperparameters.get("max_epochs", 400)
-    patience = hyperparameters.get("patience", 40)
-    n_folds = hyperparameters.get("n_folds", 5)  # Number of CV folds (default: 5)
-    batch_size = hyperparameters.get("batch_size", 16)
+    max_epochs = hyperparameters["max_epochs"]
+    patience = hyperparameters["patience"]
+    n_folds = hyperparameters["n_folds"]
+    batch_size = hyperparameters["batch_size"]
 
     # Check extra feature columns exist
     if use_extra_features:
@@ -639,7 +660,7 @@ if __name__ == "__main__":
         val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False)
 
         # Build and train model for this fold
-        pl.seed_everything(42 + fold_idx)
+        pl.seed_everything(hyperparameters["seed"] + fold_idx)
         mpnn = build_mpnn_model(
             hyperparameters, task=task, num_classes=num_classes, n_targets=n_targets,
             n_extra_descriptors=n_extra, x_d_transform=x_d_transform, output_transform=output_transform,

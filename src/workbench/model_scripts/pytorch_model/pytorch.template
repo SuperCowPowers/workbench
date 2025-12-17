@@ -41,6 +41,29 @@ from model_script_utils import (
     print_confusion_matrix,
 )
 
+# Default Hyperparameters for PyTorch Tabular
+DEFAULT_HYPERPARAMETERS = {
+    # Training parameters
+    "n_folds": 5,  # Number of CV folds (1 = single train/val split)
+    "max_epochs": 200,  # Maximum training epochs
+    "min_epochs": 10,  # Minimum epochs before early stopping
+    "early_stopping_patience": 20,  # Patience for early stopping
+    "batch_size": 128,  # Batch size (auto-adjusted if too large for data)
+    "gradient_clip_val": 1.0,  # Gradient clipping value
+    "auto_lr_find": False,  # Whether to auto-find learning rate
+
+    # Model architecture parameters
+    "layers": "256-128-64",  # Hidden layer sizes (dash-separated)
+    "activation": "LeakyReLU",  # Activation function
+    "learning_rate": 1e-3,  # Learning rate
+    "dropout": 0.1,  # Dropout rate
+    "use_batch_norm": True,  # Whether to use batch normalization
+    "initialization": "kaiming",  # Weight initialization method
+
+    # Random seed
+    "seed": 42,
+}
+
 # Template Parameters
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
@@ -238,7 +261,7 @@ if __name__ == "__main__":
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
-    hyperparameters = TEMPLATE_PARAMS["hyperparameters"] or {}
+    hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
@@ -309,9 +332,9 @@ if __name__ == "__main__":
         label_encoder = None
         num_classes = None
 
-    # Use any hyperparameters to set up both the trainer and model configurations
+    # Use hyperparameters (merged with defaults)
     print(f"Hyperparameters: {hyperparameters}")
-    n_folds = hyperparameters.get("n_folds", 5)  # Number of CV folds (default: 5)
+    n_folds = hyperparameters["n_folds"]
 
     # =========================================================================
     # UNIFIED TRAINING: Works for n_folds=1 (single model) or n_folds>1 (K-fold CV)
@@ -356,21 +379,15 @@ if __name__ == "__main__":
         categorical_cols=categorical_cols,
     )
 
-    # Model config defaults
-    model_defaults = {
-        "layers": "256-128-64",
-        "activation": "LeakyReLU",
-        "learning_rate": 1e-3,
-        "dropout": 0.1,
-        "use_batch_norm": True,
-        "initialization": "kaiming",
+    # Model config (from merged hyperparameters)
+    model_params = {
+        "layers": hyperparameters["layers"],
+        "activation": hyperparameters["activation"],
+        "learning_rate": hyperparameters["learning_rate"],
+        "dropout": hyperparameters["dropout"],
+        "use_batch_norm": hyperparameters["use_batch_norm"],
+        "initialization": hyperparameters["initialization"],
     }
-    # Override defaults with model_config if present
-    model_overrides = {k: v for k, v in hyperparameters.get("model_config", {}).items() if k in model_defaults}
-    for key, value in model_overrides.items():
-        print(f"MODEL CONFIG Override: {key}: {model_defaults[key]} → {value}")
-    model_params = {**model_defaults, **model_overrides}
-
     model_config = CategoryEmbeddingModelConfig(task=task, **model_params)
     optimizer_config = OptimizerConfig()
 
@@ -387,30 +404,23 @@ if __name__ == "__main__":
 
         # Set up PyTorch Tabular trainer configuration (per-fold for batch_size)
         # Calculate batch size that avoids single-sample last batch (batch norm requires >1)
-        batch_size = min(128, max(32, len(df_train) // 16))
+        batch_size = min(hyperparameters["batch_size"], max(32, len(df_train) // 16))
         if len(df_train) % batch_size == 1:
             batch_size += 1  # Adjust to avoid last batch of size 1
-        trainer_defaults = {
-            "auto_lr_find": False,
-            "batch_size": batch_size,
-            "max_epochs": 200,
-            "min_epochs": 10,
-            "early_stopping": "valid_loss",
-            "early_stopping_patience": 20,
-            "checkpoints": "valid_loss",
-            "accelerator": "auto",
-            "progress_bar": "none",
-            "gradient_clip_val": 1.0,
-            "seed": 42 + fold_idx,
-        }
 
-        # Override defaults with training_config if present
-        training_overrides = {k: v for k, v in hyperparameters.get("training_config", {}).items() if k in trainer_defaults}
-        if fold_idx == 0:  # Only print overrides once
-            for key, value in training_overrides.items():
-                print(f"TRAINING CONFIG Override: {key}: {trainer_defaults[key]} → {value}")
-        trainer_params = {**trainer_defaults, **training_overrides}
-        trainer_config = TrainerConfig(**trainer_params)
+        trainer_config = TrainerConfig(
+            auto_lr_find=hyperparameters["auto_lr_find"],
+            batch_size=batch_size,
+            max_epochs=hyperparameters["max_epochs"],
+            min_epochs=hyperparameters["min_epochs"],
+            early_stopping="valid_loss",
+            early_stopping_patience=hyperparameters["early_stopping_patience"],
+            checkpoints="valid_loss",
+            accelerator="auto",
+            progress_bar="none",
+            gradient_clip_val=hyperparameters["gradient_clip_val"],
+            seed=hyperparameters["seed"] + fold_idx,
+        )
 
         # Create and train the TabularModel for this fold
         tabular_model = TabularModel(
