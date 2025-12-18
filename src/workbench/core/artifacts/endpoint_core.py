@@ -531,11 +531,13 @@ class EndpointCore(Artifact):
         fs = FeatureSetCore(model.get_input())
         id_column = fs.id_column
 
-        # For UQ models, compute UQ metrics from the training CV results
+        # For UQ models, get UQ columns from training CV results and compute metrics
         # Note: XGBoost training now saves all UQ columns (q_*, confidence, prediction_std)
+        additional_columns = []
         if model.model_framework == ModelFramework.XGBOOST and model_type == ModelType.UQ_REGRESSOR:
             uq_columns = [col for col in out_of_fold_df.columns if col.startswith("q_") or col == "confidence"]
             if uq_columns:
+                additional_columns = uq_columns
                 self.log.info(f"UQ columns from training: {', '.join(uq_columns)}")
                 primary_target = targets[0] if isinstance(targets, list) else targets
                 metrics = uq_metrics(out_of_fold_df, primary_target)
