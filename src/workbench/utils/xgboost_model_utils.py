@@ -13,7 +13,14 @@ import joblib
 import pandas as pd
 import xgboost as xgb
 from scipy.stats import spearmanr
-from sklearn.metrics import mean_absolute_error, median_absolute_error, precision_recall_fscore_support, r2_score, roc_auc_score, root_mean_squared_error
+from sklearn.metrics import (
+    mean_absolute_error,
+    median_absolute_error,
+    precision_recall_fscore_support,
+    r2_score,
+    roc_auc_score,
+    root_mean_squared_error,
+)
 
 # Workbench Imports
 from workbench.utils.aws_utils import pull_s3_data
@@ -284,9 +291,7 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
         y_pred = predictions_df["prediction"]
 
         # Precision, recall, f1, support per class
-        prec, rec, f1, support = precision_recall_fscore_support(
-            y_true, y_pred, labels=class_labels, zero_division=0
-        )
+        prec, rec, f1, support = precision_recall_fscore_support(y_true, y_pred, labels=class_labels, zero_division=0)
 
         # ROC AUC per class (requires probability columns)
         proba_cols = [f"{label}_proba" for label in class_labels]
@@ -297,14 +302,16 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
             roc_auc = [None] * len(class_labels)
 
         # Build per-class metrics
-        metrics_df = pd.DataFrame({
-            target: class_labels,
-            "precision": prec,
-            "recall": rec,
-            "f1": f1,
-            "roc_auc": roc_auc,
-            "support": support,
-        })
+        metrics_df = pd.DataFrame(
+            {
+                target: class_labels,
+                "precision": prec,
+                "recall": rec,
+                "f1": f1,
+                "roc_auc": roc_auc,
+                "support": support,
+            }
+        )
 
         # Add weighted 'all' row
         total = support.sum()
@@ -322,14 +329,18 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
         # Regression metrics
         y_true = predictions_df[target].values
         y_pred = predictions_df["prediction"].values
-        metrics_df = pd.DataFrame([{
-            "rmse": root_mean_squared_error(y_true, y_pred),
-            "mae": mean_absolute_error(y_true, y_pred),
-            "medae": median_absolute_error(y_true, y_pred),
-            "r2": r2_score(y_true, y_pred),
-            "spearmanr": spearmanr(y_true, y_pred).correlation,
-            "support": len(y_true),
-        }])
+        metrics_df = pd.DataFrame(
+            [
+                {
+                    "rmse": root_mean_squared_error(y_true, y_pred),
+                    "mae": mean_absolute_error(y_true, y_pred),
+                    "medae": median_absolute_error(y_true, y_pred),
+                    "r2": r2_score(y_true, y_pred),
+                    "spearmanr": spearmanr(y_true, y_pred).correlation,
+                    "support": len(y_true),
+                }
+            ]
+        )
 
     else:
         metrics_df = pd.DataFrame()
