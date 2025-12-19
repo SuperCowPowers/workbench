@@ -286,13 +286,12 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
         if class_labels and target in metrics_df.columns:
             metrics_df = metrics_df.set_index(target).reindex(class_labels).reset_index()
 
-            # Add weighted 'all' row (weighted by support)
-            numeric_cols = ["precision", "recall", "f1", "roc_auc"]
-            available_cols = [c for c in numeric_cols if c in metrics_df.columns]
-            total_support = metrics_df["support"].sum()
-            all_row = {target: "all", "support": total_support}
-            for col in available_cols:
-                all_row[col] = (metrics_df[col] * metrics_df["support"]).sum() / total_support
+            # Add weighted 'all' row
+            w = metrics_df.get("support", pd.Series([1] * len(metrics_df)))
+            all_row = {target: "all", "support": w.sum()}
+            for col in ["precision", "recall", "f1", "roc_auc"]:
+                if col in metrics_df.columns:
+                    all_row[col] = (metrics_df[col] * w).sum() / w.sum()
             metrics_df = pd.concat([metrics_df, pd.DataFrame([all_row])], ignore_index=True)
 
         log.info(f"Metrics summary:\n{metrics_df.to_string(index=False)}")
