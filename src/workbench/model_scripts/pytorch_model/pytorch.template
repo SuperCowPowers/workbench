@@ -1,70 +1,71 @@
-# Imports for PyTorch Tabular Model
-import os
-import awswrangler as wr
-import numpy as np
-import torch
+# PyTorch Tabular Model Template for Workbench
+#
+# This template handles both classification and regression models with:
+# - K-fold cross-validation ensemble training (or single train/val split)
+# - Out-of-fold predictions for validation metrics
+# - Categorical feature embedding via CategoryEmbeddingModel
+# - Compressed feature decompression
 
-# Enable Tensor Core optimization for GPUs that support it (e.g., NVIDIA L4, A100, etc.)
+import argparse
+import json
+import os
+
+import awswrangler as wr
+import joblib
+import numpy as np
+import pandas as pd
+import torch
+from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
+from sklearn.preprocessing import LabelEncoder
+
+# Enable Tensor Core optimization for GPUs that support it
 torch.set_float32_matmul_precision("medium")
 
-# PyTorch compatibility: pytorch-tabular saves complex objects, not just tensors
-# Use legacy loading behavior for compatibility (recommended by PyTorch docs for this scenario)
+# PyTorch compatibility: use legacy loading for complex objects
 os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
 from pytorch_tabular import TabularModel
 from pytorch_tabular.config import DataConfig, OptimizerConfig, TrainerConfig
 from pytorch_tabular.models import CategoryEmbeddingModelConfig
 
-# Classification Encoder
-from sklearn.preprocessing import LabelEncoder
-
-# Scikit Learn Imports
-from sklearn.model_selection import train_test_split, KFold, StratifiedKFold
-
-import json
-import argparse
-import joblib
-import pandas as pd
-
-# Shared model script utilities
 from model_script_utils import (
     check_dataframe,
-    expand_proba_column,
-    match_features_case_insensitive,
+    compute_classification_metrics,
+    compute_regression_metrics,
     convert_categorical_types,
     decompress_features,
+    expand_proba_column,
     input_fn,
+    match_features_case_insensitive,
     output_fn,
-    compute_regression_metrics,
-    print_regression_metrics,
-    compute_classification_metrics,
     print_classification_metrics,
     print_confusion_matrix,
+    print_regression_metrics,
 )
 
-# Default Hyperparameters for PyTorch Tabular
+# =============================================================================
+# Default Hyperparameters
+# =============================================================================
 DEFAULT_HYPERPARAMETERS = {
     # Training parameters
-    "n_folds": 5,  # Number of CV folds (1 = single train/val split)
-    "max_epochs": 200,  # Maximum training epochs
-    "min_epochs": 10,  # Minimum epochs before early stopping
-    "early_stopping_patience": 20,  # Patience for early stopping
-    "batch_size": 128,  # Batch size (auto-adjusted if too large for data)
-    "gradient_clip_val": 1.0,  # Gradient clipping value
-    "auto_lr_find": False,  # Whether to auto-find learning rate
-
-    # Model architecture parameters
-    "layers": "256-128-64",  # Hidden layer sizes (dash-separated)
-    "activation": "LeakyReLU",  # Activation function
-    "learning_rate": 1e-3,  # Learning rate
-    "dropout": 0.1,  # Dropout rate
-    "use_batch_norm": True,  # Whether to use batch normalization
-    "initialization": "kaiming",  # Weight initialization method
-
+    "n_folds": 5,
+    "max_epochs": 200,
+    "min_epochs": 10,
+    "early_stopping_patience": 20,
+    "batch_size": 128,
+    "gradient_clip_val": 1.0,
+    "auto_lr_find": False,
+    # Model architecture
+    "layers": "256-128-64",
+    "activation": "LeakyReLU",
+    "learning_rate": 1e-3,
+    "dropout": 0.1,
+    "use_batch_norm": True,
+    "initialization": "kaiming",
     # Random seed
     "seed": 42,
 }
 
-# Template Parameters
+# Template parameters (filled in by Workbench)
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
     "target": "{{target_column}}",
@@ -76,184 +77,148 @@ TEMPLATE_PARAMS = {
 }
 
 
+# =============================================================================
+# Model Loading (for SageMaker inference)
+# =============================================================================
 def model_fn(model_dir: str) -> dict:
-    """Load the PyTorch Tabular ensemble models from the specified directory.
-
-    Args:
-        model_dir: Directory containing the saved model(s)
-
-    Returns:
-        Dictionary with ensemble models and metadata
-    """
-    import torch
+    """Load PyTorch Tabular ensemble from the specified directory."""
     from functools import partial
 
-    # Load ensemble metadata if present
-    ensemble_metadata_path = os.path.join(model_dir, "ensemble_metadata.joblib")
-    if os.path.exists(ensemble_metadata_path):
-        ensemble_metadata = joblib.load(ensemble_metadata_path)
-        n_ensemble = ensemble_metadata["n_ensemble"]
+    # Load ensemble metadata
+    metadata_path = os.path.join(model_dir, "ensemble_metadata.joblib")
+    if os.path.exists(metadata_path):
+        metadata = joblib.load(metadata_path)
+        n_ensemble = metadata["n_ensemble"]
     else:
         n_ensemble = 1
 
-    # Determine map_location for loading models (handle CUDA trained models on CPU inference)
+    # Handle CUDA-trained models on CPU
     map_location = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Patch torch.load globally to use map_location (needed for joblib-loaded callbacks)
-    # This handles the case where pytorch-tabular loads callbacks.sav via joblib,
-    # which internally calls torch.load without map_location
     original_torch_load = torch.load
     torch.load = partial(original_torch_load, map_location=map_location)
 
-    # Save current working directory
     original_cwd = os.getcwd()
     ensemble_models = []
 
     try:
-        # Change to /tmp because Pytorch Tabular needs write access (creates a .pt_tmp directory)
-        os.chdir("/tmp")
-
-        for ens_idx in range(n_ensemble):
-            # Try numbered model path first, fall back to legacy path
-            model_path = os.path.join(model_dir, f"tabular_model_{ens_idx}")
+        os.chdir("/tmp")  # PyTorch Tabular needs write access
+        for i in range(n_ensemble):
+            model_path = os.path.join(model_dir, f"tabular_model_{i}")
             if not os.path.exists(model_path):
-                model_path = os.path.join(model_dir, "tabular_model")
-            model = TabularModel.load_model(model_path, map_location=map_location)
-            ensemble_models.append(model)
-
+                model_path = os.path.join(model_dir, "tabular_model")  # Legacy
+            ensemble_models.append(TabularModel.load_model(model_path, map_location=map_location))
     finally:
-        # Restore torch.load and working directory
         torch.load = original_torch_load
         os.chdir(original_cwd)
 
     return {"ensemble_models": ensemble_models, "n_ensemble": n_ensemble}
 
 
+# =============================================================================
+# Inference (for SageMaker inference)
+# =============================================================================
 def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
-    """Make Predictions with our PyTorch Tabular Model ensemble.
-
-    Args:
-        df (pd.DataFrame): The input DataFrame
-        model_dict: Dictionary containing ensemble models and metadata
-
-    Returns:
-        pd.DataFrame: The DataFrame with predictions (and prediction_std for ensembles)
-    """
+    """Make predictions with PyTorch Tabular ensemble."""
     model_type = TEMPLATE_PARAMS["model_type"]
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
-
-    # Extract ensemble models
-    ensemble_models = model_dict["ensemble_models"]
-    n_ensemble = model_dict["n_ensemble"]
-
-    # Grab our feature columns (from training)
+    target = TEMPLATE_PARAMS["target"]
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
-    with open(os.path.join(model_dir, "feature_columns.json")) as fp:
-        features = json.load(fp)
+
+    # Load artifacts
+    ensemble_models = model_dict["ensemble_models"]
+    with open(os.path.join(model_dir, "feature_columns.json")) as f:
+        features = json.load(f)
+    with open(os.path.join(model_dir, "category_mappings.json")) as f:
+        category_mappings = json.load(f)
+
+    label_encoder = None
+    encoder_path = os.path.join(model_dir, "label_encoder.joblib")
+    if os.path.exists(encoder_path):
+        label_encoder = joblib.load(encoder_path)
+
     print(f"Model Features: {features}")
 
-    # Load the category mappings (from training)
-    with open(os.path.join(model_dir, "category_mappings.json")) as fp:
-        category_mappings = json.load(fp)
-
-    # Load our Label Encoder if we have one
-    label_encoder = None
-    label_encoder_path = os.path.join(model_dir, "label_encoder.joblib")
-    if os.path.exists(label_encoder_path):
-        label_encoder = joblib.load(label_encoder_path)
-
-    # Match features in a case-insensitive manner
+    # Prepare features
     matched_df = match_features_case_insensitive(df, features)
-
-    # Detect categorical types in the incoming DataFrame
     matched_df, _ = convert_categorical_types(matched_df, features, category_mappings)
 
-    # If we have compressed features, decompress them
     if compressed_features:
         print("Decompressing features for prediction...")
         matched_df, features = decompress_features(matched_df, features, compressed_features)
 
-    # Track rows with missing features
+    # Track missing features
     missing_mask = matched_df[features].isna().any(axis=1)
     if missing_mask.any():
-        print(f"Warning: {missing_mask.sum()} rows have missing features, will return NaN predictions")
+        print(f"Warning: {missing_mask.sum()} rows have missing features")
 
-    # Initialize prediction columns
+    # Initialize output columns
     df["prediction"] = np.nan
     if model_type in ["regressor", "uq_regressor"]:
         df["prediction_std"] = np.nan
 
-    # Only predict on complete rows
     complete_df = matched_df[~missing_mask]
     if len(complete_df) == 0:
         print("Warning: No complete rows to predict on")
         return df
 
-    # pytorch-tabular returns predictions using f"{target}_prediction" column
-    target = TEMPLATE_PARAMS["target"]
+    # Collect ensemble predictions
     prediction_column = f"{target}_prediction"
+    all_preds, all_probs = [], []
 
-    # Collect predictions from all ensemble members
-    all_ensemble_preds = []
-    all_ensemble_probs = []
-
-    for ens_idx, ens_model in enumerate(ensemble_models):
-        result = ens_model.predict(complete_df[features])
-
-        if prediction_column in result.columns:
-            ens_preds = result[prediction_column].values
-        else:
+    for model in ensemble_models:
+        result = model.predict(complete_df[features])
+        if prediction_column not in result.columns:
             raise ValueError(f"Cannot find prediction column in: {result.columns.tolist()}")
+        all_preds.append(result[prediction_column].values)
 
-        all_ensemble_preds.append(ens_preds)
-
-        # For classification, collect probabilities
         if label_encoder is not None:
-            prob_cols = sorted([col for col in result.columns if col.endswith("_probability")])
+            prob_cols = sorted([c for c in result.columns if c.endswith("_probability")])
             if prob_cols:
-                all_ensemble_probs.append(result[prob_cols].values)
+                all_probs.append(result[prob_cols].values)
 
-    # Stack and compute mean/std (std is 0 for single model)
-    ensemble_preds = np.stack(all_ensemble_preds, axis=0)  # (n_ensemble, n_samples)
+    # Aggregate predictions
+    ensemble_preds = np.stack(all_preds, axis=0)
     preds = np.mean(ensemble_preds, axis=0)
-    preds_std = np.std(ensemble_preds, axis=0)  # Will be 0s for n_ensemble=1
+    preds_std = np.std(ensemble_preds, axis=0)
 
-    print(f"Inference: Ensemble predictions shape: {preds.shape}, n_ensemble: {n_ensemble}")
+    print(f"Inference complete: {len(preds)} predictions, {len(ensemble_models)} ensemble members")
 
-    # Handle classification vs regression
     if label_encoder is not None:
-        # For classification, average probabilities then take argmax
-        if all_ensemble_probs:
-            ensemble_probs = np.stack(all_ensemble_probs, axis=0)  # (n_ensemble, n_samples, n_classes)
-            avg_probs = np.mean(ensemble_probs, axis=0)  # (n_samples, n_classes)
+        # Classification: average probabilities, then argmax
+        if all_probs:
+            avg_probs = np.mean(np.stack(all_probs, axis=0), axis=0)
             class_preds = np.argmax(avg_probs, axis=1)
             predictions = label_encoder.inverse_transform(class_preds)
 
-            # Build full proba Series with None for missing rows
             all_proba = pd.Series([None] * len(df), index=df.index, dtype=object)
             all_proba.loc[~missing_mask] = [p.tolist() for p in avg_probs]
             df["pred_proba"] = all_proba
-
-            # Expand the pred_proba column into separate columns for each class
             df = expand_proba_column(df, label_encoder.classes_)
         else:
-            # No probabilities, use averaged predictions
             predictions = label_encoder.inverse_transform(preds.astype(int))
     else:
-        # Regression (includes uq_regressor)
+        # Regression
         predictions = preds
         df.loc[~missing_mask, "prediction_std"] = preds_std
 
-    # Set predictions only for complete rows
     df.loc[~missing_mask, "prediction"] = predictions
-
     return df
 
 
+# =============================================================================
+# Training
+# =============================================================================
 if __name__ == "__main__":
-    """The main function is for training the PyTorch Tabular model"""
+    # -------------------------------------------------------------------------
+    # Setup: Parse arguments and load data
+    # -------------------------------------------------------------------------
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    parser.add_argument("--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data"))
+    args = parser.parse_args()
 
-    # Harness Template Parameters
+    # Extract template parameters
     target = TEMPLATE_PARAMS["target"]
     features = TEMPLATE_PARAMS["features"]
     orig_features = features.copy()
@@ -263,151 +228,123 @@ if __name__ == "__main__":
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
     hyperparameters = {**DEFAULT_HYPERPARAMETERS, **(TEMPLATE_PARAMS["hyperparameters"] or {})}
 
-    # Script arguments for input/output directories
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
-    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
-    parser.add_argument(
-        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
-    )
-    args = parser.parse_args()
-
-    # Read the training data into DataFrames
-    training_files = [os.path.join(args.train, file) for file in os.listdir(args.train) if file.endswith(".csv")]
+    # Load training data
+    training_files = [os.path.join(args.train, f) for f in os.listdir(args.train) if f.endswith(".csv")]
     print(f"Training Files: {training_files}")
-
-    # Combine files and read them all into a single pandas dataframe
-    all_df = pd.concat([pd.read_csv(file, engine="python") for file in training_files])
-
-    # Print out some info about the dataframe
-    print(f"All Data Shape: {all_df.shape}")
-    print(f"Feature dtypes:\n{all_df[features].dtypes.value_counts()}")
-    print(f"Int64 columns: {all_df[features].select_dtypes(include=['int64']).columns.tolist()}")
-
-    # Check if the dataframe is empty
+    all_df = pd.concat([pd.read_csv(f, engine="python") for f in training_files])
     check_dataframe(all_df, "training_df")
 
-    # Drop any rows with missing feature values
-    initial_row_count = all_df.shape[0]
+    # Drop rows with missing features
+    initial_count = len(all_df)
     all_df = all_df.dropna(subset=features)
-    dropped_rows = initial_row_count - all_df.shape[0]
-    if dropped_rows > 0:
-        print(f"Dropped {dropped_rows} rows due to missing feature values.")
+    if len(all_df) < initial_count:
+        print(f"Dropped {initial_count - len(all_df)} rows with missing features")
 
-    # Features/Target output
     print(f"Target: {target}")
-    print(f"Features: {str(features)}")
+    print(f"Features: {features}")
+    print(f"Hyperparameters: {hyperparameters}")
 
-    # Convert any features that might be categorical to 'category' type
+    # -------------------------------------------------------------------------
+    # Preprocessing
+    # -------------------------------------------------------------------------
     all_df, category_mappings = convert_categorical_types(all_df, features)
 
-    # Print out some info about the dataframe
-    print(f"All Data Shape: {all_df.shape}")
-    print(f"Feature dtypes:\n{all_df[features].dtypes.value_counts()}")
-    print(f"Int64 columns: {all_df[features].select_dtypes(include=['int64']).columns.tolist()}")
-
-    # If we have compressed features, decompress them
     if compressed_features:
-        print(f"Decompressing features {compressed_features}...")
+        print(f"Decompressing features: {compressed_features}")
         all_df, features = decompress_features(all_df, features, compressed_features)
 
-    # Determine categorical and continuous columns
-    categorical_cols = [col for col in features if all_df[col].dtype.name == "category"]
-    continuous_cols = [col for col in features if col not in categorical_cols]
-    print(f"Categorical columns: {categorical_cols}")
-    print(f"Continuous columns: {continuous_cols}")
-
-    # Cast continuous columns to float
+    # Determine categorical vs continuous columns
+    categorical_cols = [c for c in features if all_df[c].dtype.name == "category"]
+    continuous_cols = [c for c in features if c not in categorical_cols]
     all_df[continuous_cols] = all_df[continuous_cols].astype("float64")
+    print(f"Categorical: {categorical_cols}")
+    print(f"Continuous: {len(continuous_cols)} columns")
 
-    # Choose the 'task' based on model type and set up the label encoder if needed
+    # -------------------------------------------------------------------------
+    # Classification setup
+    # -------------------------------------------------------------------------
+    label_encoder = None
     if model_type == "classifier":
-        task = "classification"
-        # Encode the target column on full dataset for consistent encoding
         label_encoder = LabelEncoder()
         all_df[target] = label_encoder.fit_transform(all_df[target])
-        num_classes = len(label_encoder.classes_)
-    else:
-        task = "regression"
-        label_encoder = None
-        num_classes = None
+        print(f"Class labels: {label_encoder.classes_.tolist()}")
 
-    # Use hyperparameters (merged with defaults)
-    print(f"Hyperparameters: {hyperparameters}")
+    # -------------------------------------------------------------------------
+    # Cross-validation setup
+    # -------------------------------------------------------------------------
     n_folds = hyperparameters["n_folds"]
+    task = "classification" if model_type == "classifier" else "regression"
 
-    # =========================================================================
-    # UNIFIED TRAINING: Works for n_folds=1 (single model) or n_folds>1 (K-fold CV)
-    # =========================================================================
-    print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold cross-validation ensemble'}...")
-
-    # Create fold splits
     if n_folds == 1:
-        # Single fold: use train/val split from "training" column or random split
         if "training" in all_df.columns:
-            print("Found training column, splitting data based on training column")
+            print("Using 'training' column for train/val split")
             train_idx = np.where(all_df["training"])[0]
             val_idx = np.where(~all_df["training"])[0]
         else:
-            print("WARNING: No training column found, splitting data with random 80/20 split")
-            indices = np.arange(len(all_df))
-            train_idx, val_idx = train_test_split(indices, test_size=0.2, random_state=42)
+            print("WARNING: No 'training' column found, using random 80/20 split")
+            train_idx, val_idx = train_test_split(np.arange(len(all_df)), test_size=0.2, random_state=42)
         folds = [(train_idx, val_idx)]
     else:
-        # K-Fold CV
         if model_type == "classifier":
             kfold = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
-            split_target = all_df[target]
+            folds = list(kfold.split(all_df, all_df[target]))
         else:
             kfold = KFold(n_splits=n_folds, shuffle=True, random_state=42)
-            split_target = None
-        folds = list(kfold.split(all_df, split_target))
+            folds = list(kfold.split(all_df))
 
-    # Initialize storage for out-of-fold predictions
+    print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold ensemble'}...")
+
+    # -------------------------------------------------------------------------
+    # Training loop
+    # -------------------------------------------------------------------------
     oof_predictions = np.full(len(all_df), np.nan, dtype=np.float64)
-    if model_type == "classifier" and num_classes and num_classes > 1:
+    if model_type == "classifier":
+        num_classes = len(label_encoder.classes_)
         oof_proba = np.full((len(all_df), num_classes), np.nan, dtype=np.float64)
     else:
         oof_proba = None
 
+    # Data config (shared across folds)
+    data_config = DataConfig(target=[target], continuous_cols=continuous_cols, categorical_cols=categorical_cols)
+
     ensemble_models = []
-
-    # Set up PyTorch Tabular data configuration (shared across folds)
-    data_config = DataConfig(
-        target=[target],
-        continuous_cols=continuous_cols,
-        categorical_cols=categorical_cols,
-    )
-
-    # Model config (from merged hyperparameters)
-    model_params = {
-        "layers": hyperparameters["layers"],
-        "activation": hyperparameters["activation"],
-        "learning_rate": hyperparameters["learning_rate"],
-        "dropout": hyperparameters["dropout"],
-        "use_batch_norm": hyperparameters["use_batch_norm"],
-        "initialization": hyperparameters["initialization"],
-    }
-    model_config = CategoryEmbeddingModelConfig(task=task, **model_params)
-    optimizer_config = OptimizerConfig()
-
     for fold_idx, (train_idx, val_idx) in enumerate(folds):
         print(f"\n{'='*50}")
-        print(f"Training Fold {fold_idx + 1}/{len(folds)}")
+        print(f"Fold {fold_idx + 1}/{len(folds)} - Train: {len(train_idx)}, Val: {len(val_idx)}")
         print(f"{'='*50}")
 
-        # Split data for this fold
         df_train = all_df.iloc[train_idx].reset_index(drop=True)
         df_val = all_df.iloc[val_idx].reset_index(drop=True)
 
-        print(f"Fold {fold_idx + 1} - Train: {len(df_train)}, Val: {len(df_val)}")
-
-        # Set up PyTorch Tabular trainer configuration (per-fold for batch_size)
-        # Calculate batch size that avoids single-sample last batch (batch norm requires >1)
+        # Adjust batch size to avoid single-sample batches (batch norm issue)
         batch_size = min(hyperparameters["batch_size"], max(32, len(df_train) // 16))
         if len(df_train) % batch_size == 1:
-            batch_size += 1  # Adjust to avoid last batch of size 1
+            batch_size += 1
 
+        # Create fresh configs for each fold (some configs may be mutated during training)
+        if model_type == "classifier":
+            model_config = CategoryEmbeddingModelConfig(
+                task=task,
+                layers=hyperparameters["layers"],
+                activation=hyperparameters["activation"],
+                learning_rate=hyperparameters["learning_rate"],
+                dropout=hyperparameters["dropout"],
+                use_batch_norm=hyperparameters["use_batch_norm"],
+                initialization=hyperparameters["initialization"],
+                metrics=["accuracy"],
+                metrics_params=[{"task": "multiclass", "num_classes": num_classes}],
+            )
+        else:
+            model_config = CategoryEmbeddingModelConfig(
+                task=task,
+                layers=hyperparameters["layers"],
+                activation=hyperparameters["activation"],
+                learning_rate=hyperparameters["learning_rate"],
+                dropout=hyperparameters["dropout"],
+                use_batch_norm=hyperparameters["use_batch_norm"],
+                initialization=hyperparameters["initialization"],
+            )
+        optimizer_config = OptimizerConfig()
         trainer_config = TrainerConfig(
             auto_lr_find=hyperparameters["auto_lr_find"],
             batch_size=batch_size,
@@ -422,135 +359,111 @@ if __name__ == "__main__":
             seed=hyperparameters["seed"] + fold_idx,
         )
 
-        # Create and train the TabularModel for this fold
-        tabular_model = TabularModel(
+        model = TabularModel(
             data_config=data_config,
             model_config=model_config,
             optimizer_config=optimizer_config,
             trainer_config=trainer_config,
         )
-        tabular_model.fit(train=df_train, validation=df_val)
-        ensemble_models.append(tabular_model)
+        model.fit(train=df_train, validation=df_val)
+        ensemble_models.append(model)
 
-        # Make out-of-fold predictions
-        result = tabular_model.predict(df_val, include_input_features=False)
+        # Out-of-fold predictions
+        result = model.predict(df_val, include_input_features=False)
         fold_preds = result[f"{target}_prediction"].values
 
-        # Store out-of-fold predictions
         if model_type == "classifier":
             oof_predictions[val_idx] = fold_preds.astype(int)
-            prob_cols = sorted([col for col in result.columns if col.endswith("_probability")])
+            prob_cols = sorted([c for c in result.columns if c.endswith("_probability")])
             if prob_cols and oof_proba is not None:
                 oof_proba[val_idx] = result[prob_cols].values
         else:
             oof_predictions[val_idx] = fold_preds.flatten()
 
-        print(f"Fold {fold_idx + 1} complete!")
-
     print(f"\nTraining complete! Trained {len(ensemble_models)} model(s).")
 
-    # Use out-of-fold predictions for metrics
-    # For n_folds=1, we only have predictions for val_idx, so filter to those rows
+    # -------------------------------------------------------------------------
+    # Prepare validation results
+    # -------------------------------------------------------------------------
     if n_folds == 1:
         val_mask = ~np.isnan(oof_predictions)
-        preds = oof_predictions[val_mask]
         df_val = all_df[val_mask].copy()
+        predictions = oof_predictions[val_mask]
         if oof_proba is not None:
             oof_proba = oof_proba[val_mask]
     else:
-        preds = oof_predictions
         df_val = all_df.copy()
+        predictions = oof_predictions
 
-    # Compute prediction_std by running all ensemble models on validation data
-    # For n_folds=1, std will be 0 (only one model). For n_folds>1, std shows ensemble disagreement.
-    preds_std = None
-    if model_type in ["regressor", "uq_regressor"] and len(ensemble_models) > 0:
-        print("Computing prediction_std from ensemble predictions on validation data...")
-        all_ensemble_preds_for_std = []
-        for ens_model in ensemble_models:
-            result = ens_model.predict(df_val[features], include_input_features=False)
-            ens_preds = result[f"{target}_prediction"].values.flatten()
-            all_ensemble_preds_for_std.append(ens_preds)
-
-        ensemble_preds_stacked = np.stack(all_ensemble_preds_for_std, axis=0)
-        preds_std = np.std(ensemble_preds_stacked, axis=0)
-        print(f"Ensemble prediction_std - mean: {np.mean(preds_std):.4f}, max: {np.max(preds_std):.4f}")
-
+    # Decode labels for classification
     if model_type == "classifier":
-        # Get probabilities for classification
+        df_val[target] = label_encoder.inverse_transform(df_val[target].astype(int))
+        df_val["prediction"] = label_encoder.inverse_transform(predictions.astype(int))
         if oof_proba is not None:
-            df_val = df_val.copy()
             df_val["pred_proba"] = [p.tolist() for p in oof_proba]
             df_val = expand_proba_column(df_val, label_encoder.classes_)
-
-        # Decode the target and prediction labels
-        y_validate = label_encoder.inverse_transform(df_val[target])
-        preds_decoded = label_encoder.inverse_transform(preds.astype(int))
     else:
-        y_validate = df_val[target].values
-        preds_decoded = preds
+        df_val["prediction"] = predictions
 
-    # Save predictions to S3
-    df_val = df_val.copy()
-    df_val["prediction"] = preds_decoded
+    # -------------------------------------------------------------------------
+    # Compute and print metrics
+    # -------------------------------------------------------------------------
+    y_true = df_val[target].values
+    y_pred = df_val["prediction"].values
 
-    # Build output columns - include id_column if it exists
+    if model_type == "classifier":
+        score_df = compute_classification_metrics(y_true, y_pred, label_encoder.classes_, target)
+        print_classification_metrics(score_df, target, label_encoder.classes_)
+        print_confusion_matrix(y_true, y_pred, label_encoder.classes_)
+    else:
+        metrics = compute_regression_metrics(y_true, y_pred)
+        print_regression_metrics(metrics)
+
+        # Compute ensemble prediction_std
+        if n_folds > 1:
+            all_preds = []
+            for m in ensemble_models:
+                result = m.predict(df_val[features], include_input_features=False)
+                all_preds.append(result[f"{target}_prediction"].values.flatten())
+            df_val["prediction_std"] = np.std(np.stack(all_preds), axis=0)
+            print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
+        else:
+            df_val["prediction_std"] = 0.0
+
+    # -------------------------------------------------------------------------
+    # Save validation predictions to S3
+    # -------------------------------------------------------------------------
     output_columns = []
     if id_column in df_val.columns:
         output_columns.append(id_column)
     output_columns += [target, "prediction"]
 
-    # Add prediction_std for regression models (always present, 0 for single model)
-    if model_type in ["regressor", "uq_regressor"]:
-        if preds_std is not None:
-            df_val["prediction_std"] = preds_std
-        else:
-            df_val["prediction_std"] = 0.0
+    if model_type != "classifier":
         output_columns.append("prediction_std")
-        print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
 
-    output_columns += [col for col in df_val.columns if col.endswith("_proba")]
-    wr.s3.to_csv(
-        df_val[output_columns],
-        path=f"{model_metrics_s3_path}/validation_predictions.csv",
-        index=False,
-    )
+    output_columns += [c for c in df_val.columns if c.endswith("_proba")]
 
-    # Report Performance Metrics
-    if model_type == "classifier":
-        label_names = label_encoder.classes_
-        score_df = compute_classification_metrics(y_validate, preds_decoded, label_names, target)
-        print_classification_metrics(score_df, target, label_names)
-        print_confusion_matrix(y_validate, preds_decoded, label_names)
+    wr.s3.to_csv(df_val[output_columns], f"{model_metrics_s3_path}/validation_predictions.csv", index=False)
 
-    else:
-        # Calculate and print regression metrics
-        metrics = compute_regression_metrics(y_validate, preds_decoded)
-        print_regression_metrics(metrics)
+    # -------------------------------------------------------------------------
+    # Save model artifacts
+    # -------------------------------------------------------------------------
+    for idx, m in enumerate(ensemble_models):
+        m.save_model(os.path.join(args.model_dir, f"tabular_model_{idx}"))
+    print(f"Saved {len(ensemble_models)} model(s)")
 
-    # Save ensemble models
-    for model_idx, ens_model in enumerate(ensemble_models):
-        model_path = os.path.join(args.model_dir, f"tabular_model_{model_idx}")
-        ens_model.save_model(model_path)
-        print(f"Saved model {model_idx + 1} to {model_path}")
+    joblib.dump({"n_ensemble": len(ensemble_models), "n_folds": n_folds}, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
 
-    # Save ensemble metadata
-    n_ensemble = len(ensemble_models)
-    ensemble_metadata = {"n_ensemble": n_ensemble, "n_folds": n_folds}
-    joblib.dump(ensemble_metadata, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
-    print(f"Saved ensemble metadata (n_ensemble={n_ensemble}, n_folds={n_folds})")
+    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as f:
+        json.dump(orig_features, f)
+
+    with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as f:
+        json.dump(category_mappings, f)
+
+    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
+        json.dump(hyperparameters, f, indent=2)
 
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
-    # Save the features (this will validate input during predictions)
-    with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
-        json.dump(orig_features, fp)
-
-    # Save the category mappings
-    with open(os.path.join(args.model_dir, "category_mappings.json"), "w") as fp:
-        json.dump(category_mappings, fp)
-
-    # Save hyperparameters (merged defaults + user overrides) for reproducibility
-    with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as fp:
-        json.dump(hyperparameters, fp, indent=2)
+    print(f"\nModel training complete! Artifacts saved to {args.model_dir}")
