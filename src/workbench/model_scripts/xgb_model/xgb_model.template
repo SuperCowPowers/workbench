@@ -267,6 +267,8 @@ if __name__ == "__main__":
     # Save predictions to S3
     df_val = df_val.copy()
     df_val["prediction"] = preds_decoded
+    if model_type == "classifier":
+        df_val[target] = y_validate  # Decode target column for output
 
     # Build output columns - include id_column if it exists
     output_columns = []
