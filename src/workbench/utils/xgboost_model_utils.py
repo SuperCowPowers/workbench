@@ -279,6 +279,13 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
         metrics_df = pd.DataFrame({"error": [f"No training metrics found for {workbench_model.model_name}"]})
     else:
         metrics_df = pd.DataFrame.from_dict(training_metrics)
+
+        # Reorder metrics by class_labels if it's a classifier
+        class_labels = workbench_model.class_labels()
+        target = workbench_model.target()
+        if class_labels and target in metrics_df.columns:
+            metrics_df = metrics_df.set_index(target).reindex(class_labels).reset_index()
+
         log.info(f"Metrics summary:\n{metrics_df.to_string(index=False)}")
 
     return metrics_df, predictions_df
@@ -304,6 +311,18 @@ if __name__ == "__main__":
 
     print("\n=== PULL CV RESULTS EXAMPLE ===")
     model = Model("abalone-regression")
+    metrics_df, predictions_df = pull_cv_results(model)
+    print(f"\nMetrics:\n{metrics_df}")
+    print(f"\nPredictions shape: {predictions_df.shape}")
+    print(f"Predictions columns: {predictions_df.columns.tolist()}")
+    print(predictions_df.head())
+
+    # Test on a Classifier model
+    print("\n=== CLASSIFIER MODEL TEST ===")
+    model = Model("wine-classification")
+    features = feature_importance(model)
+    print("Feature Importance:")
+    print(features)
     metrics_df, predictions_df = pull_cv_results(model)
     print(f"\nMetrics:\n{metrics_df}")
     print(f"\nPredictions shape: {predictions_df.shape}")
