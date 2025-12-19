@@ -1,16 +1,19 @@
 """XGBoost Model Utilities"""
 
+import glob
+import hashlib
 import logging
 import os
-import tempfile
-import joblib
 import pickle
-import glob
+import tempfile
+from typing import Any, List, Optional, Tuple
+
 import awswrangler as wr
-from typing import Optional, List, Tuple, Any
-import hashlib
+import joblib
 import pandas as pd
 import xgboost as xgb
+from scipy.stats import spearmanr
+from sklearn.metrics import mean_absolute_error, median_absolute_error, precision_recall_fscore_support, r2_score, roc_auc_score, root_mean_squared_error
 
 # Workbench Imports
 from workbench.utils.aws_utils import pull_s3_data
@@ -250,16 +253,16 @@ def leaf_stats(df: pd.DataFrame, target_col: str) -> pd.DataFrame:
 def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Pull cross-validation results from AWS training artifacts.
 
-    This retrieves the validation predictions and training metrics that were
-    saved during model training. For XGBoost models trained with n_folds > 1,
-    these are out-of-fold predictions from k-fold cross-validation.
+    This retrieves the validation predictions saved during model training and
+    computes metrics directly from them. For XGBoost models trained with
+    n_folds > 1, these are out-of-fold predictions from k-fold cross-validation.
 
     Args:
         workbench_model: Workbench model object
 
     Returns:
         Tuple of:
-            - DataFrame with training metrics
+            - DataFrame with computed metrics
             - DataFrame with validation predictions
     """
     # Get the validation predictions from S3
@@ -271,30 +274,65 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     log.info(f"Pulled {len(predictions_df)} validation predictions from {s3_path}")
 
-    # Get training metrics from model metadata
-    training_metrics = workbench_model.workbench_meta().get("workbench_training_metrics")
+    # Compute metrics from predictions
+    target = workbench_model.target()
+    class_labels = workbench_model.class_labels()
 
-    if training_metrics is None:
-        log.warning(f"No training metrics found in model metadata for {workbench_model.model_name}")
-        metrics_df = pd.DataFrame({"error": [f"No training metrics found for {workbench_model.model_name}"]})
+    if class_labels and target in predictions_df.columns and "prediction" in predictions_df.columns:
+        # Classification metrics
+        y_true = predictions_df[target]
+        y_pred = predictions_df["prediction"]
+
+        # Precision, recall, f1, support per class
+        prec, rec, f1, support = precision_recall_fscore_support(
+            y_true, y_pred, labels=class_labels, zero_division=0
+        )
+
+        # ROC AUC per class (requires probability columns)
+        proba_cols = [f"{label}_proba" for label in class_labels]
+        if all(col in predictions_df.columns for col in proba_cols):
+            y_score = predictions_df[proba_cols].values
+            roc_auc = roc_auc_score(y_true, y_score, labels=class_labels, multi_class="ovr", average=None)
+        else:
+            roc_auc = [None] * len(class_labels)
+
+        # Build per-class metrics
+        metrics_df = pd.DataFrame({
+            target: class_labels,
+            "precision": prec,
+            "recall": rec,
+            "f1": f1,
+            "roc_auc": roc_auc,
+            "support": support,
+        })
+
+        # Add weighted 'all' row
+        total = support.sum()
+        all_row = {
+            target: "all",
+            "precision": (prec * support).sum() / total,
+            "recall": (rec * support).sum() / total,
+            "f1": (f1 * support).sum() / total,
+            "roc_auc": (roc_auc * support).sum() / total if roc_auc[0] is not None else None,
+            "support": total,
+        }
+        metrics_df = pd.concat([metrics_df, pd.DataFrame([all_row])], ignore_index=True)
+
+    elif target in predictions_df.columns and "prediction" in predictions_df.columns:
+        # Regression metrics
+        y_true = predictions_df[target].values
+        y_pred = predictions_df["prediction"].values
+        metrics_df = pd.DataFrame([{
+            "rmse": root_mean_squared_error(y_true, y_pred),
+            "mae": mean_absolute_error(y_true, y_pred),
+            "medae": median_absolute_error(y_true, y_pred),
+            "r2": r2_score(y_true, y_pred),
+            "spearmanr": spearmanr(y_true, y_pred).correlation,
+            "support": len(y_true),
+        }])
+
     else:
-        metrics_df = pd.DataFrame.from_dict(training_metrics)
-
-        # Reorder metrics by class_labels and add 'all' row if it's a classifier
-        class_labels = workbench_model.class_labels()
-        target = workbench_model.target()
-        if class_labels and target in metrics_df.columns:
-            metrics_df = metrics_df.set_index(target).reindex(class_labels).reset_index()
-
-            # Add weighted 'all' row
-            w = metrics_df.get("support", pd.Series([1] * len(metrics_df)))
-            all_row = {target: "all", "support": w.sum()}
-            for col in ["precision", "recall", "f1", "roc_auc"]:
-                if col in metrics_df.columns:
-                    all_row[col] = (metrics_df[col] * w).sum() / w.sum()
-            metrics_df = pd.concat([metrics_df, pd.DataFrame([all_row])], ignore_index=True)
-
-        log.info(f"Metrics summary:\n{metrics_df.to_string(index=False)}")
+        metrics_df = pd.DataFrame()
 
     return metrics_df, predictions_df
 
