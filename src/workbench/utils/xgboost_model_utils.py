@@ -280,11 +280,20 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
     else:
         metrics_df = pd.DataFrame.from_dict(training_metrics)
 
-        # Reorder metrics by class_labels if it's a classifier
+        # Reorder metrics by class_labels and add 'all' row if it's a classifier
         class_labels = workbench_model.class_labels()
         target = workbench_model.target()
         if class_labels and target in metrics_df.columns:
             metrics_df = metrics_df.set_index(target).reindex(class_labels).reset_index()
+
+            # Add weighted 'all' row (weighted by support)
+            numeric_cols = ["precision", "recall", "f1", "roc_auc"]
+            available_cols = [c for c in numeric_cols if c in metrics_df.columns]
+            total_support = metrics_df["support"].sum()
+            all_row = {target: "all", "support": total_support}
+            for col in available_cols:
+                all_row[col] = (metrics_df[col] * metrics_df["support"]).sum() / total_support
+            metrics_df = pd.concat([metrics_df, pd.DataFrame([all_row])], ignore_index=True)
 
         log.info(f"Metrics summary:\n{metrics_df.to_string(index=False)}")
 
