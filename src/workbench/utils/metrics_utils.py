@@ -1,7 +1,7 @@
 """Metrics utilities for computing model performance from predictions."""
 
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -40,9 +40,7 @@ def compute_classification_metrics(
     y_pred = predictions_df[prediction_col]
 
     # Precision, recall, f1, support per class
-    prec, rec, f1, support = precision_recall_fscore_support(
-        y_true, y_pred, labels=class_labels, zero_division=0
-    )
+    prec, rec, f1, support = precision_recall_fscore_support(y_true, y_pred, labels=class_labels, zero_division=0)
 
     # ROC AUC per class (requires probability columns)
     proba_cols = [f"{label}_proba" for label in class_labels]
@@ -53,14 +51,16 @@ def compute_classification_metrics(
         roc_auc = np.array([None] * len(class_labels))
 
     # Build per-class metrics
-    metrics_df = pd.DataFrame({
-        target_col: class_labels,
-        "precision": prec,
-        "recall": rec,
-        "f1": f1,
-        "roc_auc": roc_auc,
-        "support": support.astype(int),
-    })
+    metrics_df = pd.DataFrame(
+        {
+            target_col: class_labels,
+            "precision": prec,
+            "recall": rec,
+            "f1": f1,
+            "roc_auc": roc_auc,
+            "support": support.astype(int),
+        }
+    )
 
     # Add weighted 'all' row
     total = support.sum()
@@ -95,14 +95,18 @@ def compute_regression_metrics(
     y_true = predictions_df[target_col].values
     y_pred = predictions_df[prediction_col].values
 
-    return pd.DataFrame([{
-        "rmse": root_mean_squared_error(y_true, y_pred),
-        "mae": mean_absolute_error(y_true, y_pred),
-        "medae": median_absolute_error(y_true, y_pred),
-        "r2": r2_score(y_true, y_pred),
-        "spearmanr": spearmanr(y_true, y_pred).correlation,
-        "support": len(y_true),
-    }])
+    return pd.DataFrame(
+        [
+            {
+                "rmse": root_mean_squared_error(y_true, y_pred),
+                "mae": mean_absolute_error(y_true, y_pred),
+                "medae": median_absolute_error(y_true, y_pred),
+                "r2": r2_score(y_true, y_pred),
+                "spearmanr": spearmanr(y_true, y_pred).correlation,
+                "support": len(y_true),
+            }
+        ]
+    )
 
 
 def compute_metrics_from_predictions(
@@ -139,20 +143,24 @@ def compute_metrics_from_predictions(
 if __name__ == "__main__":
     # Test with sample data
     print("Testing classification metrics...")
-    class_df = pd.DataFrame({
-        "target": ["a", "b", "c", "a", "b", "c", "a", "b", "c", "a"],
-        "prediction": ["a", "b", "c", "a", "b", "a", "a", "b", "c", "b"],
-        "a_proba": [0.8, 0.1, 0.1, 0.7, 0.2, 0.4, 0.9, 0.1, 0.1, 0.3],
-        "b_proba": [0.1, 0.8, 0.1, 0.2, 0.7, 0.3, 0.05, 0.8, 0.2, 0.6],
-        "c_proba": [0.1, 0.1, 0.8, 0.1, 0.1, 0.3, 0.05, 0.1, 0.7, 0.1],
-    })
+    class_df = pd.DataFrame(
+        {
+            "target": ["a", "b", "c", "a", "b", "c", "a", "b", "c", "a"],
+            "prediction": ["a", "b", "c", "a", "b", "a", "a", "b", "c", "b"],
+            "a_proba": [0.8, 0.1, 0.1, 0.7, 0.2, 0.4, 0.9, 0.1, 0.1, 0.3],
+            "b_proba": [0.1, 0.8, 0.1, 0.2, 0.7, 0.3, 0.05, 0.8, 0.2, 0.6],
+            "c_proba": [0.1, 0.1, 0.8, 0.1, 0.1, 0.3, 0.05, 0.1, 0.7, 0.1],
+        }
+    )
     metrics = compute_metrics_from_predictions(class_df, "target", ["a", "b", "c"])
     print(metrics.to_string(index=False))
 
     print("\nTesting regression metrics...")
-    reg_df = pd.DataFrame({
-        "target": [1.0, 2.0, 3.0, 4.0, 5.0],
-        "prediction": [1.1, 2.2, 2.9, 4.1, 4.8],
-    })
+    reg_df = pd.DataFrame(
+        {
+            "target": [1.0, 2.0, 3.0, 4.0, 5.0],
+            "prediction": [1.1, 2.2, 2.9, 4.1, 4.8],
+        }
+    )
     metrics = compute_metrics_from_predictions(reg_df, "target")
     print(metrics.to_string(index=False))

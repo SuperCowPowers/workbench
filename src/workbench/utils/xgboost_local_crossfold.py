@@ -118,7 +118,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
     # Perform cross-validation
     for fold_idx, (train_idx, val_idx) in enumerate(kfold.split(X, y_for_cv), 1):
         X_train, X_val = X.iloc[train_idx], X.iloc[val_idx]
-        y_train, y_val = y_for_cv.iloc[train_idx], y_for_cv.iloc[val_idx]
+        y_train = y_for_cv.iloc[train_idx]
 
         # Get sample weights for training fold
         weights_train = sample_weights.iloc[train_idx] if sample_weights is not None else None

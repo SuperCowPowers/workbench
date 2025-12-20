@@ -108,7 +108,7 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
 if __name__ == "__main__":
 
     # Tests for the ChemProp utilities
-    from workbench.api import Endpoint, Model
+    from workbench.api import Model
 
     # Initialize Workbench model
     model_name = "logd-reg-chemprop"
