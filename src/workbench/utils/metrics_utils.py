@@ -42,11 +42,17 @@ def compute_classification_metrics(
     # Precision, recall, f1, support per class
     prec, rec, f1, support = precision_recall_fscore_support(y_true, y_pred, labels=class_labels, zero_division=0)
 
-    # ROC AUC per class (requires probability columns)
+    # ROC AUC per class (requires probability columns and sorted labels)
     proba_cols = [f"{label}_proba" for label in class_labels]
     if all(col in predictions_df.columns for col in proba_cols):
-        y_score = predictions_df[proba_cols].values
-        roc_auc = roc_auc_score(y_true, y_score, labels=class_labels, multi_class="ovr", average=None)
+        # roc_auc_score requires labels to be sorted, so we sort and reorder results back
+        sorted_labels = sorted(class_labels)
+        sorted_proba_cols = [f"{label}_proba" for label in sorted_labels]
+        y_score_sorted = predictions_df[sorted_proba_cols].values
+        roc_auc_sorted = roc_auc_score(y_true, y_score_sorted, labels=sorted_labels, multi_class="ovr", average=None)
+        # Map back to original class_labels order
+        label_to_auc = dict(zip(sorted_labels, roc_auc_sorted))
+        roc_auc = np.array([label_to_auc[label] for label in class_labels])
     else:
         roc_auc = np.array([None] * len(class_labels))
 
