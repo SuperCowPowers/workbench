@@ -16,18 +16,10 @@ from typing import Any, Tuple
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from scipy.stats import spearmanr
-from sklearn.metrics import (
-    mean_absolute_error,
-    mean_squared_error,
-    median_absolute_error,
-    precision_recall_fscore_support,
-    r2_score,
-    roc_auc_score,
-)
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 
+from workbench.utils.metrics_utils import compute_metrics_from_predictions
 from workbench.utils.pandas_utils import expand_proba_column
 from workbench.utils.xgboost_model_utils import xgboost_model_from_s3
 
@@ -120,8 +112,7 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
     # Prepare KFold
     kfold = (StratifiedKFold if is_classifier else KFold)(n_splits=nfolds, shuffle=True, random_state=42)
 
-    # Initialize results collection
-    fold_metrics = []
+    # Initialize predictions DataFrame
     predictions_df = pd.DataFrame({id_col: ids, target_col: y})
 
     # Perform cross-validation
@@ -145,110 +136,13 @@ def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.Data
         else:
             predictions_df.loc[val_indices, "prediction"] = preds
 
-        # Calculate fold metrics
-        if is_classifier:
-            y_val_orig = label_encoder.inverse_transform(y_val)
-            preds_orig = label_encoder.inverse_transform(preds.astype(int))
-
-            # Overall weighted metrics
-            prec, rec, f1, _ = precision_recall_fscore_support(
-                y_val_orig, preds_orig, average="weighted", zero_division=0
-            )
-
-            # Per-class F1
-            prec_per_class, rec_per_class, f1_per_class, _ = precision_recall_fscore_support(
-                y_val_orig, preds_orig, average=None, zero_division=0, labels=label_encoder.classes_
-            )
-
-            # ROC-AUC (overall and per-class)
-            roc_auc_overall = roc_auc_score(y_val, y_proba, multi_class="ovr", average="macro")
-            roc_auc_per_class = roc_auc_score(y_val, y_proba, multi_class="ovr", average=None)
-
-            fold_metrics.append(
-                {
-                    "fold": fold_idx,
-                    "precision": prec,
-                    "recall": rec,
-                    "f1": f1,
-                    "roc_auc": roc_auc_overall,
-                    "precision_per_class": prec_per_class,
-                    "recall_per_class": rec_per_class,
-                    "f1_per_class": f1_per_class,
-                    "roc_auc_per_class": roc_auc_per_class,
-                }
-            )
-        else:
-            spearman_corr, _ = spearmanr(y_val, preds)
-            fold_metrics.append(
-                {
-                    "fold": fold_idx,
-                    "rmse": np.sqrt(mean_squared_error(y_val, preds)),
-                    "mae": mean_absolute_error(y_val, preds),
-                    "medae": median_absolute_error(y_val, preds),
-                    "r2": r2_score(y_val, preds),
-                    "spearmanr": spearman_corr,
-                }
-            )
-
-    # Calculate summary metrics
-    fold_df = pd.DataFrame(fold_metrics)
-
+    # Expand proba columns for classifiers
     if is_classifier:
-        # Expand the *_proba columns into separate columns for easier handling
         predictions_df = expand_proba_column(predictions_df, label_encoder.classes_)
 
-        # Build per-class metrics DataFrame
-        metric_rows = []
-
-        # Per-class rows
-        for idx, class_name in enumerate(label_encoder.classes_):
-            prec_scores = np.array([fold["precision_per_class"][idx] for fold in fold_metrics])
-            rec_scores = np.array([fold["recall_per_class"][idx] for fold in fold_metrics])
-            f1_scores = np.array([fold["f1_per_class"][idx] for fold in fold_metrics])
-            roc_auc_scores = np.array([fold["roc_auc_per_class"][idx] for fold in fold_metrics])
-
-            y_orig = label_encoder.inverse_transform(y_for_cv)
-            support = int((y_orig == class_name).sum())
-
-            metric_rows.append(
-                {
-                    "class": class_name,
-                    "precision": prec_scores.mean(),
-                    "recall": rec_scores.mean(),
-                    "f1": f1_scores.mean(),
-                    "roc_auc": roc_auc_scores.mean(),
-                    "support": support,
-                }
-            )
-
-        # Overall 'all' row
-        metric_rows.append(
-            {
-                "class": "all",
-                "precision": fold_df["precision"].mean(),
-                "recall": fold_df["recall"].mean(),
-                "f1": fold_df["f1"].mean(),
-                "roc_auc": fold_df["roc_auc"].mean(),
-                "support": len(y_for_cv),
-            }
-        )
-
-        metrics_df = pd.DataFrame(metric_rows)
-
-    else:
-        # Regression metrics
-        metrics_df = pd.DataFrame(
-            [
-                {
-                    "rmse": fold_df["rmse"].mean(),
-                    "mae": fold_df["mae"].mean(),
-                    "medae": fold_df["medae"].mean(),
-                    "r2": fold_df["r2"].mean(),
-                    "spearmanr": fold_df["spearmanr"].mean(),
-                    "support": len(y_for_cv),
-                }
-            ]
-        )
+    # Compute metrics from the complete out-of-fold predictions
+    class_labels = list(label_encoder.classes_) if is_classifier else None
+    metrics_df = compute_metrics_from_predictions(predictions_df, target_col, class_labels)
 
     return metrics_df, predictions_df
 

@@ -12,16 +12,8 @@ from typing import Union, Optional
 import hashlib
 
 # Model Performance Scores
-from sklearn.metrics import (
-    mean_absolute_error,
-    r2_score,
-    median_absolute_error,
-    roc_auc_score,
-    confusion_matrix,
-    precision_recall_fscore_support,
-    mean_squared_error,
-)
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import confusion_matrix
+from workbench.utils.metrics_utils import compute_regression_metrics, compute_classification_metrics
 
 # SageMaker Imports
 from sagemaker.serializers import CSVSerializer
@@ -933,29 +925,9 @@ class EndpointCore(Artifact):
             self.log.warning("Dropping NaN rows for metric computation.")
             prediction_df = prediction_df.dropna(subset=[target_column, "prediction"])
 
-        # Compute the metrics
+        # Compute the metrics using shared utilities
         try:
-            y_true = prediction_df[target_column]
-            y_pred = prediction_df["prediction"]
-
-            mae = mean_absolute_error(y_true, y_pred)
-            rmse = np.sqrt(mean_squared_error(y_true, y_pred))
-            r2 = r2_score(y_true, y_pred)
-            # Mean Absolute Percentage Error
-            mape = np.mean(np.where(y_true != 0, np.abs((y_true - y_pred) / y_true), np.abs(y_true - y_pred))) * 100
-            # Median Absolute Error
-            medae = median_absolute_error(y_true, y_pred)
-
-            # Organize and return the metrics
-            metrics = {
-                "MAE": round(mae, 3),
-                "RMSE": round(rmse, 3),
-                "R2": round(r2, 3),
-                "MAPE": round(mape, 3),
-                "MedAE": round(medae, 3),
-                "NumRows": len(prediction_df),
-            }
-            return pd.DataFrame.from_records([metrics])
+            return compute_regression_metrics(prediction_df, target_column)
         except Exception as e:
             self.log.warning(f"Error computing regression metrics: {str(e)}")
             return pd.DataFrame()
@@ -1038,46 +1010,8 @@ class EndpointCore(Artifact):
         else:
             self.validate_proba_columns(prediction_df, class_labels)
 
-        # Calculate precision, recall, f1, and support, handling zero division
-        scores = precision_recall_fscore_support(
-            prediction_df[target_column],
-            prediction_df["prediction"],
-            average=None,
-            labels=class_labels,
-            zero_division=0,
-        )
-
-        # Identify the probability columns and keep them as a Pandas DataFrame
-        proba_columns = [f"{label}_proba" for label in class_labels]
-        y_score = prediction_df[proba_columns]
-
-        # One-hot encode the true labels using all class labels (fit with class_labels)
-        encoder = OneHotEncoder(categories=[class_labels], sparse_output=False)
-        y_true = encoder.fit_transform(prediction_df[[target_column]])
-
-        # Calculate ROC AUC per label and handle exceptions for missing classes
-        roc_auc_per_label = []
-        for i, label in enumerate(class_labels):
-            try:
-                roc_auc = roc_auc_score(y_true[:, i], y_score.iloc[:, i])
-            except ValueError as e:
-                self.log.warning(f"ROC AUC calculation failed for label {label}.")
-                self.log.warning(f"{str(e)}")
-                roc_auc = 0.0
-            roc_auc_per_label.append(roc_auc)
-
-        # Put the scores into a DataFrame
-        score_df = pd.DataFrame(
-            {
-                target_column: class_labels,
-                "precision": scores[0],
-                "recall": scores[1],
-                "f1": scores[2],
-                "roc_auc": roc_auc_per_label,
-                "support": scores[3],
-            }
-        )
-        return score_df
+        # Compute the metrics using shared utilities (returns per-class + 'all' row)
+        return compute_classification_metrics(prediction_df, target_column, class_labels)
 
     def generate_confusion_matrix(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the confusion matrix for this Endpoint
