@@ -44,7 +44,6 @@ if recreate or not Model("aqsol-pytorch-class").exists():
         target_column="solubility_class",
         description="PyTorch Classification Model for AQSol",
         tags=["pytorch", "molecular descriptors"],
-        hyperparameters={"max_epochs": 150, "layers": "256-128-64"},
     )
     m.set_owner("BW")
     m.set_class_labels(["low", "medium", "high"])
