@@ -496,6 +496,8 @@ if __name__ == "__main__":
         print_classification_metrics(score_df, target_name, label_encoder.classes_)
         print_confusion_matrix(y_true_decoded, preds_decoded, label_encoder.classes_)
 
+        # Decode target column back to string labels (was encoded for training)
+        df_val[target_name] = y_true_decoded
         df_val["prediction"] = preds_decoded
         if oof_proba is not None:
             df_val["pred_proba"] = [p.tolist() for p in oof_proba]
