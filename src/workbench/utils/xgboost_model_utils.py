@@ -12,18 +12,10 @@ import awswrangler as wr
 import joblib
 import pandas as pd
 import xgboost as xgb
-from scipy.stats import spearmanr
-from sklearn.metrics import (
-    mean_absolute_error,
-    median_absolute_error,
-    precision_recall_fscore_support,
-    r2_score,
-    roc_auc_score,
-    root_mean_squared_error,
-)
 
 # Workbench Imports
 from workbench.utils.aws_utils import pull_s3_data
+from workbench.utils.metrics_utils import compute_metrics_from_predictions
 from workbench.utils.model_utils import load_category_mappings_from_s3, safe_extract_tarfile
 from workbench.utils.pandas_utils import convert_categorical_types
 
@@ -285,63 +277,8 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
     target = workbench_model.target()
     class_labels = workbench_model.class_labels()
 
-    if class_labels and target in predictions_df.columns and "prediction" in predictions_df.columns:
-        # Classification metrics
-        y_true = predictions_df[target]
-        y_pred = predictions_df["prediction"]
-
-        # Precision, recall, f1, support per class
-        prec, rec, f1, support = precision_recall_fscore_support(y_true, y_pred, labels=class_labels, zero_division=0)
-
-        # ROC AUC per class (requires probability columns)
-        proba_cols = [f"{label}_proba" for label in class_labels]
-        if all(col in predictions_df.columns for col in proba_cols):
-            y_score = predictions_df[proba_cols].values
-            roc_auc = roc_auc_score(y_true, y_score, labels=class_labels, multi_class="ovr", average=None)
-        else:
-            roc_auc = [None] * len(class_labels)
-
-        # Build per-class metrics
-        metrics_df = pd.DataFrame(
-            {
-                target: class_labels,
-                "precision": prec,
-                "recall": rec,
-                "f1": f1,
-                "roc_auc": roc_auc,
-                "support": support,
-            }
-        )
-
-        # Add weighted 'all' row
-        total = support.sum()
-        all_row = {
-            target: "all",
-            "precision": (prec * support).sum() / total,
-            "recall": (rec * support).sum() / total,
-            "f1": (f1 * support).sum() / total,
-            "roc_auc": (roc_auc * support).sum() / total if roc_auc[0] is not None else None,
-            "support": total,
-        }
-        metrics_df = pd.concat([metrics_df, pd.DataFrame([all_row])], ignore_index=True)
-
-    elif target in predictions_df.columns and "prediction" in predictions_df.columns:
-        # Regression metrics
-        y_true = predictions_df[target].values
-        y_pred = predictions_df["prediction"].values
-        metrics_df = pd.DataFrame(
-            [
-                {
-                    "rmse": root_mean_squared_error(y_true, y_pred),
-                    "mae": mean_absolute_error(y_true, y_pred),
-                    "medae": median_absolute_error(y_true, y_pred),
-                    "r2": r2_score(y_true, y_pred),
-                    "spearmanr": spearmanr(y_true, y_pred).correlation,
-                    "support": len(y_true),
-                }
-            ]
-        )
-
+    if target in predictions_df.columns and "prediction" in predictions_df.columns:
+        metrics_df = compute_metrics_from_predictions(predictions_df, target, class_labels)
     else:
         metrics_df = pd.DataFrame()
 

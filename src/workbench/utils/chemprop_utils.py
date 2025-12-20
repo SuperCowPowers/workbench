@@ -1,28 +1,14 @@
 """ChemProp utilities for Workbench models."""
 
-# flake8: noqa: E402
 import logging
 import os
-import tempfile
 from typing import Any, Tuple
 
-import numpy as np
 import pandas as pd
-from scipy.stats import spearmanr
-from sklearn.metrics import (
-    mean_absolute_error,
-    mean_squared_error,
-    median_absolute_error,
-    precision_recall_fscore_support,
-    r2_score,
-    roc_auc_score,
-)
-from sklearn.model_selection import KFold, StratifiedKFold
-from sklearn.preprocessing import LabelEncoder
 
-from workbench.utils.model_utils import safe_extract_tarfile
-from workbench.utils.pandas_utils import expand_proba_column
 from workbench.utils.aws_utils import pull_s3_data
+from workbench.utils.metrics_utils import compute_metrics_from_predictions
+from workbench.utils.model_utils import safe_extract_tarfile
 
 log = logging.getLogger("workbench")
 
@@ -87,15 +73,15 @@ def load_chemprop_model_artifacts(model_dir: str) -> Tuple[Any, dict]:
 def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Pull cross-validation results from AWS training artifacts.
 
-    This retrieves the validation predictions and training metrics that were
-    saved during model training.
+    This retrieves the validation predictions saved during model training and
+    computes metrics directly from them.
 
     Args:
         workbench_model: Workbench model object
 
     Returns:
         Tuple of:
-            - DataFrame with training metrics
+            - DataFrame with computed metrics
             - DataFrame with validation predictions
     """
     # Get the validation predictions from S3
@@ -107,15 +93,14 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     log.info(f"Pulled {len(predictions_df)} validation predictions from {s3_path}")
 
-    # Get training metrics from model metadata
-    training_metrics = workbench_model.workbench_meta().get("workbench_training_metrics")
+    # Compute metrics from predictions
+    target = workbench_model.target()
+    class_labels = workbench_model.class_labels()
 
-    if training_metrics is None:
-        log.warning(f"No training metrics found in model metadata for {workbench_model.model_name}")
-        metrics_df = pd.DataFrame({"error": [f"No training metrics found for {workbench_model.model_name}"]})
+    if target in predictions_df.columns and "prediction" in predictions_df.columns:
+        metrics_df = compute_metrics_from_predictions(predictions_df, target, class_labels)
     else:
-        metrics_df = pd.DataFrame.from_dict(training_metrics)
-        log.info(f"Metrics summary:\n{metrics_df.to_string(index=False)}")
+        metrics_df = pd.DataFrame()
 
     return metrics_df, predictions_df
 
