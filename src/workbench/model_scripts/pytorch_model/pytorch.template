@@ -304,8 +304,9 @@ if __name__ == "__main__":
     else:
         oof_proba = None
 
-    # Data config (shared across folds)
+    # Configs shared across folds
     data_config = DataConfig(target=[target], continuous_cols=continuous_cols, categorical_cols=categorical_cols)
+    optimizer_config = OptimizerConfig()
 
     ensemble_models = []
     for fold_idx, (train_idx, val_idx) in enumerate(folds):
@@ -316,35 +317,22 @@ if __name__ == "__main__":
         df_train = all_df.iloc[train_idx].reset_index(drop=True)
         df_val = all_df.iloc[val_idx].reset_index(drop=True)
 
-        # Adjust batch size to avoid single-sample batches (batch norm issue)
+        # Adjust batch size to avoid single-sample batches (batch norm and metrics issue)
         batch_size = min(hyperparameters["batch_size"], max(32, len(df_train) // 16))
         if len(df_train) % batch_size == 1:
             batch_size += 1
+        if len(df_val) % batch_size == 1:
+            batch_size += 1
 
-        # Create fresh configs for each fold (some configs may be mutated during training)
-        if model_type == "classifier":
-            model_config = CategoryEmbeddingModelConfig(
-                task=task,
-                layers=hyperparameters["layers"],
-                activation=hyperparameters["activation"],
-                learning_rate=hyperparameters["learning_rate"],
-                dropout=hyperparameters["dropout"],
-                use_batch_norm=hyperparameters["use_batch_norm"],
-                initialization=hyperparameters["initialization"],
-                metrics=["accuracy"],
-                metrics_params=[{"task": "multiclass", "num_classes": num_classes}],
-            )
-        else:
-            model_config = CategoryEmbeddingModelConfig(
-                task=task,
-                layers=hyperparameters["layers"],
-                activation=hyperparameters["activation"],
-                learning_rate=hyperparameters["learning_rate"],
-                dropout=hyperparameters["dropout"],
-                use_batch_norm=hyperparameters["use_batch_norm"],
-                initialization=hyperparameters["initialization"],
-            )
-        optimizer_config = OptimizerConfig()
+        model_config = CategoryEmbeddingModelConfig(
+            task=task,
+            layers=hyperparameters["layers"],
+            activation=hyperparameters["activation"],
+            learning_rate=hyperparameters["learning_rate"],
+            dropout=hyperparameters["dropout"],
+            use_batch_norm=hyperparameters["use_batch_norm"],
+            initialization=hyperparameters["initialization"],
+        )
         trainer_config = TrainerConfig(
             auto_lr_find=hyperparameters["auto_lr_find"],
             batch_size=batch_size,
