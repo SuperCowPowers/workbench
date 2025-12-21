@@ -7,8 +7,6 @@ pandas==2.3.3
 awswrangler==3.14.0
 lightgbm==4.6.0
 mapie==1.2.0
-pytorch-tabular==1.1.1
-requests==2.32.5  # Needed by PyTorch-Tabular
 joblib==1.5.3
 chemprop==2.2.1   # Message Passing Neural Networks for molecular property prediction
 rdkit==2025.9.3   # Cheminformatics toolkit for SMILES processing

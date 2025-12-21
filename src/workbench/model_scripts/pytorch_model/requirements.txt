@@ -1,2 +1,2 @@
-# Note: The training and inference images already have torch and pytorch-tabular installed.
+# Note: The training and inference images already have torch + supporting packages installed.
 #       So we only need to install packages that are not already included in the images.
