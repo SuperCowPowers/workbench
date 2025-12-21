@@ -389,7 +389,6 @@ class EndpointCore(Artifact):
             self.log.warning("No predictions were made. Returning empty DataFrame.")
             return prediction_df
 
-        # FIXME: Multi-target support - currently uses first target for metrics
         # Normalize targets to handle both string and list formats
         if isinstance(targets, list):
             primary_target = targets[0] if targets else None
@@ -430,11 +429,13 @@ class EndpointCore(Artifact):
             target_list = targets if isinstance(targets, list) else [targets]
             primary_target = target_list[0]
 
-            # For auto_inference, use shorter "auto_{target}" naming
-            # Otherwise use "{capture_name}_{target}"
-            prefix = "auto" if capture_name == "auto_inference" else capture_name
+            # For single-target models (99% of cases), just save with capture_name
+            # For multi-target models, save each as {prefix}_{target} plus primary as capture_name
+            is_multi_target = len(target_list) > 1
 
-            # Save results for each target, plus primary target with original capture_name
+            if is_multi_target:
+                prefix = "auto" if capture_name == "auto_inference" else capture_name
+
             for target in target_list:
                 # Drop rows with NaN target values for metrics/plots
                 target_df = prediction_df.dropna(subset=[target])
@@ -447,21 +448,22 @@ class EndpointCore(Artifact):
                 else:
                     target_metrics = pd.DataFrame()
 
-                # Save as {prefix}_{target}
-                target_capture_name = f"{prefix}_{target}"
-                description = target_capture_name.replace("_", " ").title()
-                self._capture_inference_results(
-                    target_capture_name,
-                    target_df,
-                    target,
-                    model.model_type,
-                    target_metrics,
-                    description,
-                    features,
-                    id_column,
-                )
+                if is_multi_target:
+                    # Multi-target: save as {prefix}_{target}
+                    target_capture_name = f"{prefix}_{target}"
+                    description = target_capture_name.replace("_", " ").title()
+                    self._capture_inference_results(
+                        target_capture_name,
+                        target_df,
+                        target,
+                        model.model_type,
+                        target_metrics,
+                        description,
+                        features,
+                        id_column,
+                    )
 
-                # Also save primary target with original capture_name for backward compatibility
+                # Save primary target (or single target) with original capture_name
                 if target == primary_target:
                     self._capture_inference_results(
                         capture_name,
@@ -475,7 +477,7 @@ class EndpointCore(Artifact):
                     )
 
             # For UQ Models we also capture the uncertainty metrics
-            if model.model_type in [ModelType.UQ_REGRESSOR]:
+            if model.model_type == ModelType.UQ_REGRESSOR:
                 metrics = uq_metrics(prediction_df, primary_target)
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
@@ -526,7 +528,7 @@ class EndpointCore(Artifact):
         # For UQ models, get UQ columns from training CV results and compute metrics
         # Note: XGBoost training now saves all UQ columns (q_*, confidence, prediction_std)
         additional_columns = []
-        if model.model_framework == ModelFramework.XGBOOST and model_type == ModelType.UQ_REGRESSOR:
+        if model_type == ModelType.UQ_REGRESSOR:
             uq_columns = [col for col in out_of_fold_df.columns if col.startswith("q_") or col == "confidence"]
             if uq_columns:
                 additional_columns = uq_columns
@@ -539,8 +541,10 @@ class EndpointCore(Artifact):
         target_list = targets if isinstance(targets, list) else [targets]
         primary_target = target_list[0]
 
-        # Save results for each target as cv_{target}
-        # Also save primary target as "full_cross_fold" for backward compatibility
+        # For single-target models (99% of cases), just save as "full_cross_fold"
+        # For multi-target models, save each as cv_{target} plus primary as "full_cross_fold"
+        is_multi_target = len(target_list) > 1
+
         for target in target_list:
             # Drop rows with NaN target values for metrics/plots
             target_df = out_of_fold_df.dropna(subset=[target])
@@ -553,21 +557,22 @@ class EndpointCore(Artifact):
             else:
                 target_metrics = pd.DataFrame()
 
-            # Save as cv_{target}
-            capture_name = f"cv_{target}"
-            description = capture_name.replace("_", " ").title()
-            self._capture_inference_results(
-                capture_name,
-                target_df,
-                target,
-                model_type,
-                target_metrics,
-                description,
-                features=additional_columns,
-                id_column=id_column,
-            )
+            if is_multi_target:
+                # Multi-target: save as cv_{target}
+                capture_name = f"cv_{target}"
+                description = capture_name.replace("_", " ").title()
+                self._capture_inference_results(
+                    capture_name,
+                    target_df,
+                    target,
+                    model_type,
+                    target_metrics,
+                    description,
+                    features=additional_columns,
+                    id_column=id_column,
+                )
 
-            # Also save primary target as "full_cross_fold" for backward compatibility
+            # Save primary target (or single target) as "full_cross_fold"
             if target == primary_target:
                 self._capture_inference_results(
                     "full_cross_fold",
