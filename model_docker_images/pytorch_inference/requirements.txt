@@ -5,10 +5,11 @@
 torch==2.9.1
 pandas==2.3.3
 awswrangler==3.14.0
+lightgbm==4.6.0
 pytorch-tabular==1.1.1
 requests==2.32.5  # Needed by PyTorch-Tabular
-joblib==1.5.2
-fastapi==0.122.0  # FastAPI for serving the model
-uvicorn==0.38.0   # ASGI server for running FastAPI
+joblib==1.5.3
 chemprop==2.2.1   # Message Passing Neural Networks for molecular property prediction
-rdkit==2025.9.1   # Cheminformatics toolkit for SMILES processing
+rdkit==2025.9.3   # Cheminformatics toolkit for SMILES processing
+fastapi==0.126.0  # FastAPI for serving the model
+uvicorn==0.38.0   # ASGI server for running FastAPI
