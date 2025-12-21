@@ -41,6 +41,13 @@ from model_script_utils import (
     print_confusion_matrix,
     print_regression_metrics,
 )
+from uq_harness import (
+    compute_confidence,
+    load_uq_models,
+    predict_intervals,
+    save_uq_models,
+    train_uq_models,
+)
 
 # =============================================================================
 # Default Hyperparameters
@@ -111,7 +118,18 @@ def model_fn(model_dir: str) -> dict:
         torch.load = original_torch_load
         os.chdir(original_cwd)
 
-    return {"ensemble_models": ensemble_models, "n_ensemble": n_ensemble}
+    # Load UQ models (regression only)
+    uq_models, uq_metadata = None, None
+    uq_path = os.path.join(model_dir, "uq_metadata.json")
+    if os.path.exists(uq_path):
+        uq_models, uq_metadata = load_uq_models(model_dir)
+
+    return {
+        "ensemble_models": ensemble_models,
+        "n_ensemble": n_ensemble,
+        "uq_models": uq_models,
+        "uq_metadata": uq_metadata,
+    }
 
 
 # =============================================================================
@@ -126,6 +144,8 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 
     # Load artifacts
     ensemble_models = model_dict["ensemble_models"]
+    uq_models = model_dict.get("uq_models")
+    uq_metadata = model_dict.get("uq_metadata")
     with open(os.path.join(model_dir, "feature_columns.json")) as f:
         features = json.load(f)
     with open(os.path.join(model_dir, "category_mappings.json")) as f:
@@ -200,6 +220,17 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         # Regression
         predictions = preds
         df.loc[~missing_mask, "prediction_std"] = preds_std
+
+        # Add UQ intervals if available
+        if uq_models and uq_metadata:
+            X_complete = complete_df[features]
+            df_complete = df.loc[~missing_mask].copy()
+            df_complete = predict_intervals(df_complete, X_complete, uq_models, uq_metadata)
+            df_complete = compute_confidence(df_complete, uq_metadata["median_interval_width"], "q_10", "q_90")
+            # Copy UQ columns back to main dataframe
+            for col in df_complete.columns:
+                if col.startswith("q_") or col == "confidence":
+                    df.loc[~missing_mask, col] = df_complete[col].values
 
     df.loc[~missing_mask, "prediction"] = predictions
     return df
@@ -418,6 +449,16 @@ if __name__ == "__main__":
         else:
             df_val["prediction_std"] = 0.0
 
+        # Train UQ models for uncertainty quantification
+        print("\n" + "=" * 50)
+        print("Training UQ Models")
+        print("=" * 50)
+        uq_models, uq_metadata = train_uq_models(
+            all_df[features], all_df[target], df_val[features], y_true
+        )
+        df_val = predict_intervals(df_val, df_val[features], uq_models, uq_metadata)
+        df_val = compute_confidence(df_val, uq_metadata["median_interval_width"])
+
     # -------------------------------------------------------------------------
     # Save validation predictions to S3
     # -------------------------------------------------------------------------
@@ -428,6 +469,7 @@ if __name__ == "__main__":
 
     if model_type != "classifier":
         output_columns.append("prediction_std")
+        output_columns += [c for c in df_val.columns if c.startswith("q_") or c == "confidence"]
 
     output_columns += [c for c in df_val.columns if c.endswith("_proba")]
 
@@ -453,5 +495,8 @@ if __name__ == "__main__":
 
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
+
+    if model_type != "classifier":
+        save_uq_models(uq_models, uq_metadata, args.model_dir)
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")
