@@ -49,11 +49,14 @@ class FeatureScaler:
 
     def save(self, path: str) -> None:
         """Save scaler parameters."""
-        joblib.dump({
-            "means": self.means.tolist(),
-            "stds": self.stds.tolist(),
-            "feature_names": self.feature_names,
-        }, path)
+        joblib.dump(
+            {
+                "means": self.means.tolist(),
+                "stds": self.stds.tolist(),
+                "feature_names": self.feature_names,
+            },
+            path,
+        )
 
     @classmethod
     def load(cls, path: str) -> "FeatureScaler":
