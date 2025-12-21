@@ -476,8 +476,8 @@ class EndpointCore(Artifact):
                         id_column,
                     )
 
-            # For UQ Models we also capture the uncertainty metrics
-            if model.model_type == ModelType.UQ_REGRESSOR:
+            # Capture uncertainty metrics if prediction_std is available (UQ, ChemProp, etc.)
+            if "prediction_std" in prediction_df.columns:
                 metrics = uq_metrics(prediction_df, primary_target)
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
@@ -525,21 +525,19 @@ class EndpointCore(Artifact):
         fs = FeatureSetCore(model.get_input())
         id_column = fs.id_column
 
-        # For UQ models, get UQ columns from training CV results and compute metrics
-        # Note: XGBoost training now saves all UQ columns (q_*, confidence, prediction_std)
-        additional_columns = []
-        if model_type == ModelType.UQ_REGRESSOR:
-            uq_columns = [col for col in out_of_fold_df.columns if col.startswith("q_") or col == "confidence"]
-            if uq_columns:
-                additional_columns = uq_columns
-                self.log.info(f"UQ columns from training: {', '.join(uq_columns)}")
-                primary_target = targets[0] if isinstance(targets, list) else targets
-                metrics = uq_metrics(out_of_fold_df, primary_target)
-                self.param_store.upsert(f"/workbench/models/{model.name}/inference/full_cross_fold", metrics)
-
         # Normalize targets to a list for iteration
         target_list = targets if isinstance(targets, list) else [targets]
         primary_target = target_list[0]
+
+        # Collect UQ columns (q_*, confidence) for additional tracking
+        additional_columns = [col for col in out_of_fold_df.columns if col.startswith("q_") or col == "confidence"]
+        if additional_columns:
+            self.log.info(f"UQ columns from training: {', '.join(additional_columns)}")
+
+        # Capture uncertainty metrics if prediction_std is available (UQ, ChemProp, etc.)
+        if "prediction_std" in out_of_fold_df.columns:
+            metrics = uq_metrics(out_of_fold_df, primary_target)
+            self.param_store.upsert(f"/workbench/models/{model.name}/inference/full_cross_fold", metrics)
 
         # For single-target models (99% of cases), just save as "full_cross_fold"
         # For multi-target models, save each as cv_{target} plus primary as "full_cross_fold"
