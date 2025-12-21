@@ -6,6 +6,7 @@ torch==2.9.1
 pandas==2.3.3
 awswrangler==3.14.0
 lightgbm==4.6.0
+mapie==1.2.0
 pytorch-tabular==1.1.1
 requests==2.32.5  # Needed by PyTorch-Tabular
 joblib==1.5.3
