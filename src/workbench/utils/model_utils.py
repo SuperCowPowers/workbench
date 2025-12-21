@@ -316,6 +316,13 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     if "prediction" not in df.columns:
         raise ValueError("Prediction column 'prediction' not found in DataFrame.")
 
+    # Drop rows with NaN predictions (e.g., from models that can't handle missing features)
+    n_total = len(df)
+    df = df.dropna(subset=["prediction", target_col])
+    n_valid = len(df)
+    if n_valid < n_total:
+        log.info(f"UQ metrics: dropped {n_total - n_valid} rows with NaN predictions")
+
     # --- Coverage and Interval Width ---
     if "q_025" in df.columns and "q_975" in df.columns:
         lower_95, upper_95 = df["q_025"], df["q_975"]
