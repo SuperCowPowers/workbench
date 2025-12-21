@@ -13,9 +13,6 @@ COPY requirements.txt /tmp/
 # Install dependencies
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# MAPIE complains about Python 3.12, install with ignore flag
-RUN pip install --no-cache-dir --ignore-requires-python mapie
-
 # Copy the SageMaker entrypoint script
 COPY sagemaker_entrypoint.py /opt/program/
 WORKDIR /opt/program
