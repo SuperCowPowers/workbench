@@ -46,10 +46,9 @@ class TabularMLP(nn.Module):
         self.categorical_cardinalities = categorical_cardinalities
 
         # Embedding layers for categorical features
-        self.embeddings = nn.ModuleList([
-            nn.Embedding(n_cats, emb_dim)
-            for n_cats, emb_dim in zip(categorical_cardinalities, embedding_dims)
-        ])
+        self.embeddings = nn.ModuleList(
+            [nn.Embedding(n_cats, emb_dim) for n_cats, emb_dim in zip(categorical_cardinalities, embedding_dims)]
+        )
 
         # Calculate input dimension
         total_emb_dim = sum(embedding_dims)
