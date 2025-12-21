@@ -1,8 +1,7 @@
 import pandas as pd
 import numpy as np
 from xgboost import XGBRegressor
-from sklearn.preprocessing import StandardScaler
-from typing import List, Optional
+from typing import List
 import logging
 
 from workbench.algorithms.dataframe.proximity import Proximity
@@ -182,9 +181,11 @@ class NoiseModel:
         if len(coincident) == 0:
             return pd.DataFrame(columns=[self.id_column, self.target, "nn_id", "nn_target", "nn_target_diff"])
 
-        return coincident[
-            [self.id_column, self.target, "nn_id", "nn_target", "nn_target_diff", "noise_score"]
-        ].sort_values("nn_target_diff", ascending=False).reset_index(drop=True)
+        return (
+            coincident[[self.id_column, self.target, "nn_id", "nn_target", "nn_target_diff", "noise_score"]]
+            .sort_values("nn_target_diff", ascending=False)
+            .reset_index(drop=True)
+        )
 
     def _validate_features(self, df: pd.DataFrame, features: List[str]) -> List[str]:
         """Remove non-numeric features and log warnings."""
@@ -335,7 +336,8 @@ if __name__ == "__main__":
     # Check if our artificially noisy samples are detected
     noisy_ids = [f"sample_{i}" for i in range(90, 100)]
     detected = scores[scores["ID"].isin(noisy_ids)]
-    print(f"\nOf 10 artificially noisy samples, {len(detected[detected['noise_score'] > scores['noise_score'].median()])} detected above median noise score")
+    median_score = scores["noise_score"].median()
+    print(f"\nOf 10 noisy samples, {len(detected[detected['noise_score'] > median_score])} above median noise score")
 
     # Get sample weights
     print("\nSample weights (inverse strategy):")
