@@ -106,7 +106,7 @@ class ModelToEndpoint(Transform):
             from workbench.api import ModelFramework
 
             self.log.info(f"Model Framework: {workbench_model.model_framework}")
-            if workbench_model.model_framework in [ModelFramework.PYTORCH_TABULAR, ModelFramework.CHEMPROP]:
+            if workbench_model.model_framework in [ModelFramework.PYTORCH, ModelFramework.CHEMPROP]:
                 if mem_size < 4096:
                     self.log.important(
                         f"{workbench_model.model_framework} needs at least 4GB of memory (setting to 4GB)"

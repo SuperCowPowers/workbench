@@ -106,7 +106,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         pytorch_model = fs.to_model(
             name=pytorch_model_name,
             model_type=ModelType.UQ_REGRESSOR,
-            model_framework=ModelFramework.PYTORCH_TABULAR,
+            model_framework=ModelFramework.PYTORCH,
             target_column=target,
             feature_list=non_zero_shap,
             description=f"PyTorch Tabular model for {base_name} prediction",

@@ -44,7 +44,7 @@ class ModelFramework(Enum):
     SKLEARN = "sklearn"
     XGBOOST = "xgboost"
     LIGHTGBM = "lightgbm"
-    PYTORCH_TABULAR = "pytorch_tabular"
+    PYTORCH = "pytorch"
     CHEMPROP = "chemprop"
     TRANSFORMER = "transformer"
     UNKNOWN = "unknown"

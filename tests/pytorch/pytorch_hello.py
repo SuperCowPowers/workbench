@@ -10,16 +10,6 @@ from sklearn.metrics import (
     root_mean_squared_error,
 )
 
-# Import pytorch-tabular components
-# Set this before importing any PyTorch-related modules to fix weight loading issues
-os.environ["TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD"] = "1"
-import pytest  # noqa: E402
-
-pytest.skip("skipping this entire module for now", allow_module_level=True)
-from pytorch_tabular import TabularModel  # noqa: E402
-from pytorch_tabular.models import TabNetModelConfig, CategoryEmbeddingModelConfig  # noqa: E402
-from pytorch_tabular.config import DataConfig, OptimizerConfig, TrainerConfig  # noqa: E402
-
 
 def process_predictions(result, target_name, label_encoder=None, model_type="classifier"):
     """

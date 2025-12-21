@@ -496,7 +496,7 @@ class EndpointCore(Artifact):
         # For PyTorch and ChemProp, pull pre-computed CV results from training
         if model.model_framework in [ModelFramework.UNKNOWN, ModelFramework.XGBOOST]:
             cross_fold_metrics, out_of_fold_df = xgboost_pull_cv(model)
-        elif model.model_framework == ModelFramework.PYTORCH_TABULAR:
+        elif model.model_framework == ModelFramework.PYTORCH:
             cross_fold_metrics, out_of_fold_df = pytorch_pull_cv(model)
         elif model.model_framework == ModelFramework.CHEMPROP:
             cross_fold_metrics, out_of_fold_df = chemprop_pull_cv(model)

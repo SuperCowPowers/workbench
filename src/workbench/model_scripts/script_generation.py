@@ -110,7 +110,7 @@ def generate_model_script(template_params: dict) -> str:
     if template_params.get("model_class"):
         template_name = "scikit_learn.template"
         model_script_dir = "scikit_learn"
-    elif template_params["model_framework"] == ModelFramework.PYTORCH_TABULAR:
+    elif template_params["model_framework"] == ModelFramework.PYTORCH:
         template_name = "pytorch.template"
         model_script_dir = "pytorch_model"
     elif template_params["model_framework"] == ModelFramework.CHEMPROP:
