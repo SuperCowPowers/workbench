@@ -21,7 +21,7 @@ from workbench.utils.aws_utils import newest_path, pull_s3_data
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.shap_utils import shap_values_data, shap_feature_importance
 from workbench.utils.deprecated_utils import deprecated
-from workbench.utils.model_utils import proximity_model, get_model_hyperparameters
+from workbench.utils.model_utils import published_proximity_model, get_model_hyperparameters
 
 
 class ModelType(Enum):
@@ -906,7 +906,7 @@ class ModelCore(Artifact):
         """
         if prox_model_name is None:
             prox_model_name = self.model_name + "-prox"
-        return proximity_model(self, prox_model_name, track_columns=track_columns)
+        return published_proximity_model(self, prox_model_name, track_columns=track_columns)
 
     def delete(self):
         """Delete the Model Packages and the Model Group"""

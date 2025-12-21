@@ -125,8 +125,40 @@ def proximity_model_local(model: "Model"):
     return Proximity(full_df, id_column, features, target, track_columns=features)
 
 
-def proximity_model(model: "Model", prox_model_name: str, track_columns: list = None) -> "Model":
-    """Create a proximity model based on the given model
+def noise_model_local(model: "Model"):
+    """Create a NoiseModel for detecting noisy/problematic samples in a Model's training data.
+
+    Args:
+        model (Model): The Model used to create the noise model
+
+    Returns:
+        NoiseModel: The noise model with precomputed noise scores for all samples
+    """
+    from workbench.algorithms.models.noise_model import NoiseModel  # noqa: F401 (avoid circular import)
+    from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
+
+    # Get Feature and Target Columns from the existing given Model
+    features = model.features()
+    target = model.target()
+
+    # Backtrack our FeatureSet to get the ID column
+    fs = FeatureSet(model.get_input())
+    id_column = fs.id_column
+
+    # Create the NoiseModel from both the full FeatureSet and the Model training data
+    full_df = fs.pull_dataframe()
+    model_df = model.training_view().pull_dataframe()
+
+    # Mark rows that are in the model
+    model_ids = set(model_df[id_column])
+    full_df["in_model"] = full_df[id_column].isin(model_ids)
+
+    # Create and return the NoiseModel
+    return NoiseModel(full_df, id_column, features, target)
+
+
+def published_proximity_model(model: "Model", prox_model_name: str, track_columns: list = None) -> "Model":
+    """Create a published proximity model based on the given model
 
     Args:
         model (Model): The model to create the proximity model from

@@ -10,7 +10,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework  # noqa: F401
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from workbench.api.endpoint import Endpoint
-from workbench.utils.model_utils import proximity_model_local
+from workbench.utils.model_utils import proximity_model_local, noise_model_local
 
 
 class Model(ModelCore):
@@ -90,6 +90,14 @@ class Model(ModelCore):
            Proximity: A local Proximity Model
         """
         return proximity_model_local(self)
+
+    def noise_model(self):
+        """Create a local Noise Model for this Model
+
+        Returns:
+           NoiseModel: A local Noise Model
+        """
+        return noise_model_local(self)
 
 
 if __name__ == "__main__":
