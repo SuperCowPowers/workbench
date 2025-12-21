@@ -8,11 +8,62 @@ import json
 import os
 from typing import Optional
 
+import joblib
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
+
+
+class FeatureScaler:
+    """Standard scaler for continuous features (zero mean, unit variance)."""
+
+    def __init__(self):
+        self.means: Optional[np.ndarray] = None
+        self.stds: Optional[np.ndarray] = None
+        self.feature_names: Optional[list[str]] = None
+
+    def fit(self, df: pd.DataFrame, continuous_cols: list[str]) -> "FeatureScaler":
+        """Fit the scaler on training data."""
+        self.feature_names = continuous_cols
+        data = df[continuous_cols].values.astype(np.float32)
+        self.means = np.nanmean(data, axis=0)
+        self.stds = np.nanstd(data, axis=0)
+        # Avoid division by zero for constant features
+        self.stds[self.stds == 0] = 1.0
+        return self
+
+    def transform(self, df: pd.DataFrame) -> np.ndarray:
+        """Transform data using fitted parameters."""
+        data = df[self.feature_names].values.astype(np.float32)
+        # Fill NaN with mean before scaling
+        for i, mean in enumerate(self.means):
+            data[np.isnan(data[:, i]), i] = mean
+        return (data - self.means) / self.stds
+
+    def fit_transform(self, df: pd.DataFrame, continuous_cols: list[str]) -> np.ndarray:
+        """Fit and transform in one step."""
+        self.fit(df, continuous_cols)
+        return self.transform(df)
+
+    def save(self, path: str) -> None:
+        """Save scaler parameters."""
+        joblib.dump({
+            "means": self.means.tolist(),
+            "stds": self.stds.tolist(),
+            "feature_names": self.feature_names,
+        }, path)
+
+    @classmethod
+    def load(cls, path: str) -> "FeatureScaler":
+        """Load scaler from saved parameters."""
+        data = joblib.load(path)
+        scaler = cls()
+        scaler.means = np.array(data["means"], dtype=np.float32)
+        scaler.stds = np.array(data["stds"], dtype=np.float32)
+        scaler.feature_names = data["feature_names"]
+        return scaler
 
 
 class TabularMLP(nn.Module):
@@ -104,7 +155,8 @@ def prepare_data(
     categorical_cols: list[str],
     target_col: Optional[str] = None,
     category_mappings: Optional[dict] = None,
-) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor], dict]:
+    scaler: Optional[FeatureScaler] = None,
+) -> tuple[torch.Tensor, Optional[torch.Tensor], Optional[torch.Tensor], dict, Optional[FeatureScaler]]:
     """Prepare dataframe for model input.
 
     Args:
@@ -113,12 +165,18 @@ def prepare_data(
         categorical_cols: List of categorical feature column names
         target_col: Target column name (optional, for training)
         category_mappings: Existing category mappings (for inference)
+        scaler: Existing FeatureScaler (for inference), or None to fit a new one
 
     Returns:
-        Tuple of (x_cont, x_cat, y, category_mappings)
+        Tuple of (x_cont, x_cat, y, category_mappings, scaler)
     """
-    # Continuous features
-    x_cont = torch.tensor(df[continuous_cols].values, dtype=torch.float32)
+    # Continuous features with standardization
+    if scaler is None:
+        scaler = FeatureScaler()
+        cont_data = scaler.fit_transform(df, continuous_cols)
+    else:
+        cont_data = scaler.transform(df)
+    x_cont = torch.tensor(cont_data, dtype=torch.float32)
 
     # Categorical features
     x_cat = None
@@ -145,7 +203,7 @@ def prepare_data(
         if len(y.shape) == 1:
             y = y.unsqueeze(1)
 
-    return x_cont, x_cat, y, category_mappings
+    return x_cont, x_cat, y, category_mappings, scaler
 
 
 def create_model(

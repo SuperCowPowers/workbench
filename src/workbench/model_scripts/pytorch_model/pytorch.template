@@ -18,6 +18,9 @@ import torch
 from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
 from sklearn.preprocessing import LabelEncoder
 
+# Enable Tensor Core optimization for GPUs that support it
+torch.set_float32_matmul_precision("medium")
+
 from model_script_utils import (
     check_dataframe,
     compute_classification_metrics,
@@ -33,6 +36,7 @@ from model_script_utils import (
     print_regression_metrics,
 )
 from pytorch_utils import (
+    FeatureScaler,
     create_model,
     load_model,
     predict,
@@ -103,6 +107,9 @@ def model_fn(model_dir: str) -> dict:
 
     print(f"Loaded {len(ensemble_models)} model(s)")
 
+    # Load feature scaler
+    scaler = FeatureScaler.load(os.path.join(model_dir, "scaler.joblib"))
+
     # Load UQ models (regression only)
     uq_models, uq_metadata = None, None
     uq_path = os.path.join(model_dir, "uq_metadata.json")
@@ -112,6 +119,7 @@ def model_fn(model_dir: str) -> dict:
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": n_ensemble,
+        "scaler": scaler,
         "uq_models": uq_models,
         "uq_metadata": uq_metadata,
     }
@@ -128,6 +136,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 
     # Load artifacts
     ensemble_models = model_dict["ensemble_models"]
+    scaler = model_dict["scaler"]
     uq_models = model_dict.get("uq_models")
     uq_metadata = model_dict.get("uq_metadata")
 
@@ -171,9 +180,9 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         print("Warning: No complete rows to predict on")
         return df
 
-    # Prepare data for inference
-    x_cont, x_cat, _, _ = prepare_data(
-        complete_df, continuous_cols, categorical_cols, category_mappings=category_mappings
+    # Prepare data for inference (with standardization)
+    x_cont, x_cat, _, _, _ = prepare_data(
+        complete_df, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
     )
 
     # Collect ensemble predictions
@@ -208,6 +217,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         if uq_models and uq_metadata:
             X_complete = complete_df[features]
             df_complete = df.loc[~missing_mask].copy()
+            df_complete["prediction"] = predictions  # Set prediction before compute_confidence
             df_complete = predict_intervals(df_complete, X_complete, uq_models, uq_metadata)
             df_complete = compute_confidence(df_complete, uq_metadata["median_interval_width"], "q_10", "q_90")
             # Copy UQ columns back to main dataframe
@@ -314,6 +324,11 @@ if __name__ == "__main__":
 
     print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold ensemble'}...")
 
+    # Fit scaler on all training data (used across all folds)
+    scaler = FeatureScaler()
+    scaler.fit(all_df, continuous_cols)
+    print(f"Fitted scaler on {len(continuous_cols)} continuous features")
+
     # Determine device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
@@ -332,12 +347,12 @@ if __name__ == "__main__":
         df_train = all_df.iloc[train_idx].reset_index(drop=True)
         df_val = all_df.iloc[val_idx].reset_index(drop=True)
 
-        # Prepare data
-        train_x_cont, train_x_cat, train_y, _ = prepare_data(
-            df_train, continuous_cols, categorical_cols, target, category_mappings
+        # Prepare data (using pre-fitted scaler)
+        train_x_cont, train_x_cat, train_y, _, _ = prepare_data(
+            df_train, continuous_cols, categorical_cols, target, category_mappings, scaler=scaler
         )
-        val_x_cont, val_x_cat, val_y, _ = prepare_data(
-            df_val, continuous_cols, categorical_cols, target, category_mappings
+        val_x_cont, val_x_cat, val_y, _, _ = prepare_data(
+            df_val, continuous_cols, categorical_cols, target, category_mappings, scaler=scaler
         )
 
         # Create model
@@ -410,8 +425,8 @@ if __name__ == "__main__":
         # Compute ensemble prediction_std
         if n_folds > 1:
             # Re-run inference with all models to get std
-            x_cont, x_cat, _, _ = prepare_data(
-                df_val, continuous_cols, categorical_cols, category_mappings=category_mappings
+            x_cont, x_cat, _, _, _ = prepare_data(
+                df_val, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
             )
             all_preds = [predict(m, x_cont, x_cat).flatten() for m in ensemble_models]
             df_val["prediction_std"] = np.std(np.stack(all_preds), axis=0)
@@ -475,6 +490,8 @@ if __name__ == "__main__":
 
     with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
         json.dump(hyperparameters, f, indent=2)
+
+    scaler.save(os.path.join(args.model_dir, "scaler.joblib"))
 
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
