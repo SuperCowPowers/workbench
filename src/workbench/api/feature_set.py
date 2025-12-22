@@ -170,7 +170,9 @@ class FeatureSet(FeatureSetCore):
         full_df = self.pull_dataframe()
 
         # Create and return the FeatureSpaceProximity Model
-        return FeatureSpaceProximity(full_df, id_column=self.id_column, features=features, target=target, track_columns=features)
+        return FeatureSpaceProximity(
+            full_df, id_column=self.id_column, features=features, target=target, track_columns=features
+        )
 
 
 if __name__ == "__main__":

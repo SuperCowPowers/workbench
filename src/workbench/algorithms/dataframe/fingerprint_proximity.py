@@ -102,7 +102,7 @@ class FingerprintProximity(Proximity):
         """Compute fingerprints from SMILES if needed."""
         # If fingerprint column doesn't exist yet, compute it
         if self.fingerprint_column not in self.df.columns:
-            log.info(f"Computing Morgan fingerprints (radius={self._fp_radius}, n_bits={self._fp_n_bits}, counts={self._fp_counts})...")
+            log.info(f"Computing Morgan fingerprints (radius={self._fp_radius}, n_bits={self._fp_n_bits})...")
             self.df = compute_morgan_fingerprints(
                 self.df, radius=self._fp_radius, n_bits=self._fp_n_bits, counts=self._fp_counts
             )
@@ -240,9 +240,7 @@ if __name__ == "__main__":
     model = Model("aqsol-regression")
     features = model.features()
     df = fs.pull_dataframe()
-    prox = FingerprintProximity(
-        df, id_column=fs.id_column, target=model.target()
-    )
+    prox = FingerprintProximity(df, id_column=fs.id_column, target=model.target())
     print(prox.neighbors(df[fs.id_column].tolist()[:3]))
 
     # Test 6: Visualize the 2D projection

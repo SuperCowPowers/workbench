@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from abc import ABC, abstractmethod
-from sklearn.neighbors import NearestNeighbors
 from typing import List, Dict, Optional, Union
 import logging
 
