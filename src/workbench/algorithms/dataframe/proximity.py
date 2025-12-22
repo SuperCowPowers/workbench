@@ -5,6 +5,9 @@ from sklearn.neighbors import NearestNeighbors
 from typing import List, Dict, Optional, Union
 import logging
 
+# Workbench Imports
+from workbench.algorithms.dataframe.projection_2d import Projection2D
+
 # Set up logging
 log = logging.getLogger("workbench")
 
@@ -48,6 +51,9 @@ class Proximity:
 
         # Precompute landscape metrics
         self._precompute_metrics()
+
+        # Project the data to 2D (often useful for visualization)
+        self.df = Projection2D().fit_transform(self.df, features=self.features)
 
     def isolated(self, top_percent: float = 1.0) -> pd.DataFrame:
         """
@@ -111,13 +117,13 @@ class Proximity:
             threshold = np.percentile(candidates["gradient"], percentile)
             candidates = candidates[candidates["gradient"] >= threshold].copy()
 
-        # Phase 2: Verify with k-neighbor median to filter out cases where nearest neighbor is the outlier
+        # Phase 2: Verify with K-neighbor median to filter out cases where nearest neighbor is the outlier
         results = []
         for _, row in candidates.iterrows():
             cmpd_id = row[self.id_column]
             cmpd_target = row[self.target]
 
-            # Get k nearest neighbors (excluding self)
+            # Get K nearest neighbors (excluding self)
             nbrs = self.neighbors(cmpd_id, n_neighbors=k_neighbors, include_self=False)
 
             # Calculate median target of k neighbors, excluding the nearest neighbor (index 0)
@@ -146,10 +152,12 @@ class Proximity:
                 columns=[
                     self.id_column,
                     self.target,
+                    "nn_target",
+                    "nn_target_diff",
+                    "nn_distance",
+                    "gradient",
                     "neighbor_median",
                     "neighbor_median_diff",
-                    "mean_distance",
-                    "gradient",
                 ]
             )
 
@@ -397,7 +405,7 @@ if __name__ == "__main__":
     print(f"\nTop 1% target gradients (min_delta=5.0) (n={len(gradients_1pct)}):")
     print(
         gradients_1pct[
-            [fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "mean_distance", "gradient"]
+            [fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "gradient"]
         ].head(10)
     )
 
@@ -405,6 +413,16 @@ if __name__ == "__main__":
     print(f"\nTop 5% target gradients (min_delta=5.0) (n={len(gradients_5pct)}):")
     print(
         gradients_5pct[
-            [fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "mean_distance", "gradient"]
+            [fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "gradient"]
         ].head(10)
     )
+
+    # Show a scatter plot of the data
+    """
+    from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
+    from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
+
+    # Run the Unit Test on the Plugin using the new DataFrame with 'x' and 'y'
+    unit_test = PluginUnitTest(ScatterPlot, input_data=prox.df, x="x", y="y")
+    unit_test.run()
+    """

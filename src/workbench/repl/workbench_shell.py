@@ -302,11 +302,6 @@ class WorkbenchShell:
             self.commands["PandasToView"] = importlib.import_module("workbench.core.views.pandas_to_view").PandasToView
             self.commands["Pipeline"] = importlib.import_module("workbench.api.pipeline").Pipeline
 
-            # Algorithms
-            self.commands["FSP"] = importlib.import_module(
-                "workbench.algorithms.dataframe.feature_space_proximity"
-            ).FeatureSpaceProximity
-
             # These are 'nice to have' imports
             self.commands["pd"] = importlib.import_module("pandas")
             self.commands["wr"] = importlib.import_module("awswrangler")
