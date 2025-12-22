@@ -4,9 +4,13 @@ import logging
 import pandas as pd
 
 # Molecular Descriptor Imports
-from rdkit import Chem
+from rdkit import Chem, RDLogger
 from rdkit.Chem import rdFingerprintGenerator
 from rdkit.Chem.MolStandardize import rdMolStandardize
+
+# Suppress RDKit warnings (e.g., "not removing hydrogen atom without neighbors")
+# Keep errors enabled so we see actual problems
+RDLogger.DisableLog("rdApp.warning")
 
 # Set up the logger
 log = logging.getLogger("workbench")
@@ -47,8 +51,8 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius=2, n_bits=2048, counts=
         # Make sure our molecules are not None
         failed_smiles = df[df["molecule"].isnull()][smiles_column].tolist()
         if failed_smiles:
-            log.error(f"Failed to convert the following SMILES to molecules: {failed_smiles}")
-        df = df.dropna(subset=["molecule"])
+            log.warning(f"Failed to convert {len(failed_smiles)} SMILES to molecules ({failed_smiles})")
+        df = df.dropna(subset=["molecule"]).copy()
 
     # If we have fragments in our compounds, get the largest fragment before computing fingerprints
     largest_frags = df["molecule"].apply(

@@ -22,7 +22,14 @@ class Projection2D:
         self.log = logging.getLogger("workbench")
         self.projection_model = None
 
-    def fit_transform(self, input_df: pd.DataFrame, features: list = None, projection: str = "UMAP") -> pd.DataFrame:
+    def fit_transform(
+        self,
+        input_df: pd.DataFrame,
+        features: list = None,
+        feature_matrix: np.ndarray = None,
+        metric: str = "euclidean",
+        projection: str = "UMAP",
+    ) -> pd.DataFrame:
         """Fit and transform a DataFrame using the selected dimensionality reduction method.
 
         This method creates a copy of the input DataFrame, processes the specified features
@@ -32,6 +39,9 @@ class Projection2D:
         Args:
             input_df (pd.DataFrame): The DataFrame containing features to project.
             features (list, optional): List of feature column names. If None, numeric columns are auto-selected.
+            feature_matrix (np.ndarray, optional): Pre-computed feature matrix. If provided, features is ignored
+                and no scaling is applied (caller is responsible for appropriate preprocessing).
+            metric (str, optional): Distance metric for UMAP (e.g., 'euclidean', 'jaccard'). Default 'euclidean'.
             projection (str, optional): The projection to use ('UMAP', 'TSNE', 'MDS' or 'PCA'). Default 'UMAP'.
 
         Returns:
@@ -40,36 +50,44 @@ class Projection2D:
         # Create a copy of the input DataFrame
         df = input_df.copy()
 
-        # Auto-identify numeric features if none are provided
-        if features is None:
-            features = [col for col in df.select_dtypes(include="number").columns if not col.endswith("id")]
-            self.log.info(f"Auto-identified numeric features: {features}")
+        # If a feature matrix is provided, use it directly (no scaling)
+        if feature_matrix is not None:
+            if len(feature_matrix) != len(df):
+                self.log.critical("feature_matrix length must match DataFrame length.")
+                return df
+            X_processed = feature_matrix
+        else:
+            # Auto-identify numeric features if none are provided
+            if features is None:
+                features = [col for col in df.select_dtypes(include="number").columns if not col.endswith("id")]
+                self.log.info(f"Auto-identified numeric features: {features}")
 
-        if len(features) < 2 or df.empty:
-            self.log.critical("At least two numeric features are required, and DataFrame must not be empty.")
-            return df
+            if len(features) < 2 or df.empty:
+                self.log.critical("At least two numeric features are required, and DataFrame must not be empty.")
+                return df
 
-        # Process a copy of the feature data for projection
-        X = df[features]
-        X = X.apply(lambda col: col.fillna(col.mean()))
-        X_scaled = StandardScaler().fit_transform(X)
+            # Process a copy of the feature data for projection
+            X = df[features]
+            X = X.apply(lambda col: col.fillna(col.mean()))
+            X_processed = StandardScaler().fit_transform(X)
 
         # Select the projection method (using df for perplexity calculation)
-        self.projection_model = self._get_projection_model(projection, df)
+        self.projection_model = self._get_projection_model(projection, df, metric=metric)
 
-        # Apply the projection on the normalized data
-        projection_result = self.projection_model.fit_transform(X_scaled)
+        # Apply the projection on the processed data
+        projection_result = self.projection_model.fit_transform(X_processed)
         df[["x", "y"]] = projection_result
 
         # Resolve coincident points and return the new DataFrame
         return self.resolve_coincident_points(df)
 
-    def _get_projection_model(self, projection: str, df: pd.DataFrame):
+    def _get_projection_model(self, projection: str, df: pd.DataFrame, metric: str = "euclidean"):
         """Select and return the appropriate projection model.
 
         Args:
             projection (str): The projection method ('TSNE', 'MDS', 'PCA', or 'UMAP').
             df (pd.DataFrame): The DataFrame being transformed (used for computing perplexity).
+            metric (str): Distance metric for UMAP (default 'euclidean').
 
         Returns:
             A dimensionality reduction model instance.
@@ -88,8 +106,8 @@ class Projection2D:
             return PCA(n_components=2)
 
         if projection == "UMAP" and UMAP_AVAILABLE:
-            self.log.info("Projection: UMAP")
-            return umap.UMAP(n_components=2)
+            self.log.info(f"Projection: UMAP with metric={metric}")
+            return umap.UMAP(n_components=2, metric=metric)
 
         self.log.warning(
             f"Projection method '{projection}' not recognized or UMAP not available. Falling back to TSNE."

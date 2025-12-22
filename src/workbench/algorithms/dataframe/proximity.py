@@ -1,18 +1,17 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+from abc import ABC, abstractmethod
 from sklearn.neighbors import NearestNeighbors
 from typing import List, Dict, Optional, Union
 import logging
-
-# Workbench Imports
-from workbench.algorithms.dataframe.projection_2d import Projection2D
 
 # Set up logging
 log = logging.getLogger("workbench")
 
 
-class Proximity:
+class Proximity(ABC):
+    """Abstract base class for proximity/neighbor computations."""
+
     def __init__(
         self,
         df: pd.DataFrame,
@@ -32,28 +31,48 @@ class Proximity:
             track_columns: Additional columns to track in results. Defaults to None.
         """
         self.id_column = id_column
+        self.features = features
         self.target = target
         self.track_columns = track_columns or []
 
-        # Filter out non-numeric features
-        self.features = self._validate_features(df, features)
+        # Store the DataFrame (subclasses may filter/modify in _prepare_data)
+        self.df = df.copy()
 
-        # Drop NaN rows and set up DataFrame
-        self.df = df.dropna(subset=self.features).copy()
+        # Prepare data (subclasses can override)
+        self._prepare_data()
 
         # Compute target range if target is provided
         self.target_range = None
         if self.target and self.target in self.df.columns:
             self.target_range = self.df[self.target].max() - self.df[self.target].min()
 
-        # Build the proximity model
+        # Build the proximity model (subclass-specific)
         self._build_model()
 
         # Precompute landscape metrics
         self._precompute_metrics()
 
-        # Project the data to 2D (often useful for visualization)
-        self.df = Projection2D().fit_transform(self.df, features=self.features)
+        # Project the data to 2D (subclass-specific)
+        self._project_2d()
+
+    def _prepare_data(self) -> None:
+        """Prepare the data before building the model. Subclasses can override."""
+        pass
+
+    @abstractmethod
+    def _build_model(self) -> None:
+        """Build the proximity model. Must set self.nn (NearestNeighbors instance)."""
+        pass
+
+    @abstractmethod
+    def _transform_features(self, df: pd.DataFrame) -> np.ndarray:
+        """Transform features for querying. Returns feature matrix for nearest neighbor lookup."""
+        pass
+
+    @abstractmethod
+    def _project_2d(self) -> None:
+        """Project the data to 2D for visualization. Updates self.df with 'x' and 'y' columns."""
+        pass
 
     def isolated(self, top_percent: float = 1.0) -> pd.DataFrame:
         """
@@ -196,8 +215,8 @@ class Proximity:
         query_df = self.df[self.df[self.id_column].isin(ids)]
         query_df = query_df.set_index(self.id_column).loc[ids].reset_index()
 
-        # Transform query features
-        X_query = self.scaler.transform(query_df[self.features])
+        # Transform query features (subclass-specific)
+        X_query = self._transform_features(query_df)
 
         # Get neighbors
         if radius is not None:
@@ -224,19 +243,6 @@ class Proximity:
         df_results = df_results.sort_values([self.id_column, "is_self", "distance"], ascending=[True, False, True])
         return df_results.drop("is_self", axis=1).reset_index(drop=True)
 
-    def _validate_features(self, df: pd.DataFrame, features: List[str]) -> List[str]:
-        """Remove non-numeric features and log warnings."""
-        non_numeric = [f for f in features if f not in df.select_dtypes(include=["number"]).columns]
-        if non_numeric:
-            log.warning(f"Non-numeric features {non_numeric} aren't currently supported, excluding them")
-        return [f for f in features if f not in non_numeric]
-
-    def _build_model(self) -> None:
-        """Standardize features and fit Nearest Neighbors model."""
-        self.scaler = StandardScaler()
-        X = self.scaler.fit_transform(self.df[self.features])
-        self.nn = NearestNeighbors().fit(X)
-
     def _precompute_metrics(self, n_neighbors: int = 10) -> None:
         """
         Precompute landscape metrics for all compounds.
@@ -255,7 +261,7 @@ class Proximity:
         n_neighbors = min(n_neighbors, len(self.df) - 1)
 
         # Get nearest neighbors for all points (including self)
-        X = self.scaler.transform(self.df[self.features])
+        X = self._transform_features(self.df)
         distances, indices = self.nn.kneighbors(X, n_neighbors=2)  # Just need nearest neighbor
 
         # Extract nearest neighbor (index 1, since index 0 is self)
@@ -311,114 +317,3 @@ class Proximity:
                 result[col] = neighbor_row[col]
 
         return result
-
-
-# Testing the Proximity class
-if __name__ == "__main__":
-
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.width", 1000)
-
-    # Create a sample DataFrame
-    data = {
-        "ID": [1, 2, 3, 4, 5],
-        "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
-        "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
-        "Feature3": [2.5, 2.4, 2.3, 2.3, np.nan],
-    }
-    df = pd.DataFrame(data)
-
-    # Test the Proximity class
-    features = ["Feature1", "Feature2", "Feature3"]
-    prox = Proximity(df, id_column="ID", features=features)
-    print(prox.neighbors(1, n_neighbors=2))
-
-    # Test the neighbors method with radius
-    print(prox.neighbors(1, radius=2.0))
-
-    # Test with Features list
-    prox = Proximity(df, id_column="ID", features=["Feature1"])
-    print(prox.neighbors(1))
-
-    # Create a sample DataFrame
-    data = {
-        "foo_id": ["a", "b", "c", "d", "e"],  # Testing string IDs
-        "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
-        "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
-        "target": [1, 0, 1, 0, 5],
-    }
-    df = pd.DataFrame(data)
-
-    # Test with String Ids
-    prox = Proximity(
-        df,
-        id_column="foo_id",
-        features=["Feature1", "Feature2"],
-        target="target",
-        track_columns=["Feature1", "Feature2"],
-    )
-    print(prox.neighbors(["a", "b"]))
-
-    # Test duplicate IDs
-    data = {
-        "foo_id": ["a", "b", "c", "d", "d"],  # Duplicate ID (d)
-        "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
-        "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
-        "target": [1, 0, 1, 0, 5],
-    }
-    df = pd.DataFrame(data)
-    prox = Proximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target")
-    print(df.equals(prox.df))
-
-    # Test with a categorical feature
-    from workbench.api import FeatureSet, Model
-
-    fs = FeatureSet("aqsol_features")
-    model = Model("aqsol-regression")
-    features = model.features()
-    df = fs.pull_dataframe()
-    prox = Proximity(
-        df, id_column=fs.id_column, features=model.features(), target=model.target(), track_columns=features
-    )
-    print(prox.neighbors(df[fs.id_column].tolist()[:3]))
-
-    print("\n" + "=" * 80)
-    print("Testing isolated_compounds...")
-    print("=" * 80)
-
-    # Test isolated data in the top 1%
-    isolated_1pct = prox.isolated(top_percent=1.0)
-    print(f"\nTop 1% most isolated compounds (n={len(isolated_1pct)}):")
-    print(isolated_1pct[[fs.id_column, "nn_distance", "nn_id"]].head(10))
-
-    # Test isolated data in the top 5%
-    isolated_5pct = prox.isolated(top_percent=5.0)
-    print(f"\nTop 5% most isolated compounds (n={len(isolated_5pct)}):")
-    print(isolated_5pct[[fs.id_column, "nn_distance", "nn_id"]].head(10))
-
-    print("\n" + "=" * 80)
-    print("Testing target_gradients...")
-    print("=" * 80)
-
-    # Test with different parameters
-    gradients_1pct = prox.target_gradients(top_percent=1.0, min_delta=1.0)
-    print(f"\nTop 1% target gradients (min_delta=5.0) (n={len(gradients_1pct)}):")
-    print(
-        gradients_1pct[[fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "gradient"]].head(10)
-    )
-
-    gradients_5pct = prox.target_gradients(top_percent=5.0, min_delta=5.0)
-    print(f"\nTop 5% target gradients (min_delta=5.0) (n={len(gradients_5pct)}):")
-    print(
-        gradients_5pct[[fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "gradient"]].head(10)
-    )
-
-    # Show a scatter plot of the data
-    """
-    from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
-    from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
-
-    # Run the Unit Test on the Plugin using the new DataFrame with 'x' and 'y'
-    unit_test = PluginUnitTest(ScatterPlot, input_data=prox.df, x="x", y="y")
-    unit_test.run()
-    """
