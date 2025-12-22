@@ -4,7 +4,7 @@ from typing import Union
 import logging
 
 # Workbench Imports
-from workbench.algorithms.dataframe import Proximity
+from workbench.algorithms.dataframe.proximity import Proximity
 from workbench.api.graph_store import GraphStore
 
 # Set up logging
@@ -132,7 +132,7 @@ class ProximityGraph:
 
 
 if __name__ == "__main__":
-    from workbench.algorithms.dataframe.proximity import Proximity
+    from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
     from workbench.api import DFStore
@@ -157,9 +157,9 @@ if __name__ == "__main__":
     }
     feature_df = pd.DataFrame(feature_data)
 
-    # Build a graph using the base Proximity class
-    print("\n--- Proximity Class ---")
-    prox = Proximity(feature_df, id_column="id", features=["Feature1", "Feature2"], target="target")
+    # Build a graph using FeatureSpaceProximity
+    print("\n--- FeatureSpaceProximity Class ---")
+    prox = FeatureSpaceProximity(feature_df, id_column="id", features=["Feature1", "Feature2"], target="target")
     feature_graph = ProximityGraph()
     feature_graph.build_graph(prox)
     nx_graph = feature_graph.nx_graph

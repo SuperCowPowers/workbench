@@ -154,23 +154,23 @@ class FeatureSet(FeatureSetCore):
         # Return the Model
         return Model(name)
 
-    def prox_model(self, target: str, features: list) -> "Proximity":  # noqa: F821
-        """Create a local Proximity Model for this Model
+    def prox_model(self, target: str, features: list) -> "FeatureSpaceProximity":  # noqa: F821
+        """Create a local FeatureSpaceProximity Model for this FeatureSet
 
         Args:
            target (str): The target column name
            features (list): The list of feature column names
 
         Returns:
-           Proximity: A local Proximity Model
+           FeatureSpaceProximity: A local FeatureSpaceProximity Model
         """
-        from workbench.algorithms.dataframe.proximity import Proximity  # noqa: F401 (avoid circular import)
+        from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity  # noqa: F401
 
         # Create the Proximity Model from the full FeatureSet dataframe
         full_df = self.pull_dataframe()
 
-        # Create and return the Proximity Model
-        return Proximity(full_df, self.id_column, features, target, track_columns=features)
+        # Create and return the FeatureSpaceProximity Model
+        return FeatureSpaceProximity(full_df, id_column=self.id_column, features=features, target=target, track_columns=features)
 
 
 if __name__ == "__main__":

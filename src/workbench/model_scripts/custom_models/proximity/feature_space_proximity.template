@@ -18,7 +18,7 @@ import os
 import pandas as pd
 
 # Local Imports
-from proximity import Proximity
+from feature_space_proximity import FeatureSpaceProximity
 
 
 # Function to check if dataframe is empty
@@ -79,8 +79,8 @@ if __name__ == "__main__":
     # Check if the DataFrame is empty
     check_dataframe(all_df, "training_df")
 
-    # Create the Proximity model
-    model = Proximity(all_df, id_column, features, target, track_columns=track_columns)
+    # Create the FeatureSpaceProximity model
+    model = FeatureSpaceProximity(all_df, id_column=id_column, features=features, target=target, track_columns=track_columns)
 
     # Now serialize the model
     model.serialize(args.model_dir)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 def model_fn(model_dir):
 
     # Deserialize the model
-    model = Proximity.deserialize(model_dir)
+    model = FeatureSpaceProximity.deserialize(model_dir)
     return model
 
 

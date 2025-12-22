@@ -4,7 +4,7 @@ from xgboost import XGBRegressor
 from typing import List
 import logging
 
-from workbench.algorithms.dataframe.proximity import Proximity
+from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
 
 # Set up logging
 log = logging.getLogger("workbench")
@@ -228,7 +228,7 @@ class NoiseModel:
 
         # Proximity model for feature space analysis
         log.info("  Building proximity model...")
-        self.proximity = Proximity(
+        self.proximity = FeatureSpaceProximity(
             self.df,
             id_column=self.id_column,
             features=self.features,

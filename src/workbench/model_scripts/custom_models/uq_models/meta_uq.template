@@ -18,7 +18,7 @@ import pandas as pd
 from typing import List, Tuple
 
 # Local Imports
-from proximity import Proximity
+from feature_space_proximity import FeatureSpaceProximity
 
 
 # Template Placeholders
@@ -260,8 +260,8 @@ if __name__ == "__main__":
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
         json.dump(orig_features, fp)  # We save the original features, not the decompressed ones
 
-    # Now the Proximity model
-    model = Proximity(df_train, id_column, features, target, track_columns=track_columns)
+    # Now the FeatureSpaceProximity model
+    model = FeatureSpaceProximity(df_train, id_column=id_column, features=features, target=target, track_columns=track_columns)
 
     # Now serialize the model
     model.serialize(args.model_dir)
@@ -282,7 +282,7 @@ def model_fn(model_dir) -> dict:
     ngb_model = joblib.load(os.path.join(model_dir, "ngb_model.joblib"))
 
     # Deserialize the proximity model
-    prox_model = Proximity.deserialize(model_dir)
+    prox_model = FeatureSpaceProximity.deserialize(model_dir)
 
     return {"xgboost": xgb_model, "ngboost": ngb_model, "proximity": prox_model}
 

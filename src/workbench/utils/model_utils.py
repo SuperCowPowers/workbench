@@ -94,15 +94,15 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
 
 
 def proximity_model_local(model: "Model"):
-    """Create a Proximity Model for this Model
+    """Create a FeatureSpaceProximity Model for this Model
 
     Args:
         model (Model): The Model/FeatureSet used to create the proximity model
 
     Returns:
-        Proximity: The proximity model
+        FeatureSpaceProximity: The proximity model
     """
-    from workbench.algorithms.dataframe.proximity import Proximity  # noqa: F401 (avoid circular import)
+    from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity  # noqa: F401
     from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
 
     # Get Feature and Target Columns from the existing given Model
@@ -121,8 +121,8 @@ def proximity_model_local(model: "Model"):
     model_ids = set(model_df[id_column])
     full_df["in_model"] = full_df[id_column].isin(model_ids)
 
-    # Create and return the Proximity Model
-    return Proximity(full_df, id_column, features, target, track_columns=features)
+    # Create and return the FeatureSpaceProximity Model
+    return FeatureSpaceProximity(full_df, id_column=id_column, features=features, target=target, track_columns=features)
 
 
 def noise_model_local(model: "Model"):
