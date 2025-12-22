@@ -125,6 +125,55 @@ def proximity_model_local(model: "Model"):
     return FeatureSpaceProximity(full_df, id_column=id_column, features=features, target=target, track_columns=features)
 
 
+def fingerprint_prox_model_local(
+    model: "Model",
+    target: str = None,
+    radius: int = 2,
+    n_bits: int = 1024,
+    counts: bool = False,
+):
+    """Create a FingerprintProximity Model for this Model
+
+    Args:
+        model (Model): The Model used to create the fingerprint proximity model
+        target (str, optional): The target column name (default: model's target)
+        radius (int): Morgan fingerprint radius (default: 2)
+        n_bits (int): Number of bits for the fingerprint (default: 1024)
+        counts (bool): Use count fingerprints instead of binary (default: False)
+
+    Returns:
+        FingerprintProximity: The fingerprint proximity model
+    """
+    from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity  # noqa: F401
+    from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
+
+    # Get Target Column from the existing given Model (if not provided)
+    if target is None:
+        target = model.target()
+
+    # Backtrack our FeatureSet to get the ID column
+    fs = FeatureSet(model.get_input())
+    id_column = fs.id_column
+
+    # Create the Proximity Model from both the full FeatureSet and the Model training data
+    full_df = fs.pull_dataframe()
+    model_df = model.training_view().pull_dataframe()
+
+    # Mark rows that are in the model
+    model_ids = set(model_df[id_column])
+    full_df["in_model"] = full_df[id_column].isin(model_ids)
+
+    # Create and return the FingerprintProximity Model
+    return FingerprintProximity(
+        full_df,
+        id_column=id_column,
+        target=target,
+        radius=radius,
+        n_bits=n_bits,
+        counts=counts,
+    )
+
+
 def noise_model_local(model: "Model"):
     """Create a NoiseModel for detecting noisy/problematic samples in a Model's training data.
 

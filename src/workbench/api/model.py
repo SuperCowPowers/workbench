@@ -10,7 +10,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework  # noqa: F401
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from workbench.api.endpoint import Endpoint
-from workbench.utils.model_utils import proximity_model_local, noise_model_local
+from workbench.utils.model_utils import proximity_model_local, fingerprint_prox_model_local, noise_model_local
 
 
 class Model(ModelCore):
@@ -87,9 +87,29 @@ class Model(ModelCore):
         """Create a local Proximity Model for this Model
 
         Returns:
-           Proximity: A local Proximity Model
+           FeatureSpaceProximity: A local FeatureSpaceProximity Model
         """
         return proximity_model_local(self)
+
+    def fp_prox_model(
+        self,
+        target: str = None,
+        radius: int = 2,
+        n_bits: int = 1024,
+        counts: bool = False,
+    ):
+        """Create a local Fingerprint Proximity Model for this Model
+
+        Args:
+           target (str, optional): The target column name (default: model's target)
+           radius (int): Morgan fingerprint radius (default: 2)
+           n_bits (int): Number of bits for the fingerprint (default: 1024)
+           counts (bool): Use count fingerprints instead of binary (default: False)
+
+        Returns:
+           FingerprintProximity: A local FingerprintProximity Model
+        """
+        return fingerprint_prox_model_local(self, target=target, radius=radius, n_bits=n_bits, counts=counts)
 
     def noise_model(self):
         """Create a local Noise Model for this Model

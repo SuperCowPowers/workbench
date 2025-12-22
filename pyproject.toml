@@ -36,6 +36,7 @@ dependencies = [
     "ipython >=8.37.0",
     "pyreadline3; sys_platform == 'win32'",
     "scikit-learn >=1.5.2",
+    "umap-learn >=0.5.8",
     "xgboost >=3.0.3",
     "joblib >= 1.3.2",
     "requests >= 2.26.0",
