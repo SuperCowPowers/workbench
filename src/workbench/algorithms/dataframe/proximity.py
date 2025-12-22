@@ -404,17 +404,13 @@ if __name__ == "__main__":
     gradients_1pct = prox.target_gradients(top_percent=1.0, min_delta=1.0)
     print(f"\nTop 1% target gradients (min_delta=5.0) (n={len(gradients_1pct)}):")
     print(
-        gradients_1pct[
-            [fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "gradient"]
-        ].head(10)
+        gradients_1pct[[fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "gradient"]].head(10)
     )
 
     gradients_5pct = prox.target_gradients(top_percent=5.0, min_delta=5.0)
     print(f"\nTop 5% target gradients (min_delta=5.0) (n={len(gradients_5pct)}):")
     print(
-        gradients_5pct[
-            [fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "gradient"]
-        ].head(10)
+        gradients_5pct[[fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "gradient"]].head(10)
     )
 
     # Show a scatter plot of the data
