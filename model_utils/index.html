@@ -5414,7 +5414,7 @@ that was saved during model training.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Create a Proximity Model for this Model</p>
+        <p>Create a FeatureSpaceProximity Model for this Model</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -5458,7 +5458,7 @@ that was saved during model training.</p>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-<td><code>Proximity</code></td>            <td>
+<td><code>FeatureSpaceProximity</code></td>            <td>
             </td>
             <td>
               <div class="doc-md-description">
@@ -5502,15 +5502,15 @@ that was saved during model training.</p>
 <span class="normal"><a href="#__codelineno-0-123">123</a></span>
 <span class="normal"><a href="#__codelineno-0-124">124</a></span>
 <span class="normal"><a href="#__codelineno-0-125">125</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-96"><a id="__codelineno-0-96" name="__codelineno-0-96"></a><span class="k">def</span><span class="w"> </span><span class="nf">proximity_model_local</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="s2">&quot;Model&quot;</span><span class="p">):</span>
-</span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a Proximity Model for this Model</span>
+</span><span id="__span-0-97"><a id="__codelineno-0-97" name="__codelineno-0-97"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a FeatureSpaceProximity Model for this Model</span>
 </span><span id="__span-0-98"><a id="__codelineno-0-98" name="__codelineno-0-98"></a>
 </span><span id="__span-0-99"><a id="__codelineno-0-99" name="__codelineno-0-99"></a><span class="sd">    Args:</span>
 </span><span id="__span-0-100"><a id="__codelineno-0-100" name="__codelineno-0-100"></a><span class="sd">        model (Model): The Model/FeatureSet used to create the proximity model</span>
 </span><span id="__span-0-101"><a id="__codelineno-0-101" name="__codelineno-0-101"></a>
 </span><span id="__span-0-102"><a id="__codelineno-0-102" name="__codelineno-0-102"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a><span class="sd">        Proximity: The proximity model</span>
+</span><span id="__span-0-103"><a id="__codelineno-0-103" name="__codelineno-0-103"></a><span class="sd">        FeatureSpaceProximity: The proximity model</span>
 </span><span id="__span-0-104"><a id="__codelineno-0-104" name="__codelineno-0-104"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">workbench.algorithms.dataframe.proximity</span><span class="w"> </span><span class="kn">import</span> <span class="n">Proximity</span>  <span class="c1"># noqa: F401 (avoid circular import)</span>
+</span><span id="__span-0-105"><a id="__codelineno-0-105" name="__codelineno-0-105"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">workbench.algorithms.dataframe.feature_space_proximity</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSpaceProximity</span>  <span class="c1"># noqa: F401</span>
 </span><span id="__span-0-106"><a id="__codelineno-0-106" name="__codelineno-0-106"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Model</span><span class="p">,</span> <span class="n">FeatureSet</span>  <span class="c1"># noqa: F401 (avoid circular import)</span>
 </span><span id="__span-0-107"><a id="__codelineno-0-107" name="__codelineno-0-107"></a>
 </span><span id="__span-0-108"><a id="__codelineno-0-108" name="__codelineno-0-108"></a>    <span class="c1"># Get Feature and Target Columns from the existing given Model</span>
@@ -5529,8 +5529,8 @@ that was saved during model training.</p>
 </span><span id="__span-0-121"><a id="__codelineno-0-121" name="__codelineno-0-121"></a>    <span class="n">model_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">model_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">])</span>
 </span><span id="__span-0-122"><a id="__codelineno-0-122" name="__codelineno-0-122"></a>    <span class="n">full_df</span><span class="p">[</span><span class="s2">&quot;in_model&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">full_df</span><span class="p">[</span><span class="n">id_column</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">model_ids</span><span class="p">)</span>
 </span><span id="__span-0-123"><a id="__codelineno-0-123" name="__codelineno-0-123"></a>
-</span><span id="__span-0-124"><a id="__codelineno-0-124" name="__codelineno-0-124"></a>    <span class="c1"># Create and return the Proximity Model</span>
-</span><span id="__span-0-125"><a id="__codelineno-0-125" name="__codelineno-0-125"></a>    <span class="k">return</span> <span class="n">Proximity</span><span class="p">(</span><span class="n">full_df</span><span class="p">,</span> <span class="n">id_column</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">track_columns</span><span class="o">=</span><span class="n">features</span><span class="p">)</span>
+</span><span id="__span-0-124"><a id="__codelineno-0-124" name="__codelineno-0-124"></a>    <span class="c1"># Create and return the FeatureSpaceProximity Model</span>
+</span><span id="__span-0-125"><a id="__codelineno-0-125" name="__codelineno-0-125"></a>    <span class="k">return</span> <span class="n">FeatureSpaceProximity</span><span class="p">(</span><span class="n">full_df</span><span class="p">,</span> <span class="n">id_column</span><span class="o">=</span><span class="n">id_column</span><span class="p">,</span> <span class="n">features</span><span class="o">=</span><span class="n">features</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">track_columns</span><span class="o">=</span><span class="n">features</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
