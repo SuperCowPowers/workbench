@@ -1,6 +1,7 @@
 """ModelToEndpoint: Deploy an Endpoint for a Model"""
 
 import time
+from botocore.exceptions import ClientError
 from sagemaker import ModelPackage
 from sagemaker.serializers import CSVSerializer
 from sagemaker.deserializers import CSVDeserializer
@@ -137,16 +138,35 @@ class ModelToEndpoint(Transform):
 
         # Deploy the Endpoint
         self.log.important(f"Deploying the Endpoint {self.output_name}...")
-        model_package.deploy(
-            initial_instance_count=1,
-            instance_type=self.instance_type,
-            serverless_inference_config=serverless_config,
-            endpoint_name=self.output_name,
-            serializer=CSVSerializer(),
-            deserializer=CSVDeserializer(),
-            data_capture_config=data_capture_config,
-            tags=aws_tags,
-        )
+        try:
+            model_package.deploy(
+                initial_instance_count=1,
+                instance_type=self.instance_type,
+                serverless_inference_config=serverless_config,
+                endpoint_name=self.output_name,
+                serializer=CSVSerializer(),
+                deserializer=CSVDeserializer(),
+                data_capture_config=data_capture_config,
+                tags=aws_tags,
+            )
+        except ClientError as e:
+            # Check if this is the "endpoint config already exists" error
+            if "Cannot create already existing endpoint configuration" in str(e):
+                self.log.warning(f"Endpoint config already exists, deleting and retrying...")
+                self.sm_client.delete_endpoint_config(EndpointConfigName=self.output_name)
+                # Retry the deploy
+                model_package.deploy(
+                    initial_instance_count=1,
+                    instance_type=self.instance_type,
+                    serverless_inference_config=serverless_config,
+                    endpoint_name=self.output_name,
+                    serializer=CSVSerializer(),
+                    deserializer=CSVDeserializer(),
+                    data_capture_config=data_capture_config,
+                    tags=aws_tags,
+                )
+            else:
+                raise
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() for the Endpoint"""
