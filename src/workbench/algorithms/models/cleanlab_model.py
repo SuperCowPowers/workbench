@@ -217,6 +217,5 @@ if __name__ == "__main__":
     print("\nLabel quality distribution:")
     print(label_issues["label_quality"].describe())
 
-
     print("\nLabel quality distribution:")
     print(label_issues["label_quality"].describe())

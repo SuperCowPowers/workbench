@@ -10,7 +10,12 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework  # noqa: F401
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from workbench.api.endpoint import Endpoint
-from workbench.utils.model_utils import proximity_model_local, fingerprint_prox_model_local, noise_model_local, cleanlab_model_local
+from workbench.utils.model_utils import (
+    proximity_model_local,
+    fingerprint_prox_model_local,
+    noise_model_local,
+    cleanlab_model_local,
+)
 
 
 class Model(ModelCore):
