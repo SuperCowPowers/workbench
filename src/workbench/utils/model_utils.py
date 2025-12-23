@@ -206,6 +206,35 @@ def noise_model_local(model: "Model"):
     return NoiseModel(full_df, id_column, features, target)
 
 
+def cleanlab_model_local(model: "Model"):
+    """Create a CleanLearning model for detecting label issues in a Model's training data.
+
+    Args:
+        model (Model): The Model used to create the cleanlab model
+
+    Returns:
+        CleanLearning: A fitted cleanlab model. Use get_label_issues() to get
+        a DataFrame with id_column, label_quality, predicted_label, given_label, is_label_issue.
+    """
+    from workbench.algorithms.models.cleanlab_model import create_cleanlab_model  # noqa: F401 (avoid circular import)
+    from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
+
+    # Get Feature and Target Columns from the existing given Model
+    features = model.features()
+    target = model.target()
+    model_type = model.model_type
+
+    # Backtrack our FeatureSet to get the ID column
+    fs = FeatureSet(model.get_input())
+    id_column = fs.id_column
+
+    # Get the full FeatureSet data
+    full_df = fs.pull_dataframe()
+
+    # Create and return the CleanLearning model
+    return create_cleanlab_model(full_df, id_column, features, target, model_type=model_type)
+
+
 def published_proximity_model(model: "Model", prox_model_name: str, track_columns: list = None) -> "Model":
     """Create a published proximity model based on the given model
 

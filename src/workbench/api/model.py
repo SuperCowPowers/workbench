@@ -10,7 +10,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework  # noqa: F401
 from workbench.core.transforms.model_to_endpoint.model_to_endpoint import ModelToEndpoint
 from workbench.api.endpoint import Endpoint
-from workbench.utils.model_utils import proximity_model_local, fingerprint_prox_model_local, noise_model_local
+from workbench.utils.model_utils import proximity_model_local, fingerprint_prox_model_local, noise_model_local, cleanlab_model_local
 
 
 class Model(ModelCore):
@@ -118,6 +118,15 @@ class Model(ModelCore):
            NoiseModel: A local Noise Model
         """
         return noise_model_local(self)
+
+    def cleanlab_model(self):
+        """Create a CleanLearning model for this Model's training data.
+
+        Returns:
+           CleanLearning: A fitted cleanlab model. Use get_label_issues() to get
+           a DataFrame with id_column, label_quality, predicted_label, given_label, is_label_issue.
+        """
+        return cleanlab_model_local(self)
 
 
 if __name__ == "__main__":
