@@ -152,7 +152,7 @@ class ModelToEndpoint(Transform):
         except ClientError as e:
             # Check if this is the "endpoint config already exists" error
             if "Cannot create already existing endpoint configuration" in str(e):
-                self.log.warning(f"Endpoint config already exists, deleting and retrying...")
+                self.log.warning("Endpoint config already exists, deleting and retrying...")
                 self.sm_client.delete_endpoint_config(EndpointConfigName=self.output_name)
                 # Retry the deploy
                 model_package.deploy(
