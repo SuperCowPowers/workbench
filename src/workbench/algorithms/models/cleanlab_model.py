@@ -9,13 +9,11 @@ from sklearn.preprocessing import LabelEncoder
 from typing import List
 import logging
 
-# Set up logging
-log = logging.getLogger("workbench")
-
 # Check for cleanlab package
 try:
     from cleanlab.regression.learn import CleanLearning as CleanLearningRegressor
     from cleanlab.classification import CleanLearning as CleanLearningClassifier
+
     CLEANLAB_AVAILABLE = True
 except ImportError:
     CLEANLAB_AVAILABLE = False
@@ -27,6 +25,9 @@ from workbench.core.artifacts.model_core import ModelType
 
 # Regressor types for convenience
 REGRESSOR_TYPES = [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
+
+# Set up logging
+log = logging.getLogger("workbench")
 
 
 def create_cleanlab_model(
