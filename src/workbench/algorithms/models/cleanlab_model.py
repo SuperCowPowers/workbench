@@ -1,7 +1,6 @@
 """Cleanlab-based label quality detection for regression and classification.
 
-This module provides a factory function to create a fitted cleanlab CleanLearning
-model for regression or classification.
+Note: Users must install cleanlab separately: pip install cleanlab
 """
 
 import pandas as pd
@@ -10,15 +9,24 @@ from sklearn.preprocessing import LabelEncoder
 from typing import List
 import logging
 
-# Cleanlab imports
-from cleanlab.regression.learn import CleanLearning as CleanLearningRegressor
-from cleanlab.classification import CleanLearning as CleanLearningClassifier
+# Set up logging
+log = logging.getLogger("workbench")
+
+# Check for cleanlab package
+try:
+    from cleanlab.regression.learn import CleanLearning as CleanLearningRegressor
+    from cleanlab.classification import CleanLearning as CleanLearningClassifier
+    CLEANLAB_AVAILABLE = True
+except ImportError:
+    CLEANLAB_AVAILABLE = False
+    CleanLearningRegressor = None
+    CleanLearningClassifier = None
 
 # Workbench imports
 from workbench.core.artifacts.model_core import ModelType
 
-# Set up logging
-log = logging.getLogger("workbench")
+# Regressor types for convenience
+REGRESSOR_TYPES = [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
 
 
 def create_cleanlab_model(
@@ -35,87 +43,91 @@ def create_cleanlab_model(
         id_column: Name of the column used as the identifier.
         features: List of feature column names.
         target: Name of the target column.
-        model_type: ModelType.REGRESSOR or ModelType.CLASSIFIER.
+        model_type: ModelType (REGRESSOR, CLASSIFIER, etc.).
 
     Returns:
-        CleanLearning: A fitted cleanlab model. Use get_label_issues() to get
-        a DataFrame sorted by label_quality (worst first) with id column included.
+        CleanLearning: A fitted cleanlab model with enhanced get_label_issues().
 
     Example:
         ```python
-        from workbench.algorithms.models.cleanlab_model import create_cleanlab_model
-
-        cl_model = create_cleanlab_model(df, id_column="id", features=feature_list, target="target")
-        label_issues = cl_model.get_label_issues()
-
-        # Already sorted by label_quality (worst first)
-        worst = label_issues.head(20)
+        cl_model = model.cleanlab_model()
+        label_issues = cl_model.get_label_issues()  # Sorted by label_quality (worst first)
         ```
 
     References:
         cleanlab: https://github.com/cleanlab/cleanlab
-        Documentation: https://docs.cleanlab.ai/stable/tutorials/regression.html
     """
-    # Filter out non-numeric features
+    if not CLEANLAB_AVAILABLE:
+        raise ImportError("cleanlab is not installed. Install with: pip install cleanlab")
+
+    # Filter to numeric features only
     numeric_cols = df.select_dtypes(include=["number"]).columns
     non_numeric = [f for f in features if f not in numeric_cols]
     if non_numeric:
-        log.warning(f"Non-numeric features {non_numeric} aren't currently supported, excluding them")
-    features = [f for f in features if f not in non_numeric]
+        log.warning(f"Excluding non-numeric features: {non_numeric}")
+        features = [f for f in features if f in numeric_cols]
 
-    # Drop NaN rows in features and target, keep id column
+    # Prepare clean data
     clean_df = df.dropna(subset=features + [target])[[id_column] + features + [target]].copy()
     clean_df = clean_df.reset_index(drop=True)
-
     X = clean_df[features].values
     y = clean_df[target].values
 
-    # Create model based on model_type
+    # Build model based on type
     if model_type == ModelType.CLASSIFIER:
         log.info("Building CleanLearning model (classification)...")
-        # Encode string labels to integers for cleanlab
         label_encoder = LabelEncoder()
         y_encoded = label_encoder.fit_transform(y)
-        # Disable multiprocessing (n_jobs=1) to prevent worker processes from
-        # re-importing workbench modules (config, AWS credentials, license checks)
+        # n_jobs=1 prevents worker processes from re-importing workbench modules
         cl_model = CleanLearningClassifier(
             HistGradientBoostingClassifier(),
             find_label_issues_kwargs={"n_jobs": 1},
         )
-        log.info("  Finding label issues via cross-validation...")
         cl_model.fit(X, y_encoded)
     else:
         log.info("Building CleanLearning model (regression)...")
         cl_model = CleanLearningRegressor(HistGradientBoostingRegressor())
-        log.info("  Finding label issues via cross-validation...")
         cl_model.fit(X, y)
 
-    # Monkey-patch get_label_issues to include id column, sort, and reset index
+    # Enhance get_label_issues to include id column, sort, and decode labels
     original_get_label_issues = cl_model.get_label_issues
 
     def get_label_issues_with_id():
-        label_issues = original_get_label_issues().copy()
-        label_issues.insert(0, id_column, clean_df[id_column].values)
-        # For classification, decode labels back to original strings
+        issues = original_get_label_issues().copy()
+        issues.insert(0, id_column, clean_df[id_column].values)
         if model_type == ModelType.CLASSIFIER:
-            if "given_label" in label_issues.columns:
-                label_issues["given_label"] = label_encoder.inverse_transform(label_issues["given_label"])
-            if "predicted_label" in label_issues.columns:
-                label_issues["predicted_label"] = label_encoder.inverse_transform(label_issues["predicted_label"])
-        return label_issues.sort_values("label_quality").reset_index(drop=True)
+            for col in ["given_label", "predicted_label"]:
+                if col in issues.columns:
+                    issues[col] = label_encoder.inverse_transform(issues[col])
+        return issues.sort_values("label_quality").reset_index(drop=True)
 
     cl_model.get_label_issues = get_label_issues_with_id
 
+    # For regression, add no-arg wrappers for uncertainty methods
+    if model_type in REGRESSOR_TYPES:
+        orig_epistemic = cl_model.get_epistemic_uncertainty
+        orig_aleatoric = cl_model.get_aleatoric_uncertainty
+
+        def get_epistemic_uncertainty():
+            """Get epistemic uncertainty (model uncertainty) as DataFrame sorted by uncertainty (worst first)."""
+            uncertainty = orig_epistemic(X, y)
+            result = pd.DataFrame({id_column: clean_df[id_column].values, "epistemic_uncertainty": uncertainty})
+            return result.sort_values("epistemic_uncertainty", ascending=False).reset_index(drop=True)
+
+        def get_aleatoric_uncertainty():
+            """Get aleatoric uncertainty (data noise) estimate."""
+            return orig_aleatoric(X, cl_model.predict(X) - y)
+
+        cl_model.get_epistemic_uncertainty = get_epistemic_uncertainty
+        cl_model.get_aleatoric_uncertainty = get_aleatoric_uncertainty
+
     n_issues = original_get_label_issues()["is_label_issue"].sum()
-    log.info(f"  Found {n_issues} potential label issues out of {len(clean_df)} samples")
-    log.info("CleanLearning model built successfully")
+    log.info(f"CleanLearning: {n_issues} potential label issues out of {len(clean_df)} samples")
 
     return cl_model
 
 
-# Testing
 if __name__ == "__main__":
-
     from workbench.api import FeatureSet, Model
     import numpy as np
 
@@ -217,5 +229,8 @@ if __name__ == "__main__":
     print("\nLabel quality distribution:")
     print(label_issues["label_quality"].describe())
 
-    print("\nLabel quality distribution:")
-    print(label_issues["label_quality"].describe())
+    print("\nTesting uncertainty estimates...")
+    aleatoric = cl_model.get_aleatoric_uncertainty()
+    print(f"Aleatoric: Data noise (irreducible) = {aleatoric}")
+    epistemic = cl_model.get_epistemic_uncertainty()
+    print(f"Epistemic: Model uncertainty (reducible) = {epistemic[:10]} ...")
