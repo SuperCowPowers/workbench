@@ -191,6 +191,15 @@ class FingerprintProximity(Proximity):
         isolated = isolated.sort_values("nn_similarity", ascending=True).reset_index(drop=True)
         return isolated if self.include_all_columns else isolated[self.core_columns]
 
+    def proximity_stats(self) -> pd.DataFrame:
+        """
+        Return distribution statistics for nearest neighbor Tanimoto similarity.
+
+        Returns:
+            DataFrame with similarity distribution statistics (count, mean, std, percentiles)
+        """
+        return self.df["nn_similarity"].describe(percentiles=[0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]).to_frame()
+
     def neighbors(
         self,
         id_or_ids: Union[str, int, List[Union[str, int]]],
@@ -301,6 +310,19 @@ if __name__ == "__main__":
     gradients_5pct = prox.target_gradients(top_percent=5.0, min_delta=5.0)
     print(f"\nTop 5% target gradients (min_delta=5.0) (n={len(gradients_5pct)}):")
     print(gradients_5pct)
+
+    # Test proximity_stats
+    print("\n" + "=" * 80)
+    print("Testing proximity_stats...")
+    print("=" * 80)
+    stats = prox.proximity_stats()
+    print(stats)
+
+    # Plot the similarity distribution using pandas
+    print("\n" + "=" * 80)
+    print("Plotting similarity distribution...")
+    print("=" * 80)
+    prox.df["nn_similarity"].hist(bins=50, figsize=(10, 6), edgecolor="black")
 
     # Visualize the 2D projection
     print("\n" + "=" * 80)

@@ -110,7 +110,7 @@ if __name__ == "__main__":
     # Test with String Ids
     prox = FeatureSpaceProximity(
         df,
-        id_column="foo_id",
+        id_column="id",
         features=["Feature1", "Feature2"],
         target="target",
         include_all_columns=True,
@@ -125,7 +125,7 @@ if __name__ == "__main__":
         "target": [1, 0, 1, 0, 5],
     }
     df = pd.DataFrame(data)
-    prox = FeatureSpaceProximity(df, id_column="foo_id", features=["Feature1", "Feature2"], target="target")
+    prox = FeatureSpaceProximity(df, id_column="id", features=["Feature1", "Feature2"], target="target")
     print(df.equals(prox.df))
 
     # Test on real data from Workbench
@@ -169,6 +169,19 @@ if __name__ == "__main__":
     gradients_5pct = prox.target_gradients(top_percent=5.0, min_delta=5.0)
     print(f"\nTop 5% target gradients (min_delta=5.0) (n={len(gradients_5pct)}):")
     print(gradients_5pct)
+
+    # Test proximity_stats
+    print("\n" + "=" * 80)
+    print("Testing proximity_stats...")
+    print("=" * 80)
+    stats = prox.proximity_stats()
+    print(stats)
+
+    # Plot the distance distribution using pandas
+    print("\n" + "=" * 80)
+    print("Plotting distance distribution...")
+    print("=" * 80)
+    prox.df["nn_distance"].hist(bins=50, figsize=(10, 6), edgecolor="black")
 
     # Visualize the 2D projection
     print("\n" + "=" * 80)

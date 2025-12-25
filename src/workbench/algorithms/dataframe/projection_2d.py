@@ -136,7 +136,6 @@ class Projection2D:
 
         # Find duplicates
         duplicated = rounded.duplicated(subset=["x_round", "y_round"], keep=False)
-        print("Coincident Points found:", duplicated.sum())
         if not duplicated.any():
             return df
 
