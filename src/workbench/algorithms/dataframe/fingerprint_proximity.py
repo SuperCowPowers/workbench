@@ -156,10 +156,10 @@ class FingerprintProximity(Proximity):
         )
         return np.vstack(fingerprint_bits)
 
-    def _precompute_metrics(self, n_neighbors: int = 10) -> None:
+    def _precompute_metrics(self) -> None:
         """Precompute metrics, adding Tanimoto similarity alongside distance."""
         # Call parent to compute nn_distance (Jaccard), nn_id, nn_target, nn_target_diff
-        super()._precompute_metrics(n_neighbors)
+        super()._precompute_metrics()
 
         # Add Tanimoto similarity (keep nn_distance for internal use by target_gradients)
         self.df["nn_similarity"] = 1 - self.df["nn_distance"]

@@ -252,7 +252,7 @@ class Proximity(ABC):
         df_results = df_results.sort_values([self.id_column, "is_self", "distance"], ascending=[True, False, True])
         return df_results.drop("is_self", axis=1).reset_index(drop=True)
 
-    def _precompute_metrics(self, n_neighbors: int = 10) -> None:
+    def _precompute_metrics(self) -> None:
         """
         Precompute landscape metrics for all compounds.
 
@@ -266,12 +266,9 @@ class Proximity(ABC):
         """
         log.info("Precomputing proximity metrics...")
 
-        # Make sure n_neighbors isn't greater than dataset size
-        n_neighbors = min(n_neighbors, len(self.df) - 1)
-
-        # Get nearest neighbors for all points (including self)
+        # Get nearest neighbors for all points (n=2 because index 0 is self)
         X = self._transform_features(self.df)
-        distances, indices = self.nn.kneighbors(X, n_neighbors=2)  # Just need nearest neighbor
+        distances, indices = self.nn.kneighbors(X, n_neighbors=2)
 
         # Extract nearest neighbor (index 1, since index 0 is self)
         self.df["nn_distance"] = distances[:, 1]
