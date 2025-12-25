@@ -36,7 +36,9 @@ class FeatureSpaceProximity(Proximity):
         """
         # Validate and filter features before calling parent init
         self._raw_features = features
-        super().__init__(df, id_column=id_column, features=features, target=target, include_all_columns=include_all_columns)
+        super().__init__(
+            df, id_column=id_column, features=features, target=target, include_all_columns=include_all_columns
+        )
 
     def _prepare_data(self) -> None:
         """Filter out non-numeric features and drop NaN rows."""
@@ -133,9 +135,7 @@ if __name__ == "__main__":
     model = Model("aqsol-regression")
     features = model.features()
     df = fs.pull_dataframe()
-    prox = FeatureSpaceProximity(
-        df, id_column=fs.id_column, features=model.features(), target=model.target()
-    )
+    prox = FeatureSpaceProximity(df, id_column=fs.id_column, features=model.features(), target=model.target())
     print("\n" + "=" * 80)
     print("Testing Neighbors...")
     print("=" * 80)
