@@ -7618,19 +7618,19 @@
 </span><span id="__span-0-894"><a id="__codelineno-0-894" name="__codelineno-0-894"></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
 </span><span id="__span-0-895"><a id="__codelineno-0-895" name="__codelineno-0-895"></a>            <span class="k">return</span> <span class="kc">None</span>
 </span><span id="__span-0-896"><a id="__codelineno-0-896" name="__codelineno-0-896"></a>
-</span><span id="__span-0-897"><a id="__codelineno-0-897" name="__codelineno-0-897"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">publish_prox_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prox_model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">track_columns</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span id="__span-0-897"><a id="__codelineno-0-897" name="__codelineno-0-897"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">publish_prox_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prox_model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">include_all_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 </span><span id="__span-0-898"><a id="__codelineno-0-898" name="__codelineno-0-898"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create and publish a Proximity Model for this Model</span>
 </span><span id="__span-0-899"><a id="__codelineno-0-899" name="__codelineno-0-899"></a>
 </span><span id="__span-0-900"><a id="__codelineno-0-900" name="__codelineno-0-900"></a><span class="sd">        Args:</span>
 </span><span id="__span-0-901"><a id="__codelineno-0-901" name="__codelineno-0-901"></a><span class="sd">            prox_model_name (str, optional): Name of the Proximity Model (if not specified, a name will be generated)</span>
-</span><span id="__span-0-902"><a id="__codelineno-0-902" name="__codelineno-0-902"></a><span class="sd">            track_columns (list, optional): List of columns to track in the Proximity Model.</span>
+</span><span id="__span-0-902"><a id="__codelineno-0-902" name="__codelineno-0-902"></a><span class="sd">            include_all_columns (bool): Include all DataFrame columns in results (default: False)</span>
 </span><span id="__span-0-903"><a id="__codelineno-0-903" name="__codelineno-0-903"></a>
 </span><span id="__span-0-904"><a id="__codelineno-0-904" name="__codelineno-0-904"></a><span class="sd">        Returns:</span>
 </span><span id="__span-0-905"><a id="__codelineno-0-905" name="__codelineno-0-905"></a><span class="sd">            Model: The published Proximity Model</span>
 </span><span id="__span-0-906"><a id="__codelineno-0-906" name="__codelineno-0-906"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-907"><a id="__codelineno-0-907" name="__codelineno-0-907"></a>        <span class="k">if</span> <span class="n">prox_model_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="__span-0-908"><a id="__codelineno-0-908" name="__codelineno-0-908"></a>            <span class="n">prox_model_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">+</span> <span class="s2">&quot;-prox&quot;</span>
-</span><span id="__span-0-909"><a id="__codelineno-0-909" name="__codelineno-0-909"></a>        <span class="k">return</span> <span class="n">published_proximity_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prox_model_name</span><span class="p">,</span> <span class="n">track_columns</span><span class="o">=</span><span class="n">track_columns</span><span class="p">)</span>
+</span><span id="__span-0-909"><a id="__codelineno-0-909" name="__codelineno-0-909"></a>        <span class="k">return</span> <span class="n">published_proximity_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prox_model_name</span><span class="p">,</span> <span class="n">include_all_columns</span><span class="o">=</span><span class="n">include_all_columns</span><span class="p">)</span>
 </span><span id="__span-0-910"><a id="__codelineno-0-910" name="__codelineno-0-910"></a>
 </span><span id="__span-0-911"><a id="__codelineno-0-911" name="__codelineno-0-911"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="__span-0-912"><a id="__codelineno-0-912" name="__codelineno-0-912"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete the Model Packages and the Model Group&quot;&quot;&quot;</span>
@@ -10479,7 +10479,7 @@ Returns:
 
 
 <h3 id="workbench.core.artifacts.model_core.ModelCore.publish_prox_model" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">publish_prox_model</span><span class="p">(</span><span class="n">prox_model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">track_columns</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">publish_prox_model</span><span class="p">(</span><span class="n">prox_model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_all_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
@@ -10518,18 +10518,18 @@ Returns:
           </tr>
           <tr class="doc-section-item">
             <td>
-                <code>track_columns</code>
+                <code>include_all_columns</code>
             </td>
             <td>
-                  <code><span title="list">list</span></code>
+                  <code><span title="bool">bool</span></code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>List of columns to track in the Proximity Model.</p>
+                <p>Include all DataFrame columns in results (default: False)</p>
               </div>
             </td>
             <td>
-                  <code>None</code>
+                  <code>False</code>
             </td>
           </tr>
       </tbody>
@@ -10572,19 +10572,19 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-906">906</a></span>
 <span class="normal"><a href="#__codelineno-0-907">907</a></span>
 <span class="normal"><a href="#__codelineno-0-908">908</a></span>
-<span class="normal"><a href="#__codelineno-0-909">909</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-897"><a id="__codelineno-0-897" name="__codelineno-0-897"></a><span class="k">def</span><span class="w"> </span><span class="nf">publish_prox_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prox_model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">track_columns</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="normal"><a href="#__codelineno-0-909">909</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-897"><a id="__codelineno-0-897" name="__codelineno-0-897"></a><span class="k">def</span><span class="w"> </span><span class="nf">publish_prox_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prox_model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">include_all_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 </span><span id="__span-0-898"><a id="__codelineno-0-898" name="__codelineno-0-898"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create and publish a Proximity Model for this Model</span>
 </span><span id="__span-0-899"><a id="__codelineno-0-899" name="__codelineno-0-899"></a>
 </span><span id="__span-0-900"><a id="__codelineno-0-900" name="__codelineno-0-900"></a><span class="sd">    Args:</span>
 </span><span id="__span-0-901"><a id="__codelineno-0-901" name="__codelineno-0-901"></a><span class="sd">        prox_model_name (str, optional): Name of the Proximity Model (if not specified, a name will be generated)</span>
-</span><span id="__span-0-902"><a id="__codelineno-0-902" name="__codelineno-0-902"></a><span class="sd">        track_columns (list, optional): List of columns to track in the Proximity Model.</span>
+</span><span id="__span-0-902"><a id="__codelineno-0-902" name="__codelineno-0-902"></a><span class="sd">        include_all_columns (bool): Include all DataFrame columns in results (default: False)</span>
 </span><span id="__span-0-903"><a id="__codelineno-0-903" name="__codelineno-0-903"></a>
 </span><span id="__span-0-904"><a id="__codelineno-0-904" name="__codelineno-0-904"></a><span class="sd">    Returns:</span>
 </span><span id="__span-0-905"><a id="__codelineno-0-905" name="__codelineno-0-905"></a><span class="sd">        Model: The published Proximity Model</span>
 </span><span id="__span-0-906"><a id="__codelineno-0-906" name="__codelineno-0-906"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-907"><a id="__codelineno-0-907" name="__codelineno-0-907"></a>    <span class="k">if</span> <span class="n">prox_model_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="__span-0-908"><a id="__codelineno-0-908" name="__codelineno-0-908"></a>        <span class="n">prox_model_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">+</span> <span class="s2">&quot;-prox&quot;</span>
-</span><span id="__span-0-909"><a id="__codelineno-0-909" name="__codelineno-0-909"></a>    <span class="k">return</span> <span class="n">published_proximity_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prox_model_name</span><span class="p">,</span> <span class="n">track_columns</span><span class="o">=</span><span class="n">track_columns</span><span class="p">)</span>
+</span><span id="__span-0-909"><a id="__codelineno-0-909" name="__codelineno-0-909"></a>    <span class="k">return</span> <span class="n">published_proximity_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prox_model_name</span><span class="p">,</span> <span class="n">include_all_columns</span><span class="o">=</span><span class="n">include_all_columns</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>
