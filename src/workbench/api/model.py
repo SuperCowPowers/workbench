@@ -88,17 +88,20 @@ class Model(ModelCore):
         end.set_owner(self.get_owner())
         return end
 
-    def prox_model(self):
+    def prox_model(self, include_features: bool = False):
         """Create a local Proximity Model for this Model
+
+        Args:
+              include_features (bool): Output feature columns (default: False)
 
         Returns:
            FeatureSpaceProximity: A local FeatureSpaceProximity Model
         """
-        return proximity_model_local(self)
+        return proximity_model_local(self, include_features=include_features)
 
     def fp_prox_model(
         self,
-        target: str = None,
+        include_features: bool = False,
         radius: int = 2,
         n_bits: int = 1024,
         counts: bool = False,
@@ -106,7 +109,7 @@ class Model(ModelCore):
         """Create a local Fingerprint Proximity Model for this Model
 
         Args:
-           target (str, optional): The target column name (default: model's target)
+           include_features (bool): Output feature columns (default: False)
            radius (int): Morgan fingerprint radius (default: 2)
            n_bits (int): Number of bits for the fingerprint (default: 1024)
            counts (bool): Use count fingerprints instead of binary (default: False)
@@ -114,7 +117,7 @@ class Model(ModelCore):
         Returns:
            FingerprintProximity: A local FingerprintProximity Model
         """
-        return fingerprint_prox_model_local(self, target=target, radius=radius, n_bits=n_bits, counts=counts)
+        return fingerprint_prox_model_local(self, include_features=include_features, radius=radius, n_bits=n_bits, counts=counts)
 
     def noise_model(self):
         """Create a local Noise Model for this Model

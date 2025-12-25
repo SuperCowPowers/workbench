@@ -93,11 +93,12 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
     return script_path
 
 
-def proximity_model_local(model: "Model"):
+def proximity_model_local(model: "Model", include_features: bool = False):
     """Create a FeatureSpaceProximity Model for this Model
 
     Args:
         model (Model): The Model/FeatureSet used to create the proximity model
+        include_features (bool): Whether to include feature columns in the proximity model
 
     Returns:
         FeatureSpaceProximity: The proximity model
@@ -122,12 +123,13 @@ def proximity_model_local(model: "Model"):
     full_df["in_model"] = full_df[id_column].isin(model_ids)
 
     # Create and return the FeatureSpaceProximity Model
-    return FeatureSpaceProximity(full_df, id_column=id_column, features=features, target=target, track_columns=features)
+    track_columns = features if include_features else []
+    return FeatureSpaceProximity(full_df, id_column=id_column, features=features, target=target, track_columns=track_columns)
 
 
 def fingerprint_prox_model_local(
     model: "Model",
-    target: str = None,
+    include_features: bool = False,
     radius: int = 2,
     n_bits: int = 1024,
     counts: bool = False,
@@ -136,7 +138,7 @@ def fingerprint_prox_model_local(
 
     Args:
         model (Model): The Model used to create the fingerprint proximity model
-        target (str, optional): The target column name (default: model's target)
+        include_features (bool): Whether to include feature columns in the proximity model
         radius (int): Morgan fingerprint radius (default: 2)
         n_bits (int): Number of bits for the fingerprint (default: 1024)
         counts (bool): Use count fingerprints instead of binary (default: False)
@@ -147,9 +149,9 @@ def fingerprint_prox_model_local(
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity  # noqa: F401
     from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
 
-    # Get Target Column from the existing given Model (if not provided)
-    if target is None:
-        target = model.target()
+    # Get Feature and Target Columns from the existing given Model
+    features = model.features()
+    target = model.target()
 
     # Backtrack our FeatureSet to get the ID column
     fs = FeatureSet(model.get_input())
@@ -164,10 +166,12 @@ def fingerprint_prox_model_local(
     full_df["in_model"] = full_df[id_column].isin(model_ids)
 
     # Create and return the FingerprintProximity Model
+    track_columns = features if include_features else []
     return FingerprintProximity(
         full_df,
         id_column=id_column,
         target=target,
+        track_columns=track_columns,
         radius=radius,
         n_bits=n_bits,
         counts=counts,

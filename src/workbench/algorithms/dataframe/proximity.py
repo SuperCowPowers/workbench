@@ -298,7 +298,7 @@ class Proximity(ABC):
         result = {
             self.id_column: query_id,
             "neighbor_id": neighbor_id,
-            "distance": 0.0 if distance < 1e-5 else distance,
+            "distance": 0.0 if distance < 1e-6 else distance,
         }
 
         # Add target if present
