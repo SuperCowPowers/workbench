@@ -177,6 +177,46 @@ class FeatureSet(FeatureSetCore):
             full_df, id_column=self.id_column, features=features, target=target, include_all_columns=include_all_columns
         )
 
+    def fp_prox_model(
+        self,
+        target: str,
+        fingerprint_column: str = None,
+        include_all_columns: bool = False,
+        radius: int = 2,
+        n_bits: int = 1024,
+        counts: bool = False,
+    ) -> "FingerprintProximity":  # noqa: F821
+        """Create a local FingerprintProximity Model for this FeatureSet
+
+        Args:
+           target (str): The target column name
+           fingerprint_column (str): Column containing fingerprints. If None, uses existing 'fingerprint'
+                                     column or computes from SMILES column.
+           include_all_columns (bool): Include all DataFrame columns in results (default: False)
+           radius (int): Radius for Morgan fingerprint computation (default: 2)
+           n_bits (int): Number of bits for fingerprint (default: 1024)
+           counts (bool): Whether to use count simulation (default: False)
+
+        Returns:
+           FingerprintProximity: A local FingerprintProximity Model
+        """
+        from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity  # noqa: F401
+
+        # Create the Proximity Model from the full FeatureSet dataframe
+        full_df = self.pull_dataframe()
+
+        # Create and return the FingerprintProximity Model
+        return FingerprintProximity(
+            full_df,
+            id_column=self.id_column,
+            fingerprint_column=fingerprint_column,
+            target=target,
+            include_all_columns=include_all_columns,
+            radius=radius,
+            n_bits=n_bits,
+            counts=counts,
+        )
+
 
 if __name__ == "__main__":
     """Exercise the FeatureSet Class"""
