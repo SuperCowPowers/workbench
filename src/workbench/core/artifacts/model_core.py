@@ -894,19 +894,19 @@ class ModelCore(Artifact):
         except (KeyError, IndexError, TypeError):
             return None
 
-    def publish_prox_model(self, prox_model_name: str = None, track_columns: list = None):
+    def publish_prox_model(self, prox_model_name: str = None, include_all_columns: bool = False):
         """Create and publish a Proximity Model for this Model
 
         Args:
             prox_model_name (str, optional): Name of the Proximity Model (if not specified, a name will be generated)
-            track_columns (list, optional): List of columns to track in the Proximity Model.
+            include_all_columns (bool): Include all DataFrame columns in results (default: False)
 
         Returns:
             Model: The published Proximity Model
         """
         if prox_model_name is None:
             prox_model_name = self.model_name + "-prox"
-        return published_proximity_model(self, prox_model_name, track_columns=track_columns)
+        return published_proximity_model(self, prox_model_name, include_all_columns=include_all_columns)
 
     def delete(self):
         """Delete the Model Packages and the Model Group"""

@@ -17,7 +17,7 @@ class Proximity(ABC):
         id_column: str,
         features: List[str],
         target: Optional[str] = None,
-        track_columns: Optional[List[str]] = None,
+        include_all_columns: bool = False,
     ):
         """
         Initialize the Proximity class.
@@ -27,12 +27,12 @@ class Proximity(ABC):
             id_column: Name of the column used as the identifier.
             features: List of feature column names to be used for neighbor computations.
             target: Name of the target column. Defaults to None.
-            track_columns: Additional columns to track in results. Defaults to None.
+            include_all_columns: Include all DataFrame columns in neighbor results. Defaults to False.
         """
         self.id_column = id_column
         self.features = features
         self.target = target
-        self.track_columns = track_columns or []
+        self.include_all_columns = include_all_columns
 
         # Store the DataFrame (subclasses may filter/modify in _prepare_data)
         self.df = df.copy()
@@ -305,14 +305,13 @@ class Proximity(ABC):
         if self.target and self.target in self.df.columns:
             result[self.target] = neighbor_row[self.target]
 
-        # Add tracked columns
-        for col in self.track_columns:
-            if col in self.df.columns:
-                result[col] = neighbor_row[col]
-
         # Add prediction/probability columns if they exist
         for col in self.df.columns:
             if col == "prediction" or "_proba" in col or "residual" in col or col == "in_model":
                 result[col] = neighbor_row[col]
+
+        # Include all columns if requested
+        if self.include_all_columns:
+            result.update(neighbor_row.to_dict())
 
         return result

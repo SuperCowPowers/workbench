@@ -154,12 +154,15 @@ class FeatureSet(FeatureSetCore):
         # Return the Model
         return Model(name)
 
-    def prox_model(self, target: str, features: list) -> "FeatureSpaceProximity":  # noqa: F821
+    def prox_model(
+        self, target: str, features: list, include_all_columns: bool = False
+    ) -> "FeatureSpaceProximity":  # noqa: F821
         """Create a local FeatureSpaceProximity Model for this FeatureSet
 
         Args:
            target (str): The target column name
            features (list): The list of feature column names
+           include_all_columns (bool): Include all DataFrame columns in results (default: False)
 
         Returns:
            FeatureSpaceProximity: A local FeatureSpaceProximity Model
@@ -171,7 +174,7 @@ class FeatureSet(FeatureSetCore):
 
         # Create and return the FeatureSpaceProximity Model
         return FeatureSpaceProximity(
-            full_df, id_column=self.id_column, features=features, target=target, track_columns=features
+            full_df, id_column=self.id_column, features=features, target=target, include_all_columns=include_all_columns
         )
 
 

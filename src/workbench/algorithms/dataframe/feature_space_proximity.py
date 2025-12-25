@@ -22,7 +22,7 @@ class FeatureSpaceProximity(Proximity):
         id_column: str,
         features: List[str],
         target: Optional[str] = None,
-        track_columns: Optional[List[str]] = None,
+        include_all_columns: bool = False,
     ):
         """
         Initialize the FeatureSpaceProximity class.
@@ -32,11 +32,11 @@ class FeatureSpaceProximity(Proximity):
             id_column: Name of the column used as the identifier.
             features: List of feature column names to be used for neighbor computations.
             target: Name of the target column. Defaults to None.
-            track_columns: Additional columns to track in results. Defaults to None.
+            include_all_columns: Include all DataFrame columns in neighbor results. Defaults to False.
         """
         # Validate and filter features before calling parent init
         self._raw_features = features
-        super().__init__(df, id_column=id_column, features=features, target=target, track_columns=track_columns)
+        super().__init__(df, id_column=id_column, features=features, target=target, include_all_columns=include_all_columns)
 
     def _prepare_data(self) -> None:
         """Filter out non-numeric features and drop NaN rows."""
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         id_column="foo_id",
         features=["Feature1", "Feature2"],
         target="target",
-        track_columns=["Feature1", "Feature2"],
+        include_all_columns=True,
     )
     print(prox.neighbors(["a", "b"]))
 
@@ -134,9 +134,14 @@ if __name__ == "__main__":
     features = model.features()
     df = fs.pull_dataframe()
     prox = FeatureSpaceProximity(
-        df, id_column=fs.id_column, features=model.features(), target=model.target(), track_columns=features
+        df, id_column=fs.id_column, features=model.features(), target=model.target()
     )
-    print(prox.neighbors(df[fs.id_column].tolist()[:3]))
+    print("\n" + "=" * 80)
+    print("Testing Neighbors...")
+    print("=" * 80)
+    test_id = df[fs.id_column].tolist()[0]
+    print(f"\nNeighbors for ID {test_id}:")
+    print(prox.neighbors(test_id))
 
     print("\n" + "=" * 80)
     print("Testing isolated_compounds...")
@@ -145,12 +150,12 @@ if __name__ == "__main__":
     # Test isolated data in the top 1%
     isolated_1pct = prox.isolated(top_percent=1.0)
     print(f"\nTop 1% most isolated compounds (n={len(isolated_1pct)}):")
-    print(isolated_1pct[[fs.id_column, "nn_distance", "nn_id"]].head(10))
+    print(isolated_1pct)
 
     # Test isolated data in the top 5%
     isolated_5pct = prox.isolated(top_percent=5.0)
     print(f"\nTop 5% most isolated compounds (n={len(isolated_5pct)}):")
-    print(isolated_5pct[[fs.id_column, "nn_distance", "nn_id"]].head(10))
+    print(isolated_5pct)
 
     print("\n" + "=" * 80)
     print("Testing target_gradients...")
@@ -159,15 +164,11 @@ if __name__ == "__main__":
     # Test with different parameters
     gradients_1pct = prox.target_gradients(top_percent=1.0, min_delta=1.0)
     print(f"\nTop 1% target gradients (min_delta=5.0) (n={len(gradients_1pct)}):")
-    print(
-        gradients_1pct[[fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "gradient"]].head(10)
-    )
+    print(gradients_1pct)
 
     gradients_5pct = prox.target_gradients(top_percent=5.0, min_delta=5.0)
     print(f"\nTop 5% target gradients (min_delta=5.0) (n={len(gradients_5pct)}):")
-    print(
-        gradients_5pct[[fs.id_column, model.target(), "neighbor_median", "neighbor_median_diff", "gradient"]].head(10)
-    )
+    print(gradients_5pct)
 
     # Visualize the 2D projection
     print("\n" + "=" * 80)
@@ -176,5 +177,5 @@ if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
     from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
 
-    unit_test = PluginUnitTest(ScatterPlot, input_data=prox.df[:1000], x="x", y="y")
+    unit_test = PluginUnitTest(ScatterPlot, input_data=prox.df[:1000], x="x", y="y", color=model.target())
     unit_test.run()

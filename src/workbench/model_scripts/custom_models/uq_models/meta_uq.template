@@ -28,7 +28,7 @@ TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
     "compressed_features": "{{compressed_features}}",
     "train_all_data": "{{train_all_data}}",
-    "track_columns": "{{track_columns}}",
+    "include_all_columns": "{{include_all_columns}}",
 }
 
 
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     orig_features = features.copy()
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
     train_all_data = TEMPLATE_PARAMS["train_all_data"]
-    track_columns = TEMPLATE_PARAMS["track_columns"]  # Can be None
+    include_all_columns = TEMPLATE_PARAMS["include_all_columns"]  # Defaults to False
     validation_split = 0.2
 
     # Script arguments for input/output directories
@@ -261,7 +261,7 @@ if __name__ == "__main__":
         json.dump(orig_features, fp)  # We save the original features, not the decompressed ones
 
     # Now the FeatureSpaceProximity model
-    model = FeatureSpaceProximity(df_train, id_column=id_column, features=features, target=target, track_columns=track_columns)
+    model = FeatureSpaceProximity(df_train, id_column=id_column, features=features, target=target, include_all_columns=include_all_columns)
 
     # Now serialize the model
     model.serialize(args.model_dir)

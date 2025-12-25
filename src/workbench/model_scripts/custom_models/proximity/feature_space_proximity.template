@@ -8,7 +8,7 @@ TEMPLATE_PARAMS = {
     "id_column": "{{id_column}}",
     "features": "{{feature_list}}",
     "target": "{{target_column}}",
-    "track_columns": "{{track_columns}}",
+    "include_all_columns": "{{include_all_columns}}",
 }
 
 from io import StringIO
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     id_column = TEMPLATE_PARAMS["id_column"]
     features = TEMPLATE_PARAMS["features"]
     target = TEMPLATE_PARAMS["target"]  # Can be None for unsupervised models
-    track_columns = TEMPLATE_PARAMS["track_columns"]  # Can be None
+    include_all_columns = TEMPLATE_PARAMS["include_all_columns"]  # Defaults to False
 
     # Script arguments for input/output directories
     parser = argparse.ArgumentParser()
@@ -80,7 +80,7 @@ if __name__ == "__main__":
     check_dataframe(all_df, "training_df")
 
     # Create the FeatureSpaceProximity model
-    model = FeatureSpaceProximity(all_df, id_column=id_column, features=features, target=target, track_columns=track_columns)
+    model = FeatureSpaceProximity(all_df, id_column=id_column, features=features, target=target, include_all_columns=include_all_columns)
 
     # Now serialize the model
     model.serialize(args.model_dir)

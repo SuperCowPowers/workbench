@@ -93,12 +93,12 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
     return script_path
 
 
-def proximity_model_local(model: "Model", include_features: bool = False):
+def proximity_model_local(model: "Model", include_all_columns: bool = False):
     """Create a FeatureSpaceProximity Model for this Model
 
     Args:
         model (Model): The Model/FeatureSet used to create the proximity model
-        include_features (bool): Whether to include feature columns in the proximity model
+        include_all_columns (bool): Include all DataFrame columns in neighbor results (default: False)
 
     Returns:
         FeatureSpaceProximity: The proximity model
@@ -123,13 +123,14 @@ def proximity_model_local(model: "Model", include_features: bool = False):
     full_df["in_model"] = full_df[id_column].isin(model_ids)
 
     # Create and return the FeatureSpaceProximity Model
-    track_columns = features if include_features else []
-    return FeatureSpaceProximity(full_df, id_column=id_column, features=features, target=target, track_columns=track_columns)
+    return FeatureSpaceProximity(
+        full_df, id_column=id_column, features=features, target=target, include_all_columns=include_all_columns
+    )
 
 
 def fingerprint_prox_model_local(
     model: "Model",
-    include_features: bool = False,
+    include_all_columns: bool = False,
     radius: int = 2,
     n_bits: int = 1024,
     counts: bool = False,
@@ -138,7 +139,7 @@ def fingerprint_prox_model_local(
 
     Args:
         model (Model): The Model used to create the fingerprint proximity model
-        include_features (bool): Whether to include feature columns in the proximity model
+        include_all_columns (bool): Include all DataFrame columns in neighbor results (default: False)
         radius (int): Morgan fingerprint radius (default: 2)
         n_bits (int): Number of bits for the fingerprint (default: 1024)
         counts (bool): Use count fingerprints instead of binary (default: False)
@@ -149,8 +150,7 @@ def fingerprint_prox_model_local(
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity  # noqa: F401
     from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
 
-    # Get Feature and Target Columns from the existing given Model
-    features = model.features()
+    # Get Target Column from the existing given Model
     target = model.target()
 
     # Backtrack our FeatureSet to get the ID column
@@ -166,12 +166,11 @@ def fingerprint_prox_model_local(
     full_df["in_model"] = full_df[id_column].isin(model_ids)
 
     # Create and return the FingerprintProximity Model
-    track_columns = features if include_features else []
     return FingerprintProximity(
         full_df,
         id_column=id_column,
         target=target,
-        track_columns=track_columns,
+        include_all_columns=include_all_columns,
         radius=radius,
         n_bits=n_bits,
         counts=counts,
@@ -239,13 +238,13 @@ def cleanlab_model_local(model: "Model"):
     return create_cleanlab_model(full_df, id_column, features, target, model_type=model_type)
 
 
-def published_proximity_model(model: "Model", prox_model_name: str, track_columns: list = None) -> "Model":
+def published_proximity_model(model: "Model", prox_model_name: str, include_all_columns: bool = False) -> "Model":
     """Create a published proximity model based on the given model
 
     Args:
         model (Model): The model to create the proximity model from
         prox_model_name (str): The name of the proximity model to create
-        track_columns (list, optional): List of columns to track in the proximity model
+        include_all_columns (bool): Include all DataFrame columns in results (default: False)
     Returns:
         Model: The proximity model
     """
@@ -268,7 +267,7 @@ def published_proximity_model(model: "Model", prox_model_name: str, track_column
         description=f"Proximity Model for {model.name}",
         tags=["proximity", model.name],
         custom_script=script_path,
-        custom_args={"track_columns": track_columns},
+        custom_args={"include_all_columns": include_all_columns},
     )
     return prox_model
 

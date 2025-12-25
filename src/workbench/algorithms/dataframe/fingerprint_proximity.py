@@ -22,7 +22,7 @@ class FingerprintProximity(Proximity):
         id_column: str,
         fingerprint_column: Optional[str] = None,
         target: Optional[str] = None,
-        track_columns: Optional[List[str]] = None,
+        include_all_columns: bool = False,
         radius: int = 2,
         n_bits: int = 1024,
         counts: bool = False,
@@ -36,7 +36,7 @@ class FingerprintProximity(Proximity):
             fingerprint_column: Name of the column containing fingerprints (bit strings).
                 If None, looks for existing "fingerprint" column or computes from SMILES.
             target: Name of the target column. Defaults to None.
-            track_columns: Additional columns to track in results. Defaults to None.
+            include_all_columns: Include all DataFrame columns in neighbor results. Defaults to False.
             radius: Radius for Morgan fingerprint computation (default: 2).
             n_bits: Number of bits for fingerprint (default: 1024).
             counts: Whether to use count simulation (default: False).
@@ -58,7 +58,7 @@ class FingerprintProximity(Proximity):
             id_column=id_column,
             features=[self.fingerprint_column],
             target=target,
-            track_columns=track_columns,
+            include_all_columns=include_all_columns,
         )
 
     @staticmethod
