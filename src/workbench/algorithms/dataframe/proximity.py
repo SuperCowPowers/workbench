@@ -51,12 +51,21 @@ class Proximity(ABC):
         # Precompute landscape metrics
         self._precompute_metrics()
 
+        # Define core columns for output (subclasses can override)
+        self._set_core_columns()
+
         # Project the data to 2D (subclass-specific)
         self._project_2d()
 
     def _prepare_data(self) -> None:
         """Prepare the data before building the model. Subclasses can override."""
         pass
+
+    def _set_core_columns(self) -> None:
+        """Set the core columns for output. Subclasses can override."""
+        self.core_columns = [self.id_column, "nn_distance", "nn_id"]
+        if self.target:
+            self.core_columns.extend([self.target, "nn_target", "nn_target_diff"])
 
     @abstractmethod
     def _build_model(self) -> None:
@@ -86,7 +95,8 @@ class Proximity(ABC):
         percentile = 100 - top_percent
         threshold = np.percentile(self.df["nn_distance"], percentile)
         isolated = self.df[self.df["nn_distance"] >= threshold].copy()
-        return isolated.sort_values("nn_distance", ascending=False).reset_index(drop=True)
+        isolated = isolated.sort_values("nn_distance", ascending=False).reset_index(drop=True)
+        return isolated if self.include_all_columns else isolated[self.core_columns]
 
     def target_gradients(
         self,
@@ -114,7 +124,7 @@ class Proximity(ABC):
         if self.target is None:
             raise ValueError("Target column must be specified")
 
-        epsilon = 1e-5
+        epsilon = 1e-6
 
         # Phase 1: Quick filter using precomputed nearest neighbor
         candidates = self.df.copy()

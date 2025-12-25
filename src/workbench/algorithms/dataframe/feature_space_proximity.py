@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     # Create a sample DataFrame
     data = {
-        "foo_id": ["a", "b", "c", "d", "e"],  # Testing string IDs
+        "id": ["a", "b", "c", "d", "e"],  # Testing string IDs
         "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
         "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
         "target": [1, 0, 1, 0, 5],
@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
     # Test duplicate IDs
     data = {
-        "foo_id": ["a", "b", "c", "d", "d"],  # Duplicate ID (d)
+        "id": ["a", "b", "c", "d", "d"],  # Duplicate ID (d)
         "Feature1": [0.1, 0.2, 0.3, 0.4, 0.5],
         "Feature2": [0.5, 0.4, 0.3, 0.2, 0.1],
         "target": [1, 0, 1, 0, 5],
