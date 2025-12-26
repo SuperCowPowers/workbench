@@ -74,6 +74,29 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
     print(f"Base name: {short_name}")
     print(f"{'='*60}")
 
+    # 0. Compute High Target Gradients and set sample weights
+    print(f"\nComputing High Target Gradients for sample weights...")
+    prox = fs.prox_model(target, rdkit_features)
+    htg_df = prox.target_gradients(top_percent=5.0, min_delta=0.25)  # Log space targets
+    htg_ids = htg_df[fs.id_column].tolist()
+    print(f"HTG Top 5% (min_delta 0.25): {len(htg_ids)}")
+
+    # Outliers: HTG points that aren't in the isolated compounds (top 25%)
+    isolated_df = prox.isolated(top_percent=25)
+    isolated_ids = isolated_df[fs.id_column].tolist()
+    print(f"Isolated Compounds (top 20%): {len(isolated_df)}")
+    htg_ids = [id for id in htg_ids if id not in set(isolated_ids)]
+    print(f"Outliers (HTG not Isolated): {len(htg_ids)}")
+
+    # Print out the neighbors of the outliers
+    for id in htg_ids:
+        neighbors = prox.neighbors(id)
+        print(neighbors)
+
+    # Set sample weights to 0.25 for outlier IDs
+    sample_weights = {id: 0.25 for id in htg_ids}
+    fs.set_sample_weights(sample_weights)
+
     # 1. Create XGBoost model
     xgb_model_name = f"{short_name}-reg-xgb"
     if RECREATE or not Model(xgb_model_name).exists():
