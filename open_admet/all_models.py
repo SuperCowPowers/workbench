@@ -75,7 +75,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
     print(f"{'='*60}")
 
     # 0. Compute High Target Gradients and set sample weights
-    print(f"\nComputing High Target Gradients for sample weights...")
+    print("\nComputing High Target Gradients for sample weights...")
     prox = fs.prox_model(target, rdkit_features)
     htg_df = prox.target_gradients(top_percent=5.0, min_delta=0.25)  # Log space targets
     htg_ids = htg_df[fs.id_column].tolist()

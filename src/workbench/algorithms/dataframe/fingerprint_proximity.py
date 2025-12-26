@@ -198,7 +198,11 @@ class FingerprintProximity(Proximity):
         Returns:
             DataFrame with similarity distribution statistics (count, mean, std, percentiles)
         """
-        return self.df["nn_similarity"].describe(percentiles=[0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]).to_frame()
+        return (
+            self.df["nn_similarity"]
+            .describe(percentiles=[0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99])
+            .to_frame()
+        )
 
     def neighbors(
         self,
