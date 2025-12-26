@@ -245,6 +245,7 @@ def train_model(
     patience: int = 20,
     batch_size: int = 128,
     learning_rate: float = 1e-3,
+    loss: str = "L1Loss",
     device: str = "cpu",
 ) -> tuple[TabularMLP, dict]:
     """Train the model with early stopping.
@@ -272,7 +273,16 @@ def train_model(
     if task == "classification":
         criterion = nn.CrossEntropyLoss()
     else:
-        criterion = nn.MSELoss()
+        # Map loss name to PyTorch loss class
+        loss_map = {
+            "L1Loss": nn.L1Loss,
+            "MSELoss": nn.MSELoss,
+            "HuberLoss": nn.HuberLoss,
+            "SmoothL1Loss": nn.SmoothL1Loss,
+        }
+        if loss not in loss_map:
+            raise ValueError(f"Unknown loss '{loss}'. Supported: {list(loss_map.keys())}")
+        criterion = loss_map[loss]()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 

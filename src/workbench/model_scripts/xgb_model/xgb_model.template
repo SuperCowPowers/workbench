@@ -68,6 +68,9 @@ DEFAULT_HYPERPARAMETERS = {
 # Workbench-specific parameters (not passed to XGBoost)
 WORKBENCH_PARAMS = {"n_folds"}
 
+# Regression-only parameters (filtered out for classifiers)
+REGRESSION_ONLY_PARAMS = {"objective"}
+
 # Template parameters (filled in by Workbench)
 TEMPLATE_PARAMS = {
     "model_type": "{{model_type}}",
@@ -136,6 +139,14 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     n_folds = hyperparameters["n_folds"]
     xgb_params = {k: v for k, v in hyperparameters.items() if k not in WORKBENCH_PARAMS}
+
+    # Handle objective: filter regression-only params for classifiers, set default for regressors
+    if model_type == "classifier":
+        xgb_params = {k: v for k, v in xgb_params.items() if k not in REGRESSION_ONLY_PARAMS}
+    else:
+        # Default to MAE (reg:absoluteerror) for regression if not specified
+        xgb_params.setdefault("objective", "reg:absoluteerror")
+
     print(f"XGBoost params: {xgb_params}")
 
     if n_folds == 1:

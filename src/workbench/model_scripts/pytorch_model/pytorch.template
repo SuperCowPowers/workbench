@@ -66,6 +66,8 @@ DEFAULT_HYPERPARAMETERS = {
     "learning_rate": 1e-3,
     "dropout": 0.1,
     "use_batch_norm": True,
+    # Loss function for regression (L1Loss=MAE, MSELoss=MSE, HuberLoss, SmoothL1Loss)
+    "loss": "L1Loss",
     # Random seed
     "seed": 42,
 }
@@ -377,6 +379,7 @@ if __name__ == "__main__":
             patience=hyperparameters["early_stopping_patience"],
             batch_size=hyperparameters["batch_size"],
             learning_rate=hyperparameters["learning_rate"],
+            loss=hyperparameters.get("loss", "L1Loss"),
             device=device,
         )
         ensemble_models.append(model)
