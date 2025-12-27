@@ -97,10 +97,29 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
     target = workbench_model.target()
     class_labels = workbench_model.class_labels()
 
-    if target in predictions_df.columns and "prediction" in predictions_df.columns:
-        metrics_df = compute_metrics_from_predictions(predictions_df, target, class_labels)
+    # Target could be a list for multi-target models
+    if isinstance(target, list):
+        multi_target = True
     else:
-        metrics_df = pd.DataFrame()
+        multi_target = False
+
+    # Single target case
+    if not multi_target:
+        metrics_df = compute_metrics_from_predictions(predictions_df, target, class_labels)
+        return metrics_df, predictions_df
+
+    # Multi-target case
+    metrics_list = []
+    for t in target:
+        # Prediction will be {target}_pred in multi-target case
+        pred_col = f"{t}_pred"
+
+        # Drop NaNs for this target
+        target_preds_df = predictions_df.dropna(subset=[t, pred_col])
+        metrics_df = compute_metrics_from_predictions(target_preds_df, t, class_labels, prediction_col=pred_col)
+        metrics_df.insert(0, "target", t)
+        metrics_list.append(metrics_df)
+    metrics_df = pd.concat(metrics_list, ignore_index=True) if metrics_list else pd.DataFrame()
 
     return metrics_df, predictions_df
 
@@ -111,7 +130,7 @@ if __name__ == "__main__":
     from workbench.api import Model
 
     # Initialize Workbench model
-    model_name = "logd-reg-chemprop"
+    model_name = "open-admet-chemprop-mt"
     print(f"Loading Workbench model: {model_name}")
     model = Model(model_name)
     print(f"Model Framework: {model.model_framework}")

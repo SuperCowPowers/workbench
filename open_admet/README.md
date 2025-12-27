@@ -18,14 +18,23 @@ The challenge covers 9 key ADMET properties:
 | MBPB | Mouse brain plasma binding | % bound |
 | MGMB | Mouse gut microbiome binding | % bound |
 
-## Our Approach
-We train 5 different model types for each ADMET endpoint. The [Workbench AWS Dashboard](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo) supports all 5 of these model types and makes the creation, training, and deployment of models into your production AWS accounts a snap.
+## Our Initial Approach
+We trained 5 different model types for each ADMET endpoint. The [Workbench AWS Dashboard](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo) supports all 5 of these model types and makes the creation, training, and deployment of models into AWS a snap.
 
 1. **XGBoost** - Gradient boosted trees on RDKit molecular descriptors
 2. **PyTorch** - Neural network on RDKit molecular descriptors
 3. **ChemProp** - Message Passing Neural Network (MPNN) on molecular graphs
 4. **ChemProp Hybrid** - MPNN + Top RDKit descriptors combined
 5. **ChemProp Multi-Task** - Single MPNN predicting all 9 endpoints simultaneously
+
+### Dropping some Models
+After evaluating individual model performance on validation data, we dropped the following models from our final ensemble due to lower accuracy:
+- **ChemProp Hybrid Models**
+   
+  The Hybrid models showed roughly equivalent (or slightly worse) performance when compared to the standard ChemProp models, so we opted to drop these.
+- **ChemProp Multi-Task Model** 
+
+    The Multi-Task model showed roughly equivalent (or slightly worse) performance when compared to the standard ChemProp models, so we dropped this model.
 
 ### ChemProp Configuration
 For our chemprop setup we use R-applet's GitHub as a reference:
@@ -97,11 +106,11 @@ model = feature_set.to_model (
     description="Multi-task ChemProp model for 9 ADMET endpoints",
     tags=["chemprop", "open_admet", "multitask"],
 )
-model.set_owner("Jill")
+model.set_owner("Jane")
 
 # Now deploy a production ready AWS Endpoint for our Model
 end = model.to_endpoint(tags=["chemprop", "open_admet", "multitask"])
-end.set_owner("Jill")
+end.set_owner("Jane")
 
 # Automatically run inference and capture results
 test_df = pd.read_csv("/my/test/data.csv")
