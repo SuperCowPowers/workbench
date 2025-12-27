@@ -53,7 +53,7 @@ DEFAULT_HYPERPARAMETERS = {
     # FFN
     "ffn_hidden_dim": 2000,
     "ffn_num_layers": 2,
-    # Loss function for regression (mae, mse, huber)
+    # Loss function for regression (mae, mse)
     "criterion": "mae",
     # Random seed
     "seed": 42,
@@ -130,11 +130,12 @@ def build_mpnn_model(
             hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers, dropout=dropout,
         )
     else:
-        # Map criterion name to PyTorch loss class
+        # Map criterion name to ChemProp metric class (must have .clone() method)
+        from chemprop.nn.metrics import MAE, MSE
+
         criterion_map = {
-            "mae": torch.nn.L1Loss,
-            "mse": torch.nn.MSELoss,
-            "huber": torch.nn.HuberLoss,
+            "mae": MAE,
+            "mse": MSE,
         }
         criterion_name = hyperparameters.get("criterion", "mae")
         if criterion_name not in criterion_map:

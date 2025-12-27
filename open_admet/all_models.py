@@ -18,42 +18,6 @@ FS_LIST = [
     "open_admet_mppb",
 ]
 
-# XGBoost hyperparameters
-XGB_HYPERPARAMETERS = {
-    # Objective: optimize for MAE
-    "objective": "reg:absoluteerror",
-    # Core tree parameters
-    "n_estimators": 300,  # More trees for better convergence
-    "max_depth": 6,
-    "learning_rate": 0.03,  # Lower rate with more estimators
-    # Sampling parameters
-    "subsample": 0.8,
-    "colsample_bytree": 0.6,
-    "colsample_bylevel": 0.8,
-    # Regularization
-    "min_child_weight": 5,
-    "gamma": 0.1,  # Slightly less aggressive pruning
-    "reg_alpha": 0.3,  # L1 regularization
-    "reg_lambda": 1.5,  # L2 regularization
-    # Random seed
-    "random_state": 42,
-}
-
-# PyTorch hyperparameters
-PYTORCH_HYPERPARAMETERS = {
-    "n_folds": 5,
-}
-
-# ChemProp hyperparameters
-CHEMPROP_HYPERPARAMETERS = {
-    "n_folds": 5,
-    "hidden_dim": 300,
-    "depth": 4,
-    "dropout": 0.10,
-    "ffn_hidden_dim": 300,
-    "ffn_num_layers": 2,
-}
-
 
 def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
     """Create XGBoost, PyTorch, and ChemProp models for a given FeatureSet."""
@@ -74,7 +38,14 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
     print(f"Base name: {short_name}")
     print(f"{'='*60}")
 
-    # 0. Compute High Target Gradients and set sample weights
+    # 0. We've seen a bunch of 0.0 values so we're going to give those 0 sample weight
+    df = fs.pull_dataframe()
+    zero_ids = df.loc[df[target] == 0.0, fs.id_column].tolist()
+    fs.set_sample_weights({id: 0.0 for id in zero_ids})
+    print(f"Set {len(zero_ids)}/{len(df)} samples with target == 0.0 to weight 0")
+
+    # Not used right now
+    """
     print("\nComputing High Target Gradients for sample weights...")
     prox = fs.prox_model(target, rdkit_features)
     htg_df = prox.target_gradients(top_percent=5.0, min_delta=0.25)  # Log space targets
@@ -96,6 +67,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
     # Set sample weights to 0.25 for outlier IDs
     sample_weights = {id: 0.25 for id in htg_ids}
     fs.set_sample_weights(sample_weights)
+    """
 
     # 1. Create XGBoost model
     xgb_model_name = f"{short_name}-reg-xgb"
@@ -108,7 +80,6 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
             feature_list=rdkit_features,
             description=f"XGBoost model for {base_name} prediction",
             tags=["open_admet", base_name, "regression", "xgboost"],
-            hyperparameters=XGB_HYPERPARAMETERS,
         )
         xgb_model.set_owner("BW")
         end = xgb_model.to_endpoint(tags=["open_admet", base_name, "xgboost"], max_concurrency=1)
@@ -134,7 +105,6 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
             feature_list=non_zero_shap,
             description=f"PyTorch Tabular model for {base_name} prediction",
             tags=["open_admet", base_name, "regression", "pytorch"],
-            hyperparameters=PYTORCH_HYPERPARAMETERS,
         )
         pytorch_model.set_owner("BW")
         end = pytorch_model.to_endpoint(tags=["open_admet", base_name, "pytorch"], max_concurrency=1)
@@ -154,31 +124,9 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
             feature_list=["smiles"],
             description=f"ChemProp D-MPNN for {base_name} prediction",
             tags=["open_admet", base_name, "regression", "chemprop"],
-            hyperparameters=CHEMPROP_HYPERPARAMETERS,
         )
         chemprop_model.set_owner("BW")
         end = chemprop_model.to_endpoint(tags=["open_admet", base_name, "chemprop"], max_concurrency=1)
-        end.set_owner("BW")
-        end.auto_inference(capture=True)
-        end.cross_fold_inference()
-
-    # 4. Create hybrid ChemProp model with top 50 features
-    hybrid_model_name = f"{short_name}-reg-chemprop-hybrid"
-    if RECREATE or not Model(hybrid_model_name).exists():
-        print(f"Creating ChemProp Hybrid model: {hybrid_model_name}")
-        hybrid_features = ["smiles"] + top_50_features
-        hybrid_model = fs.to_model(
-            name=hybrid_model_name,
-            model_type=ModelType.UQ_REGRESSOR,
-            model_framework=ModelFramework.CHEMPROP,
-            target_column=target,
-            feature_list=hybrid_features,
-            description=f"ChemProp D-MPNN Hybrid for {base_name} prediction",
-            tags=["open_admet", base_name, "regression", "chemprop", "hybrid"],
-            hyperparameters=CHEMPROP_HYPERPARAMETERS,
-        )
-        hybrid_model.set_owner("BW")
-        end = hybrid_model.to_endpoint(tags=["open_admet", base_name, "chemprop", "hybrid"], max_concurrency=1)
         end.set_owner("BW")
         end.auto_inference(capture=True)
         end.cross_fold_inference()
