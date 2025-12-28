@@ -58,39 +58,30 @@ MODEL_TO_TARGET = {
 # List of all available models
 model_list = [
     "caco-2-efflux-reg-chemprop",
-    "caco-2-efflux-reg-chemprop-hybrid",
     "caco-2-efflux-reg-pytorch",
     "caco-2-efflux-reg-xgb",
     "caco-2-papp-a-b-reg-chemprop",
-    "caco-2-papp-a-b-reg-chemprop-hybrid",
     "caco-2-papp-a-b-reg-pytorch",
     "caco-2-papp-a-b-reg-xgb",
     "hlm-clint-reg-chemprop",
-    "hlm-clint-reg-chemprop-hybrid",
     "hlm-clint-reg-pytorch",
     "hlm-clint-reg-xgb",
     "ksol-reg-chemprop",
-    "ksol-reg-chemprop-hybrid",
     "ksol-reg-pytorch",
     "ksol-reg-xgb",
     "logd-reg-chemprop",
-    "logd-reg-chemprop-hybrid",
     "logd-reg-pytorch",
     "logd-reg-xgb",
     "mbpb-reg-chemprop",
-    "mbpb-reg-chemprop-hybrid",
     "mbpb-reg-pytorch",
     "mbpb-reg-xgb",
     "mgmb-reg-chemprop",
-    "mgmb-reg-chemprop-hybrid",
     "mgmb-reg-pytorch",
     "mgmb-reg-xgb",
     "mlm-clint-reg-chemprop",
-    "mlm-clint-reg-chemprop-hybrid",
     "mlm-clint-reg-pytorch",
     "mlm-clint-reg-xgb",
     "mppb-reg-chemprop",
-    "mppb-reg-chemprop-hybrid",
     "mppb-reg-pytorch",
     "mppb-reg-xgb",
 ]
@@ -98,10 +89,6 @@ model_list = [
 xgb_models = [name for name in model_list if name.endswith("-xgb")]
 pytorch_models = [name for name in model_list if name.endswith("-pytorch")]
 chemprop_models = [name for name in model_list if name.endswith("-chemprop")]
-chemprop_hybrid_models = [name for name in model_list if name.endswith("-chemprop-hybrid")]
-
-# Multi-target model
-MULTI_TARGET_MODEL = "open-admet-chemprop-mt"
 
 # Grab test data
 test_df = pd.read_csv("test_data_blind.csv")
@@ -128,7 +115,7 @@ def get_model_prefix(model_name: str) -> str:
     return model_name
 
 
-def get_predictions_for_model(model_name: str, regenerate: bool = False) -> tuple[str, np.ndarray, np.ndarray]:
+def get_predictions_for_model(model_name: str, regenerate: bool = True) -> tuple[str, np.ndarray, np.ndarray]:
     """Run inference for a single model and return (target_name, predictions, prediction_std)."""
 
     # Check if results already exist in DFStore
@@ -196,20 +183,6 @@ def run_inference_and_create_submission(models: list[str], output_file: str):
     return submission_df
 
 
-def get_multi_target_predictions() -> dict[str, tuple[np.ndarray, np.ndarray]]:
-    """Run inference for the multi-target model and return predictions for all targets."""
-    print(f"Running inference for: {MULTI_TARGET_MODEL}")
-    end = Endpoint(MULTI_TARGET_MODEL)
-    result_df = end.inference(df_features)
-    df_store.upsert(f"/workbench/open_admet/inference_runs/{MULTI_TARGET_MODEL}", result_df)
-
-    # Extract predictions for each target (column names are {target}_pred and {target}_pred_std)
-    return {
-        target: (result_df[f"{target}_pred"].values, result_df[f"{target}_pred_std"].values)
-        for target in MODEL_TO_TARGET.values()
-    }
-
-
 def run_meta_model_inference(output_file: str = "submission_meta.csv"):
     """Run inference using all 5 model types with inverse-variance weighted averaging.
 
@@ -226,9 +199,6 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
     # Start with molecule name and smiles from test data
     submission_df = df_features[["Molecule_Name", "SMILES"]].copy()
     submission_df = submission_df.rename(columns={"Molecule_Name": "Molecule Name"})
-
-    # Get multi-target model predictions once (covers all targets)
-    mt_predictions = get_multi_target_predictions()
 
     # Process each target endpoint
     for target_prefix, internal_target in MODEL_TO_TARGET.items():
@@ -249,11 +219,6 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
             _, predictions, prediction_std = get_predictions_for_model(model_name)
             preds_df[model_name] = predictions
             stds_df[model_name] = prediction_std
-
-        # Add multi-target model predictions for this target
-        mt_preds, mt_std = mt_predictions[internal_target]
-        preds_df[MULTI_TARGET_MODEL] = mt_preds
-        stds_df[MULTI_TARGET_MODEL] = mt_std
 
         # Inverse-variance weighting: weight = 1 / variance = 1 / std^2
         variances = stds_df**2 + 1e-8
@@ -315,8 +280,3 @@ if __name__ == "__main__":
     # print("Creating submission with ChemProp models")
     # print("=" * 60)
     # run_inference_and_create_submission(chemprop_models, "submission_chemprop.csv")
-
-    # print("\n" + "=" * 60)
-    # print("Creating submission with ChemProp Hybrid models")
-    # print("=" * 60)
-    # run_inference_and_create_submission(chemprop_hybrid_models, "submission_chemprop_hybrid.csv")

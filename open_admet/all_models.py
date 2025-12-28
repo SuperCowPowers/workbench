@@ -91,7 +91,6 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
     xgb_model = Model(xgb_model_name)
     importances = xgb_model.shap_importance()
     non_zero_shap = [feat for feat, imp in importances if imp != 0.0]
-    top_50_features = non_zero_shap[:50]
 
     # 2. Create PyTorch model using non-zero SHAP features
     pytorch_model_name = f"{short_name}-reg-pytorch"
