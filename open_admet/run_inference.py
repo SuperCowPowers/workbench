@@ -204,12 +204,11 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
     for target_prefix, internal_target in MODEL_TO_TARGET.items():
         print(f"\nProcessing target: {internal_target}")
 
-        # Build model names for the 4 single-target model types
+        # Build model names for the 3 single-target model types
         model_names = [
             f"{target_prefix}-reg-xgb",
             f"{target_prefix}-reg-pytorch",
             f"{target_prefix}-reg-chemprop",
-            f"{target_prefix}-reg-chemprop-hybrid",
         ]
 
         # Collect predictions and stds from single-target models (in log-space)
