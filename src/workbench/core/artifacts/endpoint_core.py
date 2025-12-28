@@ -440,11 +440,14 @@ class EndpointCore(Artifact):
                 # Drop rows with NaN target values for metrics/plots
                 target_df = prediction_df.dropna(subset=[target])
 
+                # For multi-target models, prediction column is {target}_pred, otherwise "prediction"
+                pred_col = f"{target}_pred" if is_multi_target else "prediction"
+
                 # Compute per-target metrics
                 if model.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
-                    target_metrics = self.regression_metrics(target, target_df)
+                    target_metrics = self.regression_metrics(target, target_df, prediction_col=pred_col)
                 elif model.model_type == ModelType.CLASSIFIER:
-                    target_metrics = self.classification_metrics(target, target_df)
+                    target_metrics = self.classification_metrics(target, target_df, prediction_col=pred_col)
                 else:
                     target_metrics = pd.DataFrame()
 
@@ -547,11 +550,14 @@ class EndpointCore(Artifact):
             # Drop rows with NaN target values for metrics/plots
             target_df = out_of_fold_df.dropna(subset=[target])
 
+            # For multi-target models, prediction column is {target}_pred, otherwise "prediction"
+            pred_col = f"{target}_pred" if is_multi_target else "prediction"
+
             # Compute per-target metrics
             if model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
-                target_metrics = self.regression_metrics(target, target_df)
+                target_metrics = self.regression_metrics(target, target_df, prediction_col=pred_col)
             elif model_type == ModelType.CLASSIFIER:
-                target_metrics = self.classification_metrics(target, target_df)
+                target_metrics = self.classification_metrics(target, target_df, prediction_col=pred_col)
             else:
                 target_metrics = pd.DataFrame()
 
@@ -901,39 +907,20 @@ class EndpointCore(Artifact):
         self.log.info(f"Writing predictions to {output_file}")
         wr.s3.to_csv(output_df, output_file, index=False)
 
-    def regression_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+    def regression_metrics(
+        self, target_column: str, prediction_df: pd.DataFrame, prediction_col: str = "prediction"
+    ) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
+
         Args:
             target_column (str): Name of the target column
             prediction_df (pd.DataFrame): DataFrame with the prediction results
+            prediction_col (str): Name of the prediction column (default: "prediction")
+
         Returns:
             pd.DataFrame: DataFrame with the performance metrics
         """
-
-        # Sanity Check the prediction DataFrame
-        if prediction_df.empty:
-            self.log.warning("No predictions were made. Returning empty DataFrame.")
-            return pd.DataFrame()
-
-        # Check for prediction column
-        if "prediction" not in prediction_df.columns:
-            self.log.warning("No 'prediction' column found in DataFrame")
-            return pd.DataFrame()
-
-        # Check for NaN values in target or prediction columns
-        if prediction_df[target_column].isnull().any() or prediction_df["prediction"].isnull().any():
-            num_nan_target = prediction_df[target_column].isnull().sum()
-            num_nan_prediction = prediction_df["prediction"].isnull().sum()
-            self.log.warning(f"NaNs Found: {target_column} {num_nan_target} and prediction: {num_nan_prediction}.")
-            self.log.warning("Dropping NaN rows for metric computation.")
-            prediction_df = prediction_df.dropna(subset=[target_column, "prediction"])
-
-        # Compute the metrics using shared utilities
-        try:
-            return compute_regression_metrics(prediction_df, target_column)
-        except Exception as e:
-            self.log.warning(f"Error computing regression metrics: {str(e)}")
-            return pd.DataFrame()
+        return compute_regression_metrics(prediction_df, target_column, prediction_col)
 
     def residuals(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Add the residuals to the prediction DataFrame
@@ -963,58 +950,22 @@ class EndpointCore(Artifact):
 
         return prediction_df
 
-    @staticmethod
-    def validate_proba_columns(prediction_df: pd.DataFrame, class_labels: list, guessing: bool = False):
-        """Ensure probability columns are correctly aligned with class labels
-
-        Args:
-            prediction_df (pd.DataFrame): DataFrame with the prediction results
-            class_labels (list): List of class labels
-            guessing (bool, optional): Whether we're guessing the class labels. Defaults to False.
-        """
-        proba_columns = [col.replace("_proba", "") for col in prediction_df.columns if col.endswith("_proba")]
-
-        if sorted(class_labels) != sorted(proba_columns):
-            if guessing:
-                raise ValueError(f"_proba columns {proba_columns} != GUESSED class_labels {class_labels}!")
-            else:
-                raise ValueError(f"_proba columns {proba_columns} != class_labels {class_labels}!")
-
-    def classification_metrics(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
+    def classification_metrics(
+        self, target_column: str, prediction_df: pd.DataFrame, prediction_col: str = "prediction"
+    ) -> pd.DataFrame:
         """Compute the performance metrics for this Endpoint
 
         Args:
             target_column (str): Name of the target column
             prediction_df (pd.DataFrame): DataFrame with the prediction results
+            prediction_col (str): Name of the prediction column (default: "prediction")
 
         Returns:
             pd.DataFrame: DataFrame with the performance metrics
         """
-        # Check for prediction column
-        if "prediction" not in prediction_df.columns:
-            self.log.warning("No 'prediction' column found in DataFrame")
-            return pd.DataFrame()
-
-        # Drop rows with NaN predictions (can't compute metrics on missing predictions)
-        nan_mask = prediction_df["prediction"].isna()
-        if nan_mask.any():
-            n_nan = nan_mask.sum()
-            self.log.warning(f"Dropping {n_nan} rows with NaN predictions for metrics calculation")
-            prediction_df = prediction_df[~nan_mask].copy()
-
-        # Get the class labels from the model
+        # Get class labels from the model (metrics_utils will infer if None)
         class_labels = ModelCore(self.model_name).class_labels()
-        if class_labels is None:
-            self.log.warning(
-                "Class labels not found in the model. Guessing class labels from the prediction DataFrame."
-            )
-            class_labels = prediction_df[target_column].unique().tolist()
-            self.validate_proba_columns(prediction_df, class_labels, guessing=True)
-        else:
-            self.validate_proba_columns(prediction_df, class_labels)
-
-        # Compute the metrics using shared utilities (returns per-class + 'all' row)
-        return compute_classification_metrics(prediction_df, target_column, class_labels)
+        return compute_classification_metrics(prediction_df, target_column, class_labels, prediction_col)
 
     def generate_confusion_matrix(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
         """Compute the confusion matrix for this Endpoint

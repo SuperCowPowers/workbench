@@ -18,10 +18,32 @@ from sklearn.metrics import (
 log = logging.getLogger("workbench")
 
 
+def validate_proba_columns(predictions_df: pd.DataFrame, class_labels: List[str], guessing: bool = False) -> bool:
+    """Validate that probability columns match class labels.
+
+    Args:
+        predictions_df: DataFrame with prediction results
+        class_labels: List of class labels
+        guessing: Whether class labels were guessed from data
+
+    Returns:
+        True if validation passes
+
+    Raises:
+        ValueError: If probability columns don't match class labels
+    """
+    proba_columns = [col.replace("_proba", "") for col in predictions_df.columns if col.endswith("_proba")]
+
+    if sorted(class_labels) != sorted(proba_columns):
+        label_type = "GUESSED class_labels" if guessing else "class_labels"
+        raise ValueError(f"_proba columns {proba_columns} != {label_type} {class_labels}!")
+    return True
+
+
 def compute_classification_metrics(
     predictions_df: pd.DataFrame,
     target_col: str,
-    class_labels: List[str],
+    class_labels: Optional[List[str]] = None,
     prediction_col: str = "prediction",
 ) -> pd.DataFrame:
     """Compute classification metrics from a predictions DataFrame.
@@ -29,26 +51,62 @@ def compute_classification_metrics(
     Args:
         predictions_df: DataFrame with target and prediction columns
         target_col: Name of the target column
-        class_labels: List of class labels in order
+        class_labels: List of class labels in order (if None, inferred from target column)
         prediction_col: Name of the prediction column (default: "prediction")
 
     Returns:
         DataFrame with per-class metrics (precision, recall, f1, roc_auc, support)
-        plus a weighted 'all' row
+        plus a weighted 'all' row. Returns empty DataFrame if validation fails.
     """
-    y_true = predictions_df[target_col]
-    y_pred = predictions_df[prediction_col]
+    # Validate inputs
+    if predictions_df.empty:
+        log.warning("Empty DataFrame provided. Returning empty metrics.")
+        return pd.DataFrame()
+
+    if prediction_col not in predictions_df.columns:
+        log.warning(f"Prediction column '{prediction_col}' not found in DataFrame. Returning empty metrics.")
+        return pd.DataFrame()
+
+    if target_col not in predictions_df.columns:
+        log.warning(f"Target column '{target_col}' not found in DataFrame. Returning empty metrics.")
+        return pd.DataFrame()
+
+    # Handle NaN predictions
+    df = predictions_df.copy()
+    nan_pred = df[prediction_col].isnull().sum()
+    if nan_pred > 0:
+        log.warning(f"Dropping {nan_pred} rows with NaN predictions.")
+        df = df[~df[prediction_col].isnull()]
+
+    if df.empty:
+        log.warning("No valid rows after dropping NaNs. Returning empty metrics.")
+        return pd.DataFrame()
+
+    # Handle class labels
+    guessing = False
+    if class_labels is None:
+        log.warning("Class labels not provided. Inferring from target column.")
+        class_labels = df[target_col].unique().tolist()
+        guessing = True
+
+    # Validate probability columns if present
+    proba_cols = [col for col in df.columns if col.endswith("_proba")]
+    if proba_cols:
+        validate_proba_columns(df, class_labels, guessing=guessing)
+
+    y_true = df[target_col]
+    y_pred = df[prediction_col]
 
     # Precision, recall, f1, support per class
     prec, rec, f1, support = precision_recall_fscore_support(y_true, y_pred, labels=class_labels, zero_division=0)
 
     # ROC AUC per class (requires probability columns and sorted labels)
-    proba_cols = [f"{label}_proba" for label in class_labels]
-    if all(col in predictions_df.columns for col in proba_cols):
+    proba_col_names = [f"{label}_proba" for label in class_labels]
+    if all(col in df.columns for col in proba_col_names):
         # roc_auc_score requires labels to be sorted, so we sort and reorder results back
         sorted_labels = sorted(class_labels)
         sorted_proba_cols = [f"{label}_proba" for label in sorted_labels]
-        y_score_sorted = predictions_df[sorted_proba_cols].values
+        y_score_sorted = df[sorted_proba_cols].values
         roc_auc_sorted = roc_auc_score(y_true, y_score_sorted, labels=sorted_labels, multi_class="ovr", average=None)
         # Map back to original class_labels order
         label_to_auc = dict(zip(sorted_labels, roc_auc_sorted))
@@ -97,9 +155,35 @@ def compute_regression_metrics(
 
     Returns:
         DataFrame with regression metrics (rmse, mae, medae, r2, spearmanr, support)
+        Returns empty DataFrame if validation fails or no valid data.
     """
-    y_true = predictions_df[target_col].values
-    y_pred = predictions_df[prediction_col].values
+    # Validate inputs
+    if predictions_df.empty:
+        log.warning("Empty DataFrame provided. Returning empty metrics.")
+        return pd.DataFrame()
+
+    if prediction_col not in predictions_df.columns:
+        log.warning(f"Prediction column '{prediction_col}' not found in DataFrame. Returning empty metrics.")
+        return pd.DataFrame()
+
+    if target_col not in predictions_df.columns:
+        log.warning(f"Target column '{target_col}' not found in DataFrame. Returning empty metrics.")
+        return pd.DataFrame()
+
+    # Handle NaN values
+    df = predictions_df[[target_col, prediction_col]].copy()
+    nan_target = df[target_col].isnull().sum()
+    nan_pred = df[prediction_col].isnull().sum()
+    if nan_target > 0 or nan_pred > 0:
+        log.warning(f"NaNs found: {target_col}={nan_target}, {prediction_col}={nan_pred}. Dropping NaN rows.")
+        df = df.dropna()
+
+    if df.empty:
+        log.warning("No valid rows after dropping NaNs. Returning empty metrics.")
+        return pd.DataFrame()
+
+    y_true = df[target_col].values
+    y_pred = df[prediction_col].values
 
     return pd.DataFrame(
         [
