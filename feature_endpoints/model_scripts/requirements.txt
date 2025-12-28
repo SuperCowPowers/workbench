@@ -1,0 +1,2 @@
+rdkit==2025.3.6
+mordredcommunity>=2.0.6
