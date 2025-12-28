@@ -574,7 +574,7 @@ class FeatureSetCore(Artifact):
 
         TrainingView.create_with_sql(self, sql_query=custom_sql, id_column=self.id_column)
 
-    @deprecated(version=0.9)
+    @deprecated(version="0.9")
     def set_training_filter(self, filter_expression: Optional[str] = None):
         """Set a filter expression for the training view for this FeatureSet
 

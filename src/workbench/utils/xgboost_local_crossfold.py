@@ -23,9 +23,13 @@ from workbench.utils.metrics_utils import compute_metrics_from_predictions
 from workbench.utils.pandas_utils import expand_proba_column
 from workbench.utils.xgboost_model_utils import xgboost_model_from_s3
 
+# Pull deprecated decorator into scope
+from workbench.utils.deprecated_utils import deprecated
+
 log = logging.getLogger("workbench")
 
 
+@deprecated(version="0.9")
 def cross_fold_inference(workbench_model: Any, nfolds: int = 5) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Performs K-fold cross-validation locally with detailed metrics.
