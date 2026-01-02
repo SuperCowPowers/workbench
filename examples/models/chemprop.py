@@ -66,3 +66,50 @@ if recreate or not Endpoint("open-admet-chemprop-mt").exists():
     end.set_owner("BW")
     end.auto_inference(capture=True)
     end.cross_fold_inference()
+
+# =============================================================================
+# Hybrid ChemProp Model (SMILES + Molecular Descriptors)
+# =============================================================================
+# This example shows how to combine ChemProp's learned molecular representations
+# with pre-computed molecular descriptors (RDKit/Mordred features).
+# The extra features are concatenated with the MPNN output before the FFN.
+
+# Top 10 SHAP features from XGBoost model (provides complementary information to MPNN)
+TOP_SHAP_FEATURES = [
+    "nbase",
+    "mv",
+    "mollogp",
+    "maxestateindex",
+    "vsa_estate10",
+    "mm",
+    "hallkieralpha",
+    "c2sp2",
+    "fpdensitymorgan3",
+    "slogp_vsa2",
+]
+
+if recreate or not Model("open-admet-chemprop-hybrid").exists():
+    feature_set = FeatureSet("open_admet_all")
+
+    # Hybrid mode: SMILES + top molecular descriptors
+    # The template auto-detects extra features beyond the SMILES column
+    hybrid_features = ["smiles"] + TOP_SHAP_FEATURES
+
+    m = feature_set.to_model(
+        name="open-admet-chemprop-hybrid",
+        model_type=ModelType.REGRESSOR,
+        model_framework=ModelFramework.CHEMPROP,
+        target_column="logd",
+        feature_list=hybrid_features,
+        description="Hybrid ChemProp model combining D-MPNN with top SHAP molecular descriptors",
+        tags=["chemprop", "open_admet", "hybrid"],
+    )
+    m.set_owner("BW")
+
+# Create an Endpoint for the Hybrid Model
+if recreate or not Endpoint("open-admet-chemprop-hybrid").exists():
+    m = Model("open-admet-chemprop-hybrid")
+    end = m.to_endpoint(tags=["chemprop", "open_admet", "hybrid"])
+    end.set_owner("BW")
+    end.auto_inference(capture=True)
+    end.cross_fold_inference()
