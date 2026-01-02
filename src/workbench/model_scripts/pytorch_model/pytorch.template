@@ -59,12 +59,12 @@ DEFAULT_HYPERPARAMETERS = {
     # Training parameters
     "n_folds": 5,
     "max_epochs": 200,
-    "early_stopping_patience": 20,
+    "early_stopping_patience": 30,
     "batch_size": 128,
-    # Model architecture
-    "layers": "256-128-64",
+    # Model architecture (larger capacity - ensemble provides regularization)
+    "layers": "512-256-128",
     "learning_rate": 1e-3,
-    "dropout": 0.1,
+    "dropout": 0.05,
     "use_batch_norm": True,
     # Loss function for regression (L1Loss=MAE, MSELoss=MSE, HuberLoss, SmoothL1Loss)
     "loss": "L1Loss",

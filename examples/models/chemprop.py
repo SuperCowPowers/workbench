@@ -16,7 +16,6 @@ if recreate or not Model("open-admet-chemprop-logd").exists():
         feature_list=["smiles"],
         description="Single-target Chemprop Regression Model for LogD",
         tags=["chemprop", "open_admet"],
-        hyperparameters={"max_epochs": 400, "hidden_dim": 300, "depth": 3, "n_folds": 5},
     )
     m.set_owner("BW")
 

@@ -44,12 +44,12 @@ DEFAULT_HYPERPARAMETERS = {
     # Training
     "n_folds": 5,
     "max_epochs": 400,
-    "patience": 40,
-    "batch_size": 16,
+    "patience": 50,
+    "batch_size": 32,
     # Message Passing
     "hidden_dim": 700,
     "depth": 6,
-    "dropout": 0.15,
+    "dropout": 0.1,  # Lower dropout - ensemble provides regularization
     # FFN
     "ffn_hidden_dim": 2000,
     "ffn_num_layers": 2,
@@ -73,6 +73,25 @@ TEMPLATE_PARAMS = {
 # =============================================================================
 # Helper Functions
 # =============================================================================
+def compute_std_confidence(df: pd.DataFrame, median_std: float, std_col: str = "prediction_std") -> pd.DataFrame:
+    """Compute confidence score from ensemble prediction_std.
+
+    Uses exponential decay: confidence = exp(-std / median_std)
+    - Low std (ensemble agreement) -> high confidence
+    - High std (ensemble disagreement) -> low confidence
+
+    Args:
+        df: DataFrame with prediction_std column
+        median_std: Median std from training validation set (normalization factor)
+        std_col: Name of the std column to use
+
+    Returns:
+        DataFrame with added 'confidence' column (0.0 to 1.0)
+    """
+    df["confidence"] = np.exp(-df[std_col] / median_std)
+    return df
+
+
 def find_smiles_column(columns: list[str]) -> str:
     """Find SMILES column (case-insensitive match for 'smiles')."""
     smiles_col = next((c for c in columns if c.lower() == "smiles"), None)
@@ -165,7 +184,12 @@ def model_fn(model_dir: str) -> dict:
         ensemble_models.append(model)
 
     print(f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}")
-    return {"ensemble_models": ensemble_models, "n_ensemble": metadata["n_ensemble"], "target_columns": metadata["target_columns"]}
+    return {
+        "ensemble_models": ensemble_models,
+        "n_ensemble": metadata["n_ensemble"],
+        "target_columns": metadata["target_columns"],
+        "median_std": metadata["median_std"],
+    }
 
 
 # =============================================================================
@@ -273,6 +297,9 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
             df.loc[valid_mask, f"{tc}_pred_std"] = preds_std[:, t_idx]
         df["prediction"] = df[f"{target_columns[0]}_pred"]
         df["prediction_std"] = df[f"{target_columns[0]}_pred_std"]
+
+        # Compute confidence from ensemble std
+        df = compute_std_confidence(df, model_dict["median_std"])
 
     return df
 
@@ -550,13 +577,19 @@ if __name__ == "__main__":
         df_val["prediction"] = df_val[f"{target_columns[0]}_pred"]
         df_val["prediction_std"] = df_val[f"{target_columns[0]}_pred_std"]
 
+        # Compute confidence from ensemble std
+        median_std = float(np.median(preds_std[:, 0]))
+        print(f"\nComputing confidence scores (median_std={median_std:.6f})...")
+        df_val = compute_std_confidence(df_val, median_std)
+        print(f"  Confidence: mean={df_val['confidence'].mean():.3f}, min={df_val['confidence'].min():.3f}, max={df_val['confidence'].max():.3f}")
+
     # -------------------------------------------------------------------------
     # Save validation predictions to S3
     # -------------------------------------------------------------------------
     output_columns = [id_column] if id_column in df_val.columns else []
     output_columns += target_columns
     output_columns += [f"{t}_pred" for t in target_columns] + [f"{t}_pred_std" for t in target_columns]
-    output_columns += ["prediction", "prediction_std"]
+    output_columns += ["prediction", "prediction_std", "confidence"]
     output_columns += [c for c in df_val.columns if c.endswith("_proba")]
     output_columns = [c for c in output_columns if c in df_val.columns]
 
@@ -573,7 +606,13 @@ if __name__ == "__main__":
     for ckpt in glob.glob(os.path.join(args.model_dir, "best_*.ckpt")):
         os.remove(ckpt)
 
-    joblib.dump({"n_ensemble": len(ensemble_models), "n_folds": n_folds, "target_columns": target_columns}, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
+    ensemble_metadata = {
+        "n_ensemble": len(ensemble_models),
+        "n_folds": n_folds,
+        "target_columns": target_columns,
+        "median_std": median_std,  # For confidence calculation during inference
+    }
+    joblib.dump(ensemble_metadata, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
 
     with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
         json.dump(hyperparameters, f, indent=2)
