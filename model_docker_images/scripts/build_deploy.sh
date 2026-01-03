@@ -19,7 +19,8 @@ declare -A REPO_MAP=(
   ["pytorch_inference"]="aws-ml-images/py312-pytorch-inference"
   ["ml_pipelines"]="aws-ml-images/py312-ml-pipelines"
   ["workbench_inference"]="aws-ml-images/py312-workbench-inference"
-  ["meta_endpoint"]="aws-ml-images/py312-meta-endpoint"
+  ["meta_training"]="aws-ml-images/py312-meta-training"
+  ["meta_inference"]="aws-ml-images/py312-meta-inference"
 )
 
 # Colors for output

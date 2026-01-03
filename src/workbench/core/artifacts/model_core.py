@@ -63,7 +63,8 @@ class ModelImages:
         "inference": "py312-general-ml-inference",
         "pytorch_training": "py312-pytorch-training",
         "pytorch_inference": "py312-pytorch-inference",
-        "meta-endpoint": "py312-meta-endpoint",
+        "meta_training": "py312-meta-training",
+        "meta_inference": "py312-meta-inference",
     }
 
     @classmethod

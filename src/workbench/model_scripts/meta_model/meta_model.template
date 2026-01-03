@@ -16,11 +16,16 @@
 import argparse
 import json
 import os
+from io import StringIO
 
-import numpy as np
+import boto3
 import pandas as pd
 
 from workbench_bridges.endpoints.fast_inference import fast_inference
+
+# Set AWS_REGION from boto3 if not already set (needed for fast_inference)
+if not os.environ.get("AWS_REGION") and not os.environ.get("SAGEMAKER_REGION"):
+    os.environ["AWS_REGION"] = boto3.session.Session().region_name
 
 # Template parameters (filled in by Workbench)
 TEMPLATE_PARAMS = {
@@ -70,19 +75,19 @@ def aggregate_predictions(results: dict[str, pd.DataFrame]) -> pd.DataFrame:
     first_df = list(valid_results.values())[0]
     output_df = first_df.drop(columns=["prediction", "confidence", "prediction_std"], errors="ignore").copy()
 
-    # Stack predictions and confidences from all endpoints
-    predictions = np.stack([df["prediction"].values for df in valid_results.values()], axis=0)
-    confidences = np.stack([df["confidence"].values for df in valid_results.values()], axis=0)
+    # Build DataFrames of predictions and confidences from all endpoints
+    pred_df = pd.DataFrame({name: df["prediction"] for name, df in valid_results.items()})
+    conf_df = pd.DataFrame({name: df["confidence"] for name, df in valid_results.items()})
 
     # Confidence-weighted average: sum(pred * conf) / sum(conf)
-    weights = confidences / (confidences.sum(axis=0, keepdims=True) + 1e-8)
-    output_df["prediction"] = (predictions * weights).sum(axis=0)
+    weights = conf_df.div(conf_df.sum(axis=1) + 1e-8, axis=0)
+    output_df["prediction"] = (pred_df * weights).sum(axis=1)
 
     # Ensemble std across child endpoints
-    output_df["prediction_std"] = predictions.std(axis=0)
+    output_df["prediction_std"] = pred_df.std(axis=1)
 
     # Aggregated confidence: weighted average of child confidences
-    output_df["confidence"] = (confidences * weights).sum(axis=0)
+    output_df["confidence"] = (conf_df * weights).sum(axis=1)
 
     return output_df
 
@@ -97,6 +102,33 @@ def model_fn(model_dir: str) -> dict:
 
     print(f"Meta model loaded: {len(config['child_endpoints'])} child endpoints")
     return config
+
+
+def input_fn(input_data, content_type):
+    """Parse input data and return a DataFrame."""
+    if not input_data:
+        raise ValueError("Empty input data is not supported!")
+
+    # Decode bytes to string if necessary
+    if isinstance(input_data, bytes):
+        input_data = input_data.decode("utf-8")
+
+    if "text/csv" in content_type:
+        return pd.read_csv(StringIO(input_data))
+    elif "application/json" in content_type:
+        return pd.DataFrame(json.loads(input_data))
+    else:
+        raise ValueError(f"{content_type} not supported!")
+
+
+def output_fn(output_df, accept_type):
+    """Supports both CSV and JSON output formats."""
+    if "text/csv" in accept_type:
+        return output_df.to_csv(index=False), "text/csv"
+    elif "application/json" in accept_type:
+        return output_df.to_json(orient="records"), "application/json"
+    else:
+        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
 
 # =============================================================================
