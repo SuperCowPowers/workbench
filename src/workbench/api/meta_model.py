@@ -106,12 +106,15 @@ class MetaModel(Model):
         feature_list = primary_model.features()
         feature_set_name = primary_model.get_input()
 
-        log.info(f"Primary endpoint: {child_endpoints[0]} -> Model: {primary_model.name} -> FeatureSet: {feature_set_name}")
+        log.info(
+            f"Primary endpoint: {child_endpoints[0]} -> Model: {primary_model.name} -> FeatureSet: {feature_set_name}"
+        )
         return feature_list, feature_set_name
 
     @classmethod
-    def _run_training(cls, name: str, child_endpoints: list[str], target_column: str,
-                      aws_clamp: AWSAccountClamp, sm_session) -> Estimator:
+    def _run_training(
+        cls, name: str, child_endpoints: list[str], target_column: str, aws_clamp: AWSAccountClamp, sm_session
+    ) -> Estimator:
         """Run the minimal training job that saves the meta model config.
 
         Args:
@@ -158,8 +161,16 @@ class MetaModel(Model):
         return estimator
 
     @classmethod
-    def _register_model(cls, name: str, child_endpoints: list[str], description: str,
-                        tags: list[str], estimator: Estimator, aws_clamp: AWSAccountClamp, sm_session):
+    def _register_model(
+        cls,
+        name: str,
+        child_endpoints: list[str],
+        description: str,
+        tags: list[str],
+        estimator: Estimator,
+        aws_clamp: AWSAccountClamp,
+        sm_session,
+    ):
         """Create model group and register the model.
 
         Args:
@@ -195,8 +206,9 @@ class MetaModel(Model):
         )
 
     @classmethod
-    def _set_metadata(cls, name: str, target_column: str, feature_list: list[str],
-                      feature_set_name: str, child_endpoints: list[str]):
+    def _set_metadata(
+        cls, name: str, target_column: str, feature_list: list[str], feature_set_name: str, child_endpoints: list[str]
+    ):
         """Set model metadata and onboard.
 
         Args:
