@@ -100,6 +100,7 @@ def generate_model_script(template_params: dict) -> str:
             - model_metrics_s3_path (str): The S3 path to store the model metrics
             - train_all_data (bool): Whether to train on all (100%) of the data
             - hyperparameters (dict, optional): Hyperparameters for the model (default: None)
+            - child_endpoints (list[str], optional): For META models, list of child endpoint names
 
     Returns:
         str: The name of the generated model script
@@ -116,6 +117,9 @@ def generate_model_script(template_params: dict) -> str:
     elif template_params["model_framework"] == ModelFramework.CHEMPROP:
         template_name = "chemprop.template"
         model_script_dir = "chemprop"
+    elif template_params["model_framework"] == ModelFramework.META:
+        template_name = "meta_model.template"
+        model_script_dir = "meta_model"
     elif template_params["model_type"] in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.CLASSIFIER]:
         template_name = "xgb_model.template"
         model_script_dir = "xgb_model"

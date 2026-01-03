@@ -47,6 +47,7 @@ class ModelFramework(Enum):
     PYTORCH = "pytorch"
     CHEMPROP = "chemprop"
     TRANSFORMER = "transformer"
+    META = "meta"
     UNKNOWN = "unknown"
 
 

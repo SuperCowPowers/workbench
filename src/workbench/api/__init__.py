@@ -5,6 +5,7 @@ These class provide high-level APIs for the Workbench package, offering easy acc
 - DataSource: Manages AWS Data Catalog and Athena
 - FeatureSet: Manages AWS Feature Store and Feature Groups
 - Model: Manages the training and deployment of AWS Model Groups and Packages
+- MetaModel: A Model that aggregates predictions from multiple child endpoints
 - ModelType: Enum for the different model types supported by Workbench
 - Endpoint: Manages the deployment and invocations/inference on AWS Endpoints
 - Meta: Provides an API to retrieve AWS Metadata for the above classes
@@ -15,6 +16,7 @@ These class provide high-level APIs for the Workbench package, offering easy acc
 from .data_source import DataSource
 from .feature_set import FeatureSet
 from .model import Model, ModelType, ModelFramework
+from .meta_model import MetaModel
 from .endpoint import Endpoint
 from .meta import Meta
 from .parameter_store import ParameterStore
@@ -24,6 +26,7 @@ __all__ = [
     "DataSource",
     "FeatureSet",
     "Model",
+    "MetaModel",
     "ModelType",
     "ModelFramework",
     "Endpoint",

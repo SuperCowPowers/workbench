@@ -1,0 +1,154 @@
+# Meta Model Template for Workbench
+#
+# NOTE: This is called a "meta model" but it's really a "meta endpoint" - it aggregates
+# predictions from multiple child endpoints. We call it a "model" because Workbench
+# creates Model artifacts that get deployed as Endpoints, so this follows that pattern.
+#
+# Assumptions/Shortcuts:
+# - All child endpoints are regression models
+# - All child endpoints output 'prediction' and 'confidence' columns
+# - Aggregation uses confidence-weighted voting (confidence is always 0-1)
+#
+# This template:
+# - Has no real training phase (just saves metadata)
+# - At inference time, calls child endpoints and aggregates their predictions
+
+import argparse
+import json
+import os
+
+import numpy as np
+import pandas as pd
+
+from workbench_bridges.endpoints.fast_inference import fast_inference
+
+# Template parameters (filled in by Workbench)
+TEMPLATE_PARAMS = {
+    "child_endpoints": "{{child_endpoints}}",
+    "target_column": "{{target_column}}",
+    "model_metrics_s3_path": "{{model_metrics_s3_path}}",
+}
+
+
+def invoke_endpoints_parallel(endpoint_names: list[str], df: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    """Call multiple child endpoints and collect their results.
+
+    Args:
+        endpoint_names: List of endpoint names to call
+        df: Input DataFrame to send to each endpoint
+
+    Returns:
+        Dict mapping endpoint_name -> result DataFrame (or None if failed)
+    """
+    results = {}
+    for name in endpoint_names:
+        try:
+            # Use fast_inference from workbench-bridges (handles threading internally)
+            results[name] = fast_inference(name, df)
+        except Exception as e:
+            print(f"Error calling endpoint {name}: {e}")
+            results[name] = None
+    return results
+
+
+def aggregate_predictions(results: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """Aggregate predictions from multiple endpoints using confidence-weighted voting.
+
+    Args:
+        results: Dict mapping endpoint_name -> predictions DataFrame
+                 Each DataFrame must have 'prediction' and 'confidence' columns
+
+    Returns:
+        DataFrame with aggregated prediction, prediction_std, and confidence
+    """
+    # Filter out failed endpoints
+    valid_results = {k: v for k, v in results.items() if v is not None}
+    if not valid_results:
+        raise ValueError("All child endpoints failed")
+
+    # Use first result as base (for id columns, etc.)
+    first_df = list(valid_results.values())[0]
+    output_df = first_df.drop(columns=["prediction", "confidence", "prediction_std"], errors="ignore").copy()
+
+    # Stack predictions and confidences from all endpoints
+    predictions = np.stack([df["prediction"].values for df in valid_results.values()], axis=0)
+    confidences = np.stack([df["confidence"].values for df in valid_results.values()], axis=0)
+
+    # Confidence-weighted average: sum(pred * conf) / sum(conf)
+    weights = confidences / (confidences.sum(axis=0, keepdims=True) + 1e-8)
+    output_df["prediction"] = (predictions * weights).sum(axis=0)
+
+    # Ensemble std across child endpoints
+    output_df["prediction_std"] = predictions.std(axis=0)
+
+    # Aggregated confidence: weighted average of child confidences
+    output_df["confidence"] = (confidences * weights).sum(axis=0)
+
+    return output_df
+
+
+# =============================================================================
+# Model Loading (for SageMaker inference)
+# =============================================================================
+def model_fn(model_dir: str) -> dict:
+    """Load meta model configuration."""
+    with open(os.path.join(model_dir, "meta_config.json")) as f:
+        config = json.load(f)
+
+    print(f"Meta model loaded: {len(config['child_endpoints'])} child endpoints")
+    return config
+
+
+# =============================================================================
+# Inference (for SageMaker inference)
+# =============================================================================
+def predict_fn(df: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Run inference by calling child endpoints and aggregating results."""
+    child_endpoints = config["child_endpoints"]
+
+    print(f"Calling {len(child_endpoints)} child endpoints: {child_endpoints}")
+
+    # Call all child endpoints
+    results = invoke_endpoints_parallel(child_endpoints, df)
+
+    # Report status
+    for name, result in results.items():
+        status = f"{len(result)} rows" if result is not None else "FAILED"
+        print(f"  {name}: {status}")
+
+    # Aggregate predictions using confidence-weighted voting
+    output_df = aggregate_predictions(results)
+
+    print(f"Aggregated {len(output_df)} predictions from {len(results)} endpoints")
+    return output_df
+
+
+# =============================================================================
+# Training (just saves configuration - no actual training)
+# =============================================================================
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument("--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data"))
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    args = parser.parse_args()
+
+    child_endpoints = TEMPLATE_PARAMS["child_endpoints"]
+    target_column = TEMPLATE_PARAMS["target_column"]
+
+    print("=" * 60)
+    print("Meta Model Configuration")
+    print("=" * 60)
+    print(f"Child endpoints: {child_endpoints}")
+    print(f"Target column: {target_column}")
+
+    # Save configuration for inference
+    config = {
+        "child_endpoints": child_endpoints,
+        "target_column": target_column,
+    }
+
+    with open(os.path.join(args.model_dir, "meta_config.json"), "w") as f:
+        json.dump(config, f, indent=2)
+
+    print(f"\nMeta model configuration saved to {args.model_dir}")
