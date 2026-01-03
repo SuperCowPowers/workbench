@@ -138,6 +138,7 @@ class MetaModel(Model):
             "child_endpoints": child_endpoints,
             "target_column": target_column,
             "model_metrics_s3_path": f"{models_s3_path}/{name}/training",
+            "aws_region": sm_session.boto_region_name,
         }
         script_path = generate_model_script(template_params)
 

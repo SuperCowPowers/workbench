@@ -18,20 +18,16 @@ import json
 import os
 from io import StringIO
 
-import boto3
 import pandas as pd
 
 from workbench_bridges.endpoints.fast_inference import fast_inference
-
-# Set AWS_REGION from boto3 if not already set (needed for fast_inference)
-if not os.environ.get("AWS_REGION") and not os.environ.get("SAGEMAKER_REGION"):
-    os.environ["AWS_REGION"] = boto3.session.Session().region_name
 
 # Template parameters (filled in by Workbench)
 TEMPLATE_PARAMS = {
     "child_endpoints": "{{child_endpoints}}",
     "target_column": "{{target_column}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
+    "aws_region": "{{aws_region}}",
 }
 
 
@@ -100,7 +96,12 @@ def model_fn(model_dir: str) -> dict:
     with open(os.path.join(model_dir, "meta_config.json")) as f:
         config = json.load(f)
 
+    # Set AWS_REGION for fast_inference (baked in at training time)
+    if config.get("aws_region"):
+        os.environ["AWS_REGION"] = config["aws_region"]
+
     print(f"Meta model loaded: {len(config['child_endpoints'])} child endpoints")
+    print(f"AWS region: {config.get('aws_region')}")
     return config
 
 
@@ -167,17 +168,20 @@ if __name__ == "__main__":
 
     child_endpoints = TEMPLATE_PARAMS["child_endpoints"]
     target_column = TEMPLATE_PARAMS["target_column"]
+    aws_region = TEMPLATE_PARAMS["aws_region"]
 
     print("=" * 60)
     print("Meta Model Configuration")
     print("=" * 60)
     print(f"Child endpoints: {child_endpoints}")
     print(f"Target column: {target_column}")
+    print(f"AWS region: {aws_region}")
 
     # Save configuration for inference
     config = {
         "child_endpoints": child_endpoints,
         "target_column": target_column,
+        "aws_region": aws_region,
     }
 
     with open(os.path.join(args.model_dir, "meta_config.json"), "w") as f:
