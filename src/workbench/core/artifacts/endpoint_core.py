@@ -871,41 +871,24 @@ class EndpointCore(Artifact):
             target (str): Target column name
             id_column (str, optional): Name of the ID column
         """
-        # Start with ID column if present
-        output_columns = []
-        if id_column and id_column in pred_results_df.columns:
-            output_columns.append(id_column)
+        cols = pred_results_df.columns
 
-        # Add target column if present
-        if target and target in pred_results_df.columns:
+        # Build output columns: id, target, prediction, prediction_std, UQ columns, proba columns
+        output_columns = []
+        if id_column and id_column in cols:
+            output_columns.append(id_column)
+        if target and target in cols:
             output_columns.append(target)
 
-        # Build the output DataFrame
-        output_df = pred_results_df[output_columns].copy() if output_columns else pd.DataFrame()
+        output_columns += [c for c in ["prediction", "prediction_std"] if c in cols]
 
-        # For multi-task: map {target}_pred -> prediction, {target}_pred_std -> prediction_std
-        # For single-task: just grab prediction and prediction_std columns directly
-        pred_col = f"{target}_pred"
-        std_col = f"{target}_pred_std"
-        if pred_col in pred_results_df.columns:
-            # Multi-task columns exist
-            output_df["prediction"] = pred_results_df[pred_col]
-            if std_col in pred_results_df.columns:
-                output_df["prediction_std"] = pred_results_df[std_col]
-        else:
-            # Single-task: grab standard prediction columns
-            for col in ["prediction", "prediction_std"]:
-                if col in pred_results_df.columns:
-                    output_df[col] = pred_results_df[col]
-            # Also grab any _proba columns and UQ columns
-            for col in pred_results_df.columns:
-                if col.endswith("_proba") or col.startswith("q_") or col == "confidence":
-                    output_df[col] = pred_results_df[col]
+        # Add UQ columns (q_*, confidence) and proba columns
+        output_columns += [c for c in cols if c.startswith("q_") or c == "confidence" or c.endswith("_proba")]
 
         # Write the predictions to S3
         output_file = f"{inference_capture_path}/inference_predictions.csv"
         self.log.info(f"Writing predictions to {output_file}")
-        wr.s3.to_csv(output_df, output_file, index=False)
+        wr.s3.to_csv(pred_results_df[output_columns], output_file, index=False)
 
     def regression_metrics(
         self, target_column: str, prediction_df: pd.DataFrame, prediction_col: str = "prediction"
