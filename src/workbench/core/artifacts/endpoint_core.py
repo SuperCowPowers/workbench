@@ -344,7 +344,9 @@ class EndpointCore(Artifact):
         eval_df = all_df[~all_df["training"]]
 
         # Remove AWS created columns
-        eval_df = eval_df.drop(columns=["write_time", "api_invocation_time", "is_deleted", "event_time"], errors="ignore")
+        eval_df = eval_df.drop(
+            columns=["write_time", "api_invocation_time", "is_deleted", "event_time"], errors="ignore"
+        )
 
         # Run inference
         return self.inference(eval_df, "auto_inference")
@@ -362,7 +364,9 @@ class EndpointCore(Artifact):
         eval_df = model.training_view().pull_dataframe()
 
         # Remove AWS created columns
-        eval_df = eval_df.drop(columns=["write_time", "api_invocation_time", "is_deleted", "event_time"], errors="ignore")
+        eval_df = eval_df.drop(
+            columns=["write_time", "api_invocation_time", "is_deleted", "event_time"], errors="ignore"
+        )
 
         # Run inference
         return self.inference(eval_df, "full_inference")
