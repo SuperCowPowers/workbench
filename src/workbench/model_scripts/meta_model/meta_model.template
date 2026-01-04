@@ -16,6 +16,7 @@
 import argparse
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 
 import pandas as pd
@@ -32,7 +33,7 @@ TEMPLATE_PARAMS = {
 
 
 def invoke_endpoints_parallel(endpoint_names: list[str], df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """Call multiple child endpoints and collect their results.
+    """Call multiple child endpoints in parallel and collect their results.
 
     Args:
         endpoint_names: List of endpoint names to call
@@ -42,13 +43,20 @@ def invoke_endpoints_parallel(endpoint_names: list[str], df: pd.DataFrame) -> di
         Dict mapping endpoint_name -> result DataFrame (or None if failed)
     """
     results = {}
-    for name in endpoint_names:
+
+    def call_endpoint(name: str) -> tuple[str, pd.DataFrame | None]:
         try:
-            # Use fast_inference from workbench-bridges (handles threading internally)
-            results[name] = fast_inference(name, df)
+            return name, fast_inference(name, df)
         except Exception as e:
             print(f"Error calling endpoint {name}: {e}")
-            results[name] = None
+            return name, None
+
+    with ThreadPoolExecutor(max_workers=len(endpoint_names)) as executor:
+        futures = {executor.submit(call_endpoint, name): name for name in endpoint_names}
+        for future in as_completed(futures):
+            name, result = future.result()
+            results[name] = result
+
     return results
 
 
