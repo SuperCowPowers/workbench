@@ -53,7 +53,7 @@ def create_model_pipeline(model_name):
     end = m.to_endpoint(endpoint_name, tags=["test"])
 
     # Run inference on the endpoint
-    end.auto_inference(capture=True)
+    end.auto_inference()
 
 
 if __name__ == "__main__":

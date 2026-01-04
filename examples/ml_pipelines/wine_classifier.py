@@ -37,5 +37,5 @@ if __name__ == "__main__":
     end = m.to_endpoint("wine-classification", tags=["wine", "classification"])
 
     # Run inference on the endpoint
-    end.auto_inference(capture=True)
+    end.auto_inference()
     end.set_owner("test")

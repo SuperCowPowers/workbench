@@ -36,4 +36,4 @@ my_model = Model("aqsol-meta-uq")
 endpoint = my_model.to_endpoint(tags=["aqsol", "meta-uq"])
 
 # Run auto-inference on the Endpoint
-endpoint.auto_inference(capture=True)
+endpoint.auto_inference()

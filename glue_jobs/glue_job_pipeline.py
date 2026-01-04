@@ -104,4 +104,4 @@ if __name__ == "__main__":
     m.set_pipeline(pipeline_name)
     m.to_endpoint(name=endpoint_name, tags=endpoint_tags)
     end = Endpoint(endpoint_name)
-    end.auto_inference(capture=True)
+    end.auto_inference()

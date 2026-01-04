@@ -15,4 +15,4 @@ results_df = endpoint.inference(df)
 results_df = endpoint.inference(df, capture_name="test_inference")
 
 # Run inference/predictions using the FeatureSet evaluation data
-results_df = endpoint.auto_inference(capture=True)
+results_df = endpoint.auto_inference()

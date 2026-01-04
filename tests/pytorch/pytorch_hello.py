@@ -32,7 +32,7 @@ def test_pytorch_models():
         end.set_owner("BW")
 
         # Run inference on the endpoint
-        end.auto_inference(capture=True)
+        end.auto_inference()
 
     # Pytorch Classification Model
     if recreate or not Model("aqsol-pytorch-class").exists():
@@ -56,7 +56,7 @@ def test_pytorch_models():
         end.set_owner("BW")
 
         # Run inference on the endpoint
-        end.auto_inference(capture=True)
+        end.auto_inference()
 
 
 if __name__ == "__main__":

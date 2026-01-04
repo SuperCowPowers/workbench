@@ -35,4 +35,4 @@ my_model = Model("aqsol-gaussian-reg")
 endpoint = my_model.to_endpoint(tags=["aqsol", "gaussian"])
 
 # Run auto-inference on the Endpoint
-endpoint.auto_inference(capture=True)
+endpoint.auto_inference()

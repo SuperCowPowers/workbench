@@ -116,7 +116,7 @@ model = Model("my-custom-model")
 end = model.to_endpoint()   # Note: This takes a while
 
 # Now run inference on my custom model :)
-end.auto_inference(capture=True)
+end.auto_inference()
 
 # Run inference with my own dataframe
 df = fs.pull_dataframe()  # Or whatever dataframe

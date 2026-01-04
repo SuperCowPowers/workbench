@@ -245,7 +245,7 @@ if __name__ == "__main__":
     # Create an endpoint for the meta model
     end = meta.to_endpoint(tags=["meta", "logd"])
     end.set_owner("BW")
-    end.auto_inference(capture=True)
+    end.auto_inference()
 
     # Test loading an existing meta model
     meta = MetaModel("logd-meta")

@@ -73,7 +73,7 @@ if __name__ == "__main__":
         end = model.to_endpoint(tags=["test", "regression"])
 
         # Run inference on the endpoint
-        end.auto_inference(capture=True)
+        end.auto_inference()
 
     # Test Data Classification Model
     if recreate or not Model("test-classification").exists():
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         end = model.to_endpoint(tags=["test", "classification"])
 
         # Run inference on the endpoint
-        end.auto_inference(capture=True)
+        end.auto_inference()
 
     # Create the abalone_data DataSource
     if recreate or not DataSource("abalone_data").exists():
@@ -135,4 +135,4 @@ if __name__ == "__main__":
         end = model.to_endpoint(name="abalone-regression", tags=["abalone", "regression"])
 
         # Run inference on the endpoint
-        end.auto_inference(capture=True)
+        end.auto_inference()

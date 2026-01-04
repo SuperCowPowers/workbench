@@ -24,4 +24,4 @@ model = feature_set.to_model(
 end = model.to_endpoint(tags=tags, mem_size=4096, max_concurrency=10)
 
 # Run inference on the endpoint
-end.auto_inference(capture=True)
+end.auto_inference()

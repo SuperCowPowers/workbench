@@ -33,7 +33,7 @@ if __name__ == "__main__":
         m = Model("abalone-prox")
         m.set_owner("BW")
         end = m.to_endpoint(tags=["proximity", "abalone"])
-        end.auto_inference(capture=True)
+        end.auto_inference()
 
     # Create the Proximity Model based on AQSol Features
     if recreate or not Model("aqsol-prox").exists():
@@ -46,4 +46,4 @@ if __name__ == "__main__":
         m = Model("aqsol-prox")
         m.set_owner("BW")
         end = m.to_endpoint(tags=["proximity", "aqsol"])
-        end.auto_inference(capture=True)
+        end.auto_inference()

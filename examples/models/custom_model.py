@@ -21,4 +21,4 @@ my_model = Model("smiles-to-taut-md-stereo-v0")
 endpoint = my_model.to_endpoint(name="smiles-to-taut-md-stereo-v0", tags=["smiles", "molecular descriptors"])
 
 # Run auto-inference on the Endpoint
-endpoint.auto_inference(capture=True)
+endpoint.auto_inference()

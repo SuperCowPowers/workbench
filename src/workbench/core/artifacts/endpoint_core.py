@@ -330,12 +330,8 @@ class EndpointCore(Artifact):
         self.details()
         return True
 
-    def auto_inference(self, capture: bool = False) -> pd.DataFrame:
-        """Run inference on the endpoint using FeatureSet data
-
-        Args:
-            capture (bool, optional): Capture the inference results and metrics (default=False)
-        """
+    def auto_inference(self) -> pd.DataFrame:
+        """Run inference on the endpoint using the test data from the model training view"""
 
         # Sanity Check that we have a model
         model = ModelCore(self.get_input())
@@ -343,22 +339,28 @@ class EndpointCore(Artifact):
             self.log.error("No model found for this endpoint. Returning empty DataFrame.")
             return pd.DataFrame()
 
-        # Now get the FeatureSet and make sure it exists
-        fs = FeatureSetCore(model.get_input())
-        if not fs.exists():
-            self.log.error("No FeatureSet found for this endpoint. Returning empty DataFrame.")
+        # Grab the evaluation data from the Model's training view
+        all_df = model.training_view().pull_dataframe()
+        eval_df = all_df[~all_df["training"]]
+        return self.inference(eval_df, "auto_inference", id_column=fs.id_column)
+
+    def full_inference(self) -> pd.DataFrame:
+        """Run inference on the endpoint using all the data from the model training view"""
+
+        # Sanity Check that we have a model
+        model = ModelCore(self.get_input())
+        if not model.exists():
+            self.log.error("No model found for this endpoint. Returning empty DataFrame.")
             return pd.DataFrame()
 
-        # Grab the evaluation data from the FeatureSet
-        table = model.training_view().table
-        eval_df = fs.query(f'SELECT * FROM "{table}" where training = FALSE')
-        capture_name = "auto_inference" if capture else None
-        return self.inference(eval_df, capture_name, id_column=fs.id_column)
+        # Grab the full data from the Model's training view
+        eval_df = model.training_view().pull_dataframe()
+        return self.inference(eval_df, "full_inference", id_column=fs.id_column)
 
     def inference(
         self, eval_df: pd.DataFrame, capture_name: str = None, id_column: str = None, drop_error_rows: bool = False
     ) -> pd.DataFrame:
-        """Run inference and compute performance metrics with optional capture
+        """Run inference on the Endpoint using the provided DataFrame
 
         Args:
             eval_df (pd.DataFrame): DataFrame to run predictions on (must have superset of features)

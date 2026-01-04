@@ -53,9 +53,9 @@ def test_inference_predictions():
 
     # Make sure we have inference predictions
     end = Endpoint("abalone-regression")
-    end.auto_inference(capture=True)
+    end.auto_inference()
     end = Endpoint("wine-classification")
-    end.auto_inference(capture=True)
+    end.auto_inference()
 
     # Retrieve the inference predictions
     model_reg = Model("abalone-regression")

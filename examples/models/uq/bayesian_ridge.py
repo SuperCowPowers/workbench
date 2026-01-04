@@ -28,4 +28,4 @@ my_model = fs.to_model(
 end = my_model.to_endpoint(tags=["aqsol", "bayesian"])
 
 # Run auto-inference on the Endpoint
-end.auto_inference(capture=True)
+end.auto_inference()

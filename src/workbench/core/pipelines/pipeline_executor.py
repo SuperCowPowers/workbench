@@ -123,7 +123,7 @@ class PipelineExecutor:
                 if "model" in workbench_objects and (not subset or "endpoint" in subset):
                     workbench_objects["model"].to_endpoint(**kwargs)
                     endpoint = Endpoint(kwargs["name"])
-                    endpoint.auto_inference(capture=True)
+                    endpoint.auto_inference()
 
             # Found something weird
             else:

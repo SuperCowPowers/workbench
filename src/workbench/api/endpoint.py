@@ -44,16 +44,21 @@ class Endpoint(EndpointCore):
         """
         return super().inference(eval_df, capture_name, id_column, drop_error_rows)
 
-    def auto_inference(self, capture: bool = False) -> pd.DataFrame:
-        """Run inference on the Endpoint using the FeatureSet evaluation data
-
-        Args:
-            capture (bool): Capture the inference results
+    def auto_inference(self) -> pd.DataFrame:
+        """Run inference on the Endpoint using the test data from the model training view
 
         Returns:
             pd.DataFrame: The DataFrame with predictions
         """
-        return super().auto_inference(capture)
+        return super().auto_inference()
+
+    def full_inference(self) -> pd.DataFrame:
+        """Run inference on the Endpoint using the full data from the model training view
+
+        Returns:
+            pd.DataFrame: The DataFrame with predictions
+        """
+        return super().full_inference()
 
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame

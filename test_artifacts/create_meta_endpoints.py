@@ -46,4 +46,4 @@ if __name__ == "__main__":
         end = model.to_endpoint(tags=tags)
 
         # Run inference on the endpoint
-        end.auto_inference(capture=True)
+        end.auto_inference()

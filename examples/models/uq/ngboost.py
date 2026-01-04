@@ -35,4 +35,4 @@ my_model = Model("aqsol-ngboost-reg")
 endpoint = my_model.to_endpoint(tags=["aqsol", "ngboost"])
 
 # Run auto-inference on the Endpoint
-endpoint.auto_inference(capture=True)
+endpoint.auto_inference()

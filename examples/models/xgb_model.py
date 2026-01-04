@@ -48,7 +48,7 @@ if recreate or not Endpoint("aqsol-regression").exists():
     end.set_owner("BW")
 
     # Run inference on the endpoint
-    end.auto_inference(capture=True)
+    end.auto_inference()
     end.cross_fold_inference()
 
 # XGBoost Classification Model
@@ -72,5 +72,5 @@ if recreate or not Endpoint("aqsol-class").exists():
     end.set_owner("BW")
 
     # Run inference on the endpoint
-    end.auto_inference(capture=True)
+    end.auto_inference()
     end.cross_fold_inference()

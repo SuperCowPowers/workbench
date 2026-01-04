@@ -31,7 +31,7 @@ if recreate or not Endpoint("aqsol-pytorch-reg").exists():
     end.set_owner("BW")
 
     # Run inference on the endpoint
-    end.auto_inference(capture=True)
+    end.auto_inference()
 
 # Pytorch Classification Model
 if recreate or not Model("aqsol-pytorch-class").exists():
@@ -55,4 +55,4 @@ if recreate or not Endpoint("aqsol-pytorch-class").exists():
     end.set_owner("BW")
 
     # Run inference on the endpoint
-    end.auto_inference(capture=True)
+    end.auto_inference()

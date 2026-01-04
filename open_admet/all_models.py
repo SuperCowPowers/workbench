@@ -17,6 +17,9 @@ FS_LIST = [
     "open_admet_mlm_clint",
     "open_admet_mppb",
 ]
+FS_LIST = [
+    "open_admet_logd",
+]
 
 
 def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
@@ -84,7 +87,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         xgb_model.set_owner("BW")
         end = xgb_model.to_endpoint(tags=["open_admet", base_name, "xgboost"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference(capture=True)
+        end.auto_inference()
         end.cross_fold_inference()
 
     # Get feature importances from the XGBoost model for PyTorch and hybrid models
@@ -108,7 +111,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         pytorch_model.set_owner("BW")
         end = pytorch_model.to_endpoint(tags=["open_admet", base_name, "pytorch"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference(capture=True)
+        end.auto_inference()
         end.cross_fold_inference()
 
     # 3. Create ChemProp model (SMILES only)
@@ -127,7 +130,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         chemprop_model.set_owner("BW")
         end = chemprop_model.to_endpoint(tags=["open_admet", base_name, "chemprop"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference(capture=True)
+        end.auto_inference()
         end.cross_fold_inference()
 
     print(f"\nCompleted all models for: {fs_name}")

@@ -45,5 +45,5 @@ my_model = Model("aqsol-uq-hyper")
 endpoint = my_model.to_endpoint()
 
 # Run auto-inference on the Endpoint
-endpoint.auto_inference(capture=True)
+endpoint.auto_inference()
 endpoint.cross_fold_inference()

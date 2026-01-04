@@ -24,7 +24,7 @@ if recreate or not Endpoint("open-admet-chemprop-logd").exists():
     m = Model("open-admet-chemprop-logd")
     end = m.to_endpoint(tags=["chemprop", "open_admet"])
     end.set_owner("BW")
-    end.auto_inference(capture=True)
+    end.auto_inference()
     end.cross_fold_inference()
 
 # =============================================================================
@@ -71,7 +71,7 @@ if recreate or not Endpoint("open-admet-chemprop-logd-hybrid").exists():
     m = Model("open-admet-chemprop-logd-hybrid")
     end = m.to_endpoint(tags=["chemprop", "open_admet", "hybrid"])
     end.set_owner("BW")
-    end.auto_inference(capture=True)
+    end.auto_inference()
     end.cross_fold_inference()
 
 # =============================================================================
@@ -111,5 +111,5 @@ if recreate or not Endpoint("open-admet-chemprop-mt").exists():
     m = Model("open-admet-chemprop-mt")
     end = m.to_endpoint(tags=["chemprop", "open_admet", "multitask"])
     end.set_owner("BW")
-    end.auto_inference(capture=True)
+    end.auto_inference()
     end.cross_fold_inference()

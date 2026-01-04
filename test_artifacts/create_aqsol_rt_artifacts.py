@@ -29,7 +29,7 @@ if __name__ == "__main__":
         end = m.to_endpoint(name="tautomerize-v0-rt", tags=["smiles", "tautomerization", "realtime"], serverless=False)
 
         # Run inference on the endpoint
-        end.auto_inference(capture=True)
+        end.auto_inference()
 
     # Create realtime endpoint for testing with a ml.c7i.large instance
     if recreate or not Endpoint("tautomerize-v0-rt-fast1").exists():
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         )
 
         # Run inference on the endpoint
-        end.auto_inference(capture=True)
+        end.auto_inference()
 
     # Create realtime endpoint for testing with a ml.c7i.xlarge instance
     if recreate or not Endpoint("tautomerize-v0-rt-fast2").exists():
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         )
 
         # Run inference on the endpoint
-        end.auto_inference(capture=True)
+        end.auto_inference()
 
     # Create a realtime endpoint for Molecular Descriptors Transformer Model
     if recreate or not Endpoint("smiles-to-taut-md-stereo-v0-rt").exists():
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         )
 
         # Run inference on the endpoint
-        end.auto_inference(capture=True)
+        end.auto_inference()
 
     # Create a realtime endpoint for AQSOL solubility classification model
     if recreate or not Endpoint("aqsol-mol-class-rt").exists():

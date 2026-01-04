@@ -28,4 +28,4 @@ my_model = fs.to_model(
 end = my_model.to_endpoint(tags=["aqsol", "ensemble", "uq"])
 
 # Run auto-inference on the AQSol Ensemble/UQ Endpoint
-end.auto_inference(capture=True)
+end.auto_inference()
