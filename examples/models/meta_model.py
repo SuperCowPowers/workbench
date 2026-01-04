@@ -32,3 +32,4 @@ if recreate or not Endpoint("logd-meta").exists():
     end = m.to_endpoint(tags=["meta", "open_admet", "logd"])
     end.set_owner("BW")
     end.auto_inference()
+    end.full_inference()

@@ -17,9 +17,6 @@ FS_LIST = [
     "open_admet_mlm_clint",
     "open_admet_mppb",
 ]
-FS_LIST = [
-    "open_admet_logd",
-]
 
 
 def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
@@ -41,11 +38,12 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
     print(f"Base name: {short_name}")
     print(f"{'='*60}")
 
-    # 0. We've seen a bunch of 0.0 values so we're going to give those 0 sample weight
+    # 0. We've seen a bunch of 0.0 values (in the clint models) so we're going to give those 0 sample weight
     df = fs.pull_dataframe()
-    zero_ids = df.loc[df[target] == 0.0, fs.id_column].tolist()
-    fs.set_sample_weights({id: 0.0 for id in zero_ids})
-    print(f"Set {len(zero_ids)}/{len(df)} samples with target == 0.0 to weight 0")
+    if "clint" in fs_name:
+        zero_ids = df.loc[df[target] == 0.0, fs.id_column].tolist()
+        fs.set_sample_weights({id: 0.0 for id in zero_ids})
+        print(f"Set {len(zero_ids)}/{len(df)} samples with target == 0.0 to weight 0")
 
     # Not used right now
     """

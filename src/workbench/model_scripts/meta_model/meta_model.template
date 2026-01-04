@@ -84,14 +84,15 @@ def aggregate_predictions(results: dict[str, pd.DataFrame]) -> pd.DataFrame:
     conf_df = pd.DataFrame({name: df["confidence"] for name, df in valid_results.items()})
 
     # Confidence-weighted average: sum(pred * conf) / sum(conf)
-    weights = conf_df.div(conf_df.sum(axis=1) + 1e-8, axis=0)
+    conf_sum = conf_df.sum(axis=1) + 1e-8
+    weights = conf_df.div(conf_sum, axis=0)
     output_df["prediction"] = (pred_df * weights).sum(axis=1)
 
     # Ensemble std across child endpoints
     output_df["prediction_std"] = pred_df.std(axis=1)
 
-    # Aggregated confidence: weighted average of child confidences
-    output_df["confidence"] = (conf_df * weights).sum(axis=1)
+    # Aggregated confidence: mean of child confidences
+    output_df["confidence"] = conf_df.mean(axis=1)
 
     return output_df
 
