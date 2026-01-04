@@ -342,7 +342,12 @@ class EndpointCore(Artifact):
         # Grab the evaluation data from the Model's training view
         all_df = model.training_view().pull_dataframe()
         eval_df = all_df[~all_df["training"]]
-        return self.inference(eval_df, "auto_inference", id_column=fs.id_column)
+
+        # Remove AWS created columns
+        eval_df = eval_df.drop(columns=["write_time", "api_invocation_time", "is_deleted", "event_time"], errors="ignore")
+
+        # Run inference
+        return self.inference(eval_df, "auto_inference")
 
     def full_inference(self) -> pd.DataFrame:
         """Run inference on the endpoint using all the data from the model training view"""
@@ -355,7 +360,12 @@ class EndpointCore(Artifact):
 
         # Grab the full data from the Model's training view
         eval_df = model.training_view().pull_dataframe()
-        return self.inference(eval_df, "full_inference", id_column=fs.id_column)
+
+        # Remove AWS created columns
+        eval_df = eval_df.drop(columns=["write_time", "api_invocation_time", "is_deleted", "event_time"], errors="ignore")
+
+        # Run inference
+        return self.inference(eval_df, "full_inference")
 
     def inference(
         self, eval_df: pd.DataFrame, capture_name: str = None, id_column: str = None, drop_error_rows: bool = False
