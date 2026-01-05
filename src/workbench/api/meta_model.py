@@ -66,7 +66,7 @@ class MetaModel(Model):
         Artifact.is_name_valid(name, delimiter="-", lower_case=False)
 
         # Validate endpoints and get lineage info from primary endpoint
-        feature_list, feature_set_name = cls._validate_and_get_lineage(child_endpoints)
+        feature_list, feature_set_name, model_weights = cls._validate_and_get_lineage(child_endpoints)
 
         # Delete existing model if it exists
         log.important(f"Trying to delete existing model {name}...")
@@ -74,9 +74,8 @@ class MetaModel(Model):
 
         # Run training and register model
         aws_clamp = AWSAccountClamp()
-        sm_session = aws_clamp.sagemaker_session()
-        estimator = cls._run_training(name, child_endpoints, target_column, aws_clamp, sm_session)
-        cls._register_model(name, child_endpoints, description, tags, estimator, aws_clamp, sm_session)
+        estimator = cls._run_training(name, child_endpoints, target_column, model_weights, aws_clamp)
+        cls._register_model(name, child_endpoints, description, tags, estimator, aws_clamp)
 
         # Set metadata and onboard
         cls._set_metadata(name, target_column, feature_list, feature_set_name, child_endpoints)
@@ -85,20 +84,52 @@ class MetaModel(Model):
         return cls(name)
 
     @classmethod
-    def _validate_and_get_lineage(cls, child_endpoints: list[str]) -> tuple[list[str], str]:
+    def _validate_and_get_lineage(cls, child_endpoints: list[str]) -> tuple[list[str], str, dict[str, float]]:
         """Validate child endpoints exist and get lineage info from primary endpoint.
 
         Args:
             child_endpoints: List of endpoint names
 
         Returns:
-            tuple: (feature_list, feature_set_name) from the primary endpoint's model
+            tuple: (feature_list, feature_set_name, model_weights) from the primary endpoint's model
         """
-        log.info("Verifying child endpoints...")
+        log.info("Verifying child endpoints and gathering model metrics...")
+        mae_scores = {}
+
         for ep_name in child_endpoints:
             ep = Endpoint(ep_name)
             if not ep.exists():
                 raise ValueError(f"Child endpoint '{ep_name}' does not exist")
+
+            # Get model MAE from full_inference metrics
+            model = Model(ep.get_input())
+            metrics = model.get_inference_metrics("full_inference")
+            if metrics is not None and "mae" in metrics.columns:
+                mae = metrics["mae"].iloc[0]
+                mae_scores[ep_name] = mae
+                log.info(f"  {ep_name} -> {model.name}: MAE={mae:.4f}")
+            else:
+                log.warning(f"  {ep_name}: No full_inference metrics found, using default weight")
+                mae_scores[ep_name] = None
+
+        # Compute inverse-MAE weights (higher weight for lower MAE)
+        valid_mae = {k: v for k, v in mae_scores.items() if v is not None}
+        if valid_mae:
+            inv_mae = {k: 1.0 / v for k, v in valid_mae.items()}
+            total = sum(inv_mae.values())
+            model_weights = {k: v / total for k, v in inv_mae.items()}
+            # Fill in missing weights with equal share of remaining weight
+            missing = [k for k in mae_scores if mae_scores[k] is None]
+            if missing:
+                equal_weight = (1.0 - sum(model_weights.values())) / len(missing)
+                for k in missing:
+                    model_weights[k] = equal_weight
+        else:
+            # No metrics available, use equal weights
+            model_weights = {k: 1.0 / len(child_endpoints) for k in child_endpoints}
+            log.warning("No MAE metrics found, using equal weights")
+
+        log.info(f"Model weights: {model_weights}")
 
         # Use first endpoint as primary - backtrack to get model and feature set
         primary_endpoint = Endpoint(child_endpoints[0])
@@ -109,11 +140,16 @@ class MetaModel(Model):
         log.info(
             f"Primary endpoint: {child_endpoints[0]} -> Model: {primary_model.name} -> FeatureSet: {feature_set_name}"
         )
-        return feature_list, feature_set_name
+        return feature_list, feature_set_name, model_weights
 
     @classmethod
     def _run_training(
-        cls, name: str, child_endpoints: list[str], target_column: str, aws_clamp: AWSAccountClamp, sm_session
+        cls,
+        name: str,
+        child_endpoints: list[str],
+        target_column: str,
+        model_weights: dict[str, float],
+        aws_clamp: AWSAccountClamp,
     ) -> Estimator:
         """Run the minimal training job that saves the meta model config.
 
@@ -121,12 +157,13 @@ class MetaModel(Model):
             name: Model name
             child_endpoints: List of endpoint names
             target_column: Target column name
+            model_weights: Dict mapping endpoint name to weight
             aws_clamp: AWS account clamp
-            sm_session: SageMaker session
 
         Returns:
             Estimator: The fitted estimator
         """
+        sm_session = aws_clamp.sagemaker_session()
         cm = ConfigManager()
         workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
         models_s3_path = f"s3://{workbench_bucket}/models"
@@ -137,6 +174,7 @@ class MetaModel(Model):
             "model_framework": ModelFramework.META,
             "child_endpoints": child_endpoints,
             "target_column": target_column,
+            "model_weights": model_weights,
             "model_metrics_s3_path": f"{models_s3_path}/{name}/training",
             "aws_region": sm_session.boto_region_name,
         }
@@ -170,7 +208,6 @@ class MetaModel(Model):
         tags: list[str],
         estimator: Estimator,
         aws_clamp: AWSAccountClamp,
-        sm_session,
     ):
         """Create model group and register the model.
 
@@ -181,8 +218,8 @@ class MetaModel(Model):
             tags: Model tags
             estimator: Fitted estimator
             aws_clamp: AWS account clamp
-            sm_session: SageMaker session
         """
+        sm_session = aws_clamp.sagemaker_session()
         model_description = description or f"Meta model aggregating: {', '.join(child_endpoints)}"
 
         # Create model group
