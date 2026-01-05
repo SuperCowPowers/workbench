@@ -1,5 +1,4 @@
 # Description: Create XGBoost, PyTorch, and ChemProp models for all Open ADMET FeatureSets
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from workbench.api import FeatureSet, Model, ModelType, ModelFramework
 from workbench_bridges.api import ParameterStore
 
