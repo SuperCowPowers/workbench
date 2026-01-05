@@ -54,7 +54,9 @@ class MetaModelSimulator:
                 self._target_column = model.target()
             df = model.get_inference_predictions("full_inference")
             if df is None:
-                raise ValueError(f"No full_inference predictions found for model '{name}'. Run endpoint inference first.")
+                raise ValueError(
+                    f"No full_inference predictions found for model '{name}'. Run endpoint inference first."
+                )
             df["residual"] = df["prediction"] - df[self._target_column]
             df["abs_residual"] = df["residual"].abs()
             self._dfs[name] = df
@@ -315,16 +317,16 @@ class MetaModelSimulator:
         mae = (combined["scaled_conf_weighted"] - combined["target"]).abs().mean()
         results.append({"strategy": "Scaled Conf-Weighted", "mae": mae})
 
-        # Strategy 6: Drop worst model
+        # Strategy 6: Drop worst model (use simple mean of remaining, or raw prediction if only 1 left)
         worst_model = max(mae_scores, key=mae_scores.get)
         remaining = [n for n in model_names if n != worst_model]
         remaining_pred_cols = [f"{n}_pred" for n in remaining]
-        remaining_conf_cols = [f"{n}_conf" for n in remaining]
-        rem_conf = combined[remaining_conf_cols].values
-        rem_pred = combined[remaining_pred_cols].values
-        rem_conf_sum = rem_conf.sum(axis=1, keepdims=True) + 1e-8
-        rem_weights = rem_conf / rem_conf_sum
-        combined["drop_worst"] = (rem_pred * rem_weights).sum(axis=1)
+        if len(remaining) == 1:
+            # Single model remaining - use raw prediction (same as "Best Model Only")
+            combined["drop_worst"] = combined[remaining_pred_cols[0]]
+        else:
+            # Multiple models remaining - use simple mean
+            combined["drop_worst"] = combined[remaining_pred_cols].mean(axis=1)
         mae = (combined["drop_worst"] - combined["target"]).abs().mean()
         results.append({"strategy": f"Drop Worst ({worst_model})", "mae": mae})
 
@@ -390,7 +392,6 @@ class MetaModelSimulator:
             combined[f"{name}_conf"] = df["confidence"].values
             combined[f"{name}_abs_err"] = df["abs_residual"].values
 
-        conf_cols = [f"{name}_conf" for name in model_names]
         pred_cols = [f"{name}_pred" for name in model_names]
 
         # Calculate ensemble prediction (inverse-MAE weighted)
@@ -422,21 +423,21 @@ class MetaModelSimulator:
             degradation = (ensemble_mae - best_model_mae) / best_model_mae * 100
             print(f"Ensemble is worse than best model by {degradation:.1f}%")
 
-        print(f"\nPer-row comparison:")
+        print("\nPer-row comparison:")
         print(f"  Ensemble wins: {n_better}/{n_total} ({100*n_better/n_total:.1f}%)")
         print(f"  Best model wins: {n_total - n_better}/{n_total} ({100*(n_total - n_better)/n_total:.1f}%)")
 
         # When ensemble wins
         ensemble_wins = combined[combined["ensemble_better"]]
         if len(ensemble_wins) > 0:
-            print(f"\nWhen ensemble wins:")
+            print("\nWhen ensemble wins:")
             print(f"  Mean ensemble error: {ensemble_wins['ensemble_abs_err'].mean():.3f}")
             print(f"  Mean best model error: {ensemble_wins['best_model_abs_err'].mean():.3f}")
 
         # When best model wins
         best_wins = combined[~combined["ensemble_better"]]
         if len(best_wins) > 0:
-            print(f"\nWhen best model wins:")
+            print("\nWhen best model wins:")
             print(f"  Mean ensemble error: {best_wins['ensemble_abs_err'].mean():.3f}")
             print(f"  Mean best model error: {best_wins['best_model_abs_err'].mean():.3f}")
 
@@ -458,8 +459,8 @@ if __name__ == "__main__":
         ["logd-reg-xgb", "logd-reg-pytorch", "logd-reg-chemprop"],
         id_column="molecule_name",
     )
-    sim.report()  # Full analysis
-    
+    sim.report(details=True)  # Full analysis
+
     print("\n" + "*" * 80)
     print("Two model ensemble analysis: PyTorch + ChemProp")
     print("*" * 80)
@@ -467,4 +468,4 @@ if __name__ == "__main__":
         ["logd-reg-pytorch", "logd-reg-chemprop"],
         id_column="molecule_name",
     )
-    sim.report()  # Full analysis
+    sim.report(details=True)  # Full analysis
