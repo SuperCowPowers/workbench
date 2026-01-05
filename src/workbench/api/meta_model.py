@@ -105,7 +105,7 @@ class MetaModel(Model):
             model = Model(ep.get_input())
             metrics = model.get_inference_metrics("full_inference")
             if metrics is not None and "mae" in metrics.columns:
-                mae = float(metrics["mae"].iloc[0])  # Convert to native float for serialization
+                mae = float(metrics["mae"].iloc[0])
                 mae_scores[ep_name] = mae
                 log.info(f"  {ep_name} -> {model.name}: MAE={mae:.4f}")
             else:
