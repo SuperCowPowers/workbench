@@ -1,7 +1,7 @@
 """MetaModelSimulator: Simulate and analyze ensemble model performance.
 
 This class helps evaluate whether a meta model (ensemble) would outperform
-individual child models by analyzing cross-validation predictions.
+individual child models by analyzing endpoint inference predictions.
 """
 
 import pandas as pd
@@ -46,13 +46,15 @@ class MetaModelSimulator:
         self._load_predictions()
 
     def _load_predictions(self):
-        """Load cross-validation predictions for all models."""
+        """Load endpoint inference predictions for all models."""
         log.info(f"Loading predictions for {len(self.model_names)} models...")
         for name in self.model_names:
             model = Model(name)
             if self._target_column is None:
                 self._target_column = model.target()
-            df = model.get_inference_predictions("full_cross_fold")
+            df = model.get_inference_predictions("full_inference")
+            if df is None:
+                raise ValueError(f"No full_inference predictions found for model '{name}'. Run endpoint inference first.")
             df["residual"] = df["prediction"] - df[self._target_column]
             df["abs_residual"] = df["residual"].abs()
             self._dfs[name] = df
