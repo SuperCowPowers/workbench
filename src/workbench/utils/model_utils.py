@@ -210,14 +210,15 @@ def noise_model_local(model: "Model"):
 
 
 def cleanlab_model_local(model: "Model"):
-    """Create a CleanLearning model for detecting label issues in a Model's training data.
+    """Create a CleanlabModels instance for detecting data quality issues in a Model's training data.
 
     Args:
-        model (Model): The Model used to create the cleanlab model
+        model (Model): The Model used to create the cleanlab models
 
     Returns:
-        CleanLearning: A fitted cleanlab model. Use get_label_issues() to get
-        a DataFrame with id_column, label_quality, predicted_label, given_label, is_label_issue.
+        CleanlabModels: Factory providing access to CleanLearning and Datalab models.
+            - clean_learning(): CleanLearning model with enhanced get_label_issues()
+            - datalab(): Datalab instance with report(), get_issues()
     """
     from workbench.algorithms.models.cleanlab_model import create_cleanlab_model  # noqa: F401 (avoid circular import)
     from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
