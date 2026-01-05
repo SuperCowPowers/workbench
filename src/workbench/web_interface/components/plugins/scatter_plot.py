@@ -420,21 +420,16 @@ if __name__ == "__main__":
     df = pd.DataFrame(data)
 
     # Get a UQ regressor model
-    # from workbench.api import Endpoint, DFStore
-    # end = Endpoint("aqsol-uq")
-    # df = end.auto_inference()
-    # DFStore().upsert("/workbench/models/aqsol-uq/auto_inference", df)
-
-    from workbench.api import DFStore
-
-    df = DFStore().get("/workbench/models/aqsol-uq-100/full_cross_fold_inference")
+    from workbench.api import Model
+    model = Model("logd-reg-xgb")
+    df = model.get_inference_predictions("full_cross_fold")
 
     # Run the Unit Test on the Plugin
     PluginUnitTest(
         ScatterPlot,
         input_data=df,
         theme="midnight_blue",
-        x="solubility",
+        x="logd",
         y="prediction",
         color="prediction_std",
         suppress_hover_display=True,
