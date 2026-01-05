@@ -231,7 +231,7 @@ class MetaModelSimulator:
         return metrics_df
 
     def ensemble_weights(self) -> dict[str, float]:
-        """Calculate suggested ensemble weights based on inverse RMSE.
+        """Calculate suggested ensemble weights based on inverse MAE.
 
         Returns:
             Dict mapping model name to suggested weight
@@ -240,15 +240,15 @@ class MetaModelSimulator:
         print("SUGGESTED ENSEMBLE WEIGHTS")
         print("=" * 60)
 
-        rmse_scores = {name: np.sqrt((df["residual"] ** 2).mean()) for name, df in self._dfs.items()}
+        mae_scores = {name: df["abs_residual"].mean() for name, df in self._dfs.items()}
 
-        inv_rmse = {name: 1.0 / rmse for name, rmse in rmse_scores.items()}
-        total = sum(inv_rmse.values())
-        weights = {name: w / total for name, w in inv_rmse.items()}
+        inv_mae = {name: 1.0 / mae for name, mae in mae_scores.items()}
+        total = sum(inv_mae.values())
+        weights = {name: w / total for name, w in inv_mae.items()}
 
-        print("\nWeights based on inverse RMSE:")
+        print("\nWeights based on inverse MAE:")
         for name, weight in weights.items():
-            print(f"  {name}: {weight:.3f} (RMSE={rmse_scores[name]:.3f})")
+            print(f"  {name}: {weight:.3f} (MAE={mae_scores[name]:.3f})")
 
         print(f"\nEqual weights would be: {1.0/len(self._dfs):.3f} each")
 
@@ -258,7 +258,7 @@ class MetaModelSimulator:
         """Compare different ensemble strategies.
 
         Returns:
-            DataFrame with RMSE for each strategy, sorted best to worst
+            DataFrame with MAE for each strategy, sorted best to worst
         """
         print("\n" + "=" * 60)
         print("ENSEMBLE STRATEGY COMPARISON")
@@ -281,8 +281,8 @@ class MetaModelSimulator:
 
         # Strategy 1: Simple mean
         combined["simple_mean"] = combined[pred_cols].mean(axis=1)
-        rmse = np.sqrt(((combined["simple_mean"] - combined["target"]) ** 2).mean())
-        results.append({"strategy": "Simple Mean", "rmse": rmse})
+        mae = (combined["simple_mean"] - combined["target"]).abs().mean()
+        results.append({"strategy": "Simple Mean", "mae": mae})
 
         # Strategy 2: Confidence-weighted
         conf_arr = combined[conf_cols].values
@@ -290,33 +290,33 @@ class MetaModelSimulator:
         conf_sum = conf_arr.sum(axis=1, keepdims=True) + 1e-8
         weights = conf_arr / conf_sum
         combined["conf_weighted"] = (pred_arr * weights).sum(axis=1)
-        rmse = np.sqrt(((combined["conf_weighted"] - combined["target"]) ** 2).mean())
-        results.append({"strategy": "Confidence-Weighted", "rmse": rmse})
+        mae = (combined["conf_weighted"] - combined["target"]).abs().mean()
+        results.append({"strategy": "Confidence-Weighted", "mae": mae})
 
-        # Strategy 3: Inverse-RMSE weighted
-        rmse_scores = {name: np.sqrt((self._dfs[name]["residual"] ** 2).mean()) for name in model_names}
-        inv_rmse_weights = np.array([1.0 / rmse_scores[name] for name in model_names])
-        inv_rmse_weights = inv_rmse_weights / inv_rmse_weights.sum()
-        combined["inv_rmse_weighted"] = (pred_arr * inv_rmse_weights).sum(axis=1)
-        rmse = np.sqrt(((combined["inv_rmse_weighted"] - combined["target"]) ** 2).mean())
-        results.append({"strategy": "Inverse-RMSE Weighted", "rmse": rmse})
+        # Strategy 3: Inverse-MAE weighted
+        mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
+        inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
+        inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
+        combined["inv_mae_weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
+        mae = (combined["inv_mae_weighted"] - combined["target"]).abs().mean()
+        results.append({"strategy": "Inverse-MAE Weighted", "mae": mae})
 
         # Strategy 4: Best model only
-        best_model = min(rmse_scores, key=rmse_scores.get)
+        best_model = min(mae_scores, key=mae_scores.get)
         combined["best_only"] = combined[f"{best_model}_pred"]
-        rmse = np.sqrt(((combined["best_only"] - combined["target"]) ** 2).mean())
-        results.append({"strategy": f"Best Model Only ({best_model})", "rmse": rmse})
+        mae = (combined["best_only"] - combined["target"]).abs().mean()
+        results.append({"strategy": f"Best Model Only ({best_model})", "mae": mae})
 
-        # Strategy 5: Scaled confidence-weighted
-        scaled_conf = conf_arr * inv_rmse_weights
+        # Strategy 5: Scaled confidence-weighted (confidence * model_weights)
+        scaled_conf = conf_arr * inv_mae_weights
         scaled_conf_sum = scaled_conf.sum(axis=1, keepdims=True) + 1e-8
         scaled_weights = scaled_conf / scaled_conf_sum
         combined["scaled_conf_weighted"] = (pred_arr * scaled_weights).sum(axis=1)
-        rmse = np.sqrt(((combined["scaled_conf_weighted"] - combined["target"]) ** 2).mean())
-        results.append({"strategy": "Scaled Conf-Weighted", "rmse": rmse})
+        mae = (combined["scaled_conf_weighted"] - combined["target"]).abs().mean()
+        results.append({"strategy": "Scaled Conf-Weighted", "mae": mae})
 
         # Strategy 6: Drop worst model
-        worst_model = max(rmse_scores, key=rmse_scores.get)
+        worst_model = max(mae_scores, key=mae_scores.get)
         remaining = [n for n in model_names if n != worst_model]
         remaining_pred_cols = [f"{n}_pred" for n in remaining]
         remaining_conf_cols = [f"{n}_conf" for n in remaining]
@@ -325,15 +325,15 @@ class MetaModelSimulator:
         rem_conf_sum = rem_conf.sum(axis=1, keepdims=True) + 1e-8
         rem_weights = rem_conf / rem_conf_sum
         combined["drop_worst"] = (rem_pred * rem_weights).sum(axis=1)
-        rmse = np.sqrt(((combined["drop_worst"] - combined["target"]) ** 2).mean())
-        results.append({"strategy": f"Drop Worst ({worst_model})", "rmse": rmse})
+        mae = (combined["drop_worst"] - combined["target"]).abs().mean()
+        results.append({"strategy": f"Drop Worst ({worst_model})", "mae": mae})
 
-        results_df = pd.DataFrame(results).sort_values("rmse")
+        results_df = pd.DataFrame(results).sort_values("mae")
         print("\n" + results_df.to_string(index=False))
 
-        print("\nIndividual model RMSEs for reference:")
-        for name, rmse in sorted(rmse_scores.items(), key=lambda x: x[1]):
-            print(f"  {name}: {rmse:.4f}")
+        print("\nIndividual model MAEs for reference:")
+        for name, mae in sorted(mae_scores.items(), key=lambda x: x[1]):
+            print(f"  {name}: {mae:.4f}")
 
         return results_df
 
@@ -393,17 +393,16 @@ class MetaModelSimulator:
         conf_cols = [f"{name}_conf" for name in model_names]
         pred_cols = [f"{name}_pred" for name in model_names]
 
-        # Calculate ensemble prediction (confidence-weighted)
-        conf_arr = combined[conf_cols].values
+        # Calculate ensemble prediction (inverse-MAE weighted)
+        mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
+        inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
+        inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
         pred_arr = combined[pred_cols].values
-        conf_sum = conf_arr.sum(axis=1, keepdims=True) + 1e-8
-        weights = conf_arr / conf_sum
-        combined["ensemble_pred"] = (pred_arr * weights).sum(axis=1)
+        combined["ensemble_pred"] = (pred_arr * inv_mae_weights).sum(axis=1)
         combined["ensemble_abs_err"] = (combined["ensemble_pred"] - combined["target"]).abs()
 
-        # Find best overall model (lowest RMSE)
-        rmse_scores = {name: np.sqrt((self._dfs[name]["residual"] ** 2).mean()) for name in model_names}
-        best_model = min(rmse_scores, key=rmse_scores.get)
+        # Find best overall model (lowest MAE)
+        best_model = min(mae_scores, key=mae_scores.get)
         combined["best_model_abs_err"] = combined[f"{best_model}_abs_err"]
 
         # Compare ensemble vs best model
@@ -411,16 +410,16 @@ class MetaModelSimulator:
         n_better = combined["ensemble_better"].sum()
         n_total = len(combined)
 
-        ensemble_rmse = np.sqrt((combined["ensemble_abs_err"] ** 2).mean())
-        best_model_rmse = rmse_scores[best_model]
+        ensemble_mae = combined["ensemble_abs_err"].mean()
+        best_model_mae = mae_scores[best_model]
 
-        print(f"\nBest individual model: {best_model} (RMSE={best_model_rmse:.4f})")
-        print(f"Ensemble RMSE: {ensemble_rmse:.4f}")
-        if ensemble_rmse < best_model_rmse:
-            improvement = (best_model_rmse - ensemble_rmse) / best_model_rmse * 100
+        print(f"\nBest individual model: {best_model} (MAE={best_model_mae:.4f})")
+        print(f"Ensemble MAE: {ensemble_mae:.4f}")
+        if ensemble_mae < best_model_mae:
+            improvement = (best_model_mae - ensemble_mae) / best_model_mae * 100
             print(f"Ensemble improves over best model by {improvement:.1f}%")
         else:
-            degradation = (ensemble_rmse - best_model_rmse) / best_model_rmse * 100
+            degradation = (ensemble_mae - best_model_mae) / best_model_mae * 100
             print(f"Ensemble is worse than best model by {degradation:.1f}%")
 
         print(f"\nPer-row comparison:")
@@ -442,9 +441,9 @@ class MetaModelSimulator:
             print(f"  Mean best model error: {best_wins['best_model_abs_err'].mean():.3f}")
 
         return {
-            "ensemble_rmse": ensemble_rmse,
+            "ensemble_mae": ensemble_mae,
             "best_model": best_model,
-            "best_model_rmse": best_model_rmse,
+            "best_model_mae": best_model_mae,
             "ensemble_win_rate": n_better / n_total,
         }
 
