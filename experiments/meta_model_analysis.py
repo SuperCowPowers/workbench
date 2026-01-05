@@ -368,51 +368,10 @@ def analyze_where_ensemble_fails(dfs: dict[str, pd.DataFrame]):
         print(f"  {name}: all={mean_conf_all:.3f}, failed={mean_conf_worse:.3f}")
 
 
-def check_row_alignment(dfs: dict[str, pd.DataFrame]):
-    """Check if rows are aligned across DataFrames (same molecule in same row)."""
-    print("=" * 70)
-    print("0. ROW ALIGNMENT CHECK")
-    print("=" * 70)
-
-    model_names = list(dfs.keys())
-    first_name = model_names[0]
-    first_ids = dfs[first_name][id].values
-
-    print(f"\nChecking if '{id}' column is aligned across all models...")
-    all_aligned = True
-    for name in model_names[1:]:
-        other_ids = dfs[name][id].values
-        if len(first_ids) != len(other_ids):
-            print(f"  {first_name} vs {name}: DIFFERENT LENGTHS ({len(first_ids)} vs {len(other_ids)})")
-            all_aligned = False
-        elif not np.array_equal(first_ids, other_ids):
-            mismatches = np.sum(first_ids != other_ids)
-            print(f"  {first_name} vs {name}: {mismatches} MISALIGNED ROWS!")
-            all_aligned = False
-            # Show first few mismatches
-            for i in range(min(5, len(first_ids))):
-                if first_ids[i] != other_ids[i]:
-                    print(f"    Row {i}: '{first_ids[i]}' vs '{other_ids[i]}'")
-        else:
-            print(f"  {first_name} vs {name}: aligned ✓")
-
-    if not all_aligned:
-        print("\n*** WARNING: DataFrames are NOT aligned! Ensemble calculations are invalid! ***")
-        print("*** Need to merge on 'id' column instead of assuming row alignment ***")
-    else:
-        print("\nAll DataFrames are properly aligned.")
-
-    return all_aligned
-
-
-def align_dataframes(dfs: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
-    """Align all DataFrames by sorting on the id column."""
-    print("Aligning DataFrames by sorting on molecule_name...")
-    aligned = {}
-    for name, df in dfs.items():
-        aligned[name] = df.sort_values(id).reset_index(drop=True)
-    print("  Done.\n")
-    return aligned
+def merge_dataframes(dfs: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
+    """Merge all DataFrames on the id column to ensure alignment."""
+    # Sort each DataFrame by id and reset index
+    return {name: df.sort_values(id).reset_index(drop=True) for name, df in dfs.items()}
 
 
 if __name__ == "__main__":
@@ -424,16 +383,8 @@ if __name__ == "__main__":
 
     print(f"\nLoaded {len(dfs)} models, {len(list(dfs.values())[0])} samples each\n")
 
-    # First check alignment
-    aligned = check_row_alignment(dfs)
-    if not aligned:
-        print("\nDataFrames not aligned - aligning now...")
-        dfs = align_dataframes(dfs)
-        # Verify alignment
-        aligned = check_row_alignment(dfs)
-        if not aligned:
-            print("\nFailed to align DataFrames!")
-            exit(1)
+    # Merge on id column to ensure alignment
+    dfs = merge_dataframes(dfs)
 
     # Run analyses
     analyze_confidence_vs_residuals(dfs)
