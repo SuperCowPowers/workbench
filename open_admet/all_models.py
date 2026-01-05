@@ -143,19 +143,9 @@ if __name__ == "__main__":
     print(f"Processing {len(FS_LIST)} FeatureSets")
     print(f"Using {len(rdkit_features)} RDKit/Mordred features")
 
-    # Process all FeatureSets in parallel using threads
-    max_workers = len(FS_LIST)  # One thread per FeatureSet
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(create_models_for_featureset, fs_name, rdkit_features): fs_name
-            for fs_name in FS_LIST
-        }
-        for future in as_completed(futures):
-            fs_name = futures[future]
-            try:
-                future.result()
-            except Exception as e:
-                print(f"Error processing {fs_name}: {e}")
+    # Loop over all FeatureSets and create models
+    for fs_name in FS_LIST:
+        create_models_for_featureset(fs_name, rdkit_features)
 
     print("\n" + "=" * 60)
     print("All models created successfully!")
