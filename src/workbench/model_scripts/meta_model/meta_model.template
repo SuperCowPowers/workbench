@@ -7,10 +7,10 @@
 # Assumptions/Shortcuts:
 # - All child endpoints are regression models
 # - All child endpoints output 'prediction' and 'confidence' columns
-# - Aggregation uses confidence-weighted voting (confidence is always 0-1)
+# - Aggregation uses model weights (provided at meta model creation time)
 #
 # This template:
-# - Has no real training phase (just saves metadata)
+# - Has no real training phase (just saves metadata including model weights)
 # - At inference time, calls child endpoints and aggregates their predictions
 
 import argparse
@@ -27,6 +27,7 @@ from workbench_bridges.endpoints.fast_inference import fast_inference
 TEMPLATE_PARAMS = {
     "child_endpoints": "{{child_endpoints}}",
     "target_column": "{{target_column}}",
+    "model_weights": "{{model_weights}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "aws_region": "{{aws_region}}",
 }
@@ -60,12 +61,13 @@ def invoke_endpoints_parallel(endpoint_names: list[str], df: pd.DataFrame) -> di
     return results
 
 
-def aggregate_predictions(results: dict[str, pd.DataFrame]) -> pd.DataFrame:
-    """Aggregate predictions from multiple endpoints using confidence-weighted voting.
+def aggregate_predictions(results: dict[str, pd.DataFrame], model_weights: dict[str, float]) -> pd.DataFrame:
+    """Aggregate predictions from multiple endpoints using model weights.
 
     Args:
         results: Dict mapping endpoint_name -> predictions DataFrame
                  Each DataFrame must have 'prediction' and 'confidence' columns
+        model_weights: Dict mapping endpoint_name -> weight
 
     Returns:
         DataFrame with aggregated prediction, prediction_std, and confidence
@@ -83,16 +85,19 @@ def aggregate_predictions(results: dict[str, pd.DataFrame]) -> pd.DataFrame:
     pred_df = pd.DataFrame({name: df["prediction"] for name, df in valid_results.items()})
     conf_df = pd.DataFrame({name: df["confidence"] for name, df in valid_results.items()})
 
-    # Confidence-weighted average: sum(pred * conf) / sum(conf)
-    conf_sum = conf_df.sum(axis=1) + 1e-8
-    weights = conf_df.div(conf_sum, axis=0)
-    output_df["prediction"] = (pred_df * weights).sum(axis=1)
+    # Apply model weights (renormalize for valid endpoints only)
+    valid_weights = {k: model_weights.get(k, 1.0) for k in valid_results}
+    weight_sum = sum(valid_weights.values())
+    normalized_weights = {k: v / weight_sum for k, v in valid_weights.items()}
+
+    # Weighted average
+    output_df["prediction"] = sum(pred_df[name] * w for name, w in normalized_weights.items())
 
     # Ensemble std across child endpoints
     output_df["prediction_std"] = pred_df.std(axis=1)
 
-    # Aggregated confidence: mean of child confidences
-    output_df["confidence"] = conf_df.mean(axis=1)
+    # Aggregated confidence: weighted mean of child confidences
+    output_df["confidence"] = sum(conf_df[name] * w for name, w in normalized_weights.items())
 
     return output_df
 
@@ -110,6 +115,7 @@ def model_fn(model_dir: str) -> dict:
         os.environ["AWS_REGION"] = config["aws_region"]
 
     print(f"Meta model loaded: {len(config['child_endpoints'])} child endpoints")
+    print(f"Model weights: {config.get('model_weights')}")
     print(f"AWS region: {config.get('aws_region')}")
     return config
 
@@ -147,6 +153,7 @@ def output_fn(output_df, accept_type):
 def predict_fn(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     """Run inference by calling child endpoints and aggregating results."""
     child_endpoints = config["child_endpoints"]
+    model_weights = config.get("model_weights", {})
 
     print(f"Calling {len(child_endpoints)} child endpoints: {child_endpoints}")
 
@@ -158,8 +165,8 @@ def predict_fn(df: pd.DataFrame, config: dict) -> pd.DataFrame:
         status = f"{len(result)} rows" if result is not None else "FAILED"
         print(f"  {name}: {status}")
 
-    # Aggregate predictions using confidence-weighted voting
-    output_df = aggregate_predictions(results)
+    # Aggregate predictions using model weights
+    output_df = aggregate_predictions(results, model_weights)
 
     print(f"Aggregated {len(output_df)} predictions from {len(results)} endpoints")
     return output_df
@@ -177,6 +184,7 @@ if __name__ == "__main__":
 
     child_endpoints = TEMPLATE_PARAMS["child_endpoints"]
     target_column = TEMPLATE_PARAMS["target_column"]
+    model_weights = TEMPLATE_PARAMS["model_weights"]
     aws_region = TEMPLATE_PARAMS["aws_region"]
 
     print("=" * 60)
@@ -184,12 +192,14 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"Child endpoints: {child_endpoints}")
     print(f"Target column: {target_column}")
+    print(f"Model weights: {model_weights}")
     print(f"AWS region: {aws_region}")
 
     # Save configuration for inference
     config = {
         "child_endpoints": child_endpoints,
         "target_column": target_column,
+        "model_weights": model_weights,
         "aws_region": aws_region,
     }
 
