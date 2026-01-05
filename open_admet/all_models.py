@@ -44,6 +44,8 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         zero_ids = df.loc[df[target] == 0.0, fs.id_column].tolist()
         fs.set_sample_weights({id: 0.0 for id in zero_ids})
         print(f"Set {len(zero_ids)}/{len(df)} samples with target == 0.0 to weight 0")
+    else:
+        fs.set_sample_weights({})  # Clear any existing sample weights
 
     # Not used right now
     """
