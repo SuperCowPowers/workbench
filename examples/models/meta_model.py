@@ -6,12 +6,11 @@ recreate = True
 # =============================================================================
 # Meta Model: Ensemble of XGBoost, PyTorch, and ChemProp for LogD
 # =============================================================================
-# This meta model aggregates predictions from three different model architectures,
-# using confidence-weighted voting to combine their outputs.
+# This meta model aggregates predictions from different model architectures,
+# using model-weighted voting to combine their outputs.
 
 # Child endpoints that this meta model will call
 CHILD_ENDPOINTS = [
-    "logd-reg-xgb",
     "logd-reg-pytorch",
     "logd-reg-chemprop",
 ]
