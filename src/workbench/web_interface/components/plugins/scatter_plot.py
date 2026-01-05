@@ -421,6 +421,7 @@ if __name__ == "__main__":
 
     # Get a UQ regressor model
     from workbench.api import Model
+
     model = Model("logd-reg-xgb")
     df = model.get_inference_predictions("full_cross_fold")
 

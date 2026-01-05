@@ -3,11 +3,25 @@
 Note: Users must install cleanlab separately: pip install cleanlab
 """
 
+import logging
+from typing import List, Optional
+
+import datasets
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor, HistGradientBoostingClassifier
 from sklearn.preprocessing import LabelEncoder
-from typing import List, Optional
-import logging
+
+from workbench.core.artifacts.model_core import ModelType
+
+# Check datasets version - Datalab has a bug with datasets>=4.0.0
+# See: https://github.com/cleanlab/cleanlab/issues/1253
+_datasets_major = int(datasets.__version__.split(".")[0])
+if _datasets_major >= 4:
+    raise ImportError(
+        "cleanlab's Datalab requires datasets<4.0.0 due to a known bug.\n"
+        "See: https://github.com/cleanlab/cleanlab/issues/1253\n"
+        "Fix: pip install 'datasets<4.0.0'"
+    )
 
 # Check for cleanlab package
 try:
@@ -21,21 +35,6 @@ except ImportError:
     CleanLearningRegressor = None
     CleanLearningClassifier = None
     Datalab = None
-
-# Check datasets version - Datalab has a bug with datasets>=4.0.0
-# See: https://github.com/cleanlab/cleanlab/issues/1253
-import datasets
-
-_datasets_major = int(datasets.__version__.split(".")[0])
-if _datasets_major >= 4:
-    raise ImportError(
-        "cleanlab's Datalab requires datasets<4.0.0 due to a known bug.\n"
-        "See: https://github.com/cleanlab/cleanlab/issues/1253\n"
-        "Fix: pip install 'datasets<4.0.0'"
-    )
-
-# Workbench imports
-from workbench.core.artifacts.model_core import ModelType
 
 # Regressor types for convenience
 REGRESSOR_TYPES = [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
