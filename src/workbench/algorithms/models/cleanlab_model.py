@@ -164,6 +164,27 @@ class CleanlabModels:
 
         cl_model.get_label_issues = get_label_issues_enhanced
 
+        # For regression, enhance uncertainty methods to use stored data and return DataFrames
+        if model_type != ModelType.CLASSIFIER:
+            X = self._X
+            y = self._y
+            original_get_aleatoric = cl_model.get_aleatoric_uncertainty
+            original_get_epistemic = cl_model.get_epistemic_uncertainty
+
+            def get_aleatoric_uncertainty_enhanced():
+                residual = cl_model.predict(X) - y
+                return original_get_aleatoric(X, residual)
+
+            def get_epistemic_uncertainty_enhanced():
+                values = original_get_epistemic(X, y)
+                return pd.DataFrame({
+                    id_column: clean_df[id_column].values,
+                    "epistemic_uncertainty": values,
+                }).sort_values("epistemic_uncertainty", ascending=False).reset_index(drop=True)
+
+            cl_model.get_aleatoric_uncertainty = get_aleatoric_uncertainty_enhanced
+            cl_model.get_epistemic_uncertainty = get_epistemic_uncertainty_enhanced
+
         n_issues = original_get_label_issues()["is_label_issue"].sum()
         log.info(f"CleanLearning: {n_issues} potential label issues out of {len(self._clean_df)} samples")
 
@@ -190,15 +211,18 @@ class CleanlabModels:
 
         log.info("Building Datalab model...")
 
+        # Create DataFrame with only numeric columns (features + target) for Datalab
+        datalab_df = self._clean_df[self.features + [self.target]]
+
         # Create Datalab instance
         if self.model_type == ModelType.CLASSIFIER:
-            lab = Datalab(data=self._clean_df, label_name=self.target)
+            lab = Datalab(data=datalab_df, label_name=self.target)
             # Build CleanLearning first to reuse its classifier for pred_probs
             cl = self.clean_learning()
             pred_probs = cl.clf.predict_proba(self._X)
             lab.find_issues(features=self._X, pred_probs=pred_probs)
         else:
-            lab = Datalab(data=self._clean_df, label_name=self.target, task="regression")
+            lab = Datalab(data=datalab_df, label_name=self.target, task="regression")
             lab.find_issues(features=self._X)
 
         self._datalab = lab
