@@ -10,7 +10,7 @@ if recreate or not Model("open-admet-chemprop-logd").exists():
     feature_set = FeatureSet("open_admet_all")
     m = feature_set.to_model(
         name="open-admet-chemprop-logd",
-        model_type=ModelType.REGRESSOR,
+        model_type=ModelType.UQ_REGRESSOR,
         model_framework=ModelFramework.CHEMPROP,
         target_column="logd",  # Single target (string)
         feature_list=["smiles"],
@@ -57,7 +57,7 @@ if recreate or not Model("open-admet-chemprop-logd-hybrid").exists():
 
     m = feature_set.to_model(
         name="open-admet-chemprop-logd-hybrid",
-        model_type=ModelType.REGRESSOR,
+        model_type=ModelType.UQ_REGRESSOR,
         model_framework=ModelFramework.CHEMPROP,
         target_column="logd",
         feature_list=hybrid_features,
@@ -70,6 +70,30 @@ if recreate or not Model("open-admet-chemprop-logd-hybrid").exists():
 if recreate or not Endpoint("open-admet-chemprop-logd-hybrid").exists():
     m = Model("open-admet-chemprop-logd-hybrid")
     end = m.to_endpoint(tags=["chemprop", "open_admet", "hybrid"])
+    end.set_owner("BW")
+    end.auto_inference()
+    end.cross_fold_inference()
+
+# =============================================================================
+# Chemprop Classification Model
+# =============================================================================
+if recreate or not Model("aqsol-class-chemprop").exists():
+    feature_set = FeatureSet("aqsol_features")
+    m = feature_set.to_model(
+        name="aqsol-class-chemprop",
+        model_type=ModelType.CLASSIFIER,
+        model_framework=ModelFramework.CHEMPROP,
+        target_column=["solubility_class"],
+        feature_list=["smiles"],
+        description="Classification ChemProp model AQSol solubility classes",
+        tags=["chemprop", "aqsol", "class"],
+    )
+    m.set_owner("BW")
+
+# Create an Endpoint for the Multi-Task Regression Model
+if recreate or not Endpoint("aqsol-class-chemprop").exists():
+    m = Model("aqsol-class-chemprop")
+    end = m.to_endpoint(tags=["chemprop", "aqsol", "class"])
     end.set_owner("BW")
     end.auto_inference()
     end.cross_fold_inference()
