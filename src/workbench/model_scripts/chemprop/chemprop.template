@@ -528,6 +528,7 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Compute metrics and prepare output
     # -------------------------------------------------------------------------
+    median_std = None  # Only set for regression models with ensemble
     if model_type == "classifier":
         class_preds = preds[:, 0].astype(int)
         target_name = target_columns[0]
