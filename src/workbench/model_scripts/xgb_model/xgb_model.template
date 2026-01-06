@@ -7,39 +7,30 @@
 # - Sample weights support
 # - Categorical feature handling
 # - Compressed feature decompression
+#
+# NOTE: Imports are structured to minimize serverless endpoint startup time.
+# Heavy imports (sklearn, awswrangler) are deferred to training time.
 
-import argparse
 import json
 import os
 
-import awswrangler as wr
 import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
-from sklearn.preprocessing import LabelEncoder
 
 from model_script_utils import (
-    check_dataframe,
-    compute_classification_metrics,
-    compute_regression_metrics,
     convert_categorical_types,
     decompress_features,
     expand_proba_column,
     input_fn,
     match_features_case_insensitive,
     output_fn,
-    print_classification_metrics,
-    print_confusion_matrix,
-    print_regression_metrics,
 )
 from uq_harness import (
     compute_confidence,
     load_uq_models,
     predict_intervals,
-    save_uq_models,
-    train_uq_models,
 )
 
 # =============================================================================
@@ -61,7 +52,7 @@ DEFAULT_HYPERPARAMETERS = {
     "reg_alpha": 0.1,
     "reg_lambda": 1.0,
     # Random seed
-    "random_state": 42,
+    "seed": 42,
 }
 
 # Workbench-specific parameters (not passed to XGBoost)
@@ -83,9 +74,139 @@ TEMPLATE_PARAMS = {
 
 
 # =============================================================================
+# Model Loading (for SageMaker inference)
+# =============================================================================
+def model_fn(model_dir: str) -> dict:
+    """Load XGBoost ensemble from the specified directory."""
+    # Load ensemble metadata
+    metadata_path = os.path.join(model_dir, "ensemble_metadata.json")
+    if os.path.exists(metadata_path):
+        with open(metadata_path) as f:
+            metadata = json.load(f)
+        n_ensemble = metadata["n_ensemble"]
+    else:
+        n_ensemble = 1  # Legacy single model
+
+    # Load ensemble models
+    ensemble_models = []
+    for i in range(n_ensemble):
+        model_path = os.path.join(model_dir, f"xgb_model_{i}.joblib")
+        if not os.path.exists(model_path):
+            model_path = os.path.join(model_dir, "xgb_model.joblib")  # Legacy fallback
+        ensemble_models.append(joblib.load(model_path))
+
+    print(f"Loaded {len(ensemble_models)} model(s)")
+
+    # Load label encoder (classifier only)
+    label_encoder = None
+    encoder_path = os.path.join(model_dir, "label_encoder.joblib")
+    if os.path.exists(encoder_path):
+        label_encoder = joblib.load(encoder_path)
+
+    # Load category mappings
+    category_mappings = {}
+    category_path = os.path.join(model_dir, "category_mappings.json")
+    if os.path.exists(category_path):
+        with open(category_path) as f:
+            category_mappings = json.load(f)
+
+    # Load UQ models (regression only)
+    uq_models, uq_metadata = None, None
+    uq_path = os.path.join(model_dir, "uq_metadata.json")
+    if os.path.exists(uq_path):
+        uq_models, uq_metadata = load_uq_models(model_dir)
+
+    return {
+        "ensemble_models": ensemble_models,
+        "n_ensemble": n_ensemble,
+        "label_encoder": label_encoder,
+        "category_mappings": category_mappings,
+        "uq_models": uq_models,
+        "uq_metadata": uq_metadata,
+    }
+
+
+# =============================================================================
+# Inference (for SageMaker inference)
+# =============================================================================
+def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
+    """Make predictions with XGBoost ensemble."""
+    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
+    with open(os.path.join(model_dir, "feature_columns.json")) as f:
+        features = json.load(f)
+    print(f"Model Features: {features}")
+
+    # Extract model components
+    ensemble_models = model_dict["ensemble_models"]
+    label_encoder = model_dict.get("label_encoder")
+    category_mappings = model_dict.get("category_mappings", {})
+    uq_models = model_dict.get("uq_models")
+    uq_metadata = model_dict.get("uq_metadata")
+    compressed_features = TEMPLATE_PARAMS["compressed_features"]
+
+    # Prepare features
+    matched_df = match_features_case_insensitive(df, features)
+    matched_df, _ = convert_categorical_types(matched_df, features, category_mappings)
+
+    if compressed_features:
+        print("Decompressing features for prediction...")
+        matched_df, features = decompress_features(matched_df, features, compressed_features)
+
+    X = matched_df[features]
+
+    # Collect ensemble predictions
+    all_preds = [m.predict(X) for m in ensemble_models]
+    ensemble_preds = np.stack(all_preds, axis=0)
+
+    if label_encoder is not None:
+        # Classification: average probabilities, then argmax
+        all_probs = [m.predict_proba(X) for m in ensemble_models]
+        avg_probs = np.mean(np.stack(all_probs, axis=0), axis=0)
+        class_preds = np.argmax(avg_probs, axis=1)
+
+        df["prediction"] = label_encoder.inverse_transform(class_preds)
+        df["pred_proba"] = [p.tolist() for p in avg_probs]
+        df = expand_proba_column(df, label_encoder.classes_)
+    else:
+        # Regression: average predictions
+        df["prediction"] = np.mean(ensemble_preds, axis=0)
+        df["prediction_std"] = np.std(ensemble_preds, axis=0)
+
+        # Add UQ intervals if available
+        if uq_models and uq_metadata:
+            df = predict_intervals(df, X, uq_models, uq_metadata)
+            df = compute_confidence(df, uq_metadata["median_interval_width"], "q_10", "q_90")
+
+    print(f"Inference complete: {len(df)} predictions, {len(ensemble_models)} ensemble members")
+    return df
+
+
+# =============================================================================
 # Training
 # =============================================================================
 if __name__ == "__main__":
+    # -------------------------------------------------------------------------
+    # Training-only imports (deferred to reduce serverless startup time)
+    # -------------------------------------------------------------------------
+    import argparse
+
+    import awswrangler as wr
+    from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
+    from sklearn.preprocessing import LabelEncoder
+
+    from model_script_utils import (
+        check_dataframe,
+        compute_classification_metrics,
+        compute_regression_metrics,
+        print_classification_metrics,
+        print_confusion_matrix,
+        print_regression_metrics,
+    )
+    from uq_harness import (
+        save_uq_models,
+        train_uq_models,
+    )
+
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data
     # -------------------------------------------------------------------------
@@ -125,7 +246,7 @@ if __name__ == "__main__":
         all_df, features = decompress_features(all_df, features, compressed_features)
 
     # -------------------------------------------------------------------------
-    # Classification setup: Encode target labels
+    # Classification setup
     # -------------------------------------------------------------------------
     label_encoder = None
     if model_type == "classifier":
@@ -138,6 +259,10 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     n_folds = hyperparameters["n_folds"]
     xgb_params = {k: v for k, v in hyperparameters.items() if k not in WORKBENCH_PARAMS}
+
+    # Map 'seed' to 'random_state' for XGBoost
+    if "seed" in xgb_params:
+        xgb_params["random_state"] = xgb_params.pop("seed")
 
     # Handle objective: filter regression-only params for classifiers, set default for regressors
     if model_type == "classifier":
@@ -295,12 +420,10 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Save model artifacts
     # -------------------------------------------------------------------------
-    # Ensemble models
-    for idx, ens_model in enumerate(ensemble_models):
-        joblib.dump(ens_model, os.path.join(args.model_dir, f"xgb_model_{idx}.joblib"))
-    print(f"Saved {len(ensemble_models)} XGBoost model(s)")
+    for idx, m in enumerate(ensemble_models):
+        joblib.dump(m, os.path.join(args.model_dir, f"xgb_model_{idx}.joblib"))
+    print(f"Saved {len(ensemble_models)} model(s)")
 
-    # Metadata files
     with open(os.path.join(args.model_dir, "ensemble_metadata.json"), "w") as f:
         json.dump({"n_ensemble": len(ensemble_models), "n_folds": n_folds}, f)
 
@@ -320,125 +443,3 @@ if __name__ == "__main__":
         save_uq_models(uq_models, uq_metadata, args.model_dir)
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")
-
-
-# =============================================================================
-# Model Loading (for SageMaker inference)
-# =============================================================================
-def model_fn(model_dir: str) -> dict:
-    """Load XGBoost ensemble and associated artifacts.
-
-    Args:
-        model_dir: Directory containing model artifacts
-
-    Returns:
-        Dictionary with ensemble_models, label_encoder, category_mappings, uq_models, etc.
-    """
-    # Load ensemble metadata
-    metadata_path = os.path.join(model_dir, "ensemble_metadata.json")
-    if os.path.exists(metadata_path):
-        with open(metadata_path) as f:
-            metadata = json.load(f)
-        n_ensemble = metadata["n_ensemble"]
-    else:
-        n_ensemble = 1  # Legacy single model
-
-    # Load ensemble models
-    ensemble_models = []
-    for i in range(n_ensemble):
-        model_path = os.path.join(model_dir, f"xgb_model_{i}.joblib")
-        if not os.path.exists(model_path):
-            model_path = os.path.join(model_dir, "xgb_model.joblib")  # Legacy fallback
-        ensemble_models.append(joblib.load(model_path))
-
-    # Load label encoder (classifier only)
-    label_encoder = None
-    encoder_path = os.path.join(model_dir, "label_encoder.joblib")
-    if os.path.exists(encoder_path):
-        label_encoder = joblib.load(encoder_path)
-
-    # Load category mappings
-    category_mappings = {}
-    category_path = os.path.join(model_dir, "category_mappings.json")
-    if os.path.exists(category_path):
-        with open(category_path) as f:
-            category_mappings = json.load(f)
-
-    # Load UQ models (regression only)
-    uq_models, uq_metadata = None, None
-    uq_path = os.path.join(model_dir, "uq_metadata.json")
-    if os.path.exists(uq_path):
-        uq_models, uq_metadata = load_uq_models(model_dir)
-
-    return {
-        "ensemble_models": ensemble_models,
-        "n_ensemble": n_ensemble,
-        "label_encoder": label_encoder,
-        "category_mappings": category_mappings,
-        "uq_models": uq_models,
-        "uq_metadata": uq_metadata,
-    }
-
-
-# =============================================================================
-# Inference (for SageMaker inference)
-# =============================================================================
-def predict_fn(df: pd.DataFrame, models: dict) -> pd.DataFrame:
-    """Make predictions with XGBoost ensemble.
-
-    Args:
-        df: Input DataFrame with features
-        models: Dictionary from model_fn containing ensemble and metadata
-
-    Returns:
-        DataFrame with predictions added
-    """
-    # Load feature columns
-    model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
-    with open(os.path.join(model_dir, "feature_columns.json")) as f:
-        features = json.load(f)
-    print(f"Model Features: {features}")
-
-    # Extract model components
-    ensemble_models = models["ensemble_models"]
-    label_encoder = models.get("label_encoder")
-    category_mappings = models.get("category_mappings", {})
-    uq_models = models.get("uq_models")
-    uq_metadata = models.get("uq_metadata")
-    compressed_features = TEMPLATE_PARAMS["compressed_features"]
-
-    # Prepare features
-    matched_df = match_features_case_insensitive(df, features)
-    matched_df, _ = convert_categorical_types(matched_df, features, category_mappings)
-
-    if compressed_features:
-        print("Decompressing features for prediction...")
-        matched_df, features = decompress_features(matched_df, features, compressed_features)
-
-    X = matched_df[features]
-
-    # Collect ensemble predictions
-    all_preds = [m.predict(X) for m in ensemble_models]
-    ensemble_preds = np.stack(all_preds, axis=0)
-
-    if label_encoder is not None:
-        # Classification: average probabilities, then argmax
-        all_probs = [m.predict_proba(X) for m in ensemble_models]
-        avg_probs = np.mean(np.stack(all_probs, axis=0), axis=0)
-        class_preds = np.argmax(avg_probs, axis=1)
-
-        df["prediction"] = label_encoder.inverse_transform(class_preds)
-        df["pred_proba"] = [p.tolist() for p in avg_probs]
-        df = expand_proba_column(df, label_encoder.classes_)
-    else:
-        # Regression: average predictions
-        df["prediction"] = np.mean(ensemble_preds, axis=0)
-        df["prediction_std"] = np.std(ensemble_preds, axis=0)
-
-        # Add UQ intervals if available
-        if uq_models and uq_metadata:
-            df = predict_intervals(df, X, uq_models, uq_metadata)
-            df = compute_confidence(df, uq_metadata["median_interval_width"], "q_10", "q_90")
-
-    print(f"Inference complete: {len(df)} predictions, {len(ensemble_models)} ensemble members")
-    return df

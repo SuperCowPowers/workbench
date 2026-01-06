@@ -5,51 +5,36 @@
 # - Out-of-fold predictions for validation metrics
 # - Categorical feature embedding via TabularMLP
 # - Compressed feature decompression
+#
+# NOTE: Imports are structured to minimize serverless endpoint startup time.
+# Heavy imports (sklearn, awswrangler) are deferred to training time.
 
-import argparse
 import json
 import os
 
-import awswrangler as wr
 import joblib
 import numpy as np
 import pandas as pd
 import torch
-from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
-from sklearn.preprocessing import LabelEncoder
-
-# Enable Tensor Core optimization for GPUs that support it
-torch.set_float32_matmul_precision("medium")
 
 from model_script_utils import (
-    check_dataframe,
-    compute_classification_metrics,
-    compute_regression_metrics,
     convert_categorical_types,
     decompress_features,
     expand_proba_column,
     input_fn,
     match_features_case_insensitive,
     output_fn,
-    print_classification_metrics,
-    print_confusion_matrix,
-    print_regression_metrics,
 )
 from pytorch_utils import (
     FeatureScaler,
-    create_model,
     load_model,
     predict,
     prepare_data,
-    save_model,
-    train_model,
 )
 from uq_harness import (
     compute_confidence,
     load_uq_models,
     predict_intervals,
-    save_uq_models,
-    train_uq_models,
 )
 
 # =============================================================================
@@ -88,7 +73,7 @@ TEMPLATE_PARAMS = {
 # Model Loading (for SageMaker inference)
 # =============================================================================
 def model_fn(model_dir: str) -> dict:
-    """Load TabularMLP ensemble from the specified directory."""
+    """Load PyTorch TabularMLP ensemble from the specified directory."""
     # Load ensemble metadata
     metadata_path = os.path.join(model_dir, "ensemble_metadata.joblib")
     if os.path.exists(metadata_path):
@@ -131,7 +116,7 @@ def model_fn(model_dir: str) -> dict:
 # Inference (for SageMaker inference)
 # =============================================================================
 def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
-    """Make predictions with TabularMLP ensemble."""
+    """Make predictions with PyTorch TabularMLP ensemble."""
     model_type = TEMPLATE_PARAMS["model_type"]
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
@@ -235,6 +220,36 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 # Training
 # =============================================================================
 if __name__ == "__main__":
+    # -------------------------------------------------------------------------
+    # Training-only imports (deferred to reduce serverless startup time)
+    # -------------------------------------------------------------------------
+    import argparse
+
+    import awswrangler as wr
+    from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
+    from sklearn.preprocessing import LabelEncoder
+
+    # Enable Tensor Core optimization for GPUs that support it
+    torch.set_float32_matmul_precision("medium")
+
+    from model_script_utils import (
+        check_dataframe,
+        compute_classification_metrics,
+        compute_regression_metrics,
+        print_classification_metrics,
+        print_confusion_matrix,
+        print_regression_metrics,
+    )
+    from pytorch_utils import (
+        create_model,
+        save_model,
+        train_model,
+    )
+    from uq_harness import (
+        save_uq_models,
+        train_uq_models,
+    )
+
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data
     # -------------------------------------------------------------------------

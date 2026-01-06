@@ -5,36 +5,24 @@
 # - Multi-task regression support
 # - Hybrid mode (SMILES + extra molecular descriptors)
 # - Classification (single-target only)
+#
+# NOTE: Imports are structured to minimize serverless endpoint startup time.
+# Heavy imports (lightning, sklearn, awswrangler) are deferred to training time.
 
-import argparse
-import glob
 import json
 import os
 
-import awswrangler as wr
 import joblib
 import numpy as np
 import pandas as pd
 import torch
-from lightning import pytorch as pl
-from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
-from sklearn.preprocessing import LabelEncoder
 
-# Enable Tensor Core optimization for GPUs that support it
-torch.set_float32_matmul_precision("medium")
-
-from chemprop import data, models, nn
+from chemprop import data, models
 
 from model_script_utils import (
-    check_dataframe,
-    compute_classification_metrics,
-    compute_regression_metrics,
     expand_proba_column,
     input_fn,
     output_fn,
-    print_classification_metrics,
-    print_confusion_matrix,
-    print_regression_metrics,
 )
 
 # =============================================================================
@@ -73,7 +61,7 @@ TEMPLATE_PARAMS = {
 # =============================================================================
 # Helper Functions
 # =============================================================================
-def compute_std_confidence(df: pd.DataFrame, median_std: float, std_col: str = "prediction_std") -> pd.DataFrame:
+def _compute_std_confidence(df: pd.DataFrame, median_std: float, std_col: str = "prediction_std") -> pd.DataFrame:
     """Compute confidence score from ensemble prediction_std.
 
     Uses exponential decay: confidence = exp(-std / median_std)
@@ -92,7 +80,7 @@ def compute_std_confidence(df: pd.DataFrame, median_std: float, std_col: str = "
     return df
 
 
-def find_smiles_column(columns: list[str]) -> str:
+def _find_smiles_column(columns: list[str]) -> str:
     """Find SMILES column (case-insensitive match for 'smiles')."""
     smiles_col = next((c for c in columns if c.lower() == "smiles"), None)
     if smiles_col is None:
@@ -100,7 +88,7 @@ def find_smiles_column(columns: list[str]) -> str:
     return smiles_col
 
 
-def create_molecule_datapoints(
+def _create_molecule_datapoints(
     smiles_list: list[str],
     targets: np.ndarray | None = None,
     extra_descriptors: np.ndarray | None = None,
@@ -122,60 +110,13 @@ def create_molecule_datapoints(
     return datapoints, valid_indices
 
 
-def build_mpnn_model(
-    hyperparameters: dict,
-    task: str = "regression",
-    num_classes: int | None = None,
-    n_targets: int = 1,
-    n_extra_descriptors: int = 0,
-    x_d_transform: nn.ScaleTransform | None = None,
-    output_transform: nn.UnscaleTransform | None = None,
-    task_weights: np.ndarray | None = None,
-) -> models.MPNN:
-    """Build an MPNN model with specified hyperparameters."""
-    hidden_dim = hyperparameters["hidden_dim"]
-    depth = hyperparameters["depth"]
-    dropout = hyperparameters["dropout"]
-    ffn_hidden_dim = hyperparameters["ffn_hidden_dim"]
-    ffn_num_layers = hyperparameters["ffn_num_layers"]
-
-    mp = nn.BondMessagePassing(d_h=hidden_dim, depth=depth, dropout=dropout)
-    agg = nn.NormAggregation()
-    ffn_input_dim = hidden_dim + n_extra_descriptors
-
-    if task == "classification" and num_classes is not None:
-        ffn = nn.MulticlassClassificationFFN(
-            n_classes=num_classes, input_dim=ffn_input_dim,
-            hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers, dropout=dropout,
-        )
-    else:
-        # Map criterion name to ChemProp metric class (must have .clone() method)
-        from chemprop.nn.metrics import MAE, MSE
-
-        criterion_map = {
-            "mae": MAE,
-            "mse": MSE,
-        }
-        criterion_name = hyperparameters.get("criterion", "mae")
-        if criterion_name not in criterion_map:
-            raise ValueError(f"Unknown criterion '{criterion_name}'. Supported: {list(criterion_map.keys())}")
-        criterion = criterion_map[criterion_name]()
-
-        weights_tensor = torch.tensor(task_weights, dtype=torch.float32) if task_weights is not None else None
-        ffn = nn.RegressionFFN(
-            input_dim=ffn_input_dim, hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers,
-            dropout=dropout, n_tasks=n_targets, output_transform=output_transform, task_weights=weights_tensor,
-            criterion=criterion,
-        )
-
-    return models.MPNN(message_passing=mp, agg=agg, predictor=ffn, batch_norm=True, metrics=None, X_d_transform=x_d_transform)
-
-
 # =============================================================================
 # Model Loading (for SageMaker inference)
 # =============================================================================
 def model_fn(model_dir: str) -> dict:
     """Load ChemProp MPNN ensemble from the specified directory."""
+    from lightning import pytorch as pl
+
     metadata = joblib.load(os.path.join(model_dir, "ensemble_metadata.joblib"))
     ensemble_models = []
     for i in range(metadata["n_ensemble"]):
@@ -183,12 +124,16 @@ def model_fn(model_dir: str) -> dict:
         model.eval()
         ensemble_models.append(model)
 
+    # Pre-initialize trainer once during model loading (expensive operation)
+    trainer = pl.Trainer(accelerator="auto", logger=False, enable_progress_bar=False)
+
     print(f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}")
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": metadata["n_ensemble"],
         "target_columns": metadata["target_columns"],
         "median_std": metadata["median_std"],
+        "trainer": trainer,
     }
 
 
@@ -202,6 +147,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 
     ensemble_models = model_dict["ensemble_models"]
     target_columns = model_dict["target_columns"]
+    trainer = model_dict["trainer"]  # Use pre-initialized trainer
 
     # Load artifacts
     label_encoder = None
@@ -216,7 +162,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         print(f"Hybrid mode: {len(feature_metadata['extra_feature_cols'])} extra features")
 
     # Find SMILES column and validate
-    smiles_column = find_smiles_column(df.columns.tolist())
+    smiles_column = _find_smiles_column(df.columns.tolist())
     smiles_list = df[smiles_column].tolist()
 
     valid_mask = np.array([bool(s and isinstance(s, str) and s.strip()) for s in smiles_list])
@@ -251,13 +197,12 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
                 extra_features[:, j] = col_means[j]
 
     # Create datapoints and predict
-    datapoints, rdkit_valid = create_molecule_datapoints(valid_smiles, extra_descriptors=extra_features)
+    datapoints, rdkit_valid = _create_molecule_datapoints(valid_smiles, extra_descriptors=extra_features)
     if len(datapoints) == 0:
         return df
 
     dataset = data.MoleculeDataset(datapoints)
     dataloader = data.build_dataloader(dataset, shuffle=False)
-    trainer = pl.Trainer(accelerator="auto", logger=False, enable_progress_bar=False)
 
     # Ensemble predictions
     all_preds = []
@@ -299,7 +244,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df["prediction_std"] = df[f"{target_columns[0]}_pred_std"]
 
         # Compute confidence from ensemble std
-        df = compute_std_confidence(df, model_dict["median_std"])
+        df = _compute_std_confidence(df, model_dict["median_std"])
 
     return df
 
@@ -308,6 +253,82 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 # Training
 # =============================================================================
 if __name__ == "__main__":
+    # -------------------------------------------------------------------------
+    # Training-only imports (deferred to reduce serverless startup time)
+    # -------------------------------------------------------------------------
+    import argparse
+    import glob
+
+    import awswrangler as wr
+    from lightning import pytorch as pl
+    from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
+    from sklearn.preprocessing import LabelEncoder
+
+    # Enable Tensor Core optimization for GPUs that support it
+    torch.set_float32_matmul_precision("medium")
+
+    from chemprop import nn
+
+    from model_script_utils import (
+        check_dataframe,
+        compute_classification_metrics,
+        compute_regression_metrics,
+        print_classification_metrics,
+        print_confusion_matrix,
+        print_regression_metrics,
+    )
+
+    # -------------------------------------------------------------------------
+    # Training-only helper function
+    # -------------------------------------------------------------------------
+    def build_mpnn_model(
+        hyperparameters: dict,
+        task: str = "regression",
+        num_classes: int | None = None,
+        n_targets: int = 1,
+        n_extra_descriptors: int = 0,
+        x_d_transform: nn.ScaleTransform | None = None,
+        output_transform: nn.UnscaleTransform | None = None,
+        task_weights: np.ndarray | None = None,
+    ) -> models.MPNN:
+        """Build an MPNN model with specified hyperparameters."""
+        hidden_dim = hyperparameters["hidden_dim"]
+        depth = hyperparameters["depth"]
+        dropout = hyperparameters["dropout"]
+        ffn_hidden_dim = hyperparameters["ffn_hidden_dim"]
+        ffn_num_layers = hyperparameters["ffn_num_layers"]
+
+        mp = nn.BondMessagePassing(d_h=hidden_dim, depth=depth, dropout=dropout)
+        agg = nn.NormAggregation()
+        ffn_input_dim = hidden_dim + n_extra_descriptors
+
+        if task == "classification" and num_classes is not None:
+            ffn = nn.MulticlassClassificationFFN(
+                n_classes=num_classes, input_dim=ffn_input_dim,
+                hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers, dropout=dropout,
+            )
+        else:
+            # Map criterion name to ChemProp metric class (must have .clone() method)
+            from chemprop.nn.metrics import MAE, MSE
+
+            criterion_map = {
+                "mae": MAE,
+                "mse": MSE,
+            }
+            criterion_name = hyperparameters.get("criterion", "mae")
+            if criterion_name not in criterion_map:
+                raise ValueError(f"Unknown criterion '{criterion_name}'. Supported: {list(criterion_map.keys())}")
+            criterion = criterion_map[criterion_name]()
+
+            weights_tensor = torch.tensor(task_weights, dtype=torch.float32) if task_weights is not None else None
+            ffn = nn.RegressionFFN(
+                input_dim=ffn_input_dim, hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers,
+                dropout=dropout, n_tasks=n_targets, output_transform=output_transform, task_weights=weights_tensor,
+                criterion=criterion,
+            )
+
+        return models.MPNN(message_passing=mp, agg=agg, predictor=ffn, batch_norm=True, metrics=None, X_d_transform=x_d_transform)
+
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data
     # -------------------------------------------------------------------------
@@ -329,7 +350,7 @@ if __name__ == "__main__":
         raise ValueError("'targets' must be a non-empty list of target column names")
     n_targets = len(target_columns)
 
-    smiles_column = find_smiles_column(feature_list)
+    smiles_column = _find_smiles_column(feature_list)
     extra_feature_cols = [f for f in feature_list if f != smiles_column]
     use_extra_features = len(extra_feature_cols) > 0
 
@@ -384,7 +405,7 @@ if __name__ == "__main__":
     all_targets = all_df[target_columns].values.astype(np.float32)
 
     # Filter invalid SMILES
-    _, valid_indices = create_molecule_datapoints(all_df[smiles_column].tolist(), all_targets, all_extra_features)
+    _, valid_indices = _create_molecule_datapoints(all_df[smiles_column].tolist(), all_targets, all_extra_features)
     all_df = all_df.iloc[valid_indices].reset_index(drop=True)
     all_targets = all_targets[valid_indices]
     if all_extra_features is not None:
@@ -443,8 +464,8 @@ if __name__ == "__main__":
         val_extra_raw = val_extra.copy() if val_extra is not None else None
 
         # Create datasets
-        train_dps, _ = create_molecule_datapoints(df_train[smiles_column].tolist(), train_targets, train_extra)
-        val_dps, _ = create_molecule_datapoints(df_val[smiles_column].tolist(), val_targets, val_extra)
+        train_dps, _ = _create_molecule_datapoints(df_train[smiles_column].tolist(), train_targets, train_extra)
+        val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), val_targets, val_extra)
         train_dataset, val_dataset = data.MoleculeDataset(train_dps), data.MoleculeDataset(val_dps)
 
         # Scale features/targets
@@ -489,7 +510,7 @@ if __name__ == "__main__":
         ensemble_models.append(mpnn)
 
         # Out-of-fold predictions (using raw features)
-        val_dps_raw, _ = create_molecule_datapoints(df_val[smiles_column].tolist(), val_targets, val_extra_raw)
+        val_dps_raw, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), val_targets, val_extra_raw)
         val_loader_pred = data.build_dataloader(data.MoleculeDataset(val_dps_raw), batch_size=batch_size, shuffle=False)
 
         with torch.inference_mode():
@@ -550,7 +571,7 @@ if __name__ == "__main__":
         preds_std = None
         if len(ensemble_models) > 1:
             print("Computing prediction_std from ensemble...")
-            val_dps, _ = create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
+            val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
             val_loader = data.build_dataloader(data.MoleculeDataset(val_dps), batch_size=batch_size, shuffle=False)
             trainer_pred = pl.Trainer(accelerator="auto", logger=False, enable_progress_bar=False)
 
@@ -581,7 +602,7 @@ if __name__ == "__main__":
         # Compute confidence from ensemble std
         median_std = float(np.median(preds_std[:, 0]))
         print(f"\nComputing confidence scores (median_std={median_std:.6f})...")
-        df_val = compute_std_confidence(df_val, median_std)
+        df_val = _compute_std_confidence(df_val, median_std)
         print(f"  Confidence: mean={df_val['confidence'].mean():.3f}, min={df_val['confidence'].min():.3f}, max={df_val['confidence'].max():.3f}")
 
     # -------------------------------------------------------------------------
