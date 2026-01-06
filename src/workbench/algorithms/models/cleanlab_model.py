@@ -177,10 +177,16 @@ class CleanlabModels:
 
             def get_epistemic_uncertainty_enhanced():
                 values = original_get_epistemic(X, y)
-                return pd.DataFrame({
-                    id_column: clean_df[id_column].values,
-                    "epistemic_uncertainty": values,
-                }).sort_values("epistemic_uncertainty", ascending=False).reset_index(drop=True)
+                return (
+                    pd.DataFrame(
+                        {
+                            id_column: clean_df[id_column].values,
+                            "epistemic_uncertainty": values,
+                        }
+                    )
+                    .sort_values("epistemic_uncertainty", ascending=False)
+                    .reset_index(drop=True)
+                )
 
             cl_model.get_aleatoric_uncertainty = get_aleatoric_uncertainty_enhanced
             cl_model.get_epistemic_uncertainty = get_epistemic_uncertainty_enhanced
