@@ -76,6 +76,10 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
     This retrieves the validation predictions saved during model training and
     computes metrics directly from them.
 
+    Note:
+        - Regression: Supports both single-target and multi-target models
+        - Classification: Only single-target is supported (with any number of classes)
+
     Args:
         workbench_model: Workbench model object
 
@@ -84,6 +88,7 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
             - DataFrame with computed metrics
             - DataFrame with validation predictions
     """
+
     # Get the validation predictions from S3
     s3_path = f"{workbench_model.model_training_path}/validation_predictions.csv"
     predictions_df = pull_s3_data(s3_path)
@@ -93,22 +98,16 @@ def pull_cv_results(workbench_model: Any) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
     log.info(f"Pulled {len(predictions_df)} validation predictions from {s3_path}")
 
-    # Compute metrics from predictions
+    # Get target and class labels
     target = workbench_model.target()
     class_labels = workbench_model.class_labels()
 
-    # Target could be a list for multi-target models
-    if isinstance(target, list):
-        multi_target = True
-    else:
-        multi_target = False
-
-    # Single target case
-    if not multi_target:
+    # If single target just use the "prediction" column
+    if isinstance(target, str):
         metrics_df = compute_metrics_from_predictions(predictions_df, target, class_labels)
         return metrics_df, predictions_df
 
-    # Multi-target case
+    # Multi-target regression
     metrics_list = []
     for t in target:
         # Prediction will be {target}_pred in multi-target case

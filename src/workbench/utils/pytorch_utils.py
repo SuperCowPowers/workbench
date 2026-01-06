@@ -75,7 +75,7 @@ if __name__ == "__main__":
     from workbench.api import Model
 
     # Test pulling CV results
-    model_name = "aqsol-pytorch-reg"
+    model_name = "aqsol-reg-pytorch"
     print(f"Loading Workbench model: {model_name}")
     model = Model(model_name)
     print(f"Model Framework: {model.model_framework}")

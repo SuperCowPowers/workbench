@@ -10,10 +10,10 @@ target = model.target()
 recreate = False
 
 # PyTorch Regression Model
-if recreate or not Model("aqsol-pytorch-reg").exists():
+if recreate or not Model("aqsol-reg-pytorch").exists():
     feature_set = FeatureSet("aqsol_features")
     m = feature_set.to_model(
-        name="aqsol-pytorch-reg",
+        name="aqsol-reg-pytorch",
         model_type=ModelType.UQ_REGRESSOR,
         model_framework=ModelFramework.PYTORCH,
         feature_list=feature_list,
@@ -25,8 +25,8 @@ if recreate or not Model("aqsol-pytorch-reg").exists():
     m.set_owner("BW")
 
 # Create an Endpoint for the Regression Model
-if recreate or not Endpoint("aqsol-pytorch-reg").exists():
-    m = Model("aqsol-pytorch-reg")
+if recreate or not Endpoint("aqsol-reg-pytorch").exists():
+    m = Model("aqsol-reg-pytorch")
     end = m.to_endpoint(tags=["pytorch", "molecular descriptors"])
     end.set_owner("BW")
 
@@ -34,10 +34,10 @@ if recreate or not Endpoint("aqsol-pytorch-reg").exists():
     end.auto_inference()
 
 # Pytorch Classification Model
-if recreate or not Model("aqsol-pytorch-class").exists():
+if recreate or not Model("aqsol-class-pytorch").exists():
     feature_set = FeatureSet("aqsol_features")
     m = feature_set.to_model(
-        name="aqsol-pytorch-class",
+        name="aqsol-class-pytorch",
         model_type=ModelType.CLASSIFIER,
         model_framework=ModelFramework.PYTORCH,
         feature_list=feature_list,
@@ -49,8 +49,8 @@ if recreate or not Model("aqsol-pytorch-class").exists():
     m.set_class_labels(["low", "medium", "high"])
 
 # Create an Endpoint for the Classification Model
-if recreate or not Endpoint("aqsol-pytorch-class").exists():
-    m = Model("aqsol-pytorch-class")
+if recreate or not Endpoint("aqsol-class-pytorch").exists():
+    m = Model("aqsol-class-pytorch")
     end = m.to_endpoint(tags=["pytorch", "molecular descriptors"])
     end.set_owner("BW")
 

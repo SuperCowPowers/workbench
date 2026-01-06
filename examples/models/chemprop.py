@@ -83,12 +83,13 @@ if recreate or not Model("aqsol-class-chemprop").exists():
         name="aqsol-class-chemprop",
         model_type=ModelType.CLASSIFIER,
         model_framework=ModelFramework.CHEMPROP,
-        target_column=["solubility_class"],
+        target_column="solubility_class",
         feature_list=["smiles"],
         description="Classification ChemProp model AQSol solubility classes",
         tags=["chemprop", "aqsol", "class"],
     )
     m.set_owner("BW")
+    m.set_class_labels(["low", "medium", "high"])
 
 # Create an Endpoint for the Multi-Task Regression Model
 if recreate or not Endpoint("aqsol-class-chemprop").exists():

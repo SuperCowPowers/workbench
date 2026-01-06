@@ -5,7 +5,7 @@ Usage:
     python model_script_harness.py <local_script.py> <model_name>
 
 Example:
-    python model_script_harness.py pytorch.py aqsol-pytorch-reg
+    python model_script_harness.py pytorch.py aqsol-reg-pytorch
 
 This allows you to test LOCAL changes to a model script against deployed model artifacts.
 Evaluation data is automatically pulled from the FeatureSet (training = FALSE rows).
@@ -72,7 +72,7 @@ def main():
         print("Usage: python model_script_harness.py <local_script.py> <model_name>")
         print("\nArguments:")
         print("  local_script.py  - Path to your LOCAL model script to test")
-        print("  model_name       - Workbench model name (e.g., aqsol-pytorch-reg)")
+        print("  model_name       - Workbench model name (e.g., aqsol-reg-pytorch)")
         print("\nOptional: testing/env.json with additional environment variables")
         sys.exit(1)
 
