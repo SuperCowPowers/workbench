@@ -3,6 +3,7 @@
 This class helps evaluate whether a meta model (ensemble) would outperform
 individual child models by analyzing endpoint inference predictions.
 """
+
 import argparse
 from workbench.utils.meta_model_simulator import MetaModelSimulator
 
