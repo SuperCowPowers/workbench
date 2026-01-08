@@ -24,7 +24,7 @@ The challenge covers 9 key ADMET properties:
 | MGMB | Mouse gut microbiome binding | % bound |
 
 ## Our Initial Approach
-We trained 5 different model types for each ADMET endpoint. The [Workbench AWS Dashboard](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo) supports all 6 of these model types and makes the creation, training, and deployment of models into AWS a snap.
+We trained 6 different model types for each ADMET endpoint. The [Workbench AWS Dashboard](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo) supports all 6 of these model types and makes the creation, training, and deployment of models into AWS a snap.
 
 1. **XGBoost** - Gradient boosted trees on RDKit molecular descriptors
 2. **PyTorch** - Neural network on RDKit molecular descriptors
@@ -42,31 +42,14 @@ After evaluating individual model performance on validation data, we dropped the
 
     The Multi-Task model showed roughly equivalent (or slightly worse) performance when compared to the standard ChemProp models, so we dropped this model.
 
-### ChemProp Configuration
-For our chemprop setup we use R-applet's GitHub as a reference:
-[ADMET Challenge 2025 reference](https://github.com/R-applet/ADMET_Challenge_2025).
 
-| Parameter | Value |
-|-----------|-------|
-| Message passing depth | 6 |
-| Hidden dimension | 700 |
-| FFN hidden dimension | 2000 |
-| FFN layers | 2 |
-| Dropout | 0.25 |
-| Max epochs | 400 |
-| Early stopping patience | 40 |
-| Batch size | 16 |
-
-For multi-task models, we use **dynamic task weights** computed as inverse sample counts:
-
-```
-weight[task] = (1 / sample_count[task]) / min(1 / sample_counts)
-```
-This gives higher weight to targets with fewer training samples.
+## All-in-One Model
+For this model we're going to aggregate the features and then train a single model on all features.
+TBD
 
 ## Meta-Model Ensemble
 
-Our final submission uses **inverse-variance weighted averaging** across all 5 model types:
+Our final submission uses **inverse-variance weighted averaging** across all 6 model types:
 
 1. Each model produces predictions with uncertainty estimates (prediction_std)
 2. For each molecule, we weight each model's prediction by `1 / variance` where `variance = std²`
