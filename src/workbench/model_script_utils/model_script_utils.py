@@ -148,12 +148,16 @@ def convert_categorical_types(
 def decompress_features(
     df: pd.DataFrame, features: list[str], compressed_features: list[str]
 ) -> tuple[pd.DataFrame, list[str]]:
-    """Decompress bitstring features into individual bit columns.
+    """Decompress compressed features (bitstrings or count vectors) into individual columns.
+
+    Supports two formats (auto-detected):
+        - Bitstrings: "10110010..." → individual uint8 columns (0 or 1)
+        - Count vectors: "0,3,0,1,5,..." → individual uint8 columns (0-255)
 
     Args:
         df: The features DataFrame
         features: Full list of feature names
-        compressed_features: List of feature names to decompress (bitstrings)
+        compressed_features: List of feature names to decompress
 
     Returns:
         Tuple of (DataFrame with decompressed features, updated feature list)
@@ -178,18 +182,18 @@ def decompress_features(
         # Remove the feature from the list to avoid duplication
         decompressed_features.remove(feature)
 
-        # Handle all compressed features as bitstrings
-        bit_matrix = np.array([list(bitstring) for bitstring in df[feature]], dtype=np.uint8)
+        # Auto-detect format and parse: comma-separated counts or bitstring
+        sample = str(df[feature].dropna().iloc[0]) if not df[feature].dropna().empty else ""
+        parse_fn = (lambda s: list(map(int, s.split(",")))) if "," in sample else list
+        feature_matrix = np.array([parse_fn(s) for s in df[feature]], dtype=np.uint8)
+
+        # Create new columns with prefix from feature name
         prefix = feature[:3]
+        new_col_names = [f"{prefix}_{i}" for i in range(feature_matrix.shape[1])]
+        new_df = pd.DataFrame(feature_matrix, columns=new_col_names, index=df.index)
 
-        # Create all new columns at once - avoids fragmentation
-        new_col_names = [f"{prefix}_{i}" for i in range(bit_matrix.shape[1])]
-        new_df = pd.DataFrame(bit_matrix, columns=new_col_names, index=df.index)
-
-        # Add to features list
+        # Update features list and dataframe
         decompressed_features.extend(new_col_names)
-
-        # Drop original column and concatenate new ones
         df = df.drop(columns=[feature])
         df = pd.concat([df, new_df], axis=1)
 
