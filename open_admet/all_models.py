@@ -90,7 +90,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end.auto_inference()
         end.cross_fold_inference()
 
-    # Get feature importances from the XGBoost model for PyTorch and hybrid models
+    # Get feature importances from the XGBoost model for PyTorch models
     xgb_model = Model(xgb_model_name)
     importances = xgb_model.shap_importance()
     non_zero_shap = [feat for feat, imp in importances if imp != 0.0]
@@ -133,16 +133,13 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end.auto_inference()
         end.cross_fold_inference()
 
-    print(f"\nCompleted all models for: {fs_name}")
-
-    # 4. Create a Fingerprint Model
+    # 4. Create an XGBoost Fingerprint Model
     fingerprint_model_name = f"{short_name}-reg-fp"
     if RECREATE or not Model(fingerprint_model_name).exists():
         print(f"Creating Fingerprint model: {fingerprint_model_name}")
         fingerprint_model = fs.to_model(
             name=fingerprint_model_name,
             model_type=ModelType.UQ_REGRESSOR,
-            model_framework=ModelFramework.FINGERPRINT,
             target_column=target,
             feature_list=["fingerprint"],
             description=f"Fingerprint-based model for {base_name} prediction",
@@ -153,6 +150,8 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end.set_owner("BW")
         end.auto_inference()
         end.cross_fold_inference()
+
+    print(f"\nCompleted all models for: {fs_name}")
 
 
 if __name__ == "__main__":

@@ -61,6 +61,13 @@ class MetaModelSimulator:
             df["abs_residual"] = df["residual"].abs()
             self._dfs[name] = df
 
+        # Find common rows across all models
+        id_sets = {name: set(df[self.id_column]) for name, df in self._dfs.items()}
+        common_ids = set.intersection(*id_sets.values())
+        sizes = ", ".join(f"{name}: {len(ids)}" for name, ids in id_sets.items())
+        log.info(f"Row counts before alignment: {sizes} -> common: {len(common_ids)}")
+        self._dfs = {name: df[df[self.id_column].isin(common_ids)] for name, df in self._dfs.items()}
+
         # Align DataFrames by sorting on id column
         self._dfs = {name: df.sort_values(self.id_column).reset_index(drop=True) for name, df in self._dfs.items()}
         log.info(f"Loaded {len(self._dfs)} models, {len(list(self._dfs.values())[0])} samples each")
