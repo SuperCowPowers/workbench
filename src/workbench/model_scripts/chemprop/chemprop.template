@@ -481,8 +481,8 @@ if __name__ == "__main__":
             val_dataset.normalize_targets(target_scaler)
             output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
 
-        train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True)
-        val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False)
+        train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=3)
+        val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=3)
 
         # Build and train model
         pl.seed_everything(hyperparameters["seed"] + fold_idx)
