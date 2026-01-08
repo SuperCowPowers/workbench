@@ -379,13 +379,13 @@ class MetaModelSimulator:
         return weight_df
 
     def ensemble_failure_analysis(self) -> dict:
-        """Compare ensemble vs best overall model (not per-row oracle).
+        """Compare best ensemble strategy vs best individual model.
 
         Returns:
             Dict with comparison statistics
         """
         print("\n" + "=" * 60)
-        print("ENSEMBLE VS BEST MODEL COMPARISON")
+        print("BEST ENSEMBLE VS BEST MODEL COMPARISON")
         print("=" * 60)
 
         model_names = list(self._dfs.keys())
@@ -400,29 +400,49 @@ class MetaModelSimulator:
             combined[f"{name}_abs_err"] = df["abs_residual"].values
 
         pred_cols = [f"{name}_pred" for name in model_names]
+        conf_cols = [f"{name}_conf" for name in model_names]
+        pred_arr = combined[pred_cols].values
+        conf_arr = combined[conf_cols].values
 
-        # Calculate ensemble prediction (inverse-MAE weighted)
         mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
         inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
         inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
-        pred_arr = combined[pred_cols].values
-        combined["ensemble_pred"] = (pred_arr * inv_mae_weights).sum(axis=1)
-        combined["ensemble_abs_err"] = (combined["ensemble_pred"] - combined["target"]).abs()
 
-        # Find best overall model (lowest MAE)
+        # Compute all ensemble strategies and find the best
+        strategies = {}
+        strategies["Simple Mean"] = combined[pred_cols].mean(axis=1)
+        conf_sum = conf_arr.sum(axis=1, keepdims=True) + 1e-8
+        strategies["Confidence-Weighted"] = (pred_arr * (conf_arr / conf_sum)).sum(axis=1)
+        strategies["Inverse-MAE Weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
+        scaled_conf = conf_arr * inv_mae_weights
+        scaled_conf_sum = scaled_conf.sum(axis=1, keepdims=True) + 1e-8
+        strategies["Scaled Conf-Weighted"] = (pred_arr * (scaled_conf / scaled_conf_sum)).sum(axis=1)
+        worst_model = max(mae_scores, key=mae_scores.get)
+        remaining = [n for n in model_names if n != worst_model]
+        remaining_cols = [f"{n}_pred" for n in remaining]
+        strategies[f"Drop Worst ({worst_model})"] = (
+            combined[remaining_cols[0]] if len(remaining) == 1 else combined[remaining_cols].mean(axis=1)
+        )
+
+        # Find best strategy by MAE
+        strategy_maes = {name: (preds - combined["target"]).abs().mean() for name, preds in strategies.items()}
+        best_strategy = min(strategy_maes, key=strategy_maes.get)
+        combined["ensemble_pred"] = strategies[best_strategy]
+        combined["ensemble_abs_err"] = (combined["ensemble_pred"] - combined["target"]).abs()
+        ensemble_mae = strategy_maes[best_strategy]
+
+        # Find best individual model
         best_model = min(mae_scores, key=mae_scores.get)
         combined["best_model_abs_err"] = combined[f"{best_model}_abs_err"]
+        best_model_mae = mae_scores[best_model]
 
-        # Compare ensemble vs best model
+        # Compare
         combined["ensemble_better"] = combined["ensemble_abs_err"] < combined["best_model_abs_err"]
         n_better = combined["ensemble_better"].sum()
         n_total = len(combined)
 
-        ensemble_mae = combined["ensemble_abs_err"].mean()
-        best_model_mae = mae_scores[best_model]
-
         print(f"\nBest individual model: {best_model} (MAE={best_model_mae:.4f})")
-        print(f"Ensemble MAE: {ensemble_mae:.4f}")
+        print(f"Best ensemble strategy: {best_strategy} (MAE={ensemble_mae:.4f})")
         if ensemble_mae < best_model_mae:
             improvement = (best_model_mae - ensemble_mae) / best_model_mae * 100
             print(f"Ensemble improves over best model by {improvement:.1f}%")
@@ -450,6 +470,7 @@ class MetaModelSimulator:
 
         return {
             "ensemble_mae": ensemble_mae,
+            "best_strategy": best_strategy,
             "best_model": best_model,
             "best_model_mae": best_model_mae,
             "ensemble_win_rate": n_better / n_total,
