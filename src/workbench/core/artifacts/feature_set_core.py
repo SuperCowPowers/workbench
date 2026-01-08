@@ -247,7 +247,7 @@ class FeatureSetCore(Artifact):
 
         # Set the compressed features in our FeatureSet metadata
         self.log.important(f"Setting Compressed Columns...{compressed_columns}")
-        self.upsert_workbench_meta({"comp_features": compressed_columns})
+        self.upsert_workbench_meta({"compressed_features": compressed_columns})
 
     def get_compressed_features(self) -> list[str]:
         """Get the compressed features for this FeatureSet
@@ -256,7 +256,7 @@ class FeatureSetCore(Artifact):
             list[str]: The compressed columns for this FeatureSet
         """
         # Get the compressed features from our FeatureSet metadata
-        return self.workbench_meta().get("comp_features", [])
+        return self.workbench_meta().get("compressed_features", [])
 
     def num_columns(self) -> int:
         """Return the number of columns of the Feature Set"""

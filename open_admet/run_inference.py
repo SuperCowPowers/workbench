@@ -261,8 +261,8 @@ def run_meta_model_inference(output_file: str = "submission_meta.csv"):
 
 
 if __name__ == "__main__":
-    # Create META-MODEL submission (ensemble of all 5 model types including multi-target)
-    run_meta_model_inference("submission_meta.csv")
+    # Create META-MODEL submission (ensemble of all 3 model types)
+    # run_meta_model_inference("submission_meta.csv")
 
     # Optionally create individual model type submissions
     # print("\n" + "=" * 60)
@@ -278,4 +278,4 @@ if __name__ == "__main__":
     # print("\n" + "=" * 60)
     # print("Creating submission with ChemProp models")
     # print("=" * 60)
-    # run_inference_and_create_submission(chemprop_models, "submission_chemprop.csv")
+    run_inference_and_create_submission(chemprop_models, "submission_chemprop.csv")

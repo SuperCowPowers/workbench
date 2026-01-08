@@ -410,7 +410,7 @@ class EndpointCore(Artifact):
             primary_target = targets
 
         # Sanity Check that the target column is present
-        if primary_target and (primary_target not in prediction_df.columns):
+        if primary_target not in prediction_df.columns:
             self.log.important(f"Target Column {primary_target} not found in prediction_df!")
             self.log.important("In order to compute metrics, the target column must be present!")
             metrics = pd.DataFrame()
@@ -432,7 +432,7 @@ class EndpointCore(Artifact):
         print(metrics.head())
 
         # Capture the inference results and metrics
-        if capture_name is not None:
+        if primary_target and capture_name:
 
             # If we don't have an id_column, we'll pull it from the model's FeatureSet
             if id_column is None:

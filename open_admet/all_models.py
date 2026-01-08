@@ -3,7 +3,7 @@ from workbench.api import FeatureSet, Model, ModelType, ModelFramework
 from workbench_bridges.api import ParameterStore
 
 # Set to True to recreate models even if they already exist
-RECREATE = True
+RECREATE = False
 
 # FeatureSet List
 FS_LIST = [
@@ -47,7 +47,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
     else:
         fs.set_sample_weights({})  # Clear any existing sample weights
 
-    # Not used right now
+    # High Target Gradients: Not used right now
     """
     print("\nComputing High Target Gradients for sample weights...")
     prox = fs.prox_model(target, rdkit_features)
@@ -134,6 +134,25 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end.cross_fold_inference()
 
     print(f"\nCompleted all models for: {fs_name}")
+
+    # 4. Create a Fingerprint Model
+    fingerprint_model_name = f"{short_name}-reg-fp"
+    if RECREATE or not Model(fingerprint_model_name).exists():
+        print(f"Creating Fingerprint model: {fingerprint_model_name}")
+        fingerprint_model = fs.to_model(
+            name=fingerprint_model_name,
+            model_type=ModelType.UQ_REGRESSOR,
+            model_framework=ModelFramework.FINGERPRINT,
+            target_column=target,
+            feature_list=["fingerprint"],
+            description=f"Fingerprint-based model for {base_name} prediction",
+            tags=["open_admet", base_name, "regression", "fingerprint"],
+        )
+        fingerprint_model.set_owner("BW")
+        end = fingerprint_model.to_endpoint(tags=["open_admet", base_name, "fingerprint"], max_concurrency=1)
+        end.set_owner("BW")
+        end.auto_inference()
+        end.cross_fold_inference()
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from workbench.api import DataSource, Endpoint, ParameterStore, DFStore
+from workbench.api import DataSource, FeatureSet, Endpoint, ParameterStore, DFStore
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 # Log transformation config from OpenADMET tutorial
@@ -48,6 +48,7 @@ def main():
     df_store = DFStore()
 
     # Load the original training data
+    """
     df = pd.read_csv("train_data.csv")
     print(f"Loaded {len(df)} rows from train_data.csv")
 
@@ -65,12 +66,21 @@ def main():
     print("Saved transformed data to train_data_xformed.csv")
 
     # Create a new DataSource with transformed data
-    ds = DataSource("train_data_xformed.csv", name="open_admet_xformed")
-    df = ds.pull_dataframe()
+    # ds = DataSource("train_data_xformed.csv", name="open_admet_xformed")
+    # df = ds.pull_dataframe()
+    """
+
+    # We've already created the DataSource "open_admet_xformed" in Workbench
+    df = DataSource("open_admet_xformed").pull_dataframe()
+    print(f"Pulled {len(df)} rows from DataSource 'open_admet_xformed'")
+
+    # Run the data through our Fingerprint Endpoint
+    fp_end = Endpoint("smiles-to-fingerprints-v0")
+    df_features = fp_end.inference(df)
 
     # Run the data through our RDKit+Mordred Feature Endpoint
     rdkit_end = Endpoint("smiles-to-taut-md-stereo-v1")
-    df_features = rdkit_end.inference(df)
+    df_features = rdkit_end.inference(df_features)
 
     # Shove this into the DFStore for inspection/use later
     df_store.upsert("/workbench/datasets/open_admet_xformed_featurized", df_features)
@@ -86,7 +96,7 @@ def main():
         df_assay = df_features.dropna(subset=[assay])
 
         # Just keep the molecule_name, smiles, assay, and feature columns
-        keep_columns = ["molecule_name", "smiles", assay] + features
+        keep_columns = ["molecule_name", "smiles", assay] + features + ["fingerprint"]
         df_assay = df_assay[keep_columns]
 
         # Create a Feature Set
@@ -95,6 +105,10 @@ def main():
         to_features.set_input(df_assay, id_column="molecule_name")
         to_features.set_output_tags(["open_admet", assay])
         to_features.transform()
+
+        # Set our compressed features for this FeatureSet
+        fs = FeatureSet(fs_name)
+        fs.set_compressed_features(["fingerprint"])
 
 
 if __name__ == "__main__":
