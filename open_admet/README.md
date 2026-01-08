@@ -1,4 +1,9 @@
 # OpenADMET Challenge
+
+**WIP**
+Note: This document is a work in progress and will change as we finalize our approach.
+
+
 This challenge is a community-driven initiative to benchmark predictive models for ADMET properties in drug discovery, hosted by OpenADMET in collaboration with ExpansionRx.
 
 - Huggingface Space: <https://huggingface.co/spaces/openadmet/OpenADMET-ExpansionRx-Challenge>
@@ -19,13 +24,14 @@ The challenge covers 9 key ADMET properties:
 | MGMB | Mouse gut microbiome binding | % bound |
 
 ## Our Initial Approach
-We trained 5 different model types for each ADMET endpoint. The [Workbench AWS Dashboard](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo) supports all 5 of these model types and makes the creation, training, and deployment of models into AWS a snap.
+We trained 5 different model types for each ADMET endpoint. The [Workbench AWS Dashboard](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo) supports all 6 of these model types and makes the creation, training, and deployment of models into AWS a snap.
 
 1. **XGBoost** - Gradient boosted trees on RDKit molecular descriptors
 2. **PyTorch** - Neural network on RDKit molecular descriptors
 3. **ChemProp** - Message Passing Neural Network (MPNN) on molecular graphs
 4. **ChemProp Hybrid** - MPNN + Top RDKit descriptors combined
 5. **ChemProp Multi-Task** - Single MPNN predicting all 9 endpoints simultaneously
+6. **Fingerprint** - Count fingerprints
 
 ### Dropping some Models
 After evaluating individual model performance on validation data, we dropped the following models from our final ensemble due to lower accuracy:
