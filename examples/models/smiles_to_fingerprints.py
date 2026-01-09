@@ -8,7 +8,7 @@ fs_name = "aqsol_features"
 
 # A 'Model' to Compute Morgan Fingerprints Features
 script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
-feature_set = FeatureSet("aqsol_features")
+feature_set = FeatureSet(fs_name)
 model = feature_set.to_model(
     name="smiles-to-fingerprints-v0",
     model_type=ModelType.TRANSFORMER,
