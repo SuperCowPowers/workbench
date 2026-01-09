@@ -90,23 +90,25 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end = xgb_model.to_endpoint(tags=["open_admet", base_name, "xgboost"], max_concurrency=1)
         end.set_owner("BW")
         end.auto_inference()
+        end.full_inference()
         end.cross_fold_inference()
 
-    # Get feature importances from the XGBoost model (not currently used)
+    # Get feature importances from the XGBoost model
     xgb_model = Model(xgb_model_name)
     importances = xgb_model.shap_importance()
     non_zero_shap = [feat for feat, imp in importances if imp != 0.0]
+    top_50_shap = non_zero_shap[:50]
 
     # 2. Create PyTorch model (all RDKit/Mordred features)
     pytorch_model_name = f"{short_name}-reg-pytorch"
-    if RECREATE or not Model(pytorch_model_name).exists():
+    if True or RECREATE or not Model(pytorch_model_name).exists():
         print(f"Creating PyTorch model: {pytorch_model_name}")
         pytorch_model = fs.to_model(
             name=pytorch_model_name,
             model_type=ModelType.UQ_REGRESSOR,
             model_framework=ModelFramework.PYTORCH,
             target_column=target,
-            feature_list=rdkit_features,
+            feature_list=non_zero_shap,
             description=f"PyTorch Tabular model for {base_name} prediction",
             tags=["open_admet", base_name, "regression", "pytorch"],
         )
@@ -114,6 +116,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end = pytorch_model.to_endpoint(tags=["open_admet", base_name, "pytorch"], max_concurrency=1)
         end.set_owner("BW")
         end.auto_inference()
+        end.full_inference()
         end.cross_fold_inference()
 
     # 3. Create ChemProp model (SMILES only)
@@ -133,18 +136,19 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end = chemprop_model.to_endpoint(tags=["open_admet", base_name, "chemprop"], max_concurrency=1)
         end.set_owner("BW")
         end.auto_inference()
+        end.full_inference()
         end.cross_fold_inference()
 
-    # 4. Create ChemProp Hybrid model (SMILES + Molecular Descriptors)
+    # 4. Create ChemProp Hybrid model (SMILES + Top 50 SHAP features)
     chemprop_hybrid_model_name = f"{short_name}-reg-chemprop-hybrid"
-    if RECREATE or not Model(chemprop_hybrid_model_name).exists():
+    if True or RECREATE or not Model(chemprop_hybrid_model_name).exists():
         print(f"Creating ChemProp Hybrid model: {chemprop_hybrid_model_name}")
         chemprop_hybrid_model = fs.to_model(
             name=chemprop_hybrid_model_name,
             model_type=ModelType.UQ_REGRESSOR,
             model_framework=ModelFramework.CHEMPROP,
             target_column=target,
-            feature_list=["smiles"] + rdkit_features,
+            feature_list=["smiles"] + top_50_shap,
             description=f"ChemProp D-MPNN Hybrid for {base_name} prediction",
             tags=["open_admet", base_name, "regression", "chemprop", "hybrid"],
         )
@@ -152,11 +156,12 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end = chemprop_hybrid_model.to_endpoint(tags=["open_admet", base_name, "chemprop", "hybrid"], max_concurrency=1)
         end.set_owner("BW")
         end.auto_inference()
+        end.full_inference()
         end.cross_fold_inference()
 
     # 4. Create an XGBoost Fingerprint Model
     fingerprint_model_name = f"{short_name}-reg-fp"
-    if True or RECREATE or not Model(fingerprint_model_name).exists():
+    if RECREATE or not Model(fingerprint_model_name).exists():
         print(f"Creating Fingerprint model: {fingerprint_model_name}")
         fingerprint_model = fs.to_model(
             name=fingerprint_model_name,
@@ -170,13 +175,14 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end = fingerprint_model.to_endpoint(tags=["open_admet", base_name, "fingerprint"], max_concurrency=1)
         end.set_owner("BW")
         end.auto_inference()
+        end.full_inference()
         end.cross_fold_inference()
 
     print(f"\nCompleted all models for: {fs_name}")
 
     # 5. Create a PyTorch Fingerprint Model
     pytorch_fp_model_name = f"{short_name}-reg-fp-pytorch"
-    if True or RECREATE or not Model(pytorch_fp_model_name).exists():
+    if RECREATE or not Model(pytorch_fp_model_name).exists():
         print(f"Creating PyTorch Fingerprint model: {pytorch_fp_model_name}")
         pytorch_fp_model = fs.to_model(
             name=pytorch_fp_model_name,
@@ -191,6 +197,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end = pytorch_fp_model.to_endpoint(tags=["open_admet", base_name, "fingerprint", "pytorch"], max_concurrency=1)
         end.set_owner("BW")
         end.auto_inference()
+        end.full_inference()
         end.cross_fold_inference()
 
 
