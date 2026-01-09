@@ -408,33 +408,33 @@ class MetaModelSimulator:
         inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
         inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
 
-        # Compute all ensemble strategies and find the best
-        strategies = {}
-        strategies["Simple Mean"] = combined[pred_cols].mean(axis=1)
+        # Compute all ensemble strategies (true ensembles that combine multiple models)
+        ensemble_strategies = {}
+        ensemble_strategies["Simple Mean"] = combined[pred_cols].mean(axis=1)
         conf_sum = conf_arr.sum(axis=1, keepdims=True) + 1e-8
-        strategies["Confidence-Weighted"] = (pred_arr * (conf_arr / conf_sum)).sum(axis=1)
-        strategies["Inverse-MAE Weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
+        ensemble_strategies["Confidence-Weighted"] = (pred_arr * (conf_arr / conf_sum)).sum(axis=1)
+        ensemble_strategies["Inverse-MAE Weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
         scaled_conf = conf_arr * inv_mae_weights
         scaled_conf_sum = scaled_conf.sum(axis=1, keepdims=True) + 1e-8
-        strategies["Scaled Conf-Weighted"] = (pred_arr * (scaled_conf / scaled_conf_sum)).sum(axis=1)
+        ensemble_strategies["Scaled Conf-Weighted"] = (pred_arr * (scaled_conf / scaled_conf_sum)).sum(axis=1)
         worst_model = max(mae_scores, key=mae_scores.get)
         remaining = [n for n in model_names if n != worst_model]
         remaining_cols = [f"{n}_pred" for n in remaining]
-        strategies[f"Drop Worst ({worst_model})"] = (
-            combined[remaining_cols[0]] if len(remaining) == 1 else combined[remaining_cols].mean(axis=1)
-        )
-
-        # Find best strategy by MAE
-        strategy_maes = {name: (preds - combined["target"]).abs().mean() for name, preds in strategies.items()}
-        best_strategy = min(strategy_maes, key=strategy_maes.get)
-        combined["ensemble_pred"] = strategies[best_strategy]
-        combined["ensemble_abs_err"] = (combined["ensemble_pred"] - combined["target"]).abs()
-        ensemble_mae = strategy_maes[best_strategy]
+        # Only add Drop Worst if it still combines multiple models
+        if len(remaining) > 1:
+            ensemble_strategies[f"Drop Worst ({worst_model})"] = combined[remaining_cols].mean(axis=1)
 
         # Find best individual model
         best_model = min(mae_scores, key=mae_scores.get)
         combined["best_model_abs_err"] = combined[f"{best_model}_abs_err"]
         best_model_mae = mae_scores[best_model]
+
+        # Find best true ensemble strategy
+        strategy_maes = {name: (preds - combined["target"]).abs().mean() for name, preds in ensemble_strategies.items()}
+        best_strategy = min(strategy_maes, key=strategy_maes.get)
+        combined["ensemble_pred"] = ensemble_strategies[best_strategy]
+        combined["ensemble_abs_err"] = (combined["ensemble_pred"] - combined["target"]).abs()
+        ensemble_mae = strategy_maes[best_strategy]
 
         # Compare
         combined["ensemble_better"] = combined["ensemble_abs_err"] < combined["best_model_abs_err"]
@@ -448,7 +448,7 @@ class MetaModelSimulator:
             print(f"Ensemble improves over best model by {improvement:.1f}%")
         else:
             degradation = (ensemble_mae - best_model_mae) / best_model_mae * 100
-            print(f"Ensemble is worse than best model by {degradation:.1f}%")
+            print(f"No ensemble benefit: best single model outperforms all ensemble strategies by {degradation:.1f}%")
 
         print("\nPer-row comparison:")
         print(f"  Ensemble wins: {n_better}/{n_total} ({100*n_better/n_total:.1f}%)")
