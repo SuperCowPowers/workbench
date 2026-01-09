@@ -9,6 +9,7 @@ from typing import Optional, List, Tuple, Dict, Union
 from workbench.utils.xgboost_model_utils import xgboost_model_from_s3
 from workbench.utils.model_utils import load_category_mappings_from_s3
 from workbench.utils.pandas_utils import convert_categorical_types
+from workbench.model_script_utils.model_script_utils import decompress_features
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -109,61 +110,6 @@ def shap_values_data(
         result_df = pd.DataFrame(single_class_values, columns=features)
         result_df.insert(0, ids.name, ids.reset_index(drop=True))
         return result_df, feature_df
-
-
-def decompress_features(
-    df: pd.DataFrame, features: List[str], compressed_features: List[str]
-) -> Tuple[pd.DataFrame, List[str]]:
-    """Prepare features for the XGBoost model
-
-    Args:
-        df (pd.DataFrame): The features DataFrame
-        features (List[str]): Full list of feature names
-        compressed_features (List[str]): List of feature names to decompress (bitstrings)
-
-    Returns:
-        pd.DataFrame: DataFrame with the decompressed features
-        List[str]: Updated list of feature names after decompression
-
-    Raises:
-        ValueError: If any missing values are found in the specified features
-    """
-
-    # Check for any missing values in the required features
-    missing_counts = df[features].isna().sum()
-    if missing_counts.any():
-        missing_features = missing_counts[missing_counts > 0]
-        print(
-            f"WARNING: Found missing values in features: {missing_features.to_dict()}. "
-            "WARNING: You might want to remove/replace all NaN values before processing."
-        )
-
-    # Decompress the specified compressed features
-    decompressed_features = features
-    for feature in compressed_features:
-        if (feature not in df.columns) or (feature not in features):
-            print(f"Feature '{feature}' not in the features list, skipping decompression.")
-            continue
-
-        # Remove the feature from the list of features to avoid duplication
-        decompressed_features.remove(feature)
-
-        # Handle all compressed features as bitstrings
-        bit_matrix = np.array([list(bitstring) for bitstring in df[feature]], dtype=np.uint8)
-        prefix = feature[:3]
-
-        # Create all new columns at once - avoids fragmentation
-        new_col_names = [f"{prefix}_{i}" for i in range(bit_matrix.shape[1])]
-        new_df = pd.DataFrame(bit_matrix, columns=new_col_names, index=df.index)
-
-        # Add to features list
-        decompressed_features.extend(new_col_names)
-
-        # Drop original column and concatenate new ones
-        df = df.drop(columns=[feature])
-        df = pd.concat([df, new_df], axis=1)
-
-    return df, decompressed_features
 
 
 def _calculate_shap_values(workbench_model, sample_df: pd.DataFrame = None):
