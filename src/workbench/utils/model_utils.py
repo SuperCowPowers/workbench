@@ -173,7 +173,6 @@ def fingerprint_prox_model_local(
         include_all_columns=include_all_columns,
         radius=radius,
         n_bits=n_bits,
-        counts=counts,
     )
 
 

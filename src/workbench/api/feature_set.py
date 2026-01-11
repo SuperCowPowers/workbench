@@ -214,7 +214,6 @@ class FeatureSet(FeatureSetCore):
             include_all_columns=include_all_columns,
             radius=radius,
             n_bits=n_bits,
-            counts=counts,
         )
 
     def cleanlab_model(

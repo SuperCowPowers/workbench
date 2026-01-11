@@ -29,7 +29,6 @@ class FingerprintProximity(Proximity):
         include_all_columns: bool = False,
         radius: int = 2,
         n_bits: int = 1024,
-        counts: bool = False,
     ) -> None:
         """
         Initialize the FingerprintProximity class for binary fingerprint similarity.
@@ -43,12 +42,10 @@ class FingerprintProximity(Proximity):
             include_all_columns: Include all DataFrame columns in neighbor results. Defaults to False.
             radius: Radius for Morgan fingerprint computation (default: 2).
             n_bits: Number of bits for fingerprint (default: 1024).
-            counts: Whether to use count simulation (default: False).
         """
         # Store fingerprint computation parameters
         self._fp_radius = radius
         self._fp_n_bits = n_bits
-        self._fp_counts = counts
 
         # Store the requested fingerprint column (may be None)
         self._fingerprint_column_arg = fingerprint_column
@@ -107,9 +104,7 @@ class FingerprintProximity(Proximity):
         # If fingerprint column doesn't exist yet, compute it
         if self.fingerprint_column not in self.df.columns:
             log.info(f"Computing Morgan fingerprints (radius={self._fp_radius}, n_bits={self._fp_n_bits})...")
-            self.df = compute_morgan_fingerprints(
-                self.df, radius=self._fp_radius, n_bits=self._fp_n_bits, counts=self._fp_counts
-            )
+            self.df = compute_morgan_fingerprints(self.df, radius=self._fp_radius, n_bits=self._fp_n_bits)
 
     def _build_model(self) -> None:
         """
@@ -145,15 +140,28 @@ class FingerprintProximity(Proximity):
         """
         Convert fingerprint strings to a binary numpy matrix.
 
+        Supports two formats (auto-detected):
+            - Bitstrings: "10110010..." → binary matrix
+            - Count vectors: "0,3,0,1,5,..." → binary matrix (non-zero counts become 1)
+
         Args:
             df: DataFrame containing fingerprint column.
 
         Returns:
             2D numpy array of binary fingerprint bits.
         """
-        fingerprint_bits = df[self.fingerprint_column].apply(
-            lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
-        )
+        # Auto-detect format based on first fingerprint
+        sample = str(df[self.fingerprint_column].iloc[0])
+        if "," in sample:
+            # Count vector format: comma-separated integers → convert to binary
+            fingerprint_bits = df[self.fingerprint_column].apply(
+                lambda fp: np.array([int(x) > 0 for x in fp.split(",")], dtype=np.bool_)
+            )
+        else:
+            # Bitstring format: each character is a bit
+            fingerprint_bits = df[self.fingerprint_column].apply(
+                lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
+            )
         return np.vstack(fingerprint_bits)
 
     def _precompute_metrics(self) -> None:

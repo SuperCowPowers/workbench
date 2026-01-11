@@ -101,7 +101,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
 
     # 2. Create PyTorch model (all RDKit/Mordred features)
     pytorch_model_name = f"{short_name}-reg-pytorch"
-    if True or RECREATE or not Model(pytorch_model_name).exists():
+    if RECREATE or not Model(pytorch_model_name).exists():
         print(f"Creating PyTorch model: {pytorch_model_name}")
         pytorch_model = fs.to_model(
             name=pytorch_model_name,
