@@ -17,18 +17,28 @@ log = logging.getLogger("workbench")
 
 def fingerprints_to_matrix(fingerprints, dtype=np.uint8):
     """
-    Convert bitstring fingerprints to numpy matrix.
+    Convert fingerprints to numpy matrix.
+
+    Supports two formats (auto-detected):
+        - Bitstrings: "10110010..." → matrix of 0s and 1s
+        - Count vectors: "0,3,0,1,5,..." → matrix of counts (or binary if dtype=np.bool_)
 
     Args:
-        fingerprints: pandas Series or list of bitstring fingerprints
-        dtype: numpy data type (uint8 is default: np.bool_ is good for Jaccard computations
+        fingerprints: pandas Series or list of fingerprints
+        dtype: numpy data type (uint8 is default; np.bool_ for Jaccard computations)
 
     Returns:
         dense numpy array of shape (n_molecules, n_bits)
     """
-
-    # Dense matrix representation (we might support sparse in the future)
-    return np.array([list(fp) for fp in fingerprints], dtype=dtype)
+    # Auto-detect format based on first fingerprint
+    sample = str(fingerprints.iloc[0] if hasattr(fingerprints, "iloc") else fingerprints[0])
+    if "," in sample:
+        # Count vector format: comma-separated integers
+        matrix = np.array([list(map(int, fp.split(","))) for fp in fingerprints], dtype=dtype)
+    else:
+        # Bitstring format: each character is a bit
+        matrix = np.array([list(fp) for fp in fingerprints], dtype=dtype)
+    return matrix
 
 
 def project_fingerprints(df: pd.DataFrame, projection: str = "UMAP") -> pd.DataFrame:
