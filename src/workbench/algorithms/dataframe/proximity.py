@@ -331,5 +331,8 @@ class Proximity(ABC):
         # Include all columns if requested
         if self.include_all_columns:
             result.update(neighbor_row.to_dict())
+            # Restore query_id after update (neighbor_row may have overwritten id column)
+            result[self.id_column] = query_id
+            result["neighbor_id"] = neighbor_id
 
         return result
