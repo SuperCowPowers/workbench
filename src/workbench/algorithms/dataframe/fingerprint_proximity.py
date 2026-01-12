@@ -265,6 +265,81 @@ class FingerprintProximity(Proximity):
 
         return neighbors_df
 
+    def neighbors_from_smiles(
+        self,
+        smiles: Union[str, List[str]],
+        n_neighbors: int = 5,
+        min_similarity: Optional[float] = None,
+    ) -> pd.DataFrame:
+        """
+        Find neighbors for SMILES strings not in the reference dataset.
+
+        Args:
+            smiles: Single SMILES string or list of SMILES to query
+            n_neighbors: Number of neighbors to return (default: 5, ignored if min_similarity is set)
+            min_similarity: If provided, find all neighbors with Tanimoto similarity >= this value (0-1)
+
+        Returns:
+            DataFrame containing neighbors with Tanimoto similarity scores.
+            The 'query_id' column contains the SMILES string (or index if list).
+        """
+        # Normalize to list
+        smiles_list = [smiles] if isinstance(smiles, str) else smiles
+
+        # Build a temporary DataFrame with the query SMILES
+        query_df = pd.DataFrame({"smiles": smiles_list})
+
+        # Compute fingerprints using same parameters as the reference dataset
+        query_df = compute_morgan_fingerprints(query_df, radius=self._fp_radius, n_bits=self._fp_n_bits)
+
+        # Transform to matrix (use same format detection as reference)
+        X_query, _ = self._fingerprints_to_matrix(query_df)
+
+        # Query the model
+        if min_similarity is not None:
+            radius = 1 - min_similarity
+            distances, indices = self.nn.radius_neighbors(X_query, radius=radius)
+        else:
+            distances, indices = self.nn.kneighbors(X_query, n_neighbors=n_neighbors)
+
+        # Build results
+        results = []
+        for i, (dists, nbrs) in enumerate(zip(distances, indices)):
+            query_id = smiles_list[i]
+
+            for neighbor_idx, dist in zip(nbrs, dists):
+                neighbor_row = self.df.iloc[neighbor_idx]
+                neighbor_id = neighbor_row[self.id_column]
+                similarity = 1.0 - dist if dist > 1e-6 else 1.0
+
+                result = {
+                    "query_id": query_id,
+                    "neighbor_id": neighbor_id,
+                    "similarity": similarity,
+                }
+
+                # Add target if present
+                if self.target and self.target in self.df.columns:
+                    result[self.target] = neighbor_row[self.target]
+
+                # Include all columns if requested
+                if self.include_all_columns:
+                    for col in self.df.columns:
+                        if col not in [self.id_column, "query_id", "neighbor_id", "similarity"]:
+                            result[f"neighbor_{col}"] = neighbor_row[col]
+
+                results.append(result)
+
+        df_results = pd.DataFrame(results)
+
+        # Sort by query_id then similarity descending
+        if len(df_results) > 0:
+            df_results = df_results.sort_values(
+                ["query_id", "similarity"], ascending=[True, False]
+            ).reset_index(drop=True)
+
+        return df_results
+
 
 # Testing the FingerprintProximity class
 if __name__ == "__main__":
@@ -313,6 +388,49 @@ if __name__ == "__main__":
         neighbors_all_cols["id"] == "a"
     ), f"Query ID column corrupted! Expected all 'a', got: {neighbors_all_cols['id'].tolist()}"
     print("PASSED: Neighbors correctly sorted by similarity with include_all_columns=True")
+
+    # Test neighbors_from_smiles with synthetic data
+    print("\n" + "=" * 80)
+    print("Testing neighbors_from_smiles...")
+    print("=" * 80)
+
+    # Create reference dataset with known SMILES
+    ref_data = {
+        "id": ["aspirin", "ibuprofen", "naproxen", "caffeine", "ethanol"],
+        "smiles": [
+            "CC(=O)OC1=CC=CC=C1C(=O)O",  # aspirin
+            "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",  # ibuprofen
+            "COC1=CC2=CC(C(C)C(O)=O)=CC=C2C=C1",  # naproxen
+            "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",  # caffeine
+            "CCO",  # ethanol
+        ],
+        "activity": [1.0, 2.0, 2.5, 3.0, 0.5],
+    }
+    ref_df = pd.DataFrame(ref_data)
+
+    prox_ref = FingerprintProximity(ref_df, id_column="id", target="activity", radius=2, n_bits=1024)
+
+    # Query with a single SMILES (acetaminophen - similar to aspirin)
+    query_smiles = "CC(=O)NC1=CC=C(C=C1)O"  # acetaminophen
+    print(f"\nQuery: acetaminophen ({query_smiles})")
+    neighbors = prox_ref.neighbors_from_smiles(query_smiles, n_neighbors=3)
+    print(neighbors)
+
+    # Query with multiple SMILES
+    print("\nQuery: multiple SMILES (theophylline, methanol)")
+    multi_query = [
+        "CN1C=NC2=C1C(=O)NC(=O)N2",  # theophylline - similar to caffeine
+        "CO",  # methanol - similar to ethanol
+    ]
+    neighbors_multi = prox_ref.neighbors_from_smiles(multi_query, n_neighbors=2)
+    print(neighbors_multi)
+
+    # Test with min_similarity threshold
+    print("\nQuery with min_similarity=0.3:")
+    neighbors_thresh = prox_ref.neighbors_from_smiles(query_smiles, min_similarity=0.3)
+    print(neighbors_thresh)
+
+    print("PASSED: neighbors_from_smiles working correctly")
 
     # Test on real data from Workbench
     from workbench.api import FeatureSet, Model
