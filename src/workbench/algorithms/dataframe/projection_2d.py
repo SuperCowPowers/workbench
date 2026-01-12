@@ -106,8 +106,12 @@ class Projection2D:
             return PCA(n_components=2)
 
         if projection == "UMAP" and UMAP_AVAILABLE:
-            self.log.info(f"Projection: UMAP with metric={metric}")
-            return umap.UMAP(n_components=2, metric=metric)
+            # UMAP default n_neighbors=15, adjust if dataset is smaller
+            n_neighbors = min(15, len(df) - 1)
+            if n_neighbors < 15:
+                self.log.warning(f"Dataset size ({len(df)}) smaller than default n_neighbors, using n_neighbors={n_neighbors}")
+            self.log.info(f"Projection: UMAP with metric={metric}, n_neighbors={n_neighbors}")
+            return umap.UMAP(n_components=2, metric=metric, n_neighbors=n_neighbors)
 
         self.log.warning(
             f"Projection method '{projection}' not recognized or UMAP not available. Falling back to TSNE."
