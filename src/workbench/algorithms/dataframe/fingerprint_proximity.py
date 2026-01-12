@@ -109,60 +109,72 @@ class FingerprintProximity(Proximity):
     def _build_model(self) -> None:
         """
         Build the fingerprint proximity model for Tanimoto similarity.
-        Converts fingerprint strings to binary arrays and initializes NearestNeighbors.
 
-        Note: sklearn uses Jaccard distance internally (1 - Tanimoto similarity).
-        We convert back to Tanimoto similarity in the output methods.
+        For binary fingerprints: uses Jaccard distance (1 - Tanimoto)
+        For count fingerprints: uses weighted Tanimoto (Ruzicka) distance
         """
-        log.info("Converting fingerprints to binary feature matrix...")
+        # Convert fingerprint strings to matrix and detect format
+        self.X, self._is_count_fp = self._fingerprints_to_matrix(self.df)
 
-        # Convert fingerprint strings to binary arrays and store for later use
-        self.X = self._fingerprints_to_matrix(self.df)
+        if self._is_count_fp:
+            # Weighted Tanimoto (Ruzicka) for count vectors: 1 - Σmin(A,B)/Σmax(A,B)
+            log.info("Building NearestNeighbors model (weighted Tanimoto for count fingerprints)...")
 
-        # sklearn uses Jaccard distance = 1 - Tanimoto similarity
-        # We convert to Tanimoto similarity in neighbors() and _precompute_metrics()
-        log.info("Building NearestNeighbors model (Jaccard/Tanimoto metric, BallTree)...")
-        self.nn = NearestNeighbors(metric="jaccard", algorithm="ball_tree").fit(self.X)
+            def ruzicka_distance(a, b):
+                """Ruzicka distance = 1 - weighted Tanimoto similarity."""
+                min_sum = np.minimum(a, b).sum()
+                max_sum = np.maximum(a, b).sum()
+                if max_sum == 0:
+                    return 0.0
+                return 1.0 - (min_sum / max_sum)
+
+            self.nn = NearestNeighbors(metric=ruzicka_distance, algorithm="ball_tree").fit(self.X)
+        else:
+            # Standard Jaccard for binary fingerprints
+            log.info("Building NearestNeighbors model (Jaccard/Tanimoto for binary fingerprints)...")
+            self.nn = NearestNeighbors(metric="jaccard", algorithm="ball_tree").fit(self.X)
 
     def _transform_features(self, df: pd.DataFrame) -> np.ndarray:
         """
-        Transform fingerprints to binary matrix for querying.
+        Transform fingerprints to matrix for querying.
 
         Args:
             df: DataFrame containing fingerprints to transform.
 
         Returns:
-            Binary feature matrix for the fingerprints.
+            Feature matrix for the fingerprints (binary or count based on self._is_count_fp).
         """
-        return self._fingerprints_to_matrix(df)
+        matrix, _ = self._fingerprints_to_matrix(df)
+        return matrix
 
-    def _fingerprints_to_matrix(self, df: pd.DataFrame) -> np.ndarray:
+    def _fingerprints_to_matrix(self, df: pd.DataFrame) -> tuple[np.ndarray, bool]:
         """
-        Convert fingerprint strings to a binary numpy matrix.
+        Convert fingerprint strings to a numpy matrix.
 
         Supports two formats (auto-detected):
-            - Bitstrings: "10110010..." → binary matrix
-            - Count vectors: "0,3,0,1,5,..." → binary matrix (non-zero counts become 1)
+            - Bitstrings: "10110010..." → binary matrix (bool), is_count=False
+            - Count vectors: "0,3,0,1,5,..." → count matrix (uint8), is_count=True
 
         Args:
             df: DataFrame containing fingerprint column.
 
         Returns:
-            2D numpy array of binary fingerprint bits.
+            Tuple of (2D numpy array, is_count_fingerprint boolean)
         """
         # Auto-detect format based on first fingerprint
         sample = str(df[self.fingerprint_column].iloc[0])
         if "," in sample:
-            # Count vector format: comma-separated integers → convert to binary
-            fingerprint_bits = df[self.fingerprint_column].apply(
-                lambda fp: np.array([int(x) > 0 for x in fp.split(",")], dtype=np.bool_)
+            # Count vector format: preserve counts for weighted Tanimoto
+            fingerprint_values = df[self.fingerprint_column].apply(
+                lambda fp: np.array([int(x) for x in fp.split(",")], dtype=np.uint8)
             )
+            return np.vstack(fingerprint_values), True
         else:
-            # Bitstring format: each character is a bit
+            # Bitstring format: binary values
             fingerprint_bits = df[self.fingerprint_column].apply(
                 lambda fp: np.array([int(bit) for bit in fp], dtype=np.bool_)
             )
-        return np.vstack(fingerprint_bits)
+            return np.vstack(fingerprint_bits), False
 
     def _precompute_metrics(self) -> None:
         """Precompute metrics, adding Tanimoto similarity alongside distance."""
@@ -179,8 +191,13 @@ class FingerprintProximity(Proximity):
             self.core_columns.extend([self.target, "nn_target", "nn_target_diff"])
 
     def _project_2d(self) -> None:
-        """Project the fingerprint matrix to 2D for visualization using UMAP with Jaccard metric."""
-        self.df = Projection2D().fit_transform(self.df, feature_matrix=self.X, metric="jaccard")
+        """Project the fingerprint matrix to 2D for visualization using UMAP."""
+        if self._is_count_fp:
+            # For count fingerprints, convert to binary for UMAP projection (Jaccard needs binary)
+            X_binary = (self.X > 0).astype(np.bool_)
+            self.df = Projection2D().fit_transform(self.df, feature_matrix=X_binary, metric="jaccard")
+        else:
+            self.df = Projection2D().fit_transform(self.df, feature_matrix=self.X, metric="jaccard")
 
     def isolated(self, top_percent: float = 1.0) -> pd.DataFrame:
         """
@@ -281,12 +298,28 @@ if __name__ == "__main__":
     )
     print(prox.neighbors(["a", "b"]))
 
+    # Regression test: include_all_columns should not break neighbor sorting
+    print("\n" + "=" * 80)
+    print("Regression test: include_all_columns neighbor sorting...")
+    print("=" * 80)
+    neighbors_all_cols = prox.neighbors("a", n_neighbors=4)
+    # Verify neighbors are sorted by similarity (descending), not alphabetically by neighbor_id
+    similarities = neighbors_all_cols["similarity"].tolist()
+    assert similarities == sorted(similarities, reverse=True), (
+        f"Neighbors not sorted by similarity! Got: {similarities}"
+    )
+    # Verify query_id column has correct value (the query, not the neighbor)
+    assert all(neighbors_all_cols["id"] == "a"), (
+        f"Query ID column corrupted! Expected all 'a', got: {neighbors_all_cols['id'].tolist()}"
+    )
+    print("PASSED: Neighbors correctly sorted by similarity with include_all_columns=True")
+
     # Test on real data from Workbench
     from workbench.api import FeatureSet, Model
 
     fs = FeatureSet("aqsol_features")
     model = Model("aqsol-regression")
-    df = fs.pull_dataframe()
+    df = fs.pull_dataframe()[:1000]  # Limit to 1000 for testing
     prox = FingerprintProximity(df, id_column=fs.id_column, target=model.target())
 
     print("\n" + "=" * 80)
