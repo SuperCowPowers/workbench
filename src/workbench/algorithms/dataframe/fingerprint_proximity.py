@@ -305,13 +305,13 @@ if __name__ == "__main__":
     neighbors_all_cols = prox.neighbors("a", n_neighbors=4)
     # Verify neighbors are sorted by similarity (descending), not alphabetically by neighbor_id
     similarities = neighbors_all_cols["similarity"].tolist()
-    assert similarities == sorted(similarities, reverse=True), (
-        f"Neighbors not sorted by similarity! Got: {similarities}"
-    )
+    assert similarities == sorted(
+        similarities, reverse=True
+    ), f"Neighbors not sorted by similarity! Got: {similarities}"
     # Verify query_id column has correct value (the query, not the neighbor)
-    assert all(neighbors_all_cols["id"] == "a"), (
-        f"Query ID column corrupted! Expected all 'a', got: {neighbors_all_cols['id'].tolist()}"
-    )
+    assert all(
+        neighbors_all_cols["id"] == "a"
+    ), f"Query ID column corrupted! Expected all 'a', got: {neighbors_all_cols['id'].tolist()}"
     print("PASSED: Neighbors correctly sorted by similarity with include_all_columns=True")
 
     # Test on real data from Workbench
