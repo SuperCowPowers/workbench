@@ -483,18 +483,6 @@ class FeatureSetCore(Artifact):
             time.sleep(1)
         cls.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
-    def set_training_holdouts(self, holdout_ids: list[str]):
-        """Set the hold out ids for the training view for this FeatureSet
-
-        Args:
-            holdout_ids (list[str]): The list of holdout ids.
-        """
-        from workbench.core.views import TrainingView
-
-        # Create a NEW training view
-        self.log.important(f"Setting Training Holdouts: {len(holdout_ids)} ids...")
-        TrainingView.create(self, id_column=self.id_column, holdout_ids=holdout_ids)
-
     def get_training_holdouts(self) -> list[str]:
         """Get the hold out ids for the training view for this FeatureSet
 
@@ -509,6 +497,93 @@ class FeatureSetCore(Artifact):
             self.id_column
         ].tolist()
         return hold_out_ids
+
+    # ---- Public methods for training configuration ----
+    def set_training_config(
+        self,
+        holdout_ids: List[Union[str, int]] = None,
+        weight_dict: Dict[Union[str, int], float] = None,
+        default_weight: float = 1.0,
+        exclude_zero_weights: bool = True,
+    ):
+        """Configure training view with holdout IDs and/or sample weights.
+
+        This method creates a training view that can include both:
+        - A 'training' column (True/False) based on holdout IDs
+        - A 'sample_weight' column for weighted training
+
+        Args:
+            holdout_ids: List of IDs to mark as training=False (validation/holdout set)
+            weight_dict: Mapping of ID to sample weight
+                - weight > 1.0: oversample/emphasize
+                - weight = 1.0: normal (default)
+                - 0 < weight < 1.0: downweight/de-emphasize
+                - weight = 0.0: exclude from training (filtered out if exclude_zero_weights=True)
+            default_weight: Weight for IDs not in weight_dict (default: 1.0)
+            exclude_zero_weights: If True, filter out rows with sample_weight=0 (default: True)
+
+        Example:
+            # Temporal split with sample weights
+            fs.set_training_config(
+                holdout_ids=temporal_hold_out_ids,  # IDs after cutoff date
+                weight_dict={'compound_42': 0.0, 'compound_99': 2.0},  # exclude/upweight
+            )
+        """
+        from workbench.core.views.training_view import TrainingView
+
+        # If neither is provided, create a standard training view
+        if not holdout_ids and not weight_dict:
+            self.log.important("No holdouts or weights specified, creating standard training view")
+            TrainingView.create(self, id_column=self.id_column)
+            return
+
+        # If only holdout_ids, delegate to set_training_holdouts
+        if holdout_ids and not weight_dict:
+            self.set_training_holdouts(holdout_ids)
+            return
+
+        # If only weight_dict, delegate to set_sample_weights
+        if weight_dict and not holdout_ids:
+            self.set_sample_weights(weight_dict, default_weight, exclude_zero_weights)
+            return
+
+        # Both holdout_ids and weight_dict provided - build combined view
+        self.log.important(f"Setting training config: {len(holdout_ids)} holdouts, {len(weight_dict)} weights")
+
+        # Get column list (excluding AWS-generated columns)
+        from workbench.core.views.view_utils import get_column_list
+
+        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+        source_columns = get_column_list(self.data_source, self.table)
+        column_list = [col for col in source_columns if col not in aws_cols]
+        sql_columns = ", ".join([f'"{column}"' for column in column_list])
+
+        # Build inner query with both columns
+        training_case = self._build_holdout_case(holdout_ids)
+        weight_case = self._build_weight_case(weight_dict, default_weight)
+        inner_sql = f"SELECT {sql_columns}, {training_case}, {weight_case} FROM {self.table}"
+
+        # Optionally filter out zero weights
+        if exclude_zero_weights:
+            zero_count = sum(1 for w in weight_dict.values() if w == 0.0)
+            if zero_count:
+                self.log.important(f"Filtering out {zero_count} rows with sample_weight = 0")
+            sql_query = f"SELECT * FROM ({inner_sql}) WHERE sample_weight > 0"
+        else:
+            sql_query = inner_sql
+
+        self._create_training_view(sql_query)
+
+    def set_training_holdouts(self, holdout_ids: list[str]):
+        """Set the hold out ids for the training view for this FeatureSet
+
+        Args:
+            holdout_ids (list[str]): The list of holdout ids.
+        """
+        from workbench.core.views import TrainingView
+
+        self.log.important(f"Setting Training Holdouts: {len(holdout_ids)} ids...")
+        TrainingView.create(self, id_column=self.id_column, holdout_ids=holdout_ids)
 
     def set_sample_weights(
         self,
@@ -533,8 +608,8 @@ class FeatureSetCore(Artifact):
                 'compound_99': 0.1,  # noisy, downweight
                 'compound_123': 0.0, # exclude from training
             }
-            model.set_sample_weights(weights)  # zeros automatically excluded
-            model.set_sample_weights(weights, exclude_zero_weights=False)  # keep zeros
+            fs.set_sample_weights(weights)  # zeros automatically excluded
+            fs.set_sample_weights(weights, exclude_zero_weights=False)  # keep zeros
         """
         from workbench.core.views import TrainingView
 
@@ -545,34 +620,54 @@ class FeatureSetCore(Artifact):
 
         self.log.important(f"Setting sample weights for {len(weight_dict)} IDs")
 
-        # Helper to format IDs for SQL
-        def format_id(id_val):
-            return repr(id_val)
-
-        # Build CASE statement for sample_weight
-        case_conditions = [
-            f"WHEN {self.id_column} = {format_id(id_val)} THEN {weight}" for id_val, weight in weight_dict.items()
-        ]
-        case_statement = "\n        ".join(case_conditions)
-
         # Build inner query with sample weights
-        inner_sql = f"""SELECT
-            *,
-            CASE
-                {case_statement}
-                ELSE {default_weight}
-            END AS sample_weight
-        FROM {self.table}"""
+        weight_case = self._build_weight_case(weight_dict, default_weight)
+        inner_sql = f"SELECT *, {weight_case} FROM {self.table}"
 
         # Optionally filter out zero weights
         if exclude_zero_weights:
-            zero_count = sum(1 for weight in weight_dict.values() if weight == 0.0)
-            custom_sql = f"SELECT * FROM ({inner_sql}) WHERE sample_weight > 0"
+            zero_count = sum(1 for w in weight_dict.values() if w == 0.0)
             self.log.important(f"Filtering out {zero_count} rows with sample_weight = 0")
+            sql_query = f"SELECT * FROM ({inner_sql}) WHERE sample_weight > 0"
         else:
-            custom_sql = inner_sql
+            sql_query = inner_sql
 
-        TrainingView.create_with_sql(self, sql_query=custom_sql, id_column=self.id_column)
+        TrainingView.create_with_sql(self, sql_query=sql_query, id_column=self.id_column)
+
+    # ---- Internal helpers for training view SQL generation ----
+    @staticmethod
+    def _format_id_for_sql(id_val: Union[str, int]) -> str:
+        """Format an ID value for use in SQL."""
+        return repr(id_val)
+
+    def _build_holdout_case(self, holdout_ids: List[Union[str, int]]) -> str:
+        """Build SQL CASE statement for training column based on holdout IDs."""
+        if all(isinstance(id_val, str) for id_val in holdout_ids):
+            formatted_ids = ", ".join(f"'{id_val}'" for id_val in holdout_ids)
+        else:
+            formatted_ids = ", ".join(map(str, holdout_ids))
+        return f"""CASE
+            WHEN {self.id_column} IN ({formatted_ids}) THEN False
+            ELSE True
+        END AS training"""
+
+    def _build_weight_case(self, weight_dict: Dict[Union[str, int], float], default_weight: float) -> str:
+        """Build SQL CASE statement for sample_weight column."""
+        conditions = [
+            f"WHEN {self.id_column} = {self._format_id_for_sql(id_val)} THEN {weight}"
+            for id_val, weight in weight_dict.items()
+        ]
+        case_body = "\n            ".join(conditions)
+        return f"""CASE
+            {case_body}
+            ELSE {default_weight}
+        END AS sample_weight"""
+
+    def _create_training_view(self, sql_query: str):
+        """Create the training view directly from a SQL query."""
+        view_table = f"{self.table}___training"
+        create_view_query = f"CREATE OR REPLACE VIEW {view_table} AS\n{sql_query}"
+        self.data_source.execute_statement(create_view_query)
 
     @deprecated(version="0.9")
     def set_training_filter(self, filter_expression: Optional[str] = None):
