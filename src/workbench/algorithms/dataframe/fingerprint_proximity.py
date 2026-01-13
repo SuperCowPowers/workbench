@@ -334,9 +334,9 @@ class FingerprintProximity(Proximity):
 
         # Sort by query_id then similarity descending
         if len(df_results) > 0:
-            df_results = df_results.sort_values(
-                ["query_id", "similarity"], ascending=[True, False]
-            ).reset_index(drop=True)
+            df_results = df_results.sort_values(["query_id", "similarity"], ascending=[True, False]).reset_index(
+                drop=True
+            )
 
         return df_results
 

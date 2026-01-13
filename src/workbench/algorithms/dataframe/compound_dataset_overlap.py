@@ -111,20 +111,24 @@ class CompoundDatasetOverlap:
             match = neighbors_df[neighbors_df["query_id"] == q_smi]
             if len(match) > 0:
                 row = match.iloc[0]
-                results.append({
-                    "id": q_id,
-                    "smiles": q_smi,
-                    "nearest_neighbor_id": row["neighbor_id"],
-                    "tanimoto_similarity": row["similarity"],
-                })
+                results.append(
+                    {
+                        "id": q_id,
+                        "smiles": q_smi,
+                        "nearest_neighbor_id": row["neighbor_id"],
+                        "tanimoto_similarity": row["similarity"],
+                    }
+                )
             else:
                 # Should not happen, but handle gracefully
-                results.append({
-                    "id": q_id,
-                    "smiles": q_smi,
-                    "nearest_neighbor_id": None,
-                    "tanimoto_similarity": 0.0,
-                })
+                results.append(
+                    {
+                        "id": q_id,
+                        "smiles": q_smi,
+                        "nearest_neighbor_id": None,
+                        "tanimoto_similarity": 0.0,
+                    }
+                )
 
         result_df = pd.DataFrame(results)
 
