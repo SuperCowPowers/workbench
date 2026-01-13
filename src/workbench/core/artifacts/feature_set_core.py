@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 import botocore.exceptions
 import pandas as pd
 import awswrangler as wr
-import numpy as np
 
 from sagemaker.feature_store.feature_group import FeatureGroup
 from sagemaker.feature_store.feature_store import FeatureStore
@@ -16,9 +15,8 @@ from sagemaker.feature_store.feature_store import FeatureStore
 from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.data_source_factory import DataSourceFactory
 from workbench.core.artifacts.athena_source import AthenaSource
-from workbench.utils.deprecated_utils import deprecated
 
-from typing import TYPE_CHECKING, Optional, List, Dict, Union
+from typing import TYPE_CHECKING, List, Dict, Union
 
 from workbench.utils.aws_utils import aws_throttle
 
@@ -669,120 +667,6 @@ class FeatureSetCore(Artifact):
         create_view_query = f"CREATE OR REPLACE VIEW {view_table} AS\n{sql_query}"
         self.data_source.execute_statement(create_view_query)
 
-    @deprecated(version="0.9")
-    def set_training_filter(self, filter_expression: Optional[str] = None):
-        """Set a filter expression for the training view for this FeatureSet
-
-        Args:
-            filter_expression (Optional[str]): A SQL filter expression (e.g., "age > 25 AND status = 'active'")
-                If None or empty string, will reset to training view with no filter
-                (default: None)
-        """
-        from workbench.core.views import TrainingView
-
-        # Grab the existing holdout ids
-        holdout_ids = self.get_training_holdouts()
-
-        # Create a NEW training view
-        self.log.important(f"Setting Training Filter: {filter_expression}")
-        TrainingView.create(
-            self, id_column=self.id_column, holdout_ids=holdout_ids, filter_expression=filter_expression
-        )
-
-    @deprecated(version="0.9")
-    def exclude_ids_from_training(self, ids: List[Union[str, int]], column_name: Optional[str] = None):
-        """Exclude a list of IDs from the training view
-
-        Args:
-            ids (List[Union[str, int]],): List of IDs to exclude from training
-            column_name (Optional[str]): Column name to filter on.
-                If None, uses self.id_column (default: None)
-        """
-        # Use the default id_column if not specified
-        column = column_name or self.id_column
-
-        # Handle empty list case
-        if not ids:
-            self.log.warning("No IDs provided to exclude")
-            return
-
-        # Build the filter expression with proper SQL quoting
-        quoted_ids = ", ".join([repr(id) for id in ids])
-        filter_expression = f"{column} NOT IN ({quoted_ids})"
-
-        # Apply the filter
-        self.set_training_filter(filter_expression)
-
-    @deprecated(version="0.9")
-    def set_training_sampling(
-        self,
-        exclude_ids: Optional[List[Union[str, int]]] = None,
-        replicate_ids: Optional[List[Union[str, int]]] = None,
-        replication_factor: int = 2,
-    ):
-        """Configure training view with ID exclusions and replications (oversampling).
-
-        Args:
-            exclude_ids: List of IDs to exclude from training view
-            replicate_ids: List of IDs to replicate in training view for oversampling
-            replication_factor: Number of times to replicate each ID (default: 2)
-
-        Note:
-            If an ID appears in both lists, exclusion takes precedence.
-        """
-        from workbench.core.views import TrainingView
-
-        # Normalize to empty lists if None
-        exclude_ids = exclude_ids or []
-        replicate_ids = replicate_ids or []
-
-        # Remove any replicate_ids that are also in exclude_ids (exclusion wins)
-        replicate_ids = [rid for rid in replicate_ids if rid not in exclude_ids]
-
-        # If no sampling needed, just create normal view
-        if not exclude_ids and not replicate_ids:
-            self.log.important("No sampling specified, creating standard training view")
-            TrainingView.create(self, id_column=self.id_column)
-            return
-
-        # Build the custom SQL query
-        self.log.important(
-            f"Excluding {len(exclude_ids)} IDs, Replicating {len(replicate_ids)} IDs "
-            f"(factor: {replication_factor}x)"
-        )
-
-        # Helper to format IDs for SQL
-        def format_ids(ids):
-            return ", ".join([repr(id) for id in ids])
-
-        # Start with base query
-        base_query = f"SELECT * FROM {self.table}"
-
-        # Add exclusions if needed
-        if exclude_ids:
-            base_query += f"\nWHERE {self.id_column} NOT IN ({format_ids(exclude_ids)})"
-
-        # Build full query with replication
-        if replicate_ids:
-            # Generate VALUES clause for CROSS JOIN: (1), (2), ..., (N-1)
-            # We want N-1 additional copies since the original row is already in base_query
-            values_clause = ", ".join([f"({i})" for i in range(1, replication_factor)])
-
-            custom_sql = f"""{base_query}
-
-            UNION ALL
-
-            SELECT t.*
-            FROM {self.table} t
-            CROSS JOIN (VALUES {values_clause}) AS n(num)
-            WHERE t.{self.id_column} IN ({format_ids(replicate_ids)})"""
-        else:
-            # Only exclusions, no UNION needed
-            custom_sql = base_query
-
-        # Create the training view with our custom SQL
-        TrainingView.create_with_sql(self, sql_query=custom_sql, id_column=self.id_column)
-
     @classmethod
     def delete_views(cls, table: str, database: str):
         """Delete any views associated with this FeatureSet
@@ -831,20 +715,6 @@ class FeatureSetCore(Artifact):
             pd.DataFrame: A combined DataFrame of sample data + outliers
         """
         return self.data_source.smart_sample()
-
-    def anomalies(self) -> pd.DataFrame:
-        """Get a set of anomalous data from the underlying DataSource
-        Returns:
-            pd.DataFrame: A dataframe of anomalies from the underlying DataSource
-        """
-
-        # FIXME: Mock this for now
-        anom_df = self.sample().copy()
-        anom_df["anomaly_score"] = np.random.rand(anom_df.shape[0])
-        anom_df["cluster"] = np.random.randint(0, 10, anom_df.shape[0])
-        anom_df["x"] = np.random.rand(anom_df.shape[0])
-        anom_df["y"] = np.random.rand(anom_df.shape[0])
-        return anom_df
 
     def value_counts(self) -> dict:
         """Get the value counts for the string columns of the underlying DataSource
@@ -1010,81 +880,71 @@ if __name__ == "__main__":
     training_data = my_features.get_training_data()
     print(f"Training Data: {training_data.shape}")
 
-    # Test the filter expression functionality
-    print("Setting a filter expression...")
-    my_features.set_training_filter("auto_id < 50 AND length > 65.0")
-    training_data = my_features.get_training_data()
-    print(f"Training Data: {training_data.shape}")
-    print(training_data)
+    # Test set_sample_weights
+    print("\n--- Testing set_sample_weights ---")
+    sample_ids = df["auto_id"].tolist()[:5]
+    weight_dict = {sample_ids[0]: 0.0, sample_ids[1]: 0.5, sample_ids[2]: 2.0}
+    my_features.set_sample_weights(weight_dict)
+    training_view = my_features.view("training")
+    training_df = training_view.pull_dataframe()
+    print(f"Training view shape after set_sample_weights: {training_df.shape}")
+    print(f"Columns: {training_df.columns.tolist()}")
+    assert "sample_weight" in training_df.columns, "sample_weight column missing!"
+    assert "training" in training_df.columns, "training column missing!"
+    # Verify zero-weight row was excluded
+    assert sample_ids[0] not in training_df["auto_id"].values, "Zero-weight ID should be excluded!"
+    print("set_sample_weights test passed!")
 
-    # Remove training filter
-    print("Removing the filter expression...")
-    my_features.set_training_filter(None)
-    training_data = my_features.get_training_data()
-    print(f"Training Data: {training_data.shape}")
-    print(training_data)
+    # Test set_training_config with both holdouts and weights
+    print("\n--- Testing set_training_config (combined) ---")
+    holdout_ids = [id for id in df["auto_id"] if id >= 100 and id < 120]
+    weight_dict = {sample_ids[3]: 0.0, sample_ids[4]: 3.0}  # exclude one, upweight another
+    my_features.set_training_config(holdout_ids=holdout_ids, weight_dict=weight_dict)
+    training_view = my_features.view("training")
+    training_df = training_view.pull_dataframe()
+    print(f"Training view shape after set_training_config: {training_df.shape}")
+    print(f"Columns: {training_df.columns.tolist()}")
+    assert "sample_weight" in training_df.columns, "sample_weight column missing!"
+    assert "training" in training_df.columns, "training column missing!"
+    # Verify holdout IDs are marked as training=False
+    holdout_rows = training_df[training_df["auto_id"].isin(holdout_ids)]
+    assert all(holdout_rows["training"] == False), "Holdout IDs should have training=False!"  # noqa: E712
+    # Verify zero-weight row was excluded
+    assert sample_ids[3] not in training_df["auto_id"].values, "Zero-weight ID should be excluded!"
+    # Verify upweighted row has correct weight
+    upweight_row = training_df[training_df["auto_id"] == sample_ids[4]]
+    assert upweight_row["sample_weight"].iloc[0] == 3.0, "Upweighted ID should have weight=3.0!"
+    print("set_training_config (combined) test passed!")
 
-    # Test excluding ids from training
-    print("Excluding ids from training...")
-    my_features.exclude_ids_from_training([1, 2, 3, 4, 5])
-    training_data = my_features.get_training_data()
-    print(f"Training Data: {training_data.shape}")
-    print(training_data)
+    # Test set_training_config with only holdouts (should delegate to set_training_holdouts)
+    print("\n--- Testing set_training_config (holdouts only) ---")
+    my_features.set_training_config(holdout_ids=holdout_ids)
+    training_view = my_features.view("training")
+    training_df = training_view.pull_dataframe()
+    assert "training" in training_df.columns, "training column missing!"
+    holdout_rows = training_df[training_df["auto_id"].isin(holdout_ids)]
+    assert all(holdout_rows["training"] == False), "Holdout IDs should have training=False!"  # noqa: E712
+    print("set_training_config (holdouts only) test passed!")
+
+    # Test set_training_config with only weights (should delegate to set_sample_weights)
+    print("\n--- Testing set_training_config (weights only) ---")
+    my_features.set_training_config(weight_dict={sample_ids[0]: 0.5, sample_ids[1]: 2.0})
+    training_view = my_features.view("training")
+    training_df = training_view.pull_dataframe()
+    assert "sample_weight" in training_df.columns, "sample_weight column missing!"
+    print("set_training_config (weights only) test passed!")
+
+    # Test set_training_config with neither (should create standard training view)
+    print("\n--- Testing set_training_config (neither) ---")
+    my_features.set_training_config()
+    training_view = my_features.view("training")
+    training_df = training_view.pull_dataframe()
+    assert "training" in training_df.columns, "training column missing!"
+    print("set_training_config (neither) test passed!")
+
+    print("\n=== All training config tests passed! ===")
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print("Deleting Workbench Feature Set...")
     # my_features.delete()
     # print("Done")
-
-    # Test set_training_sampling with exclusions and replications
-    print("\n--- Testing set_training_sampling ---")
-    my_features.set_training_filter(None)  # Reset any existing filters
-    original_count = num_rows
-
-    # Get valid IDs from the table
-    all_data = my_features.query(f'SELECT auto_id, length FROM "{table}"')
-    valid_ids = sorted(all_data["auto_id"].tolist())
-    print(f"Valid IDs range from {valid_ids[0]} to {valid_ids[-1]}")
-
-    exclude_list = valid_ids[0:3]  # First 3 IDs
-    replicate_list = valid_ids[10:13]  # IDs at positions 10, 11, 12
-
-    print(f"Original row count: {original_count}")
-    print(f"Excluding IDs: {exclude_list}")
-    print(f"Replicating IDs: {replicate_list}")
-
-    # Test with default replication factor (2x)
-    print("\n--- Testing with replication_factor=2 (default) ---")
-    my_features.set_training_sampling(exclude_ids=exclude_list, replicate_ids=replicate_list)
-    training_data = my_features.get_training_data()
-    print(f"Training Data after sampling: {training_data.shape}")
-
-    # Verify exclusions
-    for exc_id in exclude_list:
-        count = len(training_data[training_data["auto_id"] == exc_id])
-        print(f"Excluded ID {exc_id} appears {count} times (should be 0)")
-
-    # Verify replications
-    for rep_id in replicate_list:
-        count = len(training_data[training_data["auto_id"] == rep_id])
-        print(f"Replicated ID {rep_id} appears {count} times (should be 2)")
-
-    # Test with replication factor of 5
-    print("\n--- Testing with replication_factor=5 ---")
-    replicate_list_5x = [20, 21]
-    my_features.set_training_sampling(exclude_ids=exclude_list, replicate_ids=replicate_list_5x, replication_factor=5)
-    training_data = my_features.get_training_data()
-    print(f"Training Data after sampling: {training_data.shape}")
-
-    # Verify 5x replication
-    for rep_id in replicate_list_5x:
-        count = len(training_data[training_data["auto_id"] == rep_id])
-        print(f"Replicated ID {rep_id} appears {count} times (should be 5)")
-
-    # Test with large replication list (simulate 100 IDs)
-    print("\n--- Testing with large ID list (100 IDs) ---")
-    large_replicate_list = list(range(30, 130))  # 100 IDs
-    my_features.set_training_sampling(replicate_ids=large_replicate_list, replication_factor=3)
-    training_data = my_features.get_training_data()
-    print(f"Training Data after sampling: {training_data.shape}")
-    print(f"Expected extra rows: {len(large_replicate_list) * 3}")
