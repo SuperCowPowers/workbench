@@ -148,6 +148,7 @@ class ModelToEndpoint(Transform):
                 deserializer=CSVDeserializer(),
                 data_capture_config=data_capture_config,
                 tags=aws_tags,
+                container_startup_health_check_timeout=300,
             )
         except ClientError as e:
             # Check if this is the "endpoint config already exists" error
@@ -164,6 +165,7 @@ class ModelToEndpoint(Transform):
                     deserializer=CSVDeserializer(),
                     data_capture_config=data_capture_config,
                     tags=aws_tags,
+                    container_startup_health_check_timeout=300,
                 )
             else:
                 raise
