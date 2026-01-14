@@ -1,6 +1,8 @@
 import argparse
+import ast
 import logging
 import json
+import re
 from pathlib import Path
 
 # Workbench Imports
@@ -11,6 +13,32 @@ from workbench.utils.s3_utils import upload_content_to_s3
 log = logging.getLogger("workbench")
 cm = ConfigManager()
 workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
+
+
+def parse_workbench_batch(script_content: str) -> dict | None:
+    """Parse WORKBENCH_BATCH config from a script.
+
+    Looks for a dictionary assignment like:
+        WORKBENCH_BATCH = {
+            "group": "feature_set_xyz",
+            "priority": 1,
+        }
+
+    Args:
+        script_content: The Python script content as a string
+
+    Returns:
+        The parsed dictionary or None if not found
+    """
+    pattern = r"WORKBENCH_BATCH\s*=\s*(\{[^}]+\})"
+    match = re.search(pattern, script_content, re.DOTALL)
+    if match:
+        try:
+            return ast.literal_eval(match.group(1))
+        except (ValueError, SyntaxError) as e:
+            print(f"⚠️  Warning: Failed to parse WORKBENCH_BATCH: {e}")
+            return None
+    return None
 
 
 def submit_to_sqs(
@@ -44,12 +72,19 @@ def submit_to_sqs(
     if not script_file.exists():
         raise FileNotFoundError(f"Script not found: {script_path}")
 
+    # Read script content and parse WORKBENCH_BATCH config
+    script_content = script_file.read_text()
+    batch_config = parse_workbench_batch(script_content)
+    group_id = (batch_config or {}).get("group", "ml-pipeline-jobs")
+    priority = (batch_config or {}).get("priority")
+
     print(f"📄  Script: {script_file.name}")
     print(f"📏  Size tier: {size}")
     print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
     print(f"🪣  Bucket: {workbench_bucket}")
+    print(f"📦  Batch Group: {group_id}" + (f" (priority: {priority})" if priority else ""))
     sqs = AWSAccountClamp().boto3_session.client("sqs")
     script_name = script_file.name
 
@@ -75,7 +110,7 @@ def submit_to_sqs(
     print(f"   Destination: {s3_path}")
 
     try:
-        upload_content_to_s3(script_file.read_text(), s3_path)
+        upload_content_to_s3(script_content, s3_path)
         print("✅  Script uploaded successfully")
     except Exception as e:
         print(f"❌  Upload failed: {e}")
@@ -118,7 +153,7 @@ def submit_to_sqs(
         response = sqs.send_message(
             QueueUrl=queue_url,
             MessageBody=json.dumps(message, indent=2),
-            MessageGroupId="ml-pipeline-jobs",  # Required for FIFO
+            MessageGroupId=group_id,  # From WORKBENCH_BATCH or default
         )
         message_id = response["MessageId"]
         print("✅  Message sent successfully!")
@@ -136,6 +171,7 @@ def submit_to_sqs(
     print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (SERVERLESS={'False' if realtime else 'True'})")
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
+    print(f"📦  Batch Group: {group_id}" + (f" (priority: {priority})" if priority else ""))
     print(f"🆔  Message ID: {message_id}")
     print("\n🔍  MONITORING LOCATIONS:")
     print(f"   • SQS Queue: AWS Console → SQS → {queue_name}")
