@@ -1500,6 +1500,7 @@ class WorkbenchCoreStack(Stack):
         lambda_role.add_to_policy(self.batch_jobs_discover())
         lambda_role.add_to_policy(self.batch_jobs_full())
         lambda_role.add_to_policy(self.batch_pass_role())
+        lambda_role.add_to_policy(self.s3_read())
         return lambda_role
 
     def create_glue_role(self) -> iam.Role:
