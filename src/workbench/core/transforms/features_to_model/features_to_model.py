@@ -227,19 +227,13 @@ class FeaturesToModel(Transform):
                 self.log.critical(msg)
                 raise ValueError(msg)
 
-            # Dynamically create the metric definitions
+            # Dynamically create the metric definitions (per-class precision/recall/f1/support)
+            # Note: Confusion matrix metrics are skipped to stay under SageMaker's 40 metric limit
             metrics = ["precision", "recall", "f1", "support"]
             metric_definitions = []
             for t in self.class_labels:
                 for m in metrics:
                     metric_definitions.append({"Name": f"Metrics:{t}:{m}", "Regex": f"Metrics:{t}:{m} ([0-9.]+)"})
-
-            # Add the confusion matrix metrics
-            for row in self.class_labels:
-                for col in self.class_labels:
-                    metric_definitions.append(
-                        {"Name": f"ConfusionMatrix:{row}:{col}", "Regex": f"ConfusionMatrix:{row}:{col} ([0-9.]+)"}
-                    )
 
         # If the model type is UNKNOWN, our metric_definitions will be empty
         else:
