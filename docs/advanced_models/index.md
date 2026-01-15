@@ -1,36 +1,25 @@
-# ChemProp and Workbench: WORLD DOMINATION!
+# Advanced Models
 
-<figure style="float: right; width: 280px;">
-<img alt="chemprop_mascot" src="images/chemprop_robot.svg">
-<figcaption>ChemBot says: "Your molecules will OBEY!"</figcaption>
-</figure>
+!!! tip inline end "OpenADMET Challenge"
+    ChemProp was used by many of the top performers on the [OpenADMET Leaderboard](https://huggingface.co/spaces/openadmet/OpenADMET-ExpansionRx-Challenge). Workbench makes it easy to train and deploy ChemProp models to AWS®.
 
-**FOOLISH MORTALS!** Did you think your puny XGBoost models could compete with the MAGNIFICENT POWER of neural networks? The [OpenADMET Leaderboard](https://huggingface.co/spaces/openadmet/OpenADMET-ExpansionRx-Challenge) has spoken, and **ChemProp is Dominating!**
+Workbench supports advanced model frameworks including PyTorch neural networks and ChemProp message passing neural networks (MPNNs). These models can be trained and deployed to AWS® with the same simple API as other Workbench models.
 
-## The MIGHTY Neural Network Arsenal
+## Available Model Frameworks
 
-Workbench doesn't just give you ONE way to crush your ADMET predictions—it gives you an entire DOOM ARMY of model options!
+| Model Framework | Description |
+|-----------------|-------------|
+| **XGBoost** | Gradient boosted trees on RDKit molecular descriptors |
+| **PyTorch** | Neural network on RDKit molecular descriptors |
+| **ChemProp** | Message Passing Neural Network (MPNN) on molecular graphs |
+| **ChemProp Hybrid** | MPNN combined with top RDKit descriptors |
+| **ChemProp Multi-Task** | Single MPNN predicting multiple endpoints simultaneously |
 
-| Model Type | Description | Power Level |
-|------------|-------------|-------------|
-| **XGBoost** | Gradient boosted trees on RDKit molecular descriptors | STRONG! |
-| **PyTorch** | Neural network on RDKit molecular descriptors | IMPRESSIVE! |
-| **ChemProp** | Message Passing Neural Network (MPNN) on molecular graphs | DEVASTATINGLY POWERFUL! |
-| **ChemProp Hybrid** | MPNN + Top RDKit descriptors combined | TERRIFYINGLY EFFECTIVE! |
-| **ChemProp Multi-Task** | Single MPNN predicting ALL endpoints at once | ULTIMATE DESTRUCTION! |
+## Why ChemProp?
 
-## Why ChemProp? WHY?!
+Traditional models treat molecules as a list of computed descriptors. ChemProp takes a different approach—it operates directly on the molecular graph structure, using atoms as nodes and bonds as edges. This allows the model to learn representations from the molecular topology itself.
 
-<figure style="float: left; width: 240px; margin-right: 20px;">
-<img alt="pytorch_mascot" src="images/pytorch_brain.svg">
-<figcaption>PyTorch Pete: "Brains? I've got LAYERS of them!"</figcaption>
-</figure>
-
-*Ahem.* Let us explain with SCIENCE:
-
-Traditional models look at molecules like a list of boring numbers (descriptors). ChemProp looks at the ACTUAL molecular graph—atoms as nodes, bonds as edges—and uses Message Passing Neural Networks to learn from the molecular STRUCTURE itself!
-
-The results from OpenADMET Challenge? **ChemProp Single-Task models consistently DOMINATED** across all 9 ADMET endpoints:
+In the OpenADMET Challenge, ChemProp Single-Task models consistently performed well across all 9 ADMET endpoints:
 
 - LogD (Lipophilicity)
 - KSOL (Kinetic Solubility)
@@ -38,44 +27,37 @@ The results from OpenADMET Challenge? **ChemProp Single-Task models consistently
 - Caco-2 Permeability & Efflux
 - Plasma & Brain Protein Binding
 
-## Deploy to AWS® in a SNAP!
+## Deploying a ChemProp Model
 
-<figure style="float: right; width: 260px;">
-<img alt="workbench_mascot" src="images/workbench_hero.svg">
-<figcaption>Commander Workbench: "I deploy endpoints before breakfast!"</figcaption>
-</figure>
-
-This is where it gets **DELICIOUSLY EASY**. While lesser frameworks make you wrestle with Docker containers, SageMaker configurations, and IAM policies... Workbench just DOES IT.
+Creating and deploying a ChemProp model follows the standard Workbench pattern:
 
 ```python
 from workbench.api import DataSource, FeatureSet, ModelType, ModelFramework
 
-# BEHOLD! The power of simplicity!
+# Create a DataSource and FeatureSet
 ds = DataSource("my_molecules.csv", name="admet_data")
 fs = ds.to_features("admet_features", id_column="mol_id")
 
-# Create a ChemProp model with ONE COMMAND
+# Create a ChemProp model
 model = FeatureSet("admet_features").to_model(
     name="my-chemprop-model",
     model_type=ModelType.REGRESSOR,
-    model_framework=ModelFramework.CHEMPROP,  # THE MAGIC!
+    model_framework=ModelFramework.CHEMPROP,
     target_column="logd",
     feature_list=["smiles"],
     description="ChemProp model for LogD prediction",
 )
 
-# Deploy to AWS® Endpoint - WORLD DOMINATION ACHIEVED!
+# Deploy to an AWS Endpoint
 endpoint = model.to_endpoint()
 ```
 
-**That's it.** No 47-page AWS documentation. No crying at 3 AM. Just RESULTS.
+## Multi-Task Models
 
-## Multi-Task: Because ONE Prediction is for AMATEURS
-
-Why train 9 models when you can train ONE that predicts EVERYTHING?
+ChemProp supports multi-task learning, where a single model predicts multiple endpoints simultaneously. This can improve performance when endpoints are related and share underlying molecular features.
 
 ```python
-# ALL 9 ADMET ENDPOINTS IN ONE GLORIOUS MODEL!
+# Define multiple target columns for multi-task learning
 ADMET_TARGETS = [
     'logd', 'ksol', 'hlm_clint', 'mlm_clint',
     'caco_2_papp_a_b', 'caco_2_efflux',
@@ -83,83 +65,66 @@ ADMET_TARGETS = [
 ]
 
 model = feature_set.to_model(
-    name="admet-multi-task-SUPREME",
+    name="admet-multi-task",
     model_type=ModelType.REGRESSOR,
     model_framework=ModelFramework.CHEMPROP,
-    target_column=ADMET_TARGETS,  # List = Multi-task!
+    target_column=ADMET_TARGETS,  # List enables multi-task
     feature_list=["smiles"],
-    tags=["chemprop", "multitask", "world_domination"],
+    tags=["chemprop", "multitask"],
 )
 ```
 
-## Confidence Estimates: Know Your DOOM Level
+## Confidence Estimates
 
-<figure style="float: left; width: 220px; margin-right: 20px;">
-<img alt="confidence_mascot" src="images/confidence_cat.svg">
-<figcaption>Confidence Cat: "I'm 95% sure this molecule is garbage."</figcaption>
+All Workbench models include built-in uncertainty quantification. This provides confidence estimates alongside predictions, which is valuable for drug discovery workflows:
+
+- **High confidence**: Predictions can be trusted for decision-making
+- **Low confidence**: The molecule may be outside the training domain; consider gathering additional data
+
+<figure>
+  <img src="images/confidence.jpg" alt="Confidence Estimates">
+  <figcaption>Confidence Models: All our models provide confidence metrics to identify predictions where the model is unsure or needs more data.</figcaption>
 </figure>
 
-Every Workbench model comes with **built-in uncertainty quantification**. Don't just get a prediction—know HOW SURE you can be about that prediction!
+## PyTorch Models
 
-This is CRITICAL for drug discovery because:
-
-- **High confidence** = Trust this prediction, move forward!
-- **Low confidence** = This molecule is weird, get more data!
-
-## PyTorch: Sometimes Better
-
-Yes ChemProp is good but for some/assays PyTorch models on RDKit descriptors are still **incredibly effective** and can sometimes outperform ChemProp.:
+For some assays, PyTorch models on RDKit descriptors can outperform ChemProp. These models train faster and work well when molecular descriptors capture the relevant features:
 
 ```python
 model = feature_set.to_model(
     name="my-pytorch-model",
     model_type=ModelType.REGRESSOR,
-    model_framework=ModelFramework.PYTORCH,  #Go PyTorch!
+    model_framework=ModelFramework.PYTORCH,
     target_column="logd",
-    feature_list=fs.feature_columns,  # All the RDKit goodness
+    feature_list=fs.feature_columns,
 )
 ```
 
-## The Leaderboard Speaks!
+## Getting Started
 
-The [OpenADMET Challenge](https://huggingface.co/spaces/openadmet/OpenADMET-ExpansionRx-Challenge) pitted models against each other across 9 ADMET properties. The verdict?
+1. Install Workbench: `pip install workbench`
+2. Connect to AWS®: [Setup Guide](../getting_started/index.md)
+3. Create your model using the examples above
+4. Deploy to an endpoint for inference
 
-**ChemProp models built with Workbench DEFAULT settings** dominated the competition. No hyperparameter wizardry. No secret sauce. Just good architecture deployed the EASY way.
-
-## Get Started NOW!
-
-1. **Install Workbench**: `pip install workbench`
-2. **Connect to AWS®**: [Setup Guide](../getting_started/index.md)
-3. **Deploy ChemProp**: Use the code above!
-4. **ACHIEVE VICTORY!**
+!!! note "Examples"
+    All Workbench examples are in the repository under the `examples/` directory. For full code listings, visit [Workbench Examples](https://github.com/SuperCowPowers/workbench/blob/main/examples).
 
 ---
 
-## Workbench is in Beta!
+!!! warning "Beta Software"
+    Workbench is currently in beta. We're actively looking for beta testers! If you're interested in early access, contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com).
 
-<figure style="float: right; width: 200px;">
-<img alt="broken_robot" src="images/broken_robot.svg">
-<figcaption>BetaBot: "I'm still learning... be gentle!"</figcaption>
-</figure>
-
-**ATTENTION BRAVE SOULS!** Workbench is currently in **BETA** — which means we're still squashing bugs, polishing features, and occasionally setting things on fire (metaphorically... mostly).
-
-We're looking for **fearless beta testers** to help us make Workbench even MORE powerful! If you want early access to cutting-edge ML deployment tools and don't mind the occasional glitch, **WE WANT YOU!**
-
-**Sign up for the beta program:** [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com)
-
-### Questions? CONFUSED? TERRIFIED? Need Help?
-
-Running into issues? Have questions? Just want to chat about molecules and neural networks? We're here for you:
+## Questions?
 
 <img align="right" src="../images/scp.png" width="180">
 
-- **Support Email:** [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com)
-- **Discord:** [Join the Hive Mind](https://discord.gg/WHAJuz8sw8) — get real-time help from the team and community!
-- **Dashboard:** [Workbench Dashboard](https://workbench-dashboard.com/)
+The SuperCowPowers team is happy to answer any questions you may have about AWS® and Workbench.
 
+- **Support:** [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com)
+- **Discord:** [Join us on Discord](https://discord.gg/WHAJuz8sw8)
+- **Website:** [supercowpowers.com](https://www.supercowpowers.com)
 
-*Now go forth and CONQUER your ADMET predictions!*
+<br clear="both"/>
 
----
-
+<i>® Amazon Web Services, AWS, the Powered by AWS logo, are trademarks of Amazon.com, Inc. or its affiliates</i>
