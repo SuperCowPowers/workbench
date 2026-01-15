@@ -19,7 +19,7 @@ Workbench supports advanced model frameworks including PyTorch neural networks a
 
 Traditional models treat molecules as a list of computed descriptors. ChemProp takes a different approach—it operates directly on the molecular graph structure, using atoms as nodes and bonds as edges. This allows the model to learn representations from the molecular topology itself.
 
-In the OpenADMET Challenge, ChemProp Single-Task models consistently performed well across all 9 ADMET endpoints:
+In the OpenADMET Challenge, ChemProp models consistently performed well across the ADMET endpoints given for the contest:
 
 - LogD (Lipophilicity)
 - KSOL (Kinetic Solubility)
