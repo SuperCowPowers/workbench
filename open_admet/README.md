@@ -1,12 +1,12 @@
 # OpenADMET Challenge
 
-**WIP**
-Note: This document is a work in progress and will change as we finalize our approach.
-
-
 This challenge is a community-driven initiative to benchmark predictive models for ADMET properties in drug discovery, hosted by OpenADMET in collaboration with ExpansionRx.
 
 - Huggingface Space: <https://huggingface.co/spaces/openadmet/OpenADMET-ExpansionRx-Challenge>
+
+## Overview
+All models/submissions were built using the **default** models and features available in [Workbench](https://github.com/SuperCowPowers/workbench), an open-source framework for building, deploying, and managing ML models on AWS. All models are available via the [Workbench Dashboard](https://workbench-dashboard.com/).
+
 
 ## ADMET Properties
 The challenge covers 9 key ADMET properties:
@@ -23,44 +23,22 @@ The challenge covers 9 key ADMET properties:
 | MBPB | Mouse brain plasma binding | % bound |
 | MGMB | Mouse gut microbiome binding | % bound |
 
-## Our Initial Approach
-We trained 6 different model types for each ADMET endpoint. The [Workbench AWS Dashboard](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo) supports all 6 of these model types and makes the creation, training, and deployment of models into AWS a snap.
+## Lots of Models to Choose From
+We trained 6 different model types for each ADMET endpoint. The [Workbench AWS Dashboard](https://workbench-dashboard.com/) supports all 6 of these model types and makes the creation, training, and deployment of models into AWS a snap.
 
 1. **XGBoost** - Gradient boosted trees on RDKit molecular descriptors
 2. **PyTorch** - Neural network on RDKit molecular descriptors
 3. **ChemProp** - Message Passing Neural Network (MPNN) on molecular graphs
 4. **ChemProp Hybrid** - MPNN + Top RDKit descriptors combined
 5. **ChemProp Multi-Task** - Single MPNN predicting all 9 endpoints simultaneously
-6. **Fingerprint** - Count fingerprints
+6. **Fingerprint** - A broad set of fingerprint options
 
-### Dropping some Models
-After evaluating individual model performance on validation data, we dropped the following models from our final ensemble due to lower accuracy:
-- **ChemProp Hybrid Models**
-   
-  The Hybrid models showed roughly equivalent (or slightly worse) performance when compared to the standard ChemProp models, so we opted to drop these.
-- **ChemProp Multi-Task Model** 
+### Chemprop ST performed the Best
+After evaluating individual model performance on validation data, the Chemprop ST (Single Task) models consistently outperformed the other model types across most endpoints.
 
-    The Multi-Task model showed roughly equivalent (or slightly worse) performance when compared to the standard ChemProp models, so we dropped this model.
+You can explore and deploy all models via the [Workbench Dashboard](https://workbench-dashboard.com/models). Simply filter by "logd" or "chemprop" to see all available models.
 
-
-## All-in-One Model
-For this model we're going to aggregate the features and then train a single model on all features.
-TBD
-
-## Meta-Model Ensemble
-
-Our final submission uses **inverse-variance weighted averaging** across all 6 model types:
-
-1. Each model produces predictions with uncertainty estimates (prediction_std)
-2. For each molecule, we weight each model's prediction by `1 / variance` where `variance = std²`
-3. The weighted average is computed in log-space (before inverse transform)
-4. Final predictions are transformed back to original scale
-
-This approach:
-
-- Gives more weight to confident predictions
-- Naturally handles model disagreement
-- Produces robust predictions across diverse chemical space
+![Open ADMET Model](images/open_admet_model.jpg)
 
 ## Deploying a ChemProp Model to AWS using Workbench
 This is a hello world example of how to deploy a ChemProp model to AWS using Workbench. For more detailed instructions, please see the [Workbench Documentation](https://supercowpowers.github.io/workbench/)
