@@ -125,6 +125,10 @@ The SuperCowPowers team is happy to answer any questions you may have about AWS�
 - **Discord:** [Join us on Discord](https://discord.gg/WHAJuz8sw8)
 - **Website:** [supercowpowers.com](https://www.supercowpowers.com)
 
-<br clear="both"/>
+## References
+
+- **ChemProp:** Yang et al. "Analyzing Learned Molecular Representations for Property Prediction" *J. Chem. Inf. Model.* 2019 — [GitHub](https://github.com/chemprop/chemprop) | [Paper](https://pubs.acs.org/doi/10.1021/acs.jcim.9b00237)
+- **PyTorch:** Paszke et al. "PyTorch: An Imperative Style, High-Performance Deep Learning Library" *NeurIPS* 2019 — [pytorch.org](https://pytorch.org/) | [Paper](https://arxiv.org/abs/1912.01703)
+- **OpenADMET Challenge:** Community benchmark for ADMET property prediction — [Leaderboard](https://huggingface.co/spaces/openadmet/OpenADMET-ExpansionRx-Challenge) | [GitHub](https://github.com/OpenADMET/OpenADMET-ExpansionRx-Challenge)
 
 <i>® Amazon Web Services, AWS, the Powered by AWS logo, are trademarks of Amazon.com, Inc. or its affiliates</i>
