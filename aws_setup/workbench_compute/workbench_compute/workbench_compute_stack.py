@@ -149,7 +149,7 @@ class WorkbenchComputeStack(Stack):
                         "PYTHONUNBUFFERED": "1",
                     },
                 ),
-                timeout=Duration.hours(3),
+                timeout=Duration.hours(6),
             )
         return job_definitions
 
