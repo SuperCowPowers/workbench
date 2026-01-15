@@ -197,8 +197,7 @@ def lambda_handler(event, context):
                 if dependency_job_ids:
                     # Add dependencies (up to 20 supported by AWS Batch)
                     submit_params["dependsOn"] = [
-                        {"jobId": job_id, "type": "SEQUENTIAL"}
-                        for job_id in dependency_job_ids[:20]
+                        {"jobId": job_id, "type": "SEQUENTIAL"} for job_id in dependency_job_ids[:20]
                     ]
                     print(f"Job {job_name} will depend on {len(dependency_job_ids)} job(s): {dependency_job_ids}")
 
