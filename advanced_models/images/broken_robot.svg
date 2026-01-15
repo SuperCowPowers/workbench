@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Broken Robot - Cute glitchy robot for beta section -->
+  <defs>
+    <linearGradient id="brokenBodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#888888"/>
+      <stop offset="100%" style="stop-color:#555555"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Smoke puffs coming out -->
+  <circle cx="130" cy="30" r="8" fill="#CCCCCC" opacity="0.7">
+    <animate attributeName="cy" values="30;10;30" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.7;0;0.7" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="r" values="8;15;8" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="145" cy="40" r="6" fill="#CCCCCC" opacity="0.5">
+    <animate attributeName="cy" values="40;15;40" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    <animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    <animate attributeName="r" values="6;12;6" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+  </circle>
+  <circle cx="115" cy="35" r="5" fill="#CCCCCC" opacity="0.6">
+    <animate attributeName="cy" values="35;20;35" dur="2s" repeatCount="indefinite" begin="1s"/>
+    <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite" begin="1s"/>
+    <animate attributeName="r" values="5;10;5" dur="2s" repeatCount="indefinite" begin="1s"/>
+  </circle>
+
+  <!-- Whole robot wobbles/glitches -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0,0; 3,0; -2,0; 0,1; 2,-1; 0,0" dur="0.3s" repeatCount="indefinite"/>
+
+    <!-- Antenna - bent and sparking -->
+    <path d="M 100 45 Q 90 30 85 15" stroke="#333" stroke-width="4" fill="none"/>
+    <circle cx="85" cy="15" r="5" fill="#FF4444">
+      <animate attributeName="opacity" values="1;0;1;0;0;1" dur="0.2s" repeatCount="indefinite"/>
+    </circle>
+    <!-- Sparks from antenna -->
+    <line x1="85" y1="15" x2="75" y2="5" stroke="#FFFF00" stroke-width="2">
+      <animate attributeName="opacity" values="0;1;0" dur="0.15s" repeatCount="indefinite"/>
+    </line>
+    <line x1="85" y1="15" x2="95" y2="8" stroke="#FFFF00" stroke-width="2">
+      <animate attributeName="opacity" values="1;0;1" dur="0.15s" repeatCount="indefinite"/>
+    </line>
+
+    <!-- Head - slightly tilted -->
+    <g transform="rotate(8 100 70)">
+      <rect x="55" y="45" width="90" height="60" rx="10" fill="url(#brokenBodyGrad)" stroke="#333" stroke-width="3"/>
+
+      <!-- Eyes - one working, one X'd out -->
+      <ellipse cx="80" cy="70" rx="15" ry="18" fill="#111"/>
+      <ellipse cx="80" cy="70" rx="11" ry="14" fill="#00FF00">
+        <animate attributeName="opacity" values="1;0.3;1;1;0;1" dur="0.5s" repeatCount="indefinite"/>
+      </ellipse>
+
+      <!-- X eye -->
+      <ellipse cx="120" cy="70" rx="15" ry="18" fill="#111"/>
+      <line x1="110" y1="62" x2="130" y2="78" stroke="#FF0000" stroke-width="3"/>
+      <line x1="130" y1="62" x2="110" y2="78" stroke="#FF0000" stroke-width="3"/>
+
+      <!-- Dizzy swirl near head -->
+      <text x="150" y="50" font-size="20" fill="#FFD700">
+        <animate attributeName="opacity" values="1;0;1" dur="0.5s" repeatCount="indefinite"/>
+        ✦
+      </text>
+
+      <!-- Mouth - wobbly confused line -->
+      <path d="M 75 95 Q 85 90 95 95 Q 105 100 115 92" fill="none" stroke="#333" stroke-width="3">
+        <animate attributeName="d" values="M 75 95 Q 85 90 95 95 Q 105 100 115 92; M 75 92 Q 85 98 95 90 Q 105 95 115 95; M 75 95 Q 85 90 95 95 Q 105 100 115 92" dur="0.4s" repeatCount="indefinite"/>
+      </path>
+    </g>
+
+    <!-- Body - with panel falling off -->
+    <rect x="65" y="110" width="70" height="55" rx="5" fill="url(#brokenBodyGrad)" stroke="#333" stroke-width="3"/>
+
+    <!-- Loose panel -->
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="0 135 125; 15 135 125; 0 135 125; -5 135 125; 0 135 125" dur="0.8s" repeatCount="indefinite"/>
+      <rect x="120" y="115" width="20" height="25" rx="2" fill="#666" stroke="#333" stroke-width="2"/>
+    </g>
+
+    <!-- Exposed wires -->
+    <path d="M 125 130 Q 140 135 145 125" stroke="#FF0000" stroke-width="2" fill="none">
+      <animate attributeName="d" values="M 125 130 Q 140 135 145 125; M 125 130 Q 145 130 148 128; M 125 130 Q 140 135 145 125" dur="0.3s" repeatCount="indefinite"/>
+    </path>
+    <path d="M 125 135 Q 138 140 142 132" stroke="#0000FF" stroke-width="2" fill="none">
+      <animate attributeName="d" values="M 125 135 Q 138 140 142 132; M 125 135 Q 140 138 145 135; M 125 135 Q 138 140 142 132" dur="0.35s" repeatCount="indefinite"/>
+    </path>
+
+    <!-- Chest - glitchy display -->
+    <circle cx="95" cy="135" r="12" fill="#111"/>
+    <text x="95" y="140" font-family="monospace" font-size="10" fill="#00FF00" text-anchor="middle">
+      <animate attributeName="opacity" values="1;0;1;1;0;0;1" dur="0.3s" repeatCount="indefinite"/>
+      ?!
+    </text>
+
+    <!-- Arms - one drooping -->
+    <rect x="40" y="115" width="25" height="10" rx="4" fill="url(#brokenBodyGrad)" stroke="#333" stroke-width="2"/>
+    <circle cx="38" cy="120" r="7" fill="#666" stroke="#333" stroke-width="2"/>
+
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="20 135 120; 25 135 120; 20 135 120" dur="0.5s" repeatCount="indefinite"/>
+      <rect x="135" y="115" width="25" height="10" rx="4" fill="url(#brokenBodyGrad)" stroke="#333" stroke-width="2"/>
+      <circle cx="162" cy="120" r="7" fill="#666" stroke="#333" stroke-width="2"/>
+    </g>
+
+    <!-- Legs - one shorter/broken -->
+    <rect x="75" y="165" width="12" height="25" rx="3" fill="#666" stroke="#333" stroke-width="2"/>
+    <rect x="113" y="165" width="12" height="15" rx="3" fill="#666" stroke="#333" stroke-width="2"/>
+
+    <!-- Broken leg piece on ground -->
+    <rect x="125" y="185" width="12" height="8" rx="2" fill="#666" stroke="#333" stroke-width="2" transform="rotate(25 130 189)"/>
+
+    <!-- Feet -->
+    <ellipse cx="81" cy="192" rx="10" ry="5" fill="#444" stroke="#333" stroke-width="2"/>
+    <ellipse cx="119" cy="182" rx="8" ry="4" fill="#444" stroke="#333" stroke-width="2"/>
+  </g>
+
+  <!-- Floating question marks and symbols -->
+  <text x="40" y="50" font-size="16" fill="#FF6600">
+    <animate attributeName="y" values="50;40;50" dur="1s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="1s" repeatCount="indefinite"/>
+    ?
+  </text>
+  <text x="165" y="90" font-size="14" fill="#FF6600">
+    <animate attributeName="y" values="90;80;90" dur="1s" repeatCount="indefinite" begin="0.5s"/>
+    <animate attributeName="opacity" values="1;0.5;1" dur="1s" repeatCount="indefinite" begin="0.5s"/>
+    !
+  </text>
+</svg>
