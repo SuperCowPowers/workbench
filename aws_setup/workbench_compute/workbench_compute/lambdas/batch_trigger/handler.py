@@ -32,11 +32,11 @@ def parse_workbench_batch(script_content: str) -> dict | None:
 
     Looks for a dictionary assignment like:
         WORKBENCH_BATCH = {
-            "outputs": ["fs_caco2_er_reg_1"],
+            "outputs": ["feature_set_xyz"],
         }
     or:
         WORKBENCH_BATCH = {
-            "inputs": ["fs_caco2_er_reg_1"],
+            "inputs": ["feature_set_xyz"],
         }
 
     Args:
@@ -108,7 +108,7 @@ def find_active_jobs_with_output(output_name: str) -> list[str]:
     that have the matching output in their environment.
 
     Args:
-        output_name: The output name to look for (e.g., "fs_caco2_er_reg_1")
+        output_name: The output name to look for (e.g., "feature_set_xyz")
 
     Returns:
         List of job IDs that produce this output
