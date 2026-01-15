@@ -40,6 +40,11 @@ You can explore and deploy all models via the [Workbench Dashboard](https://work
 
 ![Open ADMET Model](images/open_admet_model.jpg)
 
+### Confidence Models
+All of the workbench models come with built-in confidence estimation. This allows users to not only get point predictions but also reliable uncertainty estimates for each prediction.
+
+![Confidence](images/confidence.jpg)
+
 ## Deploying a ChemProp Model to AWS using Workbench
 This is a hello world example of how to deploy a ChemProp model to AWS using Workbench. For more detailed instructions, please see the [Workbench Documentation](https://supercowpowers.github.io/workbench/)
 
