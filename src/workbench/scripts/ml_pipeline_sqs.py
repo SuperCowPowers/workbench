@@ -20,8 +20,11 @@ def parse_workbench_batch(script_content: str) -> dict | None:
 
     Looks for a dictionary assignment like:
         WORKBENCH_BATCH = {
-            "group": "feature_set_xyz",
-            "priority": 1,
+            "outputs": ["fs_caco2_er_reg_1"],
+        }
+    or:
+        WORKBENCH_BATCH = {
+            "inputs": ["fs_caco2_er_reg_1"],
         }
 
     Args:
@@ -39,6 +42,27 @@ def parse_workbench_batch(script_content: str) -> dict | None:
             print(f"⚠️  Warning: Failed to parse WORKBENCH_BATCH: {e}")
             return None
     return None
+
+
+def get_message_group_id(batch_config: dict | None) -> str:
+    """Derive MessageGroupId from outputs or inputs.
+
+    - Scripts with outputs use first output as group
+    - Scripts with inputs use first input as group
+    - Default to "ml-pipeline-jobs" if no config
+    """
+    if not batch_config:
+        return "ml-pipeline-jobs"
+
+    outputs = batch_config.get("outputs", [])
+    inputs = batch_config.get("inputs", [])
+
+    if outputs:
+        return outputs[0]
+    elif inputs:
+        return inputs[0]
+    else:
+        return "ml-pipeline-jobs"
 
 
 def submit_to_sqs(
@@ -75,8 +99,9 @@ def submit_to_sqs(
     # Read script content and parse WORKBENCH_BATCH config
     script_content = script_file.read_text()
     batch_config = parse_workbench_batch(script_content)
-    group_id = (batch_config or {}).get("group", "ml-pipeline-jobs")
-    priority = (batch_config or {}).get("priority")
+    group_id = get_message_group_id(batch_config)
+    outputs = (batch_config or {}).get("outputs", [])
+    inputs = (batch_config or {}).get("inputs", [])
 
     print(f"📄  Script: {script_file.name}")
     print(f"📏  Size tier: {size}")
@@ -84,7 +109,11 @@ def submit_to_sqs(
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
     print(f"🪣  Bucket: {workbench_bucket}")
-    print(f"📦  Batch Group: {group_id}" + (f" (priority: {priority})" if priority else ""))
+    if outputs:
+        print(f"📤  Outputs: {outputs}")
+    if inputs:
+        print(f"📥  Inputs: {inputs}")
+    print(f"📦  Batch Group: {group_id}")
     sqs = AWSAccountClamp().boto3_session.client("sqs")
     script_name = script_file.name
 
@@ -171,7 +200,11 @@ def submit_to_sqs(
     print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (SERVERLESS={'False' if realtime else 'True'})")
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
-    print(f"📦  Batch Group: {group_id}" + (f" (priority: {priority})" if priority else ""))
+    if outputs:
+        print(f"📤  Outputs: {outputs}")
+    if inputs:
+        print(f"📥  Inputs: {inputs}")
+    print(f"📦  Batch Group: {group_id}")
     print(f"🆔  Message ID: {message_id}")
     print("\n🔍  MONITORING LOCATIONS:")
     print(f"   • SQS Queue: AWS Console → SQS → {queue_name}")
