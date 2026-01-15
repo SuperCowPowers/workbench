@@ -4,6 +4,7 @@ nav:
   - Presentations: presentations/index.md
   - Getting Started: getting_started/index.md
   - Workbench REPL: repl/index.md
+  - Advanced Models: advanced_models/index.md
   - API Classes: 
     - OverView: api_classes/overview.md
     - Meta: api_classes/meta.md

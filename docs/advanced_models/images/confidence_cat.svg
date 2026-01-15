@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Confidence Cat - Sassy cat with data vibes, PPG style with EXAGGERATED animations -->
+  <defs>
+    <linearGradient id="catFur" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#9370DB"/>
+      <stop offset="100%" style="stop-color:#6A5ACD"/>
+    </linearGradient>
+    <linearGradient id="screenGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#00FF88"/>
+      <stop offset="100%" style="stop-color:#00AA55"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Tail - SWISHING dramatically -->
+  <path fill="none" stroke="url(#catFur)" stroke-width="15" stroke-linecap="round">
+    <animate attributeName="d"
+             values="M 150 150 Q 180 130 175 90 Q 185 70 170 60;
+                     M 150 150 Q 190 120 190 85 Q 200 60 180 50;
+                     M 150 150 Q 175 135 168 95 Q 175 75 160 70;
+                     M 150 150 Q 180 130 175 90 Q 185 70 170 60"
+             dur="0.8s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- Whole cat BOBBING -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0,0; 0,-6; 0,0" dur="0.7s" repeatCount="indefinite"/>
+
+    <!-- Body -->
+    <ellipse cx="100" cy="145" rx="50" ry="35" fill="url(#catFur)" stroke="#4B0082" stroke-width="3"/>
+
+    <!-- Head - slight tilt animation -->
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="-3 100 85; 3 100 85; -3 100 85" dur="1.2s" repeatCount="indefinite"/>
+
+      <ellipse cx="100" cy="85" rx="45" ry="40" fill="url(#catFur)" stroke="#4B0082" stroke-width="3"/>
+
+      <!-- Ears - TWITCHING -->
+      <g>
+        <animateTransform attributeName="transform" type="rotate" values="0 60 40; -15 60 40; 0 60 40" dur="0.4s" repeatCount="indefinite"/>
+        <polygon points="60,55 45,20 75,45" fill="url(#catFur)" stroke="#4B0082" stroke-width="3"/>
+        <polygon points="62,52 52,30 72,47" fill="#FFB6C1"/>
+      </g>
+      <g>
+        <animateTransform attributeName="transform" type="rotate" values="0 140 40; 15 140 40; 0 140 40" dur="0.4s" repeatCount="indefinite" begin="0.2s"/>
+        <polygon points="140,55 155,20 125,45" fill="url(#catFur)" stroke="#4B0082" stroke-width="3"/>
+        <polygon points="138,52 148,30 128,47" fill="#FFB6C1"/>
+      </g>
+
+      <!-- Big PPG eyes - half-lidded sassy look -->
+      <ellipse cx="80" cy="80" rx="18" ry="20" fill="#FFFFFF" stroke="#333" stroke-width="2"/>
+      <ellipse cx="120" cy="80" rx="18" ry="20" fill="#FFFFFF" stroke="#333" stroke-width="2"/>
+
+      <!-- Half-closed eyelids for sass -->
+      <ellipse cx="80" cy="73" rx="19" ry="12" fill="url(#catFur)"/>
+      <ellipse cx="120" cy="73" rx="19" ry="12" fill="url(#catFur)"/>
+
+      <!-- Pupils - LOOKING AROUND smugly -->
+      <ellipse rx="8" ry="12" fill="#000">
+        <animate attributeName="cx" values="82;85;78;82" dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="85;83;87;85" dur="2s" repeatCount="indefinite"/>
+      </ellipse>
+      <ellipse rx="8" ry="12" fill="#000">
+        <animate attributeName="cx" values="122;125;118;122" dur="2s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="85;83;87;85" dur="2s" repeatCount="indefinite"/>
+      </ellipse>
+      <!-- Eye shine -->
+      <ellipse cx="84" cy="82" rx="3" ry="4" fill="#FFF"/>
+      <ellipse cx="124" cy="82" rx="3" ry="4" fill="#FFF"/>
+
+      <!-- Nose -->
+      <ellipse cx="100" cy="100" rx="6" ry="4" fill="#FF69B4">
+        <animate attributeName="ry" values="4;5;4" dur="0.5s" repeatCount="indefinite"/>
+      </ellipse>
+
+      <!-- Smug mouth -->
+      <path d="M 90 108 Q 100 102 110 108" fill="none" stroke="#333" stroke-width="2"/>
+      <path d="M 85 108 Q 80 115 75 110" fill="none" stroke="#333" stroke-width="2"/>
+      <path d="M 115 108 Q 120 115 125 110" fill="none" stroke="#333" stroke-width="2"/>
+
+      <!-- Whiskers - WIGGLING -->
+      <g>
+        <animateTransform attributeName="transform" type="rotate" values="-5 60 100; 5 60 100; -5 60 100" dur="0.3s" repeatCount="indefinite"/>
+        <line x1="60" y1="95" x2="30" y2="88" stroke="#333" stroke-width="2"/>
+        <line x1="60" y1="100" x2="28" y2="100" stroke="#333" stroke-width="2"/>
+        <line x1="60" y1="105" x2="30" y2="112" stroke="#333" stroke-width="2"/>
+      </g>
+      <g>
+        <animateTransform attributeName="transform" type="rotate" values="5 140 100; -5 140 100; 5 140 100" dur="0.3s" repeatCount="indefinite" begin="0.15s"/>
+        <line x1="140" y1="95" x2="170" y2="88" stroke="#333" stroke-width="2"/>
+        <line x1="140" y1="100" x2="172" y2="100" stroke="#333" stroke-width="2"/>
+        <line x1="140" y1="105" x2="170" y2="112" stroke="#333" stroke-width="2"/>
+      </g>
+    </g>
+
+    <!-- Paws -->
+    <ellipse cx="65" cy="175" rx="15" ry="10" fill="url(#catFur)" stroke="#4B0082" stroke-width="2"/>
+    <ellipse cx="135" cy="175" rx="15" ry="10" fill="url(#catFur)" stroke="#4B0082" stroke-width="2"/>
+
+    <!-- Tablet/screen being held - GLOWING -->
+    <rect x="40" y="130" width="55" height="40" rx="5" fill="#222" stroke="#444" stroke-width="2"/>
+    <rect x="45" y="135" width="45" height="30" fill="url(#screenGlow)">
+      <animate attributeName="opacity" values="1;0.7;1" dur="0.5s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- Confidence bar on screen - FILLING UP -->
+    <rect x="50" y="140" width="35" height="8" fill="#005522"/>
+    <rect x="50" y="140" height="8" fill="#00FF00">
+      <animate attributeName="width" values="5;35;5" dur="1.5s" repeatCount="indefinite"/>
+    </rect>
+    <text x="67" y="158" font-family="monospace" font-size="8" fill="#00FF00" text-anchor="middle">
+      <animate attributeName="opacity" values="1;0.5;1" dur="0.3s" repeatCount="indefinite"/>
+      95%
+    </text>
+  </g>
+
+  <!-- Data sparkles around cat - FLOATING UP -->
+  <text font-family="monospace" font-size="10" fill="#00FF88">
+    <animate attributeName="y" values="60;40;60" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/>
+    <tspan x="20">0.95</tspan>
+  </text>
+  <text font-family="monospace" font-size="10" fill="#00FF88">
+    <animate attributeName="y" values="50;30;50" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+    <tspan x="165">CI</tspan>
+  </text>
+  <text font-family="monospace" font-size="8" fill="#00FF88">
+    <animate attributeName="y" values="140;120;140" dur="2s" repeatCount="indefinite" begin="1s"/>
+    <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="1s"/>
+    <tspan x="170">+/-</tspan>
+  </text>
+  <text font-family="monospace" font-size="9" fill="#00FF88">
+    <animate attributeName="y" values="70;50;70" dur="2s" repeatCount="indefinite" begin="1.5s"/>
+    <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite" begin="1.5s"/>
+    <tspan x="5">R²</tspan>
+  </text>
+</svg>

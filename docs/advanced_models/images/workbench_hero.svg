@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Commander Workbench - Heroic mascot with EXAGGERATED animations -->
+  <defs>
+    <linearGradient id="capeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#FF4444"/>
+      <stop offset="100%" style="stop-color:#CC0000"/>
+    </linearGradient>
+    <linearGradient id="heroBody" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4488FF"/>
+      <stop offset="100%" style="stop-color:#2255CC"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFD700"/>
+      <stop offset="100%" style="stop-color:#DAA520"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Cape flowing DRAMATICALLY behind -->
+  <path fill="url(#capeGrad)" stroke="#990000" stroke-width="2">
+    <animate attributeName="d"
+             values="M 60 70 Q 30 100 25 160 Q 45 150 60 165 Q 75 150 95 165 Q 110 150 125 165 Q 140 150 160 160 Q 155 100 125 70;
+                     M 60 70 Q 15 110 10 170 Q 35 155 55 175 Q 80 155 95 175 Q 115 155 135 175 Q 155 155 175 170 Q 165 110 125 70;
+                     M 60 70 Q 25 95 30 155 Q 50 145 65 160 Q 80 145 95 160 Q 110 145 125 160 Q 140 145 155 155 Q 150 95 125 70;
+                     M 60 70 Q 30 100 25 160 Q 45 150 60 165 Q 75 150 95 165 Q 110 150 125 165 Q 140 150 160 160 Q 155 100 125 70"
+             dur="1.5s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- Whole hero FLOATING up and down -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0,0; 0,-10; 0,0; 0,-5; 0,0" dur="1.2s" repeatCount="indefinite"/>
+
+    <!-- Body -->
+    <ellipse cx="95" cy="120" rx="35" ry="45" fill="url(#heroBody)" stroke="#1A3D7C" stroke-width="3"/>
+
+    <!-- AWS logo on chest - GLOWING -->
+    <rect x="75" y="105" width="40" height="25" rx="3" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="2">
+      <animate attributeName="opacity" values="1;0.7;1" dur="0.8s" repeatCount="indefinite"/>
+    </rect>
+    <text x="95" y="122" font-family="Arial Black" font-size="12" fill="#333" text-anchor="middle">AWS</text>
+
+    <!-- Head -->
+    <circle cx="95" cy="55" r="30" fill="#FFE4C4" stroke="#333" stroke-width="2"/>
+
+    <!-- Hero mask -->
+    <path d="M 60 50 Q 95 35 130 50 L 125 60 Q 95 55 65 60 Z" fill="#1A3D7C"/>
+
+    <!-- Big determined eyes - SPARKLING -->
+    <ellipse cx="80" cy="55" rx="12" ry="15" fill="#FFFFFF" stroke="#333" stroke-width="1"/>
+    <ellipse cx="110" cy="55" rx="12" ry="15" fill="#FFFFFF" stroke="#333" stroke-width="1"/>
+    <ellipse cx="82" cy="55" rx="6" ry="9" fill="#000"/>
+    <ellipse cx="112" cy="55" rx="6" ry="9" fill="#000"/>
+    <ellipse cx="84" cy="52" rx="2" ry="3" fill="#FFF"/>
+    <ellipse cx="114" cy="52" rx="2" ry="3" fill="#FFF"/>
+
+    <!-- Heroic eyebrows -->
+    <path d="M 65 42 L 90 48" fill="none" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 125 42 L 100 48" fill="none" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Confident smile -->
+    <path d="M 82 72 Q 95 82 108 72" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Arms in heroic pose - PUMPING -->
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="0 60 105; -20 60 105; 0 60 105" dur="0.5s" repeatCount="indefinite"/>
+      <ellipse cx="45" cy="105" rx="18" ry="12" fill="url(#heroBody)" stroke="#1A3D7C" stroke-width="2"/>
+      <circle cx="32" cy="100" r="10" fill="#FFE4C4" stroke="#333" stroke-width="2"/>
+    </g>
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="0 130 105; 20 130 105; 0 130 105" dur="0.5s" repeatCount="indefinite" begin="0.25s"/>
+      <ellipse cx="145" cy="105" rx="18" ry="12" fill="url(#heroBody)" stroke="#1A3D7C" stroke-width="2"/>
+      <circle cx="158" cy="100" r="10" fill="#FFE4C4" stroke="#333" stroke-width="2"/>
+    </g>
+
+    <!-- Legs -->
+    <rect x="75" y="160" width="15" height="25" rx="5" fill="url(#heroBody)" stroke="#1A3D7C" stroke-width="2"/>
+    <rect x="100" y="160" width="15" height="25" rx="5" fill="url(#heroBody)" stroke="#1A3D7C" stroke-width="2"/>
+
+    <!-- Hero boots -->
+    <rect x="72" y="180" width="20" height="12" rx="3" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="2"/>
+    <rect x="98" y="180" width="20" height="12" rx="3" fill="url(#goldGrad)" stroke="#B8860B" stroke-width="2"/>
+  </g>
+
+  <!-- Power emanating - MULTIPLE RINGS -->
+  <circle cx="158" cy="100" r="15" fill="none" stroke="#FFD700" stroke-width="3">
+    <animate attributeName="r" values="15;35;15" dur="0.8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.8;0;0.8" dur="0.8s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="158" cy="100" r="15" fill="none" stroke="#FFD700" stroke-width="2">
+    <animate attributeName="r" values="15;45;15" dur="0.8s" repeatCount="indefinite" begin="0.2s"/>
+    <animate attributeName="opacity" values="0.6;0;0.6" dur="0.8s" repeatCount="indefinite" begin="0.2s"/>
+  </circle>
+
+  <!-- Sparkle effects - BIGGER and more dramatic -->
+  <g>
+    <animateTransform attributeName="transform" type="rotate" from="0 170 35" to="360 170 35" dur="3s" repeatCount="indefinite"/>
+    <polygon points="170,25 173,33 182,33 175,39 178,48 170,43 162,48 165,39 158,33 167,33" fill="#FFD700">
+      <animate attributeName="opacity" values="1;0.3;1" dur="0.4s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+  <g>
+    <animateTransform attributeName="transform" type="rotate" from="0 30 45" to="-360 30 45" dur="4s" repeatCount="indefinite"/>
+    <polygon points="30,35 32,42 40,42 34,47 36,55 30,50 24,55 26,47 20,42 28,42" fill="#FFD700">
+      <animate attributeName="opacity" values="0.3;1;0.3" dur="0.4s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+  <g>
+    <animateTransform attributeName="transform" type="rotate" from="0 175 160" to="360 175 160" dur="2.5s" repeatCount="indefinite"/>
+    <polygon points="175,152 177,158 184,158 179,162 181,169 175,165 169,169 171,162 166,158 173,158" fill="#FFD700">
+      <animate attributeName="opacity" values="1;0.5;1" dur="0.5s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+</svg>
