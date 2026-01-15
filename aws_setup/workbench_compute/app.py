@@ -35,6 +35,9 @@ lambda_role_arn = Fn.import_value("WorkbenchCore-LambdaRoleArn")
 existing_vpc_id = cm.get_config("WORKBENCH_VPC_ID")
 subnet_ids = cm.get_config("WORKBENCH_SUBNET_IDS") or []
 
+# Environment name for notifications (e.g., sandbox, dev, stage, prod)
+environment_name = cm.get_config("WORKBENCH_ENVIRONMENT") or "unknown"
+
 # Log the configuration for transparency
 print("Configuration:")
 print(f"  WORKBENCH_BUCKET: {workbench_bucket}")
@@ -42,6 +45,7 @@ print(f"  WORKBENCH_BATCH_ROLE_ARN: {batch_role_arn}")
 print(f"  WORKBENCH_LAMBDA_ROLE_ARN: {lambda_role_arn}")
 print(f"  WORKBENCH_VPC_ID: {existing_vpc_id}")
 print(f"  WORKBENCH_SUBNET_IDS: {subnet_ids}")
+print(f"  WORKBENCH_ENVIRONMENT: {environment_name}")
 
 # Our CDK App and Environment
 app = cdk.App()
@@ -56,6 +60,7 @@ compute_stack = WorkbenchComputeStack(
         workbench_bucket=workbench_bucket,
         batch_role_arn=batch_role_arn,
         lambda_role_arn=lambda_role_arn,
+        environment_name=environment_name,
         existing_vpc_id=existing_vpc_id,
         subnet_ids=subnet_ids,
     ),

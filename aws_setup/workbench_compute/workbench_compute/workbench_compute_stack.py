@@ -7,8 +7,11 @@ from aws_cdk import (
     aws_ecr as ecr,
     aws_batch as batch,
     aws_sqs as sqs,
+    aws_sns as sns,
     aws_lambda as lambda_,
     aws_lambda_event_sources as lambda_events,
+    aws_events as events,
+    aws_events_targets as targets,
     aws_logs as logs,
     Duration,
     Size,
@@ -24,6 +27,7 @@ class WorkbenchComputeStackProps:
     workbench_bucket: str
     batch_role_arn: str
     lambda_role_arn: str
+    environment_name: str = "unknown"  # Environment name (sandbox, dev, stage, prod)
     existing_vpc_id: str = None
     subnet_ids: List[str] = field(default_factory=list)  # Optional subnets ids for the Batch compute environment
 
@@ -47,6 +51,7 @@ class WorkbenchComputeStack(Stack):
         # Grab our properties
         self.workbench_bucket = props.workbench_bucket
         self.batch_role_arn = props.batch_role_arn
+        self.environment_name = props.environment_name
         self.existing_vpc_id = props.existing_vpc_id
         self.subnet_ids = props.subnet_ids
 
@@ -64,6 +69,11 @@ class WorkbenchComputeStack(Stack):
         # Create ML Pipeline SQS Queue and Lambda (after Batch resources)
         self.ml_pipeline_queue = self.create_ml_pipeline_queue()
         self.batch_trigger_lambda = self.create_batch_trigger_lambda()
+
+        # Create Batch failure notification resources
+        self.batch_failure_topic = self.create_batch_failure_topic()
+        self.batch_failure_lambda = self.create_batch_failure_lambda()
+        self.create_batch_failure_rule()
 
     #####################
     #   Batch Compute   #
@@ -221,3 +231,72 @@ class WorkbenchComputeStack(Stack):
             )
         )
         return batch_trigger_lambda
+
+    ################################
+    #  Batch Failure Notification  #
+    ################################
+    def create_batch_failure_topic(self) -> sns.Topic:
+        """Create SNS topic for batch job failure notifications."""
+        return sns.Topic(
+            self,
+            "BatchJobFailureTopic",
+            topic_name="workbench-batch-job-failure",
+            display_name="Workbench Batch Job Failure",
+        )
+
+    def create_batch_failure_lambda(self) -> lambda_.Function:
+        """Create Lambda function to handle batch job failures and send notifications."""
+
+        # Path to the Lambda code directory
+        lambda_code_path = Path(__file__).parent / "lambdas" / "batch_failure"
+
+        batch_failure_lambda = lambda_.Function(
+            self,
+            "BatchFailureLambda",
+            function_name="workbench-batch-failure",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="handler.lambda_handler",
+            code=lambda_.Code.from_asset(str(lambda_code_path)),
+            timeout=Duration.minutes(1),
+            log_retention=logs.RetentionDays.ONE_WEEK,
+            environment={
+                "WORKBENCH_ENVIRONMENT": self.environment_name,
+                "BATCH_FAILURE_TOPIC_ARN": self.batch_failure_topic.topic_arn,
+            },
+            role=self.workbench_lambda_role,
+        )
+
+        # Grant permission to publish to SNS
+        self.batch_failure_topic.grant_publish(batch_failure_lambda)
+
+        # Grant permission to read CloudWatch logs
+        batch_failure_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["logs:GetLogEvents"],
+                resources=[f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/batch/job:*"],
+            )
+        )
+
+        return batch_failure_lambda
+
+    def create_batch_failure_rule(self) -> events.Rule:
+        """Create EventBridge rule to trigger batch failure lambda on job failures."""
+
+        batch_failure_rule = events.Rule(
+            self,
+            "BatchJobFailureRule",
+            rule_name="workbench-batch-job-failure",
+            event_pattern=events.EventPattern(
+                source=["aws.batch"],
+                detail_type=["Batch Job State Change"],
+                detail={
+                    "status": ["FAILED"],
+                    "jobQueue": [f"arn:aws:batch:{self.region}:{self.account}:job-queue/workbench-job-queue"],
+                },
+            ),
+            description="Triggers batch failure notification when Workbench Batch jobs fail",
+        )
+
+        batch_failure_rule.add_target(targets.LambdaFunction(self.batch_failure_lambda))
+
+        return batch_failure_rule
