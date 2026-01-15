@@ -100,10 +100,7 @@ def lambda_handler(event, context):
         log_messages = get_log_events(log_stream_name)
 
     # Build the console URL
-    console_url = (
-        f"https://{region}.console.aws.amazon.com/batch/home?region={region}"
-        f"#jobs/fargate/detail/{job_id}"
-    )
+    console_url = f"https://{region}.console.aws.amazon.com/batch/home?region={region}" f"#jobs/fargate/detail/{job_id}"
 
     # Build the notification
     subject = f"Batch Job Failed: {environment}: {job_name}"
@@ -146,10 +143,12 @@ View job details:
 
     return {
         "statusCode": 200,
-        "body": json.dumps({
-            "message": "Batch failure notification sent",
-            "job_name": job_name,
-            "job_id": job_id,
-            "environment": environment,
-        }),
+        "body": json.dumps(
+            {
+                "message": "Batch failure notification sent",
+                "job_name": job_name,
+                "job_id": job_id,
+                "environment": environment,
+            }
+        ),
     }
