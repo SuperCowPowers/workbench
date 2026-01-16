@@ -1,4 +1,4 @@
-from workbench.api import FeatureSet, Model, ModelType, Endpoint
+from workbench.api import FeatureSet, Model, Endpoint
 
 # Grab a FeatureSet
 my_features = FeatureSet("aqsol_features")
