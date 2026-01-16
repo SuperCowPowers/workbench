@@ -34,7 +34,7 @@ DEFAULT_HYPERPARAMETERS = {
     "max_epochs": 400,
     "patience": 50,
     "batch_size": 32,
-    # Message Passing
+    # Message Passing (ignored when using foundation model)
     "hidden_dim": 700,
     "depth": 6,
     "dropout": 0.1,  # Lower dropout - ensemble provides regularization
@@ -45,6 +45,14 @@ DEFAULT_HYPERPARAMETERS = {
     "criterion": "mae",
     # Random seed
     "seed": 42,
+    # Foundation model support
+    # - "CheMeleon": Load CheMeleon pretrained weights (auto-downloads on first use)
+    # - Path to .pt file: Load custom pretrained Chemprop model
+    # - None: Train from scratch (default)
+    "from_foundation": None,
+    # Freeze MPNN for N epochs, then unfreeze (0 = no freezing, train all params from start)
+    # Recommended: 5-20 epochs when using foundation models to stabilize FFN before fine-tuning MPNN
+    "freeze_mpnn_epochs": 0,
 }
 
 # Template parameters (filled in by Workbench)
@@ -114,18 +122,20 @@ def _create_molecule_datapoints(
 # Model Loading (for SageMaker inference)
 # =============================================================================
 def model_fn(model_dir: str) -> dict:
-    """Load ChemProp MPNN ensemble from the specified directory."""
-    from lightning import pytorch as pl
+    """Load ChemProp MPNN ensemble from the specified directory.
 
+    Optimized for serverless cold starts - uses direct PyTorch inference
+    instead of Lightning Trainer to minimize startup time.
+    """
     metadata = joblib.load(os.path.join(model_dir, "ensemble_metadata.joblib"))
+
+    # Load all ensemble models (keep on CPU for serverless compatibility)
+    # ChemProp handles device placement internally
     ensemble_models = []
     for i in range(metadata["n_ensemble"]):
         model = models.MPNN.load_from_file(os.path.join(model_dir, f"chemprop_model_{i}.pt"))
         model.eval()
         ensemble_models.append(model)
-
-    # Pre-initialize trainer once during model loading (expensive operation)
-    trainer = pl.Trainer(accelerator="auto", logger=False, enable_progress_bar=False)
 
     print(f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}")
     return {
@@ -133,7 +143,6 @@ def model_fn(model_dir: str) -> dict:
         "n_ensemble": metadata["n_ensemble"],
         "target_columns": metadata["target_columns"],
         "median_std": metadata["median_std"],
-        "trainer": trainer,
     }
 
 
@@ -141,13 +150,15 @@ def model_fn(model_dir: str) -> dict:
 # Inference (for SageMaker inference)
 # =============================================================================
 def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
-    """Make predictions with ChemProp MPNN ensemble."""
+    """Make predictions with ChemProp MPNN ensemble.
+
+    Uses direct PyTorch inference (no Lightning Trainer) for fast serverless inference.
+    """
     model_type = TEMPLATE_PARAMS["model_type"]
     model_dir = os.environ.get("SM_MODEL_DIR", "/opt/ml/model")
 
     ensemble_models = model_dict["ensemble_models"]
     target_columns = model_dict["target_columns"]
-    trainer = model_dict["trainer"]  # Use pre-initialized trainer
 
     # Load artifacts
     label_encoder = None
@@ -202,17 +213,33 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         return df
 
     dataset = data.MoleculeDataset(datapoints)
-    dataloader = data.build_dataloader(dataset, shuffle=False)
+    dataloader = data.build_dataloader(dataset, shuffle=False, batch_size=64)
 
-    # Ensemble predictions
+    # Ensemble predictions using direct PyTorch inference (no Lightning Trainer)
     all_preds = []
     for model in ensemble_models:
+        model_preds = []
+        model.eval()
         with torch.inference_mode():
-            predictions = trainer.predict(model, dataloader)
-        preds = np.concatenate([p.numpy() for p in predictions], axis=0)
+            for batch in dataloader:
+                # TrainingBatch contains (bmg, V_d, X_d, targets, weights, lt_mask, gt_mask)
+                # For inference we only need bmg, V_d, X_d
+                bmg, V_d, X_d, *_ = batch
+                output = model(bmg, V_d, X_d)
+                model_preds.append(output.detach().cpu().numpy())
+
+        if len(model_preds) == 0:
+            print(f"Warning: No predictions generated. Dataset size: {len(datapoints)}")
+            continue
+
+        preds = np.concatenate(model_preds, axis=0)
         if preds.ndim == 3 and preds.shape[1] == 1:
             preds = preds.squeeze(axis=1)
         all_preds.append(preds)
+
+    if len(all_preds) == 0:
+        print("Error: No ensemble predictions generated")
+        return df
 
     preds = np.mean(np.stack(all_preds), axis=0)
     preds_std = np.std(np.stack(all_preds), axis=0)
@@ -243,8 +270,11 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df["prediction"] = df[f"{target_columns[0]}_pred"]
         df["prediction_std"] = df[f"{target_columns[0]}_pred_std"]
 
-        # Compute confidence from ensemble std
-        df = _compute_std_confidence(df, model_dict["median_std"])
+        # Compute confidence from ensemble std (or NaN if single model)
+        if model_dict["median_std"] is not None:
+            df = _compute_std_confidence(df, model_dict["median_std"])
+        else:
+            df["confidence"] = np.nan
 
     return df
 
@@ -279,54 +309,107 @@ if __name__ == "__main__":
     )
 
     # -------------------------------------------------------------------------
-    # Training-only helper function
+    # Training-only helper functions
     # -------------------------------------------------------------------------
-    def build_mpnn_model(
-        hyperparameters: dict,
-        task: str = "regression",
-        num_classes: int | None = None,
-        n_targets: int = 1,
-        n_extra_descriptors: int = 0,
-        x_d_transform: nn.ScaleTransform | None = None,
-        output_transform: nn.UnscaleTransform | None = None,
-        task_weights: np.ndarray | None = None,
-    ) -> models.MPNN:
-        """Build an MPNN model with specified hyperparameters."""
-        hidden_dim = hyperparameters["hidden_dim"]
-        depth = hyperparameters["depth"]
+    def _load_foundation_weights(from_foundation: str) -> tuple[nn.BondMessagePassing, nn.Aggregation]:
+        """Load pretrained MPNN weights from foundation model.
+
+        Args:
+            from_foundation: "CheMeleon" or path to .pt file
+
+        Returns:
+            Tuple of (message_passing, aggregation) modules
+        """
+        import urllib.request
+        from pathlib import Path
+
+        print(f"Loading foundation model: {from_foundation}")
+
+        if from_foundation.lower() == "chemeleon":
+            # Download from Zenodo if not cached
+            cache_dir = Path.home() / ".chemprop" / "foundation"
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            chemeleon_path = cache_dir / "chemeleon_mp.pt"
+
+            if not chemeleon_path.exists():
+                print("  Downloading CheMeleon weights from Zenodo...")
+                urllib.request.urlretrieve(
+                    "https://zenodo.org/records/15460715/files/chemeleon_mp.pt", chemeleon_path
+                )
+                print(f"  Downloaded to {chemeleon_path}")
+
+            ckpt = torch.load(chemeleon_path, weights_only=True)
+            mp = nn.BondMessagePassing(**ckpt["hyper_parameters"])
+            mp.load_state_dict(ckpt["state_dict"])
+            print(f"  Loaded CheMeleon MPNN (hidden_dim={mp.output_dim})")
+            return mp, nn.MeanAggregation()
+
+        if not os.path.exists(from_foundation):
+            raise ValueError(f"Foundation model not found: {from_foundation}. Use 'CheMeleon' or a valid .pt path.")
+
+        ckpt = torch.load(from_foundation, weights_only=False)
+        if "hyper_parameters" in ckpt and "state_dict" in ckpt:
+            # CheMeleon-style checkpoint
+            mp = nn.BondMessagePassing(**ckpt["hyper_parameters"])
+            mp.load_state_dict(ckpt["state_dict"])
+            print(f"  Loaded custom foundation weights (hidden_dim={mp.output_dim})")
+            return mp, nn.MeanAggregation()
+
+        # Full MPNN model file
+        pretrained = models.MPNN.load_from_file(from_foundation)
+        print(f"  Loaded custom MPNN (hidden_dim={pretrained.message_passing.output_dim})")
+        return pretrained.message_passing, pretrained.agg
+
+    def _build_ffn(
+        task: str, input_dim: int, hyperparameters: dict,
+        num_classes: int | None, n_targets: int,
+        output_transform: nn.UnscaleTransform | None, task_weights: np.ndarray | None,
+    ) -> nn.Predictor:
+        """Build task-specific FFN head."""
         dropout = hyperparameters["dropout"]
         ffn_hidden_dim = hyperparameters["ffn_hidden_dim"]
         ffn_num_layers = hyperparameters["ffn_num_layers"]
 
-        mp = nn.BondMessagePassing(d_h=hidden_dim, depth=depth, dropout=dropout)
-        agg = nn.NormAggregation()
-        ffn_input_dim = hidden_dim + n_extra_descriptors
-
         if task == "classification" and num_classes is not None:
-            ffn = nn.MulticlassClassificationFFN(
-                n_classes=num_classes, input_dim=ffn_input_dim,
+            return nn.MulticlassClassificationFFN(
+                n_classes=num_classes, input_dim=input_dim,
                 hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers, dropout=dropout,
             )
+
+        from chemprop.nn.metrics import MAE, MSE
+        criterion_map = {"mae": MAE, "mse": MSE}
+        criterion_name = hyperparameters.get("criterion", "mae")
+        if criterion_name not in criterion_map:
+            raise ValueError(f"Unknown criterion '{criterion_name}'. Supported: {list(criterion_map.keys())}")
+
+        weights_tensor = torch.tensor(task_weights, dtype=torch.float32) if task_weights is not None else None
+        return nn.RegressionFFN(
+            input_dim=input_dim, hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers,
+            dropout=dropout, n_tasks=n_targets, output_transform=output_transform,
+            task_weights=weights_tensor, criterion=criterion_map[criterion_name](),
+        )
+
+    def build_mpnn_model(
+        hyperparameters: dict, task: str = "regression", num_classes: int | None = None,
+        n_targets: int = 1, n_extra_descriptors: int = 0,
+        x_d_transform: nn.ScaleTransform | None = None,
+        output_transform: nn.UnscaleTransform | None = None, task_weights: np.ndarray | None = None,
+    ) -> models.MPNN:
+        """Build MPNN model, optionally loading pretrained weights."""
+        from_foundation = hyperparameters.get("from_foundation")
+
+        if from_foundation:
+            mp, agg = _load_foundation_weights(from_foundation)
+            ffn_input_dim = mp.output_dim + n_extra_descriptors
         else:
-            # Map criterion name to ChemProp metric class (must have .clone() method)
-            from chemprop.nn.metrics import MAE, MSE
-
-            criterion_map = {
-                "mae": MAE,
-                "mse": MSE,
-            }
-            criterion_name = hyperparameters.get("criterion", "mae")
-            if criterion_name not in criterion_map:
-                raise ValueError(f"Unknown criterion '{criterion_name}'. Supported: {list(criterion_map.keys())}")
-            criterion = criterion_map[criterion_name]()
-
-            weights_tensor = torch.tensor(task_weights, dtype=torch.float32) if task_weights is not None else None
-            ffn = nn.RegressionFFN(
-                input_dim=ffn_input_dim, hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers,
-                dropout=dropout, n_tasks=n_targets, output_transform=output_transform, task_weights=weights_tensor,
-                criterion=criterion,
+            mp = nn.BondMessagePassing(
+                d_h=hyperparameters["hidden_dim"], depth=hyperparameters["depth"],
+                dropout=hyperparameters["dropout"],
             )
+            agg = nn.NormAggregation()
+            ffn_input_dim = hyperparameters["hidden_dim"] + n_extra_descriptors
 
+        ffn = _build_ffn(task, ffn_input_dim, hyperparameters, num_classes, n_targets, output_transform, task_weights)
         return models.MPNN(message_passing=mp, agg=agg, predictor=ffn, batch_norm=True, metrics=None, X_d_transform=x_d_transform)
 
     # -------------------------------------------------------------------------
@@ -358,6 +441,14 @@ if __name__ == "__main__":
     print(f"SMILES column: {smiles_column}")
     print(f"Extra features: {extra_feature_cols if use_extra_features else 'None (SMILES only)'}")
     print(f"Hyperparameters: {hyperparameters}")
+
+    # Log foundation model configuration
+    if hyperparameters.get("from_foundation"):
+        freeze_epochs = hyperparameters.get("freeze_mpnn_epochs", 0)
+        freeze_msg = f"MPNN frozen for {freeze_epochs} epochs" if freeze_epochs > 0 else "no freezing"
+        print(f"Foundation model: {hyperparameters['from_foundation']} ({freeze_msg})")
+    else:
+        print("Foundation model: None (training from scratch)")
 
     # Load training data
     training_files = [os.path.join(args.train, f) for f in os.listdir(args.train) if f.endswith(".csv")]
@@ -456,7 +547,7 @@ if __name__ == "__main__":
         print(f"Fold {fold_idx + 1}/{len(folds)} - Train: {len(train_idx)}, Val: {len(val_idx)}")
         print(f"{'='*50}")
 
-        # Split data
+        # Split data (val_extra_raw preserves unscaled features for OOF predictions)
         df_train, df_val = all_df.iloc[train_idx].reset_index(drop=True), all_df.iloc[val_idx].reset_index(drop=True)
         train_targets, val_targets = all_targets[train_idx], all_targets[val_idx]
         train_extra = all_extra_features[train_idx] if all_extra_features is not None else None
@@ -484,7 +575,7 @@ if __name__ == "__main__":
         train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=3)
         val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=3)
 
-        # Build and train model
+        # Build model
         pl.seed_everything(hyperparameters["seed"] + fold_idx)
         mpnn = build_mpnn_model(
             hyperparameters, task=task, num_classes=num_classes, n_targets=n_targets,
@@ -492,14 +583,39 @@ if __name__ == "__main__":
             output_transform=output_transform, task_weights=task_weights,
         )
 
-        trainer = pl.Trainer(
-            accelerator="auto", max_epochs=hyperparameters["max_epochs"], logger=False, enable_progress_bar=True,
-            callbacks=[
-                pl.callbacks.EarlyStopping(monitor="val_loss", patience=hyperparameters["patience"], mode="min"),
-                pl.callbacks.ModelCheckpoint(dirpath=args.model_dir, filename=f"best_{fold_idx}", monitor="val_loss", mode="min", save_top_k=1),
-            ],
-        )
-        trainer.fit(mpnn, train_loader, val_loader)
+        # Train model (with optional two-phase foundation training)
+        freeze_mpnn_epochs = hyperparameters.get("freeze_mpnn_epochs", 0)
+        use_two_phase = hyperparameters.get("from_foundation") and freeze_mpnn_epochs > 0
+
+        def _set_mpnn_frozen(frozen: bool):
+            for param in mpnn.message_passing.parameters():
+                param.requires_grad = not frozen
+            for param in mpnn.agg.parameters():
+                param.requires_grad = not frozen
+
+        def _make_trainer(max_epochs: int, save_checkpoint: bool = False):
+            callbacks = [pl.callbacks.EarlyStopping(monitor="val_loss", patience=hyperparameters["patience"], mode="min")]
+            if save_checkpoint:
+                callbacks.append(pl.callbacks.ModelCheckpoint(
+                    dirpath=args.model_dir, filename=f"best_{fold_idx}", monitor="val_loss", mode="min", save_top_k=1
+                ))
+            return pl.Trainer(accelerator="auto", max_epochs=max_epochs, logger=False, enable_progress_bar=True, callbacks=callbacks)
+
+        if use_two_phase:
+            # Phase 1: Freeze MPNN, train FFN only
+            print(f"Phase 1: Training with frozen MPNN for {freeze_mpnn_epochs} epochs...")
+            _set_mpnn_frozen(True)
+            _make_trainer(freeze_mpnn_epochs).fit(mpnn, train_loader, val_loader)
+
+            # Phase 2: Unfreeze and fine-tune all
+            print("Phase 2: Unfreezing MPNN, continuing training...")
+            _set_mpnn_frozen(False)
+            remaining_epochs = max(1, hyperparameters["max_epochs"] - freeze_mpnn_epochs)
+            trainer = _make_trainer(remaining_epochs, save_checkpoint=True)
+            trainer.fit(mpnn, train_loader, val_loader)
+        else:
+            trainer = _make_trainer(hyperparameters["max_epochs"], save_checkpoint=True)
+            trainer.fit(mpnn, train_loader, val_loader)
 
         # Load best checkpoint
         if trainer.checkpoint_callback and trainer.checkpoint_callback.best_model_path:
@@ -509,7 +625,7 @@ if __name__ == "__main__":
         mpnn.eval()
         ensemble_models.append(mpnn)
 
-        # Out-of-fold predictions (using raw features)
+        # Out-of-fold predictions (using unscaled features - model's x_d_transform handles scaling)
         val_dps_raw, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), val_targets, val_extra_raw)
         val_loader_pred = data.build_dataloader(data.MoleculeDataset(val_dps_raw), batch_size=batch_size, shuffle=False)
 
@@ -599,11 +715,17 @@ if __name__ == "__main__":
         df_val["prediction"] = df_val[f"{target_columns[0]}_pred"]
         df_val["prediction_std"] = df_val[f"{target_columns[0]}_pred_std"]
 
-        # Compute confidence from ensemble std
-        median_std = float(np.median(preds_std[:, 0]))
-        print(f"\nComputing confidence scores (median_std={median_std:.6f})...")
-        df_val = _compute_std_confidence(df_val, median_std)
-        print(f"  Confidence: mean={df_val['confidence'].mean():.3f}, min={df_val['confidence'].min():.3f}, max={df_val['confidence'].max():.3f}")
+        # Compute confidence from ensemble std (or NaN for single model)
+        if preds_std is not None:
+            median_std = float(np.median(preds_std[:, 0]))
+            print(f"\nComputing confidence scores (median_std={median_std:.6f})...")
+            df_val = _compute_std_confidence(df_val, median_std)
+            print(f"  Confidence: mean={df_val['confidence'].mean():.3f}, min={df_val['confidence'].min():.3f}, max={df_val['confidence'].max():.3f}")
+        else:
+            # Single model - no ensemble std available, confidence is undefined
+            median_std = None
+            df_val["confidence"] = np.nan
+            print("\nSingle model (n_folds=1): No ensemble std, confidence set to NaN")
 
     # -------------------------------------------------------------------------
     # Save validation predictions to S3
@@ -633,6 +755,9 @@ if __name__ == "__main__":
         "n_folds": n_folds,
         "target_columns": target_columns,
         "median_std": median_std,  # For confidence calculation during inference
+        # Foundation model provenance (for tracking/reproducibility)
+        "from_foundation": hyperparameters.get("from_foundation", None),
+        "freeze_mpnn_epochs": hyperparameters.get("freeze_mpnn_epochs", 0),
     }
     joblib.dump(ensemble_metadata, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
 
