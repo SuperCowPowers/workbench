@@ -5,7 +5,7 @@ This challenge is a community-driven initiative to benchmark predictive models f
 - Huggingface Space: <https://huggingface.co/spaces/openadmet/OpenADMET-ExpansionRx-Challenge>
 
 ## Overview
-All models/submissions were built using the **default** models and features available in [Workbench](https://github.com/SuperCowPowers/workbench), an open-source framework for building, deploying, and managing ML models on AWS. All models are available via the [Workbench Dashboard](https://workbench-dashboard.com/).
+All models/submissions were built using the **default** models and features available in [Workbench](https://github.com/SuperCowPowers/workbench), an open-source framework for building, deploying, and managing ML models on AWS®. All models are currently LIVE on AWS® and are available via the [Workbench Dashboard](https://workbench-dashboard.com/).
 
 
 ## ADMET Properties
@@ -24,7 +24,7 @@ The challenge covers 9 key ADMET properties:
 | MGMB | Mouse gut microbiome binding | % bound |
 
 ## Lots of Models to Choose From
-We trained 6 different model types for each ADMET endpoint. The [Workbench AWS Dashboard](https://workbench-dashboard.com/) supports all 6 of these model types and makes the creation, training, and deployment of models into AWS a snap.
+We trained 6 different model types for each ADMET endpoint. The [AWS Workbench](https://github.com/SuperCowPowers/workbench) supports all 6 of these model types and makes the creation, training, and deployment of models into AWS a snap.
 
 1. **XGBoost** - Gradient boosted trees on RDKit molecular descriptors
 2. **PyTorch** - Neural network on RDKit molecular descriptors
@@ -36,7 +36,7 @@ We trained 6 different model types for each ADMET endpoint. The [Workbench AWS D
 ### Chemprop ST performed the Best
 After evaluating individual model performance on validation data, the Chemprop ST (Single Task) models consistently outperformed the other model types across most endpoints.
 
-You can explore and deploy all models via the [Workbench Dashboard](https://workbench-dashboard.com/models). Simply filter by "logd" or "chemprop" to see all available models.
+You can explore and deploy all models via the [Workbench Dashboard](https://workbench-dashboard.com). Simply filter by "logd" or "chemprop" to see all available models.
 
 ![Open ADMET Model](images/open_admet_model.jpg)
 
