@@ -18,8 +18,8 @@ project_name = tm.branding().get("project_name", "Workbench")
 def models_layout(
     models_table: AGTable,
     model_details: html.Div,
-    model_plot: dcc.Graph,
-    shap_plot: dcc.Graph,
+    model_plot: html.Div,
+    shap_plot: html.Div,
 ) -> html.Div:
     layout = html.Div(
         children=[
@@ -37,7 +37,7 @@ def models_layout(
                 [
                     # Column 1: Model Details
                     dbc.Col(
-                        dcc.Loading(model_details, type="dot", color="#33aa33", delay_show=300),
+                        dcc.Loading(model_details, type="dot", color="#33aa33", delay_show=1000, delay_hide=100),
                         width=5,
                         className="text-break workbench-container",
                         style={"margin": "20px 0px 0px 0px", "padding": "20px"},
