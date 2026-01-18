@@ -12,7 +12,7 @@ log = logging.getLogger("workbench")
 # For approximating beeswarm effect
 def beeswarm_offsets(values, point_size=0.05, precision=2, max_offset=0.3):
     """
-    Generate optimal beeswarm offsets with a maximum limit.
+    Generate beeswarm offsets using random jitter with collision avoidance.
 
     Args:
         values: Array of positions to be adjusted
@@ -26,42 +26,55 @@ def beeswarm_offsets(values, point_size=0.05, precision=2, max_offset=0.3):
     values = np.asarray(values)
     rounded = np.round(values, precision)
     offsets = np.zeros_like(values, dtype=float)
-
-    # Sort indices by original values
-    sorted_idx = np.argsort(values)
+    rng = np.random.default_rng(42)  # Fixed seed for reproducibility
 
     for val in np.unique(rounded):
         # Get indices belonging to this group
-        group_idx = sorted_idx[np.isin(sorted_idx, np.where(rounded == val)[0])]
+        group_mask = rounded == val
+        group_idx = np.where(group_mask)[0]
 
         if len(group_idx) > 1:
             # Track occupied positions for collision detection
             occupied = []
 
             for idx in group_idx:
-                # Find best position with no collision
-                offset = 0
-                direction = 1
-                step = 0
+                # Try random positions, starting near center and expanding outward
+                best_offset = 0
+                found = False
 
-                while True:
-                    # Check if current offset position is free
-                    collision = any(abs(offset - pos) < point_size for pos in occupied)
+                # First point goes to center
+                if not occupied:
+                    found = True
+                else:
+                    # Try random positions with increasing spread
+                    for attempt in range(50):
+                        # Gradually increase the range of random offsets
+                        spread = min(max_offset, point_size * (1 + attempt * 0.5))
+                        offset = rng.uniform(-spread, spread)
 
-                    if not collision or abs(offset) >= max_offset:
-                        # Accept position if no collision or max offset reached
-                        if abs(offset) > max_offset:
-                            # Clamp to maximum
-                            offset = max_offset * (1 if offset > 0 else -1)
-                        break
+                        # Check for collision with occupied positions
+                        if not any(abs(offset - pos) < point_size for pos in occupied):
+                            best_offset = offset
+                            found = True
+                            break
 
-                    # Switch sides with increasing distance
-                    step += 0.25
-                    direction *= -1
-                    offset = direction * step * point_size
+                    # If no free position found after attempts, find the least crowded spot
+                    if not found:
+                        # Try a grid of positions and pick one with most space
+                        candidates = np.linspace(-max_offset, max_offset, 20)
+                        rng.shuffle(candidates)
+                        for candidate in candidates:
+                            if not any(abs(candidate - pos) < point_size * 0.8 for pos in occupied):
+                                best_offset = candidate
+                                found = True
+                                break
 
-                offsets[idx] = offset
-                occupied.append(offset)
+                        # Last resort: just use a random position within bounds
+                        if not found:
+                            best_offset = rng.uniform(-max_offset, max_offset)
+
+                offsets[idx] = best_offset
+                occupied.append(best_offset)
 
     return offsets
 
