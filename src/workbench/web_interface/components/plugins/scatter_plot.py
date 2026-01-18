@@ -60,7 +60,6 @@ class ScatterPlot(PluginInterface):
             (f"{component_id}-x-dropdown", "options"),
             (f"{component_id}-y-dropdown", "options"),
             (f"{component_id}-color-dropdown", "options"),
-            (f"{component_id}-label-dropdown", "options"),
             (f"{component_id}-x-dropdown", "value"),
             (f"{component_id}-y-dropdown", "value"),
             (f"{component_id}-color-dropdown", "value"),
@@ -105,19 +104,10 @@ class ScatterPlot(PluginInterface):
                             style={"min-width": "50px", "flex": 1},  # Responsive width
                             clearable=False,
                         ),
-                        html.Label("Label", style={"marginLeft": "30px", "marginRight": "5px", "fontWeight": "bold"}),
-                        dcc.Dropdown(
-                            id=f"{component_id}-label-dropdown",
-                            className="dropdown",
-                            style={"min-width": "50px", "flex": 1},
-                            options=[{"label": "None", "value": "none"}],
-                            value="none",
-                            clearable=False,
-                        ),
                         dcc.Checklist(
                             id=f"{component_id}-regression-line",
                             options=[{"label": " Diagonal", "value": "show"}],
-                            value=[],
+                            value=["show"],
                             style={"margin": "10px"},
                         ),
                     ],
@@ -161,8 +151,7 @@ class ScatterPlot(PluginInterface):
 
         Returns:
             list: A list of updated property values (figure, x options, y options, color options,
-                                                    label options, x default, y default,
-                                                    color default).
+                                                    x default, y default, color default).
         """
         # Get the limit for the number of rows to plot
         limit = kwargs.get("limit", 20000)
@@ -199,7 +188,7 @@ class ScatterPlot(PluginInterface):
         regression_line = kwargs.get("regression_line", False)
 
         # Create the default scatter plot
-        figure = self.create_scatter_plot(self.df, x_default, y_default, color_default, "none", regression_line)
+        figure = self.create_scatter_plot(self.df, x_default, y_default, color_default, regression_line)
 
         # Dropdown options for x and y: use provided dropdown_columns or fallback to numeric columns
         dropdown_columns = kwargs.get("dropdown_columns", numeric_columns)
@@ -212,11 +201,7 @@ class ScatterPlot(PluginInterface):
         color_columns = numeric_columns + cat_columns
         color_options = [{"label": col, "value": col} for col in color_columns]
 
-        # For label dropdown, include None option and all columns
-        label_options = [{"label": "None", "value": "none"}]
-        label_options.extend([{"label": col, "value": col} for col in self.df.columns])
-
-        return [figure, x_options, y_options, color_options, label_options, x_default, y_default, color_default]
+        return [figure, x_options, y_options, color_options, x_default, y_default, color_default]
 
     def create_scatter_plot(
         self,
@@ -224,7 +209,6 @@ class ScatterPlot(PluginInterface):
         x_col: str,
         y_col: str,
         color_col: str,
-        label_col: str,
         regression_line: bool = False,
         marker_size: int = 15,
     ) -> go.Figure:
@@ -235,15 +219,12 @@ class ScatterPlot(PluginInterface):
             x_col (str): The column to use for the x-axis.
             y_col (str): The column to use for the y-axis.
             color_col (str): The column to use for the color scale.
-            label_col (str): The column to use for point labels.
             regression_line (bool): Whether to include a regression line.
             marker_size (int): Size of the markers. Default is 15.
 
         Returns:
             go.Figure: A Plotly Figure object.
         """
-        # Check if we need to show labels
-        show_labels = label_col != "none" and len(df) < 1000
 
         # Helper to generate hover text for each point.
         def generate_hover_text(row):
@@ -281,8 +262,6 @@ class ScatterPlot(PluginInterface):
                     x=df[x_col],
                     y=df[y_col],
                     mode="markers",
-                    text=df[label_col].astype(str) if show_labels else None,
-                    textposition="top center",
                     hoverinfo=hoverinfo,
                     hovertext=hovertext,
                     hovertemplate=hovertemplate,
@@ -312,8 +291,6 @@ class ScatterPlot(PluginInterface):
                     x=sub_df[x_col],
                     y=sub_df[y_col],
                     mode="markers",
-                    text=sub_df[label_col] if show_labels else None,  # Add text if labels enabled
-                    textposition="top center",  # Position labels above points
                     name=cat,
                     hoverinfo=hoverinfo,
                     hovertext=sub_hovertext,
@@ -386,18 +363,16 @@ class ScatterPlot(PluginInterface):
                 Input(f"{self.component_id}-x-dropdown", "value"),
                 Input(f"{self.component_id}-y-dropdown", "value"),
                 Input(f"{self.component_id}-color-dropdown", "value"),
-                Input(f"{self.component_id}-label-dropdown", "value"),
                 Input(f"{self.component_id}-regression-line", "value"),
             ],
             prevent_initial_call=True,
         )
-        def _update_scatter_plot(x_value, y_value, color_value, label_value, regression_line):
+        def _update_scatter_plot(x_value, y_value, color_value, regression_line):
             """Update the Scatter Plot Graph based on the dropdown values."""
 
             # Check if the dataframe is not empty and the values are not None
             if not self.df.empty and x_value and y_value and color_value:
-                # Update Plotly Scatter Plot with the label value
-                figure = self.create_scatter_plot(self.df, x_value, y_value, color_value, label_value, regression_line)
+                figure = self.create_scatter_plot(self.df, x_value, y_value, color_value, regression_line)
                 return figure
 
             raise PreventUpdate
