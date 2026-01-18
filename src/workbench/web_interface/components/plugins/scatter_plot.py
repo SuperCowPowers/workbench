@@ -8,7 +8,7 @@ from dash.exceptions import PreventUpdate
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.plot_utils import prediction_intervals
+from workbench.utils.plot_utils import prediction_intervals, molecule_hover_tooltip
 
 
 class ScatterPlot(PluginInterface):
@@ -17,6 +17,12 @@ class ScatterPlot(PluginInterface):
     # Initialize this Plugin Component Class with required attributes
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
+
+    # Pre-computed circle overlay SVG
+    _circle_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" style="overflow: visible;">
+        <circle cx="50" cy="50" r="10" stroke="rgba(255, 255, 255, 1)" stroke-width="3" fill="none" />
+    </svg>"""
+    _circle_data_uri = f"data:image/svg+xml;base64,{base64.b64encode(_circle_svg.encode('utf-8')).decode('utf-8')}"
 
     def __init__(self, show_axes: bool = True):
         """Initialize the Scatter Plot Plugin
@@ -30,6 +36,9 @@ class ScatterPlot(PluginInterface):
         self.show_axes = show_axes
         self.theme_manager = ThemeManager()
         self.colorscale = self.theme_manager.colorscale()
+        self.has_smiles = False  # Track if dataframe has smiles column for molecule hover
+        self.smiles_column = None
+        self.id_column = None
 
         # Call the parent class constructor
         super().__init__()
@@ -114,8 +123,17 @@ class ScatterPlot(PluginInterface):
                     ],
                     style={"padding": "0px 0px 10px 0px", "display": "flex", "gap": "10px"},
                 ),
+                # Circle overlay tooltip (centered on hovered point)
                 dcc.Tooltip(
                     id=f"{component_id}-overlay",
+                    background_color="rgba(0,0,0,0)",
+                    border_color="rgba(0,0,0,0)",
+                    direction="bottom",
+                    loading_text="",
+                ),
+                # Molecule tooltip (offset from hovered point) - only used when smiles column exists
+                dcc.Tooltip(
+                    id=f"{component_id}-molecule-tooltip",
                     background_color="rgba(0,0,0,0)",
                     border_color="rgba(0,0,0,0)",
                     direction="bottom",
@@ -139,6 +157,7 @@ class ScatterPlot(PluginInterface):
                             - hover_columns: The columns to show when hovering over a point
                             - suppress_hover_display: Suppress hover display (default: False)
                             - custom_data: Custom data that get passed to hoverData callbacks
+                            - id_column: Column to use for molecule tooltip header (auto-detects "id" if not specified)
 
         Returns:
             list: A list of updated property values (figure, x options, y options, color options,
@@ -162,6 +181,11 @@ class ScatterPlot(PluginInterface):
         self.hover_columns = kwargs.get("hover_columns", sorted(self.df.columns.tolist()[:15]))
         self.suppress_hover_display = kwargs.get("suppress_hover_display", False)
         self.custom_data = kwargs.get("custom_data", [])
+
+        # Check if the dataframe has smiles/id columns for molecule hover rendering
+        self.smiles_column = next((col for col in self.df.columns if col.lower() == "smiles"), None)
+        self.id_column = kwargs.get("id_column") or next((col for col in self.df.columns if col.lower() == "id"), None)
+        self.has_smiles = self.smiles_column is not None
 
         # Identify numeric columns
         numeric_columns = self.df.select_dtypes(include="number").columns.tolist()
@@ -225,10 +249,27 @@ class ScatterPlot(PluginInterface):
         def generate_hover_text(row):
             return "<br>".join([f"{col}: {row[col]}" for col in self.hover_columns])
 
-        # Generate hover text for all points.
-        hovertext = df.apply(generate_hover_text, axis=1)
-        hovertemplate = "%{hovertext}<extra></extra>"
-        hoverinfo = "none" if self.suppress_hover_display else None
+        # Generate hover text for all points (unless suppressed or using molecule hover)
+        suppress_hover = self.suppress_hover_display or self.has_smiles
+        if suppress_hover:
+            # Use "none" to hide the default hover display but still fire hoverData callbacks
+            # Don't set hovertemplate when suppressing - it would override hoverinfo
+            hovertext = None
+            hovertemplate = None
+            hoverinfo = "none"
+        else:
+            hovertext = df.apply(generate_hover_text, axis=1)
+            hovertemplate = "%{hovertext}<extra></extra>"
+            hoverinfo = None
+
+        # Build customdata columns - include smiles and id if available for molecule hover
+        custom_data_cols = list(self.custom_data) if self.custom_data else []
+        if self.has_smiles:
+            # Add smiles as first column, id as second (if available)
+            if self.smiles_column not in custom_data_cols:
+                custom_data_cols = [self.smiles_column] + custom_data_cols
+            if self.id_column and self.id_column not in custom_data_cols:
+                custom_data_cols.insert(1, self.id_column)
 
         # Determine marker settings based on the type of the color column.
         if pd.api.types.is_numeric_dtype(df[color_col]):
@@ -245,7 +286,7 @@ class ScatterPlot(PluginInterface):
                     hoverinfo=hoverinfo,
                     hovertext=hovertext,
                     hovertemplate=hovertemplate,
-                    customdata=df[self.custom_data],
+                    customdata=df[custom_data_cols] if custom_data_cols else None,
                     marker=dict(
                         size=marker_size,
                         color=marker_color,
@@ -266,7 +307,7 @@ class ScatterPlot(PluginInterface):
             data = []
             for i, cat in enumerate(categories):
                 sub_df = df[df[color_col] == cat]
-                sub_hovertext = hovertext.loc[sub_df.index]
+                sub_hovertext = hovertext.loc[sub_df.index] if hovertext is not None else None
                 trace = go.Scattergl(
                     x=sub_df[x_col],
                     y=sub_df[y_col],
@@ -277,7 +318,7 @@ class ScatterPlot(PluginInterface):
                     hoverinfo=hoverinfo,
                     hovertext=sub_hovertext,
                     hovertemplate=hovertemplate,
-                    customdata=sub_df[self.custom_data],
+                    customdata=sub_df[custom_data_cols] if custom_data_cols else None,
                     marker=dict(
                         size=marker_size,
                         color=discrete_colors[i % len(discrete_colors)],
@@ -367,42 +408,67 @@ class ScatterPlot(PluginInterface):
             Output(f"{self.component_id}-overlay", "children"),
             Input(f"{self.component_id}-graph", "hoverData"),
         )
-        def _scatter_overlay(hover_data):
+        def _scatter_circle_overlay(hover_data):
+            """Show white circle overlay centered on the hovered point."""
             if hover_data is None:
-                # Hide the overlay if no hover data
                 return False, no_update, no_update
 
             # Extract bounding box from hoverData
             bbox = hover_data["points"][0]["bbox"]
 
-            # Create an SVG with a circle at the center
-            svg = """
-            <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" style="overflow: visible;">
-                <!-- Circle for the node -->
-                <circle cx="50" cy="50" r="10" stroke="rgba(255, 255, 255, 1)" stroke-width="3" fill="none" />
-            </svg>
-            """
-
-            # Encode the SVG as Base64
-            encoded_svg = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
-            data_uri = f"data:image/svg+xml;base64,{encoded_svg}"
-
-            # Use an img tag for the overlay
-            svg_image = html.Img(src=data_uri, style={"width": "100px", "height": "100px"})
+            # Use pre-computed circle SVG
+            svg_image = html.Img(src=self._circle_data_uri, style={"width": "100px", "height": "100px"})
 
             # Get the center of the bounding box
             center_x = (bbox["x0"] + bbox["x1"]) / 2
             center_y = (bbox["y0"] + bbox["y1"]) / 2
 
-            # The tooltip should be centered on the point (note: 'bottom' tooltip, so we adjust y position)
+            # The tooltip should be centered on the point
             adjusted_bbox = {
                 "x0": center_x - 50,
                 "x1": center_x + 50,
                 "y0": center_y - 162,
                 "y1": center_y - 62,
             }
-            # Return the updated values for the overlay
             return True, adjusted_bbox, [svg_image]
+
+        @callback(
+            Output(f"{self.component_id}-molecule-tooltip", "show"),
+            Output(f"{self.component_id}-molecule-tooltip", "bbox"),
+            Output(f"{self.component_id}-molecule-tooltip", "children"),
+            Input(f"{self.component_id}-graph", "hoverData"),
+        )
+        def _scatter_molecule_overlay(hover_data):
+            """Show molecule tooltip when smiles data is available."""
+            if hover_data is None or not self.has_smiles:
+                return False, no_update, no_update
+
+            # Extract customdata (contains smiles and id)
+            customdata = hover_data["points"][0].get("customdata")
+            if customdata is None:
+                return False, no_update, no_update
+
+            # SMILES is the first element, ID is second (if available)
+            if isinstance(customdata, (list, tuple)):
+                smiles = customdata[0]
+                mol_id = customdata[1] if len(customdata) > 1 and self.id_column else None
+            else:
+                smiles = customdata
+                mol_id = None
+
+            # Generate molecule tooltip with ID header
+            mol_width, mol_height = 300, 200
+            children = molecule_hover_tooltip(smiles, mol_id=mol_id, width=mol_width, height=mol_height)
+
+            # Extract bounding box and offset the molecule tooltip to the right of the point
+            bbox = hover_data["points"][0]["bbox"]
+            adjusted_bbox = {
+                "x0": bbox["x0"] + 15,
+                "x1": bbox["x1"] + mol_width + 15,
+                "y0": bbox["y0"] - (2 * mol_height + 60),
+                "y1": bbox["y1"] - (mol_height + 60),
+            }
+            return True, adjusted_bbox, children
 
 
 if __name__ == "__main__":
@@ -426,6 +492,8 @@ if __name__ == "__main__":
     df = model.get_inference_predictions("full_cross_fold")
 
     # Run the Unit Test on the Plugin
+    # Test currently commented out
+    """
     PluginUnitTest(
         ScatterPlot,
         input_data=df,
@@ -433,5 +501,20 @@ if __name__ == "__main__":
         x="logd",
         y="prediction",
         color="prediction_std",
+        suppress_hover_display=True,
+    ).run()
+    """
+
+    # Test with molecule hover (smiles column)
+    from workbench.api import FeatureSet
+
+    fs = FeatureSet("aqsol_features")
+    mol_df = fs.pull_dataframe()[:1000]  # Limit to 1000 rows for testing
+
+    # Run the Unit Test with molecule data (hover over points to see molecule structures)
+    PluginUnitTest(
+        ScatterPlot,
+        input_data=mol_df,
+        theme="dark",
         suppress_hover_display=True,
     ).run()
