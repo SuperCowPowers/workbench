@@ -63,6 +63,7 @@ class ScatterPlot(PluginInterface):
             (f"{component_id}-x-dropdown", "value"),
             (f"{component_id}-y-dropdown", "value"),
             (f"{component_id}-color-dropdown", "value"),
+            (f"{component_id}-regression-line", "value"),
         ]
         self.signals = [(f"{component_id}-graph", "hoverData"), (f"{component_id}-graph", "clickData")]
 
@@ -107,7 +108,7 @@ class ScatterPlot(PluginInterface):
                         dcc.Checklist(
                             id=f"{component_id}-regression-line",
                             options=[{"label": " Diagonal", "value": "show"}],
-                            value=["show"],
+                            value=[],
                             style={"margin": "10px"},
                         ),
                     ],
@@ -201,7 +202,10 @@ class ScatterPlot(PluginInterface):
         color_columns = numeric_columns + cat_columns
         color_options = [{"label": col, "value": col} for col in color_columns]
 
-        return [figure, x_options, y_options, color_options, x_default, y_default, color_default]
+        # Regression line checklist value (list with "show" if enabled, empty list if disabled)
+        regression_line_value = ["show"] if regression_line else []
+
+        return [figure, x_options, y_options, color_options, x_default, y_default, color_default, regression_line_value]
 
     def create_scatter_plot(
         self,
@@ -490,6 +494,6 @@ if __name__ == "__main__":
     PluginUnitTest(
         ScatterPlot,
         input_data=mol_df,
-        theme="dark",
+        theme="midnight_blue",
         suppress_hover_display=True,
     ).run()
