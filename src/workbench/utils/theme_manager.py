@@ -86,6 +86,7 @@ class ThemeManager:
             # 1. Check Flask request cookie (set from localStorage)
             try:
                 from flask import request, has_request_context
+
                 if has_request_context():
                     theme_name = request.cookies.get("wb_theme")
             except Exception:

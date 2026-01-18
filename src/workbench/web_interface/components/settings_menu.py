@@ -34,7 +34,12 @@ class SettingsMenu:
                         html.Span(
                             "",
                             id={"type": f"{component_id}-checkmark", "theme": theme},
-                            style={"fontFamily": "monospace", "marginRight": "5px", "width": "20px", "display": "inline-block"},
+                            style={
+                                "fontFamily": "monospace",
+                                "marginRight": "5px",
+                                "width": "20px",
+                                "display": "inline-block",
+                            },
                         ),
                         theme.replace("_", " ").title(),
                     ],
@@ -45,9 +50,27 @@ class SettingsMenu:
         # Hamburger icon (3 rounded lines)
         hamburger_icon = html.Div(
             [
-                html.Div(style={"width": "20px", "height": "3px", "backgroundColor": "currentColor", "borderRadius": "2px", "marginBottom": "4px"}),
-                html.Div(style={"width": "20px", "height": "3px", "backgroundColor": "currentColor", "borderRadius": "2px", "marginBottom": "4px"}),
-                html.Div(style={"width": "20px", "height": "3px", "backgroundColor": "currentColor", "borderRadius": "2px"}),
+                html.Div(
+                    style={
+                        "width": "20px",
+                        "height": "3px",
+                        "backgroundColor": "currentColor",
+                        "borderRadius": "2px",
+                        "marginBottom": "4px",
+                    }
+                ),
+                html.Div(
+                    style={
+                        "width": "20px",
+                        "height": "3px",
+                        "backgroundColor": "currentColor",
+                        "borderRadius": "2px",
+                        "marginBottom": "4px",
+                    }
+                ),
+                html.Div(
+                    style={"width": "20px", "height": "3px", "backgroundColor": "currentColor", "borderRadius": "2px"}
+                ),
             ],
             style={"display": "flex", "flexDirection": "column", "alignItems": "center", "justifyContent": "center"},
         )

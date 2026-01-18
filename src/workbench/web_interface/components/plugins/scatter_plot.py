@@ -84,19 +84,46 @@ class ScatterPlot(PluginInterface):
                 # Controls: X, Y, Color, Label Dropdowns, and Regression Line Checkbox
                 html.Div(
                     [
-                        html.Label("X", style={"marginLeft": "20px", "marginRight": "5px", "fontWeight": "bold", "display": "flex", "alignItems": "center"}),
+                        html.Label(
+                            "X",
+                            style={
+                                "marginLeft": "20px",
+                                "marginRight": "5px",
+                                "fontWeight": "bold",
+                                "display": "flex",
+                                "alignItems": "center",
+                            },
+                        ),
                         dcc.Dropdown(
                             id=f"{component_id}-x-dropdown",
                             style={"minWidth": "150px", "flex": 1},
                             clearable=False,
                         ),
-                        html.Label("Y", style={"marginLeft": "20px", "marginRight": "5px", "fontWeight": "bold", "display": "flex", "alignItems": "center"}),
+                        html.Label(
+                            "Y",
+                            style={
+                                "marginLeft": "20px",
+                                "marginRight": "5px",
+                                "fontWeight": "bold",
+                                "display": "flex",
+                                "alignItems": "center",
+                            },
+                        ),
                         dcc.Dropdown(
                             id=f"{component_id}-y-dropdown",
                             style={"minWidth": "150px", "flex": 1},
                             clearable=False,
                         ),
-                        html.Label("Color", style={"marginLeft": "20px", "marginRight": "5px", "fontWeight": "bold", "display": "flex", "alignItems": "center"}),
+                        html.Label(
+                            "Color",
+                            style={
+                                "marginLeft": "20px",
+                                "marginRight": "5px",
+                                "fontWeight": "bold",
+                                "display": "flex",
+                                "alignItems": "center",
+                            },
+                        ),
                         dcc.Dropdown(
                             id=f"{component_id}-color-dropdown",
                             style={"minWidth": "150px", "flex": 1},
