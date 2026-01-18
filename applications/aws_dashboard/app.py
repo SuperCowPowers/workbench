@@ -1,12 +1,13 @@
 """Workbench Dashboard: A Workbench Web Application for viewing and managing Workbench Artifacts"""
 
-from dash import Dash, html, dcc, page_container
+from dash import Dash, html, dcc, page_container, Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from dash import page_registry
 
 # Workbench Imports
 from workbench.utils.plugin_manager import PluginManager
 from workbench.utils.theme_manager import ThemeManager
+from workbench.web_interface.components.theme_picker import ThemePicker
 
 # Set up the logging
 import logging
@@ -37,8 +38,42 @@ app = Dash(
 # Register the CSS route in the ThemeManager
 tm.register_css_route(app)
 
+# Custom index string to sync localStorage theme to cookie on page load
+app.index_string = """
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+        <script>
+            // Sync localStorage theme to cookie on page load (before Flask renders)
+            (function() {
+                var theme = localStorage.getItem('wb_theme');
+                if (theme) {
+                    document.cookie = 'wb_theme=' + theme + '; path=/; max-age=31536000';
+                }
+            })();
+        </script>
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+"""
+
 # Note: The 'server' object is required for running the app with NGINX/uWSGI
 server = app.server
+
+# Create the theme picker component
+theme_picker = ThemePicker()
+theme_picker_id = "theme-picker"
 
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
 plugin_info_id = "plugin-pages-info"
@@ -47,9 +82,30 @@ app.layout = html.Div(
         # URL for subpage navigation (jumping to feature_sets, models, etc.)
         dcc.Location(id="url", refresh="callback-nav"),
         dcc.Store(id=plugin_info_id, data={}),
+        # Theme picker in top-right corner
+        html.Div(
+            theme_picker.create_component(theme_picker_id),
+            style={"position": "absolute", "top": "10px", "right": "20px", "zIndex": 1000},
+        ),
         dbc.Container([page_container], fluid=True, className="dbc dbc-ag-grid"),
     ],
     **{"data-bs-theme": tm.data_bs_theme()},
+)
+
+# Clientside callback for theme switching (stores in localStorage, sets cookie, reloads page)
+app.clientside_callback(
+    theme_picker.get_clientside_callback_code(theme_picker_id),
+    Output(f"{theme_picker_id}-dummy", "data"),
+    Input({"type": f"{theme_picker_id}-theme-item", "theme": ALL}, "n_clicks"),
+    State({"type": f"{theme_picker_id}-theme-item", "theme": ALL}, "id"),
+)
+
+# Clientside callback to update checkmarks based on localStorage
+app.clientside_callback(
+    theme_picker.get_checkmark_callback_code(),
+    Output({"type": f"{theme_picker_id}-checkmark", "theme": ALL}, "children"),
+    Input(f"{theme_picker_id}-init", "data"),
+    State({"type": f"{theme_picker_id}-checkmark", "theme": ALL}, "id"),
 )
 
 # Spin up the Plugin Manager

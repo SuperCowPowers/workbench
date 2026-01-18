@@ -76,10 +76,27 @@ class ThemeManager:
     def set_theme(cls, theme_name: str):
         """Set the current theme."""
 
-        # For 'auto', we try to grab a theme from the Parameter Store
-        # if we can't find one, we'll set the theme to the default
+        # For 'auto', we check multiple sources in priority order:
+        # 1. Browser cookie (from localStorage, for per-user preference)
+        # 2. Parameter Store (for org-wide default)
+        # 3. Default theme
         if theme_name == "auto":
-            theme_name = cls.ps.get("/workbench/dashboard/theme", warn=False) or cls.default_theme
+            theme_name = None
+
+            # 1. Check Flask request cookie (set from localStorage)
+            try:
+                from flask import request, has_request_context
+                if has_request_context():
+                    theme_name = request.cookies.get("wb_theme")
+            except Exception:
+                pass
+
+            # 2. Fall back to ParameterStore
+            if not theme_name:
+                theme_name = cls.ps.get("/workbench/dashboard/theme", warn=False)
+
+            # 3. Fall back to default
+            theme_name = theme_name or cls.default_theme
 
         # Check if the theme is in our available themes
         if theme_name not in cls.available_themes:
@@ -104,9 +121,27 @@ class ThemeManager:
         cls.current_theme_name = theme_name
         cls.log.info(f"Theme set to '{theme_name}'")
 
+    # Bootstrap themes that are dark mode (from Bootswatch)
+    _dark_bootstrap_themes = {"DARKLY", "CYBORG", "SLATE", "SOLAR", "SUPERHERO", "VAPOR"}
+
     @classmethod
     def dark_mode(cls) -> bool:
-        """Check if the current theme is a dark mode theme."""
+        """Check if the current theme is a dark mode theme.
+
+        Determines dark mode by checking if the Bootstrap base theme is a known dark theme.
+        Falls back to checking if 'dark' is in the theme name.
+        """
+        theme = cls.available_themes.get(cls.current_theme_name, {})
+        base_css = theme.get("base_css", "")
+
+        # Check if the base CSS URL contains a known dark Bootstrap theme
+        if base_css:
+            base_css_upper = base_css.upper()
+            for dark_theme in cls._dark_bootstrap_themes:
+                if dark_theme in base_css_upper:
+                    return True
+
+        # Fallback: check if 'dark' is in the theme name
         return "dark" in cls.current_theme().lower()
 
     @classmethod
@@ -184,30 +219,57 @@ class ThemeManager:
 
     @classmethod
     def css_files(cls) -> list[str]:
-        """Get the list of CSS files for the current theme."""
-        theme = cls.available_themes[cls.current_theme_name]
+        """Get the list of CSS files for the current theme.
+
+        Note: Uses /base.css route for dynamic theme switching instead of CDN URLs.
+        """
         css_files = []
 
-        # Add base.css or its CDN URL
-        if theme["base_css"]:
-            css_files.append(theme["base_css"])
+        # Use Flask route for base CSS (allows dynamic theme switching)
+        css_files.append("/base.css")
 
         # Add the DBC template CSS
         css_files.append(cls.dbc_css)
 
         # Add custom.css if it exists
-        if theme["custom_css"]:
-            css_files.append("/custom.css")
+        css_files.append("/custom.css")
 
         return css_files
 
     @classmethod
+    def _get_theme_from_cookie(cls):
+        """Get the theme dict based on the wb_theme cookie, falling back to current theme."""
+        from flask import request
+
+        theme_name = request.cookies.get("wb_theme")
+        if theme_name and theme_name in cls.available_themes:
+            return cls.available_themes[theme_name], theme_name
+        return cls.available_themes[cls.current_theme_name], cls.current_theme_name
+
+    @classmethod
     def register_css_route(cls, app):
-        """Register Flask route for custom.css."""
+        """Register Flask routes for CSS and before_request hook for theme switching."""
+        from flask import redirect
+
+        @app.server.before_request
+        def check_theme_cookie():
+            """Check for theme cookie on each request and update theme if needed."""
+            _, theme_name = cls._get_theme_from_cookie()
+            if theme_name != cls.current_theme_name:
+                cls.set_theme(theme_name)
+
+        @app.server.route("/base.css")
+        def serve_base_css():
+            """Redirect to the appropriate Bootstrap theme CSS based on cookie."""
+            theme, _ = cls._get_theme_from_cookie()
+            if theme["base_css"]:
+                return redirect(theme["base_css"])
+            return "", 404
 
         @app.server.route("/custom.css")
         def serve_custom_css():
-            theme = cls.available_themes[cls.current_theme_name]
+            """Serve the custom.css file based on cookie."""
+            theme, _ = cls._get_theme_from_cookie()
             if theme["custom_css"]:
                 return send_from_directory(theme["custom_css"].parent, theme["custom_css"].name)
             return "", 404

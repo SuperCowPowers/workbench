@@ -30,14 +30,20 @@ ul, ol {
     --ag-header-background-color: rgba(150, 150, 195);
 }
 
-/* Adjust cell background */
+/* Adjust cell background and text color */
 .ag-cell {
     background-color: rgb(240, 240, 240);
+    color: rgb(80, 80, 80);
 }
 
 /* Alternate row colors */
 .ag-row:nth-child(even) .ag-cell {
     background-color: rgb(230, 230, 230);
+}
+
+/* AgGrid header text color */
+.ag-header-cell-text {
+    color: rgb(60, 60, 60);
 }
 
 /* Selection color for the entire row */
