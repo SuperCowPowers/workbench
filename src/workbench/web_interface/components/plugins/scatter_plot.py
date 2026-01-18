@@ -84,35 +84,32 @@ class ScatterPlot(PluginInterface):
                 # Controls: X, Y, Color, Label Dropdowns, and Regression Line Checkbox
                 html.Div(
                     [
-                        html.Label("X", style={"marginLeft": "40px", "marginRight": "5px", "fontWeight": "bold"}),
+                        html.Label("X", style={"marginLeft": "20px", "marginRight": "5px", "fontWeight": "bold", "display": "flex", "alignItems": "center"}),
                         dcc.Dropdown(
                             id=f"{component_id}-x-dropdown",
-                            className="dropdown",
-                            style={"min-width": "50px", "flex": 1},  # Responsive width
+                            style={"minWidth": "150px", "flex": 1},
                             clearable=False,
                         ),
-                        html.Label("Y", style={"marginLeft": "30px", "marginRight": "5px", "fontWeight": "bold"}),
+                        html.Label("Y", style={"marginLeft": "20px", "marginRight": "5px", "fontWeight": "bold", "display": "flex", "alignItems": "center"}),
                         dcc.Dropdown(
                             id=f"{component_id}-y-dropdown",
-                            className="dropdown",
-                            style={"min-width": "50px", "flex": 1},  # Responsive width
+                            style={"minWidth": "150px", "flex": 1},
                             clearable=False,
                         ),
-                        html.Label("Color", style={"marginLeft": "30px", "marginRight": "5px", "fontWeight": "bold"}),
+                        html.Label("Color", style={"marginLeft": "20px", "marginRight": "5px", "fontWeight": "bold", "display": "flex", "alignItems": "center"}),
                         dcc.Dropdown(
                             id=f"{component_id}-color-dropdown",
-                            className="dropdown",
-                            style={"min-width": "50px", "flex": 1},  # Responsive width
+                            style={"minWidth": "150px", "flex": 1},
                             clearable=False,
                         ),
                         dcc.Checklist(
                             id=f"{component_id}-regression-line",
                             options=[{"label": " Diagonal", "value": "show"}],
                             value=[],
-                            style={"margin": "10px"},
+                            style={"marginLeft": "20px", "display": "flex", "alignItems": "center"},
                         ),
                     ],
-                    style={"padding": "0px 0px 10px 0px", "display": "flex", "gap": "10px"},
+                    style={"padding": "0px 0px 10px 0px", "display": "flex", "alignItems": "center", "gap": "5px"},
                 ),
                 # Circle overlay tooltip (centered on hovered point)
                 dcc.Tooltip(

@@ -312,23 +312,25 @@ class ThemeManager:
         # Loop over each path in the theme path
         for theme_path in cls.theme_path_list:
             for theme_dir in theme_path.iterdir():
-                if theme_dir.is_dir():
-                    theme_name = theme_dir.name
+                # Skip hidden directories (e.g., .idea, .git)
+                if not theme_dir.is_dir() or theme_dir.name.startswith("."):
+                    continue
+                theme_name = theme_dir.name
 
-                    # Grab the base.css URL
-                    base_css_url = cls._get_base_css_url(theme_dir)
+                # Grab the base.css URL
+                base_css_url = cls._get_base_css_url(theme_dir)
 
-                    # Grab the plotly template json, custom.css, and branding json
-                    plotly_template = theme_dir / "plotly.json"
-                    custom_css = theme_dir / "custom.css"
-                    branding = theme_dir / "branding.json"
+                # Grab the plotly template json, custom.css, and branding json
+                plotly_template = theme_dir / "plotly.json"
+                custom_css = theme_dir / "custom.css"
+                branding = theme_dir / "branding.json"
 
-                    cls.available_themes[theme_name] = {
-                        "base_css": base_css_url,
-                        "plotly_template": plotly_template,
-                        "custom_css": custom_css if custom_css.exists() else None,
-                        "branding": branding if branding.exists() else None,
-                    }
+                cls.available_themes[theme_name] = {
+                    "base_css": base_css_url,
+                    "plotly_template": plotly_template,
+                    "custom_css": custom_css if custom_css.exists() else None,
+                    "branding": branding if branding.exists() else None,
+                }
 
         if not cls.available_themes:
             cls.log.warning(f"No themes found in '{cls.theme_path_list}'...")

@@ -1,4 +1,4 @@
-"""ThemePicker: A component for selecting themes in the Workbench Dashboard."""
+"""SettingsMenu: A settings menu component for the Workbench Dashboard."""
 
 from dash import html, dcc
 import dash_bootstrap_components as dbc
@@ -7,29 +7,28 @@ import dash_bootstrap_components as dbc
 from workbench.utils.theme_manager import ThemeManager
 
 
-class ThemePicker:
-    """A theme picker component that displays available themes in a dropdown menu."""
+class SettingsMenu:
+    """A settings menu with admin links and theme selection."""
 
     def __init__(self):
-        """Initialize the ThemePicker."""
+        """Initialize the SettingsMenu."""
         self.tm = ThemeManager()
 
     def create_component(self, component_id: str) -> html.Div:
-        """Create a theme picker dropdown component.
+        """Create a settings menu dropdown component.
 
         Args:
             component_id (str): The ID prefix for the component.
 
         Returns:
-            html.Div: A Div containing the theme picker dropdown.
+            html.Div: A Div containing the settings menu dropdown.
         """
         themes = self.tm.list_themes()
 
-        # Create dropdown menu items for each theme
-        # Note: Checkmarks are set via JavaScript based on localStorage, not server-side
-        menu_items = []
+        # Create theme submenu items
+        theme_items = []
         for theme in sorted(themes):
-            menu_items.append(
+            theme_items.append(
                 dbc.DropdownMenuItem(
                     [
                         html.Span(
@@ -43,10 +42,29 @@ class ThemePicker:
                 )
             )
 
+        # Hamburger icon (3 rounded lines)
+        hamburger_icon = html.Div(
+            [
+                html.Div(style={"width": "20px", "height": "3px", "backgroundColor": "currentColor", "borderRadius": "2px", "marginBottom": "4px"}),
+                html.Div(style={"width": "20px", "height": "3px", "backgroundColor": "currentColor", "borderRadius": "2px", "marginBottom": "4px"}),
+                html.Div(style={"width": "20px", "height": "3px", "backgroundColor": "currentColor", "borderRadius": "2px"}),
+            ],
+            style={"display": "flex", "flexDirection": "column", "alignItems": "center", "justifyContent": "center"},
+        )
+
+        # Build menu items: Status, License, divider, Themes submenu
+        menu_items = [
+            dbc.DropdownMenuItem("Status", href="/status", external_link=True, target="_blank"),
+            dbc.DropdownMenuItem("License", href="/license", external_link=True, target="_blank"),
+            dbc.DropdownMenuItem(divider=True),
+            dbc.DropdownMenuItem("Themes", header=True),
+            *theme_items,
+        ]
+
         return html.Div(
             [
                 dbc.DropdownMenu(
-                    label=html.I(className="fas fa-palette", style={"fontSize": "1.2rem"}),
+                    label=hamburger_icon,
                     children=menu_items,
                     id=f"{component_id}-dropdown",
                     toggle_style={
@@ -55,6 +73,7 @@ class ThemePicker:
                         "boxShadow": "none",
                         "padding": "5px 10px",
                     },
+                    caret=False,
                     align_end=True,
                 ),
                 # Dummy store for the clientside callback output
@@ -135,8 +154,8 @@ class ThemePicker:
 
 if __name__ == "__main__":
     # Quick test to verify component creation
-    picker = ThemePicker()
-    component = picker.create_component("test-theme-picker")
-    print("ThemePicker component created successfully")
-    print(f"Available themes: {picker.tm.list_themes()}")
-    print(f"Current theme: {picker.tm.current_theme()}")
+    menu = SettingsMenu()
+    component = menu.create_component("test-settings-menu")
+    print("SettingsMenu component created successfully")
+    print(f"Available themes: {menu.tm.list_themes()}")
+    print(f"Current theme: {menu.tm.current_theme()}")

@@ -7,7 +7,7 @@ from dash import page_registry
 # Workbench Imports
 from workbench.utils.plugin_manager import PluginManager
 from workbench.utils.theme_manager import ThemeManager
-from workbench.web_interface.components.theme_picker import ThemePicker
+from workbench.web_interface.components.settings_menu import SettingsMenu
 
 # Set up the logging
 import logging
@@ -71,9 +71,9 @@ app.index_string = """
 # Note: The 'server' object is required for running the app with NGINX/uWSGI
 server = app.server
 
-# Create the theme picker component
-theme_picker = ThemePicker()
-theme_picker_id = "theme-picker"
+# Create the settings menu component
+settings_menu = SettingsMenu()
+settings_menu_id = "settings-menu"
 
 # For Multi-Page Applications, we need to create a 'page container' to hold all the pages
 plugin_info_id = "plugin-pages-info"
@@ -82,10 +82,10 @@ app.layout = html.Div(
         # URL for subpage navigation (jumping to feature_sets, models, etc.)
         dcc.Location(id="url", refresh="callback-nav"),
         dcc.Store(id=plugin_info_id, data={}),
-        # Theme picker in top-right corner
+        # Settings menu in top-right corner
         html.Div(
-            theme_picker.create_component(theme_picker_id),
-            style={"position": "absolute", "top": "10px", "right": "20px", "zIndex": 1000},
+            settings_menu.create_component(settings_menu_id),
+            style={"position": "absolute", "top": "25px", "right": "20px", "zIndex": 1000},
         ),
         dbc.Container([page_container], fluid=True, className="dbc dbc-ag-grid"),
     ],
@@ -94,18 +94,18 @@ app.layout = html.Div(
 
 # Clientside callback for theme switching (stores in localStorage, sets cookie, reloads page)
 app.clientside_callback(
-    theme_picker.get_clientside_callback_code(theme_picker_id),
-    Output(f"{theme_picker_id}-dummy", "data"),
-    Input({"type": f"{theme_picker_id}-theme-item", "theme": ALL}, "n_clicks"),
-    State({"type": f"{theme_picker_id}-theme-item", "theme": ALL}, "id"),
+    settings_menu.get_clientside_callback_code(settings_menu_id),
+    Output(f"{settings_menu_id}-dummy", "data"),
+    Input({"type": f"{settings_menu_id}-theme-item", "theme": ALL}, "n_clicks"),
+    State({"type": f"{settings_menu_id}-theme-item", "theme": ALL}, "id"),
 )
 
 # Clientside callback to update checkmarks based on localStorage
 app.clientside_callback(
-    theme_picker.get_checkmark_callback_code(),
-    Output({"type": f"{theme_picker_id}-checkmark", "theme": ALL}, "children"),
-    Input(f"{theme_picker_id}-init", "data"),
-    State({"type": f"{theme_picker_id}-checkmark", "theme": ALL}, "id"),
+    settings_menu.get_checkmark_callback_code(),
+    Output({"type": f"{settings_menu_id}-checkmark", "theme": ALL}, "children"),
+    Input(f"{settings_menu_id}-init", "data"),
+    State({"type": f"{settings_menu_id}-checkmark", "theme": ALL}, "id"),
 )
 
 # Spin up the Plugin Manager
