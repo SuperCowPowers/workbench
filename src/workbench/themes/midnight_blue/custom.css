@@ -133,60 +133,12 @@ a:hover {
     color: rgb(100, 255, 100);
 }
 
-/* Dropdown styling (dcc.Dropdown) - covers both old and new Dash versions */
-/* Main dropdown container */
-.dash-dropdown .Select-control,
-.Select-control {
-    background-color: rgb(55, 60, 90) !important;
-    border: 1px solid rgb(80, 85, 115) !important;
+/* Dropdown styling (dcc.Dropdown) - override Bootstrap's --bs-body-bg variable */
+.dash-dropdown {
+    --bs-body-bg: rgb(55, 60, 90);
+    --bs-border-color: rgb(80, 85, 115);
 }
 
-/* Dropdown menu (expanded list) */
-.dash-dropdown .Select-menu-outer,
-.Select-menu-outer {
-    background-color: rgb(55, 60, 90) !important;
-    border: 1px solid rgb(80, 85, 115) !important;
-}
-
-/* Selected value and placeholder text */
-.dash-dropdown .Select-value-label,
-.dash-dropdown .Select-placeholder,
-.Select-value-label,
-.Select-placeholder {
-    color: rgb(210, 210, 210) !important;
-}
-
-/* Dropdown arrow */
-.dash-dropdown .Select-arrow,
-.Select-arrow {
-    border-color: rgb(150, 150, 170) transparent transparent !important;
-}
-
-/* Individual options in dropdown */
-.dash-dropdown .Select-option,
-.Select-option,
-.VirtualizedSelectOption {
-    background-color: rgb(55, 60, 90) !important;
-    color: rgb(210, 210, 210) !important;
-}
-
-/* Hover/focused options */
-.dash-dropdown .Select-option:hover,
-.dash-dropdown .Select-option.is-focused,
-.Select-option:hover,
-.Select-option.is-focused,
-.VirtualizedSelectOption:hover,
-.VirtualizedSelectFocusedOption {
-    background-color: rgb(70, 75, 110) !important;
-}
-
-/* Input field inside dropdown - override .dbc background from dbc.css */
-/* Must match specificity of: .dbc input:not([type=radio]):not([type=checkbox]) */
-.dbc .Select-input input:not([type=radio]):not([type=checkbox]),
-.dbc input[role="combobox"]:not([type=radio]):not([type=checkbox]) {
-    background: transparent !important;
-    color: rgb(210, 210, 210) !important;
-}
 
 /* Bootstrap form controls (dbc components) */
 .form-select, .form-control {
