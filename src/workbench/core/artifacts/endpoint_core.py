@@ -546,7 +546,14 @@ class EndpointCore(Artifact):
         target_list = targets if isinstance(targets, list) else [targets]
         primary_target = target_list[0]
 
-        # Collect UQ columns (q_*, confidence) for additional tracking
+        # If we don't have a smiles column, try to merge it from the FeatureSet
+        if "smiles" not in out_of_fold_df.columns:
+            if "smiles" in fs.columns:
+                fs_df = fs.pull_dataframe(columns=[fs.id_column, "smiles"])
+                self.log.info("Merging 'smiles' column from FeatureSet into out-of-fold predictions.")
+                out_of_fold_df = out_of_fold_df.merge(fs_df, on=fs.id_column, how="left")
+
+        # Collect UQ columns (q_*, confidence) for additional tracking (used for hashing)
         additional_columns = [col for col in out_of_fold_df.columns if col.startswith("q_") or col == "confidence"]
         if additional_columns:
             self.log.info(f"UQ columns from training: {', '.join(additional_columns)}")
@@ -559,7 +566,6 @@ class EndpointCore(Artifact):
         # For single-target models (99% of cases), just save as "full_cross_fold"
         # For multi-target models, save each as cv_{target} plus primary as "full_cross_fold"
         is_multi_target = len(target_list) > 1
-
         for target in target_list:
             # Drop rows with NaN target values for metrics/plots
             target_df = out_of_fold_df.dropna(subset=[target])
@@ -898,6 +904,10 @@ class EndpointCore(Artifact):
 
         # Add UQ columns (q_*, confidence) and proba columns
         output_columns += [c for c in cols if c.startswith("q_") or c == "confidence" or c.endswith("_proba")]
+
+        # Add smiles column if present
+        if "smiles" in cols:
+            output_columns.append("smiles")
 
         # Write the predictions to S3
         output_file = f"{inference_capture_path}/inference_predictions.csv"
