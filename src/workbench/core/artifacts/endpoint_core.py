@@ -548,8 +548,8 @@ class EndpointCore(Artifact):
 
         # If we don't have a smiles column, try to merge it from the FeatureSet
         if "smiles" not in out_of_fold_df.columns:
-            if "smiles" in fs.columns:
-                fs_df = fs.pull_dataframe(columns=[fs.id_column, "smiles"])
+            fs_df = fs.query(f'SELECT {fs.id_column}, "smiles" FROM "{fs.athena_table}"')
+            if "smiles" in fs_df.columns:
                 self.log.info("Merging 'smiles' column from FeatureSet into out-of-fold predictions.")
                 out_of_fold_df = out_of_fold_df.merge(fs_df, on=fs.id_column, how="left")
 
