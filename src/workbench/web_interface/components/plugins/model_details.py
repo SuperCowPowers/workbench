@@ -49,7 +49,11 @@ class ModelDetails(PluginInterface):
                 dcc.Markdown(id=f"{self.component_id}-summary", dangerously_allow_html=True),
                 html.H5(children="Inference Metrics", style={"marginTop": "20px"}),
                 dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
-                dcc.Markdown(id=f"{self.component_id}-metrics", dangerously_allow_html=True),
+                dcc.Markdown(
+                    id=f"{self.component_id}-metrics",
+                    dangerously_allow_html=True,
+                    style={"marginBottom": "20px"},
+                ),
             ],
         )
 

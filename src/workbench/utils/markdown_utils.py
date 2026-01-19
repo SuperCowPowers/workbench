@@ -185,47 +185,57 @@ def dict_to_collapsible_html(data: dict, title: str = None, collapse_all: bool =
     return result
 
 
-def df_to_html_table(df, round_digits: int = 3) -> str:
-    """Convert a single-row DataFrame to a compact styled HTML table (transposed).
+def df_to_html_table(df, round_digits: int = 2) -> str:
+    """Convert a DataFrame to a compact styled HTML table (horizontal layout).
 
     Args:
-        df: DataFrame with metrics (single row, index may contain a metric name)
-        round_digits: Number of decimal places to round to (default: 3)
+        df: DataFrame with metrics (can be single or multi-row)
+        round_digits: Number of decimal places to round to (default: 2)
 
     Returns:
         str: HTML table string
     """
-    import pandas as pd
-
-    # Reset index if it has a name (metric stored in index)
+    # Handle index: reset if named (keeps as column), otherwise drop
     if df.index.name:
         df = df.reset_index()
+    else:
+        df = df.reset_index(drop=True)
 
     # Round numeric columns
     df = df.round(round_digits)
 
     # Table styles
     container_style = "display: flex; justify-content: center;"
-    table_style = "border-collapse: collapse; width: auto; font-size: 14px;"
+    table_style = "border-collapse: collapse; width: 100%; font-size: 15px;"
     header_style = (
-        "background: linear-gradient(135deg, #4a4a4a 0%, #2d2d2d 100%); "
-        "color: white; padding: 4px 12px; text-align: left;"
+        "background: linear-gradient(to bottom, #4a4a4a 0%, #2d2d2d 100%); "
+        "color: white; padding: 4px 8px; text-align: center;"
     )
-    value_header_style = (
-        "background: linear-gradient(135deg, #4a4a4a 0%, #2d2d2d 100%); "
-        "color: white; padding: 4px 12px; text-align: right;"
-    )
-    metric_style = "padding: 3px 12px; text-align: left; border-bottom: 1px solid #444;"
-    value_style = "padding: 3px 12px; text-align: right; border-bottom: 1px solid #444;"
+    cell_style = "padding: 3px 8px; text-align: center; border-bottom: 1px solid #444;"
 
     # Build the HTML table (wrapped in centered container)
     html = f'<div style="{container_style}"><table style="{table_style}">'
-    html += f'<tr><th style="{header_style}">Metric</th><th style="{value_header_style}">Value</th></tr>'
 
-    # Add rows for each column (transpose single row to vertical layout)
+    # Header row
+    html += "<tr>"
     for col in df.columns:
-        value = df[col].iloc[0]
-        html += f'<tr><td style="{metric_style}">{col}</td><td style="{value_style}">{value}</td></tr>'
+        html += f'<th style="{header_style}">{col}</th>'
+    html += "</tr>"
+
+    # Data rows
+    for _, row in df.iterrows():
+        html += "<tr>"
+        for val in row:
+            # Format value: integers without decimal, floats rounded
+            if isinstance(val, float):
+                if val == int(val):
+                    formatted_val = int(val)
+                else:
+                    formatted_val = round(val, round_digits)
+            else:
+                formatted_val = val
+            html += f'<td style="{cell_style}">{formatted_val}</td>'
+        html += "</tr>"
 
     html += "</table></div>"
     return html
