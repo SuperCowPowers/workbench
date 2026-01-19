@@ -1,6 +1,6 @@
 import base64
 import pandas as pd
-from dash import dcc, html, callback, Input, Output, no_update
+from dash import dcc, html, callback, clientside_callback, Input, Output, no_update
 import plotly.graph_objects as go
 import plotly.express as px
 from dash.exceptions import PreventUpdate
@@ -77,7 +77,7 @@ class ScatterPlot(PluginInterface):
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
-                    style={"height": "100%"},
+                    style={"height": "600px", "width": "100%"},
                     clear_on_unhover=True,
                 ),
                 # Controls: X, Y, Color, Label Dropdowns, and Regression Line Checkbox
@@ -200,7 +200,10 @@ class ScatterPlot(PluginInterface):
 
         # Check if the dataframe has smiles/id columns for molecule hover rendering
         self.smiles_column = next((col for col in self.df.columns if col.lower() == "smiles"), None)
-        self.id_column = kwargs.get("id_column") or next((col for col in self.df.columns if col.lower() == "id"), None)
+        # Use provided id_column, or auto-detect "id" column, or fall back to first column
+        self.id_column = kwargs.get("id_column") or next(
+            (col for col in self.df.columns if col.lower() == "id"), self.df.columns[0]
+        )
         self.has_smiles = self.smiles_column is not None
 
         # Identify numeric columns
@@ -408,35 +411,38 @@ class ScatterPlot(PluginInterface):
 
             raise PreventUpdate
 
-        @callback(
+        # Clientside callback for circle overlay - runs in browser, no server round trip
+        clientside_callback(
+            f"""
+            function(hoverData) {{
+                if (!hoverData) {{
+                    return [false, window.dash_clientside.no_update, window.dash_clientside.no_update];
+                }}
+                var bbox = hoverData.points[0].bbox;
+                var centerX = (bbox.x0 + bbox.x1) / 2;
+                var centerY = (bbox.y0 + bbox.y1) / 2;
+                var adjustedBbox = {{
+                    x0: centerX - 50,
+                    x1: centerX + 50,
+                    y0: centerY - 162,
+                    y1: centerY - 62
+                }};
+                var imgElement = {{
+                    type: 'Img',
+                    namespace: 'dash_html_components',
+                    props: {{
+                        src: '{self._circle_data_uri}',
+                        style: {{width: '100px', height: '100px'}}
+                    }}
+                }};
+                return [true, adjustedBbox, [imgElement]];
+            }}
+            """,
             Output(f"{self.component_id}-overlay", "show"),
             Output(f"{self.component_id}-overlay", "bbox"),
             Output(f"{self.component_id}-overlay", "children"),
             Input(f"{self.component_id}-graph", "hoverData"),
         )
-        def _scatter_circle_overlay(hover_data):
-            """Show white circle overlay centered on the hovered point."""
-            if hover_data is None:
-                return False, no_update, no_update
-
-            # Extract bounding box from hoverData
-            bbox = hover_data["points"][0]["bbox"]
-
-            # Use pre-computed circle SVG
-            svg_image = html.Img(src=self._circle_data_uri, style={"width": "100px", "height": "100px"})
-
-            # Get the center of the bounding box
-            center_x = (bbox["x0"] + bbox["x1"]) / 2
-            center_y = (bbox["y0"] + bbox["y1"]) / 2
-
-            # The tooltip should be centered on the point
-            adjusted_bbox = {
-                "x0": center_x - 50,
-                "x1": center_x + 50,
-                "y0": center_y - 162,
-                "y1": center_y - 62,
-            }
-            return True, adjusted_bbox, [svg_image]
 
         @callback(
             Output(f"{self.component_id}-molecule-tooltip", "show"),
@@ -466,13 +472,18 @@ class ScatterPlot(PluginInterface):
             mol_width, mol_height = 300, 200
             children = molecule_hover_tooltip(smiles, mol_id=mol_id, width=mol_width, height=mol_height)
 
-            # Extract bounding box and offset the molecule tooltip to the right of the point
+            # Position molecule tooltip above and slightly right of the point
             bbox = hover_data["points"][0]["bbox"]
+            center_x = (bbox["x0"] + bbox["x1"]) / 2
+            center_y = (bbox["y0"] + bbox["y1"]) / 2
+            x_offset = 5  # Slight offset to the right
+            y_offset = mol_height + 50  # Above the point
+
             adjusted_bbox = {
-                "x0": bbox["x0"] + 15,
-                "x1": bbox["x1"] + mol_width + 15,
-                "y0": bbox["y0"] - (2 * mol_height + 60),
-                "y1": bbox["y1"] - (mol_height + 60),
+                "x0": center_x + x_offset,
+                "x1": center_x + x_offset + mol_width,
+                "y0": center_y - mol_height - y_offset,
+                "y1": center_y - y_offset,
             }
             return True, adjusted_bbox, children
 
