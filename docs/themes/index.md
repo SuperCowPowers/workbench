@@ -47,6 +47,36 @@ The `data-bs-theme=light/dark` html attribute affects **Bootstrap-specific compo
 
 * Some figure parameters will automatically work, but for stuff like colorscales the component code needs to 'pull' that from the template meta data when it updates it's figure.
 
+## Why We Require a Page Reload for Theme Switching
+
+Workbench supports dynamic theme switching—you can change themes at runtime. However, switching themes triggers a page reload rather than an instant in-place update. If you've seen demos like the [Dash Bootstrap Theme Explorer Gallery](https://hellodash.pythonanywhere.com/theme-explorer/gallery) where themes switch instantly, you might wonder why we can't do the same.
+
+### The Technical Reality
+
+**Plotly figures don't respond to CSS variables.** Unlike Bootstrap components (buttons, cards, tables) which automatically re-style when `data-bs-theme` changes, Plotly figures have their styling "baked in" at render time. The figure's colors, fonts, and backgrounds are set when the figure is created—they don't dynamically respond to theme changes.
+
+### What dash-bootstrap-templates Actually Does
+
+Even the excellent [dash-bootstrap-templates](https://github.com/AnnMarieW/dash-bootstrap-templates) library has this limitation. From their docs:
+
+> *"The All-in-One component switches the Bootstrap stylesheet and sets the default Plotly figure template, however, figures must be updated in a callback in order to render the figure with the new template."*
+
+This means every figure needs an explicit callback to re-render when the theme changes. In a simple demo app with 3-5 figures, that's manageable. In Workbench, with 20+ dynamic figures across multiple plugin pages, wiring up individual callbacks for each figure isn't practical.
+
+### Three Separate Styling Systems
+
+| **System**           | **What It Styles**              | **Instant Switching?**                     |
+|----------------------|---------------------------------|--------------------------------------------|
+| CSS/Bootstrap        | Layout, buttons, cards, tables  | ✅ Yes (via `data-bs-theme`)                |
+| Plotly Templates     | Figure axes, colors, fonts      | ❌ No - requires figure re-render           |
+| Custom CSS           | Non-Bootstrap elements          | ⚠️ Requires stylesheet swap                 |
+
+### Our Approach: Reload on Theme Change
+
+Rather than implementing complex callback wiring for every figure across all plugin pages, Workbench takes a pragmatic approach: **when you switch themes, the page reloads**. This ensures all three styling systems (CSS, Plotly templates, and Bootstrap components) are applied consistently and correctly.
+
+The reload is fast, and theme selection is typically a one-time choice rather than something users toggle frequently. This approach gives us full theme flexibility without the architectural complexity of in-place figure updates.
+
 ## Additional Resources
 
 <img align="right" src="../images/scp.png" width="180">

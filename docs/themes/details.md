@@ -54,66 +54,30 @@ Bootstrap and Dash Bootstrap Components (DBC) provide mechanisms to control them
 
 # Theming Strategy for Workbench Dashboard
 
-## **Phase 1: Application Start-Up Theming**
-This focuses on setting a polished, cohesive interface at startup. It ensures:
+## **How Theme Switching Works**
 
-1. **CSS and Plotly Templates at Start-Up**:
-   - The current system handles global styles via CSS (including Flask-served `custom.css`) and Plotly templates (via `pio.templates.default`) during app initialization.
-2. **Highly Customizable Interface**:
-   - By leveraging both custom CSS and Plotly templates, you can style everything to match branding and preferences.
+Workbench supports dynamic theme switching at runtime. When a user changes themes, the page reloads to ensure all styling systems are applied consistently.
 
-### **Why Phase 1 Works Well**
-- **Plotly Templates**: Figures are automatically styled if `pio.templates.default` is set before app initialization.
-- **CSS**: Dynamically affects the entire app without additional callbacks.
-- **Scalability**: Suitable for large apps since styles and templates are applied globally.
+### **Why We Use Page Reload**
 
-<br><br>
+1. **CSS and Plotly Templates**:
+   - Global styles are handled via CSS (including Flask-served `custom.css`) and Plotly templates (via `pio.templates.default`) during app initialization.
+   - Plotly figures have their styling "baked in" at render time—they don't respond to CSS variable changes.
 
-## **Phase 2: Dynamic Theme Switching**
-Dynamic theme switching allows users to toggle between themes (e.g., light and dark) at runtime. This is more complex, and splitting it into its own phase will reduce the complexity of each Phase.
+2. **The Alternative Would Be Complex**:
+   - Without reload, every figure would need an explicit callback to re-render when themes change.
+   - With 20+ dynamic figures across plugin pages, wiring up individual callbacks isn't practical.
 
-### **Challenges with Dynamic Switching**
-1. **Encapsulation Barriers**:
-   - A centralized callback for theme switching needs to know about every figure or component in the app, which is not scalable.
-2. **Dynamic Content/Plugins**:
-   - We have plugin pages, views, and components. A Typical app has 20 figures dynamically created, adding complexity to centralized callbacks.
+3. **Reload Is Simple and Reliable**:
+   - A page reload ensures all three systems (CSS, Plotly templates, Bootstrap) are applied correctly.
+   - Theme switching is typically a one-time choice, not something users toggle frequently.
 
+### **What Happens on Theme Change**
 
-
-### **Proposed Solution: `set_theme()` Method**
-Introduce a `set_theme()` method in each component to manage its own updates:
-
-- **Figures**: Update their `layout.template` or regenerate themselves.
-- **HTML/CSS Components**: Dynamically update styles or toggle CSS classes.
-
-### **Advantages of `set_theme()`**
-1. **Encapsulation**:
-   - Each component knows how to update itself based on the theme.
-2. **Simple Callback**:
-   - The theme switch callback iterates through all registered components and calls their `set_theme()` method.
-3. **Scalable**:
-   - Suitable for multi-page apps with many dynamic components.
-
-
-
-## **How the Two Phases Work Together**
-### Phase 1:
-- **Focus**: Global theming at app start-up.
-- **What Works**:
-  - Plotly templates are applied to all figures by default.
-  - CSS styles are applied across the app.
-
-### Phase 2:
-- **Focus**: Extend components to dynamically update their theme.
-- **What to Add**:
-  - Extend components with a `set_theme(theme_name: str)` method.
-  - The callback triggers `set_theme()` for each registered component.
-
-
-
-## **Next Steps**
-- **Phase 1**: Finalize CSS and Plotly template integration for start-up theming.
-- **Phase 2**: Begin implementing a `set_theme()` system for individual components.
+1. User selects a new theme
+2. Theme preference is saved (persisted across sessions)
+3. Page reloads
+4. On reload, the new CSS stylesheet, Plotly template, and Bootstrap theme are all applied consistently
 
 <br><br><br>
 <br><br><br>

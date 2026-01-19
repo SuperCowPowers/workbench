@@ -185,12 +185,13 @@ def dict_to_collapsible_html(data: dict, title: str = None, collapse_all: bool =
     return result
 
 
-def df_to_html_table(df, round_digits: int = 2) -> str:
+def df_to_html_table(df, round_digits: int = 2, margin_bottom: int = 30) -> str:
     """Convert a DataFrame to a compact styled HTML table (horizontal layout).
 
     Args:
         df: DataFrame with metrics (can be single or multi-row)
         round_digits: Number of decimal places to round to (default: 2)
+        margin_bottom: Bottom margin in pixels (default: 30)
 
     Returns:
         str: HTML table string
@@ -205,7 +206,7 @@ def df_to_html_table(df, round_digits: int = 2) -> str:
     df = df.round(round_digits)
 
     # Table styles
-    container_style = "display: flex; justify-content: center;"
+    container_style = f"display: flex; justify-content: center; margin-top: 10px; margin-bottom: {margin_bottom}px;"
     table_style = "border-collapse: collapse; width: 100%; font-size: 15px;"
     header_style = (
         "background: linear-gradient(to bottom, #4a4a4a 0%, #2d2d2d 100%); "
