@@ -7,7 +7,7 @@ EXPOSE 8000
 ENV PYTHONHASHSEED=0
 
 # Define workbench version
-ARG WORKBENCH_VERSION=0.8.208
+ARG WORKBENCH_VERSION=0.8.224
 
 # Install system packages and gunicorn in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
