@@ -110,6 +110,40 @@ a:hover {
     color: rgb(100, 255, 100);
 }
 
+/* Dropdown styling (dcc.Dropdown) - override Bootstrap's variables */
+.dash-dropdown {
+    --bs-body-bg: rgb(35, 35, 35);
+    --bs-body-color: rgb(210, 210, 210);
+    --bs-border-color: rgb(60, 60, 60);
+}
+
+/* Bootstrap form controls (dbc components) */
+.form-select, .form-control {
+    background-color: rgb(35, 35, 35) !important;
+    border: 1px solid rgb(60, 60, 60) !important;
+    color: rgb(210, 210, 210) !important;
+}
+
+.form-select:focus, .form-control:focus {
+    background-color: rgb(45, 45, 45) !important;
+    border-color: rgb(80, 80, 80) !important;
+    box-shadow: 0 0 0 0.2rem rgba(80, 80, 80, 0.25) !important;
+}
+
+.dropdown-menu {
+    background-color: rgb(35, 35, 35) !important;
+    border: 1px solid rgb(60, 60, 60) !important;
+}
+
+.dropdown-item {
+    color: rgb(210, 210, 210) !important;
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: rgb(50, 50, 50) !important;
+    color: rgb(230, 230, 230) !important;
+}
+
 /* Table styling */
 table {
     width: 100%;
