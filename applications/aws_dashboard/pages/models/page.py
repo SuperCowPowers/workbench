@@ -40,9 +40,11 @@ my_confusion_matrix = confusion_matrix.ConfusionMatrix()
 confusion_matrix_component = my_confusion_matrix.create_component("model_confusion_matrix")
 
 # Wrap both in visibility-controlled containers
+# Show scatter plot by default (with "Waiting for Data..." placeholder)
+# The callback will toggle visibility based on model type once data loads
 model_plot_container = html.Div(
     [
-        html.Div(scatter_plot_component, id="scatter-plot-container", style={"display": "none"}),
+        html.Div(scatter_plot_component, id="scatter-plot-container", style={"display": "block"}),
         html.Div(confusion_matrix_component, id="confusion-matrix-container", style={"display": "none"}),
     ],
     id="model-plot-container",
