@@ -206,10 +206,11 @@ class ScatterPlot(PluginInterface):
         if len(numeric_columns) < 3:
             raise ValueError("At least three numeric columns are required for x, y, and color.")
 
-        # Default x, y, and color (for color, default to a numeric column)
+        # Default x, y, and color (for color, prefer 'confidence' if it exists)
         x_default = kwargs.get("x", numeric_columns[0])
         y_default = kwargs.get("y", numeric_columns[1])
-        color_default = kwargs.get("color", numeric_columns[2])
+        default_color = "confidence" if "confidence" in self.df.columns else numeric_columns[2]
+        color_default = kwargs.get("color", default_color)
         regression_line = kwargs.get("regression_line", False)
 
         # Create the default scatter plot
