@@ -25,7 +25,7 @@ register_page(
 
 # Create a table to display the models
 models_table = ag_table.AGTable()
-models_table_component = models_table.create_component("models_table", header_color="rgb(60, 100, 60)", max_height=270)
+models_table_component = models_table.create_component("models_table", max_height=270)
 
 # Create a Markdown component to display the model details
 my_model_details = model_details.ModelDetails()

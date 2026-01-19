@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     # Set up the Theme Manager
     tm = ThemeManager()
-    tm.set_theme("quartz_dark")
+    tm.set_theme("dark")
     css_files = tm.css_files()
 
     # Create the Dash app

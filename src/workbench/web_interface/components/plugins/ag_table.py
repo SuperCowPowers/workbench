@@ -110,4 +110,4 @@ if __name__ == "__main__":
     test_df = pd.DataFrame(data)
 
     # Run the Unit Test on the Plugin
-    PluginUnitTest(AGTable, theme="quartz", input_data=test_df, max_height=500).run()
+    PluginUnitTest(AGTable, theme="dark", input_data=test_df, max_height=500).run()

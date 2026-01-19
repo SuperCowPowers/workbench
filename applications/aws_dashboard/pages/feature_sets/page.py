@@ -16,17 +16,11 @@ register_page(__name__, path="/feature_sets", name="Workbench - Feature Sets")
 
 # Create a table to display the Feature Sets
 feature_sets_table = AGTable()
-feature_sets_component = feature_sets_table.create_component(
-    "feature_sets_table", header_color="rgb(60, 100, 60)", max_height=270
-)
+feature_sets_component = feature_sets_table.create_component("feature_sets_table", max_height=270)
 
 # Grab smart_sample rows from the first Feature Set
 samples_table = AGTable()
-samples_component = samples_table.create_component(
-    "feature_set_sample_rows",
-    header_color="rgb(70, 70, 110)",
-    max_height=250,
-)
+samples_component = samples_table.create_component("feature_set_sample_rows", max_height=250)
 
 # Feature Set Details
 feature_details = DataDetails()

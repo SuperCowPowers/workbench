@@ -25,29 +25,13 @@ for table_name in table_names:
 # Create a table container for each Workbench Artifact Type
 table_containers = dict()
 table_name = "data_sources"
-table_containers[table_name] = tables[table_name].create_component(
-    f"main_{table_name}",
-    header_color="rgb(120, 70, 70)",
-    max_height=200,
-)
+table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=200)
 table_name = "feature_sets"
-table_containers[table_name] = tables[table_name].create_component(
-    f"main_{table_name}",
-    header_color="rgb(110, 110, 70)",
-    max_height=200,
-)
+table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=200)
 table_name = "models"
-table_containers[table_name] = tables[table_name].create_component(
-    f"main_{table_name}",
-    header_color="rgb(60, 100, 60)",
-    max_height=500,
-)
+table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=500)
 table_name = "endpoints"
-table_containers[table_name] = tables[table_name].create_component(
-    f"main_{table_name}",
-    header_color="rgb(100, 60, 100)",
-    max_height=500,
-)
+table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=500)
 
 # Set up our layout (Dash looks for a var called layout)
 layout = main_layout(**table_containers)

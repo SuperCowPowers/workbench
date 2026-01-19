@@ -23,9 +23,7 @@ register_page(
 
 # Create a table to display the endpoints
 endpoints_table = ag_table.AGTable()
-endpoints_component = endpoints_table.create_component(
-    "endpoints_table", header_color="rgb(100, 60, 100)", max_height=270
-)
+endpoints_component = endpoints_table.create_component("endpoints_table", max_height=270)
 
 # Create a Markdown component to display the endpoint details
 endpoint_details = endpoint_details.EndpointDetails()

@@ -121,7 +121,7 @@ if __name__ == "__main__":
     df["Company"] = df["Company"].map(lambda x: f"<a href='https://www.google.com' target='_blank'>{x}</a>")
 
     # Create the new AG Table component
-    AG_grid_themes = ["alpine", "balham", "material", "quartz"]
+    AG_grid_themes = ["alpine", "balham", "material"]
     dag_tables = []
 
     for ag_theme in AG_grid_themes:

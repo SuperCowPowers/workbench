@@ -21,19 +21,11 @@ register_page(
 
 # Create a table to display the Data Sources
 data_sources_table = AGTable()
-data_sources_component = data_sources_table.create_component(
-    "data_sources_table",
-    header_color="rgb(120, 70, 70)",
-    max_height=270,
-)
+data_sources_component = data_sources_table.create_component("data_sources_table", max_height=270)
 
 # Create a table that sample rows from the currently selected data source
 samples_table = AGTable()
-samples_component = samples_table.create_component(
-    "data_source_sample_rows",
-    header_color="rgb(70, 70, 110)",
-    max_height=250,
-)
+samples_component = samples_table.create_component("data_source_sample_rows", max_height=250)
 
 # Data Source Details Markdown PANEL
 data_details = DataDetails()

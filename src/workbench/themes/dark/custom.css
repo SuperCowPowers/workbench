@@ -129,3 +129,28 @@ td {
     border: 0.5px solid #444;
     text-align: center !important;
 }
+
+/* AG Grid table header colors - gradient theme */
+/* Data Sources tables - red gradient */
+#main_data_sources .ag-header,
+#data_sources_table .ag-header {
+    background: linear-gradient(180deg, rgb(140, 60, 60) 0%, rgb(80, 35, 35) 100%) !important;
+}
+
+/* Feature Sets tables - yellow/olive gradient */
+#main_feature_sets .ag-header,
+#feature_sets_table .ag-header {
+    background: linear-gradient(180deg, rgb(120, 115, 55) 0%, rgb(70, 65, 30) 100%) !important;
+}
+
+/* Models tables - green gradient */
+#main_models .ag-header,
+#models_table .ag-header {
+    background: linear-gradient(180deg, rgb(55, 110, 55) 0%, rgb(30, 60, 30) 100%) !important;
+}
+
+/* Endpoints tables - purple gradient */
+#main_endpoints .ag-header,
+#endpoints_table .ag-header {
+    background: linear-gradient(180deg, rgb(100, 60, 120) 0%, rgb(55, 30, 70) 100%) !important;
+}
