@@ -17,7 +17,6 @@ from botocore.exceptions import ClientError
 from sagemaker.session import Session as SageSession
 from collections.abc import Mapping, Iterable
 
-
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.deprecated_utils import deprecated

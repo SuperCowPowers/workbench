@@ -6,7 +6,6 @@ import logging
 from pathlib import Path
 import importlib.util
 
-
 # Setup the logger
 log = logging.getLogger("workbench")
 

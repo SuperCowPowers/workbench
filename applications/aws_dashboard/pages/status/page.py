@@ -7,7 +7,6 @@ from dash import html
 from workbench.web_interface.components.plugins import dashboard_status
 from workbench.utils.config_manager import ConfigManager
 
-
 # Register this page with Dash
 register_page(
     __name__,

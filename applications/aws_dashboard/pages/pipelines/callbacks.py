@@ -6,7 +6,6 @@ from dash import callback, Output, Input, State
 from dash.exceptions import PreventUpdate
 from urllib.parse import urlparse, parse_qs
 
-
 # Workbench Imports
 from workbench.web_interface.page_views.pipelines_page_view import PipelinesPageView
 from workbench.web_interface.components.plugins.ag_table import AGTable

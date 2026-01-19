@@ -3,7 +3,6 @@ import dash_bootstrap_components as dbc
 import logging
 import socket
 
-
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginInputType
 from workbench.api import DataSource, FeatureSet, Model, Endpoint, Meta

@@ -11,7 +11,6 @@ import logging
 from workbench.algorithms.dataframe.aggregation import aggregate
 from workbench.algorithms.dataframe.projection_2d import Projection2D
 
-
 # Workbench Logger
 log = logging.getLogger("workbench")
 

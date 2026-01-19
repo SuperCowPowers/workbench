@@ -99,7 +99,6 @@ from rdkit.ML.Descriptors import MoleculeDescriptors
 from mordred import Calculator as MordredCalculator
 from mordred import AcidBase, Aromatic, Constitutional, Chi, CarbonTypes
 
-
 logger = logging.getLogger("workbench")
 logger.setLevel(logging.DEBUG)
 

@@ -9,7 +9,6 @@ if you use a DDL statement to create a column named Castle, the column created
 will be lowercased to castle.
 """
 
-
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 

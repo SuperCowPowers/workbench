@@ -6,7 +6,6 @@ from workbench.core.transforms.data_to_features.heavy.chunk.data_to_features_chu
     DataToFeaturesChunk,
 )
 
-
 # Create the DataToFeaturesChunk Class
 input_name = "heavy_dns"
 output_name = "dns_features_0"

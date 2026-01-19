@@ -7,7 +7,6 @@ from collections import defaultdict
 # Workbench Imports
 from workbench.core.artifacts.data_source_abstract import DataSourceAbstract
 
-
 # Workbench Logger
 log = logging.getLogger("workbench")
 

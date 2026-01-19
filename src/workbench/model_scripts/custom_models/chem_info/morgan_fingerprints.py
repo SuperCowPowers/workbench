@@ -17,7 +17,6 @@ import json
 # Local imports
 from fingerprints import compute_morgan_fingerprints
 
-
 # TRAINING SECTION
 #
 # This section (__main__) is where SageMaker will execute the training job

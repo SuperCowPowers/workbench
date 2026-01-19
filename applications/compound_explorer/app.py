@@ -11,7 +11,6 @@ from workbench.web_interface.components.plugins import scatter_plot, molecule_vi
 from layout import compound_explorer_layout
 import callbacks
 
-
 # Note: The 'app' and 'server' objects need to be at the top level since NGINX/uWSGI needs to
 #       import this file and use the server object as an ^entry-point^ into the Dash Application Code
 

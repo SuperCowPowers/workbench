@@ -12,7 +12,6 @@ Endpoints:
 
 from workbench.api import DataSource, FeatureSet, Model, ModelType
 
-
 if __name__ == "__main__":
 
     # Create the wine_features FeatureSet

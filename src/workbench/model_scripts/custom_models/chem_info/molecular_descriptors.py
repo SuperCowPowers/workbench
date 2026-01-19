@@ -15,7 +15,6 @@ import json
 from mol_standardize import standardize
 from mol_descriptors import compute_descriptors
 
-
 # TRAINING SECTION
 #
 # This section (__main__) is where SageMaker will execute the training job

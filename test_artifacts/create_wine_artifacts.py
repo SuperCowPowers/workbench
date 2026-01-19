@@ -15,7 +15,6 @@ import sys
 from pathlib import Path
 from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
 
-
 if __name__ == "__main__":
 
     # Get the path to the dataset in the repository data directory

@@ -21,7 +21,6 @@ import awswrangler as wr
 from workbench.api import FeatureSet, ModelType
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
-
 if __name__ == "__main__":
 
     # Serverless and Instance types

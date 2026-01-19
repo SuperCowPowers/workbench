@@ -3,7 +3,6 @@
 import pandas as pd
 from workbench.api import DataSource, FeatureSet, ModelType, ModelFramework
 
-
 # This example shows how to train a multi-task model predicting all 9 ADMET endpoints
 ADMET_TARGETS = ["logd", "ksol", "hlm_clint", "mlm_clint", "caco_2_papp_a_b", "caco_2_efflux", "mppb", "mbpb", "mgmb"]
 

@@ -6,7 +6,6 @@ import json
 # Workbench Imports
 from workbench.api import DataSource, FeatureSet, Model, Endpoint, ParameterStore
 
-
 # Set up the logging
 log = logging.getLogger("workbench")
 

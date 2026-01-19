@@ -22,7 +22,6 @@ import joblib
 from lightgbm import LGBMRegressor
 from mapie.regression import ConformalizedQuantileRegressor
 
-
 # Default confidence levels for prediction intervals
 DEFAULT_CONFIDENCE_LEVELS = [0.50, 0.68, 0.80, 0.90, 0.95]
 

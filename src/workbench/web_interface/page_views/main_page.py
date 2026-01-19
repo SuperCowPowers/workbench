@@ -3,7 +3,6 @@
 import pandas as pd
 from typing import Optional, Tuple
 
-
 # Workbench Imports
 from workbench.web_interface.page_views.page_view import PageView
 from workbench.utils.symbols import tag_symbols

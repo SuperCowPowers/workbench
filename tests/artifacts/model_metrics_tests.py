@@ -8,7 +8,6 @@ from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model, ModelType
 from workbench.api.endpoint import Endpoint
 
-
 model_reg = Model("abalone-regression")
 model_class = Model("wine-classification")
 

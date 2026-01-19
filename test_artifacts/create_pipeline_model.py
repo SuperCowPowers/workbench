@@ -4,7 +4,6 @@ from sagemaker.pipeline import PipelineModel
 from workbench.api import Model
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-
 if __name__ == "__main__":
     session = AWSAccountClamp().sagemaker_session()
     role = AWSAccountClamp().aws_session.get_workbench_execution_role_arn()

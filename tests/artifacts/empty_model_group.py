@@ -5,7 +5,6 @@ from pprint import pprint
 # Workbench Imports
 from workbench.api.model import Model
 
-
 model = Model("empty-model-group")
 
 

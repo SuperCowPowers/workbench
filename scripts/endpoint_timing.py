@@ -9,7 +9,6 @@ import logging
 # Workbench-Bridge Imports
 from workbench_bridges.endpoints.fast_inference import fast_inference
 
-
 # Set up logging
 log = logging.getLogger()
 

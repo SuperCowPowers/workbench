@@ -3,7 +3,6 @@
 from dash import dcc
 import plotly.graph_objects as go
 
-
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.api.model import Model

@@ -2,7 +2,6 @@
 
 from dash import dcc
 
-
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.api.model import Model

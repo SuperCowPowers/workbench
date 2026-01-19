@@ -5,7 +5,6 @@ from dash import callback, no_update, Input, Output, State
 from dash.exceptions import PreventUpdate
 from urllib.parse import urlparse, parse_qs
 
-
 # Workbench Imports
 from workbench.api import ModelType
 from workbench.web_interface.page_views.models_page_view import ModelsPageView
