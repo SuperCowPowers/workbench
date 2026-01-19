@@ -146,7 +146,7 @@ def setup_plugin_callbacks(plugins, scatter_plot_plugin: ScatterPlot, confusion_
                 df,
                 x=target,
                 y="prediction",
-                color="error",
+                color="confidence",
                 regression_line=True,
             )
             cm_props = [no_update] * len(confusion_matrix_plugin.properties)
