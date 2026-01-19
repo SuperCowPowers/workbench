@@ -185,6 +185,52 @@ def dict_to_collapsible_html(data: dict, title: str = None, collapse_all: bool =
     return result
 
 
+def df_to_html_table(df, round_digits: int = 3) -> str:
+    """Convert a single-row DataFrame to a compact styled HTML table (transposed).
+
+    Args:
+        df: DataFrame with metrics (single row, index may contain a metric name)
+        round_digits: Number of decimal places to round to (default: 3)
+
+    Returns:
+        str: HTML table string
+    """
+    import pandas as pd
+
+    # Reset index if it has a name (metric stored in index)
+    if df.index.name:
+        df = df.reset_index()
+
+    # Round numeric columns
+    df = df.round(round_digits)
+
+    # Table styles
+    container_style = "display: flex; justify-content: center;"
+    table_style = "border-collapse: collapse; width: auto; font-size: 14px;"
+    header_style = (
+        "background: linear-gradient(135deg, #4a4a4a 0%, #2d2d2d 100%); "
+        "color: white; padding: 4px 12px; text-align: left;"
+    )
+    value_header_style = (
+        "background: linear-gradient(135deg, #4a4a4a 0%, #2d2d2d 100%); "
+        "color: white; padding: 4px 12px; text-align: right;"
+    )
+    metric_style = "padding: 3px 12px; text-align: left; border-bottom: 1px solid #444;"
+    value_style = "padding: 3px 12px; text-align: right; border-bottom: 1px solid #444;"
+
+    # Build the HTML table (wrapped in centered container)
+    html = f'<div style="{container_style}"><table style="{table_style}">'
+    html += f'<tr><th style="{header_style}">Metric</th><th style="{value_header_style}">Value</th></tr>'
+
+    # Add rows for each column (transpose single row to vertical layout)
+    for col in df.columns:
+        value = df[col].iloc[0]
+        html += f'<tr><td style="{metric_style}">{col}</td><td style="{value_style}">{value}</td></tr>'
+
+    html += "</table></div>"
+    return html
+
+
 if __name__ == "__main__":
     """Exercise the Markdown Utilities"""
     from workbench.api.model import Model
