@@ -4612,65 +4612,35 @@
 <li>Apply <strong>CSS classes</strong> (<code>className</code>) for additional customization or integration with custom styles.</li>
 </ul>
 <h1 id="theming-strategy-for-workbench-dashboard">Theming Strategy for Workbench Dashboard</h1>
-<h2 id="phase-1-application-start-up-theming"><strong>Phase 1: Application Start-Up Theming</strong></h2>
-<p>This focuses on setting a polished, cohesive interface at startup. It ensures:</p>
+<h2 id="how-theme-switching-works"><strong>How Theme Switching Works</strong></h2>
+<p>Workbench supports dynamic theme switching at runtime. When a user changes themes, the page reloads to ensure all styling systems are applied consistently.</p>
+<h3 id="why-we-use-page-reload"><strong>Why We Use Page Reload</strong></h3>
 <ol>
-<li><strong>CSS and Plotly Templates at Start-Up</strong>:</li>
-<li>The current system handles global styles via CSS (including Flask-served <code>custom.css</code>) and Plotly templates (via <code>pio.templates.default</code>) during app initialization.</li>
-<li><strong>Highly Customizable Interface</strong>:</li>
-<li>By leveraging both custom CSS and Plotly templates, you can style everything to match branding and preferences.</li>
+<li><strong>CSS and Plotly Templates</strong>:</li>
+<li>Global styles are handled via CSS (including Flask-served <code>custom.css</code>) and Plotly templates (via <code>pio.templates.default</code>) during app initialization.</li>
+<li>
+<p>Plotly figures have their styling "baked in" at render time—they don't respond to CSS variable changes.</p>
+</li>
+<li>
+<p><strong>The Alternative Would Be Complex</strong>:</p>
+</li>
+<li>Without reload, every figure would need an explicit callback to re-render when themes change.</li>
+<li>
+<p>With 20+ dynamic figures across plugin pages, wiring up individual callbacks isn't practical.</p>
+</li>
+<li>
+<p><strong>Reload Is Simple and Reliable</strong>:</p>
+</li>
+<li>A page reload ensures all three systems (CSS, Plotly templates, Bootstrap) are applied correctly.</li>
+<li>Theme switching is typically a one-time choice, not something users toggle frequently.</li>
 </ol>
-<h3 id="why-phase-1-works-well"><strong>Why Phase 1 Works Well</strong></h3>
-<ul>
-<li><strong>Plotly Templates</strong>: Figures are automatically styled if <code>pio.templates.default</code> is set before app initialization.</li>
-<li><strong>CSS</strong>: Dynamically affects the entire app without additional callbacks.</li>
-<li><strong>Scalability</strong>: Suitable for large apps since styles and templates are applied globally.</li>
-</ul>
-<p><br><br></p>
-<h2 id="phase-2-dynamic-theme-switching"><strong>Phase 2: Dynamic Theme Switching</strong></h2>
-<p>Dynamic theme switching allows users to toggle between themes (e.g., light and dark) at runtime. This is more complex, and splitting it into its own phase will reduce the complexity of each Phase.</p>
-<h3 id="challenges-with-dynamic-switching"><strong>Challenges with Dynamic Switching</strong></h3>
+<h3 id="what-happens-on-theme-change"><strong>What Happens on Theme Change</strong></h3>
 <ol>
-<li><strong>Encapsulation Barriers</strong>:</li>
-<li>A centralized callback for theme switching needs to know about every figure or component in the app, which is not scalable.</li>
-<li><strong>Dynamic Content/Plugins</strong>:</li>
-<li>We have plugin pages, views, and components. A Typical app has 20 figures dynamically created, adding complexity to centralized callbacks.</li>
+<li>User selects a new theme</li>
+<li>Theme preference is saved (persisted across sessions)</li>
+<li>Page reloads</li>
+<li>On reload, the new CSS stylesheet, Plotly template, and Bootstrap theme are all applied consistently</li>
 </ol>
-<h3 id="proposed-solution-set_theme-method"><strong>Proposed Solution: <code>set_theme()</code> Method</strong></h3>
-<p>Introduce a <code>set_theme()</code> method in each component to manage its own updates:</p>
-<ul>
-<li><strong>Figures</strong>: Update their <code>layout.template</code> or regenerate themselves.</li>
-<li><strong>HTML/CSS Components</strong>: Dynamically update styles or toggle CSS classes.</li>
-</ul>
-<h3 id="advantages-of-set_theme"><strong>Advantages of <code>set_theme()</code></strong></h3>
-<ol>
-<li><strong>Encapsulation</strong>:</li>
-<li>Each component knows how to update itself based on the theme.</li>
-<li><strong>Simple Callback</strong>:</li>
-<li>The theme switch callback iterates through all registered components and calls their <code>set_theme()</code> method.</li>
-<li><strong>Scalable</strong>:</li>
-<li>Suitable for multi-page apps with many dynamic components.</li>
-</ol>
-<h2 id="how-the-two-phases-work-together"><strong>How the Two Phases Work Together</strong></h2>
-<h3 id="phase-1">Phase 1:</h3>
-<ul>
-<li><strong>Focus</strong>: Global theming at app start-up.</li>
-<li><strong>What Works</strong>:</li>
-<li>Plotly templates are applied to all figures by default.</li>
-<li>CSS styles are applied across the app.</li>
-</ul>
-<h3 id="phase-2">Phase 2:</h3>
-<ul>
-<li><strong>Focus</strong>: Extend components to dynamically update their theme.</li>
-<li><strong>What to Add</strong>:</li>
-<li>Extend components with a <code>set_theme(theme_name: str)</code> method.</li>
-<li>The callback triggers <code>set_theme()</code> for each registered component.</li>
-</ul>
-<h2 id="next-steps"><strong>Next Steps</strong></h2>
-<ul>
-<li><strong>Phase 1</strong>: Finalize CSS and Plotly template integration for start-up theming.</li>
-<li><strong>Phase 2</strong>: Begin implementing a <code>set_theme()</code> system for individual components.</li>
-</ul>
 <p><br><br><br>
 <br><br><br></p>
 <h2 id="storage">Storage</h2>
