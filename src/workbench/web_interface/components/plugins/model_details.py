@@ -8,9 +8,14 @@ from dash import html, callback, dcc, Input, Output, State
 # Workbench Imports
 from workbench.api import ModelType, ParameterStore
 from workbench.cached.cached_model import CachedModel
-from workbench.utils.markdown_utils import health_tag_markdown
+from workbench.utils.markdown_utils import (
+    health_tag_markdown,
+    tags_to_markdown,
+    dict_to_markdown,
+    dict_to_collapsible_html,
+    df_to_html_table,
+)
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.utils.markdown_utils import tags_to_markdown, dict_to_markdown, dict_to_collapsible_html
 
 
 class ModelDetails(PluginInterface):
@@ -44,7 +49,7 @@ class ModelDetails(PluginInterface):
                 dcc.Markdown(id=f"{self.component_id}-summary", dangerously_allow_html=True),
                 html.H5(children="Inference Metrics", style={"marginTop": "20px"}),
                 dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
-                dcc.Markdown(id=f"{self.component_id}-metrics"),
+                dcc.Markdown(id=f"{self.component_id}-metrics", dangerously_allow_html=True),
             ],
         )
 
@@ -175,15 +180,14 @@ class ModelDetails(PluginInterface):
             markdown += "  \nNo Data  \n"
         else:
             markdown += "  \n"
-            metrics = metrics.round(3)
 
             # If the model is a classification model, have the index sorting match the class labels
             if self.current_model.model_type == ModelType.CLASSIFIER:
-                # Sort the metrics by the class labels (if they match)
                 class_labels = self.current_model.class_labels()
                 if set(metrics.index) == set(class_labels):
                     metrics = metrics.reindex(class_labels)
-            markdown += metrics.to_markdown()
+
+            markdown += df_to_html_table(metrics)
 
         # Get additional inference metrics if they exist
         model_name = self.current_model.name
