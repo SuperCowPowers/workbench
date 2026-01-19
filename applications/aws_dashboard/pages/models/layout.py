@@ -46,7 +46,12 @@ def models_layout(
                     dbc.Col(
                         [
                             dbc.Row(
-                                dcc.Loading(model_plot, type="graph", delay_show=500, style={"height": "400px"}),
+                                dcc.Loading(
+                                    model_plot,
+                                    type="graph",
+                                    delay_show=500,
+                                    style={"height": "400px"},
+                                ),
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px"},
                             ),

@@ -22,9 +22,7 @@ class AGTable(PluginInterface):
     header_height = 30
     row_height = 25
 
-    def create_component(
-        self, component_id: str, header_color: str = "rgb(120, 60, 60)", max_height: int = 500
-    ) -> AgGrid:
+    def create_component(self, component_id: str, max_height: int = 500) -> AgGrid:
         """Create a Table Component without any data."""
         self.component_id = component_id
         self.max_height = max_height
