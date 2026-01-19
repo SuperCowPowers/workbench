@@ -35,7 +35,6 @@ class ScatterPlot(PluginInterface):
         self.df = None
         self.show_axes = show_axes
         self.theme_manager = ThemeManager()
-        self.colorscale = self.theme_manager.colorscale()
         self.has_smiles = False  # Track if dataframe has smiles column for molecule hover
         self.smiles_column = None
         self.id_column = None
@@ -178,6 +177,9 @@ class ScatterPlot(PluginInterface):
             list: A list of updated property values (figure, x options, y options, color options,
                                                     x default, y default, color default).
         """
+        # Get the colorscale from the current theme
+        self.colorscale = self.theme_manager.colorscale()
+
         # Get the limit for the number of rows to plot
         limit = kwargs.get("limit", 20000)
 

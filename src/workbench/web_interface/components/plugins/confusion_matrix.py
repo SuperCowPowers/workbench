@@ -21,7 +21,6 @@ class ConfusionMatrix(PluginInterface):
         self.component_id = None
         self.current_highlight = None  # Store the currently highlighted cell
         self.theme_manager = ThemeManager()
-        self.colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("heatmap"))
 
         # Call the parent class constructor
         super().__init__()
@@ -64,9 +63,8 @@ class ConfusionMatrix(PluginInterface):
         if df is None:
             return [self.display_text("No Data")]
 
-        # Use Plotly's default theme-friendly colorscale
-        # from plotly.colors import sequential
-        # color_scale = sequential.Plasma
+        # Get the colorscale from the current theme
+        colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("heatmap"))
 
         # The confusion matrix is displayed in reverse order (flip the dataframe for correct orientation)
         df = df.iloc[::-1]
@@ -88,7 +86,7 @@ class ConfusionMatrix(PluginInterface):
                     title="Count",
                     outlinewidth=1,
                 ),
-                colorscale=self.colorscale,
+                colorscale=colorscale,
             )
         )
 
