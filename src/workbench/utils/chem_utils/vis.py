@@ -2,32 +2,16 @@
 
 import logging
 import base64
-import re
 from typing import Optional, Tuple
 from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 from rdkit.Chem.Draw import rdMolDraw2D
 
+# Workbench Imports
+from workbench.utils.color_utils import is_dark
+
 # Set up the logger
 log = logging.getLogger("workbench")
-
-
-def _is_dark(color: str) -> bool:
-    """Determine if an rgba color is dark based on RGB average.
-
-    Args:
-        color: Color in rgba(...) format
-
-    Returns:
-        True if the color is dark, False otherwise
-    """
-    match = re.match(r"rgba?\((\d+),\s*(\d+),\s*(\d+)", color)
-    if not match:
-        log.warning(f"Invalid color format: {color}, defaulting to dark")
-        return True  # Default to dark mode on error
-
-    r, g, b = map(int, match.groups())
-    return (r + g + b) / 3 < 128
 
 
 def _rgba_to_tuple(rgba: str) -> Tuple[float, float, float, float]:
@@ -75,7 +59,12 @@ def _configure_draw_options(options: Draw.MolDrawOptions, background: str) -> No
         options: RDKit drawing options object
         background: Background color string
     """
-    if _is_dark(background):
+    try:
+        if is_dark(background):
+            rdMolDraw2D.SetDarkMode(options)
+    except ValueError:
+        # Default to dark mode if color format is invalid
+        log.warning(f"Invalid color format: {background}, defaulting to dark mode")
         rdMolDraw2D.SetDarkMode(options)
     options.setBackgroundColour(_rgba_to_tuple(background))
 
@@ -222,7 +211,7 @@ if __name__ == "__main__":
     # Test 6: Color parsing functions
     print("\n6. Testing color utility functions...")
     test_colors = [
-        ("invalid_color", True, (0.25, 0.25, 0.25, 1.0)),  # Should use defaults
+        ("invalid_color", None, (0.25, 0.25, 0.25, 1.0)),  # Should raise ValueError
         ("rgba(255, 255, 255, 1)", False, (1.0, 1.0, 1.0, 1.0)),
         ("rgba(0, 0, 0, 1)", True, (0.0, 0.0, 0.0, 1.0)),
         ("rgba(64, 64, 64, 0.5)", True, (0.251, 0.251, 0.251, 0.5)),
@@ -230,12 +219,20 @@ if __name__ == "__main__":
     ]
 
     for color, expected_dark, expected_tuple in test_colors:
-        is_dark_result = _is_dark(color)
+        try:
+            is_dark_result = is_dark(color)
+            if expected_dark is None:
+                print(f"   ✗ is_dark('{color[:20]}...'): Expected ValueError but got {is_dark_result}")
+            else:
+                dark_status = "✓" if is_dark_result == expected_dark else "✗"
+                print(f"   {dark_status} is_dark('{color[:20]}...'): {is_dark_result} == {expected_dark}")
+        except ValueError:
+            if expected_dark is None:
+                print(f"   ✓ is_dark('{color[:20]}...'): Correctly raised ValueError")
+            else:
+                print(f"   ✗ is_dark('{color[:20]}...'): Unexpected ValueError")
+
         tuple_result = _rgba_to_tuple(color)
-
-        dark_status = "✓" if is_dark_result == expected_dark else "✗"
-        print(f"   {dark_status} is_dark('{color[:20]}...'): {is_dark_result} == {expected_dark}")
-
         # Check tuple values with tolerance for floating point
         tuple_match = all(abs(a - b) < 0.01 for a, b in zip(tuple_result, expected_tuple))
         tuple_status = "✓" if tuple_match else "✗"
