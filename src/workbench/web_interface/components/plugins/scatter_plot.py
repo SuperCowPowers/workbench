@@ -38,6 +38,7 @@ class ScatterPlot(PluginInterface):
         self.has_smiles = False  # Track if dataframe has smiles column for molecule hover
         self.smiles_column = None
         self.id_column = None
+        self.hover_background = None  # Cached background color for molecule hover tooltip
 
         # Call the parent class constructor
         super().__init__()
@@ -177,8 +178,9 @@ class ScatterPlot(PluginInterface):
             list: A list of updated property values (figure, x options, y options, color options,
                                                     x default, y default, color default).
         """
-        # Get the colorscale from the current theme
+        # Get the colorscale and background color from the current theme
         self.colorscale = self.theme_manager.colorscale()
+        self.hover_background = self.theme_manager.background()
 
         # Get the limit for the number of rows to plot
         limit = kwargs.get("limit", 20000)
@@ -468,9 +470,11 @@ class ScatterPlot(PluginInterface):
                 smiles = customdata
                 mol_id = None
 
-            # Generate molecule tooltip with ID header
+            # Generate molecule tooltip with ID header (use cached background color)
             mol_width, mol_height = 300, 200
-            children = molecule_hover_tooltip(smiles, mol_id=mol_id, width=mol_width, height=mol_height)
+            children = molecule_hover_tooltip(
+                smiles, mol_id=mol_id, width=mol_width, height=mol_height, background=self.hover_background
+            )
 
             # Position molecule tooltip above and slightly right of the point
             bbox = hover_data["points"][0]["bbox"]

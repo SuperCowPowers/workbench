@@ -62,6 +62,7 @@ def _configure_draw_options(options: Draw.MolDrawOptions, background: str) -> No
     try:
         if is_dark(background):
             rdMolDraw2D.SetDarkMode(options)
+        # Light backgrounds use RDKit defaults (no action needed)
     except ValueError:
         # Default to dark mode if color format is invalid
         log.warning(f"Invalid color format: {background}, defaulting to dark mode")
@@ -126,7 +127,7 @@ def svg_from_smiles(
     drawer.DrawMolecule(mol)
     drawer.FinishDrawing()
 
-    # Encode SVG
+    # Encode SVG as base64 data URI
     svg = drawer.GetDrawingText()
     encoded_svg = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
     return f"data:image/svg+xml;base64,{encoded_svg}"
