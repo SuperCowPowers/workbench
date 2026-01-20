@@ -85,7 +85,7 @@ class CachedModel(CachedArtifactMixin, ModelCore):
 
     @CachedArtifactMixin.cache_result
     def get_inference_predictions(
-        self, capture_name: str = "auto_inference", limit: int = 2000
+        self, capture_name: str = "full_cross_fold", limit: int = 5000
     ) -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
