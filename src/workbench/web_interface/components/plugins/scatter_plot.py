@@ -8,7 +8,8 @@ from dash.exceptions import PreventUpdate
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.theme_manager import ThemeManager
-from workbench.utils.plot_utils import prediction_intervals, molecule_hover_tooltip
+from workbench.utils.plot_utils import prediction_intervals
+from workbench.utils.chem_utils.vis import molecule_hover_tooltip
 
 
 class ScatterPlot(PluginInterface):
