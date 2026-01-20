@@ -307,7 +307,7 @@ class ScatterPlot(PluginInterface):
                         color=marker_color,
                         colorscale=self.colorscale,
                         colorbar=colorbar,
-                        opacity=0.8,
+                        opacity=0.9,
                         line=dict(color="rgba(0,0,0,0.25)", width=1),
                     ),
                 )
