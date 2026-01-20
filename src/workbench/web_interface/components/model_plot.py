@@ -10,8 +10,10 @@ from workbench.api import Model, ModelType
 from workbench.web_interface.components.component_interface import ComponentInterface
 from workbench.web_interface.components.plugins.confusion_matrix import ConfusionMatrix
 from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
+from workbench.utils.deprecated_utils import deprecated
 
 
+@deprecated(version="0.9")
 class ModelPlot(ComponentInterface):
     """Model Metrics Components"""
 
