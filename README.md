@@ -1,48 +1,46 @@
 
-# Recent News
+## Live Dashboard Demo
+You can explore a live demo of the Workbench Dashboard at: [Workbench Dashboard Demo](https://workbench-dashboard.com)
 
-### Themes
+## Recent News
+**Chemprop Models!** All the rage for the Open ADMET Challenge. 
 
-Everyone knows that good data science requires... **Some Awesome Themes!**
+Workbench now supports:
+- Single Task Chemprop Models
+- Multi Task Chemprop Models
+- Chemprop Hybrid Models (MPNN + Descriptors)
+- Foundation Chemprop Models (CheMeleon Pretrained)
+
+Examples: 
+
+- [Deploying Chemprop Models](examples/models/chemprop_open_admet.py)
+- [Deploying Foundation Chemprop Models](examples/models/chemprop_foundation.py)
+
+**References**
+- [Open ADMET Challenge](https://huggingface.co/spaces/openadmet/OpenADMET-ExpansionRx-Challenge)
+- **ChemProp:** Yang et al. "Analyzing Learned Molecular Representations for Property Prediction" *J. Chem. Inf. Model.* 2019 — [GitHub](https://github.com/chemprop/chemprop) | [Paper](https://pubs.acs.org/doi/10.1021/acs.jcim.9b00237)
+- [CheMeleon Github](https://github.com/JacksonBurns/chemeleon)
+
+### Chemprop Action Shots!
 
 <table>
   <tr>
     <td>
-      <a href="https://github.com/user-attachments/assets/82ab4eab-0688-4b93-ad8e-9b954564777b">
-        <img width="400" alt="theme_dark" src="https://github.com/user-attachments/assets/82ab4eab-0688-4b93-ad8e-9b954564777b" />
-      </a>
-    </td>
-    <td>
-      <a href="https://github.com/user-attachments/assets/b63a0789-c144-4048-afb6-f03e3d993680">
-        <img width="400" alt="theme_light" src="https://github.com/user-attachments/assets/b63a0789-c144-4048-afb6-f03e3d993680" />
+      <a href="https://github.com/user-attachments/assets/a36c6eff-c464-4c9a-9859-a45cd7e35145">
+        <img width="800" alt="theme_dark" src="https://github.com/user-attachments/assets/a36c6eff-c464-4c9a-9859-a45cd7e35145" />
       </a>
     </td>
   </tr>
   <tr>
     <td>
-      <a href="https://github.com/user-attachments/assets/8a59be19-0c5d-42c6-9922-feafb1a1eecd">
-        <img width="400" alt="theme_quartz" src="https://github.com/user-attachments/assets/8a59be19-0c5d-42c6-9922-feafb1a1eecd" />
-      </a>
-    </td>
-    <td>
-      <a href="https://github.com/user-attachments/assets/5b01ec64-8d56-43bf-96c5-7da8ec48f527">
-        <img width="400" alt="theme_quartz_dark" src="https://github.com/user-attachments/assets/5b01ec64-8d56-43bf-96c5-7da8ec48f527" />
+      <a href="https://github.com/user-attachments/assets/d65ec1da-e04e-44fe-8782-4da0fb50588a">
+        <img width="800" alt="theme_quartz" src="https://github.com/user-attachments/assets/d65ec1da-e04e-44fe-8782-4da0fb50588a" />
       </a>
     </td>
   </tr>
 </table>
 
-All of the Dashboard pages, subpages, and plugins use our new `ThemeManager()` class. See [Workbench Themes](https://supercowpowers.github.io/workbench/themes/), also big thanks to our friends at [Dash Bootstrap Templates](https://github.com/AnnMarieW/dash-bootstrap-templates)
 
-
-
-### Workbench up on the AWS Marketplace
-
-Powered by AWS® to accelerate your Machine Learning Pipelines development with our new [Dashboard for ML Pipelines](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo). Getting started with Workbench is a snap and can be billed through AWS.
-
-### Coming Soon: `v0.9`
-
-We're getting ready for our `v0.9` release. Here's the road map: [Workbench RoadMaps](https://supercowpowers.github.io/workbench/road_maps/0_9_0/) 
 
 # Welcome to Workbench
 The Workbench framework makes AWS® both easier to use and more powerful. Workbench handles all the details around updating and managing a complex set of AWS Services. With a simple-to-use Python API and a beautiful set of web interfaces, Workbench makes creating AWS ML pipelines a snap. It also dramatically improves both the usability and visibility across the entire spectrum of services: Glue Job, Athena, Feature Store, Models, and Endpoints, Workbench makes it easy to build production ready, AWS powered, machine learning pipelines.
@@ -80,6 +78,10 @@ For the full instructions for connecting your AWS Account see:
 - Getting Started: [Initial Setup](https://supercowpowers.github.io/workbench/getting_started/) 
 - One time AWS Onboarding: [AWS Setup](https://supercowpowers.github.io/workbench/aws_setup/core_stack/)
 
+
+### Workbench up on the AWS Marketplace
+
+Powered by AWS® to accelerate your Machine Learning Pipelines development with our new [Dashboard for ML Pipelines](https://aws.amazon.com/marketplace/pp/prodview-5idedc7uptbqo). Getting started with Workbench is a snap and can be billed through AWS.
 
 ### Workbench Presentations
 Even though Workbench makes AWS easier, it's taking something very complex (the full set of AWS ML Pipelines/Services) and making it less complex. Workbench has a depth and breadth of functionality so we've provided higher level conceptual documentation See: [Workbench Presentations](https://supercowpowers.github.io/workbench/presentations/)
