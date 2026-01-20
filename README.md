@@ -13,7 +13,7 @@ Workbench now supports:
 
 Examples: 
 
-- [Deploying Chemprop Models](examples/models/chemprop_open_admet.py)
+- [Deploying Chemprop Models](examples/models/chemprop.py)
 - [Deploying Foundation Chemprop Models](examples/models/chemprop_foundation.py)
 
 **References**
