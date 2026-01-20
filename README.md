@@ -13,8 +13,8 @@ Workbench now supports:
 
 Examples: 
 
-- [Deploying Chemprop Models](workbench/examples/models/chemprop_open_admet.py)
-- [Deploying Foundation Chemprop Models](workbench/examples/models/chemprop_foundation.py)
+- [Deploying Chemprop Models](examples/models/chemprop_open_admet.py)
+- [Deploying Foundation Chemprop Models](examples/models/chemprop_foundation.py)
 
 **References**
 - [Open ADMET Challenge](https://huggingface.co/spaces/openadmet/OpenADMET-ExpansionRx-Challenge)
