@@ -346,13 +346,16 @@ if __name__ == "__main__":
         print(f"   {tuple_status} rgba_to_tuple('{color[:20]}...'): matches expected")
 
     # Test the tooltip generation in a simple Dash app
-    from dash import Dash, html
+    from dash import Dash
 
     app = Dash(__name__)
-    app.layout = html.Div([
-        html.Div("Tooltip Preview:", style={"color": "white", "marginBottom": "20px"}),
-        *molecule_hover_tooltip("CC(=O)OC1=CC=CC=C1C(=O)O", mol_id="Aspirin", background="rgba(200, 30, 30, 1)"),
-    ], style={"background": "#1a1a1a", "padding": "50px"})
+    app.layout = html.Div(
+        [
+            html.Div("Tooltip Preview:", style={"color": "white", "marginBottom": "20px"}),
+            *molecule_hover_tooltip("CC(=O)OC1=CC=CC=C1C(=O)O", mol_id="Aspirin", background="rgba(200, 30, 30, 1)"),
+        ],
+        style={"background": "#1a1a1a", "padding": "50px"},
+    )
 
     if __name__ == "__main__":
         app.run(debug=True)
