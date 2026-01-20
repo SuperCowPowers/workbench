@@ -10,6 +10,7 @@ from workbench.web_interface.components.plugin_interface import PluginInterface,
 from workbench.utils.theme_manager import ThemeManager
 from workbench.utils.plot_utils import prediction_intervals
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
+from workbench.utils.clientside_callbacks import circle_overlay_callback
 
 
 class ScatterPlot(PluginInterface):
@@ -416,31 +417,7 @@ class ScatterPlot(PluginInterface):
 
         # Clientside callback for circle overlay - runs in browser, no server round trip
         clientside_callback(
-            f"""
-            function(hoverData) {{
-                if (!hoverData) {{
-                    return [false, window.dash_clientside.no_update, window.dash_clientside.no_update];
-                }}
-                var bbox = hoverData.points[0].bbox;
-                var centerX = (bbox.x0 + bbox.x1) / 2;
-                var centerY = (bbox.y0 + bbox.y1) / 2;
-                var adjustedBbox = {{
-                    x0: centerX - 50,
-                    x1: centerX + 50,
-                    y0: centerY - 162,
-                    y1: centerY - 62
-                }};
-                var imgElement = {{
-                    type: 'Img',
-                    namespace: 'dash_html_components',
-                    props: {{
-                        src: '{self._circle_data_uri}',
-                        style: {{width: '100px', height: '100px'}}
-                    }}
-                }};
-                return [true, adjustedBbox, [imgElement]];
-            }}
-            """,
+            circle_overlay_callback(self._circle_data_uri),
             Output(f"{self.component_id}-overlay", "show"),
             Output(f"{self.component_id}-overlay", "bbox"),
             Output(f"{self.component_id}-overlay", "children"),
