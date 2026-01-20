@@ -1,15 +1,66 @@
+/* Light Theme Color Palette - Blue-Purple Blend */
+:root {
+    /* Primary colors - blue to purple blend, low saturation */
+    --wb-lightest: rgb(200, 205, 215);        /* Very light blue-lavender - backgrounds */
+    --wb-light: rgb(195, 205, 225);           /* Light periwinkle - alternate rows */
+    --wb-medium: rgb(175, 185, 215);          /* Medium blue-purple - headers */
+    --wb-accent: rgb(120, 130, 180);          /* Blue-purple accent - borders */
+    --wb-dark: rgb(80, 90, 140);              /* Dark blue-purple - strong accents */
+
+    /* Text colors */
+    --wb-text-primary: rgb(45, 50, 65);       /* Primary text - dark blue-purple */
+    --wb-text-secondary: rgb(70, 75, 95);     /* Secondary text */
+    --wb-text-muted: rgb(95, 100, 120);       /* Muted text */
+
+    /* Semantic colors */
+    --wb-success: rgb(40, 110, 50);
+    --wb-info: rgb(60, 80, 160);
+    --wb-warning: rgb(170, 90, 10);
+    --wb-danger: rgb(180, 50, 80);
+    --wb-pink: rgb(200, 100, 200);
+
+    /* Shadows - purple-tinted */
+    --wb-shadow-light: rgba(80, 90, 140, 0.15);
+    --wb-shadow-medium: rgba(80, 90, 140, 0.25);
+
+    /* Dropdown/form colors */
+    --wb-dropdown-bg: rgb(185, 185, 195);
+    --wb-dropdown-focus: rgb(195, 195, 205);
+    --wb-dropdown-hover: rgb(195, 195, 205);
+
+    /* Container colors (with alpha) */
+    --wb-container-bg: rgba(175, 185, 215, 0.5);
+    --wb-container-bg-light: rgba(175, 185, 215, 0.25);
+    --wb-table-cell-bg: rgba(205, 215, 235, 0.5);
+
+    /* Body gradient colors */
+    --wb-body-gradient-start: rgb(180, 195, 215);
+    --wb-body-gradient-mid: rgb(170, 175, 205);
+    --wb-body-gradient-end: rgb(185, 175, 205);
+
+    /* Table header gradient colors */
+    --wb-header-red-start: rgb(200, 120, 120);
+    --wb-header-red-end: rgb(160, 90, 90);
+    --wb-header-yellow-start: rgb(180, 175, 100);
+    --wb-header-yellow-end: rgb(140, 135, 70);
+    --wb-header-green-start: rgb(110, 170, 110);
+    --wb-header-green-end: rgb(80, 130, 80);
+    --wb-header-purple-start: rgb(160, 120, 180);
+    --wb-header-purple-end: rgb(120, 85, 140);
+}
+
 h1, h2, h3, h4 {
-    color: rgb(80, 80, 80); /* We want the headers dark gray */
+    color: var(--wb-text-primary);
 }
 
 body {
-    color: rgb(80, 80, 80); /* Dark gray text */
-    background: linear-gradient(90deg, rgba(200,200,220,1) 0%, rgba(170,170,210,1) 100%);
+    color: var(--wb-text-primary);
+    background: linear-gradient(135deg, var(--wb-body-gradient-start) 0%, var(--wb-body-gradient-mid) 50%, var(--wb-body-gradient-end) 100%);
 }
 
 /* Custom CSS to style bold text */
 b, strong {
-    color: rgb(40, 40, 40);
+    color: var(--wb-text-primary);
 }
 
 /* Reduce spacing around lists */
@@ -25,28 +76,28 @@ ul, ol {
 
 /* Adjust header background color */
 .ag-header {
-    --ag-header-background-color: rgba(150, 150, 195);
+    --ag-header-background-color: var(--wb-medium);
 }
 
 /* Adjust cell background and text color */
 .ag-cell {
-    background-color: rgb(200, 200, 215);
-    color: rgb(80, 80, 80);
+    background-color: var(--wb-lightest);
+    color: var(--wb-text-primary);
 }
 
 /* Alternate row colors */
 .ag-row:nth-child(even) .ag-cell {
-    background-color: rgb(190, 190, 205);
+    background-color: var(--wb-light);
 }
 
 /* AgGrid header text color */
 .ag-header-cell-text {
-    color: rgb(60, 60, 60);
+    color: var(--wb-text-primary);
 }
 
 /* Selection color for the entire row */
 .ag-row.ag-row-selected .ag-cell {
-    background-color: rgba(170, 170, 205, 1.0);
+    background-color: var(--wb-medium);
 }
 
 /* There's a one pixel border around the grid that we want to remove */
@@ -57,108 +108,108 @@ ul, ol {
 
 /* Box shadow and rounded corners for all AgGrid themes */
 [class*="ag-theme-"] {
-    box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.2); /* Drop shadow */
-    border-radius: 12px; /* Rounded corners */
-    border: 0.5px solid rgba(0, 0, 205, 0.5);
+    box-shadow: 2px 2px 6px 5px var(--wb-shadow-light);
+    border-radius: 12px;
+    border: 0.5px solid var(--wb-accent);
     margin: 0;
     padding: 0;
 }
 
 /* Apply styling to Workbench containers */
 .workbench-container {
-    background-color: rgba(180, 180, 200, 0.5);
-    box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.2);
-    border-radius: 12px; /* Rounded corners */
+    background-color: var(--wb-container-bg);
+    box-shadow: 2px 2px 6px 5px var(--wb-shadow-light);
+    border-radius: 12px;
 }
 
 /* Apply styling to Workbench Offsets */
 .workbench-offset {
-    background-color: rgba(180, 180, 200, 0.25);
-    box-shadow: 1px 1px 3px 2px rgba(0, 0, 0, 0.2);
-    border-radius: 12px; /* Rounded corners */
+    background-color: var(--wb-container-bg-light);
+    box-shadow: 1px 1px 3px 2px var(--wb-shadow-light);
+    border-radius: 12px;
 }
 
 /* Apply styling to Workbench Highlight */
 .workbench-highlight {
-    background-color: rgba(180, 180, 200, 0.5);
-    box-shadow: 1px 1px 3px 2px rgba(0, 0, 0, 0.2);
-    border-radius: 12px; /* Rounded corners */
+    background-color: var(--wb-container-bg);
+    box-shadow: 1px 1px 3px 2px var(--wb-shadow-light);
+    border-radius: 12px;
 }
 
 /* Apply styling to custom tooltips */
 .custom-tooltip {
-    background-color: rgba(240, 240, 240, 1.0);
-    box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
-    border-radius: 25px; /* Rounded corners */
-    overflow: hidden; /* Ensure contents fit inside the rounded corners */
-    border: 2px solid rgba(128, 128, 128, 1); /* 1-pixel grey */
+    background-color: var(--wb-lightest);
+    box-shadow: 2px 2px 6px 5px var(--wb-shadow-medium);
+    border-radius: 25px;
+    overflow: hidden;
+    border: 2px solid var(--wb-accent);
 }
 
 /* Some of the HTML/Markdown will use color hints like 'green-text' or 'blue-text' */
 .green-text {
-    color: rgb(40, 100, 40);
+    color: var(--wb-success);
 }
 
 .blue-text {
-    color: rgb(70, 70, 160);
+    color: var(--wb-info);
 }
 
 .pink-text {
-    color: rgb(200, 100, 200);
+    color: var(--wb-pink);
 }
 
 .red-text {
-    color: rgb(200, 60, 100);
+    color: var(--wb-danger);
 }
 
 .orange-text {
-    color: rgb(160, 80, 0);
+    color: var(--wb-warning);
 }
 
 .alert {
-    color: rgb(200, 60, 100);
+    color: var(--wb-danger);
 }
 
 .warning {
-    color: rgb(160, 80, 0);
+    color: var(--wb-warning);
 }
 
 .good {
-    color: rgb(40, 100, 40);
+    color: var(--wb-success);
 }
 
 /* Dropdown styling (dcc.Dropdown) - override Bootstrap's variables */
 .dash-dropdown {
-    --bs-body-bg: rgb(190, 190, 210);
-    --bs-body-color: rgb(60, 60, 60);
-    --bs-border-color: rgb(150, 150, 180);
+    --bs-body-bg: var(--wb-dropdown-bg);
+    --bs-body-color: var(--wb-text-primary);
+    --bs-border-color: var(--wb-accent);
 }
 
 /* Bootstrap form controls (dbc components) */
 .form-select, .form-control {
-    background-color: rgb(190, 190, 210) !important;
-    border: 1px solid rgb(150, 150, 180) !important;
-    color: rgb(60, 60, 60) !important;
+    background-color: var(--wb-dropdown-bg) !important;
+    border: 1px solid var(--wb-accent) !important;
+    color: var(--wb-text-primary) !important;
 }
 
 .form-select:focus, .form-control:focus {
-    background-color: rgb(200, 200, 220) !important;
-    border-color: rgb(130, 130, 170) !important;
-    box-shadow: 0 0 0 0.2rem rgba(150, 150, 195, 0.25) !important;
+    background-color: var(--wb-dropdown-focus) !important;
+    border-color: var(--wb-dark) !important;
+    box-shadow: 0 0 0 0.2rem var(--wb-shadow-light) !important;
 }
 
 .dropdown-menu {
-    background-color: rgb(190, 190, 210) !important;
-    border: 1px solid rgb(150, 150, 180) !important;
+    background-color: var(--wb-dropdown-bg) !important;
+    border: 1px solid var(--wb-accent) !important;
 }
 
 .dropdown-item {
-    color: rgb(60, 60, 60) !important;
+    color: var(--wb-text-primary) !important;
 }
 
 .dropdown-item:hover, .dropdown-item:focus {
-    background-color: rgb(170, 170, 200) !important;
-    color: rgb(40, 40, 40) !important;
+    background-color: var(--wb-dropdown-hover) !important;
+    color: var(--wb-text-primary) !important;
 }
 
 /* Table styling */
@@ -168,16 +219,16 @@ table {
 
 th {
     padding: 10px;
-    border: 1px solid rgb(120, 120, 120);
-    background-color: rgba(150, 150, 195);
+    border: 1px solid var(--wb-accent);
+    background-color: var(--wb-medium);
     font-weight: bold;
     text-align: center !important;
 }
 
 td {
     padding: 5px;
-    border: 0.5px solid rgb(120, 120, 120);
-    background-color: rgba(190, 190, 210, 0.5);
+    border: 0.5px solid var(--wb-accent);
+    background-color: var(--wb-table-cell-bg);
     text-align: center !important;
 }
 
@@ -185,23 +236,23 @@ td {
 /* Data Sources tables - red gradient */
 #main_data_sources .ag-header,
 #data_sources_table .ag-header {
-    background: linear-gradient(180deg, rgb(200, 120, 120) 0%, rgb(160, 90, 90) 100%) !important;
+    background: linear-gradient(180deg, var(--wb-header-red-start) 0%, var(--wb-header-red-end) 100%) !important;
 }
 
 /* Feature Sets tables - yellow/olive gradient */
 #main_feature_sets .ag-header,
 #feature_sets_table .ag-header {
-    background: linear-gradient(180deg, rgb(180, 175, 100) 0%, rgb(140, 135, 70) 100%) !important;
+    background: linear-gradient(180deg, var(--wb-header-yellow-start) 0%, var(--wb-header-yellow-end) 100%) !important;
 }
 
 /* Models tables - green gradient */
 #main_models .ag-header,
 #models_table .ag-header {
-    background: linear-gradient(180deg, rgb(110, 170, 110) 0%, rgb(80, 130, 80) 100%) !important;
+    background: linear-gradient(180deg, var(--wb-header-green-start) 0%, var(--wb-header-green-end) 100%) !important;
 }
 
 /* Endpoints tables - purple gradient */
 #main_endpoints .ag-header,
 #endpoints_table .ag-header {
-    background: linear-gradient(180deg, rgb(160, 120, 180) 0%, rgb(120, 85, 140) 100%) !important;
+    background: linear-gradient(180deg, var(--wb-header-purple-start) 0%, var(--wb-header-purple-end) 100%) !important;
 }
