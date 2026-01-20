@@ -2,14 +2,15 @@
 :root {
     /* Primary colors - blue to purple blend, low saturation */
     --wb-lightest: rgb(200, 205, 215);        /* Very light blue-lavender - backgrounds */
-    --wb-light: rgb(195, 205, 225);           /* Light periwinkle - alternate rows */
+    --wb-light: rgb(200, 205, 215);           /* Light periwinkle - alternate rows */
     --wb-medium: rgb(175, 185, 215);          /* Medium blue-purple - headers */
     --wb-accent: rgb(120, 130, 180);          /* Blue-purple accent - borders */
     --wb-dark: rgb(80, 90, 140);              /* Dark blue-purple - strong accents */
 
     /* Text colors */
-    --wb-text-primary: rgb(45, 50, 65);       /* Primary text - dark blue-purple */
-    --wb-text-secondary: rgb(70, 75, 95);     /* Secondary text */
+    --wb-text-primary: rgb(45, 45, 55);       /* Primary text */
+    --wb-text-bold: rgb(80, 80, 180);          /* Bold text */
+    --wb-text-italic: rgb(120, 80, 180);        /* Italic text */
     --wb-text-muted: rgb(95, 100, 120);       /* Muted text */
 
     /* Semantic colors */
@@ -19,19 +20,17 @@
     --wb-danger: rgb(180, 50, 80);
     --wb-pink: rgb(200, 100, 200);
 
-    /* Shadows - purple-tinted */
-    --wb-shadow-light: rgba(80, 90, 140, 0.15);
-    --wb-shadow-medium: rgba(80, 90, 140, 0.25);
+    /* Shadows */
+    --wb-shadow: rgba(80, 80, 80, 0.15);
 
     /* Dropdown/form colors */
-    --wb-dropdown-bg: rgb(185, 185, 195);
-    --wb-dropdown-focus: rgb(195, 195, 205);
-    --wb-dropdown-hover: rgb(195, 195, 205);
+    --wb-dropdown-bg: rgba(215, 215, 215);
+    --wb-dropdown-focus: rgba(215, 215, 215);
+    --wb-dropdown-hover: rgba(215, 215, 215);
 
     /* Container colors (with alpha) */
-    --wb-container-bg: rgba(175, 185, 215, 0.5);
-    --wb-container-bg-light: rgba(175, 185, 215, 0.25);
-    --wb-table-cell-bg: rgba(205, 215, 235, 0.5);
+    --wb-container-bg: rgba(215, 215, 215, 0.5);
+    --wb-table-cell-bg: rgba(215, 215, 215, 0.5);
 
     /* Body gradient colors */
     --wb-body-gradient-start: rgb(180, 195, 215);
@@ -60,7 +59,12 @@ body {
 
 /* Custom CSS to style bold text */
 b, strong {
-    color: var(--wb-text-primary);
+    color: var(--wb-text-bold);
+}
+
+/* Custom CSS to style italic text */
+i, em {
+    color: var(--wb-text-italic);
 }
 
 /* Reduce spacing around lists */
@@ -108,7 +112,7 @@ ul, ol {
 
 /* Box shadow and rounded corners for all AgGrid themes */
 [class*="ag-theme-"] {
-    box-shadow: 2px 2px 6px 5px var(--wb-shadow-light);
+    box-shadow: 2px 2px 6px 5px var(--wb-shadow);
     border-radius: 12px;
     border: 0.5px solid var(--wb-accent);
     margin: 0;
@@ -118,28 +122,20 @@ ul, ol {
 /* Apply styling to Workbench containers */
 .workbench-container {
     background-color: var(--wb-container-bg);
-    box-shadow: 2px 2px 6px 5px var(--wb-shadow-light);
+    box-shadow: 2px 2px 6px 5px var(--wb-shadow);
     border-radius: 12px;
 }
 
 /* Apply styling to Workbench Offsets */
 .workbench-offset {
-    background-color: var(--wb-container-bg-light);
-    box-shadow: 1px 1px 3px 2px var(--wb-shadow-light);
-    border-radius: 12px;
-}
-
-/* Apply styling to Workbench Highlight */
-.workbench-highlight {
-    background-color: var(--wb-container-bg);
-    box-shadow: 1px 1px 3px 2px var(--wb-shadow-light);
+    box-shadow: 1px 1px 3px 2px var(--wb-shadow);
     border-radius: 12px;
 }
 
 /* Apply styling to custom tooltips */
 .custom-tooltip {
     background-color: var(--wb-lightest);
-    box-shadow: 2px 2px 6px 5px var(--wb-shadow-medium);
+    box-shadow: 2px 2px 6px 5px var(--wb-shadow);
     border-radius: 25px;
     overflow: hidden;
     border: 2px solid var(--wb-accent);
@@ -195,7 +191,7 @@ ul, ol {
 .form-select:focus, .form-control:focus {
     background-color: var(--wb-dropdown-focus) !important;
     border-color: var(--wb-dark) !important;
-    box-shadow: 0 0 0 0.2rem var(--wb-shadow-light) !important;
+    box-shadow: 0 0 0 0.2rem var(--wb-shadow) !important;
 }
 
 .dropdown-menu {
