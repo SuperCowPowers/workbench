@@ -4,7 +4,7 @@ from typing import Union
 import pandas as pd
 
 # Workbench Imports
-from workbench.core.artifacts.model_core import ModelCore
+from workbench.core.artifacts.model_core import ModelCore, ModelType
 from workbench.core.artifacts.cached_artifact_mixin import CachedArtifactMixin
 
 
@@ -84,20 +84,54 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().get_inference_metrics(capture_name=capture_name)
 
     @CachedArtifactMixin.cache_result
-    def get_inference_predictions(self, capture_name: str = "auto_inference") -> Union[pd.DataFrame, None]:
+    def get_inference_predictions(self, capture_name: str = "auto_inference", limit: int = 1000) -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: training_holdout)
+            capture_name (str, optional): Specific capture_name (default: auto_inference)
+            limit (int, optional): Maximum rows to return (default: 1000)
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
-        # Note: This method can generate larger dataframes, so we'll sample if needed
         df = super().get_inference_predictions(capture_name=capture_name)
-        if df is not None and len(df) > 5000:
-            self.log.warning(f"{self.name}:{capture_name} Sampling Inference Predictions to 5000 rows")
-            return df.sample(5000)
+        if df is None:
+            return None
+
+        # Compute residual and do smart sampling based on model type
+        is_regressor = self.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
+        is_classifier = self.model_type == ModelType.CLASSIFIER
+
+        if is_regressor:
+            target = self.target()
+            if target and "prediction" in df.columns and target in df.columns:
+                df["residual"] = abs(df["prediction"] - df[target])
+
+        elif is_classifier:
+            target = self.target()
+            class_labels = self.class_labels()
+            if target and "prediction" in df.columns and target in df.columns and class_labels:
+                # Create a mapping from label to ordinal index
+                label_to_idx = {label: idx for idx, label in enumerate(class_labels)}
+                # Compute residual as distance between predicted and actual class
+                df["residual"] = abs(
+                    df["prediction"].map(label_to_idx).fillna(-1) - df[target].map(label_to_idx).fillna(-1)
+                )
+
+        # Smart sampling: half high-residual rows, half random from the rest
+        if "residual" in df.columns and len(df) > limit:
+            half_limit = limit // 2
+            self.log.warning(f"{self.name}:{capture_name} Sampling to {limit} rows (top {half_limit} residuals + {half_limit} random)")
+            top_residuals = df.nlargest(half_limit, "residual")
+            remaining = df.drop(top_residuals.index)
+            random_sample = remaining.sample(min(half_limit, len(remaining)))
+            return pd.concat([top_residuals, random_sample]).reset_index(drop=True)
+
+        # Fallback: just limit rows if no residual computed
+        if len(df) > limit:
+            self.log.warning(f"{self.name}:{capture_name} Sampling to {limit} rows")
+            return df.sample(limit)
+
         return df
 
     @CachedArtifactMixin.cache_result

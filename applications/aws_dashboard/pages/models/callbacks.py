@@ -135,12 +135,10 @@ def setup_plugin_callbacks(plugins, scatter_plot_plugin: ScatterPlot, confusion_
             if df is None:
                 raise PreventUpdate
 
-            # Get target column and compute error for coloring
+            # Get target column (residual is already computed in CachedModel)
             target = model.target()
             if isinstance(target, list):
                 target = next((t for t in target if t in inference_run), target[0])
-
-            df["error"] = abs(df["prediction"] - df[target])
 
             scatter_props = scatter_plot_plugin.update_properties(
                 df,
