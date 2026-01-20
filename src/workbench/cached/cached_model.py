@@ -84,7 +84,9 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().get_inference_metrics(capture_name=capture_name)
 
     @CachedArtifactMixin.cache_result
-    def get_inference_predictions(self, capture_name: str = "auto_inference", limit: int = 1000) -> Union[pd.DataFrame, None]:
+    def get_inference_predictions(
+        self, capture_name: str = "auto_inference", limit: int = 1000
+    ) -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
@@ -121,7 +123,9 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         # Smart sampling: half high-residual rows, half random from the rest
         if "residual" in df.columns and len(df) > limit:
             half_limit = limit // 2
-            self.log.warning(f"{self.name}:{capture_name} Sampling to {limit} rows (top {half_limit} residuals + {half_limit} random)")
+            self.log.warning(
+                f"{self.name}:{capture_name} Sampling {limit} rows (top {half_limit} residuals + {half_limit} random)"
+            )
             top_residuals = df.nlargest(half_limit, "residual")
             remaining = df.drop(top_residuals.index)
             random_sample = remaining.sample(min(half_limit, len(remaining)))
