@@ -567,9 +567,7 @@ class FeatureSetCore(Artifact):
             sql_columns = ", ".join([f't."{col}"' for col in column_list])
 
             # Build JOIN query with training CASE and weight from joined table
-            training_case_aliased = training_case.replace(
-                f"WHEN {self.id_column} IN", f"WHEN t.{self.id_column} IN"
-            )
+            training_case_aliased = training_case.replace(f"WHEN {self.id_column} IN", f"WHEN t.{self.id_column} IN")
             inner_sql = f"""SELECT {sql_columns}, {training_case_aliased},
                 COALESCE(w.sample_weight, {default_weight}) AS sample_weight
                 FROM {self.table} t
