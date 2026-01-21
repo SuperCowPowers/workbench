@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir pip-tools && \
     pip download --no-deps "workbench[ui]==${WORKBENCH_VERSION}" -d /tmp/pkg && \
     cd /tmp/pkg && unzip -q *.whl -d /tmp/extracted && \
     cat /tmp/extracted/*.dist-info/METADATA | grep "^Requires-Dist:" | \
-    sed 's/Requires-Dist: //' | sed 's/ ;.*//' | sed 's/ (.*//' > /tmp/deps.txt
+    sed 's/Requires-Dist: //' | sed 's/;.*//' | sed 's/ (.*//' > /tmp/deps.txt
 
 # Stage 2: Build the final image
 FROM python:3.12.5-bookworm AS base
