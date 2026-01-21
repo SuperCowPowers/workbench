@@ -554,12 +554,31 @@ class FeatureSetCore(Artifact):
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
         source_columns = get_column_list(self.data_source, self.table)
         column_list = [col for col in source_columns if col not in aws_cols]
-        sql_columns = ", ".join([f'"{column}"' for column in column_list])
 
-        # Build inner query with both columns
+        # Build the training column CASE statement
         training_case = self._build_holdout_case(holdout_ids)
-        weight_case = self._build_weight_case(weight_dict, default_weight)
-        inner_sql = f"SELECT {sql_columns}, {training_case}, {weight_case} FROM {self.table}"
+
+        # For large weight_dict, use supplemental table + JOIN
+        if len(weight_dict) >= 100:
+            self.log.info("Using supplemental table approach for large weight_dict")
+            weights_table = self._create_weights_table(weight_dict)
+
+            # Build column selection with table alias
+            sql_columns = ", ".join([f't."{col}"' for col in column_list])
+
+            # Build JOIN query with training CASE and weight from joined table
+            training_case_aliased = training_case.replace(
+                f"WHEN {self.id_column} IN", f"WHEN t.{self.id_column} IN"
+            )
+            inner_sql = f"""SELECT {sql_columns}, {training_case_aliased},
+                COALESCE(w.sample_weight, {default_weight}) AS sample_weight
+                FROM {self.table} t
+                LEFT JOIN {weights_table} w ON t.{self.id_column} = w.{self.id_column}"""
+        else:
+            # For small weight_dict, use CASE statement
+            sql_columns = ", ".join([f'"{column}"' for column in column_list])
+            weight_case = self._build_weight_case(weight_dict, default_weight)
+            inner_sql = f"SELECT {sql_columns}, {training_case}, {weight_case} FROM {self.table}"
 
         # Optionally filter out zero weights
         if exclude_zero_weights:
@@ -608,6 +627,10 @@ class FeatureSetCore(Artifact):
             }
             fs.set_sample_weights(weights)  # zeros automatically excluded
             fs.set_sample_weights(weights, exclude_zero_weights=False)  # keep zeros
+
+        Note:
+            For large weight_dict (100+ entries), weights are stored as a supplemental
+            table and joined to avoid Athena query size limits.
         """
         from workbench.core.views import TrainingView
 
@@ -618,14 +641,25 @@ class FeatureSetCore(Artifact):
 
         self.log.important(f"Setting sample weights for {len(weight_dict)} IDs")
 
-        # Build inner query with sample weights
-        weight_case = self._build_weight_case(weight_dict, default_weight)
-        inner_sql = f"SELECT *, {weight_case} FROM {self.table}"
+        # For large weight_dict, use supplemental table + JOIN to avoid query size limits
+        if len(weight_dict) >= 100:
+            self.log.info("Using supplemental table approach for large weight_dict")
+            weights_table = self._create_weights_table(weight_dict)
+
+            # Build JOIN query with COALESCE for default weight
+            inner_sql = f"""SELECT t.*, COALESCE(w.sample_weight, {default_weight}) AS sample_weight
+                FROM {self.table} t
+                LEFT JOIN {weights_table} w ON t.{self.id_column} = w.{self.id_column}"""
+        else:
+            # For small weight_dict, use CASE statement (simpler, no extra table)
+            weight_case = self._build_weight_case(weight_dict, default_weight)
+            inner_sql = f"SELECT *, {weight_case} FROM {self.table}"
 
         # Optionally filter out zero weights
         if exclude_zero_weights:
             zero_count = sum(1 for w in weight_dict.values() if w == 0.0)
-            self.log.important(f"Filtering out {zero_count} rows with sample_weight = 0")
+            if zero_count:
+                self.log.important(f"Filtering out {zero_count} rows with sample_weight = 0")
             sql_query = f"SELECT * FROM ({inner_sql}) WHERE sample_weight > 0"
         else:
             sql_query = inner_sql
@@ -666,6 +700,32 @@ class FeatureSetCore(Artifact):
         view_table = f"{self.table}___training"
         create_view_query = f"CREATE OR REPLACE VIEW {view_table} AS\n{sql_query}"
         self.data_source.execute_statement(create_view_query)
+
+    def _create_weights_table(self, weight_dict: Dict[Union[str, int], float]) -> str:
+        """Store sample weights as a supplemental data table.
+
+        Args:
+            weight_dict: Mapping of ID to sample weight
+
+        Returns:
+            str: The name of the created supplemental table
+        """
+        from workbench.core.views.view_utils import dataframe_to_table
+
+        # Create DataFrame from weight_dict
+        df = pd.DataFrame(
+            [(id_val, weight) for id_val, weight in weight_dict.items()],
+            columns=[self.id_column, "sample_weight"],
+        )
+
+        # Supplemental table name follows convention: _{base_table}___sample_weights
+        weights_table = f"_{self.table}___sample_weights"
+
+        # Store as supplemental data table
+        self.log.info(f"Creating supplemental weights table: {weights_table}")
+        dataframe_to_table(self.data_source, df, weights_table)
+
+        return weights_table
 
     @classmethod
     def delete_views(cls, table: str, database: str):
