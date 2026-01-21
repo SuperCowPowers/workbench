@@ -20,6 +20,7 @@ import torch
 from chemprop import data, models
 
 from model_script_utils import (
+    cap_std_outliers,
     expand_proba_column,
     input_fn,
     output_fn,
@@ -245,6 +246,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     preds_std = np.std(np.stack(all_preds), axis=0)
     if preds.ndim == 1:
         preds, preds_std = preds.reshape(-1, 1), preds_std.reshape(-1, 1)
+    preds_std = cap_std_outliers(preds_std)
 
     print(f"Inference complete: {preds.shape[0]} predictions")
 
@@ -701,6 +703,7 @@ if __name__ == "__main__":
             preds_std = np.std(np.stack(all_ens_preds), axis=0)
             if preds_std.ndim == 1:
                 preds_std = preds_std.reshape(-1, 1)
+            preds_std = cap_std_outliers(preds_std)
 
         print("\n--- Per-target metrics ---")
         for t_idx, t_name in enumerate(target_columns):

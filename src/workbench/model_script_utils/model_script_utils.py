@@ -249,6 +249,36 @@ def output_fn(output_df: pd.DataFrame, accept_type: str) -> tuple[str, str]:
         raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
 
 
+def cap_std_outliers(std_array: np.ndarray) -> np.ndarray:
+    """Cap extreme outliers in prediction_std using IQR method.
+
+    Uses the standard IQR fence (Q3 + 1.5*IQR) to cap extreme values.
+    This prevents unreasonably large std values while preserving the
+    relative ordering and keeping meaningful high-uncertainty signals.
+
+    Args:
+        std_array: Array of standard deviations (n_samples,) or (n_samples, n_targets)
+
+    Returns:
+        Array with outliers capped at the upper fence
+    """
+    if std_array.ndim == 1:
+        std_array = std_array.reshape(-1, 1)
+        squeeze = True
+    else:
+        squeeze = False
+
+    capped = std_array.copy()
+    for col in range(capped.shape[1]):
+        col_data = capped[:, col]
+        q1, q3 = np.percentile(col_data, [25, 75])
+        iqr = q3 - q1
+        upper_bound = q3 + 1.5 * iqr
+        capped[:, col] = np.minimum(col_data, upper_bound)
+
+    return capped.squeeze() if squeeze else capped
+
+
 def compute_regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
     """Compute standard regression metrics.
 
