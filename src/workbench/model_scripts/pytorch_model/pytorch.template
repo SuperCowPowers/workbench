@@ -152,24 +152,30 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         print("Decompressing features for prediction...")
         matched_df, features = decompress_features(matched_df, features, compressed_features)
 
-    # Track missing features
-    missing_mask = matched_df[features].isna().any(axis=1)
-    if missing_mask.any():
-        print(f"Warning: {missing_mask.sum()} rows have missing features")
+    # Impute missing values (categorical with mode, continuous handled by scaler)
+    missing_counts = matched_df[features].isna().sum()
+    if missing_counts.any():
+        missing_features = missing_counts[missing_counts > 0]
+        print(f"Imputing missing values: {missing_features.to_dict()}")
+
+        # Load categorical imputation values if available
+        impute_path = os.path.join(model_dir, "categorical_impute.json")
+        if os.path.exists(impute_path):
+            with open(impute_path) as f:
+                cat_impute_values = json.load(f)
+            for col in categorical_cols:
+                if col in cat_impute_values and matched_df[col].isna().any():
+                    matched_df[col] = matched_df[col].fillna(cat_impute_values[col])
+        # Continuous features are imputed by FeatureScaler.transform() using column means
 
     # Initialize output columns
     df["prediction"] = np.nan
     if model_type in ["regressor", "uq_regressor"]:
         df["prediction_std"] = np.nan
 
-    complete_df = matched_df[~missing_mask].copy()
-    if len(complete_df) == 0:
-        print("Warning: No complete rows to predict on")
-        return df
-
-    # Prepare data for inference (with standardization)
+    # Prepare data for inference (with standardization and continuous imputation)
     x_cont, x_cat, _, _, _ = prepare_data(
-        complete_df, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
+        matched_df, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
     )
 
     # Collect ensemble predictions
@@ -191,28 +197,20 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         class_preds = np.argmax(avg_probs, axis=1)
         predictions = label_encoder.inverse_transform(class_preds)
 
-        all_proba = pd.Series([None] * len(df), index=df.index, dtype=object)
-        all_proba.loc[~missing_mask] = [p.tolist() for p in avg_probs]
-        df["pred_proba"] = all_proba
+        df["pred_proba"] = [p.tolist() for p in avg_probs]
         df = expand_proba_column(df, label_encoder.classes_)
     else:
         # Regression
         predictions = preds.flatten()
-        df.loc[~missing_mask, "prediction_std"] = preds_std.flatten()
+        df["prediction_std"] = preds_std.flatten()
 
         # Add UQ intervals if available
         if uq_models and uq_metadata:
-            X_complete = complete_df[features]
-            df_complete = df.loc[~missing_mask].copy()
-            df_complete["prediction"] = predictions  # Set prediction before compute_confidence
-            df_complete = predict_intervals(df_complete, X_complete, uq_models, uq_metadata)
-            df_complete = compute_confidence(df_complete, uq_metadata["median_interval_width"], "q_10", "q_90")
-            # Copy UQ columns back to main dataframe
-            for col in df_complete.columns:
-                if col.startswith("q_") or col == "confidence":
-                    df.loc[~missing_mask, col] = df_complete[col].values
+            df["prediction"] = predictions  # Set prediction before compute_confidence
+            df = predict_intervals(df, matched_df[features], uq_models, uq_metadata)
+            df = compute_confidence(df, uq_metadata["median_interval_width"], "q_10", "q_90")
 
-    df.loc[~missing_mask, "prediction"] = predictions
+    df["prediction"] = predictions
     return df
 
 
@@ -275,11 +273,11 @@ if __name__ == "__main__":
     all_df = pd.concat([pd.read_csv(f, engine="python") for f in training_files])
     check_dataframe(all_df, "training_df")
 
-    # Drop rows with missing features
+    # Drop rows with missing target (required for training)
     initial_count = len(all_df)
-    all_df = all_df.dropna(subset=features)
+    all_df = all_df.dropna(subset=[target])
     if len(all_df) < initial_count:
-        print(f"Dropped {initial_count - len(all_df)} rows with missing features")
+        print(f"Dropped {initial_count - len(all_df)} rows with missing target")
 
     print(f"Target: {target}")
     print(f"Features: {features}")
@@ -300,6 +298,23 @@ if __name__ == "__main__":
     all_df[continuous_cols] = all_df[continuous_cols].astype("float64")
     print(f"Categorical: {categorical_cols}")
     print(f"Continuous: {len(continuous_cols)} columns")
+
+    # Report and handle missing values in features
+    # Compute categorical imputation values (mode) for use at inference time
+    cat_impute_values = {}
+    for col in categorical_cols:
+        mode_val = all_df[col].mode().iloc[0] if not all_df[col].mode().empty else all_df[col].cat.categories[0]
+        cat_impute_values[col] = str(mode_val)  # Convert to string for JSON serialization
+
+    missing_counts = all_df[features].isna().sum()
+    if missing_counts.any():
+        missing_features = missing_counts[missing_counts > 0]
+        print(f"Missing values in features (will be imputed): {missing_features.to_dict()}")
+        # Impute categorical features with mode (most frequent value)
+        for col in categorical_cols:
+            if all_df[col].isna().any():
+                all_df[col] = all_df[col].fillna(cat_impute_values[col])
+        # Continuous features are imputed by FeatureScaler.transform() using column means
 
     # -------------------------------------------------------------------------
     # Classification setup
@@ -505,6 +520,9 @@ if __name__ == "__main__":
 
     with open(os.path.join(args.model_dir, "feature_metadata.json"), "w") as f:
         json.dump({"continuous_cols": continuous_cols, "categorical_cols": categorical_cols}, f)
+
+    with open(os.path.join(args.model_dir, "categorical_impute.json"), "w") as f:
+        json.dump(cat_impute_values, f)
 
     with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
         json.dump(hyperparameters, f, indent=2)
