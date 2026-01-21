@@ -27,7 +27,7 @@ COPY --from=deps-extractor /tmp/deps.txt /tmp/deps.txt
 RUN pip install --no-cache-dir -r /tmp/deps.txt && rm /tmp/deps.txt
 
 # Install workbench[ui] in separate layer (dependencies already satisfied)
-ARG WORKBENCH_VERSION=0.8.227
+ARG WORKBENCH_VERSION=0.8.228
 RUN pip install --no-cache-dir --no-deps "workbench[ui]==${WORKBENCH_VERSION}"
 
 # Copy app code and configuration (after pip installs to avoid cache invalidation)

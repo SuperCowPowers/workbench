@@ -6,9 +6,10 @@ Notes and information on how to do the Dashboard Docker Builds and Push to AWS E
 ```
 cd applications/aws_dashboard
 vi Dockerfile
+...
 
-# Install workbench[ui] in separate layer
-RUN pip install --no-cache-dir "workbench[ui]==0.8.116"  <-- change this
+# Install workbench[ui] in separate layer (dependencies already satisfied)
+ARG WORKBENCH_VERSION=0.8.227  <-- change this
 ```
 
 ### Run the Deploy Script
