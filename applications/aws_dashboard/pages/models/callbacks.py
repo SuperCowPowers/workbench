@@ -140,11 +140,14 @@ def setup_plugin_callbacks(plugins, scatter_plot_plugin: ScatterPlot, confusion_
             if isinstance(target, list):
                 target = next((t for t in target if t in inference_run), target[0])
 
+            # Check if "confidence" column exists for coloring
+            color_col = "confidence" if "confidence" in df.columns else "prediction"
+
             scatter_props = scatter_plot_plugin.update_properties(
                 df,
                 x=target,
                 y="prediction",
-                color="confidence",
+                color=color_col,
                 regression_line=True,
             )
             cm_props = [no_update] * len(confusion_matrix_plugin.properties)
