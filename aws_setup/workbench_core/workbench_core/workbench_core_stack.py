@@ -180,6 +180,7 @@ class WorkbenchCoreStack(Stack):
                 "glue:GetDatabases",
                 "glue:GetTable",
                 "glue:GetTables",
+                "glue:GetPartitions",
                 "glue:SearchTables",
             ],
             resources=[f"arn:aws:glue:{self.region}:{self.account}:catalog"],
