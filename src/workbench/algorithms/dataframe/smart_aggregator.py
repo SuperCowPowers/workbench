@@ -66,8 +66,9 @@ def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000, outlier_column: 
 
     # Post-process: give high-outlier rows their own unique clusters so they don't get aggregated
     if outlier_column and outlier_column in df.columns:
-        # Use percentile-based threshold - top 10% of outlier values get their own clusters
-        threshold = df[outlier_column].quantile(0.9)
+        # Top 10% of outlier values get their own clusters, capped at 200
+        n_to_isolate = min(int(n_rows * 0.1), 200)
+        threshold = df[outlier_column].nlargest(n_to_isolate).min()
         high_outlier_mask = df[outlier_column] >= threshold
         n_high_outliers = high_outlier_mask.sum()
         # Assign unique cluster IDs starting after the max existing cluster
