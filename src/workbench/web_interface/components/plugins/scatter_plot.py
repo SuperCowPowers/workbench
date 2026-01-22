@@ -249,7 +249,6 @@ class ScatterPlot(PluginInterface):
         y_col: str,
         color_col: str,
         regression_line: bool = False,
-        marker_size: int = 10,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
@@ -259,7 +258,6 @@ class ScatterPlot(PluginInterface):
             y_col (str): The column to use for the y-axis.
             color_col (str): The column to use for the color scale.
             regression_line (bool): Whether to include a regression line.
-            marker_size (int): Base size of the markers. Default is 15.
 
         Returns:
             go.Figure: A Plotly Figure object.
@@ -269,10 +267,9 @@ class ScatterPlot(PluginInterface):
         # and compute marker sizes using square root (between log and linear)
         if "aggregation_count" in df.columns:
             df = df.sort_values("aggregation_count", ascending=False).reset_index(drop=True)
-            # Scale: base_size + (sqrt(count) - 1) * factor, so count=1 stays at base_size
-            marker_sizes = marker_size + (np.sqrt(df["aggregation_count"]) - 1) * 3
+            # Scale: base_size (15) + (sqrt(count) - 1) * factor, so count=1 stays at base_size
+            marker_sizes = 15 + (np.sqrt(df["aggregation_count"]) - 1) * 3
         else:
-            # No aggregation, use larger base size
             marker_sizes = 15
 
         # Helper to generate hover text for each point.
