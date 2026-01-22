@@ -37,6 +37,7 @@ RUN pip install --no-cache-dir --no-deps "workbench[ui]==${WORKBENCH_VERSION}"
 COPY app.py /app/
 COPY pages/ /app/pages/
 COPY static/ /app/static/
+COPY assets/ /app/assets/
 ARG WORKBENCH_CONFIG
 COPY $WORKBENCH_CONFIG /app/workbench_config.json
 ENV WORKBENCH_CONFIG=/app/workbench_config.json

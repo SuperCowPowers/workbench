@@ -3,7 +3,7 @@
 from typing import Union
 
 # Dash Imports
-from dash import html, callback, dcc, Input, Output, State
+from dash import html, callback, dcc, no_update, Input, Output, State
 
 # Workbench Imports
 from workbench.api import ModelType, ParameterStore
@@ -71,7 +71,8 @@ class ModelDetails(PluginInterface):
 
         Args:
             model (CachedModel): An instantiated CachedModel object
-            **kwargs: Additional keyword arguments (unused)
+            **kwargs: Additional keyword arguments
+                - inference_run: Current inference run selection (to preserve user's choice)
 
         Returns:
             list: A list of the updated property values for the plugin
@@ -85,10 +86,17 @@ class ModelDetails(PluginInterface):
 
         # Populate the inference runs dropdown
         inference_runs, default_run = self.get_inference_runs()
-        metrics = self.inference_metrics(default_run)
 
-        # Return the updated property values for the plugin
-        return [header, details, inference_runs, default_run, metrics]
+        # Check if we should preserve the current inference run selection
+        current_inference_run = kwargs.get("inference_run")
+        if current_inference_run and current_inference_run in inference_runs:
+            # Preserve the user's selection - use no_update for dropdown value
+            metrics = self.inference_metrics(current_inference_run)
+            return [header, details, inference_runs, no_update, metrics]
+        else:
+            # New model or invalid selection - use default
+            metrics = self.inference_metrics(default_run)
+            return [header, details, inference_runs, default_run, metrics]
 
     def register_internal_callbacks(self):
         @callback(

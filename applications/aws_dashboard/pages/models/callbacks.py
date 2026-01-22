@@ -81,10 +81,10 @@ def setup_plugin_callbacks(plugins, scatter_plot_plugin: ScatterPlot, confusion_
     # Callback to update standard plugins (model_details, shap_plot)
     @callback(
         [Output(component_id, prop) for p in standard_plugins for component_id, prop in p.properties],
-        State("model_details-dropdown", "value"),
         Input("models_table", "selectedRows"),
+        State("model_details-dropdown", "value"),
     )
-    def update_standard_plugin_properties(inference_run, selected_rows):
+    def update_standard_plugin_properties(selected_rows, inference_run):
         """Update properties for standard plugins that take a Model object."""
         if not selected_rows or selected_rows[0] is None:
             raise PreventUpdate
@@ -94,6 +94,7 @@ def setup_plugin_callbacks(plugins, scatter_plot_plugin: ScatterPlot, confusion_
 
         all_props = []
         for p in standard_plugins:
+            # Pass current inference_run to preserve user's dropdown selection
             all_props.extend(p.update_properties(model, inference_run=inference_run))
 
         return all_props
