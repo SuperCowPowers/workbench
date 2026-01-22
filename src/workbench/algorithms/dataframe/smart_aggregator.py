@@ -10,9 +10,7 @@ import logging
 log = logging.getLogger("workbench")
 
 
-def smart_aggregator(
-    df: pd.DataFrame, target_rows: int = 1000, outlier_column: str = "residuals"
-) -> pd.DataFrame:
+def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000, outlier_column: str = "residuals") -> pd.DataFrame:
     """
     Reduce DataFrame rows by aggregating similar rows based on numeric column similarity.
 
