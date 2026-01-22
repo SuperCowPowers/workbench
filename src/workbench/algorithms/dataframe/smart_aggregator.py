@@ -10,7 +10,9 @@ import logging
 log = logging.getLogger("workbench")
 
 
-def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000) -> pd.DataFrame:
+def smart_aggregator(
+    df: pd.DataFrame, target_rows: int = 1000, outlier_column: str = "residuals"
+) -> pd.DataFrame:
     """
     Reduce DataFrame rows by aggregating similar rows based on numeric column similarity.
 
@@ -21,6 +23,9 @@ def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000) -> pd.DataFrame:
     Args:
         df: Input DataFrame.
         target_rows: Target number of rows in output (default: 1000).
+        outlier_column: Column where high values should resist aggregation (default: "residuals").
+                       Rows with high values in this column will be kept separate while rows
+                       with low values cluster together. Set to None to disable.
 
     Returns:
         Reduced DataFrame with 'aggregation_count' column showing how many rows were combined.
@@ -61,6 +66,12 @@ def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000) -> pd.DataFrame:
     # Pass 1: Normalize and cluster
     scaler = StandardScaler()
     X = scaler.fit_transform(df_for_clustering)
+
+    # Apply transform to outlier_column to discourage clustering high-value rows
+    if outlier_column and outlier_column in numeric_cols:
+        col_idx = numeric_cols.index(outlier_column)
+        # Scale factor ensures high outliers dominate over all other columns combined
+        X[:, col_idx] = 50 * (X[:, col_idx] ** 2)
 
     n_clusters = min(target_rows, n_rows)
     kmeans = MiniBatchKMeans(
@@ -103,13 +114,20 @@ if __name__ == "__main__":
 
     features = np.vstack([cluster_1, cluster_2, cluster_3])
 
+    # Create target and prediction columns, then compute residuals
+    target = features[:, 0] + features[:, 1] * 0.5 + np.random.randn(len(features)) * 0.1
+    prediction = target + np.random.randn(len(features)) * 0.5  # Add noise for residuals
+    residuals = np.abs(target - prediction)
+
     data = {
         "id": [f"id_{i}" for i in range(len(features))],
         "A": features[:, 0],
         "B": features[:, 1],
         "C": features[:, 2],
         "category": np.random.choice(["cat1", "cat2", "cat3"], len(features)),
-        "target": features[:, 0] + features[:, 1] * 0.5 + np.random.randn(len(features)) * 0.1,
+        "target": target,
+        "prediction": prediction,
+        "residuals": residuals,
     }
     df = pd.DataFrame(data)
 
@@ -117,13 +135,18 @@ if __name__ == "__main__":
     print(df.head())
     print()
 
-    # Test smart_aggregator - just df and target_rows
+    # Test smart_aggregator with residuals preservation
     result = smart_aggregator(df, target_rows=500)
     print(f"smart_aggregator result: {len(result)} rows")
     print(result.head(20))
     print()
     print("Aggregation count stats:")
     print(result["aggregation_count"].describe())
+    print()
+    # Show that high-residual points have lower aggregation counts
+    print("Aggregation count by residual quartile:")
+    result["residual_quartile"] = pd.qcut(result["residuals"], 4, labels=["Q1 (low)", "Q2", "Q3", "Q4 (high)"])
+    print(result.groupby("residual_quartile")["aggregation_count"].mean())
 
     # Test with real Workbench data
     print("\n" + "=" * 80)
