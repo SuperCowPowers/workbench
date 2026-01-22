@@ -142,13 +142,13 @@ def prediction_intervals(df, figure, x_col):
 
     # Sort dataframe by x_col for connected lines
     sorted_df = df.sort_values(by=x_col)
-    # Add outer band (q_025 to q_975) - more transparent
+    # Add outer band (q_025 to q_975) - desaturated blue-gray, more transparent
     figure.add_trace(
         go.Scatter(
             x=sorted_df[x_col],
             y=sorted_df["q_025"],
             mode="lines",
-            line=dict(width=1, color="rgba(99, 110, 250, 0.5)"),
+            line=dict(width=1, color="rgba(120, 130, 180, 0.3)"),
             name="2.5 Percentile",
             hoverinfo="skip",
             showlegend=False,
@@ -159,21 +159,21 @@ def prediction_intervals(df, figure, x_col):
             x=sorted_df[x_col],
             y=sorted_df["q_975"],
             mode="lines",
-            line=dict(width=1, color="rgba(99, 110, 250, 0.5)"),
+            line=dict(width=1, color="rgba(120, 130, 180, 0.3)"),
             name="97.5 Percentile",
             hoverinfo="skip",
             showlegend=False,
             fill="tonexty",
-            fillcolor="rgba(99, 110, 250, 0.35)",
+            fillcolor="rgba(120, 130, 180, 0.15)",
         )
     )
-    # Add inner band (q_25 to q_75) - less transparent
+    # Add inner band (q_25 to q_75) - desaturated green-gray, slightly more visible
     figure.add_trace(
         go.Scatter(
             x=sorted_df[x_col],
             y=sorted_df["q_25"],
             mode="lines",
-            line=dict(width=1, color="rgba(99, 250, 110, 0.5)"),
+            line=dict(width=1, color="rgba(130, 180, 140, 0.3)"),
             name="25 Percentile",
             hoverinfo="skip",
             showlegend=False,
@@ -184,12 +184,12 @@ def prediction_intervals(df, figure, x_col):
             x=sorted_df[x_col],
             y=sorted_df["q_75"],
             mode="lines",
-            line=dict(width=1, color="rgba(99, 250, 110, 0.5)"),
+            line=dict(width=1, color="rgba(130, 180, 140, 0.3)"),
             name="75 Percentile",
             hoverinfo="skip",
             showlegend=False,
             fill="tonexty",
-            fillcolor="rgba(99, 250, 110, 0.35)",
+            fillcolor="rgba(130, 180, 140, 0.18)",
         )
     )
     return figure

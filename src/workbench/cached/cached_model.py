@@ -6,6 +6,7 @@ import pandas as pd
 # Workbench Imports
 from workbench.core.artifacts.model_core import ModelCore, ModelType
 from workbench.core.artifacts.cached_artifact_mixin import CachedArtifactMixin
+from workbench.algorithms.dataframe import smart_aggregator
 
 
 class CachedModel(CachedArtifactMixin, ModelCore):
@@ -85,13 +86,13 @@ class CachedModel(CachedArtifactMixin, ModelCore):
 
     @CachedArtifactMixin.cache_result
     def get_inference_predictions(
-        self, capture_name: str = "full_cross_fold", limit: int = 5000
+        self, capture_name: str = "full_cross_fold", target_rows: int = 1000
     ) -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: auto_inference)
-            limit (int, optional): Maximum rows to return (default: 1000)
+            capture_name (str, optional): Specific capture_name (default: full_cross_fold)
+            target_rows (int, optional): Target number of rows to return (default: 1000)
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
@@ -100,7 +101,7 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         if df is None:
             return None
 
-        # Compute residual and do smart sampling based on model type
+        # Compute residual based on model type
         is_regressor = self.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
         is_classifier = self.model_type == ModelType.CLASSIFIER
 
@@ -120,21 +121,10 @@ class CachedModel(CachedArtifactMixin, ModelCore):
                     df["prediction"].map(label_to_idx).fillna(-1) - df[target].map(label_to_idx).fillna(-1)
                 )
 
-        # Smart sampling: half high-residual rows, half random from the rest
-        if "residual" in df.columns and len(df) > limit:
-            half_limit = limit // 2
-            self.log.warning(
-                f"{self.name}:{capture_name} Sampling {limit} rows (top {half_limit} residuals + {half_limit} random)"
-            )
-            top_residuals = df.nlargest(half_limit, "residual")
-            remaining = df.drop(top_residuals.index)
-            random_sample = remaining.sample(min(half_limit, len(remaining)))
-            return pd.concat([top_residuals, random_sample]).reset_index(drop=True)
-
-        # Fallback: just limit rows if no residual computed
-        if len(df) > limit:
-            self.log.warning(f"{self.name}:{capture_name} Sampling to {limit} rows")
-            return df.sample(limit)
+        # Use smart_aggregator to aggregate similar rows if we have too many
+        if len(df) > target_rows:
+            self.log.info(f"{self.name}:{capture_name} Using smart_aggregator to reduce {len(df)} rows to ~{target_rows}")
+            df = smart_aggregator(df, target_rows=target_rows)
 
         return df
 

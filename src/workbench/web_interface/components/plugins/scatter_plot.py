@@ -1,4 +1,5 @@
 import base64
+import numpy as np
 import pandas as pd
 from dash import dcc, html, callback, clientside_callback, Input, Output, no_update
 import plotly.graph_objects as go
@@ -248,7 +249,7 @@ class ScatterPlot(PluginInterface):
         y_col: str,
         color_col: str,
         regression_line: bool = False,
-        marker_size: int = 15,
+        marker_size: int = 10,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
@@ -258,11 +259,21 @@ class ScatterPlot(PluginInterface):
             y_col (str): The column to use for the y-axis.
             color_col (str): The column to use for the color scale.
             regression_line (bool): Whether to include a regression line.
-            marker_size (int): Size of the markers. Default is 15.
+            marker_size (int): Base size of the markers. Default is 15.
 
         Returns:
             go.Figure: A Plotly Figure object.
         """
+
+        # If aggregation_count is present, sort so largest counts are drawn first (underneath)
+        # and compute marker sizes using square root (between log and linear)
+        if "aggregation_count" in df.columns:
+            df = df.sort_values("aggregation_count", ascending=False).reset_index(drop=True)
+            # Scale: base_size + (sqrt(count) - 1) * factor, so count=1 stays at base_size
+            marker_sizes = marker_size + (np.sqrt(df["aggregation_count"]) - 1) * 3
+        else:
+            # No aggregation, use larger base size
+            marker_sizes = 15
 
         # Helper to generate hover text for each point.
         def generate_hover_text(row):
@@ -305,7 +316,7 @@ class ScatterPlot(PluginInterface):
                     hovertemplate=hovertemplate,
                     customdata=df[custom_data_cols] if custom_data_cols else None,
                     marker=dict(
-                        size=marker_size,
+                        size=marker_sizes,
                         color=marker_color,
                         colorscale=self.colorscale,
                         colorbar=colorbar,
@@ -325,6 +336,11 @@ class ScatterPlot(PluginInterface):
             for i, cat in enumerate(categories):
                 sub_df = df[df[color_col] == cat]
                 sub_hovertext = hovertext.loc[sub_df.index] if hovertext is not None else None
+                # Get marker sizes for this subset (handles both array and scalar)
+                if isinstance(marker_sizes, (pd.Series, np.ndarray)):
+                    sub_marker_sizes = marker_sizes.loc[sub_df.index] if isinstance(marker_sizes, pd.Series) else marker_sizes[sub_df.index]
+                else:
+                    sub_marker_sizes = marker_sizes
                 trace = go.Scattergl(
                     x=sub_df[x_col],
                     y=sub_df[y_col],
@@ -335,7 +351,7 @@ class ScatterPlot(PluginInterface):
                     hovertemplate=hovertemplate,
                     customdata=sub_df[custom_data_cols] if custom_data_cols else None,
                     marker=dict(
-                        size=marker_size,
+                        size=sub_marker_sizes,
                         color=discrete_colors[i % len(discrete_colors)],
                         opacity=0.8,
                         line=dict(color="rgba(0,0,0,0.25)", width=1),
