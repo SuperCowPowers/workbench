@@ -1,5 +1,7 @@
 """Markdown Utility/helper methods"""
 
+import math
+
 from workbench.utils.symbols import health_icons
 
 
@@ -229,7 +231,9 @@ def df_to_html_table(df, round_digits: int = 2, margin_bottom: int = 30) -> str:
         for val in row:
             # Format value: integers without decimal, floats rounded
             if isinstance(val, float):
-                if val == int(val):
+                if math.isnan(val):
+                    formatted_val = "NaN"
+                elif val == int(val):
                     formatted_val = int(val)
                 else:
                     formatted_val = round(val, round_digits)
