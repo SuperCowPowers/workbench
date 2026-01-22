@@ -74,6 +74,7 @@ server = app.server
 # ASGI wrapper for Uvicorn (only needed in Docker/production)
 try:
     from asgiref.wsgi import WsgiToAsgi
+
     asgi_app = WsgiToAsgi(server)
 except ImportError:
     asgi_app = None  # Not available when running locally with `python app.py`
