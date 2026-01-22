@@ -36,19 +36,30 @@ a:hover {
 
 /* AgGrid custom CSS */
 
-/* There's a one pixel border around the grid that we want to remove */
-.ag-root-wrapper {
-    border: none !important; /* Force removal with !important */
-}
-
-
-/* Box shadow and rounded corners for all AgGrid themes */
+/* AG Grid 33+ uses CSS variables for theming - set them at the theme level */
 [class*="ag-theme-"] {
+    --ag-background-color: rgb(40, 40, 40);
+    --ag-odd-row-background-color: rgb(40, 40, 40);
+    --ag-row-background-color: rgb(50, 50, 50);
+    --ag-selected-row-background-color: rgb(60, 70, 90);
+    --ag-row-hover-color: rgb(55, 55, 65);
+    --ag-header-background-color: rgb(35, 35, 35);
+    --ag-border-color: rgba(80, 80, 80, 0.5);
+    --ag-foreground-color: rgb(180, 180, 180);
+    --ag-header-foreground-color: rgb(220, 220, 220);
+    --ag-wrapper-border-radius: 12px;
+
+    /* Box shadow and rounded corners */
     box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
-    border-radius: 12px; /* Rounded corners */
+    border-radius: 12px;
     border: 0.5px solid rgba(0, 0, 0, 0.5);
     margin: 0;
     padding: 0;
+}
+
+/* Remove border from the grid wrapper */
+.ag-root-wrapper {
+    border: none !important;
 }
 
 /* Apply styling to Workbench containers */

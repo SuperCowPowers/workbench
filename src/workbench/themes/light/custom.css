@@ -1,8 +1,8 @@
 /* Light Theme Color Palette - Blue-Purple Blend */
 :root {
     /* Primary colors - blue to purple blend, low saturation */
-    --wb-lightest: rgb(200, 205, 215);        /* Very light blue-lavender - backgrounds */
-    --wb-light: rgb(200, 205, 215);           /* Light periwinkle - alternate rows */
+    --wb-lightest: rgb(215, 218, 225);        /* Light blue-lavender - backgrounds */
+    --wb-light: rgb(210, 213, 220);           /* Slightly lighter - alternate rows */
     --wb-medium: rgb(175, 185, 215);          /* Medium blue-purple - headers */
     --wb-accent: rgb(120, 130, 180);          /* Blue-purple accent - borders */
     --wb-dark: rgb(80, 90, 140);              /* Dark blue-purple - strong accents */
@@ -28,9 +28,9 @@
     --wb-dropdown-focus: rgba(215, 215, 215);
     --wb-dropdown-hover: rgba(215, 215, 215);
 
-    /* Container colors (with alpha) */
-    --wb-container-bg: rgba(215, 215, 215, 0.5);
-    --wb-table-cell-bg: rgba(215, 215, 215, 0.5);
+    /* Container colors */
+    --wb-container-bg: rgb(215, 218, 225);
+    --wb-table-cell-bg: rgb(215, 218, 225);
 
     /* Body gradient colors */
     --wb-body-gradient-start: rgb(180, 195, 215);
@@ -78,45 +78,29 @@ ul, ol {
 
 /* AgGrid custom CSS */
 
-/* Adjust header background color */
-.ag-header {
-    --ag-header-background-color: var(--wb-medium);
-}
-
-/* Adjust cell background and text color */
-.ag-cell {
-    background-color: var(--wb-lightest);
-    color: var(--wb-text-primary);
-}
-
-/* Alternate row colors */
-.ag-row:nth-child(even) .ag-cell {
-    background-color: var(--wb-light);
-}
-
-/* AgGrid header text color */
-.ag-header-cell-text {
-    color: var(--wb-text-primary);
-}
-
-/* Selection color for the entire row */
-.ag-row.ag-row-selected .ag-cell {
-    background-color: var(--wb-medium);
-}
-
-/* There's a one pixel border around the grid that we want to remove */
-.ag-root-wrapper {
-    border: none !important; /* Force removal with !important */
-}
-
-
-/* Box shadow and rounded corners for all AgGrid themes */
+/* AG Grid 33+ uses CSS variables for theming - set them at the theme level */
 [class*="ag-theme-"] {
+    --ag-background-color: var(--wb-lightest);
+    --ag-odd-row-background-color: var(--wb-lightest);
+    --ag-row-background-color: var(--wb-light);
+    --ag-selected-row-background-color: var(--wb-medium);
+    --ag-row-hover-color: var(--wb-light);
+    --ag-header-background-color: var(--wb-medium);
+    --ag-border-color: var(--wb-accent);
+    --ag-foreground-color: var(--wb-text-primary);
+    --ag-header-foreground-color: var(--wb-text-primary);
+
+    /* Box shadow and rounded corners */
     box-shadow: 2px 2px 6px 5px var(--wb-shadow);
     border-radius: 12px;
     border: 0.5px solid var(--wb-accent);
     margin: 0;
     padding: 0;
+}
+
+/* Remove border from the grid wrapper */
+.ag-root-wrapper {
+    border: none !important;
 }
 
 /* Apply styling to Workbench containers */
