@@ -123,7 +123,9 @@ class CachedModel(CachedArtifactMixin, ModelCore):
 
         # Use smart_aggregator to aggregate similar rows if we have too many
         if len(df) > target_rows:
-            self.log.info(f"{self.name}:{capture_name} Using smart_aggregator to reduce {len(df)} rows to ~{target_rows}")
+            self.log.info(
+                f"{self.name}:{capture_name} Using smart_aggregator to reduce {len(df)} rows to ~{target_rows}"
+            )
             df = smart_aggregator(df, target_rows=target_rows)
 
         return df

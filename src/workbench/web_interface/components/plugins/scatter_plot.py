@@ -338,7 +338,11 @@ class ScatterPlot(PluginInterface):
                 sub_hovertext = hovertext.loc[sub_df.index] if hovertext is not None else None
                 # Get marker sizes for this subset (handles both array and scalar)
                 if isinstance(marker_sizes, (pd.Series, np.ndarray)):
-                    sub_marker_sizes = marker_sizes.loc[sub_df.index] if isinstance(marker_sizes, pd.Series) else marker_sizes[sub_df.index]
+                    sub_marker_sizes = (
+                        marker_sizes.loc[sub_df.index]
+                        if isinstance(marker_sizes, pd.Series)
+                        else marker_sizes[sub_df.index]
+                    )
                 else:
                     sub_marker_sizes = marker_sizes
                 trace = go.Scattergl(
