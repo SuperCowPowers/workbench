@@ -96,11 +96,9 @@ def setup_plugin_callbacks(plugins, scatter_plot_plugin: ScatterPlot, confusion_
         all_props = []
         for p in standard_plugins:
             # Pass current inference_run and previous model name to detect model changes
-            all_props.extend(p.update_properties(
-                model,
-                inference_run=inference_run,
-                previous_model_name=previous_model_name
-            ))
+            all_props.extend(
+                p.update_properties(model, inference_run=inference_run, previous_model_name=previous_model_name)
+            )
 
         return all_props
 
