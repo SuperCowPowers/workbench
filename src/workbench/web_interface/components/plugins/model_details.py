@@ -73,6 +73,7 @@ class ModelDetails(PluginInterface):
             model (CachedModel): An instantiated CachedModel object
             **kwargs: Additional keyword arguments
                 - inference_run: Current inference run selection (to preserve user's choice)
+                - previous_model_name: Name of the previously selected model
 
         Returns:
             list: A list of the updated property values for the plugin
@@ -87,10 +88,14 @@ class ModelDetails(PluginInterface):
         # Populate the inference runs dropdown
         inference_runs, default_run = self.get_inference_runs()
 
-        # Check if we should preserve the current inference run selection
+        # Check if the model changed
+        previous_model_name = kwargs.get("previous_model_name")
         current_inference_run = kwargs.get("inference_run")
-        if current_inference_run and current_inference_run in inference_runs:
-            # Preserve the user's selection - use no_update for dropdown value
+        model_changed = previous_model_name != model.name
+
+        # Only preserve the inference run if the model hasn't changed AND the selection is valid
+        if not model_changed and current_inference_run and current_inference_run in inference_runs:
+            # Same model, preserve the user's selection - use no_update for dropdown value
             metrics = self.inference_metrics(current_inference_run)
             return [header, details, inference_runs, no_update, metrics]
         else:

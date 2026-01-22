@@ -33,6 +33,7 @@ app = Dash(
     title=app_title,
     use_pages=True,
     external_stylesheets=css_files,
+    assets_folder="assets",
 )
 
 # Register the CSS route in the ThemeManager
