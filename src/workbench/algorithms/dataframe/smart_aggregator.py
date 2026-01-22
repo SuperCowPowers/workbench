@@ -10,7 +10,7 @@ import logging
 log = logging.getLogger("workbench")
 
 
-def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000, outlier_column: str = "residuals") -> pd.DataFrame:
+def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000, outlier_column: str = "residual") -> pd.DataFrame:
     """
     Reduce DataFrame rows by aggregating similar rows based on numeric column similarity.
 
@@ -21,7 +21,7 @@ def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000, outlier_column: 
     Args:
         df: Input DataFrame.
         target_rows: Target number of rows in output (default: 1000).
-        outlier_column: Column where high values should resist aggregation (default: "residuals").
+        outlier_column: Column where high values should resist aggregation (default: "residual").
                        Rows with high values in this column will be kept separate while rows
                        with low values cluster together. Set to None to disable.
 
@@ -56,38 +56,32 @@ def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000, outlier_column: 
         return result.reset_index(drop=True)
 
     # Handle NaN values - fill with column median
-    df_for_clustering = df[numeric_cols].copy()
-    for col in numeric_cols:
-        if df_for_clustering[col].isna().any():
-            df_for_clustering[col] = df_for_clustering[col].fillna(df_for_clustering[col].median())
+    df_for_clustering = df[numeric_cols].fillna(df[numeric_cols].median())
 
-    # Pass 1: Normalize and cluster
-    scaler = StandardScaler()
-    X = scaler.fit_transform(df_for_clustering)
+    # Normalize and cluster
+    X = StandardScaler().fit_transform(df_for_clustering)
+    df["_cluster"] = MiniBatchKMeans(
+        n_clusters=min(target_rows, n_rows), random_state=42, batch_size=min(1024, n_rows), n_init=3
+    ).fit_predict(X)
 
-    # Apply transform to outlier_column to discourage clustering high-value rows
-    if outlier_column and outlier_column in numeric_cols:
-        col_idx = numeric_cols.index(outlier_column)
-        # Scale factor ensures high outliers dominate over all other columns combined
-        X[:, col_idx] = 50 * (X[:, col_idx] ** 2)
+    # Post-process: give high-outlier rows their own unique clusters so they don't get aggregated
+    if outlier_column and outlier_column in df.columns:
+        # Use percentile-based threshold - top 10% of outlier values get their own clusters
+        threshold = df[outlier_column].quantile(0.9)
+        high_outlier_mask = df[outlier_column] >= threshold
+        n_high_outliers = high_outlier_mask.sum()
+        # Assign unique cluster IDs starting after the max existing cluster
+        max_cluster = df["_cluster"].max()
+        df.loc[high_outlier_mask, "_cluster"] = range(max_cluster + 1, max_cluster + 1 + n_high_outliers)
+        log.info(f"smart_aggregator: Isolated {n_high_outliers} high-outlier rows (>= {threshold:.3f})")
+    elif outlier_column:
+        log.warning(f"smart_aggregator: outlier_column '{outlier_column}' not found in columns")
 
-    n_clusters = min(target_rows, n_rows)
-    kmeans = MiniBatchKMeans(
-        n_clusters=n_clusters,
-        random_state=42,
-        batch_size=min(1024, n_rows),
-        n_init=3,
-    )
-    df["_cluster"] = kmeans.fit_predict(X)
-
-    # Pass 2: Aggregate each cluster (mean for numeric, first for non-numeric)
-    agg_dict = {col: "mean" for col in numeric_cols}
-    agg_dict.update({col: "first" for col in non_numeric_cols})
-
+    # Aggregate each cluster (mean for numeric, first for non-numeric)
+    agg_dict = {col: "mean" for col in numeric_cols} | {col: "first" for col in non_numeric_cols}
     grouped = df.groupby("_cluster")
-    result = grouped.agg(agg_dict)
+    result = grouped.agg(agg_dict).reset_index(drop=True)
     result["aggregation_count"] = grouped.size().values
-    result = result.reset_index(drop=True)
 
     # Restore original column order, with aggregation_count at the end
     result = result[original_columns + ["aggregation_count"]]
@@ -125,7 +119,7 @@ if __name__ == "__main__":
         "category": np.random.choice(["cat1", "cat2", "cat3"], len(features)),
         "target": target,
         "prediction": prediction,
-        "residuals": residuals,
+        "residual": residuals,
     }
     df = pd.DataFrame(data)
 
@@ -143,7 +137,7 @@ if __name__ == "__main__":
     print()
     # Show that high-residual points have lower aggregation counts
     print("Aggregation count by residual quartile:")
-    result["residual_quartile"] = pd.qcut(result["residuals"], 4, labels=["Q1 (low)", "Q2", "Q3", "Q4 (high)"])
+    result["residual_quartile"] = pd.qcut(result["residual"], 4, labels=["Q1 (low)", "Q2", "Q3", "Q4 (high)"])
     print(result.groupby("residual_quartile")["aggregation_count"].mean())
 
     # Test with real Workbench data
