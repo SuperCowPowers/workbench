@@ -528,7 +528,7 @@
             "style": "dark"
         },
         "paper_bgcolor": "rgba(0, 0, 0, 0.0)",
-        "plot_bgcolor": "rgba(0, 0, 0, 0.0)",
+        "plot_bgcolor": "rgb(54, 55, 88)",
         "polar": {
             "angularaxis": {
                 "gridcolor": "#506784",

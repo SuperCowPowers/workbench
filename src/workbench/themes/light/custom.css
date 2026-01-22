@@ -34,8 +34,7 @@
 
     /* Body gradient colors */
     --wb-body-gradient-start: rgb(180, 195, 215);
-    --wb-body-gradient-mid: rgb(170, 175, 205);
-    --wb-body-gradient-end: rgb(185, 175, 205);
+    --wb-body-gradient-end: rgb(195, 205, 220);
 
     /* Table header gradient colors */
     --wb-header-red-start: rgb(200, 120, 120);
@@ -54,7 +53,7 @@ h1, h2, h3, h4 {
 
 body {
     color: var(--wb-text-primary);
-    background: linear-gradient(135deg, var(--wb-body-gradient-start) 0%, var(--wb-body-gradient-mid) 50%, var(--wb-body-gradient-end) 100%);
+    background: linear-gradient(90deg, var(--wb-body-gradient-start) 0%, var(--wb-body-gradient-end) 100%);
 }
 
 /* Custom CSS to style bold text */
@@ -65,6 +64,16 @@ b, strong {
 /* Custom CSS to style italic text */
 i, em {
     color: var(--wb-text-italic);
+}
+
+/* Default link color */
+a {
+    color: rgb(40, 80, 200); /* Electric blue for links */
+}
+
+/* Hover effect */
+a:hover {
+    color: rgb(60, 100, 240); /* Brighter blue on hover */
 }
 
 /* Reduce spacing around lists */
@@ -101,6 +110,12 @@ ul, ol {
 /* Remove border from the grid wrapper */
 .ag-root-wrapper {
     border: none !important;
+}
+
+/* AG Grid container - remove padding but allow shadow overflow */
+div:has(> [class*="ag-theme-"]) {
+    padding: 0 !important;
+    overflow: visible !important;
 }
 
 /* Apply styling to Workbench containers */

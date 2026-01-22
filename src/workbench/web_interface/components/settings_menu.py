@@ -75,8 +75,9 @@ class SettingsMenu:
             style={"display": "flex", "flexDirection": "column", "alignItems": "center", "justifyContent": "center"},
         )
 
-        # Build menu items: Status, License, divider, Themes submenu
+        # Build menu items: Home, Status, License, divider, Themes submenu
         menu_items = [
+            dbc.DropdownMenuItem("Home", href="/"),
             dbc.DropdownMenuItem("Status", href="/status", external_link=True, target="_blank"),
             dbc.DropdownMenuItem("License", href="/license", external_link=True, target="_blank"),
             dbc.DropdownMenuItem(divider=True),

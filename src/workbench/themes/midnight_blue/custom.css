@@ -62,6 +62,12 @@ a:hover {
     border: none !important;
 }
 
+/* AG Grid container - remove padding but allow shadow overflow */
+div:has(> [class*="ag-theme-"]) {
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
 /* Apply styling to Workbench containers */
 .workbench-container {
     box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);

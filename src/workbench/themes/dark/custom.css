@@ -3,6 +3,7 @@ h1, h2, h3, h4 {
 }
 body {
     color: rgb(180, 180, 180); /* We want the text dim white */
+    background: linear-gradient(90deg, rgb(45, 45, 45) 0%, rgb(35, 35, 35) 100%);
 }
 
 /* Custom CSS to style bold text */
@@ -60,6 +61,12 @@ a:hover {
 /* Remove border from the grid wrapper */
 .ag-root-wrapper {
     border: none !important;
+}
+
+/* AG Grid container - remove padding but allow shadow overflow */
+div:has(> [class*="ag-theme-"]) {
+    padding: 0 !important;
+    overflow: visible !important;
 }
 
 /* Apply styling to Workbench containers */
