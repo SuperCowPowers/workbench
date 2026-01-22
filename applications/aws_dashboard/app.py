@@ -68,8 +68,12 @@ app.index_string = """
 </html>
 """
 
-# Note: The 'server' object is required for running the app with NGINX/uWSGI
+# Note: The 'server' object is required for running the app with WSGI servers
 server = app.server
+
+# ASGI wrapper for Uvicorn (wraps the WSGI Flask app)
+from asgiref.wsgi import WsgiToAsgi
+asgi_app = WsgiToAsgi(server)
 
 # Create the settings menu component
 settings_menu = SettingsMenu()
