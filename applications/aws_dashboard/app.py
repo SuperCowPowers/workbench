@@ -68,8 +68,16 @@ app.index_string = """
 </html>
 """
 
-# Note: The 'server' object is required for running the app with NGINX/uWSGI
+# Note: The 'server' object is required for running the app with WSGI servers
 server = app.server
+
+# ASGI wrapper for Uvicorn (only needed in Docker/production)
+try:
+    from asgiref.wsgi import WsgiToAsgi
+
+    asgi_app = WsgiToAsgi(server)
+except ImportError:
+    asgi_app = None  # Not available when running locally with `python app.py`
 
 # Create the settings menu component
 settings_menu = SettingsMenu()

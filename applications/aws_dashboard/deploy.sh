@@ -35,7 +35,12 @@ fi
 VERSION_TAG="v${VERSION}_amd64"
 
 echo "📦 Building Docker image version: $VERSION_TAG"
-docker build --build-arg WORKBENCH_CONFIG=$CONFIG -t $IMAGE_NAME:$VERSION_TAG --platform $PLATFORM .
+docker buildx build \
+    --platform $PLATFORM \
+    --build-arg WORKBENCH_CONFIG=$CONFIG \
+    -t $IMAGE_NAME:$VERSION_TAG \
+    --load \
+    .
 
 echo "🔑 Logging in to ECR..."
 aws ecr-public get-login-password --region us-east-1 --profile $AWS_PROFILE | docker login --username AWS --password-stdin public.ecr.aws
