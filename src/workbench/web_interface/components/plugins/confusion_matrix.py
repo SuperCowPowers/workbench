@@ -4,8 +4,7 @@ from dash import dcc, callback, Output, Input, State
 import plotly.graph_objects as go
 
 # Workbench Imports
-from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.utils.theme_manager import ThemeManager
+from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType, THEME_STORE_ID
 from workbench.cached.cached_model import CachedModel
 from workbench.utils.color_utils import add_alpha_to_first_color
 
@@ -19,10 +18,8 @@ class ConfusionMatrix(PluginInterface):
     def __init__(self):
         """Initialize the ConfusionMatrix plugin class"""
         self.component_id = None
-        self.current_highlight = None  # Store the currently highlighted cell
-        self.theme_manager = ThemeManager()
-
-        # Call the parent class constructor
+        self.model = None  # Store the model for re-rendering on theme change
+        self.inference_run = None  # Store the inference run for re-rendering
         super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -57,9 +54,12 @@ class ConfusionMatrix(PluginInterface):
         Returns:
             list: A list containing the updated Plotly figure.
         """
+        # Store for re-rendering on theme change
+        self.model = model
+        self.inference_run = kwargs.get("inference_run", "auto_inference")
+
         # Retrieve the confusion matrix data
-        inference_run = kwargs.get("inference_run", "auto_inference")
-        df = model.confusion_matrix(inference_run)
+        df = model.confusion_matrix(self.inference_run)
         if df is None:
             return [self.display_text("No Data")]
 
@@ -139,6 +139,18 @@ class ConfusionMatrix(PluginInterface):
 
     def register_internal_callbacks(self):
         """Register internal callbacks for the plugin."""
+
+        @callback(
+            Output(self.component_id, "figure", allow_duplicate=True),
+            Input(THEME_STORE_ID, "data"),
+            prevent_initial_call=True,
+        )
+        def _update_on_theme_change(theme):
+            """Re-render the confusion matrix when the theme changes."""
+            if self.model is None:
+                return self.display_text("Waiting for Data...")
+            # Re-render with updated theme colors
+            return self.update_properties(self.model, inference_run=self.inference_run)[0]
 
         @callback(
             Output(self.component_id, "figure", allow_duplicate=True),

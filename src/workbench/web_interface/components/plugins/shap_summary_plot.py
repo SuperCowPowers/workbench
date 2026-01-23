@@ -1,6 +1,6 @@
 """SHAP Summary Plot visualization component for XGBoost models"""
 
-from dash import dcc
+from dash import dcc, callback, Output, Input
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
@@ -8,8 +8,7 @@ from typing import Dict, List
 
 # Workbench Imports
 from workbench.cached.cached_model import CachedModel
-from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.utils.theme_manager import ThemeManager
+from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType, THEME_STORE_ID
 from workbench.utils.plot_utils import beeswarm_offsets
 
 
@@ -22,7 +21,7 @@ class ShapSummaryPlot(PluginInterface):
     def __init__(self):
         """Initialize the ShapSummaryPlot plugin class"""
         self.component_id = None
-        self.theme_manager = ThemeManager()
+        self.model = None  # Store the model for re-rendering on theme change
         super().__init__()
 
     def create_component(self, component_id: str) -> dcc.Graph:
@@ -39,6 +38,9 @@ class ShapSummaryPlot(PluginInterface):
 
     def update_properties(self, model: CachedModel, **kwargs) -> list:
         """Create a SHAP Summary Plot for feature importance visualization."""
+        # Store for re-rendering on theme change
+        self.model = model
+
         # Basic validation
         shap_data = model.shap_data()
         shap_sample_rows = model.shap_sample()
@@ -223,7 +225,18 @@ class ShapSummaryPlot(PluginInterface):
 
     def register_internal_callbacks(self):
         """Register internal callbacks for the plugin."""
-        pass  # Implement if needed
+
+        @callback(
+            Output(self.component_id, "figure", allow_duplicate=True),
+            Input(THEME_STORE_ID, "data"),
+            prevent_initial_call=True,
+        )
+        def _update_on_theme_change(theme):
+            """Re-render the SHAP summary plot when the theme changes."""
+            if self.model is None:
+                return self.display_text("Waiting for SHAP data...")
+            # Re-render with updated theme colors
+            return self.update_properties(self.model)[0]
 
 
 if __name__ == "__main__":

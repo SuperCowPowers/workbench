@@ -100,74 +100,35 @@ class SettingsMenu:
                     caret=False,
                     align_end=True,
                 ),
-                # Dummy store for the clientside callback output
-                dcc.Store(id=f"{component_id}-dummy", data=None),
-                # Store to trigger checkmark update on load
+                # Store to trigger checkmark update on load and theme change
                 dcc.Store(id=f"{component_id}-init", data=True),
             ],
             id=component_id,
         )
 
-    @staticmethod
-    def get_clientside_callback_code(component_id: str) -> str:
+    def get_clientside_callback_code(self) -> str:
         """Get the JavaScript code for the theme selection clientside callback.
-
-        Args:
-            component_id (str): The ID prefix used in create_component.
 
         Returns:
             str: JavaScript code for the clientside callback.
         """
-        return """
-        function(n_clicks_list, ids) {
-            // Find which button was clicked
-            if (!n_clicks_list || n_clicks_list.every(n => !n)) {
-                return window.dash_clientside.no_update;
-            }
-
-            // Find the clicked theme
-            let clickedTheme = null;
-            for (let i = 0; i < n_clicks_list.length; i++) {
-                if (n_clicks_list[i]) {
-                    clickedTheme = ids[i].theme;
-                    break;
-                }
-            }
-
-            if (clickedTheme) {
-                // Store in localStorage
-                localStorage.setItem('wb_theme', clickedTheme);
-                // Set cookie for Flask to read on reload
-                document.cookie = `wb_theme=${clickedTheme}; path=/; max-age=31536000`;
-                // Reload the page to apply the new theme
-                window.location.reload();
-            }
-
-            return window.dash_clientside.no_update;
-        }
-        """
+        return self.tm.get_theme_switch_js()
 
     @staticmethod
     def get_checkmark_callback_code() -> str:
-        """Get the JavaScript code to update checkmarks based on localStorage.
+        """Get the JavaScript code to update checkmarks based on current theme.
 
         Returns:
             str: JavaScript code for the checkmark update callback.
         """
         return """
-        function(init, ids) {
-            // Get current theme from localStorage (or cookie as fallback)
-            let currentTheme = localStorage.getItem('wb_theme');
+        function(theme, ids) {
+            // If theme is a string (from theme switch), use it directly
+            let currentTheme = (typeof theme === 'string') ? theme : null;
+
+            // Otherwise, get from localStorage
             if (!currentTheme) {
-                // Try to read from cookie
-                const cookies = document.cookie.split(';');
-                for (let cookie of cookies) {
-                    const [name, value] = cookie.trim().split('=');
-                    if (name === 'wb_theme') {
-                        currentTheme = value;
-                        break;
-                    }
-                }
+                currentTheme = localStorage.getItem('wb_theme');
             }
 
             // Return checkmarks for each theme
