@@ -1,5 +1,5 @@
 # Define workbench version once at the top
-ARG WORKBENCH_VERSION=0.8.233
+ARG WORKBENCH_VERSION=0.8.234
 
 # Stage 1: Extract dependencies from workbench[ui]
 FROM python:3.12.5-bookworm AS deps-extractor
