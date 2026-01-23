@@ -263,11 +263,7 @@ class WorkbenchComputeStack(Stack):
                 principals=[iam.ServicePrincipal("cloudwatch.amazonaws.com")],
                 actions=["sns:Publish"],
                 resources=[topic.topic_arn],
-                conditions={
-                    "ArnLike": {
-                        "aws:SourceArn": f"arn:aws:cloudwatch:{self.region}:{self.account}:alarm:*"
-                    }
-                },
+                conditions={"ArnLike": {"aws:SourceArn": f"arn:aws:cloudwatch:{self.region}:{self.account}:alarm:*"}},
             )
         )
 
