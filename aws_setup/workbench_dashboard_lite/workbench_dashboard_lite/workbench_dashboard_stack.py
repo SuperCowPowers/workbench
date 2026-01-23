@@ -1,5 +1,6 @@
 from typing import Optional, List
 from aws_cdk import (
+    Duration,
     Stack,
     StackProps,
     aws_ecs as ecs,
@@ -183,3 +184,6 @@ class WorkbenchDashboardStack(Stack):
 
         # Add our custom security group
         fargate_service.load_balancer.add_security_group(lb_security_group)
+
+        # Enable sticky sessions so users stay on the same container (preserves in-memory state)
+        fargate_service.target_group.enable_cookie_stickiness(Duration.hours(1))
