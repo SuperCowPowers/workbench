@@ -156,6 +156,101 @@ class ThemeManager:
         return cls.current_theme_name
 
     @classmethod
+    def get_theme_urls(cls) -> dict:
+        """Get a mapping of theme names to their Bootstrap CSS URLs."""
+        return {name: theme["base_css"] for name, theme in cls.available_themes.items() if theme["base_css"]}
+
+    @classmethod
+    def get_dark_themes(cls) -> list:
+        """Get list of theme names that are dark mode themes."""
+        dark_themes = []
+        for name, theme in cls.available_themes.items():
+            base_css = theme.get("base_css", "")
+            if base_css:
+                base_css_upper = base_css.upper()
+                for dark_theme in cls._dark_bootstrap_themes:
+                    if dark_theme in base_css_upper:
+                        dark_themes.append(name)
+                        break
+                else:
+                    # Fallback: check if 'dark' is in the theme name
+                    if "dark" in name.lower():
+                        dark_themes.append(name)
+        return dark_themes
+
+    @classmethod
+    def get_theme_switch_js(cls) -> str:
+        """Get the JavaScript code for dynamic theme switching.
+
+        This code should be used in a clientside callback that updates the Bootstrap
+        stylesheet and data-bs-theme attribute when the user selects a new theme.
+        """
+        theme_urls = cls.get_theme_urls()
+        dark_themes = cls.get_dark_themes()
+
+        return f"""
+        function(n_clicks_list, ids) {{
+            // Use callback context to find which input triggered this callback
+            const ctx = window.dash_clientside.callback_context;
+            if (!ctx || !ctx.triggered || ctx.triggered.length === 0) {{
+                return window.dash_clientside.no_update;
+            }}
+
+            // Get the triggered input's id (it's a JSON string for pattern-matching callbacks)
+            const triggeredId = ctx.triggered[0].prop_id.split('.')[0];
+            let clickedTheme = null;
+
+            try {{
+                const parsedId = JSON.parse(triggeredId);
+                clickedTheme = parsedId.theme;
+            }} catch (e) {{
+                // Not a pattern-matching callback ID
+                return window.dash_clientside.no_update;
+            }}
+
+            if (!clickedTheme) {{
+                return window.dash_clientside.no_update;
+            }}
+
+            // Store in localStorage and cookie
+            localStorage.setItem('wb_theme', clickedTheme);
+            document.cookie = `wb_theme=${{clickedTheme}}; path=/; max-age=31536000`;
+
+            // Theme URL mapping (generated from ThemeManager)
+            const themeUrls = {json.dumps(theme_urls)};
+            const darkThemes = {json.dumps(dark_themes)};
+
+            // Update Bootstrap's data-bs-theme attribute
+            const bsTheme = darkThemes.includes(clickedTheme) ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-bs-theme', bsTheme);
+
+            // Find and update the Bootstrap stylesheet
+            const newUrl = themeUrls[clickedTheme];
+            if (newUrl) {{
+                let stylesheet = document.querySelector('link[href*="bootswatch"]') ||
+                                 document.querySelector('link[href*="bootstrap"]') ||
+                                 document.querySelector('link[href="/base.css"]');
+                if (stylesheet) {{
+                    stylesheet.setAttribute('href', newUrl);
+                }} else {{
+                    stylesheet = document.createElement('link');
+                    stylesheet.rel = 'stylesheet';
+                    stylesheet.href = newUrl;
+                    document.head.appendChild(stylesheet);
+                }}
+            }}
+
+            // Force reload custom.css with cache-busting query param
+            let customCss = document.querySelector('link[href^="/custom.css"]');
+            if (customCss) {{
+                customCss.setAttribute('href', `/custom.css?t=${{Date.now()}}`);
+            }}
+
+            return clickedTheme;
+        }}
+        """
+
+    @classmethod
     def background(cls) -> list[list[float | str]]:
         """Get the plot background for the current theme."""
 

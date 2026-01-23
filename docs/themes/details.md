@@ -56,28 +56,51 @@ Bootstrap and Dash Bootstrap Components (DBC) provide mechanisms to control them
 
 ## **How Theme Switching Works**
 
-Workbench supports dynamic theme switching at runtime. When a user changes themes, the page reloads to ensure all styling systems are applied consistently.
+Workbench supports **instant dynamic theme switching** at runtime—no page reload required. All styling systems update immediately when a user selects a new theme.
 
-### **Why We Use Page Reload**
+### **The Implementation**
 
-1. **CSS and Plotly Templates**:
-   - Global styles are handled via CSS (including Flask-served `custom.css`) and Plotly templates (via `pio.templates.default`) during app initialization.
-   - Plotly figures have their styling "baked in" at render time—they don't respond to CSS variable changes.
+Theme switching uses Dash clientside callbacks (JavaScript) to update multiple systems simultaneously:
 
-2. **The Alternative Would Be Complex**:
-   - Without reload, every figure would need an explicit callback to re-render when themes change.
-   - With 20+ dynamic figures across plugin pages, wiring up individual callbacks isn't practical.
+1. **Client-Side Storage**:
+   - `localStorage.setItem('wb_theme', themeName)` - JavaScript access
+   - `document.cookie = 'wb_theme=...'` - Server-side access via Flask
 
-3. **Reload Is Simple and Reliable**:
-   - A page reload ensures all three systems (CSS, Plotly templates, Bootstrap) are applied correctly.
-   - Theme switching is typically a one-time choice, not something users toggle frequently.
+2. **Bootstrap Styling**:
+   - `data-bs-theme` attribute updated to `light` or `dark`
+   - Bootstrap stylesheet `<link>` href swapped to new theme URL
+
+3. **Custom CSS**:
+   - `/custom.css` link updated with cache-busting query param (`?t=timestamp`)
+
+4. **Plotly Figures**:
+   - `workbench-theme-store` (dcc.Store) updated with new theme name
+   - Plugins listen to this store and re-render their figures
 
 ### **What Happens on Theme Change**
 
-1. User selects a new theme
-2. Theme preference is saved (persisted across sessions)
-3. Page reloads
-4. On reload, the new CSS stylesheet, Plotly template, and Bootstrap theme are all applied consistently
+1. User clicks a theme in the settings menu
+2. Clientside callback executes JavaScript:
+   - Saves to localStorage and cookie
+   - Swaps Bootstrap stylesheet URL
+   - Updates `data-bs-theme` attribute
+   - Updates `workbench-theme-store` with new theme name
+3. Plugin callbacks fire (triggered by theme store change)
+4. Figures re-render with new colors from ThemeManager
+
+### **Server-Side Theme Detection**
+
+On page load (or refresh), the server detects the theme from cookies:
+
+```python
+@app.server.before_request
+def check_theme_cookie():
+    theme_name = request.cookies.get("wb_theme")
+    if theme_name and theme_name != cls.current_theme_name:
+        cls.set_theme(theme_name)
+```
+
+This ensures Plotly templates are set correctly for initial figure rendering.
 
 <br><br><br>
 <br><br><br>

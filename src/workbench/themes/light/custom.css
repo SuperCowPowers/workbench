@@ -180,6 +180,35 @@ div:has(> [class*="ag-theme-"]) {
     --bs-border-color: var(--wb-accent);
 }
 
+/* React-select dropdown styling - target actual rendered elements */
+.Select-control {
+    background-color: var(--wb-dropdown-bg) !important;
+    border-color: var(--wb-accent) !important;
+}
+
+.Select-value-label, .Select-input input {
+    color: var(--wb-text-primary) !important;
+}
+
+.Select-placeholder {
+    color: var(--wb-text-muted) !important;
+}
+
+.Select-menu-outer {
+    background-color: var(--wb-dropdown-bg) !important;
+    border-color: var(--wb-accent) !important;
+}
+
+.VirtualizedSelectOption {
+    background-color: var(--wb-dropdown-bg) !important;
+    color: var(--wb-text-primary) !important;
+}
+
+.VirtualizedSelectFocusedOption {
+    background-color: var(--wb-dropdown-hover) !important;
+    color: var(--wb-text-primary) !important;
+}
+
 /* Bootstrap form controls (dbc components) */
 .form-select, .form-control {
     background-color: var(--wb-dropdown-bg) !important;

@@ -135,6 +135,35 @@ div:has(> [class*="ag-theme-"]) {
     --bs-border-color: rgb(60, 60, 60);
 }
 
+/* React-select dropdown styling - target actual rendered elements */
+.Select-control {
+    background-color: rgb(35, 35, 35) !important;
+    border-color: rgb(60, 60, 60) !important;
+}
+
+.Select-value-label, .Select-input input {
+    color: rgb(210, 210, 210) !important;
+}
+
+.Select-placeholder {
+    color: rgb(150, 150, 150) !important;
+}
+
+.Select-menu-outer {
+    background-color: rgb(35, 35, 35) !important;
+    border-color: rgb(60, 60, 60) !important;
+}
+
+.VirtualizedSelectOption {
+    background-color: rgb(35, 35, 35) !important;
+    color: rgb(210, 210, 210) !important;
+}
+
+.VirtualizedSelectFocusedOption {
+    background-color: rgb(60, 60, 60) !important;
+    color: rgb(230, 230, 230) !important;
+}
+
 /* Bootstrap form controls (dbc components) */
 .form-select, .form-control {
     background-color: rgb(35, 35, 35) !important;

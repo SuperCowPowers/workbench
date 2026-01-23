@@ -3,12 +3,17 @@ import inspect
 from typing import Union, Tuple, get_args, get_origin
 from enum import Enum
 import logging
+from dash import Input
 from dash.development.base_component import Component
 
 # Local Imports
 from workbench.web_interface.components.component_interface import ComponentInterface
+from workbench.utils.theme_manager import ThemeManager
 
 log = logging.getLogger("workbench")
+
+# Well-known store ID for theme changes - plugins can use this as a callback Input
+THEME_STORE_ID = "workbench-theme-store"
 
 
 class PluginPage(Enum):
@@ -48,6 +53,9 @@ class PluginInterface(ComponentInterface):
         - The 'register_internal_callbacks' method is optional
     """
 
+    # Shared ThemeManager instance for all plugins
+    theme_manager = ThemeManager()
+
     @abstractmethod
     def create_component(self, component_id: str) -> Component:
         """Create a Dash Component without any data.
@@ -82,6 +90,27 @@ class PluginInterface(ComponentInterface):
             on a dropdown selection.
         """
         pass
+
+    @staticmethod
+    def theme_input() -> Input:
+        """Get a Dash Input for the theme store.
+
+        Use this in callbacks that render figures to trigger re-rendering when the theme changes.
+
+        Example:
+            @callback(
+                Output(f"{self.component_id}-graph", "figure"),
+                [
+                    Input(f"{self.component_id}-dropdown", "value"),
+                    PluginInterface.theme_input(),  # Re-render on theme change
+                ],
+            )
+            def _update_figure(dropdown_value, theme):
+                # theme contains the current theme name, but you typically just
+                # need this Input to trigger the callback - ThemeManager handles the rest
+                ...
+        """
+        return Input(THEME_STORE_ID, "data")
 
     #
     # Internal Methods: These methods are used to validate the plugin interface at runtime

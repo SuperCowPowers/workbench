@@ -7,8 +7,7 @@ import plotly.express as px
 from dash.exceptions import PreventUpdate
 
 # Workbench Imports
-from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.utils.theme_manager import ThemeManager
+from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType, THEME_STORE_ID
 from workbench.utils.plot_utils import prediction_intervals
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
 from workbench.utils.clientside_callbacks import circle_overlay_callback
@@ -37,7 +36,6 @@ class ScatterPlot(PluginInterface):
         self.hover_columns = []
         self.df = None
         self.show_axes = show_axes
-        self.theme_manager = ThemeManager()
         self.has_smiles = False  # Track if dataframe has smiles column for molecule hover
         self.smiles_column = None
         self.id_column = None
@@ -419,11 +417,16 @@ class ScatterPlot(PluginInterface):
                 Input(f"{self.component_id}-y-dropdown", "value"),
                 Input(f"{self.component_id}-color-dropdown", "value"),
                 Input(f"{self.component_id}-regression-line", "value"),
+                Input(THEME_STORE_ID, "data"),  # Re-render on theme change
             ],
             prevent_initial_call=True,
         )
-        def _update_scatter_plot(x_value, y_value, color_value, regression_line):
-            """Update the Scatter Plot Graph based on the dropdown values."""
+        def _update_scatter_plot(x_value, y_value, color_value, regression_line, theme):
+            """Update the Scatter Plot Graph based on the dropdown values or theme change."""
+
+            # Update theme-dependent properties (colorscale, background)
+            self.colorscale = self.theme_manager.colorscale()
+            self.hover_background = self.theme_manager.background()
 
             # Check if the dataframe is not empty and the values are not None
             if not self.df.empty and x_value and y_value and color_value:

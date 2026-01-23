@@ -91,6 +91,8 @@ app.layout = html.Div(
         # URL for subpage navigation (jumping to feature_sets, models, etc.)
         dcc.Location(id="url", refresh="callback-nav"),
         dcc.Store(id=plugin_info_id, data={}),
+        # Theme store for dynamic theme switching (plugins can use this as Input to re-render figures)
+        dcc.Store(id="workbench-theme-store", data=tm.current_theme()),
         # Settings menu in top-right corner
         html.Div(
             settings_menu.create_component(settings_menu_id),
@@ -101,10 +103,10 @@ app.layout = html.Div(
     **{"data-bs-theme": tm.data_bs_theme()},
 )
 
-# Clientside callback for theme switching (stores in localStorage, sets cookie, reloads page)
+# Clientside callback for theme switching (stores in localStorage, sets cookie, triggers checkmark update)
 app.clientside_callback(
-    settings_menu.get_clientside_callback_code(settings_menu_id),
-    Output(f"{settings_menu_id}-dummy", "data"),
+    settings_menu.get_clientside_callback_code(),
+    Output(f"{settings_menu_id}-init", "data"),
     Input({"type": f"{settings_menu_id}-theme-item", "theme": ALL}, "n_clicks"),
     State({"type": f"{settings_menu_id}-theme-item", "theme": ALL}, "id"),
 )
@@ -115,6 +117,13 @@ app.clientside_callback(
     Output({"type": f"{settings_menu_id}-checkmark", "theme": ALL}, "children"),
     Input(f"{settings_menu_id}-init", "data"),
     State({"type": f"{settings_menu_id}-checkmark", "theme": ALL}, "id"),
+)
+
+# Clientside callback to update the workbench-theme-store (plugins listen to this for figure re-renders)
+app.clientside_callback(
+    "function(theme) { return theme; }",
+    Output("workbench-theme-store", "data"),
+    Input(f"{settings_menu_id}-init", "data"),
 )
 
 # Spin up the Plugin Manager

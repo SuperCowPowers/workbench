@@ -43,39 +43,82 @@ The `data-bs-theme=light/dark` html attribute affects **Bootstrap-specific compo
 |------------------------------------|------------------------------------------|-----------------------------------------|------------------------------------------|
 | <strong>Scope</strong>             | Global app styling                      | Plotly figures                          | DBC Components                           |
 | <strong>Level of Control</strong>  | Full Range                              | Partial/Full*                           | Just Light and Dark                      |
-| <strong>Dynamic Switching?</strong>| Not easily (reloading needed)           | Can update dynamically                  | Supports dynamic switching               |
+| <strong>Dynamic Switching?</strong>| ✅ Yes (stylesheet swap)                 | ✅ Yes (plugin callbacks)               | ✅ Yes (`data-bs-theme`)                 |
 
 * Some figure parameters will automatically work, but for stuff like colorscales the component code needs to 'pull' that from the template meta data when it updates it's figure.
 
-## Why We Require a Page Reload for Theme Switching
+## Dynamic Theme Switching (No Page Reload!)
 
-Workbench supports dynamic theme switching—you can change themes at runtime. However, switching themes triggers a page reload rather than an instant in-place update. If you've seen demos like the [Dash Bootstrap Theme Explorer Gallery](https://hellodash.pythonanywhere.com/theme-explorer/gallery) where themes switch instantly, you might wonder why we can't do the same.
+Workbench supports **instant theme switching** without page reload. When you select a new theme from the settings menu, all styling systems update immediately:
 
-### The Technical Reality
+- Bootstrap components re-style via `data-bs-theme` attribute
+- CSS stylesheets swap dynamically (including custom.css)
+- Plotly figures re-render with the new template colors
 
-**Plotly figures don't respond to CSS variables.** Unlike Bootstrap components (buttons, cards, tables) which automatically re-style when `data-bs-theme` changes, Plotly figures have their styling "baked in" at render time. The figure's colors, fonts, and backgrounds are set when the figure is created—they don't dynamically respond to theme changes.
+### How It Works
 
-### What dash-bootstrap-templates Actually Does
+Theme switching is handled entirely client-side using Dash clientside callbacks:
 
-Even the excellent [dash-bootstrap-templates](https://github.com/AnnMarieW/dash-bootstrap-templates) library has this limitation. From their docs:
+1. **User clicks a theme** in the settings menu
+2. **JavaScript executes** to update localStorage, cookies, and DOM
+3. **Bootstrap stylesheet** is swapped by updating the `<link>` href
+4. **`data-bs-theme`** attribute is updated (light/dark)
+5. **`workbench-theme-store`** is updated, triggering plugin callbacks
+6. **Plugins re-render** their figures with new theme colors
 
-> *"The All-in-One component switches the Bootstrap stylesheet and sets the default Plotly figure template, however, figures must be updated in a callback in order to render the figure with the new template."*
+### Theme Persistence
 
-This means every figure needs an explicit callback to re-render when the theme changes. In a simple demo app with 3-5 figures, that's manageable. In Workbench, with 20+ dynamic figures across multiple plugin pages, wiring up individual callbacks for each figure isn't practical.
+Your theme choice is persisted across browser sessions:
 
-### Three Separate Styling Systems
+- **localStorage**: Stores the theme name for JavaScript access
+- **Cookie (`wb_theme`)**: Synced to server for Flask/Plotly template selection
 
-| **System**           | **What It Styles**              | **Instant Switching?**                     |
+### Three Styling Systems (All Dynamic!)
+
+| **System**           | **What It Styles**              | **How It Switches**                        |
 |----------------------|---------------------------------|--------------------------------------------|
-| CSS/Bootstrap        | Layout, buttons, cards, tables  | ✅ Yes (via `data-bs-theme`)                |
-| Plotly Templates     | Figure axes, colors, fonts      | ❌ No - requires figure re-render           |
-| Custom CSS           | Non-Bootstrap elements          | ⚠️ Requires stylesheet swap                 |
+| CSS/Bootstrap        | Layout, buttons, cards, tables  | ✅ `data-bs-theme` + stylesheet swap        |
+| Plotly Templates     | Figure axes, colors, fonts      | ✅ Plugin callbacks re-render figures       |
+| Custom CSS           | Non-Bootstrap elements          | ✅ Cache-busting stylesheet reload          |
 
-### Our Approach: Reload on Theme Change
+### Plugin Theme Support
 
-Rather than implementing complex callback wiring for every figure across all plugin pages, Workbench takes a pragmatic approach: **when you switch themes, the page reloads**. This ensures all three styling systems (CSS, Plotly templates, and Bootstrap components) are applied consistently and correctly.
+Plugins can listen for theme changes by using `THEME_STORE_ID` as a callback Input:
 
-The reload is fast, and theme selection is typically a one-time choice rather than something users toggle frequently. This approach gives us full theme flexibility without the architectural complexity of in-place figure updates.
+```python
+from workbench.web_interface.components.plugin_interface import (
+    PluginInterface, THEME_STORE_ID
+)
+from dash import callback, Output, Input
+
+class MyPlugin(PluginInterface):
+    def register_internal_callbacks(self):
+        @callback(
+            Output(self.component_id, "figure", allow_duplicate=True),
+            Input(THEME_STORE_ID, "data"),
+            prevent_initial_call=True,
+        )
+        def _update_on_theme_change(theme):
+            if self.model is None:
+                return self.display_text("Waiting for Data...")
+            # Re-render with updated theme colors
+            return self.update_properties(self.model)[0]
+```
+
+The `PluginInterface` base class provides a shared `theme_manager` instance for accessing colors and colorscales.
+
+### Currently Supported Plugins
+
+The following plugins automatically re-render on theme change:
+
+- ✅ ScatterPlot
+- ✅ ConfusionMatrix
+- ✅ ShapSummaryPlot
+
+### Future Work
+
+- Add theme switching support to remaining plugins
+- Fix checkmark not showing on initial page load (minor UI issue)
 
 ## Additional Resources
 
