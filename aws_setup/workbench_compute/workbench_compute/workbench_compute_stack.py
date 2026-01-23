@@ -8,11 +8,14 @@ from aws_cdk import (
     aws_batch as batch,
     aws_sqs as sqs,
     aws_sns as sns,
+    aws_sns_subscriptions as sns_subscriptions,
     aws_lambda as lambda_,
     aws_lambda_event_sources as lambda_events,
     aws_events as events,
     aws_events_targets as targets,
     aws_logs as logs,
+    aws_cloudwatch as cloudwatch,
+    aws_cloudwatch_actions as cw_actions,
     Duration,
     Size,
 )
@@ -67,13 +70,16 @@ class WorkbenchComputeStack(Stack):
         self.batch_job_definitions = self.create_batch_job_definitions()
 
         # Create ML Pipeline SQS Queue and Lambda (after Batch resources)
-        self.ml_pipeline_queue = self.create_ml_pipeline_queue()
+        self.ml_pipeline_dlq, self.ml_pipeline_queue = self.create_ml_pipeline_queue()
         self.batch_trigger_lambda = self.create_batch_trigger_lambda()
 
         # Create Batch failure notification resources
         self.batch_failure_topic = self.create_batch_failure_topic()
         self.batch_failure_lambda = self.create_batch_failure_lambda()
         self.create_batch_failure_rule()
+
+        # Create DLQ alarm (uses the batch failure topic for notifications)
+        self.create_dlq_alarm()
 
     #####################
     #   Batch Compute   #
@@ -166,8 +172,12 @@ class WorkbenchComputeStack(Stack):
     ###########################
     #  ML Pipeline SQS Queue  #
     ###########################
-    def create_ml_pipeline_queue(self) -> sqs.Queue:
-        """Create SQS FIFO queue for ML pipeline orchestration with deduplication."""
+    def create_ml_pipeline_queue(self) -> tuple[sqs.Queue, sqs.Queue]:
+        """Create SQS FIFO queue for ML pipeline orchestration with deduplication.
+
+        Returns:
+            Tuple of (dlq, main_queue)
+        """
 
         # Dead letter queue for failed messages (also FIFO)
         dlq = sqs.Queue(
@@ -179,7 +189,7 @@ class WorkbenchComputeStack(Stack):
         )
 
         # Main FIFO queue with deduplication
-        return sqs.Queue(
+        main_queue = sqs.Queue(
             self,
             "MLPipelineQueue",
             queue_name="workbench-ml-pipeline-queue.fifo",  # Must end with .fifo
@@ -189,6 +199,8 @@ class WorkbenchComputeStack(Stack):
             retention_period=Duration.days(1),
             dead_letter_queue=sqs.DeadLetterQueue(max_receive_count=1, queue=dlq),
         )
+
+        return dlq, main_queue
 
     def create_batch_trigger_lambda(self) -> lambda_.Function:
         """Create Lambda function to process SQS messages and trigger Batch jobs.
@@ -300,3 +312,26 @@ class WorkbenchComputeStack(Stack):
         batch_failure_rule.add_target(targets.LambdaFunction(self.batch_failure_lambda))
 
         return batch_failure_rule
+
+    def create_dlq_alarm(self) -> cloudwatch.Alarm:
+        """Create CloudWatch alarm for DLQ messages to alert on pipeline failures."""
+
+        alarm = cloudwatch.Alarm(
+            self,
+            "MLPipelineDLQAlarm",
+            alarm_name="workbench-ml-pipeline-dlq-alarm",
+            alarm_description="Alert when messages appear in the ML Pipeline dead letter queue",
+            metric=self.ml_pipeline_dlq.metric_approximate_number_of_messages_visible(
+                period=Duration.minutes(15),
+                statistic="Maximum",
+            ),
+            threshold=1,
+            evaluation_periods=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
+        )
+
+        # Send alarm notifications to the batch failure topic
+        alarm.add_alarm_action(cw_actions.SnsAction(self.batch_failure_topic))
+
+        return alarm
