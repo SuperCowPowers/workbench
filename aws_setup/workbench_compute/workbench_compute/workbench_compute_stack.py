@@ -8,7 +8,6 @@ from aws_cdk import (
     aws_batch as batch,
     aws_sqs as sqs,
     aws_sns as sns,
-    aws_sns_subscriptions as sns_subscriptions,
     aws_lambda as lambda_,
     aws_lambda_event_sources as lambda_events,
     aws_events as events,
