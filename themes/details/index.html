@@ -4613,34 +4613,54 @@
 </ul>
 <h1 id="theming-strategy-for-workbench-dashboard">Theming Strategy for Workbench Dashboard</h1>
 <h2 id="how-theme-switching-works"><strong>How Theme Switching Works</strong></h2>
-<p>Workbench supports dynamic theme switching at runtime. When a user changes themes, the page reloads to ensure all styling systems are applied consistently.</p>
-<h3 id="why-we-use-page-reload"><strong>Why We Use Page Reload</strong></h3>
+<p>Workbench supports <strong>instant dynamic theme switching</strong> at runtime—no page reload required. All styling systems update immediately when a user selects a new theme.</p>
+<h3 id="the-implementation"><strong>The Implementation</strong></h3>
+<p>Theme switching uses Dash clientside callbacks (JavaScript) to update multiple systems simultaneously:</p>
 <ol>
-<li><strong>CSS and Plotly Templates</strong>:</li>
-<li>Global styles are handled via CSS (including Flask-served <code>custom.css</code>) and Plotly templates (via <code>pio.templates.default</code>) during app initialization.</li>
+<li><strong>Client-Side Storage</strong>:</li>
+<li><code>localStorage.setItem('wb_theme', themeName)</code> - JavaScript access</li>
 <li>
-<p>Plotly figures have their styling "baked in" at render time—they don't respond to CSS variable changes.</p>
+<p><code>document.cookie = 'wb_theme=...'</code> - Server-side access via Flask</p>
 </li>
 <li>
-<p><strong>The Alternative Would Be Complex</strong>:</p>
+<p><strong>Bootstrap Styling</strong>:</p>
 </li>
-<li>Without reload, every figure would need an explicit callback to re-render when themes change.</li>
+<li><code>data-bs-theme</code> attribute updated to <code>light</code> or <code>dark</code></li>
 <li>
-<p>With 20+ dynamic figures across plugin pages, wiring up individual callbacks isn't practical.</p>
+<p>Bootstrap stylesheet <code>&lt;link&gt;</code> href swapped to new theme URL</p>
 </li>
 <li>
-<p><strong>Reload Is Simple and Reliable</strong>:</p>
+<p><strong>Custom CSS</strong>:</p>
 </li>
-<li>A page reload ensures all three systems (CSS, Plotly templates, Bootstrap) are applied correctly.</li>
-<li>Theme switching is typically a one-time choice, not something users toggle frequently.</li>
+<li>
+<p><code>/custom.css</code> link updated with cache-busting query param (<code>?t=timestamp</code>)</p>
+</li>
+<li>
+<p><strong>Plotly Figures</strong>:</p>
+</li>
+<li><code>workbench-theme-store</code> (dcc.Store) updated with new theme name</li>
+<li>Plugins listen to this store and re-render their figures</li>
 </ol>
 <h3 id="what-happens-on-theme-change"><strong>What Happens on Theme Change</strong></h3>
 <ol>
-<li>User selects a new theme</li>
-<li>Theme preference is saved (persisted across sessions)</li>
-<li>Page reloads</li>
-<li>On reload, the new CSS stylesheet, Plotly template, and Bootstrap theme are all applied consistently</li>
+<li>User clicks a theme in the settings menu</li>
+<li>Clientside callback executes JavaScript:</li>
+<li>Saves to localStorage and cookie</li>
+<li>Swaps Bootstrap stylesheet URL</li>
+<li>Updates <code>data-bs-theme</code> attribute</li>
+<li>Updates <code>workbench-theme-store</code> with new theme name</li>
+<li>Plugin callbacks fire (triggered by theme store change)</li>
+<li>Figures re-render with new colors from ThemeManager</li>
 </ol>
+<h3 id="server-side-theme-detection"><strong>Server-Side Theme Detection</strong></h3>
+<p>On page load (or refresh), the server detects the theme from cookies:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@app</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">before_request</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">check_theme_cookie</span><span class="p">():</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">theme_name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wb_theme&quot;</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="k">if</span> <span class="n">theme_name</span> <span class="ow">and</span> <span class="n">theme_name</span> <span class="o">!=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">current_theme_name</span><span class="p">:</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="bp">cls</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">theme_name</span><span class="p">)</span>
+</span></code></pre></div>
+<p>This ensures Plotly templates are set correctly for initial figure rendering.</p>
 <p><br><br><br>
 <br><br><br></p>
 <h2 id="storage">Storage</h2>

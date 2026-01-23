@@ -4379,55 +4379,98 @@
 </tr>
 <tr>
 <td><strong>Dynamic Switching?</strong></td>
-<td>Not easily (reloading needed)</td>
-<td>Can update dynamically</td>
-<td>Supports dynamic switching</td>
+<td>✅ Yes (stylesheet swap)</td>
+<td>✅ Yes (plugin callbacks)</td>
+<td>✅ Yes (<code>data-bs-theme</code>)</td>
 </tr>
 </tbody>
 </table>
 <ul>
 <li>Some figure parameters will automatically work, but for stuff like colorscales the component code needs to 'pull' that from the template meta data when it updates it's figure.</li>
 </ul>
-<h2 id="why-we-require-a-page-reload-for-theme-switching">Why We Require a Page Reload for Theme Switching</h2>
-<p>Workbench supports dynamic theme switching—you can change themes at runtime. However, switching themes triggers a page reload rather than an instant in-place update. If you've seen demos like the <a href="https://hellodash.pythonanywhere.com/theme-explorer/gallery">Dash Bootstrap Theme Explorer Gallery</a> where themes switch instantly, you might wonder why we can't do the same.</p>
-<h3 id="the-technical-reality">The Technical Reality</h3>
-<p><strong>Plotly figures don't respond to CSS variables.</strong> Unlike Bootstrap components (buttons, cards, tables) which automatically re-style when <code>data-bs-theme</code> changes, Plotly figures have their styling "baked in" at render time. The figure's colors, fonts, and backgrounds are set when the figure is created—they don't dynamically respond to theme changes.</p>
-<h3 id="what-dash-bootstrap-templates-actually-does">What dash-bootstrap-templates Actually Does</h3>
-<p>Even the excellent <a href="https://github.com/AnnMarieW/dash-bootstrap-templates">dash-bootstrap-templates</a> library has this limitation. From their docs:</p>
-<blockquote>
-<p><em>"The All-in-One component switches the Bootstrap stylesheet and sets the default Plotly figure template, however, figures must be updated in a callback in order to render the figure with the new template."</em></p>
-</blockquote>
-<p>This means every figure needs an explicit callback to re-render when the theme changes. In a simple demo app with 3-5 figures, that's manageable. In Workbench, with 20+ dynamic figures across multiple plugin pages, wiring up individual callbacks for each figure isn't practical.</p>
-<h3 id="three-separate-styling-systems">Three Separate Styling Systems</h3>
+<h2 id="dynamic-theme-switching-no-page-reload">Dynamic Theme Switching (No Page Reload!)</h2>
+<p>Workbench supports <strong>instant theme switching</strong> without page reload. When you select a new theme from the settings menu, all styling systems update immediately:</p>
+<ul>
+<li>Bootstrap components re-style via <code>data-bs-theme</code> attribute</li>
+<li>CSS stylesheets swap dynamically (including custom.css)</li>
+<li>Plotly figures re-render with the new template colors</li>
+</ul>
+<h3 id="how-it-works">How It Works</h3>
+<p>Theme switching is handled entirely client-side using Dash clientside callbacks:</p>
+<ol>
+<li><strong>User clicks a theme</strong> in the settings menu</li>
+<li><strong>JavaScript executes</strong> to update localStorage, cookies, and DOM</li>
+<li><strong>Bootstrap stylesheet</strong> is swapped by updating the <code>&lt;link&gt;</code> href</li>
+<li><strong><code>data-bs-theme</code></strong> attribute is updated (light/dark)</li>
+<li><strong><code>workbench-theme-store</code></strong> is updated, triggering plugin callbacks</li>
+<li><strong>Plugins re-render</strong> their figures with new theme colors</li>
+</ol>
+<h3 id="theme-persistence">Theme Persistence</h3>
+<p>Your theme choice is persisted across browser sessions:</p>
+<ul>
+<li><strong>localStorage</strong>: Stores the theme name for JavaScript access</li>
+<li><strong>Cookie (<code>wb_theme</code>)</strong>: Synced to server for Flask/Plotly template selection</li>
+</ul>
+<h3 id="three-styling-systems-all-dynamic">Three Styling Systems (All Dynamic!)</h3>
 <table>
 <thead>
 <tr>
 <th><strong>System</strong></th>
 <th><strong>What It Styles</strong></th>
-<th><strong>Instant Switching?</strong></th>
+<th><strong>How It Switches</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>CSS/Bootstrap</td>
 <td>Layout, buttons, cards, tables</td>
-<td>✅ Yes (via <code>data-bs-theme</code>)</td>
+<td>✅ <code>data-bs-theme</code> + stylesheet swap</td>
 </tr>
 <tr>
 <td>Plotly Templates</td>
 <td>Figure axes, colors, fonts</td>
-<td>❌ No - requires figure re-render</td>
+<td>✅ Plugin callbacks re-render figures</td>
 </tr>
 <tr>
 <td>Custom CSS</td>
 <td>Non-Bootstrap elements</td>
-<td>⚠️ Requires stylesheet swap</td>
+<td>✅ Cache-busting stylesheet reload</td>
 </tr>
 </tbody>
 </table>
-<h3 id="our-approach-reload-on-theme-change">Our Approach: Reload on Theme Change</h3>
-<p>Rather than implementing complex callback wiring for every figure across all plugin pages, Workbench takes a pragmatic approach: <strong>when you switch themes, the page reloads</strong>. This ensures all three styling systems (CSS, Plotly templates, and Bootstrap components) are applied consistently and correctly.</p>
-<p>The reload is fast, and theme selection is typically a one-time choice rather than something users toggle frequently. This approach gives us full theme flexibility without the architectural complexity of in-place figure updates.</p>
+<h3 id="plugin-theme-support">Plugin Theme Support</h3>
+<p>Plugins can listen for theme changes by using <code>THEME_STORE_ID</code> as a callback Input:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.web_interface.components.plugin_interface</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">PluginInterface</span><span class="p">,</span> <span class="n">THEME_STORE_ID</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">callback</span><span class="p">,</span> <span class="n">Output</span><span class="p">,</span> <span class="n">Input</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyPlugin</span><span class="p">(</span><span class="n">PluginInterface</span><span class="p">):</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">register_internal_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="nd">@callback</span><span class="p">(</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>            <span class="n">Output</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">component_id</span><span class="p">,</span> <span class="s2">&quot;figure&quot;</span><span class="p">,</span> <span class="n">allow_duplicate</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>            <span class="n">Input</span><span class="p">(</span><span class="n">THEME_STORE_ID</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">),</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>            <span class="n">prevent_initial_call</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        <span class="p">)</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">_update_on_theme_change</span><span class="p">(</span><span class="n">theme</span><span class="p">):</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">display_text</span><span class="p">(</span><span class="s2">&quot;Waiting for Data...&quot;</span><span class="p">)</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>            <span class="c1"># Re-render with updated theme colors</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span></code></pre></div>
+<p>The <code>PluginInterface</code> base class provides a shared <code>theme_manager</code> instance for accessing colors and colorscales.</p>
+<h3 id="currently-supported-plugins">Currently Supported Plugins</h3>
+<p>The following plugins automatically re-render on theme change:</p>
+<ul>
+<li>✅ ScatterPlot</li>
+<li>✅ ConfusionMatrix</li>
+<li>✅ ShapSummaryPlot</li>
+</ul>
+<h3 id="future-work">Future Work</h3>
+<ul>
+<li>Add theme switching support to remaining plugins</li>
+<li>Fix checkmark not showing on initial page load (minor UI issue)</li>
+</ul>
 <h2 id="additional-resources">Additional Resources</h2>
 <p><img align="right" src="../images/scp.png" width="180"></p>
 <p>Need help with plugins? Want to develop a customized application tailored to your business needs?</p>
