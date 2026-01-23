@@ -136,6 +136,7 @@ class ComponentInterface(ABC):
             xref="paper",
             yref="paper",
             text=text_message,
+            bgcolor="rgba(0,0,0,0)",
             showarrow=False,
             font=dict(size=font_size, color="#9999cc"),
         )
@@ -144,6 +145,8 @@ class ComponentInterface(ABC):
             xaxis=dict(showticklabels=False, zeroline=False, showgrid=False),
             yaxis=dict(showticklabels=False, zeroline=False, showgrid=False),
             margin=dict(l=0, r=0, b=0, t=0),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
         )
 
         if figure_height is not None:
