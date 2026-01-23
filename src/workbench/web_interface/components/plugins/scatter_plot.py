@@ -7,7 +7,12 @@ import plotly.express as px
 from dash.exceptions import PreventUpdate
 
 # Workbench Imports
-from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType, THEME_STORE_ID
+from workbench.web_interface.components.plugin_interface import (
+    PluginInterface,
+    PluginPage,
+    PluginInputType,
+    THEME_STORE_ID,
+)
 from workbench.utils.plot_utils import prediction_intervals
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
 from workbench.utils.clientside_callbacks import circle_overlay_callback

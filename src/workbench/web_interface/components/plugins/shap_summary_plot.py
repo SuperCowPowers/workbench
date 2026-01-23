@@ -8,7 +8,12 @@ from typing import Dict, List
 
 # Workbench Imports
 from workbench.cached.cached_model import CachedModel
-from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType, THEME_STORE_ID
+from workbench.web_interface.components.plugin_interface import (
+    PluginInterface,
+    PluginPage,
+    PluginInputType,
+    THEME_STORE_ID,
+)
 from workbench.utils.plot_utils import beeswarm_offsets
 
 

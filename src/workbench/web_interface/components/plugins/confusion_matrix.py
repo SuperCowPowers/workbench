@@ -4,7 +4,12 @@ from dash import dcc, callback, Output, Input, State
 import plotly.graph_objects as go
 
 # Workbench Imports
-from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType, THEME_STORE_ID
+from workbench.web_interface.components.plugin_interface import (
+    PluginInterface,
+    PluginPage,
+    PluginInputType,
+    THEME_STORE_ID,
+)
 from workbench.cached.cached_model import CachedModel
 from workbench.utils.color_utils import add_alpha_to_first_color
 
