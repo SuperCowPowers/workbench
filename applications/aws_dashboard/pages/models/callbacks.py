@@ -111,10 +111,12 @@ def setup_plugin_callbacks(plugins, scatter_plot_plugin: ScatterPlot, confusion_
     model_plot_outputs.extend([Output(cid, prop) for cid, prop in confusion_matrix_plugin.properties])
 
     # Callback to toggle visibility and update ScatterPlot/ConfusionMatrix based on model type
+    # Note: Only triggered by dropdown changes. Row selection updates the dropdown via
+    #       update_standard_plugin_properties, which then triggers this callback.
     @callback(
         model_plot_outputs,
         Input("model_details-dropdown", "value"),
-        Input("models_table", "selectedRows"),
+        State("models_table", "selectedRows"),
     )
     def update_model_plot_plugins(inference_run, selected_rows):
         """Update ScatterPlot or ConfusionMatrix based on model type, toggling visibility."""
@@ -139,7 +141,9 @@ def setup_plugin_callbacks(plugins, scatter_plot_plugin: ScatterPlot, confusion_
             if df is None:
                 raise PreventUpdate
 
-            # Get target column (residual is already computed in CachedModel)
+            # Get target column for the x-axis
+            # Note: Multi-task models (e.g., Chemprop) have multiple targets. We try to match
+            #       the target name to the inference_run name, otherwise fall back to the first target.
             target = model.target()
             if isinstance(target, list):
                 target = next((t for t in target if t in inference_run), target[0])
