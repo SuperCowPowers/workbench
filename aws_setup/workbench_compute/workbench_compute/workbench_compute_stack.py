@@ -248,12 +248,30 @@ class WorkbenchComputeStack(Stack):
     ################################
     def create_batch_failure_topic(self) -> sns.Topic:
         """Create SNS topic for batch job failure notifications."""
-        return sns.Topic(
+        topic = sns.Topic(
             self,
             "BatchJobFailureTopic",
             topic_name="workbench-batch-job-failure",
             display_name="Workbench Batch Job Failure",
         )
+
+        # Allow CloudWatch Alarms to publish to this topic
+        topic.add_to_resource_policy(
+            iam.PolicyStatement(
+                sid="AllowCloudWatchAlarms",
+                effect=iam.Effect.ALLOW,
+                principals=[iam.ServicePrincipal("cloudwatch.amazonaws.com")],
+                actions=["sns:Publish"],
+                resources=[topic.topic_arn],
+                conditions={
+                    "ArnLike": {
+                        "aws:SourceArn": f"arn:aws:cloudwatch:{self.region}:{self.account}:alarm:*"
+                    }
+                },
+            )
+        )
+
+        return topic
 
     def create_batch_failure_lambda(self) -> lambda_.Function:
         """Create Lambda function to handle batch job failures and send notifications."""
