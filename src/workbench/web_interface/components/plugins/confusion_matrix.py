@@ -1,15 +1,10 @@
 """A confusion matrix plugin component"""
 
-from dash import dcc, callback, Output, Input, State
+from dash import dcc, callback, Output, Input, State, no_update
 import plotly.graph_objects as go
 
 # Workbench Imports
-from workbench.web_interface.components.plugin_interface import (
-    PluginInterface,
-    PluginPage,
-    PluginInputType,
-    THEME_STORE_ID,
-)
+from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.cached.cached_model import CachedModel
 from workbench.utils.color_utils import add_alpha_to_first_color
 
@@ -142,20 +137,14 @@ class ConfusionMatrix(PluginInterface):
         # Return the updated figure wrapped in a list
         return [fig]
 
+    def set_theme(self, theme: str) -> list:
+        """Re-render the confusion matrix when the theme changes."""
+        if self.model is None:
+            return [no_update] * len(self.properties)
+        return self.update_properties(self.model, inference_run=self.inference_run)
+
     def register_internal_callbacks(self):
         """Register internal callbacks for the plugin."""
-
-        @callback(
-            Output(self.component_id, "figure", allow_duplicate=True),
-            Input(THEME_STORE_ID, "data"),
-            prevent_initial_call=True,
-        )
-        def _update_on_theme_change(theme):
-            """Re-render the confusion matrix when the theme changes."""
-            if self.model is None:
-                return self.display_text("Waiting for Data...")
-            # Re-render with updated theme colors
-            return self.update_properties(self.model, inference_run=self.inference_run)[0]
 
         @callback(
             Output(self.component_id, "figure", allow_duplicate=True),
