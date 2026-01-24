@@ -80,3 +80,6 @@ plugins = [my_model_details, my_shap_plot, my_scatter_plot, my_confusion_matrix]
 
 # Set up callbacks for all the plugins (includes scatter plot and confusion matrix)
 callbacks.setup_plugin_callbacks(plugins, my_scatter_plot, my_confusion_matrix)
+
+# Set up theme change callback for all plugins
+callbacks.setup_theme_callback(plugins)

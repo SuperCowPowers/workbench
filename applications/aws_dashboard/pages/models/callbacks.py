@@ -16,6 +16,9 @@ from workbench.cached.cached_model import CachedModel
 # Get the Workbench logger
 log = logging.getLogger("workbench")
 
+# Theme store ID (defined in app.py)
+THEME_STORE_ID = "workbench-theme-store"
+
 
 def on_page_load():
     @callback(
@@ -161,3 +164,23 @@ def setup_plugin_callbacks(plugins, scatter_plot_plugin: ScatterPlot, confusion_
             cm_props = [no_update] * len(confusion_matrix_plugin.properties)
 
         return [scatter_style, confusion_style] + scatter_props + cm_props
+
+
+def setup_theme_callback(plugins):
+    """Set up a callback to update all plugins when the theme changes.
+
+    Args:
+        plugins: List of all plugin instances on this page.
+    """
+
+    @callback(
+        [Output(cid, prop, allow_duplicate=True) for p in plugins for cid, prop in p.properties],
+        Input(THEME_STORE_ID, "data"),
+        prevent_initial_call=True,
+    )
+    def on_theme_change(theme):
+        """Update all plugins when the theme changes."""
+        all_props = []
+        for plugin in plugins:
+            all_props.extend(plugin.set_theme(theme))
+        return all_props

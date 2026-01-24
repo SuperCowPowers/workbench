@@ -69,3 +69,4 @@ callbacks.update_endpoint_metrics(endpoints_view)
 # For all the plugins we have we'll call their update_properties method
 if plugins:
     callbacks.setup_plugin_callbacks(plugins)
+    callbacks.setup_theme_callback(plugins)

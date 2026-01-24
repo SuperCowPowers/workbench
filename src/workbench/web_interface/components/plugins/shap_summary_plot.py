@@ -1,6 +1,6 @@
 """SHAP Summary Plot visualization component for XGBoost models"""
 
-from dash import dcc, callback, Output, Input
+from dash import dcc, no_update
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
@@ -8,12 +8,7 @@ from typing import Dict, List
 
 # Workbench Imports
 from workbench.cached.cached_model import CachedModel
-from workbench.web_interface.components.plugin_interface import (
-    PluginInterface,
-    PluginPage,
-    PluginInputType,
-    THEME_STORE_ID,
-)
+from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.plot_utils import beeswarm_offsets
 
 
@@ -228,20 +223,15 @@ class ShapSummaryPlot(PluginInterface):
         )
         return main_fig
 
+    def set_theme(self, theme: str) -> list:
+        """Re-render the SHAP summary plot when the theme changes."""
+        if self.model is None:
+            return [no_update] * len(self.properties)
+        return self.update_properties(self.model)
+
     def register_internal_callbacks(self):
         """Register internal callbacks for the plugin."""
-
-        @callback(
-            Output(self.component_id, "figure", allow_duplicate=True),
-            Input(THEME_STORE_ID, "data"),
-            prevent_initial_call=True,
-        )
-        def _update_on_theme_change(theme):
-            """Re-render the SHAP summary plot when the theme changes."""
-            if self.model is None:
-                return self.display_text("Waiting for SHAP data...")
-            # Re-render with updated theme colors
-            return self.update_properties(self.model)[0]
+        pass  # No internal callbacks needed
 
 
 if __name__ == "__main__":

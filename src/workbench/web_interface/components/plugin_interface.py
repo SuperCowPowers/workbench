@@ -3,7 +3,7 @@ import inspect
 from typing import Union, Tuple, get_args, get_origin
 from enum import Enum
 import logging
-from dash import Input
+from dash import no_update
 from dash.development.base_component import Component
 
 # Local Imports
@@ -11,9 +11,6 @@ from workbench.web_interface.components.component_interface import ComponentInte
 from workbench.utils.theme_manager import ThemeManager
 
 log = logging.getLogger("workbench")
-
-# Well-known store ID for theme changes - plugins can use this as a callback Input
-THEME_STORE_ID = "workbench-theme-store"
 
 
 class PluginPage(Enum):
@@ -91,26 +88,26 @@ class PluginInterface(ComponentInterface):
         """
         pass
 
-    @staticmethod
-    def theme_input() -> Input:
-        """Get a Dash Input for the theme store.
+    def set_theme(self, theme: str) -> list:
+        """Called when the application theme changes. Override to re-render with new theme colors.
 
-        Use this in callbacks that render figures to trigger re-rendering when the theme changes.
+        The default implementation returns no_update for all properties. Plugins that have
+        theme-dependent rendering (e.g., figures with colorscales) should override this method
+        to re-render their components.
+
+        Args:
+            theme (str): The name of the new theme (e.g., "light", "dark", "midnight_blue").
+
+        Returns:
+            list: Updated property values (same format as update_properties), or no_update list.
 
         Example:
-            @callback(
-                Output(f"{self.component_id}-graph", "figure"),
-                [
-                    Input(f"{self.component_id}-dropdown", "value"),
-                    PluginInterface.theme_input(),  # Re-render on theme change
-                ],
-            )
-            def _update_figure(dropdown_value, theme):
-                # theme contains the current theme name, but you typically just
-                # need this Input to trigger the callback - ThemeManager handles the rest
-                ...
+            def set_theme(self, theme: str) -> list:
+                if self.model is None:
+                    return [no_update] * len(self.properties)
+                return self.update_properties(self.model)
         """
-        return Input(THEME_STORE_ID, "data")
+        return [no_update] * len(self.properties)
 
     #
     # Internal Methods: These methods are used to validate the plugin interface at runtime
