@@ -259,38 +259,37 @@ def compute_confidence(
     median_interval_width: float,
     lower_q: str = "q_10",
     upper_q: str = "q_90",
-    alpha: float = 1.0,
-    beta: float = 1.0,
 ) -> pd.DataFrame:
     """Compute confidence scores (0.0 to 1.0) based on prediction interval width.
 
-    Uses exponential decay based on:
-    1. Interval width relative to median (alpha weight)
-    2. Distance from median prediction (beta weight)
+    Confidence is derived from the 80% prediction interval (q_10 to q_90) width:
+    - Narrower intervals → higher confidence (model is more certain)
+    - Wider intervals → lower confidence (model is less certain)
+
+    Why 80% CI (q_10/q_90)?
+        - 68% CI is too narrow and sensitive to noise
+        - 95% CI is too wide and less discriminating between samples
+        - 80% provides a good balance for ranking prediction reliability
+
+    Formula: confidence = exp(-width / median_width)
+        - When width equals median, confidence ≈ 0.37
+        - When width is half median, confidence ≈ 0.61
+        - When width is double median, confidence ≈ 0.14
+
+    This exponential decay is a common choice for converting uncertainty to
+    confidence scores, providing a smooth mapping that appropriately penalizes
+    high-uncertainty predictions.
 
     Args:
-        df: DataFrame with 'prediction', 'q_50', and quantile columns
+        df: DataFrame with quantile columns from predict_intervals()
         median_interval_width: Pre-computed median interval width from training data
         lower_q: Lower quantile column name (default: 'q_10')
         upper_q: Upper quantile column name (default: 'q_90')
-        alpha: Weight for interval width term (default: 1.0)
-        beta: Weight for distance from median term (default: 1.0)
 
     Returns:
-        DataFrame with added 'confidence' column
+        DataFrame with added 'confidence' column (values between 0 and 1)
     """
-    # Interval width
     interval_width = (df[upper_q] - df[lower_q]).abs()
-
-    # Distance from median, normalized by interval width
-    distance_from_median = (df["prediction"] - df["q_50"]).abs()
-    normalized_distance = distance_from_median / (interval_width + 1e-6)
-
-    # Cap the distance penalty at 1.0
-    normalized_distance = np.minimum(normalized_distance, 1.0)
-
-    # Confidence using exponential decay
-    interval_term = interval_width / median_interval_width
-    df["confidence"] = np.exp(-(alpha * interval_term + beta * normalized_distance))
+    df["confidence"] = np.exp(-interval_width / median_interval_width)
 
     return df
