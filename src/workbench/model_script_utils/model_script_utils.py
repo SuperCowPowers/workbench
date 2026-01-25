@@ -502,7 +502,7 @@ def get_split_indices(
     test_size: float = 0.2,
     random_state: int = 42,
     butina_cutoff: float = 0.4,
-) -> list[tuple[np.ndarray, np.ndarray]]:
+) -> tuple[list[tuple[np.ndarray, np.ndarray]], np.ndarray]:
     """Get train/validation split indices using various strategies.
 
     This is a unified interface for generating splits that can be used across
@@ -522,14 +522,19 @@ def get_split_indices(
         butina_cutoff: Tanimoto distance cutoff for Butina clustering (default 0.4)
 
     Returns:
-        List of (train_indices, val_indices) tuples
+        Tuple of (folds, split_groups) where:
+            - folds: List of (train_indices, val_indices) tuples
+            - split_groups: Array of group IDs for each row. For random splits, this is
+              the fold index (0 to n_splits-1). For scaffold/butina, this is the
+              cluster/scaffold group ID.
 
     Note:
         If scaffold/butina strategy is requested but no SMILES column is found,
         automatically falls back to random split with a warning message.
 
     Example:
-        >>> folds = get_split_indices(df, n_splits=5, strategy="scaffold")
+        >>> folds, split_groups = get_split_indices(df, n_splits=5, strategy="scaffold")
+        >>> df["split_group"] = split_groups
         >>> for train_idx, val_idx in folds:
         ...     X_train, X_val = df.iloc[train_idx], df.iloc[val_idx]
     """
@@ -539,17 +544,24 @@ def get_split_indices(
 
     # Random split (original behavior)
     if strategy == "random":
+        # For random splits, split_group = fold index (0 to n_splits-1)
+        split_groups = np.zeros(n_samples, dtype=int)
         if n_splits == 1:
             indices = np.arange(n_samples)
             train_idx, val_idx = train_test_split(indices, test_size=test_size, random_state=random_state)
-            return [(train_idx, val_idx)]
+            split_groups[val_idx] = 1  # validation set is fold 1
+            return [(train_idx, val_idx)], split_groups
         else:
             if target_column and df[target_column].dtype in ["object", "category", "bool"]:
                 kfold = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
-                return list(kfold.split(df, df[target_column]))
+                folds = list(kfold.split(df, df[target_column]))
             else:
                 kfold = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
-                return list(kfold.split(df))
+                folds = list(kfold.split(df))
+            # Assign fold index to each sample based on which fold it's in the test set
+            for fold_idx, (_, val_idx) in enumerate(folds):
+                split_groups[val_idx] = fold_idx
+            return folds, split_groups
 
     # Scaffold or Butina split requires SMILES - auto-detect if not provided
     if smiles_column is None:
@@ -581,7 +593,7 @@ def get_split_indices(
     if n_splits == 1:
         # Single split: use GroupShuffleSplit
         splitter = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
-        return list(splitter.split(df, groups=groups))
+        return list(splitter.split(df, groups=groups)), groups
     else:
         # K-fold: use GroupKFold (ensures no group appears in both train and val)
         # Note: GroupKFold doesn't shuffle, so we shuffle group order first
@@ -591,4 +603,4 @@ def get_split_indices(
         shuffled_groups = np.array([shuffled_group_map[g] for g in groups])
 
         gkf = GroupKFold(n_splits=n_splits)
-        return list(gkf.split(df, groups=shuffled_groups))
+        return list(gkf.split(df, groups=shuffled_groups)), groups

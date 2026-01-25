@@ -357,7 +357,7 @@ if __name__ == "__main__":
     else:
         # Use unified split interface (auto-detects 'smiles' column for scaffold/butina)
         target_col = target if model_type == "classifier" else None
-        folds = get_split_indices(
+        folds, split_groups = get_split_indices(
             all_df,
             n_splits=n_folds,
             strategy=split_strategy,
@@ -366,7 +366,8 @@ if __name__ == "__main__":
             random_state=42,
             butina_cutoff=butina_cutoff,
         )
-        print(f"Split strategy: {split_strategy}")
+        all_df["split_group"] = split_groups
+        print(f"Split strategy: {split_strategy} ({len(np.unique(split_groups))} groups)")
 
     print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold ensemble'}...")
 
