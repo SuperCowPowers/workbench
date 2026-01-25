@@ -5,30 +5,15 @@ strategies, then compares the cross-fold validation results to see how much
 splitting strategy affects model metrics.
 """
 
-from workbench.api import FeatureSet, Model, ModelType, Endpoint
+from workbench.api import FeatureSet, Model, ModelType, Endpoint, ParameterStore
+
+# Access Parameter Store
+params = ParameterStore()
 
 # Configuration
-feature_set_name = "aqsol_features"
-target = "solubility"
-feature_list = [
-    "molwt",
-    "mollogp",
-    "molmr",
-    "heavyatomcount",
-    "numhacceptors",
-    "numhdonors",
-    "numheteroatoms",
-    "numrotatablebonds",
-    "numvalenceelectrons",
-    "numaromaticrings",
-    "numsaturatedrings",
-    "numaliphaticrings",
-    "ringcount",
-    "tpsa",
-    "labuteasa",
-    "balabanj",
-    "bertzct",
-]
+feature_set_name = "open_admet_logd"
+target = "logd"
+features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
 
 # Recreate Flag in case you want to recreate the artifacts
 recreate = False
@@ -38,7 +23,7 @@ split_strategies = ["random", "scaffold", "butina"]
 
 # Train a model for each split strategy
 for strategy in split_strategies:
-    model_name = f"aqsol-split-{strategy}"
+    model_name = f"logd-xgb-split-{strategy}"
 
     # Create the model with the specified split strategy
     if recreate or not Model(model_name).exists():
@@ -49,7 +34,7 @@ for strategy in split_strategies:
         model = feature_set.to_model(
             name=model_name,
             model_type=ModelType.UQ_REGRESSOR,
-            feature_list=feature_list,
+            feature_list=features,
             target_column=target,
             description=f"XGBoost Regression with {strategy} split",
             tags=["split-comparison", strategy],
@@ -77,7 +62,7 @@ print("=" * 80)
 
 results = {}
 for strategy in split_strategies:
-    model_name = f"aqsol-split-{strategy}"
+    model_name = f"logd-xgb-split-{strategy}"
     model = Model(model_name)
 
     # Get the cross-fold metrics
