@@ -16,7 +16,7 @@ target = "logd"
 features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
 
 # Recreate Flag in case you want to recreate the artifacts
-recreate = False
+recreate = True
 
 # Split strategies to compare
 split_strategies = ["random", "scaffold", "butina"]

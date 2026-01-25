@@ -75,9 +75,10 @@ def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000, outlier_column: 
         threshold = np.partition(outlier_values, -n_to_isolate)[-n_to_isolate]
         high_outlier_mask = outlier_values >= threshold
         n_high_outliers = high_outlier_mask.sum()
-        # Assign unique cluster IDs starting after the max existing cluster
+        # Assign unique cluster IDs starting after the max existing cluster (match dtype to avoid warning)
         max_cluster = df["_cluster"].max()
-        df.loc[high_outlier_mask, "_cluster"] = np.arange(max_cluster + 1, max_cluster + 1 + n_high_outliers)
+        new_cluster_ids = np.arange(max_cluster + 1, max_cluster + 1 + n_high_outliers, dtype=df["_cluster"].dtype)
+        df.loc[high_outlier_mask, "_cluster"] = new_cluster_ids
         log.info(f"smart_aggregator: Isolated {n_high_outliers} high-outlier rows (>= {threshold:.3f})")
     elif outlier_column:
         log.warning(f"smart_aggregator: outlier_column '{outlier_column}' not found in columns")

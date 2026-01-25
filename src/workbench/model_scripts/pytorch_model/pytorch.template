@@ -54,10 +54,10 @@ DEFAULT_HYPERPARAMETERS = {
     # Loss function for regression (L1Loss=MAE, MSELoss=MSE, HuberLoss, SmoothL1Loss)
     "loss": "L1Loss",
     # Split strategy: "random", "scaffold", or "butina"
-    # - random: Standard random split
+    # - random: Standard random split (default)
     # - scaffold: Bemis-Murcko scaffold-based grouping (requires 'smiles' column in data)
     # - butina: Morgan fingerprint clustering (requires 'smiles' column, recommended for ADMET)
-    "split_strategy": "butina",
+    "split_strategy": "random",
     "butina_cutoff": 0.4,  # Tanimoto distance cutoff for Butina clustering
     # Random seed
     "seed": 42,
@@ -505,6 +505,7 @@ if __name__ == "__main__":
         output_columns += [c for c in df_val.columns if c.startswith("q_") or c == "confidence"]
 
     output_columns += [c for c in df_val.columns if c.endswith("_proba")]
+    output_columns.append("split_group")
 
     wr.s3.to_csv(df_val[output_columns], f"{model_metrics_s3_path}/validation_predictions.csv", index=False)
 
