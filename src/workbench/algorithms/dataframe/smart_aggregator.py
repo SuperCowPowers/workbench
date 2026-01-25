@@ -55,25 +55,29 @@ def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000, outlier_column: 
         result["aggregation_count"] = 1
         return result.reset_index(drop=True)
 
-    # Handle NaN values - fill with column median
-    df_for_clustering = df[numeric_cols].fillna(df[numeric_cols].median())
+    # Handle NaN values - fill with column median (use numpy for speed)
+    clustering_data = df[numeric_cols].values
+    col_medians = np.nanmedian(clustering_data, axis=0)
+    nan_mask = np.isnan(clustering_data)
+    clustering_data = np.where(nan_mask, col_medians, clustering_data)
 
-    # Normalize and cluster
-    X = StandardScaler().fit_transform(df_for_clustering)
+    # Normalize and cluster (n_init=1 since MiniBatchKMeans is already approximate)
+    X = StandardScaler().fit_transform(clustering_data)
     df["_cluster"] = MiniBatchKMeans(
-        n_clusters=min(target_rows, n_rows), random_state=42, batch_size=min(1024, n_rows), n_init=3
+        n_clusters=min(target_rows, n_rows), random_state=42, batch_size=min(1024, n_rows), n_init=1
     ).fit_predict(X)
 
     # Post-process: give high-outlier rows their own unique clusters so they don't get aggregated
     if outlier_column and outlier_column in df.columns:
-        # Top 10% of outlier values get their own clusters, capped at 200
-        n_to_isolate = min(int(n_rows * 0.1), 200)
-        threshold = df[outlier_column].nlargest(n_to_isolate).min()
-        high_outlier_mask = df[outlier_column] >= threshold
+        # Top 10% of outlier values get their own clusters, capped at 20% of target_rows
+        n_to_isolate = min(int(n_rows * 0.1), int(target_rows * 0.2))
+        outlier_values = df[outlier_column].values
+        threshold = np.partition(outlier_values, -n_to_isolate)[-n_to_isolate]
+        high_outlier_mask = outlier_values >= threshold
         n_high_outliers = high_outlier_mask.sum()
         # Assign unique cluster IDs starting after the max existing cluster
         max_cluster = df["_cluster"].max()
-        df.loc[high_outlier_mask, "_cluster"] = range(max_cluster + 1, max_cluster + 1 + n_high_outliers)
+        df.loc[high_outlier_mask, "_cluster"] = np.arange(max_cluster + 1, max_cluster + 1 + n_high_outliers)
         log.info(f"smart_aggregator: Isolated {n_high_outliers} high-outlier rows (>= {threshold:.3f})")
     elif outlier_column:
         log.warning(f"smart_aggregator: outlier_column '{outlier_column}' not found in columns")
