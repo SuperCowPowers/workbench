@@ -1,9 +1,14 @@
 """Tests the support for Empty Model Groups"""
 
+import pytest
 from pprint import pprint
 
 # Workbench Imports
 from workbench.api.model import Model
+
+
+# Mark all tests in this module as corner cases (not run by default)
+pytestmark = pytest.mark.corner_case
 
 model = Model("empty-model-group")
 
