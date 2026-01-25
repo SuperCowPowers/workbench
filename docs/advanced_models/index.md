@@ -100,15 +100,8 @@ model = feature_set.to_model(
 )
 ```
 
-## Getting Started
-
-1. Install Workbench: `pip install workbench`
-2. Connect to AWS®: [Setup Guide](../getting_started/index.md)
-3. Create your model using the examples above
-4. Deploy to an endpoint for inference
-
 !!! note "Examples"
-    All Workbench examples are in the repository under the `examples/` directory. For full code listings, visit [Workbench Examples](https://github.com/SuperCowPowers/workbench/blob/main/examples).
+    All Workbench model examples are in the repository under the `examples/models` directory. For full code listings, visit [Workbench Model Examples](https://github.com/SuperCowPowers/workbench/blob/main/examples/models).
 
 ---
 
