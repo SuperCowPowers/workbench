@@ -1203,6 +1203,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1219,6 +1237,69 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#theming-mechanisms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theming Mechanisms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamic-theme-switching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic Theme Switching
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plugin-theme-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plugin Theme Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additional-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional Resources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -4305,6 +4386,58 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#theming-mechanisms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theming Mechanisms
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamic-theme-switching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Dynamic Theme Switching
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plugin-theme-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plugin Theme Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additional-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional Resources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -4323,95 +4456,10 @@
 <h1 id="theme-support-for-workbench">Theme Support for Workbench</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
-<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 </div>
-<p>Workbench interfaces are going to have full support for theming and branding to enable customizations of components, and pages. The theming support will include all of the default pages/components but will also support full theming for plugin components and pages <a href="../plugins/">Workbench Plugins</a></p>
-<h1 id="summary-of-theming-mechanisms">Summary of Theming Mechanisms</h1>
-<h2 id="1-css-files">1. CSS Files</h2>
-<p>CSS affects <strong>global styling</strong> of the entire application, including:</p>
-<ul>
-<li>Font styles and sizes.</li>
-<li>Layout styles (e.g., margins, padding, spacing).</li>
-<li>Background and text colors for non-Bootstrap or custom elements.</li>
-<li>Borders and shadows.</li>
-<li>Interactive element styling (e.g., hover effects, link colors).</li>
-<li>Dash custom components.</li>
-</ul>
-<h2 id="2-plotly-figure-templates">2. Plotly Figure Templates</h2>
-<p>Plotly templates control <strong>figure-specific styling</strong> for Plotly charts and graphs:</p>
-<ul>
-<li>Axis styling (e.g., line colors, grid lines, and ticks).</li>
-<li>Color scales for heatmaps, bar charts, and scatter plots.*</li>
-<li>Marker and line styles.</li>
-<li>Background colors for the figure and plot areas.</li>
-<li>Font styles inside the figures.</li>
-</ul>
-<h2 id="3-dbc-components-lightdark">3. DBC Components Light/Dark</h2>
-<p>The <code>data-bs-theme=light/dark</code> html attribute affects <strong>Bootstrap-specific components</strong>, primarily from <strong>Dash Bootstrap Components (DBC)</strong>:</p>
-<ul>
-<li>Buttons.</li>
-<li>Tables.</li>
-<li>Forms (e.g., input boxes, checkboxes, radio buttons).</li>
-<li>Cards, modals, and alerts.</li>
-</ul>
-<h2 id="key-differences">Key Differences</h2>
-<table>
-<thead>
-<tr>
-<th><strong>Aspect</strong></th>
-<th><strong>CSS Files</strong></th>
-<th><strong>Plotly Templates</strong></th>
-<th><strong>DBC Dark/Light</strong></th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Scope</strong></td>
-<td>Global app styling</td>
-<td>Plotly figures</td>
-<td>DBC Components</td>
-</tr>
-<tr>
-<td><strong>Level of Control</strong></td>
-<td>Full Range</td>
-<td>Partial/Full*</td>
-<td>Just Light and Dark</td>
-</tr>
-<tr>
-<td><strong>Dynamic Switching?</strong></td>
-<td>✅ Yes (stylesheet swap)</td>
-<td>✅ Yes (plugin callbacks)</td>
-<td>✅ Yes (<code>data-bs-theme</code>)</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li>Some figure parameters will automatically work, but for stuff like colorscales the component code needs to 'pull' that from the template meta data when it updates it's figure.</li>
-</ul>
-<h2 id="dynamic-theme-switching-no-page-reload">Dynamic Theme Switching (No Page Reload!)</h2>
-<p>Workbench supports <strong>instant theme switching</strong> without page reload. When you select a new theme from the settings menu, all styling systems update immediately:</p>
-<ul>
-<li>Bootstrap components re-style via <code>data-bs-theme</code> attribute</li>
-<li>CSS stylesheets swap dynamically (including custom.css)</li>
-<li>Plotly figures re-render with the new template colors</li>
-</ul>
-<h3 id="how-it-works">How It Works</h3>
-<p>Theme switching is handled entirely client-side using Dash clientside callbacks:</p>
-<ol>
-<li><strong>User clicks a theme</strong> in the settings menu</li>
-<li><strong>JavaScript executes</strong> to update localStorage, cookies, and DOM</li>
-<li><strong>Bootstrap stylesheet</strong> is swapped by updating the <code>&lt;link&gt;</code> href</li>
-<li><strong><code>data-bs-theme</code></strong> attribute is updated (light/dark)</li>
-<li><strong><code>workbench-theme-store</code></strong> is updated, triggering plugin callbacks</li>
-<li><strong>Plugins re-render</strong> their figures with new theme colors</li>
-</ol>
-<h3 id="theme-persistence">Theme Persistence</h3>
-<p>Your theme choice is persisted across browser sessions:</p>
-<ul>
-<li><strong>localStorage</strong>: Stores the theme name for JavaScript access</li>
-<li><strong>Cookie (<code>wb_theme</code>)</strong>: Synced to server for Flask/Plotly template selection</li>
-</ul>
-<h3 id="three-styling-systems-all-dynamic">Three Styling Systems (All Dynamic!)</h3>
+<p>Workbench supports full theming and branding for customization of components and pages, including <a href="../plugins/">Workbench Plugins</a>.</p>
+<h2 id="theming-mechanisms">Theming Mechanisms</h2>
 <table>
 <thead>
 <tr>
@@ -4424,53 +4472,67 @@
 <tr>
 <td>CSS/Bootstrap</td>
 <td>Layout, buttons, cards, tables</td>
-<td>✅ <code>data-bs-theme</code> + stylesheet swap</td>
+<td><code>data-bs-theme</code> + stylesheet swap</td>
 </tr>
 <tr>
 <td>Plotly Templates</td>
 <td>Figure axes, colors, fonts</td>
-<td>✅ Plugin callbacks re-render figures</td>
+<td>Plugin <code>set_theme()</code> re-renders figures</td>
 </tr>
 <tr>
 <td>Custom CSS</td>
 <td>Non-Bootstrap elements</td>
-<td>✅ Cache-busting stylesheet reload</td>
+<td>Cache-busting stylesheet reload</td>
 </tr>
 </tbody>
 </table>
-<h3 id="plugin-theme-support">Plugin Theme Support</h3>
-<p>Plugins can listen for theme changes by using <code>THEME_STORE_ID</code> as a callback Input:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.web_interface.components.plugin_interface</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">PluginInterface</span><span class="p">,</span> <span class="n">THEME_STORE_ID</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">)</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">callback</span><span class="p">,</span> <span class="n">Output</span><span class="p">,</span> <span class="n">Input</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyPlugin</span><span class="p">(</span><span class="n">PluginInterface</span><span class="p">):</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">register_internal_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="nd">@callback</span><span class="p">(</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>            <span class="n">Output</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">component_id</span><span class="p">,</span> <span class="s2">&quot;figure&quot;</span><span class="p">,</span> <span class="n">allow_duplicate</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>            <span class="n">Input</span><span class="p">(</span><span class="n">THEME_STORE_ID</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">),</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>            <span class="n">prevent_initial_call</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        <span class="p">)</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">_update_on_theme_change</span><span class="p">(</span><span class="n">theme</span><span class="p">):</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">display_text</span><span class="p">(</span><span class="s2">&quot;Waiting for Data...&quot;</span><span class="p">)</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>            <span class="c1"># Re-render with updated theme colors</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<p><em>Note: Colorscales require plugins to pull from template metadata when updating figures.</em></p>
+<h2 id="dynamic-theme-switching">Dynamic Theme Switching</h2>
+<p>Workbench supports <strong>instant theme switching</strong> without page reload:</p>
+<ol>
+<li>User clicks a theme in the settings menu</li>
+<li>JavaScript updates localStorage, cookies, and DOM</li>
+<li>Bootstrap stylesheet swapped via <code>&lt;link&gt;</code> href</li>
+<li><code>data-bs-theme</code> attribute updated (light/dark)</li>
+<li><code>workbench-theme-store</code> updated, triggering plugin callbacks</li>
+<li>Plugins re-render figures with new theme colors</li>
+</ol>
+<p><strong>Theme Persistence</strong>: Stored in localStorage (JS access) and cookie <code>wb_theme</code> (server access).</p>
+<h2 id="plugin-theme-support">Plugin Theme Support</h2>
+<p>Plugins support theme changes by overriding the <code>set_theme()</code> method:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.web_interface.components.plugin_interface</span><span class="w"> </span><span class="kn">import</span> <span class="n">PluginInterface</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dash</span><span class="w"> </span><span class="kn">import</span> <span class="n">no_update</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyPlugin</span><span class="p">(</span><span class="n">PluginInterface</span><span class="p">):</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Cache data for re-rendering</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_theme</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theme</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Re-render when theme changes.&quot;&quot;&quot;</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>            <span class="k">return</span> <span class="p">[</span><span class="n">no_update</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">properties</span><span class="p">)</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">update_properties</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
 </span></code></pre></div>
-<p>The <code>PluginInterface</code> base class provides a shared <code>theme_manager</code> instance for accessing colors and colorscales.</p>
-<h3 id="currently-supported-plugins">Currently Supported Plugins</h3>
-<p>The following plugins automatically re-render on theme change:</p>
+<p>The base <code>PluginInterface</code> provides:</p>
 <ul>
-<li>✅ ScatterPlot</li>
-<li>✅ ConfusionMatrix</li>
-<li>✅ ShapSummaryPlot</li>
+<li>Default <code>set_theme()</code> returning <code>[no_update] * len(self.properties)</code></li>
+<li>Shared <code>theme_manager</code> for accessing colors and colorscales</li>
 </ul>
-<h3 id="future-work">Future Work</h3>
-<ul>
-<li>Add theme switching support to remaining plugins</li>
-<li>Fix checkmark not showing on initial page load (minor UI issue)</li>
-</ul>
+<p><strong>Page-level callback wiring</strong> (in <code>callbacks.py</code>):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">setup_theme_callback</span><span class="p">(</span><span class="n">plugins</span><span class="p">):</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="nd">@callback</span><span class="p">(</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        <span class="p">[</span><span class="n">Output</span><span class="p">(</span><span class="n">cid</span><span class="p">,</span> <span class="n">prop</span><span class="p">,</span> <span class="n">allow_duplicate</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">plugins</span> <span class="k">for</span> <span class="n">cid</span><span class="p">,</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">properties</span><span class="p">],</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="n">Input</span><span class="p">(</span><span class="s2">&quot;workbench-theme-store&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">),</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="n">prevent_initial_call</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="p">)</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">on_theme_change</span><span class="p">(</span><span class="n">theme</span><span class="p">):</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>        <span class="n">all_props</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">plugins</span><span class="p">:</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>            <span class="n">all_props</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">theme</span><span class="p">))</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>        <span class="k">return</span> <span class="n">all_props</span>
+</span></code></pre></div>
+<p>Plugins stay simple—they just implement <code>set_theme()</code> without knowing about callbacks or store IDs.</p>
 <h2 id="additional-resources">Additional Resources</h2>
 <p><img align="right" src="../images/scp.png" width="180"></p>
 <p>Need help with plugins? Want to develop a customized application tailored to your business needs?</p>
