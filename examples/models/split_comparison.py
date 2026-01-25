@@ -5,7 +5,7 @@ strategies, then compares the cross-fold validation results to see how much
 splitting strategy affects model metrics.
 """
 
-from workbench.api import FeatureSet, Model, ModelType
+from workbench.api import FeatureSet, Model, ModelType, Endpoint
 
 # Configuration
 feature_set_name = "aqsol_features"
@@ -30,36 +30,45 @@ feature_list = [
     "bertzct",
 ]
 
+# Recreate Flag in case you want to recreate the artifacts
+recreate = False
+
 # Split strategies to compare
 split_strategies = ["random", "scaffold", "butina"]
 
 # Train a model for each split strategy
 for strategy in split_strategies:
     model_name = f"aqsol-split-{strategy}"
-    print(f"\n{'='*60}")
-    print(f"Training model with {strategy} split: {model_name}")
-    print(f"{'='*60}")
-
-    # Delete existing model if it exists
-    model = Model(model_name)
-    if model.exists():
-        model.delete()
 
     # Create the model with the specified split strategy
-    feature_set = FeatureSet(feature_set_name)
-    model = feature_set.to_model(
-        name=model_name,
-        model_type=ModelType.UQ_REGRESSOR,
-        feature_list=feature_list,
-        target_column=target,
-        description=f"XGBoost Regression with {strategy} split",
-        tags=["split-comparison", strategy],
-        hyperparameters={
-            "n_estimators": 200,
-            "max_depth": 6,
-            "split_strategy": strategy,
-        },
-    )
+    if recreate or not Model(model_name).exists():
+        print(f"\n{'=' * 60}")
+        print(f"Training model with {strategy} split: {model_name}")
+        print(f"{'=' * 60}")
+        feature_set = FeatureSet(feature_set_name)
+        model = feature_set.to_model(
+            name=model_name,
+            model_type=ModelType.UQ_REGRESSOR,
+            feature_list=feature_list,
+            target_column=target,
+            description=f"XGBoost Regression with {strategy} split",
+            tags=["split-comparison", strategy],
+            hyperparameters={
+                "n_estimators": 200,
+                "max_depth": 6,
+                "split_strategy": strategy,
+            },
+        )
+
+    # Create an Endpoint for the Regression Model
+    if recreate or not Endpoint(model_name).exists():
+        m = Model(model_name)
+        end = m.to_endpoint(tags=["split", strategy])
+        end.set_owner("BW")
+
+        # Run inference on the endpoint
+        end.auto_inference()
+        end.cross_fold_inference()
 
 # Compare results
 print("\n" + "=" * 80)
