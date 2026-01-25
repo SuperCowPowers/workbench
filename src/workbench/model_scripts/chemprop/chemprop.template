@@ -538,7 +538,7 @@ if __name__ == "__main__":
     else:
         # Use unified split interface (auto-detects 'smiles' column for scaffold/butina)
         target_col = target_columns[0] if model_type == "classifier" else None
-        folds, split_groups = get_split_indices(
+        folds = get_split_indices(
             all_df,
             n_splits=n_folds,
             strategy=split_strategy,
@@ -547,8 +547,7 @@ if __name__ == "__main__":
             random_state=42,
             butina_cutoff=butina_cutoff,
         )
-        all_df["split_group"] = split_groups
-        print(f"Split strategy: {split_strategy} ({len(np.unique(split_groups))} groups)")
+        print(f"Split strategy: {split_strategy}")
 
     print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold ensemble'}...")
 
@@ -753,7 +752,6 @@ if __name__ == "__main__":
     output_columns += [f"{t}_pred" for t in target_columns] + [f"{t}_pred_std" for t in target_columns]
     output_columns += ["prediction", "prediction_std", "confidence"]
     output_columns += [c for c in df_val.columns if c.endswith("_proba")]
-    output_columns.append("split_group")
 
     output_columns = [c for c in output_columns if c in df_val.columns]
 

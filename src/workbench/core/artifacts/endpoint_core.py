@@ -930,10 +930,6 @@ class EndpointCore(Artifact):
         # Add proba columns for classifiers
         output_columns += [c for c in cols if c.endswith("_proba")]
 
-        # Add split_group column if present (for scaffold/butina split tracking)
-        if "split_group" in cols:
-            output_columns.append("split_group")
-
         # Add smiles column if present
         if "smiles" in cols:
             output_columns.append("smiles")
