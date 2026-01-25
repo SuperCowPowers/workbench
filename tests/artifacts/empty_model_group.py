@@ -6,7 +6,6 @@ from pprint import pprint
 # Workbench Imports
 from workbench.api.model import Model
 
-
 # Mark all tests in this module as corner cases (not run by default)
 pytestmark = pytest.mark.corner_case
 
