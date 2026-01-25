@@ -433,8 +433,11 @@ def get_butina_clusters(smiles_list: list[str], cutoff: float = 0.4) -> np.ndarr
         Array of cluster indices
     """
     from rdkit import Chem, DataStructs
-    from rdkit.Chem import AllChem
+    from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
     from rdkit.ML.Cluster import Butina
+
+    # Create Morgan fingerprint generator
+    fp_gen = GetMorganGenerator(radius=2, fpSize=2048)
 
     # Generate Morgan fingerprints
     fps = []
@@ -442,7 +445,7 @@ def get_butina_clusters(smiles_list: list[str], cutoff: float = 0.4) -> np.ndarr
     for i, smi in enumerate(smiles_list):
         mol = Chem.MolFromSmiles(smi)
         if mol is not None:
-            fp = AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
+            fp = fp_gen.GetFingerprint(mol)
             fps.append(fp)
             valid_indices.append(i)
 
