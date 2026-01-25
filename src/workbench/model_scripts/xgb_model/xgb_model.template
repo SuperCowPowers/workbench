@@ -51,12 +51,18 @@ DEFAULT_HYPERPARAMETERS = {
     "gamma": 0.1,
     "reg_alpha": 0.1,
     "reg_lambda": 1.0,
+    # Split strategy: "random", "scaffold", or "butina"
+    # - random: Standard random split
+    # - scaffold: Bemis-Murcko scaffold-based grouping (requires 'smiles' column in data)
+    # - butina: Morgan fingerprint clustering (requires 'smiles' column, recommended for ADMET)
+    "split_strategy": "butina",
+    "butina_cutoff": 0.4,  # Tanimoto distance cutoff for Butina clustering
     # Random seed
     "seed": 42,
 }
 
 # Workbench-specific parameters (not passed to XGBoost)
-WORKBENCH_PARAMS = {"n_folds"}
+WORKBENCH_PARAMS = {"n_folds", "split_strategy", "butina_cutoff"}
 
 # Regression-only parameters (filtered out for classifiers)
 REGRESSION_ONLY_PARAMS = {"objective"}
@@ -198,6 +204,7 @@ if __name__ == "__main__":
         check_dataframe,
         compute_classification_metrics,
         compute_regression_metrics,
+        get_split_indices,
         print_classification_metrics,
         print_confusion_matrix,
         print_regression_metrics,
@@ -273,25 +280,29 @@ if __name__ == "__main__":
 
     print(f"XGBoost params: {xgb_params}")
 
-    if n_folds == 1:
-        # Single train/val split
-        if "training" in all_df.columns:
-            print("Using 'training' column for train/val split")
-            train_idx = np.where(all_df["training"])[0]
-            val_idx = np.where(~all_df["training"])[0]
-        else:
-            print("WARNING: No 'training' column found, using random 80/20 split")
-            indices = np.arange(len(all_df))
-            train_idx, val_idx = train_test_split(indices, test_size=0.2, random_state=42)
+    # Get split strategy parameters
+    split_strategy = hyperparameters.get("split_strategy", "random")
+    butina_cutoff = hyperparameters.get("butina_cutoff", 0.4)
+
+    # Check for pre-defined training column (overrides split strategy)
+    if n_folds == 1 and "training" in all_df.columns:
+        print("Using 'training' column for train/val split")
+        train_idx = np.where(all_df["training"])[0]
+        val_idx = np.where(~all_df["training"])[0]
         folds = [(train_idx, val_idx)]
     else:
-        # K-fold cross-validation
-        if model_type == "classifier":
-            kfold = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=42)
-            folds = list(kfold.split(all_df, all_df[target]))
-        else:
-            kfold = KFold(n_splits=n_folds, shuffle=True, random_state=42)
-            folds = list(kfold.split(all_df))
+        # Use unified split interface (auto-detects 'smiles' column for scaffold/butina)
+        target_col = target if model_type == "classifier" else None
+        folds = get_split_indices(
+            all_df,
+            n_splits=n_folds,
+            strategy=split_strategy,
+            target_column=target_col,
+            test_size=0.2,
+            random_state=42,
+            butina_cutoff=butina_cutoff,
+        )
+        print(f"Split strategy: {split_strategy}")
 
     print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold ensemble'}...")
 
