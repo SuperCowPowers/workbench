@@ -85,9 +85,21 @@ for strategy in split_strategies:
     results[strategy] = metrics
 
     print(f"\n{strategy.upper()} Split:")
-    print(f"  R²:   {metrics.get('r2', 'N/A'):.4f}" if isinstance(metrics.get('r2'), (int, float)) else f"  R²:   {metrics.get('r2', 'N/A')}")
-    print(f"  MAE:  {metrics.get('mae', 'N/A'):.4f}" if isinstance(metrics.get('mae'), (int, float)) else f"  MAE:  {metrics.get('mae', 'N/A')}")
-    print(f"  RMSE: {metrics.get('rmse', 'N/A'):.4f}" if isinstance(metrics.get('rmse'), (int, float)) else f"  RMSE: {metrics.get('rmse', 'N/A')}")
+    print(
+        f"  R²:   {metrics.get('r2', 'N/A'):.4f}"
+        if isinstance(metrics.get("r2"), (int, float))
+        else f"  R²:   {metrics.get('r2', 'N/A')}"
+    )
+    print(
+        f"  MAE:  {metrics.get('mae', 'N/A'):.4f}"
+        if isinstance(metrics.get("mae"), (int, float))
+        else f"  MAE:  {metrics.get('mae', 'N/A')}"
+    )
+    print(
+        f"  RMSE: {metrics.get('rmse', 'N/A'):.4f}"
+        if isinstance(metrics.get("rmse"), (int, float))
+        else f"  RMSE: {metrics.get('rmse', 'N/A')}"
+    )
 
 # Summary comparison
 print("\n" + "=" * 80)
