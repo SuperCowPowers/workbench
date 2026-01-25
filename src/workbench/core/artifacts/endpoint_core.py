@@ -370,7 +370,12 @@ class EndpointCore(Artifact):
         return self.inference(eval_df, "full_inference")
 
     def inference(
-        self, eval_df: pd.DataFrame, capture_name: str = None, id_column: str = None, drop_error_rows: bool = False
+        self,
+        eval_df: pd.DataFrame,
+        capture_name: str = None,
+        id_column: str = None,
+        drop_error_rows: bool = False,
+        include_quantiles: bool = False,
     ) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
@@ -379,6 +384,7 @@ class EndpointCore(Artifact):
             capture_name (str, optional): Name of the inference capture (default=None)
             id_column (str, optional): Name of the ID column (default=None)
             drop_error_rows (bool, optional): If True, drop rows that had endpoint errors/issues (default=False)
+            include_quantiles (bool): Include q_* quantile columns in saved output (default: False)
 
         Returns:
             pd.DataFrame: DataFrame with the inference results
@@ -478,6 +484,7 @@ class EndpointCore(Artifact):
                         description,
                         features,
                         id_column,
+                        include_quantiles,
                     )
 
                 # Save primary target (or single target) with original capture_name
@@ -491,6 +498,7 @@ class EndpointCore(Artifact):
                         capture_name.replace("_", " ").title(),
                         features,
                         id_column,
+                        include_quantiles,
                     )
 
             # Capture uncertainty metrics if prediction_std is available (UQ, ChemProp, etc.)
@@ -501,8 +509,11 @@ class EndpointCore(Artifact):
         # Return the prediction DataFrame
         return prediction_df
 
-    def cross_fold_inference(self) -> pd.DataFrame:
+    def cross_fold_inference(self, include_quantiles: bool = False) -> pd.DataFrame:
         """Pull cross-fold inference training results for this Endpoint's model
+
+        Args:
+            include_quantiles (bool): Include q_* quantile columns in saved output (default: False)
 
         Returns:
             pd.DataFrame: A DataFrame with cross fold predictions
@@ -594,6 +605,7 @@ class EndpointCore(Artifact):
                     description,
                     features=additional_columns,
                     id_column=id_column,
+                    include_quantiles=include_quantiles,
                 )
 
             # Save primary target (or single target) as "full_cross_fold"
@@ -607,6 +619,7 @@ class EndpointCore(Artifact):
                     "Full Cross Fold",
                     features=additional_columns,
                     id_column=id_column,
+                    include_quantiles=include_quantiles,
                 )
 
         return out_of_fold_df
@@ -824,6 +837,7 @@ class EndpointCore(Artifact):
         description: str,
         features: list,
         id_column: str = None,
+        include_quantiles: bool = False,
     ):
         """Internal: Capture the inference results and metrics to S3 for a single target
 
@@ -836,6 +850,7 @@ class EndpointCore(Artifact):
             description (str): Description of the inference results
             features (list): List of features to include in the inference results
             id_column (str, optional): Name of the ID column (default=None)
+            include_quantiles (bool): Include q_* quantile columns in output (default: False)
         """
 
         # Compute a dataframe hash (just use the last 8)
@@ -862,7 +877,7 @@ class EndpointCore(Artifact):
         wr.s3.to_csv(metrics, f"{inference_capture_path}/inference_metrics.csv", index=False)
 
         # Save the inference predictions for this target
-        self._save_target_inference(inference_capture_path, pred_results_df, target, id_column)
+        self._save_target_inference(inference_capture_path, pred_results_df, target, id_column, include_quantiles)
 
         # CLASSIFIER: Write the confusion matrix to our S3 Model Inference Folder
         if model_type == ModelType.CLASSIFIER:
@@ -882,6 +897,7 @@ class EndpointCore(Artifact):
         pred_results_df: pd.DataFrame,
         target: str,
         id_column: str = None,
+        include_quantiles: bool = False,
     ):
         """Save inference results for a single target.
 
@@ -890,6 +906,7 @@ class EndpointCore(Artifact):
             pred_results_df (pd.DataFrame): DataFrame with prediction results
             target (str): Target column name
             id_column (str, optional): Name of the ID column
+            include_quantiles (bool): Include q_* quantile columns in output (default: False)
         """
         cols = pred_results_df.columns
 
@@ -902,8 +919,20 @@ class EndpointCore(Artifact):
 
         output_columns += [c for c in ["prediction", "prediction_std"] if c in cols]
 
-        # Add UQ columns (q_*, confidence) and proba columns
-        output_columns += [c for c in cols if c.startswith("q_") or c == "confidence" or c.endswith("_proba")]
+        # Add confidence column (always include if present)
+        if "confidence" in cols:
+            output_columns.append("confidence")
+
+        # Add quantile columns (q_*) only if requested
+        if include_quantiles:
+            output_columns += [c for c in cols if c.startswith("q_")]
+
+        # Add proba columns for classifiers
+        output_columns += [c for c in cols if c.endswith("_proba")]
+
+        # Add split_group column if present (for scaffold/butina split tracking)
+        if "split_group" in cols:
+            output_columns.append("split_group")
 
         # Add smiles column if present
         if "smiles" in cols:

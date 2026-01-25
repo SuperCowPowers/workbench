@@ -29,7 +29,12 @@ class Endpoint(EndpointCore):
         return super().details(**kwargs)
 
     def inference(
-        self, eval_df: pd.DataFrame, capture_name: str = None, id_column: str = None, drop_error_rows: bool = False
+        self,
+        eval_df: pd.DataFrame,
+        capture_name: str = None,
+        id_column: str = None,
+        drop_error_rows: bool = False,
+        include_quantiles: bool = False,
     ) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
@@ -38,11 +43,12 @@ class Endpoint(EndpointCore):
             capture_name (str, optional): The Name of the capture to use (default: None)
             id_column (str, optional): The name of the column to use as the ID (default: None)
             drop_error_rows (bool): Whether to drop rows with errors (default: False)
+            include_quantiles (bool): Include q_* quantile columns in saved output (default: False)
 
         Returns:
             pd.DataFrame: The DataFrame with predictions
         """
-        return super().inference(eval_df, capture_name, id_column, drop_error_rows)
+        return super().inference(eval_df, capture_name, id_column, drop_error_rows, include_quantiles)
 
     def auto_inference(self) -> pd.DataFrame:
         """Run inference on the Endpoint using the test data from the model training view
@@ -75,13 +81,16 @@ class Endpoint(EndpointCore):
         """
         return super().fast_inference(eval_df, threads=threads)
 
-    def cross_fold_inference(self) -> pd.DataFrame:
+    def cross_fold_inference(self, include_quantiles: bool = False) -> pd.DataFrame:
         """Pull cross-fold inference from model associated with this Endpoint
+
+        Args:
+            include_quantiles (bool): Include q_* quantile columns in saved output (default: False)
 
         Returns:
             pd.DataFrame: A DataFrame with cross fold predictions
         """
-        return super().cross_fold_inference()
+        return super().cross_fold_inference(include_quantiles)
 
 
 if __name__ == "__main__":
