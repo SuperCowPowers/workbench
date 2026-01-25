@@ -459,6 +459,12 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     # Spearman correlation for robustness
     interval_to_error_corr = spearmanr(width_68, abs_residuals)[0]
 
+    # --- Confidence to Error Correlation ---
+    # If confidence column exists, compute correlation (should be negative: high confidence = low error)
+    confidence_to_error_corr = None
+    if "confidence" in df.columns:
+        confidence_to_error_corr = spearmanr(df["confidence"], abs_residuals)[0]
+
     # Collect results
     results = {
         "coverage_68": coverage_68,
@@ -472,6 +478,7 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         "median_width_90": median_width_90,
         "median_width_95": median_width_95,
         "interval_to_error_corr": interval_to_error_corr,
+        "confidence_to_error_corr": confidence_to_error_corr,
         "n_samples": len(df),
     }
 
@@ -489,6 +496,8 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     print(f"CRPS: {mean_crps:.3f} (lower is better)")
     print(f"Interval Score 95%: {mean_is_95:.3f} (lower is better)")
     print(f"Interval/Error Corr: {interval_to_error_corr:.3f} (higher is better, target: >0.5)")
+    if confidence_to_error_corr is not None:
+        print(f"Confidence/Error Corr: {confidence_to_error_corr:.3f} (lower is better, target: <-0.5)")
     print(f"Samples: {len(df)}")
     return results
 
