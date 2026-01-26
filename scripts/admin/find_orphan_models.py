@@ -37,22 +37,26 @@ def find_orphan_models(delete: bool = False):
 
         # Models with no endpoints are orphans
         if not registered_endpoints:
-            orphans.append({
-                "model": model_name,
-                "reason": "no_endpoints",
-            })
+            orphans.append(
+                {
+                    "model": model_name,
+                    "reason": "no_endpoints",
+                }
+            )
             continue
 
         # Check each endpoint the model thinks it has
         for endpoint_name in registered_endpoints:
             actual_model = endpoint_to_model.get(endpoint_name)
             if actual_model and actual_model != model_name:
-                orphans.append({
-                    "model": model_name,
-                    "reason": "stolen",
-                    "claimed_endpoint": endpoint_name,
-                    "actual_owner": actual_model,
-                })
+                orphans.append(
+                    {
+                        "model": model_name,
+                        "reason": "stolen",
+                        "claimed_endpoint": endpoint_name,
+                        "actual_owner": actual_model,
+                    }
+                )
 
     # Report findings
     if not orphans:
@@ -65,7 +69,7 @@ def find_orphan_models(delete: bool = False):
         if orphan["reason"] == "no_endpoints":
             print("    Reason: No endpoints registered")
         else:
-            print(f"    Reason: Endpoint stolen")
+            print("    Reason: Endpoint stolen")
             print(f"    Claims endpoint: {orphan['claimed_endpoint']}")
             print(f"    Actual owner: {orphan['actual_owner']}")
         print()
