@@ -110,9 +110,7 @@ class ModelToEndpoint(Transform):
         if self.serverless:
             # For PyTorch or ChemProp we need at least 4GB of memory
             if needs_more_resources and mem_size < 4096:
-                self.log.important(
-                    f"{workbench_model.model_framework} needs at least 4GB of memory (setting to 4GB)"
-                )
+                self.log.important(f"{workbench_model.model_framework} needs at least 4GB of memory (setting to 4GB)")
                 mem_size = 4096
             serverless_config = ServerlessInferenceConfig(
                 memory_size_in_mb=mem_size,
