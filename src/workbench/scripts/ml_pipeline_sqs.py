@@ -71,6 +71,7 @@ def submit_to_sqs(
     realtime: bool = False,
     dt: bool = False,
     promote: bool = False,
+    test_promote: bool = False,
 ) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
@@ -81,6 +82,7 @@ def submit_to_sqs(
         realtime: If True, sets serverless=False for real-time processing (default: False)
         dt: If True, sets DT=True in environment (default: False)
         promote: If True, sets PROMOTE=True in environment (default: False)
+        test_promote: If True, sets TEST_PROMOTE=True in environment (default: False)
 
     Raises:
         ValueError: If size is invalid or script file not found
@@ -108,6 +110,7 @@ def submit_to_sqs(
     print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
+    print(f"🧪  Test Promote: {test_promote}")
     print(f"🪣  Bucket: {workbench_bucket}")
     if outputs:
         print(f"📤  Outputs: {outputs}")
@@ -174,6 +177,7 @@ def submit_to_sqs(
         "SERVERLESS": "False" if realtime else "True",
         "DT": str(dt),
         "PROMOTE": str(promote),
+        "TEST_PROMOTE": str(test_promote),
     }
 
     # Send the message to SQS
@@ -200,6 +204,7 @@ def submit_to_sqs(
     print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (SERVERLESS={'False' if realtime else 'True'})")
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
+    print(f"🧪  Test Promote: {test_promote}")
     if outputs:
         print(f"📤  Outputs: {outputs}")
     if inputs:
@@ -234,7 +239,12 @@ def main():
     parser.add_argument(
         "--promote",
         action="store_true",
-        help="Set Promote=True (models and endpoints will use promoted naming",
+        help="Set Promote=True (models and endpoints will use promoted naming)",
+    )
+    parser.add_argument(
+        "--test-promote",
+        action="store_true",
+        help="Set TEST_PROMOTE=True (creates test endpoint with '-test' suffix)",
     )
     args = parser.parse_args()
     try:
@@ -244,6 +254,7 @@ def main():
             realtime=args.realtime,
             dt=args.dt,
             promote=args.promote,
+            test_promote=args.test_promote,
         )
     except Exception as e:
         print(f"\n❌  ERROR: {e}")

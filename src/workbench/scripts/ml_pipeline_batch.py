@@ -44,7 +44,14 @@ def _log_cloudwatch_link(job: dict, message_prefix: str = "View logs") -> None:
         log.info("Check AWS Batch console for logs")
 
 
-def run_batch_job(script_path: str, size: str = "small") -> int:
+def run_batch_job(
+    script_path: str,
+    size: str = "small",
+    realtime: bool = False,
+    dt: bool = False,
+    promote: bool = False,
+    test_promote: bool = False,
+) -> int:
     """
     Submit and monitor an AWS Batch job for ML pipeline execution.
 
@@ -56,6 +63,10 @@ def run_batch_job(script_path: str, size: str = "small") -> int:
           - small: 2 vCPU, 4GB RAM for lightweight processing
           - medium: 4 vCPU, 8GB RAM for standard ML workloads
           - large: 8 vCPU, 16GB RAM for heavy training/inference
+        realtime: If True, sets serverless=False for real-time processing (default: False)
+        dt: If True, sets DT=True in environment (default: False)
+        promote: If True, sets PROMOTE=True in environment (default: False)
+        test_promote: If True, sets TEST_PROMOTE=True in environment (default: False)
 
     Returns:
         Exit code (0 for success/disconnected, non-zero for failure)
@@ -81,6 +92,10 @@ def run_batch_job(script_path: str, size: str = "small") -> int:
             "environment": [
                 {"name": "ML_PIPELINE_S3_PATH", "value": s3_path},
                 {"name": "WORKBENCH_BUCKET", "value": workbench_bucket},
+                {"name": "SERVERLESS", "value": "False" if realtime else "True"},
+                {"name": "DT", "value": str(dt)},
+                {"name": "PROMOTE", "value": str(promote)},
+                {"name": "TEST_PROMOTE", "value": str(test_promote)},
             ]
         },
     )
@@ -124,9 +139,39 @@ def main():
     """CLI entry point for running ML pipelines on AWS Batch."""
     parser = argparse.ArgumentParser(description="Run ML pipeline script on AWS Batch")
     parser.add_argument("script_file", help="Local path to ML pipeline script")
+    parser.add_argument(
+        "--size", default="small", choices=["small", "medium", "large"], help="Job size tier (default: small)"
+    )
+    parser.add_argument(
+        "--realtime",
+        action="store_true",
+        help="Create realtime endpoints (default is serverless)",
+    )
+    parser.add_argument(
+        "--dt",
+        action="store_true",
+        help="Set DT=True (models and endpoints will have '-dt' suffix)",
+    )
+    parser.add_argument(
+        "--promote",
+        action="store_true",
+        help="Set Promote=True (models and endpoints will use promoted naming)",
+    )
+    parser.add_argument(
+        "--test-promote",
+        action="store_true",
+        help="Set TEST_PROMOTE=True (creates test endpoint with '-test' suffix)",
+    )
     args = parser.parse_args()
     try:
-        exit_code = run_batch_job(args.script_file)
+        exit_code = run_batch_job(
+            args.script_file,
+            size=args.size,
+            realtime=args.realtime,
+            dt=args.dt,
+            promote=args.promote,
+            test_promote=args.test_promote,
+        )
         exit(exit_code)
     except Exception as e:
         log.error(f"Error: {e}")
