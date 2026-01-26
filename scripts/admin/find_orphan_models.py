@@ -39,10 +39,12 @@ def find_orphans(delete: bool = False):
 
         # Check if the endpoint points to a non-existent model
         if actual_model and actual_model not in model_names:
-            orphan_endpoints.append({
-                "endpoint": endpoint_name,
-                "claimed_model": actual_model,
-            })
+            orphan_endpoints.append(
+                {
+                    "endpoint": endpoint_name,
+                    "claimed_model": actual_model,
+                }
+            )
 
     # Find orphan models (stolen endpoints or no endpoints at all)
     orphan_models = []

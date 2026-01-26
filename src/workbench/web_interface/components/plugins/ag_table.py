@@ -97,7 +97,6 @@ class AGTable(PluginInterface):
 if __name__ == "__main__":
     # Run the Unit Test for the Plugin
     from workbench.api import Meta
-    from workbench.cached.cached_meta import CachedMeta
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
     # Test on model data
