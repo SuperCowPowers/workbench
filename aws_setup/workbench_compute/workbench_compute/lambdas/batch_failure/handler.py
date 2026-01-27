@@ -42,7 +42,7 @@ def get_log_events(log_stream_name: str, limit: int = 50) -> list[str]:
         return [f"(Error fetching logs: {e})"]
 
 
-def format_log_messages(messages: list[str], max_chars: int = 3000) -> str:
+def format_log_messages(messages: list[str], max_chars: int = 10000) -> str:
     """
     Format log messages for SNS, truncating if necessary.
 
