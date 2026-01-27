@@ -26,12 +26,13 @@ class ModelToEndpoint(Transform):
         ```
     """
 
-    def __init__(self, model_name: str, endpoint_name: str, serverless: bool = True):
+    def __init__(self, model_name: str, endpoint_name: str, serverless: bool = True, instance: str = None):
         """ModelToEndpoint Initialization
         Args:
             model_name(str): The Name of the input Model
             endpoint_name(str): The Name of the output Endpoint
             serverless(bool): Deploy the Endpoint in serverless mode (default: True)
+            instance(str): The instance type for Realtime Endpoints (default: None = auto-select)
         """
         # Make sure the endpoint_name is a valid name
         Artifact.is_name_valid(endpoint_name, delimiter="-", lower_case=False)
@@ -41,6 +42,7 @@ class ModelToEndpoint(Transform):
 
         # Set up all my instance attributes
         self.serverless = serverless
+        self.instance = instance
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
@@ -119,13 +121,16 @@ class ModelToEndpoint(Transform):
             instance_type = "serverless"
             self.log.important(f"Serverless Config: Memory={mem_size}MB, MaxConcurrency={max_concurrency}")
         else:
-            # For realtime endpoints, PyTorch/ChemProp need a larger instance
-            if needs_more_resources:
+            # For realtime endpoints, use explicit instance if provided, otherwise auto-select
+            if self.instance:
+                instance_type = self.instance
+                self.log.important(f"Realtime Endpoint: Using specified instance type: {instance_type}")
+            elif needs_more_resources:
                 instance_type = "ml.c7i.xlarge"
                 self.log.important(f"{workbench_model.model_framework} needs more resources (using {instance_type})")
             else:
                 instance_type = "ml.t2.medium"
-            self.log.important(f"Realtime Endpoint: Instance Type={instance_type}")
+                self.log.important(f"Realtime Endpoint: Instance Type={instance_type}")
 
         # Configure data capture if requested (and not serverless)
         data_capture_config = None
