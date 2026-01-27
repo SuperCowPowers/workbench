@@ -72,6 +72,7 @@ def submit_to_sqs(
     dt: bool = False,
     promote: bool = False,
     test_promote: bool = False,
+    group_id: str | None = None,
 ) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
@@ -83,6 +84,7 @@ def submit_to_sqs(
         dt: If True, sets DT=True in environment (default: False)
         promote: If True, sets PROMOTE=True in environment (default: False)
         test_promote: If True, sets TEST_PROMOTE=True in environment (default: False)
+        group_id: Optional MessageGroupId override for dependency chains (default: derived from script)
 
     Raises:
         ValueError: If size is invalid or script file not found
@@ -101,7 +103,8 @@ def submit_to_sqs(
     # Read script content and parse WORKBENCH_BATCH config
     script_content = script_file.read_text()
     batch_config = parse_workbench_batch(script_content)
-    group_id = get_message_group_id(batch_config)
+    if group_id is None:
+        group_id = get_message_group_id(batch_config)
     outputs = (batch_config or {}).get("outputs", [])
     inputs = (batch_config or {}).get("inputs", [])
 
@@ -246,6 +249,11 @@ def main():
         action="store_true",
         help="Set TEST_PROMOTE=True (creates test endpoint with '-test' suffix)",
     )
+    parser.add_argument(
+        "--group-id",
+        default=None,
+        help="Override MessageGroupId for SQS (used for dependency chain ordering)",
+    )
     args = parser.parse_args()
     try:
         submit_to_sqs(
@@ -255,6 +263,7 @@ def main():
             dt=args.dt,
             promote=args.promote,
             test_promote=args.test_promote,
+            group_id=args.group_id,
         )
     except Exception as e:
         print(f"\n❌  ERROR: {e}")

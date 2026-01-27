@@ -1,28 +1,239 @@
 """Launch ML pipelines via SQS for testing.
 
+Run this from a directory containing an 'ml_pipelines' folder.
+
 Usage:
-    python launch_pipelines.py --dt                    # Launch 5 random pipelines with DT mode
-    python launch_pipelines.py --dt -n 10              # Launch 10 random pipelines
-    python launch_pipelines.py --dt --all              # Launch ALL pipelines
-    python launch_pipelines.py --dt caco2              # Launch pipelines matching 'caco2'
-    python launch_pipelines.py --dt caco2 ppb          # Launch pipelines matching 'caco2' or 'ppb'
-    python launch_pipelines.py --promote               # Launch 5 random pipelines with promote mode
-    python launch_pipelines.py --promote caco2         # Promote pipelines matching 'caco2'
-    python launch_pipelines.py --test-promote --all    # Test-promote ALL pipelines
+    ml_pipeline_launcher --dt                    # Launch 5 random pipelines with DT mode
+    ml_pipeline_launcher --dt -n 10              # Launch 10 random pipelines
+    ml_pipeline_launcher --dt --all              # Launch ALL pipelines
+    ml_pipeline_launcher --dt caco2              # Launch pipelines matching 'caco2'
+    ml_pipeline_launcher --dt caco2 ppb          # Launch pipelines matching 'caco2' or 'ppb'
+    ml_pipeline_launcher --promote               # Launch 5 random pipelines with promote mode
+    ml_pipeline_launcher --promote caco2         # Promote pipelines matching 'caco2'
+    ml_pipeline_launcher --test-promote --all    # Test-promote ALL pipelines
+    ml_pipeline_launcher --dt --dry-run          # Show what would be launched without launching
 """
 
 import argparse
+import ast
 import random
+import re
 import subprocess
+import time
 from pathlib import Path
 
-# Relative path to ml_pipelines directory
-ML_PIPELINES_DIR = Path(__file__).parent.parent / "ml_pipelines"
+
+def parse_workbench_batch(script_path: Path) -> dict | None:
+    """Parse WORKBENCH_BATCH config from a script file."""
+    content = script_path.read_text()
+    match = re.search(r"WORKBENCH_BATCH\s*=\s*(\{[^}]+\})", content, re.DOTALL)
+    if match:
+        try:
+            return ast.literal_eval(match.group(1))
+        except (ValueError, SyntaxError):
+            return None
+    return None
 
 
-def get_all_pipelines() -> list[Path]:
+def build_dependency_graph(configs: dict[Path, dict]) -> dict[str, str]:
+    """Build a mapping from each output to its root producer.
+
+    For a chain like A -> B -> C (where B depends on A, C depends on B),
+    this returns {A: A, B: A, C: A} so all are in the same message group.
+    """
+    # Build output -> input mapping (what does each output depend on?)
+    output_to_input = {}
+    for config in configs.values():
+        if not config:
+            continue
+        outputs = config.get("outputs", [])
+        inputs = config.get("inputs", [])
+        for output in outputs:
+            output_to_input[output] = inputs[0] if inputs else None
+
+    # Walk chain to find root
+    def find_root(output: str, visited: set = None) -> str:
+        if visited is None:
+            visited = set()
+        if output in visited:
+            return output
+        visited.add(output)
+        parent = output_to_input.get(output)
+        if parent is None:
+            return output
+        return find_root(parent, visited)
+
+    return {output: find_root(output) for output in output_to_input}
+
+
+def get_group_id(config: dict | None, root_map: dict[str, str]) -> str | None:
+    """Get the root group_id for a pipeline based on its config and root_map."""
+    if not config:
+        return None
+    outputs = config.get("outputs", [])
+    inputs = config.get("inputs", [])
+    # Check inputs first (this script depends on something)
+    if inputs and inputs[0] in root_map:
+        return root_map[inputs[0]]
+    # Check outputs (this script produces something)
+    if outputs and outputs[0] in root_map:
+        return root_map[outputs[0]]
+    return None
+
+
+def sort_by_dependencies(pipelines: list[Path]) -> tuple[list[Path], dict[Path, dict], dict[str, str]]:
+    """Sort pipelines by dependency chains. Returns (sorted_list, configs, root_map)."""
+    # Parse all configs
+    configs = {}
+    for pipeline in pipelines:
+        configs[pipeline] = parse_workbench_batch(pipeline)
+
+    # Build root map for group_id resolution
+    root_map = build_dependency_graph(configs)
+
+    # Build output -> pipeline mapping
+    output_to_pipeline = {}
+    for pipeline, config in configs.items():
+        if config and config.get("outputs"):
+            for output in config["outputs"]:
+                output_to_pipeline[output] = pipeline
+
+    # Build chains by walking from root producers
+    sorted_pipelines = []
+    used = set()
+
+    for pipeline in sorted(pipelines):
+        config = configs.get(pipeline)
+
+        # Skip if already used or has inputs (not a root)
+        if pipeline in used:
+            continue
+        if config and config.get("inputs"):
+            continue
+
+        # Walk the chain from this root
+        chain = [pipeline]
+        used.add(pipeline)
+
+        current = pipeline
+        while True:
+            current_config = configs.get(current)
+            if not current_config or not current_config.get("outputs"):
+                break
+
+            current_output = current_config["outputs"][0]
+            # Find pipeline that consumes this output
+            next_pipeline = None
+            for p, c in configs.items():
+                if p in used or p not in pipelines:
+                    continue
+                if c and c.get("inputs") and current_output in c["inputs"]:
+                    next_pipeline = p
+                    break
+
+            if next_pipeline:
+                chain.append(next_pipeline)
+                used.add(next_pipeline)
+                current = next_pipeline
+            else:
+                break
+
+        sorted_pipelines.extend(chain)
+
+    # Add any remaining pipelines not in chains
+    for pipeline in sorted(pipelines):
+        if pipeline not in used:
+            sorted_pipelines.append(pipeline)
+
+    return sorted_pipelines, configs, root_map
+
+
+def format_dependency_chains(pipelines: list[Path], configs: dict[Path, dict]) -> list[str]:
+    """Format pipelines as dependency chains for display."""
+    # Build output -> pipeline mapping
+    output_to_pipeline = {}
+    for pipeline, config in configs.items():
+        if config and config.get("outputs"):
+            for output in config["outputs"]:
+                output_to_pipeline[output] = pipeline
+
+    # Build chains by walking from root producers
+    chains = []
+    used = set()
+
+    for pipeline in pipelines:
+        config = configs.get(pipeline)
+
+        # Skip if already part of a chain or has inputs (not a root)
+        if pipeline in used:
+            continue
+        if config and config.get("inputs"):
+            continue
+
+        # Start a new chain from this root producer (or standalone)
+        chain = [pipeline]
+        used.add(pipeline)
+
+        # Walk the chain: find who consumes our output
+        current = pipeline
+        while True:
+            current_config = configs.get(current)
+            if not current_config or not current_config.get("outputs"):
+                break
+
+            current_output = current_config["outputs"][0]
+            # Find a pipeline that takes this output as input
+            next_pipeline = None
+            for p, c in configs.items():
+                if p in used or p not in pipelines:
+                    continue
+                if c and c.get("inputs") and current_output in c["inputs"]:
+                    next_pipeline = p
+                    break
+
+            if next_pipeline:
+                chain.append(next_pipeline)
+                used.add(next_pipeline)
+                current = next_pipeline
+            else:
+                break
+
+        chains.append(chain)
+
+    # Add any remaining pipelines not in chains (shouldn't happen but just in case)
+    for pipeline in pipelines:
+        if pipeline not in used:
+            chains.append([pipeline])
+
+    # Format chains as strings
+    lines = []
+    for chain in chains:
+        names = [p.stem for p in chain]
+        lines.append("   " + " --> ".join(names))
+
+    return lines
+
+
+def find_ml_pipelines_dir() -> Path:
+    """Find ml_pipelines directory from current working directory."""
+    cwd = Path.cwd()
+
+    # Look for ml_pipelines in cwd or any subdirectory
+    if (cwd / "ml_pipelines").is_dir():
+        return cwd / "ml_pipelines"
+
+    # Search one level down
+    for subdir in cwd.iterdir():
+        if subdir.is_dir() and (subdir / "ml_pipelines").is_dir():
+            return subdir / "ml_pipelines"
+
+    # Not found
+    return cwd / "ml_pipelines"  # Return default path for error message
+
+
+def get_all_pipelines(ml_pipelines_dir: Path) -> list[Path]:
     """Get all ML pipeline scripts from the ml_pipelines directory."""
-    return list(ML_PIPELINES_DIR.rglob("*.py"))
+    return list(ml_pipelines_dir.rglob("*.py"))
 
 
 def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> list[Path]:
@@ -62,6 +273,11 @@ def main():
         action="store_true",
         help="Create realtime endpoints (default is serverless)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be launched without actually launching",
+    )
 
     # Mode flags (mutually exclusive)
     mode_group = parser.add_mutually_exclusive_group(required=True)
@@ -83,10 +299,13 @@ def main():
 
     args = parser.parse_args()
 
+    # Find ml_pipelines directory from current working directory
+    ml_pipelines_dir = find_ml_pipelines_dir()
+
     # Get all pipelines
-    all_pipelines = get_all_pipelines()
+    all_pipelines = get_all_pipelines(ml_pipelines_dir)
     if not all_pipelines:
-        print(f"No pipeline scripts found in {ML_PIPELINES_DIR}")
+        print(f"No pipeline scripts found in {ml_pipelines_dir}")
         exit(1)
 
     # Determine which pipelines to run
@@ -107,8 +326,8 @@ def main():
         selected_pipelines = random.sample(all_pipelines, num_to_select)
         selection_mode = f"RANDOM ({args.num_pipelines} requested)"
 
-    # Sort for consistent ordering
-    selected_pipelines = sorted(selected_pipelines)
+    # Sort by dependencies (producers before consumers)
+    selected_pipelines, configs, root_map = sort_by_dependencies(selected_pipelines)
 
     # Determine mode for display and CLI flag
     if args.dt:
@@ -122,16 +341,28 @@ def main():
         mode_flag = "--test-promote"
 
     print(f"\n{'=' * 60}")
-    print(f"LAUNCHING {len(selected_pipelines)} PIPELINES")
+    print(f"{'DRY RUN - ' if args.dry_run else ''}LAUNCHING {len(selected_pipelines)} PIPELINES")
     print(f"{'=' * 60}")
-    print(f"Source: {ML_PIPELINES_DIR}")
+    print(f"Source: {ml_pipelines_dir}")
     print(f"Selection: {selection_mode}")
     print(f"Mode: {mode_name}")
     print(f"Endpoint: {'Realtime' if args.realtime else 'Serverless'}")
-    print("\nSelected pipelines:")
-    for i, pipeline in enumerate(selected_pipelines, 1):
-        print(f"   {i}. {pipeline.relative_to(ML_PIPELINES_DIR)}")
+    print("\nPipeline Chains:")
+    for line in format_dependency_chains(selected_pipelines, configs):
+        print(line)
     print()
+
+    # Dry run - just show what would be launched
+    if args.dry_run:
+        print("Dry run complete. No pipelines were launched.\n")
+        return
+
+    # Countdown before launching
+    print("Launching in ", end="", flush=True)
+    for i in range(10, 0, -1):
+        print(f"{i}...", end="", flush=True)
+        time.sleep(1)
+    print(" GO!\n")
 
     # Launch each pipeline using the CLI
     for i, pipeline in enumerate(selected_pipelines, 1):
@@ -143,6 +374,11 @@ def main():
         cmd = ["ml_pipeline_sqs", str(pipeline), mode_flag]
         if args.realtime:
             cmd.append("--realtime")
+
+        # Pass root group_id for dependency chain ordering
+        group_id = get_group_id(configs.get(pipeline), root_map)
+        if group_id:
+            cmd.extend(["--group-id", group_id])
 
         print(f"Running: {' '.join(cmd)}\n")
         result = subprocess.run(cmd)
