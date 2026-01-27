@@ -1,15 +1,14 @@
 """Launch ML pipelines via SQS for testing.
 
-Run this from a directory containing an 'ml_pipelines' folder.
+Run this from a directory containing pipeline subdirectories (e.g., ml_pipelines/).
 
 Usage:
-    ml_pipeline_launcher --dt                    # Launch 5 random pipelines with DT mode
-    ml_pipeline_launcher --dt -n 10              # Launch 10 random pipelines
+    ml_pipeline_launcher --dt                    # Launch 1 random pipeline group (all scripts in a directory)
+    ml_pipeline_launcher --dt -n 3               # Launch 3 random pipeline groups
     ml_pipeline_launcher --dt --all              # Launch ALL pipelines
     ml_pipeline_launcher --dt caco2              # Launch pipelines matching 'caco2'
     ml_pipeline_launcher --dt caco2 ppb          # Launch pipelines matching 'caco2' or 'ppb'
-    ml_pipeline_launcher --promote               # Launch 5 random pipelines with promote mode
-    ml_pipeline_launcher --promote caco2         # Promote pipelines matching 'caco2'
+    ml_pipeline_launcher --promote --all         # Promote ALL pipelines
     ml_pipeline_launcher --test-promote --all    # Test-promote ALL pipelines
     ml_pipeline_launcher --dt --dry-run          # Show what would be launched without launching
 """
@@ -214,26 +213,41 @@ def format_dependency_chains(pipelines: list[Path], configs: dict[Path, dict]) -
     return lines
 
 
-def find_ml_pipelines_dir() -> Path:
-    """Find ml_pipelines directory from current working directory."""
+def get_all_pipelines() -> list[Path]:
+    """Get all ML pipeline scripts from subdirectories of current working directory."""
     cwd = Path.cwd()
-
-    # Look for ml_pipelines in cwd or any subdirectory
-    if (cwd / "ml_pipelines").is_dir():
-        return cwd / "ml_pipelines"
-
-    # Search one level down
+    # Find all .py files in subdirectories (not in cwd itself)
+    pipelines = []
     for subdir in cwd.iterdir():
-        if subdir.is_dir() and (subdir / "ml_pipelines").is_dir():
-            return subdir / "ml_pipelines"
-
-    # Not found
-    return cwd / "ml_pipelines"  # Return default path for error message
+        if subdir.is_dir():
+            pipelines.extend(subdir.rglob("*.py"))
+    return pipelines
 
 
-def get_all_pipelines(ml_pipelines_dir: Path) -> list[Path]:
-    """Get all ML pipeline scripts from the ml_pipelines directory."""
-    return list(ml_pipelines_dir.rglob("*.py"))
+def get_pipeline_groups(pipelines: list[Path]) -> dict[Path, list[Path]]:
+    """Group pipelines by their parent directory (leaf directories)."""
+    groups = {}
+    for pipeline in pipelines:
+        parent = pipeline.parent
+        groups.setdefault(parent, []).append(pipeline)
+    return groups
+
+
+def select_random_groups(pipelines: list[Path], num_groups: int) -> list[Path]:
+    """Select pipelines from n random leaf directories."""
+    groups = get_pipeline_groups(pipelines)
+    if not groups:
+        return []
+
+    # Select up to num_groups random directories
+    dirs = list(groups.keys())
+    selected_dirs = random.sample(dirs, min(num_groups, len(dirs)))
+
+    # Return all pipelines from those directories
+    selected = []
+    for d in selected_dirs:
+        selected.extend(groups[d])
+    return selected
 
 
 def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> list[Path]:
@@ -258,10 +272,10 @@ def main():
     )
     parser.add_argument(
         "-n",
-        "--num-pipelines",
+        "--num-groups",
         type=int,
-        default=5,
-        help="Number of pipelines to launch (default: 5, ignored if --all or patterns specified)",
+        default=1,
+        help="Number of random pipeline groups to launch (default: 1, ignored if --all or patterns specified)",
     )
     parser.add_argument(
         "--all",
@@ -299,13 +313,10 @@ def main():
 
     args = parser.parse_args()
 
-    # Find ml_pipelines directory from current working directory
-    ml_pipelines_dir = find_ml_pipelines_dir()
-
-    # Get all pipelines
-    all_pipelines = get_all_pipelines(ml_pipelines_dir)
+    # Get all pipelines from subdirectories of current working directory
+    all_pipelines = get_all_pipelines()
     if not all_pipelines:
-        print(f"No pipeline scripts found in {ml_pipelines_dir}")
+        print(f"No pipeline scripts found in subdirectories of {Path.cwd()}")
         exit(1)
 
     # Determine which pipelines to run
@@ -321,10 +332,15 @@ def main():
         selected_pipelines = all_pipelines
         selection_mode = "ALL"
     else:
-        # Random selection
-        num_to_select = min(args.num_pipelines, len(all_pipelines))
-        selected_pipelines = random.sample(all_pipelines, num_to_select)
-        selection_mode = f"RANDOM ({args.num_pipelines} requested)"
+        # Random group selection
+        selected_pipelines = select_random_groups(all_pipelines, args.num_groups)
+        if not selected_pipelines:
+            print("No pipeline groups found")
+            exit(1)
+        # Get the directory names for display
+        groups = get_pipeline_groups(selected_pipelines)
+        group_names = [d.name for d in groups.keys()]
+        selection_mode = f"RANDOM {args.num_groups} group(s): {group_names}"
 
     # Sort by dependencies (producers before consumers)
     selected_pipelines, configs, root_map = sort_by_dependencies(selected_pipelines)
@@ -343,7 +359,7 @@ def main():
     print(f"\n{'=' * 60}")
     print(f"{'DRY RUN - ' if args.dry_run else ''}LAUNCHING {len(selected_pipelines)} PIPELINES")
     print(f"{'=' * 60}")
-    print(f"Source: {ml_pipelines_dir}")
+    print(f"Source: {Path.cwd()}")
     print(f"Selection: {selection_mode}")
     print(f"Mode: {mode_name}")
     print(f"Endpoint: {'Realtime' if args.realtime else 'Serverless'}")
