@@ -258,7 +258,7 @@ class AthenaSource(DataSourceAbstract):
 
                 # Wait for the query to complete
                 wr.athena.wait_query(query_execution_id=query_execution_id, boto3_session=self.boto3_session)
-                self.log.debug(f"Statement executed successfully: {query_execution_id}")
+                self.log.debug(f"Query executed successfully: {query_execution_id}")
                 break  # If successful, exit the retry loop
             except wr.exceptions.QueryFailed as e:
                 if "AlreadyExistsException" in str(e):
@@ -271,11 +271,13 @@ class AthenaSource(DataSourceAbstract):
                         time.sleep(retry_delay)
                     else:
                         if not silence_errors:
-                            self.log.critical(f"Failed to execute statement after {max_retries} attempts: {e}")
+                            self.log.critical(f"Failed to execute query after {max_retries} attempts: {query}")
+                            self.log.critical(f"Error: {e}")
                         raise
                 else:
                     if not silence_errors:
-                        self.log.critical(f"Failed to execute statement: {e}")
+                        self.log.critical(f"Failed to execute query: {query}")
+                        self.log.critical(f"Error: {e}")
                     raise
 
     def s3_storage_location(self) -> str:
