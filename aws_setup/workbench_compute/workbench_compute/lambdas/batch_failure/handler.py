@@ -97,7 +97,7 @@ def lambda_handler(event, context):
     # Fetch CloudWatch logs
     log_messages = []
     if log_stream_name:
-        log_messages = get_log_events(log_stream_name)
+        log_messages = get_log_events(log_stream_name, limit=200)
 
     # Build the console URL
     console_url = f"https://{region}.console.aws.amazon.com/batch/home?region={region}" f"#jobs/fargate/detail/{job_id}"
