@@ -220,7 +220,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         return df
 
     dataset = data.MoleculeDataset(datapoints)
-    dataloader = data.build_dataloader(dataset, shuffle=False, batch_size=64)
+    dataloader = data.build_dataloader(dataset, shuffle=False, batch_size=64, drop_last=False)
 
     # Ensemble predictions using direct PyTorch inference (no Lightning Trainer)
     all_preds = []
