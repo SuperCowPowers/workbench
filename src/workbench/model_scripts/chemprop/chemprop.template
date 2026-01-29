@@ -220,7 +220,9 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         return df
 
     dataset = data.MoleculeDataset(datapoints)
-    dataloader = data.build_dataloader(dataset, shuffle=False, batch_size=64, drop_last=False)
+    # Note: Use dataset length as batch_size to prevent ChemProp's build_dataloader from
+    # dropping single-sample batches (its drop_last logic triggers when len(dataset) % batch_size == 1)
+    dataloader = data.build_dataloader(dataset, shuffle=False, batch_size=len(dataset))
 
     # Ensemble predictions using direct PyTorch inference (no Lightning Trainer)
     all_preds = []
