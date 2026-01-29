@@ -126,7 +126,7 @@ class ModelToEndpoint(Transform):
                 instance_type = self.instance
                 self.log.important(f"Realtime Endpoint: Using specified instance type: {instance_type}")
             elif needs_more_resources:
-                instance_type = "ml.c7i.xlarge"
+                instance_type = "ml.c7i.large"
                 self.log.important(f"{workbench_model.model_framework} needs more resources (using {instance_type})")
             else:
                 instance_type = "ml.t2.medium"
