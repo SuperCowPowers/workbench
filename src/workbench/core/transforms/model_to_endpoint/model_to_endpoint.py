@@ -108,7 +108,6 @@ class ModelToEndpoint(Transform):
 
         # Is this a serverless deployment?
         serverless_config = None
-        instance_type = None
         if self.serverless:
             # For PyTorch or ChemProp we need at least 4GB of memory
             if needs_more_resources and mem_size < 4096:

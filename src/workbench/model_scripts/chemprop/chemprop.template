@@ -34,7 +34,7 @@ DEFAULT_HYPERPARAMETERS = {
     "n_folds": 5,
     "max_epochs": 400,
     "patience": 50,
-    "batch_size": 32,
+    "batch_size": 64,
     # Message Passing (ignored when using foundation model)
     "hidden_dim": 700,
     "depth": 6,
@@ -590,8 +590,9 @@ if __name__ == "__main__":
             val_dataset.normalize_targets(target_scaler)
             output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
 
-        train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=3)
-        val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=3)
+        num_workers = min(os.cpu_count() or 4, 8)  # Scale with CPUs, cap at 8
+        train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, persistent_workers=num_workers > 0)
+        val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, persistent_workers=num_workers > 0)
 
         # Build model
         pl.seed_everything(hyperparameters["seed"] + fold_idx)

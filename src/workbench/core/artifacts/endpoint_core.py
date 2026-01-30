@@ -1138,7 +1138,7 @@ class EndpointCore(Artifact):
             cls.log.error("Error deleting endpoint.")
             raise e
 
-        time.sleep(5)  # Final sleep for AWS to fully register deletions
+        time.sleep(10)  # Final sleep for AWS to fully register deletions
 
     @classmethod
     def delete_endpoint_models(cls, endpoint_name: str):
