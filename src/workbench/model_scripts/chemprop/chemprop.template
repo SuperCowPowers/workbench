@@ -646,7 +646,7 @@ if __name__ == "__main__":
 
         # Out-of-fold predictions (using unscaled features - model's x_d_transform handles scaling)
         val_dps_raw, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), val_targets, val_extra_raw)
-        val_loader_pred = data.build_dataloader(data.MoleculeDataset(val_dps_raw), batch_size=batch_size, shuffle=False)
+        val_loader_pred = data.build_dataloader(data.MoleculeDataset(val_dps_raw), batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
 
         with torch.inference_mode():
             fold_preds = np.concatenate([p.numpy() for p in trainer.predict(mpnn, val_loader_pred)], axis=0)
@@ -707,7 +707,7 @@ if __name__ == "__main__":
         if len(ensemble_models) > 1:
             print("Computing prediction_std from ensemble...")
             val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
-            val_loader = data.build_dataloader(data.MoleculeDataset(val_dps), batch_size=batch_size, shuffle=False)
+            val_loader = data.build_dataloader(data.MoleculeDataset(val_dps), batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
             trainer_pred = pl.Trainer(accelerator="auto", logger=False, enable_progress_bar=False)
 
             all_ens_preds = []
