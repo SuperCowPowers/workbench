@@ -247,9 +247,12 @@ class FeaturesToModel(Transform):
         # Create a Sagemaker Model with our script
         image = ModelImages.get_image_uri(self.sm_session.boto_region_name, self.training_image)
 
-        # Use GPU instance for ChemProp/PyTorch
-        if self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]:
-            train_instance_type = "ml.g6.xlarge"  # NVIDIA L4 GPU, ~$1.00/hr
+        # Use user-specified instance or default based on framework
+        train_instance_type = kwargs.get("training_instance")
+        if train_instance_type:
+            self.log.important(f"Using user-specified instance {train_instance_type}")
+        elif self.model_framework in [ModelFramework.CHEMPROP, ModelFramework.PYTORCH]:
+            train_instance_type = "ml.g6.2xlarge"  # NVIDIA L4 GPU + 8 vCPUs for data loading
             self.log.important(f"Using GPU instance {train_instance_type} for {self.model_framework.value}")
         else:
             train_instance_type = "ml.m5.xlarge"
