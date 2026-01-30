@@ -591,8 +591,8 @@ if __name__ == "__main__":
             output_transform = nn.UnscaleTransform.from_standard_scaler(target_scaler)
 
         num_workers = min(os.cpu_count() or 4, 8)  # Scale with CPUs, cap at 8
-        train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, persistent_workers=num_workers > 0)
-        val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, persistent_workers=num_workers > 0)
+        train_loader = data.build_dataloader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, persistent_workers=num_workers > 0, pin_memory=True, prefetch_factor=2)
+        val_loader = data.build_dataloader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, persistent_workers=num_workers > 0, pin_memory=True, prefetch_factor=2)
 
         # Build model
         pl.seed_everything(hyperparameters["seed"] + fold_idx)
@@ -618,7 +618,7 @@ if __name__ == "__main__":
                 callbacks.append(pl.callbacks.ModelCheckpoint(
                     dirpath=args.model_dir, filename=f"best_{fold_idx}", monitor="val_loss", mode="min", save_top_k=1
                 ))
-            return pl.Trainer(accelerator="auto", max_epochs=max_epochs, logger=False, enable_progress_bar=True, callbacks=callbacks)
+            return pl.Trainer(accelerator="auto", max_epochs=max_epochs, precision="16-mixed", logger=False, enable_progress_bar=True, callbacks=callbacks)
 
         if use_two_phase:
             # Phase 1: Freeze MPNN, train FFN only

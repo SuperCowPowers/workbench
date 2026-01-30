@@ -45,7 +45,7 @@ DEFAULT_HYPERPARAMETERS = {
     "n_folds": 5,
     "max_epochs": 200,
     "early_stopping_patience": 30,
-    "batch_size": 128,
+    "batch_size": 64,
     # Model architecture (larger capacity - ensemble provides regularization)
     "layers": "512-256-128",
     "learning_rate": 1e-3,

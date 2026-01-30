@@ -266,8 +266,8 @@ def train_model(
         train_dataset = TensorDataset(train_x_cont, dummy_cat, train_y)
         val_dataset = TensorDataset(val_x_cont, dummy_val_cat, val_y)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, pin_memory=True)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, pin_memory=True)
 
     # Loss and optimizer
     if task == "classification":
