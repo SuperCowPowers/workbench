@@ -78,6 +78,9 @@ packages = { find = { where = ["src"] } }
     "themes/**"
 ]
 
+[tool.setuptools.exclude-package-data]
+"workbench" = ["model_scripts/**/generated_*.py"]
+
 [project.scripts]
 workbench = "workbench.repl.workbench_shell:launch_shell"
 cloud_watch = "workbench.scripts.monitor_cloud_watch:main"

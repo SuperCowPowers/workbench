@@ -22,7 +22,7 @@ athena_client = boto3_session.client("athena")
 # Define the database, table name, and S3 path
 database_name = "workbench"
 table_name = "test_table"
-s3_path = "s3://test-bucket/test/"
+s3_path = "s3://workbench-public-test-bucket/test/"
 
 # Define the original column names with mixed case
 original_column_dict = {"Id": "int", "Name": "string", "Age": "int"}

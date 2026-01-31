@@ -28,7 +28,7 @@ glue_client.create_table(
         "Name": table_name,
         "StorageDescriptor": {
             "Columns": [{"Name": name, "Type": dtype} for name, dtype in original_column_dict.items()],
-            "Location": "s3://test-bucket/test_table/",
+            "Location": "s3://workbench-public-test-bucket/test_table/",
             "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
             "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
             "SerdeInfo": {"SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"},

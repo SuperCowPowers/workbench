@@ -3,6 +3,7 @@
 import os
 import shutil
 import logging
+import tempfile
 from pathlib import Path
 import importlib.util
 
@@ -41,7 +42,7 @@ def copy_imports_to_script_dir(script_path: str, imports: list[str]) -> None:
         print(f"Copied {source_path} to {destination_path}")
 
 
-def fill_template(template_path: str, params: dict, output_script: str) -> str:
+def fill_template(template_path: str, params: dict, output_script: str, output_dir: str = None) -> str:
     """
     Fill in the placeholders in the template with the values provided in params,
     ensuring that the correct Python data types are used.
@@ -49,6 +50,7 @@ def fill_template(template_path: str, params: dict, output_script: str) -> str:
         template_path (str): The path to the template file.
         params (dict): A dictionary with placeholder keys and their corresponding values.
         output_script (str): The name of the generated model script.
+        output_dir (str): The directory to write the output script to (default: same as template).
     Returns:
         str: The path to the generated model script.
     """
@@ -77,8 +79,10 @@ def fill_template(template_path: str, params: dict, output_script: str) -> str:
         log.critical(msg)
         raise ValueError(msg)
 
-    # Write out the generated model script and return the name
-    output_path = os.path.join(os.path.dirname(template_path), output_script)
+    # Write out the generated model script to output_dir (or template dir if not specified)
+    if output_dir is None:
+        output_dir = os.path.dirname(template_path)
+    output_path = os.path.join(output_dir, output_script)
     with open(output_path, "w") as fp:
         fp.write(template)
     return output_path
@@ -102,29 +106,29 @@ def generate_model_script(template_params: dict) -> str:
             - child_endpoints (list[str], optional): For META models, list of child endpoint names
 
     Returns:
-        str: The name of the generated model script
+        str: The path to the generated model script
     """
     from workbench.api import ModelType, ModelFramework  # Avoid circular import
 
     # Determine which template to use based on model type
     if template_params.get("model_class"):
         template_name = "scikit_learn.template"
-        model_script_dir = "scikit_learn"
+        model_script_dir_name = "scikit_learn"
     elif template_params["model_framework"] == ModelFramework.PYTORCH:
         template_name = "pytorch.template"
-        model_script_dir = "pytorch_model"
+        model_script_dir_name = "pytorch_model"
     elif template_params["model_framework"] == ModelFramework.CHEMPROP:
         template_name = "chemprop.template"
-        model_script_dir = "chemprop"
+        model_script_dir_name = "chemprop"
     elif template_params["model_framework"] == ModelFramework.META:
         template_name = "meta_model.template"
-        model_script_dir = "meta_model"
+        model_script_dir_name = "meta_model"
     elif template_params["model_type"] in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.CLASSIFIER]:
         template_name = "xgb_model.template"
-        model_script_dir = "xgb_model"
+        model_script_dir_name = "xgb_model"
     elif template_params["model_type"] == ModelType.ENSEMBLE_REGRESSOR:
         template_name = "ensemble_xgb.template"
-        model_script_dir = "ensemble_xgb"
+        model_script_dir_name = "ensemble_xgb"
     else:
         msg = f"ModelType: {template_params['model_type']} needs to set custom_script argument"
         log.critical(msg)
@@ -133,31 +137,42 @@ def generate_model_script(template_params: dict) -> str:
     # Model Type is an enumerated type, so we need to convert it to a string
     template_params["model_type"] = template_params["model_type"].value
 
-    # Load the template
-    dir_path = Path(__file__).parent.absolute()
-    model_script_dir = os.path.join(dir_path, model_script_dir)
-    template_path = os.path.join(model_script_dir, template_name)
+    # Load the template from the package directory
+    package_dir = Path(__file__).parent.absolute()
+    source_script_dir = os.path.join(package_dir, model_script_dir_name)
+    template_path = os.path.join(source_script_dir, template_name)
 
-    # Fill in the template and write out the generated model script
-    output_path = fill_template(template_path, template_params, "generated_model_script.py")
+    # Create a temp directory for the generated script and supporting files
+    # Note: This directory will be cleaned up by SageMaker after the training job
+    output_dir = tempfile.mkdtemp(prefix=f"workbench_{model_script_dir_name}_")
+    log.info(f"Generating model script in temp directory: {output_dir}")
 
-    # Report on any additional files in the model script directory
-    for file in os.listdir(model_script_dir):
-        if file not in ["generated_model_script.py", "requirements.txt"] and not file.endswith(".template"):
-            log.info(f"Additional file {file} found in model_script_dir...")
+    # Copy all supporting files (except templates and generated scripts) to the temp directory
+    for file in os.listdir(source_script_dir):
+        if file.endswith(".template") or file.startswith("generated_"):
+            continue
+        source_file = os.path.join(source_script_dir, file)
+        if os.path.isfile(source_file):
+            shutil.copy(source_file, output_dir)
+            log.info(f"Copied supporting file: {file}")
+
+    # Fill in the template and write the generated script to the temp directory
+    output_path = fill_template(template_path, template_params, "generated_model_script.py", output_dir)
 
     return output_path
 
 
 if __name__ == "__main__":
     """Exercise the Model Script Utilities"""
-    from workbench.api import ModelType
+    from workbench.api import ModelType, ModelFramework
 
     copy_imports_to_script_dir("/tmp/model.py", ["workbench.utils.chem_utils"])
 
     # Define the parameters for the model script (Classifier)
     my_params = {
         "model_type": ModelType.CLASSIFIER,
+        "model_framework": ModelFramework.XGBOOST,
+        "id_column": "id",
         "target_column": "wine_class",
         "feature_list": [
             "alcohol",
@@ -174,15 +189,18 @@ if __name__ == "__main__":
             "od280_od315_of_diluted_wines",
             "proline",
         ],
-        "model_metrics_s3_path": "s3://sandbox-workbench-artifacts/models/training/wine-classifier",
+        "model_metrics_s3_path": "s3://workbench-public-test-bucket/models/training/wine-classifier",
         "train_all_data": True,
+        "compressed_features": [],
+        "hyperparameters": {},
     }
     my_model_script = generate_model_script(my_params)
-    print(my_model_script)
+    print(f"Generated script: {my_model_script}")
 
     # Define the parameters for the model script (KMeans Clustering)
     my_params = {
         "model_type": ModelType.CLUSTERER,
+        "model_framework": ModelFramework.SKLEARN,
         "model_class": "KMeans",
         "model_imports": "from sklearn.cluster import KMeans",
         "target_column": None,
@@ -201,8 +219,8 @@ if __name__ == "__main__":
             "od280_od315_of_diluted_wines",
             "proline",
         ],
-        "model_metrics_s3_path": "s3://sandbox-workbench-artifacts/models/training/wine-clusters",
+        "model_metrics_s3_path": "s3://workbench-public-test-bucket/models/training/wine-clusters",
         "train_all_data": True,
     }
     my_model_script = generate_model_script(my_params)
-    print(my_model_script)
+    print(f"Generated script: {my_model_script}")
