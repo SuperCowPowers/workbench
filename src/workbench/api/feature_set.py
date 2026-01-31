@@ -85,9 +85,6 @@ class FeatureSet(FeatureSetCore):
         model_import_str: str = None,
         custom_script: Union[str, Path] = None,
         custom_args: dict = None,
-        training_image: str = "training",
-        inference_image: str = "inference",
-        inference_arch: str = "x86_64",
         **kwargs,
     ) -> Union[Model, None]:
         """Create a Model from the FeatureSet
@@ -104,9 +101,6 @@ class FeatureSet(FeatureSetCore):
             model_class (str, optional): Model class to use (e.g. "KMeans", default: None)
             model_import_str (str, optional): The import for the model (e.g. "from sklearn.cluster import KMeans")
             custom_script (str, optional): The custom script to use for the model (default: None)
-            training_image (str, optional): The training image to use (default: "training")
-            inference_image (str, optional): The inference image to use (default: "inference")
-            inference_arch (str, optional): The architecture to use for inference (default: "x86_64")
             kwargs (dict, optional): Additional keyword arguments to pass to the model
 
         Returns:
@@ -127,10 +121,15 @@ class FeatureSet(FeatureSetCore):
         # Create the Model Tags
         tags = [name] if tags is None else tags
 
-        # If the model framework is PyTorch or ChemProp, ensure we set the training and inference images
+        # Set training/inference images based on model framework
         if model_framework in (ModelFramework.PYTORCH, ModelFramework.CHEMPROP):
             training_image = "pytorch_training"
             inference_image = "pytorch_inference"
+            inference_arch = "x86_64"
+        else:
+            training_image = "training"
+            inference_image = "inference"
+            inference_arch = "x86_64"
 
         # Transform the FeatureSet into a Model
         features_to_model = FeaturesToModel(
