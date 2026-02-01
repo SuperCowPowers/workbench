@@ -80,7 +80,6 @@ class TabularMLP(nn.Module):
         n_outputs: Number of output units
         task: "regression" or "classification"
         dropout: Dropout rate
-        use_batch_norm: Whether to use batch normalization
     """
 
     def __init__(
@@ -92,7 +91,6 @@ class TabularMLP(nn.Module):
         n_outputs: int,
         task: str = "regression",
         dropout: float = 0.1,
-        use_batch_norm: bool = True,
     ):
         super().__init__()
         self.task = task
@@ -112,8 +110,7 @@ class TabularMLP(nn.Module):
         layers = []
         for hidden_dim in hidden_layers:
             layers.append(nn.Linear(input_dim, hidden_dim))
-            if use_batch_norm:
-                layers.append(nn.BatchNorm1d(hidden_dim))
+            layers.append(nn.LayerNorm(hidden_dim))
             layers.append(nn.LeakyReLU())
             layers.append(nn.Dropout(dropout))
             input_dim = hidden_dim
@@ -216,7 +213,6 @@ def create_model(
     n_outputs: int,
     task: str = "regression",
     dropout: float = 0.1,
-    use_batch_norm: bool = True,
 ) -> TabularMLP:
     """Create a TabularMLP model with appropriate embedding dimensions."""
     embedding_dims = compute_embedding_dims(categorical_cardinalities)
@@ -228,7 +224,6 @@ def create_model(
         n_outputs=n_outputs,
         task=task,
         dropout=dropout,
-        use_batch_norm=use_batch_norm,
     )
 
 
@@ -395,7 +390,6 @@ def load_model(path: str, device: str = "cpu") -> TabularMLP:
         n_outputs=config["n_outputs"],
         task=config["task"],
         dropout=config.get("dropout", 0.1),
-        use_batch_norm=config.get("use_batch_norm", True),
     )
 
     state_dict = torch.load(os.path.join(path, "model.pt"), map_location=device, weights_only=True)
