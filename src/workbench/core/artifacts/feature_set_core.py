@@ -320,7 +320,7 @@ class FeatureSetCore(Artifact):
         """
 
         # Set up the S3 Query results path
-        date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H:%M:%S")
+        date_time = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M-%S")
         s3_output_path = self.feature_sets_s3_path + f"/{self.name}/datasets/all_{date_time}"
 
         # Make the query
