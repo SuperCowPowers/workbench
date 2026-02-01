@@ -304,7 +304,7 @@ def train_model(
             out = model(x_cont, x_cat)
 
             if task == "classification":
-                loss = criterion(out, y.squeeze().long())
+                loss = criterion(out, y.view(-1).long())
             else:
                 loss = criterion(out, y)
 
@@ -323,7 +323,7 @@ def train_model(
                 out = model(x_cont, x_cat)
 
                 if task == "classification":
-                    loss = criterion(out, y.squeeze().long())
+                    loss = criterion(out, y.view(-1).long())
                 else:
                     loss = criterion(out, y)
                 val_losses.append(loss.item())
