@@ -50,7 +50,6 @@ DEFAULT_HYPERPARAMETERS = {
     "layers": "512-256-128",
     "learning_rate": 1e-3,
     "dropout": 0.05,
-    "use_batch_norm": True,
     # Loss function for regression (L1Loss=MAE, MSELoss=MSE, HuberLoss, SmoothL1Loss)
     "loss": "L1Loss",
     # Split strategy: "random", "scaffold", or "butina"
@@ -410,7 +409,6 @@ if __name__ == "__main__":
             n_outputs=n_outputs,
             task=task,
             dropout=hyperparameters["dropout"],
-            use_batch_norm=hyperparameters["use_batch_norm"],
         )
 
         # Train
@@ -517,7 +515,6 @@ if __name__ == "__main__":
         "n_outputs": n_outputs,
         "task": task,
         "dropout": hyperparameters["dropout"],
-        "use_batch_norm": hyperparameters["use_batch_norm"],
     }
 
     for idx, m in enumerate(ensemble_models):
