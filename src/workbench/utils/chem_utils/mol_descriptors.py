@@ -246,6 +246,7 @@ def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
     result = df.copy()
+    original_columns = set(df.columns)
 
     # Create molecule objects
     logger.info("Creating molecule objects...")
@@ -356,9 +357,12 @@ def compute_descriptors(df: pd.DataFrame, include_mordred: bool = True, include_
     stereo_count = len(stereo_df.columns) if include_stereo else 0
     logger.info(f"Descriptor breakdown: RDKit={rdkit_count}, Mordred={mordred_count}, Stereo={stereo_count}")
 
-    # Sanitize column names for AWS Athena compatibility
+    # Sanitize the column names that were added (keep original columns as-is)
     # - Must be lowercase, no special characters except underscore, no spaces
-    result.columns = [re.sub(r"_+", "_", re.sub(r"[^a-z0-9_]", "_", col.lower())) for col in result.columns]
+    result.columns = [
+        col if col in original_columns else re.sub(r"_+", "_", re.sub(r"[^a-z0-9_]", "_", col.lower()))
+        for col in result.columns
+    ]
 
     # Drop duplicate columns if any exist after sanitization
     if result.columns.duplicated().any():
