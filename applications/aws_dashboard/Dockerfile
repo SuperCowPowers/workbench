@@ -1,5 +1,5 @@
 # Define workbench version once at the top
-ARG WORKBENCH_VERSION=0.8.237
+ARG WORKBENCH_VERSION=0.8.247
 
 # Stage 1: Extract dependencies from workbench[ui]
 FROM python:3.12.5-bookworm AS deps-extractor
@@ -19,8 +19,9 @@ EXPOSE 8000
 ENV PYTHONHASHSEED=0
 
 # Install system packages and uvicorn in one layer
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libnghttp2-dev && \
+# Upgrade OpenSSL to get security patches (DSA-6113-1)
+RUN apt-get update && apt-get upgrade -y openssl && \
+    apt-get install -y --no-install-recommends libnghttp2-dev && \
     apt-get autoremove -y && apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     pip install --no-cache-dir uvicorn asgiref
