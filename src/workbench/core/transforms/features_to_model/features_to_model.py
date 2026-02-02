@@ -76,6 +76,7 @@ class FeaturesToModel(Transform):
         self.estimator = None
         self.model_description = None
         self.model_training_root = f"{self.models_s3_path}/{self.output_name}/training"
+        self.log.important(f"FeaturesToModel.__init__: model_training_root = {self.model_training_root}")
         self.model_feature_list = None
         self.target_column = None
         self.class_labels = None
@@ -180,6 +181,7 @@ class FeaturesToModel(Transform):
             "id_column": feature_set.id_column,
             "hyperparameters": kwargs.get("hyperparameters", {}),
         }
+        self.log.important(f"transform_impl: model_metrics_s3_path = {template_params['model_metrics_s3_path']}")
 
         # Custom Script
         if self.custom_script:
