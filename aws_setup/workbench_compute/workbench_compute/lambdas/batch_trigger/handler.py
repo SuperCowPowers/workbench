@@ -113,7 +113,7 @@ def find_active_jobs_with_output(output_name: str) -> list[str]:
     Returns:
         List of job IDs that produce this output
     """
-    active_statuses = ["PENDING", "RUNNABLE", "STARTING", "RUNNING"]
+    active_statuses = ["SUBMITTED", "PENDING", "RUNNABLE", "STARTING", "RUNNING"]
     job_ids = []
 
     for status in active_statuses:
