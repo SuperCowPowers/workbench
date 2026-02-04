@@ -670,15 +670,19 @@ class EndpointCore(Artifact):
             deserializer=CSVDeserializer(),
         )
 
-        # Now split up the dataframe into 100 row chunks, send those chunks to our
+        # Get batch size from endpoint metadata (default 100)
+        # Some endpoints (e.g., 3D descriptor generation) need smaller batches due to processing time
+        batch_size = self.workbench_meta().get("inference_batch_size", 100)
+
+        # Now split up the dataframe into chunks, send those chunks to our
         # endpoint (with error handling) and stitch all the chunks back together
         df_list = []
         total_rows = len(eval_df)
-        for index in range(0, len(eval_df), 100):
-            self.log.info(f"Processing {index}:{min(index+100, total_rows)} out of {total_rows} rows...")
+        for index in range(0, len(eval_df), batch_size):
+            self.log.info(f"Processing {index}:{min(index+batch_size, total_rows)} out of {total_rows} rows...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + 100], drop_error_rows)
+            partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + batch_size], drop_error_rows)
             df_list.append(partial_df)
 
         # Concatenate the dataframes
