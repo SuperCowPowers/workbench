@@ -82,12 +82,12 @@ def test_shap_values():
     else:
         pprint(shap_features)
 
-    print("\n\n*** SHAP Data (regression) ***")
-    shap_data = model_reg.shap_data()
-    if shap_data is None:
-        print(f"Model {model_reg.name} has no SHAP data!")
+    print("\n\n*** SHAP Values (regression) ***")
+    shap_vals = model_reg.shap_values()
+    if shap_vals is None:
+        print(f"Model {model_reg.name} has no SHAP values!")
     else:
-        pprint(shap_features)
+        print(shap_vals.head())
 
     print("\n\n*** SHAP Features (classification) ***")
     shap_features = model_class.shap_importance()
@@ -96,13 +96,13 @@ def test_shap_values():
     else:
         pprint(shap_features)
 
-    print("\n\n*** SHAP Data (classification) ***")
-    shap_data = model_class.shap_data()
-    if shap_data is None:
-        print(f"Model {model_class.name} has no SHAP data!")
+    print("\n\n*** SHAP Values (classification) ***")
+    shap_vals = model_class.shap_values()
+    if shap_vals is None:
+        print(f"Model {model_class.name} has no SHAP values!")
     else:
         # Classifiers have a dictionary of dataframes
-        for key, df in shap_data.items():
+        for key, df in shap_vals.items():
             print(f"{key}")
             print(df.head())
 

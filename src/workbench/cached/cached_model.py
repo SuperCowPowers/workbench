@@ -1,6 +1,6 @@
 """CachedModel: Caches the method results for Workbench Models"""
 
-from typing import Union
+from typing import Union, Optional, List, Tuple, Dict
 import pandas as pd
 
 # Workbench Imports
@@ -141,6 +141,33 @@ class CachedModel(CachedArtifactMixin, ModelCore):
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
         return super().confusion_matrix(capture_name=capture_name)
+
+    @CachedArtifactMixin.cache_result
+    def shap_importance(self) -> Optional[List[Tuple[str, float]]]:
+        """Retrieve the SHAP Feature Importance for this model.
+
+        Returns:
+            Optional[List[Tuple[str, float]]]: List of tuples containing feature names and their importance scores
+        """
+        return super().shap_importance()
+
+    @CachedArtifactMixin.cache_result
+    def shap_values(self) -> Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]:
+        """Retrieve the SHAP values (contributions) for this model.
+
+        Returns:
+            Optional[Union[pd.DataFrame, dict]]: SHAP values (DataFrame or dict of DataFrames for multiclass)
+        """
+        return super().shap_values()
+
+    @CachedArtifactMixin.cache_result
+    def shap_feature_values(self) -> Optional[pd.DataFrame]:
+        """Retrieve the feature values for SHAP sample rows (used for plot coloring).
+
+        Returns:
+            Optional[pd.DataFrame]: Feature values for SHAP sample rows
+        """
+        return super().shap_feature_values()
 
 
 if __name__ == "__main__":

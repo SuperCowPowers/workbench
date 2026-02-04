@@ -3,6 +3,8 @@
 # This template handles both classification and regression models with:
 # - K-fold cross-validation ensemble training (or single train/val split)
 # - Out-of-fold predictions for validation metrics
+# - Uncertainty quantification for regression models
+# - SHAP feature importance computation (continuous features)
 # - Categorical feature embedding via TabularMLP
 # - Compressed feature decompression
 #
@@ -488,6 +490,113 @@ if __name__ == "__main__":
         )
         df_val = predict_intervals(df_val, df_val[features], uq_models, uq_metadata)
         df_val = compute_confidence(df_val, uq_metadata["median_interval_width"])
+
+    # -------------------------------------------------------------------------
+    # Compute SHAP values for feature importance (continuous features only)
+    # -------------------------------------------------------------------------
+    print("\n" + "=" * 50)
+    print("Computing SHAP Values")
+    print("=" * 50)
+    try:
+        import shap
+
+        # Sample up to 500 rows for SHAP computation
+        shap_sample_size = min(500, len(df_val))
+        shap_sample_df = df_val.sample(n=shap_sample_size, random_state=42)
+        shap_sample_ids = shap_sample_df[id_column]
+
+        # Prepare background data (subset for efficiency)
+        bg_size = min(100, shap_sample_size)
+        bg_df = shap_sample_df.sample(n=bg_size, random_state=42)
+
+        # Prepare tensors for SHAP (using pre-fitted scaler)
+        x_cont, x_cat, _, _, _ = prepare_data(
+            shap_sample_df, continuous_cols, categorical_cols,
+            category_mappings=category_mappings, scaler=scaler
+        )
+        bg_cont, bg_cat, _, _, _ = prepare_data(
+            bg_df, continuous_cols, categorical_cols,
+            category_mappings=category_mappings, scaler=scaler
+        )
+
+        # Use first ensemble model for SHAP
+        model = ensemble_models[0]
+        model.eval()
+
+        # Create wrapper for GradientExplainer
+        # For models with categorical features, fix them and only explain continuous
+        if x_cat is not None and x_cat.shape[1] > 0:
+            class ContinuousOnlyWrapper(torch.nn.Module):
+                def __init__(self, model, fixed_cat):
+                    super().__init__()
+                    self.model = model
+                    self.fixed_cat = fixed_cat
+
+                def forward(self, x_cont):
+                    batch_size = x_cont.shape[0]
+                    cat_expanded = self.fixed_cat[:1].expand(batch_size, -1)
+                    return self.model(x_cont, cat_expanded)
+
+            wrapper = ContinuousOnlyWrapper(model, x_cat)
+            explainer = shap.GradientExplainer(wrapper, bg_cont)
+        else:
+            # Pure continuous - explain directly
+            explainer = shap.GradientExplainer(model, bg_cont)
+
+        shap_values_raw = explainer.shap_values(x_cont)
+
+        # Handle output format (list for multiclass, array otherwise)
+        if isinstance(shap_values_raw, list):
+            # Multiclass: stack to (n_samples, n_classes, n_features)
+            shap_values_raw = np.stack(shap_values_raw, axis=1)
+            n_classes = shap_values_raw.shape[1]
+        else:
+            # Regression/binary: add class dimension
+            if shap_values_raw.ndim == 2:
+                shap_values_raw = shap_values_raw[:, np.newaxis, :]
+            n_classes = 1
+
+        # Compute feature importance (mean absolute SHAP value)
+        if n_classes > 1 and label_encoder is not None:
+            mean_abs_shap = np.mean(np.abs(shap_values_raw), axis=(0, 1))
+        else:
+            mean_abs_shap = np.mean(np.abs(shap_values_raw[:, 0, :]), axis=0)
+
+        # Create sorted importance list (continuous features only)
+        shap_importance = [(continuous_cols[i], round(float(mean_abs_shap[i]), 3)) for i in range(len(continuous_cols))]
+        shap_importance = sorted(shap_importance, key=lambda x: x[1], reverse=True)
+        print(f"Top 5 SHAP features: {shap_importance[:5]}")
+
+        # Get top 10 features for detailed SHAP data
+        top_10_features = [f[0] for f in shap_importance[:10]]
+        top_10_indices = [continuous_cols.index(f) for f in top_10_features]
+
+        # Create SHAP values DataFrame(s)
+        if n_classes > 1 and label_encoder is not None:
+            class_labels = label_encoder.classes_.tolist()
+            for class_idx, class_label in enumerate(class_labels):
+                class_shap = shap_values_raw[:, class_idx, :][:, top_10_indices]
+                shap_df = pd.DataFrame(class_shap, columns=top_10_features)
+                shap_df.insert(0, id_column, shap_sample_ids.reset_index(drop=True))
+                wr.s3.to_csv(shap_df, f"{model_metrics_s3_path}/shap_values_{class_label}.csv", index=False)
+            print(f"Saved SHAP values for {len(class_labels)} classes")
+        else:
+            shap_subset = shap_values_raw[:, 0, :][:, top_10_indices]
+            shap_df = pd.DataFrame(shap_subset, columns=top_10_features)
+            shap_df.insert(0, id_column, shap_sample_ids.reset_index(drop=True))
+            wr.s3.to_csv(shap_df, f"{model_metrics_s3_path}/shap_values.csv", index=False)
+            print(f"Saved SHAP values ({shap_sample_size} samples, 10 features)")
+
+        # Save feature values for the same samples (for SHAP plots)
+        shap_feature_df = shap_sample_df[[id_column] + top_10_features].reset_index(drop=True)
+        wr.s3.to_csv(shap_feature_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
+
+        # Save SHAP importance as JSON
+        wr.s3.to_json(shap_importance, f"{model_metrics_s3_path}/shap_importance.json")
+        print(f"Saved SHAP importance ({len(shap_importance)} features)")
+
+    except Exception as e:
+        print(f"Warning: SHAP computation failed: {e}")
 
     # -------------------------------------------------------------------------
     # Save validation predictions to S3

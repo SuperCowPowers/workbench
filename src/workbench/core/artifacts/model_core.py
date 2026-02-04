@@ -19,7 +19,7 @@ from sagemaker.model import Model as SagemakerModel
 from workbench.core.artifacts.artifact import Artifact
 from workbench.utils.aws_utils import newest_path, pull_s3_data
 from workbench.utils.s3_utils import compute_s3_object_hash
-from workbench.utils.shap_utils import shap_values_data, shap_feature_importance
+from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
 from workbench.utils.model_utils import published_proximity_model, get_model_hyperparameters
 
@@ -817,72 +817,29 @@ class ModelCore(Artifact):
         except (KeyError, IndexError, TypeError):
             return None
 
-    def compute_shap_values(self):
-        # Compute SHAP feature importance (try/except in case of failure)
-        try:
-            # Okay, first we compute feature importance
-            shap_importance = shap_feature_importance(self)
-
-            # Store the Shap Importance dictionary in the Parameter Store
-            self.param_store.upsert(f"/workbench/models/{self.name}/shap_importance", shap_importance)
-
-            # We're going to create sample rows for our SHAP plots
-            from workbench.api import FeatureSet
-
-            fs = FeatureSet(self.get_input())
-            shap_sample_input = fs.query(f"SELECT * FROM {fs.table} ORDER BY RAND() LIMIT 500")
-
-            # Now we recompute the SHAP values using our sample rows
-            shap_data, feature_df = shap_values_data(self, sample_df=shap_sample_input)
-
-            # Store the SHAP feature dataframe in the DataFrame Store (just the top 10 shap values)
-            shap_sample = feature_df[[fs.id_column] + [f[0] for f in shap_importance[:10]]]
-            self.df_store.upsert(f"/workbench/models/{self.name}/shap_sample", shap_sample)
-
-            # Shap Data might be a DataFrame or a dict of DataFrames
-            if isinstance(shap_data, dict):
-                for key, df in shap_data.items():
-                    self.df_store.upsert(f"/workbench/models/{self.name}/shap_data/{key}", df)
-            else:
-                self.df_store.upsert(f"/workbench/models/{self.name}/shap_data", shap_data)
-        except Exception as e:
-            self.log.warning(f"SHAP Feature Importance failed: {e}")
-
     def shap_importance(self) -> Optional[List[Tuple[str, float]]]:
-        """Retrieve the Shapely Feature Importance for this model
+        """Retrieve the SHAP Feature Importance for this model.
 
         Returns:
             Optional[List[Tuple[str, float]]]: List of tuples containing feature names and their importance scores
         """
-        shap_features = self.param_store.get(f"/workbench/models/{self.name}/shap_importance")
-        return [tuple(e) for e in shap_features] if shap_features else None
+        return get_shap_importance(self.model_training_path)
 
-    def shap_sample(self) -> Optional[pd.DataFrame]:
-        """Retrieve the SHAP sample data for this model
-
-        Returns:
-            Optional[pd.DataFrame]: SHAP sample data (DataFrame)
-        """
-        shap_sample = self.df_store.get(f"/workbench/models/{self.name}/shap_sample")
-        return shap_sample if shap_sample is not None else None
-
-    def shap_data(self) -> Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]:
-        """Retrieve the SHAP data for this model
+    def shap_values(self) -> Optional[Union[pd.DataFrame, Dict[str, pd.DataFrame]]]:
+        """Retrieve the SHAP values (contributions) for this model.
 
         Returns:
-            Optional[Union[pd.DataFrame, dict]]: SHAP data (DataFrame or dict of DataFrames)
+            Optional[Union[pd.DataFrame, dict]]: SHAP values (DataFrame or dict of DataFrames for multiclass)
         """
-        # Check if the SHAP data is one DataFrame or a dict of DataFrames
-        if self.df_store.check(f"/workbench/models/{self.name}/shap_data"):
-            return self.df_store.get(f"/workbench/models/{self.name}/shap_data")
-        else:
-            # Loop over the SHAP data and return a dict of DataFrames
-            shap_dfs = self.df_store.list(f"/workbench/models/{self.name}/shap_data")
-            shap_data = {}
-            for df_location in shap_dfs:
-                key = df_location.split("/")[-1]
-                shap_data[key] = self.df_store.get(df_location)
-            return shap_data or None
+        return get_shap_values(self.model_training_path, self.class_labels())
+
+    def shap_feature_values(self) -> Optional[pd.DataFrame]:
+        """Retrieve the feature values for SHAP sample rows (used for plot coloring).
+
+        Returns:
+            Optional[pd.DataFrame]: Feature values for SHAP sample rows
+        """
+        return get_shap_feature_values(self.model_training_path)
 
     def supported_inference_instances(self) -> Optional[list]:
         """Retrieve the supported endpoint inference instance types
@@ -1242,16 +1199,13 @@ if __name__ == "__main__":
     print("Captured Predictions: (might be None)")
     print(my_model.get_inference_predictions())
 
-    # Compute SHAP values
-    my_model.compute_shap_values()
-
     # Grab our Shapley Feature Importance
     print("Shapley Feature Importance:")
     print(my_model.shap_importance())
 
-    # Grab our Shapley Detailed Data
-    print("Shapley Detailed Data:")
-    print(my_model.shap_data())
+    # Grab our Shapley Values
+    print("Shapley Values:")
+    print(my_model.shap_values())
 
     # Get the Workbench metadata associated with this Model
     print(f"Workbench Meta: {my_model.workbench_meta()}")

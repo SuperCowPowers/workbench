@@ -42,9 +42,9 @@ class ShapSummaryPlot(PluginInterface):
         self.model = model
 
         # Basic validation
-        shap_data = model.shap_data()
-        shap_sample_rows = model.shap_sample()
-        if shap_data is None or shap_sample_rows is None:
+        shap_data = model.shap_values()
+        shap_feature_vals = model.shap_feature_values()
+        if shap_data is None or shap_feature_vals is None:
             return [self.display_text("SHAP data not available")]
 
         # Check if the model is multiclass
@@ -52,12 +52,12 @@ class ShapSummaryPlot(PluginInterface):
         if is_multiclass:
             class_labels = model.class_labels()
             id_column = shap_data[list(shap_data.keys())[0]].columns[0]
-            fig = self._create_multiclass_summary_plot(shap_data, shap_sample_rows, id_column, class_labels)
+            fig = self._create_multiclass_summary_plot(shap_data, shap_feature_vals, id_column, class_labels)
 
         # Regression or binary classification
         else:
             id_column = shap_data.columns[0]
-            fig = self._create_summary_plot(shap_data, shap_sample_rows, id_column)
+            fig = self._create_summary_plot(shap_data, shap_feature_vals, id_column)
         return [fig]
 
     def _create_summary_plot(self, shap_df: pd.DataFrame, sample_df: pd.DataFrame, id_column: str) -> go.Figure:
