@@ -9,9 +9,6 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 AWS_ACCOUNT_ID="507740646243"
 
 # Map of image types to their repository names and directories
-# Older not used images
-#   ["xgb_training"]="aws-ml-images/py312-sklearn-xgb-training"
-#   ["xgb_inference"]="aws-ml-images/py312-sklearn-xgb-inference"
 declare -A REPO_MAP=(
   ["training"]="aws-ml-images/py312-general-ml-training"
   ["inference"]="aws-ml-images/py312-general-ml-inference"
@@ -30,12 +27,11 @@ NC='\033[0m' # No Color
 
 # Parse arguments
 usage() {
-  echo "Usage: $(basename $0) IMAGE_TYPE [VERSION] [--deploy] [--latest] [--overwrite]"
+  echo "Usage: $(basename $0) IMAGE_TYPE [VERSION] [--deploy] [--overwrite]"
   echo "  IMAGE_TYPE: One of ${!REPO_MAP[*]}"
-  echo "  VERSION: Image version"
-  echo "  --deploy: Deploy to ECR"
-  echo "  --latest: Also tag as latest"
-  echo "  --overwrite: Overwrite existing images"
+  echo "  VERSION: Image version (default: 0.1)"
+  echo "  --deploy: Deploy to ECR (also updates 'latest' tag)"
+  echo "  --overwrite: Overwrite existing versioned images"
   exit 1
 }
 
@@ -51,7 +47,6 @@ shift
 # Set defaults
 IMAGE_VERSION="0.1"
 DEPLOY=false
-LATEST=false
 OVERWRITE=false
 
 # Parse remaining arguments
@@ -60,7 +55,6 @@ OVERWRITE=false
 for arg in "$@"; do
   case $arg in
     --deploy)    DEPLOY=true ;;
-    --latest)    LATEST=true ;;
     --overwrite) OVERWRITE=true ;;
     *)           echo "Unknown option: $arg" && usage ;;
   esac
@@ -128,34 +122,26 @@ deploy_image() {
     aws ecr get-login-password --region $region --profile $AWS_PROFILE | \
       docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$region.amazonaws.com"
 
-    # Check if image exists
+    # Check if versioned image exists (skip if exists and no overwrite)
     if [ "$OVERWRITE" = false ] && image_exists $REPO_NAME $tag $region; then
       echo "Image $ecr_image already exists and overwrite is set to false. Skipping..."
       continue
     fi
 
-    # Tag and push
+    # Tag and push versioned image
     echo "Tagging image for AWS ECR as $ecr_image..."
     docker tag $full_name $ecr_image
 
     echo "Pushing Docker image to AWS ECR: $ecr_image..."
     docker push $ecr_image
 
-    # Handle latest tag
-    if [ "$LATEST" = true ]; then
-      local ecr_latest="$ecr_repo:latest"
+    # Always update the latest tag
+    local ecr_latest="$ecr_repo:latest"
+    echo "Tagging AWS ECR image as latest: $ecr_latest..."
+    docker tag $full_name $ecr_latest
 
-      if [ "$OVERWRITE" = false ] && image_exists $REPO_NAME "latest" $region; then
-        echo "Image $ecr_latest already exists and overwrite is set to false. Skipping latest tag..."
-        continue
-      fi
-
-      echo "Tagging AWS ECR image as latest: $ecr_latest..."
-      docker tag $full_name $ecr_latest
-
-      echo "Pushing Docker image to AWS ECR: $ecr_latest..."
-      docker push $ecr_latest
-    fi
+    echo "Pushing Docker image to AWS ECR: $ecr_latest..."
+    docker push $ecr_latest
   done
 }
 
@@ -164,14 +150,6 @@ echo "======================================"
 echo "🏗️  Building $IMAGE_TYPE container (AMD64)"
 echo "======================================"
 build_image "amd64" "$IMAGE_VERSION"
-
-# For inference, also build ARM64 image
-if [ "$IMAGE_TYPE" = "fixme" ]; then
-  echo "======================================"
-  echo "🏗️  Building $IMAGE_TYPE container (ARM64)"
-  echo "======================================"
-  build_image "arm64" "${IMAGE_VERSION}-arm64"
-fi
 
 echo "======================================"
 echo -e "${GREEN}✅  Build completed successfully!${NC}"
@@ -185,11 +163,6 @@ if [ "$DEPLOY" = true ]; then
 
   deploy_image "$IMAGE_VERSION"
 
-  # For inference, also deploy ARM64 image
-  if [ "$IMAGE_TYPE" = "fixme" ]; then
-    deploy_image "${IMAGE_VERSION}-arm64"
-  fi
-
   echo "======================================"
   echo -e "${GREEN}✅  Deployment complete!${NC}"
   echo "======================================"
@@ -200,11 +173,6 @@ else
   echo "======================================"
   echo "📋  Image information:"
   echo "${IMAGE_TYPE^} image: $REPO_NAME:$IMAGE_VERSION"
-
-  if [ "$IMAGE_TYPE" = "fixme" ]; then
-    echo "Inference image (ARM64): $REPO_NAME:${IMAGE_VERSION}-arm64"
-  fi
-
   echo "======================================"
   echo "To test these containers, run: $PROJECT_ROOT/tests/run_tests.sh $IMAGE_VERSION"
 fi
