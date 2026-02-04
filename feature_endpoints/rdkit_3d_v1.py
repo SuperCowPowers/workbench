@@ -73,9 +73,9 @@ if __name__ == "__main__":
     else:
         end = model.to_endpoint(tags=tags, serverless=False, instance="ml.c7i.large")
 
-    # Set smaller batch size for 3D endpoint (conformer generation is slow ~1-2s per molecule)
-    # This ensures batches complete within the 60s serverless timeout
-    end.upsert_workbench_meta({"inference_batch_size": 25})
+    # Set smaller batch size for 3D endpoint (conformer generation is slow ~1-1.5s per molecule)
+    # At ~0.7 mol/s, 20 molecules takes ~28s, safely under the 60s serverless timeout
+    end.upsert_workbench_meta({"inference_batch_size": 20})
 
     # Run inference on the endpoint (smaller batch due to slower processing)
     end.inference(feature_set.pull_dataframe()[:50])

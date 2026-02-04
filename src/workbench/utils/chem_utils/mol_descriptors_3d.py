@@ -337,9 +337,11 @@ def compute_mordred_3d_descriptors(mol: Chem.Mol) -> Dict[str, float]:
                     value = float(value)
                 except (ValueError, TypeError):
                     value = np.nan
-            # Sanitize column name
+            # Sanitize column name and add m3d_ prefix to avoid collisions with 2D descriptors
+            # (e.g., tpsa exists in both 2D RDKit and 3D Mordred CPSA)
             clean_name = re.sub(r"[^a-z0-9_]", "_", str(col).lower())
             clean_name = re.sub(r"_+", "_", clean_name)
+            clean_name = f"m3d_{clean_name}"
             result[clean_name] = value
 
         return result
@@ -350,12 +352,13 @@ def compute_mordred_3d_descriptors(mol: Chem.Mol) -> Dict[str, float]:
 
 
 def get_mordred_3d_feature_names() -> List[str]:
-    """Get sanitized names of all Mordred 3D descriptors."""
+    """Get sanitized names of all Mordred 3D descriptors (with m3d_ prefix)."""
     calc = get_mordred_3d_calculator()
     names = []
     for desc in calc.descriptors:
         clean_name = re.sub(r"[^a-z0-9_]", "_", str(desc).lower())
         clean_name = re.sub(r"_+", "_", clean_name)
+        clean_name = f"m3d_{clean_name}"
         names.append(clean_name)
     return names
 
