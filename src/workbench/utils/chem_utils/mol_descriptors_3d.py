@@ -119,6 +119,7 @@ logger = logging.getLogger("workbench")
 # Conformer Generation
 # =============================================================================
 
+
 def generate_conformers(
     mol: Chem.Mol,
     n_conformers: int = 10,
@@ -235,6 +236,7 @@ def get_lowest_energy_conformer_id(mol: Chem.Mol) -> int:
 # RDKit 3D Shape Descriptors
 # =============================================================================
 
+
 def compute_rdkit_3d_descriptors(mol: Chem.Mol, conf_id: int = 0) -> Dict[str, float]:
     """
     Compute RDKit's built-in 3D shape descriptors.
@@ -284,6 +286,7 @@ def compute_rdkit_3d_descriptors(mol: Chem.Mol, conf_id: int = 0) -> Dict[str, f
 # Mordred 3D Descriptors
 # =============================================================================
 
+
 def get_mordred_3d_calculator() -> MordredCalculator:
     """
     Create a Mordred calculator with 3D descriptor modules.
@@ -330,7 +333,7 @@ def compute_mordred_3d_descriptors(mol: Chem.Mol) -> Dict[str, float]:
         for col in result_df.columns:
             value = result_df[col].iloc[0]
             # Handle Mordred error values
-            if hasattr(value, 'error'):
+            if hasattr(value, "error"):
                 value = np.nan
             else:
                 try:
@@ -366,6 +369,7 @@ def get_mordred_3d_feature_names() -> List[str]:
 # =============================================================================
 # Pharmacophore 3D Descriptors
 # =============================================================================
+
 
 def _get_atom_positions_and_masses(mol: Chem.Mol, conf_id: int = 0) -> tuple:
     """
@@ -407,7 +411,7 @@ def compute_molecular_axis_length(mol: Chem.Mol, conf_id: int = 0) -> float:
     if positions is None or len(positions) < 2:
         return np.nan
 
-    distances = pdist(positions, metric='euclidean')
+    distances = pdist(positions, metric="euclidean")
     return float(np.max(distances))
 
 
@@ -426,6 +430,7 @@ def compute_molecular_volume_3d(mol: Chem.Mol, conf_id: int = 0) -> float:
 
     try:
         from scipy.spatial import ConvexHull
+
         hull = ConvexHull(positions)
         return float(hull.volume)
     except Exception:
@@ -457,12 +462,12 @@ def compute_amphiphilic_moment(mol: Chem.Mol, conf_id: int = 0) -> float:
         symbol = atom.GetSymbol()
 
         # Polar atoms: N, O, S, P, halogens
-        if symbol in ['N', 'O', 'S', 'P', 'F', 'Cl', 'Br', 'I']:
+        if symbol in ["N", "O", "S", "P", "F", "Cl", "Br", "I"]:
             polar_positions.append(pos_array)
-        elif symbol == 'C':
+        elif symbol == "C":
             # Carbon is nonpolar if not adjacent to heteroatoms
             neighbors = atom.GetNeighbors()
-            has_polar_neighbor = any(n.GetSymbol() in ['N', 'O', 'S', 'P'] for n in neighbors)
+            has_polar_neighbor = any(n.GetSymbol() in ["N", "O", "S", "P"] for n in neighbors)
             if not has_polar_neighbor:
                 nonpolar_positions.append(pos_array)
 
@@ -494,7 +499,7 @@ def compute_charge_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
     # Find basic nitrogens (protonatable)
     n_positions = []
     for atom in mol.GetAtoms():
-        if atom.GetSymbol() == 'N':
+        if atom.GetSymbol() == "N":
             # Include aromatic N or N with H (potential protonation sites)
             if atom.GetTotalNumHs() > 0 or atom.GetIsAromatic():
                 pos = conf.GetAtomPosition(atom.GetIdx())
@@ -522,14 +527,14 @@ def compute_nitrogen_span(mol: Chem.Mol, conf_id: int = 0) -> float:
     n_positions = []
 
     for atom in mol.GetAtoms():
-        if atom.GetSymbol() == 'N':
+        if atom.GetSymbol() == "N":
             pos = conf.GetAtomPosition(atom.GetIdx())
             n_positions.append([pos.x, pos.y, pos.z])
 
     if len(n_positions) < 2:
         return 0.0
 
-    distances = pdist(np.array(n_positions), metric='euclidean')
+    distances = pdist(np.array(n_positions), metric="euclidean")
     return float(np.max(distances))
 
 
@@ -553,10 +558,10 @@ def compute_hba_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
     hba_positions = []
     for atom in mol.GetAtoms():
         symbol = atom.GetSymbol()
-        if symbol == 'O':
+        if symbol == "O":
             pos = conf.GetAtomPosition(atom.GetIdx())
             hba_positions.append([pos.x, pos.y, pos.z])
-        elif symbol == 'N' and atom.GetTotalNumHs() == 0:
+        elif symbol == "N" and atom.GetTotalNumHs() == 0:
             pos = conf.GetAtomPosition(atom.GetIdx())
             hba_positions.append([pos.x, pos.y, pos.z])
 
@@ -587,12 +592,12 @@ def compute_intramolecular_hbond_potential(mol: Chem.Mol, conf_id: int = 0) -> i
     conf = mol.GetConformer(conf_id)
 
     # HBD atoms (N-H, O-H)
-    hbd_smarts = Chem.MolFromSmarts('[#7H1,#7H2,#7H3,#8H1]')
+    hbd_smarts = Chem.MolFromSmarts("[#7H1,#7H2,#7H3,#8H1]")
     hbd_matches = mol.GetSubstructMatches(hbd_smarts) if hbd_smarts else []
     hbd_indices = [m[0] for m in hbd_matches]
 
     # HBA atoms (O, N with lone pairs)
-    hba_smarts = Chem.MolFromSmarts('[#7X2,#7X3,#8X1,#8X2]')
+    hba_smarts = Chem.MolFromSmarts("[#7X2,#7X3,#8X1,#8X2]")
     hba_matches = mol.GetSubstructMatches(hba_smarts) if hba_smarts else []
     hba_indices = [m[0] for m in hba_matches]
 
@@ -662,7 +667,7 @@ def _compute_elongation(mol: Chem.Mol, conf_id: int = 0) -> float:
     if np.isnan(axis) or np.isnan(volume) or volume <= 0:
         return np.nan
 
-    return axis / (volume ** (1/3))
+    return axis / (volume ** (1 / 3))
 
 
 def get_pharmacophore_3d_feature_names() -> List[str]:
@@ -682,6 +687,7 @@ def get_pharmacophore_3d_feature_names() -> List[str]:
 # =============================================================================
 # Conformer Ensemble Statistics
 # =============================================================================
+
 
 def compute_conformer_statistics(mol: Chem.Mol) -> Dict[str, float]:
     """
@@ -732,6 +738,7 @@ def compute_conformer_statistics(mol: Chem.Mol) -> Dict[str, float]:
 # Main Descriptor Computation Function
 # =============================================================================
 
+
 def get_3d_feature_names() -> List[str]:
     """
     Return list of all 3D feature names computed by this module.
@@ -744,10 +751,16 @@ def get_3d_feature_names() -> List[str]:
         - 5 Conformer statistics
     """
     rdkit_names = [
-        "pmi1", "pmi2", "pmi3",
-        "npr1", "npr2",
-        "asphericity", "eccentricity", "inertial_shape_factor",
-        "radius_of_gyration", "spherocity_index",
+        "pmi1",
+        "pmi2",
+        "pmi3",
+        "npr1",
+        "npr2",
+        "asphericity",
+        "eccentricity",
+        "inertial_shape_factor",
+        "radius_of_gyration",
+        "spherocity_index",
     ]
 
     mordred_names = get_mordred_3d_feature_names()
@@ -755,8 +768,11 @@ def get_3d_feature_names() -> List[str]:
     pharmacophore_names = get_pharmacophore_3d_feature_names()
 
     conformer_names = [
-        "conf_energy_min", "conf_energy_range", "conf_energy_std",
-        "conf_count", "conformational_flexibility",
+        "conf_energy_min",
+        "conf_energy_range",
+        "conf_energy_std",
+        "conf_count",
+        "conformational_flexibility",
     ]
 
     return rdkit_names + mordred_names + pharmacophore_names + conformer_names
@@ -889,25 +905,34 @@ if __name__ == "__main__":
     print("=" * 80)
 
     # Test molecules with diverse properties
-    test_data = pd.DataFrame({
-        "smiles": [
-            "CCO",                                    # Ethanol - small, simple
-            "c1ccccc1",                               # Benzene - flat aromatic
-            "CC(C)NCC(O)c1ccc(O)c(O)c1",             # Isoproterenol - drug-like
-            "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",          # Caffeine - rigid
-            "CC(=O)Oc1ccccc1C(=O)O",                 # Aspirin
-            "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C",   # Testosterone - steroid
-            "C[C@H](N)C(=O)O",                       # L-Alanine
-            "CCCCCCCCCC",                            # Decane - flexible chain
-            "",                                       # Empty - should handle gracefully
-            "INVALID_SMILES",                         # Invalid - should handle gracefully
-        ],
-        "name": [
-            "Ethanol", "Benzene", "Isoproterenol", "Caffeine",
-            "Aspirin", "Testosterone", "L-Alanine", "Decane",
-            "Empty", "Invalid",
-        ]
-    })
+    test_data = pd.DataFrame(
+        {
+            "smiles": [
+                "CCO",  # Ethanol - small, simple
+                "c1ccccc1",  # Benzene - flat aromatic
+                "CC(C)NCC(O)c1ccc(O)c(O)c1",  # Isoproterenol - drug-like
+                "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",  # Caffeine - rigid
+                "CC(=O)Oc1ccccc1C(=O)O",  # Aspirin
+                "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C",  # Testosterone - steroid
+                "C[C@H](N)C(=O)O",  # L-Alanine
+                "CCCCCCCCCC",  # Decane - flexible chain
+                "",  # Empty - should handle gracefully
+                "INVALID_SMILES",  # Invalid - should handle gracefully
+            ],
+            "name": [
+                "Ethanol",
+                "Benzene",
+                "Isoproterenol",
+                "Caffeine",
+                "Aspirin",
+                "Testosterone",
+                "L-Alanine",
+                "Decane",
+                "Empty",
+                "Invalid",
+            ],
+        }
+    )
 
     # Test 1: Basic functionality and feature counts
     print("\n" + "-" * 40)
@@ -916,10 +941,10 @@ if __name__ == "__main__":
 
     feature_names = get_3d_feature_names()
     print(f"\nTotal feature count: {len(feature_names)}")
-    print(f"  - RDKit 3D shape: 10")
+    print("  - RDKit 3D shape: 10")
     print(f"  - Mordred 3D: {len(get_mordred_3d_feature_names())}")
     print(f"  - Pharmacophore 3D: {len(get_pharmacophore_3d_feature_names())}")
-    print(f"  - Conformer stats: 5")
+    print("  - Conformer stats: 5")
 
     result = compute_descriptors_3d(test_data, n_conformers=5, optimize=True)
 
@@ -942,8 +967,8 @@ if __name__ == "__main__":
     - NPR1~1, NPR2~1: Sphere-like
     """)
 
-    for _, row in result[result['name'].isin(['Benzene', 'Decane', 'Testosterone', 'Caffeine'])].iterrows():
-        npr1, npr2 = row['npr1'], row['npr2']
+    for _, row in result[result["name"].isin(["Benzene", "Decane", "Testosterone", "Caffeine"])].iterrows():
+        npr1, npr2 = row["npr1"], row["npr2"]
         if pd.notna(npr1) and pd.notna(npr2):
             if npr1 < 0.3 and npr2 > 0.7:
                 shape = "rod-like"
@@ -961,7 +986,7 @@ if __name__ == "__main__":
     print("-" * 40)
 
     # Show a few CPSA descriptors
-    cpsa_cols = [c for c in result.columns if 'psa' in c.lower() or 'asa' in c.lower()][:5]
+    cpsa_cols = [c for c in result.columns if "psa" in c.lower() or "asa" in c.lower()][:5]
     if cpsa_cols:
         print(result[["name"] + cpsa_cols].head(6).to_string(index=False))
 
@@ -970,8 +995,14 @@ if __name__ == "__main__":
     print("TEST 5: Pharmacophore 3D Descriptors")
     print("-" * 40)
 
-    pharm_cols = ["name", "pharm3d_molecular_axis", "pharm3d_amphiphilic_moment",
-                  "pharm3d_nitrogen_span", "pharm3d_imhb_potential", "pharm3d_elongation"]
+    pharm_cols = [
+        "name",
+        "pharm3d_molecular_axis",
+        "pharm3d_amphiphilic_moment",
+        "pharm3d_nitrogen_span",
+        "pharm3d_imhb_potential",
+        "pharm3d_elongation",
+    ]
     print(result[pharm_cols].head(8).to_string(index=False))
 
     # Test 6: Conformer Statistics
@@ -992,7 +1023,7 @@ if __name__ == "__main__":
         ("Standard mode (n=10, opt)", {"n_conformers": 10, "optimize": True}),
     ]
 
-    bench_data = test_data[test_data['name'].isin(['Ethanol', 'Caffeine', 'Aspirin', 'Testosterone'])].copy()
+    bench_data = test_data[test_data["name"].isin(["Ethanol", "Caffeine", "Aspirin", "Testosterone"])].copy()
 
     for name, params in configs:
         start = time.time()
