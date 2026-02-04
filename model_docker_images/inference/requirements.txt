@@ -1,11 +1,19 @@
+# Core ML packages
 scikit-learn==1.8.0
 xgboost==3.1.3
 lightgbm==4.6.0
-mapie==1.2.0
+mapie==1.3.0
 ngboost==0.5.8
+
+# Data handling (pandas <3.0 due to breaking changes)
 pandas==2.3.3
 awswrangler==3.15.0
 joblib==1.5.3
-rdkit==2025.9.3
-fastapi==0.128.0       # FastAPI for serving the model
-uvicorn==0.40.0        # ASGI server for running FastAPI
+
+# Chemistry packages
+rdkit==2025.9.4
+mordredcommunity==2.0.7
+
+# Inference server
+fastapi==0.128.0
+uvicorn==0.40.0
