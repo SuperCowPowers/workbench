@@ -1,0 +1,1 @@
+../../../src/workbench/utils/chem_utils/mol_descriptors_3d.py
