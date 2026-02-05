@@ -12,7 +12,7 @@ Models:
     - aqsol-class
     - aqsol-mol-regression
     - aqsol-mol-class
-    - smiles-to-taut-md-stereo-v0
+    - smiles-to-taut-md-stereo-v1
     - smiles-to-fingerprints-v0
     - tautomerize-v0
 
@@ -21,7 +21,7 @@ Endpoints:
     - aqsol-class
     - aqsol-mol-regression
     - aqsol-mol-class
-    - smiles-to-taut-md-stereo-v0
+    - smiles-to-taut-md-stereo-v1
     - smiles-to-fingerprints-v0
     - tautomerize-v0
 """
@@ -30,7 +30,7 @@ import logging
 import pandas as pd
 import awswrangler as wr
 
-from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
+from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint, ParameterStore
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 from workbench.utils.model_utils import get_custom_script_path
 
@@ -38,6 +38,9 @@ log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":
+
+    # Parameter Store
+    params = ParameterStore()
 
     # Get the path to the dataset in S3
     s3_path = "s3://workbench-public-data/comp_chem/aqsol_public_data.csv"
@@ -131,7 +134,7 @@ if __name__ == "__main__":
     # Create the rdkit FeatureSet (this is an example of using lower level classes)
     if recreate or not FeatureSet("aqsol_mol_descriptors").exists():
         df = DataSource("aqsol_data").pull_dataframe()
-        end = Endpoint("smiles-to-taut-md-stereo-v0")
+        end = Endpoint("smiles-to-taut-md-stereo-v1")
         mol_df = end.inference(df)
         to_features = PandasToFeatures("aqsol_mol_descriptors")
         to_features.set_output_tags(["aqsol", "public"])
@@ -142,25 +145,12 @@ if __name__ == "__main__":
     if recreate or not Model("aqsol-mol-regression").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_mol_descriptors")
-        exclude = [
-            "id",
-            "name",
-            "inchi",
-            "inchikey",
-            "smiles",
-            "group",
-            "solubility",
-            "solubility_class",
-            "rotratio",  # rotratio is often string type
-            "ocurrences",
-            "sd",
-        ]
-        feature_list = [f for f in feature_set.columns if f not in exclude]
+        features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
         feature_set.to_model(
             name="aqsol-mol-regression",
             model_type=ModelType.REGRESSOR,
             target_column="solubility",
-            feature_list=feature_list,
+            feature_list=features,
             description="AQSol Descriptor Regression Model",
             tags=["aqsol", "regression"],
         )
@@ -169,26 +159,12 @@ if __name__ == "__main__":
     if recreate or not Model("aqsol-mol-class").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_mol_descriptors")
-        exclude = [
-            "id",
-            "name",
-            "inchi",
-            "inchikey",
-            "smiles",
-            "group",
-            "solubility",
-            "solubility_class",
-            "rotratio",  # rotratio is often string type
-            "ocurrences",
-            "sd",
-            "has_stereo",
-        ]
-        feature_list = [f for f in feature_set.columns if f not in exclude]
+        features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
         m = feature_set.to_model(
             name="aqsol-mol-class",
             model_type=ModelType.CLASSIFIER,
             target_column="solubility_class",
-            feature_list=feature_list,
+            feature_list=features,
             description="AQSol Descriptor Classification Model",
             tags=["aqsol", "classification"],
         )
@@ -211,11 +187,11 @@ if __name__ == "__main__":
         end.auto_inference()
 
     # A 'Model' to Compute Molecular Descriptors Features
-    if recreate or not Model("smiles-to-taut-md-stereo-v0").exists():
+    if recreate or not Model("smiles-to-taut-md-stereo-v1").exists():
         script_path = get_custom_script_path("chem_info", "molecular_descriptors.py")
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
-            name="smiles-to-taut-md-stereo-v0",
+            name="smiles-to-taut-md-stereo-v1",
             model_type=ModelType.TRANSFORMER,
             feature_list=["smiles"],
             description="Smiles to Molecular Descriptors",
@@ -237,8 +213,8 @@ if __name__ == "__main__":
         )
 
     # Endpoints for our Transformer/Custom Models
-    if recreate or not Endpoint("smiles-to-taut-md-stereo-v0").exists():
-        m = Model("smiles-to-taut-md-stereo-v0")
+    if recreate or not Endpoint("smiles-to-taut-md-stereo-v1").exists():
+        m = Model("smiles-to-taut-md-stereo-v1")
         end = m.to_endpoint(tags=["smiles", "molecular descriptors", "stereo"])
 
         # Run inference on the endpoint

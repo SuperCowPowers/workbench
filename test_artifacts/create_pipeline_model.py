@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     # Our three models
     taut_model = Model("tautomerize-v0").sagemaker_model_object()
-    md_model = Model("smiles-to-taut-md-stereo-v0").sagemaker_model_object()
+    md_model = Model("smiles-to-taut-md-stereo-v1").sagemaker_model_object()
     sol_model = Model("aqsol-mol-class").sagemaker_model_object()
 
     # Create a pipeline model that chains the three models
