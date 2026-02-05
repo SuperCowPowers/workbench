@@ -26,6 +26,7 @@ from model_script_utils import (
     input_fn,
     match_features_case_insensitive,
     output_fn,
+    save_to_s3,
 )
 from pytorch_utils import (
     FeatureScaler,
@@ -592,7 +593,7 @@ if __name__ == "__main__":
         wr.s3.to_csv(shap_feature_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
 
         # Save SHAP importance as JSON
-        wr.s3.to_json(shap_importance, f"{model_metrics_s3_path}/shap_importance.json")
+        save_to_s3(shap_importance, f"{model_metrics_s3_path}/shap_importance.json")
         print(f"Saved SHAP importance ({len(shap_importance)} features)")
 
     except Exception as e:

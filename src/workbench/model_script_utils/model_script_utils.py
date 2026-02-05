@@ -107,6 +107,26 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list[str])
     return df.rename(columns=rename_dict)
 
 
+def save_to_s3(data, s3_path: str, content_type: str = "application/json"):
+    """Save data to S3. Handles both raw Python objects (as JSON) and DataFrames (as CSV).
+
+    Args:
+        data: Python object (serialized as JSON) or DataFrame (saved as CSV)
+        s3_path: Full S3 path (e.g., s3://bucket/key)
+        content_type: MIME type (default: application/json)
+    """
+    import boto3
+    from urllib.parse import urlparse
+
+    parsed = urlparse(s3_path)
+    if isinstance(data, pd.DataFrame):
+        body = data.to_csv(index=False)
+        content_type = "text/csv"
+    else:
+        body = json.dumps(data)
+    boto3.client("s3").put_object(Bucket=parsed.netloc, Key=parsed.path.lstrip("/"), Body=body, ContentType=content_type)
+
+
 def convert_categorical_types(
     df: pd.DataFrame, features: list[str], category_mappings: dict[str, list[str]] | None = None
 ) -> tuple[pd.DataFrame, dict[str, list[str]]]:

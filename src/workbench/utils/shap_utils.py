@@ -5,9 +5,12 @@ and stored in S3 alongside other model artifacts. This module provides functions
 to retrieve those pre-computed SHAP values.
 """
 
+import json
 import logging
+from urllib.parse import urlparse
 from typing import Optional, List, Tuple, Dict, Union
 
+import boto3
 import pandas as pd
 
 # Workbench Imports
@@ -32,10 +35,9 @@ def get_shap_importance(model_training_path: str) -> Optional[List[Tuple[str, fl
 
     s3_path = f"{model_training_path}/shap_importance.json"
     try:
-        import awswrangler as wr
-
-        data = wr.s3.read_json(s3_path)
-        # Convert from list of lists to list of tuples
+        parsed = urlparse(s3_path)
+        obj = boto3.client("s3").get_object(Bucket=parsed.netloc, Key=parsed.path.lstrip("/"))
+        data = json.loads(obj["Body"].read().decode("utf-8"))
         return [tuple(item) for item in data]
     except Exception:
         return None
@@ -98,7 +100,7 @@ if __name__ == "__main__":
     from workbench.api import Model
 
     # Test with a model
-    model = Model("abalone-regression")
+    model = Model("aqsol-mol-regression")
     training_path = model.model_training_path
 
     print("\n=== SHAP Importance ===")
