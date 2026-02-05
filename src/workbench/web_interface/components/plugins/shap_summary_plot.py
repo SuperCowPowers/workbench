@@ -138,9 +138,7 @@ class ShapSummaryPlot(PluginInterface):
                         hoverinfo="text",
                         hovertext=[
                             f"Feature: {feature}<br>SHAP value: {shap:.4f}<br>Feature value: {val:.4f}"
-                            for shap, val in zip(
-                                merged_df[feature_shap].values[valid_mask], feature_vals[valid_mask]
-                            )
+                            for shap, val in zip(merged_df[feature_shap].values[valid_mask], feature_vals[valid_mask])
                         ],
                     )
                 )

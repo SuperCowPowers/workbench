@@ -124,7 +124,9 @@ def save_to_s3(data, s3_path: str, content_type: str = "application/json"):
         content_type = "text/csv"
     else:
         body = json.dumps(data)
-    boto3.client("s3").put_object(Bucket=parsed.netloc, Key=parsed.path.lstrip("/"), Body=body, ContentType=content_type)
+    boto3.client("s3").put_object(
+        Bucket=parsed.netloc, Key=parsed.path.lstrip("/"), Body=body, ContentType=content_type
+    )
 
 
 def convert_categorical_types(
