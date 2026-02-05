@@ -98,43 +98,70 @@ class ShapSummaryPlot(PluginInterface):
 
             # Normalize feature values for this specific feature (0-1 scale)
             feature_vals = merged_df[feature].values
-            norm_vals = (feature_vals - np.min(feature_vals)) / (np.max(feature_vals) - np.min(feature_vals) + 1e-10)
+            f_min = np.nanmin(feature_vals)
+            f_max = np.nanmax(feature_vals)
+            norm_vals = (feature_vals - f_min) / (f_max - f_min + 1e-10)
 
             # Get y positions with beeswarm offsets
             y_jitter = beeswarm_offsets(merged_df[feature_shap]) + i
 
-            # Add scatter plot
-            fig.add_trace(
-                go.Scatter(
-                    x=merged_df[feature_shap],
-                    y=y_jitter,
-                    mode="markers",
-                    name=feature,
-                    marker=dict(
-                        color=norm_vals,
-                        colorbar=(
-                            dict(
-                                title="Feature Value",  # Add the title
-                                title_side="right",
-                                tickvals=[0, 1],
-                                ticktext=["Low", "High"],
-                                thickness=10,
+            # Split into valid and NaN masks
+            nan_mask = np.isnan(feature_vals)
+            valid_mask = ~nan_mask
+
+            # Add colored trace for valid values
+            if valid_mask.any():
+                fig.add_trace(
+                    go.Scatter(
+                        x=merged_df[feature_shap].values[valid_mask],
+                        y=y_jitter[valid_mask],
+                        mode="markers",
+                        name=feature,
+                        marker=dict(
+                            color=norm_vals[valid_mask],
+                            colorbar=(
+                                dict(
+                                    title="Feature Value",
+                                    title_side="right",
+                                    tickvals=[0, 1],
+                                    ticktext=["Low", "High"],
+                                    thickness=10,
+                                )
+                                if i == 0
+                                else None
+                            ),
+                            opacity=1.0,
+                            size=8,
+                            showscale=(i == 0),
+                        ),
+                        showlegend=False,
+                        hoverinfo="text",
+                        hovertext=[
+                            f"Feature: {feature}<br>SHAP value: {shap:.4f}<br>Feature value: {val:.4f}"
+                            for shap, val in zip(
+                                merged_df[feature_shap].values[valid_mask], feature_vals[valid_mask]
                             )
-                            if i == 0
-                            else None
-                        ),  # Only show colorbar for first feature
-                        opacity=1.0,
-                        size=8,
-                        showscale=(i == 0),  # Only show color scale for first feature
-                    ),
-                    showlegend=False,
-                    hoverinfo="text",
-                    hovertext=[
-                        f"Feature: {feature}<br>SHAP value: {shap:.4f}<br>Feature value: {val:.4f}"
-                        for shap, val in zip(merged_df[feature_shap], feature_vals)
-                    ],
+                        ],
+                    )
                 )
-            )
+
+            # Add grey trace for NaN values
+            if nan_mask.any():
+                fig.add_trace(
+                    go.Scatter(
+                        x=merged_df[feature_shap].values[nan_mask],
+                        y=y_jitter[nan_mask],
+                        mode="markers",
+                        name=feature,
+                        marker=dict(color="grey", opacity=0.5, size=8),
+                        showlegend=False,
+                        hoverinfo="text",
+                        hovertext=[
+                            f"Feature: {feature}<br>SHAP value: {shap:.4f}<br>Feature value: NaN"
+                            for shap in merged_df[feature_shap].values[nan_mask]
+                        ],
+                    )
+                )
 
         # Update layout
         tick_labels = [f[:15] for f in shap_features]  # Truncate labels to 15 characters
