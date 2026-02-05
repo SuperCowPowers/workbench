@@ -133,6 +133,7 @@ class ShapSummaryPlot(PluginInterface):
                             opacity=1.0,
                             size=8,
                             showscale=(i == 0),
+                            line=dict(color="rgba(0,0,0,0.25)", width=1),
                         ),
                         showlegend=False,
                         hoverinfo="text",
@@ -151,7 +152,7 @@ class ShapSummaryPlot(PluginInterface):
                         y=y_jitter[nan_mask],
                         mode="markers",
                         name=feature,
-                        marker=dict(color="grey", opacity=0.5, size=8),
+                        marker=dict(color="grey", opacity=0.5, size=8, line=dict(color="rgba(0,0,0,0.25)", width=1)),
                         showlegend=False,
                         hoverinfo="text",
                         hovertext=[
