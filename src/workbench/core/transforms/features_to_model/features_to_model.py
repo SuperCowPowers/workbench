@@ -1,5 +1,9 @@
 """FeaturesToModel: Train/Create a Model from a Feature Set"""
 
+import os
+import re
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Union
 from sagemaker.estimator import Estimator
@@ -192,7 +196,22 @@ class FeaturesToModel(Transform):
 
                 # Fill in the custom script template with specific parameters (include any custom args)
                 template_params.update(self.custom_args)
-                script_path = fill_template(self.custom_script, template_params, "generated_model_script.py")
+
+                # Create temp directory for the generated script (fixes bug where script was written to template dir)
+                template_dir = str(Path(self.custom_script).parent)
+                output_dir = tempfile.mkdtemp(prefix="workbench_custom_script_")
+                self.log.info(f"Custom script using temp directory: {output_dir}")
+
+                # Copy supporting files from template directory to temp directory
+                for file in os.listdir(template_dir):
+                    if file.endswith(".template") or file.startswith("generated_"):
+                        continue
+                    source_file = os.path.join(template_dir, file)
+                    if os.path.isfile(source_file):
+                        shutil.copy(source_file, output_dir)
+                        self.log.info(f"Copied supporting file: {file}")
+
+                script_path = fill_template(self.custom_script, template_params, "generated_model_script.py", output_dir)
             self.log.info(f"Custom script path: {script_path}")
 
         # We're using one of the built-in model script templates
@@ -245,6 +264,20 @@ class FeaturesToModel(Transform):
         # Take the full script path and extract the entry point and source directory
         entry_point = str(Path(script_path).name)
         source_dir = str(Path(script_path).parent)
+
+        # Debug: Log the source directory contents and verify the generated script
+        self.log.important(f"transform_impl: source_dir = {source_dir}")
+        self.log.important(f"transform_impl: entry_point = {entry_point}")
+        source_files = os.listdir(source_dir)
+        self.log.important(f"transform_impl: source_dir contents = {source_files}")
+
+        # Verify the generated script has the correct S3 path
+        generated_script_path = os.path.join(source_dir, entry_point)
+        with open(generated_script_path, "r") as f:
+            script_content = f.read()
+        s3_match = re.search(r'"model_metrics_s3_path":\s*"([^"]+)"', script_content)
+        if s3_match:
+            self.log.important(f"transform_impl: VERIFY generated script model_metrics_s3_path = {s3_match.group(1)}")
 
         # Create a Sagemaker Model with our script
         image = ModelImages.get_image_uri(self.sm_session.boto_region_name, self.training_image)

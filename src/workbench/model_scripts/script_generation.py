@@ -85,6 +85,15 @@ def fill_template(template_path: str, params: dict, output_script: str, output_d
     output_path = os.path.join(output_dir, output_script)
     with open(output_path, "w") as fp:
         fp.write(template)
+
+    # Debug: Log the actual content written to verify the template was filled correctly
+    log.important(f"fill_template: Wrote script to {output_path}")
+    # Extract and log the model_metrics_s3_path from the generated content
+    import re
+    s3_match = re.search(r'"model_metrics_s3_path":\s*"([^"]+)"', template)
+    if s3_match:
+        log.important(f"fill_template: Generated script has model_metrics_s3_path = {s3_match.group(1)}")
+
     return output_path
 
 
@@ -136,6 +145,9 @@ def generate_model_script(template_params: dict) -> str:
 
     # Model Type is an enumerated type, so we need to convert it to a string
     template_params["model_type"] = template_params["model_type"].value
+
+    # Debug: Log the model_metrics_s3_path BEFORE any processing
+    log.important(f"generate_model_script: INPUT model_metrics_s3_path = {template_params.get('model_metrics_s3_path')}")
 
     # Load the template from the package directory
     package_dir = Path(__file__).parent.absolute()
