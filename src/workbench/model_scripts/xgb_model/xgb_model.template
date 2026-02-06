@@ -420,70 +420,67 @@ if __name__ == "__main__":
     print("\n" + "=" * 50)
     print("Computing SHAP Values")
     print("=" * 50)
-    try:
-        # Sample up to 500 rows for SHAP computation
-        shap_sample_size = min(500, len(df_val))
-        shap_sample_df = df_val.sample(n=shap_sample_size, random_state=42)
-        shap_sample_ids = shap_sample_df[id_column]
-        X_shap = shap_sample_df[features]
 
-        # Compute SHAP values using the first ensemble model (they should be similar)
-        # Use XGBoost's native SHAP computation via pred_contribs
-        booster = ensemble_models[0].get_booster()
-        dmatrix = xgb.DMatrix(X_shap, enable_categorical=True)
-        shap_values_raw = booster.predict(dmatrix, pred_contribs=True, strict_shape=True)
-        # Shape: (n_samples, n_classes, n_features + 1) where +1 is bias term
+    # Sample up to 500 rows for SHAP computation
+    shap_sample_size = min(500, len(df_val))
+    shap_sample_df = df_val.sample(n=shap_sample_size, random_state=42)
+    shap_sample_ids = shap_sample_df[id_column]
+    X_shap = shap_sample_df[features]
 
-        # For multiclass, shap_values_raw has shape (n_samples, n_classes, n_features+1)
-        # For regression/binary, it has shape (n_samples, 1, n_features+1)
-        n_classes = shap_values_raw.shape[1]
-        features_with_bias = features + ["bias"]
+    # Compute SHAP values using the first ensemble model (they should be similar)
+    # Use XGBoost's native SHAP computation via pred_contribs
+    booster = ensemble_models[0].get_booster()
+    dmatrix = xgb.DMatrix(X_shap, enable_categorical=True)
+    shap_values_raw = booster.predict(dmatrix, pred_contribs=True, strict_shape=True)
+    # Shape: (n_samples, n_classes, n_features + 1) where +1 is bias term
 
-        # Compute feature importance (mean absolute SHAP value)
-        if n_classes > 1 and label_encoder is not None:
-            # Multiclass: average across classes then samples
-            mean_abs_shap = np.mean(np.abs(shap_values_raw[:, :, :-1]), axis=(0, 1))
-        else:
-            # Regression/binary: average across samples (squeeze out class dim)
-            mean_abs_shap = np.mean(np.abs(shap_values_raw[:, 0, :-1]), axis=0)
+    # For multiclass, shap_values_raw has shape (n_samples, n_classes, n_features+1)
+    # For regression/binary, it has shape (n_samples, 1, n_features+1)
+    n_classes = shap_values_raw.shape[1]
+    features_with_bias = features + ["bias"]
 
-        # Create sorted importance list
-        shap_importance = [(features[i], round(float(mean_abs_shap[i]), 3)) for i in range(len(features))]
-        shap_importance = sorted(shap_importance, key=lambda x: x[1], reverse=True)
-        print(f"Top 5 SHAP features: {shap_importance[:5]}")
+    # Compute feature importance (mean absolute SHAP value)
+    if n_classes > 1 and label_encoder is not None:
+        # Multiclass: average across classes then samples
+        mean_abs_shap = np.mean(np.abs(shap_values_raw[:, :, :-1]), axis=(0, 1))
+    else:
+        # Regression/binary: average across samples (squeeze out class dim)
+        mean_abs_shap = np.mean(np.abs(shap_values_raw[:, 0, :-1]), axis=0)
 
-        # Get top 10 features for detailed SHAP data
-        top_10_features = [f[0] for f in shap_importance[:10]]
-        top_10_indices = [features.index(f) for f in top_10_features]
+    # Create sorted importance list
+    shap_importance = [(features[i], round(float(mean_abs_shap[i]), 3)) for i in range(len(features))]
+    shap_importance = sorted(shap_importance, key=lambda x: x[1], reverse=True)
+    print(f"Top 5 SHAP features: {shap_importance[:5]}")
 
-        # Create SHAP values DataFrame(s) for top 10 features + bias
-        if n_classes > 1 and label_encoder is not None:
-            # Multiclass: save separate CSV for each class
-            class_labels = label_encoder.classes_.tolist()
-            for class_idx, class_label in enumerate(class_labels):
-                class_shap = shap_values_raw[:, class_idx, :][:, top_10_indices + [-1]]
-                shap_df = pd.DataFrame(class_shap, columns=top_10_features + ["bias"])
-                shap_df.insert(0, id_column, shap_sample_ids.reset_index(drop=True))
-                wr.s3.to_csv(shap_df, f"{model_metrics_s3_path}/shap_values_{class_label}.csv", index=False)
-            print(f"Saved SHAP values for {len(class_labels)} classes")
-        else:
-            # Regression/binary: single CSV
-            shap_subset = shap_values_raw[:, 0, :][:, top_10_indices + [-1]]
-            shap_df = pd.DataFrame(shap_subset, columns=top_10_features + ["bias"])
+    # Get top 10 features for detailed SHAP data
+    top_10_features = [f[0] for f in shap_importance[:10]]
+    top_10_indices = [features.index(f) for f in top_10_features]
+
+    # Create SHAP values DataFrame(s) for top 10 features + bias
+    if n_classes > 1 and label_encoder is not None:
+        # Multiclass: save separate CSV for each class
+        class_labels = label_encoder.classes_.tolist()
+        for class_idx, class_label in enumerate(class_labels):
+            class_shap = shap_values_raw[:, class_idx, :][:, top_10_indices + [-1]]
+            shap_df = pd.DataFrame(class_shap, columns=top_10_features + ["bias"])
             shap_df.insert(0, id_column, shap_sample_ids.reset_index(drop=True))
-            wr.s3.to_csv(shap_df, f"{model_metrics_s3_path}/shap_values.csv", index=False)
-            print(f"Saved SHAP values ({shap_sample_size} samples, 10 features)")
+            wr.s3.to_csv(shap_df, f"{model_metrics_s3_path}/shap_values_{class_label}.csv", index=False)
+        print(f"Saved SHAP values for {len(class_labels)} classes")
+    else:
+        # Regression/binary: single CSV
+        shap_subset = shap_values_raw[:, 0, :][:, top_10_indices + [-1]]
+        shap_df = pd.DataFrame(shap_subset, columns=top_10_features + ["bias"])
+        shap_df.insert(0, id_column, shap_sample_ids.reset_index(drop=True))
+        wr.s3.to_csv(shap_df, f"{model_metrics_s3_path}/shap_values.csv", index=False)
+        print(f"Saved SHAP values ({shap_sample_size} samples, 10 features)")
 
-        # Save feature values for the same samples (for SHAP plots)
-        shap_feature_df = shap_sample_df[[id_column] + top_10_features].reset_index(drop=True)
-        wr.s3.to_csv(shap_feature_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
+    # Save feature values for the same samples (for SHAP plots)
+    shap_feature_df = shap_sample_df[[id_column] + top_10_features].reset_index(drop=True)
+    wr.s3.to_csv(shap_feature_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
 
-        # Save SHAP importance as JSON
-        save_to_s3(shap_importance, f"{model_metrics_s3_path}/shap_importance.json")
-        print(f"Saved SHAP importance ({len(shap_importance)} features)")
-
-    except Exception as e:
-        print(f"Warning: SHAP computation failed: {e}")
+    # Save SHAP importance as JSON
+    save_to_s3(shap_importance, f"{model_metrics_s3_path}/shap_importance.json")
+    print(f"Saved SHAP importance ({len(shap_importance)} features)")
 
     # -------------------------------------------------------------------------
     # Save validation predictions to S3
