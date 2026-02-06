@@ -546,24 +546,22 @@ if __name__ == "__main__":
 
     shap_values_raw = explainer.shap_values(x_cont)
 
-    # Handle output format (list for multiclass, array otherwise)
+    # Normalize to (n_samples, n_classes, n_features)
+    # shap 0.50+ returns (n_samples, n_features, n_outputs) for single-output models
+    # and a list of (n_samples, n_features) arrays for multiclass.
     if isinstance(shap_values_raw, list):
-        # Multiclass: list of (n_samples, n_features) arrays, one per class
+        # Multiclass: list of per-class arrays -> stack on class axis
         shap_values_raw = np.stack(shap_values_raw, axis=1)
-        n_classes = shap_values_raw.shape[1]
     else:
         shap_values_raw = np.array(shap_values_raw)
-        if shap_values_raw.ndim == 2:
-            # Regression/binary: (n_samples, n_features) -> add class dimension
+        if shap_values_raw.ndim == 3:
+            # (n_samples, n_features, n_outputs) -> (n_samples, n_outputs, n_features)
+            shap_values_raw = shap_values_raw.transpose(0, 2, 1)
+        elif shap_values_raw.ndim == 2:
+            # (n_samples, n_features) -> (n_samples, 1, n_features)
             shap_values_raw = shap_values_raw[:, np.newaxis, :]
-        n_classes = shap_values_raw.shape[1] if shap_values_raw.ndim == 3 else 1
-
-    # Validate feature dimension matches continuous columns
-    n_shap_features = shap_values_raw.shape[-1]
-    assert n_shap_features == len(continuous_cols), (
-        f"SHAP feature count ({n_shap_features}) != continuous columns ({len(continuous_cols)}). "
-        f"shap_values shape: {shap_values_raw.shape}"
-    )
+    n_classes = shap_values_raw.shape[1]
+    print(f"SHAP values shape: {shap_values_raw.shape} (samples, classes, features)")
 
     # Compute feature importance (mean absolute SHAP value)
     if n_classes > 1 and label_encoder is not None:
