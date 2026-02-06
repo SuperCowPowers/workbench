@@ -347,7 +347,7 @@ def load_hyperparameters_from_s3(model_artifact_uri: str) -> Optional[dict]:
             try:
                 with open(hyperparameters_path, "r") as f:
                     hyperparameters = json.load(f)
-                log.info(f"Loaded hyperparameters from {hyperparameters_path}")
+                log.important(f"Performance warning: Loaded hyperparameters from {hyperparameters_path}")
             except Exception as e:
                 log.warning(f"Failed to load hyperparameters from {hyperparameters_path}: {e}")
 
@@ -373,7 +373,6 @@ def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:
         log.warning(f"No model artifact found for {workbench_model.uuid}")
         return None
 
-    log.info(f"Loading hyperparameters from {model_artifact_uri}")
     return load_hyperparameters_from_s3(model_artifact_uri)
 
 
