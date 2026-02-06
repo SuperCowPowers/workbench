@@ -2,8 +2,6 @@
 
 import os
 import re
-import shutil
-import tempfile
 from pathlib import Path
 from typing import Union
 from sagemaker.estimator import Estimator
@@ -196,22 +194,7 @@ class FeaturesToModel(Transform):
 
                 # Fill in the custom script template with specific parameters (include any custom args)
                 template_params.update(self.custom_args)
-
-                # Create temp directory for the generated script (fixes bug where script was written to template dir)
-                template_dir = str(Path(self.custom_script).parent)
-                output_dir = tempfile.mkdtemp(prefix="workbench_custom_script_")
-                self.log.info(f"Custom script using temp directory: {output_dir}")
-
-                # Copy supporting files from template directory to temp directory
-                for file in os.listdir(template_dir):
-                    if file.endswith(".template") or file.startswith("generated_"):
-                        continue
-                    source_file = os.path.join(template_dir, file)
-                    if os.path.isfile(source_file):
-                        shutil.copy(source_file, output_dir)
-                        self.log.info(f"Copied supporting file: {file}")
-
-                script_path = fill_template(self.custom_script, template_params, "generated_model_script.py", output_dir)
+                script_path = fill_template(self.custom_script, template_params, "generated_model_script.py")
             self.log.info(f"Custom script path: {script_path}")
 
         # We're using one of the built-in model script templates
