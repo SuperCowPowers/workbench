@@ -35,8 +35,12 @@ class AblationAtomFeaturizer(MultiHotAtomFeaturizer):
     # Human-readable names for the one-hot groups in _subfeats, followed by
     # the two scalar features that the base class appends (aromaticity, mass).
     SUBFEAT_NAMES = [
-        "atomic_num", "degree", "formal_charge",
-        "chiral_tag", "num_Hs", "hybridization",
+        "atomic_num",
+        "degree",
+        "formal_charge",
+        "chiral_tag",
+        "num_Hs",
+        "hybridization",
     ]
     EXTRA_NAMES = ["is_aromatic", "mass"]
 
@@ -44,17 +48,19 @@ class AblationAtomFeaturizer(MultiHotAtomFeaturizer):
         super().__init__(**kwargs)
         self.n_ablation_features = len(self._subfeats) + len(self.EXTRA_NAMES)
         self.feature_names = self.SUBFEAT_NAMES[: len(self._subfeats)] + self.EXTRA_NAMES
-        self.keep_features = (
-            keep_features if keep_features is not None else [True] * self.n_ablation_features
-        )
+        self.keep_features = keep_features if keep_features is not None else [True] * self.n_ablation_features
 
     def __call__(self, a):
         x = np.zeros(len(self))
         if a is None:
             return x
         feats = [
-            a.GetAtomicNum(), a.GetTotalDegree(), a.GetFormalCharge(),
-            int(a.GetChiralTag()), int(a.GetTotalNumHs()), a.GetHybridization(),
+            a.GetAtomicNum(),
+            a.GetTotalDegree(),
+            a.GetFormalCharge(),
+            int(a.GetChiralTag()),
+            int(a.GetTotalNumHs()),
+            a.GetHybridization(),
         ]
         i = 0
         for feat, choices, keep in zip(feats, self._subfeats, self.keep_features):
@@ -79,9 +85,7 @@ class AblationBondFeaturizer(MultiHotBondFeaturizer):
         super().__init__(**kwargs)
         self.n_ablation_features = len(self.FEATURE_NAMES)
         self.feature_names = list(self.FEATURE_NAMES)
-        self.keep_features = (
-            keep_features if keep_features is not None else [True] * self.n_ablation_features
-        )
+        self.keep_features = keep_features if keep_features is not None else [True] * self.n_ablation_features
 
     def __call__(self, b):
         x = np.zeros(len(self), int)
