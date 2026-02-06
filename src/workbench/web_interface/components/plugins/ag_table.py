@@ -22,14 +22,23 @@ class AGTable(PluginInterface):
     header_height = 30
     row_height = 25
 
-    def create_component(self, component_id: str, max_height: int = 500) -> AgGrid:
-        """Create a Table Component without any data."""
+    def create_component(self, component_id: str, max_height: int = 500, row_selection: str = "single") -> AgGrid:
+        """Create a Table Component without any data.
+
+        Args:
+            component_id (str): The ID of the component
+            max_height (int): Maximum height in pixels (default: 500)
+            row_selection (str): Row selection mode - "single" or "multiple" (default: "single")
+
+        Returns:
+            AgGrid: The AG Grid component
+        """
         self.component_id = component_id
         self.max_height = max_height
 
         # AG Grid configuration for tighter rows and columns
         grid_options = {
-            "rowSelection": "single",
+            "rowSelection": row_selection,
             "suppressCellFocus": True,
             "headerHeight": self.header_height,
             "rowHeight": self.row_height,
