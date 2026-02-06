@@ -289,7 +289,7 @@ class DataSourceAbstract(Artifact):
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
-        self.health_check()
+        self.health_check(deep=True)
         self.refresh_meta()
         self.details()
         self.set_status("ready")

@@ -110,14 +110,17 @@ class FeatureSetCore(Artifact):
             return False
         return True
 
-    def health_check(self) -> list[str]:
-        """Perform a health check on this model
+    def health_check(self, deep: bool = False) -> list[str]:
+        """Perform a health check on this FeatureSet
+
+        Args:
+            deep (bool): If True, perform more extensive (expensive) health checks (default: False)
 
         Returns:
             list[str]: List of health issues
         """
         # Call the base class health check
-        health_issues = super().health_check()
+        health_issues = super().health_check(deep=deep)
 
         # If we have a 'needs_onboard' in the health check then just return
         if "needs_onboard" in health_issues:
@@ -842,7 +845,7 @@ class FeatureSetCore(Artifact):
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
-        self.health_check()
+        self.health_check(deep=True)
         self.refresh_meta()
         self.details()
         self.set_status("ready")

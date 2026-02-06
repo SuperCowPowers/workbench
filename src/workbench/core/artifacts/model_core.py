@@ -170,13 +170,17 @@ class ModelCore(Artifact):
             return False
         return True
 
-    def health_check(self) -> list[str]:
+    def health_check(self, deep: bool = False) -> list[str]:
         """Perform a health check on this model
+
+        Args:
+            deep (bool): If True, perform more extensive (expensive) health checks (default: False)
+
         Returns:
             list[str]: List of health issues
         """
         # Call the base class health check
-        health_issues = super().health_check()
+        health_issues = super().health_check(deep=deep)
 
         # Check if the model exists
         if self.latest_model is None:
@@ -188,23 +192,26 @@ class ModelCore(Artifact):
         else:
             self.remove_health_tag("model_type_unknown")
 
-        # Model Performance Metrics
-        needs_metrics = self.model_type in {
-            ModelType.REGRESSOR,
-            ModelType.UQ_REGRESSOR,
-            ModelType.ENSEMBLE_REGRESSOR,
-            ModelType.CLASSIFIER,
-        }
-        if needs_metrics and self.get_inference_metrics() is None:
-            health_issues.append("metrics_needed")
-        else:
-            self.remove_health_tag("metrics_needed")
+        # Deep checks (expensive API/S3 calls)
+        if deep:
+            # Model Performance Metrics
+            needs_metrics = self.model_type in {
+                ModelType.REGRESSOR,
+                ModelType.UQ_REGRESSOR,
+                ModelType.ENSEMBLE_REGRESSOR,
+                ModelType.CLASSIFIER,
+            }
+            if needs_metrics and self.get_inference_metrics() is None:
+                health_issues.append("metrics_needed")
+            else:
+                self.remove_health_tag("metrics_needed")
 
-        # Endpoint
-        if not self.endpoints():
-            health_issues.append("no_endpoint")
-        else:
-            self.remove_health_tag("no_endpoint")
+            # Endpoint
+            if not self.endpoints():
+                health_issues.append("no_endpoint")
+            else:
+                self.remove_health_tag("no_endpoint")
+
         return health_issues
 
     def sagemaker_model_object(self) -> SagemakerModel:
@@ -767,7 +774,7 @@ class ModelCore(Artifact):
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
-        self.health_check()
+        self.health_check(deep=True)
         self.refresh_meta()
         self.details()
         return True

@@ -365,8 +365,12 @@ class Artifact(ABC):
         """
         self.upsert_workbench_meta({"workbench_status": status})
 
-    def health_check(self) -> list[str]:
+    def health_check(self, deep: bool = False) -> list[str]:
         """Perform a health check on this artifact
+
+        Args:
+            deep (bool): If True, perform more extensive (expensive) health checks (default: False)
+
         Returns:
             list[str]: List of health issues
         """

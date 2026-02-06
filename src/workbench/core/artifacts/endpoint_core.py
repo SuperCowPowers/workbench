@@ -107,8 +107,11 @@ class EndpointCore(Artifact):
             return False
         return True
 
-    def health_check(self) -> list[str]:
-        """Perform a health check on this model
+    def health_check(self, deep: bool = False) -> list[str]:
+        """Perform a health check on this endpoint
+
+        Args:
+            deep (bool): If True, perform more extensive (expensive) health checks (default: False)
 
         Returns:
             list[str]: List of health issues
@@ -117,37 +120,40 @@ class EndpointCore(Artifact):
             return ["needs_onboard"]
 
         # Call the base class health check
-        health_issues = super().health_check()
+        health_issues = super().health_check(deep=deep)
 
         # Does this endpoint have a config?
         # Note: This is not an authoritative check, so improve later
         if self.endpoint_meta.get("ProductionVariants") is None:
             health_issues.append("no_config")
 
-        # We're going to check for 5xx errors and no activity
-        endpoint_metrics = self.endpoint_metrics()
+        # Deep checks (expensive CloudWatch metrics call)
+        if deep:
+            # We're going to check for 5xx errors and no activity
+            endpoint_metrics = self.endpoint_metrics()
 
-        # Check if we have metrics
-        if endpoint_metrics is None:
-            health_issues.append("unknown_error")
-            return health_issues
+            # Check if we have metrics
+            if endpoint_metrics is None:
+                health_issues.append("unknown_error")
+                return health_issues
 
-        # Check for 5xx errors
-        num_errors = endpoint_metrics["Invocation5XXErrors"].sum()
-        if num_errors > 5:
-            health_issues.append("5xx_errors")
-        elif num_errors > 0:
-            health_issues.append("5xx_errors_min")
-        else:
-            self.remove_health_tag("5xx_errors")
-            self.remove_health_tag("5xx_errors_min")
+            # Check for 5xx errors
+            num_errors = endpoint_metrics["Invocation5XXErrors"].sum()
+            if num_errors > 5:
+                health_issues.append("5xx_errors")
+            elif num_errors > 0:
+                health_issues.append("5xx_errors_min")
+            else:
+                self.remove_health_tag("5xx_errors")
+                self.remove_health_tag("5xx_errors_min")
 
-        # Check for Endpoint activity
-        num_invocations = endpoint_metrics["Invocations"].sum()
-        if num_invocations == 0:
-            health_issues.append("no_activity")
-        else:
-            self.remove_health_tag("no_activity")
+            # Check for Endpoint activity
+            num_invocations = endpoint_metrics["Invocations"].sum()
+            if num_invocations == 0:
+                health_issues.append("no_activity")
+            else:
+                self.remove_health_tag("no_activity")
+
         return health_issues
 
     def is_serverless(self) -> bool:
@@ -325,7 +331,7 @@ class EndpointCore(Artifact):
 
         # Run a health check and refresh the meta
         time.sleep(2)  # Give the AWS Metadata a chance to update
-        self.health_check()
+        self.health_check(deep=True)
         self.refresh_meta()
         self.details()
         return True
