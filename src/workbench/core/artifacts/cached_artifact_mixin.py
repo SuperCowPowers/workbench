@@ -1,7 +1,9 @@
 """CachedArtifactMixin for caching method results in Artifact subclasses"""
 
 import logging
+import threading
 import time
+from contextlib import contextmanager
 from functools import wraps
 from concurrent.futures import ThreadPoolExecutor
 from workbench.utils.workbench_cache import WorkbenchCache
@@ -15,6 +17,34 @@ class CachedArtifactMixin:
     artifact_cache = WorkbenchCache(prefix="artifact_cache")
     fresh_cache = WorkbenchCache(prefix="artifact_fresh_cache", expire=120)
     thread_pool = ThreadPoolExecutor(max_workers=5)
+
+    # Thread-local storage for the skip_refresh flag
+    _local = threading.local()
+
+    @classmethod
+    @contextmanager
+    def no_refresh(cls):
+        """Context manager to skip background refresh threads.
+
+        Useful for batch operations where you want fast cached reads
+        without spawning background refresh threads.
+
+        Example:
+            with CachedArtifactMixin.no_refresh():
+                for name in model_names:
+                    model = CachedModel(name)
+                    # ... do work ...
+        """
+        cls._local.skip_refresh = True
+        try:
+            yield
+        finally:
+            cls._local.skip_refresh = False
+
+    @classmethod
+    def _should_refresh(cls) -> bool:
+        """Check if we should launch background refresh threads."""
+        return not getattr(cls._local, "skip_refresh", False)
 
     @staticmethod
     def _flatten_redis_key(method, *args, **kwargs):
@@ -45,8 +75,8 @@ class CachedArtifactMixin:
                 cls.artifact_cache.set(cache_key, result)
                 return result
 
-            # Stale cache: Refresh in the background
-            if cache_fresh is None:
+            # Stale cache: Refresh in the background (unless skip_refresh is set)
+            if cache_fresh is None and cls._should_refresh():
                 self.log.debug(f"Async: Refresh thread started: {cache_key}...")
                 cls.fresh_cache.set(cache_key, True)
                 cls.thread_pool.submit(cls._refresh_data_in_background, self, cache_key, method, *args, **kwargs)
