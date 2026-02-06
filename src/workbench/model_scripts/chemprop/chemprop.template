@@ -24,6 +24,7 @@ from model_script_utils import (
     expand_proba_column,
     input_fn,
     output_fn,
+    save_to_s3,
 )
 
 # =============================================================================
@@ -746,6 +747,35 @@ if __name__ == "__main__":
             median_std = None
             df_val["confidence"] = np.nan
             print("\nSingle model (n_folds=1): No ensemble std, confidence set to NaN")
+
+    # -------------------------------------------------------------------------
+    # Compute SHAP values for feature importance
+    # -------------------------------------------------------------------------
+    # Uses PermutationExplainer with custom featurizers to measure the importance
+    # of each atom/bond feature type (e.g., atomic_num, degree, bond_type).
+    # Output format matches XGB/PyTorch templates: shap_importance.json,
+    # shap_values.csv, and shap_feature_values.csv.
+    # -------------------------------------------------------------------------
+    print("\n" + "=" * 50)
+    print("Computing SHAP Values")
+    print("=" * 50)
+    from chemprop_shap_utils import compute_chemprop_shap, format_shap_results
+
+    shap_values_array, shap_feature_names, shap_indices = compute_chemprop_shap(
+        model=ensemble_models[0],
+        smiles=df_val[smiles_column].tolist(),
+        extra_descriptors=val_extra_features if use_extra_features else None,
+    )
+    sample_ids = df_val.iloc[shap_indices][id_column].reset_index(drop=True) if id_column in df_val.columns else None
+    shap_importance, shap_values_df, feature_vals_df = format_shap_results(
+        shap_values_array, shap_feature_names, sample_ids=sample_ids, id_column=id_column,
+    )
+    print(f"Top 5 SHAP features: {shap_importance[:5]}")
+
+    wr.s3.to_csv(shap_values_df, f"{model_metrics_s3_path}/shap_values.csv", index=False)
+    wr.s3.to_csv(feature_vals_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
+    save_to_s3(shap_importance, f"{model_metrics_s3_path}/shap_importance.json")
+    print(f"Saved SHAP artifacts ({len(shap_indices)} samples, {len(shap_importance)} features)")
 
     # -------------------------------------------------------------------------
     # Save validation predictions to S3
