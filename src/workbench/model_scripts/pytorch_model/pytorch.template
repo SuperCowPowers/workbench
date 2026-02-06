@@ -548,14 +548,22 @@ if __name__ == "__main__":
 
     # Handle output format (list for multiclass, array otherwise)
     if isinstance(shap_values_raw, list):
-        # Multiclass: stack to (n_samples, n_classes, n_features)
+        # Multiclass: list of (n_samples, n_features) arrays, one per class
         shap_values_raw = np.stack(shap_values_raw, axis=1)
         n_classes = shap_values_raw.shape[1]
     else:
-        # Regression/binary: add class dimension
+        shap_values_raw = np.array(shap_values_raw)
         if shap_values_raw.ndim == 2:
+            # Regression/binary: (n_samples, n_features) -> add class dimension
             shap_values_raw = shap_values_raw[:, np.newaxis, :]
-        n_classes = 1
+        n_classes = shap_values_raw.shape[1] if shap_values_raw.ndim == 3 else 1
+
+    # Validate feature dimension matches continuous columns
+    n_shap_features = shap_values_raw.shape[-1]
+    assert n_shap_features == len(continuous_cols), (
+        f"SHAP feature count ({n_shap_features}) != continuous columns ({len(continuous_cols)}). "
+        f"shap_values shape: {shap_values_raw.shape}"
+    )
 
     # Compute feature importance (mean absolute SHAP value)
     if n_classes > 1 and label_encoder is not None:
