@@ -10,3 +10,4 @@ mapie==1.2.0
 joblib==1.5.3
 chemprop==2.2.1   # Message Passing Neural Networks for molecular property prediction
 rdkit==2025.9.3   # Cheminformatics toolkit for SMILES processing
+shap==0.50.0      # SHAP values for model interpretability
