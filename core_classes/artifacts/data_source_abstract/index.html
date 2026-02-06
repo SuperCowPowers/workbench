@@ -5368,7 +5368,7 @@
 </span><span id="__span-0-289"><a id="__codelineno-0-289" name="__codelineno-0-289"></a>
 </span><span id="__span-0-290"><a id="__codelineno-0-290" name="__codelineno-0-290"></a>        <span class="c1"># Run a health check and refresh the meta</span>
 </span><span id="__span-0-291"><a id="__codelineno-0-291" name="__codelineno-0-291"></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># Give the AWS Metadata a chance to update</span>
-</span><span id="__span-0-292"><a id="__codelineno-0-292" name="__codelineno-0-292"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">health_check</span><span class="p">()</span>
+</span><span id="__span-0-292"><a id="__codelineno-0-292" name="__codelineno-0-292"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">health_check</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span><span id="__span-0-293"><a id="__codelineno-0-293" name="__codelineno-0-293"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">refresh_meta</span><span class="p">()</span>
 </span><span id="__span-0-294"><a id="__codelineno-0-294" name="__codelineno-0-294"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">details</span><span class="p">()</span>
 </span><span id="__span-0-295"><a id="__codelineno-0-295" name="__codelineno-0-295"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="s2">&quot;ready&quot;</span><span class="p">)</span>
@@ -6131,7 +6131,7 @@ Args:
 </span><span id="__span-0-289"><a id="__codelineno-0-289" name="__codelineno-0-289"></a>
 </span><span id="__span-0-290"><a id="__codelineno-0-290" name="__codelineno-0-290"></a>    <span class="c1"># Run a health check and refresh the meta</span>
 </span><span id="__span-0-291"><a id="__codelineno-0-291" name="__codelineno-0-291"></a>    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># Give the AWS Metadata a chance to update</span>
-</span><span id="__span-0-292"><a id="__codelineno-0-292" name="__codelineno-0-292"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">health_check</span><span class="p">()</span>
+</span><span id="__span-0-292"><a id="__codelineno-0-292" name="__codelineno-0-292"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">health_check</span><span class="p">(</span><span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span><span id="__span-0-293"><a id="__codelineno-0-293" name="__codelineno-0-293"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">refresh_meta</span><span class="p">()</span>
 </span><span id="__span-0-294"><a id="__codelineno-0-294" name="__codelineno-0-294"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">details</span><span class="p">()</span>
 </span><span id="__span-0-295"><a id="__codelineno-0-295" name="__codelineno-0-295"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">set_status</span><span class="p">(</span><span class="s2">&quot;ready&quot;</span><span class="p">)</span>
