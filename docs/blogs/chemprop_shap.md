@@ -2,7 +2,7 @@
 In this blog we'll explore how Workbench computes SHAP (SHapley Additive exPlanations) values for [ChemProp](https://github.com/chemprop/chemprop) message-passing neural network (MPNN) models. ChemProp models operate directly on molecular graphs rather than tabular feature vectors, which makes interpretability a unique challenge. We'll walk through the per-bit ablation approach we developed, show some key code snippets, and then analyze real SHAP output from a LogD regression model.
 
 <figure style="margin: 20px 0;">
-<img src="../images/chemprop_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
+<img src="../../images/chemprop_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
 <figcaption><em>Workbench provides visibility and drilldowns into Chemprop models deployed to AWS Endpoints.</em></figcaption>
 </figure>
 
@@ -86,11 +86,12 @@ Some features have the same fraction across virtually all molecules in a dataset
 Here's the SHAP output from a ChemProp model trained to predict **LogD** (the distribution coefficient — a measure of lipophilicity at physiological pH). LogD is a critical ADME property in drug discovery: it influences membrane permeability, protein binding, metabolism, and oral absorption.
 
 <figure style="margin: 20px 0;">
-<img src="../images/chemprop_shap_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
-<figcaption><em>SHAP beeswarm plot for a ChemProp LogD regression model. Features are ranked by mean |SHAP| (most impactful at top). Dot color represents the per-molecule feature fraction (red = high, blue = low).</em></figcaption>
+<img src="../../images/chemprop_shap_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
+<figcaption><em>SHAP beeswarm plot for a ChemProp LogD regression model. Features are ranked by mean |SHAP| (most impactful at top).</em></figcaption>
 </figure>
 
-Let's walk through what the model has learned:
+## Model Insights: What the SHAP Values Reveal
+The SHAP values reveal that the ChemProp model has independently learned the fundamental structure-lipophilicity relationships that medicinal chemists rely on:
 
 ### Carbon Content (`atom=C`) — Top Feature
 Carbon fraction is the dominant predictor, and the pattern is clear: **higher carbon fraction (red dots) pushes LogD positive** (more lipophilic). This is textbook — carbon-rich molecules are hydrophobic. The wide spread of SHAP values (roughly -1 to +3.5) shows this feature has massive discriminating power.
