@@ -230,7 +230,7 @@ def format_shap_results(
     artifacts that match the XGB/PyTorch SHAP output format:
       - shap_importance: ranked list of (feature_name, mean_abs_shap)
       - shap_values_df:  top_n SHAP values per sample (for shap_values.csv)
-      - feature_vals_df: matching feature-presence flags (for shap_feature_values.csv)
+      - feature_vals_df: |SHAP| magnitudes for plot coloring (for shap_feature_values.csv)
 
     Args:
         shap_values: (n_samples, n_features) array from compute_chemprop_shap.
@@ -242,7 +242,7 @@ def format_shap_results(
     Returns:
         shap_importance: Sorted list of (feature_name, mean_abs_shap) tuples (all features).
         shap_values_df: DataFrame of SHAP values for the top_n features.
-        feature_vals_df: DataFrame of feature presence flags for the top_n features.
+        feature_vals_df: DataFrame of |SHAP| magnitudes for beeswarm plot coloring.
     """
     # Rank all features by mean |SHAP|
     mean_abs = np.mean(np.abs(shap_values), axis=0)
@@ -258,9 +258,13 @@ def format_shap_results(
 
     shap_values_df = pd.DataFrame(shap_values[:, top_indices], columns=top_features)
 
-    # For molecular feature-type SHAP, all features are always "on" (1) in the base case
+    # Use |SHAP| as the "feature value" for beeswarm plot coloring.
+    # Unlike tabular models where each sample has a real feature value (e.g., molecular
+    # weight=350), chemprop's ablation features are uniform across molecules (all "on").
+    # Using |SHAP| gives per-molecule color variation: high-impact molecules are colored
+    # differently from low-impact ones, producing a meaningful gradient in the plot.
     feature_vals_df = pd.DataFrame(
-        np.ones((shap_values.shape[0], len(top_features)), dtype=int),
+        np.abs(shap_values[:, top_indices]),
         columns=top_features,
     )
 

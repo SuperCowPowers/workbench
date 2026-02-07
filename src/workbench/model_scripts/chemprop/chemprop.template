@@ -769,6 +769,7 @@ if __name__ == "__main__":
     sample_ids = df_val.iloc[shap_indices][id_column].reset_index(drop=True) if id_column in df_val.columns else None
     shap_importance, shap_values_df, feature_vals_df = format_shap_results(
         shap_values_array, shap_feature_names, sample_ids=sample_ids, id_column=id_column,
+        top_n=len(shap_feature_names),
     )
     print(f"Top 5 SHAP features: {shap_importance[:5]}")
 
