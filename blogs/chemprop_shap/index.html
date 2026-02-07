@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../residual_analysis/">
-      
-      
-        <link rel="next" href="../htg/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>Exploratory Data Analysis(EDA) - Workbench</title>
+        <title>SHAP Values for ChemProp Models - Workbench</title>
       
     
     
@@ -76,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#exploratory-data-analysis" class="md-skip">
+        <a href="#shap-values-for-chemprop-models" class="md-skip">
           Skip to content
         </a>
       
@@ -112,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Exploratory Data Analysis(EDA)
+              SHAP Values for ChemProp Models
             
           </span>
         </div>
@@ -1334,20 +1330,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
         
           
           <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
@@ -1368,7 +1362,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1414,7 +1408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../residual_analysis/" class="md-nav__link">
+      <a href="../residual_analysis.md" class="md-nav__link">
         
   
   
@@ -1439,37 +1433,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Exploratory Data Analysis(EDA)
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../eda.md" class="md-nav__link">
         
   
   
@@ -1485,37 +1452,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Additional Resources
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1528,7 +1464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../htg/" class="md-nav__link">
+      <a href="../htg.md" class="md-nav__link">
         
   
   
@@ -1556,7 +1492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_monitoring/" class="md-nav__link">
+      <a href="../model_monitoring.md" class="md-nav__link">
         
   
   
@@ -4442,10 +4378,226 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#additional-resources" class="md-nav__link">
+  <a href="#the-challenge-explaining-a-graph-neural-network" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Additional Resources
+        The Challenge: Explaining a Graph Neural Network
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#our-approach-per-bit-feature-ablation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Our Approach: Per-Bit Feature Ablation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Our Approach: Per-Bit Feature Ablation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-ablation-featurizers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Ablation Featurizers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#active-bit-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Active-Bit Filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shap-computation-with-permutationexplainer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SHAP Computation with PermutationExplainer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#meaningful-feature-values-for-the-beeswarm-plot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Meaningful Feature Values for the Beeswarm Plot
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Meaningful Feature Values for the Beeswarm Plot">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filtering-constant-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filtering Constant Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analyzing-a-logd-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analyzing a LogD Model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Analyzing a LogD Model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#carbon-content-atomc-top-feature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Carbon Content (atom=C) — Top Feature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nitrogen-content-atomn-strong-negative-driver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nitrogen Content (atom=N) — Strong Negative Driver
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hydrogen-count-num_hs0-num_hs2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hydrogen Count (num_Hs=0, num_Hs=2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hybridization-and-aromaticity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hybridization and Aromaticity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bond-types-bondaromatic-vs-bondsingle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bond Types (bond=AROMATIC vs bond=SINGLE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#degree-of-substitution-degree3-degree2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Degree of Substitution (degree=3, degree=2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oxygen-and-halogens-atomo-atomcl-atoms-atomf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Oxygen and Halogens (atom=O, atom=Cl, atom=S, atom=F)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-big-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Big Picture
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
       
     </span>
   </a>
@@ -4469,26 +4621,158 @@
 
 
 
-<h1 id="exploratory-data-analysis">Exploratory Data Analysis</h1>
-<div class="admonition tip inline end">
-<p class="admonition-title">Workbench EDA</p>
-<p>The Workbench toolkit a set of plots that show EDA results, it also has a flexible plugin architecture to expand, enhance, or even replace the current set of web components <a href="../../aws_setup/dashboard_stack/">Dashboard</a>.</p>
-</div>
-<p>The Workbench framework has a broad range of Exploratory Data Analysis (EDA) functionality. Each time a DataSource or FeatureSet is created that data is run through a full set of EDA techniques:</p>
-<ul>
-<li>TBD</li>
-<li>TBD2</li>
-</ul>
-<figure style="float: right; width: 400px;">
-<img alt="workbench_new_light" src="https://github.com/SuperCowPowers/workbench/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4">
-<figcaption>Workbench Exploratory Data Analysis</figcaption>
+<h1 id="shap-values-for-chemprop-models">SHAP Values for ChemProp Models</h1>
+<p>In this blog we'll explore how Workbench computes SHAP (SHapley Additive exPlanations) values for <a href="https://github.com/chemprop/chemprop">ChemProp</a> message-passing neural network (MPNN) models. ChemProp models operate directly on molecular graphs rather than tabular feature vectors, which makes interpretability a unique challenge. We'll walk through the per-bit ablation approach we developed, show some key code snippets, and then analyze real SHAP output from a LogD regression model.</p>
+<figure style="margin: 20px 0;">
+<img src="../images/chemprop_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
+<figcaption><em>Workbench provides visibility and drilldowns into Chemprop models deployed to AWS Endpoints.</em></figcaption>
 </figure>
 
-<h2 id="additional-resources">Additional Resources</h2>
-<p><img align="right" src="../../images/scp.png" width="180"></p>
+<h2 id="the-challenge-explaining-a-graph-neural-network">The Challenge: Explaining a Graph Neural Network</h2>
+<p>Traditional ML models (XGBoost, PyTorch feed-forward networks) take a fixed-length feature vector as input. Computing SHAP values is straightforward: mask or permute individual features and measure the prediction change.</p>
+<p>ChemProp is different. It takes a <strong>molecular graph</strong> as input — atoms are nodes, bonds are edges, and each carries a multi-hot encoded feature vector. There's no single "feature matrix" to permute. So how do we ask: <em>"Which molecular properties matter most for this prediction?"</em></p>
+<h2 id="our-approach-per-bit-feature-ablation">Our Approach: Per-Bit Feature Ablation</h2>
+<p>ChemProp's default v2 featurizers encode each atom as a <strong>72-bit vector</strong> and each bond as a <strong>14-bit vector</strong> (86 bits total). Each bit represents a specific chemical property:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Example Bits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Atom type</strong></td>
+<td><code>atom=C</code>, <code>atom=N</code>, <code>atom=O</code>, <code>atom=S</code>, <code>atom=Cl</code>, <code>atom=F</code></td>
+</tr>
+<tr>
+<td><strong>Degree</strong></td>
+<td><code>degree=1</code>, <code>degree=2</code>, <code>degree=3</code>, <code>degree=4</code></td>
+</tr>
+<tr>
+<td><strong>Hybridization</strong></td>
+<td><code>hybrid=SP</code>, <code>hybrid=SP2</code>, <code>hybrid=SP3</code></td>
+</tr>
+<tr>
+<td><strong>Hydrogen count</strong></td>
+<td><code>num_Hs=0</code>, <code>num_Hs=1</code>, <code>num_Hs=2</code>, <code>num_Hs=3</code></td>
+</tr>
+<tr>
+<td><strong>Bond type</strong></td>
+<td><code>bond=SINGLE</code>, <code>bond=DOUBLE</code>, <code>bond=AROMATIC</code></td>
+</tr>
+<tr>
+<td><strong>Ring/conjugation</strong></td>
+<td><code>is_aromatic</code>, <code>is_in_ring</code>, <code>is_conjugated</code></td>
+</tr>
+<tr>
+<td><strong>Chirality</strong></td>
+<td><code>chiral=CW</code>, <code>chiral=CCW</code></td>
+</tr>
+</tbody>
+</table>
+<p>Our approach selectively <strong>zeroes out individual bits</strong> across all atoms/bonds in a molecule, then measures the prediction change. If zeroing out the "atom=N" bit (effectively hiding all nitrogen atoms from the model) causes a large shift in the predicted value, then nitrogen content is important for that molecule's prediction.</p>
+<h3 id="custom-ablation-featurizers">Custom Ablation Featurizers</h3>
+<p>We extend ChemProp's built-in featurizers with a <code>keep_mask</code> — a boolean array where <code>False</code> means "zero out this bit":</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">BitAblationAtomFeaturizer</span><span class="p">(</span><span class="n">MultiHotAtomFeaturizer</span><span class="p">):</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">keep_mask</span> <span class="o">=</span> <span class="n">keep_mask</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom</span><span class="p">):</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="n">x</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span>  <span class="c1"># Normal featurization</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        <span class="n">x</span><span class="p">[</span><span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">keep_mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>     <span class="c1"># Zero out ablated bits</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="k">return</span> <span class="n">x</span>
+</span></code></pre></div>
+<p>The same pattern applies for <code>BitAblationBondFeaturizer</code>. This lets us selectively ablate any combination of features while keeping the rest of the molecular graph intact.</p>
+<h3 id="active-bit-filtering">Active-Bit Filtering</h3>
+<p>Not all 86 bits are used by every dataset. A dataset of organic drug-like molecules won't contain silicon or germanium atoms, so those bits are always zero. We scan the sampled molecules to find which bits are actually "active" in the dataset, typically reducing the feature count from 86 to around 25-35 active features. This keeps the SHAP computation focused and the output readable.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">_analyze_molecules</span><span class="p">(</span><span class="n">smiles_list</span><span class="p">,</span> <span class="n">atom_feat</span><span class="p">,</span> <span class="n">bond_feat</span><span class="p">):</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Scan molecules to find active bits and compute feature fractions.&quot;&quot;&quot;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="k">for</span> <span class="n">mol_idx</span><span class="p">,</span> <span class="n">smi</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">smiles_list</span><span class="p">):</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="n">mol</span> <span class="o">=</span> <span class="n">Chem</span><span class="o">.</span><span class="n">MolFromSmiles</span><span class="p">(</span><span class="n">smi</span><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="n">mol</span><span class="o">.</span><span class="n">GetAtoms</span><span class="p">():</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>            <span class="n">vec</span> <span class="o">=</span> <span class="n">atom_feat</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>            <span class="n">atom_active</span> <span class="o">|=</span> <span class="p">(</span><span class="n">vec</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>   <span class="c1"># Track which bits fire</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>            <span class="n">atom_sum</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">vec</span><span class="p">)</span>      <span class="c1"># Accumulate for fractions</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        <span class="n">feature_fractions</span><span class="p">[</span><span class="n">mol_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">atom_sum</span> <span class="o">/</span> <span class="n">n_atoms</span>  <span class="c1"># Per-molecule fraction</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="o">...</span>
+</span></code></pre></div>
+<h3 id="shap-computation-with-permutationexplainer">SHAP Computation with PermutationExplainer</h3>
+<p>For each molecule, we wrap the ablation logic in a callable that SHAP's <code>PermutationExplainer</code> can drive. The explainer systematically toggles feature bits on/off and measures the prediction impact:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">explainer</span> <span class="o">=</span> <span class="n">shap</span><span class="o">.</span><span class="n">PermutationExplainer</span><span class="p">(</span><span class="n">model_wrapper</span><span class="p">,</span> <span class="n">masker</span><span class="o">=</span><span class="n">binary_masker</span><span class="p">)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">explanation</span> <span class="o">=</span> <span class="n">explainer</span><span class="p">(</span><span class="n">all_features_on</span><span class="p">,</span> <span class="n">max_evals</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</span></code></pre></div>
+<p>We use <code>PermutationExplainer</code> rather than <code>GradientExplainer</code> or <code>KernelExplainer</code> because the feature ablation happens at the graph-construction level (not at a differentiable tensor), so gradient-based methods don't apply.</p>
+<h2 id="meaningful-feature-values-for-the-beeswarm-plot">Meaningful Feature Values for the Beeswarm Plot</h2>
+<p>A SHAP beeswarm plot colors each dot by the feature's value for that sample — high values in red, low values in blue. But what does "feature value" mean for a graph-level bit like <code>atom=N</code>?</p>
+<p>We compute <strong>per-molecule feature fractions</strong>: for each molecule, the fraction of atoms (or bonds) that activate each bit. For example:</p>
 <ul>
-<li>Consulting Available: <a href="https://www.supercowpowers.com">SuperCowPowers LLC</a></li>
+<li>A molecule with 2 nitrogen atoms out of 20 total atoms gets <code>atom=N = 0.10</code></li>
+<li>A molecule with 6 aromatic bonds out of 8 total bonds gets <code>bond=AROMATIC = 0.75</code></li>
 </ul>
+<p>This gives each dot on the beeswarm plot a meaningful color: molecules with high nitrogen content are colored differently from low-nitrogen molecules on the <code>atom=N</code> row.</p>
+<h3 id="filtering-constant-features">Filtering Constant Features</h3>
+<p>Some features have the same fraction across virtually all molecules in a dataset (e.g., <code>charge=+0</code> ≈ 1.0 for nearly every organic molecule). These constant-fraction features can't help differentiate <em>why</em> one molecule behaves differently from another, so we filter them from the beeswarm plot while keeping them in the importance rankings for completeness.</p>
+<h2 id="analyzing-a-logd-model">Analyzing a LogD Model</h2>
+<p>Here's the SHAP output from a ChemProp model trained to predict <strong>LogD</strong> (the distribution coefficient — a measure of lipophilicity at physiological pH). LogD is a critical ADME property in drug discovery: it influences membrane permeability, protein binding, metabolism, and oral absorption.</p>
+<figure style="margin: 20px 0;">
+<img src="../images/chemprop_shap_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
+<figcaption><em>SHAP beeswarm plot for a ChemProp LogD regression model. Features are ranked by mean |SHAP| (most impactful at top). Dot color represents the per-molecule feature fraction (red = high, blue = low).</em></figcaption>
+</figure>
+
+<p>Let's walk through what the model has learned:</p>
+<h3 id="carbon-content-atomc-top-feature">Carbon Content (<code>atom=C</code>) — Top Feature</h3>
+<p>Carbon fraction is the dominant predictor, and the pattern is clear: <strong>higher carbon fraction (red dots) pushes LogD positive</strong> (more lipophilic). This is textbook — carbon-rich molecules are hydrophobic. The wide spread of SHAP values (roughly -1 to +3.5) shows this feature has massive discriminating power.</p>
+<h3 id="nitrogen-content-atomn-strong-negative-driver">Nitrogen Content (<code>atom=N</code>) — Strong Negative Driver</h3>
+<p>Nitrogen is the second most important feature and shows the <strong>opposite</strong> pattern: higher nitrogen fraction (red dots) pushes LogD <strong>negative</strong> (more hydrophilic). Nitrogen atoms introduce hydrogen-bond donors/acceptors that increase water solubility. The two red outliers far to the left (SHAP ≈ -4 to -5) are likely molecules with very high nitrogen density (e.g., tetrazoles, triazines).</p>
+<h3 id="hydrogen-count-num_hs0-num_hs2">Hydrogen Count (<code>num_Hs=0</code>, <code>num_Hs=2</code>)</h3>
+<p>Atoms with zero attached hydrogens (<code>num_Hs=0</code>) appear third — these are typically heteroatoms in aromatic rings or heavily substituted carbons. High fractions push LogD up slightly, consistent with aromatic/hydrophobic character. Meanwhile, <code>num_Hs=2</code> (methylene groups, primary amines) has a more mixed effect.</p>
+<h3 id="hybridization-and-aromaticity">Hybridization and Aromaticity</h3>
+<p><code>hybrid=SP2</code> and <code>is_aromatic</code> both rank highly. SP2-hybridized atoms and aromatic rings are flat, planar structures that tend to stack via pi-pi interactions and contribute to lipophilicity. The model captures this: high aromaticity generally pushes LogD positive.</p>
+<h3 id="bond-types-bondaromatic-vs-bondsingle">Bond Types (<code>bond=AROMATIC</code> vs <code>bond=SINGLE</code>)</h3>
+<p>Aromatic bonds rank higher than single bonds in importance. Molecules rich in aromatic bonds (red dots on the <code>bond=AROMATIC</code> row) tend toward higher LogD — again consistent with the lipophilic nature of aromatic ring systems.</p>
+<h3 id="degree-of-substitution-degree3-degree2">Degree of Substitution (<code>degree=3</code>, <code>degree=2</code>)</h3>
+<p>Higher connectivity (degree=3: branching points, ring junctions) appears with moderate importance. Branched and ring-fused structures are common in lipophilic drug scaffolds.</p>
+<h3 id="oxygen-and-halogens-atomo-atomcl-atoms-atomf">Oxygen and Halogens (<code>atom=O</code>, <code>atom=Cl</code>, <code>atom=S</code>, <code>atom=F</code>)</h3>
+<p>These appear lower in the ranking but tell a coherent story:</p>
+<ul>
+<li><strong>Oxygen</strong> (<code>atom=O</code>): Pushes LogD negative — hydroxyl groups, carbonyls, and ethers increase polarity and water solubility</li>
+<li><strong>Chlorine</strong> (<code>atom=Cl</code>): Moderate positive push — halogens increase lipophilicity, and chlorine substituents are classic LogP-raising groups</li>
+<li><strong>Sulfur</strong> (<code>atom=S</code>): Small effect, consistent with sulfur's moderate lipophilicity contribution</li>
+<li><strong>Fluorine</strong> (<code>atom=F</code>): Appears near the bottom — fluorine has complex effects on LogD (can increase or decrease depending on context)</li>
+</ul>
+<h3 id="the-big-picture">The Big Picture</h3>
+<p>The model has independently learned the fundamental structure-lipophilicity relationships that medicinal chemists rely on:</p>
+<ol>
+<li><strong>More carbon → more lipophilic</strong> (higher LogD)</li>
+<li><strong>More nitrogen/oxygen → more hydrophilic</strong> (lower LogD)</li>
+<li><strong>Aromaticity and SP2 character → more lipophilic</strong></li>
+<li><strong>Halogens (Cl) → more lipophilic</strong></li>
+</ol>
+<p>These aren't rules we gave the model — they emerged from the MPNN learning on molecular graphs. The fact that SHAP reveals these well-established SAR trends validates both the model and the interpretability approach.</p>
+<h2 id="summary">Summary</h2>
+<p>Computing SHAP values for graph neural networks requires creative approaches since traditional feature-perturbation methods don't directly apply. Our per-bit ablation strategy bridges this gap by operating at the featurizer level — selectively hiding individual chemical properties and measuring the prediction impact. Combined with per-molecule feature fractions for meaningful beeswarm coloring and automatic filtering of constant features, this gives practitioners an interpretable window into what their ChemProp models have learned.</p>
+<h2 id="references">References</h2>
+<p><strong>ChemProp v2</strong> — The message-passing neural network framework that Workbench uses for molecular property prediction:</p>
+<ul>
+<li>Chemprop v2 Paper: Iunusova, E., Pang, H.W., Greenman, K.P., et al. <em>"Chemprop v2: An Efficient, Modular Machine Learning Package for Chemical Property Prediction."</em> Journal of Chemical Information and Modeling (2025). <a href="https://doi.org/10.1021/acs.jcim.5c02332">DOI: 10.1021/acs.jcim.5c02332</a></li>
+<li>Chemprop v1 Paper: Heid, E., Greenman, K.P., Chung, Y., et al. <em>"Chemprop: A Machine Learning Package for Chemical Property Prediction."</em> Journal of Chemical Information and Modeling 64(1), 9–17 (2024). <a href="https://doi.org/10.1021/acs.jcim.3c01250">DOI: 10.1021/acs.jcim.3c01250</a></li>
+<li>GitHub: <a href="https://github.com/chemprop/chemprop">https://github.com/chemprop/chemprop</a></li>
+</ul>
+<p><strong>SHAP</strong> — The interpretability framework for computing Shapley values:</p>
+<ul>
+<li>Lundberg, S.M. &amp; Lee, S.-I. <em>"A Unified Approach to Interpreting Model Predictions."</em> Advances in Neural Information Processing Systems 30 (NeurIPS 2017). <a href="https://arxiv.org/abs/1705.07874">https://arxiv.org/abs/1705.07874</a></li>
+<li>GitHub: <a href="https://github.com/shap/shap">https://github.com/shap/shap</a></li>
+</ul>
+<p><strong>ChemProp Shapley Value Notebook</strong> — The official chemprop v2 notebook that our per-bit ablation approach is based on:</p>
+<ul>
+<li><em>"Shapley Value Analysis for Chemprop Models"</em> — demonstrates customized featurizers for SHAP analysis with PermutationExplainer. <a href="https://chemprop.readthedocs.io/en/latest/shapley_value_with_customized_featurizers.html">Chemprop Docs: Shapley Value with Customized Featurizers</a></li>
+<li>Li, W., Wu, H., et al. <em>"When Do Quantum Mechanical Descriptors Help Graph Neural Networks to Predict Chemical Properties?"</em> Journal of the American Chemical Society 146(33), 23103–23120 (2024). <a href="https://doi.org/10.1021/jacs.4c04670">DOI: 10.1021/jacs.4c04670</a></li>
+</ul>
+<h2 id="questions">Questions?</h2>
+<p><img align="right" src="../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 
 
 

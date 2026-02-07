@@ -19,7 +19,7 @@
     
     
       
-        <title>Fun with Endpoints - Workbench</title>
+        <title>Molecular Descriptors - Workbench</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#fun-with-endpoints" class="md-skip">
+        <a href="#molecular-descriptors" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Fun with Endpoints
+              Molecular Descriptors
             
           </span>
         </div>
@@ -1408,7 +1408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../residual_analysis/" class="md-nav__link">
+      <a href="../../residual_analysis.md" class="md-nav__link">
         
   
   
@@ -1436,7 +1436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../eda/" class="md-nav__link">
+      <a href="../../eda.md" class="md-nav__link">
         
   
   
@@ -1464,7 +1464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../htg/" class="md-nav__link">
+      <a href="../../htg.md" class="md-nav__link">
         
   
   
@@ -1492,7 +1492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../model_monitoring/" class="md-nav__link">
+      <a href="../../model_monitoring.md" class="md-nav__link">
         
   
   
@@ -4378,10 +4378,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#endpoints" class="md-nav__link">
+  <a href="#data" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Endpoints
+        Data
       
     </span>
   </a>
@@ -4389,10 +4389,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#timing-results-fast_inference-direct" class="md-nav__link">
+  <a href="#python-packages" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Timing results (fast_inference direct)
+        Python Packages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#canonicalization-and-tautomerization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Canonicalization and Tautomerization
       
     </span>
   </a>
@@ -4416,136 +4427,55 @@
 
 
 
-<h1 id="fun-with-endpoints">Fun with Endpoints</h1>
-<p>This is a blog about timing, combining, and choosing AWS® endpoints.</p>
-<h2 id="endpoints">Endpoints</h2>
-<table>
-<thead>
-<tr>
-<th>Endpoint</th>
-<th>Instance</th>
-<th>Price/Hour</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>tautomerize-v0-rt</td>
-<td>ml.t2.medium</td>
-<td>$0.06</td>
-</tr>
-<tr>
-<td>smiles-to-taut-md-stereo-v0-rt</td>
-<td>ml.t2.medium</td>
-<td>$0.06</td>
-</tr>
-<tr>
-<td>aqsol-mol-class-rt</td>
-<td>ml.t2.medium</td>
-<td>$0.06</td>
-</tr>
-<tr>
-<td>pipeline-model</td>
-<td>ml.t2.medium</td>
-<td>$0.06</td>
-</tr>
-<tr>
-<td>pipeline-model-fast</td>
-<td>ml.c7i.xlarge</td>
-<td>$0.21</td>
-</tr>
-</tbody>
-</table>
-<h2 id="timing-results-fast_inference-direct">Timing results (fast_inference direct)</h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Timing for 10 rows
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Individual endpoints Total: 2.083378314971924 seconds
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Taut: 1.0616083145141602 seconds, MD: 0.5406620502471924 seconds, Model: 0.48110198974609375 seconds
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Pipeline endpoint: 1.445024013519287 seconds
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>Pipeline Fast endpoint: 1.2368178367614746 seconds
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>Timing for 100 rows
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>Individual endpoints Total: 3.918509006500244 seconds
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>Taut: 2.0423460006713867 seconds, MD: 1.1638188362121582 seconds, Model: 0.7123398780822754 seconds
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>Pipeline endpoint: 2.8939127922058105 seconds
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>Pipeline Fast endpoint: 1.852799892425537 seconds
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>Timing for 500 rows
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>Individual endpoints Total: 14.36154294013977 seconds
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>Taut: 9.30370306968689 seconds, MD: 4.105616092681885 seconds, Model: 0.9522147178649902 seconds
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>Pipeline endpoint: 12.265265226364136 seconds
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>Pipeline Fast endpoint: 8.951914072036743 seconds
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>Timing for 1000 rows
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>Individual endpoints Total: 23.543747663497925 seconds
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>Taut: 15.042346715927124 seconds, MD: 6.840778112411499 seconds, Model: 1.6606106758117676 seconds
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>Pipeline endpoint: 21.389296770095825 seconds
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>Pipeline Fast endpoint: 12.815913915634155 seconds
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>Timing for 10000 rows
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>Individual endpoints Total: 189.780255317688 seconds
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>Taut: 120.399178981781 seconds, MD: 59.34339618682861 seconds, Model: 10.037672281265259 seconds
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>Pipeline endpoint: 190.11978220939636 seconds
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>Pipeline Fast endpoint: 110.5272912979126 seconds
+<h1 id="molecular-descriptors">Molecular Descriptors</h1>
+<p>In this Blog we'll look at the popular AqSol compound solubility dataset, compute Molecular Descriptors (RDKit and Mordred) and take a deep dive on why NaNs, INFs, and parse errors are generated on about 9% of the compounds.</p>
+<h3 id="data">Data</h3>
+<p>AqSolDB: A curated reference set of aqueous solubility, created by the Autonomous Energy Materials Discovery [AMD] research group, consists of aqueous solubility values of 9,982 unique compounds curated from 9 different publicly available aqueous solubility datasets.
+<a href="https://www.nature.com/articles/s41597-019-0151-1">https://www.nature.com/articles/s41597-019-0151-1</a></p>
+<p><strong>Download from Harvard DataVerse:</strong>
+<a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8">https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8</a></p>
+<h3 id="python-packages">Python Packages</h3>
+<ul>
+<li><a href="https://github.com/rdkit/rdkit">RDKIT</a>: Open source toolkit for cheminformatics</li>
+<li><a href="https://github.com/JacksonBurns/mordred-community">Mordred Community</a>: Community maintained version of the mordred molecular descriptor calculator.</li>
+</ul>
+<h3 id="canonicalization-and-tautomerization">Canonicalization and Tautomerization</h3>
+<p>We have another blog on <a href="canonicalization_and_tautomerization.md">Canonicalization and Tautomerization</a> which covers the importance of getting your compounds into a standardized ...</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>df = DataSource(&quot;aqsol_data&quot;).pull_dataframe()
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mol_df = compute_molecular_descriptors(df)
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>INFO Computing Molecular Descriptors...
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>INFO Computing RDKit Descriptors...
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>INFO Found 2 INF/-INF values. Replacing them with NaN.
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>INFO INF/-INF value &#39;inf&#39; found in column &#39;MaxAbsPartialCharge&#39; at index 3047.
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>INFO INF/-INF value &#39;inf&#39; found in column &#39;MaxPartialCharge&#39; at index 3047.
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>INFO Imputing missing values using &#39;median&#39; strategy.
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>WARNING Imputing BCUT2D_MRLOW replacing 884 values with median(0.05)
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>WARNING Imputing BCUT2D_LOGPHI replacing 884 values with median(2.20)
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>WARNING Imputing BCUT2D_MWLOW replacing 884 values with median(10.14)
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>WARNING Imputing MaxAbsPartialCharge replacing 102 values with median(0.44)
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>WARNING Imputing BCUT2D_CHGHI replacing 884 values with median(2.14)
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>WARNING Imputing BCUT2D_LOGPLOW replacing 884 values with median(-2.15)
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>WARNING Imputing MaxPartialCharge replacing 102 values with median(0.28)
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>WARNING Imputing MinAbsPartialCharge replacing 101 values with median(0.27)
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>WARNING Imputing MinPartialCharge replacing 101 values with median(-0.41)
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>WARNING Imputing BCUT2D_MWHI replacing 884 values with median(16.55)
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>WARNING Imputing BCUT2D_MRHI replacing 884 values with median(5.93)
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>WARNING Imputing BCUT2D_CHGLO replacing 884 values with median(-2.09)
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>INFO Computing Mordred Descriptors...
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>WARNING Failed to parse value &#39;float division by zero (RotRatio/nBondsO)&#39; in column &#39;RotRatio&#39; at index 38.
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>WARNING Failed to parse value &#39;float division by zero (RotRatio/nBondsO)&#39; in column &#39;RotRatio&#39; at index 71.
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>...
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>WARNING Failed to parse vallue &#39;float division by zero (RotRatio/nBondsO)&#39; in column &#39;RotRatio&#39; at index 5579.
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>INFO Imputing missing values using &#39;median&#39; strategy.
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>WARNING Imputing RotRatio replacing 149 values with median(0.17)
 </span></code></pre></div>
-<h1 id="storage">Storage</h1>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Timing for 10 rows
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>Individual endpoints Total: 1.5638809204101562 seconds
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>Taut: 0.4830169677734375 seconds, MD: 0.5586769580841064 seconds, Model: 0.5221822261810303 seconds
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>Pipeline endpoint: 0.9330408573150635 seconds
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>Pipeline Fast endpoint: 1.0244662761688232 seconds
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>Timing for 100 rows
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>Individual endpoints Total: 3.009629011154175 seconds
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>Taut: 1.0144999027252197 seconds, MD: 1.3848729133605957 seconds, Model: 0.6102499961853027 seconds
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>Pipeline endpoint: 2.384669065475464 seconds
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>Pipeline Fast endpoint: 1.4272871017456055 seconds
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>Timing for 500 rows
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>Individual endpoints Total: 12.45196795463562 seconds
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>Taut: 7.562067985534668 seconds, MD: 3.9801008701324463 seconds, Model: 0.9097919464111328 seconds
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>Pipeline endpoint: 10.858699083328247 seconds
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>Pipeline Fast endpoint: 6.549439907073975 seconds
-</span></code></pre></div>
-<h2 id="timing-results-without-instantiation">Timing results (without instantiation)</h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Timing for 10 rows
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Individual endpoints Total: 1.4224412441253662 seconds
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>Taut: 0.46330809593200684 seconds, MD: 0.47082972526550293 seconds, Model: 0.4882962703704834 seconds
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>Pipeline endpoint: 0.9333341121673584 seconds
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>Pipeline Fast endpoint: 0.7804160118103027 seconds
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>Timing for 100 rows
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>Individual endpoints Total: 4.0739476680755615 seconds
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>Taut: 2.0824239253997803 seconds, MD: 1.3490509986877441 seconds, Model: 0.6424648761749268 seconds
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>Pipeline endpoint: 2.9797439575195312 seconds
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>Pipeline Fast endpoint: 1.944951057434082 seconds
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>Timing for 500 rows
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>Individual endpoints Total: 12.776091814041138 seconds
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>Taut: 8.085582971572876 seconds, MD: 3.8499021530151367 seconds, Model: 0.8406000137329102 seconds
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>Pipeline endpoint: 10.98793077468872 seconds
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>Pipeline Fast endpoint: 6.76329493522644 seconds
-</span></code></pre></div>
-<h2 id="timing-results-with-instantiation">Timing results (with instantiation)</h2>
-<p>```
-Timing for 10 rows
-Individual endpoints Total: 6.6 seconds
-Taut: 2.05 seconds, MD: 2.32 seconds, Model: 2.27 seconds
-Pipeline endpoint: 2.347784996032715 seconds
-Pipeline Fast endpoint: 1.9402740001678467 seconds</p>
-<p>Timing for 100 rows
-Individual endpoints Total: 7.686334848403931 seconds
-Taut: 2.3493008613586426 seconds, MD: 2.758458137512207 seconds, Model: 2.578571081161499 seconds
-Pipeline endpoint: 3.0636699199676514 seconds
-Pipeline Fast endpoint: 2.204558849334717 seconds</p>
-<p>Timing for 500 rows
-Individual endpoints Total: 14.027569770812988 seconds
-Taut: 6.019566774368286 seconds, MD: 5.3194098472595215 seconds, Model: 2.6885838508605957 seconds
-Pipeline endpoint: 8.654812097549438 seconds
-Pipeline Fast endpoint: 6.5653462409973145 seconds</p>
-<p>® Amazon Web Services (AWS) is a trademark of Amazon.com, Inc. or its affiliates.</p>
 
 
 

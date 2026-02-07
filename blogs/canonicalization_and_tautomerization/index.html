@@ -19,7 +19,7 @@
     
     
       
-        <title>Canonicalization and Tautomerization - Workbench</title>
+        <title>Molecular Standardization: Canonicalization, Tautomerization, and Salt Handling - Workbench</title>
       
     
     
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#canonicalization-and-tautomerization" class="md-skip">
+        <a href="#molecular-standardization-canonicalization-tautomerization-and-salt-handling" class="md-skip">
           Skip to content
         </a>
       
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Canonicalization and Tautomerization
+              Molecular Standardization: Canonicalization, Tautomerization, and Salt Handling
             
           </span>
         </div>
@@ -1408,7 +1408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../residual_analysis/" class="md-nav__link">
+      <a href="../residual_analysis.md" class="md-nav__link">
         
   
   
@@ -1436,7 +1436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../eda/" class="md-nav__link">
+      <a href="../eda.md" class="md-nav__link">
         
   
   
@@ -1464,7 +1464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../htg/" class="md-nav__link">
+      <a href="../htg.md" class="md-nav__link">
         
   
   
@@ -1492,7 +1492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_monitoring/" class="md-nav__link">
+      <a href="../model_monitoring.md" class="md-nav__link">
         
   
   
@@ -4378,10 +4378,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#data" class="md-nav__link">
+  <a href="#why-standardization-matters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Data
+        Why Standardization Matters
       
     </span>
   </a>
@@ -4389,33 +4389,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#python-packages" class="md-nav__link">
+  <a href="#workbenchs-standardization-pipeline" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Python Packages
+        Workbench's Standardization Pipeline
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#canonicalization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Canonicalization
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Canonicalization">
+    <nav class="md-nav" aria-label="Workbench&#39;s Standardization Pipeline">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
+  <a href="#step-1-cleanup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How It Works:
+        Step 1: Cleanup
       
     </span>
   </a>
@@ -4423,10 +4412,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#why-its-important" class="md-nav__link">
+  <a href="#step-2-saltfragment-handling" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why It’s Important:
+        Step 2: Salt/Fragment Handling
       
     </span>
   </a>
@@ -4434,10 +4423,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#when-its-used" class="md-nav__link">
+  <a href="#step-3-charge-neutralization" class="md-nav__link">
     <span class="md-ellipsis">
       
-        When It’s Used:
+        Step 3: Charge Neutralization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-tautomer-canonicalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Tautomer Canonicalization
       
     </span>
   </a>
@@ -4450,60 +4450,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#tautomerization" class="md-nav__link">
+  <a href="#descriptor-computation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tautomerization
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Tautomerization">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How It Works:
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-its-important_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why It’s Important:
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#when-its-used_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        When It’s Used:
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-differences" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Key Differences
+        Descriptor Computation
       
     </span>
   </a>
@@ -4511,80 +4461,57 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#importance-in-ml-pipelines" class="md-nav__link">
+  <a href="#feature-endpoints-deployed-on-aws" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Importance in ML Pipelines
+        Feature Endpoints: Deployed on AWS
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Importance in ML Pipelines">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#canonicalization_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Canonicalization:
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#tautomerization_1" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Tautomerization:
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#practical-example-in-workbench" class="md-nav__link">
+  <a href="#the-aqsol-dataset-a-real-world-example" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Practical Example in Workbench
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Practical Example in Workbench">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#canonicalization_2" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Canonicalization:
+        The AqSol Dataset: A Real-World Example
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#tautomerization_2" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#key-differences-canonicalization-vs-tautomerization" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Tautomerization:
+        Key Differences: Canonicalization vs Tautomerization
       
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
+      
+    </span>
+  </a>
   
 </li>
       
@@ -4605,61 +4532,82 @@
 
 
 
-<h1 id="canonicalization-and-tautomerization">Canonicalization and Tautomerization</h1>
-<p>In this Blog we'll look at the popular AqSol compound solubility dataset, compute Molecular Descriptors (RDKit and Mordred) and take a deep dive on why NaNs, INFs, and parse errors are generated on about 9% of the compounds.</p>
-<h3 id="data">Data</h3>
-<p>AqSolDB: A curated reference set of aqueous solubility, created by the Autonomous Energy Materials Discovery [AMD] research group, consists of aqueous solubility values of 9,982 unique compounds curated from 9 different publicly available aqueous solubility datasets.
-<a href="https://www.nature.com/articles/s41597-019-0151-1">https://www.nature.com/articles/s41597-019-0151-1</a></p>
-<p><strong>Download from Harvard DataVerse:</strong>
-<a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8">https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8</a></p>
-<h3 id="python-packages">Python Packages</h3>
+<h1 id="molecular-standardization-canonicalization-tautomerization-and-salt-handling">Molecular Standardization: Canonicalization, Tautomerization, and Salt Handling</h1>
+<p>In this blog we'll look at why molecular standardization matters for ML pipelines, what Workbench's feature endpoints actually do under the hood, and how the popular AqSol compound solubility dataset illustrates the challenges of working with real-world chemical data.</p>
+<h2 id="why-standardization-matters">Why Standardization Matters</h2>
+<p>The same molecule can be represented many different ways in SMILES notation. Benzene alone has multiple valid representations: <code>C1=CC=CC=C1</code>, <code>c1ccccc1</code>, <code>C1=CC=C(C=C1)</code> — all describe the same compound. Drug compounds are even worse: they come as salts, mixtures of tautomers, and with inconsistent stereochemistry annotations.</p>
+<p>If you feed these raw SMILES into a descriptor computation pipeline, structurally identical compounds produce different feature vectors. Your ML model sees noise where there should be signal. Standardization eliminates this problem.</p>
+<h2 id="workbenchs-standardization-pipeline">Workbench's Standardization Pipeline</h2>
+<p>Workbench feature endpoints run a four-step standardization pipeline (based on the <a href="https://doi.org/10.1186/s13321-020-00456-1">ChEMBL structure pipeline</a>) before computing any molecular descriptors:</p>
+<h3 id="step-1-cleanup">Step 1: Cleanup</h3>
+<p>Removes explicit hydrogens, disconnects metal atoms from organic fragments, and normalizes functional group representations (e.g., different ways of drawing nitro groups or sulfoxides).</p>
+<h3 id="step-2-saltfragment-handling">Step 2: Salt/Fragment Handling</h3>
+<p>Many drug compounds are stored as salt forms (e.g., sodium acetate <code>[Na+].CC(=O)[O-]</code>). Workbench provides <strong>two modes</strong> for handling these:</p>
 <ul>
-<li><a href="https://github.com/rdkit/rdkit">RDKIT</a>: Open source toolkit for cheminformatics</li>
+<li><strong><code>extract_salts=True</code></strong> (default): Identifies and keeps the largest organic fragment, removes counterions, and records the removed salt for traceability. Also distinguishes true salts from mixtures — multiple large neutral organic fragments are flagged as mixtures and logged.</li>
+<li><strong><code>extract_salts=False</code></strong>: Keeps the full molecule with all fragments intact and preserves ionic charges. Useful when the salt form itself affects the property you're modeling (e.g., solubility, formulation studies).</li>
 </ul>
-<h2 id="canonicalization">Canonicalization</h2>
-<p>Canonicalization is the process of converting a chemical structure into a unique, standard representation. It ensures that structurally identical compounds are represented in the same way, regardless of how they were originally drawn or encoded (e.g., in SMILES format).</p>
-<h3 id="how-it-works">How It Works:</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Default: removes salts (ChEMBL standard)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">standardize</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">extract_salts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Input:  [Na+].CC(=O)[O-]  →  smiles: CC(=O)O, salt: [Na+]</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># Keep salts for salt-dependent properties</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">df</span> <span class="o">=</span> <span class="n">standardize</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">extract_salts</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Input:  [Na+].CC(=O)[O-]  →  smiles: [Na+].CC(=O)[O-], salt: None</span>
+</span></code></pre></div>
+<h3 id="step-3-charge-neutralization">Step 3: Charge Neutralization</h3>
+<p>When salts are extracted, charges on the parent molecule are neutralized (e.g., <code>CC(=O)[O-]</code> → <code>CC(=O)O</code>). This step is skipped when keeping salts to preserve ionic character.</p>
+<h3 id="step-4-tautomer-canonicalization">Step 4: Tautomer Canonicalization</h3>
+<p>Tautomers are isomers that differ in proton and double-bond positions but exist in rapid equilibrium. The classic example is the keto-enol pair. Workbench uses RDKit's tautomer enumerator to pick a canonical form, ensuring that the same compound always produces the same descriptors regardless of which tautomeric form appeared in the source data.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># 2-hydroxypyridine and 2-pyridone are the same compound
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>Oc1ccccn1  →  O=c1cccc[nH]1  (canonical tautomer)
+</span></code></pre></div>
+<h2 id="descriptor-computation">Descriptor Computation</h2>
+<p>After standardization, Workbench computes ~310 molecular descriptors from three sources:</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Count</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RDKit</strong></td>
+<td>~220</td>
+<td>Constitutional, topological, electronic, lipophilicity, pharmacophore, and ADMET-specific descriptors (TPSA, QED, Lipinski)</td>
+</tr>
+<tr>
+<td><strong>Mordred</strong></td>
+<td>~85</td>
+<td>Five ADMET-focused modules: AcidBase, Aromatic, Constitutional, Chi connectivity indices, and CarbonTypes</td>
+</tr>
+<tr>
+<td><strong>Stereochemistry</strong></td>
+<td>10</td>
+<td>Custom features: R/S center counts, E/Z bond counts, stereo complexity, and fraction-defined metrics</td>
+</tr>
+</tbody>
+</table>
+<p>Invalid molecules receive NaN values rather than being dropped, preserving row alignment with the input DataFrame. The <code>Ipc</code> descriptor is excluded due to known overflow issues in RDKit.</p>
+<h2 id="feature-endpoints-deployed-on-aws">Feature Endpoints: Deployed on AWS</h2>
+<p>These standardization and descriptor computations run inside Workbench <strong>feature endpoints</strong> — SageMaker-hosted transformer models that take raw SMILES and return standardized structures plus computed descriptors. Two variants are available:</p>
 <ul>
-<li>Algorithms (e.g., RDKit’s <code>MolToSmiles</code> with <code>isomericSmiles=True</code>) reorder atoms, bonds, and stereochemistry to produce a unique canonical SMILES string or another standardized format.</li>
-<li>Includes standardizing:</li>
-<li><strong>Atom ordering</strong>.</li>
-<li><strong>Bond configurations</strong>.</li>
-<li><strong>Stereochemical information</strong>.</li>
+<li><strong><code>smiles-to-taut-md-stereo-v1</code></strong>: Standard pipeline with salt extraction (ChEMBL default)</li>
+<li><strong><code>smiles-to-taut-md-stereo-v1-keep-salts</code></strong>: Preserves salt forms for salt-sensitive modeling</li>
 </ul>
-<h3 id="why-its-important">Why It’s Important:</h3>
+<p>Both endpoints can be deployed as serverless (cost-efficient for intermittent workloads) or on dedicated instances for higher throughput.</p>
+<h2 id="the-aqsol-dataset-a-real-world-example">The AqSol Dataset: A Real-World Example</h2>
+<p><a href="https://www.nature.com/articles/s41597-019-0151-1">AqSolDB</a> is a curated reference set of aqueous solubility values containing 9,982 unique compounds from 9 publicly available datasets (<a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8">Harvard DataVerse</a>).</p>
+<p>Running this dataset through the full standardization + descriptor pipeline reveals that roughly <strong>9% of compounds</strong> produce NaNs, INFs, or parse errors in one or more descriptors. Common causes include:</p>
 <ul>
-<li><strong>Removes Redundancy</strong>: Different representations of the same compound (e.g., mirror images or re-ordered bonds) are treated as identical.</li>
-<li><strong>Ensures Consistency</strong>: ML models and data pipelines process identical compounds uniformly.</li>
-<li><strong>Facilitates Comparison</strong>: Allows for direct comparison of compounds in datasets.</li>
-<li><strong>Prevents Duplication</strong>: Helps deduplicate datasets by grouping identical molecules.</li>
+<li><strong>Invalid or unusual SMILES</strong>: Organometallic compounds, polymers, or SMILES notation errors that RDKit can't parse</li>
+<li><strong>Descriptor overflow</strong>: Extremely large or complex molecules that cause numerical issues in certain descriptors</li>
+<li><strong>Mordred edge cases</strong>: Some Mordred modules return error objects rather than numbers for unusual chemical structures</li>
 </ul>
-<h3 id="when-its-used">When It’s Used:</h3>
-<ul>
-<li>Preprocessing datasets to unify chemical representations.</li>
-<li>During compound matching or database searches.</li>
-</ul>
-<h2 id="tautomerization">Tautomerization</h2>
-<p>Tautomerization is the process of identifying and optionally converting a molecule into a specific tautomeric form. Tautomers are isomers of a compound that differ in the positions of protons and double bonds but are in rapid equilibrium under physiological conditions.</p>
-<h3 id="how-it-works_1">How It Works:</h3>
-<ul>
-<li>Algorithms identify tautomerizable groups (e.g., keto-enol, imine-enamine) and can standardize compounds to:</li>
-<li>A <strong>preferred tautomeric form</strong> (e.g., keto over enol for simplicity).</li>
-<li>A <strong>representation-invariant form</strong> to collapse tautomers into a single, standardized version.</li>
-</ul>
-<h3 id="why-its-important_1">Why It’s Important:</h3>
-<ul>
-<li><strong>Improves Feature Consistency</strong>: ML models treat tautomers as a single entity, reducing variability in descriptor calculations.</li>
-<li><strong>Biological Relevance</strong>: Focuses on biologically relevant forms (e.g., the keto form is often more stable).</li>
-<li><strong>Avoids Data Noise</strong>: Reduces noise caused by the presence of multiple tautomers for the same compound.</li>
-<li><strong>Essential for Drug Discovery</strong>: Tautomers may exhibit different bioactivity, so properly standardizing them ensures consistent analysis.</li>
-</ul>
-<h3 id="when-its-used_1">When It’s Used:</h3>
-<ul>
-<li>Preprocessing compounds for QSAR/QSPR studies.</li>
-<li>Normalizing datasets for machine learning pipelines.</li>
-<li>Ensuring compatibility with descriptor calculations and downstream analyses.</li>
-</ul>
-<h2 id="key-differences">Key Differences</h2>
+<p>This is why the pipeline uses <code>errors="coerce"</code> for Mordred values and returns NaN rather than crashing — downstream ML pipelines can then handle missing values through imputation or row filtering as appropriate.</p>
+<h2 id="key-differences-canonicalization-vs-tautomerization">Key Differences: Canonicalization vs Tautomerization</h2>
 <table>
 <thead>
 <tr>
@@ -4671,57 +4619,37 @@
 <tbody>
 <tr>
 <td><strong>Purpose</strong></td>
-<td>Standardizes the entire molecule representation.</td>
-<td>Handles tautomeric equilibria and normalizes tautomers.</td>
+<td>Standardizes the entire molecular representation</td>
+<td>Handles proton/bond-shift equilibria</td>
 </tr>
 <tr>
 <td><strong>Scope</strong></td>
-<td>Covers all aspects of molecular representation.</td>
-<td>Focuses on proton/bond shifts within tautomeric groups.</td>
+<td>Atom ordering, bond types, stereochemistry</td>
+<td>Functional groups capable of tautomerization</td>
 </tr>
 <tr>
 <td><strong>Output</strong></td>
-<td>Unique, canonical representation of a molecule.</td>
-<td>A specific or invariant tautomeric form of a molecule.</td>
-</tr>
-<tr>
-<td><strong>Focus</strong></td>
-<td>Atom order, bond types, stereochemistry.</td>
-<td>Functional groups capable of tautomerization.</td>
+<td>Unique, canonical SMILES string</td>
+<td>A specific canonical tautomeric form</td>
 </tr>
 <tr>
 <td><strong>Use Case</strong></td>
-<td>Dataset deduplication, consistency, comparison.</td>
-<td>Biologically/chemically meaningful normalization.</td>
+<td>Deduplication, consistency, comparison</td>
+<td>Consistent descriptors across tautomeric forms</td>
 </tr>
 </tbody>
 </table>
-<h2 id="importance-in-ml-pipelines">Importance in ML Pipelines</h2>
-<h3 id="canonicalization_1">Canonicalization:</h3>
+<h2 id="references">References</h2>
 <ul>
-<li>Ensures a one-to-one mapping between molecules and their descriptors.</li>
-<li>Removes duplicates and inconsistencies.</li>
-<li>Facilitates reproducibility by unifying chemical representations.</li>
+<li><strong>ChEMBL Structure Pipeline</strong>: Bento, A.P., et al. <em>"An open source chemical structure curation pipeline using RDKit."</em> Journal of Cheminformatics 12, 51 (2020). <a href="https://doi.org/10.1186/s13321-020-00456-1">DOI: 10.1186/s13321-020-00456-1</a></li>
+<li><strong>RDKit Standardization</strong>: Landrum, G. <em>"Standardization and Validation with the RDKit."</em> RSC Open Science (2021). <a href="https://github.com/greglandrum/RSC_OpenScience_Standardization_202104">GitHub Notebook</a></li>
+<li><strong>RDKit</strong>: <a href="https://github.com/rdkit/rdkit">https://github.com/rdkit/rdkit</a></li>
+<li><strong>Mordred</strong>: <a href="https://github.com/mordred-descriptor/mordred">https://github.com/mordred-descriptor/mordred</a></li>
+<li><strong>AqSolDB</strong>: Sorkun, M.C., et al. <em>"AqSolDB, a curated reference set of aqueous solubility and 2D descriptors for a diverse set of compounds."</em> Scientific Data 6, 143 (2019). <a href="https://doi.org/10.1038/s41597-019-0151-1">DOI: 10.1038/s41597-019-0151-1</a></li>
 </ul>
-<h3 id="tautomerization_1">Tautomerization:</h3>
-<ul>
-<li>Ensures tautomers are treated consistently across datasets.</li>
-<li>Produces more reliable molecular descriptors by standardizing proton and bond positions.</li>
-<li>Avoids introducing noise due to the coexistence of multiple tautomeric forms.</li>
-</ul>
-<h2 id="practical-example-in-workbench">Practical Example in Workbench</h2>
-<h3 id="canonicalization_2">Canonicalization:</h3>
-<ul>
-<li><strong>Input</strong>: <code>C1=CC=CC=C1</code> (Benzene) and <code>c1ccccc1</code> (alternate representation).</li>
-<li><strong>Output</strong>: <code>c1ccccc1</code> (unique canonical SMILES).</li>
-</ul>
-<h3 id="tautomerization_2">Tautomerization:</h3>
-<ul>
-<li><strong>Input</strong>: Keto-enol tautomerism: <code>C=O</code> ↔ <code>C-OH</code>.</li>
-<li><strong>Output</strong>: Standardized form based on stability or biological relevance (e.g., <code>C=O</code> for keto).</li>
-</ul>
-<hr />
-<p>Both processes are crucial preprocessing steps in Workbench to ensure high-quality, noise-free datasets for QSAR/QSPR modeling and other predictive tasks in drug discovery.</p>
+<h2 id="questions">Questions?</h2>
+<p><img align="right" src="../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 
 
 

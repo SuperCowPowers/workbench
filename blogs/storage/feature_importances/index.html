@@ -14,19 +14,19 @@
         
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
     
     
       
-        <title>Molecular Descriptors - Workbench</title>
+        <title>XGBoost Feature Importance vs. SHAP Values: Understanding the Differences - Workbench</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -45,9 +45,9 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#molecular-descriptors" class="md-skip">
+        <a href="#xgboost-feature-importance-vs-shap-values-understanding-the-differences" class="md-skip">
           Skip to content
         </a>
       
@@ -88,7 +88,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
+    <a href="../../.." title="Workbench" class="md-header__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -108,7 +108,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Molecular Descriptors
+              XGBoost Feature Importance vs. SHAP Values: Understanding the Differences
             
           </span>
         </div>
@@ -212,7 +212,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
+    <a href="../../.." title="Workbench" class="md-nav__button md-logo" aria-label="Workbench" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -230,7 +230,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   
@@ -257,7 +257,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../presentations/" class="md-nav__link">
+      <a href="../../../presentations/" class="md-nav__link">
         
   
   
@@ -284,7 +284,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../getting_started/" class="md-nav__link">
+      <a href="../../../getting_started/" class="md-nav__link">
         
   
   
@@ -311,7 +311,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../repl/" class="md-nav__link">
+      <a href="../../../repl/" class="md-nav__link">
         
   
   
@@ -338,7 +338,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced_models/" class="md-nav__link">
+      <a href="../../../advanced_models/" class="md-nav__link">
         
   
   
@@ -412,7 +412,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/overview/" class="md-nav__link">
+      <a href="../../../api_classes/overview/" class="md-nav__link">
         
   
   
@@ -440,7 +440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/meta/" class="md-nav__link">
+      <a href="../../../api_classes/meta/" class="md-nav__link">
         
   
   
@@ -468,7 +468,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/data_source/" class="md-nav__link">
+      <a href="../../../api_classes/data_source/" class="md-nav__link">
         
   
   
@@ -496,7 +496,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/feature_set/" class="md-nav__link">
+      <a href="../../../api_classes/feature_set/" class="md-nav__link">
         
   
   
@@ -524,7 +524,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/model/" class="md-nav__link">
+      <a href="../../../api_classes/model/" class="md-nav__link">
         
   
   
@@ -552,7 +552,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/endpoint/" class="md-nav__link">
+      <a href="../../../api_classes/endpoint/" class="md-nav__link">
         
   
   
@@ -580,7 +580,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/views/" class="md-nav__link">
+      <a href="../../../api_classes/views/" class="md-nav__link">
         
   
   
@@ -608,7 +608,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/parameter_store/" class="md-nav__link">
+      <a href="../../../api_classes/parameter_store/" class="md-nav__link">
         
   
   
@@ -636,7 +636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/df_store/" class="md-nav__link">
+      <a href="../../../api_classes/df_store/" class="md-nav__link">
         
   
   
@@ -664,7 +664,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/pipelines/" class="md-nav__link">
+      <a href="../../../api_classes/pipelines/" class="md-nav__link">
         
   
   
@@ -692,7 +692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../api_classes/monitor/" class="md-nav__link">
+      <a href="../../../api_classes/monitor/" class="md-nav__link">
         
   
   
@@ -774,7 +774,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../comparisons/workbench_vs_databricks/" class="md-nav__link">
+      <a href="../../../comparisons/workbench_vs_databricks/" class="md-nav__link">
         
   
   
@@ -856,7 +856,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../chem_utils/" class="md-nav__link">
+      <a href="../../../chem_utils/" class="md-nav__link">
         
   
   
@@ -884,7 +884,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../model_utils/" class="md-nav__link">
+      <a href="../../../model_utils/" class="md-nav__link">
         
   
   
@@ -966,7 +966,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cached/overview/" class="md-nav__link">
+      <a href="../../../cached/overview/" class="md-nav__link">
         
   
   
@@ -994,7 +994,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cached/cached_meta/" class="md-nav__link">
+      <a href="../../../cached/cached_meta/" class="md-nav__link">
         
   
   
@@ -1022,7 +1022,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cached/cached_data_source/" class="md-nav__link">
+      <a href="../../../cached/cached_data_source/" class="md-nav__link">
         
   
   
@@ -1050,7 +1050,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cached/cached_feature_set/" class="md-nav__link">
+      <a href="../../../cached/cached_feature_set/" class="md-nav__link">
         
   
   
@@ -1078,7 +1078,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cached/cached_model/" class="md-nav__link">
+      <a href="../../../cached/cached_model/" class="md-nav__link">
         
   
   
@@ -1106,7 +1106,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cached/cached_endpoint/" class="md-nav__link">
+      <a href="../../../cached/cached_endpoint/" class="md-nav__link">
         
   
   
@@ -1188,7 +1188,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../themes/" class="md-nav__link">
+      <a href="../../../themes/" class="md-nav__link">
         
   
   
@@ -1216,7 +1216,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../themes/details/" class="md-nav__link">
+      <a href="../../../themes/details/" class="md-nav__link">
         
   
   
@@ -1298,7 +1298,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../confidence/" class="md-nav__link">
+      <a href="../../../confidence/" class="md-nav__link">
         
   
   
@@ -1380,7 +1380,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../" class="md-nav__link">
         
   
   
@@ -1408,7 +1408,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../residual_analysis/" class="md-nav__link">
+      <a href="../../residual_analysis.md" class="md-nav__link">
         
   
   
@@ -1436,7 +1436,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../eda/" class="md-nav__link">
+      <a href="../../eda.md" class="md-nav__link">
         
   
   
@@ -1464,7 +1464,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../htg/" class="md-nav__link">
+      <a href="../../htg.md" class="md-nav__link">
         
   
   
@@ -1492,7 +1492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_monitoring/" class="md-nav__link">
+      <a href="../../model_monitoring.md" class="md-nav__link">
         
   
   
@@ -1574,7 +1574,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/overview/" class="md-nav__link">
+      <a href="../../../core_classes/overview/" class="md-nav__link">
         
   
   
@@ -1649,7 +1649,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/artifacts/overview/" class="md-nav__link">
+      <a href="../../../core_classes/artifacts/overview/" class="md-nav__link">
         
   
   
@@ -1677,7 +1677,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/artifacts/athena_source/" class="md-nav__link">
+      <a href="../../../core_classes/artifacts/athena_source/" class="md-nav__link">
         
   
   
@@ -1705,7 +1705,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/artifacts/feature_set_core/" class="md-nav__link">
+      <a href="../../../core_classes/artifacts/feature_set_core/" class="md-nav__link">
         
   
   
@@ -1733,7 +1733,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/artifacts/model_core/" class="md-nav__link">
+      <a href="../../../core_classes/artifacts/model_core/" class="md-nav__link">
         
   
   
@@ -1761,7 +1761,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/artifacts/endpoint_core/" class="md-nav__link">
+      <a href="../../../core_classes/artifacts/endpoint_core/" class="md-nav__link">
         
   
   
@@ -1789,7 +1789,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/artifacts/monitor_core/" class="md-nav__link">
+      <a href="../../../core_classes/artifacts/monitor_core/" class="md-nav__link">
         
   
   
@@ -1817,7 +1817,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/artifacts/artifact/" class="md-nav__link">
+      <a href="../../../core_classes/artifacts/artifact/" class="md-nav__link">
         
   
   
@@ -1900,7 +1900,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/views/overview/" class="md-nav__link">
+      <a href="../../../core_classes/views/overview/" class="md-nav__link">
         
   
   
@@ -1928,7 +1928,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/views/computation_view/" class="md-nav__link">
+      <a href="../../../core_classes/views/computation_view/" class="md-nav__link">
         
   
   
@@ -1956,7 +1956,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/views/display_view/" class="md-nav__link">
+      <a href="../../../core_classes/views/display_view/" class="md-nav__link">
         
   
   
@@ -1984,7 +1984,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/views/training_view/" class="md-nav__link">
+      <a href="../../../core_classes/views/training_view/" class="md-nav__link">
         
   
   
@@ -2012,7 +2012,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/views/inference_view/" class="md-nav__link">
+      <a href="../../../core_classes/views/inference_view/" class="md-nav__link">
         
   
   
@@ -2095,7 +2095,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/transforms/overview/" class="md-nav__link">
+      <a href="../../../core_classes/transforms/overview/" class="md-nav__link">
         
   
   
@@ -2123,7 +2123,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/transforms/data_loaders_light/" class="md-nav__link">
+      <a href="../../../core_classes/transforms/data_loaders_light/" class="md-nav__link">
         
   
   
@@ -2151,7 +2151,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/transforms/data_loaders_heavy/" class="md-nav__link">
+      <a href="../../../core_classes/transforms/data_loaders_heavy/" class="md-nav__link">
         
   
   
@@ -2179,7 +2179,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/transforms/data_to_features/" class="md-nav__link">
+      <a href="../../../core_classes/transforms/data_to_features/" class="md-nav__link">
         
   
   
@@ -2207,7 +2207,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/transforms/features_to_model/" class="md-nav__link">
+      <a href="../../../core_classes/transforms/features_to_model/" class="md-nav__link">
         
   
   
@@ -2235,7 +2235,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/transforms/model_to_endpoint/" class="md-nav__link">
+      <a href="../../../core_classes/transforms/model_to_endpoint/" class="md-nav__link">
         
   
   
@@ -2263,7 +2263,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/transforms/pandas_transforms/" class="md-nav__link">
+      <a href="../../../core_classes/transforms/pandas_transforms/" class="md-nav__link">
         
   
   
@@ -2291,7 +2291,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/transforms/transform/" class="md-nav__link">
+      <a href="../../../core_classes/transforms/transform/" class="md-nav__link">
         
   
   
@@ -2381,7 +2381,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../plugins/" class="md-nav__link">
+      <a href="../../../plugins/" class="md-nav__link">
         
   
   
@@ -2463,7 +2463,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data_algorithms/overview/" class="md-nav__link">
+      <a href="../../../data_algorithms/overview/" class="md-nav__link">
         
   
   
@@ -2491,7 +2491,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data_algorithms/dataframes/overview/" class="md-nav__link">
+      <a href="../../../data_algorithms/dataframes/overview/" class="md-nav__link">
         
   
   
@@ -2519,7 +2519,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data_algorithms/graphs/overview/" class="md-nav__link">
+      <a href="../../../data_algorithms/graphs/overview/" class="md-nav__link">
         
   
   
@@ -2547,7 +2547,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data_algorithms/spark/overview/" class="md-nav__link">
+      <a href="../../../data_algorithms/spark/overview/" class="md-nav__link">
         
   
   
@@ -2575,7 +2575,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../data_algorithms/sql/overview/" class="md-nav__link">
+      <a href="../../../data_algorithms/sql/overview/" class="md-nav__link">
         
   
   
@@ -2657,7 +2657,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../enterprise/" class="md-nav__link">
+      <a href="../../../enterprise/" class="md-nav__link">
         
   
   
@@ -2685,7 +2685,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../enterprise/private_saas/" class="md-nav__link">
+      <a href="../../../enterprise/private_saas/" class="md-nav__link">
         
   
   
@@ -2713,7 +2713,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../enterprise/themes/" class="md-nav__link">
+      <a href="../../../enterprise/themes/" class="md-nav__link">
         
   
   
@@ -2741,7 +2741,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../enterprise/project_branding/" class="md-nav__link">
+      <a href="../../../enterprise/project_branding/" class="md-nav__link">
         
   
   
@@ -2776,7 +2776,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../misc/faq/" class="md-nav__link">
+      <a href="../../../misc/faq/" class="md-nav__link">
         
   
   
@@ -2803,7 +2803,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../glue/" class="md-nav__link">
+      <a href="../../../glue/" class="md-nav__link">
         
   
   
@@ -2830,7 +2830,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../lambda_layer/" class="md-nav__link">
+      <a href="../../../lambda_layer/" class="md-nav__link">
         
   
   
@@ -2857,7 +2857,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cloudwatch/" class="md-nav__link">
+      <a href="../../../cloudwatch/" class="md-nav__link">
         
   
   
@@ -2931,7 +2931,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../aws_setup/aws_setup/" class="md-nav__link">
+      <a href="../../../aws_setup/aws_setup/" class="md-nav__link">
         
   
   
@@ -2959,7 +2959,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../aws_setup/full_pipeline/" class="md-nav__link">
+      <a href="../../../aws_setup/full_pipeline/" class="md-nav__link">
         
   
   
@@ -2987,7 +2987,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../aws_setup/core_stack/" class="md-nav__link">
+      <a href="../../../aws_setup/core_stack/" class="md-nav__link">
         
   
   
@@ -3015,7 +3015,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../aws_setup/dashboard_stack/" class="md-nav__link">
+      <a href="../../../aws_setup/dashboard_stack/" class="md-nav__link">
         
   
   
@@ -3043,7 +3043,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../aws_setup/domain_cert_setup/" class="md-nav__link">
+      <a href="../../../aws_setup/domain_cert_setup/" class="md-nav__link">
         
   
   
@@ -3071,7 +3071,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../aws_setup/aws_tips_and_tricks/" class="md-nav__link">
+      <a href="../../../aws_setup/aws_tips_and_tricks/" class="md-nav__link">
         
   
   
@@ -3099,7 +3099,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../aws_setup/aws_access_management/" class="md-nav__link">
+      <a href="../../../aws_setup/aws_access_management/" class="md-nav__link">
         
   
   
@@ -3127,7 +3127,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../aws_setup/aws_client_vpn/" class="md-nav__link">
+      <a href="../../../aws_setup/aws_client_vpn/" class="md-nav__link">
         
   
   
@@ -3209,7 +3209,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../road_maps/0_9_0/" class="md-nav__link">
+      <a href="../../../road_maps/0_9_0/" class="md-nav__link">
         
   
   
@@ -3237,7 +3237,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../road_maps/0_9_5/" class="md-nav__link">
+      <a href="../../../road_maps/0_9_5/" class="md-nav__link">
         
   
   
@@ -3319,7 +3319,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_158/" class="md-nav__link">
+      <a href="../../../release_notes/0_8_158/" class="md-nav__link">
         
   
   
@@ -3347,7 +3347,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_106/" class="md-nav__link">
+      <a href="../../../release_notes/0_8_106/" class="md-nav__link">
         
   
   
@@ -3375,7 +3375,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_78/" class="md-nav__link">
+      <a href="../../../release_notes/0_8_78/" class="md-nav__link">
         
   
   
@@ -3403,7 +3403,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_74/" class="md-nav__link">
+      <a href="../../../release_notes/0_8_74/" class="md-nav__link">
         
   
   
@@ -3431,7 +3431,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_71/" class="md-nav__link">
+      <a href="../../../release_notes/0_8_71/" class="md-nav__link">
         
   
   
@@ -3459,7 +3459,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_60/" class="md-nav__link">
+      <a href="../../../release_notes/0_8_60/" class="md-nav__link">
         
   
   
@@ -3487,7 +3487,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_58/" class="md-nav__link">
+      <a href="../../../release_notes/0_8_58/" class="md-nav__link">
         
   
   
@@ -3515,7 +3515,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_55/" class="md-nav__link">
+      <a href="../../../release_notes/0_8_55/" class="md-nav__link">
         
   
   
@@ -3543,7 +3543,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/0_8_50/" class="md-nav__link">
+      <a href="../../../release_notes/0_8_50/" class="md-nav__link">
         
   
   
@@ -3618,7 +3618,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_46/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_46/" class="md-nav__link">
         
   
   
@@ -3646,7 +3646,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_42/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_42/" class="md-nav__link">
         
   
   
@@ -3674,7 +3674,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_39/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_39/" class="md-nav__link">
         
   
   
@@ -3702,7 +3702,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_36/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_36/" class="md-nav__link">
         
   
   
@@ -3730,7 +3730,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_35/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_35/" class="md-nav__link">
         
   
   
@@ -3758,7 +3758,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_33/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_33/" class="md-nav__link">
         
   
   
@@ -3786,7 +3786,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_29/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_29/" class="md-nav__link">
         
   
   
@@ -3814,7 +3814,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_27/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_27/" class="md-nav__link">
         
   
   
@@ -3842,7 +3842,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_23/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_23/" class="md-nav__link">
         
   
   
@@ -3870,7 +3870,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_22/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_22/" class="md-nav__link">
         
   
   
@@ -3898,7 +3898,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_20/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_20/" class="md-nav__link">
         
   
   
@@ -3926,7 +3926,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_11/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_11/" class="md-nav__link">
         
   
   
@@ -3954,7 +3954,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_8/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_8/" class="md-nav__link">
         
   
   
@@ -3982,7 +3982,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_8_6/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_8_6/" class="md-nav__link">
         
   
   
@@ -4010,7 +4010,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../release_notes/archived/0_7_8/" class="md-nav__link">
+      <a href="../../../release_notes/archived/0_7_8/" class="md-nav__link">
         
   
   
@@ -4100,7 +4100,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/aws_service_limits/" class="md-nav__link">
+      <a href="../../../admin/aws_service_limits/" class="md-nav__link">
         
   
   
@@ -4128,7 +4128,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/pypi_release/" class="md-nav__link">
+      <a href="../../../admin/pypi_release/" class="md-nav__link">
         
   
   
@@ -4156,7 +4156,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/base_docker_push/" class="md-nav__link">
+      <a href="../../../admin/base_docker_push/" class="md-nav__link">
         
   
   
@@ -4184,7 +4184,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/dashboard_docker_push/" class="md-nav__link">
+      <a href="../../../admin/dashboard_docker_push/" class="md-nav__link">
         
   
   
@@ -4212,7 +4212,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/dashboard_s3_plugins/" class="md-nav__link">
+      <a href="../../../admin/dashboard_s3_plugins/" class="md-nav__link">
         
   
   
@@ -4240,7 +4240,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/explorer_docker_push/" class="md-nav__link">
+      <a href="../../../admin/explorer_docker_push/" class="md-nav__link">
         
   
   
@@ -4315,7 +4315,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
+      <a href="../../../admin/workbench_docker_for_lambdas/" class="md-nav__link">
         
   
   
@@ -4378,10 +4378,99 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#data" class="md-nav__link">
+  <a href="#xgboost-built-in-feature-importance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Data
+        XGBoost Built-in Feature Importance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="XGBoost Built-in Feature Importance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-gain-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Gain (Default)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-weight" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Weight
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-cover" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Cover
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shap-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SHAP Values
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SHAP Values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-shap-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How SHAP Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-differences-from-xgboost-feature-importance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Differences from XGBoost Feature Importance
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#why-they-sometimes-disagree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why They Sometimes Disagree
       
     </span>
   </a>
@@ -4389,21 +4478,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#python-packages" class="md-nav__link">
+  <a href="#which-should-you-use" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Python Packages
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#canonicalization-and-tautomerization" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Canonicalization and Tautomerization
+        Which Should You Use?
       
     </span>
   </a>
@@ -4427,55 +4505,78 @@
 
 
 
-<h1 id="molecular-descriptors">Molecular Descriptors</h1>
-<p>In this Blog we'll look at the popular AqSol compound solubility dataset, compute Molecular Descriptors (RDKit and Mordred) and take a deep dive on why NaNs, INFs, and parse errors are generated on about 9% of the compounds.</p>
-<h3 id="data">Data</h3>
-<p>AqSolDB: A curated reference set of aqueous solubility, created by the Autonomous Energy Materials Discovery [AMD] research group, consists of aqueous solubility values of 9,982 unique compounds curated from 9 different publicly available aqueous solubility datasets.
-<a href="https://www.nature.com/articles/s41597-019-0151-1">https://www.nature.com/articles/s41597-019-0151-1</a></p>
-<p><strong>Download from Harvard DataVerse:</strong>
-<a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8">https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8</a></p>
-<h3 id="python-packages">Python Packages</h3>
+<h1 id="xgboost-feature-importance-vs-shap-values-understanding-the-differences">XGBoost Feature Importance vs. SHAP Values: Understanding the Differences</h1>
+<p>When working with XGBoost models, there are two primary ways to understand which features are most important to your model: the built-in feature importance metrics and SHAP (SHapley Additive exPlanations) values. While both aim to explain feature impact, they work in fundamentally different ways and can sometimes yield different results.</p>
+<h2 id="xgboost-built-in-feature-importance">XGBoost Built-in Feature Importance</h2>
+<p>XGBoost offers several built-in methods to calculate feature importance:</p>
+<h3 id="1-gain-default">1. Gain (Default)</h3>
 <ul>
-<li><a href="https://github.com/rdkit/rdkit">RDKIT</a>: Open source toolkit for cheminformatics</li>
-<li><a href="https://github.com/JacksonBurns/mordred-community">Mordred Community</a>: Community maintained version of the mordred molecular descriptor calculator.</li>
+<li><strong>What it measures</strong>: The average gain of a feature when it is used in trees</li>
+<li><strong>How it works</strong>: It calculates how much each feature improves the model performance when used in splits</li>
+<li><strong>Strengths</strong>: Fast to calculate and directly tied to the model's optimization objective</li>
+<li><strong>Limitations</strong>: Can be biased toward high-cardinality features (features with many unique values)</li>
 </ul>
-<h3 id="canonicalization-and-tautomerization">Canonicalization and Tautomerization</h3>
-<p>We have another blog on <a href="../canonicalization_and_tautomerization/">Canonicalization and Tautomerization</a> which covers the importance of getting your compounds into a standardized ...</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>df = DataSource(&quot;aqsol_data&quot;).pull_dataframe()
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>mol_df = compute_molecular_descriptors(df)
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>INFO Computing Molecular Descriptors...
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>INFO Computing RDKit Descriptors...
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>INFO Found 2 INF/-INF values. Replacing them with NaN.
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>INFO INF/-INF value &#39;inf&#39; found in column &#39;MaxAbsPartialCharge&#39; at index 3047.
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>INFO INF/-INF value &#39;inf&#39; found in column &#39;MaxPartialCharge&#39; at index 3047.
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>INFO Imputing missing values using &#39;median&#39; strategy.
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>WARNING Imputing BCUT2D_MRLOW replacing 884 values with median(0.05)
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>WARNING Imputing BCUT2D_LOGPHI replacing 884 values with median(2.20)
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>WARNING Imputing BCUT2D_MWLOW replacing 884 values with median(10.14)
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>WARNING Imputing MaxAbsPartialCharge replacing 102 values with median(0.44)
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>WARNING Imputing BCUT2D_CHGHI replacing 884 values with median(2.14)
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>WARNING Imputing BCUT2D_LOGPLOW replacing 884 values with median(-2.15)
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>WARNING Imputing MaxPartialCharge replacing 102 values with median(0.28)
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>WARNING Imputing MinAbsPartialCharge replacing 101 values with median(0.27)
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>WARNING Imputing MinPartialCharge replacing 101 values with median(-0.41)
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>WARNING Imputing BCUT2D_MWHI replacing 884 values with median(16.55)
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>WARNING Imputing BCUT2D_MRHI replacing 884 values with median(5.93)
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>WARNING Imputing BCUT2D_CHGLO replacing 884 values with median(-2.09)
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>INFO Computing Mordred Descriptors...
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>WARNING Failed to parse value &#39;float division by zero (RotRatio/nBondsO)&#39; in column &#39;RotRatio&#39; at index 38.
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>WARNING Failed to parse value &#39;float division by zero (RotRatio/nBondsO)&#39; in column &#39;RotRatio&#39; at index 71.
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>...
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>WARNING Failed to parse vallue &#39;float division by zero (RotRatio/nBondsO)&#39; in column &#39;RotRatio&#39; at index 5579.
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>INFO Imputing missing values using &#39;median&#39; strategy.
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>WARNING Imputing RotRatio replacing 149 values with median(0.17)
-</span></code></pre></div>
+<h3 id="2-weight">2. Weight</h3>
+<ul>
+<li><strong>What it measures</strong>: The number of times a feature appears in trees</li>
+<li><strong>How it works</strong>: Simply counts feature occurrences across all trees</li>
+<li><strong>Limitations</strong>: A feature could appear frequently but have minimal impact on predictions</li>
+</ul>
+<h3 id="3-cover">3. Cover</h3>
+<ul>
+<li><strong>What it measures</strong>: The average coverage of splits using the feature</li>
+<li><strong>How it works</strong>: Measures how many samples are affected by splits on this feature</li>
+<li><strong>Limitations</strong>: May not reflect the actual contribution to prediction quality</li>
+</ul>
+<h2 id="shap-values">SHAP Values</h2>
+<p>SHAP values offer an alternative approach based on game theory concepts:</p>
+<h3 id="how-shap-works">How SHAP Works</h3>
+<ul>
+<li><strong>Definition</strong>: SHAP values represent how much each feature contributes to the predicted value of the target, given all the other features of that row</li>
+<li><strong>Mathematical foundation</strong>: Based on Shapley values from cooperative game theory</li>
+<li><strong>Sample-level insights</strong>: Calculated for each individual prediction, then typically averaged across all samples</li>
+</ul>
+<h3 id="key-differences-from-xgboost-feature-importance">Key Differences from XGBoost Feature Importance</h3>
+<ol>
+<li><strong>Individual vs. Global Explanations</strong></li>
+<li>SHAP provides both individual prediction explanations and global importance</li>
+<li>
+<p>XGBoost feature importance only offers global importance metrics</p>
+</li>
+<li>
+<p><strong>Feature Interactions</strong></p>
+</li>
+<li>XGBoost's built-in importance (especially Total Gain) only considers one ordering of features, which can lead to biases when there are interactions</li>
+<li>
+<p>SHAP accounts for feature interactions by considering all possible feature combinations</p>
+</li>
+<li>
+<p><strong>Model Agnostic</strong></p>
+</li>
+<li>SHAP can be applied to any model, not just XGBoost</li>
+<li>XGBoost's built-in importance is specific to tree-based models</li>
+</ol>
+<h2 id="why-they-sometimes-disagree">Why They Sometimes Disagree</h2>
+<p>It's not uncommon to see different rankings between XGBoost feature importance and SHAP values. This can happen because:</p>
+<ol>
+<li>
+<p>Impurity-based importances (such as XGBoost built-in routines) give more weight to high cardinality features, while gain may be affected by tree structure</p>
+</li>
+<li>
+<p>SHAP considers all possible feature combinations, while XGBoost importance is based on the actual tree structures built during training</p>
+</li>
+<li>
+<p>SHAP evaluates feature importance in terms of how features contribute to predictions, while other methods like Permutation Feature Importance (PFI) measure how features affect model performance</p>
+</li>
+</ol>
+<h2 id="which-should-you-use">Which Should You Use?</h2>
+<p>Both approaches have their place:</p>
+<ul>
+<li><strong>XGBoost Built-in Importance</strong>: Faster to compute and directly tied to the model's optimization process</li>
+<li><strong>SHAP Values</strong>: More theoretically sound, consistent across models, and offers both local and global explanations</li>
+</ul>
+<p>For critical applications where model interpretability is essential, consider using both methods and investigating discrepancies between them. If they disagree, this might reveal interesting insights about your data and model.</p>
+<p>A complete explanation system would ideally include both XGBoost's built-in importance (for quick insights) and SHAP values (for deeper, more theoretically robust interpretations).</p>
 
 
 
@@ -4525,10 +4626,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": [], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
