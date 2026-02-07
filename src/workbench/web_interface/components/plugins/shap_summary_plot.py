@@ -92,6 +92,15 @@ class ShapSummaryPlot(PluginInterface):
             layer="below",
         )
 
+        # Scale row height and marker size based on feature count
+        n_features = len(shap_features)
+        if n_features <= 12:
+            row_height, marker_size = 50, 8
+        elif n_features <= 25:
+            row_height, marker_size = 35, 7
+        else:
+            row_height, marker_size = 25, 6
+
         # Add traces for each feature
         for i, feature in enumerate(shap_features):
             feature_shap = f"{feature}_shap"
@@ -131,7 +140,7 @@ class ShapSummaryPlot(PluginInterface):
                                 else None
                             ),
                             opacity=1.0,
-                            size=8,
+                            size=marker_size,
                             showscale=(i == 0),
                             line=dict(color="rgba(0,0,0,0.25)", width=1),
                         ),
@@ -152,7 +161,10 @@ class ShapSummaryPlot(PluginInterface):
                         y=y_jitter[nan_mask],
                         mode="markers",
                         name=feature,
-                        marker=dict(color="grey", opacity=0.5, size=8, line=dict(color="rgba(0,0,0,0.25)", width=1)),
+                        marker=dict(
+                            color="grey", opacity=0.5, size=marker_size,
+                            line=dict(color="rgba(0,0,0,0.25)", width=1),
+                        ),
                         showlegend=False,
                         hoverinfo="text",
                         hovertext=[
@@ -167,14 +179,14 @@ class ShapSummaryPlot(PluginInterface):
         fig.update_layout(
             title="SHAP Summary Plot: Feature Impact",
             xaxis_title="SHAP Value (Impact on Model Output)",
-            margin={"t": 50, "b": 60, "r": 0, "l": 0, "pad": 0},
-            height=max(400, 50 * len(shap_features)),
+            margin={"t": 50, "b": 55, "r": 0, "l": 0, "pad": 0},
+            height=max(400, row_height * n_features),
             plot_bgcolor=self.theme_manager.background(),
             xaxis=dict(showgrid=False, zeroline=False),
             yaxis=dict(
-                tickvals=list(range(len(shap_features))),
+                tickvals=list(range(n_features)),
                 ticktext=tick_labels,
-                autorange="reversed",  # Most important features at top
+                range=[n_features - 0.5, -0.5],  # Fixed range, no extra padding
                 showgrid=False,
                 zeroline=False,
             ),
