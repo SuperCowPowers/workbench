@@ -96,8 +96,12 @@ class BitAblationAtomFeaturizer(MultiHotAtomFeaturizer):
             return x
 
         feats = [
-            a.GetAtomicNum(), a.GetTotalDegree(), a.GetFormalCharge(),
-            int(a.GetChiralTag()), int(a.GetTotalNumHs()), a.GetHybridization(),
+            a.GetAtomicNum(),
+            a.GetTotalDegree(),
+            a.GetFormalCharge(),
+            int(a.GetChiralTag()),
+            int(a.GetTotalNumHs()),
+            a.GetHybridization(),
         ]
         i = 0
         for feat, choices in zip(feats, self._subfeats):
@@ -155,9 +159,7 @@ class AblationMolGraphFeaturizer(SimpleMoleculeMolGraphFeaturizer):
 # =============================================================================
 # Analyze molecules: detect active bits and compute per-molecule feature fractions
 # =============================================================================
-def _analyze_molecules(
-    smiles_list: list[str], atom_feat, bond_feat
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _analyze_molecules(smiles_list: list[str], atom_feat, bond_feat) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Featurize all molecules, find active bits, and compute feature fractions.
 
     For each molecule, computes the fraction of atoms/bonds that activate each
@@ -266,8 +268,7 @@ def compute_chemprop_shap(
     n_active = len(active_indices)
 
     feature_names = [
-        (all_atom_labels[i] if i < n_atom_bits else all_bond_labels[i - n_atom_bits])
-        for i in active_indices
+        (all_atom_labels[i] if i < n_atom_bits else all_bond_labels[i - n_atom_bits]) for i in active_indices
     ]
     print(f"Active features: {n_active} of {n_atom_bits + n_bond_bits} total bits")
     print(f"  Atom: {atom_active.sum()} of {n_atom_bits}, Bond: {bond_active.sum()} of {n_bond_bits}")
@@ -379,9 +380,7 @@ def format_shap_results(
     # from another, so they add noise to the beeswarm plot.  They are kept
     # in shap_importance for completeness but excluded from the detail CSVs.
     fraction_std = np.std(feature_fractions, axis=0)
-    low_var_names = {
-        feature_names[i] for i in range(len(feature_names)) if fraction_std[i] < 0.01
-    }
+    low_var_names = {feature_names[i] for i in range(len(feature_names)) if fraction_std[i] < 0.01}
     if low_var_names:
         print(f"  Filtering {len(low_var_names)} constant-fraction feature(s): {sorted(low_var_names)}")
 

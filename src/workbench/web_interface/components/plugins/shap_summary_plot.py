@@ -162,7 +162,9 @@ class ShapSummaryPlot(PluginInterface):
                         mode="markers",
                         name=feature,
                         marker=dict(
-                            color="grey", opacity=0.5, size=marker_size,
+                            color="grey",
+                            opacity=0.5,
+                            size=marker_size,
                             line=dict(color="rgba(0,0,0,0.25)", width=1),
                         ),
                         showlegend=False,
