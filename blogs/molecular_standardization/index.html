@@ -9,6 +9,10 @@
       
       
       
+        <link rel="prev" href="../chemprop_shap/">
+      
+      
+        <link rel="next" href="../../core_classes/overview/">
       
       
         
@@ -19,7 +23,7 @@
     
     
       
-        <title>Molecular Standardization: Canonicalization, Tautomerization, and Salt Handling - Workbench</title>
+        <title>Molecular Standardization - Workbench</title>
       
     
     
@@ -108,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Molecular Standardization: Canonicalization, Tautomerization, and Salt Handling
+              Molecular Standardization
             
           </span>
         </div>
@@ -1330,18 +1334,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
         
           
           <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
@@ -1362,7 +1368,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1408,14 +1414,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../residual_analysis.md" class="md-nav__link">
+      <a href="../chemprop_shap/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Residual Analysis
+    Chemprop Shap Values
   
 
     
@@ -1433,17 +1439,44 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../eda.md" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Molecular Standardization
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
   <span class="md-ellipsis">
     
   
-    Exploratory Data Analysis(EDA)
+    Molecular Standardization
   
 
     
@@ -1452,62 +1485,164 @@
   
 
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../htg.md" class="md-nav__link">
+      
         
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
-  <span class="md-ellipsis">
+  
     
   
-    High Target Gradients (HTG)
   
-
-    
-  </span>
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-standardization-matters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why Standardization Matters
+      
+    </span>
+  </a>
   
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workbenchs-standardization-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workbench's Standardization Pipeline
+      
+    </span>
+  </a>
   
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../model_monitoring.md" class="md-nav__link">
+    <nav class="md-nav" aria-label="Workbench&#39;s Standardization Pipeline">
+      <ul class="md-nav__list">
         
+          <li class="md-nav__item">
+  <a href="#step-1-cleanup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Cleanup
+      
+    </span>
+  </a>
   
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-saltfragment-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Salt/Fragment Handling
+      
+    </span>
+  </a>
   
-  <span class="md-ellipsis">
-    
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-charge-neutralization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Charge Neutralization
+      
+    </span>
+  </a>
   
-    Model Monitoring
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-tautomer-canonicalization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Tautomer Canonicalization
+      
+    </span>
+  </a>
   
-
-    
-  </span>
+</li>
+        
+      </ul>
+    </nav>
   
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#descriptor-computation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Descriptor Computation
+      
+    </span>
+  </a>
   
-
-      </a>
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#feature-endpoints-deployed-on-aws" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Feature Endpoints: Deployed on AWS
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-aqsol-dataset-a-real-world-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The AqSol Dataset: A Real-World Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-differences-canonicalization-vs-tautomerization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Differences: Canonicalization vs Tautomerization
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 

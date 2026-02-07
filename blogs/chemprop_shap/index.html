@@ -9,6 +9,10 @@
       
       
       
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../molecular_standardization/">
       
       
         
@@ -19,7 +23,7 @@
     
     
       
-        <title>SHAP Values for ChemProp Models - Workbench</title>
+        <title>Chemprop Shap Values - Workbench</title>
       
     
     
@@ -108,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              SHAP Values for ChemProp Models
+              Chemprop Shap Values
             
           </span>
         </div>
@@ -1330,18 +1334,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
         
           
           <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
@@ -1362,7 +1368,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1405,17 +1411,44 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../residual_analysis.md" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chemprop Shap Values
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
   <span class="md-ellipsis">
     
   
-    Residual Analysis
+    Chemprop Shap Values
   
 
     
@@ -1424,6 +1457,264 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-challenge-explaining-a-graph-neural-network" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Challenge: Explaining a Graph Neural Network
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#our-approach-per-bit-feature-ablation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Our Approach: Per-Bit Feature Ablation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Our Approach: Per-Bit Feature Ablation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-ablation-featurizers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Ablation Featurizers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#active-bit-filtering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Active-Bit Filtering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shap-computation-with-permutationexplainer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SHAP Computation with PermutationExplainer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#meaningful-feature-values-for-the-beeswarm-plot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Meaningful Feature Values for the Beeswarm Plot
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Meaningful Feature Values for the Beeswarm Plot">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filtering-constant-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filtering Constant Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analyzing-a-logd-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analyzing a LogD Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-insights-what-the-shap-values-reveal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model Insights: What the SHAP Values Reveal
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Insights: What the SHAP Values Reveal">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#carbon-content-atomc-top-feature" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Carbon Content (atom=C) — Top Feature
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nitrogen-content-atomn-strong-negative-driver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nitrogen Content (atom=N) — Strong Negative Driver
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hydrogen-count-num_hs0-num_hs2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hydrogen Count (num_Hs=0, num_Hs=2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#hybridization-and-aromaticity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hybridization and Aromaticity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bond-types-bondaromatic-vs-bondsingle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bond Types (bond=AROMATIC vs bond=SINGLE)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#degree-of-substitution-degree3-degree2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Degree of Substitution (degree=3, degree=2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#oxygen-and-halogens-atomo-atomcl-atoms-atomf" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Oxygen and Halogens (atom=O, atom=Cl, atom=S, atom=F)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-big-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Big Picture
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1436,70 +1727,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../eda.md" class="md-nav__link">
+      <a href="../molecular_standardization/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Exploratory Data Analysis(EDA)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../htg.md" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    High Target Gradients (HTG)
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../model_monitoring.md" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Model Monitoring
+    Molecular Standardization
   
 
     
@@ -4475,7 +4710,18 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Analyzing a LogD Model">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-insights-what-the-shap-values-reveal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model Insights: What the SHAP Values Reveal
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model Insights: What the SHAP Values Reveal">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4624,7 +4870,7 @@
 <h1 id="shap-values-for-chemprop-models">SHAP Values for ChemProp Models</h1>
 <p>In this blog we'll explore how Workbench computes SHAP (SHapley Additive exPlanations) values for <a href="https://github.com/chemprop/chemprop">ChemProp</a> message-passing neural network (MPNN) models. ChemProp models operate directly on molecular graphs rather than tabular feature vectors, which makes interpretability a unique challenge. We'll walk through the per-bit ablation approach we developed, show some key code snippets, and then analyze real SHAP output from a LogD regression model.</p>
 <figure style="margin: 20px 0;">
-<img src="../images/chemprop_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
+<img src="../../images/chemprop_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
 <figcaption><em>Workbench provides visibility and drilldowns into Chemprop models deployed to AWS Endpoints.</em></figcaption>
 </figure>
 
@@ -4717,11 +4963,12 @@
 <h2 id="analyzing-a-logd-model">Analyzing a LogD Model</h2>
 <p>Here's the SHAP output from a ChemProp model trained to predict <strong>LogD</strong> (the distribution coefficient — a measure of lipophilicity at physiological pH). LogD is a critical ADME property in drug discovery: it influences membrane permeability, protein binding, metabolism, and oral absorption.</p>
 <figure style="margin: 20px 0;">
-<img src="../images/chemprop_shap_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
-<figcaption><em>SHAP beeswarm plot for a ChemProp LogD regression model. Features are ranked by mean |SHAP| (most impactful at top). Dot color represents the per-molecule feature fraction (red = high, blue = low).</em></figcaption>
+<img src="../../images/chemprop_shap_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
+<figcaption><em>SHAP beeswarm plot for a ChemProp LogD regression model. Features are ranked by mean |SHAP| (most impactful at top).</em></figcaption>
 </figure>
 
-<p>Let's walk through what the model has learned:</p>
+<h2 id="model-insights-what-the-shap-values-reveal">Model Insights: What the SHAP Values Reveal</h2>
+<p>The SHAP values reveal that the ChemProp model has independently learned the fundamental structure-lipophilicity relationships that medicinal chemists rely on:</p>
 <h3 id="carbon-content-atomc-top-feature">Carbon Content (<code>atom=C</code>) — Top Feature</h3>
 <p>Carbon fraction is the dominant predictor, and the pattern is clear: <strong>higher carbon fraction (red dots) pushes LogD positive</strong> (more lipophilic). This is textbook — carbon-rich molecules are hydrophobic. The wide spread of SHAP values (roughly -1 to +3.5) shows this feature has massive discriminating power.</p>
 <h3 id="nitrogen-content-atomn-strong-negative-driver">Nitrogen Content (<code>atom=N</code>) — Strong Negative Driver</h3>
