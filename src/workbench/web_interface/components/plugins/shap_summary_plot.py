@@ -95,11 +95,11 @@ class ShapSummaryPlot(PluginInterface):
         # Scale row height and marker size based on feature count
         n_features = len(shap_features)
         if n_features <= 12:
-            row_height, marker_size = 50, 8
+            row_height, marker_size = 50, 10
         elif n_features <= 25:
-            row_height, marker_size = 35, 7
+            row_height, marker_size = 40, 9
         else:
-            row_height, marker_size = 25, 6
+            row_height, marker_size = 30, 8
 
         # Add traces for each feature
         for i, feature in enumerate(shap_features):
