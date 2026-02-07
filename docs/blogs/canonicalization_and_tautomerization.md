@@ -1,93 +1,91 @@
-# Canonicalization and Tautomerization
-In this Blog we'll look at the popular AqSol compound solubility dataset, compute Molecular Descriptors (RDKit and Mordred) and take a deep dive on why NaNs, INFs, and parse errors are generated on about 9% of the compounds.
+# Molecular Standardization: Canonicalization, Tautomerization, and Salt Handling
+In this blog we'll look at why molecular standardization matters for ML pipelines, what Workbench's feature endpoints actually do under the hood, and how the popular AqSol compound solubility dataset illustrates the challenges of working with real-world chemical data.
 
-### Data
-AqSolDB: A curated reference set of aqueous solubility, created by the Autonomous Energy Materials Discovery [AMD] research group, consists of aqueous solubility values of 9,982 unique compounds curated from 9 different publicly available aqueous solubility datasets.
-<https://www.nature.com/articles/s41597-019-0151-1>
+## Why Standardization Matters
+The same molecule can be represented many different ways in SMILES notation. Benzene alone has multiple valid representations: `C1=CC=CC=C1`, `c1ccccc1`, `C1=CC=C(C=C1)` — all describe the same compound. Drug compounds are even worse: they come as salts, mixtures of tautomers, and with inconsistent stereochemistry annotations.
 
-**Download from Harvard DataVerse:**
-<https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8>
+If you feed these raw SMILES into a descriptor computation pipeline, structurally identical compounds produce different feature vectors. Your ML model sees noise where there should be signal. Standardization eliminates this problem.
 
-### Python Packages
+## Workbench's Standardization Pipeline
+Workbench feature endpoints run a four-step standardization pipeline (based on the [ChEMBL structure pipeline](https://doi.org/10.1186/s13321-020-00456-1)) before computing any molecular descriptors:
 
-- [RDKIT](https://github.com/rdkit/rdkit): Open source toolkit for cheminformatics
+### Step 1: Cleanup
+Removes explicit hydrogens, disconnects metal atoms from organic fragments, and normalizes functional group representations (e.g., different ways of drawing nitro groups or sulfoxides).
 
-## Canonicalization
-Canonicalization is the process of converting a chemical structure into a unique, standard representation. It ensures that structurally identical compounds are represented in the same way, regardless of how they were originally drawn or encoded (e.g., in SMILES format).
+### Step 2: Salt/Fragment Handling
+Many drug compounds are stored as salt forms (e.g., sodium acetate `[Na+].CC(=O)[O-]`). Workbench provides **two modes** for handling these:
 
-### How It Works:
-- Algorithms (e.g., RDKit’s `MolToSmiles` with `isomericSmiles=True`) reorder atoms, bonds, and stereochemistry to produce a unique canonical SMILES string or another standardized format.
-- Includes standardizing:
-  - **Atom ordering**.
-  - **Bond configurations**.
-  - **Stereochemical information**.
+- **`extract_salts=True`** (default): Identifies and keeps the largest organic fragment, removes counterions, and records the removed salt for traceability. Also distinguishes true salts from mixtures — multiple large neutral organic fragments are flagged as mixtures and logged.
+- **`extract_salts=False`**: Keeps the full molecule with all fragments intact and preserves ionic charges. Useful when the salt form itself affects the property you're modeling (e.g., solubility, formulation studies).
 
-### Why It’s Important:
-- **Removes Redundancy**: Different representations of the same compound (e.g., mirror images or re-ordered bonds) are treated as identical.
-- **Ensures Consistency**: ML models and data pipelines process identical compounds uniformly.
-- **Facilitates Comparison**: Allows for direct comparison of compounds in datasets.
-- **Prevents Duplication**: Helps deduplicate datasets by grouping identical molecules.
+```python
+# Default: removes salts (ChEMBL standard)
+df = standardize(df, extract_salts=True)
+# Input:  [Na+].CC(=O)[O-]  →  smiles: CC(=O)O, salt: [Na+]
 
-### When It’s Used:
-- Preprocessing datasets to unify chemical representations.
-- During compound matching or database searches.
+# Keep salts for salt-dependent properties
+df = standardize(df, extract_salts=False)
+# Input:  [Na+].CC(=O)[O-]  →  smiles: [Na+].CC(=O)[O-], salt: None
+```
 
+### Step 3: Charge Neutralization
+When salts are extracted, charges on the parent molecule are neutralized (e.g., `CC(=O)[O-]` → `CC(=O)O`). This step is skipped when keeping salts to preserve ionic character.
 
+### Step 4: Tautomer Canonicalization
+Tautomers are isomers that differ in proton and double-bond positions but exist in rapid equilibrium. The classic example is the keto-enol pair. Workbench uses RDKit's tautomer enumerator to pick a canonical form, ensuring that the same compound always produces the same descriptors regardless of which tautomeric form appeared in the source data.
 
-## Tautomerization
-Tautomerization is the process of identifying and optionally converting a molecule into a specific tautomeric form. Tautomers are isomers of a compound that differ in the positions of protons and double bonds but are in rapid equilibrium under physiological conditions.
+```
+# 2-hydroxypyridine and 2-pyridone are the same compound
+Oc1ccccn1  →  O=c1cccc[nH]1  (canonical tautomer)
+```
 
-### How It Works:
-- Algorithms identify tautomerizable groups (e.g., keto-enol, imine-enamine) and can standardize compounds to:
-  - A **preferred tautomeric form** (e.g., keto over enol for simplicity).
-  - A **representation-invariant form** to collapse tautomers into a single, standardized version.
+## Descriptor Computation
+After standardization, Workbench computes ~310 molecular descriptors from three sources:
 
-### Why It’s Important:
-- **Improves Feature Consistency**: ML models treat tautomers as a single entity, reducing variability in descriptor calculations.
-- **Biological Relevance**: Focuses on biologically relevant forms (e.g., the keto form is often more stable).
-- **Avoids Data Noise**: Reduces noise caused by the presence of multiple tautomers for the same compound.
-- **Essential for Drug Discovery**: Tautomers may exhibit different bioactivity, so properly standardizing them ensures consistent analysis.
+| Source | Count | Description |
+|--------|-------|-------------|
+| **RDKit** | ~220 | Constitutional, topological, electronic, lipophilicity, pharmacophore, and ADMET-specific descriptors (TPSA, QED, Lipinski) |
+| **Mordred** | ~85 | Five ADMET-focused modules: AcidBase, Aromatic, Constitutional, Chi connectivity indices, and CarbonTypes |
+| **Stereochemistry** | 10 | Custom features: R/S center counts, E/Z bond counts, stereo complexity, and fraction-defined metrics |
 
-### When It’s Used:
-- Preprocessing compounds for QSAR/QSPR studies.
-- Normalizing datasets for machine learning pipelines.
-- Ensuring compatibility with descriptor calculations and downstream analyses.
+Invalid molecules receive NaN values rather than being dropped, preserving row alignment with the input DataFrame. The `Ipc` descriptor is excluded due to known overflow issues in RDKit.
 
+## Feature Endpoints: Deployed on AWS
+These standardization and descriptor computations run inside Workbench **feature endpoints** — SageMaker-hosted transformer models that take raw SMILES and return standardized structures plus computed descriptors. Two variants are available:
 
+- **`smiles-to-taut-md-stereo-v1`**: Standard pipeline with salt extraction (ChEMBL default)
+- **`smiles-to-taut-md-stereo-v1-keep-salts`**: Preserves salt forms for salt-sensitive modeling
 
-## Key Differences
-| **Aspect**         | **Canonicalization**                                 | **Tautomerization**                                     |
-|---------------------|-----------------------------------------------------|---------------------------------------------------------|
-| **Purpose**         | Standardizes the entire molecule representation.    | Handles tautomeric equilibria and normalizes tautomers. |
-| **Scope**           | Covers all aspects of molecular representation.     | Focuses on proton/bond shifts within tautomeric groups. |
-| **Output**          | Unique, canonical representation of a molecule.     | A specific or invariant tautomeric form of a molecule.  |
-| **Focus**           | Atom order, bond types, stereochemistry.            | Functional groups capable of tautomerization.           |
-| **Use Case**        | Dataset deduplication, consistency, comparison.     | Biologically/chemically meaningful normalization.       |
+Both endpoints can be deployed as serverless (cost-efficient for intermittent workloads) or on dedicated instances for higher throughput.
 
+## The AqSol Dataset: A Real-World Example
+[AqSolDB](https://www.nature.com/articles/s41597-019-0151-1) is a curated reference set of aqueous solubility values containing 9,982 unique compounds from 9 publicly available datasets ([Harvard DataVerse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8)).
 
+Running this dataset through the full standardization + descriptor pipeline reveals that roughly **9% of compounds** produce NaNs, INFs, or parse errors in one or more descriptors. Common causes include:
 
-## Importance in ML Pipelines
-### Canonicalization:
-- Ensures a one-to-one mapping between molecules and their descriptors.
-- Removes duplicates and inconsistencies.
-- Facilitates reproducibility by unifying chemical representations.
+- **Invalid or unusual SMILES**: Organometallic compounds, polymers, or SMILES notation errors that RDKit can't parse
+- **Descriptor overflow**: Extremely large or complex molecules that cause numerical issues in certain descriptors
+- **Mordred edge cases**: Some Mordred modules return error objects rather than numbers for unusual chemical structures
 
-### Tautomerization:
-- Ensures tautomers are treated consistently across datasets.
-- Produces more reliable molecular descriptors by standardizing proton and bond positions.
-- Avoids introducing noise due to the coexistence of multiple tautomeric forms.
+This is why the pipeline uses `errors="coerce"` for Mordred values and returns NaN rather than crashing — downstream ML pipelines can then handle missing values through imputation or row filtering as appropriate.
 
+## Key Differences: Canonicalization vs Tautomerization
+| **Aspect** | **Canonicalization** | **Tautomerization** |
+|---|---|---|
+| **Purpose** | Standardizes the entire molecular representation | Handles proton/bond-shift equilibria |
+| **Scope** | Atom ordering, bond types, stereochemistry | Functional groups capable of tautomerization |
+| **Output** | Unique, canonical SMILES string | A specific canonical tautomeric form |
+| **Use Case** | Deduplication, consistency, comparison | Consistent descriptors across tautomeric forms |
 
+## References
 
-## Practical Example in Workbench
-### Canonicalization:
-- **Input**: `C1=CC=CC=C1` (Benzene) and `c1ccccc1` (alternate representation).
-- **Output**: `c1ccccc1` (unique canonical SMILES).
+- **ChEMBL Structure Pipeline**: Bento, A.P., et al. *"An open source chemical structure curation pipeline using RDKit."* Journal of Cheminformatics 12, 51 (2020). [DOI: 10.1186/s13321-020-00456-1](https://doi.org/10.1186/s13321-020-00456-1)
+- **RDKit Standardization**: Landrum, G. *"Standardization and Validation with the RDKit."* RSC Open Science (2021). [GitHub Notebook](https://github.com/greglandrum/RSC_OpenScience_Standardization_202104)
+- **RDKit**: [https://github.com/rdkit/rdkit](https://github.com/rdkit/rdkit)
+- **Mordred**: [https://github.com/mordred-descriptor/mordred](https://github.com/mordred-descriptor/mordred)
+- **AqSolDB**: Sorkun, M.C., et al. *"AqSolDB, a curated reference set of aqueous solubility and 2D descriptors for a diverse set of compounds."* Scientific Data 6, 143 (2019). [DOI: 10.1038/s41597-019-0151-1](https://doi.org/10.1038/s41597-019-0151-1)
 
-### Tautomerization:
-- **Input**: Keto-enol tautomerism: `C=O` ↔ `C-OH`.
-- **Output**: Standardized form based on stability or biological relevance (e.g., `C=O` for keto).
+## Questions?
+<img align="right" src="../images/scp.png" width="180">
 
----
-
-Both processes are crucial preprocessing steps in Workbench to ensure high-quality, noise-free datasets for QSAR/QSPR modeling and other predictive tasks in drug discovery.
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8)

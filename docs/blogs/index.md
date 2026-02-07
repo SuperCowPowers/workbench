@@ -1,23 +1,16 @@
 # Workbench Blogs
 !!! tip inline end "Just Getting Started?"
-    The Workbench Code Blogs is a great way to see what's possible with Workbench. Also if you're ready to jump in the [API Classes](../api_classes/overview.md) will give you details on the Workbench ML Pipeline Classes.
-    
-Workbench blogs are intended to show the actual steps/code around each blog topic. We also take a candid look at what worked well and where the current toolkit might need some feature improvements.
+    Workbench Blogs are a great way to see what's possible with Workbench. When you're ready to jump in, the [API Classes](../api_classes/overview.md) will give you details on the Workbench ML Pipeline Classes.
 
-## Latest Blogs
+Workbench blogs highlight interesting functionality and approaches that might be useful to a broader audience. Each blog gives a high-level overview of the topic with occasional drilldowns into the trickier bits.
 
-- **[Molecular Descriptors Issues for AqSol Data](descriptor_drilldown.md):** In this Blog we'll look at the popular AqSol compound solubility dataset, compute Molecular Descriptors (RDKit and Mordred) and take a deep dive on why NaNs, INFs, and parse errors are generated on about 9% of the compounds.
+## Blogs
 
-- **[AqSol Residual Analysis](residual_analysis.md):** In this Blog we'll look at the popular AqSol compound solubility dataset and walk backward through the ML pipeline by starting with model residuals and backtracking to the features and input data.
+- **[SHAP Values for ChemProp Models](chemprop_shap.md):** How do you explain a graph neural network? In this blog we explore our per-bit ablation approach for computing [SHAP values](https://shap.readthedocs.io/) on [ChemProp](https://github.com/chemprop/chemprop) MPNN models. We walk through the technical approach, show key code snippets, and analyze real SHAP output from a LogD regression model — validating that the model independently learns known structure-lipophilicity relationships.
 
-## Corner Cases
-
-These blogs are odd corner cases that we stumbled into and discovered some interesting aspect of Cloud Platforms or ML Pipelines. 
-
-- **[AWS Credentials Refresh Lock](aws_credentials_lock.md)** We discover that the AWS botocore library has a threading lock when refreshing credentials.
-
+- **[Canonicalization and Tautomerization](canonicalization_and_tautomerization.md):** A deep dive into why molecular standardization matters for ML pipelines. We look at the AqSol solubility dataset, compute molecular descriptors with RDKit, and explore why NaNs and parse errors show up on about 9% of compounds.
 
 ## Questions?
-<img align="right" src="../../images/scp.png" width="180">
+<img align="right" src="../images/scp.png" width="180">
 
-The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8)
