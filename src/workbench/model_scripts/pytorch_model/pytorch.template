@@ -574,28 +574,29 @@ if __name__ == "__main__":
     shap_importance = sorted(shap_importance, key=lambda x: x[1], reverse=True)
     print(f"Top 5 SHAP features: {shap_importance[:5]}")
 
-    # Get top 10 features for detailed SHAP data
-    top_10_features = [f[0] for f in shap_importance[:10]]
-    top_10_indices = [continuous_cols.index(f) for f in top_10_features]
+    # Get top N features for detailed SHAP data
+    shap_top_n = 20
+    top_n_features = [f[0] for f in shap_importance[:shap_top_n]]
+    top_n_indices = [continuous_cols.index(f) for f in top_n_features]
 
     # Create SHAP values DataFrame(s)
     if n_classes > 1 and label_encoder is not None:
         class_labels = label_encoder.classes_.tolist()
         for class_idx, class_label in enumerate(class_labels):
-            class_shap = shap_values_raw[:, class_idx, :][:, top_10_indices]
-            shap_df = pd.DataFrame(class_shap, columns=top_10_features)
+            class_shap = shap_values_raw[:, class_idx, :][:, top_n_indices]
+            shap_df = pd.DataFrame(class_shap, columns=top_n_features)
             shap_df.insert(0, id_column, shap_sample_ids.reset_index(drop=True))
             wr.s3.to_csv(shap_df, f"{model_metrics_s3_path}/shap_values_{class_label}.csv", index=False)
         print(f"Saved SHAP values for {len(class_labels)} classes")
     else:
-        shap_subset = shap_values_raw[:, 0, :][:, top_10_indices]
-        shap_df = pd.DataFrame(shap_subset, columns=top_10_features)
+        shap_subset = shap_values_raw[:, 0, :][:, top_n_indices]
+        shap_df = pd.DataFrame(shap_subset, columns=top_n_features)
         shap_df.insert(0, id_column, shap_sample_ids.reset_index(drop=True))
         wr.s3.to_csv(shap_df, f"{model_metrics_s3_path}/shap_values.csv", index=False)
-        print(f"Saved SHAP values ({shap_sample_size} samples, 10 features)")
+        print(f"Saved SHAP values ({shap_sample_size} samples, {len(top_n_features)} features)")
 
     # Save feature values for the same samples (for SHAP plots)
-    shap_feature_df = shap_sample_df[[id_column] + top_10_features].reset_index(drop=True)
+    shap_feature_df = shap_sample_df[[id_column] + top_n_features].reset_index(drop=True)
     wr.s3.to_csv(shap_feature_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
 
     # Save SHAP importance as JSON

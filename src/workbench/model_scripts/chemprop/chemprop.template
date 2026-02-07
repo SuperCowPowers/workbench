@@ -703,18 +703,26 @@ if __name__ == "__main__":
             df_val["pred_proba"] = [p.tolist() for p in oof_proba]
             df_val = expand_proba_column(df_val, label_encoder.classes_)
     else:
-        # Compute ensemble std
+        # Compute ensemble std using direct PyTorch inference (faster, no Trainer overhead)
         preds_std = None
         if len(ensemble_models) > 1:
             print("Computing prediction_std from ensemble...")
             val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
-            val_loader = data.build_dataloader(data.MoleculeDataset(val_dps), batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True)
-            trainer_pred = pl.Trainer(accelerator="auto", logger=False, enable_progress_bar=False)
+            val_loader = data.build_dataloader(
+                data.MoleculeDataset(val_dps), batch_size=batch_size, shuffle=False,
+                num_workers=num_workers, pin_memory=True,
+            )
 
             all_ens_preds = []
             for m in ensemble_models:
+                m.eval()
+                model_preds = []
                 with torch.inference_mode():
-                    ens_preds = np.concatenate([p.numpy() for p in trainer_pred.predict(m, val_loader)], axis=0)
+                    for batch in val_loader:
+                        bmg, V_d, X_d, *_ = batch
+                        output = m(bmg, V_d, X_d)
+                        model_preds.append(output.detach().cpu().numpy())
+                ens_preds = np.concatenate(model_preds, axis=0)
                 if ens_preds.ndim == 3 and ens_preds.shape[1] == 1:
                     ens_preds = ens_preds.squeeze(axis=1)
                 all_ens_preds.append(ens_preds)
@@ -761,15 +769,15 @@ if __name__ == "__main__":
     print("=" * 50)
     from chemprop_shap_utils import compute_chemprop_shap, format_shap_results
 
-    shap_values_array, shap_feature_names, shap_indices = compute_chemprop_shap(
+    shap_values_array, shap_feature_names, shap_indices, shap_fractions = compute_chemprop_shap(
         model=ensemble_models[0],
         smiles=df_val[smiles_column].tolist(),
         extra_descriptors=val_extra_features if use_extra_features else None,
     )
     sample_ids = df_val.iloc[shap_indices][id_column].reset_index(drop=True) if id_column in df_val.columns else None
     shap_importance, shap_values_df, feature_vals_df = format_shap_results(
-        shap_values_array, shap_feature_names, sample_ids=sample_ids, id_column=id_column,
-        top_n=len(shap_feature_names),
+        shap_values_array, shap_feature_names, shap_fractions,
+        sample_ids=sample_ids, id_column=id_column, top_n=len(shap_feature_names),
     )
     print(f"Top 5 SHAP features: {shap_importance[:5]}")
 
