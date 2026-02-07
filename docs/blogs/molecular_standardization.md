@@ -86,6 +86,6 @@ This is why the pipeline uses `errors="coerce"` for Mordred values and returns N
 - **AqSolDB**: Sorkun, M.C., et al. *"AqSolDB, a curated reference set of aqueous solubility and 2D descriptors for a diverse set of compounds."* Scientific Data 6, 143 (2019). [DOI: 10.1038/s41597-019-0151-1](https://doi.org/10.1038/s41597-019-0151-1)
 
 ## Questions?
-<img align="right" src="../images/scp.png" width="180">
+<img align="right" src="../../images/scp.png" width="180">
 
 The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8)

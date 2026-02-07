@@ -151,6 +151,6 @@ Computing SHAP values for graph neural networks requires creative approaches sin
 - Li, W., Wu, H., et al. *"When Do Quantum Mechanical Descriptors Help Graph Neural Networks to Predict Chemical Properties?"* Journal of the American Chemical Society 146(33), 23103–23120 (2024). [DOI: 10.1021/jacs.4c04670](https://doi.org/10.1021/jacs.4c04670)
 
 ## Questions?
-<img align="right" src="../images/scp.png" width="180">
+<img align="right" src="../../images/scp.png" width="180">
 
 The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8)
