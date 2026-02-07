@@ -18,7 +18,8 @@ FS_LIST = [
     "open_admet_mppb",
 ]
 
-FS_LIST = ["open_admet_logd"]  # For testing purposes, only process logD
+FS_LIST.remove("open_admet_logd")  # Remove logD
+print(FS_LIST)
 
 
 def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
@@ -76,7 +77,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
 
     # 1. Create XGBoost model
     xgb_model_name = f"{short_name}-reg-xgb"
-    if RECREATE or not Model(xgb_model_name).exists():
+    if True or RECREATE or not Model(xgb_model_name).exists():
         print(f"\nCreating XGBoost model: {xgb_model_name}")
         xgb_model = fs.to_model(
             name=xgb_model_name,
@@ -101,7 +102,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
 
     # 2. Create PyTorch model (all RDKit/Mordred features)
     pytorch_model_name = f"{short_name}-reg-pytorch"
-    if RECREATE or not Model(pytorch_model_name).exists():
+    if True or RECREATE or not Model(pytorch_model_name).exists():
         print(f"Creating PyTorch model: {pytorch_model_name}")
         pytorch_model = fs.to_model(
             name=pytorch_model_name,
@@ -121,7 +122,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
 
     # 3. Create ChemProp model (SMILES only)
     chemprop_model_name = f"{short_name}-reg-chemprop"
-    if RECREATE or not Model(chemprop_model_name).exists():
+    if True or RECREATE or not Model(chemprop_model_name).exists():
         print(f"Creating ChemProp model: {chemprop_model_name}")
         chemprop_model = fs.to_model(
             name=chemprop_model_name,
@@ -141,7 +142,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
 
     # 4. Create ChemProp Hybrid model (SMILES + Top 50 SHAP features)
     chemprop_hybrid_model_name = f"{short_name}-reg-chemprop-hybrid"
-    if True or RECREATE or not Model(chemprop_hybrid_model_name).exists():
+    if RECREATE or not Model(chemprop_hybrid_model_name).exists():
         print(f"Creating ChemProp Hybrid model: {chemprop_hybrid_model_name}")
         chemprop_hybrid_model = fs.to_model(
             name=chemprop_hybrid_model_name,

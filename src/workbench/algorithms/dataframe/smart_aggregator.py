@@ -10,7 +10,7 @@ import logging
 log = logging.getLogger("workbench")
 
 
-def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000, outlier_column: str = "residual") -> pd.DataFrame:
+def smart_aggregator(df: pd.DataFrame, target_rows: int = 5000, outlier_column: str = "residual") -> pd.DataFrame:
     """
     Reduce DataFrame rows by aggregating similar rows based on numeric column similarity.
 
@@ -20,7 +20,7 @@ def smart_aggregator(df: pd.DataFrame, target_rows: int = 1000, outlier_column: 
 
     Args:
         df: Input DataFrame.
-        target_rows: Target number of rows in output (default: 1000).
+        target_rows: Target number of rows in output (default: 5000).
         outlier_column: Column where high values should resist aggregation (default: "residual").
                        Rows with high values in this column will be kept separate while rows
                        with low values cluster together. Set to None to disable.
