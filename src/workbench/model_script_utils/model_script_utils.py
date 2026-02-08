@@ -208,7 +208,16 @@ def decompress_features(
         # Auto-detect format and parse: comma-separated counts or bitstring
         sample = str(df[feature].dropna().iloc[0]) if not df[feature].dropna().empty else ""
         parse_fn = (lambda s: list(map(int, s.split(",")))) if "," in sample else list
-        feature_matrix = np.array([parse_fn(s) for s in df[feature]], dtype=np.uint8)
+
+        # Determine feature width from sample and parse rows (NaN → zero vector)
+        n_bits = len(parse_fn(sample)) if sample else 0
+        rows = []
+        for s in df[feature]:
+            if pd.isna(s):
+                rows.append([0] * n_bits)
+            else:
+                rows.append(parse_fn(str(s)))
+        feature_matrix = np.array(rows, dtype=np.uint8)
 
         # Create new columns with prefix from feature name
         prefix = feature[:3]
