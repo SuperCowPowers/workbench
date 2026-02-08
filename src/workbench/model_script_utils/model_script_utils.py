@@ -185,15 +185,6 @@ def decompress_features(
     Returns:
         Tuple of (DataFrame with decompressed features, updated feature list)
     """
-    # Check for any missing values in the required features
-    missing_counts = df[features].isna().sum()
-    if missing_counts.any():
-        missing_features = missing_counts[missing_counts > 0]
-        print(
-            f"WARNING: Found missing values in features: {missing_features.to_dict()}. "
-            "WARNING: You might want to remove/replace all NaN values before processing."
-        )
-
     # Make a copy to avoid mutating the original list
     decompressed_features = features.copy()
 
@@ -206,18 +197,12 @@ def decompress_features(
         decompressed_features.remove(feature)
 
         # Auto-detect format and parse: comma-separated counts or bitstring
-        sample = str(df[feature].dropna().iloc[0]) if not df[feature].dropna().empty else ""
+        non_null = df[feature].dropna()
+        if non_null.empty:
+            raise ValueError(f"All values for '{feature}' are NaN — cannot decompress.")
+        sample = str(non_null.iloc[0])
         parse_fn = (lambda s: list(map(int, s.split(",")))) if "," in sample else list
-
-        # Determine feature width from sample and parse rows (NaN → zero vector)
-        n_bits = len(parse_fn(sample)) if sample else 0
-        rows = []
-        for s in df[feature]:
-            if pd.isna(s):
-                rows.append([0] * n_bits)
-            else:
-                rows.append(parse_fn(str(s)))
-        feature_matrix = np.array(rows, dtype=np.uint8)
+        feature_matrix = np.array([parse_fn(str(s)) for s in df[feature]], dtype=np.uint8)
 
         # Create new columns with prefix from feature name
         prefix = feature[:3]

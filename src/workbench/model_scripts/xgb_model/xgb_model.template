@@ -156,7 +156,11 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 
     # Prepare features
     matched_df = match_features_case_insensitive(df, features)
-    matched_df, _ = convert_categorical_types(matched_df, features, category_mappings)
+
+    # Exclude compressed features from categorical conversion (they're strings like "0,1,0,1,..."
+    # that should NOT be treated as categorical — they get decompressed into numeric columns below)
+    non_compressed_features = [f for f in features if f not in (compressed_features or [])]
+    matched_df, _ = convert_categorical_types(matched_df, non_compressed_features, category_mappings)
 
     if compressed_features:
         print("Decompressing features for prediction...")
@@ -250,7 +254,9 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Preprocessing: Categorical features and decompression
     # -------------------------------------------------------------------------
-    all_df, category_mappings = convert_categorical_types(all_df, features)
+    # Exclude compressed features from categorical conversion
+    non_compressed_features = [f for f in features if f not in (compressed_features or [])]
+    all_df, category_mappings = convert_categorical_types(all_df, non_compressed_features)
 
     if compressed_features:
         print(f"Decompressing features: {compressed_features}")
