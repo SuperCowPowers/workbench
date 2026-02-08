@@ -1511,6 +1511,34 @@
   
   
     <li class="md-nav__item">
+      <a href="aws_endpoint_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AWS Endpoint Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="molecular_standardization/" class="md-nav__link">
         
   
@@ -4440,11 +4468,14 @@
 <p class="admonition-title">Just Getting Started?</p>
 <p>Workbench Blogs are a great way to see what's possible with Workbench. When you're ready to jump in, the <a href="../api_classes/overview/">API Classes</a> will give you details on the Workbench ML Pipeline Classes.</p>
 </div>
-<p>Workbench blogs highlight interesting functionality and approaches that might be useful to a broader audience. Each blog gives a high-level overview of the topic with occasional drilldowns into the trickier bits.</p>
+<p>Workbench blogs highlight interesting functionality and approaches that might be useful to a broader audience. Each blog gives a high-level overview of the topic with drilldowns into the trickier bits. Whether you're looking for implementation details, architecture decisions, or practical tips for deploying ML models on AWS, these posts cover the real-world challenges we've solved.</p>
 <h2 id="blogs">Blogs</h2>
 <ul>
 <li>
 <p><strong><a href="chemprop_shap/">SHAP Values for ChemProp Models</a>:</strong> How do you explain a graph neural network? In this blog we explore our per-bit ablation approach for computing <a href="https://shap.readthedocs.io/">SHAP values</a> on <a href="https://github.com/chemprop/chemprop">ChemProp</a> MPNN models. We walk through the technical approach, show key code snippets, and analyze real SHAP output from a LogD regression model — validating that the model independently learns known structure-lipophilicity relationships.</p>
+</li>
+<li>
+<p><strong><a href="aws_endpoint_architecture/">Inside a Workbench AWS Endpoint</a>:</strong> A deep dive into endpoint architecture — comparing the default SageMaker stack (Nginx, Gunicorn, Flask) with Workbench's modern ASGI stack (Uvicorn, FastAPI). We cover the custom image with pre-loaded chemistry packages, and Workbench's binary-search error handling that isolates bad rows instead of failing entire batches.</p>
 </li>
 <li>
 <p><strong><a href="molecular_standardization/">Canonicalization and Tautomerization</a>:</strong> A deep dive into why molecular standardization matters for ML pipelines. We look at the AqSol solubility dataset, compute molecular descriptors with RDKit, and explore why NaNs and parse errors show up on about 9% of compounds.</p>
