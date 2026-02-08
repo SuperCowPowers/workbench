@@ -103,7 +103,7 @@ Nitrogen is the second most important feature and shows the **opposite** pattern
 Atoms with zero attached hydrogens (`num_Hs=0`) appear third — these are typically heteroatoms in aromatic rings or heavily substituted carbons. High fractions push LogD up slightly, consistent with aromatic/hydrophobic character. Meanwhile, `num_Hs=2` (methylene groups, primary amines) has a more mixed effect.
 
 ### Hybridization and Aromaticity
-`hybrid=SP2` and `is_aromatic` both rank highly. SP2-hybridized atoms and aromatic rings are flat, planar structures that tend to stack via pi-pi interactions and contribute to lipophilicity. The model captures this: high aromaticity generally pushes LogD positive.
+`hybrid=SP2` and `is_aromatic` both rank highly. SP2-hybridized atoms and aromatic rings are flat, planar structures with significant hydrophobic surface area that resists solvation by water, driving lipophilicity. The model captures this: high aromaticity generally pushes LogD positive.
 
 ### Bond Types (`bond=AROMATIC` vs `bond=SINGLE`)
 Aromatic bonds rank higher than single bonds in importance. Molecules rich in aromatic bonds (red dots on the `bond=AROMATIC` row) tend toward higher LogD — again consistent with the lipophilic nature of aromatic ring systems.
