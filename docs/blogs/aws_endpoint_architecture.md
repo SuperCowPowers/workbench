@@ -76,22 +76,26 @@ The FastAPI `/invocations` handler orchestrates three functions that every model
 async def invoke(request: Request):
     body = await request.body()
     data = inference_module.input_fn(body, content_type)      # → DataFrame
-    result = inference_module.predict_fn(data, model)          # → DataFrame
-    output_data, _ = inference_module.output_fn(result, accept) # → CSV/JSON
+    result = inference_module.predict_fn(data, model)         # → DataFrame
+    output_data = inference_module.output_fn(result, accept)  # → CSV/JSON
     return Response(content=output_data)
 ```
 
-**`input_fn`** parses the raw request body into a DataFrame — supporting both CSV and JSON content types. **`predict_fn`** receives that DataFrame, runs it through the model, and returns a new DataFrame with predictions appended. **`output_fn`** serializes the result back to CSV or JSON for the response.
+- **`input_fn`** parses the raw request body into a DataFrame — supports both CSV and JSON. 
+- **`predict_fn`** runs dataframe through the model, and returns a new DataFrame with predictions appended. 
+- **`output_fn`** serializes the result back to CSV or JSON for the response.
 
-This pattern means model scripts look like regular pandas code:
+This pattern means model scripts are simplier and that calling inference on an endpoint is as easy as sending a DataFrame:
 
 ```python
-def predict_fn(df, model):
-    # Standard pandas operations — no HTTP plumbing
-    df = match_features_case_insensitive(df, model.feature_names)
-    predictions = model.predict(df[model.feature_names])
-    df["prediction"] = predictions
-    return df
+# Grab Endpoint
+end = Endpoint("my_awesome_endpoint")
+
+# Grab data that I want to predict on
+my_data = <my inference data>
+
+# Send DataFrame to endpoint and get predictions back as a new DataFrame
+predictions = end.inference(my_data)
 ```
 
 ### Why DataFrames Matter
