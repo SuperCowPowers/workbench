@@ -4998,7 +4998,7 @@
 <h2 id="model-insights-what-the-shap-values-reveal">Model Insights: What the SHAP Values Reveal</h2>
 <p>The SHAP values reveal that the ChemProp model has independently learned the fundamental structure-lipophilicity relationships that medicinal chemists rely on:</p>
 <h3 id="carbon-content-atomc-top-feature">Carbon Content (<code>atom=C</code>) — Top Feature</h3>
-<p>Carbon fraction is the dominant predictor, and the pattern is clear: <strong>higher carbon fraction (red dots) pushes LogD positive</strong> (more lipophilic). This is textbook — carbon-rich molecules are hydrophobic. The wide spread of SHAP values (roughly -1 to +3.5) shows this feature has massive discriminating power.</p>
+<p>Carbon fraction is the dominant predictor, and the pattern is clear: <strong>higher carbon fraction (red dots) pushes LogD positive</strong> (more lipophilic). This is textbook — carbon-rich molecules are hydrophobic. The spread of SHAP values (roughly 0.5 to 3.5) shows this feature has good discriminating power.</p>
 <h3 id="nitrogen-content-atomn-strong-negative-driver">Nitrogen Content (<code>atom=N</code>) — Strong Negative Driver</h3>
 <p>Nitrogen is the second most important feature and shows the <strong>opposite</strong> pattern: higher nitrogen fraction (red dots) pushes LogD <strong>negative</strong> (more hydrophilic). Nitrogen atoms introduce hydrogen-bond donors/acceptors that increase water solubility. The two red outliers far to the left (SHAP ≈ -4 to -5) are likely molecules with very high nitrogen density (e.g., tetrazoles, triazines).</p>
 <h3 id="hydrogen-count-num_hs0-num_hs2">Hydrogen Count (<code>num_Hs=0</code>, <code>num_Hs=2</code>)</h3>
