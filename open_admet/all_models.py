@@ -19,9 +19,9 @@ FS_LIST = [
 ]
 
 FS_LIST.remove("open_admet_caco_2_efflux")
-FS_LIST.remove("open_admet_caco_2_papp_a_b")  # Remove Caco-2 Papp
-FS_LIST.remove("open_admet_logd")  # Remove logD
-
+FS_LIST.remove("open_admet_caco_2_papp_a_b")
+FS_LIST.remove("open_admet_hlm_clint")
+FS_LIST.remove("open_admet_logd")
 print(FS_LIST)
 
 
