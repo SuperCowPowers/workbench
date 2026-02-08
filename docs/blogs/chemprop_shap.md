@@ -94,7 +94,7 @@ Here's the SHAP output from a ChemProp model trained to predict **LogD** (the di
 The SHAP values reveal that the ChemProp model has independently learned the fundamental structure-lipophilicity relationships that medicinal chemists rely on:
 
 ### Carbon Content (`atom=C`) — Top Feature
-Carbon fraction is the dominant predictor, and the pattern is clear: **higher carbon fraction (red dots) pushes LogD positive** (more lipophilic). This is textbook — carbon-rich molecules are hydrophobic. The wide spread of SHAP values (roughly -1 to +3.5) shows this feature has massive discriminating power.
+Carbon fraction is the dominant predictor, and the pattern is clear: **higher carbon fraction (red dots) pushes LogD positive** (more lipophilic). This is textbook — carbon-rich molecules are hydrophobic. The spread of SHAP values (roughly 0.5 to 3.5) shows this feature has good discriminating power.
 
 ### Nitrogen Content (`atom=N`) — Strong Negative Driver
 Nitrogen is the second most important feature and shows the **opposite** pattern: higher nitrogen fraction (red dots) pushes LogD **negative** (more hydrophilic). Nitrogen atoms introduce hydrogen-bond donors/acceptors that increase water solubility. The two red outliers far to the left (SHAP ≈ -4 to -5) are likely molecules with very high nitrogen density (e.g., tetrazoles, triazines).
