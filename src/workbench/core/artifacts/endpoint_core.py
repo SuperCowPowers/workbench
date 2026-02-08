@@ -813,7 +813,7 @@ class EndpointCore(Artifact):
         """Internal: Fill a single-row DataFrame with NaNs for inference columns, keeping original feature data."""
 
         # Create a single-row DataFrame with NaNs, ensuring dtype=object to prevent type downcasting
-        one_row_df_with_nans = pd.DataFrame({col: [np.NaN] for col in self.endpoint_return_columns}, dtype=object)
+        one_row_df_with_nans = pd.DataFrame({col: [np.nan] for col in self.endpoint_return_columns}, dtype=object)
 
         # Check if feature_df is not empty and has at least one row
         if not feature_df.empty:

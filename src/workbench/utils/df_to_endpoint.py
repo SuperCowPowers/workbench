@@ -20,7 +20,7 @@ result_columns = list()
 # Internal Method to construct an Error DataFrame (a Pandas DataFrame with one row of NaNs)
 def _error_df(df, all_columns):
     # Create a new dataframe with all NaNs
-    error_df = pd.DataFrame(dict(zip(all_columns, [[np.NaN]] * len(result_columns))))
+    error_df = pd.DataFrame(dict(zip(all_columns, [[np.nan]] * len(result_columns))))
     # Now set the original values for the incoming dataframe
     for column in df.columns:
         error_df[column] = df[column].values
@@ -130,8 +130,8 @@ def endpoint_to_dataframe_tests():
     print(endpoint_results.head())
 
     # Now replace one of the SMILES with a NaN
-    df["SMILES"][1] = np.NaN
-    df["SMILES"][3] = np.NaN
+    df["SMILES"][1] = np.nan
+    df["SMILES"][3] = np.nan
     print(f"Calling Endpoint with a NaN SMILES: {endpoint_name}...")
     endpoint_results = df_to_endpoint(endpoint, df)
     print(endpoint_results.head())
