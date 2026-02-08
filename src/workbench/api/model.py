@@ -5,6 +5,8 @@ Models can be viewed in the AWS Sagemaker interfaces or in the Workbench
 Dashboard UI, which provides additional model details and performance metrics
 """
 
+from __future__ import annotations
+
 # Type checking imports (avoid circular imports at runtime)
 from typing import TYPE_CHECKING
 

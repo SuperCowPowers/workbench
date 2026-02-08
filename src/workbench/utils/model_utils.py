@@ -1,5 +1,7 @@
 """Model Utilities for Workbench models"""
 
+from __future__ import annotations
+
 import logging
 import pandas as pd
 import numpy as np
