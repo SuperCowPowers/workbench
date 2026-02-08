@@ -11,8 +11,15 @@ import json
 import tempfile
 import tarfile
 import awswrangler as wr
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, TYPE_CHECKING
 from scipy.stats import norm
+
+if TYPE_CHECKING:
+    from workbench.api import Model
+    from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
+    from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
+    from workbench.algorithms.models.noise_model import NoiseModel
+    from workbench.algorithms.models.cleanlab_model import CleanlabModels
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -93,7 +100,7 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
     return script_path
 
 
-def proximity_model_local(model: "Model", include_all_columns: bool = False) -> "FeatureSpaceProximity":
+def proximity_model_local(model: Model, include_all_columns: bool = False) -> FeatureSpaceProximity:
     """Create a FeatureSpaceProximity Model for this Model
 
     Args:
@@ -129,12 +136,12 @@ def proximity_model_local(model: "Model", include_all_columns: bool = False) -> 
 
 
 def fingerprint_prox_model_local(
-    model: "Model",
+    model: Model,
     include_all_columns: bool = False,
     radius: int = 2,
     n_bits: int = 1024,
     counts: bool = False,
-) -> "FingerprintProximity":
+) -> FingerprintProximity:
     """Create a FingerprintProximity Model for this Model
 
     Args:
@@ -176,7 +183,7 @@ def fingerprint_prox_model_local(
     )
 
 
-def noise_model_local(model: "Model") -> "NoiseModel":
+def noise_model_local(model: Model) -> NoiseModel:
     """Create a NoiseModel for detecting noisy/problematic samples in a Model's training data.
 
     Args:
@@ -208,7 +215,7 @@ def noise_model_local(model: "Model") -> "NoiseModel":
     return NoiseModel(full_df, id_column, features, target)
 
 
-def cleanlab_model_local(model: "Model") -> "CleanlabModels":
+def cleanlab_model_local(model: Model) -> CleanlabModels:
     """Create a CleanlabModels instance for detecting data quality issues in a Model's training data.
 
     Args:
@@ -238,7 +245,7 @@ def cleanlab_model_local(model: "Model") -> "CleanlabModels":
     return create_cleanlab_model(full_df, id_column, features, target, model_type=model_type)
 
 
-def published_proximity_model(model: "Model", prox_model_name: str, include_all_columns: bool = False) -> "Model":
+def published_proximity_model(model: Model, prox_model_name: str, include_all_columns: bool = False) -> Model:
     """Create a published proximity model based on the given model
 
     Args:
@@ -503,7 +510,7 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     """Exercise the Model Utilities"""
-    from workbench.api import Model
+    from workbench.api import Model  # noqa: F811
 
     # Get the instance information
     print(model_instance_info())

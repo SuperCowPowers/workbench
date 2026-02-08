@@ -5,6 +5,15 @@ Models can be viewed in the AWS Sagemaker interfaces or in the Workbench
 Dashboard UI, which provides additional model details and performance metrics
 """
 
+# Type checking imports (avoid circular imports at runtime)
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
+    from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
+    from workbench.algorithms.models.noise_model import NoiseModel
+    from workbench.algorithms.models.cleanlab_model import CleanlabModels
+
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework  # noqa: F401
@@ -88,7 +97,7 @@ class Model(ModelCore):
         end.set_owner(self.get_owner())
         return end
 
-    def prox_model(self, include_all_columns: bool = False) -> "FeatureSpaceProximity":
+    def prox_model(self, include_all_columns: bool = False) -> FeatureSpaceProximity:
         """Create a local Proximity Model for this Model
 
         Args:
@@ -105,7 +114,7 @@ class Model(ModelCore):
         radius: int = 2,
         n_bits: int = 1024,
         counts: bool = False,
-    ) -> "FingerprintProximity":
+    ) -> FingerprintProximity:
         """Create a local Fingerprint Proximity Model for this Model
 
         Args:
@@ -121,7 +130,7 @@ class Model(ModelCore):
             self, include_all_columns=include_all_columns, radius=radius, n_bits=n_bits, counts=counts
         )
 
-    def noise_model(self) -> "NoiseModel":
+    def noise_model(self) -> NoiseModel:
         """Create a local Noise Model for this Model
 
         Returns:
@@ -129,7 +138,7 @@ class Model(ModelCore):
         """
         return noise_model_local(self)
 
-    def cleanlab_model(self) -> "CleanlabModels":
+    def cleanlab_model(self) -> CleanlabModels:
         """Create a CleanlabModels instance for this Model's training data.
 
         Returns:
