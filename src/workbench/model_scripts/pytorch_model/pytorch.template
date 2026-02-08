@@ -1,4 +1,4 @@
-# PyTorch Tabular Model Template for Workbench
+# PyTorch Tabular Model Template for Workbench:
 #
 # This template handles both classification and regression models with:
 # - K-fold cross-validation ensemble training (or single train/val split)

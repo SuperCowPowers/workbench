@@ -1,4 +1,4 @@
-# XGBoost Model Template for Workbench
+# XGBoost Model Template for Workbench:
 #
 # This template handles both classification and regression models with:
 # - K-fold cross-validation ensemble training (or single train/val split)

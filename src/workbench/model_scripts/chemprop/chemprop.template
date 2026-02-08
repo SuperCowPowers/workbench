@@ -1,4 +1,4 @@
-# ChemProp Model Template for Workbench
+# ChemProp Model Template for Workbench:
 #
 # This template handles molecular property prediction using ChemProp 2.x MPNN with:
 # - K-fold cross-validation ensemble training (or single train/val split)
