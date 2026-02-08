@@ -34,9 +34,10 @@ nav:
     - Support Phases (WIP): themes/details.md
   - Confidence Scores:
     - Overview: confidence/index.md
-  - Blogs: 
+  - Blogs:
     - OverView: blogs/index.md
-    - Chemprop Shap Values: blogs/chemprop_shap.md 
+    - Chemprop Shap Values: blogs/chemprop_shap.md
+    - AWS Endpoint Architecture: blogs/aws_endpoint_architecture.md
     - Molecular Standardization: blogs/molecular_standardization.md
   - Core Classes: 
     - OverView: core_classes/overview.md
