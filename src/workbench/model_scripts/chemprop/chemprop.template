@@ -1,3 +1,5 @@
+# vim: set ft=python:
+
 # ChemProp Model Template for Workbench:
 #
 # This template handles molecular property prediction using ChemProp 2.x MPNN with:

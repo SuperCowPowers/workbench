@@ -1,3 +1,5 @@
+# vim: set ft=python:
+
 # PyTorch Tabular Model Template for Workbench:
 #
 # This template handles both classification and regression models with:
