@@ -334,7 +334,7 @@ class FeaturesToModel(Transform):
 
         Args:
             aws_region (str, optional): AWS Region to use (default None)
-            **kwargs: Additional keyword arguments to pass to the model registration
+            **kwargs (dict): Additional keyword arguments to pass to the model registration
         """
 
         # Get the metadata/tags to push into AWS

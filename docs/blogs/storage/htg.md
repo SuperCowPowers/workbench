@@ -1,7 +1,7 @@
 # EDA: High Target Gradients
 
 !!! tip inline end "Workbench EDS"
-    The Workbench toolkit a set of plots that show EDA results, it also has a flexible plugin architecture to expand, enhance, or even replace the current set of web components [Dashboard](../aws_setup/dashboard_stack.md).
+    The Workbench toolkit a set of plots that show EDA results, it also has a flexible plugin architecture to expand, enhance, or even replace the current set of web components [Dashboard](../../aws_setup/dashboard_stack.md).
 
 The Workbench framework has a broad range of Exploratory Data Analysis (EDA) functionality. Each time a DataSource or FeatureSet is created that data is run through a full set of EDA techniques:
 

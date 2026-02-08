@@ -286,7 +286,7 @@ class MonitorCore:
         # Use the utility function
         return get_monitor_json_data(self.statistics_json_file)
 
-    def update_constraints(self, constraints_updates):
+    def update_constraints(self, constraints_updates) -> bool:
         """Update the constraints file with custom constraints or monitoring config
 
         Args:
@@ -387,7 +387,7 @@ class MonitorCore:
         self.model_monitor.create_monitoring_schedule(**schedule_args)
         self.log.important(f"New Monitoring schedule created for {self.endpoint_name}.")
 
-    def monitoring_schedule_exists(self):
+    def monitoring_schedule_exists(self) -> bool:
         """Check if a monitoring schedule already exists for this endpoint
 
         Returns:
@@ -497,7 +497,7 @@ class MonitorCore:
             self.log.error(f"Error getting execution details for {processing_job_arn}: {e}")
             return None
 
-    def setup_alerts(self, notification_email, threshold=1):
+    def setup_alerts(self, notification_email, threshold=1) -> bool:
         """Set up CloudWatch alarms for monitoring violations with email notifications
 
         Args:

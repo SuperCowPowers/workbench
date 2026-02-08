@@ -68,18 +68,18 @@ class ModelImages:
     }
 
     @classmethod
-    def get_image_uri(cls, region, image_type, version="latest", architecture="x86_64"):
+    def get_image_uri(cls, region: str, image_type: str, version: str = "latest", architecture: str = "x86_64") -> str:
         """
         Dynamically construct ECR image URI.
 
         Args:
-            region: AWS region (e.g., 'us-east-1', 'us-west-2')
-            image_type: Type of image (e.g., 'training', 'inference', 'pytorch_training')
-            version: Image version (e.g., '0.1', '0.2' defaults to 'latest')
-            architecture: CPU architecture (default: 'x86_64', currently unused but kept for compatibility)
+            region (str): AWS region (e.g., 'us-east-1', 'us-west-2')
+            image_type (str): Type of image (e.g., 'training', 'inference', 'pytorch_training')
+            version (str): Image version (e.g., '0.1', '0.2' defaults to 'latest')
+            architecture (str): CPU architecture (default: 'x86_64', currently unused but kept for compatibility)
 
         Returns:
-            ECR image URI string
+            str: ECR image URI string
         """
         if image_type not in cls.IMAGE_NAMES:
             raise ValueError(f"Unknown image_type: {image_type}. Valid types: {list(cls.IMAGE_NAMES.keys())}")
@@ -857,7 +857,7 @@ class ModelCore(Artifact):
         except (KeyError, IndexError, TypeError):
             return None
 
-    def publish_prox_model(self, prox_model_name: str = None, include_all_columns: bool = False):
+    def publish_prox_model(self, prox_model_name: str = None, include_all_columns: bool = False) -> "ModelCore":
         """Create and publish a Proximity Model for this Model
 
         Args:

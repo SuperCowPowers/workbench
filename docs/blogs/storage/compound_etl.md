@@ -53,7 +53,7 @@ Tautomerization standardizes different tautomeric forms of a compound into a sin
 
 
 ### Canonicalization and Tautomerization
-For an in-depth look at why **Canonicalization** and **Tautomerization** are crucial for compound preprocessing, see our blog on [Canonicalization and Tautomerization](canonicalization_and_tautomerization.md). It covers the importance of standardizing molecular representations to ensure robust and reproducible machine learning workflows.
+For an in-depth look at why **Canonicalization** and **Tautomerization** are crucial for compound preprocessing, see our blog on [Canonicalization and Tautomerization](../molecular_standardization.md). It covers the importance of standardizing molecular representations to ensure robust and reproducible machine learning workflows.
 
 
 ## Conclusion

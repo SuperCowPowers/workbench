@@ -8,7 +8,7 @@ Workbench blogs highlight interesting functionality and approaches that might be
 
 - **[SHAP Values for ChemProp Models](chemprop_shap.md):** How do you explain a graph neural network? In this blog we explore our per-bit ablation approach for computing [SHAP values](https://shap.readthedocs.io/) on [ChemProp](https://github.com/chemprop/chemprop) MPNN models. We walk through the technical approach, show key code snippets, and analyze real SHAP output from a LogD regression model — validating that the model independently learns known structure-lipophilicity relationships.
 
-- **[Canonicalization and Tautomerization](canonicalization_and_tautomerization.md):** A deep dive into why molecular standardization matters for ML pipelines. We look at the AqSol solubility dataset, compute molecular descriptors with RDKit, and explore why NaNs and parse errors show up on about 9% of compounds.
+- **[Canonicalization and Tautomerization](molecular_standardization.md):** A deep dive into why molecular standardization matters for ML pipelines. We look at the AqSol solubility dataset, compute molecular descriptors with RDKit, and explore why NaNs and parse errors show up on about 9% of compounds.
 
 ## Questions?
 <img align="right" src="../images/scp.png" width="180">

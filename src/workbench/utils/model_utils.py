@@ -93,7 +93,7 @@ def get_custom_script_path(package: str, script_name: str) -> Path:
     return script_path
 
 
-def proximity_model_local(model: "Model", include_all_columns: bool = False):
+def proximity_model_local(model: "Model", include_all_columns: bool = False) -> "FeatureSpaceProximity":
     """Create a FeatureSpaceProximity Model for this Model
 
     Args:
@@ -134,7 +134,7 @@ def fingerprint_prox_model_local(
     radius: int = 2,
     n_bits: int = 1024,
     counts: bool = False,
-):
+) -> "FingerprintProximity":
     """Create a FingerprintProximity Model for this Model
 
     Args:
@@ -176,7 +176,7 @@ def fingerprint_prox_model_local(
     )
 
 
-def noise_model_local(model: "Model"):
+def noise_model_local(model: "Model") -> "NoiseModel":
     """Create a NoiseModel for detecting noisy/problematic samples in a Model's training data.
 
     Args:
@@ -208,7 +208,7 @@ def noise_model_local(model: "Model"):
     return NoiseModel(full_df, id_column, features, target)
 
 
-def cleanlab_model_local(model: "Model"):
+def cleanlab_model_local(model: "Model") -> "CleanlabModels":
     """Create a CleanlabModels instance for detecting data quality issues in a Model's training data.
 
     Args:

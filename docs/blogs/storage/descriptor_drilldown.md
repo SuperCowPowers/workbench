@@ -15,7 +15,7 @@ AqSolDB: A curated reference set of aqueous solubility, created by the Autonomou
 
 
 ### Canonicalization and Tautomerization
-We have another blog on [Canonicalization and Tautomerization](canonicalization_and_tautomerization.md) which covers the importance of getting your compounds into a standardized ...
+We have another blog on [Canonicalization and Tautomerization](../molecular_standardization.md) which covers the importance of getting your compounds into a standardized ...
 
 
 ```

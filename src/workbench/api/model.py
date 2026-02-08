@@ -88,14 +88,14 @@ class Model(ModelCore):
         end.set_owner(self.get_owner())
         return end
 
-    def prox_model(self, include_all_columns: bool = False):
+    def prox_model(self, include_all_columns: bool = False) -> "FeatureSpaceProximity":
         """Create a local Proximity Model for this Model
 
         Args:
-              include_all_columns (bool): Include all DataFrame columns in results (default: False)
+            include_all_columns (bool): Include all DataFrame columns in results (default: False)
 
         Returns:
-           FeatureSpaceProximity: A local FeatureSpaceProximity Model
+            FeatureSpaceProximity: A local FeatureSpaceProximity Model
         """
         return proximity_model_local(self, include_all_columns=include_all_columns)
 
@@ -105,36 +105,36 @@ class Model(ModelCore):
         radius: int = 2,
         n_bits: int = 1024,
         counts: bool = False,
-    ):
+    ) -> "FingerprintProximity":
         """Create a local Fingerprint Proximity Model for this Model
 
         Args:
-           include_all_columns (bool): Include all DataFrame columns in results (default: False)
-           radius (int): Morgan fingerprint radius (default: 2)
-           n_bits (int): Number of bits for the fingerprint (default: 1024)
-           counts (bool): Use count fingerprints instead of binary (default: False)
+            include_all_columns (bool): Include all DataFrame columns in results (default: False)
+            radius (int): Morgan fingerprint radius (default: 2)
+            n_bits (int): Number of bits for the fingerprint (default: 1024)
+            counts (bool): Use count fingerprints instead of binary (default: False)
 
         Returns:
-           FingerprintProximity: A local FingerprintProximity Model
+            FingerprintProximity: A local FingerprintProximity Model
         """
         return fingerprint_prox_model_local(
             self, include_all_columns=include_all_columns, radius=radius, n_bits=n_bits, counts=counts
         )
 
-    def noise_model(self):
+    def noise_model(self) -> "NoiseModel":
         """Create a local Noise Model for this Model
 
         Returns:
-           NoiseModel: A local Noise Model
+            NoiseModel: A local Noise Model
         """
         return noise_model_local(self)
 
-    def cleanlab_model(self):
-        """Create a CleanLearning model for this Model's training data.
+    def cleanlab_model(self) -> "CleanlabModels":
+        """Create a CleanlabModels instance for this Model's training data.
 
         Returns:
-           CleanLearning: A fitted cleanlab model. Use get_label_issues() to get
-           a DataFrame with id_column, label_quality, predicted_label, given_label, is_label_issue.
+            CleanlabModels: Factory providing access to CleanLearning and Datalab models. Use get_label_issues() to get
+                a DataFrame with id_column, label_quality, predicted_label, given_label, is_label_issue.
         """
         return cleanlab_model_local(self)
 
