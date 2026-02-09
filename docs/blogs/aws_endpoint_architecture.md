@@ -19,9 +19,10 @@ Gunicorn is a pre-fork worker server that spawns multiple copies of the Flask ap
 Flask defines the two required endpoints: `GET /ping` for health checks and `POST /invocations` for inference. It's lightweight and well-understood, but it's a synchronous WSGI framework — no native support for async I/O, streaming responses, or WebSocket connections.
 
 ### The Request Flow
-```
-SageMaker Runtime → Nginx (:8080) → Unix Socket → Gunicorn (sync workers) → Flask → Model
-```
+
+<figure style="margin: 20px auto;">
+<img src="../../images/default_stack_flow.svg" alt="Default SageMaker request flow: Nginx → Gunicorn → Flask → Model" style="min-height: 350px;">
+</figure>
 
 Each request passes through three layers of process/socket boundaries before reaching your model code. Gunicorn's sync workers mean that concurrency is limited to the number of worker processes — and each worker loads a full copy of the model into memory.
 
@@ -57,9 +58,10 @@ Key advantages over Gunicorn + Nginx:
 - **Native async/await**: Endpoint handlers can be `async def`, enabling non-blocking I/O throughout the request lifecycle.
 
 ### The Workbench Request Flow
-```
-SageMaker Runtime → Uvicorn (:8080, ASGI) → FastAPI → Model Script → Model
-```
+
+<figure style="margin: 20px auto;">
+<img src="../../images/workbench_stack_flow.svg" alt="Workbench request flow: Uvicorn → FastAPI → Model" style="min-height: 300px;">
+</figure>
 
 Two layers instead of three. Async instead of sync. Typed schemas instead of manual parsing.
 

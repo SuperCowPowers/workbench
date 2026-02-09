@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 460" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="w-uvicorn" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#1E88E5"/>
+    </linearGradient>
+    <linearGradient id="w-fastapi" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00897B"/>
+      <stop offset="100%" stop-color="#009688"/>
+    </linearGradient>
+    <linearGradient id="w-model" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a6b8a"/>
+      <stop offset="100%" stop-color="#2196a9"/>
+    </linearGradient>
+    <filter id="w-shadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="390" y="36" text-anchor="middle" font-size="28" font-weight="700" fill="#E0E0E0">Workbench Stack</text>
+  <text x="390" y="66" text-anchor="middle" font-size="24" fill="#999">ASGI / Async-Native</text>
+
+  <!-- Request arrow down (left side) -->
+  <text x="55" y="92" text-anchor="middle" font-size="24" font-weight="600" fill="#66BB6A">Request</text>
+  <line x1="55" y1="104" x2="55" y2="388" stroke="#66BB6A" stroke-width="2.5" stroke-dasharray="7,4"/>
+  <polygon points="48,386 55,402 62,386" fill="#66BB6A"/>
+
+  <!-- Response arrow up (right side) -->
+  <text x="725" y="92" text-anchor="middle" font-size="24" font-weight="600" fill="#42A5F5">Response</text>
+  <line x1="725" y1="388" x2="725" y2="130" stroke="#42A5F5" stroke-width="2.5" stroke-dasharray="7,4"/>
+  <polygon points="718,132 725,116 732,132" fill="#42A5F5"/>
+
+  <!-- Uvicorn box -->
+  <rect x="115" y="90" width="550" height="88" rx="10" fill="url(#w-uvicorn)" filter="url(#w-shadow)"/>
+  <text x="390" y="130" text-anchor="middle" font-size="28" font-weight="700" fill="white">Uvicorn</text>
+  <text x="390" y="160" text-anchor="middle" font-size="24" fill="#BBDEFB">ASGI · Async · :8080</text>
+
+  <!-- Connector -->
+  <line x1="390" y1="178" x2="390" y2="222" stroke="#666" stroke-width="1" stroke-dasharray="5,4"/>
+
+  <!-- FastAPI box -->
+  <rect x="115" y="222" width="550" height="88" rx="10" fill="url(#w-fastapi)" filter="url(#w-shadow)"/>
+  <text x="390" y="262" text-anchor="middle" font-size="28" font-weight="700" fill="white">FastAPI</text>
+  <text x="390" y="292" text-anchor="middle" font-size="24" fill="#B2DFDB">Pydantic Validation · DataFrame In/Out</text>
+
+  <!-- Connector -->
+  <line x1="390" y1="310" x2="390" y2="354" stroke="#666" stroke-width="1" stroke-dasharray="5,4"/>
+
+  <!-- Model box -->
+  <rect x="115" y="354" width="550" height="72" rx="10" fill="url(#w-model)" filter="url(#w-shadow)"/>
+  <text x="390" y="398" text-anchor="middle" font-size="28" font-weight="600" fill="white">Model</text>
+</svg>
