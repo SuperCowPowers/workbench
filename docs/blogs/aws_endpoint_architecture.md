@@ -1,5 +1,5 @@
 # Inside a Workbench AWS Endpoint: A Modern Web Stack for ML Inference
-When you deploy a model endpoint on AWS SageMaker, the default architecture gives you a battle-tested but aging web stack. Workbench takes a different approach — building custom container images with a modern ASGI stack that delivers better performance, native async support, and automatic API documentation. In this blog we'll compare the two architectures and explain why the Workbench stack is a better foundation for production ML inference.
+When you deploy a model endpoint on AWS SageMaker, the default architecture gives you a battle-tested but aging web stack. Workbench takes a different approach — building custom container images with a modern ASGI stack that delivers better performance and native async support. In this blog we'll compare the two architectures and explain why the Workbench stack is a better foundation for production ML inference.
 
 <figure style="margin: 20px 0;">
 <img src="../../images/endpoint_architecture.png" alt="Components of a Workbench AWS Endpoint" style="width: 100%;">
@@ -34,8 +34,6 @@ The Nginx/Gunicorn/Flask stack works, but it has real limitations for modern ML 
 
 **Memory-heavy concurrency.** Gunicorn achieves concurrency by forking worker processes. Each process loads the full Python interpreter and model into memory. Want 8 concurrent requests? You need 8 copies of your model in RAM.
 
-**No automatic API documentation.** Flask endpoints are opaque — there's no built-in schema validation, no auto-generated docs, and no request/response models. You're writing validation logic by hand and hoping the client sends the right format.
-
 **An aging ecosystem.** Flask and Gunicorn are mature and stable, but the Python web ecosystem has moved on. The ASGI standard, async/await, and frameworks like FastAPI represent the modern approach to building high-performance Python web services.
 
 ## The Workbench Stack: Uvicorn + FastAPI
@@ -52,10 +50,9 @@ Key advantages over Gunicorn + Nginx:
 - **Native HTTP/1.1 and WebSocket support**: ASGI natively supports streaming responses and bidirectional communication — critical for streaming inference results.
 
 ### FastAPI (ASGI Web Framework)
-[FastAPI](https://fastapi.tiangolo.com/) is a modern Python web framework built on ASGI and Pydantic. It's what makes Workbench endpoints self-documenting and type-safe:
+[FastAPI](https://fastapi.tiangolo.com/) is a modern Python web framework built on ASGI and Pydantic. It's what makes Workbench endpoints type-safe and production-ready:
 
 - **Pydantic models for request/response validation**: Input data is validated against typed schemas before your model code ever sees it. Bad requests get clear error messages automatically.
-- **Automatic OpenAPI docs**: Every Workbench endpoint gets a `/docs` page with interactive API documentation — try out inference calls directly from the browser.
 - **Dependency injection**: Shared resources (model loading, configuration) are managed cleanly without global state or singletons.
 - **Native async/await**: Endpoint handlers can be `async def`, enabling non-blocking I/O throughout the request lifecycle.
 
@@ -133,7 +130,6 @@ This means endpoint model scripts can import these packages directly without bun
 | **Concurrency Model** | Process forking (1 req/worker) | Async event loop (many req/worker) |
 | **Streaming** | Not natively supported | Native ASGI streaming |
 | **Request Validation** | Manual | Automatic (Pydantic) |
-| **API Documentation** | None | Auto-generated OpenAPI/Swagger |
 | **Process Count** | 3 (Nginx + Gunicorn + Flask) | 1 (Uvicorn + FastAPI) |
 | **Chemistry Packages** | Install yourself | Pre-loaded (RDKit, Mordred, ChemProp) |
 
@@ -143,8 +139,6 @@ The architecture differences aren't academic — they translate directly to oper
 **Simpler debugging.** One server process with structured FastAPI logging beats digging through Nginx access logs, Gunicorn error logs, and Flask tracebacks across three processes.
 
 **Better resource utilization.** Async I/O means a single worker can overlap model loading, preprocessing, and response serialization. You're not paying for idle workers blocked on I/O.
-
-**Self-documenting endpoints.** Every Workbench endpoint exposes its API schema. New team members can hit `/docs` and immediately understand the input format, output schema, and available parameters.
 
 **Ready for advanced patterns.** Streaming inference results, health checks with detailed model status, batch preprocessing with async gathering — these patterns fall out naturally from the ASGI architecture. With WSGI, each one requires workarounds.
 
@@ -188,7 +182,7 @@ This means you can send 10,000 rows to an endpoint, have 3 of them contain inval
 The `N/A` → `NaN` conversion and automatic type recovery in `_predict` further smooths over the rough edges of CSV serialization — numeric columns that SageMaker's CSV deserializer returns as strings get converted back to proper numeric types, and `pd.NA` placeholders survive the round-trip through `__NA__` encoding.
 
 ## Summary
-AWS SageMaker's default endpoint architecture — Nginx, Gunicorn, and Flask — is a proven stack that's been serving models reliably for years. But it's a synchronous, WSGI-era design that shows its age when you need async processing, streaming responses, or automatic API documentation.
+AWS SageMaker's default endpoint architecture — Nginx, Gunicorn, and Flask — is a proven stack that's been serving models reliably for years. But it's a synchronous, WSGI-era design that shows its age when you need async processing, or streaming responses.
 
 Workbench replaces this with Uvicorn and FastAPI: a modern ASGI stack that's simpler (fewer processes), more capable (async, streaming, auto-docs), and purpose-built for computational chemistry workloads. The DataFrame-in/DataFrame-out contract means model scripts work with familiar pandas code while the framework handles serialization, type recovery, and case-insensitive feature matching automatically. On top of that, robust error handling uses binary search to isolate bad rows in inference batches — so a single malformed SMILES string doesn't take down your entire prediction run. Combined with a custom image pre-loaded with RDKit, Mordred, and ChemProp, Workbench endpoints give you a production-ready ML inference platform without the infrastructure headaches.
 
