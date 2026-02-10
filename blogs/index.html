@@ -12,7 +12,7 @@
         <link rel="prev" href="../confidence/">
       
       
-        <link rel="next" href="chemprop_shap/">
+        <link rel="next" href="model_confidence/">
       
       
         
@@ -1471,6 +1471,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="model_confidence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Confidence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -4471,6 +4499,9 @@
 <p>Workbench blogs highlight interesting functionality and approaches that might be useful to a broader audience. Each blog gives a high-level overview of the topic with drilldowns into the trickier bits. Whether you're looking for implementation details, architecture decisions, or practical tips for deploying ML models on AWS, these posts cover the real-world challenges we've solved.</p>
 <h2 id="blogs">Blogs</h2>
 <ul>
+<li>
+<p><strong><a href="model_confidence/">Model Confidence: Building on Conformal Prediction</a>:</strong> How does Workbench approach prediction uncertainty? We walk through our current pipeline — 5-fold ensemble disagreement, conformal calibration for coverage guarantees, and percentile-rank confidence scoring — discuss the trade-offs, and point to the foundational work we're building on.</p>
+</li>
 <li>
 <p><strong><a href="chemprop_shap/">SHAP Values for ChemProp Models</a>:</strong> How do you explain a graph neural network? In this blog we explore our per-bit ablation approach for computing <a href="https://shap.readthedocs.io/">SHAP values</a> on <a href="https://github.com/chemprop/chemprop">ChemProp</a> MPNN models. We walk through the technical approach, show key code snippets, and analyze real SHAP output from a LogD regression model — validating that the model independently learns known structure-lipophilicity relationships.</p>
 </li>

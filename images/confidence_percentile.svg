@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" width="100%" height="auto">
+  <!-- Title -->
+  <text x="450" y="42" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="28" font-weight="bold">Prediction Confidence Bands</text>
+
+  <!-- Plot area -->
+  <!-- Axes -->
+  <line x1="100" y1="70" x2="100" y2="370" stroke="#999" stroke-width="1.5"/>
+  <line x1="100" y1="370" x2="840" y2="370" stroke="#999" stroke-width="1.5"/>
+
+  <!-- Y-axis label -->
+  <text x="38" y="220" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="24" transform="rotate(-90, 38, 220)">Prediction</text>
+
+  <!-- X-axis label -->
+  <text x="470" y="410" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="24">Compounds (sorted by confidence)</text>
+
+  <!-- Y-axis ticks -->
+  <line x1="94" y1="120" x2="100" y2="120" stroke="#999" stroke-width="1"/>
+  <text x="86" y="126" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="24">3</text>
+  <line x1="94" y1="195" x2="100" y2="195" stroke="#999" stroke-width="1"/>
+  <text x="86" y="201" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="24">2</text>
+  <line x1="94" y1="270" x2="100" y2="270" stroke="#999" stroke-width="1"/>
+  <text x="86" y="276" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="24">1</text>
+  <line x1="94" y1="345" x2="100" y2="345" stroke="#999" stroke-width="1"/>
+  <text x="86" y="351" text-anchor="end" fill="#aaa" font-family="Helvetica, Arial" font-size="24">0</text>
+
+  <!-- Grid lines -->
+  <line x1="100" y1="120" x2="840" y2="120" stroke="#bbb" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <line x1="100" y1="195" x2="840" y2="195" stroke="#bbb" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <line x1="100" y1="270" x2="840" y2="270" stroke="#bbb" stroke-width="0.5" stroke-dasharray="4,4"/>
+  <line x1="100" y1="345" x2="840" y2="345" stroke="#bbb" stroke-width="0.5" stroke-dasharray="4,4"/>
+
+  <!-- Prediction line center: ~189 at x=120, gently rising to ~238 at x=820 -->
+
+  <!-- 95% confidence band (outermost) — very tight left, very wide right -->
+  <path d="M120,178 C200,172 280,176 370,178 C460,185 540,192 620,175 C700,158 760,130 820,105
+           L820,365 C760,340 700,305 620,282 C540,260 460,235 370,218 C280,208 200,200 120,200 Z"
+        fill="#3a86ff" opacity="0.12"/>
+
+  <!-- 80% confidence band — tight left, wide right -->
+  <path d="M120,181 C200,176 280,180 370,183 C460,190 540,198 620,185 C700,170 760,148 820,128
+           L820,345 C760,325 700,292 620,272 C540,252 460,230 370,214 C280,205 200,197 120,197 Z"
+        fill="#3a86ff" opacity="0.15"/>
+
+  <!-- 68% confidence band — snug left, moderate right -->
+  <path d="M120,184 C200,180 280,184 370,188 C460,196 540,205 620,196 C700,185 760,165 820,150
+           L820,322 C760,308 700,278 620,262 C540,245 460,226 370,210 C280,202 200,194 120,194 Z"
+        fill="#3a86ff" opacity="0.20"/>
+
+  <!-- 50% confidence band (innermost) — very snug left, moderate right -->
+  <path d="M120,186 C200,183 280,188 370,193 C460,202 540,212 620,208 C700,200 760,186 820,172
+           L820,300 C760,290 700,264 620,252 C540,240 460,222 370,206 C280,199 200,192 120,192 Z"
+        fill="#3a86ff" opacity="0.25"/>
+
+  <!-- Prediction line (center) -->
+  <path d="M120,189 C200,185 280,192 370,198 C460,210 540,222 620,230 C700,232 760,236 820,238"
+        fill="none" stroke="#5aa0ff" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Actual values — green dots close to line on left, red scattered dots on right -->
+  <circle cx="135" cy="185" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="160" cy="191" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="185" cy="183" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="215" cy="188" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="245" cy="193" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="275" cy="187" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="305" cy="196" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="335" cy="192" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="370" cy="202" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="405" cy="198" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="440" cy="214" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="475" cy="206" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="510" cy="228" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="545" cy="215" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="580" cy="238" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="620" cy="218" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="660" cy="248" r="4" fill="#00d4aa" opacity="0.7"/>
+  <circle cx="700" cy="210" r="4" fill="#ff6b6b" opacity="0.7"/>
+  <circle cx="730" cy="275" r="4" fill="#ff6b6b" opacity="0.7"/>
+  <circle cx="760" cy="178" r="4" fill="#ff6b6b" opacity="0.7"/>
+  <circle cx="790" cy="310" r="4" fill="#ff6b6b" opacity="0.7"/>
+  <circle cx="820" cy="155" r="4" fill="#ff6b6b" opacity="0.7"/>
+
+  <!-- Legend -->
+  <rect x="130" y="430" width="180" height="36" rx="6" fill="none" stroke="#999" stroke-width="1"/>
+  <line x1="142" y1="448" x2="170" y2="448" stroke="#5aa0ff" stroke-width="3"/>
+  <text x="178" y="455" fill="#aaa" font-family="Helvetica, Arial" font-size="24">Prediction</text>
+
+  <rect x="330" y="430" width="220" height="36" rx="6" fill="none" stroke="#999" stroke-width="1"/>
+  <rect x="342" y="440" width="24" height="16" rx="3" fill="#3a86ff" opacity="0.3"/>
+  <text x="374" y="455" fill="#aaa" font-family="Helvetica, Arial" font-size="24">Confidence CI</text>
+
+  <rect x="570" y="430" width="130" height="36" rx="6" fill="none" stroke="#999" stroke-width="1"/>
+  <circle cx="586" cy="448" r="5" fill="#00d4aa" opacity="0.7"/>
+  <text x="600" y="455" fill="#aaa" font-family="Helvetica, Arial" font-size="24">Actual</text>
+
+  <!-- Annotations -->
+  <!-- High confidence region -->
+  <text x="220" y="96" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="24" opacity="0.8">High Confidence</text>
+  <text x="220" y="118" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="24" opacity="0.6">narrow bands</text>
+
+  <!-- Low confidence region -->
+  <text x="750" y="96" text-anchor="middle" fill="#ff6b6b" font-family="Helvetica, Arial" font-size="24" opacity="0.8">Low Confidence</text>
+  <text x="750" y="118" text-anchor="middle" fill="#ff6b6b" font-family="Helvetica, Arial" font-size="24" opacity="0.6">wide bands</text>
+</svg>

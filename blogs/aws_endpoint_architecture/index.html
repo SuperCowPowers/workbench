@@ -1414,6 +1414,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../model_confidence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Confidence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chemprop_shap/" class="md-nav__link">
         
   
@@ -4957,93 +4985,45 @@
 <p><strong>Consistent interface across model frameworks.</strong> Whether your model is XGBoost, PyTorch, or ChemProp, the contract is the same: DataFrame in, DataFrame out. The model script handles framework-specific details (loading XGBoost models, running ChemProp graph inference, expanding classifier probability columns) while the caller always works with the same pandas interface.</p>
 <h2 id="custom-image-more-than-just-the-web-stack">Custom Image: More Than Just the Web Stack</h2>
 <p>The Workbench custom image isn't only about Uvicorn and FastAPI — it's a purpose-built environment for computational chemistry and ADMET modeling. The image comes pre-loaded with:</p>
-<table>
-<thead>
-<tr>
-<th>Package</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>RDKit</strong></td>
-<td>Molecular parsing, descriptor computation, substructure search</td>
-</tr>
-<tr>
-<td><strong>Mordred</strong></td>
-<td>Additional molecular descriptors (ADMET-focused modules)</td>
-</tr>
-<tr>
-<td><strong>ChemProp</strong></td>
-<td>Message-passing neural network (MPNN) inference for molecular property prediction</td>
-</tr>
-<tr>
-<td><strong>XGBoost</strong></td>
-<td>Gradient-boosted tree model inference</td>
-</tr>
-<tr>
-<td><strong>PyTorch</strong></td>
-<td>Neural network inference (ChemProp backend)</td>
-</tr>
-<tr>
-<td><strong>scikit-learn</strong></td>
-<td>Classical ML model inference and preprocessing</td>
-</tr>
-</tbody>
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Package</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">RDKit</td><td style="padding: 8px 16px;">Molecular parsing, descriptor computation, substructure search</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">Mordred</td><td style="padding: 8px 16px;">Additional molecular descriptors (ADMET-focused modules)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">Message-passing neural network (MPNN) inference for molecular property prediction</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">Gradient-boosted tree model inference</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">Neural network inference (ChemProp backend)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">scikit-learn</td><td style="padding: 8px 16px;">Classical ML model inference and preprocessing</td></tr>
+  </tbody>
 </table>
+
 <p>This means endpoint model scripts can import these packages directly without bundling them into the model artifact. The container image handles the complex dependency chain (RDKit's C++ extensions, PyTorch's CUDA bindings, Mordred's dependency on NetworkX) so your model script stays focused on inference logic.</p>
 <h2 id="side-by-side-comparison">Side-by-Side Comparison</h2>
-<table>
-<thead>
-<tr>
-<th>Aspect</th>
-<th>Default Stack</th>
-<th>Workbench Stack</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Web Server</strong></td>
-<td>Nginx + Gunicorn</td>
-<td>Uvicorn</td>
-</tr>
-<tr>
-<td><strong>Framework</strong></td>
-<td>Flask (WSGI)</td>
-<td>FastAPI (ASGI)</td>
-</tr>
-<tr>
-<td><strong>Protocol</strong></td>
-<td>WSGI (synchronous)</td>
-<td>ASGI (async-native)</td>
-</tr>
-<tr>
-<td><strong>Concurrency Model</strong></td>
-<td>Process forking (1 req/worker)</td>
-<td>Async event loop (many req/worker)</td>
-</tr>
-<tr>
-<td><strong>Streaming</strong></td>
-<td>Not natively supported</td>
-<td>Native ASGI streaming</td>
-</tr>
-<tr>
-<td><strong>Request Validation</strong></td>
-<td>Manual</td>
-<td>Automatic (Pydantic)</td>
-</tr>
-<tr>
-<td><strong>Process Count</strong></td>
-<td>3 (Nginx + Gunicorn + Flask)</td>
-<td>1 (Uvicorn + FastAPI)</td>
-</tr>
-<tr>
-<td><strong>Chemistry Packages</strong></td>
-<td>Install yourself</td>
-<td>Pre-loaded (RDKit, Mordred, ChemProp)</td>
-</tr>
-</tbody>
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Aspect</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Default Stack</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Workbench Stack</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Web Server</td><td style="padding: 8px 16px;">Nginx + Gunicorn</td><td style="padding: 8px 16px;">Uvicorn</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Framework</td><td style="padding: 8px 16px;">Flask (WSGI)</td><td style="padding: 8px 16px;">FastAPI (ASGI)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Protocol</td><td style="padding: 8px 16px;">WSGI (synchronous)</td><td style="padding: 8px 16px;">ASGI (async-native)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Concurrency Model</td><td style="padding: 8px 16px;">Process forking (1 req/worker)</td><td style="padding: 8px 16px;">Async event loop (many req/worker)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Streaming</td><td style="padding: 8px 16px;">Not natively supported</td><td style="padding: 8px 16px;">Native ASGI streaming</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Request Validation</td><td style="padding: 8px 16px;">Manual</td><td style="padding: 8px 16px;">Automatic (Pydantic)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Process Count</td><td style="padding: 8px 16px;">3 (Nginx + Gunicorn + Flask)</td><td style="padding: 8px 16px;">1 (Uvicorn + FastAPI)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Chemistry Packages</td><td style="padding: 8px 16px;">Install yourself</td><td style="padding: 8px 16px;">Pre-loaded (RDKit, Mordred, ChemProp)</td></tr>
+  </tbody>
 </table>
+
 <h2 id="why-it-matters-for-ml-inference">Why It Matters for ML Inference</h2>
 <p>The architecture differences aren't academic — they translate directly to operational benefits:</p>
 <p><strong>Simpler debugging.</strong> One server process with structured FastAPI logging beats digging through Nginx access logs, Gunicorn error logs, and Flask tracebacks across three processes.</p>

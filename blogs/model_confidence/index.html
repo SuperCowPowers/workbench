@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../private_saas/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../project_branding/">
+        <link rel="next" href="../chemprop_shap/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Themes - Workbench</title>
+        <title>Model Confidence - Workbench</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#workbench-themes" class="md-skip">
+        <a href="#model-confidence-building-on-conformal-prediction" class="md-skip">
           Skip to content
         </a>
       
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Themes
+              Model Confidence
             
           </span>
         </div>
@@ -1334,18 +1334,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
         
           
           <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
@@ -1366,7 +1368,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1384,7 +1386,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -1409,10 +1411,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../blogs/model_confidence/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Confidence
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1428,6 +1457,142 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-core-idea-ensemble-disagreement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Core Idea: Ensemble Disagreement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-raw-std-isnt-calibrated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem: Raw Std Isn't Calibrated
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformal-calibration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformal Calibration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Conformal Calibration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coverage-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confidence-scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confidence Scores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unified-across-frameworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unified Across Frameworks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-confidence-doesnt-tell-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Confidence Doesn't Tell You
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1440,7 +1605,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/chemprop_shap/" class="md-nav__link">
+      <a href="../chemprop_shap/" class="md-nav__link">
         
   
   
@@ -1468,7 +1633,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/aws_endpoint_architecture/" class="md-nav__link">
+      <a href="../aws_endpoint_architecture/" class="md-nav__link">
         
   
   
@@ -1496,7 +1661,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/molecular_standardization/" class="md-nav__link">
+      <a href="../molecular_standardization/" class="md-nav__link">
         
   
   
@@ -2611,20 +2776,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
         
           
           <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
@@ -2645,7 +2808,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_16">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2663,7 +2826,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../enterprise/" class="md-nav__link">
         
   
   
@@ -2691,7 +2854,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../private_saas/" class="md-nav__link">
+      <a href="../../enterprise/private_saas/" class="md-nav__link">
         
   
   
@@ -2716,37 +2879,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Themes
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../enterprise/themes/" class="md-nav__link">
         
   
   
@@ -2762,37 +2898,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#contact-us" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Contact Us
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2805,7 +2910,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../project_branding/" class="md-nav__link">
+      <a href="../../enterprise/project_branding/" class="md-nav__link">
         
   
   
@@ -4442,10 +4547,115 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#contact-us" class="md-nav__link">
+  <a href="#the-core-idea-ensemble-disagreement" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Contact Us
+        The Core Idea: Ensemble Disagreement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-raw-std-isnt-calibrated" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem: Raw Std Isn't Calibrated
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformal-calibration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformal Calibration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Conformal Calibration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#coverage-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coverage Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confidence-scores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confidence Scores
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#unified-across-frameworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unified Across Frameworks
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-confidence-doesnt-tell-you" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Confidence Doesn't Tell You
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
       
     </span>
   </a>
@@ -4469,11 +4679,132 @@
 
 
 
-<h1 id="workbench-themes">Workbench Themes</h1>
-<p><img src="https://github.com/SuperCowPowers/workbench/assets/4806709/4cdd3700-a9d8-441f-a27d-3da1038c7c4d" style="float: right; width: 500px; height: auto; padding: 10px 0px 0px 20px"></p>
-<p>The Workbench Dashboard can be customized extensively. Using Workbench <strong>Themes</strong> allows you to customize the User Interfaces to suit your preferences, including completely customized color palettes and fonts. We offer a set of default 'dark' and 'light' themes, but we'll also customize the theme to match your company's color palette and logos.</p>
-<h2 id="contact-us">Contact Us</h2>
-<p>Contact us on our <a href="https://discord.gg/WHAJuz8sw8">Discord</a> channel, we're happy to answer any questions that you might have about <strong>Workbench</strong> and accelerating your AWS ML Pipelines. You can also send us email at <a href="mailto:workbench@supercowpowers.com">Workbench Info</a> or  <a href="mailto:sales@supercowpowers.com">Workbench Sales</a>.</p>
+<h1 id="model-confidence-building-on-conformal-prediction">Model Confidence: Building on Conformal Prediction</h1>
+<p>A prediction without a confidence score is just a number. In drug discovery, knowing <em>how much to trust</em> a prediction is often more valuable than the prediction itself — it determines whether you synthesize a compound, run an experiment, or move on. In this blog we'll walk through how Workbench approaches model confidence, the trade-offs we've considered, and where we think there's room to improve.</p>
+<figure style="margin: 20px auto; text-align: center;">
+<img src="../../images/uq_pred_scatter.png" alt="Prediction scatter plot colored by confidence" style="max-width: 800px; width: 100%;">
+<figcaption><em>A target vs. prediction scatter from a ChemProp MLM CLint model. Points are colored by confidence — the high confidence points cluster along the diagonal, low confidence (blue) are scattered.</em></figcaption>
+</figure>
+
+<h2 id="the-core-idea-ensemble-disagreement">The Core Idea: Ensemble Disagreement</h2>
+<p>Every Workbench model — whether XGBoost, PyTorch, or ChemProp — is actually a <strong>5-model ensemble</strong> trained via cross-validation. Each fold produces a model that saw a slightly different slice of the training data. At inference time, all 5 models make a prediction and we take the average.</p>
+<p>The idea behind using ensemble disagreement as an uncertainty signal is well-established in the ML literature (see <a href="https://arxiv.org/abs/1612.01474">Lakshminarayanan et al., 2017</a>): <strong>when the models disagree, the prediction is less reliable.</strong> If all 5 models predict log CLint = 2.4 ± 0.02, we have reason to be confident. If they predict 2.4 ± 0.71, something about that compound is tricky and we should be cautious.</p>
+<figure style="margin: 20px auto; text-align: center;">
+<img src="../../images/ensemble_disagreement.svg" alt="Ensemble disagreement drives confidence" style="max-width: 800px; width: 100%; min-height: 250px;">
+</figure>
+
+<p>This ensemble standard deviation (<code>prediction_std</code>) is the raw uncertainty signal. It comes directly from the model itself — not from an external surrogate or statistical assumption. In our testing, it correlates strongly with actual prediction error (Spearman r &gt; 0.85 for ChemProp on MLM CLint from the <a href="https://openadmet.org/">OpenADMET Blind Challenge</a>), though your mileage will vary depending on the dataset and model type.</p>
+<h2 id="the-problem-raw-std-isnt-calibrated">The Problem: Raw Std Isn't Calibrated</h2>
+<p>Ensemble std tells you <em>which</em> predictions to trust more, but the raw numbers don't correspond to meaningful intervals. If std = 0.3, does that mean the true value is within ± 0.3? ± 0.6? There's no guarantee.</p>
+<p>This is the classic <strong>calibration vs. discrimination</strong> trade-off described in <a href="https://doi.org/10.1111/j.1467-9868.2007.00587.x">Gneiting et al., 2007</a>:</p>
+<ul>
+<li><strong>Discrimination</strong> (ranking): Can you tell which predictions are better? Ensemble std tends to do this well.</li>
+<li><strong>Calibration</strong> (coverage): Do your 80% intervals actually contain 80% of true values? Raw std alone doesn't guarantee this.</li>
+</ul>
+<p>We need both. That's where conformal prediction comes in.</p>
+<h2 id="conformal-calibration">Conformal Calibration</h2>
+<p>Conformal prediction is a distribution-free framework for turning any uncertainty estimate into calibrated prediction intervals. Originally developed by <a href="https://link.springer.com/book/10.1007/978-3-031-06649-8">Vovk et al.</a> and made accessible by <a href="https://arxiv.org/abs/2107.07511">Angelopoulos &amp; Bates (2021)</a>, the core idea is elegant and the math is straightforward:</p>
+<ol>
+<li><strong>Compute nonconformity scores</strong> on held-out validation data: <code>score = |actual - predicted| / std</code></li>
+<li><strong>Find scaling factors</strong>: For each confidence level (50%, 68%, 80%, 90%, 95%), find the quantile of scores that achieves the target coverage</li>
+<li><strong>Build intervals</strong>: <code>prediction ± scale_factor × std</code></li>
+</ol>
+<p>The scaling factors are computed once during training and stored as metadata. At inference, building intervals is a simple multiply — no extra models to run.</p>
+<figure style="margin: 20px auto; text-align: center;">
+<img src="../../images/conformal_calibration.svg" alt="Conformal calibration pipeline" style="max-width: 800px; width: 100%; min-height: 250px;">
+</figure>
+
+<p>In practice, this gives us intervals that inherit the ensemble's discrimination (width varies per-compound based on model disagreement) but are calibrated to have correct coverage. An 80% interval should contain ~80% of true values — and empirically, it does.</p>
+<h3 id="coverage-validation">Coverage Validation</h3>
+<p>Here are actual coverage numbers from a ChemProp MLM CLint model (4,375 compounds). The conformal calibration does what it promises:</p>
+<table style="width: auto; margin: 0 auto;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 24px; text-align: center;">Target Coverage</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 24px; text-align: center;">Empirical Coverage</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 24px; text-align: center;">68%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">68.0%</td></tr>
+    <tr><td style="padding: 8px 24px; text-align: center;">80%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">80.0%</td></tr>
+    <tr><td style="padding: 8px 24px; text-align: center;">90%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">90.0%</td></tr>
+    <tr><td style="padding: 8px 24px; text-align: center;">95%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">95.0%</td></tr>
+  </tbody>
+</table>
+
+<p>We should note that these numbers come from cross-validated held-out predictions, so they reflect in-distribution performance. Coverage on truly novel chemistry may differ — an important caveat we'll return to below.</p>
+<h2 id="confidence-scores">Confidence Scores</h2>
+<p>With calibrated intervals in hand, we compute a <strong>confidence score</strong> between 0 and 1 for every prediction. We explored several approaches (exponential decay, z-score normalization) and settled on a simple percentile-rank method inspired by the nonparametric statistics literature:</p>
+<figure style="margin: 20px auto; text-align: center;">
+<img src="../../images/confidence_percentile.svg" alt="Confidence bands showing prediction uncertainty" style="max-width: 800px; width: 100%; min-height: 300px;">
+</figure>
+
+<p>Specifically, confidence is the <strong>percentile rank</strong> of the prediction's <code>prediction_std</code> within the training set's std distribution:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>confidence = 1 - percentile_rank(prediction_std)
+</span></code></pre></div>
+<p>A confidence of <strong>0.7</strong> means this prediction's ensemble disagreement is lower than 70% of the training set — it's a relatively tight prediction. A confidence of <strong>0.1</strong> means 90% of training predictions had lower uncertainty — this compound is an outlier in some way.</p>
+<p>We like this approach for a few reasons:</p>
+<ul>
+<li><strong>Full range</strong>: Confidence scores spread across the entire 0–1 range, rather than clustering near zero</li>
+<li><strong>Directly interpretable</strong>: "confidence 0.7" means "tighter than 70% of training predictions"</li>
+<li><strong>No arbitrary parameters</strong>: No decay rates or normalization constants to tune</li>
+<li><strong>Grounded in the calibration data</strong>: Derived from the same distribution used for interval calibration</li>
+</ul>
+<p>That said, percentile-rank has its own limitations — it's relative to the training set, so a confidence of 0.7 from two different models isn't directly comparable. We think this is an acceptable trade-off for now, but it's an area we're continuing to think about.</p>
+<figure style="margin: 20px auto; text-align: center;">
+<img src="../../images/uq_conf_residual.png" alt="Confidence vs residual plot" style="max-width: 800px; width: 100%;">
+<figcaption><em>Confidence vs. prediction residual — high-confidence predictions (right) cluster near zero error, while low-confidence predictions (left) show the largest residuals.</em></figcaption>
+</figure>
+
+<p>You'll notice the outlier around confidence ~0.55 with a residual near 1.0 — the model is moderately confident on that compound but clearly getting it wrong. We're not going to pretend that doesn't happen. The value of this plot is that it gives us <strong>visibility</strong> into exactly these cases, so we can investigate individual compounds where the model's confidence doesn't match reality.</p>
+<h2 id="unified-across-frameworks">Unified Across Frameworks</h2>
+<p>One design goal we're happy with: the <strong>same UQ pipeline</strong> runs for all three model types. Each framework trains its ensemble differently, but the uncertainty signal (ensemble std) and the calibration pipeline (conformal scaling + percentile-rank confidence) are identical.</p>
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Framework</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Ensemble</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Std Source</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Calibration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">5-fold CV, XGBRegressor per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
+    <tr><td style="padding: 8px 16px; color: #3a86ff; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">5-fold CV, TabularMLP per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">5-fold CV, MPNN per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
+  </tbody>
+</table>
+
+<p>This consistency means confidence scores have the same interpretation across frameworks, which simplifies things when comparing models on the same dataset.</p>
+<h2 id="what-confidence-doesnt-tell-you">What Confidence Doesn't Tell You</h2>
+<p>We want to be upfront about the limitations. Confidence reflects how much the ensemble models agree — but agreement doesn't guarantee correctness. All 5 models can confidently agree on the wrong answer, especially for compounds that are structurally far from the training data.</p>
+<ul>
+<li><strong>High confidence ≠ correct prediction.</strong> It means the models agree, not that they're right. This is a fundamental limitation of ensemble-based UQ noted by <a href="https://arxiv.org/abs/1906.02530">Ovadia et al., 2019</a>.</li>
+<li><strong>Novel chemistry may get falsely high confidence</strong> if it happens to fall in a region where the models extrapolate consistently.</li>
+<li><strong>Confidence is relative to the training set.</strong> A confidence of 0.9 on a kinase solubility model doesn't transfer to a PROTAC dataset.</li>
+<li><strong>Conformal coverage assumes exchangeability.</strong> The guarantee holds when test data comes from the same distribution as calibration data. For out-of-distribution compounds, coverage may degrade.</li>
+</ul>
+<p>For truly out-of-distribution detection, we'd recommend pairing confidence with applicability domain analysis (e.g., feature-space proximity to training data). This is something we're actively exploring for future Workbench releases.</p>
+<h2 id="summary">Summary</h2>
+<p>Here's how Workbench approaches model confidence today:</p>
+<ol>
+<li><strong>Ensemble disagreement</strong> — Building on <a href="https://arxiv.org/abs/1612.01474">Lakshminarayanan et al.</a>, the 5-fold CV ensemble provides <code>prediction_std</code> as the raw uncertainty signal</li>
+<li><strong>Conformal calibration</strong> — Following <a href="https://arxiv.org/abs/2107.07511">Angelopoulos &amp; Bates</a>, we scale std into prediction intervals with target coverage (80% CI → ~80% coverage)</li>
+<li><strong>Percentile-rank confidence</strong> — Ranks each prediction's std against the training distribution (0.0 – 1.0)</li>
+</ol>
+<p>We're excited about this approach — it's simple, unified across frameworks, and gives us both calibrated intervals and interpretable confidence scores built from the model's own uncertainty. But there's always more to do, and we're looking forward to incorporating applicability domain methods and testing on a wider range of datasets.</p>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://arxiv.org/abs/1612.01474">Lakshminarayanan et al., "Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles" (2017)</a> — Foundational work on using ensemble disagreement for uncertainty</li>
+<li><a href="https://link.springer.com/book/10.1007/978-3-031-06649-8">Vovk et al., "Algorithmic Learning in a Random World"</a> — Foundational text on conformal prediction</li>
+<li><a href="https://arxiv.org/abs/2107.07511">Angelopoulos &amp; Bates, "Conformal Prediction: A Gentle Introduction" (2021)</a> — Accessible introduction to conformal methods</li>
+<li><a href="https://doi.org/10.1111/j.1467-9868.2007.00587.x">Gneiting et al., "Probabilistic Forecasts, Calibration and Sharpness" (2007)</a> — Calibration vs. discrimination framework</li>
+<li><a href="https://arxiv.org/abs/1906.02530">Ovadia et al., "Can You Trust Your Model's Uncertainty?" (2019)</a> — Analysis of ensemble UQ under dataset shift</li>
+<li><a href="https://openadmet.org/">OpenADMET Blind Challenge</a> — ExpansionRx MLM CLint dataset used for examples in this blog</li>
+</ul>
+<h2 id="questions">Questions?</h2>
+<p><img align="right" src="../../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 
 
 
