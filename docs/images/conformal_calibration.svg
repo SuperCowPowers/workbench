@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 380" width="100%" height="auto">
+  <defs>
+    <linearGradient id="step1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff9f43"/>
+      <stop offset="100%" stop-color="#cc7a30"/>
+    </linearGradient>
+    <linearGradient id="step2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a86ff"/>
+      <stop offset="100%" stop-color="#2a66cc"/>
+    </linearGradient>
+    <linearGradient id="step3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00d4aa"/>
+      <stop offset="100%" stop-color="#00a080"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Title -->
+  <text x="450" y="42" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="28" font-weight="bold">Conformal Calibration Pipeline</text>
+
+  <!-- Step 1: Ensemble Std -->
+  <rect x="30" y="70" width="240" height="120" rx="12" fill="url(#step1)" opacity="0.15" stroke="#ff9f43" stroke-width="2"/>
+  <text x="150" y="105" text-anchor="middle" fill="#ff9f43" font-family="Helvetica, Arial" font-size="24" font-weight="bold">Ensemble Std</text>
+  <text x="150" y="138" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="24">5 models predict</text>
+  <text x="150" y="170" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="24">→ compute std</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="280" y1="130" x2="320" y2="130" stroke="#999" stroke-width="2.5"/>
+  <polygon points="328,130 316,123 316,137" fill="#666"/>
+
+  <!-- Step 2: Nonconformity Scores -->
+  <rect x="335" y="70" width="240" height="120" rx="12" fill="url(#step2)" opacity="0.15" stroke="#3a86ff" stroke-width="2"/>
+  <text x="455" y="105" text-anchor="middle" fill="#3a86ff" font-family="Helvetica, Arial" font-size="24" font-weight="bold">Calibrate</text>
+  <text x="455" y="138" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="24">|error| / std</text>
+  <text x="455" y="170" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="24">→ scale factors</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="585" y1="130" x2="625" y2="130" stroke="#999" stroke-width="2.5"/>
+  <polygon points="633,130 621,123 621,137" fill="#666"/>
+
+  <!-- Step 3: Calibrated Intervals -->
+  <rect x="640" y="70" width="240" height="120" rx="12" fill="url(#step3)" opacity="0.15" stroke="#00d4aa" stroke-width="2"/>
+  <text x="760" y="105" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="24" font-weight="bold">Intervals</text>
+  <text x="760" y="138" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="24">pred ± q × std</text>
+  <text x="760" y="170" text-anchor="middle" fill="#aaa" font-family="Helvetica, Arial" font-size="24">→ coverage ✓</text>
+
+  <!-- Bottom section: the key insight -->
+  <rect x="30" y="220" width="850" height="140" rx="12" fill="none" stroke="#999" stroke-width="1" stroke-dasharray="6,6"/>
+
+  <text x="450" y="258" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="26" font-weight="bold">Same Approach, All Frameworks</text>
+
+  <!-- Three framework boxes -->
+  <rect x="60" y="278" width="230" height="60" rx="8" fill="url(#step1)" opacity="0.12" stroke="#ff9f43" stroke-width="1.5"/>
+  <text x="175" y="316" text-anchor="middle" fill="#ff9f43" font-family="Helvetica, Arial" font-size="26" font-weight="bold">XGBoost</text>
+
+  <rect x="340" y="278" width="230" height="60" rx="8" fill="url(#step2)" opacity="0.12" stroke="#3a86ff" stroke-width="1.5"/>
+  <text x="455" y="316" text-anchor="middle" fill="#3a86ff" font-family="Helvetica, Arial" font-size="26" font-weight="bold">PyTorch</text>
+
+  <rect x="620" y="278" width="230" height="60" rx="8" fill="url(#step3)" opacity="0.12" stroke="#00d4aa" stroke-width="1.5"/>
+  <text x="735" y="316" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="26" font-weight="bold">ChemProp</text>
+</svg>
