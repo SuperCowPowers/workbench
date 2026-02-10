@@ -135,7 +135,7 @@ class WorkbenchComputeStack(Stack):
                 "MLPipelineRepo",
                 repository_arn=f"arn:aws:ecr:{self.region}:507740646243:repository/aws-ml-images/py312-ml-pipelines",
             ),
-            tag="0.3",
+            tag="latest",
         )
 
         # Job Definition Tiers
