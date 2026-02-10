@@ -2,92 +2,86 @@
 !!!tip inline end "Need Help?"
     The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8)
 
-Workbench provides **confidence scores** for model predictions, giving users a measure of how certain the model is about each prediction. Higher confidence indicates the model is more certain, while lower confidence suggests greater uncertainty.
+Workbench provides **confidence scores** for every model prediction, giving users a measure of how much to trust each prediction. Higher confidence means the ensemble models agree closely; lower confidence means they disagree.
 
 ## Overview
 
-| **Framework**  | **UQ Method**                          | **Confidence Source**           |
-|----------------|----------------------------------------|---------------------------------|
-| XGBoost        | MAPIE Conformalized Quantile Regression | 80% prediction interval width  |
-| PyTorch        | MAPIE Conformalized Quantile Regression | 80% prediction interval width  |
-| ChemProp       | Ensemble disagreement (5 models)       | Ensemble standard deviation     |
+Every Workbench model — XGBoost, PyTorch, or ChemProp — is a **5-model ensemble** trained via cross-validation. The same uncertainty quantification pipeline runs for all three frameworks:
 
-All frameworks use the same confidence formula, but the uncertainty source differs.
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Framework</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Ensemble</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Std Source</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Calibration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">5-fold CV, XGBRegressor per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
+    <tr><td style="padding: 8px 16px; color: #3a86ff; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">5-fold CV, TabularMLP per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">5-fold CV, MPNN per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
+  </tbody>
+</table>
 
-## Confidence Formula
+## Three-Step Pipeline
 
-Confidence is computed using a simple exponential decay function:
+### 1. Ensemble Disagreement
+
+Each fold of the 5-fold cross-validation produces a model trained on a different slice of the data. At inference time, all 5 models make a prediction and we take the average. The **standard deviation** across the 5 predictions (`prediction_std`) is the raw uncertainty signal.
+
+When the models agree closely (low std), the prediction is more reliable. When they disagree (high std), something about that compound is tricky.
+
+### 2. Conformal Calibration
+
+Raw ensemble std tells you *which* predictions to trust more, but the numbers aren't calibrated — a std of 0.3 doesn't map to a meaningful interval. Workbench uses **conformal prediction** to fix this:
+
+1. Compute nonconformity scores on held-out validation data: `score = |actual - predicted| / std`
+2. For each confidence level (50%, 68%, 80%, 90%, 95%), find the quantile of scores that achieves the target coverage
+3. Build intervals: `prediction ± scale_factor × std`
+
+The scaling factors are computed once during training and stored as metadata. At inference, building intervals is a simple multiply.
+
+The result: prediction intervals that vary per-compound (based on ensemble disagreement) but are calibrated to achieve correct coverage. An 80% interval really does contain ~80% of true values.
+
+### 3. Percentile-Rank Confidence
+
+Confidence is the **percentile rank** of each prediction's `prediction_std` within the training set's std distribution:
 
 ```
-confidence = exp(-uncertainty / median_uncertainty)
+confidence = 1 - percentile_rank(prediction_std)
 ```
 
-Where:
+- **Confidence 0.7** means this prediction's ensemble disagreement is lower than 70% of the training set — a relatively tight prediction.
+- **Confidence 0.1** means 90% of training predictions had lower uncertainty — this compound is an outlier.
 
-- **uncertainty**: The model's uncertainty estimate for each prediction
-- **median_uncertainty**: The median uncertainty from the training/validation data
-
-
-## XGBoost and PyTorch: MAPIE CQR
-
-For XGBoost and PyTorch models, Workbench uses **MAPIE Conformalized Quantile Regression (CQR)** to generate prediction intervals with coverage guarantees.
-
-### How It Works
-
-1. **Train quantile models**: LightGBM models are trained to predict the 10th and 90th percentiles (80% confidence interval)
-2. **Conformalize**: MAPIE adjusts the intervals using a held-out calibration set to guarantee coverage
-3. **Compute interval width**: The uncertainty is the width of the 80% prediction interval (q_90 - q_10)
-4. **Calculate confidence**: Apply the exponential decay formula
-
-### Why 80% Confidence Interval?
-
-We use the 80% CI (q_10 to q_90) rather than other intervals because:
-
-- **68% CI** is too narrow and sensitive to noise
-- **95% CI** is too wide and less discriminating between samples
-- **80% CI** provides a good balance for ranking prediction reliability
-
-### Coverage Guarantees
-
-MAPIE's conformalization ensures that prediction intervals achieve their target coverage. For example, an 80% CI will contain approximately 80% of true values on the calibration set. This is a key advantage over simple quantile regression.
-
-## ChemProp: Ensemble Disagreement
-
-For ChemProp models, Workbench trains an **ensemble of 5 models** and uses their disagreement as the uncertainty measure.
-
-### How It Works
-
-1. **Train ensemble**: 5 ChemProp models are trained with different random seeds
-2. **Predict**: Each model makes a prediction for each sample
-3. **Compute disagreement**: The standard deviation across the 5 predictions is the uncertainty
-4. **Calibrate**: The standard deviation is empirically calibrated against actual errors
-5. **Calculate confidence**: Apply the exponential decay formula using calibrated std
-
-### Ensemble vs MAPIE
-
-| Aspect | MAPIE (XGBoost/PyTorch)   | Ensemble (ChemProp)        |
-|--------|---------------------------|----------------------------|
-| Coverage guarantee | Yes (conformal)           | No (empirical)             |
-| Computational cost | + 5 MAPIE models          | Just the 5 chemprop models |
-| Uncertainty type | Prediction interval width | Model disagreement         |
-
-Both approaches are valid and widely used in the ML community. MAPIE provides theoretical guarantees, while ensembles capture model uncertainty more directly.
+This approach gives scores that spread across the full 0–1 range, are directly interpretable, and require no arbitrary parameters.
 
 ## Interpreting Confidence Scores
 
-### High Confidence (> 0.5)
-- Model is relatively certain about the prediction
-- Prediction interval is narrower than typical
+### High Confidence (> 0.7)
+- Ensemble models agree closely on the prediction
+- Prediction intervals are narrower than most training predictions
 - Good candidates for prioritization
 
-### Medium Confidence (0.3 - 0.5)
-- Model has typical uncertainty
-- Prediction is likely reasonable but verify important decisions
+### Medium Confidence (0.3 – 0.7)
+- Typical level of ensemble disagreement
+- Predictions are likely reasonable but verify important decisions
 
 ### Low Confidence (< 0.3)
-- Model is uncertain about the prediction
-- Prediction interval is wider than typical
-- May indicate out-of-distribution samples or difficult predictions
+- Ensemble models disagree significantly
+- Prediction intervals are wider than most training predictions
+- May indicate out-of-distribution compounds or regions where the model is uncertain
+
+## What Confidence Doesn't Tell You
+
+Confidence reflects how much the ensemble models agree — but agreement doesn't guarantee correctness:
+
+- **High confidence ≠ correct prediction.** It means the models agree, not that they're right.
+- **Novel chemistry may get falsely high confidence** if it happens to fall in a region where models extrapolate consistently.
+- **Confidence is relative to the training set.** A confidence of 0.9 from a kinase solubility model doesn't transfer to a PROTAC dataset.
+
+For truly out-of-distribution detection, consider pairing confidence with applicability domain analysis.
 
 ## Metrics for Evaluating Confidence
 
@@ -101,6 +95,10 @@ Spearman correlation between interval width and absolute error. **Should be posi
 
 ### Coverage Metrics
 For each confidence level (50%, 68%, 80%, 90%, 95%), the percentage of true values that fall within the prediction interval. Should match the target coverage.
+
+## Deep Dive
+
+For more details on the approach, including code walkthrough and validation results, see the [Model Confidence Blog](../blogs/model_confidence.md).
 
 ## Additional Resources
 

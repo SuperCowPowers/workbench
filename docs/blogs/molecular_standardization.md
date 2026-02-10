@@ -42,11 +42,20 @@ Oc1ccccn1  →  O=c1cccc[nH]1  (canonical tautomer)
 ## Descriptor Computation
 After standardization, Workbench computes ~310 molecular descriptors from three sources:
 
-| Source | Count | Description |
-|--------|-------|-------------|
-| **RDKit** | ~220 | Constitutional, topological, electronic, lipophilicity, pharmacophore, and ADMET-specific descriptors (TPSA, QED, Lipinski) |
-| **Mordred** | ~85 | Five ADMET-focused modules: AcidBase, Aromatic, Constitutional, Chi connectivity indices, and CarbonTypes |
-| **Stereochemistry** | 10 | Custom features: R/S center counts, E/Z bond counts, stereo complexity, and fraction-defined metrics |
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Source</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Count</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">RDKit</td><td style="padding: 8px 16px;">~220</td><td style="padding: 8px 16px;">Constitutional, topological, electronic, lipophilicity, pharmacophore, and ADMET-specific descriptors (TPSA, QED, Lipinski)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">Mordred</td><td style="padding: 8px 16px;">~85</td><td style="padding: 8px 16px;">Five ADMET-focused modules: AcidBase, Aromatic, Constitutional, Chi connectivity indices, and CarbonTypes</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">Stereochemistry</td><td style="padding: 8px 16px;">10</td><td style="padding: 8px 16px;">Custom features: R/S center counts, E/Z bond counts, stereo complexity, and fraction-defined metrics</td></tr>
+  </tbody>
+</table>
 
 Invalid molecules receive NaN values rather than being dropped, preserving row alignment with the input DataFrame. The `Ipc` descriptor is excluded due to known overflow issues in RDKit.
 
@@ -70,12 +79,21 @@ Running this dataset through the full standardization + descriptor pipeline reve
 This is why the pipeline uses `errors="coerce"` for Mordred values and returns NaN rather than crashing — downstream ML pipelines can then handle missing values through imputation or row filtering as appropriate.
 
 ## Key Differences: Canonicalization vs Tautomerization
-| **Aspect** | **Canonicalization** | **Tautomerization** |
-|---|---|---|
-| **Purpose** | Standardizes the entire molecular representation | Handles proton/bond-shift equilibria |
-| **Scope** | Atom ordering, bond types, stereochemistry | Functional groups capable of tautomerization |
-| **Output** | Unique, canonical SMILES string | A specific canonical tautomeric form |
-| **Use Case** | Deduplication, consistency, comparison | Consistent descriptors across tautomeric forms |
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Aspect</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Canonicalization</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Tautomerization</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Purpose</td><td style="padding: 8px 16px;">Standardizes the entire molecular representation</td><td style="padding: 8px 16px;">Handles proton/bond-shift equilibria</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Scope</td><td style="padding: 8px 16px;">Atom ordering, bond types, stereochemistry</td><td style="padding: 8px 16px;">Functional groups capable of tautomerization</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Output</td><td style="padding: 8px 16px;">Unique, canonical SMILES string</td><td style="padding: 8px 16px;">A specific canonical tautomeric form</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Use Case</td><td style="padding: 8px 16px;">Deduplication, consistency, comparison</td><td style="padding: 8px 16px;">Consistent descriptors across tautomeric forms</td></tr>
+  </tbody>
+</table>
 
 ## References
 

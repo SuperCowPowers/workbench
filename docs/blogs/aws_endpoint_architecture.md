@@ -111,29 +111,46 @@ This isn't just a convenience — it's a design decision that pays off across th
 ## Custom Image: More Than Just the Web Stack
 The Workbench custom image isn't only about Uvicorn and FastAPI — it's a purpose-built environment for computational chemistry and ADMET modeling. The image comes pre-loaded with:
 
-| Package | Purpose |
-|---------|---------|
-| **RDKit** | Molecular parsing, descriptor computation, substructure search |
-| **Mordred** | Additional molecular descriptors (ADMET-focused modules) |
-| **ChemProp** | Message-passing neural network (MPNN) inference for molecular property prediction |
-| **XGBoost** | Gradient-boosted tree model inference |
-| **PyTorch** | Neural network inference (ChemProp backend) |
-| **scikit-learn** | Classical ML model inference and preprocessing |
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Package</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">RDKit</td><td style="padding: 8px 16px;">Molecular parsing, descriptor computation, substructure search</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">Mordred</td><td style="padding: 8px 16px;">Additional molecular descriptors (ADMET-focused modules)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">Message-passing neural network (MPNN) inference for molecular property prediction</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">Gradient-boosted tree model inference</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">Neural network inference (ChemProp backend)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">scikit-learn</td><td style="padding: 8px 16px;">Classical ML model inference and preprocessing</td></tr>
+  </tbody>
+</table>
 
 This means endpoint model scripts can import these packages directly without bundling them into the model artifact. The container image handles the complex dependency chain (RDKit's C++ extensions, PyTorch's CUDA bindings, Mordred's dependency on NetworkX) so your model script stays focused on inference logic.
 
 ## Side-by-Side Comparison
 
-| Aspect | Default Stack | Workbench Stack |
-|--------|--------------|-----------------|
-| **Web Server** | Nginx + Gunicorn | Uvicorn |
-| **Framework** | Flask (WSGI) | FastAPI (ASGI) |
-| **Protocol** | WSGI (synchronous) | ASGI (async-native) |
-| **Concurrency Model** | Process forking (1 req/worker) | Async event loop (many req/worker) |
-| **Streaming** | Not natively supported | Native ASGI streaming |
-| **Request Validation** | Manual | Automatic (Pydantic) |
-| **Process Count** | 3 (Nginx + Gunicorn + Flask) | 1 (Uvicorn + FastAPI) |
-| **Chemistry Packages** | Install yourself | Pre-loaded (RDKit, Mordred, ChemProp) |
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Aspect</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Default Stack</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Workbench Stack</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Web Server</td><td style="padding: 8px 16px;">Nginx + Gunicorn</td><td style="padding: 8px 16px;">Uvicorn</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Framework</td><td style="padding: 8px 16px;">Flask (WSGI)</td><td style="padding: 8px 16px;">FastAPI (ASGI)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Protocol</td><td style="padding: 8px 16px;">WSGI (synchronous)</td><td style="padding: 8px 16px;">ASGI (async-native)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Concurrency Model</td><td style="padding: 8px 16px;">Process forking (1 req/worker)</td><td style="padding: 8px 16px;">Async event loop (many req/worker)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Streaming</td><td style="padding: 8px 16px;">Not natively supported</td><td style="padding: 8px 16px;">Native ASGI streaming</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Request Validation</td><td style="padding: 8px 16px;">Manual</td><td style="padding: 8px 16px;">Automatic (Pydantic)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Process Count</td><td style="padding: 8px 16px;">3 (Nginx + Gunicorn + Flask)</td><td style="padding: 8px 16px;">1 (Uvicorn + FastAPI)</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Chemistry Packages</td><td style="padding: 8px 16px;">Install yourself</td><td style="padding: 8px 16px;">Pre-loaded (RDKit, Mordred, ChemProp)</td></tr>
+  </tbody>
+</table>
 
 ## Why It Matters for ML Inference
 The architecture differences aren't academic — they translate directly to operational benefits:

@@ -6,6 +6,8 @@ Workbench blogs highlight interesting functionality and approaches that might be
 
 ## Blogs
 
+- **[Model Confidence: Building on Conformal Prediction](model_confidence.md):** How does Workbench approach prediction uncertainty? We walk through our current pipeline — 5-fold ensemble disagreement, conformal calibration for coverage guarantees, and percentile-rank confidence scoring — discuss the trade-offs, and point to the foundational work we're building on.
+
 - **[SHAP Values for ChemProp Models](chemprop_shap.md):** How do you explain a graph neural network? In this blog we explore our per-bit ablation approach for computing [SHAP values](https://shap.readthedocs.io/) on [ChemProp](https://github.com/chemprop/chemprop) MPNN models. We walk through the technical approach, show key code snippets, and analyze real SHAP output from a LogD regression model — validating that the model independently learns known structure-lipophilicity relationships.
 
 - **[Inside a Workbench AWS Endpoint](aws_endpoint_architecture.md):** A deep dive into endpoint architecture — comparing the default SageMaker stack (Nginx, Gunicorn, Flask) with Workbench's modern ASGI stack (Uvicorn, FastAPI). We cover the custom image with pre-loaded chemistry packages, and Workbench's binary-search error handling that isolates bad rows instead of failing entire batches.

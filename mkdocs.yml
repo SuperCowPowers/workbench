@@ -36,6 +36,7 @@ nav:
     - Overview: confidence/index.md
   - Blogs:
     - OverView: blogs/index.md
+    - Model Confidence: blogs/model_confidence.md
     - Chemprop Shap Values: blogs/chemprop_shap.md
     - AWS Endpoint Architecture: blogs/aws_endpoint_architecture.md
     - Molecular Standardization: blogs/molecular_standardization.md

@@ -22,8 +22,10 @@ FS_LIST.remove("open_admet_caco_2_efflux")
 FS_LIST.remove("open_admet_caco_2_papp_a_b")
 FS_LIST.remove("open_admet_hlm_clint")
 FS_LIST.remove("open_admet_logd")
+
+# Temp Testing
+FS_LIST = ["open_admet_mlm_clint"]
 print(FS_LIST)
-# Notes: The last model was mlm-clint-reg-fp (no endpoint created, so deleted)
 
 
 def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):

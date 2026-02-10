@@ -14,15 +14,23 @@ ChemProp is different. It takes a **molecular graph** as input — atoms are nod
 ## Our Approach: Per-Bit Feature Ablation
 ChemProp's default v2 featurizers encode each atom as a **72-bit vector** and each bond as a **14-bit vector** (86 bits total). Each bit represents a specific chemical property:
 
-| Category | Example Bits |
-|----------|-------------|
-| **Atom type** | `atom=C`, `atom=N`, `atom=O`, `atom=S`, `atom=Cl`, `atom=F` |
-| **Degree** | `degree=1`, `degree=2`, `degree=3`, `degree=4` |
-| **Hybridization** | `hybrid=SP`, `hybrid=SP2`, `hybrid=SP3` |
-| **Hydrogen count** | `num_Hs=0`, `num_Hs=1`, `num_Hs=2`, `num_Hs=3` |
-| **Bond type** | `bond=SINGLE`, `bond=DOUBLE`, `bond=AROMATIC` |
-| **Ring/conjugation** | `is_aromatic`, `is_in_ring`, `is_conjugated` |
-| **Chirality** | `chiral=CW`, `chiral=CCW` |
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Category</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Example Bits</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Atom type</td><td style="padding: 8px 16px;"><code>atom=C</code>, <code>atom=N</code>, <code>atom=O</code>, <code>atom=S</code>, <code>atom=Cl</code>, <code>atom=F</code></td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Degree</td><td style="padding: 8px 16px;"><code>degree=1</code>, <code>degree=2</code>, <code>degree=3</code>, <code>degree=4</code></td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Hybridization</td><td style="padding: 8px 16px;"><code>hybrid=SP</code>, <code>hybrid=SP2</code>, <code>hybrid=SP3</code></td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Hydrogen count</td><td style="padding: 8px 16px;"><code>num_Hs=0</code>, <code>num_Hs=1</code>, <code>num_Hs=2</code>, <code>num_Hs=3</code></td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Bond type</td><td style="padding: 8px 16px;"><code>bond=SINGLE</code>, <code>bond=DOUBLE</code>, <code>bond=AROMATIC</code></td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Ring/conjugation</td><td style="padding: 8px 16px;"><code>is_aromatic</code>, <code>is_in_ring</code>, <code>is_conjugated</code></td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Chirality</td><td style="padding: 8px 16px;"><code>chiral=CW</code>, <code>chiral=CCW</code></td></tr>
+  </tbody>
+</table>
 
 Our approach selectively **zeroes out individual bits** across all atoms/bonds in a molecule, then measures the prediction change. If zeroing out the "atom=N" bit (effectively hiding all nitrogen atoms from the model) causes a large shift in the predicted value, then nitrogen content is important for that molecule's prediction.
 
