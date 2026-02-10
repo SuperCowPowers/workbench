@@ -710,8 +710,9 @@ if __name__ == "__main__":
         if len(ensemble_models) > 1:
             print("Computing prediction_std from ensemble...")
             val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
+            std_dataset = data.MoleculeDataset(val_dps)
             val_loader = data.build_dataloader(
-                data.MoleculeDataset(val_dps), batch_size=batch_size, shuffle=False,
+                std_dataset, batch_size=len(std_dataset), shuffle=False,
                 num_workers=num_workers, pin_memory=True,
             )
 
