@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 400" width="100%" height="auto">
+  <defs>
+    <linearGradient id="highConf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00d4aa"/>
+      <stop offset="100%" stop-color="#00a080"/>
+    </linearGradient>
+    <linearGradient id="lowConf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff6b6b"/>
+      <stop offset="100%" stop-color="#c44040"/>
+    </linearGradient>
+    <linearGradient id="modelBox" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a86ff"/>
+      <stop offset="100%" stop-color="#2a66cc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Title -->
+  <text x="450" y="42" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="28" font-weight="bold">Ensemble Disagreement → Confidence</text>
+
+  <!-- Left side: High agreement -->
+  <text x="225" y="82" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="24" font-weight="bold">Models Agree</text>
+
+  <!-- 5 model boxes - left -->
+  <rect x="60" y="100" width="110" height="44" rx="8" fill="url(#modelBox)" opacity="0.9"/>
+  <text x="115" y="128" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">2.41</text>
+
+  <rect x="170" y="100" width="110" height="44" rx="8" fill="url(#modelBox)" opacity="0.9"/>
+  <text x="225" y="128" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">2.38</text>
+
+  <rect x="280" y="100" width="110" height="44" rx="8" fill="url(#modelBox)" opacity="0.9"/>
+  <text x="335" y="128" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">2.43</text>
+
+  <rect x="115" y="155" width="110" height="44" rx="8" fill="url(#modelBox)" opacity="0.9"/>
+  <text x="170" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">2.39</text>
+
+  <rect x="225" y="155" width="110" height="44" rx="8" fill="url(#modelBox)" opacity="0.9"/>
+  <text x="280" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">2.40</text>
+
+  <!-- Arrow down left -->
+  <line x1="225" y1="210" x2="225" y2="260" stroke="#00d4aa" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <polygon points="225,268 218,252 232,252" fill="#00d4aa"/>
+
+  <!-- Result box left -->
+  <rect x="105" y="275" width="240" height="95" rx="10" fill="url(#highConf)" opacity="0.2" stroke="#00d4aa" stroke-width="2"/>
+  <text x="225" y="310" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="24">std = 0.02</text>
+  <text x="225" y="348" text-anchor="middle" fill="#00d4aa" font-family="Helvetica, Arial" font-size="28" font-weight="bold">High Confidence</text>
+
+  <!-- Divider -->
+  <line x1="450" y1="70" x2="450" y2="385" stroke="#999" stroke-width="1" stroke-dasharray="6,6"/>
+
+  <!-- Right side: High disagreement -->
+  <text x="675" y="82" text-anchor="middle" fill="#ff6b6b" font-family="Helvetica, Arial" font-size="24" font-weight="bold">Models Disagree</text>
+
+  <!-- 5 model boxes - right -->
+  <rect x="510" y="100" width="110" height="44" rx="8" fill="url(#modelBox)" opacity="0.9"/>
+  <text x="565" y="128" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">1.82</text>
+
+  <rect x="620" y="100" width="110" height="44" rx="8" fill="url(#modelBox)" opacity="0.9"/>
+  <text x="675" y="128" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">2.95</text>
+
+  <rect x="730" y="100" width="110" height="44" rx="8" fill="url(#modelBox)" opacity="0.9"/>
+  <text x="785" y="128" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">2.31</text>
+
+  <rect x="565" y="155" width="110" height="44" rx="8" fill="url(#modelBox)" opacity="0.9"/>
+  <text x="620" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">3.47</text>
+
+  <rect x="675" y="155" width="110" height="44" rx="8" fill="url(#modelBox)" opacity="0.9"/>
+  <text x="730" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">1.58</text>
+
+  <!-- Arrow down right -->
+  <polygon points="675,268 668,252 682,252" fill="#ff6b6b"/>
+
+  <!-- Result box right -->
+  <rect x="555" y="275" width="240" height="95" rx="10" fill="url(#lowConf)" opacity="0.2" stroke="#ff6b6b" stroke-width="2"/>
+  <text x="675" y="310" text-anchor="middle" fill="#ccc" font-family="Helvetica, Arial" font-size="24">std = 0.71</text>
+  <text x="675" y="348" text-anchor="middle" fill="#ff6b6b" font-family="Helvetica, Arial" font-size="28" font-weight="bold">Low Confidence</text>
+</svg>

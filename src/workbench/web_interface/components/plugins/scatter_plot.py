@@ -270,11 +270,12 @@ class ScatterPlot(PluginInterface):
             go.Figure: A Plotly Figure object.
         """
 
-        # If aggregation_count is present, sort so largest counts are drawn first (underneath)
-        # and compute marker sizes using square root (between log and linear)
+        # Sort by color column so high-value points render on top (drawn last)
+        if pd.api.types.is_numeric_dtype(df[color_col]):
+            df = df.sort_values(color_col, ascending=True).reset_index(drop=True)
+
+        # Compute marker sizes based on aggregation count (if present)
         if "aggregation_count" in df.columns:
-            df = df.sort_values("aggregation_count", ascending=False).reset_index(drop=True)
-            # Scale: base_size (15) + (sqrt(count) - 1) * factor, so count=1 stays at base_size
             marker_sizes = 15 + (np.sqrt(df["aggregation_count"]) - 1) * 3
         else:
             marker_sizes = 15

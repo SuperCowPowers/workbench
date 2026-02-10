@@ -28,6 +28,11 @@ from model_script_utils import (
     output_fn,
     save_to_s3,
 )
+from uq_harness import (
+    compute_confidence,
+    load_uq_metadata,
+    predict_intervals,
+)
 
 # =============================================================================
 # Default Hyperparameters
@@ -79,25 +84,6 @@ TEMPLATE_PARAMS = {
 # =============================================================================
 # Helper Functions
 # =============================================================================
-def _compute_std_confidence(df: pd.DataFrame, median_std: float, std_col: str = "prediction_std") -> pd.DataFrame:
-    """Compute confidence score from ensemble prediction_std.
-
-    Uses exponential decay: confidence = exp(-std / median_std)
-    - Low std (ensemble agreement) -> high confidence
-    - High std (ensemble disagreement) -> low confidence
-
-    Args:
-        df: DataFrame with prediction_std column
-        median_std: Median std from training validation set (normalization factor)
-        std_col: Name of the std column to use
-
-    Returns:
-        DataFrame with added 'confidence' column (0.0 to 1.0)
-    """
-    df["confidence"] = np.exp(-df[std_col] / median_std)
-    return df
-
-
 def _find_smiles_column(columns: list[str]) -> str:
     """Find SMILES column (case-insensitive match for 'smiles')."""
     smiles_col = next((c for c in columns if c.lower() == "smiles"), None)
@@ -147,12 +133,18 @@ def model_fn(model_dir: str) -> dict:
         model.eval()
         ensemble_models.append(model)
 
+    # Load UQ metadata (regression only)
+    uq_metadata = None
+    uq_path = os.path.join(model_dir, "uq_metadata.json")
+    if os.path.exists(uq_path):
+        uq_metadata = load_uq_metadata(model_dir)
+
     print(f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}")
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": metadata["n_ensemble"],
         "target_columns": metadata["target_columns"],
-        "median_std": metadata["median_std"],
+        "uq_metadata": uq_metadata,
     }
 
 
@@ -283,11 +275,12 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df["prediction"] = df[f"{target_columns[0]}_pred"]
         df["prediction_std"] = df[f"{target_columns[0]}_pred_std"]
 
-        # Compute confidence from ensemble std (or NaN if single model)
-        if model_dict["median_std"] is not None:
-            df = _compute_std_confidence(df, model_dict["median_std"])
-        else:
-            df["confidence"] = np.nan
+        # Add calibrated UQ intervals and confidence if available
+        # Add calibrated UQ intervals and confidence
+        uq_metadata = model_dict.get("uq_metadata")
+        if uq_metadata:
+            df = predict_intervals(df, uq_metadata)
+            df = compute_confidence(df, uq_metadata)
 
     return df
 
@@ -687,7 +680,6 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Compute metrics and prepare output
     # -------------------------------------------------------------------------
-    median_std = None  # Only set for regression models with ensemble
     if model_type == "classifier":
         class_preds = preds[:, 0].astype(int)
         target_name = target_columns[0]
@@ -747,15 +739,21 @@ if __name__ == "__main__":
         df_val["prediction"] = df_val[f"{target_columns[0]}_pred"]
         df_val["prediction_std"] = df_val[f"{target_columns[0]}_pred_std"]
 
-        # Compute confidence from ensemble std (or NaN for single model)
+        # Calibrate UQ intervals from ensemble std
         if preds_std is not None:
-            median_std = float(np.median(preds_std[:, 0]))
-            print(f"\nComputing confidence scores (median_std={median_std:.6f})...")
-            df_val = _compute_std_confidence(df_val, median_std)
-            print(f"  Confidence: mean={df_val['confidence'].mean():.3f}, min={df_val['confidence'].min():.3f}, max={df_val['confidence'].max():.3f}")
+            from uq_harness import calibrate_uq, save_uq_metadata
+
+            print("\n" + "=" * 50)
+            print("Calibrating UQ Intervals")
+            print("=" * 50)
+            y_true_primary = df_val[target_columns[0]].values
+            y_pred_primary = df_val["prediction"].values
+            uq_metadata = calibrate_uq(y_true_primary, y_pred_primary, df_val["prediction_std"].values)
+            df_val = predict_intervals(df_val, uq_metadata)
+            df_val = compute_confidence(df_val, uq_metadata)
         else:
             # Single model - no ensemble std available, confidence is undefined
-            median_std = None
+            uq_metadata = None
             df_val["confidence"] = np.nan
             print("\nSingle model (n_folds=1): No ensemble std, confidence set to NaN")
 
@@ -795,7 +793,8 @@ if __name__ == "__main__":
     output_columns = [id_column] if id_column in df_val.columns else []
     output_columns += target_columns
     output_columns += [f"{t}_pred" for t in target_columns] + [f"{t}_pred_std" for t in target_columns]
-    output_columns += ["prediction", "prediction_std", "confidence"]
+    output_columns += ["prediction", "prediction_std"]
+    output_columns += [c for c in df_val.columns if c.startswith("q_") or c == "confidence"]
     output_columns += [c for c in df_val.columns if c.endswith("_proba")]
 
     output_columns = [c for c in output_columns if c in df_val.columns]
@@ -817,12 +816,15 @@ if __name__ == "__main__":
         "n_ensemble": len(ensemble_models),
         "n_folds": n_folds,
         "target_columns": target_columns,
-        "median_std": median_std,  # For confidence calculation during inference
         # Foundation model provenance (for tracking/reproducibility)
         "from_foundation": hyperparameters.get("from_foundation", None),
         "freeze_mpnn_epochs": hyperparameters.get("freeze_mpnn_epochs", 0),
     }
     joblib.dump(ensemble_metadata, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
+
+    # Save UQ metadata (calibrated intervals)
+    if uq_metadata is not None:
+        save_uq_metadata(uq_metadata, args.model_dir)
 
     with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
         json.dump(hyperparameters, f, indent=2)
