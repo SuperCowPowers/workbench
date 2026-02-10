@@ -33,7 +33,7 @@ from model_script_utils import (
 )
 from uq_harness import (
     compute_confidence,
-    load_uq_models,
+    load_uq_metadata,
     predict_intervals,
 )
 
@@ -120,18 +120,17 @@ def model_fn(model_dir: str) -> dict:
         with open(category_path) as f:
             category_mappings = json.load(f)
 
-    # Load UQ models (regression only)
-    uq_models, uq_metadata = None, None
+    # Load UQ metadata (regression only)
+    uq_metadata = None
     uq_path = os.path.join(model_dir, "uq_metadata.json")
     if os.path.exists(uq_path):
-        uq_models, uq_metadata = load_uq_models(model_dir)
+        uq_metadata = load_uq_metadata(model_dir)
 
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": n_ensemble,
         "label_encoder": label_encoder,
         "category_mappings": category_mappings,
-        "uq_models": uq_models,
         "uq_metadata": uq_metadata,
     }
 
@@ -150,7 +149,6 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     ensemble_models = model_dict["ensemble_models"]
     label_encoder = model_dict.get("label_encoder")
     category_mappings = model_dict.get("category_mappings", {})
-    uq_models = model_dict.get("uq_models")
     uq_metadata = model_dict.get("uq_metadata")
     compressed_features = TEMPLATE_PARAMS["compressed_features"]
 
@@ -186,10 +184,10 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df["prediction"] = np.mean(ensemble_preds, axis=0)
         df["prediction_std"] = np.std(ensemble_preds, axis=0)
 
-        # Add UQ intervals if available
-        if uq_models and uq_metadata:
-            df = predict_intervals(df, X, uq_models, uq_metadata)
-            df = compute_confidence(df, uq_metadata["median_interval_width"], "q_10", "q_90")
+        # Add calibrated UQ intervals and confidence if available
+        if uq_metadata:
+            df = predict_intervals(df, uq_metadata)
+            df = compute_confidence(df, uq_metadata)
 
     print(f"Inference complete: {len(df)} predictions, {len(ensemble_models)} ensemble members")
     return df
@@ -218,8 +216,8 @@ if __name__ == "__main__":
         print_regression_metrics,
     )
     from uq_harness import (
-        save_uq_models,
-        train_uq_models,
+        calibrate_uq,
+        save_uq_metadata,
     )
 
     # -------------------------------------------------------------------------
@@ -412,15 +410,13 @@ if __name__ == "__main__":
         else:
             df_val["prediction_std"] = 0.0
 
-        # Train UQ models for uncertainty quantification
+        # Calibrate UQ intervals from ensemble std
         print("\n" + "=" * 50)
-        print("Training UQ Models")
+        print("Calibrating UQ Intervals")
         print("=" * 50)
-        uq_models, uq_metadata = train_uq_models(
-            all_df[features], all_df[target], df_val[features], y_true
-        )
-        df_val = predict_intervals(df_val, df_val[features], uq_models, uq_metadata)
-        df_val = compute_confidence(df_val, uq_metadata["median_interval_width"])
+        uq_metadata = calibrate_uq(y_true, y_pred, df_val["prediction_std"].values)
+        df_val = predict_intervals(df_val, uq_metadata)
+        df_val = compute_confidence(df_val, uq_metadata)
 
     # -------------------------------------------------------------------------
     # Compute SHAP values for feature importance
@@ -530,6 +526,6 @@ if __name__ == "__main__":
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
     if model_type != "classifier":
-        save_uq_models(uq_models, uq_metadata, args.model_dir)
+        save_uq_metadata(uq_metadata, args.model_dir)
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")
