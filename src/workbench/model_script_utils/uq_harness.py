@@ -1,245 +1,201 @@
-"""UQ Harness: Uncertainty Quantification using MAPIE Conformalized Quantile Regression.
+"""UQ Harness: Uncertainty Quantification via Conformalized Ensemble Uncertainty.
 
-This module provides a reusable UQ harness that can wrap any point predictor model
-(XGBoost, PyTorch, ChemProp, etc.) to provide calibrated prediction intervals.
+This module provides calibrated prediction intervals by combining ensemble disagreement
+(prediction_std) with conformal calibration. The approach works uniformly across all
+model types (XGBoost, PyTorch, ChemProp).
 
-Features:
-    - Conformalized Quantile Regression (CQR) for distribution-free coverage guarantees
-    - Multiple confidence levels (50%, 68%, 80%, 90%, 95%)
-    - Confidence scoring based on interval width
+How it works:
+    1. Each model framework trains a K-fold ensemble and computes prediction_std
+       (standard deviation across ensemble members) — this captures the model's own
+       uncertainty signal.
+    2. This harness calibrates that raw std into prediction intervals with guaranteed
+       coverage using conformal prediction:
+       - For each confidence level, find a scaling factor `q` such that
+         `prediction ± q * prediction_std` covers the target percentage on held-out data.
+       - This is a split-conformal approach: the scaling factors are computed on validation
+         data that was NOT used for training.
 
-Why CQR without additional Z-scaling:
-    MAPIE's conformalization step already guarantees that prediction intervals achieve
-    their target coverage on the calibration set. For example, an 80% CI will contain
-    ~80% of true values. This is the core promise of conformal prediction.
-
-    Z-scaling (post-hoc interval adjustment) would only help if there's a distribution
-    shift between calibration and test data. However:
-    1. We'd compute Z-scale on the same calibration set MAPIE uses, making it redundant
-    2. Our cross-fold validation metrics confirm coverage is already well-calibrated
-    3. Adding Z-scaling would "second-guess" MAPIE's principled conformalization
-
-    Empirically, our models achieve excellent coverage (e.g., 80% CI → 80.1% coverage),
-    validating that MAPIE's approach is sufficient without additional calibration.
+Why ensemble std + conformal calibration?
+    - Ensemble disagreement is the best available uncertainty signal — it comes from
+      the model itself. When ensemble members disagree on a prediction, the actual error
+      tends to be larger (high interval-to-error correlation).
+    - Raw ensemble std is poorly calibrated (intervals are often too narrow or too wide).
+      Conformal calibration fixes this with distribution-free coverage guarantees.
 
 Usage:
-    # Training
-    uq_models, uq_metadata = train_uq_models(X_train, y_train, X_val, y_val)
-    save_uq_models(uq_models, uq_metadata, model_dir)
+    # Training: calibrate prediction intervals from ensemble std
+    uq_metadata = calibrate_uq(y_val, y_pred_val, prediction_std_val)
+    save_uq_metadata(uq_metadata, model_dir)
 
-    # Inference
-    uq_models, uq_metadata = load_uq_models(model_dir)
-    df = predict_intervals(df, X, uq_models, uq_metadata)
-    df = compute_confidence(df, uq_metadata["median_interval_width"])
+    # Inference: apply calibrated intervals to new predictions
+    uq_metadata = load_uq_metadata(model_dir)
+    df = predict_intervals(df)
+    df = compute_confidence(df, uq_metadata)
 """
 
 import json
 import os
 import numpy as np
 import pandas as pd
-import joblib
-from lightgbm import LGBMRegressor
-from mapie.regression import ConformalizedQuantileRegressor
 
 # Default confidence levels for prediction intervals
 DEFAULT_CONFIDENCE_LEVELS = [0.50, 0.68, 0.80, 0.90, 0.95]
 
 
-def train_uq_models(
-    X_train: pd.DataFrame | np.ndarray,
-    y_train: pd.Series | np.ndarray,
-    X_val: pd.DataFrame | np.ndarray,
-    y_val: pd.Series | np.ndarray,
+def calibrate_uq(
+    y_val: np.ndarray,
+    y_pred_val: np.ndarray,
+    prediction_std_val: np.ndarray,
     confidence_levels: list[float] | None = None,
-) -> tuple[dict, dict]:
-    """Train MAPIE UQ models for multiple confidence levels.
+) -> dict:
+    """Calibrate prediction intervals using conformal prediction on ensemble std.
+
+    Computes scaling factors so that `prediction ± scale_factor * prediction_std`
+    achieves the target coverage on validation data. This is a split-conformal
+    approach with distribution-free coverage guarantees.
 
     Args:
-        X_train: Training features
-        y_train: Training targets
-        X_val: Validation features for conformalization
-        y_val: Validation targets for conformalization
-        confidence_levels: List of confidence levels (default: [0.50, 0.68, 0.80, 0.90, 0.95])
+        y_val (np.ndarray): True target values (validation set)
+        y_pred_val (np.ndarray): Predicted values (validation set)
+        prediction_std_val (np.ndarray): Ensemble std values (validation set)
+        confidence_levels (list[float]): Confidence levels (default: [0.50, 0.68, 0.80, 0.90, 0.95])
 
     Returns:
-        Tuple of (uq_models dict, uq_metadata dict)
+        dict: UQ metadata with scale_factors, std_percentiles, and confidence_levels
     """
     if confidence_levels is None:
         confidence_levels = DEFAULT_CONFIDENCE_LEVELS
 
-    mapie_models = {}
+    y_val = np.asarray(y_val).flatten()
+    y_pred_val = np.asarray(y_pred_val).flatten()
+    prediction_std_val = np.asarray(prediction_std_val).flatten()
+
+    # Compute nonconformity scores: |residual| / std
+    # For samples with zero std (all ensemble members agree perfectly), use a small epsilon
+    safe_std = np.maximum(prediction_std_val, 1e-10)
+    nonconformity_scores = np.abs(y_val - y_pred_val) / safe_std
+
+    # For each confidence level, find the scaling factor (quantile of nonconformity scores)
+    # that achieves the target coverage
+    scale_factors = {}
+    print("\nCalibrating prediction intervals from ensemble std...")
+    print(f"  Validation samples: {len(y_val)}")
+    print(f"  Mean ensemble std: {np.mean(prediction_std_val):.4f}")
+    print(f"  Median ensemble std: {np.median(prediction_std_val):.4f}")
 
     for confidence_level in confidence_levels:
-        alpha = 1 - confidence_level
-        lower_q = alpha / 2
-        upper_q = 1 - alpha / 2
+        # Conformal quantile: use (1 - alpha) quantile of nonconformity scores
+        # with finite-sample correction: ceil((n+1) * confidence_level) / n
+        n = len(nonconformity_scores)
+        adjusted_quantile = min(np.ceil((n + 1) * confidence_level) / n, 1.0)
+        q = float(np.quantile(nonconformity_scores, adjusted_quantile))
+        scale_factors[f"{confidence_level:.2f}"] = q
 
-        print(f"\nTraining quantile models for {confidence_level * 100:.0f}% confidence interval...")
-        print(f"  Quantiles: {lower_q:.3f}, {upper_q:.3f}, 0.500")
+        # Validate coverage
+        lower = y_pred_val - q * safe_std
+        upper = y_pred_val + q * safe_std
+        coverage = np.mean((y_val >= lower) & (y_val <= upper))
+        print(f"  {confidence_level * 100:.0f}% CI: scale_factor={q:.3f}, coverage={coverage * 100:.1f}%")
 
-        # Train three LightGBM quantile models for this confidence level
-        quantile_estimators = []
-        for q in [lower_q, upper_q, 0.5]:
-            print(f"    Training model for quantile {q:.3f}...")
-            est = LGBMRegressor(
-                objective="quantile",
-                alpha=q,
-                n_estimators=1000,
-                max_depth=6,
-                learning_rate=0.01,
-                num_leaves=31,
-                min_child_samples=20,
-                subsample=0.8,
-                colsample_bytree=0.8,
-                random_state=42,
-                verbose=-1,
-                force_col_wise=True,
-            )
-            est.fit(X_train, y_train)
-            quantile_estimators.append(est)
+    # Store the std distribution for percentile-rank confidence scoring
+    # 101 percentile values (0th, 1st, ..., 100th) for smooth interpolation at inference
+    std_percentiles = [float(np.percentile(prediction_std_val, p)) for p in range(101)]
 
-        # Create MAPIE CQR model for this confidence level
-        print(f"  Setting up MAPIE CQR for {confidence_level * 100:.0f}% confidence...")
-        mapie_model = ConformalizedQuantileRegressor(
-            quantile_estimators, confidence_level=confidence_level, prefit=True
-        )
-
-        # Conformalize the model with validation data
-        print("  Conformalizing with validation data...")
-        mapie_model.conformalize(X_val, y_val)
-
-        # Store the model
-        model_name = f"mapie_{confidence_level:.2f}"
-        mapie_models[model_name] = mapie_model
-
-        # Validate coverage for this confidence level
-        y_pred, y_pis = mapie_model.predict_interval(X_val)
-        coverage = np.mean((y_val >= y_pis[:, 0, 0]) & (y_val <= y_pis[:, 1, 0]))
-        print(f"  Coverage: Target={confidence_level * 100:.0f}%, Empirical={coverage * 100:.1f}%")
-
-    # Compute median interval width for confidence calculation (using 80% CI = q_10 to q_90)
-    print("\nComputing normalization statistics for confidence scores...")
-    model_80 = mapie_models["mapie_0.80"]
-    _, y_pis_80 = model_80.predict_interval(X_val)
-    interval_width = np.abs(y_pis_80[:, 1, 0] - y_pis_80[:, 0, 0])
-    median_interval_width = float(np.median(interval_width))
-    print(f"  Median interval width (q_10-q_90): {median_interval_width:.6f}")
-
-    # Analyze interval widths across confidence levels
+    # Compute interval width analysis
     print("\nInterval Width Analysis:")
-    for conf_level in confidence_levels:
-        model = mapie_models[f"mapie_{conf_level:.2f}"]
-        _, y_pis = model.predict_interval(X_val)
-        widths = y_pis[:, 1, 0] - y_pis[:, 0, 0]
-        print(f"  {conf_level * 100:.0f}% CI: Mean width={np.mean(widths):.3f}, Std={np.std(widths):.3f}")
+    for confidence_level in confidence_levels:
+        q = scale_factors[f"{confidence_level:.2f}"]
+        widths = 2 * q * safe_std
+        print(f"  {confidence_level * 100:.0f}% CI: Mean width={np.mean(widths):.3f}, Std={np.std(widths):.3f}")
 
     uq_metadata = {
         "confidence_levels": confidence_levels,
-        "median_interval_width": median_interval_width,
+        "scale_factors": scale_factors,
+        "std_percentiles": std_percentiles,
     }
 
-    return mapie_models, uq_metadata
+    return uq_metadata
 
 
-def save_uq_models(uq_models: dict, uq_metadata: dict, model_dir: str) -> None:
-    """Save UQ models and metadata to disk.
+def save_uq_metadata(uq_metadata: dict, model_dir: str) -> None:
+    """Save UQ metadata to disk.
 
     Args:
-        uq_models: Dictionary of MAPIE models keyed by name (e.g., "mapie_0.80")
-        uq_metadata: Dictionary with confidence_levels and median_interval_width
-        model_dir: Directory to save models
+        uq_metadata (dict): UQ metadata from calibrate_uq()
+        model_dir (str): Directory to save metadata
     """
-    # Save each MAPIE model
-    for model_name, model in uq_models.items():
-        joblib.dump(model, os.path.join(model_dir, f"{model_name}.joblib"))
-
-    # Save median interval width
-    with open(os.path.join(model_dir, "median_interval_width.json"), "w") as fp:
-        json.dump(uq_metadata["median_interval_width"], fp)
-
-    # Save UQ metadata
     with open(os.path.join(model_dir, "uq_metadata.json"), "w") as fp:
         json.dump(uq_metadata, fp, indent=2)
 
-    print(f"Saved {len(uq_models)} UQ models to {model_dir}")
+    print(f"Saved UQ metadata to {model_dir}")
 
 
-def load_uq_models(model_dir: str) -> tuple[dict, dict]:
-    """Load UQ models and metadata from disk.
+def load_uq_metadata(model_dir: str) -> dict:
+    """Load UQ metadata from disk.
 
     Args:
-        model_dir: Directory containing saved models
+        model_dir (str): Directory containing saved metadata
 
     Returns:
-        Tuple of (uq_models dict, uq_metadata dict)
+        dict: UQ metadata with scale_factors, std_percentiles, and confidence_levels
     """
-    # Load UQ metadata
     uq_metadata_path = os.path.join(model_dir, "uq_metadata.json")
-    if os.path.exists(uq_metadata_path):
-        with open(uq_metadata_path) as fp:
-            uq_metadata = json.load(fp)
-    else:
-        # Fallback for older models that only have median_interval_width.json
-        uq_metadata = {"confidence_levels": DEFAULT_CONFIDENCE_LEVELS}
-        median_width_path = os.path.join(model_dir, "median_interval_width.json")
-        if os.path.exists(median_width_path):
-            with open(median_width_path) as fp:
-                uq_metadata["median_interval_width"] = json.load(fp)
+    with open(uq_metadata_path) as fp:
+        uq_metadata = json.load(fp)
 
-    # Load all MAPIE models
-    uq_models = {}
-    for conf_level in uq_metadata["confidence_levels"]:
-        model_name = f"mapie_{conf_level:.2f}"
-        model_path = os.path.join(model_dir, f"{model_name}.joblib")
-        if os.path.exists(model_path):
-            uq_models[model_name] = joblib.load(model_path)
-
-    return uq_models, uq_metadata
+    return uq_metadata
 
 
 def predict_intervals(
     df: pd.DataFrame,
-    X: pd.DataFrame | np.ndarray,
-    uq_models: dict,
     uq_metadata: dict,
+    prediction_col: str = "prediction",
+    std_col: str = "prediction_std",
 ) -> pd.DataFrame:
-    """Add prediction intervals to a DataFrame.
+    """Add calibrated prediction intervals to a DataFrame.
+
+    Uses the conformally-calibrated scaling factors to convert ensemble std
+    into prediction intervals with guaranteed coverage.
+
+    Interval: prediction ± scale_factor * prediction_std
 
     Args:
-        df: DataFrame to add interval columns to
-        X: Features for prediction (must match training features)
-        uq_models: Dictionary of MAPIE models
-        uq_metadata: Dictionary with confidence_levels
+        df (pd.DataFrame): DataFrame with prediction and prediction_std columns
+        uq_metadata (dict): UQ metadata from calibrate_uq() or load_uq_metadata()
+        prediction_col (str): Name of the prediction column (default: 'prediction')
+        std_col (str): Name of the prediction_std column (default: 'prediction_std')
 
     Returns:
-        DataFrame with added quantile columns (q_025, q_05, ..., q_975)
+        pd.DataFrame: DataFrame with added quantile columns (q_025, q_05, ..., q_975)
     """
+    predictions = df[prediction_col].values
+    prediction_std = df[std_col].values
+    safe_std = np.maximum(prediction_std, 1e-10)
+
     confidence_levels = uq_metadata["confidence_levels"]
+    scale_factors = uq_metadata["scale_factors"]
+
+    # Confidence level -> quantile column name mapping
+    quantile_map = {
+        0.50: ("q_25", "q_75"),
+        0.68: ("q_16", "q_84"),
+        0.80: ("q_10", "q_90"),
+        0.90: ("q_05", "q_95"),
+        0.95: ("q_025", "q_975"),
+    }
 
     for conf_level in confidence_levels:
-        model_name = f"mapie_{conf_level:.2f}"
-        model = uq_models[model_name]
+        q = scale_factors[f"{conf_level:.2f}"]
+        lower = predictions - q * safe_std
+        upper = predictions + q * safe_std
 
-        # Get conformalized predictions
-        y_pred, y_pis = model.predict_interval(X)
+        if conf_level in quantile_map:
+            lower_col, upper_col = quantile_map[conf_level]
+            df[lower_col] = lower
+            df[upper_col] = upper
 
-        # Map confidence levels to quantile column names
-        if conf_level == 0.50:  # 50% CI
-            df["q_25"] = y_pis[:, 0, 0]
-            df["q_75"] = y_pis[:, 1, 0]
-            df["q_50"] = y_pred  # Median prediction
-        elif conf_level == 0.68:  # 68% CI (~1 std)
-            df["q_16"] = y_pis[:, 0, 0]
-            df["q_84"] = y_pis[:, 1, 0]
-        elif conf_level == 0.80:  # 80% CI
-            df["q_10"] = y_pis[:, 0, 0]
-            df["q_90"] = y_pis[:, 1, 0]
-        elif conf_level == 0.90:  # 90% CI
-            df["q_05"] = y_pis[:, 0, 0]
-            df["q_95"] = y_pis[:, 1, 0]
-        elif conf_level == 0.95:  # 95% CI
-            df["q_025"] = y_pis[:, 0, 0]
-            df["q_975"] = y_pis[:, 1, 0]
+    # Set q_50 as the prediction itself (median of the ensemble)
+    df["q_50"] = predictions
 
     # Calculate pseudo-standard deviation from the 68% interval width
     if "q_84" in df.columns and "q_16" in df.columns:
@@ -256,40 +212,37 @@ def predict_intervals(
 
 def compute_confidence(
     df: pd.DataFrame,
-    median_interval_width: float,
-    lower_q: str = "q_10",
-    upper_q: str = "q_90",
+    uq_metadata: dict,
+    std_col: str = "prediction_std",
 ) -> pd.DataFrame:
-    """Compute confidence scores (0.0 to 1.0) based on prediction interval width.
+    """Compute confidence scores (0.0 to 1.0) based on ensemble prediction std.
 
-    Confidence is derived from the 80% prediction interval (q_10 to q_90) width:
-    - Narrower intervals → higher confidence (model is more certain)
-    - Wider intervals → lower confidence (model is less certain)
+    Uses percentile-rank of prediction_std against the calibration distribution:
+    - confidence = 1 - percentile_rank(std)
+    - Low std (ensemble agreement) → high percentile rank → high confidence
+    - High std (ensemble disagreement) → low percentile rank → low confidence
 
-    Why 80% CI (q_10/q_90)?
-        - 68% CI is too narrow and sensitive to noise
-        - 95% CI is too wide and less discriminating between samples
-        - 80% provides a good balance for ranking prediction reliability
-
-    Formula: confidence = exp(-width / median_width)
-        - When width equals median, confidence ≈ 0.37
-        - When width is half median, confidence ≈ 0.61
-        - When width is double median, confidence ≈ 0.14
-
-    This exponential decay is a common choice for converting uncertainty to
-    confidence scores, providing a smooth mapping that appropriately penalizes
-    high-uncertainty predictions.
+    Interpretation: confidence of 0.7 means this prediction's uncertainty is lower
+    than 70% of predictions in the calibration set.
 
     Args:
-        df: DataFrame with quantile columns from predict_intervals()
-        median_interval_width: Pre-computed median interval width from training data
-        lower_q: Lower quantile column name (default: 'q_10')
-        upper_q: Upper quantile column name (default: 'q_90')
+        df (pd.DataFrame): DataFrame with prediction_std column
+        uq_metadata (dict): UQ metadata containing std_percentiles
+        std_col (str): Name of the std column (default: 'prediction_std')
 
     Returns:
-        DataFrame with added 'confidence' column (values between 0 and 1)
+        pd.DataFrame: DataFrame with added 'confidence' column (values between 0 and 1)
     """
-    interval_width = (df[upper_q] - df[lower_q]).abs()
-    df["confidence"] = np.exp(-interval_width / median_interval_width)
+    std_percentiles = np.array(uq_metadata["std_percentiles"])
+    std_values = df[std_col].abs().values
+
+    # For each prediction's std, find where it falls in the calibration distribution
+    # np.searchsorted gives the index where each value would be inserted to maintain order
+    # Dividing by 100 (len - 1) gives us the percentile rank (0.0 to 1.0)
+    percentile_ranks = np.searchsorted(std_percentiles, std_values, side="right") / len(std_percentiles)
+
+    # Confidence = 1 - percentile_rank (low std = high confidence)
+    # Clip to [0, 1] for predictions outside the calibration range
+    df["confidence"] = np.clip(1.0 - percentile_ranks, 0.0, 1.0)
 
     return df
