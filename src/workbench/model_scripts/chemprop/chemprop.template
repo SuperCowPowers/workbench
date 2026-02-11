@@ -18,6 +18,9 @@ import joblib
 import numpy as np
 import pandas as pd
 import torch
+from rdkit import RDLogger
+
+RDLogger.logger().setLevel(RDLogger.ERROR)
 
 from chemprop import data, models
 
@@ -313,6 +316,10 @@ if __name__ == "__main__":
         print_classification_metrics,
         print_confusion_matrix,
         print_regression_metrics,
+    )
+    from uq_harness import (
+        calibrate_uq,
+        save_uq_metadata,
     )
 
     # -------------------------------------------------------------------------
@@ -703,6 +710,9 @@ if __name__ == "__main__":
             print("Computing prediction_std from ensemble...")
             val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
             std_dataset = data.MoleculeDataset(val_dps)
+
+            # Note: Use dataset length as batch_size to prevent ChemProp's build_dataloader from
+            # dropping single-sample batches (its drop_last logic triggers when len(dataset) % batch_size == 1)
             val_loader = data.build_dataloader(
                 std_dataset, batch_size=len(std_dataset), shuffle=False,
                 num_workers=num_workers, pin_memory=True,
@@ -740,22 +750,14 @@ if __name__ == "__main__":
         df_val["prediction_std"] = df_val[f"{target_columns[0]}_pred_std"]
 
         # Calibrate UQ intervals from ensemble std
-        if preds_std is not None:
-            from uq_harness import calibrate_uq, save_uq_metadata
-
-            print("\n" + "=" * 50)
-            print("Calibrating UQ Intervals")
-            print("=" * 50)
-            y_true_primary = df_val[target_columns[0]].values
-            y_pred_primary = df_val["prediction"].values
-            uq_metadata = calibrate_uq(y_true_primary, y_pred_primary, df_val["prediction_std"].values)
-            df_val = predict_intervals(df_val, uq_metadata)
-            df_val = compute_confidence(df_val, uq_metadata)
-        else:
-            # Single model - no ensemble std available, confidence is undefined
-            uq_metadata = None
-            df_val["confidence"] = np.nan
-            print("\nSingle model (n_folds=1): No ensemble std, confidence set to NaN")
+        print("\n" + "=" * 50)
+        print("Calibrating UQ Intervals")
+        print("=" * 50)
+        y_true_primary = df_val[target_columns[0]].values
+        y_pred_primary = df_val["prediction"].values
+        uq_metadata = calibrate_uq(y_true_primary, y_pred_primary, df_val["prediction_std"].values)
+        df_val = predict_intervals(df_val, uq_metadata)
+        df_val = compute_confidence(df_val, uq_metadata)
 
     # -------------------------------------------------------------------------
     # Compute SHAP values for feature importance
@@ -822,8 +824,7 @@ if __name__ == "__main__":
     }
     joblib.dump(ensemble_metadata, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
 
-    # Save UQ metadata (calibrated intervals)
-    if uq_metadata is not None:
+    if model_type != "classifier":
         save_uq_metadata(uq_metadata, args.model_dir)
 
     with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
