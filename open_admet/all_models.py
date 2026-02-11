@@ -18,7 +18,6 @@ FS_LIST = [
     "open_admet_mppb",
 ]
 
-FS_LIST.remove("open_admet_mlm_clint")
 print(FS_LIST)
 
 INCLUDE_EXTRA_MODELS = False  # Set to True to create additional fingerprint and hybrid models
