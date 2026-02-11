@@ -710,11 +710,12 @@ if __name__ == "__main__":
             print("Computing prediction_std from ensemble...")
             val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
             std_dataset = data.MoleculeDataset(val_dps)
-
-            # Note: Use dataset length as batch_size to prevent ChemProp's build_dataloader from
-            # dropping single-sample batches (its drop_last logic triggers when len(dataset) % batch_size == 1)
+            # Use batch_size+1 to avoid ChemProp's drop_last logic which drops the last
+            # batch when len(dataset) % batch_size == 1 (to avoid batch norm issues).
+            # We need all samples here to stay aligned with df_val.
+            safe_batch_size = batch_size + 1 if len(std_dataset) % batch_size == 1 else batch_size
             val_loader = data.build_dataloader(
-                std_dataset, batch_size=len(std_dataset), shuffle=False,
+                std_dataset, batch_size=safe_batch_size, shuffle=False,
                 num_workers=num_workers, pin_memory=True,
             )
 
