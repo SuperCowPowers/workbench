@@ -23,6 +23,7 @@ import pandas as pd
 import xgboost as xgb
 
 from model_script_utils import (
+    compress_std_outliers,
     convert_categorical_types,
     decompress_features,
     expand_proba_column,
@@ -182,7 +183,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     else:
         # Regression: average predictions
         df["prediction"] = np.mean(ensemble_preds, axis=0)
-        df["prediction_std"] = np.std(ensemble_preds, axis=0)
+        df["prediction_std"] = compress_std_outliers(np.std(ensemble_preds, axis=0))
 
         # Add calibrated UQ intervals and confidence if available
         if uq_metadata:
@@ -405,7 +406,7 @@ if __name__ == "__main__":
         # Compute ensemble prediction_std
         if n_folds > 1:
             all_preds = np.stack([m.predict(all_df[features]) for m in ensemble_models])
-            df_val["prediction_std"] = np.std(all_preds, axis=0)
+            df_val["prediction_std"] = compress_std_outliers(np.std(all_preds, axis=0))
             print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
         else:
             df_val["prediction_std"] = 0.0

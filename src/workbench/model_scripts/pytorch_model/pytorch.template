@@ -22,6 +22,7 @@ import pandas as pd
 import torch
 
 from model_script_utils import (
+    compress_std_outliers,
     convert_categorical_types,
     decompress_features,
     expand_proba_column,
@@ -199,7 +200,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     # Aggregate predictions
     ensemble_preds = np.stack(all_preds, axis=0)
     preds = np.mean(ensemble_preds, axis=0)
-    preds_std = np.std(ensemble_preds, axis=0)
+    preds_std = compress_std_outliers(np.std(ensemble_preds, axis=0))
 
     print(f"Inference complete: {len(preds)} predictions, {len(ensemble_models)} ensemble members")
 
@@ -483,7 +484,7 @@ if __name__ == "__main__":
                 df_val, continuous_cols, categorical_cols, category_mappings=category_mappings, scaler=scaler
             )
             all_preds = [predict(m, x_cont, x_cat).flatten() for m in ensemble_models]
-            df_val["prediction_std"] = np.std(np.stack(all_preds), axis=0)
+            df_val["prediction_std"] = compress_std_outliers(np.std(np.stack(all_preds), axis=0))
             print(f"Ensemble std - mean: {df_val['prediction_std'].mean():.4f}, max: {df_val['prediction_std'].max():.4f}")
         else:
             df_val["prediction_std"] = 0.0
