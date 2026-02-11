@@ -18,14 +18,10 @@ FS_LIST = [
     "open_admet_mppb",
 ]
 
-FS_LIST.remove("open_admet_caco_2_efflux")
-FS_LIST.remove("open_admet_caco_2_papp_a_b")
-FS_LIST.remove("open_admet_hlm_clint")
-FS_LIST.remove("open_admet_logd")
-
-# Temp Testing
-FS_LIST = ["open_admet_mlm_clint"]
+FS_LIST.remove("open_admet_mlm_clint")
 print(FS_LIST)
+
+INCLUDE_EXTRA_MODELS = False  # Set to True to create additional fingerprint and hybrid models
 
 
 def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
@@ -145,6 +141,11 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end.auto_inference()
         end.full_inference()
         end.cross_fold_inference()
+
+    # Do we want to create additional models with fingerprints and hybrid features?
+    if not INCLUDE_EXTRA_MODELS:
+        print("\nSkipping additional fingerprint and hybrid models...")
+        return
 
     # 4. Create ChemProp Hybrid model (SMILES + Top 50 SHAP features)
     chemprop_hybrid_model_name = f"{short_name}-reg-chemprop-hybrid"
