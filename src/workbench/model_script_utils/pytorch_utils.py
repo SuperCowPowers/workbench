@@ -137,10 +137,6 @@ class TabularMLP(nn.Module):
 
         x = self.mlp(x)
         out = self.head(x)
-
-        if self.task == "classification":
-            out = torch.softmax(out, dim=1)
-
         return out
 
 
@@ -279,7 +275,8 @@ def train_model(
             raise ValueError(f"Unknown loss '{loss}'. Supported: {list(loss_map.keys())}")
         criterion = loss_map[loss]()
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=patience // 3)
 
     # Training loop with early stopping
     best_val_loss = float("inf")
@@ -327,6 +324,7 @@ def train_model(
         val_loss = np.mean(val_losses)
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
+        scheduler.step(val_loss)
 
         # Early stopping check
         if val_loss < best_val_loss:
@@ -366,6 +364,9 @@ def predict(
         if x_cat is not None:
             x_cat = x_cat.to(device)
         out = model(x_cont, x_cat)
+
+        if model.task == "classification":
+            out = torch.softmax(out, dim=1)
 
     return out.cpu().numpy()
 
