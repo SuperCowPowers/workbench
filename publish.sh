@@ -7,6 +7,16 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Parse arguments
+RUN_TESTS=false
+VERSION_ARG=""
+for arg in "$@"; do
+    case "$arg" in
+        --tests) RUN_TESTS=true ;;
+        *) VERSION_ARG="$arg" ;;
+    esac
+done
+
 # Check for required tools
 for cmd in python tox twine git; do
     if ! command -v $cmd &> /dev/null; then
@@ -32,7 +42,7 @@ fi
 # Get version tag
 CURRENT=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
 
-if [ -z "$1" ]; then
+if [ -z "$VERSION_ARG" ]; then
     if [ "$CURRENT" = "none" ]; then
         echo -e "${RED}Error: No existing tags found and no version specified.${NC}"
         echo -e "${YELLOW}Usage: ./publish.sh <version>${NC}"
@@ -53,16 +63,21 @@ if [ -z "$1" ]; then
         exit 0
     fi
 else
-    VERSION="$1"
+    VERSION="$VERSION_ARG"
     # Ensure the 'v' prefix is stripped from the version number (we add it ourselves)
     VERSION="${VERSION#v}"
 fi
 
 echo -e "${GREEN}=== Publishing workbench v${VERSION} ===${NC}"
 
-# Step 1: Run linting and tests
-echo -e "\n${YELLOW}[1/6] Running tox (lint + tests)...${NC}"
-tox
+# Step 1: Run linting (and tests if --tests specified)
+if [ "$RUN_TESTS" = true ]; then
+    echo -e "\n${YELLOW}[1/6] Running tox (lint + tests)...${NC}"
+    tox
+else
+    echo -e "\n${YELLOW}[1/6] Running tox (lint only)...${NC}"
+    tox -e lint
+fi
 
 # Step 2: Clean build artifacts
 echo -e "\n${YELLOW}[2/6] Cleaning build artifacts...${NC}"
