@@ -292,7 +292,6 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df["prediction_std"] = df[f"{target_columns[0]}_pred_std"]
 
         # Add calibrated UQ intervals and confidence if available
-        # Add calibrated UQ intervals and confidence
         uq_metadata = model_dict.get("uq_metadata")
         if uq_metadata:
             df = predict_intervals(df, uq_metadata)
