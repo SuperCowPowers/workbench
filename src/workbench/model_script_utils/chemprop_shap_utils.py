@@ -217,7 +217,6 @@ def compute_chemprop_shap(
     model,
     smiles: list[str],
     extra_descriptors: np.ndarray | None = None,
-    max_evals: int = 100,
     sample_size: int = 500,
     seed: int = 42,
 ) -> tuple[np.ndarray, list[str], np.ndarray, np.ndarray]:
@@ -232,7 +231,6 @@ def compute_chemprop_shap(
         smiles: List of SMILES strings to explain.
         extra_descriptors: Optional (n_molecules, n_features) array of extra
             descriptors matching the smiles list. Pass None for SMILES-only models.
-        max_evals: Max evaluations per molecule for PermutationExplainer.
         sample_size: Max molecules to sample (from the provided list).
         seed: Random seed for reproducible sampling.
 
@@ -323,7 +321,7 @@ def compute_chemprop_shap(
 
         wrapper = _ModelWrapper(smi, x_d)
         explainer = shap.PermutationExplainer(wrapper, masker=binary_masker)
-        explanation = explainer(all_features_on, max_evals=max_evals)
+        explanation = explainer(all_features_on)
         all_shap.append(explanation.values.flatten())
 
         if (count + 1) % 50 == 0:
