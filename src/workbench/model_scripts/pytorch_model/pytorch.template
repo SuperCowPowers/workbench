@@ -383,6 +383,11 @@ if __name__ == "__main__":
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
 
+    # Fit scaler on all training data (shared across all folds and inference for consistency)
+    scaler = FeatureScaler()
+    scaler.fit(all_df, continuous_cols)
+    print(f"Fitted scaler on {len(continuous_cols)} continuous features")
+
     # -------------------------------------------------------------------------
     # Training loop
     # -------------------------------------------------------------------------
@@ -397,16 +402,12 @@ if __name__ == "__main__":
         df_train = all_df.iloc[train_idx].reset_index(drop=True)
         df_val = all_df.iloc[val_idx].reset_index(drop=True)
 
-        # Fit scaler on training fold only (avoids data leakage into OOF predictions)
-        fold_scaler = FeatureScaler()
-        fold_scaler.fit(df_train, continuous_cols)
-
-        # Prepare data
+        # Prepare data (using shared scaler for train/inference consistency)
         train_x_cont, train_x_cat, train_y, _, _ = prepare_data(
-            df_train, continuous_cols, categorical_cols, target, category_mappings, scaler=fold_scaler
+            df_train, continuous_cols, categorical_cols, target, category_mappings, scaler=scaler
         )
         val_x_cont, val_x_cat, val_y, _, _ = prepare_data(
-            df_val, continuous_cols, categorical_cols, target, category_mappings, scaler=fold_scaler
+            df_val, continuous_cols, categorical_cols, target, category_mappings, scaler=scaler
         )
 
         # Create model
@@ -440,11 +441,6 @@ if __name__ == "__main__":
         oof_predictions[val_idx] = fold_preds
 
     print(f"\nTraining complete! Trained {len(ensemble_models)} model(s).")
-
-    # Fit scaler on all data for inference artifact (no leakage concern at serving time)
-    scaler = FeatureScaler()
-    scaler.fit(all_df, continuous_cols)
-    print(f"Fitted inference scaler on {len(continuous_cols)} continuous features")
 
     # -------------------------------------------------------------------------
     # Prepare validation results
