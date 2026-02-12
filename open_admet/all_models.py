@@ -18,6 +18,8 @@ FS_LIST = [
     "open_admet_mppb",
 ]
 
+FS_LIST = ["open_admet_mppb"]
+
 print(FS_LIST)
 
 INCLUDE_EXTRA_MODELS = False  # Set to True to create additional fingerprint and hybrid models
