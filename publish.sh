@@ -30,14 +30,33 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 # Get version tag
+CURRENT=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
+
 if [ -z "$1" ]; then
-    echo -e "${YELLOW}Usage: ./publish.sh <version>${NC}"
-    echo -e "${YELLOW}Example: ./publish.sh 0.8.261${NC}"
-    CURRENT=$(git describe --tags --abbrev=0 2>/dev/null || echo "none")
+    if [ "$CURRENT" = "none" ]; then
+        echo -e "${RED}Error: No existing tags found and no version specified.${NC}"
+        echo -e "${YELLOW}Usage: ./publish.sh <version>${NC}"
+        exit 1
+    fi
+    # Auto-increment: bump the last number in the version
+    # Strip the 'v' prefix, split on '.', increment the last segment
+    BASE="${CURRENT#v}"
+    PREFIX="${BASE%.*}"
+    LAST="${BASE##*.}"
+    NEXT=$((LAST + 1))
+    VERSION="${PREFIX}.${NEXT}"
     echo -e "Current tag: ${GREEN}${CURRENT}${NC}"
-    exit 1
+    echo -e "Next version: ${GREEN}v${VERSION}${NC}"
+    read -p "Publish v${VERSION}? [y/N] " CONFIRM
+    if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+        echo -e "${YELLOW}Aborted.${NC}"
+        exit 0
+    fi
+else
+    VERSION="$1"
+    # Ensure the 'v' prefix is stripped from the version number (we add it ourselves)
+    VERSION="${VERSION#v}"
 fi
-VERSION="$1"
 
 echo -e "${GREEN}=== Publishing workbench v${VERSION} ===${NC}"
 
