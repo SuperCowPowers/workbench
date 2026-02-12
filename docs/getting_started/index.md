@@ -1,13 +1,13 @@
 # Getting Started
-For the initial setup of ADMET-Workbench we'll be using the Workbench REPL. When you start `workbench` it will recognize that it needs to complete the initial configuration and will guide you through that process.
+For the initial setup of ADMET Workbench we'll be using the Workbench REPL. When you start `workbench` it will recognize that it needs to complete the initial configuration and will guide you through that process.
 
 !!!tip inline end "Need Help?"
-    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and ADMET-Workbench. So please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
+    The SuperCowPowers team is happy to give any assistance needed when setting up AWS and ADMET Workbench. So please contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) or on chat us up on [Discord](https://discord.gg/WHAJuz8sw8) 
 
 ## Initial Setup/Config
-**Notes:** ADMET-Workbench uses your existing AWS account/profile/SSO. So if you don't already have an AWS Profile or SSO Setup you'll need to do that first [AWS Setup](../aws_setup/aws_setup.md)
+**Notes:** ADMET Workbench uses your existing AWS account/profile/SSO. So if you don't already have an AWS Profile or SSO Setup you'll need to do that first [AWS Setup](../aws_setup/aws_setup.md)
 
-Okay so **after** you've completed your [AWS Setup](../aws_setup/aws_setup.md) you can now install ADMET-Workbench.
+Okay so **after** you've completed your [AWS Setup](../aws_setup/aws_setup.md) you can now install ADMET Workbench.
 
 ```
 > pip install workbench
@@ -32,7 +32,7 @@ WORKBENCH_BUCKET: my-company-workbench
 
 
 ### AWS Administrators
-For companies that are setting up ADMET-Workbench on an internal AWS Account: [Company AWS Setup](../aws_setup/core_stack.md)
+For companies that are setting up ADMET Workbench on an internal AWS Account: [Company AWS Setup](../aws_setup/core_stack.md)
 
 ## Additional Resources
 
