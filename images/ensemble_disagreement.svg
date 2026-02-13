@@ -37,7 +37,7 @@
   <text x="280" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">2.40</text>
 
   <!-- Arrow down left -->
-  <line x1="225" y1="210" x2="225" y2="260" stroke="#00d4aa" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <line x1="225" y1="210" x2="225" y2="255" stroke="#00d4aa" stroke-width="3"/>
   <polygon points="225,268 218,252 232,252" fill="#00d4aa"/>
 
   <!-- Result box left -->
@@ -68,6 +68,7 @@
   <text x="730" y="183" text-anchor="middle" fill="white" font-family="Helvetica, Arial" font-size="24">1.58</text>
 
   <!-- Arrow down right -->
+  <line x1="675" y1="210" x2="675" y2="255" stroke="#ff6b6b" stroke-width="3"/>
   <polygon points="675,268 668,252 682,252" fill="#ff6b6b"/>
 
   <!-- Result box right -->
