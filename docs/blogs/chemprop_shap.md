@@ -34,6 +34,13 @@ ChemProp's default v2 featurizers encode each atom as a **72-bit vector** and ea
 
 Our approach selectively **zeroes out individual bits** across all atoms/bonds in a molecule, then measures the prediction change. If zeroing out the "atom=N" bit (effectively hiding all nitrogen atoms from the model) causes a large shift in the predicted value, then nitrogen content is important for that molecule's prediction.
 
+<figure style="margin: 20px auto;">
+<img src="../../images/chemprop_shap_pipeline.svg" alt="ChemProp SHAP pipeline: SMILES → RDKit Graph → Feature Vectors → Model" style="min-height: 200px;">
+<figcaption><em>The ablation pipeline: bit masking happens at the feature vector level, after RDKit has already constructed a valid molecular graph.</em></figcaption>
+</figure>
+
+**What this measures.** Because the ablation operates on feature vectors rather than the molecular graph itself, zeroing out a bit like `num_Hs` can create atom representations that don't correspond to real chemistry — the graph topology stays intact but the feature annotations become chemically implausible. This means we're measuring "how sensitive is the model to this feature bit" rather than "what happens when we make a specific chemical substitution." It's an approximation, but a useful one for validating that the model has learned sensible structure-property relationships.
+
 ### Custom Ablation Featurizers
 We extend ChemProp's built-in featurizers with a `keep_mask` — a boolean array where `False` means "zero out this bit":
 
