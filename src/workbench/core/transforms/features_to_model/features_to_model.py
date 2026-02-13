@@ -248,19 +248,26 @@ class FeaturesToModel(Transform):
         entry_point = str(Path(script_path).name)
         source_dir = str(Path(script_path).parent)
 
-        # Debug: Log the source directory contents and verify the generated script
+        # DIAG: S3 bucket investigation - log the source directory contents
         self.log.important(f"transform_impl: source_dir = {source_dir}")
         self.log.important(f"transform_impl: entry_point = {entry_point}")
         source_files = os.listdir(source_dir)
         self.log.important(f"transform_impl: source_dir contents = {source_files}")
 
-        # Verify the generated script has the correct S3 path
+        # DIAG: S3 bucket investigation - verify the generated script has the correct S3 path
         generated_script_path = os.path.join(source_dir, entry_point)
         with open(generated_script_path, "r") as f:
             script_content = f.read()
         s3_match = re.search(r'"model_metrics_s3_path":\s*"([^"]+)"', script_content)
         if s3_match:
-            self.log.important(f"transform_impl: VERIFY generated script model_metrics_s3_path = {s3_match.group(1)}")
+            baked_path = s3_match.group(1)
+            self.log.important(f"transform_impl: VERIFY generated script model_metrics_s3_path = {baked_path}")
+            if baked_path != self.model_training_root:
+                raise ValueError(
+                    f"CRITICAL: Generated script has wrong S3 path!\n"
+                    f"  Expected: {self.model_training_root}\n"
+                    f"  Got:      {baked_path}"
+                )
 
         # Create a Sagemaker Model with our script
         image = ModelImages.get_image_uri(self.sm_session.boto_region_name, self.training_image)
@@ -289,6 +296,22 @@ class FeaturesToModel(Transform):
         # Training Job Name based on the Model Name and today's date
         training_date_time_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M")
         training_job_name = f"{self.output_name}-{training_date_time_utc}"
+
+        # DIAG: S3 bucket investigation - pre-fit integrity check to catch any corruption
+        # between the initial VERIFY and the SageMaker upload (investigating intermittent
+        # issue where wrong S3 bucket appears in the uploaded sourcedir.tar.gz)
+        with open(generated_script_path, "rb") as f:
+            pre_fit_content = f.read()
+        pre_fit_match = re.search(rb'"model_metrics_s3_path":\s*"([^"]+)"', pre_fit_content)
+        if pre_fit_match:
+            pre_fit_path = pre_fit_match.group(1).decode()
+            self.log.important(f"transform_impl: PRE-FIT CHECK model_metrics_s3_path = {pre_fit_path}")
+            if pre_fit_path != self.model_training_root:
+                raise ValueError(
+                    f"CRITICAL: Generated script was modified between VERIFY and fit()!\n"
+                    f"  Expected: {self.model_training_root}\n"
+                    f"  Got:      {pre_fit_path}"
+                )
 
         # Train the estimator
         self.log.important(f"Training the Model {self.output_name} with Training Image {image}...")
