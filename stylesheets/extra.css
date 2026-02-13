@@ -1,0 +1,5 @@
+/* Light mode: shift from pure white to a soft light grey */
+[data-md-color-scheme="default"] {
+  --md-default-bg-color: #ebebeb;
+  --md-default-bg-color--light: #f0f0f0;
+}
