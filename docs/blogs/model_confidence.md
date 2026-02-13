@@ -43,28 +43,7 @@ The scaling factors are computed once during training and stored as metadata. At
 <img src="../../images/conformal_calibration.svg" alt="Conformal calibration pipeline" style="max-width: 800px; width: 100%; min-height: 250px;">
 </figure>
 
-In practice, this gives us intervals that inherit the ensemble's discrimination (width varies per-compound based on model disagreement) but are calibrated to have correct coverage. An 80% interval should contain ~80% of true values — and empirically, it does.
-
-### Coverage Validation
-
-Here are actual coverage numbers from a ChemProp MLM CLint model (4,375 compounds). The conformal calibration does what it promises:
-
-<table style="width: auto; margin: 0 auto;">
-  <thead>
-    <tr>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 24px; text-align: center;">Target Coverage</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 24px; text-align: center;">Empirical Coverage</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td style="padding: 8px 24px; text-align: center;">68%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">68.0%</td></tr>
-    <tr><td style="padding: 8px 24px; text-align: center;">80%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">80.0%</td></tr>
-    <tr><td style="padding: 8px 24px; text-align: center;">90%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">90.0%</td></tr>
-    <tr><td style="padding: 8px 24px; text-align: center;">95%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">95.0%</td></tr>
-  </tbody>
-</table>
-
-We should note that these numbers come from cross-validated held-out predictions, so they reflect in-distribution performance. Coverage on truly novel chemistry may differ — an important caveat we'll return to below.
+In practice, this gives us intervals that inherit the ensemble's discrimination (width varies per-compound based on model disagreement) but are calibrated to have correct coverage, an 80% interval should contain ~80% of true values.
 
 ## Confidence Scores
 
@@ -96,7 +75,7 @@ That said, percentile-rank has its own limitations — it's relative to the trai
 <figcaption><em>Confidence vs. prediction residual — high-confidence predictions (right) cluster near zero error, while low-confidence predictions (left) show the largest residuals.</em></figcaption>
 </figure>
 
-You'll notice the outlier around confidence ~0.55 with a residual near 1.0 — the model is moderately confident on that compound but clearly getting it wrong. We're not going to pretend that doesn't happen. The value of this plot is that it gives us **visibility** into exactly these cases, so we can investigate individual compounds where the model's confidence doesn't match reality.
+You'll notice the outlier around confidence ~0.55 with a residual near 1.0 — the model is moderately confident on that compound but clearly getting it wrong. We're not going to pretend this doesn't happen. The value of this plot is that it gives us **visibility** into exactly these cases, so we can investigate individual compounds where the model's confidence doesn't match reality.
 
 ## Unified Across Frameworks
 
