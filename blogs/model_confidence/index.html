@@ -1504,23 +1504,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Conformal Calibration">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#coverage-validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Coverage Validation
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
@@ -4577,23 +4560,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Conformal Calibration">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#coverage-validation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Coverage Validation
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
@@ -4714,25 +4680,7 @@
 <img src="../../images/conformal_calibration.svg" alt="Conformal calibration pipeline" style="max-width: 800px; width: 100%; min-height: 250px;">
 </figure>
 
-<p>In practice, this gives us intervals that inherit the ensemble's discrimination (width varies per-compound based on model disagreement) but are calibrated to have correct coverage. An 80% interval should contain ~80% of true values — and empirically, it does.</p>
-<h3 id="coverage-validation">Coverage Validation</h3>
-<p>Here are actual coverage numbers from a ChemProp MLM CLint model (4,375 compounds). The conformal calibration does what it promises:</p>
-<table style="width: auto; margin: 0 auto;">
-  <thead>
-    <tr>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 24px; text-align: center;">Target Coverage</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 24px; text-align: center;">Empirical Coverage</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td style="padding: 8px 24px; text-align: center;">68%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">68.0%</td></tr>
-    <tr><td style="padding: 8px 24px; text-align: center;">80%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">80.0%</td></tr>
-    <tr><td style="padding: 8px 24px; text-align: center;">90%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">90.0%</td></tr>
-    <tr><td style="padding: 8px 24px; text-align: center;">95%</td><td style="padding: 8px 24px; text-align: center; color: #00d4aa;">95.0%</td></tr>
-  </tbody>
-</table>
-
-<p>We should note that these numbers come from cross-validated held-out predictions, so they reflect in-distribution performance. Coverage on truly novel chemistry may differ — an important caveat we'll return to below.</p>
+<p>In practice, this gives us intervals that inherit the ensemble's discrimination (width varies per-compound based on model disagreement) but are calibrated to have correct coverage, an 80% interval should contain ~80% of true values.</p>
 <h2 id="confidence-scores">Confidence Scores</h2>
 <p>With calibrated intervals in hand, we compute a <strong>confidence score</strong> between 0 and 1 for every prediction. We explored several approaches (exponential decay, z-score normalization) and settled on a simple percentile-rank method inspired by the nonparametric statistics literature:</p>
 <figure style="margin: 20px auto; text-align: center;">
@@ -4756,7 +4704,7 @@
 <figcaption><em>Confidence vs. prediction residual — high-confidence predictions (right) cluster near zero error, while low-confidence predictions (left) show the largest residuals.</em></figcaption>
 </figure>
 
-<p>You'll notice the outlier around confidence ~0.55 with a residual near 1.0 — the model is moderately confident on that compound but clearly getting it wrong. We're not going to pretend that doesn't happen. The value of this plot is that it gives us <strong>visibility</strong> into exactly these cases, so we can investigate individual compounds where the model's confidence doesn't match reality.</p>
+<p>You'll notice the outlier around confidence ~0.55 with a residual near 1.0 — the model is moderately confident on that compound but clearly getting it wrong. We're not going to pretend this doesn't happen. The value of this plot is that it gives us <strong>visibility</strong> into exactly these cases, so we can investigate individual compounds where the model's confidence doesn't match reality.</p>
 <h2 id="unified-across-frameworks">Unified Across Frameworks</h2>
 <p>One design goal we're happy with: the <strong>same UQ pipeline</strong> runs for all three model types. Each framework trains its ensemble differently, but the uncertainty signal (ensemble std) and the calibration pipeline (conformal scaling + percentile-rank confidence) are identical.</p>
 <table style="width: 100%;">
