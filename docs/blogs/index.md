@@ -12,7 +12,7 @@ Workbench blogs highlight interesting functionality and approaches that might be
 
 - **[Inside a Workbench AWS Endpoint](aws_endpoint_architecture.md):** A deep dive into endpoint architecture — comparing the default SageMaker stack (Nginx, Gunicorn, Flask) with Workbench's modern ASGI stack (Uvicorn, FastAPI). We cover the custom image with pre-loaded chemistry packages, and Workbench's binary-search error handling that isolates bad rows instead of failing entire batches.
 
-- **[Canonicalization and Tautomerization](molecular_standardization.md):** A deep dive into why molecular standardization matters for ML pipelines. We look at the AqSol solubility dataset, compute molecular descriptors with RDKit, and explore why NaNs and parse errors show up on about 9% of compounds.
+- **[Molecular Standardization](molecular_standardization.md):** Why molecular standardization matters for ML pipelines. We walk through Workbench's four-step pipeline — cleanup, salt handling, charge neutralization, and tautomer canonicalization. We also describe **2D** and **3D** molecular descriptors computed by our feature endpoints.
 
 ## Questions?
 <img align="right" src="../images/scp.png" width="180">
