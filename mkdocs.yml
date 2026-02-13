@@ -1,4 +1,4 @@
-site_name: Workbench
+site_name: ADMET Workbench
 nav:
   - Welcome: index.md
   - Presentations: presentations/index.md
@@ -132,6 +132,7 @@ nav:
 
 theme:
   name: material
+  logo: images/scp.png
   palette:
     # Palette toggle for light mode
   - scheme: slate
