@@ -13,6 +13,11 @@ from workbench.web_interface.components.plugin_interface import PluginInterface,
 from workbench.cached.cached_model import CachedModel
 from workbench.utils.clientside_callbacks import circle_overlay_callback
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
+from workbench.utils.color_utils import add_alpha_to_first_color
+
+# Marker style constants
+_MARKER_LINE = dict(color="rgba(0,0,0,0.25)", width=1)
+_DIMMED_MARKER = dict(size=10, color="rgba(128, 128, 128, 0.3)", line=dict(color="rgba(0,0,0,0.3)", width=1))
 
 
 class ConfusionTriangle(PluginInterface):
@@ -77,53 +82,23 @@ class ConfusionTriangle(PluginInterface):
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
-                    style={"height": "500px", "width": "100%"},
+                    style={"height": "400px", "width": "100%"},
                     clear_on_unhover=True,
                 ),
                 html.Div(
                     [
-                        html.Span(
-                            "Prediction Probabilities",
-                            style={
-                                "fontSize": "14px",
-                                "fontWeight": "bold",
-                                "opacity": "0.8",
-                            },
-                        ),
-                        html.Div(style={"flex": 1}),  # Spacer
-                        html.Label(
-                            "Color",
-                            style={
-                                "marginRight": "5px",
-                                "fontWeight": "bold",
-                                "display": "flex",
-                                "alignItems": "center",
-                            },
-                        ),
-                        dcc.Dropdown(
-                            id=f"{component_id}-color-dropdown",
-                            style={"minWidth": "200px"},
-                            clearable=False,
-                        ),
+                        html.Div(style={"flex": 1}),
+                        html.Label("Color", style={"marginRight": "5px", "fontWeight": "bold",
+                                                    "display": "flex", "alignItems": "center"}),
+                        dcc.Dropdown(id=f"{component_id}-color-dropdown", style={"minWidth": "200px"},
+                                     clearable=False),
                     ],
                     style={"padding": "0px 20px 10px 20px", "display": "flex", "alignItems": "center", "gap": "5px"},
                 ),
-                # Circle overlay tooltip (centered on hovered point)
-                dcc.Tooltip(
-                    id=f"{component_id}-overlay",
-                    background_color="rgba(0,0,0,0)",
-                    border_color="rgba(0,0,0,0)",
-                    direction="bottom",
-                    loading_text="",
-                ),
-                # Molecule/info tooltip (offset from hovered point)
-                dcc.Tooltip(
-                    id=f"{component_id}-molecule-tooltip",
-                    background_color="rgba(0,0,0,0)",
-                    border_color="rgba(0,0,0,0)",
-                    direction="bottom",
-                    loading_text="",
-                ),
+                dcc.Tooltip(id=f"{component_id}-overlay", background_color="rgba(0,0,0,0)",
+                            border_color="rgba(0,0,0,0)", direction="bottom", loading_text=""),
+                dcc.Tooltip(id=f"{component_id}-molecule-tooltip", background_color="rgba(0,0,0,0)",
+                            border_color="rgba(0,0,0,0)", direction="bottom", loading_text=""),
             ],
             style={"height": "100%", "display": "flex", "flexDirection": "column"},
         )
@@ -134,17 +109,14 @@ class ConfusionTriangle(PluginInterface):
         Args:
             model (CachedModel): Workbench instantiated CachedModel object.
             **kwargs (dict):
-                - inference_run (str): Inference capture name (default: "auto_inference").
+                - inference_run (str): Inference capture name (default: "full_cross_fold").
 
         Returns:
-            list: A list of updated property values (figure, color options, color default).
+            list: A list of updated property values [figure, color_options, color_default].
         """
-        # Get the background color from the current theme
         self.hover_background = self.theme_manager.background()
-
-        # Cache for theme re-rendering
         self.model = model
-        self.inference_run = kwargs.get("inference_run", "auto_inference")
+        self.inference_run = kwargs.get("inference_run", "full_cross_fold")
 
         # Get class labels and validate we have exactly 3
         self.class_labels = model.class_labels()
@@ -152,18 +124,18 @@ class ConfusionTriangle(PluginInterface):
             n = len(self.class_labels) if self.class_labels else 0
             return [self.display_text(f"Requires 3-class classifier (got {n} classes)"), [], None]
 
-        # Get inference predictions
+        # Get inference predictions and drop rows with NaN in key columns
         self.df = model.get_inference_predictions(self.inference_run)
         if self.df is None or self.df.empty:
             return [self.display_text("No Prediction Data"), [], None]
-
-        # Build probability column names
         self.proba_cols = [f"{label}_proba" for label in self.class_labels]
-
-        # Verify all proba columns exist
         missing = [col for col in self.proba_cols if col not in self.df.columns]
         if missing:
             return [self.display_text(f"Missing columns: {missing}"), [], None]
+
+        # Drop rows with NaN in probability or residual columns (bad predictions)
+        drop_cols = self.proba_cols + (["residual"] if "residual" in self.df.columns else [])
+        self.df = self.df.dropna(subset=drop_cols).reset_index(drop=True)
 
         # Detect smiles and id columns for molecule hover rendering
         self.smiles_column = next((col for col in self.df.columns if col.lower() == "smiles"), None)
@@ -171,8 +143,7 @@ class ConfusionTriangle(PluginInterface):
         self.has_smiles = self.smiles_column is not None
 
         # Build color dropdown options
-        target_col = model.target()
-        self.target_col = target_col
+        self.target_col = model.target()
         numeric_columns = self.df.select_dtypes(include="number").columns.tolist()
         cat_columns = self.df.select_dtypes(include=["object", "string", "category"]).columns.tolist()
         cat_columns = [col for col in cat_columns if self.df[col].astype(str).nunique() < 20]
@@ -182,12 +153,11 @@ class ConfusionTriangle(PluginInterface):
         if self.default_color and self.default_color in color_columns:
             color_default = self.default_color
         else:
-            color_default = target_col if target_col in color_columns else color_columns[0] if color_columns else None
+            color_default = self.target_col if self.target_col in color_columns else (
+                color_columns[0] if color_columns else None)
         color_options = [{"label": col, "value": col} for col in color_columns]
 
-        # Create the ternary plot
         figure = self.create_ternary_plot(self.df, self.class_labels, self.proba_cols, color_default)
-
         return [figure, color_options, color_default]
 
     def set_theme(self, theme: str) -> list:
@@ -200,8 +170,6 @@ class ConfusionTriangle(PluginInterface):
     def _project(low, mid, high):
         """Project barycentric coordinates to 2D cartesian (equilateral triangle).
 
-        Vertices: bottom-left (0,0) = low, top (0.5, sqrt(3)/2) = mid, bottom-right (1,0) = high.
-
         Args:
             low (float | np.ndarray): Probability for the lowest class.
             mid (float | np.ndarray): Probability for the middle class.
@@ -211,18 +179,9 @@ class ConfusionTriangle(PluginInterface):
             tuple: (x, y) cartesian coordinates.
         """
         h = np.sqrt(3) / 2
-        x = high + mid * 0.5
-        y = mid * h
-        return x, y
+        return high + mid * 0.5, mid * h
 
-    def create_ternary_plot(
-        self,
-        df: pd.DataFrame,
-        class_labels: list,
-        proba_cols: list,
-        color_col: str,
-        mask: pd.Series = None,
-    ) -> go.Figure:
+    def create_ternary_plot(self, df, class_labels, proba_cols, color_col, mask=None):
         """Create a ternary scatter plot using Scattergl with manual 2D projection.
 
         When mask is None, all points are rendered normally. When mask is provided,
@@ -239,11 +198,8 @@ class ConfusionTriangle(PluginInterface):
         Returns:
             go.Figure: A Plotly Figure object.
         """
-        low_col, mid_col, high_col = proba_cols
         h = np.sqrt(3) / 2
-
-        # Project all data points to 2D
-        px_arr, py_arr = self._project(df[low_col].values, df[mid_col].values, df[high_col].values)
+        px_arr, py_arr = self._project(df[proba_cols[0]].values, df[proba_cols[1]].values, df[proba_cols[2]].values)
 
         # Build customdata columns for molecule hover
         custom_data_cols = []
@@ -254,62 +210,52 @@ class ConfusionTriangle(PluginInterface):
 
         figure = go.Figure()
 
-        # Draw the triangle border
-        tri_x = [0, 1, 0.5, 0]
-        tri_y = [0, 0, h, 0]
-        figure.add_trace(
-            go.Scattergl(
-                x=tri_x, y=tri_y, mode="lines",
-                line=dict(color="rgba(255, 255, 255, 0.4)", width=1),
-                showlegend=False, hoverinfo="skip",
-            )
-        )
+        # Line colors adapt to dark/light theme
+        line_color = "rgba(200, 200, 200, 0.5)" if self.theme_manager.dark_mode() else "rgba(0, 0, 0, 0.5)"
+        boundary_color = "rgba(200, 200, 200, 0.4)" if self.theme_manager.dark_mode() else "rgba(0, 0, 0, 0.4)"
+
+        # Add data point traces first (so lines render on top)
+        self._add_data_traces(figure, df, px_arr, py_arr, color_col, class_labels, custom_data_cols, mask)
+
+        # Triangle border (on top of data points)
+        figure.add_trace(go.Scattergl(
+            x=[0, 1, 0.5, 0], y=[0, 0, h, 0], mode="lines",
+            line=dict(color=line_color, width=4), showlegend=False, hoverinfo="skip",
+        ))
 
         # Decision boundary lines: center (1/3, 1/3, 1/3) to each edge midpoint
         cx, cy = self._project(1/3, 1/3, 1/3)
-        boundary_color = "rgba(255, 255, 255, 0.3)"
         for edge in [(0.5, 0.5, 0), (0, 0.5, 0.5), (0.5, 0, 0.5)]:
             ex, ey = self._project(*edge)
-            figure.add_trace(
-                go.Scattergl(
-                    x=[cx, ex], y=[cy, ey], mode="lines",
-                    line=dict(color=boundary_color, width=1, dash="dash"),
-                    showlegend=False, hoverinfo="skip",
-                )
-            )
+            figure.add_trace(go.Scattergl(
+                x=[cx, ex], y=[cy, ey], mode="lines",
+                line=dict(color=boundary_color, width=2, dash="dash"),
+                showlegend=False, hoverinfo="skip",
+            ))
 
-        # --- Add data point traces ---
-        if mask is not None:
-            # Selection mode: dim non-matching, highlight matching
-            self._add_selection_traces(figure, df, px_arr, py_arr, color_col, class_labels, custom_data_cols, mask)
-        else:
-            # Normal mode: all points with full coloring
-            self._add_color_traces(figure, df, px_arr, py_arr, color_col, class_labels, custom_data_cols)
-
-        # Vertex labels and layout
-        bg_color = self.theme_manager.background()
+        # Vertex labels + title annotation below the triangle
         pad = 0.03
         annotations = [
-            dict(x=0 - pad, y=0 - pad, text=class_labels[0], showarrow=False, font=dict(size=14)),
-            dict(x=0.5, y=h + pad, text=class_labels[1], showarrow=False, font=dict(size=14)),
-            dict(x=1 + pad, y=0 - pad, text=class_labels[2], showarrow=False, font=dict(size=14)),
+            dict(x=-pad, y=-pad, text=class_labels[0], showarrow=False, font=dict(size=18)),
+            dict(x=0.5, y=h + pad, text=class_labels[1], showarrow=False, font=dict(size=18)),
+            dict(x=1 + pad, y=-pad, text=class_labels[2], showarrow=False, font=dict(size=18)),
+            dict(x=0.5, y=-0.05, text="<b>Prediction Probabilities</b>", showarrow=False,
+                 font=dict(size=16), xanchor="center", yanchor="top"),
         ]
         figure.update_layout(
-            xaxis=dict(visible=False, range=[-0.1, 1.1], scaleanchor="y", scaleratio=1),
-            yaxis=dict(visible=False, range=[-0.1, h + 0.1]),
-            plot_bgcolor=bg_color,
+            xaxis=dict(visible=False, range=[-0.1, 1.1], scaleanchor="y", scaleratio=1, constrain="domain"),
+            yaxis=dict(visible=False, range=[-0.12, h + 0.1], constrain="domain"),
+            plot_bgcolor=self.theme_manager.background(),
             paper_bgcolor="rgba(0,0,0,0)",
             margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 0},
-            showlegend=True,
-            dragmode="pan",
+            showlegend=True, dragmode="pan",
             modebar={"bgcolor": "rgba(0, 0, 0, 0)"},
             annotations=annotations,
         )
-
         return figure
 
-    def _add_color_traces(self, figure, df, px_arr, py_arr, color_col, class_labels, custom_data_cols):
-        """Add colored data point traces to the figure.
+    def _add_data_traces(self, figure, df, px_arr, py_arr, color_col, class_labels, custom_data_cols, mask=None):
+        """Add data point traces to the figure (normal or selection-style).
 
         Args:
             figure (go.Figure): The Plotly figure to add traces to.
@@ -319,115 +265,56 @@ class ConfusionTriangle(PluginInterface):
             color_col (str): The column to use for coloring points.
             class_labels (list): The three class labels.
             custom_data_cols (list): Columns to include in customdata for hover.
+            mask (pd.Series): Optional boolean mask. None = normal mode, Series = selection mode.
         """
-        if color_col in df.columns and pd.api.types.is_numeric_dtype(df[color_col]):
-            # Numeric coloring (e.g., residual)
-            colorscale = self.theme_manager.colorscale("heatmap")
-            figure.add_trace(
-                go.Scattergl(
-                    x=px_arr, y=py_arr, mode="markers", hoverinfo="none",
-                    customdata=df[custom_data_cols] if custom_data_cols else None,
-                    marker=dict(
-                        size=15, color=df[color_col],
-                        colorscale=colorscale,
-                        colorbar=dict(title=color_col, thickness=10),
-                        line=dict(color="rgba(0,0,0,0.25)", width=1),
-                    ),
-                    showlegend=False,
-                )
-            )
-
-        elif color_col in df.columns:
-            # Categorical coloring (one trace per category)
-            categories = df[color_col].astype(str).unique().tolist()
-            categories = list(class_labels) if set(categories) == set(class_labels) else sorted(categories)
-            discrete_colors = pex.colors.qualitative.Plotly
-
-            for i, cat in enumerate(categories):
-                cat_mask = df[color_col].astype(str) == cat
-                figure.add_trace(
-                    go.Scattergl(
-                        x=px_arr[cat_mask.values], y=py_arr[cat_mask.values],
-                        mode="markers", hoverinfo="none", name=cat,
-                        customdata=df.loc[cat_mask, custom_data_cols] if custom_data_cols else None,
-                        marker=dict(
-                            size=15, color=discrete_colors[i % len(discrete_colors)],
-                            line=dict(color="rgba(0,0,0,0.25)", width=1),
-                        ),
-                    )
-                )
-
-    def _add_selection_traces(self, figure, df, px_arr, py_arr, color_col, class_labels, custom_data_cols, mask):
-        """Add selection-style traces: dimmed background + highlighted foreground.
-
-        Args:
-            figure (go.Figure): The Plotly figure to add traces to.
-            df (pd.DataFrame): The full dataframe containing prediction data.
-            px_arr (np.ndarray): Projected x coordinates.
-            py_arr (np.ndarray): Projected y coordinates.
-            color_col (str): The column to use for coloring highlighted points.
-            class_labels (list): The three class labels.
-            custom_data_cols (list): Columns to include in customdata for hover.
-            mask (pd.Series): Boolean mask where True = selected/highlighted.
-        """
-        # Dimmed background points (non-selected)
-        bg_mask = ~mask
-        if bg_mask.any():
-            figure.add_trace(
-                go.Scattergl(
+        # In selection mode, add dimmed background points first
+        if mask is not None:
+            bg_mask = ~mask
+            if bg_mask.any():
+                figure.add_trace(go.Scattergl(
                     x=px_arr[bg_mask.values], y=py_arr[bg_mask.values],
-                    mode="markers", hoverinfo="none",
-                    marker=dict(
-                        size=10, color="rgba(128, 128, 128, 0.15)",
-                        line=dict(color="rgba(0,0,0,0.05)", width=1),
-                    ),
-                    showlegend=False,
-                )
-            )
+                    mode="markers", hoverinfo="skip", marker=_DIMMED_MARKER, showlegend=False,
+                ))
+            # Use only selected points for coloring
+            plot_df = df[mask]
+            plot_px, plot_py = px_arr[mask.values], py_arr[mask.values]
+        else:
+            plot_df = df
+            plot_px, plot_py = px_arr, py_arr
 
-        # Highlighted points (selected) — use full dataframe color range for consistent colorscale
-        fg_df = df[mask]
-        if fg_df.empty:
+        if plot_df.empty:
             return
 
-        fg_px, fg_py = px_arr[mask.values], py_arr[mask.values]
+        # Numeric coloring (e.g., residual)
+        if color_col in plot_df.columns and pd.api.types.is_numeric_dtype(plot_df[color_col]):
+            colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("heatmap"))
+            marker = dict(size=15, color=plot_df[color_col], colorscale=colorscale,
+                          colorbar=dict(title=color_col, thickness=10), line=_MARKER_LINE)
+            # In selection mode, pin colorscale to full dataframe range
+            if mask is not None:
+                marker["cmin"], marker["cmax"] = df[color_col].min(), df[color_col].max()
+            cdata = plot_df[custom_data_cols].values if custom_data_cols else None
+            figure.add_trace(go.Scattergl(
+                x=plot_px, y=plot_py, mode="markers", hoverinfo="none",
+                customdata=cdata, marker=marker, showlegend=False,
+            ))
 
-        if color_col in fg_df.columns and pd.api.types.is_numeric_dtype(fg_df[color_col]):
-            colorscale = self.theme_manager.colorscale("heatmap")
-            figure.add_trace(
-                go.Scattergl(
-                    x=fg_px, y=fg_py, mode="markers", hoverinfo="none",
-                    customdata=fg_df[custom_data_cols].values if custom_data_cols else None,
-                    marker=dict(
-                        size=15, color=fg_df[color_col],
-                        colorscale=colorscale, cmin=df[color_col].min(), cmax=df[color_col].max(),
-                        colorbar=dict(title=color_col, thickness=10),
-                        line=dict(color="rgba(0,0,0,0.25)", width=1),
-                    ),
-                    showlegend=False,
-                )
-            )
-        elif color_col in fg_df.columns:
-            categories = fg_df[color_col].astype(str).unique().tolist()
+        # Categorical coloring (one trace per category)
+        elif color_col in plot_df.columns:
+            categories = plot_df[color_col].astype(str).unique().tolist()
             categories = list(class_labels) if set(categories) == set(class_labels) else sorted(categories)
-            discrete_colors = pex.colors.qualitative.Plotly
-
+            colors = pex.colors.qualitative.Plotly
             for i, cat in enumerate(categories):
-                cat_mask = fg_df[color_col].astype(str) == cat
-                figure.add_trace(
-                    go.Scattergl(
-                        x=fg_px[cat_mask.values], y=fg_py[cat_mask.values],
-                        mode="markers", hoverinfo="none", name=cat,
-                        customdata=fg_df.loc[cat_mask, custom_data_cols].values if custom_data_cols else None,
-                        marker=dict(
-                            size=15, color=discrete_colors[i % len(discrete_colors)],
-                            line=dict(color="rgba(0,0,0,0.25)", width=1),
-                        ),
-                    )
-                )
+                cat_mask = plot_df[color_col].astype(str) == cat
+                cdata = plot_df.loc[cat_mask, custom_data_cols].values if custom_data_cols else None
+                figure.add_trace(go.Scattergl(
+                    x=plot_px[cat_mask.values], y=plot_py[cat_mask.values],
+                    mode="markers", hoverinfo="none", name=cat, customdata=cdata,
+                    marker=dict(size=15, color=colors[i % len(colors)], line=_MARKER_LINE),
+                ))
 
     def register_internal_callbacks(self):
-        """Register any internal callbacks for the plugin."""
+        """Register internal callbacks for the plugin."""
 
         @callback(
             Output(f"{self.component_id}-graph", "figure", allow_duplicate=True),
@@ -435,7 +322,6 @@ class ConfusionTriangle(PluginInterface):
             prevent_initial_call=True,
         )
         def _update_ternary_color(color_value):
-            """Update the ternary plot when the color dropdown changes."""
             if self.df is None or self.df.empty or not color_value:
                 raise PreventUpdate
             return self.create_ternary_plot(self.df, self.class_labels, self.proba_cols, color_value)
@@ -456,41 +342,30 @@ class ConfusionTriangle(PluginInterface):
             Input(f"{self.component_id}-graph", "hoverData"),
         )
         def _molecule_overlay(hover_data):
-            """Show molecule tooltip when smiles data is available."""
             if hover_data is None or not self.has_smiles:
                 return False, no_update, no_update
 
-            # Extract customdata (contains smiles and id)
             customdata = hover_data["points"][0].get("customdata")
             if customdata is None:
                 return False, no_update, no_update
 
-            # SMILES is the first element, ID is second (if available)
             if isinstance(customdata, (list, tuple)):
                 smiles = customdata[0]
                 mol_id = customdata[1] if len(customdata) > 1 and self.id_column else None
             else:
-                smiles = customdata
-                mol_id = None
+                smiles, mol_id = customdata, None
 
-            # Generate molecule tooltip (use cached background color)
             mol_width, mol_height = 300, 200
             children = molecule_hover_tooltip(
                 smiles, mol_id=mol_id, width=mol_width, height=mol_height, background=self.hover_background
             )
 
-            # Position molecule tooltip above and slightly right of the point
             bbox = hover_data["points"][0]["bbox"]
-            center_x = (bbox["x0"] + bbox["x1"]) / 2
-            center_y = (bbox["y0"] + bbox["y1"]) / 2
-            x_offset = 5
-            y_offset = mol_height + 50
-
+            cx = (bbox["x0"] + bbox["x1"]) / 2
+            cy = (bbox["y0"] + bbox["y1"]) / 2
             adjusted_bbox = {
-                "x0": center_x + x_offset,
-                "x1": center_x + x_offset + mol_width,
-                "y0": center_y - mol_height - y_offset,
-                "y1": center_y - y_offset,
+                "x0": cx + 5, "x1": cx + 5 + mol_width,
+                "y0": cy - mol_height - (mol_height + 50), "y1": cy - (mol_height + 50),
             }
             return True, adjusted_bbox, children
 
@@ -499,6 +374,5 @@ if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
-    # Use the aqsol-mol-class model (3-class classifier)
     model = CachedModel("aqsol-mol-class")
     PluginUnitTest(ConfusionTriangle, input_data=model, theme="dark").run()

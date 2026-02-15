@@ -56,7 +56,7 @@ class ConfusionMatrix(PluginInterface):
         """
         # Store for re-rendering on theme change
         self.model = model
-        self.inference_run = kwargs.get("inference_run", "auto_inference")
+        self.inference_run = kwargs.get("inference_run", "full_cross_fold")
 
         # Retrieve the confusion matrix data
         df = model.confusion_matrix(self.inference_run)

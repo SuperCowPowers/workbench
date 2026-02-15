@@ -118,7 +118,7 @@ class PluginUnitTest:
             return self.plugin.update_properties(feature_set, **self.kwargs)
         elif plugin_input_type == PluginInputType.MODEL:
             model = self.input_data if self.input_data is not None else Model("abalone-regression")
-            return self.plugin.update_properties(model, inference_run="auto_inference", **self.kwargs)
+            return self.plugin.update_properties(model, **{"inference_run": "full_cross_fold", **self.kwargs})
         elif plugin_input_type == PluginInputType.ENDPOINT:
             endpoint = self.input_data if self.input_data is not None else Endpoint("abalone-regression")
             return self.plugin.update_properties(endpoint, **self.kwargs)

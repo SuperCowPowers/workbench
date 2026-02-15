@@ -1,6 +1,6 @@
 """A Model Plot plugin that displays the appropriate visualization based on model type.
 
-For classifiers: Shows a Confusion Matrix
+For classifiers: Shows a Confusion Explorer (Confusion Matrix + Confusion Triangle)
 For regressors: Shows a Scatter Plot of predictions vs actuals
 """
 
@@ -10,12 +10,12 @@ from dash import html, no_update
 from workbench.api import ModelType
 from workbench.cached.cached_model import CachedModel
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.web_interface.components.plugins.confusion_matrix import ConfusionMatrix
+from workbench.web_interface.components.plugins.confusion_explorer import ConfusionExplorer
 from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
 
 
 class ModelPlot(PluginInterface):
-    """Model Plot Plugin - switches between ConfusionMatrix and ScatterPlot based on model type."""
+    """Model Plot Plugin - switches between ConfusionExplorer and ScatterPlot based on model type."""
 
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.MODEL
@@ -28,13 +28,13 @@ class ModelPlot(PluginInterface):
 
         # Internal plugins
         self.scatter_plot = ScatterPlot()
-        self.confusion_matrix = ConfusionMatrix()
+        self.confusion_explorer = ConfusionExplorer()
 
         # Call the parent class constructor
         super().__init__()
 
     def create_component(self, component_id: str) -> html.Div:
-        """Create a container with both ScatterPlot and ConfusionMatrix components.
+        """Create a container with both ScatterPlot and ConfusionExplorer components.
 
         Args:
             component_id (str): The ID of the web component
@@ -46,7 +46,7 @@ class ModelPlot(PluginInterface):
 
         # Create internal components
         scatter_component = self.scatter_plot.create_component(f"{component_id}-scatter")
-        confusion_component = self.confusion_matrix.create_component(f"{component_id}-confusion")
+        confusion_component = self.confusion_explorer.create_component(f"{component_id}-confusion")
 
         # Build properties list: visibility styles + scatter props + confusion props
         self.properties = [
@@ -54,10 +54,10 @@ class ModelPlot(PluginInterface):
             (f"{component_id}-confusion-container", "style"),
         ]
         self.properties.extend(self.scatter_plot.properties)
-        self.properties.extend(self.confusion_matrix.properties)
+        self.properties.extend(self.confusion_explorer.properties)
 
         # Aggregate signals from both plugins
-        self.signals = self.scatter_plot.signals + self.confusion_matrix.signals
+        self.signals = self.scatter_plot.signals + self.confusion_explorer.signals
 
         # Create container with both components
         # Show scatter plot by default (will display "Waiting for Data..." until model loads)
@@ -98,8 +98,8 @@ class ModelPlot(PluginInterface):
         confusion_style = {"display": "block"} if is_classifier else {"display": "none"}
 
         if is_classifier:
-            # Update ConfusionMatrix, no_update for ScatterPlot
-            cm_props = self.confusion_matrix.update_properties(model, inference_run=self.inference_run)
+            # Update ConfusionExplorer, no_update for ScatterPlot
+            cm_props = self.confusion_explorer.update_properties(model, inference_run=self.inference_run)
             scatter_props = [no_update] * len(self.scatter_plot.properties)
         else:
             # Update ScatterPlot with regression data
@@ -107,7 +107,7 @@ class ModelPlot(PluginInterface):
             if df is None:
                 # Still update visibility styles, but no_update for plugin properties
                 scatter_props = [no_update] * len(self.scatter_plot.properties)
-                cm_props = [no_update] * len(self.confusion_matrix.properties)
+                cm_props = [no_update] * len(self.confusion_explorer.properties)
                 return [scatter_style, confusion_style] + scatter_props + cm_props
 
             # Get target column for the x-axis
@@ -125,7 +125,7 @@ class ModelPlot(PluginInterface):
                 color=color_col,
                 regression_line=True,
             )
-            cm_props = [no_update] * len(self.confusion_matrix.properties)
+            cm_props = [no_update] * len(self.confusion_explorer.properties)
 
         return [scatter_style, confusion_style] + scatter_props + cm_props
 
@@ -140,14 +140,14 @@ class ModelPlot(PluginInterface):
     def register_internal_callbacks(self):
         """Register internal callbacks for both sub-plugins."""
         self.scatter_plot.register_internal_callbacks()
-        self.confusion_matrix.register_internal_callbacks()
+        self.confusion_explorer.register_internal_callbacks()
 
 
 if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
 
-    # Test with a classifier (shows Confusion Matrix)
+    # Test with a classifier (shows Confusion Explorer)
     classifier_model = CachedModel("wine-classification")
     PluginUnitTest(ModelPlot, input_data=classifier_model, theme="dark").run()
 

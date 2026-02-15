@@ -1066,11 +1066,11 @@ class ModelCore(Artifact):
             self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
 
-    def get_inference_predictions(self, capture_name: str = "auto_inference") -> Union[pd.DataFrame, None]:
+    def get_inference_predictions(self, capture_name: str = "full_cross_fold") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: training_holdout)
+            capture_name (str, optional): Specific capture_name (default: full_cross_fold)
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)

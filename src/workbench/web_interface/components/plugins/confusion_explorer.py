@@ -2,12 +2,15 @@
 
 from dash import dcc, html, callback, Input, Output, State, no_update
 from dash.exceptions import PreventUpdate
+import dash_bootstrap_components as dbc
+import pandas as pd
 import plotly.graph_objects as go
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.web_interface.components.plugins.confusion_triangle import ConfusionTriangle
 from workbench.cached.cached_model import CachedModel
+from workbench.utils.color_utils import add_alpha_to_first_color
 
 
 def _residual_z_matrix(n_classes: int) -> list[list[int]]:
@@ -57,7 +60,8 @@ class ClassConfusionMatrix(PluginInterface):
         self.container = dcc.Graph(
             id=component_id,
             figure=self.display_text("Waiting for Data..."),
-            config={"scrollZoom": False, "doubleClick": "reset"},
+            config={"scrollZoom": False, "doubleClick": "reset", "displayModeBar": False},
+            style={"height": "400px", "width": "100%"},
         )
 
         # Fill in plugin properties
@@ -78,12 +82,21 @@ class ClassConfusionMatrix(PluginInterface):
             list: A list containing the updated Plotly figure.
         """
         self.model = model
-        self.inference_run = kwargs.get("inference_run", "auto_inference")
+        self.inference_run = kwargs.get("inference_run", "full_cross_fold")
 
-        # Retrieve the confusion matrix data (real counts)
-        df = model.confusion_matrix(self.inference_run)
-        if df is None:
+        # Compute confusion matrix directly from inference predictions
+        pred_df = model.get_inference_predictions(self.inference_run)
+        if pred_df is None or pred_df.empty:
             return [self.display_text("No Data")]
+
+        target_col = model.target()
+        class_labels = model.class_labels()
+        if target_col not in pred_df.columns or "prediction" not in pred_df.columns:
+            return [self.display_text("Missing target/prediction columns")]
+
+        # Build confusion matrix: rows = actual, columns = predicted
+        df = pd.crosstab(pred_df[target_col], pred_df["prediction"], dropna=False)
+        df = df.reindex(index=class_labels, columns=class_labels, fill_value=0)
 
         # Flip for correct orientation (highest class on top)
         df = df.iloc[::-1]
@@ -96,8 +109,8 @@ class ClassConfusionMatrix(PluginInterface):
         # Build the residual z-matrix (flipped to match the dataframe orientation)
         z_residual = _residual_z_matrix(n_classes)[::-1]
 
-        # Use the heatmap colorscale (matches the standalone confusion matrix)
-        colorscale = self.theme_manager.colorscale("heatmap")
+        # Use the heatmap colorscale with alpha fade (matches the standalone confusion matrix)
+        colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("heatmap"))
 
         # Create the heatmap with residual z-values for coloring
         # 0 = diagonal (correct), higher = off-diagonal (errors, bright)
@@ -117,7 +130,7 @@ class ClassConfusionMatrix(PluginInterface):
 
         # Layout
         fig.update_layout(
-            margin=dict(l=60, r=0, t=15, b=80, pad=5),
+            margin=dict(l=60, r=10, t=15, b=80, pad=5),
             xaxis=dict(title=dict(text="Predicted")),
             yaxis=dict(title=dict(text="Actual")),
             title_font_size=14,
@@ -126,13 +139,13 @@ class ClassConfusionMatrix(PluginInterface):
         # Configure axes
         fig.update_xaxes(
             tickvals=x_labels, ticktext=df.columns, tickangle=30,
-            tickfont_size=12, automargin=True, title_standoff=20,
+            tickfont_size=12, title_standoff=20,
             title_font={"size": 18}, showgrid=False,
         )
         fig.update_yaxes(
             tickvals=y_labels, ticktext=df.index, tickfont_size=12,
-            automargin=True, title_standoff=20, title_font={"size": 18},
-            showgrid=False,
+            title_standoff=20, title_font={"size": 18},
+            showgrid=False, scaleanchor="x", constrain="domain",
         )
 
         # Annotations: show real count values
@@ -246,23 +259,17 @@ class ConfusionExplorer(PluginInterface):
         return html.Div(
             id=component_id,
             children=[
-                # Hidden store for tracking the currently selected matrix cell (toggle support)
                 dcc.Store(id=f"{component_id}-selected-cell", data=None),
-                html.Div(
-                    children=[
-                        # Left: Confusion Matrix
-                        html.Div(
-                            matrix_component,
-                            style={"flex": "1", "minWidth": "300px"},
+                dbc.Row([
+                    dbc.Col([
+                        html.Span(
+                            "Confusion Explorer",
+                            style={"fontSize": "18px", "fontWeight": "bold", "paddingLeft": "10px"},
                         ),
-                        # Right: Confusion Triangle
-                        html.Div(
-                            triangle_component,
-                            style={"flex": "1", "minWidth": "400px"},
-                        ),
-                    ],
-                    style={"display": "flex", "flexDirection": "row", "gap": "10px", "width": "100%"},
-                ),
+                        matrix_component,
+                    ], width=5),
+                    dbc.Col(triangle_component, width=7),
+                ]),
             ],
         )
 
@@ -272,13 +279,13 @@ class ConfusionExplorer(PluginInterface):
         Args:
             model (CachedModel): Workbench instantiated CachedModel object.
             **kwargs (dict):
-                - inference_run (str): Inference capture name (default: "auto_inference").
+                - inference_run (str): Inference capture name (default: "full_cross_fold").
 
         Returns:
             list: Combined property values from both sub-plugins.
         """
         self.model = model
-        self.inference_run = kwargs.get("inference_run", "auto_inference")
+        self.inference_run = kwargs.get("inference_run", "full_cross_fold")
 
         # Update both sub-plugins
         matrix_props = self.matrix.update_properties(model, **kwargs)
@@ -378,4 +385,5 @@ if __name__ == "__main__":
 
     # Use the aqsol-mol-class model (3-class classifier)
     model = CachedModel("aqsol-mol-class")
-    PluginUnitTest(ConfusionExplorer, input_data=model, theme="dark").run()
+    # model = CachedModel("caco2-pappab-class-pytorch-1-dt")
+    PluginUnitTest(ConfusionExplorer, input_data=model, theme="dark", inference_run="auto_inference").run()
