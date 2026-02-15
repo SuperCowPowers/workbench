@@ -138,14 +138,23 @@ class ClassConfusionMatrix(PluginInterface):
 
         # Configure axes
         fig.update_xaxes(
-            tickvals=x_labels, ticktext=df.columns, tickangle=30,
-            tickfont_size=12, title_standoff=20,
-            title_font={"size": 18}, showgrid=False,
+            tickvals=x_labels,
+            ticktext=df.columns,
+            tickangle=30,
+            tickfont_size=12,
+            title_standoff=20,
+            title_font={"size": 18},
+            showgrid=False,
         )
         fig.update_yaxes(
-            tickvals=y_labels, ticktext=df.index, tickfont_size=12,
-            title_standoff=20, title_font={"size": 18},
-            showgrid=False, scaleanchor="x", constrain="domain",
+            tickvals=y_labels,
+            ticktext=df.index,
+            tickfont_size=12,
+            title_standoff=20,
+            title_font={"size": 18},
+            showgrid=False,
+            scaleanchor="x",
+            constrain="domain",
         )
 
         # Annotations: show real count values
@@ -154,8 +163,11 @@ class ClassConfusionMatrix(PluginInterface):
                 value = df.loc[row, col]
                 text_value = f"{value:.2f}" if isinstance(value, float) else str(value)
                 fig.add_annotation(
-                    x=j, y=i, text=text_value,
-                    showarrow=False, font_size=14,
+                    x=j,
+                    y=i,
+                    text=text_value,
+                    showarrow=False,
+                    font_size=14,
                 )
 
         return [fig]
@@ -260,16 +272,21 @@ class ConfusionExplorer(PluginInterface):
             id=component_id,
             children=[
                 dcc.Store(id=f"{component_id}-selected-cell", data=None),
-                dbc.Row([
-                    dbc.Col([
-                        html.Span(
-                            "Confusion Explorer",
-                            style={"fontSize": "18px", "fontWeight": "bold", "paddingLeft": "10px"},
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            [
+                                html.Span(
+                                    "Confusion Explorer",
+                                    style={"fontSize": "18px", "fontWeight": "bold", "paddingLeft": "10px"},
+                                ),
+                                matrix_component,
+                            ],
+                            width=5,
                         ),
-                        matrix_component,
-                    ], width=5),
-                    dbc.Col(triangle_component, width=7),
-                ]),
+                        dbc.Col(triangle_component, width=7),
+                    ]
+                ),
             ],
         )
 
@@ -354,27 +371,26 @@ class ConfusionExplorer(PluginInterface):
 
             # Build selection mask: actual class matches y_label AND predicted class matches x_label
             target_col = tri.target_col
-            mask = (
-                (tri.df[target_col].astype(str) == y_label)
-                & (tri.df["prediction"].astype(str) == x_label)
-            )
+            mask = (tri.df[target_col].astype(str) == y_label) & (tri.df["prediction"].astype(str) == x_label)
 
             # Render with selection-style brushing (all points visible, matching highlighted)
-            selection_figure = tri.create_ternary_plot(
-                tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask
-            )
+            selection_figure = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask)
 
             # Apply highlight rectangle on the matrix cell
             x_idx = int(point["x"].split(":")[1])
             y_idx = int(point["y"].split(":")[1])
             delta = 0.5
-            matrix_figure["layout"]["shapes"] = [{
-                "type": "rect",
-                "x0": x_idx - delta, "x1": x_idx + delta,
-                "y0": y_idx - delta, "y1": y_idx + delta,
-                "line": {"color": "grey", "width": 2},
-                "layer": "above",
-            }]
+            matrix_figure["layout"]["shapes"] = [
+                {
+                    "type": "rect",
+                    "x0": x_idx - delta,
+                    "x1": x_idx + delta,
+                    "y0": y_idx - delta,
+                    "y1": y_idx + delta,
+                    "line": {"color": "grey", "width": 2},
+                    "layer": "above",
+                }
+            ]
 
             return selection_figure, cell_key, matrix_figure
 

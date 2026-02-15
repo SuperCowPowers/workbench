@@ -88,17 +88,33 @@ class ConfusionTriangle(PluginInterface):
                 html.Div(
                     [
                         html.Div(style={"flex": 1}),
-                        html.Label("Color", style={"marginRight": "5px", "fontWeight": "bold",
-                                                    "display": "flex", "alignItems": "center"}),
-                        dcc.Dropdown(id=f"{component_id}-color-dropdown", style={"minWidth": "200px"},
-                                     clearable=False),
+                        html.Label(
+                            "Color",
+                            style={
+                                "marginRight": "5px",
+                                "fontWeight": "bold",
+                                "display": "flex",
+                                "alignItems": "center",
+                            },
+                        ),
+                        dcc.Dropdown(id=f"{component_id}-color-dropdown", style={"minWidth": "200px"}, clearable=False),
                     ],
                     style={"padding": "0px 20px 10px 20px", "display": "flex", "alignItems": "center", "gap": "5px"},
                 ),
-                dcc.Tooltip(id=f"{component_id}-overlay", background_color="rgba(0,0,0,0)",
-                            border_color="rgba(0,0,0,0)", direction="bottom", loading_text=""),
-                dcc.Tooltip(id=f"{component_id}-molecule-tooltip", background_color="rgba(0,0,0,0)",
-                            border_color="rgba(0,0,0,0)", direction="bottom", loading_text=""),
+                dcc.Tooltip(
+                    id=f"{component_id}-overlay",
+                    background_color="rgba(0,0,0,0)",
+                    border_color="rgba(0,0,0,0)",
+                    direction="bottom",
+                    loading_text="",
+                ),
+                dcc.Tooltip(
+                    id=f"{component_id}-molecule-tooltip",
+                    background_color="rgba(0,0,0,0)",
+                    border_color="rgba(0,0,0,0)",
+                    direction="bottom",
+                    loading_text="",
+                ),
             ],
             style={"height": "100%", "display": "flex", "flexDirection": "column"},
         )
@@ -153,8 +169,9 @@ class ConfusionTriangle(PluginInterface):
         if self.default_color and self.default_color in color_columns:
             color_default = self.default_color
         else:
-            color_default = self.target_col if self.target_col in color_columns else (
-                color_columns[0] if color_columns else None)
+            color_default = (
+                self.target_col if self.target_col in color_columns else (color_columns[0] if color_columns else None)
+            )
         color_options = [{"label": col, "value": col} for col in color_columns]
 
         figure = self.create_ternary_plot(self.df, self.class_labels, self.proba_cols, color_default)
@@ -218,20 +235,31 @@ class ConfusionTriangle(PluginInterface):
         self._add_data_traces(figure, df, px_arr, py_arr, color_col, class_labels, custom_data_cols, mask)
 
         # Triangle border (on top of data points)
-        figure.add_trace(go.Scattergl(
-            x=[0, 1, 0.5, 0], y=[0, 0, h, 0], mode="lines",
-            line=dict(color=line_color, width=4), showlegend=False, hoverinfo="skip",
-        ))
+        figure.add_trace(
+            go.Scattergl(
+                x=[0, 1, 0.5, 0],
+                y=[0, 0, h, 0],
+                mode="lines",
+                line=dict(color=line_color, width=4),
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
 
         # Decision boundary lines: center (1/3, 1/3, 1/3) to each edge midpoint
-        cx, cy = self._project(1/3, 1/3, 1/3)
+        cx, cy = self._project(1 / 3, 1 / 3, 1 / 3)
         for edge in [(0.5, 0.5, 0), (0, 0.5, 0.5), (0.5, 0, 0.5)]:
             ex, ey = self._project(*edge)
-            figure.add_trace(go.Scattergl(
-                x=[cx, ex], y=[cy, ey], mode="lines",
-                line=dict(color=boundary_color, width=2, dash="dash"),
-                showlegend=False, hoverinfo="skip",
-            ))
+            figure.add_trace(
+                go.Scattergl(
+                    x=[cx, ex],
+                    y=[cy, ey],
+                    mode="lines",
+                    line=dict(color=boundary_color, width=2, dash="dash"),
+                    showlegend=False,
+                    hoverinfo="skip",
+                )
+            )
 
         # Vertex labels + title annotation below the triangle
         pad = 0.03
@@ -239,8 +267,15 @@ class ConfusionTriangle(PluginInterface):
             dict(x=-pad, y=-pad, text=class_labels[0], showarrow=False, font=dict(size=18)),
             dict(x=0.5, y=h + pad, text=class_labels[1], showarrow=False, font=dict(size=18)),
             dict(x=1 + pad, y=-pad, text=class_labels[2], showarrow=False, font=dict(size=18)),
-            dict(x=0.5, y=-0.05, text="<b>Prediction Probabilities</b>", showarrow=False,
-                 font=dict(size=16), xanchor="center", yanchor="top"),
+            dict(
+                x=0.5,
+                y=-0.05,
+                text="<b>Prediction Probabilities</b>",
+                showarrow=False,
+                font=dict(size=16),
+                xanchor="center",
+                yanchor="top",
+            ),
         ]
         figure.update_layout(
             xaxis=dict(visible=False, range=[-0.1, 1.1], scaleanchor="y", scaleratio=1, constrain="domain"),
@@ -248,7 +283,8 @@ class ConfusionTriangle(PluginInterface):
             plot_bgcolor=self.theme_manager.background(),
             paper_bgcolor="rgba(0,0,0,0)",
             margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 0},
-            showlegend=True, dragmode="pan",
+            showlegend=True,
+            dragmode="pan",
             modebar={"bgcolor": "rgba(0, 0, 0, 0)"},
             annotations=annotations,
         )
@@ -271,10 +307,16 @@ class ConfusionTriangle(PluginInterface):
         if mask is not None:
             bg_mask = ~mask
             if bg_mask.any():
-                figure.add_trace(go.Scattergl(
-                    x=px_arr[bg_mask.values], y=py_arr[bg_mask.values],
-                    mode="markers", hoverinfo="skip", marker=_DIMMED_MARKER, showlegend=False,
-                ))
+                figure.add_trace(
+                    go.Scattergl(
+                        x=px_arr[bg_mask.values],
+                        y=py_arr[bg_mask.values],
+                        mode="markers",
+                        hoverinfo="skip",
+                        marker=_DIMMED_MARKER,
+                        showlegend=False,
+                    )
+                )
             # Use only selected points for coloring
             plot_df = df[mask]
             plot_px, plot_py = px_arr[mask.values], py_arr[mask.values]
@@ -288,16 +330,28 @@ class ConfusionTriangle(PluginInterface):
         # Numeric coloring (e.g., residual)
         if color_col in plot_df.columns and pd.api.types.is_numeric_dtype(plot_df[color_col]):
             colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("heatmap"))
-            marker = dict(size=15, color=plot_df[color_col], colorscale=colorscale,
-                          colorbar=dict(title=color_col, thickness=10), line=_MARKER_LINE)
+            marker = dict(
+                size=15,
+                color=plot_df[color_col],
+                colorscale=colorscale,
+                colorbar=dict(title=color_col, thickness=10),
+                line=_MARKER_LINE,
+            )
             # In selection mode, pin colorscale to full dataframe range
             if mask is not None:
                 marker["cmin"], marker["cmax"] = df[color_col].min(), df[color_col].max()
             cdata = plot_df[custom_data_cols].values if custom_data_cols else None
-            figure.add_trace(go.Scattergl(
-                x=plot_px, y=plot_py, mode="markers", hoverinfo="none",
-                customdata=cdata, marker=marker, showlegend=False,
-            ))
+            figure.add_trace(
+                go.Scattergl(
+                    x=plot_px,
+                    y=plot_py,
+                    mode="markers",
+                    hoverinfo="none",
+                    customdata=cdata,
+                    marker=marker,
+                    showlegend=False,
+                )
+            )
 
         # Categorical coloring (one trace per category)
         elif color_col in plot_df.columns:
@@ -307,11 +361,17 @@ class ConfusionTriangle(PluginInterface):
             for i, cat in enumerate(categories):
                 cat_mask = plot_df[color_col].astype(str) == cat
                 cdata = plot_df.loc[cat_mask, custom_data_cols].values if custom_data_cols else None
-                figure.add_trace(go.Scattergl(
-                    x=plot_px[cat_mask.values], y=plot_py[cat_mask.values],
-                    mode="markers", hoverinfo="none", name=cat, customdata=cdata,
-                    marker=dict(size=15, color=colors[i % len(colors)], line=_MARKER_LINE),
-                ))
+                figure.add_trace(
+                    go.Scattergl(
+                        x=plot_px[cat_mask.values],
+                        y=plot_py[cat_mask.values],
+                        mode="markers",
+                        hoverinfo="none",
+                        name=cat,
+                        customdata=cdata,
+                        marker=dict(size=15, color=colors[i % len(colors)], line=_MARKER_LINE),
+                    )
+                )
 
     def register_internal_callbacks(self):
         """Register internal callbacks for the plugin."""
@@ -364,8 +424,10 @@ class ConfusionTriangle(PluginInterface):
             cx = (bbox["x0"] + bbox["x1"]) / 2
             cy = (bbox["y0"] + bbox["y1"]) / 2
             adjusted_bbox = {
-                "x0": cx + 5, "x1": cx + 5 + mol_width,
-                "y0": cy - mol_height - (mol_height + 50), "y1": cy - (mol_height + 50),
+                "x0": cx + 5,
+                "x1": cx + 5 + mol_width,
+                "y0": cy - mol_height - (mol_height + 50),
+                "y1": cy - (mol_height + 50),
             }
             return True, adjusted_bbox, children
 
