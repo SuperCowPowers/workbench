@@ -1,6 +1,7 @@
 """Color Utilities for Workbench"""
 
 import re
+import numpy as np
 
 
 def is_dark(color: str) -> bool:
@@ -105,6 +106,42 @@ def adjust_towards_gray(r: float, g: float, b: float, factor: float = 0.5) -> tu
     g = g + (gray - g) * factor
     b = b + (gray - b) * factor
     return r, g, b
+
+
+def blended_colors(proba_matrix: np.ndarray, base_rgb: list[np.ndarray]) -> list[str]:
+    """Blend base colors by probability weights and desaturate toward grey for uncertain points.
+
+    For each row in proba_matrix, the base colors are blended proportionally to the probabilities.
+    Points with low confidence (max probability near 1/N) are desaturated toward grey, while
+    high-confidence points retain full color saturation.
+
+    Args:
+        proba_matrix (np.ndarray): (N, K) array of class probabilities (rows sum to 1).
+        base_rgb (list[np.ndarray]): K base colors as normalized RGB arrays (each shape (3,), values 0-1).
+
+    Returns:
+        list[str]: Per-point rgba color strings.
+    """
+    n_classes = proba_matrix.shape[1]
+    max_proba = proba_matrix.max(axis=1)
+
+    # Saturation: 0 at 1/N (fully uncertain) -> 1 at 1.0 (fully confident)
+    # Apply square root to keep colors vivid longer, only fading near the center
+    saturation = (max_proba - 1 / n_classes) / (1 - 1 / n_classes)
+    saturation = np.clip(saturation, 0, 1)
+    saturation = np.sqrt(saturation)
+
+    # Weighted blend of base colors by probabilities
+    blended = np.zeros((len(proba_matrix), 3))
+    for i, rgb in enumerate(base_rgb):
+        blended += np.outer(proba_matrix[:, i], rgb)
+
+    # Desaturate: lerp from grey toward the blended color
+    grey = np.array([0.5, 0.5, 0.5])
+    colors = grey + saturation[:, np.newaxis] * (blended - grey)
+    colors = np.clip(colors, 0, 1)
+
+    return [f"rgba({int(r*255)}, {int(g*255)}, {int(b*255)}, 0.85)" for r, g, b in colors]
 
 
 # Colorscale interpolation
