@@ -85,7 +85,7 @@ class ClassConfusionMatrix(PluginInterface):
             id=component_id,
             figure=self.display_text("Waiting for Data..."),
             config={"scrollZoom": False, "doubleClick": "reset", "displayModeBar": False},
-            style={"flex": "1", "minHeight": "200px", "width": "100%"},
+            style={"height": "350px", "width": "100%"},
         )
 
         # Fill in plugin properties
@@ -152,7 +152,7 @@ class ClassConfusionMatrix(PluginInterface):
 
         # Layout
         fig.update_layout(
-            margin=dict(l=60, r=10, t=15, b=80, pad=5),
+            margin=dict(l=60, r=10, t=0, b=50, pad=0),
             xaxis=dict(title=dict(text="Predicted")),
             yaxis=dict(title=dict(text="Actual")),
             title_font_size=14,
@@ -187,7 +187,7 @@ class ClassConfusionMatrix(PluginInterface):
                     y=i,
                     text=text_value,
                     showarrow=False,
-                    font_size=14,
+                    font_size=18,
                 )
 
         return [fig]
@@ -208,7 +208,7 @@ class ClassConfusionMatrix(PluginInterface):
     def register_internal_callbacks(self):
         """Register standalone cell highlight callback.
 
-        Note: Not used when embedded in ConfusionExplorer (the explorer's cross-component
+        Note: Not used when embedded in ConfusionExplorer (the efxplorer's cross-component
         callback handles matrix highlighting instead). Kept for potential standalone use.
         """
 
@@ -305,7 +305,7 @@ class ConfusionExplorer(PluginInterface):
                     "Confidence",
                     style={"fontWeight": "bold", "fontSize": "12px", "whiteSpace": "nowrap"},
                 ),
-                html.Div(slider, style={"flex": 1, "minWidth": "150px"}),
+                html.Div(slider, style={"flex": 1, "minWidth": "150px", "marginTop": "20px", "marginBottom": "0px"}),
             ],
             style={
                 "display": "flex",
@@ -328,7 +328,7 @@ class ConfusionExplorer(PluginInterface):
                                     style={
                                         "fontSize": "18px",
                                         "fontWeight": "bold",
-                                        "paddingLeft": "10px",
+                                        "padding": "10px 0px 0px 10px",
                                     },
                                 ),
                                 slider_row,
@@ -339,7 +339,7 @@ class ConfusionExplorer(PluginInterface):
                         ),
                         dbc.Col(triangle_component, width=7, style={"paddingLeft": "0"}),
                     ],
-                    style={"alignItems": "stretch"},
+                    style={},
                 ),
             ],
         )

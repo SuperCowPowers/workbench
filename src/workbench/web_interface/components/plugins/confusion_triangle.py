@@ -84,7 +84,7 @@ class ConfusionTriangle(PluginInterface):
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
-                    style={"height": "400px", "width": "100%"},
+                    style={"height": "420px", "width": "100%"},
                     clear_on_unhover=True,
                 ),
                 html.Div(
@@ -282,11 +282,11 @@ class ConfusionTriangle(PluginInterface):
             ),
         ]
         figure.update_layout(
-            xaxis=dict(visible=False, range=[-0.05, 1.05], scaleanchor="y", scaleratio=1),
-            yaxis=dict(visible=False, range=[-0.12, h + 0.05]),
+            xaxis=dict(visible=False, range=[-0.08, 1.12]),
+            yaxis=dict(visible=False, range=[-0.12, h + 0.10]),
             plot_bgcolor=self.theme_manager.background(),
             paper_bgcolor="rgba(0,0,0,0)",
-            margin={"t": 10, "b": 10, "r": 0, "l": 0, "pad": 0},
+            margin={"t": 0, "b": 0, "r": 0, "l": 0, "pad": 0},
             showlegend=True,
             dragmode="pan",
             modebar={"bgcolor": "rgba(0, 0, 0, 0)"},
@@ -330,6 +330,12 @@ class ConfusionTriangle(PluginInterface):
 
         if plot_df.empty:
             return
+
+        # Sort by color column so high-value points render on top (drawn last)
+        if color_col in plot_df.columns and pd.api.types.is_numeric_dtype(plot_df[color_col]):
+            sort_idx = plot_df[color_col].values.argsort()
+            plot_df = plot_df.iloc[sort_idx].reset_index(drop=True)
+            plot_px, plot_py = plot_px[sort_idx], plot_py[sort_idx]
 
         # Numeric coloring (e.g., residual)
         if color_col in plot_df.columns and pd.api.types.is_numeric_dtype(plot_df[color_col]):

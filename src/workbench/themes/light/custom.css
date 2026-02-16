@@ -309,6 +309,6 @@ td {
     background-color: var(--wb-light) !important;
 }
 .confidence-slider .rc-slider-mark-text {
-    font-size: 9px !important;
+    font-size: 11px !important;
     color: var(--wb-text-muted) !important;
 }
