@@ -216,13 +216,12 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
 
     # Load the FeatureSet and get target column
     fs = FeatureSet(fs_name)
-    target = fs_name.replace("open_admet_", "")
     base_name = fs_name.replace("open_admet_", "")
     short_name = base_name.replace("_", "-")
 
     print(f"\n{'='*60}")
     print(f"Processing Classification FeatureSet: {fs_name}")
-    print(f"Target column: class")
+    print("Target column: class")
     print(f"Base name: {short_name}")
     print(f"{'='*60}")
 
@@ -284,7 +283,9 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
             tags=["open_admet", base_name, "classification", "chemprop"],
         )
         chemprop_model.set_owner("BW")
-        end = chemprop_model.to_endpoint(tags=["open_admet", base_name, "classification", "chemprop"], max_concurrency=1)
+        end = chemprop_model.to_endpoint(
+            tags=["open_admet", base_name, "classification", "chemprop"], max_concurrency=1
+        )
         end.set_owner("BW")
         end.auto_inference()
         end.full_inference()
