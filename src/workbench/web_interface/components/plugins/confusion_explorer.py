@@ -478,9 +478,7 @@ class ConfusionExplorer(PluginInterface):
 
             # Build selection mask: actual class matches y_label AND predicted class matches x_label
             mask = (tri.df[tri.target_col].astype(str) == y_label) & (tri.df["prediction"].astype(str) == x_label)
-            sel_fig = tri.create_ternary_plot(
-                tri.df, tri.class_labels, tri.proba_cols, tri.active_color_col, mask=mask
-            )
+            sel_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, tri.active_color_col, mask=mask)
 
             # Apply highlight rectangle on the matrix cell
             x_idx = int(point["x"].split(":")[1])
@@ -525,9 +523,7 @@ class ConfusionExplorer(PluginInterface):
                 x_label, y_label = prev_cell.split("|")
 
                 # Re-apply the triangle mask on the newly filtered data
-                mask = (tri.df[tri.target_col].astype(str) == y_label) & (
-                    tri.df["prediction"].astype(str) == x_label
-                )
+                mask = (tri.df[tri.target_col].astype(str) == y_label) & (tri.df["prediction"].astype(str) == x_label)
                 triangle_props[0] = tri.create_ternary_plot(
                     tri.df, tri.class_labels, tri.proba_cols, tri.active_color_col, mask=mask
                 )

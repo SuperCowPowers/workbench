@@ -139,7 +139,9 @@ class ConfusionTriangle(PluginInterface):
         # Extract metadata from kwargs
         self.class_labels = kwargs.get("class_labels")
         self.target_col = kwargs.get("target_col")
-        self.proba_cols = kwargs.get("proba_cols", [f"{label}_proba" for label in self.class_labels] if self.class_labels else [])
+        self.proba_cols = kwargs.get(
+            "proba_cols", [f"{label}_proba" for label in self.class_labels] if self.class_labels else []
+        )
 
         # Validate class labels (requires exactly 3 for ternary plot)
         if self.class_labels is None or len(self.class_labels) != 3:
@@ -181,8 +183,9 @@ class ConfusionTriangle(PluginInterface):
         """Re-render the confusion triangle when the theme changes."""
         if self.df is None:
             return [no_update] * len(self.properties)
-        return self.update_properties(self.df, class_labels=self.class_labels,
-                                      target_col=self.target_col, proba_cols=self.proba_cols)
+        return self.update_properties(
+            self.df, class_labels=self.class_labels, target_col=self.target_col, proba_cols=self.proba_cols
+        )
 
     @staticmethod
     def _project(low, mid, high):
@@ -446,5 +449,11 @@ if __name__ == "__main__":
     class_labels = model.class_labels()
     target_col = model.target()
     proba_cols = [f"{label}_proba" for label in class_labels]
-    PluginUnitTest(ConfusionTriangle, input_data=df, theme="dark",
-                   class_labels=class_labels, target_col=target_col, proba_cols=proba_cols).run()
+    PluginUnitTest(
+        ConfusionTriangle,
+        input_data=df,
+        theme="dark",
+        class_labels=class_labels,
+        target_col=target_col,
+        proba_cols=proba_cols,
+    ).run()
