@@ -233,3 +233,35 @@ td {
 #endpoints_table .ag-header {
     background: linear-gradient(180deg, rgb(90, 55, 110) 0%, rgb(55, 30, 70) 100%) !important;
 }
+
+/* Confidence range slider styling */
+.confidence-slider .rc-slider-handle {
+    width: 22px !important;
+    height: 22px !important;
+    margin-top: -9px !important;
+    background-color: rgb(55, 60, 90) !important;
+    border: 2px solid rgb(100, 105, 140) !important;
+    border-radius: 4px !important;
+    opacity: 1 !important;
+}
+.confidence-slider .rc-slider-handle::after {
+    content: "|||";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 9px;
+    color: rgb(180, 180, 200);
+    letter-spacing: 0px;
+    line-height: 1;
+}
+.confidence-slider .rc-slider-track {
+    background-color: rgb(80, 100, 160) !important;
+}
+.confidence-slider .rc-slider-rail {
+    background-color: rgb(45, 48, 72) !important;
+}
+.confidence-slider .rc-slider-mark-text {
+    font-size: 9px !important;
+    color: rgb(130, 135, 165) !important;
+}

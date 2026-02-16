@@ -10,7 +10,6 @@ from dash.exceptions import PreventUpdate
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.cached.cached_model import CachedModel
 from workbench.utils.clientside_callbacks import circle_overlay_callback
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
 from workbench.utils.color_utils import add_alpha_to_first_color
@@ -30,7 +29,7 @@ class ConfusionTriangle(PluginInterface):
     """
 
     auto_load_page = PluginPage.NONE
-    plugin_input_type = PluginInputType.MODEL
+    plugin_input_type = PluginInputType.DATAFRAME
 
     # Pre-computed circle overlay SVG (same as scatter_plot)
     _circle_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" style="overflow: visible;">
@@ -41,8 +40,6 @@ class ConfusionTriangle(PluginInterface):
     def __init__(self):
         """Initialize the ConfusionTriangle plugin class."""
         self.component_id = None
-        self.model = None
-        self.inference_run = None
         self.df = None
         self.class_labels = None
         self.proba_cols = None
@@ -53,6 +50,11 @@ class ConfusionTriangle(PluginInterface):
         self.id_column = None
         self.hover_background = None
         super().__init__()
+
+    @property
+    def active_color_col(self) -> str:
+        """The currently active color column (default_color if set, else target_col, else 'prediction')."""
+        return self.default_color or self.target_col or "prediction"
 
     def create_component(self, component_id: str) -> html.Div:
         """Create a Dash Component without any data.
@@ -119,39 +121,38 @@ class ConfusionTriangle(PluginInterface):
             style={"height": "100%", "display": "flex", "flexDirection": "column"},
         )
 
-    def update_properties(self, model: CachedModel, **kwargs) -> list:
+    def update_properties(self, df: pd.DataFrame, **kwargs) -> list:
         """Update the property values for the plugin component.
 
         Args:
-            model (CachedModel): Workbench instantiated CachedModel object.
+            df (pd.DataFrame): DataFrame containing inference predictions.
             **kwargs (dict):
-                - inference_run (str): Inference capture name (default: "full_cross_fold").
+                - class_labels (list): The class labels for the model.
+                - target_col (str): The target column name.
+                - proba_cols (list): The probability column names.
 
         Returns:
             list: A list of updated property values [figure, color_options, color_default].
         """
         self.hover_background = self.theme_manager.background()
-        self.model = model
-        self.inference_run = kwargs.get("inference_run", "full_cross_fold")
 
-        # Get class labels and validate we have exactly 3
-        self.class_labels = model.class_labels()
+        # Extract metadata from kwargs
+        self.class_labels = kwargs.get("class_labels")
+        self.target_col = kwargs.get("target_col")
+        self.proba_cols = kwargs.get("proba_cols", [f"{label}_proba" for label in self.class_labels] if self.class_labels else [])
+
+        # Validate class labels (requires exactly 3 for ternary plot)
         if self.class_labels is None or len(self.class_labels) != 3:
             n = len(self.class_labels) if self.class_labels else 0
             return [self.display_text(f"Requires 3-class classifier (got {n} classes)"), [], None]
 
-        # Get inference predictions and drop rows with NaN in key columns
-        self.df = model.get_inference_predictions(self.inference_run)
+        # Validate dataframe
+        self.df = df
         if self.df is None or self.df.empty:
             return [self.display_text("No Prediction Data"), [], None]
-        self.proba_cols = [f"{label}_proba" for label in self.class_labels]
         missing = [col for col in self.proba_cols if col not in self.df.columns]
         if missing:
             return [self.display_text(f"Missing columns: {missing}"), [], None]
-
-        # Drop rows with NaN in probability or residual columns (bad predictions)
-        drop_cols = self.proba_cols + (["residual"] if "residual" in self.df.columns else [])
-        self.df = self.df.dropna(subset=drop_cols).reset_index(drop=True)
 
         # Detect smiles and id columns for molecule hover rendering
         self.smiles_column = next((col for col in self.df.columns if col.lower() == "smiles"), None)
@@ -159,7 +160,6 @@ class ConfusionTriangle(PluginInterface):
         self.has_smiles = self.smiles_column is not None
 
         # Build color dropdown options
-        self.target_col = model.target()
         numeric_columns = self.df.select_dtypes(include="number").columns.tolist()
         cat_columns = self.df.select_dtypes(include=["object", "string", "category"]).columns.tolist()
         cat_columns = [col for col in cat_columns if self.df[col].astype(str).nunique() < 20]
@@ -179,9 +179,10 @@ class ConfusionTriangle(PluginInterface):
 
     def set_theme(self, theme: str) -> list:
         """Re-render the confusion triangle when the theme changes."""
-        if self.model is None:
+        if self.df is None:
             return [no_update] * len(self.properties)
-        return self.update_properties(self.model, inference_run=self.inference_run)
+        return self.update_properties(self.df, class_labels=self.class_labels,
+                                      target_col=self.target_col, proba_cols=self.proba_cols)
 
     @staticmethod
     def _project(low, mid, high):
@@ -278,11 +279,11 @@ class ConfusionTriangle(PluginInterface):
             ),
         ]
         figure.update_layout(
-            xaxis=dict(visible=False, range=[-0.1, 1.1], scaleanchor="y", scaleratio=1, constrain="domain"),
-            yaxis=dict(visible=False, range=[-0.12, h + 0.1], constrain="domain"),
+            xaxis=dict(visible=False, range=[-0.05, 1.05], scaleanchor="y", scaleratio=1),
+            yaxis=dict(visible=False, range=[-0.12, h + 0.05]),
             plot_bgcolor=self.theme_manager.background(),
             paper_bgcolor="rgba(0,0,0,0)",
-            margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 0},
+            margin={"t": 10, "b": 10, "r": 0, "l": 0, "pad": 0},
             showlegend=True,
             dragmode="pan",
             modebar={"bgcolor": "rgba(0, 0, 0, 0)"},
@@ -334,11 +335,14 @@ class ConfusionTriangle(PluginInterface):
                 size=15,
                 color=plot_df[color_col],
                 colorscale=colorscale,
-                colorbar=dict(title=color_col, thickness=10),
+                colorbar=dict(title=color_col, thickness=10, x=1.01, xpad=0),
                 line=_MARKER_LINE,
             )
-            # In selection mode, pin colorscale to full dataframe range
-            if mask is not None:
+            # Pin residual colorscale to fixed 0–(n_classes-1) so colors stay stable across filtering
+            if color_col == "residual":
+                marker["cmin"], marker["cmax"] = 0, len(class_labels) - 1
+            elif mask is not None:
+                # In selection mode, pin colorscale to full dataframe range
                 marker["cmin"], marker["cmax"] = df[color_col].min(), df[color_col].max()
             cdata = plot_df[custom_data_cols].values if custom_data_cols else None
             figure.add_trace(
@@ -435,6 +439,12 @@ class ConfusionTriangle(PluginInterface):
 if __name__ == "__main__":
     """Run the Unit Test for the Plugin."""
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
+    from workbench.cached.cached_model import CachedModel
 
     model = CachedModel("aqsol-mol-class")
-    PluginUnitTest(ConfusionTriangle, input_data=model, theme="dark").run()
+    df = model.get_inference_predictions()
+    class_labels = model.class_labels()
+    target_col = model.target()
+    proba_cols = [f"{label}_proba" for label in class_labels]
+    PluginUnitTest(ConfusionTriangle, input_data=df, theme="dark",
+                   class_labels=class_labels, target_col=target_col, proba_cols=proba_cols).run()

@@ -286,6 +286,29 @@ def max_proba(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def decile_marks(series: pd.Series, lower_bound: float = 0.0) -> dict:
+    """Compute decile-based tick marks from a numeric Series.
+
+    Generates ~10 quantile-based edges, deduplicates, and returns a dict
+    suitable for use as ``dcc.RangeSlider`` marks.
+
+    Args:
+        series (pd.Series): Numeric values to compute deciles from.
+        lower_bound (float): Minimum allowed value (edges below this are dropped).
+
+    Returns:
+        dict: ``{value: label_str}`` mapping for slider marks.
+    """
+    quantiles = np.linspace(0, 1, 11)
+    edges = np.unique(np.round(np.quantile(series, quantiles), 2))
+
+    # Ensure lower_bound and 1.0 are included, filter to valid range
+    edges = np.unique(np.concatenate([[lower_bound], edges, [1.0]]))
+    edges = edges[edges >= lower_bound]
+
+    return {float(v): f"{v:.2f}" for v in edges}
+
+
 def confidence_profile(
     df: pd.DataFrame, target: str, positive_classes: list, negative_classes: list, quantiles: int = 10
 ) -> pd.DataFrame:

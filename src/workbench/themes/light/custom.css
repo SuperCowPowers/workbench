@@ -280,3 +280,35 @@ td {
 #endpoints_table .ag-header {
     background: linear-gradient(180deg, var(--wb-header-purple-start) 0%, var(--wb-header-purple-end) 100%) !important;
 }
+
+/* Confidence range slider styling */
+.confidence-slider .rc-slider-handle {
+    width: 22px !important;
+    height: 22px !important;
+    margin-top: -9px !important;
+    background-color: var(--wb-lightest) !important;
+    border: 2px solid var(--wb-accent) !important;
+    border-radius: 4px !important;
+    opacity: 1 !important;
+}
+.confidence-slider .rc-slider-handle::after {
+    content: "|||";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 9px;
+    color: var(--wb-dark);
+    letter-spacing: 0px;
+    line-height: 1;
+}
+.confidence-slider .rc-slider-track {
+    background-color: var(--wb-accent) !important;
+}
+.confidence-slider .rc-slider-rail {
+    background-color: var(--wb-light) !important;
+}
+.confidence-slider .rc-slider-mark-text {
+    font-size: 9px !important;
+    color: var(--wb-text-muted) !important;
+}
