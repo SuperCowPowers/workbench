@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#model-confidence-building-on-conformal-prediction" class="md-skip">
+        <a href="#model-confidence-from-ensemble-disagreement-to-calibrated-scores" class="md-skip">
           Skip to content
         </a>
       
@@ -1514,6 +1514,67 @@
       
     </span>
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#classification-confidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification Confidence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Classification Confidence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-challenge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Challenge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vgmu-variance-gated-margin-uncertainty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VGMU: Variance-Gated Margin Uncertainty
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isotonic-calibration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Isotonic Calibration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -4574,6 +4635,67 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#classification-confidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification Confidence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Classification Confidence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-challenge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Challenge
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vgmu-variance-gated-margin-uncertainty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        VGMU: Variance-Gated Margin Uncertainty
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#isotonic-calibration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Isotonic Calibration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#training-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Training output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#unified-across-frameworks" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4645,7 +4767,7 @@
 
 
 
-<h1 id="model-confidence-building-on-conformal-prediction">Model Confidence: Building on Conformal Prediction</h1>
+<h1 id="model-confidence-from-ensemble-disagreement-to-calibrated-scores">Model Confidence: From Ensemble Disagreement to Calibrated Scores</h1>
 <p>A prediction without a confidence score is just a number. In drug discovery, knowing <em>how much to trust</em> a prediction is often more valuable than the prediction itself — it determines whether you synthesize a compound, run an experiment, or move on. In this blog we'll walk through how Workbench approaches model confidence, the trade-offs we've considered, and where we think there's room to improve.</p>
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/uq_pred_scatter.png" alt="Prediction scatter plot colored by confidence" style="max-width: 800px; width: 100%;">
@@ -4705,21 +4827,64 @@
 </figure>
 
 <p>You'll notice the outlier around confidence ~0.55 with a residual near 1.0 — the model is moderately confident on that compound but clearly getting it wrong. We're not going to pretend this doesn't happen. The value of this plot is that it gives us <strong>visibility</strong> into exactly these cases, so we can investigate individual compounds where the model's confidence doesn't match reality.</p>
+<h2 id="classification-confidence">Classification Confidence</h2>
+<p>Everything above applies to regression models — where <code>prediction_std</code> gives us a natural uncertainty signal. But what about classifiers? A classification ensemble doesn't predict a continuous value with a standard deviation; it produces class probabilities. We need a different approach.</p>
+<h3 id="the-challenge">The Challenge</h3>
+<p>For classification, each of the 5 ensemble members outputs a softmax probability distribution over classes. We average those distributions to get the final <code>_proba</code> columns. But how do we turn that into a single confidence score?</p>
+<p>Simple approaches like using the maximum predicted probability (<code>max(p)</code>) are tempting but have known issues — <a href="https://arxiv.org/abs/2210.14070">Galil et al. (2022)</a> showed that max probability alone is suboptimal for detecting incorrect predictions, especially under distribution shift. It ignores both the shape of the probability distribution and whether the ensemble actually agrees.</p>
+<h3 id="vgmu-variance-gated-margin-uncertainty">VGMU: Variance-Gated Margin Uncertainty</h3>
+<p>We use <strong>VGMU</strong> (Variance-Gated Margin Uncertainty), introduced in the <a href="https://arxiv.org/abs/2602.08142">Variance-Gated Ensembles paper (2025)</a>. The idea is to combine two signals:</p>
+<ul>
+<li><strong>Margin</strong>: How much does the ensemble prefer its top class over the runner-up?</li>
+<li><strong>Agreement</strong>: Do the 5 models agree on those probabilities, or are they all over the place?</li>
+</ul>
+<p>The formula computes a signal-to-noise ratio between the margin and the ensemble disagreement:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>SNR = (p_top1 - p_top2) / (std_top1 + std_top2 + ε)
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>gamma = 1 - exp(-SNR)
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>raw_confidence = gamma × p_top1
+</span></code></pre></div>
+<p>Where <code>p_top1</code> and <code>p_top2</code> are the mean probabilities for the top two classes, and <code>std_top1</code> and <code>std_top2</code> are the standard deviations of those probabilities across the 5 ensemble members.</p>
+<p>This gives us nice behavior across the spectrum:</p>
+<ul>
+<li><strong>Ensemble agrees with clear margin</strong> → high SNR → gamma ≈ 1 → confidence ≈ p_top1</li>
+<li><strong>Ensemble disagrees or margin is thin</strong> → low SNR → gamma ≈ 0 → confidence ≈ 0</li>
+<li><strong>Uniform probabilities</strong> (model can't distinguish classes) → margin = 0, confidence = 0</li>
+</ul>
+<h3 id="isotonic-calibration">Isotonic Calibration</h3>
+<p>Just like raw ensemble std needs conformal calibration for regression, raw VGMU scores need calibration for classification. We use <strong>isotonic regression</strong> — a standard technique that fits a monotonically non-decreasing mapping from raw confidence to empirical accuracy on the validation set.</p>
+<p>During training, we compute VGMU scores for all validation predictions and fit an isotonic regression mapping <code>raw_confidence → P(correct)</code>. The fitted mapping is stored as a simple piecewise-linear function (just two arrays of thresholds) that can be applied with <code>np.interp</code> at inference time — no sklearn dependency needed in production.</p>
+<p>After calibration, a confidence of <strong>0.85</strong> means that among validation predictions with similar VGMU scores, about 85% were correctly classified. This gives the score a direct probabilistic interpretation.</p>
+<h3 id="training-output">Training output</h3>
+<p>During training, classification models now print calibration diagnostics showing how raw confidence maps to actual accuracy across bins:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>==================================================
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Calibrating Classification Confidence (VGMU)
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>==================================================
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  Validation samples: 2451
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  Overall accuracy: 0.847
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  Raw confidence  - mean: 0.621, std: 0.284
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  Calibrated conf - mean: 0.847, std: 0.128
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  Bin 1: n=  490, accuracy=0.639, calibrated_conf=0.654
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  Bin 2: n=  490, accuracy=0.794, calibrated_conf=0.805
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  Bin 3: n=  490, accuracy=0.871, calibrated_conf=0.873
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  Bin 4: n=  491, accuracy=0.924, calibrated_conf=0.922
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>  Bin 5: n=  490, accuracy=0.998, calibrated_conf=0.982
+</span></code></pre></div>
+<p>This lets you verify that the calibration is working — accuracy should increase monotonically across bins, and calibrated confidence should track accuracy closely.</p>
 <h2 id="unified-across-frameworks">Unified Across Frameworks</h2>
-<p>One design goal we're happy with: the <strong>same UQ pipeline</strong> runs for all three model types. Each framework trains its ensemble differently, but the uncertainty signal (ensemble std) and the calibration pipeline (conformal scaling + percentile-rank confidence) are identical.</p>
+<p>One design goal we're happy with: the <strong>same UQ pipeline</strong> runs for all three model types. Each framework trains its ensemble differently, but the uncertainty signal and calibration pipeline are unified — conformal scaling for regression, VGMU + isotonic calibration for classification.</p>
 <table style="width: 100%;">
   <thead>
     <tr>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Framework</th>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Ensemble</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Std Source</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Calibration</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Regression Confidence</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Classification Confidence</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">5-fold CV, XGBRegressor per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
-    <tr><td style="padding: 8px 16px; color: #3a86ff; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">5-fold CV, TabularMLP per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">5-fold CV, MPNN per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">5-fold CV</td><td style="padding: 8px 16px;">Ensemble std + conformal scaling</td><td style="padding: 8px 16px;">VGMU + isotonic calibration</td></tr>
+    <tr><td style="padding: 8px 16px; color: #3a86ff; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">5-fold CV</td><td style="padding: 8px 16px;">Ensemble std + conformal scaling</td><td style="padding: 8px 16px;">VGMU + isotonic calibration</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">5-fold CV</td><td style="padding: 8px 16px;">Ensemble std + conformal scaling</td><td style="padding: 8px 16px;">VGMU + isotonic calibration</td></tr>
   </tbody>
 </table>
 
@@ -4735,12 +4900,19 @@
 <p>For truly out-of-distribution detection, we'd recommend pairing confidence with applicability domain analysis (e.g., feature-space proximity to training data). This is something we're actively exploring for future Workbench releases.</p>
 <h2 id="summary">Summary</h2>
 <p>Here's how Workbench approaches model confidence today:</p>
+<p><strong>Regression models:</strong></p>
 <ol>
 <li><strong>Ensemble disagreement</strong> — Building on <a href="https://arxiv.org/abs/1612.01474">Lakshminarayanan et al.</a>, the 5-fold CV ensemble provides <code>prediction_std</code> as the raw uncertainty signal</li>
 <li><strong>Conformal calibration</strong> — Following <a href="https://arxiv.org/abs/2107.07511">Angelopoulos &amp; Bates</a>, we scale std into prediction intervals with target coverage (80% CI → ~80% coverage)</li>
 <li><strong>Percentile-rank confidence</strong> — Ranks each prediction's std against the training distribution (0.0 – 1.0)</li>
 </ol>
-<p>We're excited about this approach — it's simple, unified across frameworks, and gives us both calibrated intervals and interpretable confidence scores built from the model's own uncertainty. But there's always more to do, and we're looking forward to incorporating applicability domain methods and testing on a wider range of datasets.</p>
+<p><strong>Classification models:</strong></p>
+<ol>
+<li><strong>Ensemble probabilities</strong> — Each of the 5 models outputs class probabilities; we average them and also track per-model disagreement</li>
+<li><strong>VGMU scoring</strong> — Following <a href="https://arxiv.org/abs/2602.08142">Weiss et al. (2025)</a>, we combine the probability margin between top classes with ensemble disagreement via a signal-to-noise ratio</li>
+<li><strong>Isotonic calibration</strong> — Maps raw VGMU scores to P(correct) using isotonic regression on validation data, giving confidence a direct probabilistic interpretation</li>
+</ol>
+<p>Both approaches share the same philosophy: leverage the ensemble's own disagreement as the uncertainty signal, then calibrate it against held-out data so the numbers are meaningful. We're excited about this unified framework and looking forward to incorporating applicability domain methods and testing on a wider range of datasets.</p>
 <h2 id="references">References</h2>
 <ul>
 <li><a href="https://arxiv.org/abs/1612.01474">Lakshminarayanan et al., "Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles" (2017)</a> — Foundational work on using ensemble disagreement for uncertainty</li>
@@ -4748,6 +4920,9 @@
 <li><a href="https://arxiv.org/abs/2107.07511">Angelopoulos &amp; Bates, "Conformal Prediction: A Gentle Introduction" (2021)</a> — Accessible introduction to conformal methods</li>
 <li><a href="https://doi.org/10.1111/j.1467-9868.2007.00587.x">Gneiting et al., "Probabilistic Forecasts, Calibration and Sharpness" (2007)</a> — Calibration vs. discrimination framework</li>
 <li><a href="https://arxiv.org/abs/1906.02530">Ovadia et al., "Can You Trust Your Model's Uncertainty?" (2019)</a> — Analysis of ensemble UQ under dataset shift</li>
+<li><a href="https://arxiv.org/abs/2602.08142">Weiss et al., "Variance-Gated Ensembles: An Epistemic-Aware Framework" (2025)</a> — VGMU approach for combining margin and ensemble variance in classification</li>
+<li><a href="https://arxiv.org/abs/2210.14070">Galil et al., "What Can We Learn From The Selective Prediction And Uncertainty Estimation Performance Of 523 Imagenet Classifiers?" (2022)</a> — Analysis showing entropy-based measures outperform max probability for failure detection</li>
+<li><a href="https://proceedings.mlr.press/v216/wimmer23a.html">Wimmer et al., "Quantifying Aleatoric and Epistemic Uncertainty with Proper Scoring Rules" (2023)</a> — Caveats on entropy decomposition for small ensembles</li>
 <li><a href="https://openadmet.org/">OpenADMET Blind Challenge</a> — ExpansionRx MLM CLint dataset used for examples in this blog</li>
 </ul>
 <h2 id="questions">Questions?</h2>

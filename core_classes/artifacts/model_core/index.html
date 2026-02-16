@@ -7858,11 +7858,11 @@
 </span><span id="__span-0-1066"><a id="__codelineno-0-1066" name="__codelineno-0-1066"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find model inference meta at </span><span class="si">{</span><span class="n">s3_path</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
 </span><span id="__span-0-1067"><a id="__codelineno-0-1067" name="__codelineno-0-1067"></a>            <span class="k">return</span> <span class="kc">None</span>
 </span><span id="__span-0-1068"><a id="__codelineno-0-1068" name="__codelineno-0-1068"></a>
-</span><span id="__span-0-1069"><a id="__codelineno-0-1069" name="__codelineno-0-1069"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_inference_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capture_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto_inference&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+</span><span id="__span-0-1069"><a id="__codelineno-0-1069" name="__codelineno-0-1069"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_inference_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capture_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;full_cross_fold&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 </span><span id="__span-0-1070"><a id="__codelineno-0-1070" name="__codelineno-0-1070"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the captured prediction results for this model</span>
 </span><span id="__span-0-1071"><a id="__codelineno-0-1071" name="__codelineno-0-1071"></a>
 </span><span id="__span-0-1072"><a id="__codelineno-0-1072" name="__codelineno-0-1072"></a><span class="sd">        Args:</span>
-</span><span id="__span-0-1073"><a id="__codelineno-0-1073" name="__codelineno-0-1073"></a><span class="sd">            capture_name (str, optional): Specific capture_name (default: training_holdout)</span>
+</span><span id="__span-0-1073"><a id="__codelineno-0-1073" name="__codelineno-0-1073"></a><span class="sd">            capture_name (str, optional): Specific capture_name (default: full_cross_fold)</span>
 </span><span id="__span-0-1074"><a id="__codelineno-0-1074" name="__codelineno-0-1074"></a>
 </span><span id="__span-0-1075"><a id="__codelineno-0-1075" name="__codelineno-0-1075"></a><span class="sd">        Returns:</span>
 </span><span id="__span-0-1076"><a id="__codelineno-0-1076" name="__codelineno-0-1076"></a><span class="sd">            pd.DataFrame: DataFrame of the Captured Predictions (might be None)</span>
@@ -9344,7 +9344,7 @@ Returns:
 
 
 <h3 id="workbench.core.artifacts.model_core.ModelCore.get_inference_predictions" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">get_inference_predictions</span><span class="p">(</span><span class="n">capture_name</span><span class="o">=</span><span class="s1">&#39;auto_inference&#39;</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">get_inference_predictions</span><span class="p">(</span><span class="n">capture_name</span><span class="o">=</span><span class="s1">&#39;full_cross_fold&#39;</span><span class="p">)</span></code>
 
 </h3>
 
@@ -9374,11 +9374,11 @@ Returns:
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Specific capture_name (default: training_holdout)</p>
+                <p>Specific capture_name (default: full_cross_fold)</p>
               </div>
             </td>
             <td>
-                  <code>&#39;auto_inference&#39;</code>
+                  <code>&#39;full_cross_fold&#39;</code>
             </td>
           </tr>
       </tbody>
@@ -9438,11 +9438,11 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-1094">1094</a></span>
 <span class="normal"><a href="#__codelineno-0-1095">1095</a></span>
 <span class="normal"><a href="#__codelineno-0-1096">1096</a></span>
-<span class="normal"><a href="#__codelineno-0-1097">1097</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1069"><a id="__codelineno-0-1069" name="__codelineno-0-1069"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_inference_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capture_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto_inference&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="normal"><a href="#__codelineno-0-1097">1097</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-1069"><a id="__codelineno-0-1069" name="__codelineno-0-1069"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_inference_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">capture_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;full_cross_fold&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
 </span><span id="__span-0-1070"><a id="__codelineno-0-1070" name="__codelineno-0-1070"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the captured prediction results for this model</span>
 </span><span id="__span-0-1071"><a id="__codelineno-0-1071" name="__codelineno-0-1071"></a>
 </span><span id="__span-0-1072"><a id="__codelineno-0-1072" name="__codelineno-0-1072"></a><span class="sd">    Args:</span>
-</span><span id="__span-0-1073"><a id="__codelineno-0-1073" name="__codelineno-0-1073"></a><span class="sd">        capture_name (str, optional): Specific capture_name (default: training_holdout)</span>
+</span><span id="__span-0-1073"><a id="__codelineno-0-1073" name="__codelineno-0-1073"></a><span class="sd">        capture_name (str, optional): Specific capture_name (default: full_cross_fold)</span>
 </span><span id="__span-0-1074"><a id="__codelineno-0-1074" name="__codelineno-0-1074"></a>
 </span><span id="__span-0-1075"><a id="__codelineno-0-1075" name="__codelineno-0-1075"></a><span class="sd">    Returns:</span>
 </span><span id="__span-0-1076"><a id="__codelineno-0-1076" name="__codelineno-0-1076"></a><span class="sd">        pd.DataFrame: DataFrame of the Captured Predictions (might be None)</span>
