@@ -254,6 +254,7 @@ class GraphPlot(PluginInterface):
     def register_internal_callbacks(self):
         """Register any internal callbacks for the plugin."""
 
+        # allow_duplicate: figure also set by page-level callbacks and theme changes
         @callback(
             Output(f"{self.component_id}-graph", "figure", allow_duplicate=True),
             [

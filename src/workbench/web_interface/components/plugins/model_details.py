@@ -182,6 +182,7 @@ class InferenceMetrics(PluginInterface):
     def register_internal_callbacks(self):
         """Register the dropdown → metrics callback."""
 
+        # allow_duplicate: metrics also set by page-level update_model_details callback
         @callback(
             Output(f"{self.component_id}-metrics", "children", allow_duplicate=True),
             Input(f"{self.component_id}-dropdown", "value"),

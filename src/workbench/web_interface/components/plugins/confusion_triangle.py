@@ -389,6 +389,7 @@ class ConfusionTriangle(PluginInterface):
     def register_internal_callbacks(self):
         """Register internal callbacks for the plugin."""
 
+        # allow_duplicate: figure also set by page-level callbacks, theme, matrix-click, and confidence slider
         @callback(
             Output(f"{self.component_id}-graph", "figure", allow_duplicate=True),
             Input(f"{self.component_id}-color-dropdown", "value"),

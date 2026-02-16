@@ -212,6 +212,7 @@ class ClassConfusionMatrix(PluginInterface):
         callback handles matrix highlighting instead). Kept for potential standalone use.
         """
 
+        # allow_duplicate: figure also set by page-level callbacks and theme changes
         @callback(
             Output(self.component_id, "figure", allow_duplicate=True),
             Input(self.component_id, "clickData"),
@@ -446,6 +447,8 @@ class ConfusionExplorer(PluginInterface):
 
         # Cross-component callback: clicking a matrix cell highlights matching points on the triangle
         # Clicking the same cell again (toggle) resets to the full view
+        # allow_duplicate: triangle figure also set by color dropdown and confidence slider;
+        #                   matrix figure also set by page-level callbacks and confidence slider
         @callback(
             Output(f"{self.component_id}-triangle-graph", "figure", allow_duplicate=True),
             Output(f"{self.component_id}-selected-cell", "data"),
@@ -489,6 +492,7 @@ class ConfusionExplorer(PluginInterface):
 
         # Confidence slider callback: filter both children by max_proba range
         # Preserves the active matrix cell selection if one exists
+        # allow_duplicate: all outputs shared with page-level callbacks or matrix-click callback above
         @callback(
             Output(f"{self.component_id}-matrix", "figure", allow_duplicate=True),
             Output(f"{self.component_id}-triangle-graph", "figure", allow_duplicate=True),

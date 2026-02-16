@@ -146,6 +146,7 @@ class ConfusionMatrix(PluginInterface):
     def register_internal_callbacks(self):
         """Register internal callbacks for the plugin."""
 
+        # allow_duplicate: figure also set by page-level callbacks and theme changes
         @callback(
             Output(self.component_id, "figure", allow_duplicate=True),
             Input(self.component_id, "clickData"),
