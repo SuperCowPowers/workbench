@@ -22,6 +22,7 @@ FS_LIST = ["open_admet_mppb"]
 
 print(FS_LIST)
 
+INCLUDE_CLASSIFICATION = False  # Set to True to create classification models
 INCLUDE_EXTRA_MODELS = False  # Set to True to create additional fingerprint and hybrid models
 
 
@@ -210,6 +211,88 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         end.cross_fold_inference()
 
 
+def create_classification_models(fs_name: str, rdkit_features: list[str]):
+    """Create XGBoost, PyTorch, and ChemProp classification models for a given FeatureSet."""
+
+    # Load the FeatureSet and get target column
+    fs = FeatureSet(fs_name)
+    target = fs_name.replace("open_admet_", "")
+    base_name = fs_name.replace("open_admet_", "")
+    short_name = base_name.replace("_", "-")
+
+    print(f"\n{'='*60}")
+    print(f"Processing Classification FeatureSet: {fs_name}")
+    print(f"Target column: class")
+    print(f"Base name: {short_name}")
+    print(f"{'='*60}")
+
+    # 1. Create XGBoost Classification model
+    xgb_model_name = f"{short_name}-class-xgb"
+    if RECREATE or not Model(xgb_model_name).exists():
+        print(f"\nCreating XGBoost Classification model: {xgb_model_name}")
+        xgb_model = fs.to_model(
+            name=xgb_model_name,
+            model_type=ModelType.CLASSIFIER,
+            target_column="class",
+            feature_list=rdkit_features,
+            description=f"XGBoost classification model for {base_name} prediction",
+            tags=["open_admet", base_name, "classification", "xgboost"],
+        )
+        xgb_model.set_owner("BW")
+        end = xgb_model.to_endpoint(tags=["open_admet", base_name, "classification", "xgboost"], max_concurrency=1)
+        end.set_owner("BW")
+        end.auto_inference()
+        end.full_inference()
+        end.cross_fold_inference()
+
+    # Get feature importances from the XGBoost model
+    xgb_model = Model(xgb_model_name)
+    importances = xgb_model.shap_importance()
+    non_zero_shap = [feat for feat, imp in importances if imp != 0.0]
+
+    # 2. Create PyTorch Classification model
+    pytorch_model_name = f"{short_name}-class-pytorch"
+    if RECREATE or not Model(pytorch_model_name).exists():
+        print(f"Creating PyTorch Classification model: {pytorch_model_name}")
+        pytorch_model = fs.to_model(
+            name=pytorch_model_name,
+            model_type=ModelType.CLASSIFIER,
+            model_framework=ModelFramework.PYTORCH,
+            target_column="class",
+            feature_list=non_zero_shap,
+            description=f"PyTorch Tabular classification model for {base_name} prediction",
+            tags=["open_admet", base_name, "classification", "pytorch"],
+        )
+        pytorch_model.set_owner("BW")
+        end = pytorch_model.to_endpoint(tags=["open_admet", base_name, "classification", "pytorch"], max_concurrency=1)
+        end.set_owner("BW")
+        end.auto_inference()
+        end.full_inference()
+        end.cross_fold_inference()
+
+    # 3. Create ChemProp Classification model
+    chemprop_model_name = f"{short_name}-class-chemprop"
+    if RECREATE or not Model(chemprop_model_name).exists():
+        print(f"Creating ChemProp Classification model: {chemprop_model_name}")
+        chemprop_model = fs.to_model(
+            name=chemprop_model_name,
+            model_type=ModelType.CLASSIFIER,
+            model_framework=ModelFramework.CHEMPROP,
+            target_column="class",
+            feature_list=["smiles"],
+            description=f"ChemProp D-MPNN classification for {base_name} prediction",
+            tags=["open_admet", base_name, "classification", "chemprop"],
+        )
+        chemprop_model.set_owner("BW")
+        end = chemprop_model.to_endpoint(tags=["open_admet", base_name, "classification", "chemprop"], max_concurrency=1)
+        end.set_owner("BW")
+        end.auto_inference()
+        end.full_inference()
+        end.cross_fold_inference()
+
+    print(f"\nCompleted all classification models for: {fs_name}")
+
+
 if __name__ == "__main__":
     # Pull features from Parameter Store
     params = ParameterStore()
@@ -218,9 +301,17 @@ if __name__ == "__main__":
     print(f"Processing {len(FS_LIST)} FeatureSets")
     print(f"Using {len(rdkit_features)} RDKit/Mordred features")
 
-    # Loop over all FeatureSets and create models
+    # Loop over all FeatureSets and create regression models
     for fs_name in FS_LIST:
         create_models_for_featureset(fs_name, rdkit_features)
+
+    # Create classification models if enabled
+    if INCLUDE_CLASSIFICATION:
+        print("\n" + "=" * 60)
+        print("Creating Classification Models...")
+        print("=" * 60)
+        for fs_name in FS_LIST:
+            create_classification_models(fs_name, rdkit_features)
 
     print("\n" + "=" * 60)
     print("All models created successfully!")

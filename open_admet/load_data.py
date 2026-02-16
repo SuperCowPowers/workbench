@@ -19,6 +19,30 @@ TRANSFORM_CONFIG = {
     "mgmb": {"log_transform": True, "multiplier": 1.0},
 }
 
+# Classification boundaries for each assay (in log-transformed space)
+# Transform is log10((value + 1) * multiplier), bins use log10((boundary + 1) * multiplier)
+# Format: {target: (bins, labels)}
+CLASSIFICATION_BINS = {
+    # Caco-2 efflux ratio: <2 low, 2-10 moderate, >10 high  ->  log10(3)=0.48, log10(11)=1.04
+    "caco_2_efflux": ([-float("inf"), 0.48, 1.04, float("inf")], ["low", "moderate", "high"]),
+    # Caco-2 Papp A→B: <1 low, 1-10 mod, >10 high (mult 1e-6)  ->  log10(2e-6)=-5.70, log10(11e-6)=-4.96
+    "caco_2_papp_a_b": ([-float("inf"), -5.70, -4.96, float("inf")], ["low", "moderate", "high"]),
+    # HLM CLint: <10 low, 10-50 moderate, >50 high  ->  log10(11)=1.04, log10(51)=1.71
+    "hlm_clint": ([-float("inf"), 1.04, 1.71, float("inf")], ["low", "moderate", "high"]),
+    # Kinetic solubility: <10 low, 10-100 mod, >100 high (mult 1e-6)  ->  log10(11e-6)=-4.96, log10(101e-6)=-4.0
+    "ksol": ([-float("inf"), -4.96, -4.0, float("inf")], ["low", "moderate", "high"]),
+    # LogD: NOT log-transformed, boundaries in original scale
+    "logd": ([-float("inf"), 1, 3, float("inf")], ["low", "moderate", "high"]),
+    # Mouse brain plasma binding: <50 low, 50-90 mod, >90 high  ->  log10(51)=1.71, log10(91)=1.96
+    "mbpb": ([-float("inf"), 1.71, 1.96, float("inf")], ["low", "moderate", "high"]),
+    # Mouse gut microbiome binding: <30 low, 30-70 mod, >70 high  ->  log10(31)=1.49, log10(71)=1.85
+    "mgmb": ([-float("inf"), 1.49, 1.85, float("inf")], ["low", "moderate", "high"]),
+    # MLM CLint: <10 low, 10-50 moderate, >50 high  ->  log10(11)=1.04, log10(51)=1.71
+    "mlm_clint": ([-float("inf"), 1.04, 1.71, float("inf")], ["low", "moderate", "high"]),
+    # Mouse plasma protein binding: <50 low, 50-90 mod, >90 high  ->  log10(51)=1.71, log10(91)=1.96
+    "mppb": ([-float("inf"), 1.71, 1.96, float("inf")], ["low", "moderate", "high"]),
+}
+
 
 def apply_log_transforms(df: pd.DataFrame) -> pd.DataFrame:
     """Apply log10 transformations to assay columns based on OpenADMET tutorial."""
@@ -95,8 +119,13 @@ def main():
         # Pull all rows with non-null values for this assay
         df_assay = df_features.dropna(subset=[assay])
 
-        # Just keep the molecule_name, smiles, assay, and feature columns
-        keep_columns = ["molecule_name", "smiles", assay] + features + ["fingerprint"]
+        # Add classification column using pd.cut on the assay target
+        bins, labels = CLASSIFICATION_BINS[assay]
+        df_assay["class"] = pd.cut(df_assay[assay], bins=bins, labels=labels).astype(str)
+        print(f"  Classification distribution: {df_assay['class'].value_counts().to_dict()}")
+
+        # Just keep the molecule_name, smiles, assay, class, and feature columns
+        keep_columns = ["molecule_name", "smiles", assay, "class"] + features + ["fingerprint"]
         df_assay = df_assay[keep_columns]
 
         # Create a Feature Set
