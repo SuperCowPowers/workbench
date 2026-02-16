@@ -37,7 +37,13 @@ def models_layout(
                 [
                     # Column 1: Model Details
                     dbc.Col(
-                        dcc.Loading(model_details, type="dot", color="#33aa33", delay_show=1000),
+                        dcc.Loading(
+                            model_details,
+                            type="circle",
+                            color="#aa5577",
+                            delay_show=500,
+                            overlay_style={"visibility": "visible", "opacity": 0.25},
+                        ),
                         width=4,
                         className="text-break workbench-container",
                         style={"margin": "20px 0px 0px 0px", "padding": "20px"},
@@ -48,14 +54,22 @@ def models_layout(
                             dbc.Row(
                                 dcc.Loading(
                                     model_plot,
-                                    type="graph",
+                                    type="cube",
+                                    color="#aa5577",
                                     delay_show=500,
+                                    overlay_style={"visibility": "visible", "opacity": 0.25},
                                 ),
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px"},
                             ),
                             dbc.Row(
-                                dcc.Loading(shap_plot, type="graph", delay_show=500),
+                                dcc.Loading(
+                                    shap_plot,
+                                    type="cube",
+                                    color="#aa5577",
+                                    delay_show=500,
+                                    overlay_style={"visibility": "visible", "opacity": 0.25},
+                                ),
                                 className="workbench-container",
                                 style={"margin": "20px 0px 10px 20px"},
                             ),

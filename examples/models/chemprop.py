@@ -77,7 +77,7 @@ if recreate or not Endpoint("open-admet-chemprop-logd-hybrid").exists():
 # =============================================================================
 # Chemprop Classification Model
 # =============================================================================
-if recreate or not Model("aqsol-class-chemprop").exists():
+if True or recreate or not Model("aqsol-class-chemprop").exists():
     feature_set = FeatureSet("aqsol_features")
     m = feature_set.to_model(
         name="aqsol-class-chemprop",
