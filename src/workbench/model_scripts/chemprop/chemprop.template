@@ -32,7 +32,9 @@ from model_script_utils import (
     save_to_s3,
 )
 from uq_harness import (
+    apply_classification_confidence,
     compute_confidence,
+    compute_vgmu_confidence,
     load_uq_metadata,
     predict_intervals,
 )
@@ -149,7 +151,7 @@ def model_fn(model_dir: str) -> dict:
         model.eval()
         ensemble_models.append(model)
 
-    # Load UQ metadata (regression only)
+    # Load UQ metadata (regression or classification confidence)
     uq_metadata = None
     uq_path = os.path.join(model_dir, "uq_metadata.json")
     if os.path.exists(uq_path):
@@ -276,14 +278,34 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
 
     if model_type == "classifier" and label_encoder is not None:
         if preds.shape[1] > 1:
-            class_preds = np.argmax(preds, axis=1)
-            df.loc[valid_mask, "prediction"] = label_encoder.inverse_transform(class_preds)
-            proba = pd.Series([None] * len(df), dtype=object)
-            proba.loc[valid_mask] = [p.tolist() for p in preds]
-            df["pred_proba"] = proba
-            df = expand_proba_column(df, label_encoder.classes_)
+            avg_probs = preds
         else:
-            df.loc[valid_mask, "prediction"] = label_encoder.inverse_transform((preds.flatten() > 0.5).astype(int))
+            # Binary with single sigmoid — derive 2-class probabilities
+            sigmoid_probs = preds.flatten()
+            avg_probs = np.column_stack([1 - sigmoid_probs, sigmoid_probs])
+
+        class_preds = np.argmax(avg_probs, axis=1)
+        df.loc[valid_mask, "prediction"] = label_encoder.inverse_transform(class_preds)
+        proba = pd.Series([None] * len(df), dtype=object)
+        proba.loc[valid_mask] = [p.tolist() for p in avg_probs]
+        df["pred_proba"] = proba
+        df = expand_proba_column(df, label_encoder.classes_)
+
+        # VGMU classification confidence
+        uq_metadata = model_dict.get("uq_metadata")
+        if uq_metadata and "classification_confidence" in uq_metadata:
+            all_probs_stack = np.stack(all_preds, axis=0)
+            if all_probs_stack.shape[2] == 1:
+                # Binary sigmoid → expand to 2-class for each model
+                all_probs_stack = np.concatenate(
+                    [1 - all_probs_stack, all_probs_stack], axis=2
+                )
+            raw_conf = compute_vgmu_confidence(avg_probs, all_probs_stack)
+            conf_values = apply_classification_confidence(
+                raw_conf, uq_metadata["classification_confidence"]
+            )
+            df["confidence"] = np.nan
+            df.loc[valid_mask, "confidence"] = conf_values
     else:
         for t_idx, tc in enumerate(target_columns):
             df.loc[valid_mask, f"{tc}_pred"] = preds[:, t_idx]
@@ -330,7 +352,10 @@ if __name__ == "__main__":
         print_regression_metrics,
     )
     from uq_harness import (
+        apply_classification_confidence,
+        calibrate_classification_confidence,
         calibrate_uq,
+        compute_vgmu_confidence,
         save_uq_metadata,
     )
 
@@ -716,6 +741,47 @@ if __name__ == "__main__":
         if oof_proba is not None:
             df_val["pred_proba"] = [p.tolist() for p in oof_proba]
             df_val = expand_proba_column(df_val, label_encoder.classes_)
+
+        # Calibrate VGMU classification confidence from ensemble probabilities
+        if len(ensemble_models) > 1:
+            val_dps, _ = _create_molecule_datapoints(
+                df_val[smiles_column].tolist(), None, val_extra_features
+            )
+            cal_dataset = data.MoleculeDataset(val_dps)
+            cal_loader = data.build_dataloader(
+                cal_dataset,
+                batch_size=_safe_batch_size(len(cal_dataset), batch_size),
+                shuffle=False, num_workers=num_workers, pin_memory=True,
+            )
+
+            all_model_probs = []
+            for m in ensemble_models:
+                m.eval()
+                model_preds = []
+                with torch.inference_mode():
+                    for batch in cal_loader:
+                        bmg, V_d, X_d, *_ = batch
+                        output = m(bmg, V_d, X_d)
+                        model_preds.append(output.detach().cpu().numpy())
+                probs = np.concatenate(model_preds, axis=0)
+                if probs.ndim == 3 and probs.shape[1] == 1:
+                    probs = probs.squeeze(axis=1)
+                all_model_probs.append(probs)
+
+            all_probs_stack = np.stack(all_model_probs)  # (n_models, n_samples, n_classes)
+            if all_probs_stack.shape[2] == 1:
+                # Binary sigmoid → expand to 2-class for each model
+                all_probs_stack = np.concatenate(
+                    [1 - all_probs_stack, all_probs_stack], axis=2
+                )
+            avg_probs = np.mean(all_probs_stack, axis=0)
+            raw_conf = compute_vgmu_confidence(avg_probs, all_probs_stack)
+            uq_metadata = calibrate_classification_confidence(raw_conf, y_true_decoded, preds_decoded)
+            df_val["confidence"] = apply_classification_confidence(
+                raw_conf, uq_metadata["classification_confidence"]
+            )
+        else:
+            uq_metadata = None
     else:
         # Compute ensemble std using direct PyTorch inference (faster, no Trainer overhead)
         preds_std = None
@@ -834,7 +900,7 @@ if __name__ == "__main__":
     }
     joblib.dump(ensemble_metadata, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
 
-    if model_type != "classifier":
+    if uq_metadata is not None:
         save_uq_metadata(uq_metadata, args.model_dir)
 
     with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:

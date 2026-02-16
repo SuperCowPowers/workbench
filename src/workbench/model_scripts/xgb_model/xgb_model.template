@@ -33,7 +33,9 @@ from model_script_utils import (
     save_to_s3,
 )
 from uq_harness import (
+    apply_classification_confidence,
     compute_confidence,
+    compute_vgmu_confidence,
     load_uq_metadata,
     predict_intervals,
 )
@@ -121,7 +123,7 @@ def model_fn(model_dir: str) -> dict:
         with open(category_path) as f:
             category_mappings = json.load(f)
 
-    # Load UQ metadata (regression only)
+    # Load UQ metadata (regression or classification confidence)
     uq_metadata = None
     uq_path = os.path.join(model_dir, "uq_metadata.json")
     if os.path.exists(uq_path):
@@ -174,12 +176,20 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     if label_encoder is not None:
         # Classification: average probabilities, then argmax
         all_probs = [m.predict_proba(X) for m in ensemble_models]
-        avg_probs = np.mean(np.stack(all_probs, axis=0), axis=0)
+        all_probs_stack = np.stack(all_probs, axis=0)
+        avg_probs = np.mean(all_probs_stack, axis=0)
         class_preds = np.argmax(avg_probs, axis=1)
 
         df["prediction"] = label_encoder.inverse_transform(class_preds)
         df["pred_proba"] = [p.tolist() for p in avg_probs]
         df = expand_proba_column(df, label_encoder.classes_)
+
+        # VGMU classification confidence
+        if uq_metadata and "classification_confidence" in uq_metadata:
+            raw_conf = compute_vgmu_confidence(avg_probs, all_probs_stack)
+            df["confidence"] = apply_classification_confidence(
+                raw_conf, uq_metadata["classification_confidence"]
+            )
     else:
         # Regression: average predictions
         df["prediction"] = np.mean(ensemble_preds, axis=0)
@@ -217,7 +227,10 @@ if __name__ == "__main__":
         print_regression_metrics,
     )
     from uq_harness import (
+        apply_classification_confidence,
+        calibrate_classification_confidence,
         calibrate_uq,
+        compute_vgmu_confidence,
         save_uq_metadata,
     )
 
@@ -399,6 +412,18 @@ if __name__ == "__main__":
         score_df = compute_classification_metrics(y_true, y_pred, label_names, target)
         print_classification_metrics(score_df, target, label_names)
         print_confusion_matrix(y_true, y_pred, label_names)
+
+        # Calibrate VGMU classification confidence from ensemble probabilities
+        if n_folds > 1:
+            all_probs = np.stack([m.predict_proba(df_val[features]) for m in ensemble_models])
+            avg_probs = np.mean(all_probs, axis=0)
+            raw_conf = compute_vgmu_confidence(avg_probs, all_probs)
+            uq_metadata = calibrate_classification_confidence(raw_conf, y_true, y_pred)
+            df_val["confidence"] = apply_classification_confidence(
+                raw_conf, uq_metadata["classification_confidence"]
+            )
+        else:
+            uq_metadata = None
     else:
         metrics = compute_regression_metrics(y_true, y_pred)
         print_regression_metrics(metrics)
@@ -498,7 +523,7 @@ if __name__ == "__main__":
 
     if model_type != "classifier":
         output_columns.append("prediction_std")
-        output_columns += [c for c in df_val.columns if c.startswith("q_") or c == "confidence"]
+    output_columns += [c for c in df_val.columns if c.startswith("q_") or c == "confidence"]
 
     output_columns += [c for c in df_val.columns if c.endswith("_proba")]
 
@@ -526,7 +551,7 @@ if __name__ == "__main__":
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
-    if model_type != "classifier":
+    if uq_metadata is not None:
         save_uq_metadata(uq_metadata, args.model_dir)
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")

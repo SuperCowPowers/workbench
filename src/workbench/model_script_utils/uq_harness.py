@@ -4,7 +4,7 @@ This module provides calibrated prediction intervals by combining ensemble disag
 (prediction_std) with conformal calibration. The approach works uniformly across all
 model types (XGBoost, PyTorch, ChemProp).
 
-How it works:
+Regression:
     1. Each model framework trains a K-fold ensemble and computes prediction_std
        (standard deviation across ensemble members) — this captures the model's own
        uncertainty signal.
@@ -15,6 +15,15 @@ How it works:
        - This is a split-conformal approach: the scaling factors are computed on validation
          data that was NOT used for training.
 
+Classification:
+    Uses VGMU (Variance-Gated Margin Uncertainty) to combine the probability margin
+    between top-2 classes with ensemble disagreement on those classes:
+        SNR = (p_top1 - p_top2) / (std_top1 + std_top2 + eps)
+        gamma = 1 - exp(-SNR)
+        raw_confidence = gamma * p_top1
+    The raw confidence is then calibrated via isotonic regression on validation data
+    to map to P(correct).
+
 Why ensemble std + conformal calibration?
     - Ensemble disagreement is the best available uncertainty signal — it comes from
       the model itself. When ensemble members disagree on a prediction, the actual error
@@ -23,14 +32,24 @@ Why ensemble std + conformal calibration?
       Conformal calibration fixes this with distribution-free coverage guarantees.
 
 Usage:
-    # Training: calibrate prediction intervals from ensemble std
+    # Regression training: calibrate prediction intervals from ensemble std
     uq_metadata = calibrate_uq(y_val, y_pred_val, prediction_std_val)
     save_uq_metadata(uq_metadata, model_dir)
 
-    # Inference: apply calibrated intervals to new predictions
+    # Regression inference: apply calibrated intervals to new predictions
     uq_metadata = load_uq_metadata(model_dir)
     df = predict_intervals(df)
     df = compute_confidence(df, uq_metadata)
+
+    # Classification training: calibrate VGMU confidence from ensemble probabilities
+    raw_conf = compute_vgmu_confidence(avg_probs, all_probs_stack)
+    uq_metadata = calibrate_classification_confidence(raw_conf, y_true, y_pred)
+    save_uq_metadata(uq_metadata, model_dir)
+
+    # Classification inference: apply calibrated VGMU confidence
+    uq_metadata = load_uq_metadata(model_dir)
+    raw_conf = compute_vgmu_confidence(avg_probs, all_probs_stack)
+    confidence = apply_classification_confidence(raw_conf, uq_metadata["classification_confidence"])
 """
 
 import json
@@ -246,3 +265,149 @@ def compute_confidence(
     df["confidence"] = np.clip(1.0 - percentile_ranks, 0.0, 1.0)
 
     return df
+
+
+# =============================================================================
+# Classification Confidence (VGMU + Isotonic Calibration)
+# =============================================================================
+
+
+def compute_vgmu_confidence(
+    avg_probs: np.ndarray,
+    all_probs_stack: np.ndarray,
+    eps: float = 1e-8,
+) -> np.ndarray:
+    """Compute raw VGMU (Variance-Gated Margin Uncertainty) confidence for classification.
+
+    Combines the probability margin between top-2 classes with ensemble disagreement
+    on those classes via a signal-to-noise ratio:
+
+        SNR = (p_top1 - p_top2) / (std_top1 + std_top2 + eps)
+        gamma = 1 - exp(-SNR)
+        raw_confidence = gamma * p_top1
+
+    Intuition:
+        - High margin + low ensemble std → high SNR → gamma ≈ 1 → confidence ≈ p_top1
+        - Low margin or high ensemble std → low SNR → gamma ≈ 0 → confidence ≈ 0
+        - Single model (std=0) → gracefully degrades to p_top1 (max probability)
+        - Uniform proba (margin=0) → confidence = 0
+
+    Reference: Variance-Gated Ensembles (VGE), arXiv:2602.08142 (2025)
+
+    Args:
+        avg_probs (np.ndarray): Mean softmax probabilities, shape (n_samples, n_classes)
+        all_probs_stack (np.ndarray): Per-model softmax probabilities,
+            shape (n_models, n_samples, n_classes)
+        eps (float): Small constant to prevent division by zero (default: 1e-8)
+
+    Returns:
+        np.ndarray: Raw confidence values, shape (n_samples,). NOT yet calibrated.
+    """
+    avg_probs = np.asarray(avg_probs)
+    all_probs_stack = np.asarray(all_probs_stack)
+    n = len(avg_probs)
+
+    # Top-1 and top-2 class indices from averaged probabilities
+    sorted_indices = np.argsort(-avg_probs, axis=1)  # descending
+    top1_idx = sorted_indices[:, 0]
+    top2_idx = sorted_indices[:, 1]
+
+    # Mean probabilities for top-1 and top-2
+    p_top1 = avg_probs[np.arange(n), top1_idx]
+    p_top2 = avg_probs[np.arange(n), top2_idx]
+
+    # Ensemble std for each class, then extract top-1 and top-2
+    std_per_class = np.std(all_probs_stack, axis=0)  # (n_samples, n_classes)
+    std_top1 = std_per_class[np.arange(n), top1_idx]
+    std_top2 = std_per_class[np.arange(n), top2_idx]
+
+    # VGMU formula
+    snr = (p_top1 - p_top2) / (std_top1 + std_top2 + eps)
+    gamma = 1.0 - np.exp(-snr)
+    raw_confidence = gamma * p_top1
+
+    return raw_confidence
+
+
+def calibrate_classification_confidence(
+    raw_confidence: np.ndarray,
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+) -> dict:
+    """Calibrate raw VGMU confidence to P(correct) using isotonic regression.
+
+    Fits an isotonic (monotonically non-decreasing) mapping from raw confidence
+    scores to empirical accuracy on validation data. The fitted mapping is stored
+    as piecewise-linear thresholds for lightweight inference (no sklearn needed).
+
+    Args:
+        raw_confidence (np.ndarray): Raw VGMU confidence values, shape (n_samples,)
+        y_true (np.ndarray): True labels (string or int), shape (n_samples,)
+        y_pred (np.ndarray): Predicted labels (string or int), shape (n_samples,)
+
+    Returns:
+        dict: UQ metadata with "classification_confidence" key containing
+            x_thresholds and y_thresholds for np.interp at inference time
+    """
+    from sklearn.isotonic import IsotonicRegression
+
+    raw_confidence = np.asarray(raw_confidence).flatten()
+    correctness = (np.asarray(y_true) == np.asarray(y_pred)).astype(float)
+
+    # Fit isotonic regression: raw_confidence → P(correct)
+    iso_reg = IsotonicRegression(y_min=0, y_max=1, out_of_bounds="clip")
+    iso_reg.fit(raw_confidence, correctness)
+
+    # Extract piecewise-linear mapping for JSON serialization
+    calibration_data = {
+        "x_thresholds": iso_reg.X_thresholds_.tolist(),
+        "y_thresholds": iso_reg.y_thresholds_.tolist(),
+    }
+
+    # Diagnostics
+    calibrated = iso_reg.predict(raw_confidence)
+    print("\n" + "=" * 50)
+    print("Calibrating Classification Confidence (VGMU)")
+    print("=" * 50)
+    print(f"  Validation samples: {len(raw_confidence)}")
+    print(f"  Overall accuracy: {correctness.mean():.3f}")
+    print(f"  Raw confidence  - mean: {raw_confidence.mean():.3f}, std: {raw_confidence.std():.3f}")
+    print(f"  Calibrated conf - mean: {calibrated.mean():.3f}, std: {calibrated.std():.3f}")
+
+    # Reliability: bin by raw confidence, show actual accuracy per bin
+    n_bins = 5
+    bin_edges = np.percentile(raw_confidence, np.linspace(0, 100, n_bins + 1))
+    # Ensure unique bin edges by adding small increments
+    bin_edges[-1] += 1e-10
+    for i in range(n_bins):
+        mask = (raw_confidence >= bin_edges[i]) & (raw_confidence < bin_edges[i + 1])
+        if mask.sum() > 0:
+            bin_acc = correctness[mask].mean()
+            bin_conf = calibrated[mask].mean()
+            print(f"  Bin {i + 1}: n={mask.sum():>5}, accuracy={bin_acc:.3f}, calibrated_conf={bin_conf:.3f}")
+
+    return {"classification_confidence": calibration_data}
+
+
+def apply_classification_confidence(
+    raw_confidence: np.ndarray,
+    calibration_data: dict,
+) -> np.ndarray:
+    """Apply saved isotonic calibration to raw VGMU confidence values.
+
+    Uses np.interp for the piecewise-linear mapping — no sklearn needed at inference.
+
+    Args:
+        raw_confidence (np.ndarray): Raw VGMU confidence values, shape (n_samples,)
+        calibration_data (dict): Dict with "x_thresholds" and "y_thresholds" arrays
+            from calibrate_classification_confidence()
+
+    Returns:
+        np.ndarray: Calibrated confidence values in [0, 1], shape (n_samples,)
+    """
+    x_thresholds = np.array(calibration_data["x_thresholds"])
+    y_thresholds = np.array(calibration_data["y_thresholds"])
+
+    # Piecewise-linear interpolation (np.interp clamps to edge values for out-of-bounds)
+    calibrated = np.interp(np.asarray(raw_confidence).flatten(), x_thresholds, y_thresholds)
+    return np.clip(calibrated, 0.0, 1.0)

@@ -77,23 +77,85 @@ That said, percentile-rank has its own limitations — it's relative to the trai
 
 You'll notice the outlier around confidence ~0.55 with a residual near 1.0 — the model is moderately confident on that compound but clearly getting it wrong. We're not going to pretend this doesn't happen. The value of this plot is that it gives us **visibility** into exactly these cases, so we can investigate individual compounds where the model's confidence doesn't match reality.
 
+## Classification Confidence
+
+Everything above applies to regression models — where `prediction_std` gives us a natural uncertainty signal. But what about classifiers? A classification ensemble doesn't predict a continuous value with a standard deviation; it produces class probabilities. We need a different approach.
+
+### The Challenge
+
+For classification, each of the 5 ensemble members outputs a softmax probability distribution over classes. We average those distributions to get the final `_proba` columns. But how do we turn that into a single confidence score?
+
+Simple approaches like using the maximum predicted probability (`max(p)`) are tempting but have known issues — [Galil et al. (2022)](https://arxiv.org/abs/2210.14070) showed that max probability alone is suboptimal for detecting incorrect predictions, especially under distribution shift. It ignores both the shape of the probability distribution and whether the ensemble actually agrees.
+
+### VGMU: Variance-Gated Margin Uncertainty
+
+We use **VGMU** (Variance-Gated Margin Uncertainty), introduced in the [Variance-Gated Ensembles paper (2025)](https://arxiv.org/abs/2602.08142). The idea is to combine two signals:
+
+- **Margin**: How much does the ensemble prefer its top class over the runner-up?
+- **Agreement**: Do the 5 models agree on those probabilities, or are they all over the place?
+
+The formula computes a signal-to-noise ratio between the margin and the ensemble disagreement:
+
+```
+SNR = (p_top1 - p_top2) / (std_top1 + std_top2 + ε)
+gamma = 1 - exp(-SNR)
+raw_confidence = gamma × p_top1
+```
+
+Where `p_top1` and `p_top2` are the mean probabilities for the top two classes, and `std_top1` and `std_top2` are the standard deviations of those probabilities across the 5 ensemble members.
+
+This gives us nice behavior across the spectrum:
+
+- **Ensemble agrees with clear margin** → high SNR → gamma ≈ 1 → confidence ≈ p_top1
+- **Ensemble disagrees or margin is thin** → low SNR → gamma ≈ 0 → confidence ≈ 0
+- **Uniform probabilities** (model can't distinguish classes) → margin = 0, confidence = 0
+
+### Isotonic Calibration
+
+Just like raw ensemble std needs conformal calibration for regression, raw VGMU scores need calibration for classification. We use **isotonic regression** — a standard technique that fits a monotonically non-decreasing mapping from raw confidence to empirical accuracy on the validation set.
+
+During training, we compute VGMU scores for all validation predictions and fit an isotonic regression mapping `raw_confidence → P(correct)`. The fitted mapping is stored as a simple piecewise-linear function (just two arrays of thresholds) that can be applied with `np.interp` at inference time — no sklearn dependency needed in production.
+
+After calibration, a confidence of **0.85** means that among validation predictions with similar VGMU scores, about 85% were correctly classified. This gives the score a direct probabilistic interpretation.
+
+### Training output
+
+During training, classification models now print calibration diagnostics showing how raw confidence maps to actual accuracy across bins:
+
+```
+==================================================
+Calibrating Classification Confidence (VGMU)
+==================================================
+  Validation samples: 2451
+  Overall accuracy: 0.847
+  Raw confidence  - mean: 0.621, std: 0.284
+  Calibrated conf - mean: 0.847, std: 0.128
+  Bin 1: n=  490, accuracy=0.639, calibrated_conf=0.654
+  Bin 2: n=  490, accuracy=0.794, calibrated_conf=0.805
+  Bin 3: n=  490, accuracy=0.871, calibrated_conf=0.873
+  Bin 4: n=  491, accuracy=0.924, calibrated_conf=0.922
+  Bin 5: n=  490, accuracy=0.998, calibrated_conf=0.982
+```
+
+This lets you verify that the calibration is working — accuracy should increase monotonically across bins, and calibrated confidence should track accuracy closely.
+
 ## Unified Across Frameworks
 
-One design goal we're happy with: the **same UQ pipeline** runs for all three model types. Each framework trains its ensemble differently, but the uncertainty signal (ensemble std) and the calibration pipeline (conformal scaling + percentile-rank confidence) are identical.
+One design goal we're happy with: the **same UQ pipeline** runs for all three model types. Each framework trains its ensemble differently, but the uncertainty signal and calibration pipeline are unified — conformal scaling for regression, VGMU + isotonic calibration for classification.
 
 <table style="width: 100%;">
   <thead>
     <tr>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Framework</th>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Ensemble</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Std Source</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Calibration</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Regression Confidence</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Classification Confidence</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">5-fold CV, XGBRegressor per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
-    <tr><td style="padding: 8px 16px; color: #3a86ff; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">5-fold CV, TabularMLP per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">5-fold CV, MPNN per fold</td><td style="padding: 8px 16px;"><code>np.std</code> across 5 predictions</td><td style="padding: 8px 16px;">Conformal scaling</td></tr>
+    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">5-fold CV</td><td style="padding: 8px 16px;">Ensemble std + conformal scaling</td><td style="padding: 8px 16px;">VGMU + isotonic calibration</td></tr>
+    <tr><td style="padding: 8px 16px; color: #3a86ff; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">5-fold CV</td><td style="padding: 8px 16px;">Ensemble std + conformal scaling</td><td style="padding: 8px 16px;">VGMU + isotonic calibration</td></tr>
+    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">5-fold CV</td><td style="padding: 8px 16px;">Ensemble std + conformal scaling</td><td style="padding: 8px 16px;">VGMU + isotonic calibration</td></tr>
   </tbody>
 </table>
 
@@ -114,11 +176,19 @@ For truly out-of-distribution detection, we'd recommend pairing confidence with 
 
 Here's how Workbench approaches model confidence today:
 
+**Regression models:**
+
 1. **Ensemble disagreement** — Building on [Lakshminarayanan et al.](https://arxiv.org/abs/1612.01474), the 5-fold CV ensemble provides `prediction_std` as the raw uncertainty signal
 2. **Conformal calibration** — Following [Angelopoulos & Bates](https://arxiv.org/abs/2107.07511), we scale std into prediction intervals with target coverage (80% CI → ~80% coverage)
 3. **Percentile-rank confidence** — Ranks each prediction's std against the training distribution (0.0 – 1.0)
 
-We're excited about this approach — it's simple, unified across frameworks, and gives us both calibrated intervals and interpretable confidence scores built from the model's own uncertainty. But there's always more to do, and we're looking forward to incorporating applicability domain methods and testing on a wider range of datasets.
+**Classification models:**
+
+1. **Ensemble probabilities** — Each of the 5 models outputs class probabilities; we average them and also track per-model disagreement
+2. **VGMU scoring** — Following [Weiss et al. (2025)](https://arxiv.org/abs/2602.08142), we combine the probability margin between top classes with ensemble disagreement via a signal-to-noise ratio
+3. **Isotonic calibration** — Maps raw VGMU scores to P(correct) using isotonic regression on validation data, giving confidence a direct probabilistic interpretation
+
+Both approaches share the same philosophy: leverage the ensemble's own disagreement as the uncertainty signal, then calibrate it against held-out data so the numbers are meaningful. We're excited about this unified framework and looking forward to incorporating applicability domain methods and testing on a wider range of datasets.
 
 ## References
 
@@ -127,6 +197,9 @@ We're excited about this approach — it's simple, unified across frameworks, an
 - [Angelopoulos & Bates, "Conformal Prediction: A Gentle Introduction" (2021)](https://arxiv.org/abs/2107.07511) — Accessible introduction to conformal methods
 - [Gneiting et al., "Probabilistic Forecasts, Calibration and Sharpness" (2007)](https://doi.org/10.1111/j.1467-9868.2007.00587.x) — Calibration vs. discrimination framework
 - [Ovadia et al., "Can You Trust Your Model's Uncertainty?" (2019)](https://arxiv.org/abs/1906.02530) — Analysis of ensemble UQ under dataset shift
+- [Weiss et al., "Variance-Gated Ensembles: An Epistemic-Aware Framework" (2025)](https://arxiv.org/abs/2602.08142) — VGMU approach for combining margin and ensemble variance in classification
+- [Galil et al., "What Can We Learn From The Selective Prediction And Uncertainty Estimation Performance Of 523 Imagenet Classifiers?" (2022)](https://arxiv.org/abs/2210.14070) — Analysis showing entropy-based measures outperform max probability for failure detection
+- [Wimmer et al., "Quantifying Aleatoric and Epistemic Uncertainty with Proper Scoring Rules" (2023)](https://proceedings.mlr.press/v216/wimmer23a.html) — Caveats on entropy decomposition for small ensembles
 - [OpenADMET Blind Challenge](https://openadmet.org/) — ExpansionRx MLM CLint dataset used for examples in this blog
 
 ## Questions?
