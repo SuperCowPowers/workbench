@@ -1,4 +1,4 @@
-# Model Confidence: Building on Conformal Prediction
+# Model Confidence: From Ensemble Disagreement to Calibrated Scores
 A prediction without a confidence score is just a number. In drug discovery, knowing *how much to trust* a prediction is often more valuable than the prediction itself — it determines whether you synthesize a compound, run an experiment, or move on. In this blog we'll walk through how Workbench approaches model confidence, the trade-offs we've considered, and where we think there's room to improve.
 
 <figure style="margin: 20px auto; text-align: center;">
