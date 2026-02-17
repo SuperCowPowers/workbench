@@ -1,5 +1,6 @@
 """Confusion Explorer: A compound plugin combining a residual-colored Confusion Matrix + Confusion Triangle."""
 
+from math import log
 from dash import dcc, html, callback, Input, Output, State, no_update
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
@@ -11,21 +12,7 @@ from workbench.web_interface.components.plugin_interface import PluginInterface,
 from workbench.web_interface.components.plugins.confusion_triangle import ConfusionTriangle
 from workbench.cached.cached_model import CachedModel
 from workbench.utils.pandas_utils import max_proba, proba_to_conf, compute_confusion
-
-
-def _residual_z_matrix(n_classes: int) -> list[list[int]]:
-    """Build a residual z-matrix for confusion matrix coloring.
-
-    Each cell value is the absolute distance from the diagonal (0, 1, 2, ...).
-    Diagonal = 0 (correct), off-diagonal = distance (misclassification severity).
-
-    Args:
-        n_classes (int): Number of classes.
-
-    Returns:
-        list[list[int]]: The residual z-matrix.
-    """
-    return [[abs(i - j) for j in range(n_classes)] for i in range(n_classes)]
+from workbench.utils.color_utils import sample_colorscale_rgba
 
 
 def _highlight_shape(x_idx: int, y_idx: int) -> dict:
@@ -44,6 +31,7 @@ def _highlight_shape(x_idx: int, y_idx: int) -> dict:
     delta = 0.5
     return {
         "type": "rect",
+        "name": "highlight",
         "x0": x_idx - delta,
         "x1": x_idx + delta,
         "y0": y_idx - delta,
@@ -53,13 +41,57 @@ def _highlight_shape(x_idx: int, y_idx: int) -> dict:
     }
 
 
-class ClassConfusionMatrix(PluginInterface):
-    """A residual-colored Confusion Matrix designed for the Confusion Explorer.
+def _cell_shapes(cm, n_classes: int, colorscale: list) -> list[dict]:
+    """Build filled rect shapes for each confusion matrix cell.
 
-    Uses a residual z-matrix where diagonal cells (correct predictions) are nearly
-    transparent and off-diagonal cells get brighter based on distance from the diagonal.
-    This mirrors the per-point residual coloring on the triangle.
-    Real count values are shown as annotations.
+    Color is based on residual (distance from diagonal), alpha on log(count).
+
+    Args:
+        cm (pd.DataFrame): The confusion matrix (rows=actual, columns=predicted, already flipped).
+        n_classes (int): Number of classes.
+        colorscale (list): Plotly colorscale for residual coloring.
+
+    Returns:
+        list (dict): A list of Plotly rect shape dicts.
+    """
+    # Alpha: 0.1 for zero-count cells, then log-scaled [0.25, 1.0] for non-zero
+    nonzero_counts = [c for c in cm.values.flatten() if c > 0]
+    max_log = log(max(nonzero_counts) + 1) if nonzero_counts else 1.0
+
+    shapes = []
+    delta = 0.47  # slightly smaller than 0.5 to create gaps between cells
+    vmax = max(n_classes - 1, 1)
+    for i, row in enumerate(cm.index):
+        for j, col in enumerate(cm.columns):
+            # The cm is flipped (row 0 = last class), so map back to original row index
+            orig_row = n_classes - 1 - i
+            residual = abs(orig_row - j)
+            count = cm.iloc[i, j]
+            if count == 0:
+                alpha = 0.1
+            else:
+                alpha = 0.25 + 0.75 * (log(count + 1) / max_log)
+            fillcolor = sample_colorscale_rgba(colorscale, residual, vmin=0, vmax=vmax, alpha=alpha)
+            shapes.append({
+                "type": "rect",
+                "name": "cell",
+                "x0": j - delta,
+                "x1": j + delta,
+                "y0": i - delta,
+                "y1": i + delta,
+                "fillcolor": fillcolor,
+                "line": {"width": 0},
+                "layer": "below",
+            })
+    return shapes
+
+
+class ClassConfusionMatrix(PluginInterface):
+    """A residual-colored Confusion Matrix with log-count alpha.
+
+    Cell color is based on residual distance from the diagonal (0 = correct,
+    higher = worse misclassification). Cell opacity scales with log(count),
+    making high-count cells visually prominent and low-count cells faint.
     """
 
     auto_load_page = PluginPage.NONE
@@ -130,27 +162,23 @@ class ClassConfusionMatrix(PluginInterface):
         x_labels = [f"{c}:{i}" for i, c in enumerate(cm.columns)]
         y_labels = [f"{c}:{i}" for i, c in enumerate(cm.index)]
 
-        # Build the residual z-matrix (flipped to match the dataframe orientation)
-        z_residual = _residual_z_matrix(n_classes)[::-1]
-
-        # Use the muted heatmap colorscale for the residual-colored matrix
+        # Build cell shapes: color from residual, alpha from log(count)
         colorscale = self.theme_manager.colorscale("muted_heatmap")
+        cell_shapes = _cell_shapes(cm, n_classes, colorscale)
 
-        # Create the heatmap with residual z-values for coloring
-        # 0 = diagonal (correct), higher = off-diagonal (errors, bright)
+        # Invisible heatmap for click detection (shapes don't generate clickData)
+        z_zeros = [[0] * n_classes for _ in range(n_classes)]
         fig = go.Figure(
             data=go.Heatmap(
-                z=z_residual,
+                z=z_zeros,
                 x=x_labels,
                 y=y_labels,
-                xgap=5,
-                ygap=5,
-                colorscale=colorscale,
+                colorscale=[[0, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"]],
                 showscale=False,
-                zmin=0,
-                zmax=n_classes - 1,
+                hoverinfo="none",
             )
         )
+        fig.update_layout(shapes=cell_shapes)
 
         # Layout with fixed axis range to prevent shift when highlight shape is added
         pad = 0.6  # slightly larger than the 0.5 shape delta to accommodate line width
@@ -230,7 +258,9 @@ class ClassConfusionMatrix(PluginInterface):
             point = click_data["points"][0]
             x_idx = int(point["x"].split(":")[1])
             y_idx = int(point["y"].split(":")[1])
-            current_figure["layout"]["shapes"] = [_highlight_shape(x_idx, y_idx)]
+            # Preserve cell shapes, replace only the highlight
+            cell_shapes = [s for s in current_figure["layout"].get("shapes", []) if s.get("name") != "highlight"]
+            current_figure["layout"]["shapes"] = cell_shapes + [_highlight_shape(x_idx, y_idx)]
             return current_figure
 
 
@@ -479,10 +509,13 @@ class ConfusionExplorer(PluginInterface):
             y_label = point["y"].split(":")[0]
             cell_key = f"{x_label}|{y_label}"
 
+            # Preserve cell shapes, strip any existing highlight
+            cell_shapes = [s for s in matrix_figure["layout"].get("shapes", []) if s.get("name") != "highlight"]
+
             # Toggle: if clicking the same cell again, reset to full view
             if prev_cell == cell_key:
                 full_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col)
-                matrix_figure["layout"]["shapes"] = []
+                matrix_figure["layout"]["shapes"] = cell_shapes
                 return full_fig, None, matrix_figure, None
 
             # Build selection mask: actual class matches y_label AND predicted class matches x_label
@@ -492,7 +525,7 @@ class ConfusionExplorer(PluginInterface):
             # Apply highlight rectangle on the matrix cell
             x_idx = int(point["x"].split(":")[1])
             y_idx = int(point["y"].split(":")[1])
-            matrix_figure["layout"]["shapes"] = [_highlight_shape(x_idx, y_idx)]
+            matrix_figure["layout"]["shapes"] = cell_shapes + [_highlight_shape(x_idx, y_idx)]
 
             # Clear clickData so re-clicking the same cell fires this callback again
             return sel_fig, cell_key, matrix_figure, None
@@ -539,12 +572,13 @@ class ConfusionExplorer(PluginInterface):
                 x_label, y_label = prev_cell.split("|")
                 mask = (tri.df[tri.target_col].astype(str) == y_label) & (tri.df["prediction"].astype(str) == x_label)
 
-                # Re-apply the highlight rectangle on the matrix
+                # Re-apply the highlight rectangle on the matrix (cell shapes already present from update_properties)
                 str_labels = [str(c) for c in (self.class_labels or [])]
                 if x_label in str_labels and y_label in str_labels:
                     x_idx = str_labels.index(x_label)
                     y_idx = [str(c) for c in reversed(self.class_labels)].index(y_label)
-                    matrix_props[0].update_layout(shapes=[_highlight_shape(x_idx, y_idx)])
+                    existing = list(matrix_props[0].layout.shapes or [])
+                    matrix_props[0].update_layout(shapes=existing + [_highlight_shape(x_idx, y_idx)])
 
             # Re-create figure with current color, preserve dropdown selection
             triangle_props[0] = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask)

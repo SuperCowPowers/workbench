@@ -145,6 +145,30 @@ def blended_colors(proba_matrix: np.ndarray, base_rgb: list[np.ndarray]) -> list
 
 
 # Colorscale interpolation
+def sample_colorscale_rgba(colorscale: list, value: float, vmin: float = 0, vmax: float = 1, alpha: float = 1.0) -> str:
+    """Sample a Plotly colorscale at a position and return an rgba string with custom alpha.
+
+    Args:
+        colorscale (list): A Plotly-style colorscale (list of [position, color] pairs).
+        value (float): The value to sample at (will be normalized using vmin/vmax).
+        vmin (float): Minimum value for normalization (maps to 0.0 on colorscale).
+        vmax (float): Maximum value for normalization (maps to 1.0 on colorscale).
+        alpha (float): Alpha override for the returned color (0.0 to 1.0).
+
+    Returns:
+        str: Color in rgba format (e.g., "rgba(100, 200, 50, 0.8)").
+    """
+    from plotly.colors import sample_colorscale
+
+    # Normalize value to [0, 1]
+    t = 0.0 if vmax == vmin else max(0.0, min(1.0, (value - vmin) / (vmax - vmin)))
+    sampled = sample_colorscale(colorscale, [t], colortype="rgba")[0]
+
+    # sample_colorscale returns (r, g, b) or (r, g, b, a) with values 0-1
+    r, g, b = sampled[0], sampled[1], sampled[2]
+    return f"rgba({int(r * 255)}, {int(g * 255)}, {int(b * 255)}, {alpha:.2f})"
+
+
 def weights_to_colors(weights: list[float], colorscale: list, muted: bool = True) -> list[str]:
     """
     Map a list of weights to colors using Plotly's sample_colorscale function and return rgba strings.
