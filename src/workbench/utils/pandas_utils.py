@@ -268,15 +268,13 @@ def split_dataframe_by_quantiles(df: pd.DataFrame, column: str, quantiles: int =
 
 
 def max_proba(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Adds a new column 'max_proba' to the DataFrame, which is the max value
-    among all columns ending in '_proba'.
+    """Add a 'max_proba' column with the max value among '_proba' columns.
 
-    Parameters:
+    Args:
         df (pd.DataFrame): The input DataFrame.
 
     Returns:
-        pd.DataFrame: The updated DataFrame with the new 'max_proba' column.
+        pd.DataFrame: The DataFrame with a new 'max_proba' column (in-place).
     """
     # Identify probability columns
     proba_cols = [col for col in df.columns if col.endswith("_proba")]
@@ -289,12 +287,13 @@ def max_proba(df: pd.DataFrame) -> pd.DataFrame:
 def proba_to_conf(df: pd.DataFrame) -> pd.DataFrame:
     """Add a 'confidence' column by normalizing max_proba to [0, 1].
 
-    Always (re)computes the column so the values are deterministic regardless
-    of whether 'confidence' already exists in the DataFrame.
-
     Maps the maximum class probability from [1/n_classes, 1.0] to [0.0, 1.0],
     where 1/n_classes (random guess) becomes 0 and 1.0 (certain) stays 1.
     Requires a 'max_proba' column (see :func:`max_proba`).
+
+    Note:
+        Callers should check for an existing 'confidence' column before calling
+        this function to avoid overwriting model-provided confidence values.
 
     Args:
         df (pd.DataFrame): DataFrame with a 'max_proba' column and one or more

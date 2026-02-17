@@ -607,7 +607,8 @@
         },
         "shapedefaults": {
             "line": {
-                "color": "#2a3f5f"
+                "color": "#444444",
+                "width": 2
             }
         },
         "ternary": {

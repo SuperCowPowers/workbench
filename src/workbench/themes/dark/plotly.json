@@ -572,7 +572,8 @@
         },
         "shapedefaults": {
             "line": {
-                "color": "#f2f5fa"
+                "color": "#e8ecf0",
+                "width": 2
             }
         },
         "sliderdefaults": {

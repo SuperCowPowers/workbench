@@ -32,6 +32,9 @@ def _residual_z_matrix(n_classes: int) -> list[list[int]]:
 def _highlight_shape(x_idx: int, y_idx: int) -> dict:
     """Build a Plotly shape dict for highlighting a confusion matrix cell.
 
+    Color comes from the Plotly template's shapedefaults.line.color, which is
+    theme-aware (light color for dark themes, dark color for light themes).
+
     Args:
         x_idx (int): Column index of the cell.
         y_idx (int): Row index of the cell.
@@ -46,7 +49,7 @@ def _highlight_shape(x_idx: int, y_idx: int) -> dict:
         "x1": x_idx + delta,
         "y0": y_idx - delta,
         "y1": y_idx + delta,
-        "line": {"color": "grey", "width": 2},
+        "line": {"width": 3},
         "layer": "above",
     }
 
@@ -141,8 +144,8 @@ class ClassConfusionMatrix(PluginInterface):
                 z=z_residual,
                 x=x_labels,
                 y=y_labels,
-                xgap=3,
-                ygap=3,
+                xgap=5,
+                ygap=5,
                 colorscale=colorscale,
                 showscale=False,
                 zmin=0,
@@ -150,11 +153,13 @@ class ClassConfusionMatrix(PluginInterface):
             )
         )
 
-        # Layout
+        # Layout with fixed axis range to prevent shift when highlight shape is added
+        pad = 0.6  # slightly larger than the 0.5 shape delta to accommodate line width
+        axis_range = [-pad, n_classes - 1 + pad]
         fig.update_layout(
             margin=dict(l=60, r=10, t=0, b=50, pad=0),
-            xaxis=dict(title=dict(text="Predicted")),
-            yaxis=dict(title=dict(text="Actual")),
+            xaxis=dict(title=dict(text="Predicted"), range=axis_range),
+            yaxis=dict(title=dict(text="Actual"), range=axis_range),
             title_font_size=14,
         )
 
@@ -287,7 +292,7 @@ class ConfusionExplorer(PluginInterface):
         # Expose signals from both sub-plugins
         self.signals = list(self.matrix.signals) + list(self.triangle.signals)
 
-        # Confidence slider with decile marks (marks populated in update_properties)
+        # Confidence slider (marks populated in update_properties)
         slider = dcc.RangeSlider(
             id=f"{component_id}-confidence-slider",
             min=0.0,
@@ -339,7 +344,6 @@ class ConfusionExplorer(PluginInterface):
                         ),
                         dbc.Col(triangle_component, width=7, style={"paddingLeft": "0"}),
                     ],
-                    style={},
                 ),
             ],
         )
@@ -452,12 +456,14 @@ class ConfusionExplorer(PluginInterface):
             Output(f"{self.component_id}-triangle-graph", "figure", allow_duplicate=True),
             Output(f"{self.component_id}-selected-cell", "data"),
             Output(f"{self.component_id}-matrix", "figure", allow_duplicate=True),
+            Output(f"{self.component_id}-matrix", "clickData"),
             Input(f"{self.component_id}-matrix", "clickData"),
             State(f"{self.component_id}-selected-cell", "data"),
             State(f"{self.component_id}-matrix", "figure"),
+            State(f"{self.component_id}-triangle-color-dropdown", "value"),
             prevent_initial_call=True,
         )
-        def _select_triangle_from_matrix(click_data, prev_cell, matrix_figure):
+        def _select_triangle_from_matrix(click_data, prev_cell, matrix_figure, current_color):
             """Highlight matching points on the triangle for the clicked matrix cell (toggle to reset)."""
             if not click_data or "points" not in click_data:
                 raise PreventUpdate
@@ -465,6 +471,8 @@ class ConfusionExplorer(PluginInterface):
             tri = self.triangle
             if tri.df is None or tri.df.empty:
                 raise PreventUpdate
+
+            color_col = current_color if current_color else tri.active_color_col
 
             # Parse the clicked cell: x = predicted class, y = actual class
             point = click_data["points"][0]
@@ -474,20 +482,21 @@ class ConfusionExplorer(PluginInterface):
 
             # Toggle: if clicking the same cell again, reset to full view
             if prev_cell == cell_key:
-                full_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, tri.active_color_col)
+                full_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col)
                 matrix_figure["layout"]["shapes"] = []
-                return full_fig, None, matrix_figure
+                return full_fig, None, matrix_figure, None
 
             # Build selection mask: actual class matches y_label AND predicted class matches x_label
             mask = (tri.df[tri.target_col].astype(str) == y_label) & (tri.df["prediction"].astype(str) == x_label)
-            sel_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, tri.active_color_col, mask=mask)
+            sel_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask)
 
             # Apply highlight rectangle on the matrix cell
             x_idx = int(point["x"].split(":")[1])
             y_idx = int(point["y"].split(":")[1])
             matrix_figure["layout"]["shapes"] = [_highlight_shape(x_idx, y_idx)]
 
-            return sel_fig, cell_key, matrix_figure
+            # Clear clickData so re-clicking the same cell fires this callback again
+            return sel_fig, cell_key, matrix_figure, None
 
         # Confidence slider callback: filter both children by confidence range
         # Preserves the active matrix cell selection if one exists
@@ -500,9 +509,10 @@ class ConfusionExplorer(PluginInterface):
             Output(f"{self.component_id}-selected-cell", "data", allow_duplicate=True),
             Input(f"{self.component_id}-confidence-slider", "value"),
             State(f"{self.component_id}-selected-cell", "data"),
+            State(f"{self.component_id}-triangle-color-dropdown", "value"),
             prevent_initial_call=True,
         )
-        def _filter_by_confidence(slider_value, prev_cell):
+        def _filter_by_confidence(slider_value, prev_cell, current_color):
             """Filter both children by confidence range, preserving matrix cell selection."""
             if slider_value is None or self.df is None:
                 raise PreventUpdate
@@ -520,21 +530,15 @@ class ConfusionExplorer(PluginInterface):
             matrix_props = self.matrix.update_properties(filtered_df, **child_kwargs)
             triangle_props = self.triangle.update_properties(filtered_df, **child_kwargs)
 
+            # Re-render the triangle with the user's current color selection
+            tri = self.triangle
+            color_col = current_color if current_color else tri.active_color_col
+            mask = None
+
             # If a matrix cell was selected, re-apply the selection on the filtered data
             if prev_cell:
-                tri = self.triangle
                 x_label, y_label = prev_cell.split("|")
-
-                # Re-apply the triangle mask on the newly filtered data
                 mask = (tri.df[tri.target_col].astype(str) == y_label) & (tri.df["prediction"].astype(str) == x_label)
-                triangle_props[0] = tri.create_ternary_plot(
-                    tri.df, tri.class_labels, tri.proba_cols, tri.active_color_col, mask=mask
-                )
-
-                # Don't update dropdown — prevents _update_ternary_color from firing
-                # and overwriting our masked figure with an unmasked one
-                triangle_props[1] = no_update  # options
-                triangle_props[2] = no_update  # value
 
                 # Re-apply the highlight rectangle on the matrix
                 str_labels = [str(c) for c in (self.class_labels or [])]
@@ -542,6 +546,13 @@ class ConfusionExplorer(PluginInterface):
                     x_idx = str_labels.index(x_label)
                     y_idx = [str(c) for c in reversed(self.class_labels)].index(y_label)
                     matrix_props[0].update_layout(shapes=[_highlight_shape(x_idx, y_idx)])
+
+            # Re-create figure with current color, preserve dropdown selection
+            triangle_props[0] = tri.create_ternary_plot(
+                tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask
+            )
+            triangle_props[1] = no_update  # options
+            triangle_props[2] = no_update  # value
 
             # Return: matrix figure + triangle (figure, options, value) + preserve cell
             return matrix_props + triangle_props + [prev_cell]
