@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 from dash import dcc, html, callback, clientside_callback, Input, Output, no_update
 import plotly.graph_objects as go
-import plotly.express as px
 from dash.exceptions import PreventUpdate
 
 # Workbench Imports
@@ -336,7 +335,7 @@ class ScatterPlot(PluginInterface):
             categories = sorted(df[color_col].astype(str).unique())
 
             # Discrete colorscale using Plotly Express's qualitative palette.
-            discrete_colors = px.colors.qualitative.Plotly
+            discrete_colors = self.theme_manager.categorical_colors()
             data = []
             for i, cat in enumerate(categories):
                 sub_df = df[df[color_col] == cat]

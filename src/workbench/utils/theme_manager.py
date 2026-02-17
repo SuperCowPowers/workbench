@@ -296,6 +296,24 @@ class ThemeManager:
                 cls.log.error(f"No color scales found for template '{cls.current_theme_name}'.")
         return None
 
+    @classmethod
+    def colorway(cls) -> List[str]:
+        """Get the categorical color cycle for the current theme.
+
+        Returns:
+            list (str): List of color hex strings from the theme's colorway.
+        """
+        return cls.current_template.get("layout", {}).get("colorway", pio.templates["plotly"].layout.colorway)
+
+    @classmethod
+    def categorical_colors(cls) -> List[str]:
+        """Alias for colorway() - get the categorical color cycle for the current theme.
+
+        Returns:
+            list (str): List of color hex strings from the theme's colorway.
+        """
+        return cls.colorway()
+
     @staticmethod
     def adjust_colorscale_alpha(colorscale, alpha=0.5):
         """

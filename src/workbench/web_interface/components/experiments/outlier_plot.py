@@ -10,6 +10,7 @@ import logging
 # Workbench Imports
 from workbench.algorithms.dataframe.aggregation import aggregate
 from workbench.algorithms.dataframe.projection_2d import Projection2D
+from workbench.utils.theme_manager import ThemeManager
 
 # Workbench Logger
 log = logging.getLogger("workbench")
@@ -57,7 +58,7 @@ def create_figure(df: pd.DataFrame, title: str = "Outlier Groups") -> plotly.gra
     coord_df.drop("is_sample", axis=1, inplace=True)
 
     # Create the Outlier Plot
-    color_map = px.colors.qualitative.Plotly
+    color_map = ThemeManager.categorical_colors()
     fig = px.scatter(
         coord_df,
         x="x",

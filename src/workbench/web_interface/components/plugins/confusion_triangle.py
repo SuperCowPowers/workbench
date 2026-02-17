@@ -5,14 +5,12 @@ import numpy as np
 import pandas as pd
 from dash import dcc, html, callback, clientside_callback, Input, Output, no_update
 import plotly.graph_objects as go
-import plotly.express as pex
 from dash.exceptions import PreventUpdate
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.clientside_callbacks import circle_overlay_callback
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
-from workbench.utils.color_utils import add_alpha_to_first_color
 
 # Marker style constants
 _MARKER_LINE = dict(color="rgba(0,0,0,0.25)", width=1)
@@ -340,7 +338,7 @@ class ConfusionTriangle(PluginInterface):
 
         # Numeric coloring (e.g., residual)
         if color_col in plot_df.columns and pd.api.types.is_numeric_dtype(plot_df[color_col]):
-            colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("heatmap"))
+            colorscale = self.theme_manager.colorscale("muted_heatmap")
             marker = dict(
                 size=15,
                 color=plot_df[color_col],
@@ -373,7 +371,7 @@ class ConfusionTriangle(PluginInterface):
         elif color_col in plot_df.columns:
             categories = plot_df[color_col].astype(str).unique().tolist()
             categories = list(class_labels) if set(categories) == set(class_labels) else sorted(categories)
-            colors = pex.colors.qualitative.Plotly
+            colors = self.theme_manager.categorical_colors()
             for i, cat in enumerate(categories):
                 cat_mask = plot_df[color_col].astype(str) == cat
                 cdata = plot_df.loc[cat_mask, custom_data_cols].values if custom_data_cols else None

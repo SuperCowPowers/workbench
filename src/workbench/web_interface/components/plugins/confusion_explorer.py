@@ -10,7 +10,6 @@ import plotly.graph_objects as go
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.web_interface.components.plugins.confusion_triangle import ConfusionTriangle
 from workbench.cached.cached_model import CachedModel
-from workbench.utils.color_utils import add_alpha_to_first_color
 from workbench.utils.pandas_utils import max_proba, proba_to_conf, compute_confusion
 
 
@@ -134,8 +133,8 @@ class ClassConfusionMatrix(PluginInterface):
         # Build the residual z-matrix (flipped to match the dataframe orientation)
         z_residual = _residual_z_matrix(n_classes)[::-1]
 
-        # Use the muted heatmap colorscale with alpha fade for the residual-colored matrix
-        colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("muted_heatmap"))
+        # Use the muted heatmap colorscale for the residual-colored matrix
+        colorscale = self.theme_manager.colorscale("muted_heatmap")
 
         # Create the heatmap with residual z-values for coloring
         # 0 = diagonal (correct), higher = off-diagonal (errors, bright)
