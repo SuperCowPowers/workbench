@@ -1,4 +1,7 @@
 # Model Confidence: From Ensemble Disagreement to Calibrated Scores
+!!! tip inline end "See It in Action"
+    The [Confusion Explorer](confusion_explorer.md) uses these confidence scores to let you filter predictions by certainty and drill down on errors interactively.
+
 A prediction without a confidence score is just a number. In drug discovery, knowing *how much to trust* a prediction is often more valuable than the prediction itself — it determines whether you synthesize a compound, run an experiment, or move on. In this blog we'll walk through how Workbench approaches model confidence, the trade-offs we've considered, and where we think there's room to improve.
 
 <figure style="margin: 20px auto; text-align: center;">

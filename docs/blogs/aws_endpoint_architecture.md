@@ -1,4 +1,7 @@
 # Inside a Workbench AWS Endpoint: A Modern Web Stack for ML Inference
+!!! tip inline end "Deploy Your Own"
+    Ready to deploy? The [Endpoint API](../api_classes/endpoint.md) walks you through creating and managing endpoints on AWS.
+
 When you deploy a model endpoint on AWS SageMaker, the default architecture gives you a battle-tested but aging web stack. Workbench takes a different approach — building custom container images with a modern ASGI stack that delivers better performance and native async support. In this blog we'll compare the two architectures and explain why the Workbench stack is a better foundation for production ML inference.
 
 <figure style="margin: 20px 0;">

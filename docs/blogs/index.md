@@ -6,6 +6,8 @@ Workbench blogs highlight interesting functionality and approaches that might be
 
 ## Blogs
 
+- **[Confusion Explorer: Beyond the Confusion Matrix](confusion_explorer.md):** The standard confusion matrix tells you *what* your model gets wrong — the Confusion Explorer shows you *why*. We pair a residual-colored matrix with an interactive ternary probability plot, linked through a confidence slider. Filter to high-confidence predictions, click a cell to isolate misclassified compounds, and hover to see molecular structures.
+
 - **[Model Confidence: Building on Conformal Prediction](model_confidence.md):** How does Workbench approach prediction uncertainty? We walk through our current pipeline — 5-fold ensemble disagreement, conformal calibration for coverage guarantees, and percentile-rank confidence scoring — discuss the trade-offs, and point to the foundational work we're building on.
 
 - **[SHAP Values for ChemProp Models](chemprop_shap.md):** How do you explain a graph neural network? In this blog we explore our per-bit ablation approach for computing [SHAP values](https://shap.readthedocs.io/) on [ChemProp](https://github.com/chemprop/chemprop) MPNN models. We walk through the technical approach, show key code snippets, and analyze real SHAP output from a LogD regression model — validating that the model independently learns known structure-lipophilicity relationships.

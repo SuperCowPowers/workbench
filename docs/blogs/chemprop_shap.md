@@ -1,4 +1,7 @@
 # SHAP Values for ChemProp Models
+!!! tip inline end "ChemProp in Workbench"
+    Workbench wraps [ChemProp](https://github.com/chemprop/chemprop) as a first-class model type. See the [Model API](../api_classes/model.md) for details on training and inference.
+
 In this blog we'll explore how Workbench computes SHAP (SHapley Additive exPlanations) values for [ChemProp](https://github.com/chemprop/chemprop) message-passing neural network (MPNN) models. ChemProp models operate directly on molecular graphs rather than tabular feature vectors, which makes interpretability a unique challenge. We'll walk through the per-bit ablation approach we developed, show some key code snippets, and then analyze real SHAP output from a LogD regression model.
 
 <figure style="margin: 20px 0;">

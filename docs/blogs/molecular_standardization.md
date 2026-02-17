@@ -1,4 +1,7 @@
 # Molecular Standardization: Canonicalization, Tautomerization, and Salt Handling
+!!! tip inline end "FeatureSets Handle This"
+    Workbench [FeatureSets](../api_classes/feature_set.md) run standardization automatically when you create molecular descriptors from SMILES data.
+
 In this blog we'll look at why molecular standardization matters for ML pipelines, what Workbench's feature endpoints actually do under the hood, and how the popular AqSol compound solubility dataset illustrates the challenges of working with real-world chemical data.
 
 ## Why Standardization Matters
