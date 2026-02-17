@@ -468,6 +468,17 @@
             }
         },
         "autotypenumbers": "strict",
+        "meta": {
+            "custom_colorscales": {
+                "muted_heatmap": [
+                    [0.0, "rgba(45, 41, 76, 0.5)"],
+                    [0.4, "rgba(62, 68, 101, 1.0)"],
+                    [0.5, "rgba(62, 68, 101, 1.0)"],
+                    [0.6, "rgba(62, 68, 101, 1.0)"],
+                    [1.0, "rgba(42, 85, 115, 1.0)"]
+                ]
+            }
+        },
         "coloraxis": {
             "colorbar": {
                 "outlinewidth": 0,
