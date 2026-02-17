@@ -9,7 +9,7 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../confusion_explorer/">
       
       
         <link rel="next" href="../chemprop_shap/">
@@ -1394,6 +1394,34 @@
     
   
     OverView
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../confusion_explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confusion Explorer
   
 
     
@@ -4768,6 +4796,10 @@
 
 
 <h1 id="model-confidence-from-ensemble-disagreement-to-calibrated-scores">Model Confidence: From Ensemble Disagreement to Calibrated Scores</h1>
+<div class="admonition tip inline end">
+<p class="admonition-title">See It in Action</p>
+<p>The <a href="../confusion_explorer/">Confusion Explorer</a> uses these confidence scores to let you filter predictions by certainty and drill down on errors interactively.</p>
+</div>
 <p>A prediction without a confidence score is just a number. In drug discovery, knowing <em>how much to trust</em> a prediction is often more valuable than the prediction itself — it determines whether you synthesize a compound, run an experiment, or move on. In this blog we'll walk through how Workbench approaches model confidence, the trade-offs we've considered, and where we think there's room to improve.</p>
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/uq_pred_scatter.png" alt="Prediction scatter plot colored by confidence" style="max-width: 800px; width: 100%;">

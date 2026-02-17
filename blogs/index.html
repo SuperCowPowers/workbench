@@ -12,7 +12,7 @@
         <link rel="prev" href="../confidence/">
       
       
-        <link rel="next" href="model_confidence/">
+        <link rel="next" href="confusion_explorer/">
       
       
         
@@ -1471,6 +1471,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="confusion_explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confusion Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -4499,6 +4527,9 @@
 <p>Workbench blogs highlight interesting functionality and approaches that might be useful to a broader audience. Each blog gives a high-level overview of the topic with drilldowns into the trickier bits. Whether you're looking for implementation details, architecture decisions, or practical tips for deploying ML models on AWS, these posts cover the real-world challenges we've solved.</p>
 <h2 id="blogs">Blogs</h2>
 <ul>
+<li>
+<p><strong><a href="confusion_explorer/">Confusion Explorer: Beyond the Confusion Matrix</a>:</strong> The standard confusion matrix tells you <em>what</em> your model gets wrong — the Confusion Explorer shows you <em>why</em>. We pair a residual-colored matrix with an interactive ternary probability plot, linked through a confidence slider. Filter to high-confidence predictions, click a cell to isolate misclassified compounds, and hover to see molecular structures.</p>
+</li>
 <li>
 <p><strong><a href="model_confidence/">Model Confidence: Building on Conformal Prediction</a>:</strong> How does Workbench approach prediction uncertainty? We walk through our current pipeline — 5-fold ensemble disagreement, conformal calibration for coverage guarantees, and percentile-rank confidence scoring — discuss the trade-offs, and point to the foundational work we're building on.</p>
 </li>

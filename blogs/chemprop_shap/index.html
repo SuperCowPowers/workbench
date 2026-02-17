@@ -1414,6 +1414,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../confusion_explorer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Confusion Explorer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../model_confidence/" class="md-nav__link">
         
   
@@ -4924,6 +4952,10 @@
 
 
 <h1 id="shap-values-for-chemprop-models">SHAP Values for ChemProp Models</h1>
+<div class="admonition tip inline end">
+<p class="admonition-title">ChemProp in Workbench</p>
+<p>Workbench wraps <a href="https://github.com/chemprop/chemprop">ChemProp</a> as a first-class model type. See the <a href="../../api_classes/model/">Model API</a> for details on training and inference.</p>
+</div>
 <p>In this blog we'll explore how Workbench computes SHAP (SHapley Additive exPlanations) values for <a href="https://github.com/chemprop/chemprop">ChemProp</a> message-passing neural network (MPNN) models. ChemProp models operate directly on molecular graphs rather than tabular feature vectors, which makes interpretability a unique challenge. We'll walk through the per-bit ablation approach we developed, show some key code snippets, and then analyze real SHAP output from a LogD regression model.</p>
 <figure style="margin: 20px 0;">
 <img src="../../images/chemprop_logd.png" alt="SHAP beeswarm plot for a ChemProp LogD model" style="width: 100%;">
