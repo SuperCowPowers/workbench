@@ -548,9 +548,7 @@ class ConfusionExplorer(PluginInterface):
                     matrix_props[0].update_layout(shapes=[_highlight_shape(x_idx, y_idx)])
 
             # Re-create figure with current color, preserve dropdown selection
-            triangle_props[0] = tri.create_ternary_plot(
-                tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask
-            )
+            triangle_props[0] = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask)
             triangle_props[1] = no_update  # options
             triangle_props[2] = no_update  # value
 
