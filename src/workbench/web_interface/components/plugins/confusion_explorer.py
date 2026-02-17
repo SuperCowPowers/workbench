@@ -134,8 +134,8 @@ class ClassConfusionMatrix(PluginInterface):
         # Build the residual z-matrix (flipped to match the dataframe orientation)
         z_residual = _residual_z_matrix(n_classes)[::-1]
 
-        # Use the heatmap colorscale with alpha fade (matches the standalone confusion matrix)
-        colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("heatmap"))
+        # Use the muted heatmap colorscale with alpha fade for the residual-colored matrix
+        colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("muted_heatmap"))
 
         # Create the heatmap with residual z-values for coloring
         # 0 = diagonal (correct), higher = off-diagonal (errors, bright)

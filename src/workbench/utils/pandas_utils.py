@@ -291,10 +291,6 @@ def proba_to_conf(df: pd.DataFrame) -> pd.DataFrame:
     where 1/n_classes (random guess) becomes 0 and 1.0 (certain) stays 1.
     Requires a 'max_proba' column (see :func:`max_proba`).
 
-    Note:
-        Callers should check for an existing 'confidence' column before calling
-        this function to avoid overwriting model-provided confidence values.
-
     Args:
         df (pd.DataFrame): DataFrame with a 'max_proba' column and one or more
             columns ending in '_proba'.
@@ -312,9 +308,6 @@ def proba_to_conf(df: pd.DataFrame) -> pd.DataFrame:
 
 def compute_confusion(df: pd.DataFrame, n_classes: int = None) -> pd.DataFrame:
     """Add a 'confusion' column combining residual and confidence.
-
-    Always (re)computes the column so the values are deterministic regardless
-    of whether 'confusion' already exists in the DataFrame.
 
     Each residual level gets its own non-overlapping band with small (0.1)
     gaps between them. Band width = (1 - (n-1)*gap) / n. Confidence scales
@@ -344,7 +337,7 @@ def compute_confusion(df: pd.DataFrame, n_classes: int = None) -> pd.DataFrame:
 
     # Each residual level r gets its own band with small gaps between them.
     # band_width = (1.0 - (n-1)*gap) / n, base = r * (band_width + gap)
-    gap = 0.1
+    gap = 0.0
     band_width = (1.0 - (n_classes - 1) * gap) / n_classes
     residual = df["residual"]
     confidence = df["confidence"]

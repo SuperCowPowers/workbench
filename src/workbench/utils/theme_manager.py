@@ -278,6 +278,11 @@ class ThemeManager:
 
         # We have another colorscale in data/heatmap
         color_scales["heatmap"] = cls.current_template["data"]["heatmap"][0]["colorscale"]
+
+        # Custom colorscales stored in layout.meta.custom_colorscales
+        custom = cls.current_template.get("layout", {}).get("meta", {}).get("custom_colorscales", {})
+        color_scales.update(custom)
+
         if scale_type in color_scales:
             return color_scales[scale_type]
         else:
