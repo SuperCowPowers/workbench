@@ -11,7 +11,7 @@ from workbench.web_interface.components.plugin_interface import PluginInterface,
 from workbench.web_interface.components.plugins.confusion_triangle import ConfusionTriangle
 from workbench.cached.cached_model import CachedModel
 from workbench.utils.color_utils import add_alpha_to_first_color
-from workbench.utils.pandas_utils import max_proba, decile_marks
+from workbench.utils.pandas_utils import max_proba, proba_to_conf, compute_confusion
 
 
 def _residual_z_matrix(n_classes: int) -> list[list[int]]:
@@ -208,7 +208,7 @@ class ClassConfusionMatrix(PluginInterface):
     def register_internal_callbacks(self):
         """Register standalone cell highlight callback.
 
-        Note: Not used when embedded in ConfusionExplorer (the efxplorer's cross-component
+        Note: Not used when embedded in ConfusionExplorer (the explorer's cross-component
         callback handles matrix highlighting instead). Kept for potential standalone use.
         """
 
@@ -251,7 +251,7 @@ class ConfusionExplorer(PluginInterface):
         self.class_labels = None
         self.target_col = None
         self.proba_cols = None
-        self.min_conf = 0.33  # 1/n_classes — lower bound for confidence slider
+        self.min_conf = 0.0  # Lower bound for confidence slider (0 = random guess)
         self.confidence_range = None  # [lo, hi] from slider; None = no filtering
         self.matrix = ClassConfusionMatrix()
         self.triangle = ConfusionTriangle()
@@ -290,10 +290,10 @@ class ConfusionExplorer(PluginInterface):
         # Confidence slider with decile marks (marks populated in update_properties)
         slider = dcc.RangeSlider(
             id=f"{component_id}-confidence-slider",
-            min=0.33,
+            min=0.0,
             max=1.0,
             step=0.01,
-            value=[0.33, 1.0],
+            value=[0.0, 1.0],
             marks=None,
             tooltip={"placement": "bottom", "always_visible": False},
             className="confidence-slider",
@@ -311,8 +311,7 @@ class ConfusionExplorer(PluginInterface):
             style={
                 "display": "flex",
                 "alignItems": "center",
-                "gap": "8px",
-                "padding": "0px 10px",
+                "padding": "5px",
             },
         )
 
@@ -364,7 +363,7 @@ class ConfusionExplorer(PluginInterface):
         lo, hi = self.confidence_range
         if lo <= self.min_conf and hi >= 1.0:
             return self.df
-        return self.df[(self.df["max_proba"] >= lo) & (self.df["max_proba"] <= hi)].reset_index(drop=True)
+        return self.df[(self.df["confidence"] >= lo) & (self.df["confidence"] <= hi)].reset_index(drop=True)
 
     def update_properties(self, model: CachedModel, **kwargs) -> list:
         """Fetch data from the model and update both sub-plugins with the dataframe.
@@ -393,18 +392,18 @@ class ConfusionExplorer(PluginInterface):
             if drop_cols:
                 self.df = self.df.dropna(subset=drop_cols).reset_index(drop=True)
 
-            # Compute max_proba for confidence filtering (uses pandas_utils.max_proba)
-            max_proba(self.df)
+            # Compute derived columns for filtering/coloring
+            if "confidence" not in self.df.columns:
+                max_proba(self.df)
+                proba_to_conf(self.df)
+            compute_confusion(self.df)
 
-        # Compute slider parameters (min_conf = 1/n_classes, the random-guess baseline)
-        n_classes = len(self.class_labels) if self.class_labels else 3
-        self.min_conf = round(1 / n_classes, 2)
-        self.confidence_range = [self.min_conf, 1.0]
+        # Slider parameters: confidence ranges from 0 (random guess) to 1 (certain)
+        self.min_conf = 0.0
+        self.confidence_range = [0.0, 1.0]
 
-        # Compute decile marks for the slider
-        slider_marks = {}
-        if self.df is not None and "max_proba" in self.df.columns:
-            slider_marks = decile_marks(self.df["max_proba"], lower_bound=self.min_conf)
+        # Fixed 0-to-1 scale marks for the confidence slider
+        slider_marks = {round(i * 0.1, 1): str(round(i * 0.1, 1)) for i in range(11)}
 
         # Pass dataframe + metadata to both children
         child_kwargs = self._child_kwargs()
@@ -490,7 +489,7 @@ class ConfusionExplorer(PluginInterface):
 
             return sel_fig, cell_key, matrix_figure
 
-        # Confidence slider callback: filter both children by max_proba range
+        # Confidence slider callback: filter both children by confidence range
         # Preserves the active matrix cell selection if one exists
         # allow_duplicate: all outputs shared with page-level callbacks or matrix-click callback above
         @callback(

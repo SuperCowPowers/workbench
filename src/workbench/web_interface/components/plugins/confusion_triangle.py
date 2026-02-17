@@ -232,8 +232,8 @@ class ConfusionTriangle(PluginInterface):
         figure = go.Figure()
 
         # Line colors adapt to dark/light theme
-        line_color = "rgba(200, 200, 200, 0.5)" if self.theme_manager.dark_mode() else "rgba(0, 0, 0, 0.5)"
-        boundary_color = "rgba(200, 200, 200, 0.4)" if self.theme_manager.dark_mode() else "rgba(0, 0, 0, 0.4)"
+        line_color = "rgba(220, 220, 220, 1.0)" if self.theme_manager.dark_mode() else "rgba(40, 40, 40, 1.0)"
+        boundary_color = "rgba(220, 220, 220, 1.0)" if self.theme_manager.dark_mode() else "rgba(40, 40, 40, 1.0)"
 
         # Add data point traces first (so lines render on top)
         self._add_data_traces(figure, df, px_arr, py_arr, color_col, class_labels, custom_data_cols, mask)
@@ -286,8 +286,9 @@ class ConfusionTriangle(PluginInterface):
             yaxis=dict(visible=False, range=[-0.12, h + 0.10]),
             plot_bgcolor=self.theme_manager.background(),
             paper_bgcolor="rgba(0,0,0,0)",
-            margin={"t": 0, "b": 0, "r": 0, "l": 0, "pad": 0},
+            margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},
             showlegend=True,
+            legend=dict(x=0.85, y=0.9),
             dragmode="pan",
             modebar={"bgcolor": "rgba(0, 0, 0, 0)"},
             annotations=annotations,
@@ -344,12 +345,14 @@ class ConfusionTriangle(PluginInterface):
                 size=15,
                 color=plot_df[color_col],
                 colorscale=colorscale,
-                colorbar=dict(title=color_col, thickness=10, x=1.01, xpad=0),
+                colorbar=dict(title=color_col, thickness=10, len=0.6, x=0.95, y=1.0, yanchor="top", xpad=0),
                 line=_MARKER_LINE,
             )
-            # Pin residual colorscale to fixed 0–(n_classes-1) so colors stay stable across filtering
+            # Pin colorscale for known columns so colors stay stable across filtering
             if color_col == "residual":
                 marker["cmin"], marker["cmax"] = 0, len(class_labels) - 1
+            elif color_col in ("confusion", "confidence"):
+                marker["cmin"], marker["cmax"] = 0, 1
             elif mask is not None:
                 # In selection mode, pin colorscale to full dataframe range
                 marker["cmin"], marker["cmax"] = df[color_col].min(), df[color_col].max()

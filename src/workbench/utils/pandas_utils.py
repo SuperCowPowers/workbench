@@ -286,27 +286,77 @@ def max_proba(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def decile_marks(series: pd.Series, lower_bound: float = 0.0) -> dict:
-    """Compute decile-based tick marks from a numeric Series.
+def proba_to_conf(df: pd.DataFrame) -> pd.DataFrame:
+    """Add a 'confidence' column by normalizing max_proba to [0, 1].
 
-    Generates ~10 quantile-based edges, deduplicates, and returns a dict
-    suitable for use as ``dcc.RangeSlider`` marks.
+    Always (re)computes the column so the values are deterministic regardless
+    of whether 'confidence' already exists in the DataFrame.
+
+    Maps the maximum class probability from [1/n_classes, 1.0] to [0.0, 1.0],
+    where 1/n_classes (random guess) becomes 0 and 1.0 (certain) stays 1.
+    Requires a 'max_proba' column (see :func:`max_proba`).
 
     Args:
-        series (pd.Series): Numeric values to compute deciles from.
-        lower_bound (float): Minimum allowed value (edges below this are dropped).
+        df (pd.DataFrame): DataFrame with a 'max_proba' column and one or more
+            columns ending in '_proba'.
 
     Returns:
-        dict: ``{value: label_str}`` mapping for slider marks.
+        pd.DataFrame: The DataFrame with a new 'confidence' column (in-place).
     """
-    quantiles = np.linspace(0, 1, 11)
-    edges = np.unique(np.round(np.quantile(series, quantiles), 2))
+    if "max_proba" not in df.columns:
+        return df
+    n_classes = len([c for c in df.columns if c.endswith("_proba") and c != "max_proba"])
+    baseline = 1.0 / max(n_classes, 2)
+    df["confidence"] = (df["max_proba"] - baseline) / (1.0 - baseline)
+    return df
 
-    # Ensure lower_bound and 1.0 are included, filter to valid range
-    edges = np.unique(np.concatenate([[lower_bound], edges, [1.0]]))
-    edges = edges[edges >= lower_bound]
 
-    return {float(v): f"{v:.2f}" for v in edges}
+def compute_confusion(df: pd.DataFrame, n_classes: int = None) -> pd.DataFrame:
+    """Add a 'confusion' column combining residual and confidence.
+
+    Always (re)computes the column so the values are deterministic regardless
+    of whether 'confusion' already exists in the DataFrame.
+
+    Each residual level gets its own non-overlapping band with small (0.1)
+    gaps between them. Band width = (1 - (n-1)*gap) / n. Confidence scales
+    within each band.
+
+    For 3 classes the bands are:
+        residual=0: [0.000, 0.267]  (correct predictions)
+        gap:        (0.267, 0.367)
+        residual=1: [0.367, 0.633]  (off-by-one)
+        gap:        (0.633, 0.733)
+        residual=2: [0.733, 1.000]  (maximally wrong)
+
+    Requires 'residual' and 'confidence' columns (no-op if either is missing).
+
+    Args:
+        df (pd.DataFrame): DataFrame with 'residual' and 'confidence' columns.
+        n_classes (int): Number of classes. If None, inferred from '_proba' columns.
+
+    Returns:
+        pd.DataFrame: The DataFrame with a 'confusion' column (in-place).
+    """
+    if "residual" not in df.columns or "confidence" not in df.columns:
+        return df
+    if n_classes is None:
+        n_classes = len([c for c in df.columns if c.endswith("_proba") and c != "max_proba"])
+    n_classes = max(n_classes, 2)
+
+    # Each residual level r gets its own band with small gaps between them.
+    # band_width = (1.0 - (n-1)*gap) / n, base = r * (band_width + gap)
+    gap = 0.1
+    band_width = (1.0 - (n_classes - 1) * gap) / n_classes
+    residual = df["residual"]
+    confidence = df["confidence"]
+    correct = residual == 0
+    base = residual * (band_width + gap)
+    df["confusion"] = 0.0
+    # Correct predictions: high confidence → 0 confusion, low confidence → top of band
+    df.loc[correct, "confusion"] = (1 - confidence[correct]) * band_width
+    # Wrong predictions: high confidence → top of band, low confidence → bottom
+    df.loc[~correct, "confusion"] = base[~correct] + confidence[~correct] * band_width
+    return df
 
 
 def confidence_profile(
@@ -343,7 +393,7 @@ def confidence_profile(
         )
 
         # Step 3b: Compute binary accuracy
-        accuracy = binary_accuracy(cm, positive_classes, negative_classes)
+        accuracy = binary_accuracy(cm, positive_classes)
 
         # Step 3c: Store result
         quant_accuracy.append({"quantile": i, "binary_accuracy": accuracy})
@@ -1055,7 +1105,7 @@ if __name__ == "__main__":
     negative_classes = ["bad_low", "bad_high"]
 
     # Compute Binary Accuracy
-    accuracy = binary_accuracy(conf_matrix, positive_classes, negative_classes)
+    accuracy = binary_accuracy(conf_matrix, positive_classes)
     print(f"Binary Accuracy: {accuracy:.3f}")
 
     # Test split_dataframe_by_quantiles

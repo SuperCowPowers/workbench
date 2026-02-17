@@ -77,7 +77,7 @@ if recreate or not Endpoint("open-admet-chemprop-logd-hybrid").exists():
 # =============================================================================
 # Chemprop Classification Model
 # =============================================================================
-if True or recreate or not Model("aqsol-class-chemprop").exists():
+if recreate or not Model("aqsol-class-chemprop").exists():
     feature_set = FeatureSet("aqsol_features")
     m = feature_set.to_model(
         name="aqsol-class-chemprop",
@@ -92,12 +92,13 @@ if True or recreate or not Model("aqsol-class-chemprop").exists():
     m.set_class_labels(["low", "medium", "high"])
 
 # Create an Endpoint for the Multi-Task Regression Model
-if recreate or not Endpoint("aqsol-class-chemprop").exists():
+if True or recreate or not Endpoint("aqsol-class-chemprop").exists():
     m = Model("aqsol-class-chemprop")
     end = m.to_endpoint(tags=["chemprop", "aqsol", "class"])
     end.set_owner("BW")
     end.auto_inference()
     end.cross_fold_inference()
+    end.full_inference()
 
 # =============================================================================
 # Multi-Target Chemprop Regression Model (Open ADMET)
