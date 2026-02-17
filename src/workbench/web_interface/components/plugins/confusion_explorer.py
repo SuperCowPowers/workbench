@@ -72,17 +72,19 @@ def _cell_shapes(cm, n_classes: int, colorscale: list) -> list[dict]:
             else:
                 alpha = 0.25 + 0.75 * (log(count + 1) / max_log)
             fillcolor = sample_colorscale_rgba(colorscale, residual, vmin=0, vmax=vmax, alpha=alpha)
-            shapes.append({
-                "type": "rect",
-                "name": "cell",
-                "x0": j - delta,
-                "x1": j + delta,
-                "y0": i - delta,
-                "y1": i + delta,
-                "fillcolor": fillcolor,
-                "line": {"width": 0},
-                "layer": "below",
-            })
+            shapes.append(
+                {
+                    "type": "rect",
+                    "name": "cell",
+                    "x0": j - delta,
+                    "x1": j + delta,
+                    "y0": i - delta,
+                    "y1": i + delta,
+                    "fillcolor": fillcolor,
+                    "line": {"width": 0},
+                    "layer": "below",
+                }
+            )
     return shapes
 
 
