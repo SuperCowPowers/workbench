@@ -36,7 +36,12 @@ def df_to_sdf_file(
     with SDWriter(output_file) as writer:
         writer.SetForceV3000(True)
         for idx, row in df.iterrows():
-            mol = Chem.MolFromSmiles(row[smiles_col])
+            smiles = row[smiles_col]
+            if pd.isna(smiles):
+                if not skip_invalid:
+                    raise ValueError(f"Missing SMILES at row {idx}")
+                continue
+            mol = Chem.MolFromSmiles(smiles)
             if mol is None:
                 if not skip_invalid:
                     raise ValueError(f"Invalid SMILES at row {idx}: {row[smiles_col]}")
