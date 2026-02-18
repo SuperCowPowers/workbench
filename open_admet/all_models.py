@@ -238,7 +238,7 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
             tags=["open_admet", base_name, "classification", "xgboost"],
         )
         xgb_model.set_owner("BW")
-        xbb_model.set_class_labels(["low", "moderate", "high"])
+        xgb_model.set_class_labels(["low", "moderate", "high"])
         end = xgb_model.to_endpoint(tags=["open_admet", base_name, "classification", "xgboost"], max_concurrency=1)
         end.set_owner("BW")
         end.auto_inference()
