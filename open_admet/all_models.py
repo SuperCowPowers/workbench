@@ -22,7 +22,7 @@ FS_LIST = ["open_admet_mppb"]
 
 print(FS_LIST)
 
-INCLUDE_CLASSIFICATION = False  # Set to True to create classification models
+INCLUDE_CLASSIFICATION = True  # Set to True to create classification models
 INCLUDE_EXTRA_MODELS = False  # Set to True to create additional fingerprint and hybrid models
 
 
@@ -238,6 +238,7 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
             tags=["open_admet", base_name, "classification", "xgboost"],
         )
         xgb_model.set_owner("BW")
+        xbb_model.set_class_labels(["low", "moderate", "high"])
         end = xgb_model.to_endpoint(tags=["open_admet", base_name, "classification", "xgboost"], max_concurrency=1)
         end.set_owner("BW")
         end.auto_inference()
@@ -263,6 +264,7 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
             tags=["open_admet", base_name, "classification", "pytorch"],
         )
         pytorch_model.set_owner("BW")
+        pytorch_model.set_class_labels(["low", "moderate", "high"])
         end = pytorch_model.to_endpoint(tags=["open_admet", base_name, "classification", "pytorch"], max_concurrency=1)
         end.set_owner("BW")
         end.auto_inference()
@@ -283,6 +285,7 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
             tags=["open_admet", base_name, "classification", "chemprop"],
         )
         chemprop_model.set_owner("BW")
+        chemprop_model.set_class_labels(["low", "moderate", "high"])
         end = chemprop_model.to_endpoint(
             tags=["open_admet", base_name, "classification", "chemprop"], max_concurrency=1
         )
