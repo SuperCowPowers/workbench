@@ -16,60 +16,79 @@ def df_to_sdf_file(
     smiles_col: str = "smiles",
     id_col: Optional[str] = None,
     include_cols: Optional[List[str]] = None,
-    skip_invalid: bool = True,
     generate_3d: bool = True,
-):
-    """
-    Convert DataFrame with SMILES to SDF file.
+    optimize_geometry: bool = True,
+    v3000: bool = False,
+) -> int:
+    """Convert DataFrame with SMILES to SDF file.
+
+    Uses ETKDGv3 with small-ring torsion handling for 3D coordinate generation.
+    Invalid/missing SMILES and embedding failures are skipped with warnings.
 
     Args:
-        df: DataFrame containing SMILES and other data
-        output_file: Path to output SDF file
-        smiles_col: Column name containing SMILES strings
-        id_col: Column to use as molecule ID/name
-        include_cols: Specific columns to include as properties (default: all except smiles and molecule columns)
-        skip_invalid: Skip invalid SMILES instead of raising error
-        generate_3d: Generate 3D coordinates and optimize geometry
+        df (pd.DataFrame): DataFrame containing SMILES and other data
+        output_file (str): Path to output SDF file
+        smiles_col (str): Column name containing SMILES strings
+        id_col (str): Column to use as molecule ID/name
+        include_cols (list): Specific columns to include as properties (default: all except smiles and molecule columns)
+        generate_3d (bool): Generate 3D coordinates using ETKDGv3
+        optimize_geometry (bool): Run MMFF optimization after embedding (only applies when generate_3d=True)
+        v3000 (bool): Force V3000 format (default V2000, auto-upgrades for large molecules)
+
+    Returns:
+        int: Number of molecules successfully written
     """
     written_count = 0
+    skipped_count = 0
+
+    # Set up ETKDGv3 embedding parameters (RDKit 2024.03+)
+    embed_params = AllChem.ETKDGv3()
+    embed_params.randomSeed = 42
+    embed_params.useSmallRingTorsions = True
 
     with SDWriter(output_file) as writer:
-        writer.SetForceV3000(True)
+        if v3000:
+            writer.SetForceV3000(True)
+
         for idx, row in df.iterrows():
             smiles = row[smiles_col]
             if pd.isna(smiles):
-                if not skip_invalid:
-                    raise ValueError(f"Missing SMILES at row {idx}")
+                log.warning(f"Skipping row {idx}: missing SMILES")
+                skipped_count += 1
                 continue
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
-                if not skip_invalid:
-                    raise ValueError(f"Invalid SMILES at row {idx}: {row[smiles_col]}")
+                log.warning(f"Skipping row {idx}: could not parse SMILES '{smiles}'")
+                skipped_count += 1
                 continue
 
-            # Generate 3D coordinates
+            # Generate 3D coordinates using ETKDGv3
             if generate_3d:
                 mol = Chem.AddHs(mol)
 
-                # Try progressively more aggressive embedding strategies
-                embed_strategies = [
-                    {"maxAttempts": 1000, "randomSeed": 42},
-                    {"maxAttempts": 1000, "randomSeed": 42, "useRandomCoords": True},
-                    {"maxAttempts": 1000, "randomSeed": 42, "boxSizeMult": 5.0},
-                ]
+                # First attempt with standard ETKDGv3
+                if AllChem.EmbedMolecule(mol, embed_params) == -1:
+                    # Fallback: random coordinates for difficult molecules
+                    fallback_params = AllChem.ETKDGv3()
+                    fallback_params.randomSeed = 42
+                    fallback_params.useSmallRingTorsions = True
+                    fallback_params.useRandomCoords = True
+                    if AllChem.EmbedMolecule(mol, fallback_params) == -1:
+                        log.warning(f"Skipping row {idx}: 3D embedding failed for '{smiles}'")
+                        skipped_count += 1
+                        continue
 
-                embedded = False
-                for strategy in embed_strategies:
-                    if AllChem.EmbedMolecule(mol, **strategy) != -1:
-                        embedded = True
-                        break
+                # MMFF geometry optimization
+                if optimize_geometry:
+                    try:
+                        result = AllChem.MMFFOptimizeMolecule(mol)
+                        if result == -1:
+                            log.debug(f"Row {idx}: MMFF params unavailable, skipping optimization")
+                    except Exception:
+                        log.debug(f"Row {idx}: MMFF optimization failed, using unoptimized coords")
 
-                if not embedded:
-                    if not skip_invalid:
-                        raise ValueError(f"Could not generate 3D coords for row {idx}")
-                    continue
-
-                AllChem.MMFFOptimizeMolecule(mol)
+                # Remove explicit Hs for cleaner output (3D coords are preserved)
+                mol = Chem.RemoveHs(mol)
 
             # Set molecule name/ID
             if id_col and id_col in df.columns:
@@ -83,14 +102,17 @@ def df_to_sdf_file(
                 mol_col_names = ["mol", "molecule", "rdkit_mol", "Mol"]
                 cols_to_add = [col for col in df.columns if col != smiles_col and col not in mol_col_names]
 
-            # Add properties
+            # Add properties (skip NaN/None to avoid writing literal "nan" strings)
             for col in cols_to_add:
-                mol.SetProp(col, str(row[col]))
+                value = row[col]
+                if pd.isna(value):
+                    continue
+                mol.SetProp(col, str(value))
 
             writer.write(mol)
             written_count += 1
 
-    log.info(f"Wrote {written_count} molecules to SDF: {output_file}")
+    log.info(f"Wrote {written_count} molecules to SDF ({skipped_count} skipped): {output_file}")
     return written_count
 
 
@@ -187,13 +209,13 @@ if __name__ == "__main__":
     try:
         # Test with 3D generation
         count = df_to_sdf_file(
-            test_data, tmp_path, smiles_col="smiles", id_col="name", skip_invalid=True, generate_3d=True
+            test_data, tmp_path, smiles_col="smiles", id_col="name", generate_3d=True
         )
         print(f"   ✓ Wrote {count} molecules with 3D coords (expected 4, skipped 1 invalid)")
 
         # Test without 3D generation
         count = df_to_sdf_file(
-            test_data, tmp_path, smiles_col="smiles", id_col="name", skip_invalid=True, generate_3d=False
+            test_data, tmp_path, smiles_col="smiles", id_col="name", generate_3d=False
         )
         print(f"   ✓ Wrote {count} molecules without 3D coords")
 
@@ -220,7 +242,6 @@ if __name__ == "__main__":
             tmp_path,
             smiles_col="smiles",
             include_cols=["name", "mol_weight"],
-            skip_invalid=True,
             generate_3d=False,
         )
 
@@ -234,21 +255,11 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"   ✗ Error with column filtering: {e}")
 
-    # Test 4: Error handling
-    print("\n4. Testing error handling...")
-
-    # Test with skip_invalid=False
-    try:
-        count = df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", skip_invalid=False, generate_3d=False)
-        print("   ✗ Should have raised error for invalid SMILES")
-    except ValueError:
-        print("   ✓ Correctly raised error for invalid SMILES")
-
-    # Test 5: Property filtering on read
+    # Test 4: Property filtering on read
     print("\n5. Testing property filtering on read...")
     try:
         # Write full data
-        df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", skip_invalid=True, generate_3d=False)
+        df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", generate_3d=False)
 
         # Read with include filter
         df_include = sdf_file_to_df(tmp_path, include_props=["mol_weight", "category"])
@@ -284,7 +295,7 @@ if __name__ == "__main__":
     # Large molecule test (3D generation stress test)
     large_mol_df = pd.DataFrame({"smiles": ["C" * 50], "name": ["Long Chain"]})  # Very long carbon chain
     try:
-        count = df_to_sdf_file(large_mol_df, tmp_path, generate_3d=True, skip_invalid=True)
+        count = df_to_sdf_file(large_mol_df, tmp_path, generate_3d=True)
         print(f"   ✓ Large molecule: wrote {count} molecule(s)")
     except Exception as e:
         print(f"   ✗ Large molecule error: {e}")
