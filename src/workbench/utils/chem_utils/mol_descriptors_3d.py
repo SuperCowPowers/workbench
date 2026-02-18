@@ -146,39 +146,38 @@ def generate_conformers(
         mol = Chem.AddHs(mol)
 
         # Configure ETKDGv3 parameters
+        # ETKDGv3 handles macrocycles by default (useMacrocycleTorsions=True)
         params = AllChem.ETKDGv3()
         params.randomSeed = random_seed
+        params.useSmallRingTorsions = True  # Also handle small rings (3-6 membered)
         params.numThreads = 1  # Single thread to avoid issues in serverless
-        params.useRandomCoords = False  # Start from distance geometry
-        params.enforceChirality = True  # Respect stereochemistry
-        params.maxIterations = 200  # Max iterations for distance geometry refinement
-
-        # Check for macrocycles and adjust parameters
-        ring_info = mol.GetRingInfo()
-        max_ring_size = max([len(r) for r in ring_info.AtomRings()]) if ring_info.AtomRings() else 0
-        if max_ring_size > 12:
-            params.useSmallRingTorsions = False
-            params.useMacrocycleTorsions = True
 
         # Generate conformers
         conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params)
 
         if len(conf_ids) == 0:
-            # Fallback: try with random coordinates
-            params.useRandomCoords = True
-            conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params)
+            # Fallback: random coordinates for difficult molecules
+            fallback_params = AllChem.ETKDGv3()
+            fallback_params.randomSeed = random_seed
+            fallback_params.useSmallRingTorsions = True
+            fallback_params.useRandomCoords = True
+            fallback_params.numThreads = 1
+            conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=fallback_params)
 
         if len(conf_ids) == 0:
             logger.warning("Failed to generate conformers for molecule")
             return None
 
         # Optimize conformers with MMFF94 if requested
-        if optimize and len(conf_ids) > 0:
+        if optimize:
             try:
                 AllChem.MMFFOptimizeMoleculeConfs(mol, maxIters=100, numThreads=1)
             except Exception as e:
                 logger.debug(f"MMFF optimization failed: {e}")
                 # Continue without optimization
+
+        # Remove explicit Hs (3D coords on heavy atoms are preserved)
+        mol = Chem.RemoveHs(mol)
 
         return mol
 
@@ -325,8 +324,9 @@ def compute_mordred_3d_descriptors(mol: Chem.Mol) -> Dict[str, float]:
         return {str(desc): np.nan for desc in calc.descriptors}
 
     try:
-        # Mordred expects a list of molecules
-        result_df = calc.pandas([mol], nproc=1, quiet=True)
+        # Mordred CPSA needs explicit Hs for partial charge calculations
+        mol_with_hs = Chem.AddHs(mol, addCoords=True)
+        result_df = calc.pandas([mol_with_hs], nproc=1, quiet=True)
 
         # Convert to dictionary with sanitized column names
         result = {}
@@ -373,7 +373,10 @@ def get_mordred_3d_feature_names() -> List[str]:
 
 def _get_atom_positions_and_masses(mol: Chem.Mol, conf_id: int = 0) -> tuple:
     """
-    Get heavy atom positions and masses as numpy arrays.
+    Get atom positions and masses as numpy arrays.
+
+    Note: Assumes explicit Hs have already been removed (via Chem.RemoveHs)
+    during conformer generation, so all atoms are heavy atoms.
 
     Returns:
         Tuple of (positions array [N, 3], masses array [N]), or (None, None) if failed
@@ -386,8 +389,6 @@ def _get_atom_positions_and_masses(mol: Chem.Mol, conf_id: int = 0) -> tuple:
     masses = []
 
     for atom in mol.GetAtoms():
-        if atom.GetAtomicNum() == 1:  # Skip hydrogens
-            continue
         pos = conf.GetAtomPosition(atom.GetIdx())
         positions.append([pos.x, pos.y, pos.z])
         masses.append(atom.GetMass())
@@ -454,9 +455,6 @@ def compute_amphiphilic_moment(mol: Chem.Mol, conf_id: int = 0) -> float:
     nonpolar_positions = []
 
     for atom in mol.GetAtoms():
-        if atom.GetAtomicNum() == 1:  # Skip hydrogens
-            continue
-
         pos = conf.GetAtomPosition(atom.GetIdx())
         pos_array = np.array([pos.x, pos.y, pos.z])
         symbol = atom.GetSymbol()
