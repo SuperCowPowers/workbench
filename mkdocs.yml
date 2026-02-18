@@ -41,6 +41,7 @@ nav:
     - Chemprop Shap Values: blogs/chemprop_shap.md
     - AWS Endpoint Architecture: blogs/aws_endpoint_architecture.md
     - Molecular Standardization: blogs/molecular_standardization.md
+    - Feature Endpoints: blogs/feature_endpoints.md
   - Core Classes: 
     - OverView: core_classes/overview.md
     - Artifacts: 
