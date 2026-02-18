@@ -208,15 +208,11 @@ if __name__ == "__main__":
 
     try:
         # Test with 3D generation
-        count = df_to_sdf_file(
-            test_data, tmp_path, smiles_col="smiles", id_col="name", generate_3d=True
-        )
+        count = df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", id_col="name", generate_3d=True)
         print(f"   ✓ Wrote {count} molecules with 3D coords (expected 4, skipped 1 invalid)")
 
         # Test without 3D generation
-        count = df_to_sdf_file(
-            test_data, tmp_path, smiles_col="smiles", id_col="name", generate_3d=False
-        )
+        count = df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", id_col="name", generate_3d=False)
         print(f"   ✓ Wrote {count} molecules without 3D coords")
 
     except Exception as e:
