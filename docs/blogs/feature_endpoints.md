@@ -31,7 +31,7 @@ When you build a predictive model in Workbench, the training pipeline calls the 
 # Training: features computed by calling the endpoint
 df = load_training_data()
 feature_endpoint = Endpoint("smiles-to-taut-md-stereo-v1")
-df_features = rdkit_end.inference(df)
+df_features = feature_endpoint.inference(df)
 
 # Create a FeatureSet and deploy a model that uses those features
 to_features = PandasToFeatures("open_admet_mppb")
@@ -92,13 +92,15 @@ You might ask: why not just share a Python function? Or package the code into a 
 <figcaption><em>Every Workbench endpoint — including feature endpoints — runs on a modern ASGI stack. Any client that can make an HTTP request gets the same features.</em></figcaption>
 </figure>
 
-**Pinned dependencies at the container level.** The feature endpoint runs inside a Docker container with exact versions of RDKit, Mordred, NumPy, and every other dependency. Updating your local Python environment doesn't change what the endpoint computes. This is especially important for chemistry libraries — RDKit descriptor implementations do change between releases, and Mordred edge-case handling varies by version.
+**Pinned dependencies at the container level.**{style="color: #00d4aa"} The feature endpoint runs inside a Docker container with exact versions of RDKit, Mordred, NumPy, and every other dependency. Updating your local Python environment doesn't change what the endpoint computes. This is especially important for chemistry libraries — RDKit descriptor implementations do change between releases, and Mordred edge-case handling varies by version.
 
-**Version management through naming.** Deploy `smiles-to-taut-md-stereo-v2` alongside `v1`, and let downstream models pin whichever version they were trained against. When you improve the descriptor pipeline, existing models keep working with their original features while new models can use the updated set.
+**Version management through naming.**{style="color: #00d4aa"} Deploy `smiles-to-taut-md-stereo-v2` alongside `v1`, and let downstream models pin whichever version they were trained against. When you improve the descriptor pipeline, existing models keep working with their original features while new models can use the updated set.
 
-**Any consumer can call it.** A notebook, a training pipeline, an inference endpoint, a scheduled batch job, or an external drug discovery platform — anything that can make an HTTP request gets the same features. No need to install RDKit locally, manage conda environments, or worry about platform-specific compilation issues. A simple `requests.post()` call with a CSV payload is all it takes.
+**Any consumer can call it.**{style="color: #00d4aa"} A notebook, a training pipeline, an inference endpoint, a scheduled batch job, or an external drug discovery platform — anything that can make an HTTP request gets the same features. No need to install RDKit locally, manage conda environments, or worry about platform-specific compilation issues. A simple `requests.post()` call with a CSV payload is all it takes.
 
-**Scaling is handled by AWS.** The endpoint can run serverless (cost-efficient for intermittent use) or on dedicated instances (higher throughput for batch processing). The 3D endpoint, which is compute-intensive (~1-2 molecules/second for conformer generation), benefits from this — you can scale up for a big batch run and scale back down without managing infrastructure.
+**Scaling is handled by AWS.**{style="color: #00d4aa"} The endpoint can run serverless (cost-efficient for intermittent use) or on dedicated instances (higher throughput for batch processing). The 3D endpoint, which is compute-intensive (~1-2 molecules/second for conformer generation), benefits from this — you can scale up for a big batch run and scale back down without managing infrastructure.
+
+**Built on the Workbench endpoint stack.**{style="color: #00d4aa"} Feature endpoints run on the same [modern ASGI stack](aws_endpoint_architecture.md) as every other Workbench endpoint — Uvicorn and FastAPI instead of the default SageMaker Nginx/Gunicorn/Flask stack. They follow the same **DataFrame-in, DataFrame-out** contract: send a DataFrame with SMILES, get back a DataFrame with descriptors appended.
 
 ## Integration with Drug Discovery Platforms
 !!! tip inline end "Just an HTTP Call"
@@ -116,23 +118,15 @@ The training/inference skew problem is well-recognized across the ML industry, a
 
 ### Feature Stores: Pre-Compute and Look Up
 
-The most common pattern — used by platforms like AWS SageMaker Feature Store and Google Vertex AI Feature Store — is to pre-compute features in a batch job and store them in a low-latency key-value store. At inference time, you look up the features by entity ID rather than recomputing them.
-
-This works well for features that are entity-specific and change infrequently (user demographics, historical aggregations, item metadata). But it doesn't work for our use case: molecular descriptors are computed *on the fly* from a SMILES string that the system has never seen before. You can't pre-compute descriptors for every possible molecule — the chemical space is effectively infinite.
+Platforms like AWS SageMaker Feature Store and Google Vertex AI Feature Store pre-compute features in batch and store them for low-latency lookup by entity ID. This works well for slowly-changing entity features (user demographics, item metadata), but not for molecular descriptors — you can't pre-compute features for every possible molecule when the chemical space is effectively infinite.
 
 ### On-Demand Feature Transforms: UDFs Inside the Platform
 
-Platforms like Databricks (with Unity Catalog) and Tecton (with On-Demand Feature Views) let you register Python functions that run at serving time. When a model needs features, the platform executes the registered function on the incoming data. The same function definition is used during training and inference, preventing skew.
-
-This is architecturally similar to what Workbench does — a single piece of code that runs in both paths. The main difference is coupling: these UDFs run inside the platform's managed runtime, which means your feature computation is tied to that specific ecosystem. Workbench's endpoint is a standalone service — it happens to be hosted on SageMaker, but the interface is just HTTP. Any client that can send a CSV or JSON payload can call it.
-
-Tecton's approach is particularly interesting because it supports custom Python environments (via `requirements.txt`), which lets you bring domain-specific libraries like RDKit into the feature computation. This is conceptually close to Workbench's custom container image, though Workbench takes it further by packaging the entire chemistry stack into a purpose-built Docker image.
+Databricks (Unity Catalog) and Tecton (On-Demand Feature Views) let you register Python functions that run at both training and serving time — architecturally similar to Workbench's approach. The key difference is coupling: these UDFs run inside the platform's managed runtime, tying your feature computation to that ecosystem. Workbench's endpoint is a standalone HTTP service that any client can call, independent of platform.
 
 ### Feast and Hopsworks: Open-Source Feature Engineering
 
-Open-source feature stores like [Feast](https://feast.dev/) and [Hopsworks](https://www.hopsworks.ai/) support on-demand feature transformations that run at both training and serving time. Feast's Transformation Server runs user-defined functions as a sidecar service, while Hopsworks attaches transformation UDFs directly to feature views so they're applied transparently during both data retrieval paths.
-
-These are solid approaches for general ML workflows. For domain-specific computation like molecular descriptors — where you need RDKit's C++ extensions, Mordred's descriptor modules, and careful handling of chemical edge cases — the containerized endpoint approach gives you more control over the execution environment.
+[Feast](https://feast.dev/) and [Hopsworks](https://www.hopsworks.ai/) support on-demand transformations at both training and serving time — Feast via a sidecar Transformation Server, Hopsworks via UDFs attached to feature views. These are solid general-purpose approaches, but for domain-specific computation requiring RDKit's C++ extensions and Mordred's descriptor modules, a containerized endpoint gives you more control over the execution environment.
 
 ### Summary Comparison
 
@@ -155,11 +149,6 @@ These are solid approaches for general ML workflows. For domain-specific computa
   </tbody>
 </table>
 
-## Built on the Workbench Endpoint Stack
-
-Feature endpoints run on the same [modern ASGI stack](aws_endpoint_architecture.md) as every other Workbench endpoint — Uvicorn and FastAPI instead of the default SageMaker Nginx/Gunicorn/Flask stack. They follow the same **DataFrame-in, DataFrame-out** contract: send a DataFrame with SMILES, get back a DataFrame with descriptors appended. Column preservation, case-insensitive feature matching, and automatic type recovery across the wire all work exactly as described in our [endpoint architecture](aws_endpoint_architecture.md) blog.
-
-
 ## Under the Hood: Feature Endpoint Details
 !!! tip inline end "Combine 2D + 3D"
     Run both the 2D and 3D endpoints and concatenate the results for a ~390-feature descriptor set covering topological, electronic, and geometric properties.
@@ -171,7 +160,7 @@ Most Feature Endpoints run a full molecular processing pipeline.
 3. **Mordred descriptors** (~85): Five ADMET-focused modules — AcidBase, Aromatic, Constitutional, Chi connectivity, and CarbonTypes
 4. **Stereochemistry features** (10): R/S center counts, E/Z bond counts, stereo complexity, fraction-defined metrics
 
-Our 3D endpoint typically include conformer generation using RDKit's ETKDGv3 algorithm and computes 75 additional descriptors covering molecular shape (PMI, NPR, asphericity), charged partial surface area (CPSA), pharmacophore spatial distribution (amphiphilic moment, intramolecular H-bond potential), and conformer ensemble statistics.
+Our 3D endpoint typically includes conformer generation using RDKit's ETKDGv3 algorithm and computes 75 additional descriptors covering molecular shape (PMI, NPR, asphericity), charged partial surface area (CPSA), pharmacophore spatial distribution (amphiphilic moment, intramolecular H-bond potential), and conformer ensemble statistics.
 
 
 ## References
