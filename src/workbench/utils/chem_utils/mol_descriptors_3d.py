@@ -106,7 +106,7 @@ import numpy as np
 import time
 from typing import Optional, List, Dict
 
-from rdkit import Chem
+from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem, Descriptors3D
 from mordred import Calculator as MordredCalculator
 from mordred import CPSA, GeometricalIndex, GravitationalIndex, PBF
@@ -152,8 +152,16 @@ def generate_conformers(
         params.useSmallRingTorsions = True  # Also handle small rings (3-6 membered)
         params.numThreads = 1  # Single thread to avoid issues in serverless
 
+        # Suppress noisy RDKit warnings (UFFTYPER, etc.) during embedding
+        rdkit_logger = RDLogger.logger()
+        rdkit_logger.setLevel(RDLogger.ERROR)
+
         # Generate conformers
-        conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params)
+        try:
+            conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params)
+        except RuntimeError as e:
+            logger.debug(f"ETKDGv3 embedding raised {e}, trying fallback")
+            conf_ids = []
 
         if len(conf_ids) == 0:
             # Fallback: random coordinates for difficult molecules
@@ -162,9 +170,14 @@ def generate_conformers(
             fallback_params.useSmallRingTorsions = True
             fallback_params.useRandomCoords = True
             fallback_params.numThreads = 1
-            conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=fallback_params)
+            try:
+                conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=fallback_params)
+            except RuntimeError as e:
+                logger.warning(f"Fallback embedding raised {e}")
+                conf_ids = []
 
         if len(conf_ids) == 0:
+            rdkit_logger.setLevel(RDLogger.WARNING)
             logger.warning("Failed to generate conformers for molecule")
             return None
 
@@ -174,6 +187,9 @@ def generate_conformers(
                 AllChem.MMFFOptimizeMoleculeConfs(mol, maxIters=100, numThreads=1)
             except Exception as e:
                 logger.debug(f"MMFF optimization failed: {e}")
+
+        # Restore RDKit logging
+        rdkit_logger.setLevel(RDLogger.WARNING)
                 # Continue without optimization
 
         # Remove explicit Hs (3D coords on heavy atoms are preserved)

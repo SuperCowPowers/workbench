@@ -3,7 +3,7 @@
 import logging
 import pandas as pd
 from typing import List, Optional
-from rdkit import Chem
+from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem, SDWriter
 
 # Set up the logger
@@ -66,14 +66,30 @@ def df_to_sdf_file(
             if generate_3d:
                 mol = Chem.AddHs(mol)
 
+                # Suppress noisy RDKit warnings (UFFTYPER, etc.) during embedding
+                rdkit_logger = RDLogger.logger()
+                rdkit_logger.setLevel(RDLogger.ERROR)
+
                 # First attempt with standard ETKDGv3
-                if AllChem.EmbedMolecule(mol, embed_params) == -1:
+                try:
+                    embed_status = AllChem.EmbedMolecule(mol, embed_params)
+                except RuntimeError as e:
+                    log.debug(f"Row {idx}: ETKDGv3 embedding raised {e}, trying fallback")
+                    embed_status = -1
+
+                if embed_status == -1:
                     # Fallback: random coordinates for difficult molecules
                     fallback_params = AllChem.ETKDGv3()
                     fallback_params.randomSeed = 42
                     fallback_params.useSmallRingTorsions = True
                     fallback_params.useRandomCoords = True
-                    if AllChem.EmbedMolecule(mol, fallback_params) == -1:
+                    try:
+                        embed_status = AllChem.EmbedMolecule(mol, fallback_params)
+                    except RuntimeError as e:
+                        log.warning(f"Skipping row {idx}: fallback embedding raised {e} for '{smiles}'")
+                        embed_status = -1
+                    if embed_status == -1:
+                        rdkit_logger.setLevel(RDLogger.WARNING)
                         log.warning(f"Skipping row {idx}: 3D embedding failed for '{smiles}'")
                         skipped_count += 1
                         continue
@@ -87,7 +103,8 @@ def df_to_sdf_file(
                     except Exception:
                         log.debug(f"Row {idx}: MMFF optimization failed, using unoptimized coords")
 
-                # Remove explicit Hs for cleaner output (3D coords are preserved)
+                # Restore RDKit logging and remove explicit Hs
+                rdkit_logger.setLevel(RDLogger.WARNING)
                 mol = Chem.RemoveHs(mol)
 
             # Set molecule name/ID
