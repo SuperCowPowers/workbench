@@ -32,7 +32,8 @@ def df_to_sdf_file(
         smiles_col (str): Column name containing SMILES strings
         id_col (str): Column to use as molecule ID/name
         include_cols (list): Specific columns to include as properties (default: all except smiles and molecule columns)
-        generate_3d (bool): Generate 3D coordinates using ETKDGv3 (slow). When False, generates 2D depiction coords (fast).
+        generate_3d (bool): Generate 3D coordinates using ETKDGv3 (slow).
+            When False, generates 2D depiction coords (fast).
         optimize_geometry (bool): Run MMFF optimization after embedding (only applies when generate_3d=True)
         v3000 (bool): Force V3000 format (default V2000, auto-upgrades for large molecules)
 
