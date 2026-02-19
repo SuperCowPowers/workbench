@@ -190,7 +190,7 @@ def generate_conformers(
 
         # Restore RDKit logging
         rdkit_logger.setLevel(RDLogger.WARNING)
-                # Continue without optimization
+        # Continue without optimization
 
         # Remove explicit Hs (3D coords on heavy atoms are preserved)
         mol = Chem.RemoveHs(mol)
