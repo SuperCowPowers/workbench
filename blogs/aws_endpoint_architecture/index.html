@@ -5053,12 +5053,12 @@
     </tr>
   </thead>
   <tbody>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">RDKit</td><td style="padding: 8px 16px;">Molecular parsing, descriptor computation, substructure search</td></tr>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">Mordred</td><td style="padding: 8px 16px;">Additional molecular descriptors (ADMET-focused modules)</td></tr>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">Message-passing neural network (MPNN) inference for molecular property prediction</td></tr>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">Gradient-boosted tree model inference</td></tr>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">Neural network inference (ChemProp backend)</td></tr>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">scikit-learn</td><td style="padding: 8px 16px;">Classical ML model inference and preprocessing</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">RDKit</td><td style="padding: 8px 16px;">Molecular parsing, descriptor computation, substructure search</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Mordred</td><td style="padding: 8px 16px;">Additional molecular descriptors (ADMET-focused modules)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">Message-passing neural network (MPNN) inference for molecular property prediction</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">Gradient-boosted tree model inference</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">Neural network inference (ChemProp backend)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">scikit-learn</td><td style="padding: 8px 16px;">Classical ML model inference and preprocessing</td></tr>
   </tbody>
 </table>
 
@@ -5073,14 +5073,14 @@
     </tr>
   </thead>
   <tbody>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Web Server</td><td style="padding: 8px 16px;">Nginx + Gunicorn</td><td style="padding: 8px 16px;">Uvicorn</td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Framework</td><td style="padding: 8px 16px;">Flask (WSGI)</td><td style="padding: 8px 16px;">FastAPI (ASGI)</td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Protocol</td><td style="padding: 8px 16px;">WSGI (synchronous)</td><td style="padding: 8px 16px;">ASGI (async-native)</td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Concurrency Model</td><td style="padding: 8px 16px;">Process forking (1 req/worker)</td><td style="padding: 8px 16px;">Async event loop (many req/worker)</td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Streaming</td><td style="padding: 8px 16px;">Not natively supported</td><td style="padding: 8px 16px;">Native ASGI streaming</td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Request Validation</td><td style="padding: 8px 16px;">Manual</td><td style="padding: 8px 16px;">Automatic (Pydantic)</td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Process Count</td><td style="padding: 8px 16px;">3 (Nginx + Gunicorn + Flask)</td><td style="padding: 8px 16px;">1 (Uvicorn + FastAPI)</td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Chemistry Packages</td><td style="padding: 8px 16px;">Install yourself</td><td style="padding: 8px 16px;">Pre-loaded (RDKit, Mordred, ChemProp)</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Web Server</td><td style="padding: 8px 16px;">Nginx + Gunicorn</td><td style="padding: 8px 16px;">Uvicorn</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Framework</td><td style="padding: 8px 16px;">Flask (WSGI)</td><td style="padding: 8px 16px;">FastAPI (ASGI)</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Protocol</td><td style="padding: 8px 16px;">WSGI (synchronous)</td><td style="padding: 8px 16px;">ASGI (async-native)</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Concurrency Model</td><td style="padding: 8px 16px;">Process forking (1 req/worker)</td><td style="padding: 8px 16px;">Async event loop (many req/worker)</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Streaming</td><td style="padding: 8px 16px;">Not natively supported</td><td style="padding: 8px 16px;">Native ASGI streaming</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Request Validation</td><td style="padding: 8px 16px;">Manual</td><td style="padding: 8px 16px;">Automatic (Pydantic)</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Process Count</td><td style="padding: 8px 16px;">3 (Nginx + Gunicorn + Flask)</td><td style="padding: 8px 16px;">1 (Uvicorn + FastAPI)</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Chemistry Packages</td><td style="padding: 8px 16px;">Install yourself</td><td style="padding: 8px 16px;">Pre-loaded (RDKit, Mordred, ChemProp)</td></tr>
   </tbody>
 </table>
 
