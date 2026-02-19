@@ -16,13 +16,14 @@ def df_to_sdf_file(
     smiles_col: str = "smiles",
     id_col: Optional[str] = None,
     include_cols: Optional[List[str]] = None,
-    generate_3d: bool = True,
+    generate_3d: bool = False,
     optimize_geometry: bool = True,
     v3000: bool = False,
 ) -> int:
     """Convert DataFrame with SMILES to SDF file.
 
-    Uses ETKDGv3 with small-ring torsion handling for 3D coordinate generation.
+    By default generates fast 2D depiction coordinates. Set generate_3d=True
+    for full ETKDGv3 conformer generation (much slower — seconds per molecule).
     Invalid/missing SMILES and embedding failures are skipped with warnings.
 
     Args:
@@ -31,7 +32,7 @@ def df_to_sdf_file(
         smiles_col (str): Column name containing SMILES strings
         id_col (str): Column to use as molecule ID/name
         include_cols (list): Specific columns to include as properties (default: all except smiles and molecule columns)
-        generate_3d (bool): Generate 3D coordinates using ETKDGv3
+        generate_3d (bool): Generate 3D coordinates using ETKDGv3 (slow). When False, generates 2D depiction coords (fast).
         optimize_geometry (bool): Run MMFF optimization after embedding (only applies when generate_3d=True)
         v3000 (bool): Force V3000 format (default V2000, auto-upgrades for large molecules)
 
@@ -41,10 +42,11 @@ def df_to_sdf_file(
     written_count = 0
     skipped_count = 0
 
-    # Set up ETKDGv3 embedding parameters (RDKit 2024.03+)
-    embed_params = AllChem.ETKDGv3()
-    embed_params.randomSeed = 42
-    embed_params.useSmallRingTorsions = True
+    # Set up ETKDGv3 embedding parameters only if needed
+    if generate_3d:
+        embed_params = AllChem.ETKDGv3()
+        embed_params.randomSeed = 42
+        embed_params.useSmallRingTorsions = True
 
     with SDWriter(output_file) as writer:
         if v3000:
@@ -62,8 +64,8 @@ def df_to_sdf_file(
                 skipped_count += 1
                 continue
 
-            # Generate 3D coordinates using ETKDGv3
             if generate_3d:
+                # Full 3D coordinate generation using ETKDGv3 (slow)
                 mol = Chem.AddHs(mol)
 
                 # Suppress noisy RDKit warnings (UFFTYPER, etc.) during embedding
@@ -106,6 +108,9 @@ def df_to_sdf_file(
                 # Restore RDKit logging and remove explicit Hs
                 rdkit_logger.setLevel(RDLogger.WARNING)
                 mol = Chem.RemoveHs(mol)
+            else:
+                # Fast 2D depiction coordinates
+                AllChem.Compute2DCoords(mol)
 
             # Set molecule name/ID
             if id_col and id_col in df.columns:
@@ -224,13 +229,13 @@ if __name__ == "__main__":
         tmp_path = tmp.name
 
     try:
-        # Test with 3D generation
-        count = df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", id_col="name", generate_3d=True)
-        print(f"   ✓ Wrote {count} molecules with 3D coords (expected 4, skipped 1 invalid)")
+        # Test default (2D coords — fast)
+        count = df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", id_col="name")
+        print(f"   ✓ Wrote {count} molecules with 2D coords (expected 4, skipped 1 invalid)")
 
-        # Test without 3D generation
-        count = df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", id_col="name", generate_3d=False)
-        print(f"   ✓ Wrote {count} molecules without 3D coords")
+        # Test with 3D generation (slow)
+        count = df_to_sdf_file(test_data, tmp_path, smiles_col="smiles", id_col="name", generate_3d=True)
+        print(f"   ✓ Wrote {count} molecules with 3D coords")
 
     except Exception as e:
         print(f"   ✗ Error writing SDF: {e}")
