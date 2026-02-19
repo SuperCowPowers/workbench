@@ -3,3 +3,27 @@
   --md-default-bg-color: #ebebeb;
   --md-default-bg-color--light: #f0f0f0;
 }
+
+/* ── Dark mode (slate) — bright, saturated for dark backgrounds ── */
+[data-md-color-scheme="slate"] .md-typeset h1 { color: #00b894; }       /* Teal */
+[data-md-color-scheme="slate"] .md-typeset h2 { color: #3a86ff; }       /* Blue */
+[data-md-color-scheme="slate"] .md-typeset h3 { color: #c4507a; }       /* Deep rose */
+[data-md-color-scheme="slate"] .md-typeset h4 { color: #c4507a; }       /* Deep rose */
+[data-md-color-scheme="slate"] .md-typeset strong { color: #00b894; }    /* Teal */
+[data-md-color-scheme="slate"] .md-typeset em { color: #c4a8ff; }       /* Light violet */
+
+/* ── Light mode (default) — deeper, more contrast for light backgrounds ── */
+[data-md-color-scheme="default"] .md-typeset h1 { color: #006b4f; }     /* Dark teal */
+[data-md-color-scheme="default"] .md-typeset h2 { color: #2563eb; }     /* Deep blue */
+[data-md-color-scheme="default"] .md-typeset h3 { color: #c4507a; }     /* Deep rose */
+[data-md-color-scheme="default"] .md-typeset h4 { color: #c4507a; }     /* Deep rose */
+[data-md-color-scheme="default"] .md-typeset strong { color: #006b4f; }  /* Dark teal */
+[data-md-color-scheme="default"] .md-typeset em { color: #7c5cbf; }     /* Deep violet */
+
+/* ── Theme-aware table accent colors ── */
+[data-md-color-scheme="slate"] .md-typeset .text-teal { color: #00d4aa; }
+[data-md-color-scheme="default"] .md-typeset .text-teal { color: #006b4f; }
+[data-md-color-scheme="slate"] .md-typeset .text-orange { color: #ff9f43; }
+[data-md-color-scheme="default"] .md-typeset .text-orange { color: #b36b1a; }
+[data-md-color-scheme="slate"] .md-typeset .text-blue { color: #3a86ff; }
+[data-md-color-scheme="default"] .md-typeset .text-blue { color: #2563eb; }

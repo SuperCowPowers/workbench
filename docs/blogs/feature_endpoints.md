@@ -75,9 +75,9 @@ Most clients use variants similar to those listed below but we have the flexibil
     </tr>
   </thead>
   <tbody>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">smiles-to-taut-md-stereo</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Standard ADMET modeling (salt extraction, tautomer canonicalization)</td></tr>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">smiles-to-taut-md-stereo-keep-salts</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Salt-sensitive modeling (solubility, formulation)</td></tr>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">smiles-to-3d-descriptors</td><td style="padding: 8px 16px;">75 3D descriptors</td><td style="padding: 8px 16px;">Shape/pharmacophore features (permeability, transporter interactions)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-taut-md-stereo</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Standard ADMET modeling (salt extraction, tautomer canonicalization)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-taut-md-stereo-keep-salts</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Salt-sensitive modeling (solubility, formulation)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-descriptors</td><td style="padding: 8px 16px;">75 3D descriptors</td><td style="padding: 8px 16px;">Shape/pharmacophore features (permeability, transporter interactions)</td></tr>
   </tbody>
 </table>
 
@@ -92,15 +92,15 @@ You might ask: why not just share a Python function? Or package the code into a 
 <figcaption><em>Every Workbench endpoint — including feature endpoints — runs on a modern ASGI stack. Any client that can make an HTTP request gets the same features.</em></figcaption>
 </figure>
 
-**Pinned dependencies at the container level.**{style="color: #00d4aa"} The feature endpoint runs inside a Docker container with exact versions of RDKit, Mordred, NumPy, and every other dependency. Updating your local Python environment doesn't change what the endpoint computes. This is especially important for chemistry libraries — RDKit descriptor implementations do change between releases, and Mordred edge-case handling varies by version.
+**Pinned dependencies at the container level.** The feature endpoint runs inside a Docker container with exact versions of RDKit, Mordred, NumPy, and every other dependency. Updating your local Python environment doesn't change what the endpoint computes. This is especially important for chemistry libraries — RDKit descriptor implementations do change between releases, and Mordred edge-case handling varies by version.
 
-**Version management through naming.**{style="color: #00d4aa"} Deploy `smiles-to-taut-md-stereo-v2` alongside `v1`, and let downstream models pin whichever version they were trained against. When you improve the descriptor pipeline, existing models keep working with their original features while new models can use the updated set.
+**Version management through naming.** Deploy `smiles-to-taut-md-stereo-v2` alongside `v1`, and let downstream models pin whichever version they were trained against. When you improve the descriptor pipeline, existing models keep working with their original features while new models can use the updated set.
 
-**Any consumer can call it.**{style="color: #00d4aa"} A notebook, a training pipeline, an inference endpoint, a scheduled batch job, or an external drug discovery platform — anything that can make an HTTP request gets the same features. No need to install RDKit locally, manage conda environments, or worry about platform-specific compilation issues. A simple `requests.post()` call with a CSV payload is all it takes.
+**Any consumer can call it.** A notebook, a training pipeline, an inference endpoint, a scheduled batch job, or an external drug discovery platform — anything that can make an HTTP request gets the same features. No need to install RDKit locally, manage conda environments, or worry about platform-specific compilation issues. A simple `requests.post()` call with a CSV payload is all it takes.
 
-**Scaling is handled by AWS.**{style="color: #00d4aa"} The endpoint can run serverless (cost-efficient for intermittent use) or on dedicated instances (higher throughput for batch processing). The 3D endpoint, which is compute-intensive (~1-2 molecules/second for conformer generation), benefits from this — you can scale up for a big batch run and scale back down without managing infrastructure.
+**Scaling is handled by AWS.** The endpoint can run serverless (cost-efficient for intermittent use) or on dedicated instances (higher throughput for batch processing). The 3D endpoint, which is compute-intensive (~1-2 molecules/second for conformer generation), benefits from this — you can scale up for a big batch run and scale back down without managing infrastructure.
 
-**Built on the Workbench endpoint stack.**{style="color: #00d4aa"} Feature endpoints run on the same [modern ASGI stack](aws_endpoint_architecture.md) as every other Workbench endpoint — Uvicorn and FastAPI instead of the default SageMaker Nginx/Gunicorn/Flask stack. They follow the same **DataFrame-in, DataFrame-out** contract: send a DataFrame with SMILES, get back a DataFrame with descriptors appended.
+**Built on the Workbench endpoint stack.** Feature endpoints run on the same [modern ASGI stack](aws_endpoint_architecture.md) as every other Workbench endpoint — Uvicorn and FastAPI instead of the default SageMaker Nginx/Gunicorn/Flask stack. They follow the same **DataFrame-in, DataFrame-out** contract: send a DataFrame with SMILES, get back a DataFrame with descriptors appended.
 
 ## Integration with Drug Discovery Platforms
 !!! tip inline end "Just an HTTP Call"
@@ -141,11 +141,11 @@ Databricks (Unity Catalog) and Tecton (On-Demand Feature Views) let you register
     </tr>
   </thead>
   <tbody>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Pre-computed Feature Store</td><td style="padding: 8px 16px;">✅ Same store</td><td style="padding: 8px 16px;">❌ Batch only</td><td style="padding: 8px 16px;">❌ Varies</td><td style="padding: 8px 16px;">✅ Any consumer</td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Platform UDFs (Databricks/Tecton)</td><td style="padding: 8px 16px;">✅ Same function</td><td style="padding: 8px 16px;">✅ At request time</td><td style="padding: 8px 16px;">⚠️ Platform-managed</td><td style="padding: 8px 16px;">⚠️ Within platform</td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Inference Pipeline</td><td style="padding: 8px 16px;">✅ Same container</td><td style="padding: 8px 16px;">✅ At request time</td><td style="padding: 8px 16px;">✅ Container-level</td><td style="padding: 8px 16px;">❌ Per model</td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Open-Source (Feast/Hopsworks)</td><td style="padding: 8px 16px;">✅ Same transform</td><td style="padding: 8px 16px;">✅ At request time</td><td style="padding: 8px 16px;">⚠️ Sidecar/UDF</td><td style="padding: 8px 16px;">✅ Any consumer</td></tr>
-    <tr><td style="padding: 8px 16px; color: #00d4aa; font-weight: bold;">Workbench Feature Endpoint</td><td style="padding: 8px 16px;">✅ Same endpoint</td><td style="padding: 8px 16px;">✅ At request time</td><td style="padding: 8px 16px;">✅ Container-level</td><td style="padding: 8px 16px;">✅ Any consumer</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Pre-computed Feature Store</td><td style="padding: 8px 16px;">✅ Same store</td><td style="padding: 8px 16px;">❌ Batch only</td><td style="padding: 8px 16px;">❌ Varies</td><td style="padding: 8px 16px;">✅ Any consumer</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Platform UDFs (Databricks/Tecton)</td><td style="padding: 8px 16px;">✅ Same function</td><td style="padding: 8px 16px;">✅ At request time</td><td style="padding: 8px 16px;">⚠️ Platform-managed</td><td style="padding: 8px 16px;">⚠️ Within platform</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Inference Pipeline</td><td style="padding: 8px 16px;">✅ Same container</td><td style="padding: 8px 16px;">✅ At request time</td><td style="padding: 8px 16px;">✅ Container-level</td><td style="padding: 8px 16px;">❌ Per model</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Open-Source (Feast/Hopsworks)</td><td style="padding: 8px 16px;">✅ Same transform</td><td style="padding: 8px 16px;">✅ At request time</td><td style="padding: 8px 16px;">⚠️ Sidecar/UDF</td><td style="padding: 8px 16px;">✅ Any consumer</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Workbench Feature Endpoint</td><td style="padding: 8px 16px;">✅ Same endpoint</td><td style="padding: 8px 16px;">✅ At request time</td><td style="padding: 8px 16px;">✅ Container-level</td><td style="padding: 8px 16px;">✅ Any consumer</td></tr>
   </tbody>
 </table>
 

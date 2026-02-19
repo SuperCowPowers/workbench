@@ -25,13 +25,13 @@ ChemProp's default v2 featurizers encode each atom as a **72-bit vector** and ea
     </tr>
   </thead>
   <tbody>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Atom type</td><td style="padding: 8px 16px;"><code>atom=C</code>, <code>atom=N</code>, <code>atom=O</code>, <code>atom=S</code>, <code>atom=Cl</code>, <code>atom=F</code></td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Degree</td><td style="padding: 8px 16px;"><code>degree=1</code>, <code>degree=2</code>, <code>degree=3</code>, <code>degree=4</code></td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Hybridization</td><td style="padding: 8px 16px;"><code>hybrid=SP</code>, <code>hybrid=SP2</code>, <code>hybrid=SP3</code></td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Hydrogen count</td><td style="padding: 8px 16px;"><code>num_Hs=0</code>, <code>num_Hs=1</code>, <code>num_Hs=2</code>, <code>num_Hs=3</code></td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Bond type</td><td style="padding: 8px 16px;"><code>bond=SINGLE</code>, <code>bond=DOUBLE</code>, <code>bond=AROMATIC</code></td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Ring/conjugation</td><td style="padding: 8px 16px;"><code>is_aromatic</code>, <code>is_in_ring</code>, <code>is_conjugated</code></td></tr>
-    <tr><td style="padding: 8px 16px; color: #ff9f43; font-weight: bold;">Chirality</td><td style="padding: 8px 16px;"><code>chiral=CW</code>, <code>chiral=CCW</code></td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Atom type</td><td style="padding: 8px 16px;"><code>atom=C</code>, <code>atom=N</code>, <code>atom=O</code>, <code>atom=S</code>, <code>atom=Cl</code>, <code>atom=F</code></td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Degree</td><td style="padding: 8px 16px;"><code>degree=1</code>, <code>degree=2</code>, <code>degree=3</code>, <code>degree=4</code></td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Hybridization</td><td style="padding: 8px 16px;"><code>hybrid=SP</code>, <code>hybrid=SP2</code>, <code>hybrid=SP3</code></td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Hydrogen count</td><td style="padding: 8px 16px;"><code>num_Hs=0</code>, <code>num_Hs=1</code>, <code>num_Hs=2</code>, <code>num_Hs=3</code></td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Bond type</td><td style="padding: 8px 16px;"><code>bond=SINGLE</code>, <code>bond=DOUBLE</code>, <code>bond=AROMATIC</code></td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Ring/conjugation</td><td style="padding: 8px 16px;"><code>is_aromatic</code>, <code>is_in_ring</code>, <code>is_conjugated</code></td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Chirality</td><td style="padding: 8px 16px;"><code>chiral=CW</code>, <code>chiral=CCW</code></td></tr>
   </tbody>
 </table>
 
