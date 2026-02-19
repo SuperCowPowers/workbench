@@ -403,7 +403,12 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Training loop
     # -------------------------------------------------------------------------
-    oof_predictions = np.full((len(all_df), n_outputs), np.nan, dtype=np.float64)
+    # Initialize out-of-fold storage
+    oof_predictions = np.full(len(all_df), np.nan, dtype=np.float64)
+    if model_type == "classifier":
+        oof_proba = np.full((len(all_df), n_outputs), np.nan, dtype=np.float64)
+    else:
+        oof_proba = None
 
     ensemble_models = []
     for fold_idx, (train_idx, val_idx) in enumerate(folds):
@@ -450,7 +455,11 @@ if __name__ == "__main__":
 
         # Out-of-fold predictions
         fold_preds = predict(model, val_x_cont, val_x_cat)
-        oof_predictions[val_idx] = fold_preds
+        if model_type == "classifier":
+            oof_proba[val_idx] = fold_preds
+            oof_predictions[val_idx] = np.argmax(fold_preds, axis=1)
+        else:
+            oof_predictions[val_idx] = fold_preds.flatten()
 
     print(f"\nTraining complete! Trained {len(ensemble_models)} model(s).")
 
@@ -458,22 +467,26 @@ if __name__ == "__main__":
     # Prepare validation results
     # -------------------------------------------------------------------------
     if n_folds == 1:
-        val_mask = ~np.isnan(oof_predictions[:, 0])
+        # Single fold: only validation rows
+        val_mask = ~np.isnan(oof_predictions)
         df_val = all_df[val_mask].copy()
         predictions = oof_predictions[val_mask]
+        if oof_proba is not None:
+            oof_proba = oof_proba[val_mask]
     else:
+        # K-fold: all rows have out-of-fold predictions
         df_val = all_df.copy()
         predictions = oof_predictions
 
     # Decode labels for classification
     if model_type == "classifier":
-        class_preds = np.argmax(predictions, axis=1)
         df_val[target] = label_encoder.inverse_transform(df_val[target].astype(int))
-        df_val["prediction"] = label_encoder.inverse_transform(class_preds)
-        df_val["pred_proba"] = [p.tolist() for p in predictions]
-        df_val = expand_proba_column(df_val, label_encoder.classes_)
+        df_val["prediction"] = label_encoder.inverse_transform(predictions.astype(int))
+        if oof_proba is not None:
+            df_val["pred_proba"] = [p.tolist() for p in oof_proba]
+            df_val = expand_proba_column(df_val, label_encoder.classes_)
     else:
-        df_val["prediction"] = predictions.flatten()
+        df_val["prediction"] = predictions
 
     # -------------------------------------------------------------------------
     # Compute and print metrics
