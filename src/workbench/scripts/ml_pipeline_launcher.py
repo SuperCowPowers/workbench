@@ -10,16 +10,71 @@ Usage:
     ml_pipeline_launcher --dt caco2 ppb          # Launch pipelines matching 'caco2' or 'ppb'
     ml_pipeline_launcher --promote --all         # Promote ALL pipelines
     ml_pipeline_launcher --test-promote --all    # Test-promote ALL pipelines
+    ml_pipeline_launcher --temporal-split --all  # Temporal split ALL pipelines
     ml_pipeline_launcher --dt --dry-run          # Show what would be launched without launching
 """
 
 import argparse
 import ast
+import json
 import random
 import re
 import subprocess
 import time
 from pathlib import Path
+
+import yaml
+
+
+FRAMEWORKS_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)-\d+$")
+
+
+def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
+    """Build PIPELINE_META JSON for a pipeline script.
+
+    Derives model_name and endpoint_name from the script filename and mode.
+    For promoted endpoints, the framework suffix (xgb, pytorch, etc.) is stripped.
+    """
+    from datetime import datetime
+
+    model_name_base = script_path.stem.replace("_", "-")
+    endpoint_name_base = FRAMEWORKS_RE.sub("", model_name_base)
+    today = datetime.now().strftime("%y%m%d")
+
+    if mode in ("dt", "temporal_split"):
+        model_name = f"{model_name_base}-dt"
+        endpoint_name = f"{model_name_base}-dt"
+    elif mode == "promote":
+        model_name = f"{model_name_base}-{today}"
+        endpoint_name = f"{endpoint_name_base}-1"
+    elif mode == "test_promote":
+        model_name = f"{model_name_base}-{today}"
+        endpoint_name = f"{endpoint_name_base}-1-test"
+    else:  # dev
+        model_name = f"{model_name_base}-{today}-test"
+        endpoint_name = f"{endpoint_name_base}-{today}-test"
+
+    return json.dumps({"mode": mode, "model_name": model_name, "endpoint_name": endpoint_name, "serverless": serverless})
+
+
+def load_pipelines_yaml(directory: Path) -> dict[str, list[Path]] | None:
+    """Load pipelines.yaml from a directory.
+
+    Args:
+        directory (Path): Directory to check for pipelines.yaml
+
+    Returns:
+        dict[str, list[Path]] | None: {chain_name: [script_paths]} or None if no yaml found
+    """
+    yaml_path = directory / "pipelines.yaml"
+    if not yaml_path.exists():
+        return None
+    with open(yaml_path) as f:
+        config = yaml.safe_load(f)
+    chains = {}
+    for chain_name, scripts in config.get("chains", {}).items():
+        chains[chain_name] = [directory / s for s in scripts]
+    return chains
 
 
 def parse_workbench_batch(script_path: Path) -> dict | None:
@@ -80,8 +135,11 @@ def get_group_id(config: dict | None, root_map: dict[str, str]) -> str | None:
     return None
 
 
-def sort_by_dependencies(pipelines: list[Path]) -> tuple[list[Path], dict[Path, dict], dict[str, str]]:
-    """Sort pipelines by dependency chains. Returns (sorted_list, configs, root_map)."""
+def _sort_by_workbench_batch(pipelines: list[Path]) -> tuple[list[Path], dict[Path, dict], dict[str, str]]:
+    """Sort pipelines by WORKBENCH_BATCH dependency chains (legacy fallback).
+
+    Returns (sorted_list, configs, root_map).
+    """
     # Parse all configs
     configs = {}
     for pipeline in pipelines:
@@ -147,8 +205,8 @@ def sort_by_dependencies(pipelines: list[Path]) -> tuple[list[Path], dict[Path, 
     return sorted_pipelines, configs, root_map
 
 
-def format_dependency_chains(pipelines: list[Path], configs: dict[Path, dict]) -> list[str]:
-    """Format pipelines as dependency chains for display."""
+def _format_workbench_batch_chains(pipelines: list[Path], configs: dict[Path, dict]) -> list[str]:
+    """Format pipelines as dependency chains for display (legacy fallback)."""
     # Build output -> pipeline mapping
     output_to_pipeline = {}
     for pipeline, config in configs.items():
@@ -213,15 +271,88 @@ def format_dependency_chains(pipelines: list[Path], configs: dict[Path, dict]) -
     return lines
 
 
-def get_all_pipelines() -> list[Path]:
-    """Get all ML pipeline scripts from subdirectories of current working directory."""
+def sort_pipelines(
+    pipelines: list[Path], all_chains: dict[str, list[Path]]
+) -> tuple[list[Path], dict[Path, str | None], list[str]]:
+    """Sort pipelines by dependency chains.
+
+    Uses yaml chains when available, falls back to WORKBENCH_BATCH parsing for
+    pipelines not covered by any yaml chain.
+
+    Args:
+        pipelines (list[Path]): Pipelines to sort
+        all_chains (dict[str, list[Path]]): Chain definitions from pipelines.yaml files
+
+    Returns:
+        tuple: (sorted_pipelines, group_id_map, chain_lines)
+            - sorted_pipelines: Pipelines ordered by dependency chains
+            - group_id_map: {pipeline_path: sqs_message_group_id}
+            - chain_lines: Formatted display lines (e.g., "   xgb --> pytorch --> chemprop")
+    """
+    pipeline_set = set(pipelines)
+    sorted_pipelines = []
+    group_id_map = {}
+    chain_lines = []
+    used = set()
+
+    # First: process pipelines that are in yaml chains
+    for chain_name, chain_scripts in all_chains.items():
+        # Only include scripts that are in the selected pipelines
+        selected_chain = [s for s in chain_scripts if s in pipeline_set]
+        if selected_chain:
+            chain_lines.append("   " + " --> ".join(s.stem for s in selected_chain))
+            for script in selected_chain:
+                sorted_pipelines.append(script)
+                group_id_map[script] = chain_name
+                used.add(script)
+
+    # Second: process remaining pipelines via WORKBENCH_BATCH fallback
+    remaining = [p for p in pipelines if p not in used]
+    if remaining:
+        sorted_remaining, configs, root_map = _sort_by_workbench_batch(remaining)
+        for line in _format_workbench_batch_chains(sorted_remaining, configs):
+            chain_lines.append(line)
+        for pipeline in sorted_remaining:
+            sorted_pipelines.append(pipeline)
+            group_id_map[pipeline] = get_group_id(configs.get(pipeline), root_map)
+
+    return sorted_pipelines, group_id_map, chain_lines
+
+
+def get_all_pipelines() -> tuple[list[Path], dict[str, list[Path]]]:
+    """Get all ML pipeline scripts from subdirectories of current working directory.
+
+    For directories with pipelines.yaml, only listed scripts are included.
+    For directories without, falls back to discovering all .py files.
+
+    Returns:
+        tuple: (pipelines, all_chains)
+            - pipelines: List of all pipeline script paths
+            - all_chains: {chain_name: [script_paths]} from yaml files
+    """
     cwd = Path.cwd()
-    # Find all .py files in subdirectories (not in cwd itself)
     pipelines = []
+    all_chains = {}
+    yaml_managed_dirs = set()
+
+    # First pass: find all pipelines.yaml files recursively
+    for yaml_path in cwd.rglob("pipelines.yaml"):
+        directory = yaml_path.parent
+        yaml_chains = load_pipelines_yaml(directory)
+        if yaml_chains:
+            yaml_managed_dirs.add(directory)
+            all_chains.update(yaml_chains)
+            for chain_scripts in yaml_chains.values():
+                pipelines.extend(chain_scripts)
+
+    # Second pass: find .py files in directories NOT managed by yaml
     for subdir in cwd.iterdir():
         if subdir.is_dir():
-            pipelines.extend(subdir.rglob("*.py"))
-    return pipelines
+            for py_file in subdir.rglob("*.py"):
+                if py_file.parent not in yaml_managed_dirs:
+                    pipelines.append(py_file)
+
+    return pipelines, all_chains
 
 
 def get_pipeline_groups(pipelines: list[Path]) -> dict[Path, list[Path]]:
@@ -310,11 +441,16 @@ def main():
         action="store_true",
         help="Launch with TEST_PROMOTE=True (test promotion mode)",
     )
+    mode_group.add_argument(
+        "--temporal-split",
+        action="store_true",
+        help="Launch with temporal split evaluation mode",
+    )
 
     args = parser.parse_args()
 
-    # Get all pipelines from subdirectories of current working directory
-    all_pipelines = get_all_pipelines()
+    # Get all pipelines and chain definitions from subdirectories
+    all_pipelines, all_chains = get_all_pipelines()
     if not all_pipelines:
         print(f"No pipeline scripts found in subdirectories of {Path.cwd()}")
         exit(1)
@@ -343,7 +479,7 @@ def main():
         selection_mode = f"RANDOM {args.num_groups} group(s): {group_names}"
 
     # Sort by dependencies (producers before consumers)
-    selected_pipelines, configs, root_map = sort_by_dependencies(selected_pipelines)
+    selected_pipelines, group_id_map, chain_lines = sort_pipelines(selected_pipelines, all_chains)
 
     # Determine mode for display and CLI flag
     if args.dt:
@@ -352,9 +488,16 @@ def main():
     elif args.promote:
         mode_name = "PROMOTE"
         mode_flag = "--promote"
+    elif args.temporal_split:
+        mode_name = "TEMPORAL_SPLIT"
+        mode_flag = "--temporal-split"
     else:
         mode_name = "TEST_PROMOTE"
         mode_flag = "--test-promote"
+
+    # Determine pipeline mode
+    mode_map = {"dt": args.dt, "promote": args.promote, "test_promote": args.test_promote, "temporal_split": args.temporal_split}
+    pipeline_mode = next((mode for mode, flag in mode_map.items() if flag), "dev")
 
     print(f"\n{'=' * 60}")
     print(f"{'DRY RUN - ' if args.dry_run else ''}LAUNCHING {len(selected_pipelines)} PIPELINES")
@@ -364,7 +507,7 @@ def main():
     print(f"Mode: {mode_name}")
     print(f"Endpoint: {'Realtime' if args.realtime else 'Serverless'}")
     print("\nPipeline Chains:")
-    for line in format_dependency_chains(selected_pipelines, configs):
+    for line in chain_lines:
         print(line)
     print()
 
@@ -386,13 +529,17 @@ def main():
         print(f"Launching pipeline {i}/{len(selected_pipelines)}: {pipeline.name}")
         print(f"{'─' * 60}")
 
+        # Build per-script PIPELINE_META with resolved names
+        pipeline_meta = build_pipeline_meta(pipeline, pipeline_mode, not args.realtime)
+
         # Build the command
         cmd = ["ml_pipeline_sqs", str(pipeline), mode_flag]
         if args.realtime:
             cmd.append("--realtime")
+        cmd.extend(["--pipeline-meta", pipeline_meta])
 
-        # Pass root group_id for dependency chain ordering
-        group_id = get_group_id(configs.get(pipeline), root_map)
+        # Pass group_id for dependency chain ordering (from yaml chain name or WORKBENCH_BATCH root)
+        group_id = group_id_map.get(pipeline)
         if group_id:
             cmd.extend(["--group-id", group_id])
 

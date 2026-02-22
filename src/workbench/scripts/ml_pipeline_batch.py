@@ -51,6 +51,8 @@ def run_batch_job(
     dt: bool = False,
     promote: bool = False,
     test_promote: bool = False,
+    temporal_split: bool = False,
+    pipeline_meta: str | None = None,
 ) -> int:
     """
     Submit and monitor an AWS Batch job for ML pipeline execution.
@@ -67,6 +69,8 @@ def run_batch_job(
         dt: If True, sets DT=True in environment (default: False)
         promote: If True, sets PROMOTE=True in environment (default: False)
         test_promote: If True, sets TEST_PROMOTE=True in environment (default: False)
+        temporal_split: If True, sets TEMPORAL_SPLIT=True in environment (default: False)
+        pipeline_meta: Optional JSON string for PIPELINE_META environment variable
 
     Returns:
         Exit code (0 for success/disconnected, non-zero for failure)
@@ -96,7 +100,9 @@ def run_batch_job(
                 {"name": "DT", "value": str(dt)},
                 {"name": "PROMOTE", "value": str(promote)},
                 {"name": "TEST_PROMOTE", "value": str(test_promote)},
+                {"name": "TEMPORAL_SPLIT", "value": str(temporal_split)},
             ]
+            + ([{"name": "PIPELINE_META", "value": pipeline_meta}] if pipeline_meta else [])
         },
     )
     job_id = response["jobId"]
@@ -162,6 +168,16 @@ def main():
         action="store_true",
         help="Set TEST_PROMOTE=True (creates test endpoint with '-test' suffix)",
     )
+    parser.add_argument(
+        "--temporal-split",
+        action="store_true",
+        help="Set TEMPORAL_SPLIT=True (temporal split evaluation mode)",
+    )
+    parser.add_argument(
+        "--pipeline-meta",
+        default=None,
+        help="JSON string for PIPELINE_META environment variable",
+    )
     args = parser.parse_args()
     try:
         exit_code = run_batch_job(
@@ -171,6 +187,8 @@ def main():
             dt=args.dt,
             promote=args.promote,
             test_promote=args.test_promote,
+            temporal_split=args.temporal_split,
+            pipeline_meta=args.pipeline_meta,
         )
         exit(exit_code)
     except Exception as e:

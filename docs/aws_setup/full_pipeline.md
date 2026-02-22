@@ -30,7 +30,7 @@ cd workbench/application/aws_dashboard
 ```
 **This will open a browser to http://localhost:8000**
 
-<figure">
+<figure>
 <img alt="workbench_new_light" src="https://github.com/SuperCowPowers/workbench/assets/4806709/5f8b32a2-ed72-45f2-bd96-91b7bbbccff4">
 <figcaption>Workbench Dashboard: AWS Pipelines in a Whole New Light!</figcaption>
 </figure>

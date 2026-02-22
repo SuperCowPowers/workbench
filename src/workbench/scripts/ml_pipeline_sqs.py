@@ -72,7 +72,9 @@ def submit_to_sqs(
     dt: bool = False,
     promote: bool = False,
     test_promote: bool = False,
+    temporal_split: bool = False,
     group_id: str | None = None,
+    pipeline_meta: str | None = None,
 ) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
@@ -84,7 +86,9 @@ def submit_to_sqs(
         dt: If True, sets DT=True in environment (default: False)
         promote: If True, sets PROMOTE=True in environment (default: False)
         test_promote: If True, sets TEST_PROMOTE=True in environment (default: False)
+        temporal_split: If True, sets TEMPORAL_SPLIT=True in environment (default: False)
         group_id: Optional MessageGroupId override for dependency chains (default: derived from script)
+        pipeline_meta: Optional JSON string for PIPELINE_META environment variable
 
     Raises:
         ValueError: If size is invalid or script file not found
@@ -114,6 +118,9 @@ def submit_to_sqs(
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
     print(f"🧪  Test Promote: {test_promote}")
+    print(f"📅  Temporal Split: {temporal_split}")
+    if pipeline_meta:
+        print(f"📋  Pipeline Meta: {pipeline_meta}")
     print(f"🪣  Bucket: {workbench_bucket}")
     if outputs:
         print(f"📤  Outputs: {outputs}")
@@ -181,7 +188,10 @@ def submit_to_sqs(
         "DT": str(dt),
         "PROMOTE": str(promote),
         "TEST_PROMOTE": str(test_promote),
+        "TEMPORAL_SPLIT": str(temporal_split),
     }
+    if pipeline_meta:
+        message["environment"]["PIPELINE_META"] = pipeline_meta
 
     # Send the message to SQS
     try:
@@ -208,6 +218,7 @@ def submit_to_sqs(
     print(f"🔄  DynamicTraining: {dt}")
     print(f"🆕  Promote: {promote}")
     print(f"🧪  Test Promote: {test_promote}")
+    print(f"📅  Temporal Split: {temporal_split}")
     if outputs:
         print(f"📤  Outputs: {outputs}")
     if inputs:
@@ -250,6 +261,16 @@ def main():
         help="Set TEST_PROMOTE=True (creates test endpoint with '-test' suffix)",
     )
     parser.add_argument(
+        "--temporal-split",
+        action="store_true",
+        help="Set TEMPORAL_SPLIT=True (temporal split evaluation mode)",
+    )
+    parser.add_argument(
+        "--pipeline-meta",
+        default=None,
+        help="JSON string for PIPELINE_META environment variable",
+    )
+    parser.add_argument(
         "--group-id",
         default=None,
         help="Override MessageGroupId for SQS (used for dependency chain ordering)",
@@ -263,7 +284,9 @@ def main():
             dt=args.dt,
             promote=args.promote,
             test_promote=args.test_promote,
+            temporal_split=args.temporal_split,
             group_id=args.group_id,
+            pipeline_meta=args.pipeline_meta,
         )
     except Exception as e:
         print(f"\n❌  ERROR: {e}")
