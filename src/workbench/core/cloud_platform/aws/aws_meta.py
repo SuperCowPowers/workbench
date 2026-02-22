@@ -32,12 +32,6 @@ class AWSMeta:
         self.account_clamp = AWSAccountClamp()
         self.cm = ConfigManager()
 
-        # Parameter Store for Pipelines
-        from workbench.api.parameter_store import ParameterStore
-
-        self.pipeline_prefix = "/workbench/pipelines"
-        self.param_store = ParameterStore()
-
         # Storing the size of various metadata for tracking
         self.metadata_sizes = defaultdict(dict)
 
@@ -354,33 +348,6 @@ class AWSMeta:
             self.log.error(f"Error retrieving endpoint config {endpoint_config_name}: {e}")
             return {"instance": "-", "variant": "-"}
 
-    def pipelines(self) -> pd.DataFrame:
-        """List all the Pipelines in the S3 Bucket
-
-        Returns:
-            pd.DataFrame: A dataframe of Pipelines information
-        """
-        # List pipelines stored in the parameter store
-        pipeline_summaries = []
-        pipeline_list = self.param_store.list(self.pipeline_prefix)
-        for pipeline_name in pipeline_list:
-            pipeline_info = self.param_store.get(pipeline_name)
-
-            # Compile pipeline summary
-            summary = {
-                "Name": pipeline_name.replace(self.pipeline_prefix + "/", ""),
-                "Health": "",
-                "Num Stages": len(pipeline_info),
-                "Modified": datetime_string(datetime.now(timezone.utc)),
-                "Last Run": datetime_string(datetime.now(timezone.utc)),
-                "Status": "Success",  # pipeline_info.get("Status", "-"),
-                "Tags": pipeline_info.get("tags", "-"),
-            }
-            pipeline_summaries.append(summary)
-
-        # Return the summary as a DataFrame
-        return pd.DataFrame(pipeline_summaries).convert_dtypes()
-
     @not_found_returns_none
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Describe a single Glue ETL Job in AWS.
@@ -512,18 +479,6 @@ class AWSMeta:
         # Retrieve Workbench metadata from AWS tags
         endpoint_details["workbench_meta"] = self.get_aws_tags(endpoint_details["EndpointArn"])
         return endpoint_details
-
-    @not_found_returns_none
-    def pipeline(self, pipeline_name: str) -> Union[dict, None]:
-        """Describe a single Workbench Pipeline.
-
-        Args:
-            pipeline_name (str): The name of the pipeline to describe.
-
-        Returns:
-            dict: A detailed description of the pipeline (None if not found).
-        """
-        return self.param_store.get(f"{self.pipeline_prefix}/{pipeline_name}")
 
     # These are helper methods to construct the AWS URL for the Artifacts
     @staticmethod
@@ -793,14 +748,6 @@ if __name__ == "__main__":
     # Get the Endpoints with Details
     print("\n\n*** Endpoints with Details ***")
     pprint(meta.endpoints(details=True))
-
-    # List Pipelines
-    print("\n\n*** Workbench Pipelines ***")
-    pprint(meta.pipelines())
-
-    # Get one pipeline
-    print("\n\n*** Pipeline details ***")
-    pprint(meta.pipeline("abalone_pipeline_v1"))
 
     # Test out the specific artifact details methods
     print("\n\n*** Glue Job Details ***")

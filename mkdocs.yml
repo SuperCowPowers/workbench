@@ -15,7 +15,6 @@ nav:
     - Views: api_classes/views.md
     - Parameter Store: api_classes/parameter_store.md
     - DataFrame Store: api_classes/df_store.md
-    - Pipelines: api_classes/pipelines.md
     - Monitor: api_classes/monitor.md
   - Comparisons: 
     - Databricks: comparisons/workbench_vs_databricks.md

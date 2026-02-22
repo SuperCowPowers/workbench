@@ -29,7 +29,6 @@ class Meta(CloudMeta):
        meta.models(details=True/False)
        meta.endpoints(details=True/False)
        meta.views()
-       meta.pipelines()
 
        # These are 'describe' methods
        meta.data_source("abalone_data")
@@ -122,14 +121,6 @@ class Meta(CloudMeta):
             pd.DataFrame: A summary of the Endpoints in the Cloud Platform
         """
         return super().endpoints(details=details)
-
-    def pipelines(self) -> pd.DataFrame:
-        """Get a summary of the ML Pipelines deployed in the Cloud Platform
-
-        Returns:
-            pd.DataFrame: A summary of the Pipelines in the Cloud Platform
-        """
-        return super().pipelines()
 
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Get the details of a specific Glue Job
