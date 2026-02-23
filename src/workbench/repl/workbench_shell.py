@@ -299,7 +299,6 @@ class WorkbenchShell:
                 "workbench.core.views.inference_view"
             ).InferenceView
             self.commands["PandasToView"] = importlib.import_module("workbench.core.views.pandas_to_view").PandasToView
-            self.commands["Pipeline"] = importlib.import_module("workbench.api.pipeline").Pipeline
 
             # These are 'nice to have' imports
             self.commands["pd"] = importlib.import_module("pandas")

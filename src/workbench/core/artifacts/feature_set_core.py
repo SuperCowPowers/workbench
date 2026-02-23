@@ -484,113 +484,37 @@ class FeatureSetCore(Artifact):
             time.sleep(1)
         cls.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
-    def get_training_holdouts(self) -> list[str]:
-        """Get the hold out ids for the training view for this FeatureSet
-
-        Returns:
-            list[str]: The list of holdout ids.
-        """
-
-        # Create a NEW training view
-        self.log.important("Getting Training Holdouts...")
-        table = self.view("training").table
-        hold_out_ids = self.query(f'SELECT {self.id_column} FROM "{table}" where training = FALSE')[
-            self.id_column
-        ].tolist()
-        return hold_out_ids
-
-    # ---- Public methods for training configuration ----
-    def set_training_config(
-        self,
-        holdout_ids: List[Union[str, int]] = None,
-        weight_dict: Dict[Union[str, int], float] = None,
-        default_weight: float = 1.0,
-        exclude_zero_weights: bool = True,
-    ):
-        """Configure training view with holdout IDs and/or sample weights.
-
-        This method creates a training view that can include both:
-        - A 'training' column (True/False) based on holdout IDs
-        - A 'sample_weight' column for weighted training
+    def temporal_split(self, date_column: str, holdout_percent: float = 10.0) -> list:
+        """Compute a temporal split, returning IDs for the most recent holdout rows.
 
         Args:
-            holdout_ids: List of IDs to mark as training=False (validation/holdout set)
-            weight_dict: Mapping of ID to sample weight
-                - weight > 1.0: oversample/emphasize
-                - weight = 1.0: normal (default)
-                - 0 < weight < 1.0: downweight/de-emphasize
-                - weight = 0.0: exclude from training (filtered out if exclude_zero_weights=True)
-            default_weight: Weight for IDs not in weight_dict (default: 1.0)
-            exclude_zero_weights: If True, filter out rows with sample_weight=0 (default: True)
+            date_column (str): The name of the date/datetime column to split on.
+            holdout_percent (float): Percentage of rows to hold out (default: 10.0).
 
-        Example:
-            # Temporal split with sample weights
-            fs.set_training_config(
-                holdout_ids=temporal_hold_out_ids,  # IDs after cutoff date
-                weight_dict={'compound_42': 0.0, 'compound_99': 2.0},  # exclude/upweight
-            )
+        Returns:
+            list: List of IDs in the holdout set (most recent rows).
         """
-        from workbench.core.views.training_view import TrainingView
 
-        # If neither is provided, create a standard training view
-        if not holdout_ids and not weight_dict:
-            self.log.important("No holdouts or weights specified, creating standard training view")
-            TrainingView.create(self, id_column=self.id_column)
-            return
+        # Validate the date column
+        if date_column not in self.columns:
+            self.log.error(f"Date column '{date_column}' not found in columns: {self.columns}")
+            return []
 
-        # If only holdout_ids, delegate to set_training_holdouts
-        if holdout_ids and not weight_dict:
-            self.set_training_holdouts(holdout_ids)
-            return
+        # Pull the data and convert the date column to datetime
+        df = self.query(f'SELECT {self.id_column}, {date_column} FROM "{self.athena_table}"')
+        df[date_column] = pd.to_datetime(df[date_column], errors="coerce")
 
-        # If only weight_dict, delegate to set_sample_weights
-        if weight_dict and not holdout_ids:
-            self.set_sample_weights(weight_dict, default_weight, exclude_zero_weights)
-            return
+        # Compute the cutoff date based on the holdout percentage
+        cutoff_date = df[date_column].quantile(1.0 - holdout_percent / 100.0)
+        self.log.important(f"Temporal Split: {holdout_percent}% holdout, cutoff date: {cutoff_date}")
 
-        # Both holdout_ids and weight_dict provided - build combined view
-        self.log.important(f"Setting training config: {len(holdout_ids)} holdouts, {len(weight_dict)} weights")
+        # Get the holdout IDs (rows after the cutoff date)
+        holdout_ids = df[df[date_column] > cutoff_date][self.id_column].tolist()
+        self.log.important(f"Temporal Split: {len(holdout_ids)} holdout IDs")
 
-        # Get column list (excluding AWS-generated columns)
-        from workbench.core.views.view_utils import get_column_list
-
-        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        source_columns = get_column_list(self.data_source, self.table)
-        column_list = [col for col in source_columns if col not in aws_cols]
-
-        # Build the training column CASE statement
-        training_case = self._build_holdout_case(holdout_ids)
-
-        # For large weight_dict, use supplemental table + JOIN
-        if len(weight_dict) >= 100:
-            self.log.info("Using supplemental table approach for large weight_dict")
-            weights_table = self._create_weights_table(weight_dict)
-
-            # Build column selection with table alias
-            sql_columns = ", ".join([f't."{col}"' for col in column_list])
-
-            # Build JOIN query with training CASE and weight from joined table
-            training_case_aliased = training_case.replace(f"WHEN {self.id_column} IN", f"WHEN t.{self.id_column} IN")
-            inner_sql = f"""SELECT {sql_columns}, {training_case_aliased},
-                COALESCE(w.sample_weight, {default_weight}) AS sample_weight
-                FROM {self.table} t
-                LEFT JOIN {weights_table} w ON t.{self.id_column} = w.{self.id_column}"""
-        else:
-            # For small weight_dict, use CASE statement
-            sql_columns = ", ".join([f'"{column}"' for column in column_list])
-            weight_case = self._build_weight_case(weight_dict, default_weight)
-            inner_sql = f"SELECT {sql_columns}, {training_case}, {weight_case} FROM {self.table}"
-
-        # Optionally filter out zero weights
-        if exclude_zero_weights:
-            zero_count = sum(1 for w in weight_dict.values() if w == 0.0)
-            if zero_count:
-                self.log.important(f"Filtering out {zero_count} rows with sample_weight = 0")
-            sql_query = f"SELECT * FROM ({inner_sql}) WHERE sample_weight > 0"
-        else:
-            sql_query = inner_sql
-
-        self._create_training_view(sql_query)
+        # Set sample weights to 0 for holdout IDs
+        self.set_sample_weights({id: 0.0 for id in holdout_ids})
+        return holdout_ids
 
     def set_training_holdouts(self, holdout_ids: list[str]):
         """Set the hold out ids for the training view for this FeatureSet
@@ -602,6 +526,21 @@ class FeatureSetCore(Artifact):
 
         self.log.important(f"Setting Training Holdouts: {len(holdout_ids)} ids...")
         TrainingView.create(self, id_column=self.id_column, holdout_ids=holdout_ids)
+
+    def get_training_holdouts(self) -> list[str]:
+        """Get the hold out ids for the training view for this FeatureSet
+
+        Returns:
+            list[str]: The list of holdout ids.
+        """
+
+        # Grab the holdouts from the training view
+        self.log.important("Getting Training Holdouts...")
+        table = self.view("training").table
+        hold_out_ids = self.query(f'SELECT {self.id_column} FROM "{table}" where training = FALSE')[
+            self.id_column
+        ].tolist()
+        return hold_out_ids
 
     def set_sample_weights(
         self,
@@ -673,17 +612,6 @@ class FeatureSetCore(Artifact):
         """Format an ID value for use in SQL."""
         return repr(id_val)
 
-    def _build_holdout_case(self, holdout_ids: List[Union[str, int]]) -> str:
-        """Build SQL CASE statement for training column based on holdout IDs."""
-        if all(isinstance(id_val, str) for id_val in holdout_ids):
-            formatted_ids = ", ".join(f"'{id_val}'" for id_val in holdout_ids)
-        else:
-            formatted_ids = ", ".join(map(str, holdout_ids))
-        return f"""CASE
-            WHEN {self.id_column} IN ({formatted_ids}) THEN False
-            ELSE True
-        END AS training"""
-
     def _build_weight_case(self, weight_dict: Dict[Union[str, int], float], default_weight: float) -> str:
         """Build SQL CASE statement for sample_weight column."""
         conditions = [
@@ -695,12 +623,6 @@ class FeatureSetCore(Artifact):
             {case_body}
             ELSE {default_weight}
         END AS sample_weight"""
-
-    def _create_training_view(self, sql_query: str):
-        """Create the training view directly from a SQL query."""
-        view_table = f"{self.table}___training"
-        create_view_query = f"CREATE OR REPLACE VIEW {view_table} AS\n{sql_query}"
-        self.data_source.execute_statement(create_view_query)
 
     def _create_weights_table(self, weight_dict: Dict[Union[str, int], float]) -> str:
         """Store sample weights as a supplemental data table.
@@ -955,55 +877,6 @@ if __name__ == "__main__":
     # Verify zero-weight row was excluded
     assert sample_ids[0] not in training_df["auto_id"].values, "Zero-weight ID should be excluded!"
     print("set_sample_weights test passed!")
-
-    # Test set_training_config with both holdouts and weights
-    print("\n--- Testing set_training_config (combined) ---")
-    holdout_ids = [id for id in df["auto_id"] if id >= 100 and id < 120]
-    weight_dict = {sample_ids[3]: 0.0, sample_ids[4]: 3.0}  # exclude one, upweight another
-    my_features.set_training_config(holdout_ids=holdout_ids, weight_dict=weight_dict)
-    training_view = my_features.view("training")
-    training_df = training_view.pull_dataframe()
-    print(f"Training view shape after set_training_config: {training_df.shape}")
-    print(f"Columns: {training_df.columns.tolist()}")
-    assert "sample_weight" in training_df.columns, "sample_weight column missing!"
-    assert "training" in training_df.columns, "training column missing!"
-    # Verify holdout IDs are marked as training=False
-    holdout_rows = training_df[training_df["auto_id"].isin(holdout_ids)]
-    assert all(holdout_rows["training"] == False), "Holdout IDs should have training=False!"  # noqa: E712
-    # Verify zero-weight row was excluded
-    assert sample_ids[3] not in training_df["auto_id"].values, "Zero-weight ID should be excluded!"
-    # Verify upweighted row has correct weight
-    upweight_row = training_df[training_df["auto_id"] == sample_ids[4]]
-    assert upweight_row["sample_weight"].iloc[0] == 3.0, "Upweighted ID should have weight=3.0!"
-    print("set_training_config (combined) test passed!")
-
-    # Test set_training_config with only holdouts (should delegate to set_training_holdouts)
-    print("\n--- Testing set_training_config (holdouts only) ---")
-    my_features.set_training_config(holdout_ids=holdout_ids)
-    training_view = my_features.view("training")
-    training_df = training_view.pull_dataframe()
-    assert "training" in training_df.columns, "training column missing!"
-    holdout_rows = training_df[training_df["auto_id"].isin(holdout_ids)]
-    assert all(holdout_rows["training"] == False), "Holdout IDs should have training=False!"  # noqa: E712
-    print("set_training_config (holdouts only) test passed!")
-
-    # Test set_training_config with only weights (should delegate to set_sample_weights)
-    print("\n--- Testing set_training_config (weights only) ---")
-    my_features.set_training_config(weight_dict={sample_ids[0]: 0.5, sample_ids[1]: 2.0})
-    training_view = my_features.view("training")
-    training_df = training_view.pull_dataframe()
-    assert "sample_weight" in training_df.columns, "sample_weight column missing!"
-    print("set_training_config (weights only) test passed!")
-
-    # Test set_training_config with neither (should create standard training view)
-    print("\n--- Testing set_training_config (neither) ---")
-    my_features.set_training_config()
-    training_view = my_features.view("training")
-    training_df = training_view.pull_dataframe()
-    assert "training" in training_df.columns, "training column missing!"
-    print("set_training_config (neither) test passed!")
-
-    print("\n=== All training config tests passed! ===")
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print("Deleting Workbench Feature Set...")
