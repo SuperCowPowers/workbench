@@ -569,8 +569,7 @@ class FeatureSetCore(Artifact):
             fs.set_sample_weights(weights, exclude_zero_weights=False)  # keep zeros
 
         Note:
-            For large weight_dict (100+ entries), weights are stored as a supplemental
-            table and joined to avoid Athena query size limits.
+            Weights are stored as a supplemental table and joined to the training view.
         """
         from workbench.core.views import TrainingView
 
@@ -580,20 +579,12 @@ class FeatureSetCore(Artifact):
             return
 
         self.log.important(f"Setting sample weights for {len(weight_dict)} IDs")
+        weights_table = self._create_weights_table(weight_dict)
 
-        # For large weight_dict, use supplemental table + JOIN to avoid query size limits
-        if len(weight_dict) >= 100:
-            self.log.info("Using supplemental table approach for large weight_dict")
-            weights_table = self._create_weights_table(weight_dict)
-
-            # Build JOIN query with COALESCE for default weight
-            inner_sql = f"""SELECT t.*, COALESCE(w.sample_weight, {default_weight}) AS sample_weight
-                FROM {self.table} t
-                LEFT JOIN {weights_table} w ON t.{self.id_column} = w.{self.id_column}"""
-        else:
-            # For small weight_dict, use CASE statement (simpler, no extra table)
-            weight_case = self._build_weight_case(weight_dict, default_weight)
-            inner_sql = f"SELECT *, {weight_case} FROM {self.table}"
+        # Build JOIN query with COALESCE for default weight
+        inner_sql = f"""SELECT t.*, COALESCE(w.sample_weight, {default_weight}) AS sample_weight
+            FROM {self.table} t
+            LEFT JOIN {weights_table} w ON t.{self.id_column} = w.{self.id_column}"""
 
         # Optionally filter out zero weights
         if exclude_zero_weights:
@@ -605,24 +596,6 @@ class FeatureSetCore(Artifact):
             sql_query = inner_sql
 
         TrainingView.create_with_sql(self, sql_query=sql_query, id_column=self.id_column)
-
-    # ---- Internal helpers for training view SQL generation ----
-    @staticmethod
-    def _format_id_for_sql(id_val: Union[str, int]) -> str:
-        """Format an ID value for use in SQL."""
-        return repr(id_val)
-
-    def _build_weight_case(self, weight_dict: Dict[Union[str, int], float], default_weight: float) -> str:
-        """Build SQL CASE statement for sample_weight column."""
-        conditions = [
-            f"WHEN {self.id_column} = {self._format_id_for_sql(id_val)} THEN {weight}"
-            for id_val, weight in weight_dict.items()
-        ]
-        case_body = "\n            ".join(conditions)
-        return f"""CASE
-            {case_body}
-            ELSE {default_weight}
-        END AS sample_weight"""
 
     def _create_weights_table(self, weight_dict: Dict[Union[str, int], float]) -> str:
         """Store sample weights as a supplemental data table.
