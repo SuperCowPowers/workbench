@@ -8,7 +8,6 @@ from typing import Union
 import pandas as pd
 import awswrangler as wr
 from collections import defaultdict
-from datetime import datetime, timezone
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp

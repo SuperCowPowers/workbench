@@ -96,10 +96,12 @@ class TestSortPipelines:
         script_a = tmp_path / "a.py"
         script_b = tmp_path / "b.py"
 
-        all_dags = {"my_dag": [
-            {script_a: ["dt"]},
-            {script_b: ["dt", "ts"]},
-        ]}
+        all_dags = {
+            "my_dag": [
+                {script_a: ["dt"]},
+                {script_b: ["dt", "ts"]},
+            ]
+        }
         pipelines = [script_a, script_b]
 
         sorted_runs, group_id_map, dag_lines = sort_pipelines(pipelines, all_dags)
@@ -119,10 +121,12 @@ class TestSortPipelines:
         script_a = tmp_path / "a.py"
         script_b = tmp_path / "b.py"
 
-        all_dags = {"my_dag": [
-            {script_a: ["dt"]},
-            {script_b: ["dt", "ts"]},
-        ]}
+        all_dags = {
+            "my_dag": [
+                {script_a: ["dt"]},
+                {script_b: ["dt", "ts"]},
+            ]
+        }
         pipelines = [script_a, script_b]
 
         sorted_runs, group_id_map, dag_lines = sort_pipelines(pipelines, all_dags, mode_override="promote")
@@ -157,10 +161,12 @@ class TestSortPipelines:
         script_b = tmp_path / "pytorch.py"
         script_c = tmp_path / "chemprop.py"
 
-        all_dags = {"my_dag": [
-            {script_a: ["dt"]},
-            {script_b: ["dt", "ts"], script_c: ["dt"]},
-        ]}
+        all_dags = {
+            "my_dag": [
+                {script_a: ["dt"]},
+                {script_b: ["dt", "ts"], script_c: ["dt"]},
+            ]
+        }
         pipelines = [script_a, script_b, script_c]
 
         _, _, dag_lines = sort_pipelines(pipelines, all_dags)
@@ -176,10 +182,12 @@ class TestSortPipelines:
         script_b = tmp_path / "b.py"
         script_c = tmp_path / "c.py"
 
-        all_dags = {"my_dag": [
-            {script_a: ["dt"]},
-            {script_b: ["dt"], script_c: ["dt"]},
-        ]}
+        all_dags = {
+            "my_dag": [
+                {script_a: ["dt"]},
+                {script_b: ["dt"], script_c: ["dt"]},
+            ]
+        }
         # Only select a subset
         pipelines = [script_a, script_b]
 
@@ -294,9 +302,7 @@ class TestGetAllPipelines:
         (leaf / "script_a.py").write_text("# a\n")
         (leaf / "script_b.py").write_text("# b\n")
         (leaf / "excluded.py").write_text("# should not appear\n")
-        (leaf / "pipelines.yaml").write_text(
-            "dags:\n  my_dag:\n    - script_a.py: [dt]\n    - script_b.py: [dt]\n"
-        )
+        (leaf / "pipelines.yaml").write_text("dags:\n  my_dag:\n    - script_a.py: [dt]\n    - script_b.py: [dt]\n")
 
         with patch("os.getcwd", return_value=str(tmp_path)):
             os.chdir(tmp_path)
@@ -314,15 +320,11 @@ class TestGetAllPipelines:
         yaml_dir.mkdir(parents=True)
         (yaml_dir / "included.py").write_text("# in yaml\n")
         (yaml_dir / "excluded.py").write_text("# not in yaml\n")
-        (yaml_dir / "pipelines.yaml").write_text(
-            "dags:\n  dag_a:\n    - included.py: [dt]\n"
-        )
+        (yaml_dir / "pipelines.yaml").write_text("dags:\n  dag_a:\n    - included.py: [dt]\n")
 
         no_yaml_dir = tmp_path / "project" / "assay_b"
         no_yaml_dir.mkdir(parents=True)
-        (no_yaml_dir / "legacy_script.py").write_text(
-            'WORKBENCH_BATCH = {"outputs": ["legacy-out"]}\n'
-        )
+        (no_yaml_dir / "legacy_script.py").write_text('WORKBENCH_BATCH = {"outputs": ["legacy-out"]}\n')
 
         os.chdir(tmp_path)
         pipelines, all_dags = get_all_pipelines()

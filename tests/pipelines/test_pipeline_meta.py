@@ -156,6 +156,7 @@ class TestPipelineMetaOwner:
             pm.set_owner("MB")
             assert pm.dynamic_owner() == "Pro-Test-MB"
 
+
 class TestPipelineMetaRepr:
     """Tests for PipelineMeta string representation."""
 

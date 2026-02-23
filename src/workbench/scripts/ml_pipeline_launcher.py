@@ -28,7 +28,6 @@ from pathlib import Path
 
 import yaml
 
-
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 
@@ -61,7 +60,7 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
     from datetime import datetime
 
     basename, version = parse_script_name(script_path)
-    basename_hyphen = basename.replace("_", "-")          # e.g., "ppb-human-free-reg-xgb"
+    basename_hyphen = basename.replace("_", "-")  # e.g., "ppb-human-free-reg-xgb"
     endpoint_base = FRAMEWORK_RE.sub("", basename_hyphen)  # e.g., "ppb-human-free-reg"
     today = datetime.now().strftime("%y%m%d")
 
@@ -77,7 +76,9 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
     else:
         raise RuntimeError(f"Unknown mode: {mode}")
 
-    return json.dumps({"mode": mode, "model_name": model_name, "endpoint_name": endpoint_name, "serverless": serverless})
+    return json.dumps(
+        {"mode": mode, "model_name": model_name, "endpoint_name": endpoint_name, "serverless": serverless}
+    )
 
 
 def load_pipelines_yaml(directory: Path) -> dict[str, list[dict[Path, list[str]]]] | None:

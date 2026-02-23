@@ -31,7 +31,8 @@ class PipelineMeta:
     Environment Variable:
         PIPELINE_META: JSON dict with pipeline configuration, e.g.:
         ```
-        PIPELINE_META='{"mode": "dt", "model_name": "my-model-dt", "endpoint_name": "my-endpoint-dt", "serverless": true}'
+        PIPELINE_META='{"mode": "dt", "model_name": "my-model-dt",
+                       "endpoint_name": "my-endpoint-dt", "serverless": true}'
         ```
     """
 
@@ -150,12 +151,14 @@ if __name__ == "__main__":
     """Exercise the PipelineMeta class"""
 
     # Set up PIPELINE_META env var
-    os.environ["PIPELINE_META"] = json.dumps({
-        "mode": "dt",
-        "model_name": "ppb-human-free-reg-xgb-1-dt",
-        "endpoint_name": "ppb-human-free-reg-xgb-1-dt",
-        "serverless": True,
-    })
+    os.environ["PIPELINE_META"] = json.dumps(
+        {
+            "mode": "dt",
+            "model_name": "ppb-human-free-reg-xgb-1-dt",
+            "endpoint_name": "ppb-human-free-reg-xgb-1-dt",
+            "serverless": True,
+        }
+    )
     pm = PipelineMeta()
     pm.set_owner("BW")
     print(f"PipelineMeta: {pm}")
