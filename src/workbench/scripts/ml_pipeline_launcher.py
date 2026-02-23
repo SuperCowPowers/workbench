@@ -31,6 +31,14 @@ import yaml
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 
+# Maps CLI arg name -> (mode_override, mode_flag for ml_pipeline_sqs)
+MODE_MAP = {
+    "dt": ("dt", "--dt"),
+    "promote": ("promote", "--promote"),
+    "test_promote": ("test_promote", "--test-promote"),
+    "temporal_split": ("temporal_split", "--temporal-split"),
+}
+
 
 def parse_script_name(script_path: Path) -> tuple[str, str]:
     """Parse a pipeline script filename into (basename, version).
@@ -128,17 +136,14 @@ def build_dependency_graph(configs: dict[Path, dict]) -> dict[str, str]:
     For a chain like A -> B -> C (where B depends on A, C depends on B),
     this returns {A: A, B: A, C: A} so all are in the same message group.
     """
-    # Build output -> input mapping (what does each output depend on?)
     output_to_input = {}
     for config in configs.values():
         if not config:
             continue
-        outputs = config.get("outputs", [])
-        inputs = config.get("inputs", [])
-        for output in outputs:
+        for output in config.get("outputs", []):
+            inputs = config.get("inputs", [])
             output_to_input[output] = inputs[0] if inputs else None
 
-    # Walk chain to find root
     def find_root(output: str, visited: set = None) -> str:
         if visited is None:
             visited = set()
@@ -146,9 +151,7 @@ def build_dependency_graph(configs: dict[Path, dict]) -> dict[str, str]:
             return output
         visited.add(output)
         parent = output_to_input.get(output)
-        if parent is None:
-            return output
-        return find_root(parent, visited)
+        return output if parent is None else find_root(parent, visited)
 
     return {output: find_root(output) for output in output_to_input}
 
@@ -157,151 +160,65 @@ def get_group_id(config: dict | None, root_map: dict[str, str]) -> str | None:
     """Get the root group_id for a pipeline based on its config and root_map."""
     if not config:
         return None
-    outputs = config.get("outputs", [])
-    inputs = config.get("inputs", [])
-    # Check inputs first (this script depends on something)
-    if inputs and inputs[0] in root_map:
-        return root_map[inputs[0]]
-    # Check outputs (this script produces something)
-    if outputs and outputs[0] in root_map:
-        return root_map[outputs[0]]
+    for key in ("inputs", "outputs"):
+        items = config.get(key, [])
+        if items and items[0] in root_map:
+            return root_map[items[0]]
     return None
 
 
-def _sort_by_workbench_batch(pipelines: list[Path]) -> tuple[list[Path], dict[Path, dict], dict[str, str]]:
+def _walk_chain(pipeline: Path, pipelines: set, configs: dict, used: set) -> list[Path]:
+    """Walk a dependency chain from a root pipeline, returning the ordered chain."""
+    chain = [pipeline]
+    used.add(pipeline)
+    current = pipeline
+    while True:
+        current_config = configs.get(current)
+        if not current_config or not current_config.get("outputs"):
+            break
+        current_output = current_config["outputs"][0]
+        next_pipeline = next(
+            (p for p, c in configs.items()
+             if p not in used and p in pipelines and c and c.get("inputs") and current_output in c["inputs"]),
+            None,
+        )
+        if not next_pipeline:
+            break
+        chain.append(next_pipeline)
+        used.add(next_pipeline)
+        current = next_pipeline
+    return chain
+
+
+def _sort_by_workbench_batch(
+    pipelines: list[Path],
+) -> tuple[list[Path], dict[Path, dict], dict[str, str], list[str]]:
     """Sort pipelines by WORKBENCH_BATCH dependency chains (legacy fallback).
 
-    Returns (sorted_list, configs, root_map).
+    Returns (sorted_list, configs, root_map, display_lines).
     """
-    # Parse all configs
-    configs = {}
-    for pipeline in pipelines:
-        configs[pipeline] = parse_workbench_batch(pipeline)
-
-    # Build root map for group_id resolution
+    configs = {p: parse_workbench_batch(p) for p in pipelines}
     root_map = build_dependency_graph(configs)
-
-    # Build output -> pipeline mapping
-    output_to_pipeline = {}
-    for pipeline, config in configs.items():
-        if config and config.get("outputs"):
-            for output in config["outputs"]:
-                output_to_pipeline[output] = pipeline
-
-    # Build chains by walking from root producers
-    sorted_pipelines = []
+    pipeline_set = set(pipelines)
     used = set()
 
+    # Walk chains from root producers (no inputs)
+    chains = []
     for pipeline in sorted(pipelines):
         config = configs.get(pipeline)
-
-        # Skip if already used or has inputs (not a root)
-        if pipeline in used:
+        if pipeline in used or (config and config.get("inputs")):
             continue
-        if config and config.get("inputs"):
-            continue
-
-        # Walk the chain from this root
-        chain = [pipeline]
-        used.add(pipeline)
-
-        current = pipeline
-        while True:
-            current_config = configs.get(current)
-            if not current_config or not current_config.get("outputs"):
-                break
-
-            current_output = current_config["outputs"][0]
-            # Find pipeline that consumes this output
-            next_pipeline = None
-            for p, c in configs.items():
-                if p in used or p not in pipelines:
-                    continue
-                if c and c.get("inputs") and current_output in c["inputs"]:
-                    next_pipeline = p
-                    break
-
-            if next_pipeline:
-                chain.append(next_pipeline)
-                used.add(next_pipeline)
-                current = next_pipeline
-            else:
-                break
-
-        sorted_pipelines.extend(chain)
+        chains.append(_walk_chain(pipeline, pipeline_set, configs, used))
 
     # Add any remaining pipelines not in chains
     for pipeline in sorted(pipelines):
         if pipeline not in used:
-            sorted_pipelines.append(pipeline)
-
-    return sorted_pipelines, configs, root_map
-
-
-def _format_workbench_batch_chains(pipelines: list[Path], configs: dict[Path, dict]) -> list[str]:
-    """Format pipelines as dependency chains for display (legacy fallback)."""
-    # Build output -> pipeline mapping
-    output_to_pipeline = {}
-    for pipeline, config in configs.items():
-        if config and config.get("outputs"):
-            for output in config["outputs"]:
-                output_to_pipeline[output] = pipeline
-
-    # Build chains by walking from root producers
-    chains = []
-    used = set()
-
-    for pipeline in pipelines:
-        config = configs.get(pipeline)
-
-        # Skip if already part of a chain or has inputs (not a root)
-        if pipeline in used:
-            continue
-        if config and config.get("inputs"):
-            continue
-
-        # Start a new chain from this root producer (or standalone)
-        chain = [pipeline]
-        used.add(pipeline)
-
-        # Walk the chain: find who consumes our output
-        current = pipeline
-        while True:
-            current_config = configs.get(current)
-            if not current_config or not current_config.get("outputs"):
-                break
-
-            current_output = current_config["outputs"][0]
-            # Find a pipeline that takes this output as input
-            next_pipeline = None
-            for p, c in configs.items():
-                if p in used or p not in pipelines:
-                    continue
-                if c and c.get("inputs") and current_output in c["inputs"]:
-                    next_pipeline = p
-                    break
-
-            if next_pipeline:
-                chain.append(next_pipeline)
-                used.add(next_pipeline)
-                current = next_pipeline
-            else:
-                break
-
-        chains.append(chain)
-
-    # Add any remaining pipelines not in chains (shouldn't happen but just in case)
-    for pipeline in pipelines:
-        if pipeline not in used:
             chains.append([pipeline])
 
-    # Format chains as strings
-    lines = []
-    for chain in chains:
-        names = [p.stem for p in chain]
-        lines.append("   " + " --> ".join(names))
+    sorted_pipelines = [p for chain in chains for p in chain]
+    display_lines = ["   " + " --> ".join(p.stem for p in chain) for chain in chains]
 
-    return lines
+    return sorted_pipelines, configs, root_map, display_lines
 
 
 def sort_pipelines(
@@ -343,8 +260,7 @@ def sort_pipelines(
                     continue
                 used.add(script)
                 dag_has_runs = True
-                run_modes = [mode_override] if mode_override else modes
-                for mode in run_modes:
+                for mode in ([mode_override] if mode_override else modes):
                     run = (script, mode)
                     sorted_runs.append(run)
                     group_id_map[run] = dag_name
@@ -358,9 +274,8 @@ def sort_pipelines(
     remaining = [p for p in pipelines if p not in used]
     if remaining:
         fallback_mode = mode_override or "dt"
-        sorted_remaining, configs, root_map = _sort_by_workbench_batch(remaining)
-        for line in _format_workbench_batch_chains(sorted_remaining, configs):
-            dag_lines.append(line)
+        sorted_remaining, configs, root_map, display_lines = _sort_by_workbench_batch(remaining)
+        dag_lines.extend(display_lines)
         for pipeline in sorted_remaining:
             run = (pipeline, fallback_mode)
             sorted_runs.append(run)
@@ -414,8 +329,7 @@ def get_pipeline_groups(pipelines: list[Path]) -> dict[Path, list[Path]]:
     """Group pipelines by their parent directory (leaf directories)."""
     groups = {}
     for pipeline in pipelines:
-        parent = pipeline.parent
-        groups.setdefault(parent, []).append(pipeline)
+        groups.setdefault(pipeline.parent, []).append(pipeline)
     return groups
 
 
@@ -424,87 +338,43 @@ def select_random_groups(pipelines: list[Path], num_groups: int) -> list[Path]:
     groups = get_pipeline_groups(pipelines)
     if not groups:
         return []
-
-    # Select up to num_groups random directories
-    dirs = list(groups.keys())
-    selected_dirs = random.sample(dirs, min(num_groups, len(dirs)))
-
-    # Return all pipelines from those directories
-    selected = []
-    for d in selected_dirs:
-        selected.extend(groups[d])
-    return selected
+    selected_dirs = random.sample(list(groups), min(num_groups, len(groups)))
+    return [p for d in selected_dirs for p in groups[d]]
 
 
 def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> list[Path]:
     """Filter pipelines by substring patterns matching the basename."""
     if not patterns:
         return pipelines
-
-    matched = []
-    for pipeline in pipelines:
-        basename = pipeline.stem.lower()
-        if any(pattern.lower() in basename for pattern in patterns):
-            matched.append(pipeline)
-    return matched
+    patterns_lower = [p.lower() for p in patterns]
+    return [p for p in pipelines if any(pat in p.stem.lower() for pat in patterns_lower)]
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Launch ML pipelines via SQS for testing")
+    parser = argparse.ArgumentParser(description="Launch ML pipelines via SQS or locally")
     parser.add_argument(
-        "patterns",
-        nargs="*",
+        "patterns", nargs="*",
         help="Substring patterns to filter pipelines by basename (e.g., 'caco2' 'ppb')",
     )
     parser.add_argument(
-        "-n",
-        "--num-groups",
-        type=int,
-        default=1,
+        "-n", "--num-groups", type=int, default=1,
         help="Number of random pipeline groups to launch (default: 1, ignored if --all or patterns specified)",
     )
+    parser.add_argument("--all", action="store_true", help="Launch ALL pipelines (ignores -n)")
+    parser.add_argument("--realtime", action="store_true", help="Create realtime endpoints (default is serverless)")
+    parser.add_argument("--dry-run", action="store_true", help="Show what would be launched without actually launching")
     parser.add_argument(
-        "--all",
-        action="store_true",
-        help="Launch ALL pipelines (ignores -n)",
-    )
-    parser.add_argument(
-        "--realtime",
-        action="store_true",
-        help="Create realtime endpoints (default is serverless)",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show what would be launched without actually launching",
-    )
-    parser.add_argument(
-        "--local",
-        action="store_true",
+        "--local", action="store_true",
         help="Run pipelines locally instead of via SQS (uses active Python interpreter)",
     )
 
     # Mode flags (mutually exclusive) — override yaml default modes
     mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument("--dt", action="store_true", help="Override all scripts to DT mode (dynamic training)")
+    mode_group.add_argument("--promote", action="store_true", help="Override all scripts to PROMOTE mode")
+    mode_group.add_argument("--test-promote", action="store_true", help="Override all scripts to TEST_PROMOTE mode")
     mode_group.add_argument(
-        "--dt",
-        action="store_true",
-        help="Override all scripts to DT mode (dynamic training)",
-    )
-    mode_group.add_argument(
-        "--promote",
-        action="store_true",
-        help="Override all scripts to PROMOTE mode",
-    )
-    mode_group.add_argument(
-        "--test-promote",
-        action="store_true",
-        help="Override all scripts to TEST_PROMOTE mode",
-    )
-    mode_group.add_argument(
-        "--temporal-split",
-        action="store_true",
-        help="Override all scripts to temporal split evaluation mode",
+        "--temporal-split", action="store_true", help="Override all scripts to temporal split evaluation mode"
     )
 
     args = parser.parse_args()
@@ -517,42 +387,28 @@ def main():
 
     # Determine which pipelines to run
     if args.patterns:
-        # Filter by patterns
         selected_pipelines = filter_pipelines_by_patterns(all_pipelines, args.patterns)
         if not selected_pipelines:
             print(f"No pipelines matching patterns: {args.patterns}")
             exit(1)
         selection_mode = f"matching {args.patterns}"
     elif args.all:
-        # Run all pipelines
         selected_pipelines = all_pipelines
         selection_mode = "ALL"
     else:
-        # Random group selection
         selected_pipelines = select_random_groups(all_pipelines, args.num_groups)
         if not selected_pipelines:
             print("No pipeline groups found")
             exit(1)
-        # Get the directory names for display
-        groups = get_pipeline_groups(selected_pipelines)
-        group_names = [d.name for d in groups.keys()]
+        group_names = [d.name for d in get_pipeline_groups(selected_pipelines)]
         selection_mode = f"RANDOM {args.num_groups} group(s): {group_names}"
 
     # Determine mode override from CLI (None means use yaml defaults)
-    mode_override = None
-    mode_flag = None
-    if args.dt:
-        mode_override = "dt"
-        mode_flag = "--dt"
-    elif args.promote:
-        mode_override = "promote"
-        mode_flag = "--promote"
-    elif args.test_promote:
-        mode_override = "test_promote"
-        mode_flag = "--test-promote"
-    elif args.temporal_split:
-        mode_override = "temporal_split"
-        mode_flag = "--temporal-split"
+    mode_override, mode_flag = None, None
+    for arg_name, (override, flag) in MODE_MAP.items():
+        if getattr(args, arg_name, False):
+            mode_override, mode_flag = override, flag
+            break
 
     # Sort by DAG stages (with mode override if CLI flag set)
     sorted_runs, group_id_map, dag_lines = sort_pipelines(selected_pipelines, all_dags, mode_override)
@@ -597,13 +453,11 @@ def main():
     for i, (script, mode) in enumerate(sorted_runs, 1):
         print(f"\n{'─' * 60}")
         print(f"{'Running' if args.local else 'Launching'} run {i}/{len(sorted_runs)}: {script.name} ({mode})")
-        print(f"{'─' * 60}")
 
         # Build per-script PIPELINE_META with resolved names
         pipeline_meta = build_pipeline_meta(script, mode, not args.realtime)
 
         if args.local:
-            # Run locally with PIPELINE_META set in the environment
             env = os.environ.copy()
             env["PIPELINE_META"] = pipeline_meta
             cmd = [sys.executable, str(script)]
@@ -611,18 +465,15 @@ def main():
             print(f"{'─' * 60}\n")
             result = subprocess.run(cmd, env=env)
         else:
-            # Launch via SQS → Batch
             run_mode_flag = mode_flag or f"--{mode.replace('_', '-')}"
             cmd = ["ml_pipeline_sqs", str(script), run_mode_flag]
             if args.realtime:
                 cmd.append("--realtime")
             cmd.extend(["--pipeline-meta", pipeline_meta])
-
-            # Pass group_id for dependency chain ordering (from yaml DAG name or WORKBENCH_BATCH root)
             group_id = group_id_map.get((script, mode))
             if group_id:
                 cmd.extend(["--group-id", group_id])
-
+            print(f"{'─' * 60}")
             print(f"Running: {' '.join(cmd)}\n")
             result = subprocess.run(cmd)
 
