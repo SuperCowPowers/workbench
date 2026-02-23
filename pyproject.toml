@@ -44,6 +44,7 @@ dependencies = [
     "mordredcommunity>=2.0.6",
     "workbench-bridges>=0.1.16",
     "cleanlab>=2.9.0",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]

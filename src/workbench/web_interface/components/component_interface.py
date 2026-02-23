@@ -20,8 +20,6 @@ from workbench.cached.cached_feature_set import CachedFeatureSet
 from workbench.cached.cached_model import CachedModel
 from workbench.cached.cached_endpoint import CachedEndpoint
 
-from workbench.api.pipeline import Pipeline
-
 log = logging.getLogger("workbench")
 
 
@@ -48,7 +46,6 @@ class ComponentInterface(ABC):
         FeatureSet,
         Model,
         Endpoint,
-        Pipeline,
         nx.Graph,
         pd.DataFrame,
         CachedDataSource,

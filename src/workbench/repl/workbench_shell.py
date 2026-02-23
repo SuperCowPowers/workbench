@@ -161,7 +161,6 @@ class WorkbenchShell:
         self.commands["feature_sets"] = self.feature_sets
         self.commands["models"] = self.models
         self.commands["endpoints"] = self.endpoints
-        self.commands["pipelines"] = self.pipelines
         self.commands["log_debug"] = self.log_debug
         self.commands["log_trace"] = self.log_trace
         self.commands["log_info"] = self.log_info
@@ -300,7 +299,6 @@ class WorkbenchShell:
                 "workbench.core.views.inference_view"
             ).InferenceView
             self.commands["PandasToView"] = importlib.import_module("workbench.core.views.pandas_to_view").PandasToView
-            self.commands["Pipeline"] = importlib.import_module("workbench.api.pipeline").Pipeline
 
             # These are 'nice to have' imports
             self.commands["pd"] = importlib.import_module("pandas")
@@ -404,9 +402,6 @@ class WorkbenchShell:
 
     def endpoints(self):
         return self.meta.endpoints()
-
-    def pipelines(self):
-        return self.meta.pipelines()
 
     @staticmethod
     def log_debug():

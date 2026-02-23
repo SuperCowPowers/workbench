@@ -88,6 +88,52 @@ def test_computation_view():
     print(df)
 
 
+def test_set_sample_weights():
+    """Test set_sample_weights with a small dict (uses supplemental table)"""
+    fs = FeatureSet("test_features")
+    total_rows = fs.num_rows()
+
+    # Get all IDs so we can pick a few to zero out
+    df = fs.pull_dataframe()
+    id_col = fs.id_column
+    ids = df[id_col].tolist()
+
+    # Set weights: exclude first 3 IDs, downweight the 4th
+    weights = {ids[0]: 0.0, ids[1]: 0.0, ids[2]: 0.0, ids[3]: 0.5}
+    fs.set_sample_weights(weights)
+
+    # Pull the training view and verify
+    tv_df = fs.view("training").pull_dataframe()
+    assert "sample_weight" in tv_df.columns
+    assert len(tv_df) == total_rows - 3  # 3 zero-weight rows excluded
+    assert ids[0] not in tv_df[id_col].values
+    assert ids[1] not in tv_df[id_col].values
+    assert ids[2] not in tv_df[id_col].values
+
+    # Check the downweighted row
+    row = tv_df[tv_df[id_col] == ids[3]]
+    assert len(row) == 1
+    assert row["sample_weight"].iloc[0] == 0.5
+
+    # Check a normal row has default weight 1.0
+    normal_row = tv_df[tv_df[id_col] == ids[4]]
+    assert normal_row["sample_weight"].iloc[0] == 1.0
+
+    # Verify get_sample_weights reads back what we set
+    read_weights = fs.get_sample_weights()
+    assert read_weights[ids[0]] == 0.0
+    assert read_weights[ids[1]] == 0.0
+    assert read_weights[ids[2]] == 0.0
+    assert read_weights[ids[3]] == 0.5
+    assert len(read_weights) == 4  # only explicitly set IDs
+
+    # Reset to standard training view
+    fs.set_sample_weights({})
+    tv_df = fs.view("training").pull_dataframe()
+    assert len(tv_df) == total_rows
+    print(f"set_sample_weights test passed: {total_rows} rows, 3 excluded, 1 downweighted, then reset")
+
+
 def test_view_on_non_existent_data():
     # Create a View for the Non-Existing DataSource
     data_source = DataSource("non_existent_data")
@@ -103,6 +149,7 @@ if __name__ == "__main__":
     test_set_computation_view_columns()
     test_training_view()
     test_training_holdouts()
+    test_set_sample_weights()
     test_delete_display_view()
     test_delete_training_view()
     test_computation_view()

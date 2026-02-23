@@ -17,7 +17,7 @@ class ParameterStore(ParameterStoreCore):
         ['/workbench/abalone_info',
          '/workbench/my_data',
          '/workbench/test',
-         '/workbench/pipelines/my_pipeline']
+        ]
 
         # Add Key
         params.upsert("key", "value")
