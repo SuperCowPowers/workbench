@@ -178,8 +178,11 @@ def _walk_chain(pipeline: Path, pipelines: set, configs: dict, used: set) -> lis
             break
         current_output = current_config["outputs"][0]
         next_pipeline = next(
-            (p for p, c in configs.items()
-             if p not in used and p in pipelines and c and c.get("inputs") and current_output in c["inputs"]),
+            (
+                p
+                for p, c in configs.items()
+                if p not in used and p in pipelines and c and c.get("inputs") and current_output in c["inputs"]
+            ),
             None,
         )
         if not next_pipeline:
@@ -353,18 +356,23 @@ def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> 
 def main():
     parser = argparse.ArgumentParser(description="Launch ML pipelines via SQS or locally")
     parser.add_argument(
-        "patterns", nargs="*",
+        "patterns",
+        nargs="*",
         help="Substring patterns to filter pipelines by basename (e.g., 'caco2' 'ppb')",
     )
     parser.add_argument(
-        "-n", "--num-groups", type=int, default=1,
+        "-n",
+        "--num-groups",
+        type=int,
+        default=1,
         help="Number of random pipeline groups to launch (default: 1, ignored if --all or patterns specified)",
     )
     parser.add_argument("--all", action="store_true", help="Launch ALL pipelines (ignores -n)")
     parser.add_argument("--realtime", action="store_true", help="Create realtime endpoints (default is serverless)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be launched without actually launching")
     parser.add_argument(
-        "--local", action="store_true",
+        "--local",
+        action="store_true",
         help="Run pipelines locally instead of via SQS (uses active Python interpreter)",
     )
 
