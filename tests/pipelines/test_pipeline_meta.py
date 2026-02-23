@@ -4,6 +4,8 @@ import json
 import os
 from unittest.mock import patch
 
+import pytest
+
 from workbench.core.pipelines.pipeline_meta import PipelineMeta
 
 
@@ -66,50 +68,61 @@ class TestPipelineMetaWithEnvVar:
             assert pm.get("batch_size") == 32
             assert pm.get("nonexistent", "fallback") == "fallback"
 
-    def test_missing_keys_get_defaults(self):
-        """Partial PIPELINE_META should fill in defaults for missing keys."""
-        meta = {"mode": "dt"}
+    def test_partial_meta_defaults_mode_and_serverless(self):
+        """Partial PIPELINE_META should default mode and serverless only."""
+        meta = {"model_name": "my-model", "endpoint_name": "my-endpoint"}
         with patch.dict(os.environ, {"PIPELINE_META": json.dumps(meta)}, clear=True):
             pm = PipelineMeta()
             assert pm.mode == "dt"
             assert pm.serverless is True
-            assert pm.model_name.startswith("test-")
-            assert pm.endpoint_name.startswith("test-")
+            assert pm.model_name == "my-model"
+            assert pm.endpoint_name == "my-endpoint"
 
-    def test_invalid_json_falls_back_to_defaults(self):
-        with patch.dict(os.environ, {"PIPELINE_META": "not-valid-json"}, clear=True):
+    def test_get_with_explicit_default(self):
+        """get() with an explicit default returns it when key is missing."""
+        meta = {"mode": "dt", "model_name": "m", "endpoint_name": "e", "serverless": True}
+        with patch.dict(os.environ, {"PIPELINE_META": json.dumps(meta)}, clear=True):
             pm = PipelineMeta()
-            assert pm.mode == "dev"
-            assert pm.model_name.startswith("test-")
-            assert pm.serverless is True
-
-
-class TestPipelineMetaDefaults:
-    """Tests for PipelineMeta when no PIPELINE_META env var is set."""
-
-    def test_default_mode(self):
-        with patch.dict(os.environ, {}, clear=True):
-            pm = PipelineMeta()
-            assert pm.mode == "dev"
-
-    def test_default_names_have_timestamp(self):
-        with patch.dict(os.environ, {}, clear=True):
-            pm = PipelineMeta()
-            assert pm.model_name.startswith("test-")
-            assert pm.endpoint_name.startswith("test-")
-            # Should have format test-YYYYMMDD-HHMM
-            assert len(pm.model_name) == len("test-20260222-0947")
-
-    def test_default_serverless(self):
-        with patch.dict(os.environ, {}, clear=True):
-            pm = PipelineMeta()
-            assert pm.serverless is True
-
-    def test_get_with_default(self):
-        with patch.dict(os.environ, {}, clear=True):
-            pm = PipelineMeta()
-            assert pm.get("nonexistent") is None
             assert pm.get("nonexistent", "fallback") == "fallback"
+            assert pm.get("nonexistent", None) is None
+
+    def test_get_with_explicit_default_none(self):
+        """get() with explicit default=None should return None, not raise."""
+        meta = {"mode": "dt", "model_name": "m", "endpoint_name": "e", "serverless": True}
+        with patch.dict(os.environ, {"PIPELINE_META": json.dumps(meta)}, clear=True):
+            pm = PipelineMeta()
+            assert pm.get("nonexistent", None) is None
+
+
+class TestPipelineMetaFailHard:
+    """Tests for fail-hard behavior when env var is missing or keys are missing."""
+
+    def test_no_env_var_raises(self):
+        """RuntimeError when PIPELINE_META is not set."""
+        with patch.dict(os.environ, {}, clear=True):
+            with pytest.raises(RuntimeError, match="PIPELINE_META environment variable not set"):
+                PipelineMeta()
+
+    def test_invalid_json_raises(self):
+        """RuntimeError when PIPELINE_META contains invalid JSON."""
+        with patch.dict(os.environ, {"PIPELINE_META": "not-valid-json"}, clear=True):
+            with pytest.raises(RuntimeError, match="Failed to parse PIPELINE_META"):
+                PipelineMeta()
+
+    def test_get_missing_key_raises(self):
+        """RuntimeError when get() is called on a missing key with no default."""
+        meta = {"mode": "dt", "model_name": "m", "endpoint_name": "e", "serverless": True}
+        with patch.dict(os.environ, {"PIPELINE_META": json.dumps(meta)}, clear=True):
+            pm = PipelineMeta()
+            with pytest.raises(RuntimeError, match="Key 'nonexistent' not found"):
+                pm.get("nonexistent")
+
+    def test_dynamic_owner_without_set_owner_defaults_to_test(self):
+        """dynamic_owner() returns 'DT' for dt mode when set_owner() hasn't been called."""
+        meta = {"mode": "dt", "model_name": "m", "endpoint_name": "e", "serverless": True}
+        with patch.dict(os.environ, {"PIPELINE_META": json.dumps(meta)}, clear=True):
+            pm = PipelineMeta()
+            assert pm.dynamic_owner() == "DT"
 
 
 class TestPipelineMetaOwner:
@@ -143,18 +156,6 @@ class TestPipelineMetaOwner:
             pm.set_owner("MB")
             assert pm.dynamic_owner() == "Pro-Test-MB"
 
-    def test_dev_mode_owner(self):
-        with patch.dict(os.environ, {}, clear=True):
-            pm = PipelineMeta()
-            pm.set_owner("ER")
-            assert pm.dynamic_owner() == "ER"
-
-    def test_dynamic_owner_without_set_owner_defaults_to_test(self):
-        with patch.dict(os.environ, {}, clear=True):
-            pm = PipelineMeta()
-            assert pm.dynamic_owner() == "test"
-
-
 class TestPipelineMetaRepr:
     """Tests for PipelineMeta string representation."""
 
@@ -171,10 +172,3 @@ class TestPipelineMetaRepr:
             assert "PipelineMeta" in r
             assert "mode=dt" in r
             assert "my-model-dt" in r
-
-    def test_repr_defaults(self):
-        with patch.dict(os.environ, {}, clear=True):
-            pm = PipelineMeta()
-            r = repr(pm)
-            assert "PipelineMeta" in r
-            assert "mode=dev" in r

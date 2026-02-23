@@ -1,4 +1,4 @@
-"""Launch ML pipelines via SQS for testing.
+"""Launch ML pipelines via SQS or locally.
 
 Run this from a directory containing pipeline subdirectories (e.g., ml_pipelines/).
 
@@ -12,21 +12,44 @@ Usage:
     ml_pipeline_launcher --test-promote --all    # Test-promote ALL pipelines
     ml_pipeline_launcher --temporal-split --all  # Temporal split ALL pipelines
     ml_pipeline_launcher --dt --dry-run          # Show what would be launched without launching
+    ml_pipeline_launcher --local --dt ppb_human  # Run pipelines locally (uses active Python interpreter)
 """
 
 import argparse
 import ast
 import json
+import os
 import random
 import re
 import subprocess
+import sys
 import time
 from pathlib import Path
 
 import yaml
 
 
-FRAMEWORKS_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)-\d+$")
+VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
+FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
+
+
+def parse_script_name(script_path: Path) -> tuple[str, str]:
+    """Parse a pipeline script filename into (basename, version).
+
+    Filenames must end with _{number} or _v{number} (e.g., my_script_1.py, my_script_v2.py).
+
+    Args:
+        script_path (Path): Path to the pipeline script
+
+    Returns:
+        tuple[str, str]: (basename, version) — e.g., ("ppb_human_free_reg_xgb", "1")
+    """
+    match = VERSION_RE.match(script_path.stem)
+    if not match:
+        raise RuntimeError(
+            f"Pipeline script filename must end with _{{number}}.py or _v{{number}}.py: {script_path.name}"
+        )
+    return match.group(1), match.group(2)
 
 
 def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
@@ -37,44 +60,53 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
     """
     from datetime import datetime
 
-    model_name_base = script_path.stem.replace("_", "-")
-    endpoint_name_base = FRAMEWORKS_RE.sub("", model_name_base)
+    basename, version = parse_script_name(script_path)
+    basename_hyphen = basename.replace("_", "-")          # e.g., "ppb-human-free-reg-xgb"
+    endpoint_base = FRAMEWORK_RE.sub("", basename_hyphen)  # e.g., "ppb-human-free-reg"
     today = datetime.now().strftime("%y%m%d")
 
     if mode in ("dt", "temporal_split"):
-        model_name = f"{model_name_base}-dt"
-        endpoint_name = f"{model_name_base}-dt"
+        model_name = f"{basename_hyphen}-{version}-dt"
+        endpoint_name = f"{basename_hyphen}-{version}-dt"
     elif mode == "promote":
-        model_name = f"{model_name_base}-{today}"
-        endpoint_name = f"{endpoint_name_base}-1"
+        model_name = f"{basename_hyphen}-{version}-{today}"
+        endpoint_name = f"{endpoint_base}-{version}"
     elif mode == "test_promote":
-        model_name = f"{model_name_base}-{today}"
-        endpoint_name = f"{endpoint_name_base}-1-test"
-    else:  # dev
-        model_name = f"{model_name_base}-{today}-test"
-        endpoint_name = f"{endpoint_name_base}-{today}-test"
+        model_name = f"{basename_hyphen}-{version}-{today}"
+        endpoint_name = f"{endpoint_base}-{version}-test"
+    else:
+        raise RuntimeError(f"Unknown mode: {mode}")
 
     return json.dumps({"mode": mode, "model_name": model_name, "endpoint_name": endpoint_name, "serverless": serverless})
 
 
-def load_pipelines_yaml(directory: Path) -> dict[str, list[Path]] | None:
+def load_pipelines_yaml(directory: Path) -> dict[str, list[dict[Path, list[str]]]] | None:
     """Load pipelines.yaml from a directory.
+
+    The yaml uses a stage-based DAG format where each list item is a stage
+    (dict of script: [modes]). Scripts within a stage can run in parallel;
+    stages run sequentially.
 
     Args:
         directory (Path): Directory to check for pipelines.yaml
 
     Returns:
-        dict[str, list[Path]] | None: {chain_name: [script_paths]} or None if no yaml found
+        dict | None: {dag_name: [stages]} where each stage is {script_path: [modes]},
+            or None if no yaml found
     """
     yaml_path = directory / "pipelines.yaml"
     if not yaml_path.exists():
         return None
     with open(yaml_path) as f:
         config = yaml.safe_load(f)
-    chains = {}
-    for chain_name, scripts in config.get("chains", {}).items():
-        chains[chain_name] = [directory / s for s in scripts]
-    return chains
+    dags = {}
+    for dag_name, stages in config.get("dags", {}).items():
+        dag_stages = []
+        for stage in stages:
+            stage_dict = {directory / script: modes for script, modes in stage.items()}
+            dag_stages.append(stage_dict)
+        dags[dag_name] = dag_stages
+    return dags
 
 
 def parse_workbench_batch(script_path: Path) -> dict | None:
@@ -272,78 +304,100 @@ def _format_workbench_batch_chains(pipelines: list[Path], configs: dict[Path, di
 
 
 def sort_pipelines(
-    pipelines: list[Path], all_chains: dict[str, list[Path]]
-) -> tuple[list[Path], dict[Path, str | None], list[str]]:
-    """Sort pipelines by dependency chains.
+    pipelines: list[Path],
+    all_dags: dict[str, list[dict[Path, list[str]]]],
+    mode_override: str | None = None,
+) -> tuple[list[tuple[Path, str]], dict[tuple[Path, str], str | None], list[str]]:
+    """Sort pipelines by DAG stages with per-script modes.
 
-    Uses yaml chains when available, falls back to WORKBENCH_BATCH parsing for
-    pipelines not covered by any yaml chain.
+    Uses yaml DAGs when available, falls back to WORKBENCH_BATCH parsing for
+    pipelines not covered by any yaml DAG.
 
     Args:
         pipelines (list[Path]): Pipelines to sort
-        all_chains (dict[str, list[Path]]): Chain definitions from pipelines.yaml files
+        all_dags (dict): DAG definitions from pipelines.yaml files
+            {dag_name: [stages]} where each stage is {script_path: [modes]}
+        mode_override (str | None): If set, overrides all yaml modes (from CLI flags)
 
     Returns:
-        tuple: (sorted_pipelines, group_id_map, chain_lines)
-            - sorted_pipelines: Pipelines ordered by dependency chains
-            - group_id_map: {pipeline_path: sqs_message_group_id}
-            - chain_lines: Formatted display lines (e.g., "   xgb --> pytorch --> chemprop")
+        tuple: (sorted_runs, group_id_map, dag_lines)
+            - sorted_runs: List of (script_path, mode) tuples in execution order
+            - group_id_map: {(script_path, mode): sqs_message_group_id}
+            - dag_lines: Formatted display lines
     """
     pipeline_set = set(pipelines)
-    sorted_pipelines = []
+    sorted_runs = []
     group_id_map = {}
-    chain_lines = []
+    dag_lines = []
     used = set()
 
-    # First: process pipelines that are in yaml chains
-    for chain_name, chain_scripts in all_chains.items():
-        # Only include scripts that are in the selected pipelines
-        selected_chain = [s for s in chain_scripts if s in pipeline_set]
-        if selected_chain:
-            chain_lines.append("   " + " --> ".join(s.stem for s in selected_chain))
-            for script in selected_chain:
-                sorted_pipelines.append(script)
-                group_id_map[script] = chain_name
+    # First: process pipelines that are in yaml DAGs
+    for dag_name, stages in all_dags.items():
+        dag_stage_lines = []
+        dag_has_runs = False
+        for stage in stages:
+            stage_parts = []
+            for script, modes in stage.items():
+                if script not in pipeline_set:
+                    continue
                 used.add(script)
+                dag_has_runs = True
+                run_modes = [mode_override] if mode_override else modes
+                for mode in run_modes:
+                    run = (script, mode)
+                    sorted_runs.append(run)
+                    group_id_map[run] = dag_name
+                    stage_parts.append(f"{script.stem}:{mode}")
+            if stage_parts:
+                dag_stage_lines.append(" | ".join(stage_parts))
+        if dag_has_runs:
+            dag_lines.append("   " + " --> ".join(dag_stage_lines))
 
     # Second: process remaining pipelines via WORKBENCH_BATCH fallback
     remaining = [p for p in pipelines if p not in used]
     if remaining:
+        fallback_mode = mode_override or "dt"
         sorted_remaining, configs, root_map = _sort_by_workbench_batch(remaining)
         for line in _format_workbench_batch_chains(sorted_remaining, configs):
-            chain_lines.append(line)
+            dag_lines.append(line)
         for pipeline in sorted_remaining:
-            sorted_pipelines.append(pipeline)
-            group_id_map[pipeline] = get_group_id(configs.get(pipeline), root_map)
+            run = (pipeline, fallback_mode)
+            sorted_runs.append(run)
+            group_id_map[run] = get_group_id(configs.get(pipeline), root_map)
 
-    return sorted_pipelines, group_id_map, chain_lines
+    return sorted_runs, group_id_map, dag_lines
 
 
-def get_all_pipelines() -> tuple[list[Path], dict[str, list[Path]]]:
+def get_all_pipelines() -> tuple[list[Path], dict[str, list[dict[Path, list[str]]]]]:
     """Get all ML pipeline scripts from subdirectories of current working directory.
 
     For directories with pipelines.yaml, only listed scripts are included.
     For directories without, falls back to discovering all .py files.
 
     Returns:
-        tuple: (pipelines, all_chains)
-            - pipelines: List of all pipeline script paths
-            - all_chains: {chain_name: [script_paths]} from yaml files
+        tuple: (pipelines, all_dags)
+            - pipelines: List of unique pipeline script paths
+            - all_dags: {dag_name: [stages]} from yaml files
     """
     cwd = Path.cwd()
     pipelines = []
-    all_chains = {}
+    all_dags = {}
     yaml_managed_dirs = set()
+    seen_scripts = set()
 
     # First pass: find all pipelines.yaml files recursively
     for yaml_path in cwd.rglob("pipelines.yaml"):
         directory = yaml_path.parent
-        yaml_chains = load_pipelines_yaml(directory)
-        if yaml_chains:
+        dag_defs = load_pipelines_yaml(directory)
+        if dag_defs:
             yaml_managed_dirs.add(directory)
-            all_chains.update(yaml_chains)
-            for chain_scripts in yaml_chains.values():
-                pipelines.extend(chain_scripts)
+            all_dags.update(dag_defs)
+            for stages in dag_defs.values():
+                for stage in stages:
+                    for script in stage.keys():
+                        if script not in seen_scripts:
+                            pipelines.append(script)
+                            seen_scripts.add(script)
 
     # Second pass: find .py files in directories NOT managed by yaml
     for subdir in cwd.iterdir():
@@ -352,7 +406,7 @@ def get_all_pipelines() -> tuple[list[Path], dict[str, list[Path]]]:
                 if py_file.parent not in yaml_managed_dirs:
                     pipelines.append(py_file)
 
-    return pipelines, all_chains
+    return pipelines, all_dags
 
 
 def get_pipeline_groups(pipelines: list[Path]) -> dict[Path, list[Path]]:
@@ -423,34 +477,39 @@ def main():
         action="store_true",
         help="Show what would be launched without actually launching",
     )
+    parser.add_argument(
+        "--local",
+        action="store_true",
+        help="Run pipelines locally instead of via SQS (uses active Python interpreter)",
+    )
 
-    # Mode flags (mutually exclusive)
-    mode_group = parser.add_mutually_exclusive_group(required=True)
+    # Mode flags (mutually exclusive) — override yaml default modes
+    mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument(
         "--dt",
         action="store_true",
-        help="Launch with DT=True (dynamic training mode)",
+        help="Override all scripts to DT mode (dynamic training)",
     )
     mode_group.add_argument(
         "--promote",
         action="store_true",
-        help="Launch with PROMOTE=True (promotion mode)",
+        help="Override all scripts to PROMOTE mode",
     )
     mode_group.add_argument(
         "--test-promote",
         action="store_true",
-        help="Launch with TEST_PROMOTE=True (test promotion mode)",
+        help="Override all scripts to TEST_PROMOTE mode",
     )
     mode_group.add_argument(
         "--temporal-split",
         action="store_true",
-        help="Launch with temporal split evaluation mode",
+        help="Override all scripts to temporal split evaluation mode",
     )
 
     args = parser.parse_args()
 
-    # Get all pipelines and chain definitions from subdirectories
-    all_pipelines, all_chains = get_all_pipelines()
+    # Get all pipelines and DAG definitions from subdirectories
+    all_pipelines, all_dags = get_all_pipelines()
     if not all_pipelines:
         print(f"No pipeline scripts found in subdirectories of {Path.cwd()}")
         exit(1)
@@ -478,36 +537,45 @@ def main():
         group_names = [d.name for d in groups.keys()]
         selection_mode = f"RANDOM {args.num_groups} group(s): {group_names}"
 
-    # Sort by dependencies (producers before consumers)
-    selected_pipelines, group_id_map, chain_lines = sort_pipelines(selected_pipelines, all_chains)
-
-    # Determine mode for display and CLI flag
+    # Determine mode override from CLI (None means use yaml defaults)
+    mode_override = None
+    mode_flag = None
     if args.dt:
-        mode_name = "DT (Dynamic Training)"
+        mode_override = "dt"
         mode_flag = "--dt"
     elif args.promote:
-        mode_name = "PROMOTE"
+        mode_override = "promote"
         mode_flag = "--promote"
-    elif args.temporal_split:
-        mode_name = "TEMPORAL_SPLIT"
-        mode_flag = "--temporal-split"
-    else:
-        mode_name = "TEST_PROMOTE"
+    elif args.test_promote:
+        mode_override = "test_promote"
         mode_flag = "--test-promote"
+    elif args.temporal_split:
+        mode_override = "temporal_split"
+        mode_flag = "--temporal-split"
 
-    # Determine pipeline mode
-    mode_map = {"dt": args.dt, "promote": args.promote, "test_promote": args.test_promote, "temporal_split": args.temporal_split}
-    pipeline_mode = next((mode for mode, flag in mode_map.items() if flag), "dev")
+    # Sort by DAG stages (with mode override if CLI flag set)
+    sorted_runs, group_id_map, dag_lines = sort_pipelines(selected_pipelines, all_dags, mode_override)
+
+    # Local mode only supports a single script
+    if args.local and len(selected_pipelines) > 1:
+        print(f"\n--local only supports a single script, but {len(selected_pipelines)} matched:")
+        for p in selected_pipelines:
+            print(f"   {p.name}")
+        print("\nNarrow your selection to a single script.")
+        exit(1)
+
+    mode_name = mode_override.upper() if mode_override else "YAML defaults"
 
     print(f"\n{'=' * 60}")
-    print(f"{'DRY RUN - ' if args.dry_run else ''}LAUNCHING {len(selected_pipelines)} PIPELINES")
+    print(f"{'DRY RUN - ' if args.dry_run else ''}LAUNCHING {len(sorted_runs)} PIPELINE RUNS")
     print(f"{'=' * 60}")
     print(f"Source: {Path.cwd()}")
     print(f"Selection: {selection_mode}")
     print(f"Mode: {mode_name}")
+    print(f"Execution: {'Local' if args.local else 'SQS → Batch'}")
     print(f"Endpoint: {'Realtime' if args.realtime else 'Serverless'}")
-    print("\nPipeline Chains:")
-    for line in chain_lines:
+    print("\nPipeline DAGs:")
+    for line in dag_lines:
         print(line)
     print()
 
@@ -516,40 +584,52 @@ def main():
         print("Dry run complete. No pipelines were launched.\n")
         return
 
-    # Countdown before launching
-    print("Launching in ", end="", flush=True)
-    for i in range(10, 0, -1):
-        print(f"{i}...", end="", flush=True)
-        time.sleep(1)
-    print(" GO!\n")
+    # Countdown before launching (skip for local runs)
+    if not args.local:
+        print("Launching in ", end="", flush=True)
+        for i in range(10, 0, -1):
+            print(f"{i}...", end="", flush=True)
+            time.sleep(1)
+        print(" GO!\n")
 
-    # Launch each pipeline using the CLI
-    for i, pipeline in enumerate(selected_pipelines, 1):
+    # Launch each pipeline run
+    for i, (script, mode) in enumerate(sorted_runs, 1):
         print(f"\n{'─' * 60}")
-        print(f"Launching pipeline {i}/{len(selected_pipelines)}: {pipeline.name}")
+        print(f"{'Running' if args.local else 'Launching'} run {i}/{len(sorted_runs)}: {script.name} ({mode})")
         print(f"{'─' * 60}")
 
         # Build per-script PIPELINE_META with resolved names
-        pipeline_meta = build_pipeline_meta(pipeline, pipeline_mode, not args.realtime)
+        pipeline_meta = build_pipeline_meta(script, mode, not args.realtime)
 
-        # Build the command
-        cmd = ["ml_pipeline_sqs", str(pipeline), mode_flag]
-        if args.realtime:
-            cmd.append("--realtime")
-        cmd.extend(["--pipeline-meta", pipeline_meta])
+        if args.local:
+            # Run locally with PIPELINE_META set in the environment
+            env = os.environ.copy()
+            env["PIPELINE_META"] = pipeline_meta
+            cmd = [sys.executable, str(script)]
+            print(f"with ENV: PIPELINE_META='{pipeline_meta}'")
+            print(f"{'─' * 60}\n")
+            result = subprocess.run(cmd, env=env)
+        else:
+            # Launch via SQS → Batch
+            run_mode_flag = mode_flag or f"--{mode.replace('_', '-')}"
+            cmd = ["ml_pipeline_sqs", str(script), run_mode_flag]
+            if args.realtime:
+                cmd.append("--realtime")
+            cmd.extend(["--pipeline-meta", pipeline_meta])
 
-        # Pass group_id for dependency chain ordering (from yaml chain name or WORKBENCH_BATCH root)
-        group_id = group_id_map.get(pipeline)
-        if group_id:
-            cmd.extend(["--group-id", group_id])
+            # Pass group_id for dependency chain ordering (from yaml DAG name or WORKBENCH_BATCH root)
+            group_id = group_id_map.get((script, mode))
+            if group_id:
+                cmd.extend(["--group-id", group_id])
 
-        print(f"Running: {' '.join(cmd)}\n")
-        result = subprocess.run(cmd)
+            print(f"Running: {' '.join(cmd)}\n")
+            result = subprocess.run(cmd)
+
         if result.returncode != 0:
-            print(f"Failed to launch {pipeline.name} (exit code: {result.returncode})")
+            print(f"Failed to launch {script.name} (exit code: {result.returncode})")
 
     print(f"\n{'=' * 60}")
-    print(f"FINISHED LAUNCHING {len(selected_pipelines)} PIPELINES")
+    print(f"FINISHED LAUNCHING {len(sorted_runs)} PIPELINE RUNS")
     print(f"{'=' * 60}\n")
 
 
