@@ -119,6 +119,14 @@ def test_set_sample_weights():
     normal_row = tv_df[tv_df[id_col] == ids[4]]
     assert normal_row["sample_weight"].iloc[0] == 1.0
 
+    # Verify get_sample_weights reads back what we set
+    read_weights = fs.get_sample_weights()
+    assert read_weights[ids[0]] == 0.0
+    assert read_weights[ids[1]] == 0.0
+    assert read_weights[ids[2]] == 0.0
+    assert read_weights[ids[3]] == 0.5
+    assert len(read_weights) == 4  # only explicitly set IDs
+
     # Reset to standard training view
     fs.set_sample_weights({})
     tv_df = fs.view("training").pull_dataframe()

@@ -597,6 +597,22 @@ class FeatureSetCore(Artifact):
 
         TrainingView.create_with_sql(self, sql_query=sql_query, id_column=self.id_column)
 
+    def get_sample_weights(self) -> Dict[Union[str, int], float]:
+        """Read current sample weights from the supplemental weights table.
+
+        Returns:
+            Dict[Union[str, int], float]: Mapping of ID to sample weight.
+                Returns empty dict if no weights table exists.
+        """
+        weights_table = f"_{self.table}___sample_weights"
+        try:
+            df = self.query(f'SELECT * FROM "{weights_table}"')
+            if df is not None and len(df) > 0:
+                return dict(zip(df[self.id_column], df["sample_weight"]))
+        except Exception:
+            pass
+        return {}
+
     def _create_weights_table(self, weight_dict: Dict[Union[str, int], float]) -> str:
         """Store sample weights as a supplemental data table.
 
