@@ -70,8 +70,8 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
     today = datetime.now().strftime("%y%m%d")
 
     if mode in ("dt", "ts"):
-        model_name = f"{basename_hyphen}-{version}-dt"
-        endpoint_name = f"{basename_hyphen}-{version}-dt"
+        model_name = f"{basename_hyphen}-{version}-{mode}"
+        endpoint_name = f"{basename_hyphen}-{version}-{mode}"
     elif mode == "promote":
         model_name = f"{basename_hyphen}-{version}-{today}"
         endpoint_name = f"{endpoint_base}-{version}"
