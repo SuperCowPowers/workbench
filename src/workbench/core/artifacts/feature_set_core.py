@@ -544,42 +544,39 @@ class FeatureSetCore(Artifact):
 
     def set_sample_weights(
         self,
-        weight_dict: Dict[Union[str, int], float],
+        weights: Union[Dict[Union[str, int], float], pd.DataFrame],
         default_weight: float = 1.0,
         exclude_zero_weights: bool = True,
     ):
         """Configure training view with sample weights for each ID.
 
         Args:
-            weight_dict: Mapping of ID to sample weight
+            weights (Union[dict, pd.DataFrame]): Sample weights as either:
+                - dict: Mapping of ID to sample weight (sparse/small)
+                - DataFrame: Two columns [id_column, "sample_weight"] (dense/large)
+                Weight semantics:
                 - weight > 1.0: oversample/emphasize
                 - weight = 1.0: normal (default)
                 - 0 < weight < 1.0: downweight/de-emphasize
                 - weight = 0.0: exclude from training
-            default_weight: Weight for IDs not in weight_dict (default: 1.0)
-            exclude_zero_weights: If True, filter out rows with sample_weight=0 (default: True)
-
-        Example:
-            weights = {
-                'compound_42': 3.0,  # oversample 3x
-                'compound_99': 0.1,  # noisy, downweight
-                'compound_123': 0.0, # exclude from training
-            }
-            fs.set_sample_weights(weights)  # zeros automatically excluded
-            fs.set_sample_weights(weights, exclude_zero_weights=False)  # keep zeros
+            default_weight (float): Weight for IDs not in weights (default: 1.0)
+            exclude_zero_weights (bool): If True, filter out rows with sample_weight=0 (default: True)
 
         Note:
             Weights are stored as a supplemental table and joined to the training view.
         """
         from workbench.core.views import TrainingView
 
-        if not weight_dict:
-            self.log.important("Empty weight_dict, creating standard training view")
+        # Handle empty weights (dict or DataFrame)
+        is_empty = (isinstance(weights, dict) and not weights) or (isinstance(weights, pd.DataFrame) and weights.empty)
+        if is_empty:
+            self.log.important("Empty weights, creating standard training view")
+            self._delete_weights_table()
             TrainingView.create(self, id_column=self.id_column)
             return
 
-        self.log.important(f"Setting sample weights for {len(weight_dict)} IDs")
-        weights_table = self._create_weights_table(weight_dict)
+        self.log.important(f"Setting sample weights for {len(weights)} IDs")
+        weights_table = self._create_weights_table(weights)
 
         # Build JOIN query with COALESCE for default weight
         inner_sql = f"""SELECT t.*, COALESCE(w.sample_weight, {default_weight}) AS sample_weight
@@ -588,7 +585,10 @@ class FeatureSetCore(Artifact):
 
         # Optionally filter out zero weights
         if exclude_zero_weights:
-            zero_count = sum(1 for w in weight_dict.values() if w == 0.0)
+            if isinstance(weights, dict):
+                zero_count = sum(1 for w in weights.values() if w == 0.0)
+            else:
+                zero_count = int((weights["sample_weight"] == 0.0).sum())
             if zero_count:
                 self.log.important(f"Filtering out {zero_count} rows with sample_weight = 0")
             sql_query = f"SELECT * FROM ({inner_sql}) WHERE sample_weight > 0"
@@ -597,38 +597,80 @@ class FeatureSetCore(Artifact):
 
         TrainingView.create_with_sql(self, sql_query=sql_query, id_column=self.id_column)
 
-    def get_sample_weights(self) -> Dict[Union[str, int], float]:
+    def get_sample_weights(self) -> pd.DataFrame:
         """Read current sample weights from the supplemental weights table.
 
         Returns:
-            Dict[Union[str, int], float]: Mapping of ID to sample weight.
-                Returns empty dict if no weights table exists.
+            pd.DataFrame: DataFrame with columns [id_column, "sample_weight"].
+                Returns empty DataFrame if no weights table exists.
         """
         weights_table = f"_{self.table}___sample_weights"
-        try:
-            df = self.query(f'SELECT * FROM "{weights_table}"')
-            if df is not None and len(df) > 0:
-                return dict(zip(df[self.id_column], df["sample_weight"]))
-        except Exception:
-            pass
-        return {}
+        database = self.data_source.database
 
-    def _create_weights_table(self, weight_dict: Dict[Union[str, int], float]) -> str:
+        # Check if the table exists before querying
+        if not wr.catalog.does_table_exist(database, weights_table, boto3_session=self.data_source.boto3_session):
+            return pd.DataFrame(columns=[self.id_column, "sample_weight"])
+
+        df = self.query(f'SELECT * FROM "{weights_table}"')
+        if df is not None and len(df) > 0:
+            return df[[self.id_column, "sample_weight"]].reset_index(drop=True)
+        return pd.DataFrame(columns=[self.id_column, "sample_weight"])
+
+    def add_filter(self, id_list: list, exclude_zero_weights: bool = True):
+        """Additively filter out IDs from the training view.
+
+        Reads existing sample weights, sets weight=0.0 for the given IDs,
+        and recreates the training view. This is additive -- existing weights
+        are preserved for IDs not in the filter list.
+
+        Args:
+            id_list (list): List of IDs to filter out (set to weight 0.0)
+            exclude_zero_weights (bool): If True, filter out rows with sample_weight=0 (default: True)
+        """
+        # Read existing weights
+        existing = self.get_sample_weights()
+
+        # Create filter DataFrame (all zeros)
+        filter_df = pd.DataFrame({self.id_column: id_list, "sample_weight": 0.0})
+
+        # Merge: filter_df overwrites existing weights for those IDs
+        if not existing.empty:
+            combined = pd.concat([existing, filter_df]).drop_duplicates(
+                subset=[self.id_column], keep="last"
+            )
+        else:
+            combined = filter_df
+
+        # Apply combined weights
+        self.set_sample_weights(combined, exclude_zero_weights=exclude_zero_weights)
+
+    def _delete_weights_table(self):
+        """Delete the supplemental weights table if it exists."""
+        from workbench.core.views.view_utils import delete_table
+
+        weights_table = f"_{self.table}___sample_weights"
+        self.log.info(f"Deleting supplemental weights table: {weights_table}")
+        delete_table(weights_table, self.data_source.database, self.data_source.boto3_session)
+
+    def _create_weights_table(self, weights: Union[Dict[Union[str, int], float], pd.DataFrame]) -> str:
         """Store sample weights as a supplemental data table.
 
         Args:
-            weight_dict: Mapping of ID to sample weight
+            weights (Union[dict, pd.DataFrame]): Sample weights as dict or DataFrame
 
         Returns:
             str: The name of the created supplemental table
         """
         from workbench.core.views.view_utils import dataframe_to_table
 
-        # Create DataFrame from weight_dict
-        df = pd.DataFrame(
-            [(id_val, weight) for id_val, weight in weight_dict.items()],
-            columns=[self.id_column, "sample_weight"],
-        )
+        # Convert dict to DataFrame if needed
+        if isinstance(weights, dict):
+            df = pd.DataFrame(
+                list(weights.items()),
+                columns=[self.id_column, "sample_weight"],
+            )
+        else:
+            df = weights[[self.id_column, "sample_weight"]].copy()
 
         # Supplemental table name follows convention: _{base_table}___sample_weights
         weights_table = f"_{self.table}___sample_weights"

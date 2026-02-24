@@ -2,6 +2,7 @@
 
 import pytest
 import logging
+import pandas as pd
 
 # Workbench Imports
 from workbench.api import DataSource, FeatureSet
@@ -89,7 +90,7 @@ def test_computation_view():
 
 
 def test_set_sample_weights():
-    """Test set_sample_weights with a small dict (uses supplemental table)"""
+    """Test set_sample_weights with dict, DataFrame, get_sample_weights, and add_filter"""
     fs = FeatureSet("test_features")
     total_rows = fs.num_rows()
 
@@ -98,40 +99,60 @@ def test_set_sample_weights():
     id_col = fs.id_column
     ids = df[id_col].tolist()
 
-    # Set weights: exclude first 3 IDs, downweight the 4th
+    # --- Test 1: Dict input ---
     weights = {ids[0]: 0.0, ids[1]: 0.0, ids[2]: 0.0, ids[3]: 0.5}
     fs.set_sample_weights(weights)
 
-    # Pull the training view and verify
     tv_df = fs.view("training").pull_dataframe()
     assert "sample_weight" in tv_df.columns
-    assert len(tv_df) == total_rows - 3  # 3 zero-weight rows excluded
+    assert len(tv_df) == total_rows - 3
     assert ids[0] not in tv_df[id_col].values
-    assert ids[1] not in tv_df[id_col].values
-    assert ids[2] not in tv_df[id_col].values
-
-    # Check the downweighted row
     row = tv_df[tv_df[id_col] == ids[3]]
-    assert len(row) == 1
     assert row["sample_weight"].iloc[0] == 0.5
-
-    # Check a normal row has default weight 1.0
     normal_row = tv_df[tv_df[id_col] == ids[4]]
     assert normal_row["sample_weight"].iloc[0] == 1.0
 
-    # Verify get_sample_weights reads back what we set
+    # --- Test 2: get_sample_weights returns DataFrame ---
     read_weights = fs.get_sample_weights()
-    assert read_weights[ids[0]] == 0.0
-    assert read_weights[ids[1]] == 0.0
-    assert read_weights[ids[2]] == 0.0
-    assert read_weights[ids[3]] == 0.5
-    assert len(read_weights) == 4  # only explicitly set IDs
+    assert isinstance(read_weights, pd.DataFrame)
+    assert list(read_weights.columns) == [id_col, "sample_weight"]
+    assert len(read_weights) == 4
+    w_dict = read_weights.set_index(id_col)["sample_weight"].to_dict()
+    assert w_dict[ids[0]] == 0.0
+    assert w_dict[ids[3]] == 0.5
 
-    # Reset to standard training view
+    # --- Test 3: DataFrame input ---
+    weights_df = pd.DataFrame({id_col: [ids[0], ids[1]], "sample_weight": [0.0, 0.3]})
+    fs.set_sample_weights(weights_df)
+
+    tv_df = fs.view("training").pull_dataframe()
+    assert len(tv_df) == total_rows - 1  # only ids[0] excluded (weight 0.0)
+    assert ids[0] not in tv_df[id_col].values
+    row = tv_df[tv_df[id_col] == ids[1]]
+    assert row["sample_weight"].iloc[0] == 0.3
+
+    # --- Test 4: add_filter ---
+    # Start fresh: set ids[3] to 0.5
+    fs.set_sample_weights({ids[3]: 0.5})
+    # Now additively filter out ids[4] and ids[5]
+    fs.add_filter([ids[4], ids[5]])
+
+    tv_df = fs.view("training").pull_dataframe()
+    assert len(tv_df) == total_rows - 2  # ids[4] and ids[5] excluded
+    assert ids[4] not in tv_df[id_col].values
+    assert ids[5] not in tv_df[id_col].values
+    # Verify original weight for ids[3] is preserved
+    row = tv_df[tv_df[id_col] == ids[3]]
+    assert row["sample_weight"].iloc[0] == 0.5
+
+    # --- Cleanup: Reset to standard training view ---
     fs.set_sample_weights({})
     tv_df = fs.view("training").pull_dataframe()
     assert len(tv_df) == total_rows
-    print(f"set_sample_weights test passed: {total_rows} rows, 3 excluded, 1 downweighted, then reset")
+    # Verify weights table is cleaned up
+    read_weights = fs.get_sample_weights()
+    assert read_weights.empty
+    print(f"set_sample_weights test passed: dict, DataFrame, get_sample_weights, add_filter, reset all verified")
 
 
 def test_view_on_non_existent_data():
