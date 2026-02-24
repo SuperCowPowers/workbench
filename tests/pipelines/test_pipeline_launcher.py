@@ -1,8 +1,6 @@
 """Tests for ml_pipeline_launcher.py - pipelines.json loading and sort_pipelines."""
 
 import json
-from pathlib import Path
-
 import os
 from unittest.mock import patch
 
