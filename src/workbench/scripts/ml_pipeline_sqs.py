@@ -1,8 +1,6 @@
 import argparse
-import ast
 import logging
 import json
-import re
 from pathlib import Path
 
 # Workbench Imports
@@ -15,56 +13,6 @@ cm = ConfigManager()
 workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
 
 
-def parse_workbench_batch(script_content: str) -> dict | None:
-    """Parse WORKBENCH_BATCH config from a script.
-
-    Looks for a dictionary assignment like:
-        WORKBENCH_BATCH = {
-            "outputs": ["feature_set_xyz"],
-        }
-    or:
-        WORKBENCH_BATCH = {
-            "inputs": ["feature_set_xyz"],
-        }
-
-    Args:
-        script_content: The Python script content as a string
-
-    Returns:
-        The parsed dictionary or None if not found
-    """
-    pattern = r"WORKBENCH_BATCH\s*=\s*(\{[^}]+\})"
-    match = re.search(pattern, script_content, re.DOTALL)
-    if match:
-        try:
-            return ast.literal_eval(match.group(1))
-        except (ValueError, SyntaxError) as e:
-            print(f"⚠️  Warning: Failed to parse WORKBENCH_BATCH: {e}")
-            return None
-    return None
-
-
-def get_message_group_id(batch_config: dict | None) -> str:
-    """Derive MessageGroupId from outputs or inputs.
-
-    - Scripts with outputs use first output as group
-    - Scripts with inputs use first input as group
-    - Default to "ml-pipeline-jobs" if no config
-    """
-    if not batch_config:
-        return "ml-pipeline-jobs"
-
-    outputs = batch_config.get("outputs", [])
-    inputs = batch_config.get("inputs", [])
-
-    if outputs:
-        return outputs[0]
-    elif inputs:
-        return inputs[0]
-    else:
-        return "ml-pipeline-jobs"
-
-
 def submit_to_sqs(
     script_path: str,
     size: str = "small",
@@ -75,26 +23,33 @@ def submit_to_sqs(
     temporal_split: bool = False,
     group_id: str | None = None,
     pipeline_meta: str | None = None,
+    outputs: list[str] | None = None,
+    inputs: list[str] | None = None,
 ) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
 
     Args:
-        script_path: Local path to the ML pipeline script
-        size: Job size tier - "small" (default), "medium", or "large"
-        realtime: If True, sets serverless=False for real-time processing (default: False)
-        dt: If True, sets DT=True in environment (default: False)
-        promote: If True, sets PROMOTE=True in environment (default: False)
-        test_promote: If True, sets TEST_PROMOTE=True in environment (default: False)
-        temporal_split: If True, sets TEMPORAL_SPLIT=True in environment (default: False)
-        group_id: Optional MessageGroupId override for dependency chains (default: derived from script)
-        pipeline_meta: Optional JSON string for PIPELINE_META environment variable
+        script_path (str): Local path to the ML pipeline script
+        size (str): Job size tier - "small" (default), "medium", or "large"
+        realtime (bool): If True, sets serverless=False for real-time processing (default: False)
+        dt (bool): If True, sets DT=True in environment (default: False)
+        promote (bool): If True, sets PROMOTE=True in environment (default: False)
+        test_promote (bool): If True, sets TEST_PROMOTE=True in environment (default: False)
+        temporal_split (bool): If True, sets TEMPORAL_SPLIT=True in environment (default: False)
+        group_id (str | None): Optional MessageGroupId override for dependency chains
+        pipeline_meta (str | None): Optional JSON string for PIPELINE_META environment variable
+        outputs (list[str] | None): Stage outputs for dependency tracking (e.g., ["dag:stage_0"])
+        inputs (list[str] | None): Stage inputs for dependency tracking (e.g., ["dag:stage_0"])
 
     Raises:
         ValueError: If size is invalid or script file not found
     """
+    outputs = outputs or []
+    inputs = inputs or []
+
     print(f"\n{'=' * 60}")
-    print("🚀  SUBMITTING ML PIPELINE JOB")
+    print("SUBMITTING ML PIPELINE JOB")
     print(f"{'=' * 60}")
     if size not in ["small", "medium", "large"]:
         raise ValueError(f"Invalid size '{size}'. Must be 'small', 'medium', or 'large'")
@@ -104,62 +59,59 @@ def submit_to_sqs(
     if not script_file.exists():
         raise FileNotFoundError(f"Script not found: {script_path}")
 
-    # Read script content and parse WORKBENCH_BATCH config
     script_content = script_file.read_text()
-    batch_config = parse_workbench_batch(script_content)
-    if group_id is None:
-        group_id = get_message_group_id(batch_config)
-    outputs = (batch_config or {}).get("outputs", [])
-    inputs = (batch_config or {}).get("inputs", [])
 
-    print(f"📄  Script: {script_file.name}")
-    print(f"📏  Size tier: {size}")
-    print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
-    print(f"🔄  DynamicTraining: {dt}")
-    print(f"🆕  Promote: {promote}")
-    print(f"🧪  Test Promote: {test_promote}")
-    print(f"📅  Temporal Split: {temporal_split}")
+    if group_id is None:
+        group_id = "ml-pipeline-jobs"
+
+    print(f"  Script: {script_file.name}")
+    print(f"  Size tier: {size}")
+    print(f"  Mode: {'Real-time' if realtime else 'Serverless'} (serverless={'False' if realtime else 'True'})")
+    print(f"  DynamicTraining: {dt}")
+    print(f"  Promote: {promote}")
+    print(f"  Test Promote: {test_promote}")
+    print(f"  Temporal Split: {temporal_split}")
     if pipeline_meta:
-        print(f"📋  Pipeline Meta: {pipeline_meta}")
-    print(f"🪣  Bucket: {workbench_bucket}")
+        print(f"  Pipeline Meta: {pipeline_meta}")
+    print(f"  Bucket: {workbench_bucket}")
     if outputs:
-        print(f"📤  Outputs: {outputs}")
+        print(f"  Outputs: {outputs}")
     if inputs:
-        print(f"📥  Inputs: {inputs}")
-    print(f"📦  Batch Group: {group_id}")
+        print(f"  Inputs: {inputs}")
+    print(f"  Batch Group: {group_id}")
     sqs = AWSAccountClamp().boto3_session.client("sqs")
     script_name = script_file.name
 
     # List Workbench queues
-    print("\n📋  Listing Workbench SQS queues...")
+    print("\n  Listing Workbench SQS queues...")
     try:
         queues = sqs.list_queues(QueueNamePrefix="workbench-")
         queue_urls = queues.get("QueueUrls", [])
         if queue_urls:
-            print(f"✅  Found {len(queue_urls)} workbench queue(s):")
+            print(f"  Found {len(queue_urls)} workbench queue(s):")
             for url in queue_urls:
                 queue_name = url.split("/")[-1]
-                print(f"   • {queue_name}")
+                print(f"   - {queue_name}")
         else:
-            print("⚠️  No workbench queues found")
+            print("  No workbench queues found")
     except Exception as e:
-        print(f"❌  Error listing queues: {e}")
+        print(f"  Error listing queues: {e}")
 
     # Upload script to S3
     s3_path = f"s3://{workbench_bucket}/batch-jobs/{script_name}"
-    print("\n📤  Uploading script to S3...")
+    print("\n  Uploading script to S3...")
     print(f"   Source: {script_path}")
     print(f"   Destination: {s3_path}")
 
     try:
         upload_content_to_s3(script_content, s3_path)
-        print("✅  Script uploaded successfully")
+        print("  Script uploaded successfully")
     except Exception as e:
-        print(f"❌  Upload failed: {e}")
+        print(f"  Upload failed: {e}")
         raise
     # Get queue URL and info
     queue_name = "workbench-ml-pipeline-queue.fifo"
-    print("\n🎯  Getting queue information...")
+    print("\n  Getting queue information...")
     print(f"   Queue name: {queue_name}")
 
     try:
@@ -176,7 +128,7 @@ def submit_to_sqs(
         print(f"   Messages in flight: {messages_in_flight}")
 
     except Exception as e:
-        print(f"❌  Error accessing queue: {e}")
+        print(f"  Error accessing queue: {e}")
         raise
 
     # Prepare message
@@ -193,44 +145,50 @@ def submit_to_sqs(
     if pipeline_meta:
         message["environment"]["PIPELINE_META"] = pipeline_meta
 
+    # Stage dependency info for batch_trigger
+    if outputs:
+        message["outputs"] = outputs
+    if inputs:
+        message["inputs"] = inputs
+
     # Send the message to SQS
     try:
-        print("\n📨  Sending message to SQS...")
+        print("\n  Sending message to SQS...")
         response = sqs.send_message(
             QueueUrl=queue_url,
             MessageBody=json.dumps(message, indent=2),
-            MessageGroupId=group_id,  # From WORKBENCH_BATCH or default
+            MessageGroupId=group_id,
         )
         message_id = response["MessageId"]
-        print("✅  Message sent successfully!")
+        print("  Message sent successfully!")
         print(f"   Message ID: {message_id}")
     except Exception as e:
-        print(f"❌  Failed to send message: {e}")
+        print(f"  Failed to send message: {e}")
         raise
 
     # Success summary
     print(f"\n{'=' * 60}")
-    print("✅  JOB SUBMISSION COMPLETE")
+    print("  JOB SUBMISSION COMPLETE")
     print(f"{'=' * 60}")
-    print(f"📄  Script: {script_name}")
-    print(f"📏  Size: {size}")
-    print(f"⚡  Mode: {'Real-time' if realtime else 'Serverless'} (SERVERLESS={'False' if realtime else 'True'})")
-    print(f"🔄  DynamicTraining: {dt}")
-    print(f"🆕  Promote: {promote}")
-    print(f"🧪  Test Promote: {test_promote}")
-    print(f"📅  Temporal Split: {temporal_split}")
+    print(f"  Script: {script_name}")
+    print(f"  Size: {size}")
+    print(f"  Mode: {'Real-time' if realtime else 'Serverless'} (SERVERLESS={'False' if realtime else 'True'})")
+    print(f"  DynamicTraining: {dt}")
+    print(f"  Promote: {promote}")
+    print(f"  Test Promote: {test_promote}")
+    print(f"  Temporal Split: {temporal_split}")
     if outputs:
-        print(f"📤  Outputs: {outputs}")
+        print(f"  Outputs: {outputs}")
     if inputs:
-        print(f"📥  Inputs: {inputs}")
-    print(f"📦  Batch Group: {group_id}")
-    print(f"🆔  Message ID: {message_id}")
-    print("\n🔍  MONITORING LOCATIONS:")
-    print(f"   • SQS Queue: AWS Console → SQS → {queue_name}")
-    print("   • Lambda Logs: AWS Console → Lambda → Functions")
-    print("   • Batch Jobs: AWS Console → Batch → Jobs")
-    print("   • CloudWatch: AWS Console → CloudWatch → Log groups")
-    print("\n⏳  Your job should start processing soon...")
+        print(f"  Inputs: {inputs}")
+    print(f"  Batch Group: {group_id}")
+    print(f"  Message ID: {message_id}")
+    print("\n  MONITORING LOCATIONS:")
+    print(f"   - SQS Queue: AWS Console -> SQS -> {queue_name}")
+    print("   - Lambda Logs: AWS Console -> Lambda -> Functions")
+    print("   - Batch Jobs: AWS Console -> Batch -> Jobs")
+    print("   - CloudWatch: AWS Console -> CloudWatch -> Log groups")
+    print("\n  Your job should start processing soon...")
 
 
 def main():
@@ -275,7 +233,21 @@ def main():
         default=None,
         help="Override MessageGroupId for SQS (used for dependency chain ordering)",
     )
+    parser.add_argument(
+        "--outputs",
+        default=None,
+        help="Comma-separated stage outputs for dependency tracking (e.g., 'dag:stage_0')",
+    )
+    parser.add_argument(
+        "--inputs",
+        default=None,
+        help="Comma-separated stage inputs for dependency tracking (e.g., 'dag:stage_0')",
+    )
     args = parser.parse_args()
+
+    outputs = args.outputs.split(",") if args.outputs else []
+    inputs = args.inputs.split(",") if args.inputs else []
+
     try:
         submit_to_sqs(
             args.script_file,
@@ -287,9 +259,11 @@ def main():
             temporal_split=args.temporal_split,
             group_id=args.group_id,
             pipeline_meta=args.pipeline_meta,
+            outputs=outputs,
+            inputs=inputs,
         )
     except Exception as e:
-        print(f"\n❌  ERROR: {e}")
+        print(f"\n  ERROR: {e}")
         log.error(f"Error: {e}")
         exit(1)
 

@@ -1,22 +1,17 @@
 """Batch Trigger Lambda: Processes SQS messages and submits jobs to AWS Batch.
 
 This Lambda handles job dependencies by:
-1. Parsing WORKBENCH_BATCH config from the script in S3
-2. Translating inputs/outputs to group/priority for dependency tracking
-3. Querying Batch for active jobs that produce what this job needs
-4. Submitting with dependsOn to ensure proper execution order
+1. Reading outputs/inputs from the SQS message body
+2. Querying Batch for active jobs that produce what this job needs
+3. Submitting with dependsOn to ensure proper execution order
 """
 
-import ast
 import json
 import os
-import re
 import boto3
 from datetime import datetime
-from pathlib import Path
 
 batch = boto3.client("batch")
-s3 = boto3.client("s3")
 
 WORKBENCH_BUCKET = os.environ["WORKBENCH_BUCKET"]
 JOB_QUEUE = os.environ["JOB_QUEUE"]
@@ -27,80 +22,6 @@ JOB_DEFINITIONS = {
 }
 
 
-def parse_workbench_batch(script_content: str) -> dict | None:
-    """Parse WORKBENCH_BATCH config from a script.
-
-    Looks for a dictionary assignment like:
-        WORKBENCH_BATCH = {
-            "outputs": ["feature_set_xyz"],
-        }
-    or:
-        WORKBENCH_BATCH = {
-            "inputs": ["feature_set_xyz"],
-        }
-
-    Args:
-        script_content: The Python script content as a string
-
-    Returns:
-        The parsed dictionary or None if not found
-    """
-    pattern = r"WORKBENCH_BATCH\s*=\s*(\{[^}]+\})"
-    match = re.search(pattern, script_content, re.DOTALL)
-    if match:
-        try:
-            return ast.literal_eval(match.group(1))
-        except (ValueError, SyntaxError) as e:
-            print(f"Warning: Failed to parse WORKBENCH_BATCH: {e}")
-            return None
-    return None
-
-
-def translate_to_group_priority(batch_config: dict | None) -> tuple[str | None, int]:
-    """Translate inputs/outputs to group/priority.
-
-    - Scripts with outputs are producers (priority 1)
-    - Scripts with inputs are consumers (priority 2)
-    - Group is derived from the first output or input
-
-    Args:
-        batch_config: The parsed WORKBENCH_BATCH config
-
-    Returns:
-        Tuple of (group, priority)
-    """
-    if not batch_config:
-        return None, 1
-
-    outputs = batch_config.get("outputs", [])
-    inputs = batch_config.get("inputs", [])
-
-    if outputs:
-        # Producer: uses first output as group, priority 1
-        return outputs[0], 1
-    elif inputs:
-        # Consumer: uses first input as group, priority 2
-        return inputs[0], 2
-    else:
-        return None, 1
-
-
-def get_script_content(s3_path: str) -> str:
-    """Download and return the content of an S3 script.
-
-    Args:
-        s3_path: S3 URI in format s3://bucket/key
-
-    Returns:
-        Script content as string
-    """
-    parts = s3_path.replace("s3://", "").split("/", 1)
-    bucket = parts[0]
-    key = parts[1]
-    response = s3.get_object(Bucket=bucket, Key=key)
-    return response["Body"].read().decode("utf-8")
-
-
 def find_active_jobs_with_output(output_name: str) -> list[str]:
     """Find all active Batch jobs that produce the specified output.
 
@@ -108,10 +29,10 @@ def find_active_jobs_with_output(output_name: str) -> list[str]:
     that have the matching output in their environment.
 
     Args:
-        output_name: The output name to look for (e.g., "feature_set_xyz")
+        output_name (str): The output name to look for (e.g., "my_dag:stage_0")
 
     Returns:
-        List of job IDs that produce this output
+        list[str]: List of job IDs that produce this output
     """
     active_statuses = ["SUBMITTED", "PENDING", "RUNNABLE", "STARTING", "RUNNING"]
     job_ids = []
@@ -125,10 +46,10 @@ def find_active_jobs_with_output(output_name: str) -> list[str]:
                 job_detail = batch.describe_jobs(jobs=[job_id])["jobs"]
                 if job_detail:
                     job = job_detail[0]
-                    # Check container environment for WORKBENCH_BATCH_OUTPUTS
+                    # Check container environment for PIPELINE_OUTPUTS
                     env_vars = job.get("container", {}).get("environment", [])
                     for env in env_vars:
-                        if env.get("name") == "WORKBENCH_BATCH_OUTPUTS":
+                        if env.get("name") == "PIPELINE_OUTPUTS":
                             job_outputs = env.get("value", "").split(",")
                             if output_name in job_outputs:
                                 job_ids.append(job_id)
@@ -149,18 +70,11 @@ def lambda_handler(event, context):
             size = message.get("size", "small")
             extra_env = message.get("environment", {})
 
-            # Download script and parse WORKBENCH_BATCH config
-            script_content = get_script_content(script_path)
-            batch_config = parse_workbench_batch(script_content)
+            # Read dependency info from message
+            outputs = message.get("outputs", [])
+            inputs = message.get("inputs", [])
 
-            # Extract inputs/outputs for dependency tracking
-            outputs = (batch_config or {}).get("outputs", [])
-            inputs = (batch_config or {}).get("inputs", [])
-
-            # Translate to group/priority at the last minute
-            group, priority = translate_to_group_priority(batch_config)
-
-            script_name = Path(script_path).stem
+            script_name = script_path.rstrip("/").rsplit("/", 1)[-1].removesuffix(".py")
             job_name = f"workbench_{script_name}_{datetime.now():%Y%m%d_%H%M%S}"
 
             # Get job definition name from environment variables
@@ -175,7 +89,7 @@ def lambda_handler(event, context):
 
             # Add outputs to environment for dependency tracking (comma-separated)
             if outputs:
-                env_vars.append({"name": "WORKBENCH_BATCH_OUTPUTS", "value": ",".join(outputs)})
+                env_vars.append({"name": "PIPELINE_OUTPUTS", "value": ",".join(outputs)})
 
             # Build job submission parameters
             submit_params = {

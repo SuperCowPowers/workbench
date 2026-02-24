@@ -103,7 +103,7 @@ class TestSortPipelines:
         }
         pipelines = [script_a, script_b]
 
-        sorted_runs, group_id_map, dag_lines = sort_pipelines(pipelines, all_dags)
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(pipelines, all_dags)
 
         # 3 runs total: a:dt, b:dt, b:ts
         assert len(sorted_runs) == 3
@@ -114,6 +114,10 @@ class TestSortPipelines:
         assert group_id_map[(script_a, "dt")] == "my_dag"
         assert group_id_map[(script_b, "dt")] == "my_dag"
         assert group_id_map[(script_b, "ts")] == "my_dag"
+        # Stage 0 has no inputs, stage 1 depends on stage 0
+        assert deps_map[(script_a, "dt")] == {"outputs": ["my_dag:stage_0"], "inputs": []}
+        assert deps_map[(script_b, "dt")] == {"outputs": ["my_dag:stage_1"], "inputs": ["my_dag:stage_0"]}
+        assert deps_map[(script_b, "ts")] == {"outputs": ["my_dag:stage_1"], "inputs": ["my_dag:stage_0"]}
 
     def test_mode_override_replaces_json_modes(self, tmp_path):
         """mode_override should replace all JSON modes with a single mode."""
@@ -128,7 +132,7 @@ class TestSortPipelines:
         }
         pipelines = [script_a, script_b]
 
-        sorted_runs, group_id_map, dag_lines = sort_pipelines(pipelines, all_dags, mode_override="promote")
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(pipelines, all_dags, mode_override="promote")
 
         # Only 2 runs: a:promote, b:promote (JSON modes ignored)
         assert len(sorted_runs) == 2
@@ -146,13 +150,16 @@ class TestSortPipelines:
         }
         pipelines = [script_a, script_b]
 
-        sorted_runs, group_id_map, dag_lines = sort_pipelines(pipelines, all_dags)
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(pipelines, all_dags)
 
         assert len(sorted_runs) == 3
         assert group_id_map[(script_a, "dt")] == "dag_a"
         assert group_id_map[(script_b, "dt")] == "dag_b"
         assert group_id_map[(script_b, "ts")] == "dag_b"
         assert len(dag_lines) == 2
+        # Each dag has only stage 0, so no inputs
+        assert deps_map[(script_a, "dt")]["inputs"] == []
+        assert deps_map[(script_b, "dt")]["inputs"] == []
 
     def test_parallel_stage_display(self, tmp_path):
         """Stage with multiple scripts should show parallel notation."""
@@ -168,7 +175,7 @@ class TestSortPipelines:
         }
         pipelines = [script_a, script_b, script_c]
 
-        _, _, dag_lines = sort_pipelines(pipelines, all_dags)
+        _, _, dag_lines, _ = sort_pipelines(pipelines, all_dags)
 
         assert len(dag_lines) == 1
         # Stage separator is " --> ", within-stage separator is " | "
@@ -190,7 +197,7 @@ class TestSortPipelines:
         # Only select a subset
         pipelines = [script_a, script_b]
 
-        sorted_runs, group_id_map, dag_lines = sort_pipelines(pipelines, all_dags)
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(pipelines, all_dags)
 
         assert len(sorted_runs) == 2
         assert (script_a, "dt") in sorted_runs
@@ -205,7 +212,7 @@ class TestSortPipelines:
         all_dags = {"my_dag": [{script_a: ["dt"]}]}
         pipelines = [script_a, script_orphan]
 
-        sorted_runs, group_id_map, dag_lines = sort_pipelines(pipelines, all_dags)
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(pipelines, all_dags)
 
         assert len(sorted_runs) == 1
         assert sorted_runs[0] == (script_a, "dt")
@@ -213,21 +220,23 @@ class TestSortPipelines:
 
     def test_empty_pipelines(self):
         """Empty pipeline list should return empty results."""
-        sorted_runs, group_id_map, dag_lines = sort_pipelines([], {})
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines([], {})
 
         assert sorted_runs == []
         assert group_id_map == {}
         assert dag_lines == []
+        assert deps_map == {}
 
     def test_empty_dags_returns_empty(self, tmp_path):
         """Passing empty dags with pipelines should return no runs."""
         script = tmp_path / "orphan.py"
 
-        sorted_runs, group_id_map, dag_lines = sort_pipelines([script], {})
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines([script], {})
 
         assert sorted_runs == []
         assert group_id_map == {}
         assert dag_lines == []
+        assert deps_map == {}
 
 
 class TestExcludedScripts:

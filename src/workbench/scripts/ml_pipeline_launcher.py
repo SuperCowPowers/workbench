@@ -119,7 +119,7 @@ def sort_pipelines(
     pipelines: list[Path],
     all_dags: dict[str, list[dict[Path, list[str]]]],
     mode_override: str | None = None,
-) -> tuple[list[tuple[Path, str]], dict[tuple[Path, str], str | None], list[str]]:
+) -> tuple[list[tuple[Path, str]], dict[tuple[Path, str], str | None], list[str], dict]:
     """Sort pipelines by DAG stages with per-script modes.
 
     All pipelines must be defined in a pipelines.json DAG.
@@ -131,21 +131,25 @@ def sort_pipelines(
         mode_override (str | None): If set, overrides all JSON modes (from CLI flags)
 
     Returns:
-        tuple: (sorted_runs, group_id_map, dag_lines)
+        tuple: (sorted_runs, group_id_map, dag_lines, deps_map)
             - sorted_runs: List of (script_path, mode) tuples in execution order
             - group_id_map: {(script_path, mode): sqs_message_group_id}
             - dag_lines: Formatted display lines
+            - deps_map: {(script_path, mode): {"outputs": list, "inputs": list}}
     """
     pipeline_set = set(pipelines)
     sorted_runs = []
     group_id_map = {}
+    deps_map = {}
     dag_lines = []
 
     for dag_name, stages in all_dags.items():
         dag_stage_lines = []
         dag_has_runs = False
-        for stage in stages:
+        for stage_idx, stage in enumerate(stages):
             stage_parts = []
+            outputs = [f"{dag_name}:stage_{stage_idx}"]
+            inputs = [f"{dag_name}:stage_{stage_idx - 1}"] if stage_idx > 0 else []
             for script, modes in stage.items():
                 if script not in pipeline_set:
                     continue
@@ -154,13 +158,14 @@ def sort_pipelines(
                     run = (script, mode)
                     sorted_runs.append(run)
                     group_id_map[run] = dag_name
+                    deps_map[run] = {"outputs": outputs, "inputs": inputs}
                     stage_parts.append(f"{script.stem}:{mode}")
             if stage_parts:
                 dag_stage_lines.append(" | ".join(stage_parts))
         if dag_has_runs:
             dag_lines.append("   " + " --> ".join(dag_stage_lines))
 
-    return sorted_runs, group_id_map, dag_lines
+    return sorted_runs, group_id_map, dag_lines, deps_map
 
 
 def get_all_pipelines() -> tuple[list[Path], dict[str, list[dict[Path, list[str]]]]]:
@@ -284,7 +289,7 @@ def main():
             break
 
     # Sort by DAG stages (with mode override if CLI flag set)
-    sorted_runs, group_id_map, dag_lines = sort_pipelines(selected_pipelines, all_dags, mode_override)
+    sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(selected_pipelines, all_dags, mode_override)
 
     # Local mode only supports a single script
     if args.local and len(selected_pipelines) > 1:
@@ -346,6 +351,11 @@ def main():
             group_id = group_id_map.get((script, mode))
             if group_id:
                 cmd.extend(["--group-id", group_id])
+            deps = deps_map.get((script, mode), {})
+            if deps.get("outputs"):
+                cmd.extend(["--outputs", ",".join(deps["outputs"])])
+            if deps.get("inputs"):
+                cmd.extend(["--inputs", ",".join(deps["inputs"])])
             print(f"{'─' * 60}")
             print(f"Running: {' '.join(cmd)}\n")
             result = subprocess.run(cmd)
