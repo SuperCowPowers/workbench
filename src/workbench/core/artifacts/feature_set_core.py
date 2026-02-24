@@ -635,9 +635,7 @@ class FeatureSetCore(Artifact):
 
         # Merge: filter_df overwrites existing weights for those IDs
         if not existing.empty:
-            combined = pd.concat([existing, filter_df]).drop_duplicates(
-                subset=[self.id_column], keep="last"
-            )
+            combined = pd.concat([existing, filter_df]).drop_duplicates(subset=[self.id_column], keep="last")
         else:
             combined = filter_df
 

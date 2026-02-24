@@ -152,7 +152,7 @@ def test_set_sample_weights():
     # Verify weights table is cleaned up
     read_weights = fs.get_sample_weights()
     assert read_weights.empty
-    print(f"set_sample_weights test passed: dict, DataFrame, get_sample_weights, add_filter, reset all verified")
+    print("set_sample_weights test passed: dict, DataFrame, get_sample_weights, add_filter, reset all verified")
 
 
 def test_view_on_non_existent_data():
