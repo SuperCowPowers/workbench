@@ -1,5 +1,6 @@
-"""Tests for ml_pipeline_launcher.py - pipelines.yaml loading and sort_pipelines."""
+"""Tests for ml_pipeline_launcher.py - pipelines.json loading and sort_pipelines."""
 
+import json
 from pathlib import Path
 
 import os
@@ -9,27 +10,30 @@ import pytest
 
 from workbench.scripts.ml_pipeline_launcher import (
     get_all_pipelines,
-    load_pipelines_yaml,
+    load_pipelines_config,
     parse_script_name,
     sort_pipelines,
 )
 
 
-class TestLoadPipelinesYaml:
-    """Tests for loading pipelines.yaml with DAG format."""
+class TestLoadPipelinesConfig:
+    """Tests for loading pipelines.json with DAG format."""
 
-    def test_load_valid_yaml(self, tmp_path):
-        """Load a valid pipelines.yaml with stage-based DAGs."""
-        yaml_content = """
-dags:
-  dag_a:
-    - script_a1.py: [dt]
-    - script_a2.py: [dt, ts]
-  dag_b:
-    - script_b1.py: [dt]
-"""
-        (tmp_path / "pipelines.yaml").write_text(yaml_content)
-        result = load_pipelines_yaml(tmp_path)
+    def test_load_valid_json(self, tmp_path):
+        """Load a valid pipelines.json with stage-based DAGs."""
+        config = {
+            "dags": {
+                "dag_a": [
+                    {"script_a1.py": ["dt"]},
+                    {"script_a2.py": ["dt", "ts"]},
+                ],
+                "dag_b": [
+                    {"script_b1.py": ["dt"]},
+                ],
+            }
+        }
+        (tmp_path / "pipelines.json").write_text(json.dumps(config))
+        result = load_pipelines_config(tmp_path)
 
         assert result is not None
         assert "dag_a" in result
@@ -45,15 +49,16 @@ dags:
 
     def test_multi_script_stage(self, tmp_path):
         """Multiple scripts in one stage (parallel execution)."""
-        yaml_content = """
-dags:
-  my_dag:
-    - root.py: [dt]
-    - child_a.py: [dt, ts]
-      child_b.py: [dt, ts]
-"""
-        (tmp_path / "pipelines.yaml").write_text(yaml_content)
-        result = load_pipelines_yaml(tmp_path)
+        config = {
+            "dags": {
+                "my_dag": [
+                    {"root.py": ["dt"]},
+                    {"child_a.py": ["dt", "ts"], "child_b.py": ["dt", "ts"]},
+                ],
+            }
+        }
+        (tmp_path / "pipelines.json").write_text(json.dumps(config))
+        result = load_pipelines_config(tmp_path)
 
         # Stage 1 should have 2 scripts
         stage_1 = result["my_dag"][1]
@@ -61,28 +66,24 @@ dags:
         assert stage_1[tmp_path / "child_a.py"] == ["dt", "ts"]
         assert stage_1[tmp_path / "child_b.py"] == ["dt", "ts"]
 
-    def test_returns_none_when_no_yaml(self, tmp_path):
-        """Returns None when no pipelines.yaml exists in the directory."""
-        result = load_pipelines_yaml(tmp_path)
+    def test_returns_none_when_no_json(self, tmp_path):
+        """Returns None when no pipelines.json exists in the directory."""
+        result = load_pipelines_config(tmp_path)
         assert result is None
 
     def test_empty_dags(self, tmp_path):
-        """Handle yaml with empty dags section."""
-        (tmp_path / "pipelines.yaml").write_text("dags: {}\n")
-        result = load_pipelines_yaml(tmp_path)
+        """Handle JSON with empty dags section."""
+        (tmp_path / "pipelines.json").write_text(json.dumps({"dags": {}}))
+        result = load_pipelines_config(tmp_path)
 
         assert result is not None
         assert result == {}
 
     def test_paths_are_resolved_relative_to_directory(self, tmp_path):
-        """Script paths should be relative to the yaml's directory."""
-        yaml_content = """
-dags:
-  my_dag:
-    - subdir_script.py: [dt]
-"""
-        (tmp_path / "pipelines.yaml").write_text(yaml_content)
-        result = load_pipelines_yaml(tmp_path)
+        """Script paths should be relative to the JSON config's directory."""
+        config = {"dags": {"my_dag": [{"subdir_script.py": ["dt"]}]}}
+        (tmp_path / "pipelines.json").write_text(json.dumps(config))
+        result = load_pipelines_config(tmp_path)
 
         stage_0 = result["my_dag"][0]
         assert tmp_path / "subdir_script.py" in stage_0
@@ -116,8 +117,8 @@ class TestSortPipelines:
         assert group_id_map[(script_b, "dt")] == "my_dag"
         assert group_id_map[(script_b, "ts")] == "my_dag"
 
-    def test_mode_override_replaces_yaml_modes(self, tmp_path):
-        """mode_override should replace all yaml modes with a single mode."""
+    def test_mode_override_replaces_json_modes(self, tmp_path):
+        """mode_override should replace all JSON modes with a single mode."""
         script_a = tmp_path / "a.py"
         script_b = tmp_path / "b.py"
 
@@ -131,7 +132,7 @@ class TestSortPipelines:
 
         sorted_runs, group_id_map, dag_lines = sort_pipelines(pipelines, all_dags, mode_override="promote")
 
-        # Only 2 runs: a:promote, b:promote (yaml modes ignored)
+        # Only 2 runs: a:promote, b:promote (JSON modes ignored)
         assert len(sorted_runs) == 2
         assert sorted_runs[0] == (script_a, "promote")
         assert sorted_runs[1] == (script_b, "promote")
@@ -198,25 +199,19 @@ class TestSortPipelines:
         assert (script_b, "dt") in sorted_runs
         assert (script_c, "dt") not in sorted_runs
 
-    def test_no_dags_falls_back_to_workbench_batch(self, tmp_path):
-        """When no yaml DAGs, should fall back to WORKBENCH_BATCH parsing."""
-        script = tmp_path / "test_script.py"
-        script.write_text('WORKBENCH_BATCH = {"outputs": ["test-output"]}\n')
+    def test_scripts_not_in_dags_are_skipped(self, tmp_path):
+        """Scripts not defined in any DAG should be silently skipped."""
+        script_a = tmp_path / "a.py"
+        script_orphan = tmp_path / "orphan.py"
 
-        sorted_runs, group_id_map, dag_lines = sort_pipelines([script], {})
+        all_dags = {"my_dag": [{script_a: ["dt"]}]}
+        pipelines = [script_a, script_orphan]
+
+        sorted_runs, group_id_map, dag_lines = sort_pipelines(pipelines, all_dags)
 
         assert len(sorted_runs) == 1
-        assert sorted_runs[0] == (script, "dt")
-        assert group_id_map[(script, "dt")] == "test-output"
-
-    def test_workbench_batch_uses_mode_override(self, tmp_path):
-        """WORKBENCH_BATCH fallback should use mode_override when provided."""
-        script = tmp_path / "test_script.py"
-        script.write_text('WORKBENCH_BATCH = {"outputs": ["test-output"]}\n')
-
-        sorted_runs, group_id_map, dag_lines = sort_pipelines([script], {}, mode_override="dt")
-
-        assert sorted_runs[0] == (script, "dt")
+        assert sorted_runs[0] == (script_a, "dt")
+        assert (script_orphan, "dt") not in sorted_runs
 
     def test_empty_pipelines(self):
         """Empty pipeline list should return empty results."""
@@ -226,40 +221,28 @@ class TestSortPipelines:
         assert group_id_map == {}
         assert dag_lines == []
 
-    def test_mixed_yaml_and_workbench_batch(self, tmp_path):
-        """Pipelines from yaml DAGs and WORKBENCH_BATCH should both work."""
-        yaml_script = tmp_path / "yaml_script.py"
-        yaml_script.write_text("# yaml managed\n")
+    def test_empty_dags_returns_empty(self, tmp_path):
+        """Passing empty dags with pipelines should return no runs."""
+        script = tmp_path / "orphan.py"
 
-        wb_script = tmp_path / "wb_script.py"
-        wb_script.write_text('WORKBENCH_BATCH = {"outputs": ["wb-output"]}\n')
+        sorted_runs, group_id_map, dag_lines = sort_pipelines([script], {})
 
-        all_dags = {"yaml_dag": [{yaml_script: ["dt"]}]}
-        pipelines = [yaml_script, wb_script]
-
-        sorted_runs, group_id_map, dag_lines = sort_pipelines(pipelines, all_dags)
-
-        assert (yaml_script, "dt") in sorted_runs
-        assert (wb_script, "dt") in sorted_runs
-        assert group_id_map[(yaml_script, "dt")] == "yaml_dag"
-        assert group_id_map[(wb_script, "dt")] == "wb-output"
+        assert sorted_runs == []
+        assert group_id_map == {}
+        assert dag_lines == []
 
 
 class TestExcludedScripts:
-    """Tests verifying that scripts not in pipelines.yaml are excluded."""
+    """Tests verifying that scripts not in pipelines.json are excluded."""
 
     def test_excluded_script_not_discovered(self, tmp_path):
-        """Scripts not listed in pipelines.yaml should not appear in results."""
-        yaml_content = """
-dags:
-  my_dag:
-    - included.py: [dt]
-"""
-        (tmp_path / "pipelines.yaml").write_text(yaml_content)
+        """Scripts not listed in pipelines.json should not appear in results."""
+        config = {"dags": {"my_dag": [{"included.py": ["dt"]}]}}
+        (tmp_path / "pipelines.json").write_text(json.dumps(config))
         (tmp_path / "included.py").write_text("# included\n")
         (tmp_path / "excluded.py").write_text("# excluded\n")
 
-        dags = load_pipelines_yaml(tmp_path)
+        dags = load_pipelines_config(tmp_path)
 
         all_scripts = set()
         for stages in dags.values():
@@ -269,40 +252,54 @@ dags:
         assert tmp_path / "included.py" in all_scripts
         assert tmp_path / "excluded.py" not in all_scripts
 
-    def test_ppb_human_scripts_in_yaml(self):
-        """Verify the actual ppb_human pipelines.yaml includes 6 scripts (chemeleon excluded)."""
-        ppb_human_dir = Path("/Users/briford/work/ideaya/promoted_ml_pipelines/ml_pipelines/Binding/ppb_human")
-        if not (ppb_human_dir / "pipelines.yaml").exists():
-            return  # Skip if not on this machine
+    def test_realistic_multi_dag_config(self, tmp_path):
+        """Realistic config with multiple DAGs, stages, and scripts parses correctly."""
+        config = {
+            "dags": {
+                "free_class": [
+                    {"free_class_xgb_1.py": ["dt"]},
+                    {
+                        "free_class_pytorch_1.py": ["dt", "ts"],
+                        "free_class_chemprop_1.py": ["dt", "ts"],
+                    },
+                ],
+                "free_reg": [
+                    {"free_reg_xgb_1.py": ["dt"]},
+                    {
+                        "free_reg_pytorch_1.py": ["dt", "ts"],
+                        "free_reg_chemprop_1.py": ["dt", "ts"],
+                    },
+                ],
+            }
+        }
+        (tmp_path / "pipelines.json").write_text(json.dumps(config))
 
-        dags = load_pipelines_yaml(ppb_human_dir)
+        dags = load_pipelines_config(tmp_path)
+
         all_scripts = set()
         for stages in dags.values():
             for stage in stages:
                 all_scripts.update(stage.keys())
 
-        script_names = [s.name for s in all_scripts]
-        assert "ppb_human_free_reg_xgb_1.py" in script_names
-        assert "ppb_human_free_reg_pytorch_1.py" in script_names
-        assert "ppb_human_free_reg_chemprop_1.py" in script_names
-        assert "ppb_human_free_class_xgb_1.py" in script_names
-        assert "ppb_human_free_class_pytorch_1.py" in script_names
-        assert "ppb_human_free_class_chemprop_1.py" in script_names
-        assert "ppb_human_free_reg_chemeleon_1.py" not in script_names
+        assert len(dags) == 2
         assert len(all_scripts) == 6
+        script_names = [s.name for s in all_scripts]
+        assert "free_class_xgb_1.py" in script_names
+        assert "free_reg_pytorch_1.py" in script_names
 
 
 class TestGetAllPipelines:
     """Tests for get_all_pipelines with nested directory structures."""
 
-    def test_nested_yaml_discovered(self, tmp_path):
-        """pipelines.yaml in a deeply nested directory should be found."""
+    def test_nested_json_discovered(self, tmp_path):
+        """pipelines.json in a deeply nested directory should be found."""
         leaf = tmp_path / "top" / "middle" / "leaf"
         leaf.mkdir(parents=True)
         (leaf / "script_a.py").write_text("# a\n")
         (leaf / "script_b.py").write_text("# b\n")
         (leaf / "excluded.py").write_text("# should not appear\n")
-        (leaf / "pipelines.yaml").write_text("dags:\n  my_dag:\n    - script_a.py: [dt]\n    - script_b.py: [dt]\n")
+        config = {"dags": {"my_dag": [{"script_a.py": ["dt"]}, {"script_b.py": ["dt"]}]}}
+        (leaf / "pipelines.json").write_text(json.dumps(config))
 
         with patch("os.getcwd", return_value=str(tmp_path)):
             os.chdir(tmp_path)
@@ -314,17 +311,18 @@ class TestGetAllPipelines:
         assert "excluded.py" not in script_names
         assert "my_dag" in all_dags
 
-    def test_mixed_nested_yaml_and_non_yaml_dirs(self, tmp_path):
-        """Directories with yaml exclude unlisted scripts; dirs without yaml include all .py."""
-        yaml_dir = tmp_path / "project" / "assay_a"
-        yaml_dir.mkdir(parents=True)
-        (yaml_dir / "included.py").write_text("# in yaml\n")
-        (yaml_dir / "excluded.py").write_text("# not in yaml\n")
-        (yaml_dir / "pipelines.yaml").write_text("dags:\n  dag_a:\n    - included.py: [dt]\n")
+    def test_dirs_without_json_are_ignored(self, tmp_path):
+        """Directories without pipelines.json should be completely ignored."""
+        json_dir = tmp_path / "project" / "assay_a"
+        json_dir.mkdir(parents=True)
+        (json_dir / "included.py").write_text("# in JSON\n")
+        (json_dir / "excluded.py").write_text("# not in JSON\n")
+        config = {"dags": {"dag_a": [{"included.py": ["dt"]}]}}
+        (json_dir / "pipelines.json").write_text(json.dumps(config))
 
-        no_yaml_dir = tmp_path / "project" / "assay_b"
-        no_yaml_dir.mkdir(parents=True)
-        (no_yaml_dir / "legacy_script.py").write_text('WORKBENCH_BATCH = {"outputs": ["legacy-out"]}\n')
+        no_json_dir = tmp_path / "project" / "assay_b"
+        no_json_dir.mkdir(parents=True)
+        (no_json_dir / "legacy_script.py").write_text("# no pipelines.json here\n")
 
         os.chdir(tmp_path)
         pipelines, all_dags = get_all_pipelines()
@@ -332,7 +330,7 @@ class TestGetAllPipelines:
         script_names = [p.name for p in pipelines]
         assert "included.py" in script_names
         assert "excluded.py" not in script_names
-        assert "legacy_script.py" in script_names
+        assert "legacy_script.py" not in script_names
         assert "dag_a" in all_dags
 
 

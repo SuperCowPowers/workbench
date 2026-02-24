@@ -16,7 +16,6 @@ Usage:
 """
 
 import argparse
-import ast
 import json
 import os
 import random
@@ -26,8 +25,6 @@ import sys
 import time
 from pathlib import Path
 
-import yaml
-
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 
@@ -36,7 +33,7 @@ MODE_MAP = {
     "dt": ("dt", "--dt"),
     "promote": ("promote", "--promote"),
     "test_promote": ("test_promote", "--test-promote"),
-    "temporal_split": ("temporal_split", "--temporal-split"),
+    "temporal_split": ("ts", "--temporal-split"),
 }
 
 
@@ -72,7 +69,7 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
     endpoint_base = FRAMEWORK_RE.sub("", basename_hyphen)  # e.g., "ppb-human-free-reg"
     today = datetime.now().strftime("%y%m%d")
 
-    if mode in ("dt", "temporal_split"):
+    if mode in ("dt", "ts"):
         model_name = f"{basename_hyphen}-{version}-dt"
         endpoint_name = f"{basename_hyphen}-{version}-dt"
     elif mode == "promote":
@@ -89,25 +86,25 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
     )
 
 
-def load_pipelines_yaml(directory: Path) -> dict[str, list[dict[Path, list[str]]]] | None:
-    """Load pipelines.yaml from a directory.
+def load_pipelines_config(directory: Path) -> dict[str, list[dict[Path, list[str]]]] | None:
+    """Load pipelines.json from a directory.
 
-    The yaml uses a stage-based DAG format where each list item is a stage
+    The JSON uses a stage-based DAG format where each list item is a stage
     (dict of script: [modes]). Scripts within a stage can run in parallel;
     stages run sequentially.
 
     Args:
-        directory (Path): Directory to check for pipelines.yaml
+        directory (Path): Directory to check for pipelines.json
 
     Returns:
         dict | None: {dag_name: [stages]} where each stage is {script_path: [modes]},
-            or None if no yaml found
+            or None if no JSON config found
     """
-    yaml_path = directory / "pipelines.yaml"
-    if not yaml_path.exists():
+    json_path = directory / "pipelines.json"
+    if not json_path.exists():
         return None
-    with open(yaml_path) as f:
-        config = yaml.safe_load(f)
+    with open(json_path) as f:
+        config = json.load(f)
     dags = {}
     for dag_name, stages in config.get("dags", {}).items():
         dag_stages = []
@@ -118,112 +115,6 @@ def load_pipelines_yaml(directory: Path) -> dict[str, list[dict[Path, list[str]]
     return dags
 
 
-def parse_workbench_batch(script_path: Path) -> dict | None:
-    """Parse WORKBENCH_BATCH config from a script file."""
-    content = script_path.read_text()
-    match = re.search(r"WORKBENCH_BATCH\s*=\s*(\{[^}]+\})", content, re.DOTALL)
-    if match:
-        try:
-            return ast.literal_eval(match.group(1))
-        except (ValueError, SyntaxError):
-            return None
-    return None
-
-
-def build_dependency_graph(configs: dict[Path, dict]) -> dict[str, str]:
-    """Build a mapping from each output to its root producer.
-
-    For a chain like A -> B -> C (where B depends on A, C depends on B),
-    this returns {A: A, B: A, C: A} so all are in the same message group.
-    """
-    output_to_input = {}
-    for config in configs.values():
-        if not config:
-            continue
-        for output in config.get("outputs", []):
-            inputs = config.get("inputs", [])
-            output_to_input[output] = inputs[0] if inputs else None
-
-    def find_root(output: str, visited: set = None) -> str:
-        if visited is None:
-            visited = set()
-        if output in visited:
-            return output
-        visited.add(output)
-        parent = output_to_input.get(output)
-        return output if parent is None else find_root(parent, visited)
-
-    return {output: find_root(output) for output in output_to_input}
-
-
-def get_group_id(config: dict | None, root_map: dict[str, str]) -> str | None:
-    """Get the root group_id for a pipeline based on its config and root_map."""
-    if not config:
-        return None
-    for key in ("inputs", "outputs"):
-        items = config.get(key, [])
-        if items and items[0] in root_map:
-            return root_map[items[0]]
-    return None
-
-
-def _walk_chain(pipeline: Path, pipelines: set, configs: dict, used: set) -> list[Path]:
-    """Walk a dependency chain from a root pipeline, returning the ordered chain."""
-    chain = [pipeline]
-    used.add(pipeline)
-    current = pipeline
-    while True:
-        current_config = configs.get(current)
-        if not current_config or not current_config.get("outputs"):
-            break
-        current_output = current_config["outputs"][0]
-        next_pipeline = next(
-            (
-                p
-                for p, c in configs.items()
-                if p not in used and p in pipelines and c and c.get("inputs") and current_output in c["inputs"]
-            ),
-            None,
-        )
-        if not next_pipeline:
-            break
-        chain.append(next_pipeline)
-        used.add(next_pipeline)
-        current = next_pipeline
-    return chain
-
-
-def _sort_by_workbench_batch(
-    pipelines: list[Path],
-) -> tuple[list[Path], dict[Path, dict], dict[str, str], list[str]]:
-    """Sort pipelines by WORKBENCH_BATCH dependency chains (legacy fallback).
-
-    Returns (sorted_list, configs, root_map, display_lines).
-    """
-    configs = {p: parse_workbench_batch(p) for p in pipelines}
-    root_map = build_dependency_graph(configs)
-    pipeline_set = set(pipelines)
-    used = set()
-
-    # Walk chains from root producers (no inputs)
-    chains = []
-    for pipeline in sorted(pipelines):
-        config = configs.get(pipeline)
-        if pipeline in used or (config and config.get("inputs")):
-            continue
-        chains.append(_walk_chain(pipeline, pipeline_set, configs, used))
-
-    # Add any remaining pipelines not in chains
-    for pipeline in sorted(pipelines):
-        if pipeline not in used:
-            chains.append([pipeline])
-
-    sorted_pipelines = [p for chain in chains for p in chain]
-    display_lines = ["   " + " --> ".join(p.stem for p in chain) for chain in chains]
-
-    return sorted_pipelines, configs, root_map, display_lines
-
-
 def sort_pipelines(
     pipelines: list[Path],
     all_dags: dict[str, list[dict[Path, list[str]]]],
@@ -231,14 +122,13 @@ def sort_pipelines(
 ) -> tuple[list[tuple[Path, str]], dict[tuple[Path, str], str | None], list[str]]:
     """Sort pipelines by DAG stages with per-script modes.
 
-    Uses yaml DAGs when available, falls back to WORKBENCH_BATCH parsing for
-    pipelines not covered by any yaml DAG.
+    All pipelines must be defined in a pipelines.json DAG.
 
     Args:
         pipelines (list[Path]): Pipelines to sort
-        all_dags (dict): DAG definitions from pipelines.yaml files
+        all_dags (dict): DAG definitions from pipelines.json files
             {dag_name: [stages]} where each stage is {script_path: [modes]}
-        mode_override (str | None): If set, overrides all yaml modes (from CLI flags)
+        mode_override (str | None): If set, overrides all JSON modes (from CLI flags)
 
     Returns:
         tuple: (sorted_runs, group_id_map, dag_lines)
@@ -250,9 +140,7 @@ def sort_pipelines(
     sorted_runs = []
     group_id_map = {}
     dag_lines = []
-    used = set()
 
-    # First: process pipelines that are in yaml DAGs
     for dag_name, stages in all_dags.items():
         dag_stage_lines = []
         dag_has_runs = False
@@ -261,7 +149,6 @@ def sort_pipelines(
             for script, modes in stage.items():
                 if script not in pipeline_set:
                     continue
-                used.add(script)
                 dag_has_runs = True
                 for mode in ([mode_override] if mode_override else modes):
                     run = (script, mode)
@@ -273,43 +160,28 @@ def sort_pipelines(
         if dag_has_runs:
             dag_lines.append("   " + " --> ".join(dag_stage_lines))
 
-    # Second: process remaining pipelines via WORKBENCH_BATCH fallback
-    remaining = [p for p in pipelines if p not in used]
-    if remaining:
-        fallback_mode = mode_override or "dt"
-        sorted_remaining, configs, root_map, display_lines = _sort_by_workbench_batch(remaining)
-        dag_lines.extend(display_lines)
-        for pipeline in sorted_remaining:
-            run = (pipeline, fallback_mode)
-            sorted_runs.append(run)
-            group_id_map[run] = get_group_id(configs.get(pipeline), root_map)
-
     return sorted_runs, group_id_map, dag_lines
 
 
 def get_all_pipelines() -> tuple[list[Path], dict[str, list[dict[Path, list[str]]]]]:
-    """Get all ML pipeline scripts from subdirectories of current working directory.
+    """Get all ML pipeline scripts from pipelines.json files in subdirectories.
 
-    For directories with pipelines.yaml, only listed scripts are included.
-    For directories without, falls back to discovering all .py files.
+    Only scripts listed in a pipelines.json are included.
 
     Returns:
         tuple: (pipelines, all_dags)
             - pipelines: List of unique pipeline script paths
-            - all_dags: {dag_name: [stages]} from yaml files
+            - all_dags: {dag_name: [stages]} from pipelines.json files
     """
     cwd = Path.cwd()
     pipelines = []
     all_dags = {}
-    yaml_managed_dirs = set()
     seen_scripts = set()
 
-    # First pass: find all pipelines.yaml files recursively
-    for yaml_path in cwd.rglob("pipelines.yaml"):
-        directory = yaml_path.parent
-        dag_defs = load_pipelines_yaml(directory)
+    for config_path in cwd.rglob("pipelines.json"):
+        directory = config_path.parent
+        dag_defs = load_pipelines_config(directory)
         if dag_defs:
-            yaml_managed_dirs.add(directory)
             all_dags.update(dag_defs)
             for stages in dag_defs.values():
                 for stage in stages:
@@ -317,13 +189,6 @@ def get_all_pipelines() -> tuple[list[Path], dict[str, list[dict[Path, list[str]
                         if script not in seen_scripts:
                             pipelines.append(script)
                             seen_scripts.add(script)
-
-    # Second pass: find .py files in directories NOT managed by yaml
-    for subdir in cwd.iterdir():
-        if subdir.is_dir():
-            for py_file in subdir.rglob("*.py"):
-                if py_file.parent not in yaml_managed_dirs:
-                    pipelines.append(py_file)
 
     return pipelines, all_dags
 
@@ -376,7 +241,7 @@ def main():
         help="Run pipelines locally instead of via SQS (uses active Python interpreter)",
     )
 
-    # Mode flags (mutually exclusive) — override yaml default modes
+    # Mode flags (mutually exclusive) — override pipelines.json default modes
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument("--dt", action="store_true", help="Override all scripts to DT mode (dynamic training)")
     mode_group.add_argument("--promote", action="store_true", help="Override all scripts to PROMOTE mode")
@@ -411,7 +276,7 @@ def main():
         group_names = [d.name for d in get_pipeline_groups(selected_pipelines)]
         selection_mode = f"RANDOM {args.num_groups} group(s): {group_names}"
 
-    # Determine mode override from CLI (None means use yaml defaults)
+    # Determine mode override from CLI (None means use pipelines.json defaults)
     mode_override, mode_flag = None, None
     for arg_name, (override, flag) in MODE_MAP.items():
         if getattr(args, arg_name, False):
@@ -429,7 +294,7 @@ def main():
         print("\nNarrow your selection to a single script.")
         exit(1)
 
-    mode_name = mode_override.upper() if mode_override else "YAML defaults"
+    mode_name = mode_override.upper() if mode_override else "JSON defaults"
 
     print(f"\n{'=' * 60}")
     print(f"{'DRY RUN - ' if args.dry_run else ''}LAUNCHING {len(sorted_runs)} PIPELINE RUNS")

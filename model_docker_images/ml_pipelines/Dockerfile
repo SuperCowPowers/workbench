@@ -32,7 +32,7 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Install workbench only
-RUN pip install --no-cache-dir workbench==0.8.266
+RUN pip install --no-cache-dir workbench==0.8.268
 
 # Add the script runner
 COPY ml_pipeline_runner.py /app/ml_pipeline_runner.py
