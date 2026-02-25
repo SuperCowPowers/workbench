@@ -24,7 +24,7 @@
     --wb-shadow: rgba(80, 80, 80, 0.15);
 
     /* Dropdown/form colors */
-    --wb-dropdown-bg: rgba(215, 215, 215);
+    --wb-dropdown-bg: rgb(195, 200, 215);
     --wb-dropdown-focus: rgba(215, 215, 215);
     --wb-dropdown-hover: rgba(215, 215, 215);
 
@@ -181,6 +181,11 @@ div:has(> [class*="ag-theme-"]) {
 
 .dash-dropdown-value, .dash-dropdown-search {
     color: var(--wb-text-primary) !important;
+    background-color: var(--wb-dropdown-bg) !important;
+}
+
+.dash-dropdown-search-container {
+    background-color: var(--wb-dropdown-bg) !important;
 }
 
 .dash-dropdown-placeholder {
@@ -237,7 +242,8 @@ table {
 th {
     padding: 10px;
     border: 1px solid var(--wb-accent);
-    background-color: var(--wb-medium);
+    background: var(--wb-medium) !important;
+    color: var(--wb-text-primary) !important;
     font-weight: bold;
     text-align: center !important;
 }
