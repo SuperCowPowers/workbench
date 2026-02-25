@@ -173,38 +173,31 @@ div:has(> [class*="ag-theme-"]) {
     color: var(--wb-success);
 }
 
-/* Dropdown styling (dcc.Dropdown) - override Bootstrap's variables */
-.dash-dropdown {
-    --bs-body-bg: var(--wb-dropdown-bg);
-    --bs-body-color: var(--wb-text-primary);
-    --bs-border-color: var(--wb-accent);
-}
-
-/* React-select dropdown styling - target actual rendered elements */
-.Select-control {
+/* Dropdown styling (Dash 4 / Radix) */
+.dash-dropdown-trigger {
     background-color: var(--wb-dropdown-bg) !important;
     border-color: var(--wb-accent) !important;
 }
 
-.Select-value-label, .Select-input input {
+.dash-dropdown-value, .dash-dropdown-search {
     color: var(--wb-text-primary) !important;
 }
 
-.Select-placeholder {
+.dash-dropdown-placeholder {
     color: var(--wb-text-muted) !important;
 }
 
-.Select-menu-outer {
+.dash-dropdown-content {
     background-color: var(--wb-dropdown-bg) !important;
     border-color: var(--wb-accent) !important;
 }
 
-.VirtualizedSelectOption {
+.dash-dropdown-option {
     background-color: var(--wb-dropdown-bg) !important;
     color: var(--wb-text-primary) !important;
 }
 
-.VirtualizedSelectFocusedOption {
+.dash-dropdown-option:hover, .dash-dropdown-option[data-highlighted] {
     background-color: var(--wb-dropdown-hover) !important;
     color: var(--wb-text-primary) !important;
 }
@@ -281,17 +274,15 @@ td {
     background: linear-gradient(180deg, var(--wb-header-purple-start) 0%, var(--wb-header-purple-end) 100%) !important;
 }
 
-/* Confidence range slider styling */
-.confidence-slider .rc-slider-handle {
+/* Confidence range slider styling (Dash 4 / Radix) */
+.confidence-slider [role="slider"] {
     width: 22px !important;
     height: 22px !important;
-    margin-top: -9px !important;
     background-color: var(--wb-lightest) !important;
     border: 2px solid var(--wb-accent) !important;
     border-radius: 4px !important;
-    opacity: 1 !important;
 }
-.confidence-slider .rc-slider-handle::after {
+.confidence-slider [role="slider"]::after {
     content: "|||";
     position: absolute;
     top: 50%;
@@ -302,13 +293,16 @@ td {
     letter-spacing: 0px;
     line-height: 1;
 }
-.confidence-slider .rc-slider-track {
+.confidence-slider .dash-slider-range {
     background-color: var(--wb-accent) !important;
 }
-.confidence-slider .rc-slider-rail {
+.confidence-slider .dash-slider-track {
     background-color: var(--wb-light) !important;
 }
-.confidence-slider .rc-slider-mark-text {
+.confidence-slider .dash-slider-dot {
     font-size: 11px !important;
     color: var(--wb-text-muted) !important;
+}
+.confidence-slider .dash-slider-mark-outside-selection {
+    color: var(--wb-accent) !important;
 }

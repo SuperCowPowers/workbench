@@ -331,7 +331,8 @@ class ConfusionExplorer(PluginInterface):
             step=0.01,
             value=[0.0, 1.0],
             marks=None,
-            tooltip={"placement": "bottom", "always_visible": False},
+            tooltip=False,
+            allow_direct_input=False,
             className="confidence-slider",
         )
 
@@ -340,7 +341,7 @@ class ConfusionExplorer(PluginInterface):
             [
                 html.Label(
                     "Confidence",
-                    style={"fontWeight": "bold", "fontSize": "12px", "whiteSpace": "nowrap"},
+                    style={"fontWeight": "bold", "fontSize": "12px", "whiteSpace": "nowrap", "marginRight": "10px"},
                 ),
                 html.Div(slider, style={"flex": 1, "minWidth": "150px", "marginTop": "20px", "marginBottom": "0px"}),
             ],

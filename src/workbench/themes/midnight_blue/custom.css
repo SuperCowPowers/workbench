@@ -127,37 +127,31 @@ div:has(> [class*="ag-theme-"]) {
     color: rgb(100, 255, 100);
 }
 
-/* Dropdown styling (dcc.Dropdown) - override Bootstrap's --bs-body-bg variable */
-.dash-dropdown {
-    --bs-body-bg: rgb(55, 60, 90);
-    --bs-border-color: rgb(80, 85, 115);
-}
-
-/* React-select dropdown styling - target actual rendered elements */
-.Select-control {
+/* Dropdown styling (Dash 4 / Radix) */
+.dash-dropdown-trigger {
     background-color: rgb(55, 60, 90) !important;
     border-color: rgb(80, 85, 115) !important;
 }
 
-.Select-value-label, .Select-input input {
+.dash-dropdown-value, .dash-dropdown-search {
     color: rgb(210, 210, 210) !important;
 }
 
-.Select-placeholder {
+.dash-dropdown-placeholder {
     color: rgb(150, 150, 170) !important;
 }
 
-.Select-menu-outer {
+.dash-dropdown-content {
     background-color: rgb(55, 60, 90) !important;
     border-color: rgb(80, 85, 115) !important;
 }
 
-.VirtualizedSelectOption {
+.dash-dropdown-option {
     background-color: rgb(55, 60, 90) !important;
     color: rgb(210, 210, 210) !important;
 }
 
-.VirtualizedSelectFocusedOption {
+.dash-dropdown-option:hover, .dash-dropdown-option[data-highlighted] {
     background-color: rgb(70, 75, 110) !important;
     color: rgb(230, 230, 230) !important;
 }
@@ -234,17 +228,15 @@ td {
     background: linear-gradient(180deg, rgb(90, 55, 110) 0%, rgb(55, 30, 70) 100%) !important;
 }
 
-/* Confidence range slider styling */
-.confidence-slider .rc-slider-handle {
+/* Confidence range slider styling (Dash 4 / Radix) */
+.confidence-slider [role="slider"] {
     width: 22px !important;
     height: 22px !important;
-    margin-top: -9px !important;
     background-color: rgb(55, 60, 90) !important;
     border: 2px solid rgb(100, 105, 140) !important;
     border-radius: 4px !important;
-    opacity: 1 !important;
 }
-.confidence-slider .rc-slider-handle::after {
+.confidence-slider [role="slider"]::after {
     content: "|||";
     position: absolute;
     top: 50%;
@@ -255,13 +247,16 @@ td {
     letter-spacing: 0px;
     line-height: 1;
 }
-.confidence-slider .rc-slider-track {
+.confidence-slider .dash-slider-range {
     background-color: rgb(80, 100, 160) !important;
 }
-.confidence-slider .rc-slider-rail {
+.confidence-slider .dash-slider-track {
     background-color: rgb(45, 48, 72) !important;
 }
-.confidence-slider .rc-slider-mark-text {
+.confidence-slider .dash-slider-dot {
     font-size: 11px !important;
     color: rgb(130, 135, 165) !important;
+}
+.confidence-slider .dash-slider-mark-outside-selection {
+    color: rgb(80, 85, 110) !important;
 }

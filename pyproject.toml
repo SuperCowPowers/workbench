@@ -49,8 +49,8 @@ dependencies = [
 
 [project.optional-dependencies]
 ui = [
-    "plotly>=6.0.0",
-    "dash>=3.0.0",
+    "plotly>=6.5.0",
+    "dash>=4.0.0",
     "dash-bootstrap-components>=1.6.0",
     "dash-bootstrap-templates>=1.3.0",
     "dash_ag_grid>=33.3.3",
