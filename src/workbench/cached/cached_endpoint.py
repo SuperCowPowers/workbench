@@ -23,7 +23,7 @@ class CachedEndpoint(CachedArtifactMixin, EndpointCore):
 
     def __init__(self, endpoint_name: str):
         """CachedEndpoint Initialization"""
-        EndpointCore.__init__(self, endpoint_name=endpoint_name, use_cached_meta=True)
+        EndpointCore.__init__(self, endpoint_name=endpoint_name)
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:

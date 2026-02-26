@@ -25,7 +25,7 @@ class CachedFeatureSet(CachedArtifactMixin, FeatureSetCore):
 
     def __init__(self, feature_set_name: str, database: str = "workbench"):
         """CachedFeatureSet Initialization"""
-        FeatureSetCore.__init__(self, feature_set_name=feature_set_name, use_cached_meta=True)
+        FeatureSetCore.__init__(self, feature_set_name=feature_set_name)
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:

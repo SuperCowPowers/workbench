@@ -25,7 +25,7 @@ class CachedModel(CachedArtifactMixin, ModelCore):
 
     def __init__(self, name: str):
         """CachedModel Initialization"""
-        ModelCore.__init__(self, model_name=name, use_cached_meta=True)
+        ModelCore.__init__(self, model_name=name)
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:
