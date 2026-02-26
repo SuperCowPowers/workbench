@@ -32,9 +32,14 @@ class CustomEncoder(json.JSONEncoder):
             elif isinstance(obj, (datetime, date)):
                 return {"__datetime__": True, "datetime": datetime_to_iso8601(obj)}
             elif isinstance(obj, pd.DataFrame):
+                # Convert tz-aware datetime columns to UTC for serialization
+                # (pandas to_json fails with tzlocal objects)
+                df = obj.copy()
+                for col in df.select_dtypes(include=["datetimetz"]).columns:
+                    df[col] = df[col].dt.tz_convert("UTC")
                 return {
                     "__dataframe__": True,
-                    "df": obj.to_json(orient="table"),
+                    "df": df.to_json(orient="table"),
                 }
             return super().default(obj)
         except Exception as e:

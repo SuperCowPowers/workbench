@@ -4,6 +4,7 @@ AWS Artifacts, such as Data Sources, Feature Sets, Models, and Endpoints.
 """
 
 import logging
+from datetime import datetime, timezone
 from typing import Union
 import pandas as pd
 import awswrangler as wr
@@ -12,8 +13,14 @@ from collections import defaultdict
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.config_manager import ConfigManager
-from workbench.utils.datetime_utils import datetime_string
 from workbench.utils.aws_utils import not_found_returns_none, aws_throttle, aws_tags_to_dict
+
+
+def to_utc(dt):
+    """Convert a datetime to UTC, passthrough non-datetime values (None, '-', etc.)"""
+    if isinstance(dt, datetime):
+        return dt.astimezone(timezone.utc)
+    return dt
 
 
 class AWSMeta:
@@ -79,7 +86,7 @@ class AWSMeta:
             summary = {
                 "Name": name,
                 "Size": size_mb,
-                "Modified": datetime_string(info.get("LastModified", "-")),
+                "Modified": to_utc(info.get("LastModified", "-")),
                 "ContentType": info.get("ContentType", "-"),
                 "Encryption": info.get("ServerSideEncryption", "-"),
                 "Tags": str(info.get("tags", "-")),  # Ensure 'tags' exist if needed
@@ -111,7 +118,7 @@ class AWSMeta:
                 "Name": job_name,
                 "Workers": job.get("NumberOfWorkers", "-"),
                 "WorkerType": job.get("WorkerType", "-"),
-                "Start Time": datetime_string(last_run["StartedOn"]) if last_run else "-",
+                "Start Time": to_utc(last_run["StartedOn"]) if last_run else "-",
                 "Duration": f"{last_run['ExecutionTime']} sec" if last_run else "-",
                 "State": last_run["JobRunState"] if last_run else "-",
                 "_aws_url": self.glue_job_console_url(job_name),
@@ -177,7 +184,8 @@ class AWSMeta:
                     "Feature Group": name,
                     "Health": "",
                     "Owner": aws_tags.get("workbench_owner", "-"),
-                    "Created": datetime_string(feature_set_details.get("CreationTime")),
+                    "Created": to_utc(fg["CreationTime"]),
+                    "Modified": to_utc(fg["CreationTime"]),
                     "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),
                     "Input": aws_tags.get("workbench_input", "-"),
                     "Online": str(feature_set_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "Unknown")),
@@ -210,7 +218,7 @@ class AWSMeta:
         for page in paginator.paginate():
             for group in page["ModelPackageGroupSummaryList"]:
                 model_group_name = group["ModelPackageGroupName"]
-                created = datetime_string(group["CreationTime"])
+                created = to_utc(group["CreationTime"])
                 description = group.get("ModelPackageGroupDescription", "-")
 
                 # Initialize variables for details retrieval
@@ -241,6 +249,7 @@ class AWSMeta:
                     "Type": aws_tags.get("workbench_model_type", "-"),
                     "Framework": aws_tags.get("workbench_model_framework", "-"),
                     "Created": created,
+                    "Modified": created,
                     "Ver": model_details.get("ModelPackageVersion", "-"),
                     "Input": aws_tags.get("workbench_input", "-"),
                     "Status": status,
@@ -293,15 +302,13 @@ class AWSMeta:
                     endpoint_details["monitored"] = is_monitored(endpoint_name, self.sm_client)
 
                 # Compile endpoint summary
-                created = (
-                    datetime_string(endpoint_details["CreationTime"]) if "CreationTime" in endpoint_details else "-"
-                )
                 summary = {
                     "Name": endpoint_name,
                     "Health": aws_tags.get("workbench_health_tags", ""),
                     "Owner": aws_tags.get("workbench_owner", "-"),
                     "Instance": endpoint_details["config"]["instance"],
-                    "Created": created,
+                    "Created": to_utc(endpoint["CreationTime"]),
+                    "Modified": to_utc(endpoint["LastModifiedTime"]),
                     "Input": aws_tags.get("workbench_input", "-"),
                     "Status": endpoint_details.get("EndpointStatus", "-"),
                     "Config": endpoint_details.get("EndpointConfigName", "-"),
@@ -363,7 +370,7 @@ class AWSMeta:
             "Job Name": job_details["Name"],
             "Worker Type": job_details.get("WorkerType", "-"),
             "Number of Workers": job_details.get("NumberOfWorkers", "-"),
-            "Last Modified": datetime_string(job_details.get("LastModifiedOn")),
+            "Last Modified": to_utc(job_details.get("LastModifiedOn")),
             "Role": job_details.get("Role", "-"),
             "Description": job_details.get("Description", "-"),
             "Tags": job_details.get("Tags", {}),
@@ -605,7 +612,7 @@ class AWSMeta:
                 "Name": table["Name"],
                 "Owner": table.get("Parameters", {}).get("workbench_owner", "-"),
                 "Database": database,
-                "Modified": datetime_string(table["UpdateTime"]),
+                "Modified": to_utc(table["UpdateTime"]),
                 "Columns": len(table["StorageDescriptor"].get("Columns", [])),
                 "Input": str(
                     table.get("Parameters", {}).get("workbench_input", "-"),
@@ -661,7 +668,7 @@ class AWSMeta:
                         "Name": pipeline_name,
                         "ExecutionName": execution["PipelineExecutionDisplayName"],
                         "Health": health_tags,
-                        "Created": datetime_string(pipeline_info.get("CreationTime")),
+                        "Created": to_utc(pipeline_info.get("CreationTime")),
                         "Tags": workbench_meta.get("workbench_tags", "-"),
                         "Input": workbench_meta.get("workbench_input", "-"),
                         "Status": pipeline_info["PipelineExecutionStatus"],
