@@ -37,7 +37,7 @@ def cache_result(method):
             and not result.empty
             and "Modified" in result.columns
         ):
-            CachedMeta._modified_registry[method.__name__] = dict(zip(result[name_column], result["Modified"]))
+            self.modified_registry.set(method.__name__, dict(zip(result[name_column], result["Modified"])))
 
         return result
 
@@ -69,9 +69,7 @@ class CachedMeta(CloudMeta):
     _instance = None  # Class attribute to hold the singleton instance
     _cache_ttl = 30  # 30 seconds
 
-    # Modified timestamp registry: {list_method: {artifact_name: modified_datetime}}
-    # Shared with CachedArtifactMixin for dirty/stale detection
-    _modified_registry = {}
+    # Registry config maps list method names to the DataFrame column containing artifact names
     _registry_config = {
         "data_sources": "Name",
         "feature_sets": "Feature Group",
@@ -95,6 +93,9 @@ class CachedMeta(CloudMeta):
 
         # Meta Cache for list method results
         self.meta_cache = WorkbenchCache(prefix="meta")
+
+        # Modified timestamp registry (Redis-backed for cross-process sharing)
+        self.modified_registry = WorkbenchCache(prefix="modified_registry")
 
         # Mark the instance as initialized
         self._initialized = True
@@ -217,8 +218,13 @@ class CachedMeta(CloudMeta):
             dict: The full registry or a single list method's entries
         """
         if list_method:
-            return self._modified_registry.get(list_method, {})
-        return self._modified_registry
+            return self.modified_registry.get(list_method) or {}
+        registry = {}
+        for method_name in self._registry_config:
+            entries = self.modified_registry.get(method_name)
+            if entries:
+                registry[method_name] = entries
+        return registry
 
     def get_modified_timestamp(self, artifact):
         """Look up a Cached Artifact's Modified timestamp
@@ -230,14 +236,15 @@ class CachedMeta(CloudMeta):
             datetime: The Modified timestamp, or None if not found
         """
         list_method = artifact._list_method
-        return self._modified_registry.get(list_method, {}).get(artifact.name)
+        entries = self.modified_registry.get(list_method) or {}
+        return entries.get(artifact.name)
 
     def update_modified_timestamp(self, artifact):
         """Update a Cached Artifact's Modified timestamp to now.
 
         This pokes both the registry (for CachedArtifactMixin staleness) and the
         cached previous_df (for incremental detail reuse), so the entire caching
-        system sees the artifact as dirty.
+        system sees the artifact as dirty and refetches on next access.
 
         Args:
             artifact (CachedArtifact): A Cached Artifact object (CachedModel, CachedEndpoint, etc.)
@@ -245,10 +252,10 @@ class CachedMeta(CloudMeta):
         list_method = artifact._list_method
         now = datetime.now(timezone.utc)
 
-        # Update the registry
-        if list_method not in self._modified_registry:
-            self._modified_registry[list_method] = {}
-        self._modified_registry[list_method][artifact.name] = now
+        # Update the registry in Redis
+        entries = self.modified_registry.get(list_method) or {}
+        entries[artifact.name] = now
+        self.modified_registry.set(list_method, entries)
 
         # Update the cached previous_df so the previous_df reuse path also sees the change
         cache_key = WorkbenchCache.flatten_key(list_method, details=True)
