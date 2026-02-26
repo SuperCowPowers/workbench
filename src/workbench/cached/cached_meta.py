@@ -22,8 +22,14 @@ def cache_result(method):
         # Check if we have a cached result that's still fresh
         cached_entry = self.meta_cache.get(cache_key)
         if cached_entry is not None and isinstance(cached_entry, dict) and "_result" in cached_entry:
-            if (now - cached_entry.get("_cached_at", 0)) < self._cache_ttl:
-                return cached_entry["_result"]
+            result = cached_entry["_result"]
+
+            # Guard against corrupted cache entries (e.g., failed DataFrame deserialization)
+            if isinstance(result, dict) and "__dataframe__" in result:
+                self.log.warning(f"Corrupted cache entry for {cache_key}, refetching...")
+                self.meta_cache.delete(cache_key)
+            elif (now - cached_entry.get("_cached_at", 0)) < self._cache_ttl:
+                return result
 
         # Stale or first access: fetch fresh data
         result = method(self, *args, **kwargs)
