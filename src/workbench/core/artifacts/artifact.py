@@ -13,7 +13,6 @@ from workbench.core.artifacts.df_store_core import DFStoreCore
 from workbench.utils.aws_utils import dict_to_aws_tags
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
 from workbench.core.cloud_platform.cloud_meta import CloudMeta
-from workbench.cached.cached_meta import CachedMeta
 
 
 class Artifact(ABC):
@@ -54,19 +53,14 @@ class Artifact(ABC):
     param_store = ParameterStoreCore()
     df_store = DFStoreCore()
 
-    def __init__(self, name: str, use_cached_meta: bool = False):
+    def __init__(self, name: str, **kwargs):
         """Initialize the Artifact Base Class
 
         Args:
             name (str): The Name of this artifact
-            use_cached_meta (bool): Should we use cached metadata? (default: False)
         """
         self.name = name
-        if use_cached_meta:
-            self.log.info(f"Using Cached Metadata for {self.name}")
-            self.meta = CachedMeta()
-        else:
-            self.meta = CloudMeta()
+        self.meta = CloudMeta()
 
     def __post_init__(self):
         """Artifact Post Initialization"""

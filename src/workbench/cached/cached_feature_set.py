@@ -23,9 +23,11 @@ class CachedFeatureSet(CachedArtifactMixin, FeatureSetCore):
         ```
     """
 
-    def __init__(self, feature_set_name: str, database: str = "workbench"):
+    _list_method = "feature_sets"
+
+    def __init__(self, feature_set_name: str):
         """CachedFeatureSet Initialization"""
-        FeatureSetCore.__init__(self, feature_set_name=feature_set_name, use_cached_meta=True)
+        FeatureSetCore.__init__(self, feature_set_name=feature_set_name)
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:
@@ -55,8 +57,8 @@ class CachedFeatureSet(CachedArtifactMixin, FeatureSetCore):
         return super().health_check(**kwargs)
 
     @CachedArtifactMixin.cache_result
-    def workbench_meta(self) -> Union[str, None]:
-        """Retrieve the Workbench Metadata for this DataSource.
+    def workbench_meta(self) -> Union[dict, None]:
+        """Retrieve the Workbench Metadata for this FeatureSet.
 
         Returns:
             Union[dict, None]: Dictionary of Workbench metadata for this Artifact
@@ -85,5 +87,5 @@ if __name__ == "__main__":
     pprint(my_features.health_check())
     pprint(my_features.workbench_meta())
 
-    # Shutdown the ThreadPoolExecutor (note: users should NOT call this)
-    my_features._shutdown()
+    # Second call to demonstrate caching
+    pprint(my_features.summary())

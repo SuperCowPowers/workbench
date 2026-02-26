@@ -24,7 +24,6 @@ from sagemaker import Predictor
 from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts import FeatureSetCore, ModelCore, ModelType, ModelFramework
 from workbench.utils.endpoint_metrics import EndpointMetrics
-from workbench.utils.cache import Cache
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.model_utils import uq_metrics
 from workbench.utils.xgboost_model_utils import pull_cv_results as xgboost_pull_cv
@@ -86,9 +85,6 @@ class EndpointCore(Artifact):
 
         # This is for endpoint error handling later
         self.endpoint_return_columns = None
-
-        # We temporary cache the endpoint metrics
-        self.temp_storage = Cache(prefix="temp_storage", expire=300)  # 5 minutes
 
         # Call SuperClass Post Initialization
         super().__post_init__()
@@ -234,21 +230,11 @@ class EndpointCore(Artifact):
         Returns:
             pd.DataFrame: DataFrame with the metrics for this endpoint (or None if no metrics)
         """
-
-        # Do we have it cached?
-        metrics_key = f"endpoint:{self.name}:endpoint_metrics"
-        endpoint_metrics = self.temp_storage.get(metrics_key)
-        if endpoint_metrics is not None:
-            return endpoint_metrics
-
-        # We don't have it cached so let's get it from CloudWatch
         if "ProductionVariants" not in self.endpoint_meta:
             return None
         self.log.important("Updating endpoint metrics...")
         variant = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
-        endpoint_metrics = EndpointMetrics().get_metrics(self.name, variant=variant)
-        self.temp_storage.set(metrics_key, endpoint_metrics)
-        return endpoint_metrics
+        return EndpointMetrics().get_metrics(self.name, variant=variant)
 
     def details(self) -> dict:
         """Additional Details about this Endpoint
@@ -564,7 +550,7 @@ class EndpointCore(Artifact):
         primary_target = target_list[0]
 
         # If we don't have a smiles column, try to merge it from the FeatureSet
-        if "smiles" not in out_of_fold_df.columns:
+        if "smiles" not in out_of_fold_df.columns and "smiles" in fs.columns:
             fs_df = fs.query(f'SELECT {fs.id_column}, "smiles" FROM "{fs.athena_table}"')
             if "smiles" in fs_df.columns:
                 self.log.info("Merging 'smiles' column from FeatureSet into out-of-fold predictions.")

@@ -23,9 +23,11 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         ```
     """
 
+    _list_method = "models"
+
     def __init__(self, name: str):
         """CachedModel Initialization"""
-        ModelCore.__init__(self, model_name=name, use_cached_meta=True)
+        ModelCore.__init__(self, model_name=name)
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:
@@ -46,11 +48,11 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         return super().details(**kwargs)
 
     @CachedArtifactMixin.cache_result
-    def workbench_meta(self) -> Union[str, None]:
-        """Retrieve the Enumerated Model Type (REGRESSOR, CLASSIFER, etc).
+    def workbench_meta(self) -> Union[dict, None]:
+        """Retrieve the Workbench Metadata for this Model.
 
         Returns:
-            str: The Enumerated Model Type
+            Union[dict, None]: Dictionary of Workbench metadata for this Artifact
         """
         return super().workbench_meta()
 
@@ -182,5 +184,5 @@ if __name__ == "__main__":
     print(my_model.get_inference_metrics())
     print(my_model.get_inference_predictions())
 
-    # Shutdown the ThreadPoolExecutor (note: users should NOT call this)
-    my_model._shutdown()
+    # Second call to demonstrate caching
+    pprint(my_model.summary())

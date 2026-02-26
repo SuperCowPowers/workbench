@@ -23,9 +23,11 @@ class CachedDataSource(CachedArtifactMixin, AthenaSource):
         ```
     """
 
+    _list_method = "data_sources"
+
     def __init__(self, data_name: str, database: str = "workbench"):
         """CachedDataSource Initialization"""
-        AthenaSource.__init__(self, data_name=data_name, database=database, use_cached_meta=True)
+        AthenaSource.__init__(self, data_name=data_name, database=database)
 
     @CachedArtifactMixin.cache_result
     def summary(self, **kwargs) -> dict:
@@ -63,6 +65,7 @@ class CachedDataSource(CachedArtifactMixin, AthenaSource):
         """
         return super().workbench_meta()
 
+    @CachedArtifactMixin.cache_result
     def smart_sample(self) -> pd.DataFrame:
         """Retrieve the Smart Sample for this DataSource.
 
@@ -83,5 +86,5 @@ if __name__ == "__main__":
     pprint(my_data.health_check())
     pprint(my_data.workbench_meta())
 
-    # Shutdown the ThreadPoolExecutor (note: users should NOT call this)
-    my_data._shutdown()
+    # Second call to demonstrate caching
+    pprint(my_data.summary())
