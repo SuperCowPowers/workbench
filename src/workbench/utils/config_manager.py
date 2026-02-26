@@ -179,8 +179,8 @@ class ConfigManager:
         Returns:
             int: The UI update rate in seconds.
         """
-        # Default to 120 seconds if not set
-        return int(self.config.get("UI_UPDATE_RATE", 120))
+        # Default to 60 seconds if not set
+        return int(self.config.get("UI_UPDATE_RATE", 60))
 
     def create_site_config(self):
         """Create a site configuration file from the default configuration."""

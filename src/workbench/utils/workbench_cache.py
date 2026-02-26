@@ -103,6 +103,23 @@ class WorkbenchCache:
         else:
             return len(str(value))
 
+    @staticmethod
+    def flatten_key(name, *args, **kwargs):
+        """Build a cache key from a name (or method), args, and kwargs.
+
+        Args:
+            name: A string or a callable (method.__name__ will be used).
+            *args: Positional arguments to include in the key.
+            **kwargs: Keyword arguments to include in the key.
+
+        Returns:
+            str: A flattened cache key string.
+        """
+        key_name = name.__name__ if callable(name) else name
+        arg_str = "_".join(str(arg) for arg in args)
+        kwarg_str = "_".join(f"{k}_{v}" for k, v in sorted(kwargs.items()))
+        return f"{key_name}_{arg_str}_{kwarg_str}".replace(" ", "").replace("'", "")
+
     def __repr__(self):
         return f"WorkbenchCache({repr(self._actual_cache)})"
 

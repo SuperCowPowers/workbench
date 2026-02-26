@@ -21,6 +21,8 @@ class CachedEndpoint(CachedArtifactMixin, EndpointCore):
         ```
     """
 
+    _list_method = "endpoints"
+
     def __init__(self, endpoint_name: str):
         """CachedEndpoint Initialization"""
         EndpointCore.__init__(self, endpoint_name=endpoint_name)
@@ -53,11 +55,11 @@ class CachedEndpoint(CachedArtifactMixin, EndpointCore):
         return super().health_check(**kwargs)
 
     @CachedArtifactMixin.cache_result
-    def workbench_meta(self) -> Union[str, None]:
-        """Retrieve the Enumerated Model Type (REGRESSOR, CLASSIFER, etc).
+    def workbench_meta(self) -> Union[dict, None]:
+        """Retrieve the Workbench Metadata for this Endpoint.
 
         Returns:
-            str: The Enumerated Model Type
+            Union[dict, None]: Dictionary of Workbench metadata for this Artifact
         """
         return super().workbench_meta()
 
@@ -82,5 +84,5 @@ if __name__ == "__main__":
     pprint(my_endpoint.health_check())
     print(my_endpoint.endpoint_metrics())
 
-    # Shutdown the ThreadPoolExecutor (note: users should NOT call this)
-    my_endpoint._shutdown()
+    # Second call to demonstrate caching
+    pprint(my_endpoint.summary())

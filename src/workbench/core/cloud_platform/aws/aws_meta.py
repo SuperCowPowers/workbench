@@ -155,11 +155,12 @@ class AWSMeta:
         summary = self._list_catalog_tables(database, views=True)
         return summary
 
-    def feature_sets(self, details: bool = False) -> pd.DataFrame:
+    def feature_sets(self, details: bool = False, previous_df: pd.DataFrame = None) -> pd.DataFrame:
         """Get a summary of the Feature Sets in AWS.
 
         Args:
             details (bool, optional): Get additional details (Defaults to False).
+            previous_df (pd.DataFrame, optional): Previous details result for incremental updates.
 
         Returns:
             pd.DataFrame: A summary of the Feature Sets in AWS.
@@ -167,15 +168,26 @@ class AWSMeta:
         # Initialize the SageMaker paginator for listing feature groups
         paginator = self.sm_client.get_paginator("list_feature_groups")
         data_summary = []
+        reused, refreshed = 0, 0
 
         # Use the paginator to retrieve all feature groups
         for page in paginator.paginate():
             for fg in page["FeatureGroupSummaries"]:
                 name = fg["FeatureGroupName"]
+                modified = to_utc(fg["CreationTime"])
+
+                # Reuse previous row if artifact hasn't changed
+                if details and previous_df is not None:
+                    prev_rows = previous_df[previous_df["Feature Group"] == name]
+                    if not prev_rows.empty and prev_rows.iloc[0]["Modified"] == modified:
+                        data_summary.append(prev_rows.iloc[0].to_dict())
+                        reused += 1
+                        continue
 
                 # Get details if requested
                 feature_set_details = {}
                 if details:
+                    refreshed += 1
                     feature_set_details.update(self.sm_client.describe_feature_group(FeatureGroupName=name))
 
                 # Retrieve Workbench metadata from tags
@@ -185,7 +197,7 @@ class AWSMeta:
                     "Health": "",
                     "Owner": aws_tags.get("workbench_owner", "-"),
                     "Created": to_utc(fg["CreationTime"]),
-                    "Modified": to_utc(fg["CreationTime"]),
+                    "Modified": modified,
                     "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),
                     "Input": aws_tags.get("workbench_input", "-"),
                     "Online": str(feature_set_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "Unknown")),
@@ -195,17 +207,22 @@ class AWSMeta:
                 }
                 data_summary.append(summary)
 
+        # Log reuse stats for incremental detail updates
+        if details and previous_df is not None:
+            self.log.info(f"FeatureSets details: {reused} reused, {refreshed} refreshed")
+
         # Return the summary as a DataFrame
         df = pd.DataFrame(data_summary).convert_dtypes()
         if not df.empty:
             df.sort_values(by="Created", ascending=False, inplace=True)
         return df
 
-    def models(self, details: bool = False) -> pd.DataFrame:
+    def models(self, details: bool = False, previous_df: pd.DataFrame = None) -> pd.DataFrame:
         """Get a summary of the Models in AWS.
 
         Args:
             details (bool, optional): Get additional details (Defaults to False).
+            previous_df (pd.DataFrame, optional): Previous details result for incremental updates.
 
         Returns:
             pd.DataFrame: A summary of the Models in AWS.
@@ -213,6 +230,7 @@ class AWSMeta:
         # Initialize the SageMaker paginator for listing model package groups
         paginator = self.sm_client.get_paginator("list_model_package_groups")
         model_summary = []
+        reused, refreshed = 0, 0
 
         # Use the paginator to retrieve all model package groups
         for page in paginator.paginate():
@@ -220,6 +238,14 @@ class AWSMeta:
                 model_group_name = group["ModelPackageGroupName"]
                 created = to_utc(group["CreationTime"])
                 description = group.get("ModelPackageGroupDescription", "-")
+
+                # Reuse previous row if artifact hasn't changed
+                if details and previous_df is not None:
+                    prev_rows = previous_df[previous_df["Model Group"] == model_group_name]
+                    if not prev_rows.empty and prev_rows.iloc[0]["Modified"] == created:
+                        model_summary.append(prev_rows.iloc[0].to_dict())
+                        reused += 1
+                        continue
 
                 # Initialize variables for details retrieval
                 model_details = {}
@@ -229,6 +255,7 @@ class AWSMeta:
 
                 # If details=True get the latest model package details
                 if details:
+                    refreshed += 1
                     latest_model = self.get_latest_model_package_info(model_group_name)
                     if latest_model:
                         model_details.update(
@@ -259,17 +286,22 @@ class AWSMeta:
                 }
                 model_summary.append(summary)
 
+        # Log reuse stats for incremental detail updates
+        if details and previous_df is not None:
+            self.log.info(f"Models details: {reused} reused, {refreshed} refreshed")
+
         # Return the summary as a DataFrame
         df = pd.DataFrame(model_summary).convert_dtypes()
         if not df.empty:
             df.sort_values(by="Created", ascending=False, inplace=True)
         return df
 
-    def endpoints(self, details: bool = False) -> pd.DataFrame:
+    def endpoints(self, details: bool = False, previous_df: pd.DataFrame = None) -> pd.DataFrame:
         """Get a summary of the Endpoints in AWS.
 
         Args:
             details (bool, optional): Get additional details (Defaults to False).
+            previous_df (pd.DataFrame, optional): Previous details result for incremental updates.
 
         Returns:
             pd.DataFrame: A summary of the Endpoints in AWS.
@@ -279,16 +311,27 @@ class AWSMeta:
         # Use our SageMaker client to list all endpoints
         paginator = self.sm_client.get_paginator("list_endpoints")
         data_summary = []
+        reused, refreshed = 0, 0
 
         # Use the paginator to retrieve all endpoints
         for page in paginator.paginate():
             for endpoint in page["Endpoints"]:
                 endpoint_name = endpoint["EndpointName"]
+                modified = to_utc(endpoint["LastModifiedTime"])
+
+                # Reuse previous row if artifact hasn't changed
+                if details and previous_df is not None:
+                    prev_rows = previous_df[previous_df["Name"] == endpoint_name]
+                    if not prev_rows.empty and prev_rows.iloc[0]["Modified"] == modified:
+                        data_summary.append(prev_rows.iloc[0].to_dict())
+                        reused += 1
+                        continue
 
                 # Grab various endpoint details
                 endpoint_details = {"config": {"instance": "-", "variant": "-"}, "monitored": "-"}
                 aws_tags = {}
                 if details:
+                    refreshed += 1
                     endpoint_details = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
 
                     # Retrieve AWS Tags for this Endpoint
@@ -308,7 +351,7 @@ class AWSMeta:
                     "Owner": aws_tags.get("workbench_owner", "-"),
                     "Instance": endpoint_details["config"]["instance"],
                     "Created": to_utc(endpoint["CreationTime"]),
-                    "Modified": to_utc(endpoint["LastModifiedTime"]),
+                    "Modified": modified,
                     "Input": aws_tags.get("workbench_input", "-"),
                     "Status": endpoint_details.get("EndpointStatus", "-"),
                     "Config": endpoint_details.get("EndpointConfigName", "-"),
@@ -319,6 +362,10 @@ class AWSMeta:
                     "Monitored": endpoint_details["monitored"],
                 }
                 data_summary.append(summary)
+
+        # Log reuse stats for incremental detail updates
+        if details and previous_df is not None:
+            self.log.info(f"Endpoints details: {reused} reused, {refreshed} refreshed")
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(data_summary).convert_dtypes()
@@ -635,8 +682,6 @@ class AWSMeta:
         Returns:
             pd.DataFrame: A summary of the Cloud internal Pipelines (not Workbench Pipelines).
         """
-        import pandas as pd
-
         # Initialize the SageMaker client and list all pipelines
         sagemaker_client = self.boto3_session.client("sagemaker")
         data_summary = []
@@ -698,55 +743,6 @@ if __name__ == "__main__":
     # Create the class
     meta = AWSMeta()
 
-    """
-    # Test the __repr__ method
-    print(meta)
-
-    # Get the AWS Account Info
-    print("*** AWS Account ***")
-    pprint(meta.account())
-
-    # Get the Workbench Configuration
-    print("*** Workbench Configuration ***")
-    pprint(meta.config())
-
-    # Get the Incoming Data
-    print("\n\n*** Incoming Data ***")
-    print(meta.incoming_data())
-
-    # Get the AWS Glue Jobs (ETL Jobs)
-    print("\n\n*** ETL Jobs ***")
-    print(meta.etl_jobs())
-
-    # Get the Data Sources
-    print("\n\n*** Data Sources ***")
-    print(meta.data_sources())
-
-    # Get the Views (Data Sources)
-    print("\n\n*** Views (Data Sources) ***")
-    print(meta.views("workbench"))
-
-    # Get the Views (Feature Sets)
-    print("\n\n*** Views (Feature Sets) ***")
-    fs_views = meta.views("sagemaker_featurestore")
-    print(fs_views)
-
-    # Get the Feature Sets
-    print("\n\n*** Feature Sets ***")
-    pprint(meta.feature_sets())
-
-    # Get the Models
-    print("\n\n*** Models ***")
-    start_time = time.time()
-    pprint(meta.models())
-    print(f"Elapsed Time Model (no details): {time.time() - start_time:.2f}")
-
-    # Get the Models with Details
-    print("\n\n*** Models with Details ***")
-    start_time = time.time()
-    pprint(meta.models(details=True))
-    print(f"Elapsed Time Model (with details): {time.time() - start_time:.2f}")
-    """
     # Get the Endpoints
     print("\n\n*** Endpoints ***")
     pprint(meta.endpoints())
@@ -762,8 +758,6 @@ if __name__ == "__main__":
     pprint(meta.data_source("abalone_data"))
     print("\n\n*** FeatureSet Details ***")
     pprint(meta.feature_set("abalone_features"))
-    # print("\n\n*** StandAlone Model Details ***")
-    # pprint(meta.stand_alone_model("tbd"))
     print("\n\n*** Model Details ***")
     pprint(meta.model("abalone-regression"))
     print("\n\n*** Endpoint Details ***")
