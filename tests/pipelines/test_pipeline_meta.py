@@ -136,7 +136,7 @@ class TestPipelineMetaOwner:
             assert pm.dynamic_owner() == "DT"
 
     def test_temporal_split_owner(self):
-        meta = {"mode": "temporal_split", "model_name": "m-ts", "endpoint_name": "e-ts", "serverless": True}
+        meta = {"mode": "ts", "model_name": "m-ts", "endpoint_name": "e-ts", "serverless": True}
         with patch.dict(os.environ, {"PIPELINE_META": json.dumps(meta)}, clear=True):
             pm = PipelineMeta()
             pm.set_owner("BW")
