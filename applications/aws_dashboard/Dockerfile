@@ -1,11 +1,3 @@
-# Stage 1: Install workbench with all dependencies to capture the full dependency set
-FROM python:3.12.5-bookworm AS deps-builder
-ARG WORKBENCH_VERSION=0.8.272
-RUN pip install --no-cache-dir "workbench[ui]==${WORKBENCH_VERSION}"
-# Freeze everything except workbench itself into a requirements file
-RUN pip freeze | grep -v "^workbench==" > /tmp/deps.txt
-
-# Stage 2: Build the final image
 FROM python:3.12.5-bookworm AS base
 WORKDIR /app
 EXPOSE 8000
@@ -20,12 +12,19 @@ RUN apt-get update && apt-get upgrade -y openssl && \
     apt-get autoremove -y && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Layer 1: All dependencies (changes rarely)
-COPY --from=deps-builder /tmp/deps.txt /tmp/deps.txt
-RUN pip install --no-cache-dir uvicorn asgiref -r /tmp/deps.txt && rm /tmp/deps.txt
+# Layer 1: All dependencies (changes only when pyproject.toml deps change)
+# pyproject.toml is copied into build context by deploy.sh
+COPY pyproject.toml /tmp/pyproject.toml
+RUN python -c "\
+import tomllib; \
+data = tomllib.load(open('/tmp/pyproject.toml', 'rb')); \
+deps = data['project']['dependencies'] + data['project']['optional-dependencies']['ui']; \
+open('/tmp/deps.txt', 'w').write('\n'.join(deps))" && \
+    pip install --no-cache-dir uvicorn asgiref -r /tmp/deps.txt && \
+    rm /tmp/pyproject.toml /tmp/deps.txt
 
-# Layer 2: Workbench only (changes often)
-ARG WORKBENCH_VERSION=0.8.272
+# Layer 2: Workbench only (changes often, ~20MB)
+ARG WORKBENCH_VERSION=0.8.273
 RUN pip install --no-cache-dir --no-deps "workbench[ui]==${WORKBENCH_VERSION}"
 
 # Copy app code and configuration (after pip installs to avoid cache invalidation)

@@ -35,6 +35,11 @@ fi
 VERSION_TAG="v${VERSION}_amd64"
 
 echo "📦 Building Docker image version: $VERSION_TAG"
+
+# Copy pyproject.toml into build context for dependency layer caching
+cp ../../pyproject.toml pyproject.toml
+trap 'rm -f pyproject.toml' EXIT
+
 docker buildx build \
     --platform $PLATFORM \
     --build-arg WORKBENCH_CONFIG=$CONFIG \
