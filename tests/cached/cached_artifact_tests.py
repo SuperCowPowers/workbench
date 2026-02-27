@@ -1,6 +1,5 @@
 """Tests for Cached Artifacts: caching behavior, poke lifecycle, and stale/fresh cycles"""
 
-import time
 from pprint import pprint
 
 # Workbench Imports
@@ -95,6 +94,7 @@ def test_artifact_single_stale():
 
     # Check what the artifact cache stored as _modified
     from workbench.utils.workbench_cache import WorkbenchCache
+
     cache_key = f"cachedmodel_{my_model.name}_{WorkbenchCache.flatten_key(CachedModel.summary.__wrapped__)}"
     cached_entry = CachedModel.artifact_cache.get(cache_key)
     cached_modified = cached_entry.get("_modified") if cached_entry else None

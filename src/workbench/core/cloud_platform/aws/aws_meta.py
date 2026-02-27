@@ -173,19 +173,21 @@ class AWSMeta:
                     data_summary.append(self._feature_set_detail_row(fg["FeatureGroupName"]))
                 else:
                     name = fg["FeatureGroupName"]
-                    data_summary.append({
-                        "Feature Group": name,
-                        "Health": "",
-                        "Owner": "-",
-                        "Created": to_utc(fg["CreationTime"]),
-                        "Modified": to_utc(fg["CreationTime"]),
-                        "Num Columns": 0,
-                        "Input": "-",
-                        "Online": "Unknown",
-                        "Offline": "Unknown",
-                        "Tags": "-",
-                        "_aws_url": self.feature_group_console_url(name),
-                    })
+                    data_summary.append(
+                        {
+                            "Feature Group": name,
+                            "Health": "",
+                            "Owner": "-",
+                            "Created": to_utc(fg["CreationTime"]),
+                            "Modified": to_utc(fg["CreationTime"]),
+                            "Num Columns": 0,
+                            "Input": "-",
+                            "Online": "Unknown",
+                            "Offline": "Unknown",
+                            "Tags": "-",
+                            "_aws_url": self.feature_group_console_url(name),
+                        }
+                    )
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(data_summary).convert_dtypes()
@@ -239,21 +241,23 @@ class AWSMeta:
                 else:
                     name = group["ModelPackageGroupName"]
                     created = to_utc(group["CreationTime"])
-                    model_summary.append({
-                        "Model Group": name,
-                        "Health": "",
-                        "Owner": "-",
-                        "Type": "-",
-                        "Framework": "-",
-                        "Created": created,
-                        "Modified": created,
-                        "Ver": "-",
-                        "Input": "-",
-                        "Status": "Unknown",
-                        "Description": group.get("ModelPackageGroupDescription", "-"),
-                        "Tags": "-",
-                        "_aws_url": self.model_package_group_console_url(name),
-                    })
+                    model_summary.append(
+                        {
+                            "Model Group": name,
+                            "Health": "",
+                            "Owner": "-",
+                            "Type": "-",
+                            "Framework": "-",
+                            "Created": created,
+                            "Modified": created,
+                            "Ver": "-",
+                            "Input": "-",
+                            "Status": "Unknown",
+                            "Description": group.get("ModelPackageGroupDescription", "-"),
+                            "Tags": "-",
+                            "_aws_url": self.model_package_group_console_url(name),
+                        }
+                    )
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(model_summary).convert_dtypes()
@@ -323,22 +327,24 @@ class AWSMeta:
                     data_summary.append(self._endpoint_detail_row(endpoint["EndpointName"]))
                 else:
                     name = endpoint["EndpointName"]
-                    data_summary.append({
-                        "Name": name,
-                        "Health": "",
-                        "Owner": "-",
-                        "Instance": "-",
-                        "Created": to_utc(endpoint["CreationTime"]),
-                        "Modified": to_utc(endpoint["LastModifiedTime"]),
-                        "Input": "-",
-                        "Status": "-",
-                        "Config": "-",
-                        "Variant": "-",
-                        "Capture": "-",
-                        "Samp(%)": "-",
-                        "Tags": "-",
-                        "Monitored": "-",
-                    })
+                    data_summary.append(
+                        {
+                            "Name": name,
+                            "Health": "",
+                            "Owner": "-",
+                            "Instance": "-",
+                            "Created": to_utc(endpoint["CreationTime"]),
+                            "Modified": to_utc(endpoint["LastModifiedTime"]),
+                            "Input": "-",
+                            "Status": "-",
+                            "Config": "-",
+                            "Variant": "-",
+                            "Capture": "-",
+                            "Samp(%)": "-",
+                            "Tags": "-",
+                            "Monitored": "-",
+                        }
+                    )
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(data_summary).convert_dtypes()

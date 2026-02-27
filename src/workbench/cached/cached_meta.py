@@ -94,12 +94,13 @@ class CachedMeta(CloudMeta):
     #   - Call per-artifact detail methods for incremental refresh
     _registry_config = {
         "data_sources": {"name_column": "Name", "base_class": "AthenaSource"},
-        "feature_sets": {"name_column": "Feature Group", "base_class": "FeatureSetCore",
-                         "detail_method": "_feature_set_detail_row"},
-        "models": {"name_column": "Model Group", "base_class": "ModelCore",
-                   "detail_method": "_model_detail_row"},
-        "endpoints": {"name_column": "Name", "base_class": "EndpointCore",
-                      "detail_method": "_endpoint_detail_row"},
+        "feature_sets": {
+            "name_column": "Feature Group",
+            "base_class": "FeatureSetCore",
+            "detail_method": "_feature_set_detail_row",
+        },
+        "models": {"name_column": "Model Group", "base_class": "ModelCore", "detail_method": "_model_detail_row"},
+        "endpoints": {"name_column": "Name", "base_class": "EndpointCore", "detail_method": "_endpoint_detail_row"},
     }
 
     def __new__(cls, *args, **kwargs):
@@ -351,7 +352,9 @@ class CachedMeta(CloudMeta):
 
         # Step 5: Refetch stale artifacts and merge into cached DataFrame
         if stale_names:
-            self.log.info(f"{list_method} details: {len(current_names) - len(stale_names)} reused, {len(stale_names)} refreshed")
+            self.log.info(
+                f"{list_method} details: {len(current_names) - len(stale_names)} reused, {len(stale_names)} refreshed"
+            )
             fresh_rows = [detail_method(name) for name in stale_names]
             fresh_df = pd.DataFrame(fresh_rows)
 

@@ -1,8 +1,7 @@
 """Tests for the CachedMeta caching system: registry, incremental refresh, and poke lifecycle"""
 
 import time
-from datetime import datetime, timezone
-from pprint import pprint
+from datetime import datetime
 
 # Workbench Imports
 from workbench.cached.cached_meta import CachedMeta
@@ -140,9 +139,9 @@ def test_poke_single_stale_cycle():
     post_second_ts = meta.get_modified_timestamp(model)
 
     # The registry should be stable after the first refresh
-    assert post_refresh_ts == post_second_ts, (
-        f"Registry should be stable after refresh: {post_refresh_ts} != {post_second_ts}"
-    )
+    assert (
+        post_refresh_ts == post_second_ts
+    ), f"Registry should be stable after refresh: {post_refresh_ts} != {post_second_ts}"
     print(f"Registry stable: poke={poke_ts}, after_refresh={post_refresh_ts}")
 
 
@@ -159,9 +158,9 @@ def test_deleted_artifact():
     # (we can't easily test deletion without actually deleting, but we can verify
     # that the cached details only contain models from the lightweight list)
     lightweight = meta.models(details=False)
-    assert set(df["Model Group"]) == set(lightweight["Model Group"]), (
-        "Detail and lightweight lists should have the same model names"
-    )
+    assert set(df["Model Group"]) == set(
+        lightweight["Model Group"]
+    ), "Detail and lightweight lists should have the same model names"
     print("Detail and lightweight lists match")
 
 
