@@ -4,7 +4,7 @@ from typing import Union
 
 # Workbench Imports
 from workbench.core.artifacts.endpoint_core import EndpointCore
-from workbench.core.artifacts.cached_artifact_mixin import CachedArtifactMixin
+from workbench.cached.cached_artifact_mixin import CachedArtifactMixin
 
 
 class CachedEndpoint(CachedArtifactMixin, EndpointCore):
@@ -20,8 +20,6 @@ class CachedEndpoint(CachedArtifactMixin, EndpointCore):
         my_endpoint.workbench_meta()
         ```
     """
-
-    _list_method = "endpoints"
 
     def __init__(self, endpoint_name: str):
         """CachedEndpoint Initialization"""

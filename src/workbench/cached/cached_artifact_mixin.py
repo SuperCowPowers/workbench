@@ -1,4 +1,4 @@
-"""CachedArtifactMixin: Caching for Artifact subclasses using Modified timestamps for staleness detection"""
+"""CachedArtifactMixin: Caching for Artifact subclasses using Modified timestamps for stale detection"""
 
 import logging
 from functools import wraps
@@ -8,11 +8,8 @@ from workbench.utils.workbench_cache import WorkbenchCache
 class CachedArtifactMixin:
     """Mixin for caching methods in Artifact subclasses.
 
-    Uses Modified timestamps from CachedMeta's registry to determine staleness.
-    Clean artifacts return instantly from cache. Dirty artifacts block and refetch.
-
-    Subclasses must define:
-        _list_method (str): The CloudMeta list method name (e.g., "models", "endpoints")
+    Uses Modified timestamps from CachedMeta's registry to detect staleness.
+    Fresh artifacts return instantly from cache. Stale artifacts block and refetch.
     """
 
     # Class-level cache for artifact method results
@@ -21,7 +18,7 @@ class CachedArtifactMixin:
 
     @classmethod
     def cache_result(cls, method):
-        """Decorator to cache method results using Modified timestamps for staleness detection"""
+        """Decorator to cache method results using Modified timestamps for stale detection"""
 
         @wraps(method)
         def wrapper(self, *args, **kwargs):
@@ -32,23 +29,20 @@ class CachedArtifactMixin:
             # Get the cached entry (stored as {"_result": ..., "_modified": ...})
             cached_entry = cls.artifact_cache.get(cache_key)
 
-            # Read the current Modified timestamp from CachedMeta's shared registry
+            # Lazy import to avoid circular dependency (CachedMeta ↔ CachedArtifactMixin)
             from workbench.cached.cached_meta import CachedMeta
 
-            if getattr(self.__class__, "_list_method", None):
-                current_modified = CachedMeta().get_modified_timestamp(self)
-            else:
-                current_modified = None
+            current_modified = CachedMeta().get_modified_timestamp(self)
 
-            # Check if cached value is clean (Modified timestamp matches)
+            # Check if cached value is fresh (cached timestamp >= registry timestamp)
             if cached_entry is not None and isinstance(cached_entry, dict) and "_result" in cached_entry:
                 cached_modified = cached_entry.get("_modified")
-                if current_modified is not None and cached_modified == current_modified:
+                if current_modified is not None and cached_modified is not None and cached_modified >= current_modified:
                     return cached_entry["_result"]
                 else:
-                    self.log.info(f"Dirty: Refreshing {method.__name__} for {self.name}")
+                    self.log.info(f"Stale: Refreshing {method.__name__} for {self.name}")
 
-            # Dirty or first access: fetch fresh data
+            # Stale or first access: fetch fresh data
             result = method(self, *args, **kwargs)
             cls.artifact_cache.set(cache_key, {"_result": result, "_modified": current_modified})
             return result

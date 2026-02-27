@@ -98,7 +98,7 @@ class CloudMeta(AWSMeta):
         """
         return super().views(database=database)
 
-    def feature_sets(self, details: bool = False, **kwargs) -> pd.DataFrame:
+    def feature_sets(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Feature Sets deployed in the Cloud Platform
 
         Args:
@@ -107,9 +107,9 @@ class CloudMeta(AWSMeta):
         Returns:
             pd.DataFrame: A summary of the Feature Sets deployed in the Cloud Platform
         """
-        return super().feature_sets(details=details, **kwargs)
+        return super().feature_sets(details=details)
 
-    def models(self, details: bool = False, **kwargs) -> pd.DataFrame:
+    def models(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Models deployed in the Cloud Platform
 
         Args:
@@ -118,9 +118,9 @@ class CloudMeta(AWSMeta):
         Returns:
             pd.DataFrame: A summary of the Models deployed in the Cloud Platform
         """
-        return super().models(details=details, **kwargs)
+        return super().models(details=details)
 
-    def endpoints(self, details: bool = False, **kwargs) -> pd.DataFrame:
+    def endpoints(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Endpoints deployed in the Cloud Platform
 
         Args:
@@ -129,7 +129,7 @@ class CloudMeta(AWSMeta):
         Returns:
             pd.DataFrame: A summary of the Endpoints in the Cloud Platform
         """
-        return super().endpoints(details=details, **kwargs)
+        return super().endpoints(details=details)
 
     def glue_job(self, job_name: str) -> Union[dict, None]:
         """Get the details of a specific Glue Job

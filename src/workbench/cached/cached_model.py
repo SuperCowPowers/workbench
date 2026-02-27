@@ -5,7 +5,7 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.core.artifacts.model_core import ModelCore, ModelType
-from workbench.core.artifacts.cached_artifact_mixin import CachedArtifactMixin
+from workbench.cached.cached_artifact_mixin import CachedArtifactMixin
 from workbench.algorithms.dataframe import smart_aggregator
 
 
@@ -22,8 +22,6 @@ class CachedModel(CachedArtifactMixin, ModelCore):
         my_model.workbench_meta()
         ```
     """
-
-    _list_method = "models"
 
     def __init__(self, name: str):
         """CachedModel Initialization"""

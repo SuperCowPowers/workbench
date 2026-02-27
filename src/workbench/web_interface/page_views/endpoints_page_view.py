@@ -18,9 +18,8 @@ class EndpointsPageView(PageView):
         # CachedMeta object for Cloud Platform Metadata
         self.meta = CachedMeta()
 
-        # Initialize the Endpoints DataFrame
+        # Initialize the Endpoints DataFrame (populated by the first interval callback)
         self.endpoints_df = None
-        self.refresh()
 
     def refresh(self):
         """Refresh the endpoint data from the Cloud Platform"""

@@ -6,7 +6,7 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.core.artifacts.athena_source import AthenaSource
-from workbench.core.artifacts.cached_artifact_mixin import CachedArtifactMixin
+from workbench.cached.cached_artifact_mixin import CachedArtifactMixin
 
 
 class CachedDataSource(CachedArtifactMixin, AthenaSource):
@@ -22,8 +22,6 @@ class CachedDataSource(CachedArtifactMixin, AthenaSource):
         my_data.workbench_meta()
         ```
     """
-
-    _list_method = "data_sources"
 
     def __init__(self, data_name: str, database: str = "workbench"):
         """CachedDataSource Initialization"""

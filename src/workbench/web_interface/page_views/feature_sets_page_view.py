@@ -17,9 +17,8 @@ class FeatureSetsPageView(PageView):
         # CachedMeta object for Cloud Platform Metadata
         self.meta = CachedMeta()
 
-        # Initialize the Endpoints DataFrame
+        # Initialize the FeatureSets DataFrame (populated by the first interval callback)
         self.feature_sets_df = None
-        self.refresh()
 
     def refresh(self):
         """Refresh the data from the AWS Service Broker"""

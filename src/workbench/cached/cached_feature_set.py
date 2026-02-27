@@ -6,7 +6,7 @@ import pandas as pd
 
 # Workbench Imports
 from workbench.core.artifacts.feature_set_core import FeatureSetCore
-from workbench.core.artifacts.cached_artifact_mixin import CachedArtifactMixin
+from workbench.cached.cached_artifact_mixin import CachedArtifactMixin
 
 
 class CachedFeatureSet(CachedArtifactMixin, FeatureSetCore):
@@ -22,8 +22,6 @@ class CachedFeatureSet(CachedArtifactMixin, FeatureSetCore):
         my_features.workbench_meta()
         ```
     """
-
-    _list_method = "feature_sets"
 
     def __init__(self, feature_set_name: str):
         """CachedFeatureSet Initialization"""

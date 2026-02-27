@@ -155,61 +155,37 @@ class AWSMeta:
         summary = self._list_catalog_tables(database, views=True)
         return summary
 
-    def feature_sets(self, details: bool = False, previous_df: pd.DataFrame = None) -> pd.DataFrame:
+    def feature_sets(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Feature Sets in AWS.
 
         Args:
             details (bool, optional): Get additional details (Defaults to False).
-            previous_df (pd.DataFrame, optional): Previous details result for incremental updates.
 
         Returns:
             pd.DataFrame: A summary of the Feature Sets in AWS.
         """
-        # Initialize the SageMaker paginator for listing feature groups
         paginator = self.sm_client.get_paginator("list_feature_groups")
         data_summary = []
-        reused, refreshed = 0, 0
 
-        # Use the paginator to retrieve all feature groups
         for page in paginator.paginate():
             for fg in page["FeatureGroupSummaries"]:
-                name = fg["FeatureGroupName"]
-                modified = to_utc(fg["CreationTime"])
-
-                # Reuse previous row if artifact hasn't changed
-                if details and previous_df is not None:
-                    prev_rows = previous_df[previous_df["Feature Group"] == name]
-                    if not prev_rows.empty and prev_rows.iloc[0]["Modified"] == modified:
-                        data_summary.append(prev_rows.iloc[0].to_dict())
-                        reused += 1
-                        continue
-
-                # Get details if requested
-                feature_set_details = {}
                 if details:
-                    refreshed += 1
-                    feature_set_details.update(self.sm_client.describe_feature_group(FeatureGroupName=name))
-
-                # Retrieve Workbench metadata from tags
-                aws_tags = self.get_aws_tags(fg["FeatureGroupArn"]) if details else {}
-                summary = {
-                    "Feature Group": name,
-                    "Health": "",
-                    "Owner": aws_tags.get("workbench_owner", "-"),
-                    "Created": to_utc(fg["CreationTime"]),
-                    "Modified": modified,
-                    "Num Columns": len(feature_set_details.get("FeatureDefinitions", [])),
-                    "Input": aws_tags.get("workbench_input", "-"),
-                    "Online": str(feature_set_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "Unknown")),
-                    "Offline": "True" if feature_set_details.get("OfflineStoreConfig") else "Unknown",
-                    "Tags": aws_tags.get("workbench_tags", "-"),
-                    "_aws_url": self.feature_group_console_url(name),
-                }
-                data_summary.append(summary)
-
-        # Log reuse stats for incremental detail updates
-        if details and previous_df is not None:
-            self.log.info(f"FeatureSets details: {reused} reused, {refreshed} refreshed")
+                    data_summary.append(self._feature_set_detail_row(fg["FeatureGroupName"]))
+                else:
+                    name = fg["FeatureGroupName"]
+                    data_summary.append({
+                        "Feature Group": name,
+                        "Health": "",
+                        "Owner": "-",
+                        "Created": to_utc(fg["CreationTime"]),
+                        "Modified": to_utc(fg["CreationTime"]),
+                        "Num Columns": 0,
+                        "Input": "-",
+                        "Online": "Unknown",
+                        "Offline": "Unknown",
+                        "Tags": "-",
+                        "_aws_url": self.feature_group_console_url(name),
+                    })
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(data_summary).convert_dtypes()
@@ -217,78 +193,67 @@ class AWSMeta:
             df.sort_values(by="Created", ascending=False, inplace=True)
         return df
 
-    def models(self, details: bool = False, previous_df: pd.DataFrame = None) -> pd.DataFrame:
+    def _feature_set_detail_row(self, name: str) -> dict:
+        """Fetch a detail summary row for a single Feature Set.
+
+        Args:
+            name (str): The feature group name.
+
+        Returns:
+            dict: A summary row dict with all detail fields populated.
+        """
+        fg_details = self.sm_client.describe_feature_group(FeatureGroupName=name)
+        created = to_utc(fg_details["CreationTime"])
+        aws_tags = self.get_aws_tags(fg_details["FeatureGroupArn"])
+
+        return {
+            "Feature Group": name,
+            "Health": "",
+            "Owner": aws_tags.get("workbench_owner", "-"),
+            "Created": created,
+            "Modified": created,
+            "Num Columns": len(fg_details.get("FeatureDefinitions", [])),
+            "Input": aws_tags.get("workbench_input", "-"),
+            "Online": str(fg_details.get("OnlineStoreConfig", {}).get("EnableOnlineStore", "Unknown")),
+            "Offline": "True" if fg_details.get("OfflineStoreConfig") else "Unknown",
+            "Tags": aws_tags.get("workbench_tags", "-"),
+            "_aws_url": self.feature_group_console_url(name),
+        }
+
+    def models(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Models in AWS.
 
         Args:
             details (bool, optional): Get additional details (Defaults to False).
-            previous_df (pd.DataFrame, optional): Previous details result for incremental updates.
 
         Returns:
             pd.DataFrame: A summary of the Models in AWS.
         """
-        # Initialize the SageMaker paginator for listing model package groups
         paginator = self.sm_client.get_paginator("list_model_package_groups")
         model_summary = []
-        reused, refreshed = 0, 0
 
-        # Use the paginator to retrieve all model package groups
         for page in paginator.paginate():
             for group in page["ModelPackageGroupSummaryList"]:
-                model_group_name = group["ModelPackageGroupName"]
-                created = to_utc(group["CreationTime"])
-                description = group.get("ModelPackageGroupDescription", "-")
-
-                # Reuse previous row if artifact hasn't changed
-                if details and previous_df is not None:
-                    prev_rows = previous_df[previous_df["Model Group"] == model_group_name]
-                    if not prev_rows.empty and prev_rows.iloc[0]["Modified"] == created:
-                        model_summary.append(prev_rows.iloc[0].to_dict())
-                        reused += 1
-                        continue
-
-                # Initialize variables for details retrieval
-                model_details = {}
-                aws_tags = {}
-                status = "Unknown"
-                health_tags = ""
-
-                # If details=True get the latest model package details
                 if details:
-                    refreshed += 1
-                    latest_model = self.get_latest_model_package_info(model_group_name)
-                    if latest_model:
-                        model_details.update(
-                            self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"])
-                        )
-                        aws_tags = self.get_aws_tags(group["ModelPackageGroupArn"])
-                        health_tags = aws_tags.get("workbench_health_tags", "")
-                        status = model_details.get("ModelPackageStatus", "Unknown")
-                    else:
-                        health_tags = "model_not_found"
-                        status = "No Models"
-
-                # Compile model summary
-                summary = {
-                    "Model Group": model_group_name,
-                    "Health": health_tags,
-                    "Owner": aws_tags.get("workbench_owner", "-"),
-                    "Type": aws_tags.get("workbench_model_type", "-"),
-                    "Framework": aws_tags.get("workbench_model_framework", "-"),
-                    "Created": created,
-                    "Modified": created,
-                    "Ver": model_details.get("ModelPackageVersion", "-"),
-                    "Input": aws_tags.get("workbench_input", "-"),
-                    "Status": status,
-                    "Description": description,
-                    "Tags": aws_tags.get("workbench_tags", "-"),
-                    "_aws_url": self.model_package_group_console_url(model_group_name),
-                }
-                model_summary.append(summary)
-
-        # Log reuse stats for incremental detail updates
-        if details and previous_df is not None:
-            self.log.info(f"Models details: {reused} reused, {refreshed} refreshed")
+                    model_summary.append(self._model_detail_row(group["ModelPackageGroupName"]))
+                else:
+                    name = group["ModelPackageGroupName"]
+                    created = to_utc(group["CreationTime"])
+                    model_summary.append({
+                        "Model Group": name,
+                        "Health": "",
+                        "Owner": "-",
+                        "Type": "-",
+                        "Framework": "-",
+                        "Created": created,
+                        "Modified": created,
+                        "Ver": "-",
+                        "Input": "-",
+                        "Status": "Unknown",
+                        "Description": group.get("ModelPackageGroupDescription", "-"),
+                        "Tags": "-",
+                        "_aws_url": self.model_package_group_console_url(name),
+                    })
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(model_summary).convert_dtypes()
@@ -296,82 +261,122 @@ class AWSMeta:
             df.sort_values(by="Created", ascending=False, inplace=True)
         return df
 
-    def endpoints(self, details: bool = False, previous_df: pd.DataFrame = None) -> pd.DataFrame:
+    def _model_detail_row(self, name: str) -> dict:
+        """Fetch a detail summary row for a single Model.
+
+        Args:
+            name (str): The model package group name.
+
+        Returns:
+            dict: A summary row dict with all detail fields populated.
+        """
+        group_info = self.sm_client.describe_model_package_group(ModelPackageGroupName=name)
+        created = to_utc(group_info["CreationTime"])
+        description = group_info.get("ModelPackageGroupDescription", "-")
+
+        model_details = {}
+        aws_tags = {}
+        status = "Unknown"
+        health_tags = ""
+
+        latest_model = self.get_latest_model_package_info(name)
+        if latest_model:
+            model_details = self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"])
+            aws_tags = self.get_aws_tags(group_info["ModelPackageGroupArn"])
+            health_tags = aws_tags.get("workbench_health_tags", "")
+            status = model_details.get("ModelPackageStatus", "Unknown")
+        else:
+            health_tags = "model_not_found"
+            status = "No Models"
+
+        return {
+            "Model Group": name,
+            "Health": health_tags,
+            "Owner": aws_tags.get("workbench_owner", "-"),
+            "Type": aws_tags.get("workbench_model_type", "-"),
+            "Framework": aws_tags.get("workbench_model_framework", "-"),
+            "Created": created,
+            "Modified": created,
+            "Ver": model_details.get("ModelPackageVersion", "-"),
+            "Input": aws_tags.get("workbench_input", "-"),
+            "Status": status,
+            "Description": description,
+            "Tags": aws_tags.get("workbench_tags", "-"),
+            "_aws_url": self.model_package_group_console_url(name),
+        }
+
+    def endpoints(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Endpoints in AWS.
 
         Args:
             details (bool, optional): Get additional details (Defaults to False).
-            previous_df (pd.DataFrame, optional): Previous details result for incremental updates.
 
         Returns:
             pd.DataFrame: A summary of the Endpoints in AWS.
         """
-        from workbench.utils.endpoint_utils import is_monitored  # noqa: E402
-
-        # Use our SageMaker client to list all endpoints
         paginator = self.sm_client.get_paginator("list_endpoints")
         data_summary = []
-        reused, refreshed = 0, 0
 
-        # Use the paginator to retrieve all endpoints
         for page in paginator.paginate():
             for endpoint in page["Endpoints"]:
-                endpoint_name = endpoint["EndpointName"]
-                modified = to_utc(endpoint["LastModifiedTime"])
-
-                # Reuse previous row if artifact hasn't changed
-                if details and previous_df is not None:
-                    prev_rows = previous_df[previous_df["Name"] == endpoint_name]
-                    if not prev_rows.empty and prev_rows.iloc[0]["Modified"] == modified:
-                        data_summary.append(prev_rows.iloc[0].to_dict())
-                        reused += 1
-                        continue
-
-                # Grab various endpoint details
-                endpoint_details = {"config": {"instance": "-", "variant": "-"}, "monitored": "-"}
-                aws_tags = {}
                 if details:
-                    refreshed += 1
-                    endpoint_details = self.sm_client.describe_endpoint(EndpointName=endpoint_name)
-
-                    # Retrieve AWS Tags for this Endpoint
-                    aws_tags = self.get_aws_tags(endpoint_details["EndpointArn"])
-
-                    # Getting the endpoint configuration
-                    config_info = self._endpoint_config_info(endpoint_details["EndpointConfigName"])
-                    endpoint_details["config"] = config_info
-
-                    # Check if the endpoint has monitoring enabled
-                    endpoint_details["monitored"] = is_monitored(endpoint_name, self.sm_client)
-
-                # Compile endpoint summary
-                summary = {
-                    "Name": endpoint_name,
-                    "Health": aws_tags.get("workbench_health_tags", ""),
-                    "Owner": aws_tags.get("workbench_owner", "-"),
-                    "Instance": endpoint_details["config"]["instance"],
-                    "Created": to_utc(endpoint["CreationTime"]),
-                    "Modified": modified,
-                    "Input": aws_tags.get("workbench_input", "-"),
-                    "Status": endpoint_details.get("EndpointStatus", "-"),
-                    "Config": endpoint_details.get("EndpointConfigName", "-"),
-                    "Variant": endpoint_details["config"]["variant"],
-                    "Capture": str(endpoint_details.get("DataCaptureConfig", {}).get("EnableCapture", "-")),
-                    "Samp(%)": str(endpoint_details.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
-                    "Tags": aws_tags.get("workbench_tags", "-"),
-                    "Monitored": endpoint_details["monitored"],
-                }
-                data_summary.append(summary)
-
-        # Log reuse stats for incremental detail updates
-        if details and previous_df is not None:
-            self.log.info(f"Endpoints details: {reused} reused, {refreshed} refreshed")
+                    data_summary.append(self._endpoint_detail_row(endpoint["EndpointName"]))
+                else:
+                    name = endpoint["EndpointName"]
+                    data_summary.append({
+                        "Name": name,
+                        "Health": "",
+                        "Owner": "-",
+                        "Instance": "-",
+                        "Created": to_utc(endpoint["CreationTime"]),
+                        "Modified": to_utc(endpoint["LastModifiedTime"]),
+                        "Input": "-",
+                        "Status": "-",
+                        "Config": "-",
+                        "Variant": "-",
+                        "Capture": "-",
+                        "Samp(%)": "-",
+                        "Tags": "-",
+                        "Monitored": "-",
+                    })
 
         # Return the summary as a DataFrame
         df = pd.DataFrame(data_summary).convert_dtypes()
         if not df.empty:
             df.sort_values(by="Created", ascending=False, inplace=True)
         return df
+
+    def _endpoint_detail_row(self, name: str) -> dict:
+        """Fetch a detail summary row for a single Endpoint.
+
+        Args:
+            name (str): The endpoint name.
+
+        Returns:
+            dict: A summary row dict with all detail fields populated.
+        """
+        from workbench.utils.endpoint_utils import is_monitored  # noqa: E402
+
+        endpoint_details = self.sm_client.describe_endpoint(EndpointName=name)
+        aws_tags = self.get_aws_tags(endpoint_details["EndpointArn"])
+        config_info = self._endpoint_config_info(endpoint_details["EndpointConfigName"])
+
+        return {
+            "Name": name,
+            "Health": aws_tags.get("workbench_health_tags", ""),
+            "Owner": aws_tags.get("workbench_owner", "-"),
+            "Instance": config_info["instance"],
+            "Created": to_utc(endpoint_details["CreationTime"]),
+            "Modified": to_utc(endpoint_details["LastModifiedTime"]),
+            "Input": aws_tags.get("workbench_input", "-"),
+            "Status": endpoint_details.get("EndpointStatus", "-"),
+            "Config": endpoint_details.get("EndpointConfigName", "-"),
+            "Variant": config_info["variant"],
+            "Capture": str(endpoint_details.get("DataCaptureConfig", {}).get("EnableCapture", "-")),
+            "Samp(%)": str(endpoint_details.get("DataCaptureConfig", {}).get("CurrentSamplingPercentage", "-")),
+            "Tags": aws_tags.get("workbench_tags", "-"),
+            "Monitored": is_monitored(name, self.sm_client),
+        }
 
     def _endpoint_config_info(self, endpoint_config_name: str) -> dict:
         """Internal: Get the Endpoint Configuration information for the given endpoint config name.

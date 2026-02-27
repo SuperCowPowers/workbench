@@ -18,9 +18,8 @@ class ModelsPageView(PageView):
         # CachedMeta object for Cloud Platform Metadata
         self.meta = CachedMeta()
 
-        # Initialize the Models DataFrame
+        # Initialize the Models DataFrame (populated by the first interval callback)
         self.models_df = None
-        self.refresh()
 
     def refresh(self):
         """Refresh the model data from the Cloud Platform"""
