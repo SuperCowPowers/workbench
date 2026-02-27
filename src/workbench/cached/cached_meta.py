@@ -43,7 +43,15 @@ def cache_result(method):
             and not result.empty
             and "Modified" in result.columns
         ):
-            self.modified_registry.set(method.__name__, dict(zip(result[name_column], result["Modified"])))
+            new_entries = dict(zip(result[name_column], result["Modified"]))
+            existing = self.modified_registry.get(method.__name__) or {}
+
+            # Merge: add new, remove deleted, keep max(existing, new) for updates
+            merged = {}
+            for name, ts in new_entries.items():
+                existing_ts = existing.get(name)
+                merged[name] = max(existing_ts, ts) if existing_ts else ts
+            self.modified_registry.set(method.__name__, merged)
 
         return result
 
