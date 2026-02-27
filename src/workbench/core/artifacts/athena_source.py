@@ -140,9 +140,16 @@ class AthenaSource(DataSourceAbstract):
             else:
                 self.log.critical(f"Failed to upsert metadata: {e}")
                 self.log.critical(f"{self.name} is Malformed! Delete this Artifact and recreate it!")
+                return
         except Exception as e:
             self.log.critical(f"Failed to upsert metadata: {e}")
             self.log.critical(f"{self.name} is Malformed! Delete this Artifact and recreate it!")
+            return
+
+        # Poke the modified registry so caches know this artifact changed
+        from workbench.cached.cached_meta import CachedMeta
+
+        CachedMeta().update_modified_timestamp(self)
 
     def size(self) -> float:
         """Return the size of this data in MegaBytes"""

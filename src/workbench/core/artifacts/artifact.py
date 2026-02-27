@@ -249,6 +249,12 @@ class Artifact(ABC):
             self.sm_client.add_tags(ResourceArn=aws_arn, Tags=aws_tags)
         except Exception as e:
             self.log.error(f"Error adding metadata to {aws_arn}: {e}")
+            return
+
+        # Poke the modified registry so caches know this artifact changed
+        from workbench.cached.cached_meta import CachedMeta
+
+        CachedMeta().update_modified_timestamp(self)
 
     def get_tags(self, tag_type="user") -> list:
         """Get the tags for this artifact
