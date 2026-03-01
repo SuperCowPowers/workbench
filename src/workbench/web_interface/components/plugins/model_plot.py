@@ -61,18 +61,21 @@ class ModelPlot(PluginInterface):
 
         # Create container with both components
         # Show scatter plot by default (will display "Waiting for Data..." until model loads)
+        # Note: Use visibility/height instead of display:none so Bootstrap grid computes
+        # column widths upfront, preventing Plotly from rendering wide then shrinking.
+        _hidden = {"visibility": "hidden", "height": 0, "overflow": "hidden"}
         return html.Div(
             id=component_id,
             children=[
                 html.Div(
                     scatter_component,
                     id=f"{component_id}-scatter-container",
-                    style={"display": "block"},
+                    style={},
                 ),
                 html.Div(
                     confusion_component,
                     id=f"{component_id}-confusion-container",
-                    style={"display": "none"},
+                    style=_hidden,
                 ),
             ],
         )
@@ -93,9 +96,11 @@ class ModelPlot(PluginInterface):
         self.inference_run = kwargs.get("inference_run", "full_cross_fold")
 
         # Determine model type and set visibility
+        # Use visibility/height instead of display:none to preserve Bootstrap grid layout
+        _hidden = {"visibility": "hidden", "height": 0, "overflow": "hidden"}
         is_classifier = model.model_type == ModelType.CLASSIFIER
-        scatter_style = {"display": "none"} if is_classifier else {"display": "block"}
-        confusion_style = {"display": "block"} if is_classifier else {"display": "none"}
+        scatter_style = _hidden if is_classifier else {}
+        confusion_style = {} if is_classifier else _hidden
 
         if is_classifier:
             # Update ConfusionExplorer, no_update for ScatterPlot

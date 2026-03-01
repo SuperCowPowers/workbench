@@ -31,7 +31,7 @@ class FeatureSetsPageView(PageView):
         Returns:
             pd.DataFrame: DataFrame of all the FeatureSets
         """
-        return self.feature_sets_df
+        return self.concise_timestamps(self.feature_sets_df)
 
     @staticmethod
     def feature_set_smart_sample(feature_name: str) -> pd.DataFrame:

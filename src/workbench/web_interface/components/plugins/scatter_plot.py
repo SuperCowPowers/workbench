@@ -78,7 +78,7 @@ class ScatterPlot(PluginInterface):
                     id=f"{component_id}-graph",
                     figure=self.display_text("Waiting for Data..."),
                     config={"scrollZoom": True},
-                    style={"height": "500px", "width": "100%"},
+                    style={"height": "420px", "width": "100%"},
                     clear_on_unhover=True,
                 ),
                 # Controls: X, Y, Color, Label Dropdowns, and Regression Line Checkbox

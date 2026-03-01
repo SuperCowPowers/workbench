@@ -3,7 +3,7 @@ h1, h2, h3, h4 {
 }
 body {
     color: rgb(210, 210, 210);
-    background: linear-gradient(90deg, rgb(62, 68, 101) 0%, rgb(45, 41, 76) 100%);
+    background: linear-gradient(90deg, rgb(35, 32, 60) 0%, rgb(50, 52, 85) 25%, rgb(50, 52, 85) 75%, rgb(35, 32, 60) 100%);
 }
 
 /* Custom CSS to style bold text */
@@ -49,12 +49,20 @@ a:hover {
     --ag-foreground-color: rgb(210, 210, 210);
     --ag-header-foreground-color: rgb(220, 220, 220);
 
+    --ag-wrapper-border-radius: 12px;
+
     /* Box shadow and rounded corners */
     box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
     border-radius: 12px;
-    border: 0.5px solid rgba(0, 0, 0, 0.5);
+    border: 2px solid rgb(60, 65, 95);
     margin: 0;
     padding: 0;
+    transition: border-color 0s, box-shadow 0s;
+}
+
+[class*="ag-theme-"]:hover {
+    border-color: rgba(100, 110, 220, 0.5);
+    box-shadow: 2px 2px 8px 6px rgba(60, 50, 140, 0.3), 0 0 16px rgba(100, 100, 220, 0.15);
 }
 
 /* Remove border from the grid wrapper */
@@ -71,8 +79,15 @@ div:has(> [class*="ag-theme-"]) {
 /* Apply styling to Workbench containers */
 .workbench-container {
     box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
-    border-radius: 12px; /* Rounded corners */
-    background-color: rgb(54, 55, 88); /* Dark background */
+    border-radius: 12px;
+    background-color: rgb(54, 55, 88);
+    border: 2px solid rgb(60, 65, 95);
+    transition: border-color 0s, box-shadow 0s;
+}
+
+.workbench-container:hover {
+    border-color: rgba(100, 110, 220, 0.5);
+    box-shadow: 2px 2px 8px 6px rgba(60, 50, 140, 0.3), 0 0 16px rgba(100, 100, 220, 0.15);
 }
 
 /* Apply styling to Workbench Offsets */
@@ -88,6 +103,13 @@ div:has(> [class*="ag-theme-"]) {
     border-radius: 25px; /* Rounded corners */
     overflow: hidden; /* Ensure contents fit inside the rounded corners */
     border: 2px solid rgba(128, 128, 128, 1); /* 1-pixel grey */
+}
+
+/* Strip default Dash 4 tooltip chrome for transparent overlay tooltips */
+.hover-content {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* Some of the HTML/Markdown will use color hints like 'green-text' or 'blue-text' */
@@ -203,29 +225,175 @@ td {
     text-align: center !important;
 }
 
-/* AG Grid table header colors - gradient theme */
-/* Data Sources tables - red gradient */
+/* AG Grid table headers - transparent with neon inner glow per table */
+[class*="ag-theme-"] {
+    --ag-header-height: 36px;
+}
+
+.ag-header {
+    padding-left: 6px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Glass pipette base - specular highlight, color tint, dark bottom */
+/* Data Sources - red glass */
 #main_data_sources .ag-header,
 #data_sources_table .ag-header {
-    background: linear-gradient(180deg, rgb(130, 55, 55) 0%, rgb(80, 35, 35) 100%) !important;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.03) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%),
+        rgba(255, 20, 80, 0.12) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        inset 0 0 20px rgba(255, 20, 80, 0.25);
+}
+#main_data_sources:hover .ag-header,
+#data_sources_table:hover .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.08) 100%),
+        rgba(255, 20, 80, 0.22) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+        inset 0 0 28px rgba(255, 20, 80, 0.45);
 }
 
-/* Feature Sets tables - yellow/olive gradient */
+/* Feature Sets - yellow glass */
 #main_feature_sets .ag-header,
 #feature_sets_table .ag-header {
-    background: linear-gradient(180deg, rgb(110, 105, 50) 0%, rgb(70, 65, 30) 100%) !important;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.03) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%),
+        rgba(255, 255, 0, 0.10) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        inset 0 0 20px rgba(255, 255, 0, 0.2);
+}
+#main_feature_sets:hover .ag-header,
+#feature_sets_table:hover .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.08) 100%),
+        rgba(255, 255, 0, 0.18) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+        inset 0 0 28px rgba(255, 255, 0, 0.4);
 }
 
-/* Models tables - green gradient */
+/* Models - green glass */
 #main_models .ag-header,
 #models_table .ag-header {
-    background: linear-gradient(180deg, rgb(50, 100, 50) 0%, rgb(30, 60, 30) 100%) !important;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.03) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%),
+        rgba(0, 255, 50, 0.10) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        inset 0 0 20px rgba(0, 255, 50, 0.25);
+}
+#main_models:hover .ag-header,
+#models_table:hover .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.08) 100%),
+        rgba(0, 255, 50, 0.18) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+        inset 0 0 28px rgba(0, 255, 50, 0.45);
 }
 
-/* Endpoints tables - purple gradient */
+/* Endpoints - blue glass */
 #main_endpoints .ag-header,
 #endpoints_table .ag-header {
-    background: linear-gradient(180deg, rgb(90, 55, 110) 0%, rgb(55, 30, 70) 100%) !important;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.03) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%),
+        rgba(80, 80, 255, 0.12) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        inset 0 0 20px rgba(80, 80, 255, 0.3);
+}
+#main_endpoints:hover .ag-header,
+#endpoints_table:hover .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.08) 100%),
+        rgba(80, 80, 255, 0.22) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+        inset 0 0 28px rgba(80, 80, 255, 0.5);
+}
+
+/* Sample tables - grey glass */
+#data_source_sample_rows .ag-header,
+#feature_set_sample_rows .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.03) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%),
+        rgba(160, 170, 200, 0.10) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        inset 0 0 20px rgba(160, 170, 200, 0.15);
+}
+#data_source_sample_rows:hover .ag-header,
+#feature_set_sample_rows:hover .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.08) 100%),
+        rgba(160, 170, 200, 0.18) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+        inset 0 0 28px rgba(160, 170, 200, 0.3);
+}
+
+/* AG Grid header text styling */
+.ag-header-cell-text {
+    font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 1.1em;
+    letter-spacing: 0.3px;
+    color: rgb(240, 240, 240) !important;
 }
 
 /* Confidence range slider styling (Dash 4 / Radix) */

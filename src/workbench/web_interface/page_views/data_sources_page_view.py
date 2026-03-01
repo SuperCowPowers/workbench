@@ -36,7 +36,7 @@ class DataSourcesPageView(PageView):
         Returns:
             pd.DataFrame: DataFrame of all the DataSources
         """
-        return self.data_sources_df
+        return self.concise_timestamps(self.data_sources_df)
 
     @staticmethod
     def data_source_smart_sample(data_name: str) -> pd.DataFrame:

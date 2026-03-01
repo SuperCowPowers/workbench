@@ -38,7 +38,7 @@ class EndpointsPageView(PageView):
         Returns:
             pd.DataFrame: DataFrame of the Endpoints View Data
         """
-        return self.endpoints_df
+        return self.concise_timestamps(self.endpoints_df)
 
     @staticmethod
     def endpoint_details(endpoint_name: str) -> (dict, None):

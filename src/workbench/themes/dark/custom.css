@@ -3,7 +3,7 @@ h1, h2, h3, h4 {
 }
 body {
     color: rgb(180, 180, 180); /* We want the text dim white */
-    background: linear-gradient(90deg, rgb(45, 45, 45) 0%, rgb(35, 35, 35) 100%);
+    background: linear-gradient(90deg, rgb(25, 25, 25) 0%, rgb(38, 38, 38) 25%, rgb(38, 38, 38) 75%, rgb(25, 25, 25) 100%);
 }
 
 /* Custom CSS to style bold text */
@@ -54,7 +54,7 @@ a:hover {
     /* Box shadow and rounded corners */
     box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
     border-radius: 12px;
-    border: 2px solid rgb(70, 70, 70);
+    border: 2px solid rgb(50, 50, 50);
     margin: 0;
     padding: 0;
     transition: border-color 0s, box-shadow 0s;
@@ -81,7 +81,7 @@ div:has(> [class*="ag-theme-"]) {
     box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
     border-radius: 12px;
     background-color: rgb(40, 40, 40);
-    border: 2px solid rgb(70, 70, 70);
+    border: 2px solid rgb(50, 50, 50);
     transition: border-color 0s, box-shadow 0s;
 }
 
@@ -103,6 +103,13 @@ div:has(> [class*="ag-theme-"]) {
     border-radius: 25px; /* Rounded corners */
     overflow: hidden; /* Ensure contents fit inside the rounded corners */
     border: 2px solid rgba(128, 128, 128, 1); /* 1-pixel grey */
+}
+
+/* Strip default Dash 4 tooltip chrome for transparent overlay tooltips */
+.hover-content {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* Some of the HTML/Markdown will use color hints like 'green-text' or 'blue-text' */
@@ -226,7 +233,7 @@ td {
 }
 
 .ag-header {
-    padding-left: 12px !important;
+    padding-left: 6px !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 

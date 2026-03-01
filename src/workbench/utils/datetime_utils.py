@@ -114,6 +114,30 @@ def datetime_string(datetime_obj: datetime) -> str:
         return str(datetime_obj)
 
 
+def concise_timestamps(df) -> "pd.DataFrame":
+    """Format all datetime columns in a DataFrame to concise minute-resolution strings (YYYY-MM-DD HH:MM).
+
+    Args:
+        df (pd.DataFrame): The DataFrame to format
+
+    Returns:
+        pd.DataFrame: The DataFrame with formatted datetime columns
+    """
+    import pandas as pd
+
+    for col in df.columns:
+        if pd.api.types.is_datetime64_any_dtype(df[col]):
+            df[col] = df[col].dt.strftime("%Y-%m-%d %H:%M")
+        elif df[col].dtype == "object":
+            try:
+                parsed = pd.to_datetime(df[col], format="ISO8601", errors="coerce")
+                if parsed.notna().sum() > len(df) * 0.5:
+                    df[col] = parsed.dt.strftime("%Y-%m-%d %H:%M").where(parsed.notna(), df[col])
+            except Exception:
+                pass
+    return df
+
+
 if __name__ == "__main__":
     """Exercise the helper functions"""
 

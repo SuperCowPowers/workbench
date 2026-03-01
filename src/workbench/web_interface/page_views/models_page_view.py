@@ -39,7 +39,7 @@ class ModelsPageView(PageView):
         Returns:
             pd.DataFrame: DataFrame of the Models View Data
         """
-        return self.models_df
+        return self.concise_timestamps(self.models_df)
 
     @staticmethod
     def model_details(self, model_name: str) -> (dict, None):
