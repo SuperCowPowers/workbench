@@ -222,6 +222,7 @@ class AWSMeta:
             "_aws_url": self.feature_group_console_url(name),
         }
 
+    @aws_throttle
     def models(self, details: bool = False) -> pd.DataFrame:
         """Get a summary of the Models in AWS.
 
