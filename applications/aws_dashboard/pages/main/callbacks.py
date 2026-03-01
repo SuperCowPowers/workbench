@@ -1,5 +1,7 @@
 """Callbacks/Connections for the Main/Front Dashboard Page"""
 
+from concurrent.futures import ThreadPoolExecutor
+
 from dash import callback, Input, Output, State, no_update, html, clientside_callback
 from dash.exceptions import PreventUpdate
 
@@ -70,13 +72,16 @@ def tables_refresh(main_page: MainPage, tables: dict[str, AGTable]):
         ],
     )
     def _all_tables_update(_n, current_hashes):
-        # Grab all tables and compute deltas
-        updated_dataframes = {
-            "data_sources": dataframe_delta(main_page.data_sources_summary, current_hashes["data_sources"]),
-            "feature_sets": dataframe_delta(main_page.feature_sets_summary, current_hashes["feature_sets"]),
-            "models": dataframe_delta(main_page.models_summary, current_hashes["models"]),
-            "endpoints": dataframe_delta(main_page.endpoints_summary, current_hashes["endpoints"]),
-        }
+        # Grab all tables and compute deltas (in parallel to avoid sequential AWS calls on TTL expiry)
+        artifact_types = ["data_sources", "feature_sets", "models", "endpoints"]
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = {
+                key: executor.submit(
+                    dataframe_delta, getattr(main_page, f"{key}_summary"), current_hashes[key]
+                )
+                for key in artifact_types
+            }
+            updated_dataframes = {key: future.result() for key, future in futures.items()}
 
         # Check if all DataFrames are None (no changes)
         if all(df is None for df, _ in updated_dataframes.values()):
