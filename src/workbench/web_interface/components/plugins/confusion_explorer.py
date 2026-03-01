@@ -501,10 +501,7 @@ class ConfusionExplorer(PluginInterface):
                 raise PreventUpdate
 
             tri = self.triangle
-            if tri.df is None or tri.df.empty:
-                raise PreventUpdate
-
-            color_col = current_color if current_color else tri.active_color_col
+            triangle_active = tri.df is not None and not tri.df.empty
 
             # Parse the clicked cell: x = predicted class, y = actual class
             point = click_data["points"][0]
@@ -517,21 +514,29 @@ class ConfusionExplorer(PluginInterface):
 
             # Toggle: if clicking the same cell again, reset to full view
             if prev_cell == cell_key:
-                full_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col)
+                if triangle_active:
+                    color_col = current_color if current_color else tri.active_color_col
+                    tri_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col)
+                else:
+                    tri_fig = no_update
                 matrix_figure["layout"]["shapes"] = cell_shapes
-                return full_fig, None, matrix_figure, None
-
-            # Build selection mask: actual class matches y_label AND predicted class matches x_label
-            mask = (tri.df[tri.target_col].astype(str) == y_label) & (tri.df["prediction"].astype(str) == x_label)
-            sel_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask)
+                return tri_fig, None, matrix_figure, None
 
             # Apply highlight rectangle on the matrix cell
             x_idx = int(point["x"].split(":")[1])
             y_idx = int(point["y"].split(":")[1])
             matrix_figure["layout"]["shapes"] = cell_shapes + [_highlight_shape(x_idx, y_idx)]
 
+            # Build selection on triangle if active (3-class models only)
+            if triangle_active:
+                color_col = current_color if current_color else tri.active_color_col
+                mask = (tri.df[tri.target_col].astype(str) == y_label) & (tri.df["prediction"].astype(str) == x_label)
+                tri_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask)
+            else:
+                tri_fig = no_update
+
             # Clear clickData so re-clicking the same cell fires this callback again
-            return sel_fig, cell_key, matrix_figure, None
+            return tri_fig, cell_key, matrix_figure, None
 
         # Confidence slider callback: filter both children by confidence range
         # Preserves the active matrix cell selection if one exists
@@ -565,17 +570,11 @@ class ConfusionExplorer(PluginInterface):
             matrix_props = self.matrix.update_properties(filtered_df, **child_kwargs)
             triangle_props = self.triangle.update_properties(filtered_df, **child_kwargs)
 
-            # Re-render the triangle with the user's current color selection
             tri = self.triangle
-            color_col = current_color if current_color else tri.active_color_col
-            mask = None
 
-            # If a matrix cell was selected, re-apply the selection on the filtered data
+            # If a matrix cell was selected, re-apply the highlight rectangle on the matrix
             if prev_cell:
                 x_label, y_label = prev_cell.split("|")
-                mask = (tri.df[tri.target_col].astype(str) == y_label) & (tri.df["prediction"].astype(str) == x_label)
-
-                # Re-apply the highlight rectangle on the matrix (cell shapes already present from update_properties)
                 str_labels = [str(c) for c in (self.class_labels or [])]
                 if x_label in str_labels and y_label in str_labels:
                     x_idx = str_labels.index(x_label)
@@ -583,10 +582,20 @@ class ConfusionExplorer(PluginInterface):
                     existing = list(matrix_props[0].layout.shapes or [])
                     matrix_props[0].update_layout(shapes=existing + [_highlight_shape(x_idx, y_idx)])
 
-            # Re-create figure with current color, preserve dropdown selection
-            triangle_props[0] = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask)
-            triangle_props[1] = no_update  # options
-            triangle_props[2] = no_update  # value
+            # Re-create triangle with current color only if triangle is active (3-class models)
+            if tri.df is not None and not tri.df.empty:
+                color_col = current_color if current_color else tri.active_color_col
+                mask = None
+                if prev_cell:
+                    x_label, y_label = prev_cell.split("|")
+                    mask = (tri.df[tri.target_col].astype(str) == y_label) & (
+                        tri.df["prediction"].astype(str) == x_label
+                    )
+                triangle_props[0] = tri.create_ternary_plot(
+                    tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask
+                )
+                triangle_props[1] = no_update  # options
+                triangle_props[2] = no_update  # value
 
             # Return: matrix figure + triangle (figure, options, value) + preserve cell
             return matrix_props + triangle_props + [prev_cell]
