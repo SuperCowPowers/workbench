@@ -236,29 +236,29 @@ td {
 #data_sources_table .ag-header {
     background:
         linear-gradient(180deg,
-            rgba(255, 255, 255, 0.12) 0%,
-            rgba(255, 255, 255, 0.04) 35%,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.03) 35%,
             transparent 50%,
-            rgba(0, 0, 0, 0.15) 100%),
-        rgba(255, 20, 80, 0.12) !important;
+            rgba(0, 0, 0, 0.1) 100%),
+        rgba(255, 20, 80, 0.07) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-        inset 0 0 20px rgba(255, 20, 80, 0.35);
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        inset 0 0 20px rgba(255, 20, 80, 0.25);
 }
 #main_data_sources:hover .ag-header,
 #data_sources_table:hover .ag-header {
     background:
         linear-gradient(180deg,
-            rgba(255, 255, 255, 0.18) 0%,
-            rgba(255, 255, 255, 0.06) 35%,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
             transparent 50%,
-            rgba(0, 0, 0, 0.12) 100%),
-        rgba(255, 20, 80, 0.2) !important;
+            rgba(0, 0, 0, 0.08) 100%),
+        rgba(255, 20, 80, 0.14) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.25),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-        inset 0 0 28px rgba(255, 20, 80, 0.55);
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+        inset 0 0 28px rgba(255, 20, 80, 0.45);
 }
 
 /* Feature Sets - yellow glass */
@@ -266,29 +266,29 @@ td {
 #feature_sets_table .ag-header {
     background:
         linear-gradient(180deg,
-            rgba(255, 255, 255, 0.12) 0%,
-            rgba(255, 255, 255, 0.04) 35%,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.03) 35%,
             transparent 50%,
-            rgba(0, 0, 0, 0.15) 100%),
-        rgba(255, 255, 0, 0.1) !important;
+            rgba(0, 0, 0, 0.1) 100%),
+        rgba(255, 255, 0, 0.06) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-        inset 0 0 20px rgba(255, 255, 0, 0.3);
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        inset 0 0 20px rgba(255, 255, 0, 0.2);
 }
 #main_feature_sets:hover .ag-header,
 #feature_sets_table:hover .ag-header {
     background:
         linear-gradient(180deg,
-            rgba(255, 255, 255, 0.18) 0%,
-            rgba(255, 255, 255, 0.06) 35%,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
             transparent 50%,
-            rgba(0, 0, 0, 0.12) 100%),
-        rgba(255, 255, 0, 0.18) !important;
+            rgba(0, 0, 0, 0.08) 100%),
+        rgba(255, 255, 0, 0.12) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.25),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-        inset 0 0 28px rgba(255, 255, 0, 0.5);
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+        inset 0 0 28px rgba(255, 255, 0, 0.4);
 }
 
 /* Models - green glass */
@@ -296,29 +296,29 @@ td {
 #models_table .ag-header {
     background:
         linear-gradient(180deg,
-            rgba(255, 255, 255, 0.12) 0%,
-            rgba(255, 255, 255, 0.04) 35%,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.03) 35%,
             transparent 50%,
-            rgba(0, 0, 0, 0.15) 100%),
-        rgba(0, 255, 50, 0.1) !important;
+            rgba(0, 0, 0, 0.1) 100%),
+        rgba(0, 255, 50, 0.06) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-        inset 0 0 20px rgba(0, 255, 50, 0.35);
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        inset 0 0 20px rgba(0, 255, 50, 0.25);
 }
 #main_models:hover .ag-header,
 #models_table:hover .ag-header {
     background:
         linear-gradient(180deg,
-            rgba(255, 255, 255, 0.18) 0%,
-            rgba(255, 255, 255, 0.06) 35%,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
             transparent 50%,
-            rgba(0, 0, 0, 0.12) 100%),
-        rgba(0, 255, 50, 0.18) !important;
+            rgba(0, 0, 0, 0.08) 100%),
+        rgba(0, 255, 50, 0.12) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.25),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-        inset 0 0 28px rgba(0, 255, 50, 0.55);
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+        inset 0 0 28px rgba(0, 255, 50, 0.45);
 }
 
 /* Endpoints - blue glass */
@@ -326,29 +326,59 @@ td {
 #endpoints_table .ag-header {
     background:
         linear-gradient(180deg,
-            rgba(255, 255, 255, 0.12) 0%,
-            rgba(255, 255, 255, 0.04) 35%,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.03) 35%,
             transparent 50%,
-            rgba(0, 0, 0, 0.15) 100%),
-        rgba(80, 80, 255, 0.12) !important;
+            rgba(0, 0, 0, 0.1) 100%),
+        rgba(80, 80, 255, 0.07) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-        inset 0 0 20px rgba(80, 80, 255, 0.4);
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        inset 0 0 20px rgba(80, 80, 255, 0.3);
 }
 #main_endpoints:hover .ag-header,
 #endpoints_table:hover .ag-header {
     background:
         linear-gradient(180deg,
-            rgba(255, 255, 255, 0.18) 0%,
-            rgba(255, 255, 255, 0.06) 35%,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
             transparent 50%,
-            rgba(0, 0, 0, 0.12) 100%),
-        rgba(80, 80, 255, 0.2) !important;
+            rgba(0, 0, 0, 0.08) 100%),
+        rgba(80, 80, 255, 0.14) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.25),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-        inset 0 0 28px rgba(80, 80, 255, 0.6);
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+        inset 0 0 28px rgba(80, 80, 255, 0.5);
+}
+
+/* Sample tables - grey glass */
+#data_source_sample_rows .ag-header,
+#feature_set_sample_rows .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(255, 255, 255, 0.03) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%),
+        rgba(180, 180, 200, 0.07) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        inset 0 0 20px rgba(180, 180, 200, 0.15);
+}
+#data_source_sample_rows:hover .ag-header,
+#feature_set_sample_rows:hover .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.15) 0%,
+            rgba(255, 255, 255, 0.05) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.08) 100%),
+        rgba(180, 180, 200, 0.12) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.15),
+        inset 0 0 28px rgba(180, 180, 200, 0.3);
 }
 
 /* AG Grid header text styling */
