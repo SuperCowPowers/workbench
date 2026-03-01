@@ -29,9 +29,9 @@ table_containers[table_name] = tables[table_name].create_component(f"main_{table
 table_name = "feature_sets"
 table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=200)
 table_name = "models"
-table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=500)
+table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=200)
 table_name = "endpoints"
-table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=500)
+table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=200)
 
 # Set up our layout (Dash looks for a var called layout)
 layout = main_layout(**table_containers)

@@ -19,7 +19,7 @@ class AGTable(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
     max_height = 500
-    header_height = 30
+    header_height = 36
     row_height = 25
 
     def create_component(self, component_id: str, max_height: int = 500, row_selection: str = "single") -> AgGrid:
@@ -40,7 +40,6 @@ class AGTable(PluginInterface):
         grid_options = {
             "rowSelection": row_selection,
             "suppressCellFocus": True,
-            "headerHeight": self.header_height,
             "rowHeight": self.row_height,
             "defaultColDef": {"sortable": True, "filter": True, "resizable": True, "maxWidth": 500},
             "autoSizeStrategy": {"type": "fitCellContents"},

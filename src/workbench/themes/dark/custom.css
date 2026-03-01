@@ -18,7 +18,8 @@ i, em {
 
 /* Default link color */
 a {
-    color: rgb(120, 120, 240); /* Change to your preferred color */
+    color: rgb(120, 120, 240);
+    transition: color 0.2s ease;
 }
 
 /* Reduce spacing around lists */
@@ -53,9 +54,15 @@ a:hover {
     /* Box shadow and rounded corners */
     box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
     border-radius: 12px;
-    border: 0.5px solid rgba(0, 0, 0, 0.5);
+    border: 2px solid rgb(70, 70, 70);
     margin: 0;
     padding: 0;
+    transition: border-color 0s, box-shadow 0s;
+}
+
+[class*="ag-theme-"]:hover {
+    border-color: rgba(120, 120, 240, 0.5);
+    box-shadow: 2px 2px 8px 6px rgba(90, 60, 160, 0.3), 0 0 16px rgba(120, 100, 240, 0.15);
 }
 
 /* Remove border from the grid wrapper */
@@ -72,8 +79,15 @@ div:has(> [class*="ag-theme-"]) {
 /* Apply styling to Workbench containers */
 .workbench-container {
     box-shadow: 2px 2px 6px 5px rgba(0, 0, 0, 0.25);
-    border-radius: 12px; /* Rounded corners */
-    background-color: rgb(40, 40, 40); /* Dark background */
+    border-radius: 12px;
+    background-color: rgb(40, 40, 40);
+    border: 2px solid rgb(70, 70, 70);
+    transition: border-color 0s, box-shadow 0s;
+}
+
+.workbench-container:hover {
+    border-color: rgba(120, 120, 240, 0.5);
+    box-shadow: 2px 2px 8px 6px rgba(90, 60, 160, 0.3), 0 0 16px rgba(120, 100, 240, 0.15);
 }
 
 /* Apply styling to Workbench Offsets */
@@ -150,6 +164,7 @@ div:has(> [class*="ag-theme-"]) {
 .dash-dropdown-option {
     background-color: rgb(35, 35, 35) !important;
     color: rgb(210, 210, 210) !important;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .dash-dropdown-option:hover, .dash-dropdown-option[data-highlighted] {
@@ -177,6 +192,7 @@ div:has(> [class*="ag-theme-"]) {
 
 .dropdown-item {
     color: rgb(210, 210, 210) !important;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .dropdown-item:hover, .dropdown-item:focus {
@@ -204,29 +220,145 @@ td {
     text-align: center !important;
 }
 
-/* AG Grid table header colors - gradient theme */
-/* Data Sources tables - red gradient */
+/* AG Grid table headers - transparent with neon inner glow per table */
+[class*="ag-theme-"] {
+    --ag-header-height: 36px;
+}
+
+.ag-header {
+    padding-left: 12px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Glass pipette base - specular highlight, color tint, dark bottom */
+/* Data Sources - red glass */
 #main_data_sources .ag-header,
 #data_sources_table .ag-header {
-    background: linear-gradient(180deg, rgb(140, 60, 60) 0%, rgb(80, 35, 35) 100%) !important;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.12) 0%,
+            rgba(255, 255, 255, 0.04) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.15) 100%),
+        rgba(255, 20, 80, 0.12) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+        inset 0 0 20px rgba(255, 20, 80, 0.35);
+}
+#main_data_sources:hover .ag-header,
+#data_sources_table:hover .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.18) 0%,
+            rgba(255, 255, 255, 0.06) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.12) 100%),
+        rgba(255, 20, 80, 0.2) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+        inset 0 0 28px rgba(255, 20, 80, 0.55);
 }
 
-/* Feature Sets tables - yellow/olive gradient */
+/* Feature Sets - yellow glass */
 #main_feature_sets .ag-header,
 #feature_sets_table .ag-header {
-    background: linear-gradient(180deg, rgb(120, 115, 55) 0%, rgb(70, 65, 30) 100%) !important;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.12) 0%,
+            rgba(255, 255, 255, 0.04) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.15) 100%),
+        rgba(255, 255, 0, 0.1) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+        inset 0 0 20px rgba(255, 255, 0, 0.3);
+}
+#main_feature_sets:hover .ag-header,
+#feature_sets_table:hover .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.18) 0%,
+            rgba(255, 255, 255, 0.06) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.12) 100%),
+        rgba(255, 255, 0, 0.18) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+        inset 0 0 28px rgba(255, 255, 0, 0.5);
 }
 
-/* Models tables - green gradient */
+/* Models - green glass */
 #main_models .ag-header,
 #models_table .ag-header {
-    background: linear-gradient(180deg, rgb(55, 110, 55) 0%, rgb(30, 60, 30) 100%) !important;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.12) 0%,
+            rgba(255, 255, 255, 0.04) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.15) 100%),
+        rgba(0, 255, 50, 0.1) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+        inset 0 0 20px rgba(0, 255, 50, 0.35);
+}
+#main_models:hover .ag-header,
+#models_table:hover .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.18) 0%,
+            rgba(255, 255, 255, 0.06) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.12) 100%),
+        rgba(0, 255, 50, 0.18) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+        inset 0 0 28px rgba(0, 255, 50, 0.55);
 }
 
-/* Endpoints tables - purple gradient */
+/* Endpoints - blue glass */
 #main_endpoints .ag-header,
 #endpoints_table .ag-header {
-    background: linear-gradient(180deg, rgb(100, 60, 120) 0%, rgb(55, 30, 70) 100%) !important;
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.12) 0%,
+            rgba(255, 255, 255, 0.04) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.15) 100%),
+        rgba(80, 80, 255, 0.12) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+        inset 0 0 20px rgba(80, 80, 255, 0.4);
+}
+#main_endpoints:hover .ag-header,
+#endpoints_table:hover .ag-header {
+    background:
+        linear-gradient(180deg,
+            rgba(255, 255, 255, 0.18) 0%,
+            rgba(255, 255, 255, 0.06) 35%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.12) 100%),
+        rgba(80, 80, 255, 0.2) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+        inset 0 0 28px rgba(80, 80, 255, 0.6);
+}
+
+/* AG Grid header text styling */
+.ag-header-cell-text {
+    font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 1.1em;
+    letter-spacing: 0.3px;
+    color: rgb(240, 240, 240) !important;
 }
 
 /* Confidence range slider styling (Dash 4 / Radix) */
