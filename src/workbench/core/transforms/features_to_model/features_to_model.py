@@ -1,6 +1,5 @@
 """FeaturesToModel: Train/Create a Model from a Feature Set"""
 
-import os
 from pathlib import Path
 from typing import Union
 from sagemaker.estimator import Estimator
