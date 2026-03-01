@@ -100,32 +100,42 @@ def main_layout(
                 ),
                 style={"padding": "20px 0px"},
             ),
-            # Each table in its own row
+            # 2x2 grid of artifact tables
             dbc.Row(
                 [
-                    html.H3("Data Sources", style={"textAlign": "left"}),
-                    data_sources,
+                    dbc.Col(
+                        [
+                            html.H3("Data Sources", style={"textAlign": "left"}),
+                            data_sources,
+                        ],
+                        width=6,
+                    ),
+                    dbc.Col(
+                        [
+                            html.H3("Feature Sets", style={"textAlign": "left"}),
+                            feature_sets,
+                        ],
+                        width=6,
+                    ),
                 ],
                 style={"padding": "0px 0px"},
             ),
             dbc.Row(
                 [
-                    html.H3("Feature Sets", style={"textAlign": "left"}),
-                    feature_sets,
-                ],
-                style={"padding": "20px 0px"},
-            ),
-            dbc.Row(
-                [
-                    html.H3("Models", style={"textAlign": "left"}),
-                    models,
-                ],
-                style={"padding": "20px 0px"},
-            ),
-            dbc.Row(
-                [
-                    html.H3("Endpoints", style={"textAlign": "left"}),
-                    endpoints,
+                    dbc.Col(
+                        [
+                            html.H3("Models", style={"textAlign": "left"}),
+                            models,
+                        ],
+                        width=6,
+                    ),
+                    dbc.Col(
+                        [
+                            html.H3("Endpoints", style={"textAlign": "left"}),
+                            endpoints,
+                        ],
+                        width=6,
+                    ),
                 ],
                 style={"padding": "20px 0px"},
             ),

@@ -25,13 +25,13 @@ for table_name in table_names:
 # Create a table container for each Workbench Artifact Type
 table_containers = dict()
 table_name = "data_sources"
-table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=200)
+table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=300)
 table_name = "feature_sets"
-table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=200)
+table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=300)
 table_name = "models"
-table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=200)
+table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=400)
 table_name = "endpoints"
-table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=200)
+table_containers[table_name] = tables[table_name].create_component(f"main_{table_name}", max_height=400)
 
 # Set up our layout (Dash looks for a var called layout)
 layout = main_layout(**table_containers)
