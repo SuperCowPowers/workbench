@@ -2,6 +2,7 @@
 
 from datetime import datetime, date, timezone
 import numpy as np
+import pandas as pd
 import logging
 import time
 
@@ -114,7 +115,7 @@ def datetime_string(datetime_obj: datetime) -> str:
         return str(datetime_obj)
 
 
-def concise_timestamps(df) -> "pd.DataFrame":
+def concise_timestamps(df) -> pd.DataFrame:
     """Format all datetime columns in a DataFrame to concise minute-resolution strings (YYYY-MM-DD HH:MM).
 
     Args:
@@ -123,8 +124,6 @@ def concise_timestamps(df) -> "pd.DataFrame":
     Returns:
         pd.DataFrame: The DataFrame with formatted datetime columns
     """
-    import pandas as pd
-
     for col in df.columns:
         if pd.api.types.is_datetime64_any_dtype(df[col]):
             df[col] = df[col].dt.strftime("%Y-%m-%d %H:%M")

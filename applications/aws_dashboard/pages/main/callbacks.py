@@ -76,9 +76,7 @@ def tables_refresh(main_page: MainPage, tables: dict[str, AGTable]):
         artifact_types = ["data_sources", "feature_sets", "models", "endpoints"]
         with ThreadPoolExecutor(max_workers=4) as executor:
             futures = {
-                key: executor.submit(
-                    dataframe_delta, getattr(main_page, f"{key}_summary"), current_hashes[key]
-                )
+                key: executor.submit(dataframe_delta, getattr(main_page, f"{key}_summary"), current_hashes[key])
                 for key in artifact_types
             }
             updated_dataframes = {key: future.result() for key, future in futures.items()}
