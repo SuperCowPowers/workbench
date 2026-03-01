@@ -1,4 +1,10 @@
-"""A Confusion Triangle (Ternary Plot) plugin for 3-class classification models."""
+"""A Confusion Simplex plugin for N-class classification models (N >= 2).
+
+Projects N-dimensional probability vectors onto a 2D regular polygon using star/radar
+centroid coordinates. Each class maps to a vertex equally spaced on a unit circle, and
+each data point is positioned at the probability-weighted centroid of the vertices.
+For N=3 this produces an equilateral triangle, for N=5 a pentagon, etc.
+"""
 
 import base64
 import numpy as np
@@ -17,13 +23,13 @@ _MARKER_LINE = dict(color="rgba(0,0,0,0.25)", width=1)
 _DIMMED_MARKER = dict(size=10, color="rgba(128, 128, 128, 0.3)", line=dict(color="rgba(0,0,0,0.3)", width=1))
 
 
-class ConfusionTriangle(PluginInterface):
-    """A Confusion Triangle Plugin for 3-class classification models.
+class ConfusionSimplex(PluginInterface):
+    """A Confusion Simplex Plugin for N-class classification models.
 
-    The three class probabilities (which sum to 1) are plotted on a ternary simplex:
-    - Bottom-left vertex: lowest class (first in class_labels)
-    - Top vertex: middle class
-    - Bottom-right vertex: highest class (last in class_labels)
+    The N class probabilities (which sum to 1) are projected onto a regular N-gon
+    inscribed in a unit circle. Each vertex represents a class, and data points are
+    positioned at the probability-weighted centroid of the vertices. High-confidence
+    predictions cluster near their vertex; confused predictions drift toward the center.
     """
 
     auto_load_page = PluginPage.NONE
@@ -36,7 +42,7 @@ class ConfusionTriangle(PluginInterface):
     _circle_data_uri = f"data:image/svg+xml;base64,{base64.b64encode(_circle_svg.encode('utf-8')).decode('utf-8')}"
 
     def __init__(self):
-        """Initialize the ConfusionTriangle plugin class."""
+        """Initialize the ConfusionSimplex plugin class."""
         self.component_id = None
         self.df = None
         self.class_labels = None
@@ -61,7 +67,7 @@ class ConfusionTriangle(PluginInterface):
             component_id (str): The ID of the web component.
 
         Returns:
-            html.Div: A Dash Div Component containing the ternary graph and color dropdown.
+            html.Div: A Dash Div Component containing the simplex graph and color dropdown.
         """
         self.component_id = component_id
 
@@ -141,10 +147,10 @@ class ConfusionTriangle(PluginInterface):
             "proba_cols", [f"{label}_proba" for label in self.class_labels] if self.class_labels else []
         )
 
-        # Validate class labels (requires exactly 3 for ternary plot)
-        if self.class_labels is None or len(self.class_labels) != 3:
+        # Validate class labels (requires at least 2 for simplex projection)
+        if self.class_labels is None or len(self.class_labels) < 2:
             n = len(self.class_labels) if self.class_labels else 0
-            return [self.display_text(f"Requires 3-class classifier (got {n} classes)"), [], None]
+            return [self.display_text(f"Requires 2+ class classifier (got {n} classes)"), [], None]
 
         # Validate dataframe
         self.df = df
@@ -174,11 +180,11 @@ class ConfusionTriangle(PluginInterface):
             )
         color_options = [{"label": col, "value": col} for col in color_columns]
 
-        figure = self.create_ternary_plot(self.df, self.class_labels, self.proba_cols, color_default)
+        figure = self.create_plot(self.df, self.class_labels, self.proba_cols, color_default)
         return [figure, color_options, color_default]
 
     def set_theme(self, theme: str) -> list:
-        """Re-render the confusion triangle when the theme changes."""
+        """Re-render the confusion simplex when the theme changes."""
         if self.df is None:
             return [no_update] * len(self.properties)
         return self.update_properties(
@@ -186,22 +192,34 @@ class ConfusionTriangle(PluginInterface):
         )
 
     @staticmethod
-    def _project(low, mid, high):
-        """Project barycentric coordinates to 2D cartesian (equilateral triangle).
+    def _compute_vertices(n):
+        """Compute N vertices equally spaced on a unit circle, starting from the top.
 
         Args:
-            low (float | np.ndarray): Probability for the lowest class.
-            mid (float | np.ndarray): Probability for the middle class.
-            high (float | np.ndarray): Probability for the highest class.
+            n (int): Number of classes/vertices.
 
         Returns:
-            tuple: (x, y) cartesian coordinates.
+            tuple: (vx, vy) arrays of vertex x and y coordinates.
         """
-        h = np.sqrt(3) / 2
-        return high + mid * 0.5, mid * h
+        angles = np.linspace(0, 2 * np.pi, n, endpoint=False) + np.pi / 2
+        return np.cos(angles), np.sin(angles)
 
-    def create_ternary_plot(self, df, class_labels, proba_cols, color_col, mask=None):
-        """Create a ternary scatter plot using Scattergl with manual 2D projection.
+    @staticmethod
+    def _project(probabilities, vx, vy):
+        """Project probability vectors to 2D via weighted centroid of polygon vertices.
+
+        Args:
+            probabilities (np.ndarray): Shape (n_samples, n_classes) probability matrix.
+            vx (np.ndarray): Shape (n_classes,) x-coordinates of vertices.
+            vy (np.ndarray): Shape (n_classes,) y-coordinates of vertices.
+
+        Returns:
+            tuple: (px, py) projected x and y coordinate arrays, shape (n_samples,).
+        """
+        return probabilities @ vx, probabilities @ vy
+
+    def create_plot(self, df, class_labels, proba_cols, color_col, mask=None):
+        """Create a simplex scatter plot using Scattergl with star/radar centroid projection.
 
         When mask is None, all points are rendered normally. When mask is provided,
         matching points (True) are highlighted and non-matching points (False) are
@@ -209,16 +227,25 @@ class ConfusionTriangle(PluginInterface):
 
         Args:
             df (pd.DataFrame): The dataframe containing prediction data.
-            class_labels (list): The three class labels [low, mid, high].
-            proba_cols (list): The three probability column names.
+            class_labels (list): The class labels.
+            proba_cols (list): The probability column names (one per class).
             color_col (str): The column to use for coloring points.
             mask (pd.Series): Optional boolean mask for selection-style brushing.
 
         Returns:
             go.Figure: A Plotly Figure object.
         """
-        h = np.sqrt(3) / 2
-        px_arr, py_arr = self._project(df[proba_cols[0]].values, df[proba_cols[1]].values, df[proba_cols[2]].values)
+        n = len(class_labels)
+        vx, vy = self._compute_vertices(n)
+
+        # Project data points to 2D
+        proba_matrix = df[proba_cols].values
+        px_arr, py_arr = self._project(proba_matrix, vx, vy)
+
+        # For binary classifiers, add deterministic y-jitter to prevent stacking on a line
+        if n == 2:
+            rng = np.random.default_rng(42)
+            py_arr = py_arr + rng.normal(0, 0.015, len(py_arr))
 
         # Build customdata columns for molecule hover
         custom_data_cols = []
@@ -236,11 +263,13 @@ class ConfusionTriangle(PluginInterface):
         # Add data point traces first (so lines render on top)
         self._add_data_traces(figure, df, px_arr, py_arr, color_col, class_labels, custom_data_cols, mask)
 
-        # Triangle border (on top of data points)
+        # N-gon border (on top of data points)
+        border_x = list(vx) + [vx[0]]
+        border_y = list(vy) + [vy[0]]
         figure.add_trace(
             go.Scattergl(
-                x=[0, 1, 0.5, 0],
-                y=[0, 0, h, 0],
+                x=border_x,
+                y=border_y,
                 mode="lines",
                 line=dict(color=line_color, width=4),
                 showlegend=False,
@@ -248,14 +277,14 @@ class ConfusionTriangle(PluginInterface):
             )
         )
 
-        # Decision boundary lines: center (1/3, 1/3, 1/3) to each edge midpoint
-        cx, cy = self._project(1 / 3, 1 / 3, 1 / 3)
-        for edge in [(0.5, 0.5, 0), (0, 0.5, 0.5), (0.5, 0, 0.5)]:
-            ex, ey = self._project(*edge)
+        # Decision boundary lines: center (0,0) to each edge midpoint
+        for i in range(n):
+            mx = (vx[i] + vx[(i + 1) % n]) / 2
+            my = (vy[i] + vy[(i + 1) % n]) / 2
             figure.add_trace(
                 go.Scattergl(
-                    x=[cx, ex],
-                    y=[cy, ey],
+                    x=[0, mx],
+                    y=[0, my],
                     mode="lines",
                     line=dict(color=boundary_color, width=2, dash="dash"),
                     showlegend=False,
@@ -263,30 +292,47 @@ class ConfusionTriangle(PluginInterface):
                 )
             )
 
-        # Vertex labels + title annotation below the triangle
-        pad = 0.03
-        annotations = [
-            dict(x=-pad, y=-pad, text=class_labels[0], showarrow=False, font=dict(size=18)),
-            dict(x=0.5, y=h + pad, text=class_labels[1], showarrow=False, font=dict(size=18)),
-            dict(x=1 + pad, y=-pad, text=class_labels[2], showarrow=False, font=dict(size=18)),
+        # Vertex labels placed radially outside the polygon + title annotation below
+        label_pad = 0.12
+        annotations = []
+        for i, label in enumerate(class_labels):
+            annotations.append(
+                dict(
+                    x=vx[i] * (1 + label_pad),
+                    y=vy[i] * (1 + label_pad),
+                    text=str(label),
+                    showarrow=False,
+                    font=dict(size=18),
+                    xanchor="center",
+                    yanchor="middle",
+                )
+            )
+        annotations.append(
             dict(
-                x=0.5,
-                y=-0.05,
+                x=0,
+                y=min(vy) - 0.18,
                 text="<b>Prediction Probabilities</b>",
                 showarrow=False,
                 font=dict(size=16),
                 xanchor="center",
                 yanchor="top",
             ),
-        ]
+        )
+
+        margin = 0.25
         figure.update_layout(
-            xaxis=dict(visible=False, range=[-0.08, 1.12]),
-            yaxis=dict(visible=False, range=[-0.12, h + 0.10]),
+            xaxis=dict(visible=False, range=[min(vx) - margin, max(vx) + margin]),
+            yaxis=dict(
+                visible=False,
+                range=[min(vy) - margin - 0.1, max(vy) + margin],
+                scaleanchor="x",
+                scaleratio=1,
+            ),
             plot_bgcolor=self.theme_manager.background(),
             paper_bgcolor="rgba(0,0,0,0)",
             margin={"t": 10, "b": 10, "r": 10, "l": 10, "pad": 10},
             showlegend=True,
-            legend=dict(x=0.85, y=0.9),
+            legend=dict(x=1.0, y=1.0),
             dragmode="pan",
             modebar={"bgcolor": "rgba(0, 0, 0, 0)"},
             annotations=annotations,
@@ -302,7 +348,7 @@ class ConfusionTriangle(PluginInterface):
             px_arr (np.ndarray): Projected x coordinates.
             py_arr (np.ndarray): Projected y coordinates.
             color_col (str): The column to use for coloring points.
-            class_labels (list): The three class labels.
+            class_labels (list): The class labels.
             custom_data_cols (list): Columns to include in customdata for hover.
             mask (pd.Series): Optional boolean mask. None = normal mode, Series = selection mode.
         """
@@ -396,10 +442,10 @@ class ConfusionTriangle(PluginInterface):
             Input(f"{self.component_id}-color-dropdown", "value"),
             prevent_initial_call=True,
         )
-        def _update_ternary_color(color_value):
+        def _update_color(color_value):
             if self.df is None or self.df.empty or not color_value:
                 raise PreventUpdate
-            return self.create_ternary_plot(self.df, self.class_labels, self.proba_cols, color_value)
+            return self.create_plot(self.df, self.class_labels, self.proba_cols, color_value)
 
         # Clientside callback for circle overlay - runs in browser, no server round trip
         clientside_callback(
@@ -458,7 +504,7 @@ if __name__ == "__main__":
     target_col = model.target()
     proba_cols = [f"{label}_proba" for label in class_labels]
     PluginUnitTest(
-        ConfusionTriangle,
+        ConfusionSimplex,
         input_data=df,
         theme="dark",
         class_labels=class_labels,

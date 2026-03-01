@@ -1,6 +1,6 @@
 """A Model Plot plugin that displays the appropriate visualization based on model type.
 
-For classifiers: Shows a Confusion Explorer (Confusion Matrix + Confusion Triangle)
+For classifiers: Shows a Confusion Explorer (Confusion Matrix + Confusion Simplex)
 For regressors: Shows a Scatter Plot of predictions vs actuals
 """
 

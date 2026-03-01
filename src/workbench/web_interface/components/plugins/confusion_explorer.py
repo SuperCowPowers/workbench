@@ -1,4 +1,4 @@
-"""Confusion Explorer: A compound plugin combining a residual-colored Confusion Matrix + Confusion Triangle."""
+"""Confusion Explorer: A compound plugin combining a residual-colored Confusion Matrix + Confusion Simplex."""
 
 from math import log
 from dash import dcc, html, callback, Input, Output, State, no_update
@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.web_interface.components.plugins.confusion_triangle import ConfusionTriangle
+from workbench.web_interface.components.plugins.confusion_simplex import ConfusionSimplex
 from workbench.cached.cached_model import CachedModel
 from workbench.utils.pandas_utils import max_proba, proba_to_conf, compute_confusion
 from workbench.utils.color_utils import sample_colorscale_rgba
@@ -267,11 +267,11 @@ class ClassConfusionMatrix(PluginInterface):
 
 
 class ConfusionExplorer(PluginInterface):
-    """Confusion Explorer: Residual-colored Confusion Matrix + Confusion Triangle with linked selection.
+    """Confusion Explorer: Residual-colored Confusion Matrix + Confusion Simplex with linked selection.
 
     Both components use residual-based coloring: correct predictions fade out (transparent),
     misclassifications light up (bright). Clicking a matrix cell highlights matching points on
-    the triangle while dimming non-matching points. Clicking the same cell again resets to the
+    the simplex while dimming non-matching points. Clicking the same cell again resets to the
     full view.
     """
 
@@ -290,8 +290,8 @@ class ConfusionExplorer(PluginInterface):
         self.min_conf = 0.0  # Lower bound for confidence slider (0 = random guess)
         self.confidence_range = None  # [lo, hi] from slider; None = no filtering
         self.matrix = ClassConfusionMatrix()
-        self.triangle = ConfusionTriangle()
-        self.triangle.default_color = "residual"  # Sync residual coloring between matrix and triangle
+        self.triangle = ConfusionSimplex()
+        self.triangle.default_color = "residual"  # Sync residual coloring between matrix and simplex
         super().__init__()
 
     def create_component(self, component_id: str) -> html.Div:
@@ -516,7 +516,7 @@ class ConfusionExplorer(PluginInterface):
             if prev_cell == cell_key:
                 if triangle_active:
                     color_col = current_color if current_color else tri.active_color_col
-                    tri_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col)
+                    tri_fig = tri.create_plot(tri.df, tri.class_labels, tri.proba_cols, color_col)
                 else:
                     tri_fig = no_update
                 matrix_figure["layout"]["shapes"] = cell_shapes
@@ -527,11 +527,11 @@ class ConfusionExplorer(PluginInterface):
             y_idx = int(point["y"].split(":")[1])
             matrix_figure["layout"]["shapes"] = cell_shapes + [_highlight_shape(x_idx, y_idx)]
 
-            # Build selection on triangle if active (3-class models only)
+            # Build selection on simplex if active
             if triangle_active:
                 color_col = current_color if current_color else tri.active_color_col
                 mask = (tri.df[tri.target_col].astype(str) == y_label) & (tri.df["prediction"].astype(str) == x_label)
-                tri_fig = tri.create_ternary_plot(tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask)
+                tri_fig = tri.create_plot(tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask)
             else:
                 tri_fig = no_update
 
@@ -582,7 +582,7 @@ class ConfusionExplorer(PluginInterface):
                     existing = list(matrix_props[0].layout.shapes or [])
                     matrix_props[0].update_layout(shapes=existing + [_highlight_shape(x_idx, y_idx)])
 
-            # Re-create triangle with current color only if triangle is active (3-class models)
+            # Re-create simplex plot with current color if active
             if tri.df is not None and not tri.df.empty:
                 color_col = current_color if current_color else tri.active_color_col
                 mask = None
@@ -591,7 +591,7 @@ class ConfusionExplorer(PluginInterface):
                     mask = (tri.df[tri.target_col].astype(str) == y_label) & (
                         tri.df["prediction"].astype(str) == x_label
                     )
-                triangle_props[0] = tri.create_ternary_plot(
+                triangle_props[0] = tri.create_plot(
                     tri.df, tri.class_labels, tri.proba_cols, color_col, mask=mask
                 )
                 triangle_props[1] = no_update  # options
