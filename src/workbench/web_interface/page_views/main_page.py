@@ -42,7 +42,7 @@ class MainPage(PageView):
 
         # Drop the AWS URL column and return the dataframe
         s3_data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
-        return s3_data_df
+        return self.concise_timestamps(s3_data_df)
 
     def incoming_data_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
         """Detect changes in the incoming data and return a new DataFrame if changed."""
@@ -67,7 +67,7 @@ class MainPage(PageView):
 
         # Drop the AWS URL column and return the dataframe
         glue_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
-        return glue_df
+        return self.concise_timestamps(glue_df)
 
     def glue_jobs_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
         """Detect changes in the AWS Glue Jobs and return a new DataFrame if changed."""
@@ -92,7 +92,7 @@ class MainPage(PageView):
 
         # Drop the AWS URL column and return the dataframe
         data_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
-        return data_df
+        return self.concise_timestamps(data_df)
 
     def data_sources_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
         """Detect changes in the Workbench DataSources and return a new DataFrame if changed."""
@@ -117,7 +117,7 @@ class MainPage(PageView):
 
         # Drop the AWS URL column and return the dataframe
         feature_df.drop(columns=["_aws_url"], inplace=True, errors="ignore")
-        return feature_df
+        return self.concise_timestamps(feature_df)
 
     def feature_sets_delta(self, previous_hash: str = None) -> tuple[Optional[pd.DataFrame], str]:
         """Detect changes in the Workbench FeatureSets and return a new DataFrame if changed."""
@@ -147,7 +147,7 @@ class MainPage(PageView):
         if "Health" in model_df.columns:
             model_df["Health"] = model_df["Health"].map(lambda x: tag_symbols(x))
 
-        return model_df
+        return self.concise_timestamps(model_df)
 
     def models_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
         """Detect changes in the Workbench Models and return a new DataFrame if changed."""
@@ -177,7 +177,7 @@ class MainPage(PageView):
         if "Health" in endpoint_df.columns:
             endpoint_df["Health"] = endpoint_df["Health"].map(lambda x: tag_symbols(x))
 
-        return endpoint_df
+        return self.concise_timestamps(endpoint_df)
 
     def endpoints_delta(self, previous_hash: str = None) -> Tuple[Optional[pd.DataFrame], str]:
         """Detect changes in the Workbench Endpoints and return a new DataFrame if changed."""
