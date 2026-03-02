@@ -32,6 +32,8 @@ class WorkbenchComputeStackProps:
     environment_name: str = "unknown"  # Environment name (sandbox, dev, stage, prod)
     existing_vpc_id: str = None
     subnet_ids: List[str] = field(default_factory=list)  # Optional subnets ids for the Batch compute environment
+    redis_host: str = None  # Redis host for cache/modified registry
+    redis_port: str = "6379"  # Redis port
 
 
 class WorkbenchComputeStack(Stack):
@@ -56,6 +58,8 @@ class WorkbenchComputeStack(Stack):
         self.environment_name = props.environment_name
         self.existing_vpc_id = props.existing_vpc_id
         self.subnet_ids = props.subnet_ids
+        self.redis_host = props.redis_host
+        self.redis_port = props.redis_port
 
         # Import the Batch role
         self.workbench_batch_role = iam.Role.from_role_arn(self, "ImportedBatchRole", self.batch_role_arn)
@@ -161,6 +165,8 @@ class WorkbenchComputeStack(Stack):
                     execution_role=self.workbench_batch_role,
                     environment={
                         "WORKBENCH_BUCKET": self.workbench_bucket,
+                        "REDIS_HOST": self.redis_host or "",
+                        "REDIS_PORT": self.redis_port or "6379",
                         "PYTHONUNBUFFERED": "1",
                     },
                 ),

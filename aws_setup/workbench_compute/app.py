@@ -35,6 +35,10 @@ lambda_role_arn = Fn.import_value("WorkbenchCore-LambdaRoleArn")
 existing_vpc_id = cm.get_config("WORKBENCH_VPC_ID")
 subnet_ids = cm.get_config("WORKBENCH_SUBNET_IDS") or []
 
+# Redis configuration (for batch container cache/modified registry access)
+redis_host = cm.get_config("REDIS_HOST")
+redis_port = cm.get_config("REDIS_PORT", "6379")
+
 # Environment name for notifications (e.g., sandbox, dev, stage, prod)
 environment_name = cm.get_config("WORKBENCH_ENVIRONMENT") or "unknown"
 
@@ -46,6 +50,8 @@ print(f"  WORKBENCH_LAMBDA_ROLE_ARN: {lambda_role_arn}")
 print(f"  WORKBENCH_VPC_ID: {existing_vpc_id}")
 print(f"  WORKBENCH_SUBNET_IDS: {subnet_ids}")
 print(f"  WORKBENCH_ENVIRONMENT: {environment_name}")
+print(f"  REDIS_HOST: {redis_host}")
+print(f"  REDIS_PORT: {redis_port}")
 
 # Our CDK App and Environment
 app = cdk.App()
@@ -63,6 +69,8 @@ compute_stack = WorkbenchComputeStack(
         environment_name=environment_name,
         existing_vpc_id=existing_vpc_id,
         subnet_ids=subnet_ids,
+        redis_host=redis_host,
+        redis_port=redis_port,
     ),
 )
 
