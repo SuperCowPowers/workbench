@@ -281,11 +281,11 @@ class FeatureSetCore(Artifact):
             query = query.replace(" " + self.name + " ", " " + self.athena_table + " ")
         return self.data_source.query(query)
 
-    def pull_dataframe(self, limit: int = 50000, include_aws_columns=False) -> pd.DataFrame:
+    def pull_dataframe(self, limit: int = 100000, include_aws_columns=False) -> pd.DataFrame:
         """Return a DataFrame of ALL the data from this FeatureSet
 
         Args:
-            limit (int): Limit the number of rows returned (default: 50000)
+            limit (int): Limit the number of rows returned (default: 100000)
             include_aws_columns (bool): Include the AWS columns in the DataFrame (default: False)
 
         Returns:

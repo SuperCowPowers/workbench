@@ -634,10 +634,11 @@ class EndpointCore(Artifact):
         model = ModelCore(self.model_name)
         fs = FeatureSetCore(model.get_input())
 
-        # The training view excludes hold-out rows (sample_weight == 0.0)
-        # So the hold-out set is all_data minus training_data
+        # The model training view excludes hold-out rows (sample_weight == 0.0)
+        # So the hold-out set is all_data minus training_view IDs
         all_df = fs.pull_dataframe()
-        training_ids = set(model.training_view().pull_dataframe()[fs.id_column])
+        tv = model.training_view()
+        training_ids = set(fs.query(f'SELECT "{fs.id_column}" FROM "{tv.table}"')[fs.id_column])
         hold_df = all_df[~all_df[fs.id_column].isin(training_ids)].copy()
 
         # Guard against empty hold-out set
