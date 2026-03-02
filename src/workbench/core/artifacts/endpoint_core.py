@@ -638,7 +638,7 @@ class EndpointCore(Artifact):
         # So the hold-out set is all_data minus training_data
         all_df = fs.pull_dataframe()
         training_ids = set(model.training_view().pull_dataframe()[fs.id_column])
-        hold_df = all_df[~all_df[fs.id_column].isin(training_ids)]
+        hold_df = all_df[~all_df[fs.id_column].isin(training_ids)].copy()
 
         # Guard against empty hold-out set
         if hold_df.empty:
@@ -1211,6 +1211,16 @@ if __name__ == "__main__":
     from workbench.utils.endpoint_utils import get_evaluation_data
     import random
 
+    # Test the ts_inference method
+    # Note: This requires a FeatureSet with a date column and a prior temporal_split() call
+    print("Running Temporal Split Inference...")
+    fs = FeatureSet("test_features")
+    fs.temporal_split("date")
+    end = EndpointCore("test-regression")
+    ts_results = end.ts_inference("date")
+    print(f"TS Inference Results: {len(ts_results)} rows")
+    print(ts_results.head())
+
     # Grab an EndpointCore object and pull some information from it
     my_endpoint = EndpointCore("abalone-regression")
 
@@ -1315,15 +1325,6 @@ if __name__ == "__main__":
     all_results = class_endpoint.cross_fold_inference()
     print(all_results)
     print("All done...")
-
-    # Test the ts_inference method
-    # Note: This requires a FeatureSet with a date column and a prior temporal_split() call
-    print("Running Temporal Split Inference...")
-    fs = FeatureSet("abalone_features")
-    fs.temporal_split("event_time")  # Sets sample_weight == 0.0 on hold-out rows
-    ts_results = my_endpoint.ts_inference("event_time")
-    print(f"TS Inference Results: {len(ts_results)} rows")
-    print(ts_results.head())
 
     # Test the class method delete (commented out for now)
     # from workbench.api import Model
