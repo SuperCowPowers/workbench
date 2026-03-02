@@ -245,9 +245,7 @@ def main():
     mode_group.add_argument("--dt", action="store_true", help="Override all scripts to DT mode (dynamic training)")
     mode_group.add_argument("--promote", action="store_true", help="Override all scripts to PROMOTE mode")
     mode_group.add_argument("--test-promote", action="store_true", help="Override all scripts to TEST_PROMOTE mode")
-    mode_group.add_argument(
-        "--ts", action="store_true", help="Override all scripts to temporal split evaluation mode"
-    )
+    mode_group.add_argument("--ts", action="store_true", help="Override all scripts to temporal split evaluation mode")
 
     args = parser.parse_args()
 
