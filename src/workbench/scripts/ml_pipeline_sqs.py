@@ -219,7 +219,7 @@ def main():
         help="Set TEST_PROMOTE=True (creates test endpoint with '-test' suffix)",
     )
     parser.add_argument(
-        "--temporal-split",
+        "--ts",
         action="store_true",
         help="Set TEMPORAL_SPLIT=True (temporal split evaluation mode)",
     )
@@ -256,7 +256,7 @@ def main():
             dt=args.dt,
             promote=args.promote,
             test_promote=args.test_promote,
-            temporal_split=args.temporal_split,
+            temporal_split=args.ts,
             group_id=args.group_id,
             pipeline_meta=args.pipeline_meta,
             outputs=outputs,

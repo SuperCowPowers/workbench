@@ -42,7 +42,7 @@ class TestPipelineMetaWithEnvVar:
 
     def test_temporal_split_mode(self):
         meta = {
-            "mode": "temporal_split",
+            "mode": "ts",
             "model_name": "my-model-xgb-1-ts",
             "endpoint_name": "my-endpoint-xgb-1-ts",
             "serverless": True,
@@ -50,7 +50,7 @@ class TestPipelineMetaWithEnvVar:
         }
         with patch.dict(os.environ, {"PIPELINE_META": json.dumps(meta)}, clear=True):
             pm = PipelineMeta()
-            assert pm.mode == "temporal_split"
+            assert pm.mode == "ts"
             assert pm.get("cutoff_date") == "2025-10-17"
 
     def test_custom_keys(self):

@@ -10,7 +10,7 @@ Usage:
     ml_pipeline_launcher --dt caco2 ppb          # Launch pipelines matching 'caco2' or 'ppb'
     ml_pipeline_launcher --promote --all         # Promote ALL pipelines
     ml_pipeline_launcher --test-promote --all    # Test-promote ALL pipelines
-    ml_pipeline_launcher --temporal-split --all  # Temporal split ALL pipelines
+    ml_pipeline_launcher --ts --all  # Temporal split ALL pipelines
     ml_pipeline_launcher --dt --dry-run          # Show what would be launched without launching
     ml_pipeline_launcher --local --dt ppb_human  # Run pipelines locally (uses active Python interpreter)
 """
@@ -28,13 +28,7 @@ from pathlib import Path
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 
-# Maps CLI arg name -> (mode_override, mode_flag for ml_pipeline_sqs)
-MODE_MAP = {
-    "dt": ("dt", "--dt"),
-    "promote": ("promote", "--promote"),
-    "test_promote": ("test_promote", "--test-promote"),
-    "temporal_split": ("ts", "--temporal-split"),
-}
+MODES = ["dt", "promote", "test_promote", "ts"]
 
 
 def parse_script_name(script_path: Path) -> tuple[str, str]:
@@ -252,7 +246,7 @@ def main():
     mode_group.add_argument("--promote", action="store_true", help="Override all scripts to PROMOTE mode")
     mode_group.add_argument("--test-promote", action="store_true", help="Override all scripts to TEST_PROMOTE mode")
     mode_group.add_argument(
-        "--temporal-split", action="store_true", help="Override all scripts to temporal split evaluation mode"
+        "--ts", action="store_true", help="Override all scripts to temporal split evaluation mode"
     )
 
     args = parser.parse_args()
@@ -282,10 +276,10 @@ def main():
         selection_mode = f"RANDOM {args.num_groups} group(s): {group_names}"
 
     # Determine mode override from CLI (None means use pipelines.json defaults)
-    mode_override, mode_flag = None, None
-    for arg_name, (override, flag) in MODE_MAP.items():
-        if getattr(args, arg_name, False):
-            mode_override, mode_flag = override, flag
+    mode_override = None
+    for mode_name in MODES:
+        if getattr(args, mode_name, False):
+            mode_override = mode_name
             break
 
     # Sort by DAG stages (with mode override if CLI flag set)
@@ -343,7 +337,7 @@ def main():
             print(f"{'─' * 60}\n")
             result = subprocess.run(cmd, env=env)
         else:
-            run_mode_flag = mode_flag or f"--{mode.replace('_', '-')}"
+            run_mode_flag = f"--{mode.replace('_', '-')}"
             cmd = ["ml_pipeline_sqs", str(script), run_mode_flag]
             if args.realtime:
                 cmd.append("--realtime")
