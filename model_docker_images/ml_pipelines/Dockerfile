@@ -7,34 +7,41 @@ RUN apt-get update && \
         build-essential \
         gcc
 
-# Copy and install requirements file
+# Layer 1: All heavy dependencies (changes only when requirements.txt changes)
 COPY requirements.txt /tmp/
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+COPY pyproject.toml /tmp/pyproject.toml
+RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
+    python -c "\
+import tomllib; \
+data = tomllib.load(open('/tmp/pyproject.toml', 'rb')); \
+deps = data['project']['dependencies']; \
+open('/tmp/workbench_deps.txt', 'w').write('\n'.join(deps))" && \
+    pip install --no-cache-dir -r /tmp/workbench_deps.txt && \
+    rm /tmp/pyproject.toml /tmp/workbench_deps.txt
 
 # Final runtime image
 FROM python:3.12-slim
 
-# Upgrade OpenSSL to get security patches (DSA-6113-1)
-RUN apt-get update && apt-get upgrade -y openssl && rm -rf /var/lib/apt/lists/*
+# System packages (single apt-get update)
+RUN apt-get update && apt-get upgrade -y openssl && \
+    apt-get install -y --no-install-recommends \
+        libxrender1 \
+        libxext6 \
+        libsm6 \
+        libxinerama1 \
+        libfontconfig1 \
+        libcairo2 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install required X11 libraries for RDKit Draw module
-RUN apt-get update && apt-get install -y \
-    libxrender1 \
-    libxext6 \
-    libsm6 \
-    libxinerama1 \
-    libfontconfig1 \
-    libcairo2 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy installed packages from builder
+# Layer 1: All dependencies from builder (cached, changes rarely)
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Install workbench only
-RUN pip install --no-cache-dir workbench==0.8.276
+# Layer 2: Workbench only (changes often, ~20MB)
+ARG WORKBENCH_VERSION=0.8.276
+RUN pip install --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}"
 
-# Add the script runner
+# Layer 3: App code (tiny, changes rarely)
 COPY ml_pipeline_runner.py /app/ml_pipeline_runner.py
 WORKDIR /app
 
