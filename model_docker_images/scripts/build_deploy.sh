@@ -86,6 +86,12 @@ build_image() {
     exit 1
   fi
 
+  # Copy pyproject.toml into build context for dependency layer caching (if needed by Dockerfile)
+  if grep -q 'pyproject.toml' "$DIR/Dockerfile"; then
+    cp "$PROJECT_ROOT/../pyproject.toml" "$DIR/pyproject.toml"
+    trap 'rm -f "$DIR/pyproject.toml"' EXIT
+  fi
+
   docker build --platform $platform -t $name $DIR
   echo -e "${GREEN}✅  Successfully built: $name${NC}"
 }
