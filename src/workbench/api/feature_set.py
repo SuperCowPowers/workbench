@@ -60,17 +60,7 @@ class FeatureSet(FeatureSetCore):
         Returns:
             pd.DataFrame: A DataFrame of all the data from this FeatureSet up to the limit
         """
-
-        # Get the table associated with the data
-        self.log.info(f"Pulling data from {self.name}...")
-        pull_query = f'SELECT * FROM "{self.athena_table}" LIMIT {limit}'
-        df = self.query(pull_query)
-
-        # Drop any columns generated from AWS
-        if not include_aws_columns:
-            aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-            df = df.drop(columns=aws_cols, errors="ignore")
-        return df
+        return super().pull_dataframe(limit, include_aws_columns)
 
     def to_model(
         self,

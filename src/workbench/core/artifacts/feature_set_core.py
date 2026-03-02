@@ -281,6 +281,28 @@ class FeatureSetCore(Artifact):
             query = query.replace(" " + self.name + " ", " " + self.athena_table + " ")
         return self.data_source.query(query)
 
+    def pull_dataframe(self, limit: int = 50000, include_aws_columns=False) -> pd.DataFrame:
+        """Return a DataFrame of ALL the data from this FeatureSet
+
+        Args:
+            limit (int): Limit the number of rows returned (default: 50000)
+            include_aws_columns (bool): Include the AWS columns in the DataFrame (default: False)
+
+        Returns:
+            pd.DataFrame: A DataFrame of all the data from this FeatureSet up to the limit
+        """
+
+        # Get the table associated with the data
+        self.log.info(f"Pulling data from {self.name}...")
+        pull_query = f'SELECT * FROM "{self.athena_table}" LIMIT {limit}'
+        df = self.query(pull_query)
+
+        # Drop any columns generated from AWS
+        if not include_aws_columns:
+            aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+            df = df.drop(columns=aws_cols, errors="ignore")
+        return df
+
     def aws_url(self):
         """The AWS URL for looking at/querying the underlying data source"""
         workbench_details = self.data_source.workbench_meta().get("workbench_details", {})
