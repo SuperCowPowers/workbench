@@ -612,14 +612,16 @@ class ModelCore(Artifact):
         # Grab our FeatureSet
         fs = FeatureSetCore(self.get_input())
 
-        # See if we have a training view for this model
-        my_model_training_view = f"{self.name.replace('-', '_')}_training".lower()
-        view = View(fs, my_model_training_view, auto_create_view=False)
-        if view.exists():
-            return view
-        else:
-            self.log.important(f"No specific training view {my_model_training_view}, returning default training view")
-            return fs.view("training")
+        # Get the model's training view name from metadata
+        my_model_training_view = self.workbench_meta().get("workbench_training_view")
+        if my_model_training_view:
+            view = View(fs, my_model_training_view, auto_create_view=False)
+            if view.exists():
+                return view
+
+        # No model-specific training view, return the FeatureSet default
+        self.log.important("No model-specific training view, returning default training view")
+        return fs.view("training")
 
     # Pipeline for this model
     def get_pipeline(self) -> str:
@@ -896,6 +898,9 @@ class ModelCore(Artifact):
             else:
                 raise  # Re-raise unexpected errors
 
+        # Clean up model-owned training view and weights table (before deleting model metadata)
+        cls._delete_model_training_artifacts(model_group_name)
+
         # Delete Model Packages within the Model Group
         try:
             paginator = cls.sm_client.get_paginator("list_model_packages")
@@ -928,6 +933,46 @@ class ModelCore(Artifact):
         # Delete anything we might have stored in the Parameter Store
         cls.log.info("Deleting Parameter Store Entries...")
         cls.param_store.delete_recursive(f"workbench/models/{model_group_name}")
+
+    @classmethod
+    def _delete_model_training_artifacts(cls, model_group_name: str):
+        """Delete the model's training view and weights table from the FeatureSet's Athena database.
+
+        Args:
+            model_group_name (str): The name of the Model Group
+        """
+        try:
+            from workbench.core.artifacts.feature_set_core import FeatureSetCore
+            from workbench.core.views.view_utils import delete_table
+
+            # Get the model's input FeatureSet and training view name
+            model = cls(model_group_name)
+            model_view_name = model.workbench_meta().get("workbench_training_view")
+            if not model_view_name:
+                return
+
+            fs_name = model.get_input()
+            fs = FeatureSetCore(fs_name)
+            if not fs.exists():
+                return
+
+            base_table = fs.data_source.table
+            model_view_table = f"{base_table}___{model_view_name}"
+            model_weights_table = f"_{base_table}___{model_view_name}_weights"
+
+            # Delete the model's weights table
+            cls.log.info(f"Deleting model weights table: {model_weights_table}")
+            delete_table(model_weights_table, fs.data_source.database, cls.boto3_session)
+
+            # Delete the model's training view
+            cls.log.info(f"Deleting model training view: {model_view_table}")
+            drop_view_sql = f'DROP VIEW "{model_view_table}"'
+            try:
+                fs.data_source.execute_statement(drop_view_sql, silence_errors=True)
+            except Exception:
+                cls.log.info(f"Model training view {model_view_table} not found, skipping...")
+        except Exception as e:
+            cls.log.warning(f"Could not clean up model training artifacts: {e}")
 
     def _set_model_type(self, model_type: ModelType):
         """Internal: Set the Model Type for this Model"""

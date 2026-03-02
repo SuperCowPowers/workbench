@@ -286,10 +286,60 @@ class FeaturesToModel(Transform):
         self.log.important(f"Creating new model {self.output_name}...")
         self.create_and_register_model(**kwargs)
 
-        # Make a copy of the training view, to lock-in the training data used for this model
-        model_training_view_name = f"{self.output_name.replace('-', '_')}_training"
-        self.log.important(f"Creating Model Training View: {model_training_view_name}...")
-        feature_set.view("training").copy(f"{model_training_view_name}")
+        # Create a model-owned training view with its own weights table (isolated from shared FeatureSet state)
+        self.model_training_view_name = f"{self.output_name.replace('-', '_')}_training".lower()
+        self.log.important(f"Creating Model Training View: {self.model_training_view_name}...")
+        self._create_model_training_view(feature_set, self.model_training_view_name)
+
+    def _create_model_training_view(self, feature_set: FeatureSetCore, model_view_name: str):
+        """Create a model-owned training view with its own isolated weights table.
+
+        Instead of copying the FeatureSet's training view (which references a shared weights table),
+        this snapshots the current training state into a model-scoped weights table and builds
+        a self-contained view that won't break if the shared weights table is later deleted.
+
+        Args:
+            feature_set (FeatureSetCore): The source FeatureSet
+            model_view_name (str): The model training view name (e.g. "my_model_training")
+        """
+        from workbench.core.views.view_utils import dataframe_to_table
+
+        # Snapshot the current training view state (id, training flag, optional sample_weight)
+        training_view = feature_set.view("training")
+        tv_columns = training_view.columns
+        id_column = feature_set.id_column
+
+        select_cols = [f'"{id_column}"', '"training"']
+        has_weights = "sample_weight" in tv_columns
+        if has_weights:
+            select_cols.append('"sample_weight"')
+
+        col_str = ", ".join(select_cols)
+        tv_df = feature_set.data_source.query(f'SELECT {col_str} FROM "{training_view.table}"')
+
+        # Add default sample_weight if the training view didn't have one
+        if not has_weights:
+            tv_df["sample_weight"] = 1.0
+
+        # Create model-scoped weights table
+        base_table = feature_set.data_source.table
+        model_weights_table = f"_{base_table}___{model_view_name}_weights"
+        self.log.info(f"Creating model weights table: {model_weights_table}")
+        dataframe_to_table(feature_set.data_source, tv_df, model_weights_table)
+
+        # Build model training view SQL: JOIN base table with model's own weights table
+        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+        feature_columns = [c for c in feature_set.columns if c not in aws_cols]
+        sql_columns = ", ".join([f't."{c}"' for c in feature_columns])
+
+        model_view_table = f"{base_table}___{model_view_name}"
+        create_view_sql = f"""
+        CREATE OR REPLACE VIEW "{model_view_table}" AS
+        SELECT {sql_columns}, w."sample_weight", w."training"
+        FROM "{base_table}" t
+        INNER JOIN "{model_weights_table}" w ON t."{id_column}" = w."{id_column}"
+        """
+        feature_set.data_source.execute_statement(create_view_sql)
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() on the Model"""
@@ -302,6 +352,7 @@ class FeaturesToModel(Transform):
         output_model._set_model_framework(self.model_framework)
         output_model.upsert_workbench_meta({"workbench_model_features": self.model_feature_list})
         output_model.upsert_workbench_meta({"workbench_model_target": self.target_column})
+        output_model.upsert_workbench_meta({"workbench_training_view": self.model_training_view_name})
 
         # Store the class labels (if they exist)
         if self.class_labels:
