@@ -66,6 +66,21 @@ class Endpoint(EndpointCore):
         """
         return super().full_inference()
 
+    def ts_inference(self, date_column: str) -> pd.DataFrame:
+        """Run temporal hold-out inference on this Endpoint
+
+        Note:
+            temporal_split() must be called on the FeatureSet BEFORE model training.
+            This method uses the sample_weights == 0.0 rows as the hold-out set.
+
+        Args:
+            date_column (str): Name of the date column (used for the capture name)
+
+        Returns:
+            pd.DataFrame: DataFrame with the inference results (empty if no hold-out rows)
+        """
+        return super().ts_inference(date_column)
+
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 

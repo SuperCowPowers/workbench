@@ -616,6 +616,44 @@ class EndpointCore(Artifact):
 
         return out_of_fold_df
 
+    def ts_inference(self, date_column: str) -> pd.DataFrame:
+        """Run temporal hold-out inference on this Endpoint
+
+        Note:
+            temporal_split() must be called on the FeatureSet BEFORE model training.
+            This method uses the sample_weights == 0.0 rows as the hold-out set.
+
+        Args:
+            date_column (str): Name of the date column (used for the capture name)
+
+        Returns:
+            pd.DataFrame: DataFrame with the inference results (empty if no hold-out rows)
+        """
+
+        # Backtrace to the FeatureSet: Endpoint -> Model -> FeatureSet
+        model = ModelCore(self.model_name)
+        fs = FeatureSetCore(model.get_input())
+
+        # The training view excludes hold-out rows (sample_weight == 0.0)
+        # So the hold-out set is all_data minus training_data
+        all_df = fs.pull_dataframe()
+        training_ids = set(model.training_view().pull_dataframe()[fs.id_column])
+        hold_df = all_df[~all_df[fs.id_column].isin(training_ids)]
+
+        # Guard against empty hold-out set
+        if hold_df.empty:
+            self.log.warning("No hold out rows found, skipping temporal inference")
+            return pd.DataFrame()
+
+        # Compute the earliest date in the hold-out set for the capture name
+        hold_df[date_column] = pd.to_datetime(hold_df[date_column], errors="coerce")
+        earliest_date = hold_df[date_column].min().date()
+        self.log.important(f"Running temporal hold out inference on {len(hold_df)} rows from {earliest_date} and later")
+
+        # Run inference with a temporal split capture name
+        capture_name = f"ts_{earliest_date.strftime('%Y%m%d')}"
+        return self.inference(hold_df, capture_name=capture_name)
+
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
 
@@ -1277,6 +1315,15 @@ if __name__ == "__main__":
     all_results = class_endpoint.cross_fold_inference()
     print(all_results)
     print("All done...")
+
+    # Test the ts_inference method
+    # Note: This requires a FeatureSet with a date column and a prior temporal_split() call
+    print("Running Temporal Split Inference...")
+    fs = FeatureSet("abalone_features")
+    fs.temporal_split("event_time")  # Sets sample_weight == 0.0 on hold-out rows
+    ts_results = my_endpoint.ts_inference("event_time")
+    print(f"TS Inference Results: {len(ts_results)} rows")
+    print(ts_results.head())
 
     # Test the class method delete (commented out for now)
     # from workbench.api import Model
