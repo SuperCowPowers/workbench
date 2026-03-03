@@ -658,6 +658,7 @@ class WorkbenchCoreStack(Stack):
                 "sagemaker:ListModels",
                 "sagemaker:ListModelPackages",
                 "sagemaker:ListModelPackageGroups",
+                "sagemaker:Search",
             ],
             resources=["*"],  # Required for listing operations
         )
