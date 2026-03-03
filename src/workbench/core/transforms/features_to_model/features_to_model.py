@@ -6,6 +6,7 @@ from sagemaker.estimator import Estimator
 import awswrangler as wr
 from datetime import datetime, timezone
 import time
+import uuid
 
 # Local Imports
 from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput
@@ -104,7 +105,8 @@ class FeaturesToModel(Transform):
 
         # Get our Feature Set and snapshot the training view immediately
         feature_set = FeatureSetCore(self.input_name)
-        self.model_training_view_name = f"{self.output_name.replace('-', '_')}_training".lower()
+        short_id = uuid.uuid4().hex[:6]
+        self.model_training_view_name = f"{self.output_name.replace('-', '_')}_training_{short_id}".lower()
         self.log.important(f"Creating Model Training View: {self.model_training_view_name}...")
         self._create_model_training_view(feature_set, self.model_training_view_name)
 
