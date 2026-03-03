@@ -336,10 +336,14 @@ class FeatureSetCore(Artifact):
         """
         return self.feature_store
 
-    def create_s3_training_data(self) -> str:
+    def create_s3_training_data(self, source_table: str) -> str:
         """Create some Training Data (S3 CSV) from a Feature Set using standard options. If you want
         additional options/features use the get_feature_store() method and see AWS docs for all
         the details: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
+
+        Args:
+            source_table (str): The table/view to query for training data
+
         Returns:
             str: The full path/file for the CSV file created by Feature Store create_dataset()
         """
@@ -349,8 +353,7 @@ class FeatureSetCore(Artifact):
         s3_output_path = self.feature_sets_s3_path + f"/{self.name}/datasets/all_{date_time}"
 
         # Make the query
-        table = self.view("training").table
-        query = f'SELECT * FROM "{table}"'
+        query = f'SELECT * FROM "{source_table}"'
         athena_query = FeatureGroup(name=self.name, sagemaker_session=self.sm_session).athena_query()
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()

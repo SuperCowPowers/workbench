@@ -106,9 +106,19 @@ class FeaturesToModel(Transform):
         # Set our model description
         self.model_description = description if description is not None else f"Model created from {self.input_name}"
 
-        # Get our Feature Set and create an S3 CSV Training dataset
+        # Get our Feature Set
         feature_set = FeatureSetCore(self.input_name)
-        s3_training_path = feature_set.create_s3_training_data()
+
+        # Snapshot the training view into a model-owned view BEFORE creating training data
+        # This isolates us from concurrent jobs that might modify the shared weights table
+        self.model_training_view_name = f"{self.output_name.replace('-', '_')}_training".lower()
+        self.log.important(f"Creating Model Training View: {self.model_training_view_name}...")
+        self._create_model_training_view(feature_set, self.model_training_view_name)
+
+        # Create S3 training data from the model-owned snapshot (not the shared training view)
+        base_table = feature_set.data_source.table
+        model_view_table = f"{base_table}___{self.model_training_view_name}"
+        s3_training_path = feature_set.create_s3_training_data(source_table=model_view_table)
         self.log.info(f"Created new training data {s3_training_path}...")
 
         # Report the target column(s)
@@ -285,11 +295,6 @@ class FeaturesToModel(Transform):
         # Create Model and officially Register
         self.log.important(f"Creating new model {self.output_name}...")
         self.create_and_register_model(**kwargs)
-
-        # Create a model-owned training view with its own weights table (isolated from shared FeatureSet state)
-        self.model_training_view_name = f"{self.output_name.replace('-', '_')}_training".lower()
-        self.log.important(f"Creating Model Training View: {self.model_training_view_name}...")
-        self._create_model_training_view(feature_set, self.model_training_view_name)
 
     def _create_model_training_view(self, feature_set: FeatureSetCore, model_view_name: str):
         """Create a model-owned training view with its own isolated weights table.
