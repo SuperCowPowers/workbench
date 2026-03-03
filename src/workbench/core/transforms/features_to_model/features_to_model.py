@@ -99,21 +99,18 @@ class FeaturesToModel(Transform):
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
             train_all_data (bool): Train on ALL (100%) of the data (default False)
         """
-        # Delete the existing model (if it exists)
-        self.log.important(f"Trying to delete existing model {self.output_name}...")
-        ModelCore.managed_delete(self.output_name)
-
         # Set our model description
         self.model_description = description if description is not None else f"Model created from {self.input_name}"
 
-        # Get our Feature Set
+        # Get our Feature Set and snapshot the training view immediately
         feature_set = FeatureSetCore(self.input_name)
-
-        # Snapshot the training view into a model-owned view BEFORE creating training data
-        # This isolates us from concurrent jobs that might modify the shared weights table
         self.model_training_view_name = f"{self.output_name.replace('-', '_')}_training".lower()
         self.log.important(f"Creating Model Training View: {self.model_training_view_name}...")
         self._create_model_training_view(feature_set, self.model_training_view_name)
+
+        # Delete the existing model (if it exists)
+        self.log.important(f"Trying to delete existing model {self.output_name}...")
+        ModelCore.managed_delete(self.output_name)
 
         # Create S3 training data from the model-owned snapshot (not the shared training view)
         base_table = feature_set.data_source.table
