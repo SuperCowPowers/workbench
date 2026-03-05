@@ -19,9 +19,9 @@ The challenge covers 9 key ADMET properties:
 | MLM CLint | Mouse liver microsome intrinsic clearance | µL/min/mg |
 | Caco-2 Papp A>B | Caco-2 permeability (apical to basolateral) | cm/s |
 | Caco-2 Efflux | Caco-2 efflux ratio | ratio |
-| MPPB | Mouse plasma protein binding | % bound |
-| MBPB | Mouse brain plasma binding | % bound |
-| MGMB | Mouse gut microbiome binding | % bound |
+| MPPB | Mouse plasma protein binding | % unbound |
+| MBPB | Mouse brain plasma binding | % unbound |
+| MGMB | Mouse gut microbiome binding | % unbound |
 
 ## Lots of Models to Choose From
 We trained 6 different model types for each ADMET endpoint. The [AWS Workbench](https://github.com/SuperCowPowers/workbench) supports all 6 of these model types and makes the creation, training, and deployment of models into AWS a snap.
