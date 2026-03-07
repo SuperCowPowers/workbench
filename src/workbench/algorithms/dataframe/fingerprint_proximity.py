@@ -28,7 +28,7 @@ class FingerprintProximity(Proximity):
         target: Optional[str] = None,
         include_all_columns: bool = False,
         radius: int = 2,
-        n_bits: int = 1024,
+        n_bits: int = 2048,
     ) -> None:
         """
         Initialize the FingerprintProximity class for binary fingerprint similarity.
@@ -41,7 +41,7 @@ class FingerprintProximity(Proximity):
             target: Name of the target column. Defaults to None.
             include_all_columns: Include all DataFrame columns in neighbor results. Defaults to False.
             radius: Radius for Morgan fingerprint computation (default: 2).
-            n_bits: Number of bits for fingerprint (default: 1024).
+            n_bits: Number of bits for fingerprint (default: 2048).
         """
         # Store fingerprint computation parameters
         self._fp_radius = radius
@@ -408,7 +408,7 @@ if __name__ == "__main__":
     }
     ref_df = pd.DataFrame(ref_data)
 
-    prox_ref = FingerprintProximity(ref_df, id_column="id", target="activity", radius=2, n_bits=1024)
+    prox_ref = FingerprintProximity(ref_df, id_column="id", target="activity")
 
     # Query with a single SMILES (acetaminophen - similar to aspirin)
     query_smiles = "CC(=O)NC1=CC=C(C=C1)O"  # acetaminophen

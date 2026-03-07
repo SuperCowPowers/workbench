@@ -133,7 +133,7 @@ if __name__ == "__main__":
 
     # Generate Morgan fingerprints
     mols = [Chem.MolFromSmiles(smi) for smi in test_df["SMILES"]]
-    morgan_gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=512)
+    morgan_gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
     fingerprints = [morgan_gen.GetFingerprint(mol).ToBitString() if mol else None for mol in mols]
     test_df["fingerprint"] = fingerprints
 

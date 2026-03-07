@@ -114,7 +114,7 @@ class Model(ModelCore):
         self,
         include_all_columns: bool = False,
         radius: int = 2,
-        n_bits: int = 1024,
+        n_bits: int = 2048,
         counts: bool = False,
     ) -> FingerprintProximity:
         """Create a local Fingerprint Proximity Model for this Model
@@ -122,7 +122,7 @@ class Model(ModelCore):
         Args:
             include_all_columns (bool): Include all DataFrame columns in results (default: False)
             radius (int): Morgan fingerprint radius (default: 2)
-            n_bits (int): Number of bits for the fingerprint (default: 1024)
+            n_bits (int): Number of bits for the fingerprint (default: 2048)
             counts (bool): Use count fingerprints instead of binary (default: False)
 
         Returns:
