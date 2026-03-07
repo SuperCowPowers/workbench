@@ -170,6 +170,117 @@ class TestDataGenerator:
         """Get the AQSol Target"""
         return "solubility"
 
+    # ---- AQSol Alignment Test Data ----
+    # Pre-partitioned subsets with controlled chemical space overlap levels.
+    # Run scripts/admet/partition_aqsol_alignment.py to generate the partitions.
+    # Overlap levels (feature space) are fixed on disk; target alignment is synthesized dynamically.
+
+    _ALIGNMENT_S3_PREFIX = "s3://workbench-public-data/comp_chem/aqsol_alignment"
+    _ALIGNMENT_PARTITIONS = ["base", "high_overlap", "medium_overlap", "low_overlap"]
+
+    def aqsol_alignment_data(
+        self,
+        overlap: str = "medium",
+        alignment: str = "high",
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Get reference/query DataFrames for DatasetAlignment testing.
+
+        Returns a (reference, query) pair where:
+        - The **reference** is always the base partition (40% of AQSol)
+        - The **query** partition is selected by `overlap` (chemical space similarity to base)
+        - Target values in the query are dynamically modified by `alignment` level
+
+        This creates a 3×3 matrix of test scenarios::
+
+            overlap\\alignment   high        medium        low
+            ─────────────────────────────────────────────────────
+            high                best-case   offset        disagreement
+            medium              partial     mixed         noisy
+            low                 novel       novel+offset  worst-case
+
+        Args:
+            overlap (str): Chemical space overlap level ("high", "medium", or "low")
+            alignment (str): Target alignment level ("high", "medium", or "low")
+
+        Returns:
+            tuple[pd.DataFrame, pd.DataFrame]: (reference_df, query_df)
+        """
+        valid_overlaps = ("high", "medium", "low")
+        valid_alignments = ("high", "medium", "low")
+        if overlap not in valid_overlaps:
+            raise ValueError(f"overlap must be one of {valid_overlaps}, got '{overlap}'")
+        if alignment not in valid_alignments:
+            raise ValueError(f"alignment must be one of {valid_alignments}, got '{alignment}'")
+
+        # Load reference (base) and query partitions
+        reference_df = self._load_aqsol_partition("base")
+        query_df = self._load_aqsol_partition(f"{overlap}_overlap")
+
+        # Dynamically synthesize target alignment
+        query_df = self._synthesize_alignment(query_df, alignment)
+
+        return reference_df, query_df
+
+    def _load_aqsol_partition(self, partition: str) -> pd.DataFrame:
+        """Load an AQSol alignment partition from S3, with local caching.
+
+        Args:
+            partition (str): Partition name (e.g., "base", "high_overlap")
+
+        Returns:
+            pd.DataFrame: The partition data with real SMILES, features, and targets
+        """
+        cache_dir = os.path.join(tempfile.gettempdir(), "aqsol_alignment")
+        os.makedirs(cache_dir, exist_ok=True)
+        cache_path = os.path.join(cache_dir, f"aqsol_{partition}.csv")
+
+        if os.path.exists(cache_path):
+            return pd.read_csv(cache_path)
+
+        s3_path = f"{self._ALIGNMENT_S3_PREFIX}/aqsol_{partition}.csv"
+        self.log.info(f"Loading {partition} partition from {s3_path}")
+        df = wr.s3.read_csv(s3_path)
+        df.to_csv(cache_path, index=False)
+        return df
+
+    @staticmethod
+    def _synthesize_alignment(df: pd.DataFrame, alignment: str) -> pd.DataFrame:
+        """Modify target values to simulate different alignment levels.
+
+        The real solubility values are perturbed to create controlled levels of
+        concept shift (target disagreement):
+
+        - **high**: Minimal perturbation (~0.1 log units noise). Datasets agree well.
+          Simulates the same assay with normal experimental variability.
+        - **medium**: Systematic offset (+1.0) with moderate noise (~0.5 log units).
+          Simulates inter-assay calibration differences (e.g., different protocols).
+        - **low**: Large offset (+2.0) with high noise (~1.5 log units).
+          Simulates fundamentally different assays or major data quality issues.
+
+        Args:
+            df (pd.DataFrame): Query DataFrame with real solubility values
+            alignment (str): Alignment level ("high", "medium", or "low")
+
+        Returns:
+            pd.DataFrame: Copy with modified solubility target
+        """
+        df = df.copy()
+        target = "solubility"
+        n = len(df)
+        rng = np.random.default_rng(seed=42)
+
+        if alignment == "high":
+            # Small noise, no systematic offset — datasets agree well
+            df[target] += rng.normal(0, 0.1, n)
+        elif alignment == "medium":
+            # Systematic offset + moderate noise — calibration differences
+            df[target] += 1.0 + rng.normal(0, 0.5, n)
+        elif alignment == "low":
+            # Large offset + high noise — fundamentally different measurements
+            df[target] += 2.0 + rng.normal(0, 1.5, n)
+
+        return df
+
     def person_data(self, rows: int = 100) -> pd.DataFrame:
         """Generate a Pandas DataFrame of Person Data
         Args:
