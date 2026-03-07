@@ -4,8 +4,6 @@ import json
 import os
 from unittest.mock import patch
 
-import pytest
-
 from workbench.scripts.ml_pipeline_launcher import (
     get_all_pipelines,
     load_pipelines_config,
@@ -204,19 +202,24 @@ class TestSortPipelines:
         assert (script_b, "dt") in sorted_runs
         assert (script_c, "dt") not in sorted_runs
 
-    def test_scripts_not_in_dags_are_skipped(self, tmp_path):
-        """Scripts not defined in any DAG should be silently skipped."""
+    def test_standalone_scripts_included_with_mode_override(self, tmp_path):
+        """Scripts not in any DAG should appear as standalone runs when mode_override is set."""
         script_a = tmp_path / "a.py"
-        script_orphan = tmp_path / "orphan.py"
+        script_standalone = tmp_path / "standalone.py"
 
         all_dags = {"my_dag": [{script_a: ["dt"]}]}
-        pipelines = [script_a, script_orphan]
+        pipelines = [script_a, script_standalone]
 
-        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(pipelines, all_dags)
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(
+            pipelines, all_dags, mode_override="dt"
+        )
 
-        assert len(sorted_runs) == 1
+        assert len(sorted_runs) == 2
         assert sorted_runs[0] == (script_a, "dt")
-        assert (script_orphan, "dt") not in sorted_runs
+        assert sorted_runs[1] == (script_standalone, "dt")
+        assert group_id_map[(script_standalone, "dt")] is None
+        assert deps_map[(script_standalone, "dt")] == {"outputs": [], "inputs": []}
+        assert any("standalone" in line for line in dag_lines)
 
     def test_empty_pipelines(self):
         """Empty pipeline list should return empty results."""
@@ -227,16 +230,17 @@ class TestSortPipelines:
         assert dag_lines == []
         assert deps_map == {}
 
-    def test_empty_dags_returns_empty(self, tmp_path):
-        """Passing empty dags with pipelines should return no runs."""
+    def test_empty_dags_standalone_with_mode_override(self, tmp_path):
+        """Standalone script with empty dags and mode_override should produce a run."""
         script = tmp_path / "orphan.py"
 
-        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines([script], {})
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(
+            [script], {}, mode_override="dt"
+        )
 
-        assert sorted_runs == []
-        assert group_id_map == {}
-        assert dag_lines == []
-        assert deps_map == {}
+        assert len(sorted_runs) == 1
+        assert sorted_runs[0] == (script, "dt")
+        assert group_id_map[(script, "dt")] is None
 
 
 class TestExcludedScripts:
@@ -304,7 +308,7 @@ class TestGetAllPipelines:
         leaf.mkdir(parents=True)
         (leaf / "script_a.py").write_text("# a\n")
         (leaf / "script_b.py").write_text("# b\n")
-        (leaf / "excluded.py").write_text("# should not appear\n")
+        (leaf / "standalone.py").write_text("# standalone script\n")
         config = {"dags": {"my_dag": [{"script_a.py": ["dt"]}, {"script_b.py": ["dt"]}]}}
         (leaf / "pipelines.json").write_text(json.dumps(config))
 
@@ -315,34 +319,45 @@ class TestGetAllPipelines:
         script_names = [p.name for p in pipelines]
         assert "script_a.py" in script_names
         assert "script_b.py" in script_names
-        assert "excluded.py" not in script_names
+        # Standalone scripts are also discovered
+        assert "standalone.py" in script_names
         assert "my_dag" in all_dags
 
-    def test_dirs_without_json_are_ignored(self, tmp_path):
-        """Directories without pipelines.json should be completely ignored."""
+    def test_standalone_scripts_discovered(self, tmp_path):
+        """Scripts without pipelines.json should be discovered as standalone."""
         json_dir = tmp_path / "project" / "assay_a"
         json_dir.mkdir(parents=True)
         (json_dir / "included.py").write_text("# in JSON\n")
-        (json_dir / "excluded.py").write_text("# not in JSON\n")
         config = {"dags": {"dag_a": [{"included.py": ["dt"]}]}}
         (json_dir / "pipelines.json").write_text(json.dumps(config))
 
-        no_json_dir = tmp_path / "project" / "assay_b"
-        no_json_dir.mkdir(parents=True)
-        (no_json_dir / "legacy_script.py").write_text("# no pipelines.json here\n")
+        standalone_dir = tmp_path / "project" / "assay_b"
+        standalone_dir.mkdir(parents=True)
+        (standalone_dir / "standalone_script.py").write_text("# standalone\n")
 
         os.chdir(tmp_path)
         pipelines, all_dags = get_all_pipelines()
 
         script_names = [p.name for p in pipelines]
         assert "included.py" in script_names
-        assert "excluded.py" not in script_names
-        assert "legacy_script.py" not in script_names
+        assert "standalone_script.py" in script_names
         assert "dag_a" in all_dags
+
+    def test_dunder_files_excluded(self, tmp_path):
+        """__init__.py and other dunder files should be excluded."""
+        (tmp_path / "__init__.py").write_text("")
+        (tmp_path / "real_script.py").write_text("# real\n")
+
+        os.chdir(tmp_path)
+        pipelines, all_dags = get_all_pipelines()
+
+        script_names = [p.name for p in pipelines]
+        assert "real_script.py" in script_names
+        assert "__init__.py" not in script_names
 
 
 class TestParseScriptName:
-    """Tests for parse_script_name filename validation and parsing."""
+    """Tests for parse_script_name filename parsing with optional version."""
 
     def test_standard_version(self, tmp_path):
         """Standard _1.py suffix parses correctly."""
@@ -368,12 +383,14 @@ class TestParseScriptName:
         assert basename == "ppb_human_free_reg_xgb"
         assert version == "1"
 
-    def test_no_version_raises(self, tmp_path):
-        """Filename without version suffix raises RuntimeError."""
-        with pytest.raises(RuntimeError, match="must end with"):
-            parse_script_name(tmp_path / "my_script.py")
+    def test_no_version_returns_none(self, tmp_path):
+        """Filename without version suffix returns None for version."""
+        basename, version = parse_script_name(tmp_path / "caco2_er_reg_open_admet.py")
+        assert basename == "caco2_er_reg_open_admet"
+        assert version is None
 
-    def test_no_trailing_number_raises(self, tmp_path):
-        """Filename ending with non-numeric suffix raises RuntimeError."""
-        with pytest.raises(RuntimeError, match="must end with"):
-            parse_script_name(tmp_path / "my_script_abc.py")
+    def test_non_numeric_suffix_returns_none(self, tmp_path):
+        """Filename ending with non-numeric suffix returns None for version."""
+        basename, version = parse_script_name(tmp_path / "my_script_abc.py")
+        assert basename == "my_script_abc"
+        assert version is None

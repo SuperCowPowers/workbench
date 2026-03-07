@@ -1,6 +1,7 @@
 """Launch ML pipelines via SQS or locally.
 
 Run this from a directory containing pipeline subdirectories (e.g., ml_pipelines/).
+Scripts can be defined in pipelines.json DAGs or run as standalone scripts.
 
 Usage:
     ml_pipeline_launcher --dt                    # Launch 1 random pipeline group (all scripts in a directory)
@@ -10,9 +11,10 @@ Usage:
     ml_pipeline_launcher --dt caco2 ppb          # Launch pipelines matching 'caco2' or 'ppb'
     ml_pipeline_launcher --promote --all         # Promote ALL pipelines
     ml_pipeline_launcher --test-promote --all    # Test-promote ALL pipelines
-    ml_pipeline_launcher --ts --all  # Temporal split ALL pipelines
+    ml_pipeline_launcher --ts --all              # Temporal split ALL pipelines
     ml_pipeline_launcher --dt --dry-run          # Show what would be launched without launching
     ml_pipeline_launcher --local --dt ppb_human  # Run pipelines locally (uses active Python interpreter)
+    ml_pipeline_launcher --dt my_standalone      # Launch standalone script (no pipelines.json needed, mode flag required)
 """
 
 import argparse
@@ -31,23 +33,23 @@ FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 MODES = ["dt", "promote", "test_promote", "ts"]
 
 
-def parse_script_name(script_path: Path) -> tuple[str, str]:
+def parse_script_name(script_path: Path) -> tuple[str, str | None]:
     """Parse a pipeline script filename into (basename, version).
 
-    Filenames must end with _{number} or _v{number} (e.g., my_script_1.py, my_script_v2.py).
+    If the filename ends with _{number} or _v{number}, extracts the version.
+    Otherwise returns the full stem with no version.
 
     Args:
         script_path (Path): Path to the pipeline script
 
     Returns:
-        tuple[str, str]: (basename, version) — e.g., ("ppb_human_free_reg_xgb", "1")
+        tuple[str, str | None]: (basename, version) — e.g., ("ppb_human_free_reg_xgb", "1")
+            or ("caco2_er_reg_open_admet", None) for unversioned scripts
     """
     match = VERSION_RE.match(script_path.stem)
-    if not match:
-        raise RuntimeError(
-            f"Pipeline script filename must end with _{{number}}.py or _v{{number}}.py: {script_path.name}"
-        )
-    return match.group(1), match.group(2)
+    if match:
+        return match.group(1), match.group(2)
+    return script_path.stem, None
 
 
 def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
@@ -55,6 +57,7 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
 
     Derives model_name and endpoint_name from the script filename and mode.
     For promoted endpoints, the framework suffix (xgb, pytorch, etc.) is stripped.
+    Version suffix is included in names when present in the filename.
     """
     from datetime import datetime
 
@@ -62,16 +65,17 @@ def build_pipeline_meta(script_path: Path, mode: str, serverless: bool) -> str:
     basename_hyphen = basename.replace("_", "-")  # e.g., "ppb-human-free-reg-xgb"
     endpoint_base = FRAMEWORK_RE.sub("", basename_hyphen)  # e.g., "ppb-human-free-reg"
     today = datetime.now().strftime("%y%m%d")
+    v = f"-{version}" if version else ""
 
     if mode in ("dt", "ts"):
-        model_name = f"{basename_hyphen}-{version}-{mode}"
-        endpoint_name = f"{basename_hyphen}-{version}-{mode}"
+        model_name = f"{basename_hyphen}{v}-{mode}"
+        endpoint_name = f"{basename_hyphen}{v}-{mode}"
     elif mode == "promote":
-        model_name = f"{basename_hyphen}-{version}-{today}"
-        endpoint_name = f"{endpoint_base}-{version}"
+        model_name = f"{basename_hyphen}{v}-{today}"
+        endpoint_name = f"{endpoint_base}{v}"
     elif mode == "test_promote":
-        model_name = f"{basename_hyphen}-{version}-{today}"
-        endpoint_name = f"{endpoint_base}-{version}-test"
+        model_name = f"{basename_hyphen}{v}-{today}"
+        endpoint_name = f"{endpoint_base}{v}-test"
     else:
         raise RuntimeError(f"Unknown mode: {mode}")
 
@@ -116,7 +120,8 @@ def sort_pipelines(
 ) -> tuple[list[tuple[Path, str]], dict[tuple[Path, str], str | None], list[str], dict]:
     """Sort pipelines by DAG stages with per-script modes.
 
-    All pipelines must be defined in a pipelines.json DAG.
+    Scripts defined in a pipelines.json DAG are ordered by stage. Standalone
+    scripts (not in any DAG) are appended as independent runs.
 
     Args:
         pipelines (list[Path]): Pipelines to sort
@@ -136,6 +141,7 @@ def sort_pipelines(
     group_id_map = {}
     deps_map = {}
     dag_lines = []
+    found_in_dag = set()
 
     for dag_name, stages in all_dags.items():
         dag_stage_lines = []
@@ -147,6 +153,7 @@ def sort_pipelines(
             for script, modes in stage.items():
                 if script not in pipeline_set:
                     continue
+                found_in_dag.add(script)
                 dag_has_runs = True
                 for mode in ([mode_override] if mode_override else modes):
                     run = (script, mode)
@@ -159,13 +166,23 @@ def sort_pipelines(
         if dag_has_runs:
             dag_lines.append("   " + " --> ".join(dag_stage_lines))
 
+    # Handle standalone scripts (not in any DAG)
+    standalone = [p for p in pipelines if p not in found_in_dag]
+    for script in standalone:
+        run = (script, mode_override)
+        sorted_runs.append(run)
+        group_id_map[run] = None
+        deps_map[run] = {"outputs": [], "inputs": []}
+        dag_lines.append(f"   {script.stem}:{mode_override} (standalone)")
+
     return sorted_runs, group_id_map, dag_lines, deps_map
 
 
 def get_all_pipelines() -> tuple[list[Path], dict[str, list[dict[Path, list[str]]]]]:
-    """Get all ML pipeline scripts from pipelines.json files in subdirectories.
+    """Get all ML pipeline scripts from subdirectories.
 
-    Only scripts listed in a pipelines.json are included.
+    Discovers scripts from pipelines.json files AND standalone scripts
+    (matching the version naming pattern) that aren't in any DAG.
 
     Returns:
         tuple: (pipelines, all_dags)
@@ -177,6 +194,7 @@ def get_all_pipelines() -> tuple[list[Path], dict[str, list[dict[Path, list[str]
     all_dags = {}
     seen_scripts = set()
 
+    # Discover scripts from pipelines.json files
     for config_path in cwd.rglob("pipelines.json"):
         directory = config_path.parent
         dag_defs = load_pipelines_config(directory)
@@ -188,6 +206,15 @@ def get_all_pipelines() -> tuple[list[Path], dict[str, list[dict[Path, list[str]
                         if script not in seen_scripts:
                             pipelines.append(script)
                             seen_scripts.add(script)
+
+    # Discover standalone scripts not in any DAG (skip __init__.py and private modules)
+    for py_file in sorted(cwd.rglob("*.py")):
+        if py_file in seen_scripts:
+            continue
+        if py_file.stem.startswith("__"):
+            continue
+        pipelines.append(py_file)
+        seen_scripts.add(py_file)
 
     return pipelines, all_dags
 
@@ -279,6 +306,18 @@ def main():
         if getattr(args, mode_name, False):
             mode_override = mode_name
             break
+
+    # Check if any selected pipelines are standalone (not in any DAG)
+    dag_scripts = set()
+    for stages in all_dags.values():
+        for stage in stages:
+            dag_scripts.update(stage.keys())
+    standalone = [p for p in selected_pipelines if p not in dag_scripts]
+    if standalone and mode_override is None:
+        print("\nStandalone scripts (no pipelines.json) require a mode flag (--dt, --promote, --test-promote, --ts):")
+        for p in standalone:
+            print(f"   {p.name}")
+        exit(1)
 
     # Sort by DAG stages (with mode override if CLI flag set)
     sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(selected_pipelines, all_dags, mode_override)
