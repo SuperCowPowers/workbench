@@ -24,7 +24,7 @@ import logging
 
 import awswrangler as wr
 import numpy as np
-import pandas as pd
+
 
 from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
 
@@ -68,12 +68,7 @@ def main():
     neighbors_df = prox.neighbors_from_smiles(pool_smiles, n_neighbors=1)
 
     # Extract max similarity per pool compound (1-NN similarity)
-    max_sims = (
-        neighbors_df.groupby("query_id")["similarity"]
-        .max()
-        .reindex(pool_smiles, fill_value=0.0)
-        .values
-    )
+    max_sims = neighbors_df.groupby("query_id")["similarity"].max().reindex(pool_smiles, fill_value=0.0).values
 
     # Sort pool by similarity and split into thirds (~20% each of total)
     sorted_order = np.argsort(max_sims)
@@ -96,17 +91,20 @@ def main():
     log.info(f"  Base:           {len(df_base):>5} compounds")
     for name, subset in [("High overlap", df_high), ("Medium overlap", df_medium), ("Low overlap", df_low)]:
         sims = subset["max_tanimoto_to_base"]
-        log.info(f"  {name:>15}: {len(subset):>5} compounds  "
-                 f"(max_tanimoto: {sims.min():.3f} – {sims.max():.3f}, "
-                 f"mean={sims.mean():.3f})")
+        log.info(
+            f"  {name:>15}: {len(subset):>5} compounds  "
+            f"(max_tanimoto: {sims.min():.3f} – {sims.max():.3f}, "
+            f"mean={sims.mean():.3f})"
+        )
     log.info("=" * 70)
 
     # Solubility distribution per partition (sanity check)
     log.info("\nSolubility distributions:")
     for name, subset in [("Base", df_base), ("High", df_high), ("Medium", df_medium), ("Low", df_low)]:
         sol = subset["solubility"]
-        log.info(f"  {name:>8}: mean={sol.mean():.2f}, std={sol.std():.2f}, "
-                 f"range=[{sol.min():.2f}, {sol.max():.2f}]")
+        log.info(
+            f"  {name:>8}: mean={sol.mean():.2f}, std={sol.std():.2f}, " f"range=[{sol.min():.2f}, {sol.max():.2f}]"
+        )
 
     if args.dry_run:
         log.info("\n[DRY RUN] Skipping S3 upload")

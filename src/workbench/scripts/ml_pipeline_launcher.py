@@ -14,7 +14,7 @@ Usage:
     ml_pipeline_launcher --ts --all              # Temporal split ALL pipelines
     ml_pipeline_launcher --dt --dry-run          # Show what would be launched without launching
     ml_pipeline_launcher --local --dt ppb_human  # Run pipelines locally (uses active Python interpreter)
-    ml_pipeline_launcher --dt my_standalone      # Launch standalone script (no pipelines.json needed, mode flag required)
+    ml_pipeline_launcher --dt my_standalone      # Launch standalone script (no pipelines.json needed)
 """
 
 import argparse

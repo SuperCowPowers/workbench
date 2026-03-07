@@ -210,9 +210,7 @@ class TestSortPipelines:
         all_dags = {"my_dag": [{script_a: ["dt"]}]}
         pipelines = [script_a, script_standalone]
 
-        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(
-            pipelines, all_dags, mode_override="dt"
-        )
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(pipelines, all_dags, mode_override="dt")
 
         assert len(sorted_runs) == 2
         assert sorted_runs[0] == (script_a, "dt")
@@ -234,9 +232,7 @@ class TestSortPipelines:
         """Standalone script with empty dags and mode_override should produce a run."""
         script = tmp_path / "orphan.py"
 
-        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(
-            [script], {}, mode_override="dt"
-        )
+        sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines([script], {}, mode_override="dt")
 
         assert len(sorted_runs) == 1
         assert sorted_runs[0] == (script, "dt")

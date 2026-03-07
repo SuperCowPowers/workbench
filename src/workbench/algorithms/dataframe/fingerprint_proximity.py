@@ -121,7 +121,7 @@ class FingerprintProximity(Proximity):
             log.info("Building NearestNeighbors model (weighted Tanimoto for count fingerprints)...")
 
             def ruzicka_distance(a, b):
-                """Ruzicka distance = 1 - weighted Tanimoto similarity."""
+                """Ruzicka distance (weighted Tanimoto for count fingerprints): 1 - Σmin(A,B)/Σmax(A,B)."""
                 min_sum = np.minimum(a, b).sum()
                 max_sum = np.maximum(a, b).sum()
                 if max_sum == 0:

@@ -196,10 +196,9 @@ class DatasetAlignment:
         result_df = pd.DataFrame(results)
 
         # Add nearest neighbor SMILES from reference (drop_duplicates handles repeated IDs)
-        ref_smiles_map = (
-            self.df_reference.drop_duplicates(subset=self.id_column_reference)
-            .set_index(self.id_column_reference)[self._smiles_col_reference]
-        )
+        ref_smiles_map = self.df_reference.drop_duplicates(subset=self.id_column_reference).set_index(
+            self.id_column_reference
+        )[self._smiles_col_reference]
         result_df["nearest_neighbor_smiles"] = result_df["nearest_neighbor_id"].map(ref_smiles_map)
 
         return result_df.sort_values("tanimoto_similarity", ascending=False).reset_index(drop=True)
@@ -557,8 +556,14 @@ class DatasetAlignment:
         # Left: Residual distribution
         ax1.hist(residuals, bins=30, edgecolor="black", alpha=0.7, color="steelblue")
         ax1.axvline(x=0, color="red", linestyle="--", linewidth=2, label="Zero (perfect alignment)")
-        ax1.axvline(x=np.mean(residuals), color="darkorange", linestyle="-", linewidth=2, label=f"Mean: {np.mean(residuals):.3f}")
-        ax1.set_xlabel(f"Target Residual (query − neighbor median)")
+        ax1.axvline(
+            x=np.mean(residuals),
+            color="darkorange",
+            linestyle="-",
+            linewidth=2,
+            label=f"Mean: {np.mean(residuals):.3f}",
+        )
+        ax1.set_xlabel("Target Residual (query − neighbor median)")
         ax1.set_ylabel("Count")
         ax1.set_title("Concept Shift: Target Residual Distribution")
         ax1.legend()
@@ -573,8 +578,13 @@ class DatasetAlignment:
             f"Shift: {'YES' if summary['concept_shift_detected'] else 'No'}"
         )
         ax1.text(
-            0.98, 0.98, textstr, transform=ax1.transAxes, verticalalignment="top",
-            horizontalalignment="right", bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+            0.98,
+            0.98,
+            textstr,
+            transform=ax1.transAxes,
+            verticalalignment="top",
+            horizontalalignment="right",
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
         )
 
         # Right: Query target vs neighbor median target (should be on diagonal if aligned)
@@ -648,16 +658,25 @@ class DatasetAlignment:
 
         # 1. Reference compounds — gray background
         ax.scatter(
-            df_ref[x_col], df_ref[y_col],
-            s=15, c="lightgray", alpha=0.5, zorder=1,
+            df_ref[x_col],
+            df_ref[y_col],
+            s=15,
+            c="lightgray",
+            alpha=0.5,
+            zorder=1,
             label=f"Reference ({len(df_ref)})",
         )
 
         # 2. Excluded query compounds — no comparable reference neighbor
         if len(df_query_excluded) > 0:
             ax.scatter(
-                df_query_excluded[x_col], df_query_excluded[y_col],
-                s=25, c="dimgray", alpha=0.5, marker="x", zorder=2,
+                df_query_excluded[x_col],
+                df_query_excluded[y_col],
+                s=25,
+                c="dimgray",
+                alpha=0.5,
+                marker="x",
+                zorder=2,
                 label=f"Query — no overlap ({len(df_query_excluded)})",
             )
 
@@ -670,13 +689,20 @@ class DatasetAlignment:
             norm = TwoSlopeNorm(vmin=-residual_clip, vcenter=0, vmax=residual_clip)
 
             scatter = ax.scatter(
-                df_query_comparable[x_col], df_query_comparable[y_col],
-                s=40, c=clipped, cmap="RdBu_r", norm=norm,
-                alpha=0.7, edgecolors="black", linewidths=0.3, zorder=3,
+                df_query_comparable[x_col],
+                df_query_comparable[y_col],
+                s=40,
+                c=clipped,
+                cmap="RdBu_r",
+                norm=norm,
+                alpha=0.7,
+                edgecolors="black",
+                linewidths=0.3,
+                zorder=3,
                 label=f"Query — comparable ({len(df_query_comparable)})",
             )
             cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, pad=0.02)
-            cbar.set_label(f"Target Residual (query − reference neighbor median)")
+            cbar.set_label("Target Residual (query − reference neighbor median)")
 
         ax.set_xlabel("UMAP 1")
         ax.set_ylabel("UMAP 2")
@@ -692,7 +718,11 @@ class DatasetAlignment:
             f"Shift detected: {'YES' if summary['concept_shift_detected'] else 'No'}"
         )
         ax.text(
-            0.02, 0.02, textstr, transform=ax.transAxes, verticalalignment="bottom",
+            0.02,
+            0.02,
+            textstr,
+            transform=ax.transAxes,
+            verticalalignment="bottom",
             bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.7),
         )
 
@@ -730,7 +760,10 @@ class DatasetAlignment:
 
         # Shade the "comparable zone" (above min_similarity)
         ax.axvline(
-            x=self.min_similarity, color="darkorange", linestyle="--", linewidth=2,
+            x=self.min_similarity,
+            color="darkorange",
+            linestyle="--",
+            linewidth=2,
             label=f"min_similarity = {self.min_similarity}",
         )
         ax.axvspan(self.min_similarity, 1.0, alpha=0.08, color="darkorange")
@@ -742,19 +775,24 @@ class DatasetAlignment:
                 ax.plot(tau, frac, "o", color="steelblue", markersize=8, zorder=5)
                 ax.annotate(
                     f"{label_fmt}: {frac:.0%}",
-                    xy=(tau, frac), xytext=(tau + 0.03, frac + 0.05),
-                    fontsize=9, fontweight="bold",
+                    xy=(tau, frac),
+                    xytext=(tau + 0.03, frac + 0.05),
+                    fontsize=9,
+                    fontweight="bold",
                     arrowprops=dict(arrowstyle="->", color="gray", lw=1.2),
                 )
 
         # Comparable fraction annotation
         comparable_frac = (self._cross_nn_similarities >= self.min_similarity).sum() / n
         ax.text(
-            0.98, 0.98,
+            0.98,
+            0.98,
             f"Comparable: {comparable_frac:.0%} of query\n"
             f"Novel: {1 - comparable_frac:.0%} of query\n"
             f"Query compounds: {n}",
-            transform=ax.transAxes, verticalalignment="top", horizontalalignment="right",
+            transform=ax.transAxes,
+            verticalalignment="top",
+            horizontalalignment="right",
             bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.7),
             fontsize=10,
         )
@@ -806,8 +844,15 @@ class DatasetAlignment:
         norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
         scatter = ax.scatter(
-            sims, residuals, c=residuals, cmap="RdBu_r", norm=norm,
-            alpha=0.5, s=25, edgecolors="none", zorder=2,
+            sims,
+            residuals,
+            c=residuals,
+            cmap="RdBu_r",
+            norm=norm,
+            alpha=0.5,
+            s=25,
+            edgecolors="none",
+            zorder=2,
         )
         cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, pad=0.02)
         cbar.set_label("Target Residual (query − reference neighbor median)")
@@ -838,18 +883,31 @@ class DatasetAlignment:
             q75s = np.array(q75s)
 
             ax.plot(
-                bin_centers, medians, color="darkorange", linewidth=2.5,
-                zorder=4, label="Running median",
+                bin_centers,
+                medians,
+                color="darkorange",
+                linewidth=2.5,
+                zorder=4,
+                label="Running median",
             )
             ax.fill_between(
-                bin_centers, q25s, q75s, alpha=0.2, color="darkorange",
-                zorder=3, label="IQR (25th–75th percentile)",
+                bin_centers,
+                q25s,
+                q75s,
+                alpha=0.2,
+                color="darkorange",
+                zorder=3,
+                label="IQR (25th–75th percentile)",
             )
 
         # Min similarity threshold line
         ax.axvline(
-            x=self.min_similarity, color="gray", linestyle=":", linewidth=1.5,
-            alpha=0.7, label=f"min_similarity = {self.min_similarity}",
+            x=self.min_similarity,
+            color="gray",
+            linestyle=":",
+            linewidth=1.5,
+            alpha=0.7,
+            label=f"min_similarity = {self.min_similarity}",
         )
 
         # Summary annotation
@@ -862,8 +920,13 @@ class DatasetAlignment:
             f"Pattern: {funnel_diagnosis}"
         )
         ax.text(
-            0.02, 0.98, textstr, transform=ax.transAxes, verticalalignment="top",
-            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.7), fontsize=10,
+            0.02,
+            0.98,
+            textstr,
+            transform=ax.transAxes,
+            verticalalignment="top",
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.7),
+            fontsize=10,
         )
 
         ax.set_xlabel("Tanimoto Similarity (query → reference NN)", fontsize=12)
@@ -891,8 +954,16 @@ class DatasetAlignment:
         low_mask = sims < median_sim
         high_mask = sims >= median_sim
 
-        low_iqr = np.percentile(residuals[low_mask], 75) - np.percentile(residuals[low_mask], 25) if low_mask.sum() > 5 else float("inf")
-        high_iqr = np.percentile(residuals[high_mask], 75) - np.percentile(residuals[high_mask], 25) if high_mask.sum() > 5 else float("inf")
+        low_iqr = (
+            np.percentile(residuals[low_mask], 75) - np.percentile(residuals[low_mask], 25)
+            if low_mask.sum() > 5
+            else float("inf")
+        )
+        high_iqr = (
+            np.percentile(residuals[high_mask], 75) - np.percentile(residuals[high_mask], 25)
+            if high_mask.sum() > 5
+            else float("inf")
+        )
 
         narrows = high_iqr < low_iqr * 0.7  # IQR narrows by at least 30%
         offset = abs(np.median(residuals)) > 0.5 * np.std(residuals)
@@ -918,12 +989,20 @@ class DatasetAlignment:
         fig, ax = plt.subplots(figsize=figsize)
 
         ax.hist(
-            self._ref_nn_similarities, bins=bins, alpha=0.5,
-            label="Reference (within-dataset)", edgecolor="black", color="steelblue",
+            self._ref_nn_similarities,
+            bins=bins,
+            alpha=0.5,
+            label="Reference (within-dataset)",
+            edgecolor="black",
+            color="steelblue",
         )
         ax.hist(
-            self._cross_nn_similarities, bins=bins, alpha=0.5,
-            label="Query (cross-dataset)", edgecolor="black", color="darkorange",
+            self._cross_nn_similarities,
+            bins=bins,
+            alpha=0.5,
+            label="Query (cross-dataset)",
+            edgecolor="black",
+            color="darkorange",
         )
 
         ax.set_xlabel("Nearest Neighbor Tanimoto Similarity")
@@ -941,7 +1020,11 @@ class DatasetAlignment:
             f"PSI: {summary['population_stability_index']:.4f} ({summary['psi_severity']})"
         )
         ax.text(
-            0.02, 0.98, textstr, transform=ax.transAxes, verticalalignment="top",
+            0.02,
+            0.98,
+            textstr,
+            transform=ax.transAxes,
+            verticalalignment="top",
             bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
         )
 
@@ -964,9 +1047,7 @@ if __name__ == "__main__":
             print(f"Testing: overlap={overlap}, alignment={alignment_level}")
             print("=" * 80)
 
-            ref_df, query_df = test_data.aqsol_alignment_data(
-                overlap=overlap, alignment=alignment_level
-            )
+            ref_df, query_df = test_data.aqsol_alignment_data(overlap=overlap, alignment=alignment_level)
             print(f"Reference: {len(ref_df)}, Query: {len(query_df)}")
 
             da = DatasetAlignment(
