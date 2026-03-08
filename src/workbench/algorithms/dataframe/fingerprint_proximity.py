@@ -117,18 +117,24 @@ class FingerprintProximity(Proximity):
         self.X, self._is_count_fp = self._fingerprints_to_matrix(self.df)
 
         if self._is_count_fp:
-            # Weighted Tanimoto (Ruzicka) for count vectors: 1 - Σmin(A,B)/Σmax(A,B)
-            log.info("Building NearestNeighbors model (weighted Tanimoto for count fingerprints)...")
+            # Vectorized Ruzicka distance (weighted Tanimoto for count fingerprints)
+            # Uses identity: ruzicka_dist = 2*L1 / (S_a + S_b + L1)
+            # where L1 = Manhattan distance, S_a/S_b = row sums
+            from scipy.spatial.distance import cdist
 
-            def ruzicka_distance(a, b):
-                """Ruzicka distance (weighted Tanimoto for count fingerprints): 1 - Σmin(A,B)/Σmax(A,B)."""
-                min_sum = np.minimum(a, b).sum()
-                max_sum = np.maximum(a, b).sum()
-                if max_sum == 0:
-                    return 0.0
-                return 1.0 - (min_sum / max_sum)
+            log.info("Building NearestNeighbors model (vectorized Ruzicka for count fingerprints)...")
+            X_float = self.X.astype(np.float32)
+            l1_dists = cdist(X_float, X_float, metric="cityblock").astype(np.float32)
+            row_sums = X_float.sum(axis=1)
+            S = row_sums[:, np.newaxis]
+            T = row_sums[np.newaxis, :]
+            denom = S + T + l1_dists
+            self._ruzicka_dist_matrix = np.divide(
+                2.0 * l1_dists, denom, where=denom > 0, out=np.zeros_like(l1_dists)
+            )
 
-            self.nn = NearestNeighbors(metric=ruzicka_distance, algorithm="ball_tree").fit(self.X)
+            # Fit NN on precomputed distance matrix — all queries are now fast array lookups
+            self.nn = NearestNeighbors(metric="precomputed", algorithm="brute").fit(self._ruzicka_dist_matrix)
         else:
             # Standard Jaccard for binary fingerprints
             log.info("Building NearestNeighbors model (Jaccard/Tanimoto for binary fingerprints)...")
@@ -136,16 +142,27 @@ class FingerprintProximity(Proximity):
 
     def _transform_features(self, df: pd.DataFrame) -> np.ndarray:
         """
-        Transform fingerprints to matrix for querying.
+        Transform features for querying the NN model.
+
+        For precomputed distance matrix (count fingerprints): returns the corresponding
+        rows from the distance matrix so kneighbors can look up distances directly.
+        For binary fingerprints: returns the fingerprint matrix.
 
         Args:
-            df: DataFrame containing fingerprints to transform.
+            df (pd.DataFrame): DataFrame containing compounds to transform.
 
         Returns:
-            Feature matrix for the fingerprints (binary or count based on self._is_count_fp).
+            np.ndarray: Feature matrix suitable for the NN model's metric.
         """
-        matrix, _ = self._fingerprints_to_matrix(df)
-        return matrix
+        if self._is_count_fp:
+            # For precomputed metric, return rows from the distance matrix
+            # Find the row indices of df's compounds in self.df
+            idx_map = {id_val: i for i, id_val in enumerate(self.df[self.id_column])}
+            indices = [idx_map[id_val] for id_val in df[self.id_column]]
+            return self._ruzicka_dist_matrix[indices]
+        else:
+            matrix, _ = self._fingerprints_to_matrix(df)
+            return matrix
 
     def _fingerprints_to_matrix(self, df: pd.DataFrame) -> tuple[np.ndarray, bool]:
         """
@@ -178,44 +195,10 @@ class FingerprintProximity(Proximity):
 
     def _precompute_metrics(self) -> None:
         """Precompute metrics, adding Tanimoto similarity alongside distance."""
-        if self._is_count_fp:
-            # Vectorized Ruzicka distance for count fingerprints (avoids slow per-pair Python calls)
-            # Uses identity: ruzicka_dist = 2*L1 / (S_a + S_b + L1)
-            # where L1 = Manhattan distance, S_a/S_b = row sums
-            from scipy.spatial.distance import cdist
-
-            log.info("Precomputing proximity metrics (vectorized Ruzicka)...")
-            X = self._transform_features(self.df).astype(np.float32)
-
-            # Pairwise Manhattan distances (compiled C via scipy)
-            l1_dists = cdist(X, X, metric="cityblock").astype(np.float32)
-
-            # Convert Manhattan → Ruzicka using precomputed row sums
-            row_sums = X.sum(axis=1)
-            S = row_sums[:, np.newaxis]  # (N, 1)
-            T = row_sums[np.newaxis, :]  # (1, N)
-            denom = S + T + l1_dists
-            ruzicka_dists = np.divide(2.0 * l1_dists, denom, where=denom > 0, out=np.zeros_like(l1_dists))
-
-            # Exclude self-match (set diagonal to inf) and find nearest neighbor
-            np.fill_diagonal(ruzicka_dists, np.inf)
-            nn_indices = np.argmin(ruzicka_dists, axis=1)
-            nn_distances = ruzicka_dists[np.arange(len(nn_indices)), nn_indices]
-
-            # Store results (same columns as parent _precompute_metrics)
-            self.df["nn_distance"] = nn_distances
-            self.df["nn_id"] = self.df.iloc[nn_indices][self.id_column].values
-
-            if self.target and self.target in self.df.columns:
-                nn_target_values = self.df.iloc[nn_indices][self.target].values
-                self.df["nn_target"] = nn_target_values
-                self.df["nn_target_diff"] = np.abs(self.df[self.target].values - nn_target_values)
-                self.target_range = self.df[self.target].max() - self.df[self.target].min()
-
-            log.info("Proximity metrics precomputed successfully")
-        else:
-            # Binary fingerprints: parent's ball_tree with built-in jaccard is already fast
-            super()._precompute_metrics()
+        # Parent handles kneighbors(n=2) — fast for both paths:
+        #   count FP: precomputed distance matrix (array indexing)
+        #   binary FP: built-in jaccard (compiled C)
+        super()._precompute_metrics()
 
         # Add Tanimoto similarity (keep nn_distance for internal use by target_gradients)
         self.df["nn_similarity"] = 1 - self.df["nn_distance"]
@@ -319,6 +302,13 @@ class FingerprintProximity(Proximity):
             DataFrame containing neighbors with Tanimoto similarity scores.
             The 'query_id' column contains the SMILES string (or index if list).
         """
+        # Count fingerprints use a precomputed distance matrix — new SMILES aren't in it
+        if self._is_count_fp:
+            raise NotImplementedError(
+                "neighbors_from_smiles() is not supported for count fingerprints. "
+                "Add compounds to the dataset and rebuild the model instead."
+            )
+
         # Normalize to list
         smiles_list = [smiles] if isinstance(smiles, str) else smiles
 
