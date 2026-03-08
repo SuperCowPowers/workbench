@@ -574,7 +574,12 @@ def plot_similarity_residual_funnel(
 
     # Min similarity threshold line
     ax.axvline(
-        x=min_similarity, color="gray", linestyle=":", linewidth=1.5, alpha=0.7, label=f"min_similarity = {min_similarity}"
+        x=min_similarity,
+        color="gray",
+        linestyle=":",
+        linewidth=1.5,
+        alpha=0.7,
+        label=f"min_similarity = {min_similarity}",
     )
 
     # Summary annotation
@@ -643,9 +648,7 @@ def plot_covariate_shift(
 
     ax.set_xlabel("Nearest Neighbor Tanimoto Similarity")
     ax.set_ylabel("Count")
-    ax.set_title(
-        f"Covariate Shift: {len(ref_nn_similarities)} ref vs " f"{len(cross_nn_similarities)} query compounds"
-    )
+    ax.set_title(f"Covariate Shift: {len(ref_nn_similarities)} ref vs " f"{len(cross_nn_similarities)} query compounds")
     ax.legend()
 
     summary = covariate_shift_summary(ref_nn_similarities, cross_nn_similarities)

@@ -28,8 +28,6 @@ References:
 """
 
 import logging
-
-import numpy as np
 import pandas as pd
 
 from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
@@ -57,7 +55,6 @@ class DatasetAlignment:
     DATASET_COL = "dataset"
     DATASET_REF = "reference"
     DATASET_QUERY = "query"
-    REQUIRED_COLUMNS = {"id", "smiles"}
 
     def __init__(
         self,
@@ -90,7 +87,7 @@ class DatasetAlignment:
         self.min_similarity = min_similarity
 
         # Validate required columns in both DataFrames
-        required = self.REQUIRED_COLUMNS | {target_column}
+        required = {id_column, "smiles", target_column}
         for label, df in [("Reference", df_reference), ("Query", df_query)]:
             missing = required - set(df.columns)
             if missing:
@@ -147,7 +144,9 @@ class DatasetAlignment:
                 with columns from prox.df (id, similarity, smiles, target, etc.)
         """
         return self._cross_dataset_neighbors(
-            [query_id], n_neighbors=n_neighbors, source_dataset=self.DATASET_QUERY,
+            [query_id],
+            n_neighbors=n_neighbors,
+            source_dataset=self.DATASET_QUERY,
             include_self=include_self,
         )
 
@@ -209,7 +208,9 @@ class DatasetAlignment:
 
         # Single cross-dataset neighbor call with K neighbors
         cross_neighbors = self._cross_dataset_neighbors(
-            query_ids, n_neighbors=self.k_neighbors, source_dataset=self.DATASET_QUERY,
+            query_ids,
+            n_neighbors=self.k_neighbors,
+            source_dataset=self.DATASET_QUERY,
         )
 
         # --- Overlap DF: extract 1-NN per query ---
@@ -241,14 +242,16 @@ class DatasetAlignment:
             neighbor_median = float(neighbor_targets.median())
             residual = float(q_target) - neighbor_median
 
-            alignment_results.append({
-                self.id_column: q_id,
-                "query_target": float(q_target),
-                "nearest_neighbor_id": group.loc[group["similarity"].idxmax(), "neighbor_id"],
-                "tanimoto_similarity": nn_similarity,
-                "neighbor_median_target": neighbor_median,
-                "target_residual": residual,
-            })
+            alignment_results.append(
+                {
+                    self.id_column: q_id,
+                    "query_target": float(q_target),
+                    "nearest_neighbor_id": group.loc[group["similarity"].idxmax(), "neighbor_id"],
+                    "tanimoto_similarity": nn_similarity,
+                    "neighbor_median_target": neighbor_median,
+                    "target_residual": residual,
+                }
+            )
 
         alignment_df = pd.DataFrame(alignment_results)
 

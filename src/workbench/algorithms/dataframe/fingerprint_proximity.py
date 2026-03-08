@@ -14,10 +14,11 @@ log = logging.getLogger("workbench")
 
 
 class FingerprintProximity(Proximity):
-    """Proximity computations for binary fingerprints using Tanimoto similarity.
+    """Proximity computations using Tanimoto similarity on molecular fingerprints.
 
-    Note: Tanimoto similarity is equivalent to Jaccard similarity for binary vectors.
-    Tanimoto(A, B) = |A ∩ B| / |A ∪ B|
+    Supports both binary and count fingerprints (auto-detected):
+        - Binary: uses Jaccard distance (equivalent to 1 - Tanimoto for binary vectors)
+        - Count: uses Ruzicka distance (weighted Tanimoto for count vectors)
     """
 
     def __init__(
@@ -31,7 +32,7 @@ class FingerprintProximity(Proximity):
         n_bits: int = 2048,
     ) -> None:
         """
-        Initialize the FingerprintProximity class for binary fingerprint similarity.
+        Initialize FingerprintProximity for Tanimoto similarity on molecular fingerprints.
 
         Args:
             df: DataFrame containing fingerprints or SMILES.
@@ -46,9 +47,6 @@ class FingerprintProximity(Proximity):
         # Store fingerprint computation parameters
         self._fp_radius = radius
         self._fp_n_bits = n_bits
-
-        # Store the requested fingerprint column (may be None)
-        self._fingerprint_column_arg = fingerprint_column
 
         # Determine fingerprint column name (but don't compute yet - that happens in _prepare_data)
         self.fingerprint_column = self._resolve_fingerprint_column_name(df, fingerprint_column)
@@ -129,9 +127,7 @@ class FingerprintProximity(Proximity):
             S = row_sums[:, np.newaxis]
             T = row_sums[np.newaxis, :]
             denom = S + T + l1_dists
-            self._ruzicka_dist_matrix = np.divide(
-                2.0 * l1_dists, denom, where=denom > 0, out=np.zeros_like(l1_dists)
-            )
+            self._ruzicka_dist_matrix = np.divide(2.0 * l1_dists, denom, where=denom > 0, out=np.zeros_like(l1_dists))
 
             # Fit NN on precomputed distance matrix — all queries are now fast array lookups
             self.nn = NearestNeighbors(metric="precomputed", algorithm="brute").fit(self._ruzicka_dist_matrix)
@@ -211,12 +207,9 @@ class FingerprintProximity(Proximity):
 
     def _project_2d(self) -> None:
         """Project the fingerprint matrix to 2D for visualization using UMAP."""
-        if self._is_count_fp:
-            # For count fingerprints, convert to binary for UMAP projection (Jaccard needs binary)
-            X_binary = (self.X > 0).astype(np.bool_)
-            self.df = Projection2D().fit_transform(self.df, feature_matrix=X_binary, metric="jaccard")
-        else:
-            self.df = Projection2D().fit_transform(self.df, feature_matrix=self.X, metric="jaccard")
+        # Count fingerprints need binary conversion for Jaccard; binary fingerprints use X directly
+        X_proj = (self.X > 0).astype(np.bool_) if self._is_count_fp else self.X
+        self.df = Projection2D().fit_transform(self.df, feature_matrix=X_proj, metric="jaccard")
 
     def isolated(self, top_percent: float = 1.0) -> pd.DataFrame:
         """
@@ -229,8 +222,7 @@ class FingerprintProximity(Proximity):
             DataFrame of observations with lowest Tanimoto similarity, sorted ascending
         """
         # For Tanimoto similarity, isolated means LOW similarity to nearest neighbor
-        percentile = top_percent
-        threshold = np.percentile(self.df["nn_similarity"], percentile)
+        threshold = np.percentile(self.df["nn_similarity"], top_percent)
         isolated = self.df[self.df["nn_similarity"] <= threshold].copy()
         isolated = isolated.sort_values("nn_similarity", ascending=True).reset_index(drop=True)
         return isolated if self.include_all_columns else isolated[self.core_columns]
