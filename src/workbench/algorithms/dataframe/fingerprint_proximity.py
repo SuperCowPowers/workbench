@@ -178,8 +178,44 @@ class FingerprintProximity(Proximity):
 
     def _precompute_metrics(self) -> None:
         """Precompute metrics, adding Tanimoto similarity alongside distance."""
-        # Call parent to compute nn_distance (Jaccard), nn_id, nn_target, nn_target_diff
-        super()._precompute_metrics()
+        if self._is_count_fp:
+            # Vectorized Ruzicka distance for count fingerprints (avoids slow per-pair Python calls)
+            # Uses identity: ruzicka_dist = 2*L1 / (S_a + S_b + L1)
+            # where L1 = Manhattan distance, S_a/S_b = row sums
+            from scipy.spatial.distance import cdist
+
+            log.info("Precomputing proximity metrics (vectorized Ruzicka)...")
+            X = self._transform_features(self.df).astype(np.float32)
+
+            # Pairwise Manhattan distances (compiled C via scipy)
+            l1_dists = cdist(X, X, metric="cityblock").astype(np.float32)
+
+            # Convert Manhattan → Ruzicka using precomputed row sums
+            row_sums = X.sum(axis=1)
+            S = row_sums[:, np.newaxis]  # (N, 1)
+            T = row_sums[np.newaxis, :]  # (1, N)
+            denom = S + T + l1_dists
+            ruzicka_dists = np.divide(2.0 * l1_dists, denom, where=denom > 0, out=np.zeros_like(l1_dists))
+
+            # Exclude self-match (set diagonal to inf) and find nearest neighbor
+            np.fill_diagonal(ruzicka_dists, np.inf)
+            nn_indices = np.argmin(ruzicka_dists, axis=1)
+            nn_distances = ruzicka_dists[np.arange(len(nn_indices)), nn_indices]
+
+            # Store results (same columns as parent _precompute_metrics)
+            self.df["nn_distance"] = nn_distances
+            self.df["nn_id"] = self.df.iloc[nn_indices][self.id_column].values
+
+            if self.target and self.target in self.df.columns:
+                nn_target_values = self.df.iloc[nn_indices][self.target].values
+                self.df["nn_target"] = nn_target_values
+                self.df["nn_target_diff"] = np.abs(self.df[self.target].values - nn_target_values)
+                self.target_range = self.df[self.target].max() - self.df[self.target].min()
+
+            log.info("Proximity metrics precomputed successfully")
+        else:
+            # Binary fingerprints: parent's ball_tree with built-in jaccard is already fast
+            super()._precompute_metrics()
 
         # Add Tanimoto similarity (keep nn_distance for internal use by target_gradients)
         self.df["nn_similarity"] = 1 - self.df["nn_distance"]
