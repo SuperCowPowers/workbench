@@ -6,8 +6,7 @@ a shared UMAP projection and a single NN model that can be queried for cross-dat
 neighbors by filtering on the ``dataset`` column.
 
 Produces:
-    - **alignment_df**: Per-query-compound overlap flag, similarity, and target residuals.
-      Non-overlapping compounds (below min_similarity) have overlap=False and NaN residuals.
+    - **alignment_df**: Per-query-compound similarity and target residuals.
 
 This DataFrame, plus the shared 2D coordinates in ``self._prox.df``, back the
 scatter+contour visualization UI.
@@ -38,12 +37,12 @@ class DatasetAlignment:
 
     Takes reference and query DataFrames, combines them internally, and builds a single
     FingerprintProximity model (shared fingerprints, NN model, and UMAP projection).
-    For each query compound, finds reference neighbors and determines overlap/residuals.
+    For each query compound, finds reference neighbors and computes similarity/residuals.
 
     Both DataFrames must have: id, smiles, and target columns.
 
     Use ``dataset_alignment_results()`` to get a unified DataFrame with x, y coordinates,
-    dataset labels, and alignment columns (overlap, similarity, residuals).
+    dataset labels, and alignment columns (similarity, residuals).
     """
 
     def __init__(
@@ -53,7 +52,7 @@ class DatasetAlignment:
         target_column: str,
         id_column: str,
         k_neighbors: int = 5,
-        min_similarity: float = 0.6,
+        overlap_thres: float = 0.6,
         radius: int = 2,
         n_bits: int = 2048,
     ) -> None:
@@ -65,16 +64,15 @@ class DatasetAlignment:
             target_column (str): Name of the target column to compare (must exist in both DataFrames)
             id_column (str): Name of the ID column
             k_neighbors (int): Number of cross-dataset neighbors for target alignment (default: 5)
-            min_similarity (float): Minimum Tanimoto similarity to consider a query compound
-                as overlapping with reference (default: 0.6). Compounds below this threshold
-                get overlap=False and NaN residuals.
+            overlap_thres (float): Minimum Tanimoto similarity for computing median_ref_residual
+                (default: 0.6). Query compounds below this get NaN residuals.
             radius (int): Morgan fingerprint radius (default: 2 = ECFP4)
             n_bits (int): Number of fingerprint bits (default: 2048)
         """
         self.id_column = id_column
         self.target_column = target_column
         self.k_neighbors = k_neighbors
-        self.min_similarity = min_similarity
+        self.overlap_thres = overlap_thres
 
         # Validate required columns in both DataFrames
         required = {id_column, "smiles", target_column}
@@ -86,6 +84,18 @@ class DatasetAlignment:
         # Combine with a 'dataset' bookkeeping column
         df_reference = df_reference.copy()
         df_query = df_query.copy()
+
+        # Deduplicate IDs within each dataset (keep first, log details)
+        for label, df in [("Reference", df_reference), ("Query", df_query)]:
+            dup_mask = df.duplicated(subset=id_column, keep="first")
+            if dup_mask.any():
+                dup_rows = df[df[id_column].isin(df.loc[dup_mask, id_column])]
+                log.warning(f"{label}: Dropping {dup_mask.sum()} duplicate IDs (keeping first):")
+                for dup_id, group in dup_rows.groupby(id_column):
+                    targets = group[target_column].tolist()
+                    log.warning(f"  {dup_id}: {target_column}={targets}")
+                df.drop(df[dup_mask].index, inplace=True)
+
         df_reference["dataset"] = "reference"
         df_query["dataset"] = "query"
         df_combined = pd.concat([df_reference, df_query], ignore_index=True)
@@ -104,38 +114,32 @@ class DatasetAlignment:
             n_bits=n_bits,
         )
 
-        # Compute cross-dataset overlap and target alignment
-        log.info("Computing cross-dataset overlap and alignment...")
+        # Compute cross-dataset target alignment
+        log.info("Computing cross-dataset alignment...")
         self._alignment_df = self._compute_alignment()
 
-        n_overlap = int(self._alignment_df["overlap"].sum())
         n_total = len(self._alignment_df)
         log.info(f"Cross-dataset mean NN similarity: {self._alignment_df['highest_ref_tanimoto'].mean():.3f}")
-        log.info(f"Overlap: {n_overlap}/{n_total} query compounds (min_similarity={self.min_similarity})")
+        log.info(f"Alignment computed for {n_total} query compounds")
 
     def dataset_alignment_results(self) -> pd.DataFrame:
         """Return a unified DataFrame with coordinates, dataset labels, and alignment info.
 
-        Merges the per-query alignment columns (overlap, similarity, residuals) into the
-        combined proximity DataFrame. Reference compounds get overlap=False and NaN for
-        alignment-specific columns.
+        Merges the per-query alignment columns (similarity, residuals) into the
+        combined proximity DataFrame. Reference compounds get NaN for alignment columns.
 
         Returns:
             pd.DataFrame: Unified DataFrame with these added columns:
                 - dataset: "reference" or "query"
                 - x, y: UMAP 2D coordinates
-                - overlap: True if query compound has reference neighbors above min_similarity
                 - highest_ref_tanimoto: best Tanimoto similarity to any reference compound
                 - median_ref_residual: query target minus median target of nearest reference neighbors
         """
         df = self._prox.df.copy()
 
         # Left join alignment columns (query-only) onto full df
-        alignment_cols = [self.id_column, "overlap", "highest_ref_tanimoto", "median_ref_residual"]
+        alignment_cols = [self.id_column, "highest_ref_tanimoto", "median_ref_residual"]
         df = df.merge(self._alignment_df[alignment_cols], on=self.id_column, how="left")
-
-        # Reference compounds: overlap=False (was NaN from left join)
-        df["overlap"] = df["overlap"].fillna(False)
 
         # Drop internal proximity columns not needed in alignment results
         internal_cols = ["nn_distance", "nn_id", "nn_target", "nn_target_diff", "nn_similarity", "fingerprint"]
@@ -179,17 +183,16 @@ class DatasetAlignment:
         return result.head(keep).reset_index(drop=True)
 
     def _compute_alignment(self) -> pd.DataFrame:
-        """Compute overlap and target alignment for each query compound vs the reference.
+        """Compute target alignment for each query compound vs the reference.
 
         For each query compound:
             1. Get neighbors from the combined model
-            2. Filter to reference-only neighbors above the similarity threshold
-            3. If any reference neighbors exist: overlap=True, compute residual
-            4. Otherwise: overlap=False, residual=NaN
+            2. Filter to reference-only neighbors
+            3. Compute highest similarity and median target residual from top-k neighbors
 
         Returns:
             pd.DataFrame: Per-query-compound alignment with columns:
-                id, overlap, highest_ref_tanimoto, median_ref_residual
+                id, highest_ref_tanimoto, median_ref_residual
         """
         # Get query compound IDs from the combined prox.df
         query_mask = self._prox.df["dataset"] == "query"
@@ -211,25 +214,20 @@ class DatasetAlignment:
             q_target = query_targets.get(q_id)
             q_ref = ref_neighbors[ref_neighbors[self.id_column] == q_id]
 
-            # Best reference neighbor similarity (regardless of threshold)
+            # Best reference neighbor similarity
             best_sim = float(q_ref["similarity"].max()) if len(q_ref) > 0 else 0.0
 
-            # Check overlap: any reference neighbor above threshold?
-            above_threshold = q_ref[q_ref["similarity"] >= self.min_similarity]
-            has_overlap = len(above_threshold) > 0 and pd.notna(q_target)
-
-            if has_overlap:
-                # Median target from top-k reference neighbors above threshold
-                top_k = above_threshold.nlargest(min(self.k_neighbors, len(above_threshold)), "similarity")
+            # Median target residual from top-k reference neighbors (only above overlap threshold)
+            above_thres = q_ref[q_ref["similarity"] >= self.overlap_thres]
+            if len(above_thres) > 0 and pd.notna(q_target):
+                top_k = above_thres.nlargest(min(self.k_neighbors, len(above_thres)), "similarity")
                 neighbor_median = float(top_k[self.target_column].dropna().median())
                 residual = float(q_target) - neighbor_median
             else:
-                neighbor_median = float("nan")
                 residual = float("nan")
 
             results.append({
                 self.id_column: q_id,
-                "overlap": has_overlap,
                 "highest_ref_tanimoto": best_sim,
                 "median_ref_residual": residual,
             })
@@ -265,9 +263,8 @@ if __name__ == "__main__":
     print(f"\nUnified DF shape: {df.shape}")
     print(f"Columns: {list(df.columns)}")
     print(f"Dataset counts:\n{df['dataset'].value_counts()}")
-    print(f"Overlap counts:\n{df['overlap'].value_counts()}")
     print(f"\nQuery compounds (first 10):")
-    query_cols = ["id", "dataset", "x", "y", "overlap", "highest_ref_tanimoto", "median_ref_residual"]
+    query_cols = ["id", "dataset", "x", "y", "highest_ref_tanimoto", "median_ref_residual"]
     print(df[df["dataset"] == "query"][query_cols].head(10))
 
     # Test query_neighbors — drill into a specific query compound
