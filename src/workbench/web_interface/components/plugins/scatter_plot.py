@@ -541,9 +541,9 @@ if __name__ == "__main__":
     # Build alignment data
     from workbench.utils.test_data_generator import TestDataGenerator
     from workbench.algorithms.dataframe.dataset_alignment import DatasetAlignment
+
     ref_df, query_df = TestDataGenerator().aqsol_alignment_data(overlap="medium", alignment="high")
     da = DatasetAlignment(ref_df, query_df, target_column="solubility")
-
 
     # Run the Unit Test with molecule data (hover over points to see molecule structures)
     PluginUnitTest(

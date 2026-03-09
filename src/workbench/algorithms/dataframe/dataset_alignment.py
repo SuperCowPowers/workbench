@@ -226,11 +226,13 @@ class DatasetAlignment:
             else:
                 residual = float("nan")
 
-            results.append({
-                self.id_column: q_id,
-                "highest_ref_tanimoto": best_sim,
-                "median_ref_residual": residual,
-            })
+            results.append(
+                {
+                    self.id_column: q_id,
+                    "highest_ref_tanimoto": best_sim,
+                    "median_ref_residual": residual,
+                }
+            )
 
         return pd.DataFrame(results)
 
@@ -263,7 +265,7 @@ if __name__ == "__main__":
     print(f"\nUnified DF shape: {df.shape}")
     print(f"Columns: {list(df.columns)}")
     print(f"Dataset counts:\n{df['dataset'].value_counts()}")
-    print(f"\nQuery compounds (first 10):")
+    print("\nQuery compounds (first 10):")
     query_cols = ["id", "dataset", "x", "y", "highest_ref_tanimoto", "median_ref_residual"]
     print(df[df["dataset"] == "query"][query_cols].head(10))
 
