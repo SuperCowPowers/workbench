@@ -206,10 +206,19 @@ class FingerprintProximity(Proximity):
             self.core_columns.extend([self.target, "nn_target", "nn_target_diff"])
 
     def _project_2d(self) -> None:
-        """Project the fingerprint matrix to 2D for visualization using UMAP."""
-        # Count fingerprints need binary conversion for Jaccard; binary fingerprints use X directly
-        X_proj = (self.X > 0).astype(np.bool_) if self._is_count_fp else self.X
-        self.df = Projection2D().fit_transform(self.df, feature_matrix=X_proj, metric="jaccard")
+        """Project the fingerprint matrix to 2D for visualization using UMAP.
+
+        For count fingerprints: uses the precomputed Ruzicka distance matrix so the
+        2D layout is consistent with the proximity model's similarity scores.
+        For binary fingerprints: uses Jaccard distance directly on the fingerprint matrix.
+        """
+        if self._is_count_fp:
+            # Use the already-computed Ruzicka distance matrix for a consistent projection
+            self.df = Projection2D().fit_transform(
+                self.df, feature_matrix=self._ruzicka_dist_matrix, metric="precomputed"
+            )
+        else:
+            self.df = Projection2D().fit_transform(self.df, feature_matrix=self.X, metric="jaccard")
 
     def isolated(self, top_percent: float = 1.0) -> pd.DataFrame:
         """
