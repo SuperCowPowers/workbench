@@ -530,15 +530,23 @@ if __name__ == "__main__":
     """
 
     # Test with molecule hover (smiles column)
+    """
     from workbench.api import FeatureSet
 
     fs = FeatureSet("aqsol_features")
     mol_df = fs.pull_dataframe()[:1000]  # Limit to 1000 rows for testing
+    """
+
+    # Build alignment data
+    from workbench.utils.test_data_generator import TestDataGenerator
+    from workbench.algorithms.dataframe.dataset_alignment import DatasetAlignment
+    ref_df, query_df = TestDataGenerator().aqsol_alignment_data(overlap="medium", alignment="high")
+    da = DatasetAlignment(ref_df, query_df, target_column="solubility")
+
 
     # Run the Unit Test with molecule data (hover over points to see molecule structures)
     PluginUnitTest(
         ScatterPlot,
-        input_data=mol_df,
-        theme="midnight_blue",
+        input_data=da.dataset_alignment_results(),
         suppress_hover_display=True,
     ).run()
