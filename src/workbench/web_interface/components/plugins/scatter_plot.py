@@ -270,8 +270,9 @@ class ScatterPlot(PluginInterface):
         """
 
         # Sort by color column so high-value points render on top (drawn last)
+        # NaNs sort first so they're drawn in the background
         if pd.api.types.is_numeric_dtype(df[color_col]):
-            df = df.sort_values(color_col, ascending=True).reset_index(drop=True)
+            df = df.sort_values(color_col, ascending=True, na_position="first").reset_index(drop=True)
 
         # Compute marker sizes based on aggregation count (if present)
         if "aggregation_count" in df.columns:
