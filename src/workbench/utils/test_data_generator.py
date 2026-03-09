@@ -222,7 +222,7 @@ class TestDataGenerator:
         return reference_df, query_df
 
     def _load_aqsol_partition(self, partition: str) -> pd.DataFrame:
-        """Load an AQSol alignment partition from S3, with local caching.
+        """Load an AQSol alignment partition from S3.
 
         Args:
             partition (str): Partition name (e.g., "base", "high_overlap")
@@ -230,18 +230,9 @@ class TestDataGenerator:
         Returns:
             pd.DataFrame: The partition data with real SMILES, features, and targets
         """
-        cache_dir = os.path.join(tempfile.gettempdir(), "aqsol_alignment")
-        os.makedirs(cache_dir, exist_ok=True)
-        cache_path = os.path.join(cache_dir, f"aqsol_{partition}.csv")
-
-        if os.path.exists(cache_path):
-            return pd.read_csv(cache_path)
-
         s3_path = f"{self._ALIGNMENT_S3_PREFIX}/aqsol_{partition}.csv"
         self.log.info(f"Loading {partition} partition from {s3_path}")
-        df = wr.s3.read_csv(s3_path)
-        df.to_csv(cache_path, index=False)
-        return df
+        return wr.s3.read_csv(s3_path)
 
     @staticmethod
     def _synthesize_alignment(df: pd.DataFrame, alignment: str) -> pd.DataFrame:
