@@ -1,7 +1,8 @@
 """Partition AQSol data into overlap-based subsets for DatasetAlignment testing.
 
-Uses Workbench's FingerprintProximity to compute Tanimoto similarities and creates
-four subsets based on chemical space overlap:
+Uses a combined FingerprintProximity model (count fingerprints + Ruzicka distance)
+to compute cross-dataset Tanimoto similarities — the same metric that DatasetAlignment
+uses at runtime. Creates four subsets based on chemical space overlap:
 
     - base: 40% of compounds (the "reference" dataset)
     - high_overlap: 20% with highest max-Tanimoto to base
@@ -24,7 +25,7 @@ import logging
 
 import awswrangler as wr
 import numpy as np
-
+import pandas as pd
 
 from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
 
@@ -58,20 +59,41 @@ def main():
 
     log.info(f"Base set: {len(df_base)} compounds, Pool: {len(df_pool)} compounds")
 
-    # Build FingerprintProximity on base set
-    log.info("Building FingerprintProximity on base set...")
-    prox = FingerprintProximity(df_base, id_column="id")
+    # Combine base + pool with a dataset column (same approach as DatasetAlignment)
+    df_base_tagged = df_base.copy()
+    df_pool_tagged = df_pool.copy()
+    df_base_tagged["dataset"] = "base"
+    df_pool_tagged["dataset"] = "pool"
+    df_combined = pd.concat([df_base_tagged, df_pool_tagged], ignore_index=True)
 
-    # Query pool compounds against the base to get 1-NN similarities
-    log.info("Computing nearest-neighbor similarities (pool → base)...")
-    pool_smiles = df_pool["smiles"].tolist()
-    neighbors_df = prox.neighbors_from_smiles(pool_smiles, n_neighbors=1)
+    # Build ONE FingerprintProximity on combined data (count fingerprints + Ruzicka)
+    # This ensures similarity values match what DatasetAlignment computes at runtime
+    log.info("Building FingerprintProximity on combined data (count fingerprints)...")
+    prox = FingerprintProximity(df_combined, id_column="id", include_all_columns=True)
 
-    # Extract max similarity per pool compound (1-NN similarity)
-    max_sims = neighbors_df.groupby("query_id")["similarity"].max().reindex(pool_smiles, fill_value=0.0).values
+    # Drop any pool compounds that were removed during fingerprint computation (bad SMILES)
+    valid_ids = set(prox.df["id"])
+    dropped = set(df_pool["id"]) - valid_ids
+    if dropped:
+        log.info(f"Dropped {len(dropped)} pool compounds with invalid SMILES: {dropped}")
+        df_pool = df_pool[df_pool["id"].isin(valid_ids)].reset_index(drop=True)
+
+    # For each pool compound, find its best base neighbor
+    log.info("Computing cross-dataset 1-NN similarities (pool → base)...")
+    pool_ids = df_pool["id"].tolist()
+    neighbors_df = prox.neighbors(pool_ids, n_neighbors=20)
+
+    # Filter to base-only neighbors
+    dataset_lookup = prox.df.set_index("id")["dataset"]
+    neighbors_df["neighbor_dataset"] = neighbors_df["neighbor_id"].map(dataset_lookup)
+    base_neighbors = neighbors_df[neighbors_df["neighbor_dataset"] == "base"]
+
+    # Extract max similarity per pool compound (1-NN similarity to base)
+    max_sims = base_neighbors.groupby("id")["similarity"].max()
+    pool_sims = max_sims.reindex(pool_ids, fill_value=0.0).values
 
     # Sort pool by similarity and split into thirds (~20% each of total)
-    sorted_order = np.argsort(max_sims)
+    sorted_order = np.argsort(pool_sims)
     n_pool = len(sorted_order)
     third = n_pool // 3
 
@@ -79,22 +101,22 @@ def main():
     df_medium = df_pool.iloc[sorted_order[third : 2 * third]].reset_index(drop=True)
     df_high = df_pool.iloc[sorted_order[2 * third :]].reset_index(drop=True)
 
-    # Add the max-Tanimoto column to query sets (useful for validation)
-    df_low["max_tanimoto_to_base"] = max_sims[sorted_order[:third]]
-    df_medium["max_tanimoto_to_base"] = max_sims[sorted_order[third : 2 * third]]
-    df_high["max_tanimoto_to_base"] = max_sims[sorted_order[2 * third :]]
+    # Similarity arrays for summary stats (not stored on DataFrames)
+    sims_low = pool_sims[sorted_order[:third]]
+    sims_medium = pool_sims[sorted_order[third : 2 * third]]
+    sims_high = pool_sims[sorted_order[2 * third :]]
 
     # Print summary
     log.info("\n" + "=" * 70)
     log.info("PARTITION SUMMARY")
     log.info("=" * 70)
     log.info(f"  Base:           {len(df_base):>5} compounds")
-    for name, subset in [("High overlap", df_high), ("Medium overlap", df_medium), ("Low overlap", df_low)]:
-        sims = subset["max_tanimoto_to_base"]
+    for name, sims in [("High overlap", sims_high), ("Medium overlap", sims_medium), ("Low overlap", sims_low)]:
+        above_06 = (sims >= 0.6).sum()
         log.info(
-            f"  {name:>15}: {len(subset):>5} compounds  "
-            f"(max_tanimoto: {sims.min():.3f} – {sims.max():.3f}, "
-            f"mean={sims.mean():.3f})"
+            f"  {name:>15}: {len(sims):>5} compounds  "
+            f"(tanimoto: {sims.min():.3f} – {sims.max():.3f}, "
+            f"mean={sims.mean():.3f}, ≥0.6: {above_06})"
         )
     log.info("=" * 70)
 
