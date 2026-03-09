@@ -5179,7 +5179,7 @@ can be viewed and explored within the Workbench Dashboard UI.</p>
 </span><span id="__span-0-172"><a id="__codelineno-0-172" name="__codelineno-0-172"></a>        <span class="n">fingerprint_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-173"><a id="__codelineno-0-173" name="__codelineno-0-173"></a>        <span class="n">include_all_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span id="__span-0-174"><a id="__codelineno-0-174" name="__codelineno-0-174"></a>        <span class="n">radius</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a>        <span class="n">n_bits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span>
+</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a>        <span class="n">n_bits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2048</span><span class="p">,</span>
 </span><span id="__span-0-176"><a id="__codelineno-0-176" name="__codelineno-0-176"></a>        <span class="n">counts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span id="__span-0-177"><a id="__codelineno-0-177" name="__codelineno-0-177"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;FingerprintProximity&quot;</span><span class="p">:</span>  <span class="c1"># noqa: F821</span>
 </span><span id="__span-0-178"><a id="__codelineno-0-178" name="__codelineno-0-178"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a local FingerprintProximity Model for this FeatureSet</span>
@@ -5190,7 +5190,7 @@ can be viewed and explored within the Workbench Dashboard UI.</p>
 </span><span id="__span-0-183"><a id="__codelineno-0-183" name="__codelineno-0-183"></a><span class="sd">                                     column or computes from SMILES column.</span>
 </span><span id="__span-0-184"><a id="__codelineno-0-184" name="__codelineno-0-184"></a><span class="sd">           include_all_columns (bool): Include all DataFrame columns in results (default: False)</span>
 </span><span id="__span-0-185"><a id="__codelineno-0-185" name="__codelineno-0-185"></a><span class="sd">           radius (int): Radius for Morgan fingerprint computation (default: 2)</span>
-</span><span id="__span-0-186"><a id="__codelineno-0-186" name="__codelineno-0-186"></a><span class="sd">           n_bits (int): Number of bits for fingerprint (default: 1024)</span>
+</span><span id="__span-0-186"><a id="__codelineno-0-186" name="__codelineno-0-186"></a><span class="sd">           n_bits (int): Number of bits for fingerprint (default: 2048)</span>
 </span><span id="__span-0-187"><a id="__codelineno-0-187" name="__codelineno-0-187"></a><span class="sd">           counts (bool): Whether to use count simulation (default: False)</span>
 </span><span id="__span-0-188"><a id="__codelineno-0-188" name="__codelineno-0-188"></a>
 </span><span id="__span-0-189"><a id="__codelineno-0-189" name="__codelineno-0-189"></a><span class="sd">        Returns:</span>
@@ -5479,7 +5479,7 @@ can be viewed and explored within the Workbench Dashboard UI.</p>
 
 
 <h3 id="workbench.api.feature_set.FeatureSet.fp_prox_model" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">fp_prox_model</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">fingerprint_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_all_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_bits</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">counts</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">fp_prox_model</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">fingerprint_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_all_columns</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_bits</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span> <span class="n">counts</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 </h3>
 
@@ -5574,11 +5574,11 @@ can be viewed and explored within the Workbench Dashboard UI.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Number of bits for fingerprint (default: 1024)</p>
+                <p>Number of bits for fingerprint (default: 2048)</p>
               </div>
             </td>
             <td>
-                  <code>1024</code>
+                  <code>2048</code>
             </td>
           </tr>
           <tr class="doc-section-item">
@@ -5669,7 +5669,7 @@ can be viewed and explored within the Workbench Dashboard UI.</p>
 </span><span id="__span-0-172"><a id="__codelineno-0-172" name="__codelineno-0-172"></a>    <span class="n">fingerprint_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-173"><a id="__codelineno-0-173" name="__codelineno-0-173"></a>    <span class="n">include_all_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span id="__span-0-174"><a id="__codelineno-0-174" name="__codelineno-0-174"></a>    <span class="n">radius</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
-</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a>    <span class="n">n_bits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span>
+</span><span id="__span-0-175"><a id="__codelineno-0-175" name="__codelineno-0-175"></a>    <span class="n">n_bits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2048</span><span class="p">,</span>
 </span><span id="__span-0-176"><a id="__codelineno-0-176" name="__codelineno-0-176"></a>    <span class="n">counts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span id="__span-0-177"><a id="__codelineno-0-177" name="__codelineno-0-177"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;FingerprintProximity&quot;</span><span class="p">:</span>  <span class="c1"># noqa: F821</span>
 </span><span id="__span-0-178"><a id="__codelineno-0-178" name="__codelineno-0-178"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a local FingerprintProximity Model for this FeatureSet</span>
@@ -5680,7 +5680,7 @@ can be viewed and explored within the Workbench Dashboard UI.</p>
 </span><span id="__span-0-183"><a id="__codelineno-0-183" name="__codelineno-0-183"></a><span class="sd">                                 column or computes from SMILES column.</span>
 </span><span id="__span-0-184"><a id="__codelineno-0-184" name="__codelineno-0-184"></a><span class="sd">       include_all_columns (bool): Include all DataFrame columns in results (default: False)</span>
 </span><span id="__span-0-185"><a id="__codelineno-0-185" name="__codelineno-0-185"></a><span class="sd">       radius (int): Radius for Morgan fingerprint computation (default: 2)</span>
-</span><span id="__span-0-186"><a id="__codelineno-0-186" name="__codelineno-0-186"></a><span class="sd">       n_bits (int): Number of bits for fingerprint (default: 1024)</span>
+</span><span id="__span-0-186"><a id="__codelineno-0-186" name="__codelineno-0-186"></a><span class="sd">       n_bits (int): Number of bits for fingerprint (default: 2048)</span>
 </span><span id="__span-0-187"><a id="__codelineno-0-187" name="__codelineno-0-187"></a><span class="sd">       counts (bool): Whether to use count simulation (default: False)</span>
 </span><span id="__span-0-188"><a id="__codelineno-0-188" name="__codelineno-0-188"></a>
 </span><span id="__span-0-189"><a id="__codelineno-0-189" name="__codelineno-0-189"></a><span class="sd">    Returns:</span>
