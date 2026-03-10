@@ -57,7 +57,7 @@ if __name__ == "__main__":
     from workbench.algorithms.dataframe.dataset_alignment import DatasetAlignment
 
     # Build alignment data
-    # ref_df, query_df = TestDataGenerator().aqsol_alignment_data(overlap="medium", alignment="high")
+    ref_df, query_df = TestDataGenerator().aqsol_alignment_data(overlap="medium", alignment="high")
     # da = DatasetAlignment(ref_df, query_df, target_column="solubility", id_column="id")
 
     # Temp test
