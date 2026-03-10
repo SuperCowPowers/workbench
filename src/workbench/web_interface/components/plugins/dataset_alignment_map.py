@@ -57,17 +57,17 @@ if __name__ == "__main__":
     from workbench.algorithms.dataframe.dataset_alignment import DatasetAlignment
 
     # Build alignment data
-    ref_df, query_df = TestDataGenerator().aqsol_alignment_data(overlap="medium", alignment="high")
+    # ref_df, query_df = TestDataGenerator().aqsol_alignment_data(overlap="medium", alignment="high")
     # da = DatasetAlignment(ref_df, query_df, target_column="solubility", id_column="id")
 
     # Temp test
-    fs = FeatureSet("caco2_pappab_reg_1")
+    fs = FeatureSet("logd_value_reg_1")
     df = fs.pull_dataframe()
     id_col = "udm_mol_bat_id"
     is_doi = df["udm_asy_protocol"] == "DOI"
     ref_df = df[~is_doi]
     query_df = df[is_doi]
-    target = "udm_asy_res_pappa_b_10_6_cm_per_s"
+    target = "udm_asy_res_value"
     da = DatasetAlignment(ref_df, query_df, target_column=target, id_column=id_col)
 
     # Run the plugin unit test with the unified DataFrame

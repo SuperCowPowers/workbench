@@ -9,6 +9,7 @@ Usage:
     ml_pipeline_launcher --dt --all              # Launch ALL pipelines
     ml_pipeline_launcher --dt caco2              # Launch pipelines matching 'caco2'
     ml_pipeline_launcher --dt caco2 ppb          # Launch pipelines matching 'caco2' or 'ppb'
+    ml_pipeline_launcher caco2_er_reg            # Launch single matching script (defaults to --dt)
     ml_pipeline_launcher --promote --all         # Promote ALL pipelines
     ml_pipeline_launcher --test-promote --all    # Test-promote ALL pipelines
     ml_pipeline_launcher --ts --all              # Temporal split ALL pipelines
@@ -25,12 +26,23 @@ import re
 import subprocess
 import sys
 import time
+from dataclasses import dataclass, field
 from pathlib import Path
 
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 
 MODES = ["dt", "promote", "test_promote", "ts"]
+
+
+@dataclass
+class RunPlan:
+    """Execution plan produced by sort_pipelines()."""
+
+    runs: list[tuple[Path, str]] = field(default_factory=list)
+    group_ids: dict[tuple[Path, str], str | None] = field(default_factory=dict)
+    display_lines: list[str] = field(default_factory=list)
+    deps: dict[tuple[Path, str], dict] = field(default_factory=dict)
 
 
 def parse_script_name(script_path: Path) -> tuple[str, str | None]:
@@ -117,7 +129,7 @@ def sort_pipelines(
     pipelines: list[Path],
     all_dags: dict[str, list[dict[Path, list[str]]]],
     mode_override: str | None = None,
-) -> tuple[list[tuple[Path, str]], dict[tuple[Path, str], str | None], list[str], dict]:
+) -> RunPlan:
     """Sort pipelines by DAG stages with per-script modes.
 
     Scripts defined in a pipelines.json DAG are ordered by stage. Standalone
@@ -130,17 +142,10 @@ def sort_pipelines(
         mode_override (str | None): If set, overrides all JSON modes (from CLI flags)
 
     Returns:
-        tuple: (sorted_runs, group_id_map, dag_lines, deps_map)
-            - sorted_runs: List of (script_path, mode) tuples in execution order
-            - group_id_map: {(script_path, mode): sqs_message_group_id}
-            - dag_lines: Formatted display lines
-            - deps_map: {(script_path, mode): {"outputs": list, "inputs": list}}
+        RunPlan: Execution plan with runs, group IDs, display lines, and dependencies
     """
     pipeline_set = set(pipelines)
-    sorted_runs = []
-    group_id_map = {}
-    deps_map = {}
-    dag_lines = []
+    plan = RunPlan()
     found_in_dag = set()
 
     for dag_name, stages in all_dags.items():
@@ -157,25 +162,26 @@ def sort_pipelines(
                 dag_has_runs = True
                 for mode in ([mode_override] if mode_override else modes):
                     run = (script, mode)
-                    sorted_runs.append(run)
-                    group_id_map[run] = dag_name
-                    deps_map[run] = {"outputs": outputs, "inputs": inputs}
+                    plan.runs.append(run)
+                    plan.group_ids[run] = dag_name
+                    plan.deps[run] = {"outputs": outputs, "inputs": inputs}
                     stage_parts.append(f"{script.stem}:{mode}")
             if stage_parts:
                 dag_stage_lines.append(" | ".join(stage_parts))
         if dag_has_runs:
-            dag_lines.append("   " + " --> ".join(dag_stage_lines))
+            plan.display_lines.append("   " + " --> ".join(dag_stage_lines))
 
     # Handle standalone scripts (not in any DAG)
-    standalone = [p for p in pipelines if p not in found_in_dag]
-    for script in standalone:
+    for script in pipelines:
+        if script in found_in_dag:
+            continue
         run = (script, mode_override)
-        sorted_runs.append(run)
-        group_id_map[run] = None
-        deps_map[run] = {"outputs": [], "inputs": []}
-        dag_lines.append(f"   {script.stem}:{mode_override} (standalone)")
+        plan.runs.append(run)
+        plan.group_ids[run] = None
+        plan.deps[run] = {"outputs": [], "inputs": []}
+        plan.display_lines.append(f"   {script.stem}:{mode_override} (standalone)")
 
-    return sorted_runs, group_id_map, dag_lines, deps_map
+    return plan
 
 
 def get_all_pipelines() -> tuple[list[Path], dict[str, list[dict[Path, list[str]]]]]:
@@ -237,14 +243,149 @@ def select_random_groups(pipelines: list[Path], num_groups: int) -> list[Path]:
 
 
 def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> list[Path]:
-    """Filter pipelines by substring patterns matching the basename."""
+    """Filter pipelines by substring patterns matching the basename.
+
+    Patterns are case-insensitive and .py extensions are stripped so that
+    both 'caco2' and 'caco2_er_reg_open_admet.py' work as expected.
+    """
     if not patterns:
         return pipelines
-    patterns_lower = [p.lower() for p in patterns]
+    # Strip .py extension from patterns so "script.py" matches the stem "script"
+    patterns_lower = [p.lower().removesuffix(".py") for p in patterns]
     return [p for p in pipelines if any(pat in p.stem.lower() for pat in patterns_lower)]
 
 
-def main():
+def get_dag_scripts(all_dags: dict) -> set[Path]:
+    """Get the set of all scripts referenced in DAG definitions."""
+    scripts = set()
+    for stages in all_dags.values():
+        for stage in stages:
+            scripts.update(stage.keys())
+    return scripts
+
+
+def select_pipelines(all_pipelines: list[Path], args: argparse.Namespace) -> tuple[list[Path], str]:
+    """Select which pipelines to run based on CLI args.
+
+    Returns:
+        tuple[list[Path], str]: (selected_pipelines, human-readable selection description)
+    """
+    if args.patterns:
+        selected = filter_pipelines_by_patterns(all_pipelines, args.patterns)
+        if not selected:
+            print(f"No pipelines matching patterns: {args.patterns}")
+            exit(1)
+        return selected, f"matching {args.patterns}"
+
+    if args.all:
+        return all_pipelines, "ALL"
+
+    selected = select_random_groups(all_pipelines, args.num_groups)
+    if not selected:
+        print("No pipeline groups found")
+        exit(1)
+    group_names = [d.name for d in get_pipeline_groups(selected)]
+    return selected, f"RANDOM {args.num_groups} group(s): {group_names}"
+
+
+def resolve_mode(args: argparse.Namespace, selected: list[Path], all_dags: dict) -> str | None:
+    """Determine the execution mode from CLI flags, with auto-default for single scripts.
+
+    Returns:
+        str | None: Mode name (e.g., "dt") or None to use pipelines.json defaults
+    """
+    # Check explicit CLI flags first
+    for mode_name in MODES:
+        if getattr(args, mode_name, False):
+            return mode_name
+
+    # Check if standalone scripts need a mode
+    standalone = [p for p in selected if p not in get_dag_scripts(all_dags)]
+    if not standalone:
+        return None
+
+    # Single script match: default to --dt mode for convenience
+    if len(selected) == 1:
+        print(f"\nSingle script match, defaulting to --dt mode: {selected[0].name}")
+        return "dt"
+
+    print("\nStandalone scripts (no pipelines.json) require a mode flag (--dt, --promote, --test-promote, --ts):")
+    for p in standalone:
+        print(f"   {p.name}")
+    exit(1)
+
+
+def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: argparse.Namespace):
+    """Print the launch summary banner."""
+    mode_display = mode.upper() if mode else "JSON defaults"
+    prefix = "DRY RUN - " if args.dry_run else ""
+
+    print(f"\n{'=' * 60}")
+    print(f"{prefix}LAUNCHING {len(plan.runs)} PIPELINE RUNS")
+    print(f"{'=' * 60}")
+    print(f"Source: {Path.cwd()}")
+    print(f"Selection: {selection_desc}")
+    print(f"Mode: {mode_display}")
+    print(f"Execution: {'Local' if args.local else 'SQS → Batch'}")
+    print(f"Endpoint: {'Realtime' if args.realtime else 'Serverless'}")
+    print("\nPipeline DAGs:")
+    for line in plan.display_lines:
+        print(line)
+    print()
+
+
+def run_pipelines(plan: RunPlan, args: argparse.Namespace):
+    """Execute all pipeline runs (local or SQS)."""
+    serverless = not args.realtime
+
+    # Countdown before launching (skip for local runs)
+    if not args.local:
+        print("Launching in ", end="", flush=True)
+        for i in range(10, 0, -1):
+            print(f"{i}...", end="", flush=True)
+            time.sleep(1)
+        print(" GO!\n")
+
+    for i, (script, mode) in enumerate(plan.runs, 1):
+        print(f"\n{'─' * 60}")
+        print(f"{'Running' if args.local else 'Launching'} run {i}/{len(plan.runs)}: {script.name} ({mode})")
+
+        pipeline_meta = build_pipeline_meta(script, mode, serverless)
+
+        if args.local:
+            env = os.environ.copy()
+            env["PIPELINE_META"] = pipeline_meta
+            cmd = [sys.executable, str(script)]
+            print(f"with ENV: PIPELINE_META='{pipeline_meta}'")
+            print(f"{'─' * 60}\n")
+            result = subprocess.run(cmd, env=env)
+        else:
+            cmd = ["ml_pipeline_sqs", str(script), f"--{mode.replace('_', '-')}"]
+            if args.realtime:
+                cmd.append("--realtime")
+            cmd.extend(["--pipeline-meta", pipeline_meta])
+            group_id = plan.group_ids.get((script, mode))
+            if group_id:
+                cmd.extend(["--group-id", group_id])
+            deps = plan.deps.get((script, mode), {})
+            if deps.get("outputs"):
+                cmd.extend(["--outputs", ",".join(deps["outputs"])])
+            if deps.get("inputs"):
+                cmd.extend(["--inputs", ",".join(deps["inputs"])])
+            print(f"{'─' * 60}")
+            print(f"Running: {' '.join(cmd)}\n")
+            result = subprocess.run(cmd)
+
+        if result.returncode != 0:
+            print(f"Failed to launch {script.name} (exit code: {result.returncode})")
+
+    print(f"\n{'=' * 60}")
+    print(f"FINISHED LAUNCHING {len(plan.runs)} PIPELINE RUNS")
+    print(f"{'=' * 60}\n")
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Launch ML pipelines via SQS or locally")
     parser.add_argument(
         "patterns",
@@ -274,129 +415,44 @@ def main():
     mode_group.add_argument("--test-promote", action="store_true", help="Override all scripts to TEST_PROMOTE mode")
     mode_group.add_argument("--ts", action="store_true", help="Override all scripts to temporal split evaluation mode")
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    # Get all pipelines and DAG definitions from subdirectories
+
+def main():
+    args = parse_args()
+
+    # Discover all pipelines and DAG definitions
     all_pipelines, all_dags = get_all_pipelines()
     if not all_pipelines:
         print(f"No pipeline scripts found in subdirectories of {Path.cwd()}")
         exit(1)
 
-    # Determine which pipelines to run
-    if args.patterns:
-        selected_pipelines = filter_pipelines_by_patterns(all_pipelines, args.patterns)
-        if not selected_pipelines:
-            print(f"No pipelines matching patterns: {args.patterns}")
-            exit(1)
-        selection_mode = f"matching {args.patterns}"
-    elif args.all:
-        selected_pipelines = all_pipelines
-        selection_mode = "ALL"
-    else:
-        selected_pipelines = select_random_groups(all_pipelines, args.num_groups)
-        if not selected_pipelines:
-            print("No pipeline groups found")
-            exit(1)
-        group_names = [d.name for d in get_pipeline_groups(selected_pipelines)]
-        selection_mode = f"RANDOM {args.num_groups} group(s): {group_names}"
+    # Select which pipelines to run
+    selected, selection_desc = select_pipelines(all_pipelines, args)
 
-    # Determine mode override from CLI (None means use pipelines.json defaults)
-    mode_override = None
-    for mode_name in MODES:
-        if getattr(args, mode_name, False):
-            mode_override = mode_name
-            break
-
-    # Check if any selected pipelines are standalone (not in any DAG)
-    dag_scripts = set()
-    for stages in all_dags.values():
-        for stage in stages:
-            dag_scripts.update(stage.keys())
-    standalone = [p for p in selected_pipelines if p not in dag_scripts]
-    if standalone and mode_override is None:
-        print("\nStandalone scripts (no pipelines.json) require a mode flag (--dt, --promote, --test-promote, --ts):")
-        for p in standalone:
-            print(f"   {p.name}")
-        exit(1)
-
-    # Sort by DAG stages (with mode override if CLI flag set)
-    sorted_runs, group_id_map, dag_lines, deps_map = sort_pipelines(selected_pipelines, all_dags, mode_override)
-
-    # Local mode only supports a single script
-    if args.local and len(selected_pipelines) > 1:
-        print(f"\n--local only supports a single script, but {len(selected_pipelines)} matched:")
-        for p in selected_pipelines:
+    # Validate --local before doing more work
+    if args.local and len(selected) > 1:
+        print(f"\n--local only supports a single script, but {len(selected)} matched:")
+        for p in selected:
             print(f"   {p.name}")
         print("\nNarrow your selection to a single script.")
         exit(1)
 
-    mode_name = mode_override.upper() if mode_override else "JSON defaults"
+    # Resolve execution mode
+    mode = resolve_mode(args, selected, all_dags)
 
-    print(f"\n{'=' * 60}")
-    print(f"{'DRY RUN - ' if args.dry_run else ''}LAUNCHING {len(sorted_runs)} PIPELINE RUNS")
-    print(f"{'=' * 60}")
-    print(f"Source: {Path.cwd()}")
-    print(f"Selection: {selection_mode}")
-    print(f"Mode: {mode_name}")
-    print(f"Execution: {'Local' if args.local else 'SQS → Batch'}")
-    print(f"Endpoint: {'Realtime' if args.realtime else 'Serverless'}")
-    print("\nPipeline DAGs:")
-    for line in dag_lines:
-        print(line)
-    print()
+    # Build execution plan
+    plan = sort_pipelines(selected, all_dags, mode)
 
-    # Dry run - just show what would be launched
+    # Display summary
+    print_summary(plan, selection_desc, mode, args)
+
+    # Execute (unless dry run)
     if args.dry_run:
         print("Dry run complete. No pipelines were launched.\n")
         return
 
-    # Countdown before launching (skip for local runs)
-    if not args.local:
-        print("Launching in ", end="", flush=True)
-        for i in range(10, 0, -1):
-            print(f"{i}...", end="", flush=True)
-            time.sleep(1)
-        print(" GO!\n")
-
-    # Launch each pipeline run
-    for i, (script, mode) in enumerate(sorted_runs, 1):
-        print(f"\n{'─' * 60}")
-        print(f"{'Running' if args.local else 'Launching'} run {i}/{len(sorted_runs)}: {script.name} ({mode})")
-
-        # Build per-script PIPELINE_META with resolved names
-        pipeline_meta = build_pipeline_meta(script, mode, not args.realtime)
-
-        if args.local:
-            env = os.environ.copy()
-            env["PIPELINE_META"] = pipeline_meta
-            cmd = [sys.executable, str(script)]
-            print(f"with ENV: PIPELINE_META='{pipeline_meta}'")
-            print(f"{'─' * 60}\n")
-            result = subprocess.run(cmd, env=env)
-        else:
-            run_mode_flag = f"--{mode.replace('_', '-')}"
-            cmd = ["ml_pipeline_sqs", str(script), run_mode_flag]
-            if args.realtime:
-                cmd.append("--realtime")
-            cmd.extend(["--pipeline-meta", pipeline_meta])
-            group_id = group_id_map.get((script, mode))
-            if group_id:
-                cmd.extend(["--group-id", group_id])
-            deps = deps_map.get((script, mode), {})
-            if deps.get("outputs"):
-                cmd.extend(["--outputs", ",".join(deps["outputs"])])
-            if deps.get("inputs"):
-                cmd.extend(["--inputs", ",".join(deps["inputs"])])
-            print(f"{'─' * 60}")
-            print(f"Running: {' '.join(cmd)}\n")
-            result = subprocess.run(cmd)
-
-        if result.returncode != 0:
-            print(f"Failed to launch {script.name} (exit code: {result.returncode})")
-
-    print(f"\n{'=' * 60}")
-    print(f"FINISHED LAUNCHING {len(sorted_runs)} PIPELINE RUNS")
-    print(f"{'=' * 60}\n")
+    run_pipelines(plan, args)
 
 
 if __name__ == "__main__":
