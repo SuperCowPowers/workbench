@@ -86,6 +86,15 @@ class WorkbenchDashboardStack(Stack):
             subnet_ids=[subnet.subnet_id for subnet in cluster.vpc.private_subnets],
         )
 
+        # Create a Redis parameter group with allkeys-lru eviction policy
+        redis_parameter_group = elasticache.CfnParameterGroup(
+            self,
+            "RedisParameterGroup",
+            cache_parameter_group_family="redis7",
+            description="Workbench Redis parameter group with allkeys-lru eviction",
+            properties={"maxmemory-policy": "allkeys-lru"},
+        )
+
         # Create the Redis cluster
         redis_cluster = elasticache.CfnCacheCluster(
             self,
@@ -95,6 +104,7 @@ class WorkbenchDashboardStack(Stack):
             num_cache_nodes=1,
             cluster_name="WorkbenchRedis",
             cache_subnet_group_name=redis_subnet_group.ref,
+            cache_parameter_group_name=redis_parameter_group.ref,
             vpc_security_group_ids=[redis_security_group.security_group_id],
         )
 
