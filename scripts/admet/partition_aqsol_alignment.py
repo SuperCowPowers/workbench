@@ -5,9 +5,12 @@ to compute cross-dataset Tanimoto similarities — the same metric that DatasetC
 uses at runtime. Creates four subsets based on chemical space overlap:
 
     - base: 40% of compounds (the "reference" dataset)
-    - high_overlap: 20% with highest max-Tanimoto to base
-    - medium_overlap: 20% with moderate max-Tanimoto to base
-    - low_overlap: 20% with lowest max-Tanimoto to base
+    - high_overlap: all pool compounds (sim 0–1.0, realistic mix)
+    - medium_overlap: pool compounds with sim <= 0.6 (novel + moderate)
+    - low_overlap: pool compounds with sim <= 0.35 (truly novel only)
+
+Each overlap level is a cumulative range — higher levels are supersets of lower ones.
+This mirrors real-world scenarios where even high-overlap datasets contain some novel compounds.
 
 The max-Tanimoto for each pool compound is the highest Tanimoto similarity to
 ANY compound in the base set — this measures how well "covered" each compound
@@ -35,6 +38,10 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 S3_SOURCE = "s3://workbench-public-data/comp_chem/aqsol_public_data.csv"
 S3_DEST = "s3://workbench-public-data/comp_chem/aqsol_alignment"
 
+# Cumulative similarity thresholds for overlap partitions
+LOW_THRESHOLD = 0.35
+MEDIUM_THRESHOLD = 0.6
+
 
 def main():
     parser = argparse.ArgumentParser(description="Partition AQSol data for alignment testing")
@@ -48,7 +55,7 @@ def main():
     df.columns = df.columns.str.lower()
     log.info(f"Loaded {len(df)} compounds")
 
-    # Random split: 40% base, 60% candidate pool (split into 20% high/medium/low overlap)
+    # Random split: 40% base, 60% candidate pool
     np.random.seed(args.seed)
     n = len(df)
     n_base = int(n * 0.4)
@@ -71,6 +78,36 @@ def main():
     log.info("Building FingerprintProximity on combined data (count fingerprints)...")
     prox = FingerprintProximity(df_combined, id_column="id", include_all_columns=True)
 
+    # Iteratively smooth solubility using fingerprint-based neighbors.
+    # This creates a clean SAR landscape for test data where structurally similar compounds
+    # have similar targets, so synthetic alignment perturbation dominates.
+    # Multiple passes aggressively flatten the natural SAR noise.
+    all_ids = prox.df["id"].tolist()
+    original_std = prox.df["solubility"].std()
+    n_passes = 5
+    k_smooth = 50
+    log.info(f"Smoothing solubility: {n_passes} passes, k={k_smooth} fingerprint neighbors...")
+
+    for i in range(n_passes):
+        nbrs = prox.neighbors(all_ids, n_neighbors=k_smooth)
+        # Weighted mean: use similarity as weight (higher sim = more influence)
+        nbrs["weighted_target"] = nbrs["solubility"] * nbrs["similarity"]
+        smoothed = nbrs.groupby("id").agg(
+            weighted_sum=("weighted_target", "sum"),
+            weight_total=("similarity", "sum"),
+        )
+        smoothed["solubility_smooth"] = smoothed["weighted_sum"] / smoothed["weight_total"]
+
+        # Apply smoothed values back to prox.df (used by next iteration's neighbors call)
+        smooth_lookup = smoothed["solubility_smooth"]
+        prox.df["solubility"] = prox.df["id"].map(smooth_lookup)
+        log.info(f"  Pass {i + 1}: std={prox.df['solubility'].std():.3f}")
+
+    # Apply final smoothed values to the partition DataFrames
+    df_base["solubility"] = df_base["id"].map(smooth_lookup)
+    df_pool["solubility"] = df_pool["id"].map(smooth_lookup)
+    log.info(f"Smoothed solubility: std={prox.df['solubility'].std():.3f} (was {original_std:.3f})")
+
     # Drop any pool compounds that were removed during fingerprint computation (bad SMILES)
     valid_ids = set(prox.df["id"])
     dropped = set(df_pool["id"]) - valid_ids
@@ -92,41 +129,47 @@ def main():
     max_sims = base_neighbors.groupby("id")["similarity"].max()
     pool_sims = max_sims.reindex(pool_ids, fill_value=0.0).values
 
-    # Sort pool by similarity and split into thirds (~20% each of total)
-    sorted_order = np.argsort(pool_sims)
-    n_pool = len(sorted_order)
-    third = n_pool // 3
+    # Cumulative threshold partitions (each higher level is a superset)
+    low_mask = pool_sims <= LOW_THRESHOLD
+    medium_mask = pool_sims <= MEDIUM_THRESHOLD
+    # high = all pool compounds (no filter)
 
-    df_low = df_pool.iloc[sorted_order[:third]].reset_index(drop=True)
-    df_medium = df_pool.iloc[sorted_order[third : 2 * third]].reset_index(drop=True)
-    df_high = df_pool.iloc[sorted_order[2 * third :]].reset_index(drop=True)
+    df_low = df_pool[low_mask].reset_index(drop=True)
+    df_medium = df_pool[medium_mask].reset_index(drop=True)
+    df_high = df_pool.reset_index(drop=True)  # full pool
 
-    # Similarity arrays for summary stats (not stored on DataFrames)
-    sims_low = pool_sims[sorted_order[:third]]
-    sims_medium = pool_sims[sorted_order[third : 2 * third]]
-    sims_high = pool_sims[sorted_order[2 * third :]]
+    sims_low = pool_sims[low_mask]
+    sims_medium = pool_sims[medium_mask]
+    sims_high = pool_sims
 
     # Print summary
     log.info("\n" + "=" * 70)
-    log.info("PARTITION SUMMARY")
+    log.info("PARTITION SUMMARY (cumulative thresholds)")
     log.info("=" * 70)
     log.info(f"  Base:           {len(df_base):>5} compounds")
-    for name, sims in [("High overlap", sims_high), ("Medium overlap", sims_medium), ("Low overlap", sims_low)]:
-        above_06 = (sims >= 0.6).sum()
-        log.info(
-            f"  {name:>15}: {len(sims):>5} compounds  "
-            f"(tanimoto: {sims.min():.3f} – {sims.max():.3f}, "
-            f"mean={sims.mean():.3f}, ≥0.6: {above_06})"
-        )
+    for name, sims, thresh in [
+        ("Low overlap", sims_low, f"sim <= {LOW_THRESHOLD}"),
+        ("Medium overlap", sims_medium, f"sim <= {MEDIUM_THRESHOLD}"),
+        ("High overlap", sims_high, "sim <= 1.0 (all)"),
+    ]:
+        if len(sims) > 0:
+            log.info(
+                f"  {name:>15}: {len(sims):>5} compounds  "
+                f"({thresh}, range: {sims.min():.3f}–{sims.max():.3f}, mean={sims.mean():.3f})"
+            )
+        else:
+            log.info(f"  {name:>15}:     0 compounds  ({thresh})")
     log.info("=" * 70)
 
     # Solubility distribution per partition (sanity check)
     log.info("\nSolubility distributions:")
     for name, subset in [("Base", df_base), ("High", df_high), ("Medium", df_medium), ("Low", df_low)]:
-        sol = subset["solubility"]
-        log.info(
-            f"  {name:>8}: mean={sol.mean():.2f}, std={sol.std():.2f}, " f"range=[{sol.min():.2f}, {sol.max():.2f}]"
-        )
+        if len(subset) > 0:
+            sol = subset["solubility"]
+            log.info(
+                f"  {name:>8}: mean={sol.mean():.2f}, std={sol.std():.2f}, "
+                f"range=[{sol.min():.2f}, {sol.max():.2f}], n={len(subset)}"
+            )
 
     if args.dry_run:
         log.info("\n[DRY RUN] Skipping S3 upload")
