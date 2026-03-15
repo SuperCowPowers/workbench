@@ -241,12 +241,15 @@ class TestDataGenerator:
         The real solubility values are perturbed to create controlled levels of
         concept shift (target disagreement):
 
-        - **high**: Minimal perturbation (~0.1 log units noise). Datasets agree well.
+        - **high**: Minimal perturbation (~0.15 log units noise). Datasets agree well.
           Simulates the same assay with normal experimental variability.
-        - **medium**: Systematic offset (+1.0) with moderate noise (~0.5 log units).
+          Visual: mostly green on concordance map.
+        - **medium**: Systematic offset (+2.0) with moderate noise (~0.7 log units).
           Simulates inter-assay calibration differences (e.g., different protocols).
-        - **low**: Large offset (+2.0) with high noise (~1.5 log units).
+          Visual: mixture of green, yellow, and orange on concordance map.
+        - **low**: Large offset (+3.5) with high noise (~1.0 log units).
           Simulates fundamentally different assays or major data quality issues.
+          Visual: mostly orange/red on concordance map.
 
         Args:
             df (pd.DataFrame): Query DataFrame with real solubility values
@@ -262,13 +265,13 @@ class TestDataGenerator:
 
         if alignment == "high":
             # Small noise, no systematic offset — datasets agree well
-            df[target] += rng.normal(0, 0.1, n)
+            df[target] += rng.normal(0, 0.15, n)
         elif alignment == "medium":
             # Systematic offset + moderate noise — calibration differences
-            df[target] += 1.0 + rng.normal(0, 0.5, n)
+            df[target] += 2.0 + rng.normal(0, 0.7, n)
         elif alignment == "low":
             # Large offset + high noise — fundamentally different measurements
-            df[target] += 2.0 + rng.normal(0, 1.5, n)
+            df[target] += 3.5 + rng.normal(0, 1.0, n)
 
         return df
 

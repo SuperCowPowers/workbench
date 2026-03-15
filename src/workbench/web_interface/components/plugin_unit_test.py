@@ -15,7 +15,7 @@ log = logging.getLogger("workbench")
 
 
 class PluginUnitTest:
-    def __init__(self, plugin_class, theme="midnight_blue", input_data=None, auto_update=True, **kwargs):
+    def __init__(self, plugin_class, theme="midnight_blue", input_data=None, auto_update=True, height="700px", **kwargs):
         """A class to unit test a PluginInterface class.
 
         Args:
@@ -23,7 +23,8 @@ class PluginUnitTest:
             theme (str): The theme to use for the Dash app (default: "dark")
             input_data (Optional): The input data for this plugin (FeatureSet, Model, Endpoint, or DataFrame)
             auto_update (bool): Whether to automatically update the plugin properties (default: True)
-            **kwargs: Additional keyword arguments
+            height (str): The height of the plugin container (default: "700px")
+            **kwargs (dict): Additional keyword arguments
         """
         assert issubclass(
             plugin_class, PluginInterface
@@ -55,7 +56,7 @@ class PluginUnitTest:
 
         # Set up the layout
         layout_children = [
-            dbc.Row(self.component, style={"marginBottom": "20px", "height": "700px"}),
+            dbc.Row(self.component, style={"marginBottom": "20px", "height": height}),
             html.Button("Update Plugin", id="update-button", style={"marginBottom": "20px"}),
         ]
 

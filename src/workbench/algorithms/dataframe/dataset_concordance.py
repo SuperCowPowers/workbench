@@ -23,7 +23,6 @@ References:
       data integration and consistency assessment" J. Cheminform.
 """
 
-import time
 import logging
 import pandas as pd
 
@@ -191,43 +190,31 @@ class DatasetConcordance:
             pd.DataFrame: Per-query-compound concordance with columns:
                 id, tanimoto_sim, target_residual
         """
-        t0 = time.time()
-
         # Get query compound IDs and targets from the combined prox.df
         query_mask = self._prox.df["dataset"] == "query"
         query_ids = self._prox.df.loc[query_mask, self.id_column].tolist()
         query_targets = self._prox.df.loc[query_mask].set_index(self.id_column)[self.target_column]
-        log.info(f"  Setup: {time.time() - t0:.3f}s")
 
-        # Neighbor lookup (precomputed matrix — should be fast)
-        t1 = time.time()
+        # Neighbor lookup (vectorized — all query compounds in one call)
         n_neighbors = 50
         all_neighbors = self._prox.neighbors(query_ids, n_neighbors=n_neighbors)
-        log.info(f"  Neighbor lookup ({n_neighbors} neighbors, {len(query_ids)} queries): {time.time() - t1:.3f}s")
 
         # Filter to reference-only neighbors
-        t2 = time.time()
         dataset_lookup = self._prox.df.set_index(self.id_column)["dataset"]
         all_neighbors["neighbor_dataset"] = all_neighbors["neighbor_id"].map(dataset_lookup)
         ref_neighbors = all_neighbors[all_neighbors["neighbor_dataset"] == "reference"].copy()
-        log.info(f"  Filter to reference: {time.time() - t2:.3f}s ({len(ref_neighbors)} rows)")
 
         # Best Tanimoto similarity per query compound
-        t3 = time.time()
         best_sim = ref_neighbors.groupby(self.id_column)["similarity"].max()
-        log.info(f"  Best similarity groupby: {time.time() - t3:.3f}s")
 
         # Target residual: median residual from top-k reference neighbors
-        t4 = time.time()
         ref_neighbors["_rank"] = ref_neighbors.groupby(self.id_column)["similarity"].rank(
             method="first", ascending=False
         )
         top_k = ref_neighbors[ref_neighbors["_rank"] <= self.k_neighbors]
         neighbor_medians = top_k.groupby(self.id_column)[self.target_column].median()
-        log.info(f"  Rank + median groupby: {time.time() - t4:.3f}s")
 
         # Build result DataFrame
-        t5 = time.time()
         results = pd.DataFrame({self.id_column: query_ids})
         results["tanimoto_sim"] = results[self.id_column].map(best_sim).fillna(0.0)
 
@@ -235,9 +222,7 @@ class DatasetConcordance:
         q_targets = results[self.id_column].map(query_targets)
         ref_medians = results[self.id_column].map(neighbor_medians)
         results["target_residual"] = q_targets - ref_medians
-        log.info(f"  Build results: {time.time() - t5:.3f}s")
 
-        log.info(f"  Total _compute_concordance: {time.time() - t0:.3f}s")
         return results
 
 

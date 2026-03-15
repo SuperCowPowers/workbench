@@ -118,12 +118,16 @@ class FingerprintProximity(Proximity):
             # Vectorized Ruzicka distance (weighted Tanimoto for count fingerprints)
             # Uses identity: ruzicka_dist = 2*L1 / (S_a + S_b + L1)
             # where L1 = Manhattan distance, S_a/S_b = row sums
-            from scipy.spatial.distance import cdist
+            from scipy.sparse import csr_matrix
+            from sklearn.metrics import pairwise_distances
 
             log.info("Building NearestNeighbors model (vectorized Ruzicka for count fingerprints)...")
-            X_float = self.X.astype(np.float32)
-            l1_dists = cdist(X_float, X_float, metric="cityblock").astype(np.float32)
-            row_sums = X_float.sum(axis=1)
+
+            # Sparse + parallel L1 computation — Morgan fingerprints are ~90% zeros
+            X_sparse = csr_matrix(self.X.astype(np.float32))
+            l1_dists = pairwise_distances(X_sparse, metric="manhattan", n_jobs=-1).astype(np.float32)
+
+            row_sums = np.asarray(X_sparse.sum(axis=1)).ravel().astype(np.float32)
             S = row_sums[:, np.newaxis]
             T = row_sums[np.newaxis, :]
             denom = S + T + l1_dists
