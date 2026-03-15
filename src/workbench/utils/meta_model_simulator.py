@@ -32,16 +32,19 @@ class MetaModelSimulator:
         ```
     """
 
-    def __init__(self, model_names: list[str], id_column: str = "id"):
+    def __init__(self, model_names: list[str], id_column: str = "id", capture_name: str = "full_cross_fold"):
         """Initialize the simulator with a list of model names.
 
         Args:
             model_names: List of model names to include in the ensemble
             id_column: Column name to use for row alignment (default: "id")
+            capture_name: Inference capture name to load predictions from (default: "full_cross_fold")
         """
         self.model_names = model_names
         self.id_column = id_column
+        self.capture_name = capture_name
         self._dfs: dict[str, pd.DataFrame] = {}
+        self._conf_error_corr: dict[str, float] = {}
         self._target_column: str | None = None
         self._load_predictions()
 
@@ -52,10 +55,10 @@ class MetaModelSimulator:
             model = Model(name)
             if self._target_column is None:
                 self._target_column = model.target()
-            df = model.get_inference_predictions("full_inference")
+            df = model.get_inference_predictions(self.capture_name)
             if df is None:
                 raise ValueError(
-                    f"No full_inference predictions found for model '{name}'. Run endpoint inference first."
+                    f"No '{self.capture_name}' predictions found for model '{name}'. Run endpoint inference first."
                 )
             df["residual"] = df["prediction"] - df[self._target_column]
             df["abs_residual"] = df["residual"].abs()
@@ -72,6 +75,13 @@ class MetaModelSimulator:
         self._dfs = {name: df.sort_values(self.id_column).reset_index(drop=True) for name, df in self._dfs.items()}
         log.info(f"Loaded {len(self._dfs)} models, {len(list(self._dfs.values())[0])} samples each")
 
+        # Compute confidence-to-error correlation on aligned data
+        for name, df in self._dfs.items():
+            if "confidence" in df.columns:
+                self._conf_error_corr[name] = stats.spearmanr(df["confidence"], df["abs_residual"])[0]
+            else:
+                self._conf_error_corr[name] = 0.0
+
     def report(self, details: bool = False):
         """Print a comprehensive analysis report
 
@@ -81,6 +91,7 @@ class MetaModelSimulator:
         self.model_performance()
         self.residual_correlations()
         self.strategy_comparison()
+        self.ensemble_confidence_analysis()
         self.ensemble_failure_analysis()
         if details:
             self.confidence_analysis()
@@ -232,6 +243,7 @@ class MetaModelSimulator:
                     "r2": r2,
                     "spearman": spearman,
                     "mean_conf": df["confidence"].mean(),
+                    "conf_err_corr": self._conf_error_corr[name],
                 }
             )
 
@@ -324,7 +336,16 @@ class MetaModelSimulator:
         mae = (combined["scaled_conf_weighted"] - combined["target"]).abs().mean()
         results.append({"strategy": "Scaled Conf-Weighted", "mae": mae})
 
-        # Strategy 6: Drop worst model (use simple mean of remaining, or raw prediction if only 1 left)
+        # Strategy 6: Calibrated confidence (confidence scaled by |confidence_to_error_corr|)
+        corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
+        cal_conf = conf_arr * corr_scale
+        cal_conf_sum = cal_conf.sum(axis=1, keepdims=True) + 1e-8
+        cal_weights = cal_conf / cal_conf_sum
+        combined["cal_conf_weighted"] = (pred_arr * cal_weights).sum(axis=1)
+        mae = (combined["cal_conf_weighted"] - combined["target"]).abs().mean()
+        results.append({"strategy": "Calibrated Conf-Weighted", "mae": mae})
+
+        # Strategy 7: Drop worst model (use simple mean of remaining, or raw prediction if only 1 left)
         worst_model = max(mae_scores, key=mae_scores.get)
         remaining = [n for n in model_names if n != worst_model]
         remaining_pred_cols = [f"{n}_pred" for n in remaining]
@@ -378,6 +399,186 @@ class MetaModelSimulator:
 
         return weight_df
 
+    def ensemble_confidence_analysis(self) -> dict:
+        """Analyze ensemble confidence by blending model agreement with calibrated confidence.
+
+        Computes two signals:
+          - Agreement: 1 / (1 + pred_std) — high when models agree
+          - Calibrated confidence: weighted avg of model confidences scaled by |conf_error_corr|
+
+        Grid searches alpha to find the optimal blend, then reports all variants
+        (agreement-only, calibrated-conf-only, optimal blend) alongside individual models.
+
+        Returns:
+            Dict with ensemble confidence results including optimal alpha and correlations
+        """
+        print("\n" + "=" * 60)
+        print("ENSEMBLE CONFIDENCE ANALYSIS")
+        print("=" * 60)
+
+        model_names = list(self._dfs.keys())
+
+        # Build combined arrays
+        pred_arr = np.column_stack([self._dfs[name]["prediction"].values for name in model_names])
+        conf_arr = np.column_stack([self._dfs[name]["confidence"].values for name in model_names])
+
+        # Ensemble prediction (simple mean) and its absolute residual
+        target = self._dfs[model_names[0]][self._target_column].values
+        ensemble_pred = pred_arr.mean(axis=1)
+        ensemble_abs_err = np.abs(ensemble_pred - target)
+
+        # Signal 1: Agreement (inverse of prediction std)
+        pred_std = pred_arr.std(axis=1)
+        agreement = 1.0 / (1.0 + pred_std)
+
+        # Signal 2: Calibrated confidence (conf * |corr|, weighted average across models)
+        corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
+        cal_conf = conf_arr * corr_scale
+        cal_conf_sum = cal_conf.sum(axis=1) + 1e-8
+        calibrated_conf = cal_conf_sum / len(model_names)  # Average calibrated confidence
+
+        # Normalize both signals to [0, 1] for fair blending
+        def normalize(x):
+            x_min, x_max = x.min(), x.max()
+            return (x - x_min) / (x_max - x_min + 1e-8)
+
+        agreement_norm = normalize(agreement)
+        calibrated_conf_norm = normalize(calibrated_conf)
+
+        # Report individual model baselines
+        print("\nIndividual model confidence-to-error correlations:")
+        for name in model_names:
+            print(f"  {name}: {self._conf_error_corr[name]:.3f}")
+
+        # Report agreement-only and calibrated-conf-only
+        corr_agreement = stats.spearmanr(agreement_norm, ensemble_abs_err)[0]
+        corr_cal_conf = stats.spearmanr(calibrated_conf_norm, ensemble_abs_err)[0]
+        print(f"\nAgreement-only          (alpha=1.0): conf_error_corr = {corr_agreement:.3f}")
+        print(f"Calibrated-conf-only    (alpha=0.0): conf_error_corr = {corr_cal_conf:.3f}")
+
+        # Grid search alpha
+        best_alpha = 0.0
+        best_corr = corr_cal_conf
+        alpha_results = []
+        for alpha in np.arange(0.0, 1.05, 0.05):
+            blended = alpha * agreement_norm + (1 - alpha) * calibrated_conf_norm
+            corr = stats.spearmanr(blended, ensemble_abs_err)[0]
+            alpha_results.append({"alpha": alpha, "conf_error_corr": corr})
+            if corr < best_corr:  # More negative = better
+                best_corr = corr
+                best_alpha = alpha
+
+        best_blend = best_alpha * agreement_norm + (1 - best_alpha) * calibrated_conf_norm
+        print(f"Optimal blend           (alpha={best_alpha:.2f}): conf_error_corr = {best_corr:.3f}")
+
+        # Show the full alpha sweep
+        print("\nAlpha sweep (alpha=1 → agreement only, alpha=0 → calibrated conf only):")
+        for r in alpha_results:
+            marker = " <-- best" if abs(r["alpha"] - best_alpha) < 0.01 else ""
+            print(f"  alpha={r['alpha']:.2f}: {r['conf_error_corr']:.3f}{marker}")
+
+        return {
+            "agreement_corr": corr_agreement,
+            "calibrated_conf_corr": corr_cal_conf,
+            "best_alpha": best_alpha,
+            "best_blend_corr": best_corr,
+            "alpha_sweep": alpha_results,
+        }
+
+    def best_ensemble_predictions(self) -> pd.DataFrame:
+        """Generate predictions DataFrame for the best ensemble strategy with blended confidence.
+
+        Returns a DataFrame matching the format of individual model predictions:
+        id_column, target, prediction, confidence, residual, abs_residual.
+
+        Returns:
+            pd.DataFrame with ensemble predictions and confidence
+        """
+        model_names = list(self._dfs.keys())
+
+        # Build combined arrays
+        pred_arr = np.column_stack([self._dfs[name]["prediction"].values for name in model_names])
+        conf_arr = np.column_stack([self._dfs[name]["confidence"].values for name in model_names])
+        target = self._dfs[model_names[0]][self._target_column].values
+        ids = self._dfs[model_names[0]][self.id_column].values
+
+        # Find best strategy (replicate logic from strategy_comparison)
+        mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
+        inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
+        inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
+        corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
+
+        strategies = {
+            "Simple Mean": pred_arr.mean(axis=1),
+            "Inverse-MAE Weighted": (pred_arr * inv_mae_weights).sum(axis=1),
+        }
+
+        # Confidence-weighted
+        conf_sum = conf_arr.sum(axis=1, keepdims=True) + 1e-8
+        strategies["Confidence-Weighted"] = (pred_arr * (conf_arr / conf_sum)).sum(axis=1)
+
+        # Scaled conf-weighted
+        scaled_conf = conf_arr * inv_mae_weights
+        scaled_conf_sum = scaled_conf.sum(axis=1, keepdims=True) + 1e-8
+        strategies["Scaled Conf-Weighted"] = (pred_arr * (scaled_conf / scaled_conf_sum)).sum(axis=1)
+
+        # Calibrated conf-weighted
+        cal_conf = conf_arr * corr_scale
+        cal_conf_sum = cal_conf.sum(axis=1, keepdims=True) + 1e-8
+        strategies["Calibrated Conf-Weighted"] = (pred_arr * (cal_conf / cal_conf_sum)).sum(axis=1)
+
+        # Drop worst
+        worst_model = max(mae_scores, key=mae_scores.get)
+        remaining_idx = [i for i, n in enumerate(model_names) if n != worst_model]
+        if len(remaining_idx) > 1:
+            strategies[f"Drop Worst ({worst_model})"] = pred_arr[:, remaining_idx].mean(axis=1)
+
+        # Select best strategy by MAE
+        strategy_maes = {name: np.abs(preds - target).mean() for name, preds in strategies.items()}
+        best_strategy = min(strategy_maes, key=strategy_maes.get)
+        best_pred = strategies[best_strategy]
+
+        # Compute ensemble confidence using optimal alpha blend
+        pred_std = pred_arr.std(axis=1)
+        agreement = 1.0 / (1.0 + pred_std)
+        cal_conf_avg = cal_conf.sum(axis=1) / (len(model_names) + 1e-8)
+
+        def normalize(x):
+            x_min, x_max = x.min(), x.max()
+            return (x - x_min) / (x_max - x_min + 1e-8)
+
+        agreement_norm = normalize(agreement)
+        cal_conf_norm = normalize(cal_conf_avg)
+
+        # Find optimal alpha
+        ensemble_abs_err = np.abs(best_pred - target)
+        best_alpha, best_corr = 0.0, stats.spearmanr(cal_conf_norm, ensemble_abs_err)[0]
+        for alpha in np.arange(0.0, 1.05, 0.05):
+            blended = alpha * agreement_norm + (1 - alpha) * cal_conf_norm
+            corr = stats.spearmanr(blended, ensemble_abs_err)[0]
+            if corr < best_corr:
+                best_corr = corr
+                best_alpha = alpha
+
+        confidence = best_alpha * agreement_norm + (1 - best_alpha) * cal_conf_norm
+
+        # Build output DataFrame
+        result = pd.DataFrame(
+            {
+                self.id_column: ids,
+                self._target_column: target,
+                "prediction": best_pred,
+                "confidence": confidence,
+                "residual": best_pred - target,
+                "abs_residual": np.abs(best_pred - target),
+            }
+        )
+
+        print(f"\nBest ensemble: {best_strategy} (MAE={strategy_maes[best_strategy]:.4f})")
+        print(f"Ensemble confidence: alpha={best_alpha:.2f}, conf_error_corr={best_corr:.3f}")
+
+        return result
+
     def ensemble_failure_analysis(self) -> dict:
         """Compare best ensemble strategy vs best individual model.
 
@@ -417,6 +618,10 @@ class MetaModelSimulator:
         scaled_conf = conf_arr * inv_mae_weights
         scaled_conf_sum = scaled_conf.sum(axis=1, keepdims=True) + 1e-8
         ensemble_strategies["Scaled Conf-Weighted"] = (pred_arr * (scaled_conf / scaled_conf_sum)).sum(axis=1)
+        corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
+        cal_conf = conf_arr * corr_scale
+        cal_conf_sum = cal_conf.sum(axis=1, keepdims=True) + 1e-8
+        ensemble_strategies["Calibrated Conf-Weighted"] = (pred_arr * (cal_conf / cal_conf_sum)).sum(axis=1)
         worst_model = max(mae_scores, key=mae_scores.get)
         remaining = [n for n in model_names if n != worst_model]
         remaining_cols = [f"{n}_pred" for n in remaining]
