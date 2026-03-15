@@ -15,7 +15,9 @@ log = logging.getLogger("workbench")
 
 
 class PluginUnitTest:
-    def __init__(self, plugin_class, theme="midnight_blue", input_data=None, auto_update=True, height="700px", **kwargs):
+    def __init__(
+        self, plugin_class, theme="midnight_blue", input_data=None, auto_update=True, height="700px", **kwargs
+    ):
         """A class to unit test a PluginInterface class.
 
         Args:

@@ -468,7 +468,6 @@ class MetaModelSimulator:
                 best_corr = corr
                 best_alpha = alpha
 
-        best_blend = best_alpha * agreement_norm + (1 - best_alpha) * calibrated_conf_norm
         print(f"Optimal blend           (alpha={best_alpha:.2f}): conf_error_corr = {best_corr:.3f}")
 
         # Show the full alpha sweep

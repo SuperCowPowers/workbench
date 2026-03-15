@@ -26,11 +26,11 @@ class ConcordanceMap(ScatterPlot):
 
     # Colorscale for SAR concordance: green (concordant) → red (discordant)
     CONCORDANCE_COLORSCALE = [
-        [0.0, "rgb(34, 139, 34)"],       # forest green — concordant
-        [0.25, "rgb(154, 205, 50)"],      # yellow-green
-        [0.5, "rgb(255, 215, 0)"],        # gold
-        [0.75, "rgb(255, 99, 71)"],       # tomato
-        [1.0, "rgb(220, 20, 60)"],        # crimson — discordant
+        [0.0, "rgb(34, 139, 34)"],  # forest green — concordant
+        [0.25, "rgb(154, 205, 50)"],  # yellow-green
+        [0.5, "rgb(255, 215, 0)"],  # gold
+        [0.75, "rgb(255, 99, 71)"],  # tomato
+        [1.0, "rgb(220, 20, 60)"],  # crimson — discordant
     ]
 
     def __init__(self, novel_threshold: float = 0.3):
@@ -138,7 +138,7 @@ class ConcordanceMap(ScatterPlot):
                     marker=dict(
                         size=15,
                         color="rgba(128, 128, 128, 0.5)",
-                        line=dict(color="rgba(0, 0, 0, 0.5)", width=0.5),
+                        line=dict(color="rgba(0, 0, 0, 0.25)", width=0.5),
                     ),
                 )
             )
@@ -156,8 +156,8 @@ class ConcordanceMap(ScatterPlot):
                     customdata=novel_df[custom_data_cols] if custom_data_cols else None,
                     marker=dict(
                         size=15,
-                        color="rgba(65, 105, 225, 0.5)",
-                        line=dict(color="rgba(0, 0, 0, 0.5)", width=1),
+                        color="rgba(110, 110, 180, 0.5)",
+                        line=dict(color="rgba(0, 0, 0, 0.25)", width=1),
                     ),
                 )
             )

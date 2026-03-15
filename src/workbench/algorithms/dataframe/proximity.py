@@ -329,4 +329,3 @@ class Proximity(ABC):
             self.target_range = self.df[self.target].max() - self.df[self.target].min()
 
         log.info("Proximity metrics precomputed successfully")
-
