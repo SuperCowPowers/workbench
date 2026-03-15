@@ -107,7 +107,7 @@ class Projection2D:
 
         if projection == "UMAP" and UMAP_AVAILABLE:
             n_neighbors = min(15, len(df) - 1)
-            min_dist = 0.01
+            min_dist = 0.1
             if n_neighbors < 15:
                 self.log.warning(
                     f"Dataset size ({len(df)}) smaller than default n_neighbors, using n_neighbors={n_neighbors}"
