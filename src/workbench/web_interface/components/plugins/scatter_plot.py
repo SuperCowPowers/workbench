@@ -517,37 +517,12 @@ if __name__ == "__main__":
     df = model.get_inference_predictions("full_cross_fold")
 
     # Run the Unit Test on the Plugin
-    # Test currently commented out
-    """
     PluginUnitTest(
         ScatterPlot,
         input_data=df,
-        theme="midnight_blue",
+        theme="dark",
         x="logd",
         y="prediction",
         color="prediction_std",
-        suppress_hover_display=True,
-    ).run()
-    """
-
-    # Test with molecule hover (smiles column)
-    """
-    from workbench.api import FeatureSet
-
-    fs = FeatureSet("aqsol_features")
-    mol_df = fs.pull_dataframe()[:1000]  # Limit to 1000 rows for testing
-    """
-
-    # Build alignment data
-    from workbench.utils.test_data_generator import TestDataGenerator
-    from workbench.algorithms.dataframe.dataset_alignment import DatasetAlignment
-
-    ref_df, query_df = TestDataGenerator().aqsol_alignment_data(overlap="medium", alignment="high")
-    da = DatasetAlignment(ref_df, query_df, target_column="solubility")
-
-    # Run the Unit Test with molecule data (hover over points to see molecule structures)
-    PluginUnitTest(
-        ScatterPlot,
-        input_data=da.dataset_alignment_results(),
         suppress_hover_display=True,
     ).run()
