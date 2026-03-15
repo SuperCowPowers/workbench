@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional, Union
+from typing import List, Optional, Union
 import logging
 
 # Set up logging
@@ -215,13 +215,13 @@ class Proximity(ABC):
         Return neighbors for ID(s) from the existing dataset.
 
         Args:
-            id_or_ids: Single ID or list of IDs to look up
-            n_neighbors: Number of neighbors to return (default: 5, ignored if radius is set)
-            radius: If provided, find all neighbors within this radius
-            include_self: Whether to include self in results (default: True)
+            id_or_ids (Union[str, int, List[Union[str, int]]]): Single ID or list of IDs to look up.
+            n_neighbors (int): Number of neighbors to return (default: 5, ignored if radius is set).
+            radius (float): If provided, find all neighbors within this radius.
+            include_self (bool): Whether to include self in results (default: True).
 
         Returns:
-            DataFrame containing neighbors and distances
+            pd.DataFrame: DataFrame containing neighbors and distances.
         """
         # Normalize to list
         ids = [id_or_ids] if not isinstance(id_or_ids, list) else id_or_ids
@@ -238,30 +238,63 @@ class Proximity(ABC):
         # Transform query features (subclass-specific)
         X_query = self._transform_features(query_df)
 
-        # Get neighbors
+        # Get neighbors from sklearn
         if radius is not None:
             distances, indices = self.nn.radius_neighbors(X_query, radius=radius)
+            # Ragged arrays — concatenate into flat arrays
+            flat_distances = np.concatenate(distances)
+            flat_indices = np.concatenate(indices)
+            repeat_counts = [len(d) for d in distances]
+            query_ids_repeated = np.repeat(query_df[self.id_column].values, repeat_counts)
         else:
             distances, indices = self.nn.kneighbors(X_query, n_neighbors=n_neighbors)
+            flat_distances = distances.ravel()
+            flat_indices = indices.ravel()
+            query_ids_repeated = np.repeat(query_df[self.id_column].values, n_neighbors)
 
-        # Build results
-        results = []
-        for i, (dists, nbrs) in enumerate(zip(distances, indices)):
-            query_id = query_df.iloc[i][self.id_column]
+        # Vectorized column extraction (replaces per-row df.iloc[] calls)
+        neighbor_ids = self.df[self.id_column].values[flat_indices]
 
-            for neighbor_idx, dist in zip(nbrs, dists):
-                neighbor_id = self.df.iloc[neighbor_idx][self.id_column]
+        # Filter self-hits if requested
+        if not include_self:
+            mask = neighbor_ids != query_ids_repeated
+            flat_distances = flat_distances[mask]
+            flat_indices = flat_indices[mask]
+            query_ids_repeated = query_ids_repeated[mask]
+            neighbor_ids = neighbor_ids[mask]
 
-                # Skip self if requested
-                if not include_self and neighbor_id == query_id:
-                    continue
+        # Clean near-zero distances
+        flat_distances = np.where(flat_distances < 1e-6, 0.0, flat_distances)
 
-                results.append(self._build_neighbor_result(query_id=query_id, neighbor_idx=neighbor_idx, distance=dist))
+        # Build result dict with core columns
+        result = {
+            self.id_column: query_ids_repeated,
+            "neighbor_id": neighbor_ids,
+            "distance": flat_distances,
+        }
 
-        df_results = pd.DataFrame(results)
-        df_results["is_self"] = df_results["neighbor_id"] == df_results[self.id_column]
-        df_results = df_results.sort_values([self.id_column, "is_self", "distance"], ascending=[True, False, True])
-        return df_results.drop("is_self", axis=1).reset_index(drop=True)
+        # Add target column if present
+        if self.target and self.target in self.df.columns:
+            result[self.target] = self.df[self.target].values[flat_indices]
+
+        # Add prediction/probability/residual columns if they exist
+        for col in self.df.columns:
+            if col == "prediction" or "_proba" in col or "residual" in col or col == "in_model":
+                result[col] = self.df[col].values[flat_indices]
+
+        # Include all columns if requested (bulk iloc is much faster than per-row)
+        if self.include_all_columns:
+            neighbor_rows = self.df.iloc[flat_indices]
+            for col in neighbor_rows.columns:
+                if col not in result:
+                    result[col] = neighbor_rows[col].values
+            # Restore query_id and neighbor_id (neighbor_rows may have overwritten id column)
+            result[self.id_column] = query_ids_repeated
+            result["neighbor_id"] = neighbor_ids
+
+        df_results = pd.DataFrame(result)
+        df_results = df_results.sort_values([self.id_column, "distance"], ascending=[True, True])
+        return df_results.reset_index(drop=True)
 
     def _precompute_metrics(self) -> None:
         """
@@ -297,42 +330,3 @@ class Proximity(ABC):
 
         log.info("Proximity metrics precomputed successfully")
 
-    def _build_neighbor_result(self, query_id, neighbor_idx: int, distance: float) -> Dict:
-        """
-        Build a result dictionary for a single neighbor.
-
-        Args:
-            query_id: ID of the query point
-            neighbor_idx: Index of the neighbor in the original DataFrame
-            distance: Distance between query and neighbor
-
-        Returns:
-            Dictionary containing neighbor information
-        """
-        neighbor_row = self.df.iloc[neighbor_idx]
-        neighbor_id = neighbor_row[self.id_column]
-
-        # Start with basic info
-        result = {
-            self.id_column: query_id,
-            "neighbor_id": neighbor_id,
-            "distance": 0.0 if distance < 1e-6 else distance,
-        }
-
-        # Add target if present
-        if self.target and self.target in self.df.columns:
-            result[self.target] = neighbor_row[self.target]
-
-        # Add prediction/probability columns if they exist
-        for col in self.df.columns:
-            if col == "prediction" or "_proba" in col or "residual" in col or col == "in_model":
-                result[col] = neighbor_row[col]
-
-        # Include all columns if requested
-        if self.include_all_columns:
-            result.update(neighbor_row.to_dict())
-            # Restore query_id after update (neighbor_row may have overwritten id column)
-            result[self.id_column] = query_id
-            result["neighbor_id"] = neighbor_id
-
-        return result
