@@ -1,7 +1,7 @@
-"""Partition AQSol data into overlap-based subsets for DatasetAlignment testing.
+"""Partition AQSol data into overlap-based subsets for DatasetConcordance testing.
 
 Uses a combined FingerprintProximity model (count fingerprints + Ruzicka distance)
-to compute cross-dataset Tanimoto similarities — the same metric that DatasetAlignment
+to compute cross-dataset Tanimoto similarities — the same metric that DatasetConcordance
 uses at runtime. Creates four subsets based on chemical space overlap:
 
     - base: 40% of compounds (the "reference" dataset)
@@ -59,7 +59,7 @@ def main():
 
     log.info(f"Base set: {len(df_base)} compounds, Pool: {len(df_pool)} compounds")
 
-    # Combine base + pool with a dataset column (same approach as DatasetAlignment)
+    # Combine base + pool with a dataset column (same approach as DatasetConcordance)
     df_base_tagged = df_base.copy()
     df_pool_tagged = df_pool.copy()
     df_base_tagged["dataset"] = "base"
@@ -67,7 +67,7 @@ def main():
     df_combined = pd.concat([df_base_tagged, df_pool_tagged], ignore_index=True)
 
     # Build ONE FingerprintProximity on combined data (count fingerprints + Ruzicka)
-    # This ensures similarity values match what DatasetAlignment computes at runtime
+    # This ensures similarity values match what DatasetConcordance computes at runtime
     log.info("Building FingerprintProximity on combined data (count fingerprints)...")
     prox = FingerprintProximity(df_combined, id_column="id", include_all_columns=True)
 

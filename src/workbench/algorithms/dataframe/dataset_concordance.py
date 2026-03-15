@@ -1,4 +1,4 @@
-"""Dataset Alignment: Compare two molecular datasets for overlap and target agreement.
+"""Dataset Concordance: Compare two molecular datasets for chemical space overlap and SAR concordance.
 
 Takes reference and query DataFrames, combines them with a ``dataset`` bookkeeping
 column, and builds one FingerprintProximity model on the combined data. This gives
@@ -6,14 +6,14 @@ a shared UMAP projection and a single NN model that can be queried for cross-dat
 neighbors by filtering on the ``dataset`` column.
 
 Produces:
-    - **alignment_df**: Per-query-compound similarity and target residuals.
+    - **concordance_df**: Per-query-compound overlap (Tanimoto) and SAR concordance (residual).
 
 This DataFrame, plus the shared 2D coordinates in ``self._prox.df``, back the
-scatter+contour visualization UI.
+ConcordanceMap visualization UI.
 
 Use cases:
     - Data fusion: Can proprietary and public ADMET data be safely merged for training?
-    - Assay alignment: Do two assays measuring the same endpoint agree?
+    - Assay concordance: Do two assays measuring the same endpoint agree?
     - Model monitoring: Has the target relationship drifted in new data?
 
 References:
@@ -23,6 +23,7 @@ References:
       data integration and consistency assessment" J. Cheminform.
 """
 
+import time
 import logging
 import pandas as pd
 
@@ -32,17 +33,17 @@ from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProx
 log = logging.getLogger("workbench")
 
 
-class DatasetAlignment:
-    """Compare two molecular datasets for chemical space overlap and target value alignment.
+class DatasetConcordance:
+    """Compare two molecular datasets for chemical space overlap and SAR concordance.
 
     Takes reference and query DataFrames, combines them internally, and builds a single
     FingerprintProximity model (shared fingerprints, NN model, and UMAP projection).
-    For each query compound, finds reference neighbors and computes similarity/residuals.
+    For each query compound, finds reference neighbors and computes overlap/concordance.
 
     Both DataFrames must have: id, smiles, and target columns.
 
-    Use ``dataset_alignment_results()`` to get a unified DataFrame with x, y coordinates,
-    dataset labels, and alignment columns (similarity, residuals).
+    Use ``concordance_results()`` to get a unified DataFrame with x, y coordinates,
+    dataset labels, and concordance columns (overlap, residual).
     """
 
     def __init__(
@@ -52,27 +53,23 @@ class DatasetAlignment:
         target_column: str,
         id_column: str,
         k_neighbors: int = 5,
-        overlap_thres: float = 0.6,
         radius: int = 2,
         n_bits: int = 2048,
     ) -> None:
-        """Initialize the DatasetAlignment analysis.
+        """Initialize the DatasetConcordance analysis.
 
         Args:
             df_reference (pd.DataFrame): Reference dataset (must have id, smiles, and target columns)
             df_query (pd.DataFrame): Query dataset (must have id, smiles, and target columns)
             target_column (str): Name of the target column to compare (must exist in both DataFrames)
             id_column (str): Name of the ID column
-            k_neighbors (int): Number of cross-dataset neighbors for target alignment (default: 5)
-            overlap_thres (float): Minimum Tanimoto similarity for computing median_ref_residual
-                (default: 0.6). Query compounds below this get NaN residuals.
+            k_neighbors (int): Number of cross-dataset neighbors for SAR concordance (default: 5)
             radius (int): Morgan fingerprint radius (default: 2 = ECFP4)
             n_bits (int): Number of fingerprint bits (default: 2048)
         """
         self.id_column = id_column
         self.target_column = target_column
         self.k_neighbors = k_neighbors
-        self.overlap_thres = overlap_thres
 
         # Validate required columns in both DataFrames
         required = {id_column, "smiles", target_column}
@@ -114,34 +111,34 @@ class DatasetAlignment:
             n_bits=n_bits,
         )
 
-        # Compute cross-dataset target alignment
-        log.info("Computing cross-dataset alignment...")
-        self._alignment_df = self._compute_alignment()
+        # Compute cross-dataset concordance
+        log.info("Computing cross-dataset concordance...")
+        self._concordance_df = self._compute_concordance()
 
-        n_total = len(self._alignment_df)
-        log.info(f"Cross-dataset mean NN similarity: {self._alignment_df['highest_ref_tanimoto'].mean():.3f}")
-        log.info(f"Alignment computed for {n_total} query compounds")
+        n_total = len(self._concordance_df)
+        log.info(f"Cross-dataset mean NN similarity: {self._concordance_df['tanimoto_sim'].mean():.3f}")
+        log.info(f"Concordance computed for {n_total} query compounds")
 
-    def dataset_alignment_results(self) -> pd.DataFrame:
-        """Return a unified DataFrame with coordinates, dataset labels, and alignment info.
+    def concordance_results(self) -> pd.DataFrame:
+        """Return a unified DataFrame with coordinates, dataset labels, and concordance info.
 
-        Merges the per-query alignment columns (similarity, residuals) into the
-        combined proximity DataFrame. Reference compounds get NaN for alignment columns.
+        Merges the per-query concordance columns (overlap, residual) into the
+        combined proximity DataFrame. Reference compounds get NaN for concordance columns.
 
         Returns:
             pd.DataFrame: Unified DataFrame with these added columns:
                 - dataset: "reference" or "query"
                 - x, y: UMAP 2D coordinates
-                - highest_ref_tanimoto: best Tanimoto similarity to any reference compound
-                - median_ref_residual: query target minus median target of nearest reference neighbors
+                - tanimoto_sim: best Tanimoto similarity to any reference compound
+                - target_residual: query target minus median target of nearest reference neighbors
         """
         df = self._prox.df.copy()
 
-        # Left join alignment columns (query-only) onto full df
-        alignment_cols = [self.id_column, "highest_ref_tanimoto", "median_ref_residual"]
-        df = df.merge(self._alignment_df[alignment_cols], on=self.id_column, how="left")
+        # Left join concordance columns (query-only) onto full df
+        concordance_cols = [self.id_column, "tanimoto_sim", "target_residual"]
+        df = df.merge(self._concordance_df[concordance_cols], on=self.id_column, how="left")
 
-        # Drop internal proximity columns not needed in alignment results
+        # Drop internal proximity columns not needed in concordance results
         internal_cols = ["nn_distance", "nn_id", "nn_target", "nn_target_diff", "nn_similarity", "fingerprint"]
         df = df.drop(columns=[c for c in internal_cols if c in df.columns])
 
@@ -182,59 +179,66 @@ class DatasetAlignment:
         keep = n_neighbors + (1 if include_self else 0)
         return result.head(keep).reset_index(drop=True)
 
-    def _compute_alignment(self) -> pd.DataFrame:
-        """Compute target alignment for each query compound vs the reference.
+    def _compute_concordance(self) -> pd.DataFrame:
+        """Compute overlap and SAR concordance for each query compound vs the reference.
 
         For each query compound:
             1. Get neighbors from the combined model
             2. Filter to reference-only neighbors
-            3. Compute highest similarity and median target residual from top-k neighbors
+            3. Compute overlap (best Tanimoto) and concordance (median target residual)
 
         Returns:
-            pd.DataFrame: Per-query-compound alignment with columns:
-                id, highest_ref_tanimoto, median_ref_residual
+            pd.DataFrame: Per-query-compound concordance with columns:
+                id, tanimoto_sim, target_residual
         """
-        # Get query compound IDs from the combined prox.df
+        t0 = time.time()
+
+        # Get query compound IDs and targets from the combined prox.df
         query_mask = self._prox.df["dataset"] == "query"
         query_ids = self._prox.df.loc[query_mask, self.id_column].tolist()
         query_targets = self._prox.df.loc[query_mask].set_index(self.id_column)[self.target_column]
+        log.info(f"  Setup: {time.time() - t0:.3f}s")
 
-        # Get neighbors for all query compounds (enough to filter down to reference)
-        n_neighbors = max(20, self.k_neighbors * 4)
+        # Neighbor lookup (precomputed matrix — should be fast)
+        t1 = time.time()
+        n_neighbors = 50
         all_neighbors = self._prox.neighbors(query_ids, n_neighbors=n_neighbors)
+        log.info(f"  Neighbor lookup ({n_neighbors} neighbors, {len(query_ids)} queries): {time.time() - t1:.3f}s")
 
         # Filter to reference-only neighbors
+        t2 = time.time()
         dataset_lookup = self._prox.df.set_index(self.id_column)["dataset"]
         all_neighbors["neighbor_dataset"] = all_neighbors["neighbor_id"].map(dataset_lookup)
-        ref_neighbors = all_neighbors[all_neighbors["neighbor_dataset"] == "reference"]
+        ref_neighbors = all_neighbors[all_neighbors["neighbor_dataset"] == "reference"].copy()
+        log.info(f"  Filter to reference: {time.time() - t2:.3f}s ({len(ref_neighbors)} rows)")
 
-        # Build per-query alignment
-        results = []
-        for q_id in query_ids:
-            q_target = query_targets.get(q_id)
-            q_ref = ref_neighbors[ref_neighbors[self.id_column] == q_id]
+        # Best Tanimoto similarity per query compound
+        t3 = time.time()
+        best_sim = ref_neighbors.groupby(self.id_column)["similarity"].max()
+        log.info(f"  Best similarity groupby: {time.time() - t3:.3f}s")
 
-            # Best reference neighbor similarity
-            best_sim = float(q_ref["similarity"].max()) if len(q_ref) > 0 else 0.0
+        # Target residual: median residual from top-k reference neighbors
+        t4 = time.time()
+        ref_neighbors["_rank"] = ref_neighbors.groupby(self.id_column)["similarity"].rank(
+            method="first", ascending=False
+        )
+        top_k = ref_neighbors[ref_neighbors["_rank"] <= self.k_neighbors]
+        neighbor_medians = top_k.groupby(self.id_column)[self.target_column].median()
+        log.info(f"  Rank + median groupby: {time.time() - t4:.3f}s")
 
-            # Median target residual from top-k reference neighbors (only above overlap threshold)
-            above_thres = q_ref[q_ref["similarity"] >= self.overlap_thres]
-            if len(above_thres) > 0 and pd.notna(q_target):
-                top_k = above_thres.nlargest(min(self.k_neighbors, len(above_thres)), "similarity")
-                neighbor_median = float(top_k[self.target_column].dropna().median())
-                residual = float(q_target) - neighbor_median
-            else:
-                residual = float("nan")
+        # Build result DataFrame
+        t5 = time.time()
+        results = pd.DataFrame({self.id_column: query_ids})
+        results["tanimoto_sim"] = results[self.id_column].map(best_sim).fillna(0.0)
 
-            results.append(
-                {
-                    self.id_column: q_id,
-                    "highest_ref_tanimoto": best_sim,
-                    "median_ref_residual": residual,
-                }
-            )
+        # target_residual = query target - median reference target
+        q_targets = results[self.id_column].map(query_targets)
+        ref_medians = results[self.id_column].map(neighbor_medians)
+        results["target_residual"] = q_targets - ref_medians
+        log.info(f"  Build results: {time.time() - t5:.3f}s")
 
-        return pd.DataFrame(results)
+        log.info(f"  Total _compute_concordance: {time.time() - t0:.3f}s")
+        return results
 
 
 # =============================================================================
@@ -253,7 +257,7 @@ if __name__ == "__main__":
     ref_df, query_df = test_data.aqsol_alignment_data(overlap="medium", alignment="high")
     print(f"Reference: {len(ref_df)}, Query: {len(query_df)}")
 
-    da = DatasetAlignment(
+    dc = DatasetConcordance(
         ref_df,
         query_df,
         target_column="solubility",
@@ -261,17 +265,17 @@ if __name__ == "__main__":
     )
 
     # Get the unified DataFrame
-    df = da.dataset_alignment_results()
+    df = dc.concordance_results()
     print(f"\nUnified DF shape: {df.shape}")
     print(f"Columns: {list(df.columns)}")
     print(f"Dataset counts:\n{df['dataset'].value_counts()}")
     print("\nQuery compounds (first 10):")
-    query_cols = ["id", "dataset", "x", "y", "highest_ref_tanimoto", "median_ref_residual"]
+    query_cols = ["id", "dataset", "x", "y", "tanimoto_sim", "target_residual"]
     print(df[df["dataset"] == "query"][query_cols].head(10))
 
     # Test query_neighbors — drill into a specific query compound
-    query_id = df[df["dataset"] == "query"].iloc[0][da.id_column]
+    query_id = df[df["dataset"] == "query"].iloc[0][dc.id_column]
     print(f"\nQuery neighbors for '{query_id}':")
-    print(da.query_neighbors(query_id, n_neighbors=5))
+    print(dc.query_neighbors(query_id, n_neighbors=5))
 
-    print("\nDatasetAlignment tests completed!")
+    print("\nDatasetConcordance tests completed!")
