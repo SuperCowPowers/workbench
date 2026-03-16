@@ -1,30 +1,35 @@
-"""Concordance Map: Multi-layer visualization for dataset concordance analysis."""
+"""Concordance Map: Standalone multi-layer visualization for dataset concordance analysis."""
 
+import base64
 import pandas as pd
 import plotly.graph_objects as go
-from dash import html
+from dash import dcc, html, callback, clientside_callback, Input, Output, no_update
+from dash.exceptions import PreventUpdate
 
-from workbench.web_interface.components.plugins.scatter_plot import ScatterPlot
+from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from workbench.utils.clientside_callbacks import circle_overlay_callback
+from workbench.utils.chem_utils.vis import molecule_hover_tooltip
 
 
-class ConcordanceMap(ScatterPlot):
+class ConcordanceMap(PluginInterface):
     """Concordance visualization with concordance-aware coloring.
 
     Renders three layers (bottom to top):
         1. Reference compounds (dark grey)
         2. Novel query compounds with low chemical space overlap (blue)
-        3. Overlapping query compounds colored by |target_residual| (green → red)
+        3. Overlapping query compounds colored by |target_residual| (green -> red)
 
-    Inherits ScatterPlot for Dash component infrastructure (graph, dropdowns,
-    tooltips, callbacks) but overrides create_scatter_plot() for concordance-specific
-    multi-layer encoding. The color dropdown is not used — concordance encoding
-    is always applied.
+    Uses go.Scatter (SVG) instead of Scattergl to enable Plotly.Fx.hover() for
+    programmatic hover triggering from external components (e.g. table selection).
 
     Expects a unified DataFrame from DatasetConcordance.concordance_results()
     with columns: x, y, dataset, tanimoto_sim, target_residual, etc.
     """
 
-    # Colorscale for SAR concordance: green (concordant) → red (discordant)
+    auto_load_page = PluginPage.NONE
+    plugin_input_type = PluginInputType.DATAFRAME
+
+    # Colorscale for SAR concordance: green (concordant) -> red (discordant)
     CONCORDANCE_COLORSCALE = [
         [0.0, "rgb(54, 139, 54)"],  # forest green — concordant
         [0.25, "rgb(154, 205, 50)"],  # yellow-green
@@ -33,78 +38,113 @@ class ConcordanceMap(ScatterPlot):
         [1.0, "rgb(220, 60, 60)"],  # crimson — discordant
     ]
 
+    # White circle overlay SVG for hover highlighting
+    _circle_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" style="overflow: visible;">
+        <circle cx="50" cy="50" r="10" stroke="rgba(255, 255, 255, 1)" stroke-width="3" fill="none" />
+    </svg>"""
+    _circle_data_uri = f"data:image/svg+xml;base64,{base64.b64encode(_circle_svg.encode('utf-8')).decode('utf-8')}"
+
     def __init__(self, novel_threshold: float = 0.3, graph_height: str = "1200px"):
         """Initialize the ConcordanceMap plugin.
 
         Args:
             novel_threshold (float): Tanimoto similarity threshold below which query
-                compounds are considered "novel" (outside the model's applicability domain).
-                Default: 0.3 (standard ECFP4 dissimilarity boundary).
+                compounds are considered "novel" (default: 0.3).
             graph_height (str): CSS height for the graph component (default: "1200px").
         """
-        super().__init__(show_axes=False, show_controls=False)
         self.novel_threshold = novel_threshold
         self.graph_height = graph_height
-        self.concordance_cmax = None  # Set in update_properties from reference target std
+        self.concordance_cmax = None
+        self.component_id = None
+        self.df = None
+        self.smiles_column = None
+        self.id_column = None
+        self.has_smiles = False
+        self.hover_background = None
+        super().__init__()
 
     def create_component(self, component_id: str) -> html.Div:
-        """Create the component (delegates to ScatterPlot).
+        """Create the concordance map component.
 
         Args:
             component_id (str): The ID of the web component.
 
         Returns:
-            html.Div: A Dash Div Component containing the scatter plot.
+            html.Div: A Dash Div containing the graph and hover tooltips.
         """
-        component = super().create_component(component_id)
+        self.component_id = component_id
 
-        # Make the graph larger for concordance visualization
-        graph = component.children[0]
-        graph.style["height"] = self.graph_height
+        self.properties = [(f"{component_id}-graph", "figure")]
+        self.signals = [
+            (f"{component_id}-graph", "hoverData"),
+            (f"{component_id}-graph", "clickData"),
+        ]
 
-        return component
+        return html.Div(
+            children=[
+                dcc.Graph(
+                    id=f"{component_id}-graph",
+                    figure=self.display_text("Waiting for Data..."),
+                    config={"scrollZoom": True},
+                    style={"height": self.graph_height, "width": "100%"},
+                    clear_on_unhover=True,
+                ),
+                dcc.Tooltip(
+                    id=f"{component_id}-overlay",
+                    background_color="rgba(0,0,0,0)",
+                    border_color="rgba(0,0,0,0)",
+                    direction="bottom",
+                    loading_text="",
+                ),
+                dcc.Tooltip(
+                    id=f"{component_id}-molecule-tooltip",
+                    background_color="rgba(0,0,0,0)",
+                    border_color="rgba(0,0,0,0)",
+                    direction="bottom",
+                    loading_text="",
+                ),
+            ],
+            style={"height": "100%", "display": "flex", "flexDirection": "column"},
+        )
 
     def update_properties(self, input_data: pd.DataFrame, **kwargs) -> list:
-        """Set concordance-specific defaults and delegate to ScatterPlot.
+        """Update the concordance map with new data.
 
         Args:
             input_data (pd.DataFrame): Unified DataFrame from DatasetConcordance.concordance_results().
-            **kwargs (dict): Additional keyword arguments (passed through to ScatterPlot).
+            **kwargs (dict): Must include ``target_column`` and ``id_column``.
 
         Returns:
-            list: A list of updated property values from ScatterPlot.
+            list: Single-element list containing the Plotly figure.
         """
-        kwargs.setdefault("x", "x")
-        kwargs.setdefault("y", "y")
-        kwargs.setdefault("color", "target_residual")
+        self.hover_background = self.theme_manager.background()
+        self.df = input_data
+
+        # Detect SMILES and ID columns
+        self.smiles_column = next((col for col in self.df.columns if col.lower() == "smiles"), None)
+        self.id_column = kwargs.get("id_column") or next(
+            (col for col in self.df.columns if col.lower() == "id"), self.df.columns[0]
+        )
+        self.has_smiles = self.smiles_column is not None
 
         # Compute concordance colorscale max from reference target variability
-        # Residuals beyond 2 std are considered truly discordant (saturate at red)
         target_column = kwargs.get("target_column")
         if target_column and target_column in input_data.columns and "dataset" in input_data.columns:
             ref_std = input_data.loc[input_data["dataset"] == "reference", target_column].std()
             self.concordance_cmax = 2.0 * ref_std
         else:
-            self.concordance_cmax = None  # Fall back to auto-scaling
+            self.concordance_cmax = None
 
-        return super().update_properties(input_data, **kwargs)
+        figure = self.create_scatter_plot(self.df, "x", "y")
+        return [figure]
 
-    def create_scatter_plot(
-        self,
-        df: pd.DataFrame,
-        x_col: str,
-        y_col: str,
-        color_col: str,
-        regression_line: bool = False,
-    ) -> go.Figure:
+    def create_scatter_plot(self, df: pd.DataFrame, x_col: str, y_col: str) -> go.Figure:
         """Build the concordance-specific multi-layer figure.
 
         Args:
             df (pd.DataFrame): The unified concordance DataFrame.
             x_col (str): Column for x-axis (typically "x").
             y_col (str): Column for y-axis (typically "y").
-            color_col (str): Ignored — concordance encoding is always used.
-            regression_line (bool): Ignored for concordance maps.
 
         Returns:
             go.Figure: A Plotly Figure with reference, novel, and overlap layers.
@@ -129,7 +169,7 @@ class ConcordanceMap(ScatterPlot):
         # --- Layer 1: Reference scatter (dark grey) ---
         if len(ref_df) > 0:
             figure.add_trace(
-                go.Scattergl(
+                go.Scatter(
                     x=ref_df[x_col],
                     y=ref_df[y_col],
                     mode="markers",
@@ -145,10 +185,10 @@ class ConcordanceMap(ScatterPlot):
                 )
             )
 
-        # --- Layer 3: Novel query compounds (blue) ---
+        # --- Layer 2: Novel query compounds (blue) ---
         if len(novel_df) > 0:
             figure.add_trace(
-                go.Scattergl(
+                go.Scatter(
                     x=novel_df[x_col],
                     y=novel_df[y_col],
                     mode="markers",
@@ -164,7 +204,7 @@ class ConcordanceMap(ScatterPlot):
                 )
             )
 
-        # --- Layer 4: Overlapping query compounds (green → red by |residual|) ---
+        # --- Layer 3: Overlapping query compounds (green -> red by |residual|) ---
         if len(overlap_df) > 0:
             abs_residual = overlap_df["target_residual"].abs()
 
@@ -173,32 +213,10 @@ class ConcordanceMap(ScatterPlot):
             overlap_df = overlap_df.iloc[sort_idx]
             abs_residual = abs_residual.iloc[sort_idx]
 
-            # Set colorscale range: use reference target std so "good" concordance is all green
             cmax = self.concordance_cmax if self.concordance_cmax else abs_residual.quantile(0.95)
-            marker_kwargs = dict(
-                size=15,
-                color=abs_residual,
-                colorscale=self.CONCORDANCE_COLORSCALE,
-                cmin=0,
-                cmax=cmax,
-                colorbar=dict(
-                    title=dict(text="Median Residual", font=dict(size=10)),
-                    thickness=8,
-                    len=0.3,
-                    x=0.98,
-                    xanchor="right",
-                    y=0.98,
-                    yanchor="top",
-                    xpad=0,
-                    ypad=0,
-                    tickfont=dict(size=10),
-                ),
-                opacity=0.9,
-                line=dict(color="rgba(0, 0, 0, 0.5)", width=1),
-            )
 
             figure.add_trace(
-                go.Scattergl(
+                go.Scatter(
                     x=overlap_df[x_col],
                     y=overlap_df[y_col],
                     mode="markers",
@@ -207,11 +225,31 @@ class ConcordanceMap(ScatterPlot):
                     showlegend=False,
                     hoverinfo="none",
                     customdata=overlap_df[custom_data_cols] if custom_data_cols else None,
-                    marker=marker_kwargs,
+                    marker=dict(
+                        size=15,
+                        color=abs_residual,
+                        colorscale=self.CONCORDANCE_COLORSCALE,
+                        cmin=0,
+                        cmax=cmax,
+                        colorbar=dict(
+                            title=dict(text="Median Residual", font=dict(size=10)),
+                            thickness=8,
+                            len=0.3,
+                            x=0.98,
+                            xanchor="right",
+                            y=0.98,
+                            yanchor="top",
+                            xpad=0,
+                            ypad=0,
+                            tickfont=dict(size=10),
+                        ),
+                        opacity=0.9,
+                        line=dict(color="rgba(0, 0, 0, 0.5)", width=1),
+                    ),
                 )
             )
 
-            # Gradient legend: group title + indented color swatches
+            # Gradient legend: group title + color swatches
             gradient_legend = [
                 ("rgb(34, 139, 34)", "Low Target Difference"),
                 ("rgb(255, 215, 0)", "Medium Target Difference"),
@@ -232,7 +270,7 @@ class ConcordanceMap(ScatterPlot):
                         text=f"    Overlap Compounds (sim >= {self.novel_threshold})",
                         font=dict(size=12),
                     )
-                figure.add_trace(go.Scattergl(**trace_kwargs))
+                figure.add_trace(go.Scatter(**trace_kwargs))
 
         # --- Layout ---
         figure.update_layout(
@@ -255,6 +293,57 @@ class ConcordanceMap(ScatterPlot):
         )
 
         return figure
+
+    def register_internal_callbacks(self):
+        """Register hover callbacks for circle overlay and molecule tooltip."""
+
+        # Clientside callback for circle overlay (runs in browser, no server round trip)
+        clientside_callback(
+            circle_overlay_callback(self._circle_data_uri),
+            Output(f"{self.component_id}-overlay", "show"),
+            Output(f"{self.component_id}-overlay", "bbox"),
+            Output(f"{self.component_id}-overlay", "children"),
+            Input(f"{self.component_id}-graph", "hoverData"),
+        )
+
+        # Server-side callback for molecule tooltip
+        @callback(
+            Output(f"{self.component_id}-molecule-tooltip", "show"),
+            Output(f"{self.component_id}-molecule-tooltip", "bbox"),
+            Output(f"{self.component_id}-molecule-tooltip", "children"),
+            Input(f"{self.component_id}-graph", "hoverData"),
+        )
+        def _molecule_tooltip(hover_data):
+            """Show molecule tooltip when hovering over a compound."""
+            if hover_data is None or not self.has_smiles:
+                return False, no_update, no_update
+
+            customdata = hover_data["points"][0].get("customdata")
+            if customdata is None:
+                return False, no_update, no_update
+
+            if isinstance(customdata, (list, tuple)):
+                smiles = customdata[0]
+                mol_id = customdata[1] if len(customdata) > 1 and self.id_column else None
+            else:
+                smiles = customdata
+                mol_id = None
+
+            mol_width, mol_height = 300, 200
+            children = molecule_hover_tooltip(
+                smiles, mol_id=mol_id, width=mol_width, height=mol_height, background=self.hover_background
+            )
+
+            bbox = hover_data["points"][0]["bbox"]
+            center_x = (bbox["x0"] + bbox["x1"]) / 2
+            center_y = (bbox["y0"] + bbox["y1"]) / 2
+            adjusted_bbox = {
+                "x0": center_x + 5,
+                "x1": center_x + 5 + mol_width,
+                "y0": center_y - mol_height - (mol_height + 50),
+                "y1": center_y - (mol_height + 50),
+            }
+            return True, adjusted_bbox, children
 
 
 if __name__ == "__main__":

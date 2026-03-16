@@ -16,9 +16,9 @@ log = logging.getLogger("workbench")
 class ConcordanceExplorer(PluginInterface):
     """Composite plugin: ConcordanceMap (scatter) + AGTable (neighbor details on click).
 
-    Clicking a compound on the map populates the table with its nearest neighbors
-    from the DatasetConcordance proximity model. Clicking a table row highlights
-    the selected compound on the scatter plot.
+    Clicking a compound on the map populates the table with its nearest neighbors.
+    Clicking a table row triggers a hover on the scatter plot (white circle + molecule
+    tooltip) via Plotly.Fx.hover(), which works because ConcordanceMap uses go.Scatter (SVG).
 
     Expects a unified DataFrame from DatasetConcordance.concordance_results()
     and a ``dc`` kwarg with the DatasetConcordance object for neighbor lookups.
@@ -32,7 +32,7 @@ class ConcordanceExplorer(PluginInterface):
         self.component_id = None
         self.concordance_map = ConcordanceMap(graph_height="600px")
         self.table = AGTable()
-        self.dc = None  # DatasetConcordance object for neighbor lookups
+        self.dc = None
         super().__init__()
 
     def create_component(self, component_id: str) -> html.Div:
@@ -57,6 +57,8 @@ class ConcordanceExplorer(PluginInterface):
         return html.Div(
             id=component_id,
             children=[
+                # Hidden div as dummy output target for clientside callback
+                html.Div(id=f"{component_id}-hover-dummy", style={"display": "none"}),
                 dbc.Row(
                     [
                         dbc.Col(
@@ -90,13 +92,10 @@ class ConcordanceExplorer(PluginInterface):
         Returns:
             list: A list of updated property values (map props + table props).
         """
-        # Store the DatasetConcordance object for neighbor lookups on click
         self.dc = kwargs.pop("dc", None)
 
-        # Update the concordance map
         map_props = self.concordance_map.update_properties(input_data, **kwargs)
 
-        # Initialize the table with an empty DataFrame (no compound clicked yet)
         empty_df = pd.DataFrame(columns=["Click a compound to see neighbors"])
         table_props = self.table.update_properties(empty_df)
 
@@ -105,15 +104,18 @@ class ConcordanceExplorer(PluginInterface):
     def register_internal_callbacks(self):
         """Register cross-component callbacks for bidirectional interaction."""
 
-        # Register the concordance map's own internal callbacks (hover tooltip, dropdowns)
+        # Register the concordance map's own hover callbacks
         self.concordance_map.register_internal_callbacks()
+
+        graph_id = f"{self.component_id}-map-graph"
+        table_id = f"{self.component_id}-table"
 
         # --- Callback 1: Map click → Table update ---
         table_outputs = [Output(cid, prop, allow_duplicate=True) for cid, prop in self.table.properties]
 
         @callback(
             *table_outputs,
-            Input(f"{self.component_id}-map-graph", "clickData"),
+            Input(graph_id, "clickData"),
             prevent_initial_call=True,
         )
         def _update_table_on_click(click_data):
@@ -121,7 +123,6 @@ class ConcordanceExplorer(PluginInterface):
             if not click_data or "points" not in click_data or self.dc is None:
                 raise PreventUpdate
 
-            # Extract compound ID from customdata (index 1 = id_column)
             point = click_data["points"][0]
             customdata = point.get("customdata")
             if customdata is None or len(customdata) < 2:
@@ -130,60 +131,74 @@ class ConcordanceExplorer(PluginInterface):
             compound_id = customdata[1]
             log.info(f"ConcordanceExplorer: clicked compound '{compound_id}'")
 
-            # Get neighbors from the DatasetConcordance object
             neighbors_df = self.dc.neighbors(compound_id, n_neighbors=20)
 
-            # Drop the first column (id_column) — it just repeats the clicked compound ID
+            # Drop the id_column (repeats the clicked compound ID for every row)
             id_col = self.dc.id_column
             if id_col in neighbors_df.columns:
                 neighbors_df = neighbors_df.drop(columns=[id_col])
 
-            # Update the table and set compact column widths so more columns are visible
+            # Compact column widths so more columns are visible
             result = self.table.update_properties(neighbors_df)
-            column_defs = result[0]
-            for col_def in column_defs:
-                col_def["width"] = 120
+            for col_def in result[0]:
+                col_def["width"] = 150
             return result
 
-        # --- Callback 2: Table row click → Fake hover on scatter plot ---
-        # Clientside callback searches traces for the selected neighbor_id and triggers Plotly hover
-        graph_id = f"{self.component_id}-map-graph"
-        table_id = f"{self.component_id}-table"
+        # --- Callback 2: Table row click → Trigger hover on scatter plot ---
+        # Plotly.Fx.hover() works with go.Scatter (SVG), which ConcordanceMap uses.
+        # This triggers the existing hoverData callbacks (circle overlay + molecule tooltip).
         clientside_callback(
             """
             function(selectedRows) {
-                if (!selectedRows || selectedRows.length === 0) {
+                console.log('[ConcordanceExplorer] Callback 2 fired, selectedRows:', selectedRows);
+                if (!selectedRows || !selectedRows.length) {
+                    console.log('[ConcordanceExplorer] No selected rows, skipping');
                     return window.dash_clientside.no_update;
                 }
                 var neighborId = selectedRows[0].neighbor_id;
+                console.log('[ConcordanceExplorer] neighborId:', neighborId, 'type:', typeof neighborId);
                 if (!neighborId) {
                     return window.dash_clientside.no_update;
                 }
-
-                // Find the graph element and search its traces for the matching compound
                 var graphEl = document.getElementById('"""
             + graph_id
             + """');
+                console.log('[ConcordanceExplorer] graphEl found:', !!graphEl, 'has data:', !!(graphEl && graphEl.data));
                 if (!graphEl || !graphEl.data) {
                     return window.dash_clientside.no_update;
                 }
-
+                console.log('[ConcordanceExplorer] Searching', graphEl.data.length, 'traces');
                 for (var ci = 0; ci < graphEl.data.length; ci++) {
                     var trace = graphEl.data[ci];
-                    if (!trace.customdata) continue;
+                    if (!trace.customdata) {
+                        console.log('[ConcordanceExplorer] Trace', ci, '(' + trace.name + ') has no customdata');
+                        continue;
+                    }
+                    console.log('[ConcordanceExplorer] Trace', ci, '(' + trace.name + ') has', trace.customdata.length, 'points');
                     for (var pi = 0; pi < trace.customdata.length; pi++) {
                         var cd = trace.customdata[pi];
-                        // customdata[1] is the compound ID
                         if (cd && cd.length > 1 && cd[1] === neighborId) {
-                            Plotly.Fx.hover(graphEl, [{curveNumber: ci, pointNumber: pi}]);
+                            console.log('[ConcordanceExplorer] MATCH at trace', ci, 'point', pi, '- calling Fx.hover');
+                            try {
+                                Plotly.Fx.hover(graphEl, [{curveNumber: ci, pointNumber: pi}]);
+                                console.log('[ConcordanceExplorer] Fx.hover succeeded');
+                            } catch(e) {
+                                console.error('[ConcordanceExplorer] Fx.hover ERROR:', e);
+                            }
                             return window.dash_clientside.no_update;
                         }
                     }
+                    // Log first customdata entry for type comparison
+                    if (trace.customdata.length > 0) {
+                        var sample = trace.customdata[0];
+                        console.log('[ConcordanceExplorer] Sample customdata[0][1]:', sample[1], 'type:', typeof sample[1]);
+                    }
                 }
+                console.log('[ConcordanceExplorer] No match found for neighborId:', neighborId);
                 return window.dash_clientside.no_update;
             }
             """,
-            Output(table_id, "id"),  # Dummy output (no-op, just returns no_update)
+            Output(f"{self.component_id}-hover-dummy", "children"),
             Input(table_id, "selectedRows"),
             prevent_initial_call=True,
         )
