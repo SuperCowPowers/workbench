@@ -106,9 +106,9 @@ class Projection2D:
             return PCA(n_components=2)
 
         if projection == "UMAP" and UMAP_AVAILABLE:
-            n_neighbors = min(15, len(df) - 1)
-            min_dist = 0.25
-            if n_neighbors < 15:
+            n_neighbors = min(5, len(df) - 1)
+            min_dist = 0.5
+            if n_neighbors < 5:
                 self.log.warning(
                     f"Dataset size ({len(df)}) smaller than default n_neighbors, using n_neighbors={n_neighbors}"
                 )
