@@ -26,23 +26,25 @@ class ConcordanceMap(ScatterPlot):
 
     # Colorscale for SAR concordance: green (concordant) → red (discordant)
     CONCORDANCE_COLORSCALE = [
-        [0.0, "rgb(34, 139, 34)"],  # forest green — concordant
+        [0.0, "rgb(54, 139, 54)"],  # forest green — concordant
         [0.25, "rgb(154, 205, 50)"],  # yellow-green
-        [0.5, "rgb(255, 215, 0)"],  # gold
-        [0.75, "rgb(255, 99, 71)"],  # tomato
-        [1.0, "rgb(220, 20, 60)"],  # crimson — discordant
+        [0.5, "rgb(225, 215, 20)"],  # gold
+        [0.75, "rgb(225, 99, 71)"],  # tomato
+        [1.0, "rgb(220, 60, 60)"],  # crimson — discordant
     ]
 
-    def __init__(self, novel_threshold: float = 0.3):
+    def __init__(self, novel_threshold: float = 0.3, graph_height: str = "1200px"):
         """Initialize the ConcordanceMap plugin.
 
         Args:
             novel_threshold (float): Tanimoto similarity threshold below which query
                 compounds are considered "novel" (outside the model's applicability domain).
                 Default: 0.3 (standard ECFP4 dissimilarity boundary).
+            graph_height (str): CSS height for the graph component (default: "1200px").
         """
-        super().__init__(show_axes=False)
+        super().__init__(show_axes=False, show_controls=False)
         self.novel_threshold = novel_threshold
+        self.graph_height = graph_height
         self.concordance_cmax = None  # Set in update_properties from reference target std
 
     def create_component(self, component_id: str) -> html.Div:
@@ -58,7 +60,7 @@ class ConcordanceMap(ScatterPlot):
 
         # Make the graph larger for concordance visualization
         graph = component.children[0]
-        graph.style["height"] = "1200px"
+        graph.style["height"] = self.graph_height
 
         return component
 
@@ -137,7 +139,7 @@ class ConcordanceMap(ScatterPlot):
                     customdata=ref_df[custom_data_cols] if custom_data_cols else None,
                     marker=dict(
                         size=15,
-                        color="rgba(128, 128, 128, 0.5)",
+                        color="rgba(128, 128, 128, 0.75)",
                         line=dict(color="rgba(0, 0, 0, 0.25)", width=0.5),
                     ),
                 )
@@ -156,7 +158,7 @@ class ConcordanceMap(ScatterPlot):
                     customdata=novel_df[custom_data_cols] if custom_data_cols else None,
                     marker=dict(
                         size=15,
-                        color="rgba(110, 110, 180, 0.5)",
+                        color="rgba(110, 110, 200, 0.75)",
                         line=dict(color="rgba(0, 0, 0, 0.25)", width=1),
                     ),
                 )
@@ -179,7 +181,18 @@ class ConcordanceMap(ScatterPlot):
                 colorscale=self.CONCORDANCE_COLORSCALE,
                 cmin=0,
                 cmax=cmax,
-                colorbar=dict(title="|target_residual|", thickness=10),
+                colorbar=dict(
+                    title=dict(text="Median Residual", font=dict(size=10)),
+                    thickness=8,
+                    len=0.3,
+                    x=0.98,
+                    xanchor="right",
+                    y=0.98,
+                    yanchor="top",
+                    xpad=0,
+                    ypad=0,
+                    tickfont=dict(size=10),
+                ),
                 opacity=0.9,
                 line=dict(color="rgba(0, 0, 0, 0.5)", width=1),
             )
@@ -223,15 +236,15 @@ class ConcordanceMap(ScatterPlot):
 
         # --- Layout ---
         figure.update_layout(
-            margin={"t": 20, "b": 55, "r": 0, "l": 35, "pad": 0},
+            margin={"t": 0, "b": 0, "r": 0, "l": 0, "pad": 0},
             xaxis=dict(visible=False),
             yaxis=dict(visible=False),
             showlegend=True,
             legend=dict(
                 yanchor="top",
-                y=0.99,
+                y=1.0,
                 xanchor="left",
-                x=0.01,
+                x=0.0,
                 bgcolor="rgba(0, 0, 0, 0.3)",
                 font=dict(size=12),
                 groupclick="togglegroup",

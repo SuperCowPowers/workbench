@@ -143,40 +143,34 @@ class DatasetConcordance:
 
         return df
 
-    def query_neighbors(
-        self,
-        query_id: str,
-        n_neighbors: int = 5,
-        include_self: bool = True,
+    def neighbors(
+        self, compound_id: str, n_neighbors: int = 10, reference_only: bool = False
     ) -> pd.DataFrame:
-        """Get the nearest reference neighbors for a query compound.
-
-        Useful for drilling into a specific compound's neighborhood — e.g., hover
-        details in the UI showing the closest reference compounds with links.
+        """Get the nearest neighbors for a compound.
 
         Args:
-            query_id (str): ID of a query compound
-            n_neighbors (int): Number of reference neighbors to return (default: 5)
-            include_self (bool): Include the query compound in results (default: True)
+            compound_id (str): ID of any compound (reference or query).
+            n_neighbors (int): Number of neighbors to return (default: 10).
+            reference_only (bool): If True, only return reference neighbors (default: False).
 
         Returns:
-            pd.DataFrame: Reference neighbors sorted by similarity (descending),
-                with columns from prox.df (id, similarity, smiles, target, etc.)
+            pd.DataFrame: Neighbors sorted by similarity (descending), with columns:
+                id_column, neighbor_id, dataset, target_column, similarity.
         """
-        # Get extra neighbors to account for same-dataset hits being filtered out
-        k = n_neighbors * 3 + (1 if include_self else 0)
-        neighbors_df = self._prox.neighbors([query_id], n_neighbors=k, include_self=include_self)
+        # Fetch extra neighbors when filtering to account for same-dataset hits
+        k = n_neighbors * 3 if reference_only else n_neighbors
+        nbrs = self._prox.neighbors(compound_id, n_neighbors=k)
 
-        # Filter to reference neighbors (keep self if included)
-        dataset_lookup = self._prox.df.set_index(self.id_column)["dataset"]
-        neighbors_df["neighbor_dataset"] = neighbors_df["neighbor_id"].map(dataset_lookup)
-        is_self = neighbors_df["neighbor_id"] == query_id
-        is_ref = neighbors_df["neighbor_dataset"] == "reference"
-        result = neighbors_df[is_self | is_ref].drop(columns=["neighbor_dataset"])
+        if reference_only:
+            dataset_lookup = self._prox.df.set_index(self.id_column)["dataset"]
+            nbrs["neighbor_dataset"] = nbrs["neighbor_id"].map(dataset_lookup)
+            is_self = nbrs["neighbor_id"] == compound_id
+            is_ref = nbrs["neighbor_dataset"] == "reference"
+            nbrs = nbrs[is_self | is_ref].drop(columns=["neighbor_dataset"]).head(n_neighbors)
 
-        # Trim to requested count
-        keep = n_neighbors + (1 if include_self else 0)
-        return result.head(keep).reset_index(drop=True)
+        cols = [self.id_column, "neighbor_id", "dataset", self.target_column, "similarity"]
+        cols = [c for c in cols if c in nbrs.columns]
+        return nbrs[cols].reset_index(drop=True)
 
     def _compute_concordance(self) -> pd.DataFrame:
         """Compute overlap and SAR concordance for each query compound vs the reference.
