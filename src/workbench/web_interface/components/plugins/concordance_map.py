@@ -4,7 +4,6 @@ import base64
 import pandas as pd
 import plotly.graph_objects as go
 from dash import dcc, html, callback, clientside_callback, Input, Output, no_update
-from dash.exceptions import PreventUpdate
 
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.clientside_callbacks import circle_overlay_callback, external_highlight_callback
