@@ -25,16 +25,18 @@ class ScatterPlot(PluginInterface):
     </svg>"""
     _circle_data_uri = f"data:image/svg+xml;base64,{base64.b64encode(_circle_svg.encode('utf-8')).decode('utf-8')}"
 
-    def __init__(self, show_axes: bool = True):
+    def __init__(self, show_axes: bool = True, show_controls: bool = True):
         """Initialize the Scatter Plot Plugin
 
         Args:
             show_axes (bool): Whether to show the axes and grid. Default is True.
+            show_controls (bool): Whether to show the X/Y/Color dropdowns. Default is True.
         """
         self.component_id = None
         self.hover_columns = []
         self.df = None
         self.show_axes = show_axes
+        self.show_controls = show_controls
         self.has_smiles = False  # Track if dataframe has smiles column for molecule hover
         self.smiles_column = None
         self.id_column = None
@@ -136,7 +138,12 @@ class ScatterPlot(PluginInterface):
                             style={"marginLeft": "20px", "display": "flex", "alignItems": "center"},
                         ),
                     ],
-                    style={"padding": "0px 0px 10px 0px", "display": "flex", "alignItems": "center", "gap": "5px"},
+                    style={
+                        "padding": "0px 0px 10px 0px",
+                        "display": "flex" if self.show_controls else "none",
+                        "alignItems": "center",
+                        "gap": "5px",
+                    },
                 ),
                 # Circle overlay tooltip (centered on hovered point)
                 dcc.Tooltip(
