@@ -7,7 +7,7 @@ from dash import dcc, html, callback, clientside_callback, Input, Output, no_upd
 from dash.exceptions import PreventUpdate
 
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.utils.clientside_callbacks import circle_overlay_callback
+from workbench.utils.clientside_callbacks import circle_overlay_callback, external_highlight_callback
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
 
 
@@ -19,8 +19,8 @@ class ConcordanceMap(PluginInterface):
         2. Novel query compounds with low chemical space overlap (blue)
         3. Overlapping query compounds colored by |target_residual| (green -> red)
 
-    Uses go.Scatter (SVG) instead of Scattergl to enable Plotly.Fx.hover() for
-    programmatic hover triggering from external components (e.g. table selection).
+    Uses go.Scatter (SVG) for compatibility with external highlight overlays
+    triggered from external components (e.g. table row selection).
 
     Expects a unified DataFrame from DatasetConcordance.concordance_results()
     with columns: x, y, dataset, tanimoto_sim, target_residual, etc.
@@ -44,16 +44,21 @@ class ConcordanceMap(PluginInterface):
     </svg>"""
     _circle_data_uri = f"data:image/svg+xml;base64,{base64.b64encode(_circle_svg.encode('utf-8')).decode('utf-8')}"
 
-    def __init__(self, novel_threshold: float = 0.3, graph_height: str = "1200px"):
+    def __init__(self, novel_threshold: float = 0.3, graph_height: str = "1200px", external_hover_id: str = None):
         """Initialize the ConcordanceMap plugin.
 
         Args:
             novel_threshold (float): Tanimoto similarity threshold below which query
                 compounds are considered "novel" (default: 0.3).
             graph_height (str): CSS height for the graph component (default: "1200px").
+            external_hover_id (str): Optional ID of a dcc.Store whose data must
+                include ``{"mol_id": str}``. A clientside callback finds the matching
+                SVG point and dispatches a synthetic mousemove to trigger Plotly's
+                real hover, so the existing hover callbacks fire normally.
         """
         self.novel_threshold = novel_threshold
         self.graph_height = graph_height
+        self.external_hover_id = external_hover_id
         self.concordance_cmax = None
         self.component_id = None
         self.df = None
@@ -135,10 +140,10 @@ class ConcordanceMap(PluginInterface):
         else:
             self.concordance_cmax = None
 
-        figure = self.create_scatter_plot(self.df, "x", "y")
+        figure = self._create_scatter_plot(self.df, "x", "y")
         return [figure]
 
-    def create_scatter_plot(self, df: pd.DataFrame, x_col: str, y_col: str) -> go.Figure:
+    def _create_scatter_plot(self, df: pd.DataFrame, x_col: str, y_col: str) -> go.Figure:
         """Build the concordance-specific multi-layer figure.
 
         Args:
@@ -295,27 +300,42 @@ class ConcordanceMap(PluginInterface):
         return figure
 
     def register_internal_callbacks(self):
-        """Register hover callbacks for circle overlay and molecule tooltip."""
+        """Register hover callbacks for circle overlay and molecule tooltip.
 
-        # Clientside callback for circle overlay (runs in browser, no server round trip)
+        If ``external_hover_id`` was provided, a clientside callback dispatches a
+        synthetic mousemove on the matching SVG point to trigger Plotly's real hover.
+        """
+        graph_id = f"{self.component_id}-graph"
+        overlay_id = f"{self.component_id}-overlay"
+
+        # --- Optional: external store → synthetic mousemove (triggers real hoverData) ---
+        if self.external_hover_id:
+            clientside_callback(
+                external_highlight_callback(graph_id),
+                Output(graph_id, "id"),  # dummy output (id never changes)
+                Input(self.external_hover_id, "data"),
+                prevent_initial_call=True,
+            )
+
+        # --- Circle overlay on hover (clientside — no server round trip) ---
         clientside_callback(
             circle_overlay_callback(self._circle_data_uri),
-            Output(f"{self.component_id}-overlay", "show"),
-            Output(f"{self.component_id}-overlay", "bbox"),
-            Output(f"{self.component_id}-overlay", "children"),
-            Input(f"{self.component_id}-graph", "hoverData"),
+            Output(overlay_id, "show"),
+            Output(overlay_id, "bbox"),
+            Output(overlay_id, "children"),
+            Input(graph_id, "hoverData"),
         )
 
-        # Server-side callback for molecule tooltip
+        # --- Molecule tooltip (server-side for RDKit rendering) ---
         @callback(
             Output(f"{self.component_id}-molecule-tooltip", "show"),
             Output(f"{self.component_id}-molecule-tooltip", "bbox"),
             Output(f"{self.component_id}-molecule-tooltip", "children"),
-            Input(f"{self.component_id}-graph", "hoverData"),
+            Input(graph_id, "hoverData"),
         )
         def _molecule_tooltip(hover_data):
-            """Show molecule tooltip when hovering over a compound."""
-            if hover_data is None or not self.has_smiles:
+            """Show molecule tooltip on hover."""
+            if not hover_data or not self.has_smiles:
                 return False, no_update, no_update
 
             customdata = hover_data["points"][0].get("customdata")

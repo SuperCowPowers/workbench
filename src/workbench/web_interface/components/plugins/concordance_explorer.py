@@ -3,7 +3,7 @@
 import logging
 import pandas as pd
 import dash_bootstrap_components as dbc
-from dash import html, callback, clientside_callback, Input, Output
+from dash import dcc, html, callback, Input, Output
 from dash.exceptions import PreventUpdate
 
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
@@ -17,11 +17,8 @@ class ConcordanceExplorer(PluginInterface):
     """Composite plugin: ConcordanceMap (scatter) + AGTable (neighbor details on click).
 
     Clicking a compound on the map populates the table with its nearest neighbors.
-    Clicking a table row triggers a hover on the scatter plot (white circle + molecule
-    tooltip) via Plotly.Fx.hover(), which works because ConcordanceMap uses go.Scatter (SVG).
-
-    Expects a unified DataFrame from DatasetConcordance.concordance_results()
-    and a ``dc`` kwarg with the DatasetConcordance object for neighbor lookups.
+    Clicking a table row highlights the corresponding scatter point (white circle +
+    molecule tooltip) via a shared dcc.Store and a clientside synthetic mousemove.
     """
 
     auto_load_page = PluginPage.NONE
@@ -30,9 +27,9 @@ class ConcordanceExplorer(PluginInterface):
     def __init__(self):
         """Initialize the ConcordanceExplorer plugin."""
         self.component_id = None
-        self.concordance_map = ConcordanceMap(graph_height="600px")
         self.table = AGTable()
         self.dc = None
+        self.concordance_map = None
         super().__init__()
 
     def create_component(self, component_id: str) -> html.Div:
@@ -45,20 +42,19 @@ class ConcordanceExplorer(PluginInterface):
             html.Div: A Dash Div containing the concordance map and neighbors table.
         """
         self.component_id = component_id
+        store_id = f"{component_id}-hover-store"
 
-        # Create child components with namespaced IDs
+        self.concordance_map = ConcordanceMap(graph_height="600px", external_hover_id=store_id)
         map_component = self.concordance_map.create_component(f"{component_id}-map")
         table_component = self.table.create_component(f"{component_id}-table")
 
-        # Aggregate properties and signals from children
         self.properties = list(self.concordance_map.properties) + list(self.table.properties)
         self.signals = list(self.concordance_map.signals) + list(self.table.signals)
 
         return html.Div(
             id=component_id,
             children=[
-                # Hidden div as dummy output target for clientside callback
-                html.Div(id=f"{component_id}-hover-dummy", style={"display": "none"}),
+                dcc.Store(id=store_id),
                 dbc.Row(
                     [
                         dbc.Col(
@@ -103,14 +99,13 @@ class ConcordanceExplorer(PluginInterface):
 
     def register_internal_callbacks(self):
         """Register cross-component callbacks for bidirectional interaction."""
-
-        # Register the concordance map's own hover callbacks
         self.concordance_map.register_internal_callbacks()
 
         graph_id = f"{self.component_id}-map-graph"
         table_id = f"{self.component_id}-table"
+        store_id = f"{self.component_id}-hover-store"
 
-        # --- Callback 1: Map click → Table update ---
+        # --- Map click → populate table with neighbors ---
         table_outputs = [Output(cid, prop, allow_duplicate=True) for cid, prop in self.table.properties]
 
         @callback(
@@ -119,7 +114,6 @@ class ConcordanceExplorer(PluginInterface):
             prevent_initial_call=True,
         )
         def _update_table_on_click(click_data):
-            """When a compound is clicked, populate the table with its neighbors."""
             if not click_data or "points" not in click_data or self.dc is None:
                 raise PreventUpdate
 
@@ -133,75 +127,32 @@ class ConcordanceExplorer(PluginInterface):
 
             neighbors_df = self.dc.neighbors(compound_id, n_neighbors=20)
 
-            # Drop the id_column (repeats the clicked compound ID for every row)
             id_col = self.dc.id_column
             if id_col in neighbors_df.columns:
                 neighbors_df = neighbors_df.drop(columns=[id_col])
 
-            # Compact column widths so more columns are visible
             result = self.table.update_properties(neighbors_df)
             for col_def in result[0]:
                 col_def["width"] = 150
             return result
 
-        # --- Callback 2: Table row click → Trigger hover on scatter plot ---
-        # Plotly.Fx.hover() works with go.Scatter (SVG), which ConcordanceMap uses.
-        # This triggers the existing hoverData callbacks (circle overlay + molecule tooltip).
-        clientside_callback(
-            """
-            function(selectedRows) {
-                console.log('[ConcordanceExplorer] Callback 2 fired, selectedRows:', selectedRows);
-                if (!selectedRows || !selectedRows.length) {
-                    console.log('[ConcordanceExplorer] No selected rows, skipping');
-                    return window.dash_clientside.no_update;
-                }
-                var neighborId = selectedRows[0].neighbor_id;
-                console.log('[ConcordanceExplorer] neighborId:', neighborId, 'type:', typeof neighborId);
-                if (!neighborId) {
-                    return window.dash_clientside.no_update;
-                }
-                var graphEl = document.getElementById('"""
-            + graph_id
-            + """');
-                console.log('[ConcordanceExplorer] graphEl found:', !!graphEl, 'has data:', !!(graphEl && graphEl.data));
-                if (!graphEl || !graphEl.data) {
-                    return window.dash_clientside.no_update;
-                }
-                console.log('[ConcordanceExplorer] Searching', graphEl.data.length, 'traces');
-                for (var ci = 0; ci < graphEl.data.length; ci++) {
-                    var trace = graphEl.data[ci];
-                    if (!trace.customdata) {
-                        console.log('[ConcordanceExplorer] Trace', ci, '(' + trace.name + ') has no customdata');
-                        continue;
-                    }
-                    console.log('[ConcordanceExplorer] Trace', ci, '(' + trace.name + ') has', trace.customdata.length, 'points');
-                    for (var pi = 0; pi < trace.customdata.length; pi++) {
-                        var cd = trace.customdata[pi];
-                        if (cd && cd.length > 1 && cd[1] === neighborId) {
-                            console.log('[ConcordanceExplorer] MATCH at trace', ci, 'point', pi, '- calling Fx.hover');
-                            try {
-                                Plotly.Fx.hover(graphEl, [{curveNumber: ci, pointNumber: pi}]);
-                                console.log('[ConcordanceExplorer] Fx.hover succeeded');
-                            } catch(e) {
-                                console.error('[ConcordanceExplorer] Fx.hover ERROR:', e);
-                            }
-                            return window.dash_clientside.no_update;
-                        }
-                    }
-                    // Log first customdata entry for type comparison
-                    if (trace.customdata.length > 0) {
-                        var sample = trace.customdata[0];
-                        console.log('[ConcordanceExplorer] Sample customdata[0][1]:', sample[1], 'type:', typeof sample[1]);
-                    }
-                }
-                console.log('[ConcordanceExplorer] No match found for neighborId:', neighborId);
-                return window.dash_clientside.no_update;
-            }
-            """,
-            Output(f"{self.component_id}-hover-dummy", "children"),
+        # --- Table row selection → write mol_id to Store ---
+        # The Store triggers a clientside callback in ConcordanceMap that dispatches
+        # a synthetic mousemove to trigger Plotly's real hover on the matching point.
+        @callback(
+            Output(store_id, "data"),
             Input(table_id, "selectedRows"),
             prevent_initial_call=True,
         )
+        def _table_to_hover_store(selected_rows):
+            if not selected_rows:
+                raise PreventUpdate
+
+            neighbor_id = selected_rows[0].get("neighbor_id")
+            if not neighbor_id:
+                raise PreventUpdate
+
+            return {"mol_id": str(neighbor_id)}
 
 
 if __name__ == "__main__":

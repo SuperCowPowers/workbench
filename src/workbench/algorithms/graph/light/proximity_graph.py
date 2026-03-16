@@ -1,6 +1,5 @@
 import networkx as nx
 import pandas as pd
-from typing import Union
 import logging
 
 # Workbench Imports
@@ -16,79 +15,60 @@ class ProximityGraph:
 
     def __init__(self):
         """Build a NetworkX graph using the Proximity class."""
-
-        # The graph is stored as NetworkX graph
         self._nx_graph = None
-
-        # GraphStore
         self.graph_store = GraphStore()
 
-    def build_graph(self, proximity_instance: Proximity) -> None:
-        """
-        Build a NetworkX graph using a Proximity class.
+    def build_graph(self, prox: Proximity, n_neighbors: int = 5, min_edges: int = 2, min_weight: float = 0.8) -> None:
+        """Build a NetworkX graph from a Proximity instance.
 
         Args:
-            proximity_instance (Proximity): An instance of a Proximity class to compute neighbors.
+            prox (Proximity): An instance of a Proximity class.
+            n_neighbors (int): Number of neighbors to retrieve per node (default: 5).
+            min_edges (int): Minimum edges per node (default: 2).
+            min_weight (float): Weight threshold for additional edges beyond min_edges (default: 0.8).
         """
-        # Retrieve all neighbors and their distances
-        prox = proximity_instance
         node_df = prox.df
         id_column = prox.id_column
-        log.info("Retrieving all neighbors...")
-        all_neighbors_df = prox.all_neighbors()
 
-        # Add nodes with attributes (features)
+        # Get all neighbor pairs
+        log.info("Retrieving all neighbors...")
+        all_ids = node_df[id_column].tolist()
+        neighbors_df = prox.neighbors(all_ids, n_neighbors=n_neighbors, include_self=False)
+
+        # Build the graph and add nodes
         log.info("Adding nodes to the proximity graph...")
         self._nx_graph = nx.Graph()
 
-        # Check for duplicate IDs in the node DataFrame
+        # Handle duplicate IDs
         if not node_df[id_column].is_unique:
-            log.error(f"Column '{id_column}' contains duplicate values. Using first occurrence for each ID...")
+            log.warning(f"Column '{id_column}' contains duplicate values. Using first occurrence.")
             node_df = node_df.drop_duplicates(subset=[id_column], keep="first")
 
-        # Set the id_column as index and add nodes
         self._nx_graph.add_nodes_from(node_df.set_index(id_column, drop=False).to_dict("index").items())
 
-        # Determine edge weights based on proximity type
-        # if prox.proximity_type == ProximityType.SIMILARITY:
-        #     all_neighbors_df["weight"] = all_neighbors_df["similarity"]
-        # elif prox.proximity_type == ProximityType.DISTANCE:
+        # Compute edge weights (handle both distance-based and similarity-based proximity)
+        if "similarity" in neighbors_df.columns:
+            neighbors_df["weight"] = neighbors_df["similarity"]
+        else:
+            max_distance = neighbors_df["distance"].max()
+            neighbors_df["weight"] = 1.0 - neighbors_df["distance"] / max_distance if max_distance > 0 else 1.0
 
-        # Normalize and invert distance
-        max_distance = all_neighbors_df["distance"].max()
-        all_neighbors_df["weight"] = 1.0 - all_neighbors_df["distance"] / max_distance
-
-        # Add edges to the graph
+        # Add edges: guarantee min_edges per node, plus any above min_weight
         log.info("Adding edges to the graph...")
-        min_edges = 2
-        min_weight = 0.8
-
-        # Group by source ID and process each group
-        for source_id, group in all_neighbors_df.groupby(id_column):
-            # Sort by weight (assuming higher is better)
+        for source_id, group in neighbors_df.groupby(id_column):
             sorted_group = group.sort_values("weight", ascending=False)
-
-            # Take all edges up to min_edges (or all if fewer)
-            actual_min_edges = min(len(sorted_group), min_edges)
-            top_edges = sorted_group.iloc[:actual_min_edges]
-
-            # Also take any additional neighbors above min_weight (beyond the top edges)
-            high_weight_edges = sorted_group.iloc[actual_min_edges:][
-                sorted_group.iloc[actual_min_edges:]["weight"] > min_weight
-            ]
-
-            # Combine both sets
-            edges_to_add = pd.concat([top_edges, high_weight_edges])
-
-            # Add all edges at once
+            n_top = min(len(sorted_group), min_edges)
+            top_edges = sorted_group.iloc[:n_top]
+            extra_edges = sorted_group.iloc[n_top:]
+            extra_edges = extra_edges[extra_edges["weight"] > min_weight]
+            edges = pd.concat([top_edges, extra_edges])
             self._nx_graph.add_edges_from(
-                [(source_id, row["neighbor_id"], {"weight": row["weight"]}) for _, row in edges_to_add.iterrows()]
+                [(source_id, row["neighbor_id"], {"weight": row["weight"]}) for _, row in edges.iterrows()]
             )
 
     @property
     def nx_graph(self) -> nx.Graph:
-        """
-        Get the NetworkX graph object.
+        """Get the NetworkX graph object.
 
         Returns:
             nx.Graph: The NetworkX graph object.
@@ -96,8 +76,7 @@ class ProximityGraph:
         return self._nx_graph
 
     def load_graph(self, graph_path: str):
-        """
-        Load a graph from the GraphStore.
+        """Load a graph from the GraphStore.
 
         Args:
             graph_path (str): The path to the graph in GraphStore.
@@ -105,150 +84,93 @@ class ProximityGraph:
         self._nx_graph = self.graph_store.get(graph_path)
 
     def store_graph(self, graph_path: str):
-        """
-        Store the graph in the GraphStore.
+        """Store the graph in the GraphStore.
 
         Args:
             graph_path (str): The path to store the graph in GraphStore.
         """
         self.graph_store.upsert(graph_path, self._nx_graph)
 
-    def get_neighborhood(self, node_id: Union[str, int], radius: int = 1) -> nx.Graph:
-        """
-        Get a subgraph containing nodes within a given number of hops around a specific node.
+    def get_neighborhood(self, node_id, radius: int = 1) -> nx.Graph:
+        """Get a subgraph containing nodes within a given number of hops around a node.
 
         Args:
-            node_id: The ID of the node to center the neighborhood around.
-            radius: The number of hops to consider around the node (default: 1).
+            node_id: The ID of the center node.
+            radius (int): Number of hops (default: 1).
 
         Returns:
-            nx.Graph: A subgraph containing the specified neighborhood.
+            nx.Graph: A subgraph containing the neighborhood.
         """
-        # Use NetworkX's ego_graph to extract the neighborhood within the given radius
-        if node_id in self._nx_graph:
-            return nx.ego_graph(self._nx_graph, node_id, radius=radius)
-        else:
+        if node_id not in self._nx_graph:
             raise ValueError(f"Node ID '{node_id}' not found in the graph.")
+        return nx.ego_graph(self._nx_graph, node_id, radius=radius)
 
 
 if __name__ == "__main__":
     from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
+
+    # Quick test with feature data
+    feature_df = pd.DataFrame(
+        {
+            "id": [1, 2, 3, 4],
+            "Feature1": [0.1, 0.2, 0.3, 0.4],
+            "Feature2": [0.5, 0.4, 0.3, 0.2],
+            "target": [10, 20, 30, 40],
+        }
+    )
+
+    print("--- FeatureSpaceProximity Graph ---")
+    prox = FeatureSpaceProximity(feature_df, id_column="id", features=["Feature1", "Feature2"], target="target")
+    graph = ProximityGraph()
+    graph.build_graph(prox, n_neighbors=3)
+    print(f"Nodes: {graph.nx_graph.number_of_nodes()}, Edges: {graph.nx_graph.number_of_edges()}")
+    print("Edges:", graph.nx_graph.edges(data=True))
+
+    # Quick test with fingerprint data
+    fingerprint_df = pd.DataFrame(
+        {
+            "id": [1, 2, 3, 4],
+            "fingerprint": ["101010", "111010", "101110", "011100"],
+        }
+    )
+
+    print("\n--- FingerprintProximity Graph ---")
+    prox = FingerprintProximity(fingerprint_df, fingerprint_column="fingerprint", id_column="id")
+    graph = ProximityGraph()
+    graph.build_graph(prox, n_neighbors=3)
+    print(f"Nodes: {graph.nx_graph.number_of_nodes()}, Edges: {graph.nx_graph.number_of_edges()}")
+    print("Edges:", graph.nx_graph.edges(data=True))
+
+    # Neighborhood test
+    print("\n--- Neighborhood for Node 1 ---")
+    neighborhood = graph.get_neighborhood(node_id=1, radius=1)
+    print(f"Nodes: {list(neighborhood.nodes())}, Edges: {list(neighborhood.edges())}")
+
+    # Real dataset with graph visualization
     from workbench.web_interface.components.plugins.graph_plot import GraphPlot
     from workbench.api import DFStore
     from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
-    from workbench.utils.chem_utils.projections import project_fingerprints
-    from workbench.utils.graph_utils import connected_sample, graph_layout
+    from workbench.utils.graph_utils import graph_layout
 
-    def show_graph(graph, id_column):
-        """Display the graph using Plotly."""
-        graph_plot = GraphPlot()
-        properties = graph_plot.update_properties(graph, labels=id_column, hover_text="all")
-        fig = properties[0]
-        fig.update_layout(paper_bgcolor="rgb(30,30,30)", plot_bgcolor="rgb(30,30,30)")
-        fig.show()
-
-    # Example DataFrame for FeaturesProximity
-    feature_data = {
-        "id": [1, 2, 3, 4],
-        "Feature1": [0.1, 0.2, 0.3, 0.4],
-        "Feature2": [0.5, 0.4, 0.3, 0.2],
-        "target": [10, 20, 30, 40],
-    }
-    feature_df = pd.DataFrame(feature_data)
-
-    # Build a graph using FeatureSpaceProximity
-    print("\n--- FeatureSpaceProximity Class ---")
-    prox = FeatureSpaceProximity(feature_df, id_column="id", features=["Feature1", "Feature2"], target="target")
-    feature_graph = ProximityGraph()
-    feature_graph.build_graph(prox)
-    nx_graph = feature_graph.nx_graph
-    print("Edges:", nx_graph.edges(data=True))
-
-    # Example DataFrame for FingerprintProximity
-    fingerprint_data = {
-        "id": [1, 2, 3, 4],
-        "fingerprint": ["101010", "111010", "101110", "011100"],
-    }
-    fingerprint_df = pd.DataFrame(fingerprint_data)
-
-    # Build a graph using FingerprintProximity
-    print("\n--- FingerprintProximity Graph ---")
-    prox = FingerprintProximity(fingerprint_df, fingerprint_column="fingerprint", id_column="id")
-    fingerprint_graph = ProximityGraph()
-    fingerprint_graph.build_graph(prox)
-    nx_graph = fingerprint_graph.nx_graph
-    print("Edges:", nx_graph.edges(data=True))
-
-    # Neighborhood subgraph for FeaturesProximity
-    print("\n--- Neighborhood Subgraph for Node 1 ---")
-    neighborhood_subgraph = feature_graph.get_neighborhood(node_id=1, radius=1)
-    print("Nodes:", neighborhood_subgraph.nodes())
-    print("Edges:", neighborhood_subgraph.edges(data=True))
-
-    # Plot the full graph
-    show_graph(nx_graph, "id")
-
-    # Get a neighborhood subgraph for a specific node
-    neighborhood_subgraph = fingerprint_graph.get_neighborhood(node_id=fingerprint_df["id"].iloc[0], radius=2)
-
-    # Plot the neighborhood subgraph
-    show_graph(neighborhood_subgraph, "id")
-
-    # Compute a shortest path subgraph using two random nodes
-    source_node = fingerprint_df["id"].iloc[0]
-    target_node = fingerprint_df["id"].iloc[-1]
-    short_path = set(nx.shortest_path(nx_graph, source=source_node, target=target_node, weight="weight"))
-    subgraph = nx_graph.subgraph(short_path)
-
-    # Plot the subgraph
-    show_graph(subgraph, "id")
-
-    # Now a real dataset with fingerprints
-
-    # Pull in the tox21 data
-    tox_df = DFStore().get("/datasets/chem_info/tox21")[:1000]
+    print("\n--- Tox21 FingerprintProximity Graph ---")
+    tox_df = DFStore().get("/datasets/chem_info/tox21")[:500]
     tox_df = compute_morgan_fingerprints(tox_df)
-    id_column = "id"
+    prox = FingerprintProximity(tox_df, fingerprint_column="fingerprint", id_column="id")
+    graph = ProximityGraph()
+    graph.build_graph(prox, n_neighbors=5)
+    nx_graph = graph.nx_graph
+    print(f"Nodes: {nx_graph.number_of_nodes()}, Edges: {nx_graph.number_of_edges()}")
 
-    # Project the fingerprints to 2D space
-    tox_df = project_fingerprints(tox_df, projection="UMAP")
-
-    # Compute FingerprintProximity Graph
-    print("\nComputing FingerprintProximity Graph for Tox21 Data...")
-    prox = FingerprintProximity(tox_df, fingerprint_column="fingerprint", id_column=id_column, n_neighbors=5)
-    fingerprint_graph = ProximityGraph()
-    fingerprint_graph.build_graph(prox)
-    nx_graph = fingerprint_graph.nx_graph
-    print("\nTox21 Graph:")
-    print("Nodes:", nx_graph.number_of_nodes())
-    print("Edges:", nx_graph.number_of_edges())
-
-    # Grab the biggest connected component
+    # Largest connected component + layout
     largest_cc = max(nx.connected_components(nx_graph), key=len)
-    nx_graph = nx.subgraph(nx_graph, largest_cc)
-    print("Largest Connected Component:")
-    print("Nodes:", nx_graph.number_of_nodes())
-    print("Edges:", nx_graph.number_of_edges())
-
-    # Now fine tune the projection with force-directed layout
-    print("\nApplying force-directed layout...")
+    nx_graph = nx.subgraph(nx_graph, largest_cc).copy()
     nx_graph = graph_layout(nx_graph)
+    print(f"Largest CC - Nodes: {nx_graph.number_of_nodes()}, Edges: {nx_graph.number_of_edges()}")
 
-    # Store the graph in the GraphStore
-    gstore = GraphStore()
-    print("\nStoring the graph in GraphStore...")
-    gstore.upsert("chem_info/tox21", nx_graph)
-
-    # Compute a connected sample of the graph
-    print("\nComputing a connected sample of the graph...")
-    sample = connected_sample(nx_graph, n=100)
-    sample = graph_layout(sample)
-
-    # Store the graph in the GraphStore
-    print("\nStoring the sample graph in GraphStore...")
-    gstore.upsert("chem_info/tox21_100", sample)
-
-    # Plot a sample of the graph
-    print("\nShowing the connected sample graph...")
-    show_graph(sample, id_column)
+    # Show the graph
+    graph_plot = GraphPlot()
+    props = graph_plot.update_properties(nx_graph, labels="id", hover_text="all")
+    fig = props[0]
+    fig.update_layout(paper_bgcolor="rgb(30,30,30)", plot_bgcolor="rgb(30,30,30)")
+    fig.show()
