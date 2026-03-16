@@ -143,9 +143,7 @@ class DatasetConcordance:
 
         return df
 
-    def neighbors(
-        self, compound_id: str, n_neighbors: int = 10, reference_only: bool = False
-    ) -> pd.DataFrame:
+    def neighbors(self, compound_id: str, n_neighbors: int = 10, reference_only: bool = False) -> pd.DataFrame:
         """Get the nearest neighbors for a compound.
 
         Args:

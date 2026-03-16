@@ -161,7 +161,9 @@ class ConcordanceExplorer(PluginInterface):
                 }
 
                 // Find the graph element and search its traces for the matching compound
-                var graphEl = document.getElementById('""" + graph_id + """');
+                var graphEl = document.getElementById('"""
+            + graph_id
+            + """');
                 if (!graphEl || !graphEl.data) {
                     return window.dash_clientside.no_update;
                 }
