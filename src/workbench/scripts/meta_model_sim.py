@@ -11,9 +11,7 @@ from workbench.api.meta_model import MetaModel
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Simulate and analyze ensemble model performance."
-    )
+    parser = argparse.ArgumentParser(description="Simulate and analyze ensemble model performance.")
     parser.add_argument(
         "endpoints",
         nargs="+",

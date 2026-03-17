@@ -5,9 +5,15 @@ endpoints using confidence-weighted voting. This provides ensemble benefits
 across different model frameworks (XGBoost, PyTorch, ChemProp, etc.).
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 import time
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from workbench.utils.meta_model_simulator import MetaModelSimulator
 
 from sagemaker.estimator import Estimator
 
@@ -52,7 +58,7 @@ class MetaModel(Model):
         cls,
         endpoints: list[str],
         capture_name: str = "full_cross_fold",
-    ):
+    ) -> "MetaModelSimulator":
         """Run ensemble simulation to analyze how different strategies perform.
 
         Backtraces the first endpoint's lineage to automatically resolve the
