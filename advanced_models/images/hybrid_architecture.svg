@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" font-family="'Segoe UI', Arial, sans-serif" font-size="14">
+  <defs>
+    <linearGradient id="blueG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a9eff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3a86ff;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="greenG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#34d399;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="purpleG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="orangeG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    <filter id="sh" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <!-- Top path: SMILES → MPNN → 700-dim vector -->
+  <rect x="20" y="30" width="100" height="40" rx="8" fill="url(#blueG)" filter="url(#sh)"/>
+  <text x="70" y="55" text-anchor="middle" fill="white" font-weight="600">SMILES</text>
+
+  <line x1="120" y1="50" x2="170" y2="50" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="175" y="30" width="100" height="40" rx="8" fill="url(#greenG)" filter="url(#sh)"/>
+  <text x="225" y="55" text-anchor="middle" fill="white" font-weight="600">MPNN</text>
+
+  <line x1="275" y1="50" x2="325" y2="50" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="330" y="30" width="150" height="40" rx="8" fill="url(#purpleG)" filter="url(#sh)"/>
+  <text x="405" y="55" text-anchor="middle" fill="white" font-weight="600">700-dim vector</text>
+
+  <!-- Arrow down from 700-dim to concatenate -->
+  <line x1="405" y1="70" x2="405" y2="120" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Bottom path: Descriptors → Scale → N descriptors -->
+  <rect x="20" y="150" width="130" height="40" rx="8" fill="url(#blueG)" filter="url(#sh)"/>
+  <text x="85" y="175" text-anchor="middle" fill="white" font-weight="600">Descriptors</text>
+
+  <line x1="150" y1="170" x2="195" y2="170" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="200" y="150" width="80" height="40" rx="8" fill="url(#greenG)" filter="url(#sh)"/>
+  <text x="240" y="175" text-anchor="middle" fill="white" font-weight="600">Scale</text>
+
+  <line x1="280" y1="170" x2="325" y2="170" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="330" y="150" width="150" height="40" rx="8" fill="url(#purpleG)" filter="url(#sh)"/>
+  <text x="405" y="175" text-anchor="middle" fill="white" font-weight="600">N descriptors</text>
+
+  <!-- Arrow up from N descriptors to concatenate -->
+  <line x1="405" y1="150" x2="405" y2="135" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Concatenate node -->
+  <rect x="355" y="105" width="100" height="30" rx="6" fill="#475569" filter="url(#sh)"/>
+  <text x="405" y="125" text-anchor="middle" fill="#e2e8f0" font-size="12" font-weight="600">concatenate</text>
+
+  <!-- Arrow from concatenate → FFN -->
+  <line x1="455" y1="120" x2="520" y2="120" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- FFN -->
+  <rect x="525" y="100" width="70" height="40" rx="8" fill="url(#greenG)" filter="url(#sh)"/>
+  <text x="560" y="125" text-anchor="middle" fill="white" font-weight="600">FFN</text>
+
+  <!-- Arrow from FFN → prediction -->
+  <line x1="595" y1="120" x2="620" y2="120" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Prediction -->
+  <rect x="625" y="100" width="60" height="40" rx="8" fill="url(#orangeG)" filter="url(#sh)"/>
+  <text x="655" y="125" text-anchor="middle" fill="white" font-weight="600" font-size="13">predict</text>
+</svg>

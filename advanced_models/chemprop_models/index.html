@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../cached_data_source/">
+        <link rel="prev" href="../">
       
       
-        <link rel="next" href="../cached_model/">
+        <link rel="next" href="../../meta_models/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Cached FeatureSet - ADMET Workbench</title>
+        <title>ChemProp Models - ADMET Workbench</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#cachedfeatureset" class="md-skip">
+        <a href="#chemprop-model-types" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Cached FeatureSet
+              ChemProp Models
             
           </span>
         </div>
@@ -339,18 +339,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
         
           
           <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
@@ -371,7 +373,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
@@ -389,7 +391,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../advanced_models/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -414,10 +416,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../advanced_models/chemprop_models/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ChemProp Models
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -433,6 +462,220 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#single-task-chemprop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Single-Task ChemProp
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Single-Task ChemProp">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#classification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-task-chemprop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Task ChemProp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hybrid-chemprop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hybrid ChemProp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#foundation-chemprop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundation ChemProp
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Foundation ChemProp">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chemeleon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CheMeleon
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-phase-training-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-Phase Training (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foundation-multi-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundation + Multi-Task
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foundation-hybrid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundation + Hybrid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-pretrained-weights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Pretrained Weights
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hyperparameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hyperparameters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hyperparameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#split-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Split Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confidence-and-uncertainty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confidence and Uncertainty
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-the-right-model-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing the Right Model Type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1002,20 +1245,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
         
           
           <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
@@ -1036,7 +1277,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1054,7 +1295,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../overview/" class="md-nav__link">
+      <a href="../../cached/overview/" class="md-nav__link">
         
   
   
@@ -1082,7 +1323,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cached_meta/" class="md-nav__link">
+      <a href="../../cached/cached_meta/" class="md-nav__link">
         
   
   
@@ -1110,7 +1351,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cached_data_source/" class="md-nav__link">
+      <a href="../../cached/cached_data_source/" class="md-nav__link">
         
   
   
@@ -1135,37 +1376,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Cached FeatureSet
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../cached/cached_feature_set/" class="md-nav__link">
         
   
   
@@ -1181,131 +1395,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        cached_feature_set
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CachedFeatureSet
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="CachedFeatureSet">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.__init__" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        __init__
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.details" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        details
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.health_check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        health_check
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.smart_sample" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        smart_sample
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.workbench_meta" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        workbench_meta
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Examples
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1318,7 +1407,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cached_model/" class="md-nav__link">
+      <a href="../../cached/cached_model/" class="md-nav__link">
         
   
   
@@ -1346,7 +1435,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cached_endpoint/" class="md-nav__link">
+      <a href="../../cached/cached_endpoint/" class="md-nav__link">
         
   
   
@@ -4674,88 +4763,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set" class="md-nav__link">
+  <a href="#single-task-chemprop" class="md-nav__link">
     <span class="md-ellipsis">
       
-        cached_feature_set
+        Single-Task ChemProp
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        CachedFeatureSet
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="CachedFeatureSet">
+    <nav class="md-nav" aria-label="Single-Task ChemProp">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.__init__" class="md-nav__link">
+  <a href="#classification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        __init__
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.details" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        details
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.health_check" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        health_check
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.smart_sample" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        smart_sample
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#workbench.cached.cached_feature_set.CachedFeatureSet.workbench_meta" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        workbench_meta
+        Classification
       
     </span>
   </a>
@@ -4768,10 +4791,165 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#examples" class="md-nav__link">
+  <a href="#multi-task-chemprop" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Examples
+        Multi-Task ChemProp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hybrid-chemprop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hybrid ChemProp
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#foundation-chemprop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundation ChemProp
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Foundation ChemProp">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chemeleon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CheMeleon
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#two-phase-training-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Two-Phase Training (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foundation-multi-task" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundation + Multi-Task
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foundation-hybrid" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundation + Hybrid
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-pretrained-weights" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom Pretrained Weights
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hyperparameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hyperparameters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Hyperparameters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#split-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Split Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#confidence-and-uncertainty" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Confidence and Uncertainty
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#choosing-the-right-model-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choosing the Right Model Type
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
       
     </span>
   </a>
@@ -4795,583 +4973,349 @@
 
 
 
-<h1 id="cachedfeatureset">CachedFeatureSet</h1>
+<h1 id="chemprop-model-types">ChemProp Model Types</h1>
 <div class="admonition tip inline end">
-<p class="admonition-title">Model Examples</p>
-<p>Examples of using the Model Class are in the <a href="#examples">Examples</a> section at the bottom of this page. AWS Model setup and deployment are quite complicated to do manually but the Workbench Model Class makes it a breeze!</p>
+<p class="admonition-title">OpenADMET Challenge</p>
+<p>ChemProp models were used by many top performers on the <a href="https://huggingface.co/spaces/openadmet/OpenADMET-ExpansionRx-Challenge">OpenADMET Leaderboard</a>. Workbench supports all four ChemProp model types with the same simple API.</p>
 </div>
-
-
-<div class="doc doc-object doc-module">
-
-
-
-<a id="workbench.cached.cached_feature_set"></a>
-    <div class="doc doc-contents first">
-
-        <p>CachedFeatureSet: Caches the method results for Workbench FeatureSets</p>
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="workbench.cached.cached_feature_set.CachedFeatureSet" class="doc doc-heading">
-            <code>CachedFeatureSet</code>
-
-
-</h2>
-
-
-    <div class="doc doc-contents ">
-            <p class="doc doc-class-bases">
-              Bases: <code><span title="workbench.cached.cached_artifact_mixin.CachedArtifactMixin">CachedArtifactMixin</span></code>, <code><a class="autorefs autorefs-internal" title="FeatureSetCore (workbench.core.artifacts.feature_set_core.FeatureSetCore)" href="../../core_classes/artifacts/feature_set_core/#workbench.core.artifacts.feature_set_core.FeatureSetCore">FeatureSetCore</a></code></p>
-
-
-
-        <p>CachedFeatureSet: Caches the method results for Workbench FeatureSets</p>
-<p>Note: Cached method values may lag underlying FeatureSet changes.</p>
-
-
-<details class="common-usage" open>
-  <summary>Common Usage</summary>
-  <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">my_features</span> <span class="o">=</span> <span class="n">CachedFeatureSet</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">my_features</span><span class="o">.</span><span class="n">details</span><span class="p">()</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">my_features</span><span class="o">.</span><span class="n">health_check</span><span class="p">()</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">my_features</span><span class="o">.</span><span class="n">workbench_meta</span><span class="p">()</span>
-</span></code></pre></div>
-</details>
-
-
-
-
-
-
-
-              <details class="mkdocstrings-source">
-                <summary>Source code in <code>src/workbench/cached/cached_feature_set.py</code></summary>
-                <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-12">12</a></span>
-<span class="normal"><a href="#__codelineno-0-13">13</a></span>
-<span class="normal"><a href="#__codelineno-0-14">14</a></span>
-<span class="normal"><a href="#__codelineno-0-15">15</a></span>
-<span class="normal"><a href="#__codelineno-0-16">16</a></span>
-<span class="normal"><a href="#__codelineno-0-17">17</a></span>
-<span class="normal"><a href="#__codelineno-0-18">18</a></span>
-<span class="normal"><a href="#__codelineno-0-19">19</a></span>
-<span class="normal"><a href="#__codelineno-0-20">20</a></span>
-<span class="normal"><a href="#__codelineno-0-21">21</a></span>
-<span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span>
-<span class="normal"><a href="#__codelineno-0-24">24</a></span>
-<span class="normal"><a href="#__codelineno-0-25">25</a></span>
-<span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span>
-<span class="normal"><a href="#__codelineno-0-29">29</a></span>
-<span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span>
-<span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span>
-<span class="normal"><a href="#__codelineno-0-38">38</a></span>
-<span class="normal"><a href="#__codelineno-0-39">39</a></span>
-<span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span>
-<span class="normal"><a href="#__codelineno-0-47">47</a></span>
-<span class="normal"><a href="#__codelineno-0-48">48</a></span>
-<span class="normal"><a href="#__codelineno-0-49">49</a></span>
-<span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span>
-<span class="normal"><a href="#__codelineno-0-56">56</a></span>
-<span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span>
-<span class="normal"><a href="#__codelineno-0-59">59</a></span>
-<span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span>
-<span class="normal"><a href="#__codelineno-0-63">63</a></span>
-<span class="normal"><a href="#__codelineno-0-64">64</a></span>
-<span class="normal"><a href="#__codelineno-0-65">65</a></span>
-<span class="normal"><a href="#__codelineno-0-66">66</a></span>
-<span class="normal"><a href="#__codelineno-0-67">67</a></span>
-<span class="normal"><a href="#__codelineno-0-68">68</a></span>
-<span class="normal"><a href="#__codelineno-0-69">69</a></span>
-<span class="normal"><a href="#__codelineno-0-70">70</a></span>
-<span class="normal"><a href="#__codelineno-0-71">71</a></span>
-<span class="normal"><a href="#__codelineno-0-72">72</a></span>
-<span class="normal"><a href="#__codelineno-0-73">73</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="k">class</span><span class="w"> </span><span class="nc">CachedFeatureSet</span><span class="p">(</span><span class="n">CachedArtifactMixin</span><span class="p">,</span> <span class="n">FeatureSetCore</span><span class="p">):</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;CachedFeatureSet: Caches the method results for Workbench FeatureSets</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14"></a>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="sd">    Note: Cached method values may lag underlying FeatureSet changes.</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16"></a>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="sd">    Common Usage:</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="sd">        ```python</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="sd">        my_features = CachedFeatureSet(name)</span>
-</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="sd">        my_features.details()</span>
-</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="sd">        my_features.health_check()</span>
-</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="sd">        my_features.workbench_meta()</span>
-</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23"></a><span class="sd">        ```</span>
-</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25"></a>
-</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_set_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;CachedFeatureSet Initialization&quot;&quot;&quot;</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>        <span class="n">FeatureSetCore</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_set_name</span><span class="o">=</span><span class="n">feature_set_name</span><span class="p">)</span>
-</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29"></a>
-</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a>    <span class="nd">@CachedArtifactMixin</span><span class="o">.</span><span class="n">cache_result</span>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the FeatureSet Details.</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">        Returns:</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">            dict: A dictionary of details about the FeatureSet</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38"></a>
-</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a>    <span class="nd">@CachedArtifactMixin</span><span class="o">.</span><span class="n">cache_result</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the FeatureSet Details.</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">        Returns:</span>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">            dict: A dictionary of details about the FeatureSet</span>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">details</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47"></a>
-</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a>    <span class="nd">@CachedArtifactMixin</span><span class="o">.</span><span class="n">cache_result</span>
-</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">health_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the FeatureSet Health Check.</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>
-</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="sd">        Returns:</span>
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="sd">            dict: A dictionary of health check details for the FeatureSet</span>
-</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">health_check</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56"></a>
-</span><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a>    <span class="nd">@CachedArtifactMixin</span><span class="o">.</span><span class="n">cache_result</span>
-</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">workbench_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the Workbench Metadata for this FeatureSet.</span>
-</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>
-</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">        Returns:</span>
-</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">            Union[dict, None]: Dictionary of Workbench metadata for this Artifact</span>
-</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">workbench_meta</span><span class="p">()</span>
-</span><span id="__span-0-65"><a id="__codelineno-0-65" name="__codelineno-0-65"></a>
-</span><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a>    <span class="nd">@CachedArtifactMixin</span><span class="o">.</span><span class="n">cache_result</span>
-</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">smart_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve the Smart Sample for this FeatureSet.</span>
-</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>
-</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">        Returns:</span>
-</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="sd">            pd.DataFrame: The Smart Sample DataFrame</span>
-</span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">smart_sample</span><span class="p">()</span>
-</span></code></pre></div></td></tr></table></div>
-              </details>
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="workbench.cached.cached_feature_set.CachedFeatureSet.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">feature_set_name</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>CachedFeatureSet Initialization</p>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/workbench/cached/cached_feature_set.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-26">26</a></span>
-<span class="normal"><a href="#__codelineno-0-27">27</a></span>
-<span class="normal"><a href="#__codelineno-0-28">28</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26"></a><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_set_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;CachedFeatureSet Initialization&quot;&quot;&quot;</span>
-</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28"></a>    <span class="n">FeatureSetCore</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">feature_set_name</span><span class="o">=</span><span class="n">feature_set_name</span><span class="p">)</span>
-</span></code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="workbench.cached.cached_feature_set.CachedFeatureSet.details" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">details</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Retrieve the FeatureSet Details.</p>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-<th>Name</th>          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-<td><code>dict</code></td>            <td>
-                  <code><span title="dict">dict</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A dictionary of details about the FeatureSet</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/workbench/cached/cached_feature_set.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-39">39</a></span>
-<span class="normal"><a href="#__codelineno-0-40">40</a></span>
-<span class="normal"><a href="#__codelineno-0-41">41</a></span>
-<span class="normal"><a href="#__codelineno-0-42">42</a></span>
-<span class="normal"><a href="#__codelineno-0-43">43</a></span>
-<span class="normal"><a href="#__codelineno-0-44">44</a></span>
-<span class="normal"><a href="#__codelineno-0-45">45</a></span>
-<span class="normal"><a href="#__codelineno-0-46">46</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39"></a><span class="nd">@CachedArtifactMixin</span><span class="o">.</span><span class="n">cache_result</span>
-</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40"></a><span class="k">def</span><span class="w"> </span><span class="nf">details</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the FeatureSet Details.</span>
-</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42"></a>
-</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44"></a><span class="sd">        dict: A dictionary of details about the FeatureSet</span>
-</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46"></a>    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">details</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span></code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="workbench.cached.cached_feature_set.CachedFeatureSet.health_check" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">health_check</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Retrieve the FeatureSet Health Check.</p>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-<th>Name</th>          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-<td><code>dict</code></td>            <td>
-                  <code><span title="dict">dict</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A dictionary of health check details for the FeatureSet</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/workbench/cached/cached_feature_set.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-48">48</a></span>
-<span class="normal"><a href="#__codelineno-0-49">49</a></span>
-<span class="normal"><a href="#__codelineno-0-50">50</a></span>
-<span class="normal"><a href="#__codelineno-0-51">51</a></span>
-<span class="normal"><a href="#__codelineno-0-52">52</a></span>
-<span class="normal"><a href="#__codelineno-0-53">53</a></span>
-<span class="normal"><a href="#__codelineno-0-54">54</a></span>
-<span class="normal"><a href="#__codelineno-0-55">55</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48"></a><span class="nd">@CachedArtifactMixin</span><span class="o">.</span><span class="n">cache_result</span>
-</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49"></a><span class="k">def</span><span class="w"> </span><span class="nf">health_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the FeatureSet Health Check.</span>
-</span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51"></a>
-</span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53"></a><span class="sd">        dict: A dictionary of health check details for the FeatureSet</span>
-</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55"></a>    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">health_check</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span></code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="workbench.cached.cached_feature_set.CachedFeatureSet.smart_sample" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">smart_sample</span><span class="p">()</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Retrieve the Smart Sample for this FeatureSet.</p>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="pandas.DataFrame">DataFrame</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>pd.DataFrame: The Smart Sample DataFrame</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/workbench/cached/cached_feature_set.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-66">66</a></span>
-<span class="normal"><a href="#__codelineno-0-67">67</a></span>
-<span class="normal"><a href="#__codelineno-0-68">68</a></span>
-<span class="normal"><a href="#__codelineno-0-69">69</a></span>
-<span class="normal"><a href="#__codelineno-0-70">70</a></span>
-<span class="normal"><a href="#__codelineno-0-71">71</a></span>
-<span class="normal"><a href="#__codelineno-0-72">72</a></span>
-<span class="normal"><a href="#__codelineno-0-73">73</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-66"><a id="__codelineno-0-66" name="__codelineno-0-66"></a><span class="nd">@CachedArtifactMixin</span><span class="o">.</span><span class="n">cache_result</span>
-</span><span id="__span-0-67"><a id="__codelineno-0-67" name="__codelineno-0-67"></a><span class="k">def</span><span class="w"> </span><span class="nf">smart_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-</span><span id="__span-0-68"><a id="__codelineno-0-68" name="__codelineno-0-68"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the Smart Sample for this FeatureSet.</span>
-</span><span id="__span-0-69"><a id="__codelineno-0-69" name="__codelineno-0-69"></a>
-</span><span id="__span-0-70"><a id="__codelineno-0-70" name="__codelineno-0-70"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-71"><a id="__codelineno-0-71" name="__codelineno-0-71"></a><span class="sd">        pd.DataFrame: The Smart Sample DataFrame</span>
-</span><span id="__span-0-72"><a id="__codelineno-0-72" name="__codelineno-0-72"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-73"><a id="__codelineno-0-73" name="__codelineno-0-73"></a>    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">smart_sample</span><span class="p">()</span>
-</span></code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="workbench.cached.cached_feature_set.CachedFeatureSet.summary" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">summary</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Retrieve the FeatureSet Details.</p>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-<th>Name</th>          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-<td><code>dict</code></td>            <td>
-                  <code><span title="dict">dict</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>A dictionary of details about the FeatureSet</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/workbench/cached/cached_feature_set.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-30">30</a></span>
-<span class="normal"><a href="#__codelineno-0-31">31</a></span>
-<span class="normal"><a href="#__codelineno-0-32">32</a></span>
-<span class="normal"><a href="#__codelineno-0-33">33</a></span>
-<span class="normal"><a href="#__codelineno-0-34">34</a></span>
-<span class="normal"><a href="#__codelineno-0-35">35</a></span>
-<span class="normal"><a href="#__codelineno-0-36">36</a></span>
-<span class="normal"><a href="#__codelineno-0-37">37</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30"></a><span class="nd">@CachedArtifactMixin</span><span class="o">.</span><span class="n">cache_result</span>
-</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31"></a><span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the FeatureSet Details.</span>
-</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33"></a>
-</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35"></a><span class="sd">        dict: A dictionary of details about the FeatureSet</span>
-</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37"></a>    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">summary</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-</span></code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="workbench.cached.cached_feature_set.CachedFeatureSet.workbench_meta" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">workbench_meta</span><span class="p">()</span></code>
-
-</h3>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Retrieve the Workbench Metadata for this FeatureSet.</p>
-
-
-    <p><span class="doc-section-title">Returns:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="typing.Union">Union</span>[<span title="dict">dict</span>, None]</code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>Union[dict, None]: Dictionary of Workbench metadata for this Artifact</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/workbench/cached/cached_feature_set.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#__codelineno-0-57">57</a></span>
-<span class="normal"><a href="#__codelineno-0-58">58</a></span>
-<span class="normal"><a href="#__codelineno-0-59">59</a></span>
-<span class="normal"><a href="#__codelineno-0-60">60</a></span>
-<span class="normal"><a href="#__codelineno-0-61">61</a></span>
-<span class="normal"><a href="#__codelineno-0-62">62</a></span>
-<span class="normal"><a href="#__codelineno-0-63">63</a></span>
-<span class="normal"><a href="#__codelineno-0-64">64</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-57"><a id="__codelineno-0-57" name="__codelineno-0-57"></a><span class="nd">@CachedArtifactMixin</span><span class="o">.</span><span class="n">cache_result</span>
-</span><span id="__span-0-58"><a id="__codelineno-0-58" name="__codelineno-0-58"></a><span class="k">def</span><span class="w"> </span><span class="nf">workbench_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
-</span><span id="__span-0-59"><a id="__codelineno-0-59" name="__codelineno-0-59"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the Workbench Metadata for this FeatureSet.</span>
-</span><span id="__span-0-60"><a id="__codelineno-0-60" name="__codelineno-0-60"></a>
-</span><span id="__span-0-61"><a id="__codelineno-0-61" name="__codelineno-0-61"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-62"><a id="__codelineno-0-62" name="__codelineno-0-62"></a><span class="sd">        Union[dict, None]: Dictionary of Workbench metadata for this Artifact</span>
-</span><span id="__span-0-63"><a id="__codelineno-0-63" name="__codelineno-0-63"></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="__span-0-64"><a id="__codelineno-0-64" name="__codelineno-0-64"></a>    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">workbench_meta</span><span class="p">()</span>
-</span></code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
-
-
-
-
-  </div>
-
-    </div>
-
-</div><h2 id="examples">Examples</h2>
-<p>All of the Workbench Examples are in the Workbench Repository under the <code>examples/</code> directory. For a full code listing of any example please visit our <a href="https://github.com/SuperCowPowers/workbench/blob/main/examples">Workbench Examples</a></p>
-<p><strong>Pull FeatureSet Details</strong></p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.cached.cached_feature_set</span><span class="w"> </span><span class="kn">import</span> <span class="n">CachedFeatureSet</span>
+<p>Workbench supports four types of ChemProp models, each suited for different use cases. All four follow the same API pattern — the difference is in how you configure <code>target_column</code>, <code>feature_list</code>, and <code>hyperparameters</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Model Type</th>
+<th>Key Difference</th>
+<th>Best For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Single-Task (ST)</strong></td>
+<td>One target, SMILES only</td>
+<td>Standard single-endpoint prediction</td>
+</tr>
+<tr>
+<td><strong>Multi-Task (MT)</strong></td>
+<td>Multiple targets, shared MPNN</td>
+<td>Related endpoints with shared chemistry</td>
+</tr>
+<tr>
+<td><strong>Hybrid</strong></td>
+<td>SMILES + molecular descriptors</td>
+<td>Combining graph learning with domain features</td>
+</tr>
+<tr>
+<td><strong>Foundation</strong></td>
+<td>Pretrained MPNN weights</td>
+<td>Small datasets, transfer learning</td>
+</tr>
+</tbody>
+</table>
+<h2 id="single-task-chemprop">Single-Task ChemProp</h2>
+<p>The standard ChemProp model trains a D-MPNN (Directed Message Passing Neural Network) on molecular graphs to predict a single target property.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSet</span><span class="p">,</span> <span class="n">ModelType</span><span class="p">,</span> <span class="n">ModelFramework</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Grab a FeatureSet</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">fs</span> <span class="o">=</span> <span class="n">CachedFeatureSet</span><span class="p">(</span><span class="s2">&quot;abalone_features&quot;</span><span class="p">)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Show the details</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">fs</span><span class="o">.</span><span class="n">details</span><span class="p">()</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="o">&gt;</span> <span class="n">fs</span><span class="o">.</span><span class="n">details</span><span class="p">()</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;abalone_features&#39;</span><span class="p">,</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a> <span class="s1">&#39;health_tags&#39;</span><span class="p">:</span> <span class="p">[],</span>
-</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a> <span class="s1">&#39;aws_arn&#39;</span><span class="p">:</span> <span class="s1">&#39;arn:aws:glue:x:table/workbench/abalone_data&#39;</span><span class="p">,</span>
-</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a> <span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="mf">0.070272</span><span class="p">,</span>
-</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a> <span class="s1">&#39;created&#39;</span><span class="p">:</span> <span class="s1">&#39;2024-11-09T20:42:34.000Z&#39;</span><span class="p">,</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a> <span class="s1">&#39;modified&#39;</span><span class="p">:</span> <span class="s1">&#39;2024-11-10T19:57:52.000Z&#39;</span><span class="p">,</span>
-</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a> <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="s1">&#39;s3://workbench-public-data/common/aBaLone.CSV&#39;</span><span class="p">,</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a> <span class="s1">&#39;workbench_health_tags&#39;</span><span class="p">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span>
-</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a> <span class="s1">&#39;workbench_correlations&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;length&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;diameter&#39;</span><span class="p">:</span> <span class="mf">0.9868115846024996</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">feature_set</span> <span class="o">=</span> <span class="n">FeatureSet</span><span class="p">(</span><span class="s2">&quot;open_admet_all&quot;</span><span class="p">)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop&quot;</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;ChemProp model for LogD prediction&quot;</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;logd&quot;</span><span class="p">],</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">)</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># Deploy and run inference</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">endpoint</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;logd&quot;</span><span class="p">])</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">endpoint</span><span class="o">.</span><span class="n">auto_inference</span><span class="p">()</span>
 </span></code></pre></div>
+<p><strong>How it works:</strong> The MPNN reads the molecular graph directly — atoms are nodes, bonds are edges. Through multiple rounds of message passing, each atom aggregates information from its neighbors to build a learned molecular representation. This representation feeds into a feedforward network (FFN) that outputs the prediction.</p>
+<h3 id="classification">Classification</h3>
+<p>ChemProp also supports classification for single-target models:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;solubility-class-chemprop&quot;</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">CLASSIFIER</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;solubility_class&quot;</span><span class="p">,</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;ChemProp classifier for solubility classes&quot;</span><span class="p">,</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;classification&quot;</span><span class="p">],</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">)</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">model</span><span class="o">.</span><span class="n">set_class_labels</span><span class="p">([</span><span class="s2">&quot;low&quot;</span><span class="p">,</span> <span class="s2">&quot;medium&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">])</span>
+</span></code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Classification is single-target only. For multi-target classification, train separate models and combine them with a <a href="../../meta_models/">MetaModel</a>.</p>
+</div>
+<h2 id="multi-task-chemprop">Multi-Task ChemProp</h2>
+<p>Multi-task models train a single MPNN that predicts multiple endpoints simultaneously. The MPNN learns a shared molecular representation, while each target gets its own FFN head. This is especially effective when targets share underlying molecular features (e.g., multiple ADMET endpoints).</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">ADMET_TARGETS</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="s2">&quot;logd&quot;</span><span class="p">,</span> <span class="s2">&quot;ksol&quot;</span><span class="p">,</span> <span class="s2">&quot;hlm_clint&quot;</span><span class="p">,</span> <span class="s2">&quot;mlm_clint&quot;</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="s2">&quot;caco_2_papp_a_b&quot;</span><span class="p">,</span> <span class="s2">&quot;caco_2_efflux&quot;</span><span class="p">,</span> <span class="s2">&quot;mppb&quot;</span><span class="p">,</span> <span class="s2">&quot;mbpb&quot;</span><span class="p">,</span> <span class="s2">&quot;mgmb&quot;</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">]</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;admet-chemprop-mt&quot;</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">target_column</span><span class="o">=</span><span class="n">ADMET_TARGETS</span><span class="p">,</span>  <span class="c1"># Pass a list for multi-task</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Multi-task ChemProp for 9 ADMET endpoints&quot;</span><span class="p">,</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;multitask&quot;</span><span class="p">],</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="p">)</span>
+</span></code></pre></div>
+<p><strong>Key differences from single-task:</strong></p>
+<ul>
+<li><code>target_column</code> is a <strong>list of strings</strong> instead of a single string</li>
+<li>Missing values are handled automatically — task weights are computed from inverse sample counts so rarer targets aren't underrepresented</li>
+<li>All targets share the same MPNN but have independent FFN heads</li>
+<li>Regression only (not classification)</li>
+</ul>
+<p><strong>When to use multi-task:</strong> When you have related endpoints measured on overlapping compound sets. The shared MPNN learns common molecular features across tasks, which often improves performance compared to separate single-task models.</p>
+<h2 id="hybrid-chemprop">Hybrid ChemProp</h2>
+<p>Hybrid models combine ChemProp's learned graph representations with pre-computed molecular descriptors (e.g., RDKit features). The extra descriptors are concatenated with the MPNN output before the FFN, providing complementary information.</p>
+<figure style="text-align: center;">
+  <img src="../images/hybrid_architecture.svg" alt="Hybrid ChemProp Architecture" style="height: 250px;">
+</figure>
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># Top SHAP features from an XGBoost model (complementary to MPNN)</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">TOP_FEATURES</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="s2">&quot;mollogp&quot;</span><span class="p">,</span> <span class="s2">&quot;fr_halogen&quot;</span><span class="p">,</span> <span class="s2">&quot;peoe_vsa6&quot;</span><span class="p">,</span> <span class="s2">&quot;nbase&quot;</span><span class="p">,</span> <span class="s2">&quot;peoe_vsa7&quot;</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="s2">&quot;peoe_vsa9&quot;</span><span class="p">,</span> <span class="s2">&quot;peoe_vsa1&quot;</span><span class="p">,</span> <span class="s2">&quot;mi&quot;</span><span class="p">,</span> <span class="s2">&quot;bcut2d_mrlow&quot;</span><span class="p">,</span> <span class="s2">&quot;slogp_vsa1&quot;</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="p">]</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># Hybrid mode: just add descriptor columns to feature_list</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">hybrid_features</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">TOP_FEATURES</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop-hybrid&quot;</span><span class="p">,</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="n">hybrid_features</span><span class="p">,</span>  <span class="c1"># SMILES + descriptors</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Hybrid ChemProp with top SHAP molecular descriptors&quot;</span><span class="p">,</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;hybrid&quot;</span><span class="p">],</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="p">)</span>
+</span></code></pre></div>
+<p><strong>How it works:</strong> Any features beyond <code>"smiles"</code> in <code>feature_list</code> are automatically treated as extra descriptors. They are scaled (zero mean, unit variance) during training and concatenated with the MPNN output vector before feeding into the FFN.</p>
+<p><strong>When to use hybrid:</strong> When you have domain-specific descriptors that capture information the MPNN might miss. A common pattern is to train an XGBoost model first, extract the top SHAP features, and use those as extra descriptors for the hybrid model.</p>
+<h2 id="foundation-chemprop">Foundation ChemProp</h2>
+<p>Foundation models start from pretrained MPNN weights instead of random initialization. This gives the model a strong prior for molecular representation learning, which is especially beneficial for small datasets.</p>
+<h3 id="chemeleon">CheMeleon</h3>
+<p>Workbench supports <a href="https://github.com/JacksonBurns/chemeleon">CheMeleon</a>, a foundation model pretrained on 1M PubChem molecules to predict Mordred molecular descriptors. The pretrained weights are automatically downloaded on first use.</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd&quot;</span><span class="p">,</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon foundation model for LogD&quot;</span><span class="p">,</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;chemeleon&quot;</span><span class="p">,</span> <span class="s2">&quot;foundation&quot;</span><span class="p">],</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="p">},</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="two-phase-training-recommended">Two-Phase Training (Recommended)</h3>
+<p>For more stable fine-tuning, freeze the MPNN for an initial warmup period and train only the FFN head. After the warmup, unfreeze everything and fine-tune end-to-end:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd-frozen&quot;</span><span class="p">,</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon with frozen MPNN warmup&quot;</span><span class="p">,</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;chemeleon&quot;</span><span class="p">,</span> <span class="s2">&quot;foundation&quot;</span><span class="p">],</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>        <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>  <span class="c1"># Phase 1: train FFN only</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>         <span class="c1"># Total (10 frozen + 90 fine-tuning)</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="p">},</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="p">)</span>
+</span></code></pre></div>
+<p><strong>Phase 1 (epochs 1–10):</strong> MPNN weights are frozen. Only the FFN learns to map the pretrained representations to your target.</p>
+<p><strong>Phase 2 (epochs 11–100):</strong> MPNN is unfrozen. The entire model fine-tunes end-to-end, adapting the molecular representations to your specific task.</p>
+<h3 id="foundation-multi-task">Foundation + Multi-Task</h3>
+<p>Foundation models combine naturally with multi-task learning:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-mt&quot;</span><span class="p">,</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="n">ADMET_TARGETS</span><span class="p">,</span>  <span class="c1"># Multi-task</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon multi-task ADMET model&quot;</span><span class="p">,</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>        <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="p">},</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="foundation-hybrid">Foundation + Hybrid</h3>
+<p>And with hybrid descriptors:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;chemeleon-logd-hybrid&quot;</span><span class="p">,</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">TOP_FEATURES</span><span class="p">,</span>  <span class="c1"># Hybrid</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;CheMeleon hybrid with molecular descriptors&quot;</span><span class="p">,</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;CheMeleon&quot;</span><span class="p">,</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>        <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>        <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    <span class="p">},</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="custom-pretrained-weights">Custom Pretrained Weights</h3>
+<p>You can also provide your own pretrained ChemProp model:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="s2">&quot;from_foundation&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/my_pretrained_model.pt&quot;</span><span class="p">,</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="s2">&quot;freeze_mpnn_epochs&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    <span class="s2">&quot;max_epochs&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="p">}</span>
+</span></code></pre></div>
+<h2 id="hyperparameters">Hyperparameters</h2>
+<p>All ChemProp model types share a common set of tunable hyperparameters:</p>
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Parameter</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Default</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">hidden_dim</td>
+      <td style="padding: 8px 16px;">700</td>
+      <td style="padding: 8px 16px;">MPNN hidden dimension</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">depth</td>
+      <td style="padding: 8px 16px;">6</td>
+      <td style="padding: 8px 16px;">Number of message-passing steps</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">dropout</td>
+      <td style="padding: 8px 16px;">0.1</td>
+      <td style="padding: 8px 16px;">Dropout rate</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">ffn_hidden_dim</td>
+      <td style="padding: 8px 16px;">2000</td>
+      <td style="padding: 8px 16px;">FFN hidden layer dimension</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">ffn_num_layers</td>
+      <td style="padding: 8px 16px;">2</td>
+      <td style="padding: 8px 16px;">Number of FFN layers</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">batch_size</td>
+      <td style="padding: 8px 16px;">64</td>
+      <td style="padding: 8px 16px;">Training batch size</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">max_epochs</td>
+      <td style="padding: 8px 16px;">400</td>
+      <td style="padding: 8px 16px;">Maximum training epochs</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">patience</td>
+      <td style="padding: 8px 16px;">50</td>
+      <td style="padding: 8px 16px;">Early stopping patience</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">n_folds</td>
+      <td style="padding: 8px 16px;">5</td>
+      <td style="padding: 8px 16px;">Number of cross-validation folds (ensemble size)</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">split_strategy</td>
+      <td style="padding: 8px 16px;">random</td>
+      <td style="padding: 8px 16px;">Data splitting: random, scaffold, or butina</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">from_foundation</td>
+      <td style="padding: 8px 16px;">None</td>
+      <td style="padding: 8px 16px;">"CheMeleon" or path to pretrained .pt file</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 16px; font-weight: bold;">freeze_mpnn_epochs</td>
+      <td style="padding: 8px 16px;">0</td>
+      <td style="padding: 8px 16px;">Epochs to freeze MPNN (foundation models only)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="split-strategies">Split Strategies</h3>
+<p>Workbench supports three data splitting strategies for cross-validation:</p>
+<ul>
+<li><strong>random</strong> — Standard random split. Good default for large, diverse datasets.</li>
+<li><strong>scaffold</strong> — Groups molecules by Bemis-Murcko scaffold. Ensures no scaffold appears in both train and validation. Tests generalization to new chemical series.</li>
+<li><strong>butina</strong> — Clusters molecules using Morgan fingerprint similarity (Tanimoto distance). Recommended for ADMET datasets where scaffold splits may be too aggressive.</li>
+</ul>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">model</span> <span class="o">=</span> <span class="n">feature_set</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;logd-chemprop-butina&quot;</span><span class="p">,</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="n">model_type</span><span class="o">=</span><span class="n">ModelType</span><span class="o">.</span><span class="n">UQ_REGRESSOR</span><span class="p">,</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    <span class="n">model_framework</span><span class="o">=</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">,</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    <span class="n">target_column</span><span class="o">=</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="n">feature_list</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;smiles&quot;</span><span class="p">],</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="n">hyperparameters</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>        <span class="s2">&quot;split_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;butina&quot;</span><span class="p">,</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>        <span class="s2">&quot;butina_cutoff&quot;</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>  <span class="c1"># Tanimoto distance threshold</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    <span class="p">},</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="confidence-and-uncertainty">Confidence and Uncertainty</h2>
+<p>All ChemProp models include built-in uncertainty quantification:</p>
+<ul>
+<li><strong>Regression (UQ_REGRESSOR):</strong> Ensemble standard deviation across cross-validation folds provides calibrated confidence intervals. High confidence means the ensemble folds agree; low confidence means the compound may be outside the training domain.</li>
+<li><strong>Classification:</strong> Uses VGMU (Variation Gamma-Mixture Uncertainty) based on ensemble probability variation.</li>
+</ul>
+<figure style="text-align: center;">
+  <img src="../images/confidence.jpg" alt="Confidence Estimates">
+  <figcaption>All Workbench models provide confidence metrics to identify predictions where the model is unsure or needs more data.</figcaption>
+</figure>
+
+<h2 id="choosing-the-right-model-type">Choosing the Right Model Type</h2>
+<figure style="text-align: center;">
+  <img src="../images/chemprop_decision_tree.svg" alt="ChemProp Decision Tree" style="height: 550px;">
+</figure>
+
+<p><strong>General guidelines:</strong></p>
+<ul>
+<li>Start with <strong>Single-Task</strong> for a single endpoint — it's the simplest and often good enough</li>
+<li>Try <strong>Multi-Task</strong> when you have related endpoints measured on overlapping compounds</li>
+<li>Add <strong>Hybrid</strong> descriptors when XGBoost SHAP analysis reveals useful features the MPNN might miss</li>
+<li>Use <strong>Foundation</strong> (CheMeleon) when your dataset is small (&lt;1000 compounds) or you want a better starting point</li>
+<li>All options compose — you can use Foundation + Multi-Task + Hybrid together</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Examples</p>
+<p>Full code listings are in the repository under <code>examples/models/chemprop.py</code> and <code>examples/models/chemprop_foundation.py</code>.</p>
+</div>
+<hr />
+<div class="admonition warning">
+<p class="admonition-title">Beta Software</p>
+<p>Workbench is currently in beta. We're actively looking for beta testers! If you're interested in early access, contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a>.</p>
+</div>
+<h2 id="questions">Questions?</h2>
+<p><img align="right" src="../../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench.</p>
+<ul>
+<li><strong>Support:</strong> <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a></li>
+<li><strong>Discord:</strong> <a href="https://discord.gg/WHAJuz8sw8">Join us on Discord</a></li>
+<li><strong>Website:</strong> <a href="https://www.supercowpowers.com">supercowpowers.com</a></li>
+</ul>
+<h2 id="references">References</h2>
+<ul>
+<li><strong>ChemProp:</strong> Yang et al. "Analyzing Learned Molecular Representations for Property Prediction" <em>J. Chem. Inf. Model.</em> 2019 — <a href="https://github.com/chemprop/chemprop">GitHub</a> | <a href="https://pubs.acs.org/doi/10.1021/acs.jcim.9b00237">Paper</a></li>
+<li><strong>CheMeleon:</strong> Burns et al. "CheMeleon: A Pre-Trained Foundation Model for Molecular Property Prediction" 2025 — <a href="https://github.com/JacksonBurns/chemeleon">GitHub</a> | <a href="https://arxiv.org/abs/2506.15792">Paper</a></li>
+</ul>
+<p><i>® Amazon Web Services, AWS, the Powered by AWS logo, are trademarks of Amazon.com, Inc. or its affiliates</i></p>
 
 
 
