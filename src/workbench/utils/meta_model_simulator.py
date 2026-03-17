@@ -578,6 +578,91 @@ class MetaModelSimulator:
 
         return result
 
+    def get_best_strategy_config(self) -> dict:
+        """Get the best ensemble strategy configuration for MetaModel creation.
+
+        Evaluates all strategies, picks the best one by MAE, and returns the
+        template parameters needed for MetaModel.create().
+
+        If "Drop Worst" wins, the worst model is excluded from endpoints
+        and the remaining strategies are re-evaluated on the reduced set.
+
+        Returns:
+            Dict with keys: aggregation_strategy, model_weights, corr_scale,
+            endpoints, target_column
+        """
+        model_names = list(self._dfs.keys())
+        config = self._compute_strategy_config(model_names)
+
+        # If drop_worst won, re-evaluate with reduced model set
+        if config["aggregation_strategy"] == "drop_worst":
+            mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
+            worst_model = max(mae_scores, key=mae_scores.get)
+            remaining = [n for n in model_names if n != worst_model]
+            log.info(f"Drop Worst won: excluding '{worst_model}', re-evaluating with {remaining}")
+            config = self._compute_strategy_config(remaining)
+
+        log.info(f"Best strategy config: {config['aggregation_strategy']}")
+        return config
+
+    def _compute_strategy_config(self, model_names: list[str]) -> dict:
+        """Compute the best strategy and its config for a given set of models.
+
+        Args:
+            model_names: List of model names to evaluate
+
+        Returns:
+            Dict with strategy configuration
+        """
+        # Build combined arrays
+        pred_arr = np.column_stack([self._dfs[name]["prediction"].values for name in model_names])
+        conf_arr = np.column_stack([self._dfs[name]["confidence"].values for name in model_names])
+        target = self._dfs[model_names[0]][self._target_column].values
+
+        mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
+        inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
+        inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
+        corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
+
+        # Evaluate all strategies
+        strategies = {}
+        strategies["simple_mean"] = pred_arr.mean(axis=1)
+
+        conf_sum = conf_arr.sum(axis=1, keepdims=True) + 1e-8
+        strategies["confidence_weighted"] = (pred_arr * (conf_arr / conf_sum)).sum(axis=1)
+
+        strategies["inverse_mae_weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
+
+        scaled_conf = conf_arr * inv_mae_weights
+        scaled_conf_sum = scaled_conf.sum(axis=1, keepdims=True) + 1e-8
+        strategies["scaled_conf_weighted"] = (pred_arr * (scaled_conf / scaled_conf_sum)).sum(axis=1)
+
+        cal_conf = conf_arr * corr_scale
+        cal_conf_sum = cal_conf.sum(axis=1, keepdims=True) + 1e-8
+        strategies["calibrated_conf_weighted"] = (pred_arr * (cal_conf / cal_conf_sum)).sum(axis=1)
+
+        # Drop worst (only if > 2 models)
+        if len(model_names) > 2:
+            worst_model = max(mae_scores, key=mae_scores.get)
+            remaining_idx = [i for i, n in enumerate(model_names) if n != worst_model]
+            strategies["drop_worst"] = pred_arr[:, remaining_idx].mean(axis=1)
+
+        # Find best by MAE
+        strategy_maes = {name: np.abs(preds - target).mean() for name, preds in strategies.items()}
+        best_strategy = min(strategy_maes, key=strategy_maes.get)
+
+        # Build config dict
+        model_weights_dict = {name: float(w) for name, w in zip(model_names, inv_mae_weights)}
+        corr_scale_dict = {name: float(c) for name, c in zip(model_names, corr_scale)}
+
+        return {
+            "aggregation_strategy": best_strategy,
+            "model_weights": model_weights_dict,
+            "corr_scale": corr_scale_dict,
+            "endpoints": model_names,
+            "target_column": self._target_column,
+        }
+
     def ensemble_failure_analysis(self) -> dict:
         """Compare best ensemble strategy vs best individual model.
 

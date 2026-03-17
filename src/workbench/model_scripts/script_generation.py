@@ -104,7 +104,7 @@ def generate_model_script(template_params: dict) -> str:
             - model_metrics_s3_path (str): The S3 path to store the model metrics
             - train_all_data (bool): Whether to train on all (100%) of the data
             - hyperparameters (dict, optional): Hyperparameters for the model (default: None)
-            - child_endpoints (list[str], optional): For META models, list of child endpoint names
+            - endpoints (list[str], optional): For META models, list of endpoint names
 
     Returns:
         str: The path to the generated model script

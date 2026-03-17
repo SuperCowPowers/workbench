@@ -1,17 +1,17 @@
 # Meta Model Template for Workbench
 #
 # NOTE: This is called a "meta model" but it's really a "meta endpoint" - it aggregates
-# predictions from multiple child endpoints. We call it a "model" because Workbench
+# predictions from multiple endpoints. We call it a "model" because Workbench
 # creates Model artifacts that get deployed as Endpoints, so this follows that pattern.
 #
 # Assumptions/Shortcuts:
-# - All child endpoints are regression models
-# - All child endpoints output 'prediction' and 'confidence' columns
-# - Aggregation uses model weights (provided at meta model creation time)
+# - All endpoints are regression models
+# - All endpoints output 'prediction' and 'confidence' columns
+# - Aggregation strategy and weights are provided at meta model creation time
 #
 # This template:
 # - Has no real training phase (just saves metadata including model weights)
-# - At inference time, calls child endpoints and aggregates their predictions
+# - At inference time, calls endpoints and aggregates their predictions
 
 import argparse
 import json
@@ -19,22 +19,25 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
 
+import numpy as np
 import pandas as pd
 
 from workbench_bridges.endpoints.fast_inference import fast_inference
 
 # Template parameters (filled in by Workbench)
 TEMPLATE_PARAMS = {
-    "child_endpoints": "{{child_endpoints}}",
+    "endpoints": "{{endpoints}}",
     "target_column": "{{target_column}}",
     "model_weights": "{{model_weights}}",
+    "aggregation_strategy": "{{aggregation_strategy}}",
+    "corr_scale": "{{corr_scale}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "aws_region": "{{aws_region}}",
 }
 
 
 def invoke_endpoints_parallel(endpoint_names: list[str], df: pd.DataFrame) -> dict[str, pd.DataFrame]:
-    """Call multiple child endpoints in parallel and collect their results.
+    """Call multiple endpoints in parallel and collect their results.
 
     Args:
         endpoint_names: List of endpoint names to call
@@ -61,13 +64,22 @@ def invoke_endpoints_parallel(endpoint_names: list[str], df: pd.DataFrame) -> di
     return results
 
 
-def aggregate_predictions(results: dict[str, pd.DataFrame], model_weights: dict[str, float]) -> pd.DataFrame:
-    """Aggregate predictions from multiple endpoints using model weights.
+def aggregate_predictions(
+    results: dict[str, pd.DataFrame],
+    model_weights: dict[str, float],
+    aggregation_strategy: str = "inverse_mae_weighted",
+    corr_scale: dict[str, float] | None = None,
+) -> pd.DataFrame:
+    """Aggregate predictions from multiple endpoints using the specified strategy.
 
     Args:
         results: Dict mapping endpoint_name -> predictions DataFrame
                  Each DataFrame must have 'prediction' and 'confidence' columns
-        model_weights: Dict mapping endpoint_name -> weight
+        model_weights: Dict mapping endpoint_name -> weight (inverse-MAE based)
+        aggregation_strategy: One of 'simple_mean', 'confidence_weighted',
+            'inverse_mae_weighted', 'scaled_conf_weighted', 'calibrated_conf_weighted'
+        corr_scale: Dict mapping endpoint_name -> |confidence_error_correlation|
+            (required for 'calibrated_conf_weighted' strategy)
 
     Returns:
         DataFrame with aggregated prediction, prediction_std, and confidence
@@ -75,29 +87,66 @@ def aggregate_predictions(results: dict[str, pd.DataFrame], model_weights: dict[
     # Filter out failed endpoints
     valid_results = {k: v for k, v in results.items() if v is not None}
     if not valid_results:
-        raise ValueError("All child endpoints failed")
+        raise ValueError("All endpoints failed")
 
     # Use first result as base (for id columns, etc.)
     first_df = list(valid_results.values())[0]
     output_df = first_df.drop(columns=["prediction", "confidence", "prediction_std"], errors="ignore").copy()
 
-    # Build DataFrames of predictions and confidences from all endpoints
+    # Build arrays of predictions and confidences from all endpoints
+    names = list(valid_results.keys())
     pred_df = pd.DataFrame({name: df["prediction"] for name, df in valid_results.items()})
     conf_df = pd.DataFrame({name: df["confidence"] for name, df in valid_results.items()})
+    pred_arr = pred_df.values
+    conf_arr = conf_df.values
 
-    # Apply model weights (renormalize for valid endpoints only)
-    valid_weights = {k: model_weights.get(k, 1.0) for k in valid_results}
-    weight_sum = sum(valid_weights.values())
-    normalized_weights = {k: v / weight_sum for k, v in valid_weights.items()}
+    # Fallback weights for rows where all confidences are zero
+    fallback_w = np.array([model_weights.get(name, 1.0) for name in names])
+    fallback_w = fallback_w / fallback_w.sum()
 
-    # Weighted average
-    output_df["prediction"] = sum(pred_df[name] * w for name, w in normalized_weights.items())
+    # Compute per-row weights based on strategy
+    if aggregation_strategy == "simple_mean":
+        # Equal weights for all endpoints
+        row_weights = np.ones_like(pred_arr) / len(names)
 
-    # Ensemble std across child endpoints
+    elif aggregation_strategy == "confidence_weighted":
+        # Weight by per-row confidence (normalized)
+        conf_sum = conf_arr.sum(axis=1, keepdims=True)
+        zero_conf = (conf_sum < 1e-12).ravel()
+        row_weights = np.where(zero_conf[:, None], fallback_w, conf_arr / (conf_sum + 1e-8))
+
+    elif aggregation_strategy == "inverse_mae_weighted":
+        # Static weights from model_weights (renormalized for valid endpoints)
+        row_weights = np.broadcast_to(fallback_w, pred_arr.shape)
+
+    elif aggregation_strategy == "scaled_conf_weighted":
+        # model_weights * per-row confidence (normalized per row)
+        scaled = conf_arr * fallback_w
+        scaled_sum = scaled.sum(axis=1, keepdims=True)
+        zero_conf = (scaled_sum < 1e-12).ravel()
+        row_weights = np.where(zero_conf[:, None], fallback_w, scaled / (scaled_sum + 1e-8))
+
+    elif aggregation_strategy == "calibrated_conf_weighted":
+        # corr_scale * per-row confidence (normalized per row)
+        if corr_scale is None:
+            corr_scale = {name: 1.0 for name in names}
+        scale = np.array([corr_scale.get(name, 1.0) for name in names])
+        calibrated = conf_arr * scale
+        cal_sum = calibrated.sum(axis=1, keepdims=True)
+        zero_conf = (cal_sum < 1e-12).ravel()
+        row_weights = np.where(zero_conf[:, None], fallback_w, calibrated / (cal_sum + 1e-8))
+
+    else:
+        raise ValueError(f"Unknown aggregation_strategy: {aggregation_strategy}")
+
+    # Weighted prediction
+    output_df["prediction"] = (pred_arr * row_weights).sum(axis=1)
+
+    # Ensemble std across endpoints
     output_df["prediction_std"] = pred_df.std(axis=1)
 
     # Aggregated confidence: weighted mean of child confidences
-    output_df["confidence"] = sum(conf_df[name] * w for name, w in normalized_weights.items())
+    output_df["confidence"] = (conf_arr * row_weights).sum(axis=1)
 
     return output_df
 
@@ -114,7 +163,8 @@ def model_fn(model_dir: str) -> dict:
     if config.get("aws_region"):
         os.environ["AWS_REGION"] = config["aws_region"]
 
-    print(f"Meta model loaded: {len(config['child_endpoints'])} child endpoints")
+    print(f"Meta model loaded: {len(config['endpoints'])} endpoints")
+    print(f"Aggregation strategy: {config.get('aggregation_strategy')}")
     print(f"Model weights: {config.get('model_weights')}")
     print(f"AWS region: {config.get('aws_region')}")
     return config
@@ -151,22 +201,25 @@ def output_fn(output_df, accept_type):
 # Inference (for SageMaker inference)
 # =============================================================================
 def predict_fn(df: pd.DataFrame, config: dict) -> pd.DataFrame:
-    """Run inference by calling child endpoints and aggregating results."""
-    child_endpoints = config["child_endpoints"]
+    """Run inference by calling endpoints and aggregating results."""
+    endpoints = config["endpoints"]
     model_weights = config.get("model_weights", {})
+    aggregation_strategy = config.get("aggregation_strategy", "inverse_mae_weighted")
+    corr_scale = config.get("corr_scale")
 
-    print(f"Calling {len(child_endpoints)} child endpoints: {child_endpoints}")
+    print(f"Calling {len(endpoints)} endpoints: {endpoints}")
+    print(f"Using aggregation strategy: {aggregation_strategy}")
 
-    # Call all child endpoints
-    results = invoke_endpoints_parallel(child_endpoints, df)
+    # Call all endpoints
+    results = invoke_endpoints_parallel(endpoints, df)
 
     # Report status
     for name, result in results.items():
         status = f"{len(result)} rows" if result is not None else "FAILED"
         print(f"  {name}: {status}")
 
-    # Aggregate predictions using model weights
-    output_df = aggregate_predictions(results, model_weights)
+    # Aggregate predictions
+    output_df = aggregate_predictions(results, model_weights, aggregation_strategy, corr_scale)
 
     print(f"Aggregated {len(output_df)} predictions from {len(results)} endpoints")
     return output_df
@@ -178,28 +231,36 @@ def predict_fn(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
-    parser.add_argument("--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
     parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
     args = parser.parse_args()
 
-    child_endpoints = TEMPLATE_PARAMS["child_endpoints"]
+    endpoints = TEMPLATE_PARAMS["endpoints"]
     target_column = TEMPLATE_PARAMS["target_column"]
     model_weights = TEMPLATE_PARAMS["model_weights"]
+    aggregation_strategy = TEMPLATE_PARAMS["aggregation_strategy"]
+    corr_scale = TEMPLATE_PARAMS["corr_scale"]
     aws_region = TEMPLATE_PARAMS["aws_region"]
 
     print("=" * 60)
     print("Meta Model Configuration")
     print("=" * 60)
-    print(f"Child endpoints: {child_endpoints}")
+    print(f"Child endpoints: {endpoints}")
     print(f"Target column: {target_column}")
+    print(f"Aggregation strategy: {aggregation_strategy}")
     print(f"Model weights: {model_weights}")
+    print(f"Corr scale: {corr_scale}")
     print(f"AWS region: {aws_region}")
 
     # Save configuration for inference
     config = {
-        "child_endpoints": child_endpoints,
+        "endpoints": endpoints,
         "target_column": target_column,
         "model_weights": model_weights,
+        "aggregation_strategy": aggregation_strategy,
+        "corr_scale": corr_scale,
         "aws_region": aws_region,
     }
 
