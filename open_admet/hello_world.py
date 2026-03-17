@@ -19,7 +19,7 @@ fs = ds.to_features("open_admet", id_column="molecule_name")
 feature_set = FeatureSet("open_admet")
 model = feature_set.to_model(
     name="open-admet-chemprop",
-    model_type=ModelType.REGRESSOR,
+    model_type=ModelType.UQ_REGRESSOR,
     model_framework=ModelFramework.CHEMPROP,
     target_column=ADMET_TARGETS,  # Multi-task: list of 9 targets
     feature_list=["smiles"],

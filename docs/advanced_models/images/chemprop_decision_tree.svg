@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="5 5 710 510" font-family="'Segoe UI', Arial, sans-serif" font-size="14">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a9eff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3a86ff;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#34d399;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a78bfa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Level 1: How many targets? -->
+  <rect x="245" y="20" width="230" height="44" rx="8" fill="url(#blueGrad)" filter="url(#shadow)"/>
+  <text x="360" y="47" text-anchor="middle" fill="white" font-weight="600">How many targets?</text>
+
+  <!-- Branches from Level 1 -->
+  <line x1="310" y1="64" x2="180" y2="110" stroke="#64748b" stroke-width="2"/>
+  <line x1="410" y1="64" x2="540" y2="110" stroke="#64748b" stroke-width="2"/>
+  <text x="228" y="90" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="500">One</text>
+  <text x="492" y="90" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="500">Multiple</text>
+
+  <!-- Level 2 Left: Single-Task -->
+  <rect x="100" y="110" width="160" height="40" rx="8" fill="url(#greenGrad)" filter="url(#shadow)"/>
+  <text x="180" y="135" text-anchor="middle" fill="white" font-weight="600">Single-Task (ST)</text>
+
+  <!-- Level 2 Right: Multi-Task -->
+  <rect x="460" y="110" width="160" height="40" rx="8" fill="url(#greenGrad)" filter="url(#shadow)"/>
+  <text x="540" y="135" text-anchor="middle" fill="white" font-weight="600">Multi-Task (MT)</text>
+
+  <!-- Converge to descriptors question -->
+  <line x1="180" y1="150" x2="180" y2="185" stroke="#64748b" stroke-width="2"/>
+  <line x1="540" y1="150" x2="540" y2="185" stroke="#64748b" stroke-width="2"/>
+  <line x1="180" y1="185" x2="360" y2="185" stroke="#64748b" stroke-width="2"/>
+  <line x1="540" y1="185" x2="360" y2="185" stroke="#64748b" stroke-width="2"/>
+  <line x1="360" y1="185" x2="360" y2="200" stroke="#64748b" stroke-width="2"/>
+
+  <!-- Level 2.5: Have domain descriptors? -->
+  <rect x="235" y="200" width="250" height="44" rx="8" fill="url(#blueGrad)" filter="url(#shadow)"/>
+  <text x="360" y="227" text-anchor="middle" fill="white" font-weight="600">Have domain descriptors?</text>
+
+  <!-- Branches from descriptors question -->
+  <line x1="300" y1="244" x2="180" y2="300" stroke="#64748b" stroke-width="2"/>
+  <line x1="420" y1="244" x2="540" y2="300" stroke="#64748b" stroke-width="2"/>
+  <text x="222" y="275" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="500">No</text>
+  <text x="498" y="275" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="500">Yes</text>
+
+  <!-- SMILES only -->
+  <rect x="100" y="300" width="160" height="40" rx="8" fill="url(#greenGrad)" filter="url(#shadow)"/>
+  <text x="180" y="325" text-anchor="middle" fill="white" font-weight="600">SMILES only</text>
+
+  <!-- + Hybrid descriptors -->
+  <rect x="455" y="300" width="170" height="40" rx="8" fill="url(#greenGrad)" filter="url(#shadow)"/>
+  <text x="540" y="325" text-anchor="middle" fill="white" font-weight="600">+ Hybrid descriptors</text>
+
+  <!-- Converge to foundation question -->
+  <line x1="180" y1="340" x2="180" y2="370" stroke="#64748b" stroke-width="2"/>
+  <line x1="540" y1="340" x2="540" y2="370" stroke="#64748b" stroke-width="2"/>
+  <line x1="180" y1="370" x2="360" y2="370" stroke="#64748b" stroke-width="2"/>
+  <line x1="540" y1="370" x2="360" y2="370" stroke="#64748b" stroke-width="2"/>
+  <line x1="360" y1="370" x2="360" y2="390" stroke="#64748b" stroke-width="2"/>
+
+  <!-- Level 3: Small dataset? -->
+  <rect x="225" y="390" width="270" height="44" rx="8" fill="url(#blueGrad)" filter="url(#shadow)"/>
+  <text x="360" y="417" text-anchor="middle" fill="white" font-weight="600">Small dataset or want better init?</text>
+
+  <!-- Branches from foundation question -->
+  <line x1="290" y1="434" x2="200" y2="475" stroke="#64748b" stroke-width="2"/>
+  <line x1="430" y1="434" x2="520" y2="475" stroke="#64748b" stroke-width="2"/>
+  <text x="230" y="458" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="500">No</text>
+  <text x="490" y="458" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="500">Yes</text>
+
+  <!-- Train from scratch -->
+  <rect x="100" y="475" width="200" height="40" rx="8" fill="url(#purpleGrad)" filter="url(#shadow)"/>
+  <text x="200" y="500" text-anchor="middle" fill="white" font-weight="600">Train from scratch</text>
+
+  <!-- Foundation -->
+  <rect x="420" y="475" width="200" height="40" rx="8" fill="url(#orangeGrad)" filter="url(#shadow)"/>
+  <text x="520" y="500" text-anchor="middle" fill="white" font-weight="600">+ Foundation (CheMeleon)</text>
+</svg>
