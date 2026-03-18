@@ -64,6 +64,21 @@ def invoke_endpoints_parallel(endpoint_names: list[str], df: pd.DataFrame) -> di
     return results
 
 
+def _conf_weights_with_fallback(conf_arr: np.ndarray, fallback_w: np.ndarray) -> np.ndarray:
+    """Compute normalized confidence weights, falling back to static weights for zero-confidence rows.
+
+    Args:
+        conf_arr: (N, M) array of confidence-based values (raw, scaled, or calibrated)
+        fallback_w: (M,) array of static weights to use when row confidence sums to ~0
+
+    Returns:
+        (N, M) array of normalized per-row weights
+    """
+    conf_sum = conf_arr.sum(axis=1, keepdims=True)
+    zero_conf = (conf_sum < 1e-12).ravel()
+    return np.where(zero_conf[:, None], fallback_w, conf_arr / (conf_sum + 1e-12))
+
+
 def aggregate_predictions(
     results: dict[str, pd.DataFrame],
     model_weights: dict[str, float],
@@ -110,10 +125,8 @@ def aggregate_predictions(
         row_weights = np.ones_like(pred_arr) / len(names)
 
     elif aggregation_strategy == "confidence_weighted":
-        # Weight by per-row confidence (normalized)
-        conf_sum = conf_arr.sum(axis=1, keepdims=True)
-        zero_conf = (conf_sum < 1e-12).ravel()
-        row_weights = np.where(zero_conf[:, None], fallback_w, conf_arr / (conf_sum + 1e-8))
+        # Weight by per-row confidence (normalized), fallback to static weights when all confs are 0
+        row_weights = _conf_weights_with_fallback(conf_arr, fallback_w)
 
     elif aggregation_strategy == "inverse_mae_weighted":
         # Static weights from model_weights (renormalized for valid endpoints)
@@ -121,20 +134,14 @@ def aggregate_predictions(
 
     elif aggregation_strategy == "scaled_conf_weighted":
         # model_weights * per-row confidence (normalized per row)
-        scaled = conf_arr * fallback_w
-        scaled_sum = scaled.sum(axis=1, keepdims=True)
-        zero_conf = (scaled_sum < 1e-12).ravel()
-        row_weights = np.where(zero_conf[:, None], fallback_w, scaled / (scaled_sum + 1e-8))
+        row_weights = _conf_weights_with_fallback(conf_arr * fallback_w, fallback_w)
 
     elif aggregation_strategy == "calibrated_conf_weighted":
         # corr_scale * per-row confidence (normalized per row)
         if corr_scale is None:
             corr_scale = {name: 1.0 for name in names}
         scale = np.array([corr_scale.get(name, 1.0) for name in names])
-        calibrated = conf_arr * scale
-        cal_sum = calibrated.sum(axis=1, keepdims=True)
-        zero_conf = (cal_sum < 1e-12).ravel()
-        row_weights = np.where(zero_conf[:, None], fallback_w, calibrated / (cal_sum + 1e-8))
+        row_weights = _conf_weights_with_fallback(conf_arr * scale, fallback_w)
 
     else:
         raise ValueError(f"Unknown aggregation_strategy: {aggregation_strategy}")
