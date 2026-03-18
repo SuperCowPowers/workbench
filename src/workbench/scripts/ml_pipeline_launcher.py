@@ -161,6 +161,8 @@ def sort_pipelines(
                     continue
                 found_in_dag.add(script)
                 dag_has_runs = True
+                if mode_override and mode_override not in modes:
+                    continue
                 for mode in ([mode_override] if mode_override else modes):
                     run = (script, mode)
                     plan.runs.append(run)
