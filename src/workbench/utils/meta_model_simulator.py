@@ -82,6 +82,26 @@ class MetaModelSimulator:
             else:
                 self._conf_error_corr[name] = 0.0
 
+    @staticmethod
+    def _conf_weights_with_fallback(conf_arr: np.ndarray, fallback_weights: np.ndarray) -> np.ndarray:
+        """Compute normalized confidence weights with fallback for zero-confidence rows.
+
+        When all confidences in a row sum to ~0, falls back to static weights
+        (matching the deployed template's behavior).
+
+        Args:
+            conf_arr: (N, M) array of confidence-based values (raw, scaled, or calibrated)
+            fallback_weights: (M,) array of static weights to use when confidence is zero
+
+        Returns:
+            (N, M) array of normalized per-row weights
+        """
+        conf_sum = conf_arr.sum(axis=1, keepdims=True)
+        zero_conf = (conf_sum < 1e-12).ravel()
+
+        weights = np.where(conf_sum > 1e-12, conf_arr / conf_sum, fallback_weights)
+        return weights
+
     def report(self, details: bool = False):
         """Print a comprehensive analysis report
 
@@ -308,16 +328,16 @@ class MetaModelSimulator:
         # Strategy 2: Confidence-weighted
         conf_arr = combined[conf_cols].values
         pred_arr = combined[pred_cols].values
-        conf_sum = conf_arr.sum(axis=1, keepdims=True) + 1e-8
-        weights = conf_arr / conf_sum
+        mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
+        inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
+        inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
+
+        weights = self._conf_weights_with_fallback(conf_arr, inv_mae_weights)
         combined["conf_weighted"] = (pred_arr * weights).sum(axis=1)
         mae = (combined["conf_weighted"] - combined["target"]).abs().mean()
         results.append({"strategy": "Confidence-Weighted", "mae": mae})
 
         # Strategy 3: Inverse-MAE weighted
-        mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
-        inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
-        inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
         combined["inv_mae_weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
         mae = (combined["inv_mae_weighted"] - combined["target"]).abs().mean()
         results.append({"strategy": "Inverse-MAE Weighted", "mae": mae})
@@ -330,8 +350,7 @@ class MetaModelSimulator:
 
         # Strategy 5: Scaled confidence-weighted (confidence * model_weights)
         scaled_conf = conf_arr * inv_mae_weights
-        scaled_conf_sum = scaled_conf.sum(axis=1, keepdims=True) + 1e-8
-        scaled_weights = scaled_conf / scaled_conf_sum
+        scaled_weights = self._conf_weights_with_fallback(scaled_conf, inv_mae_weights)
         combined["scaled_conf_weighted"] = (pred_arr * scaled_weights).sum(axis=1)
         mae = (combined["scaled_conf_weighted"] - combined["target"]).abs().mean()
         results.append({"strategy": "Scaled Conf-Weighted", "mae": mae})
@@ -339,8 +358,7 @@ class MetaModelSimulator:
         # Strategy 6: Calibrated confidence (confidence scaled by |confidence_to_error_corr|)
         corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
         cal_conf = conf_arr * corr_scale
-        cal_conf_sum = cal_conf.sum(axis=1, keepdims=True) + 1e-8
-        cal_weights = cal_conf / cal_conf_sum
+        cal_weights = self._conf_weights_with_fallback(cal_conf, inv_mae_weights)
         combined["cal_conf_weighted"] = (pred_arr * cal_weights).sum(axis=1)
         mae = (combined["cal_conf_weighted"] - combined["target"]).abs().mean()
         results.append({"strategy": "Calibrated Conf-Weighted", "mae": mae})
@@ -512,19 +530,19 @@ class MetaModelSimulator:
             "Inverse-MAE Weighted": (pred_arr * inv_mae_weights).sum(axis=1),
         }
 
-        # Confidence-weighted
-        conf_sum = conf_arr.sum(axis=1, keepdims=True) + 1e-8
-        strategies["Confidence-Weighted"] = (pred_arr * (conf_arr / conf_sum)).sum(axis=1)
+        # Confidence-weighted (fallback to inv_mae_weights when all confs are 0)
+        weights = self._conf_weights_with_fallback(conf_arr, inv_mae_weights)
+        strategies["Confidence-Weighted"] = (pred_arr * weights).sum(axis=1)
 
         # Scaled conf-weighted
         scaled_conf = conf_arr * inv_mae_weights
-        scaled_conf_sum = scaled_conf.sum(axis=1, keepdims=True) + 1e-8
-        strategies["Scaled Conf-Weighted"] = (pred_arr * (scaled_conf / scaled_conf_sum)).sum(axis=1)
+        scaled_weights = self._conf_weights_with_fallback(scaled_conf, inv_mae_weights)
+        strategies["Scaled Conf-Weighted"] = (pred_arr * scaled_weights).sum(axis=1)
 
         # Calibrated conf-weighted
         cal_conf = conf_arr * corr_scale
-        cal_conf_sum = cal_conf.sum(axis=1, keepdims=True) + 1e-8
-        strategies["Calibrated Conf-Weighted"] = (pred_arr * (cal_conf / cal_conf_sum)).sum(axis=1)
+        cal_weights = self._conf_weights_with_fallback(cal_conf, inv_mae_weights)
+        strategies["Calibrated Conf-Weighted"] = (pred_arr * cal_weights).sum(axis=1)
 
         # Drop worst
         worst_model = max(mae_scores, key=mae_scores.get)
@@ -624,22 +642,22 @@ class MetaModelSimulator:
         inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
         corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
 
-        # Evaluate all strategies
+        # Evaluate all strategies (confidence strategies use fallback to inv_mae_weights when all confs are 0)
         strategies = {}
         strategies["simple_mean"] = pred_arr.mean(axis=1)
 
-        conf_sum = conf_arr.sum(axis=1, keepdims=True) + 1e-8
-        strategies["confidence_weighted"] = (pred_arr * (conf_arr / conf_sum)).sum(axis=1)
+        weights = self._conf_weights_with_fallback(conf_arr, inv_mae_weights)
+        strategies["confidence_weighted"] = (pred_arr * weights).sum(axis=1)
 
         strategies["inverse_mae_weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
 
         scaled_conf = conf_arr * inv_mae_weights
-        scaled_conf_sum = scaled_conf.sum(axis=1, keepdims=True) + 1e-8
-        strategies["scaled_conf_weighted"] = (pred_arr * (scaled_conf / scaled_conf_sum)).sum(axis=1)
+        scaled_weights = self._conf_weights_with_fallback(scaled_conf, inv_mae_weights)
+        strategies["scaled_conf_weighted"] = (pred_arr * scaled_weights).sum(axis=1)
 
         cal_conf = conf_arr * corr_scale
-        cal_conf_sum = cal_conf.sum(axis=1, keepdims=True) + 1e-8
-        strategies["calibrated_conf_weighted"] = (pred_arr * (cal_conf / cal_conf_sum)).sum(axis=1)
+        cal_weights = self._conf_weights_with_fallback(cal_conf, inv_mae_weights)
+        strategies["calibrated_conf_weighted"] = (pred_arr * cal_weights).sum(axis=1)
 
         # Drop worst (only if > 2 models)
         if len(model_names) > 2:
@@ -696,16 +714,16 @@ class MetaModelSimulator:
         # Compute all ensemble strategies (true ensembles that combine multiple models)
         ensemble_strategies = {}
         ensemble_strategies["Simple Mean"] = combined[pred_cols].mean(axis=1)
-        conf_sum = conf_arr.sum(axis=1, keepdims=True) + 1e-8
-        ensemble_strategies["Confidence-Weighted"] = (pred_arr * (conf_arr / conf_sum)).sum(axis=1)
+        weights = self._conf_weights_with_fallback(conf_arr, inv_mae_weights)
+        ensemble_strategies["Confidence-Weighted"] = (pred_arr * weights).sum(axis=1)
         ensemble_strategies["Inverse-MAE Weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
         scaled_conf = conf_arr * inv_mae_weights
-        scaled_conf_sum = scaled_conf.sum(axis=1, keepdims=True) + 1e-8
-        ensemble_strategies["Scaled Conf-Weighted"] = (pred_arr * (scaled_conf / scaled_conf_sum)).sum(axis=1)
+        scaled_weights = self._conf_weights_with_fallback(scaled_conf, inv_mae_weights)
+        ensemble_strategies["Scaled Conf-Weighted"] = (pred_arr * scaled_weights).sum(axis=1)
         corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
         cal_conf = conf_arr * corr_scale
-        cal_conf_sum = cal_conf.sum(axis=1, keepdims=True) + 1e-8
-        ensemble_strategies["Calibrated Conf-Weighted"] = (pred_arr * (cal_conf / cal_conf_sum)).sum(axis=1)
+        cal_weights = self._conf_weights_with_fallback(cal_conf, inv_mae_weights)
+        ensemble_strategies["Calibrated Conf-Weighted"] = (pred_arr * cal_weights).sum(axis=1)
         worst_model = max(mae_scores, key=mae_scores.get)
         remaining = [n for n in model_names if n != worst_model]
         remaining_cols = [f"{n}_pred" for n in remaining]

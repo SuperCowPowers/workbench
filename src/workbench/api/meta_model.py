@@ -75,7 +75,8 @@ class MetaModel(Model):
         from workbench.utils.meta_model_simulator import MetaModelSimulator
 
         id_column = cls._resolve_id_column(endpoints[0])
-        return MetaModelSimulator(endpoints, id_column=id_column, capture_name=capture_name)
+        model_names = [Endpoint(ep).get_input() for ep in endpoints]
+        return MetaModelSimulator(model_names, id_column=id_column, capture_name=capture_name)
 
     @classmethod
     def create(
@@ -110,17 +111,22 @@ class MetaModel(Model):
         # Validate endpoints and get lineage info from primary endpoint
         feature_list, feature_set_name, id_column, target_column = cls._validate_and_get_lineage(endpoints)
 
+        # Map endpoint names → model names for the simulator
+        ep_to_model = {ep: Endpoint(ep).get_input() for ep in endpoints}
+        model_to_ep = {m: ep for ep, m in ep_to_model.items()}
+        model_names = list(ep_to_model.values())
+
         # Run ensemble simulation to find best strategy
         log.important("Running ensemble simulation to find best strategy...")
-        sim = MetaModelSimulator(endpoints, id_column=id_column, capture_name=capture_name)
+        sim = MetaModelSimulator(model_names, id_column=id_column, capture_name=capture_name)
         sim.report()
         config = sim.get_best_strategy_config()
 
-        # Use the simulator's recommended config
+        # Map simulator results (model names) back to endpoint names
         aggregation_strategy = config["aggregation_strategy"]
-        model_weights = config["model_weights"]
-        corr_scale = config["corr_scale"]
-        final_endpoints = config["endpoints"]  # May differ if drop_worst won
+        model_weights = {model_to_ep[m]: w for m, w in config["model_weights"].items()}
+        corr_scale = {model_to_ep[m]: w for m, w in config["corr_scale"].items()}
+        final_endpoints = [model_to_ep[m] for m in config["endpoints"]]
 
         log.important(f"Best strategy: {aggregation_strategy}")
         log.important(f"Endpoints: {final_endpoints}")
