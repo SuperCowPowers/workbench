@@ -83,7 +83,6 @@ class MetaModelSimulator:
             else:
                 self._conf_error_corr[name] = 0.0
 
-
     def reproduce_deployed(
         self,
         aggregation_strategy: str,
@@ -157,21 +156,21 @@ class MetaModelSimulator:
         prediction = (pred_arr * row_weights).sum(axis=1)
 
         # Ensemble std across endpoints
-        pred_std = pd.DataFrame(
-            {name: self._dfs[name]["prediction"].values for name in model_names}
-        ).std(axis=1).values
+        pred_std = pd.DataFrame({name: self._dfs[name]["prediction"].values for name in model_names}).std(axis=1).values
 
         # Ensemble confidence (matches deployed template)
         cs_arr = np.array([cs[name] for name in model_names])
         confidence = ensemble_confidence(pred_arr, conf_arr, cs_arr, fallback_w, optimal_alpha)
 
-        return pd.DataFrame({
-            self.id_column: ids,
-            self._target_column: target,
-            "prediction": prediction,
-            "prediction_std": pred_std,
-            "confidence": confidence,
-        })
+        return pd.DataFrame(
+            {
+                self.id_column: ids,
+                self._target_column: target,
+                "prediction": prediction,
+                "prediction_std": pred_std,
+                "confidence": confidence,
+            }
+        )
 
     def report(self, details: bool = False):
         """Print a comprehensive analysis report
@@ -625,9 +624,12 @@ class MetaModelSimulator:
 
         # Find optimal alpha for ensemble confidence
         ensemble_abs_err = np.abs(best_pred - target)
-        best_alpha, best_corr = 0.0, stats.spearmanr(
-            ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 0.0), ensemble_abs_err
-        )[0]
+        best_alpha, best_corr = (
+            0.0,
+            stats.spearmanr(
+                ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 0.0), ensemble_abs_err
+            )[0],
+        )
         for alpha in np.arange(0.0, 1.05, 0.05):
             blended = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, alpha)
             corr = stats.spearmanr(blended, ensemble_abs_err)[0]
@@ -731,9 +733,12 @@ class MetaModelSimulator:
         best_pred = strategies[best_strategy]
         ensemble_abs_err = np.abs(best_pred - target)
 
-        best_alpha, best_corr = 0.0, stats.spearmanr(
-            ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 0.0), ensemble_abs_err
-        )[0]
+        best_alpha, best_corr = (
+            0.0,
+            stats.spearmanr(
+                ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 0.0), ensemble_abs_err
+            )[0],
+        )
         for alpha in np.arange(0.0, 1.05, 0.05):
             blended = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, alpha)
             corr = stats.spearmanr(blended, ensemble_abs_err)[0]

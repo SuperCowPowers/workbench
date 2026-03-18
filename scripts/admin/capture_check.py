@@ -73,9 +73,12 @@ def main():
             # Re-compute for display
             merged["_diff"] = diff
             worst = merged.nlargest(5, "_diff")
-            print(f"  Top mismatches:")
+            print("  Top mismatches:")
             for _, row in worst.iterrows():
-                print(f"    {row[ID_COL]:>15s}  captured={row[cap_col]:.6f}  live={row[live_col]:.6f}  diff={row['_diff']:.6f}")
+                print(
+                    f"    {row[ID_COL]:>15s}  captured={row[cap_col]:.6f}  "
+                    f"live={row[live_col]:.6f}  diff={row['_diff']:.6f}"
+                )
             merged.drop(columns=["_diff"], inplace=True)
 
     # Summary

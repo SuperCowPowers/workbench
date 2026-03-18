@@ -141,14 +141,24 @@ class MetaModel(Model):
         # Run training and register model
         aws_clamp = AWSAccountClamp()
         estimator = cls._run_training(
-            name, final_endpoints, target_column, model_weights, aggregation_strategy,
-            corr_scale, optimal_alpha, aws_clamp,
+            name,
+            final_endpoints,
+            target_column,
+            model_weights,
+            aggregation_strategy,
+            corr_scale,
+            optimal_alpha,
+            aws_clamp,
         )
         cls._register_model(name, final_endpoints, description, tags, estimator, aws_clamp)
 
         # Set metadata and onboard
         cls._set_metadata(
-            name, target_column, feature_list, feature_set_name, final_endpoints,
+            name,
+            target_column,
+            feature_list,
+            feature_set_name,
+            final_endpoints,
             aggregation_strategy=aggregation_strategy,
             model_weights=model_weights,
             corr_scale=corr_scale,

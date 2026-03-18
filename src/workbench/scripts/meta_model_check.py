@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from workbench.api import Endpoint, Model
+from workbench.api import Endpoint
 
 
 def compare_results(sim_df: pd.DataFrame, actual_df: pd.DataFrame, id_column: str, target_column: str):
@@ -94,7 +94,7 @@ def compare_results(sim_df: pd.DataFrame, actual_df: pd.DataFrame, id_column: st
 
             sim_conf_err_corr = stats.spearmanr(conf_sim, sim_abs_err)[0]
             actual_conf_err_corr = stats.spearmanr(conf_actual, actual_abs_err)[0]
-            print(f"\n  Conf-to-error correlation (Spearman):")
+            print("\n  Conf-to-error correlation (Spearman):")
             print(f"    Simulated: {sim_conf_err_corr:.4f}")
             print(f"    Actual:    {actual_conf_err_corr:.4f}")
 
@@ -102,14 +102,14 @@ def compare_results(sim_df: pd.DataFrame, actual_df: pd.DataFrame, id_column: st
     n_zero_sim = (pred_sim.abs() < 1e-10).sum()
     n_zero_actual = (pred_actual.abs() < 1e-10).sum()
     if n_zero_sim > 0 or n_zero_actual > 0:
-        print(f"\n--- Zero Prediction Check ---")
+        print("\n--- Zero Prediction Check ---")
         print(f"  Simulated zeros:  {n_zero_sim}")
         print(f"  Actual zeros:     {n_zero_actual}")
 
     # Rows where sim and actual disagree most
     merged["abs_diff"] = diff.abs()
     worst = merged.nlargest(5, "abs_diff")
-    print(f"\n--- Top 5 Largest Disagreements ---")
+    print("\n--- Top 5 Largest Disagreements ---")
     cols = [id_column, "prediction_sim", "prediction_actual", "abs_diff"]
     if target is not None and target_column in merged.columns:
         cols.insert(1, target_column)
