@@ -509,12 +509,14 @@ class FeatureSetCore(Artifact):
             time.sleep(1)
         cls.log.info(f"FeatureSet {feature_group.name} successfully deleted")
 
-    def temporal_split(self, date_column: str, holdout_percent: float = 10.0) -> list:
+    def temporal_split(self, date_column: str, holdout_percent: float = 10.0, overwrite: bool = False) -> list:
         """Compute a temporal split, returning IDs for the most recent holdout rows.
 
         Args:
             date_column (str): The name of the date/datetime column to split on.
             holdout_percent (float): Percentage of rows to hold out (default: 10.0).
+            overwrite (bool): If True, replace all existing sample weights. If False (default),
+                additively merge holdout weights with any existing weights.
 
         Returns:
             list: List of IDs in the holdout set (most recent rows).
@@ -537,8 +539,11 @@ class FeatureSetCore(Artifact):
         holdout_ids = df[df[date_column] > cutoff_date][self.id_column].tolist()
         self.log.important(f"Temporal Split: {len(holdout_ids)} holdout IDs")
 
-        # Set sample weights to 0 for holdout IDs
-        self.set_sample_weights({id: 0.0 for id in holdout_ids})
+        # Set sample weights to 0 for holdout IDs (additive by default, preserving existing weights)
+        if overwrite:
+            self.set_sample_weights({id: 0.0 for id in holdout_ids})
+        else:
+            self.add_filter(holdout_ids)
         return holdout_ids
 
     def set_training_holdouts(self, holdout_ids: list[str]):
