@@ -10,6 +10,7 @@ from scipy import stats
 import logging
 
 from workbench.api import Model
+from workbench.model_script_utils.meta_model_utils import conf_weights_with_fallback, ensemble_confidence
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -82,31 +83,13 @@ class MetaModelSimulator:
             else:
                 self._conf_error_corr[name] = 0.0
 
-    @staticmethod
-    def _conf_weights_with_fallback(conf_arr: np.ndarray, fallback_weights: np.ndarray) -> np.ndarray:
-        """Compute normalized confidence weights with fallback for zero-confidence rows.
-
-        When all confidences in a row sum to ~0, falls back to static weights
-        (matching the deployed template's behavior).
-
-        Args:
-            conf_arr: (N, M) array of confidence-based values (raw, scaled, or calibrated)
-            fallback_weights: (M,) array of static weights to use when confidence is zero
-
-        Returns:
-            (N, M) array of normalized per-row weights
-        """
-        conf_sum = conf_arr.sum(axis=1, keepdims=True)
-        zero_conf = (conf_sum < 1e-12).ravel()
-
-        weights = np.where(conf_sum > 1e-12, conf_arr / conf_sum, fallback_weights)
-        return weights
 
     def reproduce_deployed(
         self,
         aggregation_strategy: str,
         model_weights: dict[str, float],
         corr_scale: dict[str, float] | None = None,
+        optimal_alpha: float = 0.5,
         endpoint_to_model: dict[str, str] | None = None,
     ) -> pd.DataFrame:
         """Reproduce the deployed meta endpoint's aggregation logic exactly.
@@ -120,6 +103,7 @@ class MetaModelSimulator:
                 If endpoint_to_model is provided, keys are endpoint names that get
                 mapped to model names; otherwise keys must be model names.
             corr_scale (dict): Endpoint-name -> |conf_error_corr| mapping
+            optimal_alpha (float): Blend weight for ensemble confidence
             endpoint_to_model (dict): Optional endpoint-name -> model-name mapping.
                 When provided, model_weights/corr_scale keys are treated as endpoint
                 names and translated to model names for lookup.
@@ -154,17 +138,17 @@ class MetaModelSimulator:
             row_weights = np.ones_like(pred_arr) / len(model_names)
 
         elif aggregation_strategy == "confidence_weighted":
-            row_weights = self._conf_weights_with_fallback(conf_arr, fallback_w)
+            row_weights = conf_weights_with_fallback(conf_arr, fallback_w)
 
         elif aggregation_strategy == "inverse_mae_weighted":
             row_weights = np.broadcast_to(fallback_w, pred_arr.shape)
 
         elif aggregation_strategy == "scaled_conf_weighted":
-            row_weights = self._conf_weights_with_fallback(conf_arr * fallback_w, fallback_w)
+            row_weights = conf_weights_with_fallback(conf_arr * fallback_w, fallback_w)
 
         elif aggregation_strategy == "calibrated_conf_weighted":
             scale = np.array([cs[name] for name in model_names])
-            row_weights = self._conf_weights_with_fallback(conf_arr * scale, fallback_w)
+            row_weights = conf_weights_with_fallback(conf_arr * scale, fallback_w)
 
         else:
             raise ValueError(f"Unknown aggregation_strategy: {aggregation_strategy}")
@@ -173,18 +157,19 @@ class MetaModelSimulator:
         prediction = (pred_arr * row_weights).sum(axis=1)
 
         # Ensemble std across endpoints
-        prediction_std = pd.DataFrame(
+        pred_std = pd.DataFrame(
             {name: self._dfs[name]["prediction"].values for name in model_names}
         ).std(axis=1).values
 
-        # Aggregated confidence: weighted mean of child confidences (matches template)
-        confidence = (conf_arr * row_weights).sum(axis=1)
+        # Ensemble confidence (matches deployed template)
+        cs_arr = np.array([cs[name] for name in model_names])
+        confidence = ensemble_confidence(pred_arr, conf_arr, cs_arr, fallback_w, optimal_alpha)
 
         return pd.DataFrame({
             self.id_column: ids,
             self._target_column: target,
             "prediction": prediction,
-            "prediction_std": prediction_std,
+            "prediction_std": pred_std,
             "confidence": confidence,
         })
 
@@ -418,7 +403,7 @@ class MetaModelSimulator:
         inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
         inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
 
-        weights = self._conf_weights_with_fallback(conf_arr, inv_mae_weights)
+        weights = conf_weights_with_fallback(conf_arr, inv_mae_weights)
         combined["conf_weighted"] = (pred_arr * weights).sum(axis=1)
         mae = (combined["conf_weighted"] - combined["target"]).abs().mean()
         results.append({"strategy": "Confidence-Weighted", "mae": mae})
@@ -436,7 +421,7 @@ class MetaModelSimulator:
 
         # Strategy 5: Scaled confidence-weighted (confidence * model_weights)
         scaled_conf = conf_arr * inv_mae_weights
-        scaled_weights = self._conf_weights_with_fallback(scaled_conf, inv_mae_weights)
+        scaled_weights = conf_weights_with_fallback(scaled_conf, inv_mae_weights)
         combined["scaled_conf_weighted"] = (pred_arr * scaled_weights).sum(axis=1)
         mae = (combined["scaled_conf_weighted"] - combined["target"]).abs().mean()
         results.append({"strategy": "Scaled Conf-Weighted", "mae": mae})
@@ -444,7 +429,7 @@ class MetaModelSimulator:
         # Strategy 6: Calibrated confidence (confidence scaled by |confidence_to_error_corr|)
         corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
         cal_conf = conf_arr * corr_scale
-        cal_weights = self._conf_weights_with_fallback(cal_conf, inv_mae_weights)
+        cal_weights = conf_weights_with_fallback(cal_conf, inv_mae_weights)
         combined["cal_conf_weighted"] = (pred_arr * cal_weights).sum(axis=1)
         mae = (combined["cal_conf_weighted"] - combined["target"]).abs().mean()
         results.append({"strategy": "Calibrated Conf-Weighted", "mae": mae})
@@ -506,12 +491,13 @@ class MetaModelSimulator:
     def ensemble_confidence_analysis(self) -> dict:
         """Analyze ensemble confidence by blending model agreement with calibrated confidence.
 
-        Computes two signals:
-          - Agreement: 1 / (1 + pred_std) — high when models agree
-          - Calibrated confidence: weighted avg of model confidences scaled by |conf_error_corr|
+        Uses the same confidence formula as the deployed template:
+          confidence = alpha * agreement + (1 - alpha) * cal_conf
+        where:
+          - agreement = 1 / (1 + pred_std)
+          - cal_conf = (conf * corr_scale * model_weights).sum(axis=1)
 
-        Grid searches alpha to find the optimal blend, then reports all variants
-        (agreement-only, calibrated-conf-only, optimal blend) alongside individual models.
+        Grid searches alpha to find the optimal blend, then reports all variants.
 
         Returns:
             Dict with ensemble confidence results including optimal alpha and correlations
@@ -531,23 +517,11 @@ class MetaModelSimulator:
         ensemble_pred = pred_arr.mean(axis=1)
         ensemble_abs_err = np.abs(ensemble_pred - target)
 
-        # Signal 1: Agreement (inverse of prediction std)
-        pred_std = pred_arr.std(axis=1)
-        agreement = 1.0 / (1.0 + pred_std)
-
-        # Signal 2: Calibrated confidence (conf * |corr|, weighted average across models)
+        # Compute model weights and corr_scale
+        mae_scores = {name: self._dfs[name]["abs_residual"].mean() for name in model_names}
+        inv_mae_weights = np.array([1.0 / mae_scores[name] for name in model_names])
+        inv_mae_weights = inv_mae_weights / inv_mae_weights.sum()
         corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
-        cal_conf = conf_arr * corr_scale
-        cal_conf_sum = cal_conf.sum(axis=1) + 1e-8
-        calibrated_conf = cal_conf_sum / len(model_names)  # Average calibrated confidence
-
-        # Normalize both signals to [0, 1] for fair blending
-        def normalize(x):
-            x_min, x_max = x.min(), x.max()
-            return (x - x_min) / (x_max - x_min + 1e-8)
-
-        agreement_norm = normalize(agreement)
-        calibrated_conf_norm = normalize(calibrated_conf)
 
         # Report individual model baselines
         print("\nIndividual model confidence-to-error correlations:")
@@ -555,8 +529,10 @@ class MetaModelSimulator:
             print(f"  {name}: {self._conf_error_corr[name]:.3f}")
 
         # Report agreement-only and calibrated-conf-only
-        corr_agreement = stats.spearmanr(agreement_norm, ensemble_abs_err)[0]
-        corr_cal_conf = stats.spearmanr(calibrated_conf_norm, ensemble_abs_err)[0]
+        agreement_only = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 1.0)
+        cal_conf_only = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 0.0)
+        corr_agreement = stats.spearmanr(agreement_only, ensemble_abs_err)[0]
+        corr_cal_conf = stats.spearmanr(cal_conf_only, ensemble_abs_err)[0]
         print(f"\nAgreement-only          (alpha=1.0): conf_error_corr = {corr_agreement:.3f}")
         print(f"Calibrated-conf-only    (alpha=0.0): conf_error_corr = {corr_cal_conf:.3f}")
 
@@ -565,7 +541,7 @@ class MetaModelSimulator:
         best_corr = corr_cal_conf
         alpha_results = []
         for alpha in np.arange(0.0, 1.05, 0.05):
-            blended = alpha * agreement_norm + (1 - alpha) * calibrated_conf_norm
+            blended = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, alpha)
             corr = stats.spearmanr(blended, ensemble_abs_err)[0]
             alpha_results.append({"alpha": alpha, "conf_error_corr": corr})
             if corr < best_corr:  # More negative = better
@@ -590,6 +566,12 @@ class MetaModelSimulator:
 
     def best_ensemble_predictions(self) -> pd.DataFrame:
         """Generate predictions DataFrame for the best ensemble strategy with blended confidence.
+
+        Uses the same confidence formula as the deployed template:
+          confidence = alpha * agreement + (1 - alpha) * cal_conf
+        where:
+          - agreement = 1 / (1 + pred_std)
+          - cal_conf = (conf * corr_scale * model_weights).sum(axis=1)
 
         Returns a DataFrame matching the format of individual model predictions:
         id_column, target, prediction, confidence, residual, abs_residual.
@@ -617,17 +599,17 @@ class MetaModelSimulator:
         }
 
         # Confidence-weighted (fallback to inv_mae_weights when all confs are 0)
-        weights = self._conf_weights_with_fallback(conf_arr, inv_mae_weights)
+        weights = conf_weights_with_fallback(conf_arr, inv_mae_weights)
         strategies["Confidence-Weighted"] = (pred_arr * weights).sum(axis=1)
 
         # Scaled conf-weighted
         scaled_conf = conf_arr * inv_mae_weights
-        scaled_weights = self._conf_weights_with_fallback(scaled_conf, inv_mae_weights)
+        scaled_weights = conf_weights_with_fallback(scaled_conf, inv_mae_weights)
         strategies["Scaled Conf-Weighted"] = (pred_arr * scaled_weights).sum(axis=1)
 
         # Calibrated conf-weighted
-        cal_conf = conf_arr * corr_scale
-        cal_weights = self._conf_weights_with_fallback(cal_conf, inv_mae_weights)
+        cal_conf_weights = conf_arr * corr_scale
+        cal_weights = conf_weights_with_fallback(cal_conf_weights, inv_mae_weights)
         strategies["Calibrated Conf-Weighted"] = (pred_arr * cal_weights).sum(axis=1)
 
         # Drop worst
@@ -641,29 +623,19 @@ class MetaModelSimulator:
         best_strategy = min(strategy_maes, key=strategy_maes.get)
         best_pred = strategies[best_strategy]
 
-        # Compute ensemble confidence using optimal alpha blend
-        pred_std = pred_arr.std(axis=1)
-        agreement = 1.0 / (1.0 + pred_std)
-        cal_conf_avg = cal_conf.sum(axis=1) / (len(model_names) + 1e-8)
-
-        def normalize(x):
-            x_min, x_max = x.min(), x.max()
-            return (x - x_min) / (x_max - x_min + 1e-8)
-
-        agreement_norm = normalize(agreement)
-        cal_conf_norm = normalize(cal_conf_avg)
-
-        # Find optimal alpha
+        # Find optimal alpha for ensemble confidence
         ensemble_abs_err = np.abs(best_pred - target)
-        best_alpha, best_corr = 0.0, stats.spearmanr(cal_conf_norm, ensemble_abs_err)[0]
+        best_alpha, best_corr = 0.0, stats.spearmanr(
+            ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 0.0), ensemble_abs_err
+        )[0]
         for alpha in np.arange(0.0, 1.05, 0.05):
-            blended = alpha * agreement_norm + (1 - alpha) * cal_conf_norm
+            blended = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, alpha)
             corr = stats.spearmanr(blended, ensemble_abs_err)[0]
             if corr < best_corr:
                 best_corr = corr
                 best_alpha = alpha
 
-        confidence = best_alpha * agreement_norm + (1 - best_alpha) * cal_conf_norm
+        confidence = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, best_alpha)
 
         # Build output DataFrame
         result = pd.DataFrame(
@@ -732,17 +704,17 @@ class MetaModelSimulator:
         strategies = {}
         strategies["simple_mean"] = pred_arr.mean(axis=1)
 
-        weights = self._conf_weights_with_fallback(conf_arr, inv_mae_weights)
+        weights = conf_weights_with_fallback(conf_arr, inv_mae_weights)
         strategies["confidence_weighted"] = (pred_arr * weights).sum(axis=1)
 
         strategies["inverse_mae_weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
 
         scaled_conf = conf_arr * inv_mae_weights
-        scaled_weights = self._conf_weights_with_fallback(scaled_conf, inv_mae_weights)
+        scaled_weights = conf_weights_with_fallback(scaled_conf, inv_mae_weights)
         strategies["scaled_conf_weighted"] = (pred_arr * scaled_weights).sum(axis=1)
 
         cal_conf = conf_arr * corr_scale
-        cal_weights = self._conf_weights_with_fallback(cal_conf, inv_mae_weights)
+        cal_weights = conf_weights_with_fallback(cal_conf, inv_mae_weights)
         strategies["calibrated_conf_weighted"] = (pred_arr * cal_weights).sum(axis=1)
 
         # Drop worst (only if > 2 models)
@@ -755,6 +727,22 @@ class MetaModelSimulator:
         strategy_maes = {name: np.abs(preds - target).mean() for name, preds in strategies.items()}
         best_strategy = min(strategy_maes, key=strategy_maes.get)
 
+        # Compute optimal_alpha for ensemble confidence blending
+        best_pred = strategies[best_strategy]
+        ensemble_abs_err = np.abs(best_pred - target)
+
+        best_alpha, best_corr = 0.0, stats.spearmanr(
+            ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, 0.0), ensemble_abs_err
+        )[0]
+        for alpha in np.arange(0.0, 1.05, 0.05):
+            blended = ensemble_confidence(pred_arr, conf_arr, corr_scale, inv_mae_weights, alpha)
+            corr = stats.spearmanr(blended, ensemble_abs_err)[0]
+            if corr < best_corr:  # More negative = better
+                best_corr = corr
+                best_alpha = alpha
+
+        log.info(f"Optimal alpha for ensemble confidence: {best_alpha:.2f} (conf_error_corr={best_corr:.3f})")
+
         # Build config dict
         model_weights_dict = {name: float(w) for name, w in zip(model_names, inv_mae_weights)}
         corr_scale_dict = {name: float(c) for name, c in zip(model_names, corr_scale)}
@@ -763,6 +751,7 @@ class MetaModelSimulator:
             "aggregation_strategy": best_strategy,
             "model_weights": model_weights_dict,
             "corr_scale": corr_scale_dict,
+            "optimal_alpha": float(best_alpha),
             "endpoints": model_names,
             "target_column": self._target_column,
         }
@@ -800,15 +789,15 @@ class MetaModelSimulator:
         # Compute all ensemble strategies (true ensembles that combine multiple models)
         ensemble_strategies = {}
         ensemble_strategies["Simple Mean"] = combined[pred_cols].mean(axis=1)
-        weights = self._conf_weights_with_fallback(conf_arr, inv_mae_weights)
+        weights = conf_weights_with_fallback(conf_arr, inv_mae_weights)
         ensemble_strategies["Confidence-Weighted"] = (pred_arr * weights).sum(axis=1)
         ensemble_strategies["Inverse-MAE Weighted"] = (pred_arr * inv_mae_weights).sum(axis=1)
         scaled_conf = conf_arr * inv_mae_weights
-        scaled_weights = self._conf_weights_with_fallback(scaled_conf, inv_mae_weights)
+        scaled_weights = conf_weights_with_fallback(scaled_conf, inv_mae_weights)
         ensemble_strategies["Scaled Conf-Weighted"] = (pred_arr * scaled_weights).sum(axis=1)
         corr_scale = np.array([abs(self._conf_error_corr[name]) for name in model_names])
         cal_conf = conf_arr * corr_scale
-        cal_weights = self._conf_weights_with_fallback(cal_conf, inv_mae_weights)
+        cal_weights = conf_weights_with_fallback(cal_conf, inv_mae_weights)
         ensemble_strategies["Calibrated Conf-Weighted"] = (pred_arr * cal_weights).sum(axis=1)
         worst_model = max(mae_scores, key=mae_scores.get)
         remaining = [n for n in model_names if n != worst_model]

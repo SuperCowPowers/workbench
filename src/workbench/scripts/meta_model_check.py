@@ -161,6 +161,7 @@ def main():
     print(f"  Aggregation strategy: {meta_config['aggregation_strategy']}")
     print(f"  Model weights: {meta_config['model_weights']}")
     print(f"  Corr scale: {meta_config.get('corr_scale', {})}")
+    print(f"  Optimal alpha: {meta_config.get('optimal_alpha', 0.5)}")
 
     # Build endpoint → model name mapping
     ep_to_model = {ep: Endpoint(ep).get_input() for ep in endpoints}
@@ -181,6 +182,7 @@ def main():
         aggregation_strategy=meta_config["aggregation_strategy"],
         model_weights=meta_config["model_weights"],
         corr_scale=meta_config.get("corr_scale"),
+        optimal_alpha=meta_config.get("optimal_alpha", 0.5),
         endpoint_to_model=ep_to_model,
     )
     print(f"Simulated predictions: {len(sim_df)} rows")

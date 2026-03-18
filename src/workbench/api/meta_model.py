@@ -126,11 +126,13 @@ class MetaModel(Model):
         aggregation_strategy = config["aggregation_strategy"]
         model_weights = {model_to_ep[m]: w for m, w in config["model_weights"].items()}
         corr_scale = {model_to_ep[m]: w for m, w in config["corr_scale"].items()}
+        optimal_alpha = config["optimal_alpha"]
         final_endpoints = [model_to_ep[m] for m in config["endpoints"]]
 
         log.important(f"Best strategy: {aggregation_strategy}")
         log.important(f"Endpoints: {final_endpoints}")
         log.important(f"Model weights: {model_weights}")
+        log.important(f"Optimal alpha: {optimal_alpha}")
 
         # Delete existing model if it exists
         log.important(f"Trying to delete existing model {name}...")
@@ -139,7 +141,8 @@ class MetaModel(Model):
         # Run training and register model
         aws_clamp = AWSAccountClamp()
         estimator = cls._run_training(
-            name, final_endpoints, target_column, model_weights, aggregation_strategy, corr_scale, aws_clamp
+            name, final_endpoints, target_column, model_weights, aggregation_strategy,
+            corr_scale, optimal_alpha, aws_clamp,
         )
         cls._register_model(name, final_endpoints, description, tags, estimator, aws_clamp)
 
@@ -149,6 +152,7 @@ class MetaModel(Model):
             aggregation_strategy=aggregation_strategy,
             model_weights=model_weights,
             corr_scale=corr_scale,
+            optimal_alpha=optimal_alpha,
         )
 
         log.important(f"MetaModel {name} created successfully!")
@@ -215,6 +219,7 @@ class MetaModel(Model):
         model_weights: dict[str, float],
         aggregation_strategy: str,
         corr_scale: dict[str, float] | None,
+        optimal_alpha: float,
         aws_clamp: AWSAccountClamp,
     ) -> Estimator:
         """Run the minimal training job that saves the meta model config.
@@ -226,6 +231,7 @@ class MetaModel(Model):
             model_weights (dict): Dict mapping endpoint name to weight
             aggregation_strategy (str): Ensemble aggregation strategy name
             corr_scale (dict): Dict mapping endpoint name to |confidence_error_correlation|
+            optimal_alpha (float): Blend weight for ensemble confidence
             aws_clamp (AWSAccountClamp): AWS account clamp
 
         Returns:
@@ -245,6 +251,7 @@ class MetaModel(Model):
             "model_weights": model_weights,
             "aggregation_strategy": aggregation_strategy,
             "corr_scale": corr_scale or {},
+            "optimal_alpha": optimal_alpha,
             "model_metrics_s3_path": f"{models_s3_path}/{name}/training",
             "aws_region": sm_session.boto_region_name,
         }
@@ -324,6 +331,7 @@ class MetaModel(Model):
         aggregation_strategy: str = None,
         model_weights: dict[str, float] = None,
         corr_scale: dict[str, float] = None,
+        optimal_alpha: float = None,
     ):
         """Set model metadata and onboard.
 
@@ -336,6 +344,7 @@ class MetaModel(Model):
             aggregation_strategy (str): Ensemble aggregation strategy name
             model_weights (dict): Dict mapping endpoint name to weight
             corr_scale (dict): Dict mapping endpoint name to |confidence_error_correlation|
+            optimal_alpha (float): Blend weight for ensemble confidence
         """
         time.sleep(3)
         output_model = ModelCore(name)
@@ -351,6 +360,8 @@ class MetaModel(Model):
             output_model.upsert_workbench_meta({"model_weights": model_weights})
         if corr_scale:
             output_model.upsert_workbench_meta({"corr_scale": corr_scale})
+        if optimal_alpha is not None:
+            output_model.upsert_workbench_meta({"optimal_alpha": optimal_alpha})
         output_model.onboard_with_args(ModelType.UQ_REGRESSOR, target_column, feature_list=feature_list)
 
     def get_meta_config(self) -> dict:
@@ -377,6 +388,7 @@ class MetaModel(Model):
             "aggregation_strategy": meta["aggregation_strategy"],
             "model_weights": meta["model_weights"],
             "corr_scale": meta.get("corr_scale", {}),
+            "optimal_alpha": meta.get("optimal_alpha", 0.5),
             "target_column": meta.get("workbench_model_target"),
         }
 

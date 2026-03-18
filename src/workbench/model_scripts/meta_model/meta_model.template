@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 
 from workbench_bridges.endpoints.fast_inference import fast_inference
+from meta_model_utils import conf_weights_with_fallback, ensemble_confidence
 
 # Template parameters (filled in by Workbench)
 TEMPLATE_PARAMS = {
@@ -31,6 +32,7 @@ TEMPLATE_PARAMS = {
     "model_weights": "{{model_weights}}",
     "aggregation_strategy": "{{aggregation_strategy}}",
     "corr_scale": "{{corr_scale}}",
+    "optimal_alpha": "{{optimal_alpha}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "aws_region": "{{aws_region}}",
 }
@@ -64,26 +66,12 @@ def invoke_endpoints_parallel(endpoint_names: list[str], df: pd.DataFrame) -> di
     return results
 
 
-def _conf_weights_with_fallback(conf_arr: np.ndarray, fallback_w: np.ndarray) -> np.ndarray:
-    """Compute normalized confidence weights, falling back to static weights for zero-confidence rows.
-
-    Args:
-        conf_arr: (N, M) array of confidence-based values (raw, scaled, or calibrated)
-        fallback_w: (M,) array of static weights to use when row confidence sums to ~0
-
-    Returns:
-        (N, M) array of normalized per-row weights
-    """
-    conf_sum = conf_arr.sum(axis=1, keepdims=True)
-    zero_conf = (conf_sum < 1e-12).ravel()
-    return np.where(zero_conf[:, None], fallback_w, conf_arr / (conf_sum + 1e-12))
-
-
 def aggregate_predictions(
     results: dict[str, pd.DataFrame],
     model_weights: dict[str, float],
     aggregation_strategy: str = "inverse_mae_weighted",
     corr_scale: dict[str, float] | None = None,
+    optimal_alpha: float = 0.5,
 ) -> pd.DataFrame:
     """Aggregate predictions from multiple endpoints using the specified strategy.
 
@@ -95,6 +83,8 @@ def aggregate_predictions(
             'inverse_mae_weighted', 'scaled_conf_weighted', 'calibrated_conf_weighted'
         corr_scale: Dict mapping endpoint_name -> |confidence_error_correlation|
             (required for 'calibrated_conf_weighted' strategy)
+        optimal_alpha: Blend weight for ensemble confidence (0=calibrated conf only,
+            1=agreement only). Learned during model creation.
 
     Returns:
         DataFrame with aggregated prediction, prediction_std, and confidence
@@ -126,7 +116,7 @@ def aggregate_predictions(
 
     elif aggregation_strategy == "confidence_weighted":
         # Weight by per-row confidence (normalized), fallback to static weights when all confs are 0
-        row_weights = _conf_weights_with_fallback(conf_arr, fallback_w)
+        row_weights = conf_weights_with_fallback(conf_arr, fallback_w)
 
     elif aggregation_strategy == "inverse_mae_weighted":
         # Static weights from model_weights (renormalized for valid endpoints)
@@ -134,14 +124,14 @@ def aggregate_predictions(
 
     elif aggregation_strategy == "scaled_conf_weighted":
         # model_weights * per-row confidence (normalized per row)
-        row_weights = _conf_weights_with_fallback(conf_arr * fallback_w, fallback_w)
+        row_weights = conf_weights_with_fallback(conf_arr * fallback_w, fallback_w)
 
     elif aggregation_strategy == "calibrated_conf_weighted":
         # corr_scale * per-row confidence (normalized per row)
         if corr_scale is None:
             corr_scale = {name: 1.0 for name in names}
         scale = np.array([corr_scale.get(name, 1.0) for name in names])
-        row_weights = _conf_weights_with_fallback(conf_arr * scale, fallback_w)
+        row_weights = conf_weights_with_fallback(conf_arr * scale, fallback_w)
 
     else:
         raise ValueError(f"Unknown aggregation_strategy: {aggregation_strategy}")
@@ -152,8 +142,11 @@ def aggregate_predictions(
     # Ensemble std across endpoints
     output_df["prediction_std"] = pred_df.std(axis=1)
 
-    # Aggregated confidence: weighted mean of child confidences
-    output_df["confidence"] = (conf_arr * row_weights).sum(axis=1)
+    # Ensemble confidence: blend of agreement and calibrated confidence
+    if corr_scale is None:
+        corr_scale = {name: 1.0 for name in names}
+    cs = np.array([corr_scale.get(name, 1.0) for name in names])
+    output_df["confidence"] = ensemble_confidence(pred_arr, conf_arr, cs, fallback_w, optimal_alpha)
 
     return output_df
 
@@ -213,6 +206,7 @@ def predict_fn(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     model_weights = config.get("model_weights", {})
     aggregation_strategy = config.get("aggregation_strategy", "inverse_mae_weighted")
     corr_scale = config.get("corr_scale")
+    optimal_alpha = config.get("optimal_alpha", 0.5)
 
     print(f"Calling {len(endpoints)} endpoints: {endpoints}")
     print(f"Using aggregation strategy: {aggregation_strategy}")
@@ -226,7 +220,7 @@ def predict_fn(df: pd.DataFrame, config: dict) -> pd.DataFrame:
         print(f"  {name}: {status}")
 
     # Aggregate predictions
-    output_df = aggregate_predictions(results, model_weights, aggregation_strategy, corr_scale)
+    output_df = aggregate_predictions(results, model_weights, aggregation_strategy, corr_scale, optimal_alpha)
 
     print(f"Aggregated {len(output_df)} predictions from {len(results)} endpoints")
     return output_df
@@ -249,6 +243,7 @@ if __name__ == "__main__":
     model_weights = TEMPLATE_PARAMS["model_weights"]
     aggregation_strategy = TEMPLATE_PARAMS["aggregation_strategy"]
     corr_scale = TEMPLATE_PARAMS["corr_scale"]
+    optimal_alpha = TEMPLATE_PARAMS["optimal_alpha"]
     aws_region = TEMPLATE_PARAMS["aws_region"]
 
     print("=" * 60)
@@ -259,6 +254,7 @@ if __name__ == "__main__":
     print(f"Aggregation strategy: {aggregation_strategy}")
     print(f"Model weights: {model_weights}")
     print(f"Corr scale: {corr_scale}")
+    print(f"Optimal alpha: {optimal_alpha}")
     print(f"AWS region: {aws_region}")
 
     # Save configuration for inference
@@ -268,6 +264,7 @@ if __name__ == "__main__":
         "model_weights": model_weights,
         "aggregation_strategy": aggregation_strategy,
         "corr_scale": corr_scale,
+        "optimal_alpha": optimal_alpha,
         "aws_region": aws_region,
     }
 
