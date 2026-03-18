@@ -102,6 +102,92 @@ class MetaModelSimulator:
         weights = np.where(conf_sum > 1e-12, conf_arr / conf_sum, fallback_weights)
         return weights
 
+    def reproduce_deployed(
+        self,
+        aggregation_strategy: str,
+        model_weights: dict[str, float],
+        corr_scale: dict[str, float] | None = None,
+        endpoint_to_model: dict[str, str] | None = None,
+    ) -> pd.DataFrame:
+        """Reproduce the deployed meta endpoint's aggregation logic exactly.
+
+        Uses the same algorithm as the template's aggregate_predictions() so that
+        results can be compared 1:1 with actual endpoint output.
+
+        Args:
+            aggregation_strategy (str): Strategy name (e.g. 'inverse_mae_weighted')
+            model_weights (dict): Endpoint-name -> weight mapping from meta config.
+                If endpoint_to_model is provided, keys are endpoint names that get
+                mapped to model names; otherwise keys must be model names.
+            corr_scale (dict): Endpoint-name -> |conf_error_corr| mapping
+            endpoint_to_model (dict): Optional endpoint-name -> model-name mapping.
+                When provided, model_weights/corr_scale keys are treated as endpoint
+                names and translated to model names for lookup.
+
+        Returns:
+            pd.DataFrame: DataFrame with id, target, prediction, prediction_std,
+                confidence columns — matching the template output format
+        """
+        model_names = list(self._dfs.keys())
+
+        # Map endpoint-keyed dicts to model-keyed dicts if needed
+        if endpoint_to_model:
+            model_to_ep = {m: ep for ep, m in endpoint_to_model.items()}
+            mw = {m: model_weights.get(model_to_ep.get(m, m), 1.0) for m in model_names}
+            cs = {m: (corr_scale or {}).get(model_to_ep.get(m, m), 1.0) for m in model_names}
+        else:
+            mw = {m: model_weights.get(m, 1.0) for m in model_names}
+            cs = {m: (corr_scale or {}).get(m, 1.0) for m in model_names}
+
+        # Build arrays (same order as model_names)
+        pred_arr = np.column_stack([self._dfs[name]["prediction"].values for name in model_names])
+        conf_arr = np.column_stack([self._dfs[name]["confidence"].values for name in model_names])
+        target = self._dfs[model_names[0]][self._target_column].values
+        ids = self._dfs[model_names[0]][self.id_column].values
+
+        # Fallback weights (normalized), matching template logic
+        fallback_w = np.array([mw[name] for name in model_names])
+        fallback_w = fallback_w / fallback_w.sum()
+
+        # Compute per-row weights — exactly mirroring template's aggregate_predictions()
+        if aggregation_strategy == "simple_mean":
+            row_weights = np.ones_like(pred_arr) / len(model_names)
+
+        elif aggregation_strategy == "confidence_weighted":
+            row_weights = self._conf_weights_with_fallback(conf_arr, fallback_w)
+
+        elif aggregation_strategy == "inverse_mae_weighted":
+            row_weights = np.broadcast_to(fallback_w, pred_arr.shape)
+
+        elif aggregation_strategy == "scaled_conf_weighted":
+            row_weights = self._conf_weights_with_fallback(conf_arr * fallback_w, fallback_w)
+
+        elif aggregation_strategy == "calibrated_conf_weighted":
+            scale = np.array([cs[name] for name in model_names])
+            row_weights = self._conf_weights_with_fallback(conf_arr * scale, fallback_w)
+
+        else:
+            raise ValueError(f"Unknown aggregation_strategy: {aggregation_strategy}")
+
+        # Weighted prediction
+        prediction = (pred_arr * row_weights).sum(axis=1)
+
+        # Ensemble std across endpoints
+        prediction_std = pd.DataFrame(
+            {name: self._dfs[name]["prediction"].values for name in model_names}
+        ).std(axis=1).values
+
+        # Aggregated confidence: weighted mean of child confidences (matches template)
+        confidence = (conf_arr * row_weights).sum(axis=1)
+
+        return pd.DataFrame({
+            self.id_column: ids,
+            self._target_column: target,
+            "prediction": prediction,
+            "prediction_std": prediction_std,
+            "confidence": confidence,
+        })
+
     def report(self, details: bool = False):
         """Print a comprehensive analysis report
 

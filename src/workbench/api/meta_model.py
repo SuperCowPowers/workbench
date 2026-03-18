@@ -144,7 +144,12 @@ class MetaModel(Model):
         cls._register_model(name, final_endpoints, description, tags, estimator, aws_clamp)
 
         # Set metadata and onboard
-        cls._set_metadata(name, target_column, feature_list, feature_set_name, final_endpoints)
+        cls._set_metadata(
+            name, target_column, feature_list, feature_set_name, final_endpoints,
+            aggregation_strategy=aggregation_strategy,
+            model_weights=model_weights,
+            corr_scale=corr_scale,
+        )
 
         log.important(f"MetaModel {name} created successfully!")
         return cls(name)
@@ -310,7 +315,15 @@ class MetaModel(Model):
 
     @classmethod
     def _set_metadata(
-        cls, name: str, target_column: str, feature_list: list[str], feature_set_name: str, endpoints: list[str]
+        cls,
+        name: str,
+        target_column: str,
+        feature_list: list[str],
+        feature_set_name: str,
+        endpoints: list[str],
+        aggregation_strategy: str = None,
+        model_weights: dict[str, float] = None,
+        corr_scale: dict[str, float] = None,
     ):
         """Set model metadata and onboard.
 
@@ -320,6 +333,9 @@ class MetaModel(Model):
             feature_list (list[str]): List of feature names
             feature_set_name (str): Name of the input FeatureSet
             endpoints (list[str]): List of endpoint names
+            aggregation_strategy (str): Ensemble aggregation strategy name
+            model_weights (dict): Dict mapping endpoint name to weight
+            corr_scale (dict): Dict mapping endpoint name to |confidence_error_correlation|
         """
         time.sleep(3)
         output_model = ModelCore(name)
@@ -329,7 +345,40 @@ class MetaModel(Model):
         output_model.upsert_workbench_meta({"workbench_model_target": target_column})
         output_model.upsert_workbench_meta({"workbench_model_features": feature_list})
         output_model.upsert_workbench_meta({"endpoints": endpoints})
+        if aggregation_strategy:
+            output_model.upsert_workbench_meta({"aggregation_strategy": aggregation_strategy})
+        if model_weights:
+            output_model.upsert_workbench_meta({"model_weights": model_weights})
+        if corr_scale:
+            output_model.upsert_workbench_meta({"corr_scale": corr_scale})
         output_model.onboard_with_args(ModelType.UQ_REGRESSOR, target_column, feature_list=feature_list)
+
+    def get_meta_config(self) -> dict:
+        """Retrieve the meta model configuration (strategy, weights, corr_scale).
+
+        Returns:
+            dict: Meta config with keys: endpoints, aggregation_strategy,
+                model_weights, corr_scale, target_column
+
+        Raises:
+            ValueError: If aggregation_strategy or model_weights are not in workbench_meta.
+                Re-create the meta model to populate these fields.
+        """
+        meta = self.workbench_meta()
+
+        if not meta.get("aggregation_strategy") or not meta.get("model_weights"):
+            raise ValueError(
+                f"Meta config (aggregation_strategy, model_weights) not found in workbench_meta "
+                f"for '{self.name}'. Re-create the meta model to populate these fields."
+            )
+
+        return {
+            "endpoints": meta["endpoints"],
+            "aggregation_strategy": meta["aggregation_strategy"],
+            "model_weights": meta["model_weights"],
+            "corr_scale": meta.get("corr_scale", {}),
+            "target_column": meta.get("workbench_model_target"),
+        }
 
 
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
 """MetaModelCheck: Compare simulated ensemble performance vs actual meta endpoint results.
 
 CLI tool that takes a meta model endpoint, looks up its child endpoints,
-runs the simulator, and compares the simulated predictions against the
-actual meta endpoint inference captures.
+retrieves the deployed configuration (strategy, weights, corr_scale), and
+reproduces the template's aggregation logic on captured child predictions.
+Compares the reproduced predictions against the actual meta endpoint captures.
 """
 
 import argparse
@@ -80,6 +81,10 @@ def compare_results(sim_df: pd.DataFrame, actual_df: pd.DataFrame, id_column: st
         print(f"  Sim confidence:    mean={conf_sim.mean():.4f}, std={conf_sim.std():.4f}")
         print(f"  Actual confidence: mean={conf_actual.mean():.4f}, std={conf_actual.std():.4f}")
 
+        conf_diff = conf_sim - conf_actual
+        print(f"  Mean |conf diff|:  {conf_diff.abs().mean():.6f}")
+        print(f"  Max |conf diff|:   {conf_diff.abs().max():.6f}")
+
         conf_corr, _ = stats.pearsonr(conf_sim, conf_actual)
         print(f"  Pearson r (sim vs actual confidence): {conf_corr:.4f}")
 
@@ -132,7 +137,10 @@ def main():
     print(f"Looking up meta endpoint: {args.meta_endpoint}")
     endpoint = Endpoint(args.meta_endpoint)
     model_name = endpoint.get_input()
-    meta_model = Model(model_name)
+
+    from workbench.api.meta_model import MetaModel
+
+    meta_model = MetaModel(model_name)
     meta = meta_model.workbench_meta()
 
     endpoints = meta.get("endpoints")
@@ -145,17 +153,37 @@ def main():
     print(f"Child endpoints: {endpoints}")
     print(f"Target column: {target_column}")
 
-    # Run simulation on child endpoints
+    # Retrieve the deployed meta config (strategy, weights, corr_scale)
     print(f"\n{'='*70}")
-    print("RUNNING SIMULATION ON CHILD ENDPOINTS")
+    print("RETRIEVING DEPLOYED META CONFIG")
     print(f"{'='*70}")
-    from workbench.api.meta_model import MetaModel
+    meta_config = meta_model.get_meta_config()
+    print(f"  Aggregation strategy: {meta_config['aggregation_strategy']}")
+    print(f"  Model weights: {meta_config['model_weights']}")
+    print(f"  Corr scale: {meta_config.get('corr_scale', {})}")
 
-    sim = MetaModel.simulate(endpoints, capture_name=args.capture_name)
-    sim.report()
+    # Build endpoint → model name mapping
+    ep_to_model = {ep: Endpoint(ep).get_input() for ep in endpoints}
+    print(f"  Endpoint → Model mapping: {ep_to_model}")
 
-    # Get simulated best ensemble predictions
-    sim_df = sim.best_ensemble_predictions()
+    # Run simulation on child models
+    print(f"\n{'='*70}")
+    print("REPRODUCING DEPLOYED AGGREGATION FROM CHILD CAPTURES")
+    print(f"{'='*70}")
+    from workbench.utils.meta_model_simulator import MetaModelSimulator
+
+    id_column = MetaModel._resolve_id_column(endpoints[0])
+    model_names = list(ep_to_model.values())
+    sim = MetaModelSimulator(model_names, id_column=id_column, capture_name=args.capture_name)
+
+    # Reproduce the deployed template's exact logic
+    sim_df = sim.reproduce_deployed(
+        aggregation_strategy=meta_config["aggregation_strategy"],
+        model_weights=meta_config["model_weights"],
+        corr_scale=meta_config.get("corr_scale"),
+        endpoint_to_model=ep_to_model,
+    )
+    print(f"Simulated predictions: {len(sim_df)} rows")
 
     # Get actual meta endpoint inference predictions
     print(f"\n{'='*70}")
@@ -170,7 +198,6 @@ def main():
     print(f"Actual predictions: {len(actual_df)} rows")
 
     # Compare
-    id_column = sim.id_column
     compare_results(sim_df, actual_df, id_column, target_column)
 
 
