@@ -48,6 +48,8 @@ def ensemble_confidence(
     Returns:
         (N,) array of ensemble confidence values
     """
+    pred_arr = np.asarray(pred_arr, dtype=np.float64)
+    conf_arr = np.asarray(conf_arr, dtype=np.float64)
     pred_std = pred_arr.std(axis=1)
     agreement = 1.0 / (1.0 + pred_std)
     cal_conf = (conf_arr * corr_scale * model_weights).sum(axis=1)

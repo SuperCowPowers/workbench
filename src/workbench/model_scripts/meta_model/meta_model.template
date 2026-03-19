@@ -102,8 +102,8 @@ def aggregate_predictions(
     names = list(valid_results.keys())
     pred_df = pd.DataFrame({name: df["prediction"] for name, df in valid_results.items()})
     conf_df = pd.DataFrame({name: df["confidence"] for name, df in valid_results.items()})
-    pred_arr = pred_df.values
-    conf_arr = conf_df.values
+    pred_arr = pred_df.to_numpy(dtype=np.float64, na_value=np.nan)
+    conf_arr = conf_df.to_numpy(dtype=np.float64, na_value=np.nan)
 
     # Fallback weights for rows where all confidences are zero
     fallback_w = np.array([model_weights.get(name, 1.0) for name in names])
