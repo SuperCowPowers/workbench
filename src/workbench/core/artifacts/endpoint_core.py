@@ -658,7 +658,9 @@ class EndpointCore(Artifact):
             hold_df = hold_df[~hold_df[fs.id_column].isin(pre_existing_zeros)]
             n_excluded = n_before - len(hold_df)
             if n_excluded:
-                self.log.important(f"Temporal Inference: excluded {n_excluded} pre-filtered rows (anomalous compounds, etc.)")
+                self.log.important(
+                    f"Temporal Inference: excluded {n_excluded} pre-filtered rows (anomalous compounds, etc.)"
+                )
 
         # Guard against empty hold-out set
         if hold_df.empty:
