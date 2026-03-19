@@ -691,6 +691,7 @@ if __name__ == "__main__":
 
         with torch.inference_mode():
             fold_preds = np.concatenate([p.numpy() for p in trainer.predict(mpnn, val_loader_pred)], axis=0)
+        print(f"Fold {fold_idx + 1} OOF predictions complete.", flush=True)
         if fold_preds.ndim == 3 and fold_preds.shape[1] == 1:
             fold_preds = fold_preds.squeeze(axis=1)
 
@@ -703,7 +704,7 @@ if __name__ == "__main__":
                 fold_preds = fold_preds.reshape(-1, 1)
             oof_predictions[val_idx] = fold_preds
 
-    print(f"\nTraining complete! Trained {len(ensemble_models)} model(s).")
+    print(f"\nTraining complete! Trained {len(ensemble_models)} model(s).", flush=True)
 
     # -------------------------------------------------------------------------
     # Prepare validation results
@@ -787,7 +788,7 @@ if __name__ == "__main__":
         # Compute ensemble std using direct PyTorch inference (faster, no Trainer overhead)
         preds_std = None
         if len(ensemble_models) > 1:
-            print("Computing prediction_std from ensemble...")
+            print("Computing prediction_std from ensemble...", flush=True)
             val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
             std_dataset = data.MoleculeDataset(val_dps)
             infer_batch = min(len(std_dataset), 4096)
