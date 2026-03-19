@@ -527,17 +527,19 @@ class FeatureSetCore(Artifact):
             self.log.error(f"Date column '{date_column}' not found in columns: {self.columns}")
             return []
 
-        # Pull the data and convert the date column to datetime
+        # Pull the data, sort by date, and hold out the most recent N% of rows
         df = self.query(f'SELECT {self.id_column}, {date_column} FROM "{self.athena_table}"')
         df[date_column] = pd.to_datetime(df[date_column], errors="coerce")
+        df = df.sort_values(date_column)
 
-        # Compute the cutoff date based on the holdout percentage
-        cutoff_date = df[date_column].quantile(1.0 - holdout_percent / 100.0)
-        self.log.important(f"Temporal Split: {holdout_percent}% holdout, cutoff date: {cutoff_date}")
-
-        # Get the holdout IDs (rows after the cutoff date)
-        holdout_ids = df[df[date_column] > cutoff_date][self.id_column].tolist()
-        self.log.important(f"Temporal Split: {len(holdout_ids)} holdout IDs")
+        # Compute the cutoff index to hold out the specified percentage of rows
+        cutoff_index = int(len(df) * (1.0 - holdout_percent / 100.0))
+        holdout_df = df.iloc[cutoff_index:]
+        cutoff_date = holdout_df[date_column].min()
+        holdout_ids = holdout_df[self.id_column].tolist()
+        self.log.important(
+            f"Temporal Split: {holdout_percent}% holdout ({len(holdout_ids)} rows), cutoff date: {cutoff_date}"
+        )
 
         # Set sample weights to 0 for holdout IDs (additive by default, preserving existing weights)
         if overwrite:
