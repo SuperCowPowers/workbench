@@ -616,15 +616,18 @@ class EndpointCore(Artifact):
 
         return out_of_fold_df
 
-    def ts_inference(self, date_column: str) -> pd.DataFrame:
+    def ts_inference(self, date_column: str, holdout_percent: float = 10.0) -> pd.DataFrame:
         """Run temporal hold-out inference on this Endpoint
 
         Note:
             temporal_split() must be called on the FeatureSet BEFORE model training.
-            This method uses the sample_weights == 0.0 rows as the hold-out set.
+            This method re-derives the temporal holdout using the date cutoff and excludes
+            any rows that were already zero-weighted (e.g., anomalous compounds).
 
         Args:
-            date_column (str): Name of the date column (used for the capture name)
+            date_column (str): Name of the date column (used for the cutoff and capture name)
+            holdout_percent (float): Percentage of rows to hold out (default: 10.0).
+                Must match the value used in temporal_split().
 
         Returns:
             pd.DataFrame: DataFrame with the inference results (empty if no hold-out rows)
@@ -634,12 +637,28 @@ class EndpointCore(Artifact):
         model = ModelCore(self.model_name)
         fs = FeatureSetCore(model.get_input())
 
-        # The model training view excludes hold-out rows (sample_weight == 0.0)
-        # So the hold-out set is all_data minus training_view IDs
+        # Pull all data and re-derive the temporal cutoff (matching temporal_split logic)
+        # Note: holdout_percent must match the value used in temporal_split() on the FeatureSet
         all_df = fs.pull_dataframe()
-        tv = model.training_view()
-        training_ids = set(fs.query(f'SELECT "{fs.id_column}" FROM "{tv.table}"')[fs.id_column])
-        hold_df = all_df[~all_df[fs.id_column].isin(training_ids)].copy()
+        all_df[date_column] = pd.to_datetime(all_df[date_column], errors="coerce")
+        cutoff_date = all_df[date_column].quantile(1.0 - holdout_percent / 100.0)
+        self.log.important(f"Temporal Inference: cutoff date: {cutoff_date}")
+
+        # Get rows after the cutoff date
+        hold_df = all_df[all_df[date_column] > cutoff_date].copy()
+
+        # Exclude any rows that were already zero-weighted before the temporal split
+        # (e.g., anomalous compounds filtered by compute_sample_weights)
+        sample_weights = fs.get_sample_weights()
+        if sample_weights is not None and not sample_weights.empty:
+            pre_existing_zeros = set(sample_weights[sample_weights["sample_weight"] == 0.0][fs.id_column])
+            # Only exclude IDs that are zero-weighted AND not in the temporal holdout date range
+            # (if an ID is both anomalous and after the cutoff, it should still be excluded)
+            n_before = len(hold_df)
+            hold_df = hold_df[~hold_df[fs.id_column].isin(pre_existing_zeros)]
+            n_excluded = n_before - len(hold_df)
+            if n_excluded:
+                self.log.important(f"Temporal Inference: excluded {n_excluded} pre-filtered rows (anomalous compounds, etc.)")
 
         # Guard against empty hold-out set
         if hold_df.empty:
@@ -647,7 +666,6 @@ class EndpointCore(Artifact):
             return pd.DataFrame()
 
         # Compute the earliest date in the hold-out set for the capture name
-        hold_df[date_column] = pd.to_datetime(hold_df[date_column], errors="coerce")
         earliest_date = hold_df[date_column].min().date()
         self.log.important(f"Running temporal hold out inference on {len(hold_df)} rows from {earliest_date} and later")
 
