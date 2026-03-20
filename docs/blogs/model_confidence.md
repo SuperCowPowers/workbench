@@ -88,7 +88,7 @@ Everything above applies to regression models — where `prediction_std` gives u
 
 For classification, each of the 5 ensemble members outputs a softmax probability distribution over classes. We average those distributions to get the final `_proba` columns. But how do we turn that into a single confidence score?
 
-Simple approaches like using the maximum predicted probability (`max(p)`) are tempting but have known issues — [Galil et al. (2022)](https://arxiv.org/abs/2210.14070) showed that max probability alone is suboptimal for detecting incorrect predictions, especially under distribution shift. It ignores both the shape of the probability distribution and whether the ensemble actually agrees.
+Simple approaches like using the maximum predicted probability (`max(p)`) are tempting but have known issues — [Galil et al. (2023)](https://arxiv.org/abs/2302.11874) showed that max probability alone is suboptimal for detecting incorrect predictions, especially under distribution shift. It ignores both the shape of the probability distribution and whether the ensemble actually agrees.
 
 ### VGMU: Variance-Gated Margin Uncertainty
 
@@ -188,7 +188,7 @@ Here's how Workbench approaches model confidence today:
 **Classification models:**
 
 1. **Ensemble probabilities** — Each of the 5 models outputs class probabilities; we average them and also track per-model disagreement
-2. **VGMU scoring** — Following [Weiss et al. (2025)](https://arxiv.org/abs/2602.08142), we combine the probability margin between top classes with ensemble disagreement via a signal-to-noise ratio
+2. **VGMU scoring** — Following [Gillis et al. (2025)](https://arxiv.org/abs/2602.08142), we combine the probability margin between top classes with ensemble disagreement via a signal-to-noise ratio
 3. **Isotonic calibration** — Maps raw VGMU scores to P(correct) using isotonic regression on validation data, giving confidence a direct probabilistic interpretation
 
 Both approaches share the same philosophy: leverage the ensemble's own disagreement as the uncertainty signal, then calibrate it against held-out data so the numbers are meaningful. We're excited about this unified framework and looking forward to incorporating applicability domain methods and testing on a wider range of datasets.
@@ -200,9 +200,9 @@ Both approaches share the same philosophy: leverage the ensemble's own disagreem
 - [Angelopoulos & Bates, "Conformal Prediction: A Gentle Introduction" (2021)](https://arxiv.org/abs/2107.07511) — Accessible introduction to conformal methods
 - [Gneiting et al., "Probabilistic Forecasts, Calibration and Sharpness" (2007)](https://doi.org/10.1111/j.1467-9868.2007.00587.x) — Calibration vs. discrimination framework
 - [Ovadia et al., "Can You Trust Your Model's Uncertainty?" (2019)](https://arxiv.org/abs/1906.02530) — Analysis of ensemble UQ under dataset shift
-- [Weiss et al., "Variance-Gated Ensembles: An Epistemic-Aware Framework" (2025)](https://arxiv.org/abs/2602.08142) — VGMU approach for combining margin and ensemble variance in classification
-- [Galil et al., "What Can We Learn From The Selective Prediction And Uncertainty Estimation Performance Of 523 Imagenet Classifiers?" (2022)](https://arxiv.org/abs/2210.14070) — Analysis showing entropy-based measures outperform max probability for failure detection
-- [Wimmer et al., "Quantifying Aleatoric and Epistemic Uncertainty with Proper Scoring Rules" (2023)](https://proceedings.mlr.press/v216/wimmer23a.html) — Caveats on entropy decomposition for small ensembles
+- [Gillis et al., "Variance-Gated Ensembles: An Epistemic-Aware Framework" (2025)](https://arxiv.org/abs/2602.08142) — VGMU approach for combining margin and ensemble variance in classification
+- [Galil et al., "What Can We Learn From The Selective Prediction And Uncertainty Estimation Performance Of 523 Imagenet Classifiers?" (2023)](https://arxiv.org/abs/2302.11874) — Analysis showing entropy-based measures outperform max probability for failure detection
+- [Wimmer et al., "Quantifying Aleatoric and Epistemic Uncertainty in Machine Learning: Are Conditional Entropy and Mutual Information Appropriate Measures?" (2023)](https://proceedings.mlr.press/v216/wimmer23a.html) — Caveats on entropy decomposition for small ensembles
 - [OpenADMET Blind Challenge](https://openadmet.org/) — ExpansionRx MLM CLint dataset used for examples in this blog
 
 ## Questions?

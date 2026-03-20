@@ -57,8 +57,8 @@ The confidence scores driving the slider come from **VGMU** (Variance-Gated Marg
 ## References
 
 - [Plotly Ternary Plots](https://plotly.com/python/ternary-plots/) — Plotly's ternary plot documentation, the visualization framework underlying the Confusion Explorer
-- [Weiss et al., "Variance-Gated Ensembles: An Epistemic-Aware Framework" (2025)](https://arxiv.org/abs/2602.08142) — The VGMU approach for combining margin and ensemble variance in classification confidence
-- [Galil et al., "What Can We Learn From The Selective Prediction And Uncertainty Estimation Performance Of 523 Imagenet Classifiers?" (2022)](https://arxiv.org/abs/2210.14070) — Analysis showing max probability alone is suboptimal for detecting incorrect predictions
+- [Gillis et al., "Variance-Gated Ensembles: An Epistemic-Aware Framework" (2025)](https://arxiv.org/abs/2602.08142) — The VGMU approach for combining margin and ensemble variance in classification confidence
+- [Galil et al., "What Can We Learn From The Selective Prediction And Uncertainty Estimation Performance Of 523 Imagenet Classifiers?" (2023)](https://arxiv.org/abs/2302.11874) — Analysis showing max probability alone is suboptimal for detecting incorrect predictions
 - [scikit-learn ConfusionMatrixDisplay](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.ConfusionMatrixDisplay.html) — The standard confusion matrix visualization that the Confusion Explorer builds upon
 
 ## Questions?

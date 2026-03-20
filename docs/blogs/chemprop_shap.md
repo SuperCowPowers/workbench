@@ -154,7 +154,7 @@ Computing SHAP values for graph neural networks requires creative approaches sin
 
 **ChemProp v2** — The message-passing neural network framework that Workbench uses for molecular property prediction:
 
-- Chemprop v2 Paper: Iunusova, E., Pang, H.W., Greenman, K.P., et al. *"Chemprop v2: An Efficient, Modular Machine Learning Package for Chemical Property Prediction."* Journal of Chemical Information and Modeling (2025). [DOI: 10.1021/acs.jcim.5c02332](https://doi.org/10.1021/acs.jcim.5c02332)
+- Chemprop v2 Paper: Graff, D.E., Morgan, N.K., Burns, J.W., et al. *"Chemprop v2: An Efficient, Modular Machine Learning Package for Chemical Property Prediction."* Journal of Chemical Information and Modeling 66(1), 28–33 (2026). [DOI: 10.1021/acs.jcim.5c02332](https://doi.org/10.1021/acs.jcim.5c02332)
 - Chemprop v1 Paper: Heid, E., Greenman, K.P., Chung, Y., et al. *"Chemprop: A Machine Learning Package for Chemical Property Prediction."* Journal of Chemical Information and Modeling 64(1), 9–17 (2024). [DOI: 10.1021/acs.jcim.3c01250](https://doi.org/10.1021/acs.jcim.3c01250)
 - GitHub: [https://github.com/chemprop/chemprop](https://github.com/chemprop/chemprop)
 
@@ -166,7 +166,7 @@ Computing SHAP values for graph neural networks requires creative approaches sin
 **ChemProp Shapley Value Notebook** — The official chemprop v2 notebook that our per-bit ablation approach is based on:
 
 - *"Shapley Value Analysis for Chemprop Models"* — demonstrates customized featurizers for SHAP analysis with PermutationExplainer. [Chemprop Docs: Shapley Value with Customized Featurizers](https://chemprop.readthedocs.io/en/latest/shapley_value_with_customized_featurizers.html)
-- Li, W., Wu, H., et al. *"When Do Quantum Mechanical Descriptors Help Graph Neural Networks to Predict Chemical Properties?"* Journal of the American Chemical Society 146(33), 23103–23120 (2024). [DOI: 10.1021/jacs.4c04670](https://doi.org/10.1021/jacs.4c04670)
+- Li, S.-C., Wu, H., et al. *"When Do Quantum Mechanical Descriptors Help Graph Neural Networks to Predict Chemical Properties?"* Journal of the American Chemical Society 146(33), 23103–23120 (2024). [DOI: 10.1021/jacs.4c04670](https://doi.org/10.1021/jacs.4c04670)
 
 ## Questions?
 <img align="right" src="../../images/scp.png" width="180">
