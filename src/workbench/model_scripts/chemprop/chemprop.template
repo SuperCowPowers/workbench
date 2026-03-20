@@ -879,10 +879,11 @@ if __name__ == "__main__":
     # shap_values.csv, and shap_feature_values.csv.
     # -------------------------------------------------------------------------
     print(f"[DIAG] {time.time() - _diag_t0:.1f}s before SHAP", flush=True)  # [DIAG]
-    print("\n" + "=" * 50)
-    print("Computing SHAP Values")
-    print("=" * 50)
+    print("\n" + "=" * 50, flush=True)
+    print("Computing SHAP Values", flush=True)
+    print("=" * 50, flush=True)
     from chemprop_shap_utils import compute_chemprop_shap, format_shap_results
+    print("[DIAG] SHAP imports loaded", flush=True)  # [DIAG]
 
     shap_values_array, shap_feature_names, shap_indices, shap_fractions = compute_chemprop_shap(
         model=ensemble_models[0],
