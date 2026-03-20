@@ -304,9 +304,7 @@ def compute_chemprop_shap(
             n_batch = len(X)
             V_d = None
             if self.x_d is not None:
-                X_d = torch.tensor(
-                    np.tile(self.x_d, (n_batch, 1)), dtype=torch.float32
-                )
+                X_d = torch.tensor(np.tile(self.x_d, (n_batch, 1)), dtype=torch.float32)
             else:
                 X_d = None
 
