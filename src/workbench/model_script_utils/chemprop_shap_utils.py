@@ -342,7 +342,7 @@ def compute_chemprop_shap(
 
         # Importance = baseline - ablated (positive means feature increases prediction)
         # Use first target column for single-target models
-        ablation_values[:, feat_idx] = (baseline_preds[:, 0] - ablated_preds[:, 0])
+        ablation_values[:, feat_idx] = baseline_preds[:, 0] - ablated_preds[:, 0]
 
         if (feat_idx + 1) % 10 == 0:
             print(f"  Progress: {feat_idx + 1}/{n_active} features", flush=True)
