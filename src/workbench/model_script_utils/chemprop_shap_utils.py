@@ -273,38 +273,46 @@ def compute_chemprop_shap(
 
     model.eval()
 
-    def predict_with_mask(full_mask, smi, x_d=None):
-        """Single prediction with ablated features via direct PyTorch inference."""
-        atom_feat.keep_mask = full_mask[:n_atom_bits]
-        bond_feat.keep_mask = full_mask[n_atom_bits:]
-        featurizer = AblationMolGraphFeaturizer(atom_feat, bond_feat)
-        dp = data.MoleculeDatapoint.from_smi(smi, x_d=x_d)
-        dataset = data.MoleculeDataset([dp], featurizer=featurizer)
-        loader = data.build_dataloader(dataset, shuffle=False, batch_size=1)
-        with torch.inference_mode():
-            for batch in loader:
-                bmg, V_d, X_d, *_ = batch
-                return model(bmg, V_d, X_d).detach().cpu().numpy().flatten()[0]
+    # Pre-parse all sampled molecules once (avoids repeated SMILES parsing)
+    mols = [Chem.MolFromSmiles(smi) for smi in sampled_smiles]
+
+    # Single featurizer instance reused across all evaluations
+    mg_feat = AblationMolGraphFeaturizer(atom_feat, bond_feat)
 
     # Build the full-length mask (all bits on) and create the "active-only" view
     all_on = np.ones(n_atom_bits + n_bond_bits, dtype=bool)
 
     class _ModelWrapper:
-        """Maps active-only mask vectors to full-length masks for the model."""
+        """Batched: builds MolGraphs for all mask rows, single forward pass."""
 
-        def __init__(self, smi, x_d=None):
-            self.smi = smi
+        def __init__(self, mol, x_d=None):
+            self.mol = mol
             self.x_d = x_d
 
         def __call__(self, X):
-            preds = []
+            # Build one MolGraph per mask row, then batch them
+            molgraphs = []
             for row in X:
                 full_mask = all_on.copy()
-                # Only toggle the active bits based on the SHAP mask
-                for j, global_idx in enumerate(active_indices):
-                    full_mask[global_idx] = bool(row[j])
-                preds.append([predict_with_mask(full_mask, self.smi, self.x_d)])
-            return np.array(preds)
+                full_mask[active_indices] = row.astype(bool)
+                atom_feat.keep_mask = full_mask[:n_atom_bits]
+                bond_feat.keep_mask = full_mask[n_atom_bits:]
+                molgraphs.append(mg_feat(self.mol))
+
+            # Single batched forward pass instead of N individual passes
+            bmg = data.BatchMolGraph(molgraphs)
+            n_batch = len(X)
+            V_d = None
+            if self.x_d is not None:
+                X_d = torch.tensor(
+                    np.tile(self.x_d, (n_batch, 1)), dtype=torch.float32
+                )
+            else:
+                X_d = None
+
+            with torch.inference_mode():
+                output = model(bmg, V_d, X_d)
+            return output.detach().cpu().numpy()[:, :1]
 
     def binary_masker(mask, x):
         masked = deepcopy(x)
@@ -315,11 +323,10 @@ def compute_chemprop_shap(
     all_shap = []
 
     print(f"Computing SHAP values for {n} molecules ({n_active} active features)...")
-    for count, idx in enumerate(indices):
-        smi = smiles[idx]
+    for count, (idx, mol) in enumerate(zip(indices, mols)):
         x_d = extra_descriptors[idx] if extra_descriptors is not None else None
 
-        wrapper = _ModelWrapper(smi, x_d)
+        wrapper = _ModelWrapper(mol, x_d)
         explainer = shap.PermutationExplainer(wrapper, masker=binary_masker)
         explanation = explainer(all_features_on)
         all_shap.append(explanation.values.flatten())
