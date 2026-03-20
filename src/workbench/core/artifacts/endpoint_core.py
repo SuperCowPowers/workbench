@@ -682,12 +682,27 @@ class EndpointCore(Artifact):
             return pd.DataFrame()
 
         # Compute the earliest date in the hold-out set for the capture name
+        raw_values = hold_df[date_column].copy()
         hold_df[date_column] = pd.to_datetime(hold_df[date_column], errors="coerce")
-        earliest_date = hold_df[date_column].min().date()
+        nat_count = hold_df[date_column].isna().sum()
+        if nat_count > 0:
+            # Log diagnostic info about the NaT values
+            nat_mask = hold_df[date_column].isna()
+            sample_raw = raw_values[nat_mask].head(5).tolist()
+            self.log.error(
+                f"ts_inference: {nat_count}/{len(hold_df)} '{date_column}' values could not be parsed as dates. "
+                f"Sample raw values: {sample_raw}, dtypes: {raw_values.dtype}"
+            )
+        earliest_ts = hold_df[date_column].min()
+        if pd.isna(earliest_ts):
+            self.log.error(f"ts_inference: ALL '{date_column}' values are NaT, using 'unknown' for capture name")
+            earliest_date = None
+        else:
+            earliest_date = earliest_ts.date()
         self.log.important(f"Running temporal hold out inference on {len(hold_df)} rows from {earliest_date} and later")
 
         # Run inference with a temporal split capture name
-        capture_name = f"ts_{earliest_date.strftime('%Y%m%d')}"
+        capture_name = f"ts_{earliest_date.strftime('%Y%m%d')}" if earliest_date else "ts_unknown"
         return self.inference(hold_df, capture_name=capture_name)
 
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:

@@ -529,7 +529,17 @@ class FeatureSetCore(Artifact):
 
         # Pull the data, sort by date, and hold out the most recent N% of rows
         df = self.query(f'SELECT {self.id_column}, {date_column} FROM "{self.athena_table}"')
+        raw_values = df[date_column].copy()
         df[date_column] = pd.to_datetime(df[date_column], errors="coerce")
+        nat_count = df[date_column].isna().sum()
+        if nat_count > 0:
+            # Log diagnostic info about the NaT values
+            nat_mask = df[date_column].isna()
+            sample_raw = raw_values[nat_mask].head(5).tolist()
+            self.log.error(
+                f"temporal_split: {nat_count}/{len(df)} '{date_column}' values could not be parsed as dates. "
+                f"Sample raw values: {sample_raw}, dtypes: {raw_values.dtype}"
+            )
         df = df.sort_values(date_column)
 
         # Compute the cutoff index to hold out the specified percentage of rows
