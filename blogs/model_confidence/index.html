@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -4973,7 +4973,7 @@
 <p>Everything above applies to regression models — where <code>prediction_std</code> gives us a natural uncertainty signal. But what about classifiers? A classification ensemble doesn't predict a continuous value with a standard deviation; it produces class probabilities. We need a different approach.</p>
 <h3 id="the-challenge">The Challenge</h3>
 <p>For classification, each of the 5 ensemble members outputs a softmax probability distribution over classes. We average those distributions to get the final <code>_proba</code> columns. But how do we turn that into a single confidence score?</p>
-<p>Simple approaches like using the maximum predicted probability (<code>max(p)</code>) are tempting but have known issues — <a href="https://arxiv.org/abs/2210.14070">Galil et al. (2022)</a> showed that max probability alone is suboptimal for detecting incorrect predictions, especially under distribution shift. It ignores both the shape of the probability distribution and whether the ensemble actually agrees.</p>
+<p>Simple approaches like using the maximum predicted probability (<code>max(p)</code>) are tempting but have known issues — <a href="https://arxiv.org/abs/2302.11874">Galil et al. (2023)</a> showed that max probability alone is suboptimal for detecting incorrect predictions, especially under distribution shift. It ignores both the shape of the probability distribution and whether the ensemble actually agrees.</p>
 <h3 id="vgmu-variance-gated-margin-uncertainty">VGMU: Variance-Gated Margin Uncertainty</h3>
 <p>We use <strong>VGMU</strong> (Variance-Gated Margin Uncertainty), introduced in the <a href="https://arxiv.org/abs/2602.08142">Variance-Gated Ensembles paper (2025)</a>. The idea is to combine two signals:</p>
 <ul>
@@ -5051,7 +5051,7 @@
 <p><strong>Classification models:</strong></p>
 <ol>
 <li><strong>Ensemble probabilities</strong> — Each of the 5 models outputs class probabilities; we average them and also track per-model disagreement</li>
-<li><strong>VGMU scoring</strong> — Following <a href="https://arxiv.org/abs/2602.08142">Weiss et al. (2025)</a>, we combine the probability margin between top classes with ensemble disagreement via a signal-to-noise ratio</li>
+<li><strong>VGMU scoring</strong> — Following <a href="https://arxiv.org/abs/2602.08142">Gillis et al. (2025)</a>, we combine the probability margin between top classes with ensemble disagreement via a signal-to-noise ratio</li>
 <li><strong>Isotonic calibration</strong> — Maps raw VGMU scores to P(correct) using isotonic regression on validation data, giving confidence a direct probabilistic interpretation</li>
 </ol>
 <p>Both approaches share the same philosophy: leverage the ensemble's own disagreement as the uncertainty signal, then calibrate it against held-out data so the numbers are meaningful. We're excited about this unified framework and looking forward to incorporating applicability domain methods and testing on a wider range of datasets.</p>
@@ -5062,9 +5062,9 @@
 <li><a href="https://arxiv.org/abs/2107.07511">Angelopoulos &amp; Bates, "Conformal Prediction: A Gentle Introduction" (2021)</a> — Accessible introduction to conformal methods</li>
 <li><a href="https://doi.org/10.1111/j.1467-9868.2007.00587.x">Gneiting et al., "Probabilistic Forecasts, Calibration and Sharpness" (2007)</a> — Calibration vs. discrimination framework</li>
 <li><a href="https://arxiv.org/abs/1906.02530">Ovadia et al., "Can You Trust Your Model's Uncertainty?" (2019)</a> — Analysis of ensemble UQ under dataset shift</li>
-<li><a href="https://arxiv.org/abs/2602.08142">Weiss et al., "Variance-Gated Ensembles: An Epistemic-Aware Framework" (2025)</a> — VGMU approach for combining margin and ensemble variance in classification</li>
-<li><a href="https://arxiv.org/abs/2210.14070">Galil et al., "What Can We Learn From The Selective Prediction And Uncertainty Estimation Performance Of 523 Imagenet Classifiers?" (2022)</a> — Analysis showing entropy-based measures outperform max probability for failure detection</li>
-<li><a href="https://proceedings.mlr.press/v216/wimmer23a.html">Wimmer et al., "Quantifying Aleatoric and Epistemic Uncertainty with Proper Scoring Rules" (2023)</a> — Caveats on entropy decomposition for small ensembles</li>
+<li><a href="https://arxiv.org/abs/2602.08142">Gillis et al., "Variance-Gated Ensembles: An Epistemic-Aware Framework" (2025)</a> — VGMU approach for combining margin and ensemble variance in classification</li>
+<li><a href="https://arxiv.org/abs/2302.11874">Galil et al., "What Can We Learn From The Selective Prediction And Uncertainty Estimation Performance Of 523 Imagenet Classifiers?" (2023)</a> — Analysis showing entropy-based measures outperform max probability for failure detection</li>
+<li><a href="https://proceedings.mlr.press/v216/wimmer23a.html">Wimmer et al., "Quantifying Aleatoric and Epistemic Uncertainty in Machine Learning: Are Conditional Entropy and Mutual Information Appropriate Measures?" (2023)</a> — Caveats on entropy decomposition for small ensembles</li>
 <li><a href="https://openadmet.org/">OpenADMET Blind Challenge</a> — ExpansionRx MLM CLint dataset used for examples in this blog</li>
 </ul>
 <h2 id="questions">Questions?</h2>

@@ -19,7 +19,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -7487,11 +7487,11 @@
 </span><span id="__span-0-512"><a id="__codelineno-0-512" name="__codelineno-0-512"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-513"><a id="__codelineno-0-513" name="__codelineno-0-513"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">upsert_workbench_meta</span><span class="p">({</span><span class="s2">&quot;workbench_model_features&quot;</span><span class="p">:</span> <span class="n">feature_columns</span><span class="p">})</span>
 </span><span id="__span-0-514"><a id="__codelineno-0-514" name="__codelineno-0-514"></a>
-</span><span id="__span-0-515"><a id="__codelineno-0-515" name="__codelineno-0-515"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+</span><span id="__span-0-515"><a id="__codelineno-0-515" name="__codelineno-0-515"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
 </span><span id="__span-0-516"><a id="__codelineno-0-516" name="__codelineno-0-516"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the target for this Model (if supervised, else None)</span>
 </span><span id="__span-0-517"><a id="__codelineno-0-517" name="__codelineno-0-517"></a>
 </span><span id="__span-0-518"><a id="__codelineno-0-518" name="__codelineno-0-518"></a><span class="sd">        Returns:</span>
-</span><span id="__span-0-519"><a id="__codelineno-0-519" name="__codelineno-0-519"></a><span class="sd">            str: Target column for this Model (if supervised, else None)</span>
+</span><span id="__span-0-519"><a id="__codelineno-0-519" name="__codelineno-0-519"></a><span class="sd">            Union[str, list[str], None]: Target column(s) for this Model (if supervised, else None)</span>
 </span><span id="__span-0-520"><a id="__codelineno-0-520" name="__codelineno-0-520"></a><span class="sd">        &quot;&quot;&quot;</span>
 </span><span id="__span-0-521"><a id="__codelineno-0-521" name="__codelineno-0-521"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">workbench_meta</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;workbench_model_target&quot;</span><span class="p">)</span>  <span class="c1"># Returns None if not found</span>
 </span><span id="__span-0-522"><a id="__codelineno-0-522" name="__codelineno-0-522"></a>
@@ -11993,18 +11993,18 @@ Returns:
     <table>
       <thead>
         <tr>
-<th>Name</th>          <th>Type</th>
+          <th>Type</th>
           <th>Description</th>
         </tr>
       </thead>
       <tbody>
           <tr class="doc-section-item">
-<td><code>str</code></td>            <td>
-                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, None]</code>
+            <td>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <span title="list">list</span>[<span title="str">str</span>], None]</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Target column for this Model (if supervised, else None)</p>
+                <p>Union[str, list[str], None]: Target column(s) for this Model (if supervised, else None)</p>
               </div>
             </td>
           </tr>
@@ -12020,11 +12020,11 @@ Returns:
 <span class="normal"><a href="#__codelineno-0-518">518</a></span>
 <span class="normal"><a href="#__codelineno-0-519">519</a></span>
 <span class="normal"><a href="#__codelineno-0-520">520</a></span>
-<span class="normal"><a href="#__codelineno-0-521">521</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-515"><a id="__codelineno-0-515" name="__codelineno-0-515"></a><span class="k">def</span><span class="w"> </span><span class="nf">target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="normal"><a href="#__codelineno-0-521">521</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-515"><a id="__codelineno-0-515" name="__codelineno-0-515"></a><span class="k">def</span><span class="w"> </span><span class="nf">target</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="kc">None</span><span class="p">]:</span>
 </span><span id="__span-0-516"><a id="__codelineno-0-516" name="__codelineno-0-516"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the target for this Model (if supervised, else None)</span>
 </span><span id="__span-0-517"><a id="__codelineno-0-517" name="__codelineno-0-517"></a>
 </span><span id="__span-0-518"><a id="__codelineno-0-518" name="__codelineno-0-518"></a><span class="sd">    Returns:</span>
-</span><span id="__span-0-519"><a id="__codelineno-0-519" name="__codelineno-0-519"></a><span class="sd">        str: Target column for this Model (if supervised, else None)</span>
+</span><span id="__span-0-519"><a id="__codelineno-0-519" name="__codelineno-0-519"></a><span class="sd">        Union[str, list[str], None]: Target column(s) for this Model (if supervised, else None)</span>
 </span><span id="__span-0-520"><a id="__codelineno-0-520" name="__codelineno-0-520"></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="__span-0-521"><a id="__codelineno-0-521" name="__codelineno-0-521"></a>    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">workbench_meta</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;workbench_model_target&quot;</span><span class="p">)</span>  <span class="c1"># Returns None if not found</span>
 </span></code></pre></div></td></tr></table></div>
