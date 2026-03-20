@@ -13,6 +13,7 @@
 
 import json
 import os
+import time
 
 import joblib
 import numpy as np
@@ -310,14 +311,25 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         for t_idx, tc in enumerate(target_columns):
             df.loc[valid_mask, f"{tc}_pred"] = preds[:, t_idx]
             df.loc[valid_mask, f"{tc}_pred_std"] = preds_std[:, t_idx]
+        # FIXME: Multi-target models don't have a "primary target" — aliasing to the first
+        #  target here is a shortcut so the web UI (which expects a single "prediction" column)
+        #  continues to work. Per-target columns ({target}_pred, {target}_pred_std) are the
+        #  real source of truth. Remove this once the web UI supports multi-target natively.
         df["prediction"] = df[f"{target_columns[0]}_pred"]
         df["prediction_std"] = df[f"{target_columns[0]}_pred_std"]
 
         # Add calibrated UQ intervals and confidence if available
         uq_metadata = model_dict.get("uq_metadata")
         if uq_metadata:
-            df = predict_intervals(df, uq_metadata)
-            df = compute_confidence(df, uq_metadata)
+            if len(target_columns) > 1:
+                # Multi-target: per-target confidence using per-target UQ metadata
+                for tc in target_columns:
+                    if tc in uq_metadata:
+                        df = compute_confidence(df, uq_metadata[tc], std_col=f"{tc}_pred_std")
+                        df.rename(columns={"confidence": f"{tc}_confidence"}, inplace=True)
+            else:
+                df = predict_intervals(df, uq_metadata)
+                df = compute_confidence(df, uq_metadata)
 
     return df
 
@@ -704,6 +716,7 @@ if __name__ == "__main__":
                 fold_preds = fold_preds.reshape(-1, 1)
             oof_predictions[val_idx] = fold_preds
 
+    _diag_t0 = time.time()  # [DIAG]
     print(f"\nTraining complete! Trained {len(ensemble_models)} model(s).", flush=True)
 
     # -------------------------------------------------------------------------
@@ -788,6 +801,7 @@ if __name__ == "__main__":
         # Compute ensemble std using direct PyTorch inference (faster, no Trainer overhead)
         preds_std = None
         if len(ensemble_models) > 1:
+            print(f"[DIAG] {time.time() - _diag_t0:.1f}s since training complete", flush=True)  # [DIAG]
             print("Computing prediction_std from ensemble...", flush=True)
             val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), y_validate, val_extra_features)
             std_dataset = data.MoleculeDataset(val_dps)
@@ -795,6 +809,7 @@ if __name__ == "__main__":
             val_loader = data.build_dataloader(
                 std_dataset, batch_size=_safe_batch_size(len(std_dataset), infer_batch), shuffle=False,
             )
+            print(f"  Dataset ready ({len(std_dataset)} samples), running {len(ensemble_models)} models...", flush=True)
 
             all_ens_preds = []
             for m in ensemble_models:
@@ -809,11 +824,13 @@ if __name__ == "__main__":
                 if ens_preds.ndim == 3 and ens_preds.shape[1] == 1:
                     ens_preds = ens_preds.squeeze(axis=1)
                 all_ens_preds.append(ens_preds)
+            print(f"  Ensemble inference complete. [DIAG] {time.time() - _diag_t0:.1f}s", flush=True)  # [DIAG]
             preds_std = np.std(np.stack(all_ens_preds), axis=0)
             if preds_std.ndim == 1:
                 preds_std = preds_std.reshape(-1, 1)
             preds_std = compress_std_outliers(preds_std)
 
+        print(f"[DIAG] {time.time() - _diag_t0:.1f}s before metrics", flush=True)  # [DIAG]
         print("\n--- Per-target metrics ---")
         for t_idx, t_name in enumerate(target_columns):
             valid_mask = ~np.isnan(y_validate[:, t_idx])
@@ -824,18 +841,34 @@ if __name__ == "__main__":
             df_val[f"{t_name}_pred"] = preds[:, t_idx]
             df_val[f"{t_name}_pred_std"] = preds_std[:, t_idx] if preds_std is not None else 0.0
 
-        df_val["prediction"] = df_val[f"{target_columns[0]}_pred"]
-        df_val["prediction_std"] = df_val[f"{target_columns[0]}_pred_std"]
-
-        # Calibrate UQ intervals from ensemble std
+        # Calibrate UQ intervals and confidence
         print("\n" + "=" * 50)
         print("Calibrating UQ Intervals")
         print("=" * 50)
-        y_true_primary = df_val[target_columns[0]].values
-        y_pred_primary = df_val["prediction"].values
-        uq_metadata = calibrate_uq(y_true_primary, y_pred_primary, df_val["prediction_std"].values)
-        df_val = predict_intervals(df_val, uq_metadata)
-        df_val = compute_confidence(df_val, uq_metadata)
+
+        if n_targets > 1:
+            # Multi-target: calibrate per-target confidence independently
+            uq_metadata = {}
+            for t_idx, t_name in enumerate(target_columns):
+                valid = df_val[t_name].notna()
+                t_uq = calibrate_uq(
+                    df_val.loc[valid, t_name].values,
+                    df_val.loc[valid, f"{t_name}_pred"].values,
+                    df_val.loc[valid, f"{t_name}_pred_std"].values,
+                )
+                df_val = compute_confidence(df_val, t_uq, std_col=f"{t_name}_pred_std")
+                df_val.rename(columns={"confidence": f"{t_name}_confidence"}, inplace=True)
+                uq_metadata[t_name] = t_uq
+        else:
+            df_val["prediction"] = df_val[f"{target_columns[0]}_pred"]
+            df_val["prediction_std"] = df_val[f"{target_columns[0]}_pred_std"]
+            uq_metadata = calibrate_uq(
+                df_val[target_columns[0]].values,
+                df_val["prediction"].values,
+                df_val["prediction_std"].values,
+            )
+            df_val = predict_intervals(df_val, uq_metadata)
+            df_val = compute_confidence(df_val, uq_metadata)
 
     # -------------------------------------------------------------------------
     # Compute SHAP values for feature importance
@@ -845,6 +878,7 @@ if __name__ == "__main__":
     # Output format matches XGB/PyTorch templates: shap_importance.json,
     # shap_values.csv, and shap_feature_values.csv.
     # -------------------------------------------------------------------------
+    print(f"[DIAG] {time.time() - _diag_t0:.1f}s before SHAP", flush=True)  # [DIAG]
     print("\n" + "=" * 50)
     print("Computing SHAP Values")
     print("=" * 50)
@@ -874,7 +908,7 @@ if __name__ == "__main__":
     output_columns += target_columns
     output_columns += [f"{t}_pred" for t in target_columns] + [f"{t}_pred_std" for t in target_columns]
     output_columns += ["prediction", "prediction_std"]
-    output_columns += [c for c in df_val.columns if c.startswith("q_") or c == "confidence"]
+    output_columns += [c for c in df_val.columns if c.startswith("q_") or c.endswith("_confidence") or c == "confidence"]
     output_columns += [c for c in df_val.columns if c.endswith("_proba")]
 
     output_columns = [c for c in output_columns if c in df_val.columns]
@@ -884,6 +918,7 @@ if __name__ == "__main__":
     # -------------------------------------------------------------------------
     # Save model artifacts
     # -------------------------------------------------------------------------
+    print(f"[DIAG] {time.time() - _diag_t0:.1f}s before model save", flush=True)  # [DIAG]
     for idx, m in enumerate(ensemble_models):
         models.save_model(os.path.join(args.model_dir, f"chemprop_model_{idx}.pt"), m)
     print(f"Saved {len(ensemble_models)} model(s)")
@@ -915,4 +950,5 @@ if __name__ == "__main__":
         joblib.dump({"extra_feature_cols": extra_feature_cols, "col_means": col_means.tolist()}, os.path.join(args.model_dir, "feature_metadata.joblib"))
         print(f"Saved feature metadata for {len(extra_feature_cols)} extra features")
 
+    print(f"[DIAG] {time.time() - _diag_t0:.1f}s total post-training", flush=True)  # [DIAG]
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")

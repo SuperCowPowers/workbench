@@ -512,11 +512,11 @@ class ModelCore(Artifact):
         """
         self.upsert_workbench_meta({"workbench_model_features": feature_columns})
 
-    def target(self) -> Union[str, None]:
+    def target(self) -> Union[str, list[str], None]:
         """Return the target for this Model (if supervised, else None)
 
         Returns:
-            str: Target column for this Model (if supervised, else None)
+            Union[str, list[str], None]: Target column(s) for this Model (if supervised, else None)
         """
         return self.workbench_meta().get("workbench_model_target")  # Returns None if not found
 

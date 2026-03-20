@@ -561,14 +561,25 @@ class EndpointCore(Artifact):
         if additional_columns:
             self.log.info(f"UQ columns from training: {', '.join(additional_columns)}")
 
-        # Capture uncertainty metrics if prediction_std is available (UQ, ChemProp, etc.)
-        if "prediction_std" in out_of_fold_df.columns:
+        is_multi_target = len(target_list) > 1
+
+        # Capture uncertainty metrics
+        if is_multi_target:
+            # Multi-target: compute UQ metrics per target using per-target columns
+            for target in target_list:
+                std_col = f"{target}_pred_std"
+                if std_col not in out_of_fold_df.columns:
+                    continue
+                uq_df = out_of_fold_df.dropna(subset=[target]).copy()
+                uq_df["prediction"] = uq_df[f"{target}_pred"]
+                uq_df["prediction_std"] = uq_df[std_col]
+                if f"{target}_confidence" in uq_df.columns:
+                    uq_df["confidence"] = uq_df[f"{target}_confidence"]
+                metrics = uq_metrics(uq_df, target)
+                self.param_store.upsert(f"/workbench/models/{model.name}/inference/cv_{target}", metrics)
+        elif "prediction_std" in out_of_fold_df.columns:
             metrics = uq_metrics(out_of_fold_df, primary_target)
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/full_cross_fold", metrics)
-
-        # For single-target models (99% of cases), just save as "full_cross_fold"
-        # For multi-target models, save each as cv_{target} plus primary as "full_cross_fold"
-        is_multi_target = len(target_list) > 1
         for target in target_list:
             # Drop rows with NaN target values for metrics/plots
             target_df = out_of_fold_df.dropna(subset=[target])
@@ -585,12 +596,19 @@ class EndpointCore(Artifact):
                 target_metrics = pd.DataFrame()
 
             if is_multi_target:
-                # Multi-target: save as cv_{target}
+                # Multi-target: remap per-target columns to standard names
                 capture_name = f"cv_{target}"
                 description = capture_name.replace("_", " ").title()
+                mt_df = target_df.copy()
+                if f"{target}_pred" in mt_df.columns:
+                    mt_df["prediction"] = mt_df[f"{target}_pred"]
+                if f"{target}_pred_std" in mt_df.columns:
+                    mt_df["prediction_std"] = mt_df[f"{target}_pred_std"]
+                if f"{target}_confidence" in mt_df.columns:
+                    mt_df["confidence"] = mt_df[f"{target}_confidence"]
                 self._capture_inference_results(
                     capture_name,
-                    target_df,
+                    mt_df,
                     target,
                     model_type,
                     target_metrics,
@@ -600,8 +618,8 @@ class EndpointCore(Artifact):
                     include_quantiles=include_quantiles,
                 )
 
-            # Save primary target (or single target) as "full_cross_fold"
-            if target == primary_target:
+            # Single-target: save as "full_cross_fold"
+            if not is_multi_target:
                 self._capture_inference_results(
                     "full_cross_fold",
                     target_df,

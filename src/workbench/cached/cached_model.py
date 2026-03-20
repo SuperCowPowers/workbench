@@ -107,6 +107,9 @@ class CachedModel(CachedArtifactMixin, ModelCore):
 
         if is_regressor:
             target = self.target()
+            # Multi-target: prediction column is aliased to first target
+            if isinstance(target, list):
+                target = target[0]
             if target and "prediction" in df.columns and target in df.columns:
                 df["residual"] = abs(df["prediction"] - df[target])
 
