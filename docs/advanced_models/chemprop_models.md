@@ -334,19 +334,19 @@ All ChemProp models include built-in uncertainty quantification:
 ## Choosing the Right Model Type
 
 <figure style="text-align: center;">
-  <img src="../images/chemprop_decision_tree.svg" alt="ChemProp Decision Tree" style="height: 550px;">
+  <img src="../images/chemprop_decision_tree.svg" alt="ChemProp Decision Tree" style="height: 200px;">
 </figure>
 
 **General guidelines:**
 
-- Start with **Single-Task** for a single endpoint — it's the simplest and often good enough
+- Start with **Single-Task** for a single endpoint — it's the simplest and a good starting point for comparison
 - Try **Multi-Task** when you have related endpoints measured on overlapping compounds
-- Add **Hybrid** descriptors when XGBoost SHAP analysis reveals useful features the MPNN might miss
-- Use **Foundation** (CheMeleon) when your dataset is small (<1000 compounds) or you want a better starting point
+- Add **Hybrid** add custom/in-house descriptors when you have domain knowledge or want to boost performance with complementary features
+- Use **Foundation** (CheMeleon) this is often the mose useful when your dataset is small (<1000 compounds) or when you want to leverage transfer learning from a large chemical space. The pretrained MPNN provides a strong starting point, and the two-phase training strategy can help stabilize fine-tuning.
 - All options compose — you can use Foundation + Multi-Task + Hybrid together
 
 !!! note "Examples"
-    Full code listings are in the repository under `examples/models/chemprop.py` and `examples/models/chemprop_foundation.py`.
+    Full code listings are in the repository under [`examples/models/chemprop.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop.py) and [`examples/models/chemprop_foundation.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop_foundation.py).
 
 ---
 
