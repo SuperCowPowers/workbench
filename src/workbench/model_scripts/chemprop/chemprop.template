@@ -891,14 +891,49 @@ if __name__ == "__main__":
         extra_descriptors=val_extra_features if use_extra_features else None,
     )
     sample_ids = df_val.iloc[shap_indices][id_column].reset_index(drop=True) if id_column in df_val.columns else None
-    shap_importance, shap_values_df, feature_vals_df = format_shap_results(
-        shap_values_array, shap_feature_names, shap_fractions,
-        sample_ids=sample_ids, id_column=id_column, top_n=len(shap_feature_names),
-    )
-    print(f"Top 5 SHAP features: {shap_importance[:5]}")
 
-    wr.s3.to_csv(shap_values_df, f"{model_metrics_s3_path}/shap_values.csv", index=False)
-    wr.s3.to_csv(feature_vals_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
+    # Multiclass: shap_values_array is (n_samples, n_classes, n_features)
+    # Regression: shap_values_array is (n_samples, n_features)
+    is_multiclass_shap = shap_values_array.ndim == 3
+    n_shap_classes = shap_values_array.shape[1] if is_multiclass_shap else 1
+
+    if is_multiclass_shap:
+        # Compute importance averaged across classes (matches XGB/PyTorch)
+        mean_abs_shap = np.mean(np.abs(shap_values_array), axis=(0, 1))
+        shap_importance = sorted(
+            [(shap_feature_names[i], round(float(mean_abs_shap[i]), 6)) for i in range(len(shap_feature_names))],
+            key=lambda x: x[1], reverse=True,
+        )
+        print(f"Top 5 SHAP features: {shap_importance[:5]}")
+
+        # Save per-class SHAP CSVs (matches XGB/PyTorch pattern)
+        class_labels = label_encoder.classes_.tolist()
+        top_n_features = [f[0] for f in shap_importance[:len(shap_feature_names)]]
+        top_n_indices = [shap_feature_names.index(f) for f in top_n_features]
+        for class_idx, class_label in enumerate(class_labels):
+            class_shap = shap_values_array[:, class_idx, :][:, top_n_indices]
+            shap_df = pd.DataFrame(class_shap, columns=top_n_features)
+            if sample_ids is not None:
+                shap_df.insert(0, id_column, sample_ids)
+            wr.s3.to_csv(shap_df, f"{model_metrics_s3_path}/shap_values_{class_label}.csv", index=False)
+        print(f"Saved SHAP values for {len(class_labels)} classes")
+
+        # Save feature values for SHAP plots
+        # Use feature fractions (chemprop-specific) since features are atom/bond bits
+        active_fractions = shap_fractions[:, top_n_indices]
+        feature_vals_df = pd.DataFrame(active_fractions, columns=top_n_features)
+        if sample_ids is not None:
+            feature_vals_df.insert(0, id_column, sample_ids)
+        wr.s3.to_csv(feature_vals_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
+    else:
+        shap_importance, shap_values_df, feature_vals_df = format_shap_results(
+            shap_values_array, shap_feature_names, shap_fractions,
+            sample_ids=sample_ids, id_column=id_column, top_n=len(shap_feature_names),
+        )
+        print(f"Top 5 SHAP features: {shap_importance[:5]}")
+        wr.s3.to_csv(shap_values_df, f"{model_metrics_s3_path}/shap_values.csv", index=False)
+        wr.s3.to_csv(feature_vals_df, f"{model_metrics_s3_path}/shap_feature_values.csv", index=False)
+
     save_to_s3(shap_importance, f"{model_metrics_s3_path}/shap_importance.json")
     print(f"Saved SHAP artifacts ({len(shap_indices)} samples, {len(shap_importance)} features)")
 

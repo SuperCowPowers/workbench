@@ -222,7 +222,9 @@ def _batched_predict(model, molgraphs, x_d_array=None, batch_size=128):
         batch_size (int): Max molecules per forward pass to limit GPU memory.
 
     Returns:
-        np.ndarray: (n, n_targets) array of predictions.
+        np.ndarray: Predictions array. Shape is (n, n_targets) for regression or
+            (n, n_classes) for single-task classification (task dim squeezed).
+            For multi-task classification: (n, n_tasks, n_classes).
     """
     all_preds = []
     for start in range(0, len(molgraphs), batch_size):
@@ -236,7 +238,13 @@ def _batched_predict(model, molgraphs, x_d_array=None, batch_size=128):
         with torch.inference_mode():
             output = model(bmg, V_d, X_d)
         all_preds.append(output.detach().cpu().numpy())
-    return np.concatenate(all_preds, axis=0)
+    preds = np.concatenate(all_preds, axis=0)
+
+    # Squeeze single-task classification: (n, 1, n_classes) -> (n, n_classes)
+    if preds.ndim == 3 and preds.shape[1] == 1:
+        preds = preds[:, 0, :]
+
+    return preds
 
 
 # =============================================================================
@@ -268,7 +276,8 @@ def compute_chemprop_shap(
     Returns:
         tuple: A tuple of (shap_values, feature_names, indices, feature_fractions).
 
-            - shap_values: (n_samples, n_active_features) array of ablation importance values.
+            - shap_values: (n_samples, n_classes, n_active_features) array for multiclass
+              classification, or (n_samples, n_active_features) for regression.
             - feature_names: List of human-readable feature names for active bits.
             - indices: Array of sampled molecule indices.
             - feature_fractions: (n_samples, n_active_features) array of per-molecule
@@ -327,7 +336,16 @@ def compute_chemprop_shap(
 
     # --- Leave-one-out ablation for each active feature ---
     print(f"  Running leave-one-out ablation for {n_active} features...", flush=True)
-    ablation_values = np.zeros((n, n_active), dtype=np.float32)
+
+    # Detect multiclass: baseline_preds is (n, n_classes) for classification, (n, n_targets) for regression
+    is_multiclass = baseline_preds.ndim == 2 and baseline_preds.shape[1] > 1
+    n_classes = baseline_preds.shape[1] if is_multiclass else 1
+
+    if is_multiclass:
+        # (n_samples, n_classes, n_active_features) — matches XGB/PyTorch convention
+        ablation_values = np.zeros((n, n_classes, n_active), dtype=np.float32)
+    else:
+        ablation_values = np.zeros((n, n_active), dtype=np.float32)
 
     for feat_idx, global_bit in enumerate(active_indices):
         # Build mask with this one bit turned off
@@ -341,8 +359,10 @@ def compute_chemprop_shap(
         ablated_preds = _batched_predict(model, ablated_graphs, sampled_x_d)
 
         # Importance = baseline - ablated (positive means feature increases prediction)
-        # Use first target column for single-target models
-        ablation_values[:, feat_idx] = baseline_preds[:, 0] - ablated_preds[:, 0]
+        if is_multiclass:
+            ablation_values[:, :, feat_idx] = baseline_preds - ablated_preds
+        else:
+            ablation_values[:, feat_idx] = baseline_preds[:, 0] - ablated_preds[:, 0]
 
         if (feat_idx + 1) % 10 == 0:
             print(f"  Progress: {feat_idx + 1}/{n_active} features", flush=True)
