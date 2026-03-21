@@ -365,7 +365,14 @@ The SuperCowPowers team is happy to answer any questions you may have about AWS 
 
 ## References
 
-- **ChemProp:** Yang et al. "Analyzing Learned Molecular Representations for Property Prediction" *J. Chem. Inf. Model.* 2019 — [GitHub](https://github.com/chemprop/chemprop) | [Paper](https://pubs.acs.org/doi/10.1021/acs.jcim.9b00237)
-- **CheMeleon:** Burns et al. "CheMeleon: A Pre-Trained Foundation Model for Molecular Property Prediction" 2025 — [GitHub](https://github.com/JacksonBurns/chemeleon) | [Paper](https://arxiv.org/abs/2506.15792)
+**ChemProp v2** — The message-passing neural network framework that Workbench uses for molecular property prediction:
+
+- Chemprop v2 Paper: Graff, D.E., Morgan, N.K., Burns, J.W., et al. *"Chemprop v2: An Efficient, Modular Machine Learning Package for Chemical Property Prediction."* Journal of Chemical Information and Modeling 66(1), 28–33 (2026). [DOI: 10.1021/acs.jcim.5c02332](https://doi.org/10.1021/acs.jcim.5c02332)
+- Chemprop v1 Paper: Heid, E., Greenman, K.P., Chung, Y., et al. *"Chemprop: A Machine Learning Package for Chemical Property Prediction."* Journal of Chemical Information and Modeling 64(1), 9–17 (2024). [DOI: 10.1021/acs.jcim.3c01250](https://doi.org/10.1021/acs.jcim.3c01250)
+- GitHub: [https://github.com/chemprop/chemprop](https://github.com/chemprop/chemprop)
+
+**CheMeleon** — Foundation model pretrained on 1M PubChem molecules:
+
+- Burns et al. *"CheMeleon: A Pre-Trained Foundation Model for Molecular Property Prediction"* 2025 — [GitHub](https://github.com/JacksonBurns/chemeleon) | [Paper](https://arxiv.org/abs/2506.15792)
 
 <i>® Amazon Web Services, AWS, the Powered by AWS logo, are trademarks of Amazon.com, Inc. or its affiliates</i>
