@@ -117,8 +117,8 @@ class TestSortPipelines:
         assert plan.deps[(script_b, "dt")] == {"outputs": ["my_dag:stage_1"], "inputs": ["my_dag:stage_0"]}
         assert plan.deps[(script_b, "ts")] == {"outputs": ["my_dag:stage_1"], "inputs": ["my_dag:stage_0"]}
 
-    def test_mode_override_replaces_json_modes(self, tmp_path):
-        """mode_override should replace all JSON modes with a single mode."""
+    def test_mode_filter_keeps_only_matching(self, tmp_path):
+        """Filter mode (dt/ts) should only keep scripts that declare that mode."""
         script_a = tmp_path / "a.py"
         script_b = tmp_path / "b.py"
 
@@ -130,9 +130,71 @@ class TestSortPipelines:
         }
         pipelines = [script_a, script_b]
 
-        plan = sort_pipelines(pipelines, all_dags, mode_override="promote")
+        plan = sort_pipelines(pipelines, all_dags, mode="dt")
 
-        # Only 2 runs: a:promote, b:promote (JSON modes ignored)
+        # Both scripts declare "dt", so 2 runs: a:dt, b:dt (ts filtered out)
+        assert len(plan.runs) == 2
+        assert plan.runs[0] == (script_a, "dt")
+        assert plan.runs[1] == (script_b, "dt")
+
+    def test_mode_filter_skips_non_matching(self, tmp_path):
+        """Filter mode should skip scripts that don't declare the requested mode."""
+        script_a = tmp_path / "a.py"
+        script_b = tmp_path / "b.py"
+
+        all_dags = {
+            "my_dag": [
+                {script_a: ["dt"]},
+                {script_b: ["dt", "ts"]},
+            ]
+        }
+        pipelines = [script_a, script_b]
+
+        plan = sort_pipelines(pipelines, all_dags, mode="ts")
+
+        # Only script_b declares "ts"
+        assert len(plan.runs) == 1
+        assert plan.runs[0] == (script_b, "ts")
+
+    def test_override_mode_ignores_json_modes(self, tmp_path):
+        """Override mode (promote/test_promote) should run every unique script once."""
+        script_a = tmp_path / "a.py"
+        script_b = tmp_path / "b.py"
+
+        all_dags = {
+            "my_dag": [
+                {script_a: ["dt"]},
+                {script_b: ["dt", "ts"]},
+            ]
+        }
+        pipelines = [script_a, script_b]
+
+        plan = sort_pipelines(pipelines, all_dags, mode="promote")
+
+        # Both scripts run once with promote, regardless of JSON modes
+        assert len(plan.runs) == 2
+        assert plan.runs[0] == (script_a, "promote")
+        assert plan.runs[1] == (script_b, "promote")
+        # Override mode has no DAG dependencies
+        assert plan.deps[(script_a, "promote")] == {"outputs": [], "inputs": []}
+        assert plan.deps[(script_b, "promote")] == {"outputs": [], "inputs": []}
+
+    def test_override_mode_deduplicates_scripts(self, tmp_path):
+        """Override mode should deduplicate scripts that appear in multiple stages."""
+        script_a = tmp_path / "a.py"
+        script_b = tmp_path / "b.py"
+
+        all_dags = {
+            "my_dag": [
+                {script_a: ["dt"]},
+                {script_a: ["ts"], script_b: ["dt", "ts"]},
+            ]
+        }
+        pipelines = [script_a, script_b]
+
+        plan = sort_pipelines(pipelines, all_dags, mode="promote")
+
+        # script_a appears in 2 stages but should only run once
         assert len(plan.runs) == 2
         assert plan.runs[0] == (script_a, "promote")
         assert plan.runs[1] == (script_b, "promote")
@@ -202,15 +264,15 @@ class TestSortPipelines:
         assert (script_b, "dt") in plan.runs
         assert (script_c, "dt") not in plan.runs
 
-    def test_standalone_scripts_included_with_mode_override(self, tmp_path):
-        """Scripts not in any DAG should appear as standalone runs when mode_override is set."""
+    def test_standalone_scripts_included_with_mode(self, tmp_path):
+        """Scripts not in any DAG should appear as standalone runs when mode is set."""
         script_a = tmp_path / "a.py"
         script_standalone = tmp_path / "standalone.py"
 
         all_dags = {"my_dag": [{script_a: ["dt"]}]}
         pipelines = [script_a, script_standalone]
 
-        plan = sort_pipelines(pipelines, all_dags, mode_override="dt")
+        plan = sort_pipelines(pipelines, all_dags, mode="dt")
 
         assert len(plan.runs) == 2
         assert plan.runs[0] == (script_a, "dt")
@@ -228,11 +290,11 @@ class TestSortPipelines:
         assert plan.display_lines == []
         assert plan.deps == {}
 
-    def test_empty_dags_standalone_with_mode_override(self, tmp_path):
-        """Standalone script with empty dags and mode_override should produce a run."""
+    def test_empty_dags_standalone_with_mode(self, tmp_path):
+        """Standalone script with empty dags and mode should produce a run."""
         script = tmp_path / "orphan.py"
 
-        plan = sort_pipelines([script], {}, mode_override="dt")
+        plan = sort_pipelines([script], {}, mode="dt")
 
         assert len(plan.runs) == 1
         assert plan.runs[0] == (script, "dt")

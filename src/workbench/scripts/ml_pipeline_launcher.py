@@ -34,6 +34,8 @@ VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 
 MODES = ["dt", "promote", "test_promote", "ts"]
+FILTER_MODES = {"dt", "ts"}
+OVERRIDE_MODES = {"promote", "test_promote"}
 
 
 @dataclass
@@ -129,21 +131,96 @@ def load_pipelines_config(directory: Path) -> dict[str, list[dict[Path, list[str
 def sort_pipelines(
     pipelines: list[Path],
     all_dags: dict[str, list[dict[Path, list[str]]]],
-    mode_override: str | None = None,
+    mode: str | None = None,
 ) -> RunPlan:
     """Sort pipelines by DAG stages with per-script modes.
 
     Scripts defined in a pipelines.json DAG are ordered by stage. Standalone
     scripts (not in any DAG) are appended as independent runs.
 
+    Mode behavior depends on the mode type:
+        - Filter modes (dt, ts): Only run scripts that declare the mode in
+          their pipelines.json entry. Respects DAG ordering.
+        - Override modes (promote, test_promote): Run every unique script once
+          with the override mode, ignoring JSON modes. No DAG ordering.
+        - None: Run all modes from pipelines.json, respecting DAG ordering.
+
     Args:
         pipelines (list[Path]): Pipelines to sort
         all_dags (dict): DAG definitions from pipelines.json files
             {dag_name: [stages]} where each stage is {script_path: [modes]}
-        mode_override (str | None): If set, overrides all JSON modes (from CLI flags)
+        mode (str | None): Execution mode from CLI flags (e.g., "dt", "promote")
 
     Returns:
         RunPlan: Execution plan with runs, group IDs, display lines, and dependencies
+    """
+    # Override modes (promote, test_promote) take a completely different path:
+    # deduplicate scripts and run each once, no DAG ordering needed.
+    if mode and mode in OVERRIDE_MODES:
+        return _build_override_plan(pipelines, all_dags, mode)
+
+    return _build_dag_plan(pipelines, all_dags, mode_filter=mode)
+
+
+def _build_override_plan(
+    pipelines: list[Path],
+    all_dags: dict[str, list[dict[Path, list[str]]]],
+    mode: str,
+) -> RunPlan:
+    """Build a plan that runs each unique script once with the override mode.
+
+    Used for promote/test_promote where DAG ordering is irrelevant.
+
+    Args:
+        pipelines (list[Path]): Pipelines to run
+        all_dags (dict): DAG definitions (used only to identify DAG vs standalone)
+        mode (str): The override mode (e.g., "promote")
+
+    Returns:
+        RunPlan: Execution plan with one run per unique script
+    """
+    pipeline_set = set(pipelines)
+    plan = RunPlan()
+    seen_scripts = set()
+
+    # Collect unique scripts from DAGs (in DAG order for display consistency)
+    for dag_name, stages in all_dags.items():
+        for stage in stages:
+            for script in stage:
+                if script in pipeline_set and script not in seen_scripts:
+                    seen_scripts.add(script)
+                    run = (script, mode)
+                    plan.runs.append(run)
+                    plan.group_ids[run] = None
+                    plan.deps[run] = {"outputs": [], "inputs": []}
+                    plan.display_lines.append(f"   {script.stem}:{mode}")
+
+    # Add standalone scripts
+    for script in pipelines:
+        if script not in seen_scripts:
+            run = (script, mode)
+            plan.runs.append(run)
+            plan.group_ids[run] = None
+            plan.deps[run] = {"outputs": [], "inputs": []}
+            plan.display_lines.append(f"   {script.stem}:{mode} (standalone)")
+
+    return plan
+
+
+def _build_dag_plan(
+    pipelines: list[Path],
+    all_dags: dict[str, list[dict[Path, list[str]]]],
+    mode_filter: str | None = None,
+) -> RunPlan:
+    """Build a plan respecting DAG stage ordering, optionally filtering by mode.
+
+    Args:
+        pipelines (list[Path]): Pipelines to sort
+        all_dags (dict): DAG definitions from pipelines.json files
+        mode_filter (str | None): If set, only include runs for this mode
+
+    Returns:
+        RunPlan: Execution plan with runs in DAG stage order
     """
     pipeline_set = set(pipelines)
     plan = RunPlan()
@@ -161,14 +238,14 @@ def sort_pipelines(
                     continue
                 found_in_dag.add(script)
                 dag_has_runs = True
-                if mode_override and mode_override not in modes:
+                if mode_filter and mode_filter not in modes:
                     continue
-                for mode in ([mode_override] if mode_override else modes):
-                    run = (script, mode)
+                for m in ([mode_filter] if mode_filter else modes):
+                    run = (script, m)
                     plan.runs.append(run)
                     plan.group_ids[run] = dag_name
                     plan.deps[run] = {"outputs": outputs, "inputs": inputs}
-                    stage_parts.append(f"{script.stem}:{mode}")
+                    stage_parts.append(f"{script.stem}:{m}")
             if stage_parts:
                 dag_stage_lines.append(" | ".join(stage_parts))
         if dag_has_runs:
@@ -178,11 +255,11 @@ def sort_pipelines(
     for script in pipelines:
         if script in found_in_dag:
             continue
-        run = (script, mode_override)
+        run = (script, mode_filter)
         plan.runs.append(run)
         plan.group_ids[run] = None
         plan.deps[run] = {"outputs": [], "inputs": []}
-        label = f"{script.stem}:{mode_override}" if mode_override else script.stem
+        label = f"{script.stem}:{mode_filter}" if mode_filter else script.stem
         plan.display_lines.append(f"   {label} (standalone)")
 
     return plan
