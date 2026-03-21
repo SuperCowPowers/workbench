@@ -4,25 +4,21 @@ Run this from a directory containing pipeline subdirectories (e.g., ml_pipelines
 Scripts can be defined in pipelines.json DAGs or run as standalone scripts.
 
 Usage:
-    ml_pipeline_launcher --dt                    # Launch 1 random pipeline group (all scripts in a directory)
-    ml_pipeline_launcher --dt -n 3               # Launch 3 random pipeline groups
-    ml_pipeline_launcher --dt --all              # Launch ALL pipelines
-    ml_pipeline_launcher --dt caco2              # Launch pipelines matching 'caco2'
+    ml_pipeline_launcher --dt --all              # Launch ALL pipelines in DT mode
+    ml_pipeline_launcher --dt caco2              # Launch pipelines matching 'caco2' in DT mode
     ml_pipeline_launcher --dt caco2 ppb          # Launch pipelines matching 'caco2' or 'ppb'
-    ml_pipeline_launcher my_script.py             # Launch exact script (modeless, via SQS)
-    ml_pipeline_launcher caco2                    # Launch all pipelines matching 'caco2' (substring)
+    ml_pipeline_launcher --ts --all              # Temporal split ALL pipelines
     ml_pipeline_launcher --promote --all         # Promote ALL pipelines
     ml_pipeline_launcher --test-promote --all    # Test-promote ALL pipelines
-    ml_pipeline_launcher --ts --all              # Temporal split ALL pipelines
+    ml_pipeline_launcher caco2                   # Launch all pipelines matching 'caco2' (JSON default modes)
+    ml_pipeline_launcher my_script.py            # Launch exact script (modeless, via SQS)
     ml_pipeline_launcher --dt --dry-run          # Show what would be launched without launching
-    ml_pipeline_launcher --local --dt ppb_human  # Run pipelines locally (uses active Python interpreter)
-    ml_pipeline_launcher --dt my_standalone      # Launch standalone script in DT mode
+    ml_pipeline_launcher --local --dt ppb_human  # Run a single pipeline locally
 """
 
 import argparse
 import json
 import os
-import random
 import re
 import subprocess
 import sys
@@ -33,9 +29,9 @@ from pathlib import Path
 VERSION_RE = re.compile(r"^(.+?)_v?(\d+)$")
 FRAMEWORK_RE = re.compile(r"-(xgb|pytorch|chemprop|chemeleon)$")
 
-MODES = ["dt", "promote", "test_promote", "ts"]
 FILTER_MODES = {"dt", "ts"}
 OVERRIDE_MODES = {"promote", "test_promote"}
+ALL_MODES = FILTER_MODES | OVERRIDE_MODES
 
 
 @dataclass
@@ -46,6 +42,28 @@ class RunPlan:
     group_ids: dict[tuple[Path, str], str | None] = field(default_factory=dict)
     display_lines: list[str] = field(default_factory=list)
     deps: dict[tuple[Path, str], dict] = field(default_factory=dict)
+
+    def add_run(
+        self,
+        script: Path,
+        mode: str,
+        group_id: str | None = None,
+        outputs: list[str] | None = None,
+        inputs: list[str] | None = None,
+    ):
+        """Add a run to the plan.
+
+        Args:
+            script (Path): Path to the pipeline script
+            mode (str): Execution mode (e.g., "dt", "promote")
+            group_id (str | None): DAG name for grouped execution, or None for standalone
+            outputs (list[str] | None): Stage outputs for dependency tracking
+            inputs (list[str] | None): Stage inputs (dependencies) for ordering
+        """
+        run = (script, mode)
+        self.runs.append(run)
+        self.group_ids[run] = group_id
+        self.deps[run] = {"outputs": outputs or [], "inputs": inputs or []}
 
 
 def parse_script_name(script_path: Path) -> tuple[str, str | None]:
@@ -189,19 +207,13 @@ def _build_override_plan(
             for script in stage:
                 if script in pipeline_set and script not in seen_scripts:
                     seen_scripts.add(script)
-                    run = (script, mode)
-                    plan.runs.append(run)
-                    plan.group_ids[run] = None
-                    plan.deps[run] = {"outputs": [], "inputs": []}
+                    plan.add_run(script, mode)
                     plan.display_lines.append(f"   {script.stem}:{mode}")
 
     # Add standalone scripts
     for script in pipelines:
         if script not in seen_scripts:
-            run = (script, mode)
-            plan.runs.append(run)
-            plan.group_ids[run] = None
-            plan.deps[run] = {"outputs": [], "inputs": []}
+            plan.add_run(script, mode)
             plan.display_lines.append(f"   {script.stem}:{mode} (standalone)")
 
     return plan
@@ -241,10 +253,7 @@ def _build_dag_plan(
                 if mode_filter and mode_filter not in modes:
                     continue
                 for m in ([mode_filter] if mode_filter else modes):
-                    run = (script, m)
-                    plan.runs.append(run)
-                    plan.group_ids[run] = dag_name
-                    plan.deps[run] = {"outputs": outputs, "inputs": inputs}
+                    plan.add_run(script, m, group_id=dag_name, outputs=outputs, inputs=inputs)
                     stage_parts.append(f"{script.stem}:{m}")
             if stage_parts:
                 dag_stage_lines.append(" | ".join(stage_parts))
@@ -306,23 +315,6 @@ def get_all_pipelines() -> tuple[list[Path], dict[str, list[dict[Path, list[str]
     return pipelines, all_dags
 
 
-def get_pipeline_groups(pipelines: list[Path]) -> dict[Path, list[Path]]:
-    """Group pipelines by their parent directory (leaf directories)."""
-    groups = {}
-    for pipeline in pipelines:
-        groups.setdefault(pipeline.parent, []).append(pipeline)
-    return groups
-
-
-def select_random_groups(pipelines: list[Path], num_groups: int) -> list[Path]:
-    """Select pipelines from n random leaf directories."""
-    groups = get_pipeline_groups(pipelines)
-    if not groups:
-        return []
-    selected_dirs = random.sample(list(groups), min(num_groups, len(groups)))
-    return [p for d in selected_dirs for p in groups[d]]
-
-
 def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> list[Path]:
     """Filter pipelines by patterns matching the basename.
 
@@ -346,15 +338,6 @@ def filter_pipelines_by_patterns(pipelines: list[Path], patterns: list[str]) -> 
     return results
 
 
-def get_dag_scripts(all_dags: dict) -> set[Path]:
-    """Get the set of all scripts referenced in DAG definitions."""
-    scripts = set()
-    for stages in all_dags.values():
-        for stage in stages:
-            scripts.update(stage.keys())
-    return scripts
-
-
 def select_pipelines(all_pipelines: list[Path], args: argparse.Namespace) -> tuple[list[Path], str]:
     """Select which pipelines to run based on CLI args.
 
@@ -371,37 +354,27 @@ def select_pipelines(all_pipelines: list[Path], args: argparse.Namespace) -> tup
     if args.all:
         return all_pipelines, "ALL"
 
-    selected = select_random_groups(all_pipelines, args.num_groups)
-    if not selected:
-        print("No pipeline groups found")
-        exit(1)
-    group_names = [d.name for d in get_pipeline_groups(selected)]
-    return selected, f"RANDOM {args.num_groups} group(s): {group_names}"
+    print("Specify pipeline patterns or use --all to launch all pipelines.")
+    exit(1)
 
 
-def resolve_mode(args: argparse.Namespace, selected: list[Path], all_dags: dict) -> str | None:
+def resolve_mode(args: argparse.Namespace) -> str | None:
     """Determine the execution mode from CLI flags.
 
     Returns:
-        str | None: Mode name (e.g., "dt") or None for modeless standalone execution
+        str | None: Mode name (e.g., "dt") or None for default JSON modes
     """
-    # Check explicit CLI flags first
-    for mode_name in MODES:
+    for mode_name in ALL_MODES:
         if getattr(args, mode_name, False):
             return mode_name
-
-    # No mode flag given — that's fine for standalone scripts (they run modeless).
-    # For DAG scripts, None means "use pipelines.json defaults".
     return None
 
 
-def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: argparse.Namespace, all_dags: dict):
+def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: argparse.Namespace):
     """Print the launch summary banner."""
-    dag_scripts = get_dag_scripts(all_dags) if all_dags else set()
-    has_dag_scripts = any(p in dag_scripts for p, _ in plan.runs)
     if mode:
         mode_display = mode.upper()
-    elif has_dag_scripts:
+    elif any(gid is not None for gid in plan.group_ids.values()):
         mode_display = "JSON defaults"
     else:
         mode_display = "none (standalone)"
@@ -485,14 +458,7 @@ def parse_args() -> argparse.Namespace:
         nargs="*",
         help="Filter patterns: 'foo.py' matches exactly, 'foo' matches as substring (e.g., 'caco2' 'ppb')",
     )
-    parser.add_argument(
-        "-n",
-        "--num-groups",
-        type=int,
-        default=1,
-        help="Number of random pipeline groups to launch (default: 1, ignored if --all or patterns specified)",
-    )
-    parser.add_argument("--all", action="store_true", help="Launch ALL pipelines (ignores -n)")
+    parser.add_argument("--all", action="store_true", help="Launch ALL pipelines")
     parser.add_argument("--realtime", action="store_true", help="Create realtime endpoints (default is serverless)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be launched without actually launching")
     parser.add_argument(
@@ -501,12 +467,12 @@ def parse_args() -> argparse.Namespace:
         help="Run pipelines locally instead of via SQS (uses active Python interpreter)",
     )
 
-    # Mode flags (mutually exclusive) — override pipelines.json default modes
+    # Mode flags (mutually exclusive)
     mode_group = parser.add_mutually_exclusive_group()
-    mode_group.add_argument("--dt", action="store_true", help="Override all scripts to DT mode (dynamic training)")
-    mode_group.add_argument("--promote", action="store_true", help="Override all scripts to PROMOTE mode")
-    mode_group.add_argument("--test-promote", action="store_true", help="Override all scripts to TEST_PROMOTE mode")
-    mode_group.add_argument("--ts", action="store_true", help="Override all scripts to temporal split evaluation mode")
+    mode_group.add_argument("--dt", action="store_true", help="Filter to DT mode (dynamic training)")
+    mode_group.add_argument("--ts", action="store_true", help="Filter to temporal split evaluation mode")
+    mode_group.add_argument("--promote", action="store_true", help="Run all scripts in PROMOTE mode")
+    mode_group.add_argument("--test-promote", action="store_true", help="Run all scripts in TEST_PROMOTE mode")
 
     return parser.parse_args()
 
@@ -532,13 +498,13 @@ def main():
         exit(1)
 
     # Resolve execution mode
-    mode = resolve_mode(args, selected, all_dags)
+    mode = resolve_mode(args)
 
     # Build execution plan
     plan = sort_pipelines(selected, all_dags, mode)
 
     # Display summary
-    print_summary(plan, selection_desc, mode, args, all_dags)
+    print_summary(plan, selection_desc, mode, args)
 
     # Execute (unless dry run)
     if args.dry_run:
