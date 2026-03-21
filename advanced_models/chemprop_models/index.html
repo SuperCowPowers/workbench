@@ -5282,20 +5282,20 @@
 
 <h2 id="choosing-the-right-model-type">Choosing the Right Model Type</h2>
 <figure style="text-align: center;">
-  <img src="../images/chemprop_decision_tree.svg" alt="ChemProp Decision Tree" style="height: 550px;">
+  <img src="../images/chemprop_decision_tree.svg" alt="ChemProp Decision Tree" style="height: 200px;">
 </figure>
 
 <p><strong>General guidelines:</strong></p>
 <ul>
-<li>Start with <strong>Single-Task</strong> for a single endpoint — it's the simplest and often good enough</li>
+<li>Start with <strong>Single-Task</strong> for a single endpoint — it's the simplest and a good starting point for comparison</li>
 <li>Try <strong>Multi-Task</strong> when you have related endpoints measured on overlapping compounds</li>
-<li>Add <strong>Hybrid</strong> descriptors when XGBoost SHAP analysis reveals useful features the MPNN might miss</li>
-<li>Use <strong>Foundation</strong> (CheMeleon) when your dataset is small (&lt;1000 compounds) or you want a better starting point</li>
+<li>Add <strong>Hybrid</strong> add custom/in-house descriptors when you have domain knowledge or want to boost performance with complementary features</li>
+<li>Use <strong>Foundation</strong> (CheMeleon) this is often the mose useful when your dataset is small (&lt;1000 compounds) or when you want to leverage transfer learning from a large chemical space. The pretrained MPNN provides a strong starting point, and the two-phase training strategy can help stabilize fine-tuning.</li>
 <li>All options compose — you can use Foundation + Multi-Task + Hybrid together</li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Examples</p>
-<p>Full code listings are in the repository under <code>examples/models/chemprop.py</code> and <code>examples/models/chemprop_foundation.py</code>.</p>
+<p>Full code listings are in the repository under <a href="https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop.py"><code>examples/models/chemprop.py</code></a> and <a href="https://github.com/SuperCowPowers/workbench/blob/main/examples/models/chemprop_foundation.py"><code>examples/models/chemprop_foundation.py</code></a>.</p>
 </div>
 <hr />
 <div class="admonition warning">
