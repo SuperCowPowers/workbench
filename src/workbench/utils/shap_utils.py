@@ -60,13 +60,7 @@ def get_shap_values(
     if model_training_path is None:
         return None
 
-    # Try single file first (regression/binary classification)
-    s3_path = f"{model_training_path}/shap_values.csv"
-    df = pull_s3_data(s3_path)
-    if df is not None:
-        return df
-
-    # Try multiclass files if class_labels provided
+    # Try per-class files first if class_labels provided (multiclass classification)
     if class_labels:
         shap_data = {}
         for label in class_labels:
@@ -74,7 +68,14 @@ def get_shap_values(
             df = pull_s3_data(s3_path)
             if df is not None:
                 shap_data[label] = df
-        return shap_data if shap_data else None
+        if shap_data:
+            return shap_data
+
+    # Fall back to single file (regression/binary classification)
+    s3_path = f"{model_training_path}/shap_values.csv"
+    df = pull_s3_data(s3_path)
+    if df is not None:
+        return df
 
     return None
 
