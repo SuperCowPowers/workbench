@@ -256,6 +256,7 @@ def compute_chemprop_shap(
     extra_descriptors: np.ndarray | None = None,
     sample_size: int = 500,
     seed: int = 42,
+    is_classifier: bool = False,
 ) -> tuple[np.ndarray, list[str], np.ndarray, np.ndarray]:
     """Compute per-bit feature importance for a chemprop MPNN via ablation.
 
@@ -272,6 +273,8 @@ def compute_chemprop_shap(
             descriptors matching the smiles list. Pass None for SMILES-only models.
         sample_size (int): Max molecules to sample (from the provided list).
         seed (int): Random seed for reproducible sampling.
+        is_classifier (bool): Whether the model is a classifier (needed to distinguish
+            multiclass classification from multi-target regression).
 
     Returns:
         tuple: A tuple of (shap_values, feature_names, indices, feature_fractions).
@@ -337,8 +340,8 @@ def compute_chemprop_shap(
     # --- Leave-one-out ablation for each active feature ---
     print(f"  Running leave-one-out ablation for {n_active} features...", flush=True)
 
-    # Detect multiclass: baseline_preds is (n, n_classes) for classification, (n, n_targets) for regression
-    is_multiclass = baseline_preds.ndim == 2 and baseline_preds.shape[1] > 1
+    # Multiclass only for classifiers — multi-target regression stays 2D
+    is_multiclass = is_classifier and baseline_preds.ndim == 2 and baseline_preds.shape[1] > 1
     n_classes = baseline_preds.shape[1] if is_multiclass else 1
 
     if is_multiclass:
