@@ -27,7 +27,6 @@ if __name__ == "__main__":
         end = model.to_endpoint(tags=tags)
         end.auto_inference()
 
-
     # Now we take a DataSource, compute the fingerprints, and create a new Model/Endpoint for solubility prediction
     ds = DataSource("aqsol_data")
     df = ds.pull_dataframe()
@@ -54,7 +53,7 @@ if __name__ == "__main__":
         target_column="solubility",
         feature_list=features,
         description="Model for Aqueous Solubility using Morgan Fingerprints",
-        tags=["aqsol", "fingerprints", "regression"]
+        tags=["aqsol", "fingerprints", "regression"],
     )
     model.set_owner("test")
     end = model.to_endpoint(tags=["aqsol", "fingerprints", "regression"])
