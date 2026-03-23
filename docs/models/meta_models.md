@@ -214,7 +214,7 @@ When a meta endpoint receives a prediction request:
 
 ## Questions?
 
-<img align="right" src="../images/scp.png" width="180">
+<img align="right" src="../../images/scp.png" width="180">
 
 The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench.
 
