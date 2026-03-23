@@ -214,12 +214,10 @@ When a meta endpoint receives a prediction request:
 
 ## Questions?
 
-<img align="right" src="../images/scp.png" width="180">
+<img align="right" src="/images/scp.png" width="180">
 
 The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench.
 
 - **Support:** [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com)
 - **Discord:** [Join us on Discord](https://discord.gg/WHAJuz8sw8)
 - **Website:** [supercowpowers.com](https://www.supercowpowers.com)
-
-<i>® Amazon Web Services, AWS, the Powered by AWS logo, are trademarks of Amazon.com, Inc. or its affiliates</i>

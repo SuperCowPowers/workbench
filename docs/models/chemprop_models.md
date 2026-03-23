@@ -92,7 +92,7 @@ model = feature_set.to_model(
 Hybrid models combine ChemProp's learned graph representations with pre-computed molecular descriptors (e.g., RDKit features). The extra descriptors are concatenated with the MPNN output before the FFN, providing complementary information.
 
 <figure style="text-align: center;">
-  <img src="../images/hybrid_architecture.svg" alt="Hybrid ChemProp Architecture" style="height: 250px;">
+  <img src="images/hybrid_architecture.svg" alt="Hybrid ChemProp Architecture" style="height: 250px;">
 </figure>
 
 ```python
@@ -327,14 +327,14 @@ All ChemProp models include built-in uncertainty quantification:
 - **Classification:** Uses VGMU (Variation Gamma-Mixture Uncertainty) based on ensemble probability variation.
 
 <figure style="text-align: center;">
-  <img src="../images/confidence.jpg" alt="Confidence Estimates">
+  <img src="images/confidence.jpg" alt="Confidence Estimates">
   <figcaption>All Workbench models provide confidence metrics to identify predictions where the model is unsure or needs more data.</figcaption>
 </figure>
 
 ## Choosing the Right Model Type
 
 <figure style="text-align: center;">
-  <img src="../images/chemprop_decision_tree.svg" alt="ChemProp Decision Tree" style="height: 200px;">
+  <img src="images/chemprop_decision_tree.svg" alt="ChemProp Decision Tree" style="height: 200px;">
 </figure>
 
 **General guidelines:**

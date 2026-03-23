@@ -199,7 +199,7 @@ if __name__ == "__main__":
             custom_script=script_path,
         )
 
-    # A 'Model' to Compute Morgan Fingerprints Features
+    # An Transformer Model/Endpoint that computes Fingerprints
     if recreate or not Model("smiles-to-fingerprints-v0").exists():
         script_path = get_custom_script_path("chem_info", "morgan_fingerprints.py")
         feature_set = FeatureSet("aqsol_features")

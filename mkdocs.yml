@@ -4,10 +4,14 @@ nav:
   - Presentations: presentations/index.md
   - Getting Started: getting_started/index.md
   - Workbench REPL: repl/index.md
-  - Advanced Models:
-    - Overview: advanced_models/index.md
-    - ChemProp Models: advanced_models/chemprop_models.md
-  - Meta Models: meta_models/index.md
+  - Models:
+    - Overview: models/index.md
+    - XGBoost: models/xgboost_models.md
+    - Scikit-Learn: models/sklearn_models.md
+    - PyTorch: models/pytorch_models.md
+    - Fingerprint: models/fingerprint_models.md
+    - ChemProp: models/chemprop_models.md
+    - Meta Models: models/meta_models.md
   - API Classes: 
     - OverView: api_classes/overview.md
     - Meta: api_classes/meta.md
@@ -138,16 +142,16 @@ theme:
   name: material
   logo: images/scp.png
   palette:
-    # Palette toggle for light mode
+    # Palette toggle for dark mode (default)
   - scheme: slate
     toggle:
-      icon: material/brightness-4
+      icon: material/brightness-7
       name: Switch to light mode
 
-  # Palette toggle for dark mode
+  # Palette toggle for light mode
   - scheme: default
     toggle:
-      icon: material/brightness-7
+      icon: material/brightness-4
       name: Switch to dark mode
 
 markdown_extensions:
@@ -172,3 +176,7 @@ extra_css:
   - stylesheets/extra.css
 
 dev_addr: 127.0.0.1:8001
+
+watch:
+  - docs
+  - src
