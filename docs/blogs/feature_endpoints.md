@@ -1,8 +1,8 @@
-# Feature Endpoints: From Training to LiveDesign
+# Feature Endpoints: Reusable Data Transformations
 !!! tip inline end "Already Using Workbench?"
     Feature endpoints are created and managed through the [Model](../api_classes/model.md) and [Endpoint](../api_classes/endpoint.md) APIs. The [Molecular Standardization](molecular_standardization.md) blog covers what happens inside the 2D and 3D descriptor pipelines.
 
-When a medicinal chemist draws a compound in [LiveDesign](https://www.schrodinger.com/platform/products/livedesign/) or [StarDrop](https://www.optibrium.com/stardrop/) and requests an ADMET prediction, the molecular descriptors powering that prediction need to be *exactly* the same as the ones the model was trained on. The same is true for batch training pipelines, inference endpoints, and scheduled jobs. Any gap between how features are computed across these consumers — known as *training/inference skew* — is one of the most common sources of silent model degradation in production.
+When a model is trained on molecular descriptors or fingerprints, those features need to be computed *exactly* the same way at training time, inference time, and in every downstream consumer — whether that's a batch pipeline, a deployed endpoint, a scheduled job, or an external platform like Schrödinger's LiveDesign. Any gap between how features are computed across these consumers — known as *training/inference skew* — is one of the most common sources of silent model degradation in production.
 
 Workbench eliminates this problem with **feature endpoints**: SageMaker-hosted services whose only job is to compute features. Whether the request comes from a training notebook, a deployed model, or a drug discovery platform, every consumer calls the same endpoint and gets identical features by construction. In this blog we'll explain how they work, why the architecture looks the way it does, and how it compares to how other platforms approach the same problem.
 
@@ -78,10 +78,23 @@ Most clients use variants similar to those listed below but we have the flexibil
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-taut-md-stereo</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Standard ADMET modeling (salt extraction, tautomer canonicalization)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-taut-md-stereo-keep-salts</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Salt-sensitive modeling (solubility, formulation)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-descriptors</td><td style="padding: 8px 16px;">75 3D descriptors</td><td style="padding: 8px 16px;">Shape/pharmacophore features (permeability, transporter interactions)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-fingerprints</td><td style="padding: 8px 16px;">2048-dim Morgan count fingerprints</td><td style="padding: 8px 16px;">Substructure-based similarity models, molecular search</td></tr>
   </tbody>
 </table>
 
 The 2D and 3D endpoints can be combined — run both and concatenate the results for a ~390-feature descriptor set covering topological, electronic, and geometric properties.
+
+### Fingerprint Endpoints
+
+In addition to molecular descriptor endpoints, Workbench supports **fingerprint endpoints** that compute Morgan count fingerprints (ECFP4 equivalent) from SMILES. These are particularly useful for substructure-based modeling and molecular similarity searches.
+
+The fingerprint endpoint computes **count fingerprints** rather than binary — each position holds the number of times a substructure occurs (0–255), providing richer information than simple presence/absence. Parameters:
+
+- **Radius 2** (ECFP4) — captures local chemical environments up to 2 bonds from each atom
+- **2048 bits** — hashed into a fixed-length vector
+- **Count values** — stored as compressed uint8 arrays for efficient storage and transfer
+
+Fingerprint endpoints follow the same create-once, reuse-everywhere pattern as descriptor endpoints. See the [Fingerprint Models](../models/fingerprint_models.md) guide for full usage examples including creating the endpoint, computing fingerprints, and training models on them.
 
 ## Why a Deployed Endpoint?
 
@@ -102,15 +115,19 @@ You might ask: why not just share a Python function? Or package the code into a 
 
 **Built on the Workbench endpoint stack.** Feature endpoints run on the same [modern ASGI stack](aws_endpoint_architecture.md) as every other Workbench endpoint — Uvicorn and FastAPI instead of the default SageMaker Nginx/Gunicorn/Flask stack. They follow the same **DataFrame-in, DataFrame-out** contract: send a DataFrame with SMILES, get back a DataFrame with descriptors appended.
 
-## Integration with Drug Discovery Platforms
+## Integration with External Platforms
 !!! tip inline end "Just an HTTP Call"
     Any platform that can make an HTTP `POST` with a CSV or JSON payload can call a feature endpoint — no RDKit install, no conda environment, no chemistry stack required.
 
-This "any consumer can call it" property is especially powerful for integration with external platforms. The ADMET Workbench will often manage hundreds of models across dozens of ADMET properties — solubility, permeability, metabolic stability, transporter interactions, toxicity endpoints, and more. These models aren't just called from Workbench itself — they're integrated into drug discovery platforms like Schr&ouml;dinger's [LiveDesign](https://www.schrodinger.com/platform/products/livedesign/) and Optibrium's [StarDrop](https://www.optibrium.com/stardrop/), where medicinal chemists run predictions directly from their molecular design workflows.
+This "any consumer can call it" property is especially powerful for integration with external platforms. Because feature endpoints are standard HTTP services, any system that can make a POST request can use them — no need to install RDKit, bundle Mordred, or replicate standardization pipelines. All the complexity of feature computation stays behind the endpoint boundary.
 
-Because the feature endpoint is just an HTTP service, the integration is straightforward. When a chemist draws a compound in LiveDesign or StarDrop and requests an ADMET prediction, the platform makes a request to a Workbench model endpoint, which calls the feature endpoint to compute descriptors, then runs the model. LiveDesign and StarDrop don't need to install RDKit, bundle Mordred, or know anything about standardization pipelines — they send SMILES and get predictions back. All the complexity of feature computation is behind the endpoint boundary.
+This also means feature consistency is guaranteed across every integration point. Whether the request came from a notebook, a batch training pipeline, an inference endpoint, or an external platform, the features come from the same endpoint. Without feature endpoints, each integration would need its own copy of the feature pipeline — and keeping those copies in sync is exactly the kind of coordination that breaks down over time.
 
-This also means feature consistency is guaranteed across every integration point. Whether the request came from LiveDesign, StarDrop, a Workbench notebook, or a batch training pipeline, the descriptors come from the same endpoint. Without feature endpoints, each integration would need its own copy of the descriptor pipeline — and keeping those copies in sync across platforms is exactly the kind of coordination that breaks down over time.
+### Example: Drug Discovery Platforms
+
+A common integration pattern is with drug discovery platforms like Schrödinger's [LiveDesign](https://www.schrodinger.com/platform/products/livedesign/) and Optibrium's [StarDrop](https://www.optibrium.com/stardrop/). The ADMET Workbench often manages hundreds of models across dozens of properties — solubility, permeability, metabolic stability, transporter interactions, toxicity endpoints, and more. These models are integrated directly into the platforms where medicinal chemists do their molecular design work.
+
+When a chemist draws a compound in LiveDesign or StarDrop and requests an ADMET prediction, the platform makes a request to a Workbench model endpoint, which calls the feature endpoint to compute descriptors, then runs the model. The external platforms don't need to know anything about the feature pipeline — they send SMILES and get predictions back.
 
 ## How Other Platforms Approach This
 
