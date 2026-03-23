@@ -99,7 +99,7 @@ Any scikit-learn class that follows the estimator API works. Common choices:
 
 ## Questions?
 
-<img align="right" src="/images/scp.png" width="180">
+<img align="right" src="../images/scp.png" width="180">
 
 The SuperCowPowers team is happy to answer any questions you may have about AWS® and Workbench.
 
