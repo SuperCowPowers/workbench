@@ -4,7 +4,7 @@ import logging
 import json
 from typing import Union
 import pandas as pd
-from sagemaker.model_monitor import (
+from sagemaker.core.model_monitor import (
     CronExpressionGenerator,
     DefaultModelMonitor,
     DatasetFormat,

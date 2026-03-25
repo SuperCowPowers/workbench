@@ -2,9 +2,9 @@
 
 import time
 import pandas as pd
-from sagemaker.feature_store.feature_group import FeatureGroup
+from sagemaker.core.resources import FeatureGroup
+from sagemaker.core.shapes.shapes import DataCatalogConfig
 import awswrangler as wr
-from sagemaker.feature_store.inputs import DataCatalogConfig
 
 # Local imports
 from workbench.core.transforms.transform import Transform
@@ -135,7 +135,7 @@ class DataToFeaturesHeavy(Transform):
             self.log.debug("FeatureSet being Created...")
             time.sleep(5)
             status = feature_group.describe().get("FeatureGroupStatus")
-        self.log.info(f"FeatureSet {feature_group.name} successfully created")
+        self.log.info(f"FeatureSet {feature_group.get_name()} successfully created")
         time.sleep(5)
 
 

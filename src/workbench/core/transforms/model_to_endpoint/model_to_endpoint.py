@@ -1,18 +1,39 @@
-"""ModelToEndpoint: Deploy an Endpoint for a Model"""
+"""ModelToEndpoint: Deploy an Endpoint for a Model
+
+FIXME: Investigate using V3's ModelBuilder for deployment instead of manually creating
+Model/EndpointConfig/Endpoint resources. ModelBuilder handles inference code bundling,
+SAGEMAKER_PROGRAM env var, and model artifact repacking automatically. May eliminate
+the need for our inference-metadata.json workaround. Need to verify it works with
+our custom inference Docker images (which use their own main.py, not SageMaker's
+built-in serving stack). See https://sagemaker.readthedocs.io/en/stable/inference/index.html
+"""
 
 import time
 from botocore.exceptions import ClientError
-from sagemaker import ModelPackage
-from sagemaker.serializers import CSVSerializer
-from sagemaker.deserializers import CSVDeserializer
-from sagemaker.serverless import ServerlessInferenceConfig
-from sagemaker.model_monitor import DataCaptureConfig
 
-# Local Imports
-from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput
-from workbench.core.artifacts.model_core import ModelCore
-from workbench.core.artifacts.endpoint_core import EndpointCore
-from workbench.core.artifacts.artifact import Artifact
+# SageMaker V3 Resource Classes
+from sagemaker.core.resources import Model as SagemakerModel, EndpointConfig, Endpoint as SagemakerEndpoint
+from sagemaker.core.shapes.shapes import (
+    ContainerDefinition,
+    ProductionVariant,
+    ProductionVariantServerlessConfig,
+    DataCaptureConfig as DataCaptureConfigShape,
+    CaptureOption,
+    Tag,
+)
+
+# FIXME: sagemaker-core 2.6.0 is missing snake_to_pascal mapping for 'memory_size_in_mb'.
+# They have 'volume_size_in_gb' -> 'VolumeSizeInGB' but forgot the MB equivalent.
+# Patching at import time. See https://github.com/aws/sagemaker-core/issues/225
+from sagemaker.core.utils.utils import SPECIAL_SNAKE_TO_PASCAL_MAPPINGS
+
+SPECIAL_SNAKE_TO_PASCAL_MAPPINGS["memory_size_in_mb"] = "MemorySizeInMB"
+
+# Local Imports (after monkey-patch above)
+from workbench.core.transforms.transform import Transform, TransformInput, TransformOutput  # noqa: E402
+from workbench.core.artifacts.model_core import ModelCore  # noqa: E402
+from workbench.core.artifacts.endpoint_core import EndpointCore  # noqa: E402
+from workbench.core.artifacts.artifact import Artifact  # noqa: E402
 
 
 class ModelToEndpoint(Transform):
@@ -83,22 +104,14 @@ class ModelToEndpoint(Transform):
             data_capture(bool): Enable data capture during deployment
             capture_percentage(int): Percentage of data to capture. Defaults to 100.
         """
-        # Grab the specified Model Package
+        # Grab the specified Model Package ARN and inference image
         model_package_arn = workbench_model.model_package_arn()
-        model_package = ModelPackage(
-            role=self.workbench_role_arn,
-            model_package_arn=model_package_arn,
-            sagemaker_session=self.sm_session,
-        )
-
-        # Log the image that will be used for deployment
-        inference_image = self.sm_client.describe_model_package(ModelPackageName=model_package_arn)[
-            "InferenceSpecification"
-        ]["Containers"][0]["Image"]
+        inference_image = workbench_model.container_image()
         self.log.important(f"Deploying Model Package: {self.input_name} with Inference Image: {inference_image}")
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
+        sagemaker_tags = [Tag(key=t["key"], value=t["value"]) for t in aws_tags]
 
         # Check the model framework for resource requirements
         from workbench.api import ModelFramework
@@ -106,18 +119,18 @@ class ModelToEndpoint(Transform):
         self.log.info(f"Model Framework: {workbench_model.model_framework}")
         needs_more_resources = workbench_model.model_framework in [ModelFramework.PYTORCH, ModelFramework.CHEMPROP]
 
-        # Is this a serverless deployment?
+        # Determine serverless config and instance type
         serverless_config = None
         if self.serverless:
             # For PyTorch or ChemProp we need at least 4GB of memory
             if needs_more_resources and mem_size < 4096:
                 self.log.important(f"{workbench_model.model_framework} needs at least 4GB of memory (setting to 4GB)")
                 mem_size = 4096
-            serverless_config = ServerlessInferenceConfig(
+            serverless_config = ProductionVariantServerlessConfig(
                 memory_size_in_mb=mem_size,
                 max_concurrency=max_concurrency,
             )
-            instance_type = "serverless"
+            instance_type = None  # Not used for serverless
             self.log.important(f"Serverless Config: Memory={mem_size}MB, MaxConcurrency={max_concurrency}")
         else:
             # For realtime endpoints, use explicit instance if provided, otherwise auto-select
@@ -138,49 +151,119 @@ class ModelToEndpoint(Transform):
             base_endpoint_path = f"{workbench_model.endpoints_s3_path}/{self.output_name}"
             data_capture_path = f"{base_endpoint_path}/data_capture"
             self.log.important(f"Configuring Data Capture --> {data_capture_path}")
-            data_capture_config = DataCaptureConfig(
+            data_capture_config = DataCaptureConfigShape(
                 enable_capture=True,
-                sampling_percentage=capture_percentage,
+                initial_sampling_percentage=capture_percentage,
                 destination_s3_uri=data_capture_path,
+                capture_options=[
+                    CaptureOption(capture_mode="Input"),
+                    CaptureOption(capture_mode="Output"),
+                ],
             )
         elif data_capture and self.serverless:
             self.log.warning(
                 "Data capture is not supported for serverless endpoints. Skipping data capture configuration."
             )
 
-        # Deploy the Endpoint
+        # Deploy the Endpoint using V3 Resource Classes
         self.log.important(f"Deploying the Endpoint {self.output_name}...")
         try:
-            model_package.deploy(
-                initial_instance_count=1,
+            self._create_endpoint_resources(
+                model_package_arn=model_package_arn,
+                serverless_config=serverless_config,
                 instance_type=instance_type,
-                serverless_inference_config=serverless_config,
-                endpoint_name=self.output_name,
-                serializer=CSVSerializer(),
-                deserializer=CSVDeserializer(),
                 data_capture_config=data_capture_config,
-                tags=aws_tags,
-                container_startup_health_check_timeout=300,
+                tags=sagemaker_tags,
             )
         except ClientError as e:
             # Check if this is the "endpoint config already exists" error
             if "Cannot create already existing endpoint configuration" in str(e):
                 self.log.warning("Endpoint config already exists, deleting and retrying...")
-                self.sm_client.delete_endpoint_config(EndpointConfigName=self.output_name)
-                # Retry the deploy
-                model_package.deploy(
-                    initial_instance_count=1,
+                EndpointConfig.get(self.output_name, session=self.boto3_session).delete()
+                # Retry
+                self._create_endpoint_resources(
+                    model_package_arn=model_package_arn,
+                    serverless_config=serverless_config,
                     instance_type=instance_type,
-                    serverless_inference_config=serverless_config,
-                    endpoint_name=self.output_name,
-                    serializer=CSVSerializer(),
-                    deserializer=CSVDeserializer(),
                     data_capture_config=data_capture_config,
-                    tags=aws_tags,
-                    container_startup_health_check_timeout=300,
+                    tags=sagemaker_tags,
                 )
             else:
                 raise
+
+    def _create_endpoint_resources(
+        self,
+        model_package_arn: str,
+        serverless_config=None,
+        instance_type: str = None,
+        data_capture_config=None,
+        tags=None,
+    ):
+        """Internal: Create the SageMaker Model, EndpointConfig, and Endpoint resources.
+
+        Args:
+            model_package_arn (str): The model package ARN to deploy
+            serverless_config: ServerlessConfig for serverless deployments
+            instance_type (str): Instance type for realtime deployments
+            data_capture_config: Data capture configuration
+            tags: List of Tag objects
+        """
+        model_name = self.output_name
+        config_name = self.output_name
+
+        # Step 1: Create the SageMaker Model from the Model Package
+        container = ContainerDefinition(model_package_name=model_package_arn)
+        try:
+            SagemakerModel.create(
+                model_name=model_name,
+                primary_container=container,
+                execution_role_arn=self.workbench_role_arn,
+                tags=tags,
+                session=self.boto3_session,
+            )
+        except ClientError as e:
+            if "Cannot create already existing model" in str(e):
+                self.log.warning("Model already exists, deleting and recreating...")
+                SagemakerModel.get(model_name, session=self.boto3_session).delete()
+                SagemakerModel.create(
+                    model_name=model_name,
+                    primary_container=container,
+                    execution_role_arn=self.workbench_role_arn,
+                    tags=tags,
+                    session=self.boto3_session,
+                )
+            else:
+                raise
+
+        # Step 2: Create the EndpointConfig
+        production_variant = ProductionVariant(
+            variant_name="AllTraffic",
+            model_name=model_name,
+            initial_variant_weight=1.0,
+        )
+        if serverless_config:
+            production_variant.serverless_config = serverless_config
+        else:
+            production_variant.initial_instance_count = 1
+            production_variant.instance_type = instance_type
+            production_variant.container_startup_health_check_timeout_in_seconds = 300
+
+        EndpointConfig.create(
+            endpoint_config_name=config_name,
+            production_variants=[production_variant],
+            data_capture_config=data_capture_config,
+            tags=tags,
+            session=self.boto3_session,
+        )
+
+        # Step 3: Create the Endpoint and wait for it to be InService
+        endpoint = SagemakerEndpoint.create(
+            endpoint_name=self.output_name,
+            endpoint_config_name=config_name,
+            tags=tags,
+            session=self.boto3_session,
+        )
+        endpoint.wait_for_status("InService")
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() for the Endpoint"""

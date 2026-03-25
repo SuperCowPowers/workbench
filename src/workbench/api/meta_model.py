@@ -15,7 +15,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from workbench.utils.meta_model_simulator import MetaModelSimulator
 
-from sagemaker.estimator import Estimator
+from sagemaker.core.resources import TrainingJob, ModelPackageGroup, ModelPackage
+from sagemaker.core.shapes.model_card_shapes import InferenceSpecification, ContainersItem
+from sagemaker.train.model_trainer import ModelTrainer
+from sagemaker.core.training.configs import SourceCode, Compute
 
 # Workbench Imports
 from workbench.api.model import Model
@@ -26,7 +29,6 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.model_scripts.script_generation import generate_model_script
 from workbench.utils.config_manager import ConfigManager
-from workbench.utils.model_utils import supported_instance_types
 
 # Set up logging
 log = logging.getLogger("workbench")
@@ -140,7 +142,7 @@ class MetaModel(Model):
 
         # Run training and register model
         aws_clamp = AWSAccountClamp()
-        estimator = cls._run_training(
+        training_job_name = cls._run_training(
             name,
             final_endpoints,
             target_column,
@@ -150,7 +152,7 @@ class MetaModel(Model):
             optimal_alpha,
             aws_clamp,
         )
-        cls._register_model(name, final_endpoints, description, tags, estimator, aws_clamp)
+        cls._register_model(name, final_endpoints, description, tags, training_job_name, aws_clamp)
 
         # Set metadata and onboard
         cls._set_metadata(
@@ -231,7 +233,7 @@ class MetaModel(Model):
         corr_scale: dict[str, float] | None,
         optimal_alpha: float,
         aws_clamp: AWSAccountClamp,
-    ) -> Estimator:
+    ) -> str:
         """Run the minimal training job that saves the meta model config.
 
         Args:
@@ -245,7 +247,7 @@ class MetaModel(Model):
             aws_clamp (AWSAccountClamp): AWS account clamp
 
         Returns:
-            Estimator: The fitted estimator
+            str: The training job name
         """
         sm_session = aws_clamp.sagemaker_session()
         cm = ConfigManager()
@@ -267,24 +269,23 @@ class MetaModel(Model):
         }
         script_path = generate_model_script(template_params)
 
-        # Create estimator
+        # Create ModelTrainer (V3 replacement for Estimator)
         training_image = ModelImages.get_image_uri(sm_session.boto_region_name, "meta_training")
         log.info(f"Using Meta Training Image: {training_image}")
-        estimator = Estimator(
-            entry_point=Path(script_path).name,
-            source_dir=str(Path(script_path).parent),
+        trainer = ModelTrainer(
+            training_image=training_image,
+            source_code=SourceCode(source_dir=str(Path(script_path).parent), entry_script=Path(script_path).name),
+            compute=Compute(instance_type="ml.m5.large", instance_count=1),
             role=aws_clamp.aws_session.get_workbench_execution_role_arn(),
-            instance_count=1,
-            instance_type="ml.m5.large",
             sagemaker_session=sm_session,
-            image_uri=training_image,
+            base_job_name=name,
         )
 
         # Run training (no input data needed - just saves config)
         log.important(f"Creating MetaModel {name}...")
-        estimator.fit()
+        trainer.train(wait=True)
 
-        return estimator
+        return trainer.base_job_name
 
     @classmethod
     def _register_model(
@@ -293,7 +294,7 @@ class MetaModel(Model):
         endpoints: list[str],
         description: str,
         tags: list[str],
-        estimator: Estimator,
+        training_job_name: str,
         aws_clamp: AWSAccountClamp,
     ):
         """Create model group and register the model.
@@ -303,31 +304,41 @@ class MetaModel(Model):
             endpoints (list[str]): List of endpoint names
             description (str): Model description
             tags (list[str]): Model tags
-            estimator (Estimator): Fitted estimator
+            training_job_name (str): Name of the completed training job
             aws_clamp (AWSAccountClamp): AWS account clamp
         """
         sm_session = aws_clamp.sagemaker_session()
+        boto3_session = aws_clamp.boto3_session
         model_description = description or f"Meta model aggregating: {', '.join(endpoints)}"
 
         # Create model group
-        aws_clamp.sagemaker_client().create_model_package_group(
-            ModelPackageGroupName=name,
-            ModelPackageGroupDescription=model_description,
-            Tags=[{"Key": "workbench_tags", "Value": "::".join(tags or [name])}],
-        )
+        aws_tags = [{"key": "workbench_tags", "value": "::".join(tags or [name])}]
+        try:
+            ModelPackageGroup.create(
+                model_package_group_name=name,
+                model_package_group_description=model_description,
+                tags=aws_tags,
+                session=boto3_session,
+            )
+        except Exception:
+            log.info(f"Model Package Group {name} may already exist, continuing...")
+
+        # Get the model artifacts URL from the completed training job
+        training_job = TrainingJob.get(training_job_name, session=boto3_session)
+        model_data_url = training_job.model_artifacts.s3_model_artifacts
 
         # Register the model with meta inference image
         inference_image = ModelImages.get_image_uri(sm_session.boto_region_name, "meta_inference")
         log.important(f"Registering model {name} with Inference Image {inference_image}...")
-        estimator.create_model(role=aws_clamp.aws_session.get_workbench_execution_role_arn()).register(
+
+        container = ContainersItem(image=inference_image, model_data_url=model_data_url)
+        ModelPackage.create(
             model_package_group_name=name,
-            image_uri=inference_image,
-            content_types=["text/csv"],
-            response_types=["text/csv"],
-            inference_instances=supported_instance_types("x86_64"),
-            transform_instances=["ml.m5.large", "ml.m5.xlarge"],
-            approval_status="Approved",
-            description=model_description,
+            model_package_description=model_description,
+            inference_specification=InferenceSpecification(containers=[container]),
+            model_approval_status="Approved",
+            tags=aws_tags,
+            session=boto3_session,
         )
 
     @classmethod

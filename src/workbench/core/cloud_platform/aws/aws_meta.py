@@ -619,8 +619,11 @@ class AWSMeta:
             self.log.error("ARN is None, cannot retrieve tags.")
             return None
 
-        # Grab the tags from AWS
-        return aws_tags_to_dict(self.sm_session.list_tags(resource_arn=arn))
+        # Grab the tags from AWS using V3 API
+        from sagemaker.core.common_utils import list_tags as sm_list_tags
+
+        tags = sm_list_tags(self.sm_session, arn)
+        return aws_tags_to_dict(tags)
 
     @aws_throttle
     def get_latest_model_package_info(self, model_group_name: str) -> Union[dict, None]:

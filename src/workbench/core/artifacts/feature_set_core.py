@@ -8,8 +8,7 @@ import botocore.exceptions
 import pandas as pd
 import awswrangler as wr
 
-from sagemaker.feature_store.feature_group import FeatureGroup
-from sagemaker.feature_store.feature_store import FeatureStore
+from sagemaker.mlops.feature_store import FeatureGroup, create_athena_query
 
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
@@ -76,8 +75,8 @@ class FeatureSetCore(Artifact):
                 time.sleep(3)
                 self.refresh_meta()
 
-        # Spin up our Feature Store
-        self.feature_store = FeatureStore(self.sm_session)
+        # Note: FeatureStore class was removed in SageMaker V3
+        #       FeatureGroup and standalone functions replace its functionality
 
         # Call superclass post_init
         super().__post_init__()
@@ -329,12 +328,13 @@ class FeatureSetCore(Artifact):
         """Return the underlying DataSource object"""
         return self.data_source
 
-    def get_feature_store(self) -> FeatureStore:
-        """Return the underlying AWS FeatureStore object. This can be useful for more advanced usage
-        with create_dataset() such as Joins and time ranges and a host of other options
+    def get_feature_store(self):
+        """Deprecated: FeatureStore class was removed in SageMaker V3.
+        Use FeatureGroup resource class and standalone functions from sagemaker.mlops.feature_store instead.
         See: https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-create-a-dataset.html
         """
-        return self.feature_store
+        self.log.warning("get_feature_store() is deprecated in SageMaker V3. Use FeatureGroup directly.")
+        return None
 
     def create_s3_training_data(self, source_table: str) -> str:
         """Create some Training Data (S3 CSV) from a Feature Set using standard options. If you want
@@ -354,7 +354,7 @@ class FeatureSetCore(Artifact):
 
         # Make the query
         query = f'SELECT * FROM "{source_table}"'
-        athena_query = FeatureGroup(name=self.name, sagemaker_session=self.sm_session).athena_query()
+        athena_query = create_athena_query(feature_group_name=self.name, session=self.sm_session)
         athena_query.run(query, output_location=s3_output_path)
         athena_query.wait()
         query_execution = athena_query.get_query_execution()
@@ -455,15 +455,23 @@ class FeatureSetCore(Artifact):
 
         # See if the FeatureSet exists
         try:
-            response = cls.sm_client.describe_feature_group(FeatureGroupName=feature_set_name)
-        except cls.sm_client.exceptions.ResourceNotFound:
+            fg = FeatureGroup.get(feature_set_name, session=cls.boto3_session)
+        except (botocore.exceptions.ClientError, Exception):
             cls.log.info(f"FeatureSet {feature_set_name} not found!")
             return
 
         # Extract database and table information from the response
-        offline_config = response.get("OfflineStoreConfig", {})
-        database = offline_config.get("DataCatalogConfig", {}).get("Database")
-        offline_table = offline_config.get("DataCatalogConfig", {}).get("TableName")
+        offline_config = fg.offline_store_config
+        database = (
+            offline_config.data_catalog_config.database
+            if offline_config and offline_config.data_catalog_config
+            else None
+        )
+        offline_table = (
+            offline_config.data_catalog_config.table_name
+            if offline_config and offline_config.data_catalog_config
+            else None
+        )
         data_source_name = offline_table  # Our offline storage IS a DataSource
 
         # Delete the Feature Group and ensure that it gets deleted
@@ -489,7 +497,7 @@ class FeatureSetCore(Artifact):
     @classmethod
     @aws_throttle
     def aws_feature_group_delete(cls, feature_set_name):
-        remove_fg = FeatureGroup(name=feature_set_name, sagemaker_session=cls.sm_session)
+        remove_fg = FeatureGroup.get(feature_set_name, session=cls.boto3_session)
         remove_fg.delete()
         return remove_fg
 
@@ -499,7 +507,8 @@ class FeatureSetCore(Artifact):
         while status == "Deleting":
             cls.log.debug("FeatureSet being Deleted...")
             try:
-                status = feature_group.describe().get("FeatureGroupStatus")
+                feature_group.refresh()
+                status = feature_group.feature_group_status
             except botocore.exceptions.ClientError as error:
                 # For ResourceNotFound/ValidationException, this is fine, otherwise raise all other exceptions
                 if error.response["Error"]["Code"] in ["ResourceNotFound", "ValidationException"]:
@@ -507,7 +516,7 @@ class FeatureSetCore(Artifact):
                 else:
                     raise error
             time.sleep(1)
-        cls.log.info(f"FeatureSet {feature_group.name} successfully deleted")
+        cls.log.info(f"FeatureSet {feature_group.get_name()} successfully deleted")
 
     def temporal_split(self, date_column: str, holdout_percent: float = 10.0, overwrite: bool = False) -> list:
         """Compute a temporal split, returning IDs for the most recent holdout rows.

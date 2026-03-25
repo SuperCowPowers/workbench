@@ -8,7 +8,7 @@ from botocore.exceptions import (
 )
 from botocore.client import BaseClient
 import logging
-from sagemaker.session import Session as SageSession
+from sagemaker.core.helper.session_helper import Session as SageSession
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_session import AWSSession

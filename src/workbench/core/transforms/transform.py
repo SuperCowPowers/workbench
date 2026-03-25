@@ -110,9 +110,8 @@ class Transform(ABC):
 
     @staticmethod
     def convert_to_aws_tags(metadata: dict):
-        """Convert a dictionary to the AWS tag format (list of dicts)
-        [ {Key: key_name, Value: value}, {..}, ...]"""
-        return [{"Key": key, "Value": value} for key, value in metadata.items()]
+        """Convert a dictionary to the AWS V3 Tag format (list of Tag objects)"""
+        return [{"key": key, "value": value} for key, value in metadata.items()]
 
     def get_aws_tags(self):
         """Get the metadata/tags and convert them into AWS Tag Format"""
