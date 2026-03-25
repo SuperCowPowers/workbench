@@ -253,6 +253,17 @@ class PandasToFeatures(Transform):
         for column in [col for col in df.columns if pd.api.types.is_datetime64_any_dtype(df[col])]:
             df[column] = df[column].map(datetime_to_iso8601).astype("string")
 
+        # FIXME: Downcast pandas nullable dtypes to numpy dtypes for Feature Store compatibility.
+        # SageMaker V3's load_feature_definitions_from_dataframe() only recognizes numpy dtypes
+        # (e.g. 'float64', 'int64') not pandas nullable dtypes ('Float64', 'Int64').
+        # See https://github.com/aws/sagemaker-python-sdk/issues/5675
+        for column in df.columns:
+            dtype_name = str(df[column].dtype)
+            if dtype_name in ("Float64", "Float32", "Float16"):
+                df[column] = df[column].astype(dtype_name.lower())
+            elif dtype_name in ("Int64", "Int32", "Int16", "Int8", "UInt64", "UInt32", "UInt16", "UInt8"):
+                df[column] = df[column].astype(dtype_name.lower())
+
         return df
 
     def prep_dataframe(self):
