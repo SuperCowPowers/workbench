@@ -1256,7 +1256,7 @@ class EndpointCore(Artifact):
         # Retrieve the Model Names from the Endpoint Config
         try:
             config = SagemakerEndpointConfig.get(config_name, session=cls.boto3_session)
-        except (ClientError, ClientError):
+        except ClientError:
             cls.log.info(f"Endpoint Config {config_name} doesn't exist...")
             return
         model_names = [variant.model_name for variant in config.production_variants]

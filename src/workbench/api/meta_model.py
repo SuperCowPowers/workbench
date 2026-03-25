@@ -285,7 +285,7 @@ class MetaModel(Model):
         log.important(f"Creating MetaModel {name}...")
         trainer.train(wait=True)
 
-        return trainer.base_job_name
+        return trainer._latest_training_job.training_job_name
 
     @classmethod
     def _register_model(

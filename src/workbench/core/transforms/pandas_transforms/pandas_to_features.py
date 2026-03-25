@@ -341,7 +341,10 @@ class PandasToFeatures(Transform):
     def transform_impl(self):
         """Transform Implementation: Ingest the data into the Feature Group"""
 
-        # Now we actually push the data into the Feature Group (called ingestion)
+        # FIXME: max_workers and max_processes must both be 1 to avoid macOS fork/spawn hang.
+        # Any value > 1 routes through multiprocessing.Pool (fork by default on macOS), which
+        # hangs on macOS Tahoe 26+. V3 added a single-threaded fast path that bypasses the Pool
+        # only when both are 1. See https://github.com/aws/sagemaker-python-sdk/issues/5312
         self.log.important(f"Ingesting rows into Feature Group {self.output_name}...")
         failed_rows = []
         try:

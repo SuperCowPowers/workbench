@@ -143,8 +143,6 @@ class DataCaptureCore:
             current_config_name (str): The current endpoint config name (will be used as base)
             data_capture_config (DataCaptureConfig): The new data capture configuration
         """
-        import time
-
         # Get the current endpoint config to copy production variants
         current_config = self.sagemaker_client.describe_endpoint_config(EndpointConfigName=current_config_name)
 
