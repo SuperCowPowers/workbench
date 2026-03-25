@@ -2,9 +2,12 @@
 
 from pathlib import Path
 from typing import Union
-from sagemaker.estimator import Estimator
+from sagemaker.core.resources import ModelPackageGroup
+from sagemaker.core.shapes.shapes import MetricDefinition
+from sagemaker.train.model_trainer import ModelTrainer
+from sagemaker.core.training.configs import SourceCode, Compute
 import awswrangler as wr
-from datetime import datetime, timezone
+
 import time
 import uuid
 
@@ -14,7 +17,6 @@ from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework, ModelImages
 from workbench.core.artifacts.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script, fill_template
-from workbench.utils.model_utils import supported_instance_types
 
 
 class FeaturesToModel(Transform):
@@ -74,7 +76,8 @@ class FeaturesToModel(Transform):
         self.model_import_str = model_import_str
         self.custom_script = str(custom_script) if custom_script else None
         self.custom_args = custom_args if custom_args else {}
-        self.estimator = None
+        self.model_trainer = None
+        self.training_job_name = None
         self.model_description = None
         self.model_training_root = f"{self.models_s3_path}/{self.output_name}/training"
         self.model_feature_list = None
@@ -265,24 +268,29 @@ class FeaturesToModel(Transform):
         else:
             train_instance_type = "ml.m5.xlarge"
 
-        self.estimator = Estimator(
-            entry_point=entry_point,
-            source_dir=source_dir,
+        # Convert metric definitions to V3 MetricDefinition objects
+        v3_metric_definitions = [MetricDefinition(name=m["Name"], regex=m["Regex"]) for m in metric_definitions]
+
+        # Create ModelTrainer (V3 replacement for Estimator)
+        self.model_trainer = ModelTrainer(
+            training_image=image,
+            source_code=SourceCode(source_dir=source_dir, entry_script=entry_point),
+            compute=Compute(instance_type=train_instance_type, instance_count=1),
             role=self.workbench_role_arn,
-            instance_count=1,
-            instance_type=train_instance_type,
             sagemaker_session=self.sm_session,
-            image_uri=image,
-            metric_definitions=metric_definitions,
         )
+        self.model_trainer.with_metric_definitions(v3_metric_definitions)
 
-        # Training Job Name based on the Model Name and today's date
-        training_date_time_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d-%H-%M")
-        training_job_name = f"{self.output_name}-{training_date_time_utc}"
+        # Let ModelTrainer generate the full job name (it appends a timestamp to base_job_name)
+        self.model_trainer.base_job_name = self.output_name
 
-        # Train the estimator
+        # Train the model
         self.log.important(f"Training the Model {self.output_name} with Training Image {image}...")
-        self.estimator.fit({"train": s3_training_path}, job_name=training_job_name)
+        input_data = self.model_trainer.create_input_data_channel("train", s3_training_path)
+        self.model_trainer.train(input_data_config=[input_data], wait=True)
+
+        # Capture the actual training job name (ModelTrainer appends a timestamp to base_job_name)
+        self.training_job_name = self.model_trainer._latest_training_job.training_job_name
 
         # Now delete the training data
         self.log.info(f"Deleting training data {s3_training_path}...")
@@ -372,35 +380,45 @@ class FeaturesToModel(Transform):
             aws_region (str, optional): AWS Region to use (default None)
             **kwargs (dict): Additional keyword arguments to pass to the model registration
         """
+        from sagemaker.core.resources import TrainingJob
 
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
 
         # Create model group (if it doesn't already exist)
-        self.sm_client.create_model_package_group(
-            ModelPackageGroupName=self.output_name,
-            ModelPackageGroupDescription=self.model_description,
-            Tags=aws_tags,
-        )
+        try:
+            ModelPackageGroup.create(
+                model_package_group_name=self.output_name,
+                model_package_group_description=self.model_description,
+                tags=aws_tags,
+                session=self.boto3_session,
+            )
+        except Exception:
+            self.log.info(f"Model Package Group {self.output_name} may already exist, continuing...")
 
-        # Register our model
+        # Get the model artifacts URL from the completed training job
+        training_job = TrainingJob.get(self.training_job_name, session=self.boto3_session)
+        model_data_url = training_job.model_artifacts.s3_model_artifacts
+
+        # Get the inference image URI
         image = ModelImages.get_image_uri(
             self.sm_session.boto_region_name, self.inference_image, architecture=self.inference_arch
         )
         self.log.important(f"Registering model {self.output_name} with Inference Image {image}...")
-        model = self.estimator.create_model(role=self.workbench_role_arn)
-        if aws_region:
-            self.log.important(f"Setting AWS Region: {aws_region} for model {self.output_name}...")
-            model.env = {"AWS_REGION": aws_region}
-        model.register(
-            model_package_group_name=self.output_name,
-            image_uri=image,
-            content_types=["text/csv"],
-            response_types=["text/csv"],
-            inference_instances=supported_instance_types(self.inference_arch),
-            transform_instances=["ml.m5.large", "ml.m5.xlarge"],
-            approval_status="Approved",
-            description=self.model_description,
+
+        # FIXME: V3 SDK Bug — ModelPackage.create() does response["ModelPackageName"] at line 25047
+        # of resources.py, but the AWS CreateModelPackage API only returns "ModelPackageArn".
+        # This causes a KeyError on every versioned model package creation. Using boto3 as workaround.
+        # No existing GitHub issue — consider filing on https://github.com/aws/sagemaker-core/issues
+        self.sm_client.create_model_package(
+            ModelPackageGroupName=self.output_name,
+            ModelPackageDescription=self.model_description,
+            InferenceSpecification={
+                "Containers": [{"Image": image, "ModelDataUrl": model_data_url}],
+                "SupportedContentTypes": ["text/csv"],
+                "SupportedResponseMIMETypes": ["text/csv"],
+            },
+            ModelApprovalStatus="Approved",
         )
 
 

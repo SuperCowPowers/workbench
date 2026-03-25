@@ -2,7 +2,6 @@
 
 import time
 from datetime import datetime
-import botocore
 from botocore.exceptions import ClientError
 import pandas as pd
 import numpy as np
@@ -16,9 +15,14 @@ from sklearn.metrics import confusion_matrix
 from workbench.utils.metrics_utils import compute_regression_metrics, compute_classification_metrics
 
 # SageMaker Imports
-from sagemaker.serializers import CSVSerializer
-from sagemaker.deserializers import CSVDeserializer
-from sagemaker import Predictor
+from sagemaker.core.resources import (
+    Endpoint as SagemakerEndpoint,
+    EndpointConfig as SagemakerEndpointConfig,
+    Model as SagemakerModel,
+    MonitoringSchedule,
+)
+from sagemaker.core.serializers import CSVSerializer
+from sagemaker.core.deserializers import PandasDeserializer
 
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
@@ -30,6 +34,20 @@ from workbench.utils.xgboost_model_utils import pull_cv_results as xgboost_pull_
 from workbench.utils.pytorch_utils import pull_cv_results as pytorch_pull_cv
 from workbench.utils.chemprop_utils import pull_cv_results as chemprop_pull_cv
 from workbench_bridges.endpoints.fast_inference import fast_inference
+
+
+class WorkbenchDeserializer(PandasDeserializer):
+    """PandasDeserializer that handles 'text/csv; charset=utf-8' content types.
+
+    FIXME: V3 SDK Bug — PandasDeserializer checks for exact 'text/csv' match but SageMaker
+    endpoints return 'text/csv; charset=utf-8'.
+    No existing GitHub issue — consider filing on https://github.com/aws/sagemaker-core/issues
+    """
+
+    def deserialize(self, stream, content_type):
+        # Strip charset suffix (e.g., 'text/csv; charset=utf-8' -> 'text/csv')
+        base_content_type = content_type.split(";")[0].strip()
+        return super().deserialize(stream, base_content_type)
 
 
 class EndpointCore(Artifact):
@@ -271,8 +289,8 @@ class EndpointCore(Artifact):
             True if monitoring is enabled, False otherwise.
         """
         try:
-            response = self.sm_client.list_monitoring_schedules(EndpointName=self.name)
-            return bool(response.get("MonitoringScheduleSummaries", []))
+            schedules = MonitoringSchedule.get_all(endpoint_name=self.name, session=self.boto3_session)
+            return bool(list(schedules))
         except ClientError:
             return False
 
@@ -743,13 +761,10 @@ class EndpointCore(Artifact):
             missing_features = features_lower - df_columns_lower
             raise ValueError(f"DataFrame does not contain required features: {missing_features}")
 
-        # Create our Endpoint Predictor Class
-        predictor = Predictor(
-            self.endpoint_name,
-            sagemaker_session=self.sm_session,
-            serializer=CSVSerializer(),
-            deserializer=CSVDeserializer(),
-        )
+        # Create our SageMaker Endpoint object with CSV in / DataFrame out
+        sm_endpoint = SagemakerEndpoint.get(self.endpoint_name, session=self.boto3_session)
+        sm_endpoint.serializer = CSVSerializer()
+        sm_endpoint.deserializer = WorkbenchDeserializer()
 
         # Get batch size from endpoint metadata (default 100)
         # Some endpoints (e.g., 3D descriptor generation) need smaller batches due to processing time
@@ -763,7 +778,9 @@ class EndpointCore(Artifact):
             self.log.info(f"Processing {index}:{min(index+batch_size, total_rows)} out of {total_rows} rows...")
 
             # Compute partial DataFrames, add them to a list, and concatenate at the end
-            partial_df = self._endpoint_error_handling(predictor, eval_df[index : index + batch_size], drop_error_rows)
+            partial_df = self._endpoint_error_handling(
+                sm_endpoint, eval_df[index : index + batch_size], drop_error_rows
+            )
             df_list.append(partial_df)
 
         # Concatenate the dataframes
@@ -814,11 +831,11 @@ class EndpointCore(Artifact):
         # Return the Dataframe
         return converted_df
 
-    def _endpoint_error_handling(self, predictor, feature_df, drop_error_rows: bool = False) -> pd.DataFrame:
+    def _endpoint_error_handling(self, sm_endpoint, feature_df, drop_error_rows: bool = False) -> pd.DataFrame:
         """Internal: Handles errors, retries, and binary search for problematic rows.
 
         Args:
-            predictor (Predictor): The SageMaker Predictor object
+            sm_endpoint (SagemakerEndpoint): The SageMaker Endpoint object
             feature_df (pd.DataFrame): DataFrame to run predictions on
             drop_error_rows (bool): If True, drop rows that had endpoint errors/issues (default=False)
         Returns:
@@ -835,20 +852,20 @@ class EndpointCore(Artifact):
         feature_df.to_csv(csv_buffer, index=False)
 
         try:
-            # Send CSV buffer to the predictor and process results
-            results = predictor.predict(csv_buffer.getvalue())
-            results_df = pd.DataFrame.from_records(results[1:], columns=results[0])
+            # Send CSV buffer to the endpoint (PandasDeserializer returns a DataFrame directly)
+            response = sm_endpoint.invoke(body=csv_buffer.getvalue(), content_type="text/csv", accept="text/csv")
+            results_df = response.body
             self.endpoint_return_columns = results_df.columns.tolist()
             return results_df
 
-        except botocore.exceptions.ClientError as err:
+        except ClientError as err:
             error_code = err.response["Error"]["Code"]
             if error_code == "ModelNotReadyException":
                 self.log.error(f"Error {error_code}")
                 self.log.error(err.response)
                 self.log.error("Model not ready. Sleeping and retrying...")
                 time.sleep(60)
-                return self._endpoint_error_handling(predictor, feature_df)
+                return self._endpoint_error_handling(sm_endpoint, feature_df)
 
             elif error_code == "ModelError":
                 # Log full error response to capture all available debugging info
@@ -871,8 +888,8 @@ class EndpointCore(Artifact):
                 # Binary search for problematic rows
                 mid_point = len(feature_df) // 2
                 self.log.info(f"Bisect DataFrame: 0 -> {mid_point} and {mid_point} -> {len(feature_df)}")
-                first_half = self._endpoint_error_handling(predictor, feature_df.iloc[:mid_point], drop_error_rows)
-                second_half = self._endpoint_error_handling(predictor, feature_df.iloc[mid_point:], drop_error_rows)
+                first_half = self._endpoint_error_handling(sm_endpoint, feature_df.iloc[:mid_point], drop_error_rows)
+                second_half = self._endpoint_error_handling(sm_endpoint, feature_df.iloc[mid_point:], drop_error_rows)
                 return pd.concat([first_half, second_half], ignore_index=True)
 
             else:
@@ -1127,8 +1144,8 @@ class EndpointCore(Artifact):
 
     def endpoint_config_name(self) -> str:
         # Grab the Endpoint Config Name from the AWS
-        details = self.sm_client.describe_endpoint(EndpointName=self.endpoint_name)
-        return details["EndpointConfigName"]
+        endpoint = SagemakerEndpoint.get(self.endpoint_name, session=self.boto3_session)
+        return endpoint.endpoint_config_name
 
     def set_input(self, input: str, force=False):
         """Override: Set the input data for this artifact
@@ -1164,9 +1181,9 @@ class EndpointCore(Artifact):
     def managed_delete(cls, endpoint_name: str):
         """Delete the Endpoint and associated resources if it exists"""
 
-        # Check if the endpoint exists
+        # Check if the endpoint exists using V3 SDK
         try:
-            endpoint_info = cls.sm_client.describe_endpoint(EndpointName=endpoint_name)
+            endpoint = SagemakerEndpoint.get(endpoint_name, session=cls.boto3_session)
         except ClientError as e:
             if e.response["Error"]["Code"] in ["ValidationException", "ResourceNotFound"]:
                 cls.log.info(f"Endpoint {endpoint_name} not found!")
@@ -1177,20 +1194,19 @@ class EndpointCore(Artifact):
         cls.delete_endpoint_models(endpoint_name)
 
         # Get Endpoint Config Name and delete if exists
-        endpoint_config_name = endpoint_info["EndpointConfigName"]
+        config_name = endpoint.endpoint_config_name
         try:
-            cls.log.info(f"Deleting Endpoint Config {endpoint_config_name}...")
-            cls.sm_client.delete_endpoint_config(EndpointConfigName=endpoint_config_name)
+            cls.log.info(f"Deleting Endpoint Config {config_name}...")
+            config = SagemakerEndpointConfig.get(config_name, session=cls.boto3_session)
+            config.delete()
         except ClientError:
-            cls.log.info(f"Endpoint Config {endpoint_config_name} not found...")
+            cls.log.info(f"Endpoint Config {config_name} not found...")
 
         # Delete any monitoring schedules associated with the endpoint
-        monitoring_schedules = cls.sm_client.list_monitoring_schedules(EndpointName=endpoint_name)[
-            "MonitoringScheduleSummaries"
-        ]
-        for schedule in monitoring_schedules:
-            cls.log.info(f"Deleting Monitoring Schedule {schedule['MonitoringScheduleName']}...")
-            cls.sm_client.delete_monitoring_schedule(MonitoringScheduleName=schedule["MonitoringScheduleName"])
+        schedules = MonitoringSchedule.get_all(endpoint_name=endpoint_name, session=cls.boto3_session)
+        for schedule in schedules:
+            cls.log.info(f"Deleting Monitoring Schedule {schedule.get_name()}...")
+            schedule.delete()
 
         # Recursively delete all endpoint S3 artifacts (inference, etc)
         # Note: We do not want to delete the data_capture/ files since these
@@ -1214,11 +1230,11 @@ class EndpointCore(Artifact):
         cls.log.info("Deleting Dataframe Cache...")
         cls.df_cache.delete_recursive(endpoint_name)
 
-        # Delete the endpoint
+        # Delete the endpoint using V3 SDK
         cls.log.info(f"Deleting Endpoint {endpoint_name}...")
         time.sleep(10)  # Allow AWS to catch up
         try:
-            cls.sm_client.delete_endpoint(EndpointName=endpoint_name)
+            endpoint.delete()
         except ClientError as e:
             cls.log.error("Error deleting endpoint.")
             raise e
@@ -1233,21 +1249,23 @@ class EndpointCore(Artifact):
             endpoint_name (str): The name of the endpoint to delete
         """
 
-        # Grab the Endpoint Config Name from AWS
-        endpoint_config_name = cls.sm_client.describe_endpoint(EndpointName=endpoint_name)["EndpointConfigName"]
+        # Grab the Endpoint Config Name from AWS using V3 SDK
+        endpoint = SagemakerEndpoint.get(endpoint_name, session=cls.boto3_session)
+        config_name = endpoint.endpoint_config_name
 
         # Retrieve the Model Names from the Endpoint Config
         try:
-            endpoint_config = cls.sm_client.describe_endpoint_config(EndpointConfigName=endpoint_config_name)
-        except botocore.exceptions.ClientError:
-            cls.log.info(f"Endpoint Config {endpoint_config_name} doesn't exist...")
+            config = SagemakerEndpointConfig.get(config_name, session=cls.boto3_session)
+        except ClientError:
+            cls.log.info(f"Endpoint Config {config_name} doesn't exist...")
             return
-        model_names = [variant["ModelName"] for variant in endpoint_config["ProductionVariants"]]
+        model_names = [variant.model_name for variant in config.production_variants]
         for model_name in model_names:
             cls.log.info(f"Deleting Internal Model {model_name}...")
             try:
-                cls.sm_client.delete_model(ModelName=model_name)
-            except botocore.exceptions.ClientError as error:
+                model = SagemakerModel.get(model_name, session=cls.boto3_session)
+                model.delete()
+            except ClientError as error:
                 error_code = error.response["Error"]["Code"]
                 error_message = error.response["Error"]["Message"]
                 if error_code == "ResourceInUse":

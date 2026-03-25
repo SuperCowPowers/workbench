@@ -81,6 +81,8 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
 # Training Section
 #
 if __name__ == "__main__":
+    from model_script_utils import include_code_and_meta_for_inference
+
     # Template Parameters
     target = TEMPLATE_PARAMS["target_column"]  # Can be None for unsupervised models
     feature_list = TEMPLATE_PARAMS["feature_list"]
@@ -199,6 +201,11 @@ if __name__ == "__main__":
     # Save the feature list to validate input during predictions
     with open(os.path.join(args.model_dir, "feature_columns.json"), "w") as fp:
         json.dump(feature_list, fp)
+
+    # Bundle inference code and metadata into model artifacts
+    include_code_and_meta_for_inference(args.model_dir, "generated_model_script.py")
+
+    print(f"\nModel training complete! Artifacts saved to {args.model_dir}")
 
 
 #

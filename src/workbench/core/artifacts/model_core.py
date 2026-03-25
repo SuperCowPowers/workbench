@@ -12,8 +12,10 @@ import pandas as pd
 import awswrangler as wr
 from urllib.parse import urlparse
 from awswrangler.exceptions import NoFilesFound
-from sagemaker import TrainingJobAnalytics
-from sagemaker.model import Model as SagemakerModel
+from sagemaker.core.resources import (
+    TrainingJob,
+    ModelPackageGroup,
+)
 
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
@@ -214,17 +216,16 @@ class ModelCore(Artifact):
 
         return health_issues
 
-    def sagemaker_model_object(self) -> SagemakerModel:
-        """Return the latest AWS Sagemaker Model object for this Workbench Model
+    def sagemaker_model_object(self):
+        """Return info about the latest AWS Sagemaker Model for this Workbench Model
 
         Returns:
-           sagemaker.model.Model: AWS Sagemaker Model object
+           dict: Model data URL and container image URI
         """
-        return SagemakerModel(
-            model_data=self.model_data_url(),
-            sagemaker_session=self.sm_session,
-            image_uri=self.container_image(),
-        )
+        return {
+            "model_data_url": self.model_data_url(),
+            "image_uri": self.container_image(),
+        }
 
     def list_inference_runs(self) -> list[str]:
         """List the inference runs for this model
@@ -592,10 +593,10 @@ class ModelCore(Artifact):
         container_info = self.container_info()
         details["framework"] = container_info.get("Framework", "unknown")
         details["framework_version"] = container_info.get("FrameworkVersion", "unknown")
-        details["inference_types"] = inference_spec["SupportedRealtimeInferenceInstanceTypes"]
-        details["transform_types"] = inference_spec["SupportedTransformInstanceTypes"]
-        details["content_types"] = inference_spec["SupportedContentTypes"]
-        details["response_types"] = inference_spec["SupportedResponseMIMETypes"]
+        details["inference_types"] = inference_spec.get("SupportedRealtimeInferenceInstanceTypes", [])
+        details["transform_types"] = inference_spec.get("SupportedTransformInstanceTypes", [])
+        details["content_types"] = inference_spec.get("SupportedContentTypes", ["text/csv"])
+        details["response_types"] = inference_spec.get("SupportedResponseMIMETypes", ["text/csv"])
 
         # Grab the inference metadata
         details["inference_meta"] = self.get_inference_metadata()
@@ -890,7 +891,7 @@ class ModelCore(Artifact):
         """
         # Check if the model group exists in SageMaker
         try:
-            cls.sm_client.describe_model_package_group(ModelPackageGroupName=model_group_name)
+            model_group = ModelPackageGroup.get(model_group_name, session=cls.boto3_session)
         except ClientError as e:
             if e.response["Error"]["Code"] in ["ValidationException", "ResourceNotFound"]:
                 cls.log.info(f"Model Group {model_group_name} not found!")
@@ -901,21 +902,24 @@ class ModelCore(Artifact):
         # Clean up model-owned training view and weights table (before deleting model metadata)
         cls._delete_model_training_artifacts(model_group_name)
 
-        # Delete Model Packages within the Model Group
+        # FIXME: V3 SDK Bug — ModelPackage.get_all() iterator calls refresh() on each package,
+        # which does describe_model_package(ModelPackageName=None) because the versioned package
+        # object never gets its model_package_name populated (same root cause as the create bug).
+        # Using boto3 as workaround.
+        # No existing GitHub issue — consider filing on https://github.com/aws/sagemaker-core/issues
         try:
-            paginator = cls.sm_client.get_paginator("list_model_packages")
-            for page in paginator.paginate(ModelPackageGroupName=model_group_name):
-                for model_package in page["ModelPackageSummaryList"]:
-                    package_arn = model_package["ModelPackageArn"]
-                    cls.log.info(f"Deleting Model Package {package_arn}...")
-                    cls.sm_client.delete_model_package(ModelPackageName=package_arn)
+            packages = cls.sm_client.list_model_packages(ModelPackageGroupName=model_group_name)
+            for package in packages.get("ModelPackageSummaryList", []):
+                package_arn = package["ModelPackageArn"]
+                cls.log.info(f"Deleting Model Package {package_arn}...")
+                cls.sm_client.delete_model_package(ModelPackageName=package_arn)
         except ClientError as e:
             cls.log.error(f"Error while deleting model packages: {e}")
             raise
 
         # Delete the Model Package Group
         cls.log.info(f"Deleting Model Group {model_group_name}...")
-        cls.sm_client.delete_model_package_group(ModelPackageGroupName=model_group_name)
+        model_group.delete()
 
         # Delete S3 training artifacts
         s3_delete_path = f"{cls.models_s3_path}/training/{model_group_name}/"
@@ -1024,7 +1028,15 @@ class ModelCore(Artifact):
             This may or may not exist based on whether we have access to TrainingJobAnalytics
         """
         try:
-            df = TrainingJobAnalytics(training_job_name=self.training_job_name).dataframe()
+            # V3: Use TrainingJob.get() and final_metric_data_list
+            training_job = TrainingJob.get(self.training_job_name, session=self.boto3_session)
+            metrics = training_job.final_metric_data_list
+            if not metrics:
+                df = pd.DataFrame()
+            else:
+                df = pd.DataFrame(
+                    [{"metric_name": m.metric_name, "value": m.value, "timestamp": m.timestamp} for m in metrics]
+                )
             if df.empty:
                 self.log.important(f"No training job metrics found for {self.training_job_name}")
                 self.upsert_workbench_meta({"workbench_training_metrics": None, "workbench_training_cm": None})

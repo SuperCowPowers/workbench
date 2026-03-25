@@ -1,6 +1,5 @@
 import botocore
 import logging
-import sys
 import time
 import functools
 import json
@@ -14,12 +13,10 @@ from awswrangler.exceptions import NoFilesFound
 from pathlib import Path
 import posixpath
 from botocore.exceptions import ClientError
-from sagemaker.session import Session as SageSession
-from collections.abc import Mapping, Iterable
+from sagemaker.core.helper.session_helper import Session as SageSession
 
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
-from workbench.utils.deprecated_utils import deprecated
 
 # Workbench Logger
 log = logging.getLogger("workbench")
@@ -130,79 +127,6 @@ def not_found_returns_none(func: Optional[Callable] = None, *, resource_name: st
         return decorator(func)
 
 
-@deprecated(version="0.9")
-def list_tags_with_throttle(arn: str, sm_session) -> dict:
-    """A Wrapper around SageMaker's list_tags method that handles throttling
-    Args:
-        arn (str): The ARN of the SageMaker resource
-        sm_session (SageSession): A SageMaker session object
-    Returns:
-        dict: A dictionary of tags
-
-    Note: AWS List Tags can get grumpy if called too often
-    """
-
-    # Log the call
-    log.debug(f"Calling list_tags for {arn}...")
-    sleep_times = [2, 4, 8, 16, 32, 64]
-    max_attempts = len(sleep_times)
-
-    # Sanity check the ARN
-    if arn is None:
-        log.error("Called list_tags_with_throttle(arn==None)!")
-        return {}
-
-    # Loop with exponential backoff
-    for attempt in range(max_attempts):
-        try:
-            # Call the AWS List Tags method
-            aws_tags = sm_session.list_tags(arn)
-            meta = aws_tags_to_dict(aws_tags)  # Convert the AWS Tags to a dictionary
-            return meta
-
-        except botocore.exceptions.ClientError as e:
-            error_code = e.response["Error"]["Code"]
-            error_message = e.response["Error"]["Message"]
-
-            # Check for ThrottlingException
-            if error_code == "ThrottlingException":
-                if attempt < 2:
-                    log.info(f"ThrottlingException ({attempt}): list_tags on {arn}")
-                elif attempt < 4:
-                    log.warning(f"ThrottlingException ({attempt}): list_tags on {arn}")
-                else:
-                    log.error(f"ThrottlingException ({attempt}): list_tags on {arn}")
-
-            # Check specific (Not Found) exceptions
-            elif error_code in ["ValidationException", "ResourceNotFoundException"]:
-                log.warning(f"Probably Fine -- {arn} AWS Validation/NotFound Exception: {error_code} - {error_message}")
-                return {}
-            else:
-                # Handle other ClientErrors that may occur
-                log.error(f"ClientError: {error_code} - {error_message}")
-                raise e
-
-            # Sleep for a bit before trying again
-            time.sleep(sleep_times[attempt])
-
-    # If we get here, we've failed to retrieve the tags
-    log.error(f"Failed to retrieve tags for {arn}!")
-    return {}
-
-
-@deprecated(version="0.9")
-def workbench_meta_from_catalog_table_meta(table_meta: dict) -> dict:
-    """Retrieve the Workbench metadata from AWS Data Catalog table metadata
-    Args:
-        table_meta (dict): The AWS Data Catalog table metadata
-    Returns:
-        dict: The Workbench metadata that's stored in the Parameters field
-    """
-    # Get the Parameters field from the table metadata
-    params = table_meta.get("Parameters", {})
-    return {key: decode_value(value) for key, value in params.items() if "workbench" in key}
-
-
 def decode_value(value):
     # Try to base64 decode the value
     try:
@@ -272,10 +196,14 @@ def dict_to_aws_tags(meta_data: dict) -> list:
     output_data.update(chunked_data)
     log.info(f"Processed tags has {len(output_data.keys())} keys...")
 
-    # Now convert to AWS Tags format
+    # Now convert to AWS Tags format (V3 compatible dicts with lowercase keys)
+    # FIXME: V3 SDK Bug — Tag.add_tags() serializes empty string values as missing,
+    # causing boto3 ParamValidationError "Missing required parameter Value". Direct boto3
+    # add_tags with empty Value="" works fine. Using " " as workaround (reversed in aws_tags_to_dict).
+    # No existing GitHub issue — consider filing on https://github.com/aws/sagemaker-core/issues
     aws_tags = []
     for key, value in output_data.items():
-        aws_tags.append({"Key": key, "Value": value})
+        aws_tags.append({"key": key, "value": value if value else " "})
     return aws_tags
 
 
@@ -287,8 +215,17 @@ def aws_tags_to_dict(aws_tags) -> dict:
     regular_tags = {}
 
     for item in aws_tags:
-        key = item["Key"]
-        value = item["Value"]
+        # Handle V3 Tag objects, V3 dicts (lowercase), and boto3 dicts (uppercase)
+        if hasattr(item, "key"):
+            key, value = item.key, item.value
+        elif "key" in item:
+            key, value = item["key"], item["value"]
+        else:
+            key, value = item["Key"], item["Value"]
+
+        # V3 workaround: empty values stored as " " (see dict_to_aws_tags)
+        if value == " ":
+            value = ""
 
         # Check if this key is a chunk
         if "_chunk_" in key:
@@ -453,68 +390,6 @@ def pull_s3_data(s3_path: str, embedded_index=False) -> Union[pd.DataFrame, None
         return None
 
 
-@deprecated(version="0.9", stack_trace=True)
-def compute_size(obj: object) -> int:
-    """Recursively calculate the size of an object including its contents.
-
-    Args:
-        obj (object): The object whose size is to be computed.
-
-    Returns:
-        int: The total size of the object in bytes.
-    """
-    if isinstance(obj, Mapping):
-        return sys.getsizeof(obj) + sum(compute_size(k) + compute_size(v) for k, v in obj.items())
-    elif isinstance(obj, Iterable) and not isinstance(obj, (str, bytes, bytearray)):
-        return sys.getsizeof(obj) + sum(compute_size(item) for item in obj)
-    else:
-        return sys.getsizeof(obj)
-
-
-@deprecated(version="0.9")
-def num_columns_ds(data_info):
-    """Helper: Compute the number of columns from the storage descriptor data"""
-    try:
-        return len(data_info["StorageDescriptor"]["Columns"])
-    except KeyError:
-        return "-"
-
-
-@deprecated(version="0.9")
-def num_columns_fs(data_info):
-    """Helper: Compute the number of columns from the feature group data"""
-    try:
-        return len(data_info["FeatureDefinitions"])
-    except KeyError:
-        return "-"
-
-
-@deprecated(version="0.9")
-def aws_url(artifact_info, artifact_type, aws_account_clamp):
-    """Helper: Try to extract the AWS URL from the Artifact Info Object"""
-    if artifact_type == "S3":
-        # Construct the AWS URL for the S3 Bucket
-        name = artifact_info["Name"]
-        region = aws_account_clamp.region
-        s3_prefix = f"incoming-data/{name}"
-        bucket_name = aws_account_clamp.workbench_bucket_name
-        base_url = "https://s3.console.aws.amazon.com/s3/object"
-        return f"{base_url}/{bucket_name}?region={region}&prefix={s3_prefix}"
-    elif artifact_type == "GlueJob":
-        # Construct the AWS URL for the Glue Job
-        region = aws_account_clamp.region
-        job_name = artifact_info["Name"]
-        base_url = f"https://{region}.console.aws.amazon.com/gluestudio/home"
-        return f"{base_url}?region={region}#/editor/job/{job_name}/details"
-    elif artifact_type == "DataSource":
-        details = artifact_info.get("Parameters", {}).get("workbench_details", "{}")
-        return json.loads(details).get("aws_url", "unknown")
-    elif artifact_type == "FeatureSet":
-        aws_url = artifact_info.get("workbench_meta", {}).get("aws_url", "unknown")
-        # Hack for constraints on the SageMaker Feature Group Tags
-        return aws_url.replace("__question__", "?").replace("__pound__", "#")
-
-
 if __name__ == "__main__":
     """Exercise the AWS Utils"""
     from pprint import pprint
@@ -621,8 +496,3 @@ if __name__ == "__main__":
     my_features.delete_metadata("large_meta")
     my_meta = my_features.workbench_meta()
     pprint(my_meta)
-
-    # Test the list_tags_with_throttle method
-    arn = my_features.arn()
-    tags = list_tags_with_throttle(arn, sm_session)
-    pprint(tags)

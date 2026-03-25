@@ -11,6 +11,7 @@ from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.core.artifacts.parameter_store_core import ParameterStoreCore
 from workbench.core.artifacts.df_store_core import DFStoreCore
 from workbench.utils.aws_utils import dict_to_aws_tags
+from sagemaker.core.resources import Tag
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
 from workbench.core.cloud_platform.cloud_meta import CloudMeta
 
@@ -246,9 +247,9 @@ class Artifact(ABC):
         self.log.info(f"Adding Tags to {self.name}:{str(new_meta)[:50]}...")
         aws_tags = dict_to_aws_tags(new_meta)
         try:
-            self.sm_client.add_tags(ResourceArn=aws_arn, Tags=aws_tags)
+            Tag.add_tags(resource_arn=aws_arn, tags=aws_tags, session=self.boto3_session)
         except Exception as e:
-            self.log.error(f"Error adding metadata to {aws_arn}: {e}")
+            self.log.error(f"Error adding metadata to {aws_arn}: {type(e).__name__}: {e}")
             return
 
         # Poke the modified registry so caches know this artifact changed
@@ -433,8 +434,10 @@ class Artifact(ABC):
         aws_arn = self.arn()
         self.log.important(f"Deleting Metadata {key_to_delete} for Artifact: {aws_arn}...")
 
-        # First, fetch all the existing tags
-        existing_tags = self.sm_session.list_tags(aws_arn)
+        # First, fetch all the existing tags using V3 API
+        from sagemaker.core.common_utils import list_tags as sm_list_tags
+
+        existing_tags = sm_list_tags(self.sm_session, aws_arn)
 
         # Convert existing AWS tags to a dictionary for easy manipulation
         existing_tags_dict = {item["Key"]: item["Value"] for item in existing_tags}
@@ -445,9 +448,9 @@ class Artifact(ABC):
             if key == key_to_delete or key.startswith(f"{key_to_delete}_chunk_"):
                 tag_list_to_delete.append(key)
 
-        # Delete the identified tags
+        # Delete the identified tags using V3 API
         if tag_list_to_delete:
-            self.sm_client.delete_tags(ResourceArn=aws_arn, TagKeys=tag_list_to_delete)
+            Tag.delete_tags(resource_arn=aws_arn, tag_keys=tag_list_to_delete, session=self.boto3_session)
         else:
             self.log.info(f"No Metadata found: {key_to_delete}...")
 

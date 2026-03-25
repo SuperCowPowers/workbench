@@ -3,8 +3,14 @@
 import pandas as pd
 import time
 import re
-from sagemaker.feature_store.feature_group import FeatureGroup, IngestionError
-from sagemaker.feature_store.inputs import TableFormatEnum
+from sagemaker.core.resources import FeatureGroup
+from sagemaker.core.shapes.shapes import OnlineStoreConfig, OfflineStoreConfig, S3StorageConfig
+from sagemaker.mlops.feature_store import (
+    TableFormatEnum,
+    IngestionError,
+    load_feature_definitions_from_dataframe,
+    ingest_dataframe,
+)
 
 # Local imports
 from workbench.utils.datetime_utils import datetime_to_iso8601
@@ -247,14 +253,6 @@ class PandasToFeatures(Transform):
         for column in [col for col in df.columns if pd.api.types.is_datetime64_any_dtype(df[col])]:
             df[column] = df[column].map(datetime_to_iso8601).astype("string")
 
-        """FIXME Not sure we need these conversions
-        for column in list(df.select_dtypes(include="object").columns):
-            df[column] = df[column].astype("string")
-        for column in list(df.select_dtypes(include=[pd.Int64Dtype]).columns):
-            df[column] = df[column].astype("int64")
-        for column in list(df.select_dtypes(include=[pd.Float64Dtype]).columns):
-            df[column] = df[column].astype("float64")
-        """
         return df
 
     def prep_dataframe(self):
@@ -306,9 +304,8 @@ class PandasToFeatures(Transform):
     def create_feature_group(self):
         """Create a Feature Group, load our Feature Definitions, and wait for it to be ready"""
 
-        # Create a Feature Group and load our Feature Definitions
-        my_feature_group = FeatureGroup(name=self.output_name, sagemaker_session=self.sm_session)
-        my_feature_group.load_feature_definitions(data_frame=self.output_df)
+        # Load Feature Definitions from the DataFrame
+        feature_definitions = load_feature_definitions_from_dataframe(self.output_df)
 
         # Create the Output S3 Storage Path for this Feature Set
         s3_storage_path = f"{self.feature_sets_s3_path}/{self.output_name}"
@@ -316,15 +313,20 @@ class PandasToFeatures(Transform):
         # Get the metadata/tags to push into AWS
         aws_tags = self.get_aws_tags()
 
-        # Create the Feature Group
-        my_feature_group.create(
-            s3_uri=s3_storage_path,
-            record_identifier_name=self.id_column,
+        # Create the Feature Group using V3 resource class
+        my_feature_group = FeatureGroup.create(
+            feature_group_name=self.output_name,
+            record_identifier_feature_name=self.id_column,
             event_time_feature_name=self.event_time_column,
+            feature_definitions=feature_definitions,
+            online_store_config=OnlineStoreConfig(enable_online_store=True),
+            offline_store_config=OfflineStoreConfig(
+                s3_storage_config=S3StorageConfig(s3_uri=s3_storage_path),
+                table_format=self.table_format,
+            ),
             role_arn=self.workbench_role_arn,
-            enable_online_store=True,
-            table_format=self.table_format,
             tags=aws_tags,
+            session=self.boto3_session,
         )
 
         # Ensure/wait for the feature group to be created
@@ -336,57 +338,31 @@ class PandasToFeatures(Transform):
         self.delete_existing()
         self.output_feature_group = self.create_feature_group()
 
-    def mac_spawn_hack(self):
-        """Workaround for macOS Tahoe fork/spawn issue with SageMaker FeatureStore ingest.
-
-        See: https://github.com/aws/sagemaker-python-sdk/issues/5312
-        macOS Tahoe 26+ has issues with forked processes creating boto3 sessions.
-        This forces spawn mode on macOS to avoid the hang.
-        """
-        import platform
-
-        if platform.system() == "Darwin":  # macOS
-            self.log.warning("macOS detected, forcing 'spawn' mode for multiprocessing (Tahoe hang workaround)")
-            import multiprocessing
-
-            try:
-                import multiprocess
-
-                multiprocess.set_start_method("spawn", force=True)
-            except (RuntimeError, ImportError):
-                pass  # Already set or multiprocess not available
-            try:
-                multiprocessing.set_start_method("spawn", force=True)
-            except RuntimeError:
-                pass  # Already set
-
     def transform_impl(self):
         """Transform Implementation: Ingest the data into the Feature Group"""
 
-        # Workaround for macOS Tahoe hang issue
-        self.mac_spawn_hack()
-
-        # Now we actually push the data into the Feature Group (called ingestion)
+        # FIXME: max_workers and max_processes must both be 1 to avoid macOS fork/spawn hang.
+        # Any value > 1 routes through multiprocessing.Pool (fork by default on macOS), which
+        # hangs on macOS Tahoe 26+. V3 added a single-threaded fast path that bypasses the Pool
+        # only when both are 1. See https://github.com/aws/sagemaker-python-sdk/issues/5312
         self.log.important(f"Ingesting rows into Feature Group {self.output_name}...")
-        ingest_manager = self.output_feature_group.ingest(self.output_df, max_workers=8, max_processes=4, wait=False)
+        failed_rows = []
         try:
-            ingest_manager.wait()
+            ingest_dataframe(
+                feature_group_name=self.output_name,
+                data_frame=self.output_df,
+                max_workers=1,
+                max_processes=1,
+                wait=True,
+            )
         except IngestionError as exc:
+            failed_rows = exc.failed_rows
             self.log.warning(f"Some rows had an ingesting error: {exc}")
 
-        # Report on any rows that failed to ingest
-        if ingest_manager.failed_rows:
-            self.log.warning(f"Number of Failed Rows: {len(ingest_manager.failed_rows)}")
-
-            # Log failed row details
-            failed_data = self.output_df.iloc[ingest_manager.failed_rows]
-            for idx, row in failed_data.iterrows():
-                self.log.warning(f"Failed Row {idx}: {row.to_dict()}")
-
         # Keep track of the number of rows we expect to be ingested
-        self.expected_rows += len(self.output_df) - len(ingest_manager.failed_rows)
+        self.expected_rows += len(self.output_df) - len(failed_rows)
         self.log.info(f"Added rows: {len(self.output_df)}")
-        self.log.info(f"Failed rows: {len(ingest_manager.failed_rows)}")
+        self.log.info(f"Failed rows: {len(failed_rows)}")
         self.log.info(f"Total rows ingested: {self.expected_rows}")
 
         # We often need to wait a bit for AWS to fully register the new Feature Group
@@ -412,19 +388,19 @@ class PandasToFeatures(Transform):
             self.output_feature_set.set_training_holdouts(self.incoming_hold_out_ids)
 
     def ensure_feature_group_created(self, feature_group):
-        status = feature_group.describe().get("FeatureGroupStatus")
+        feature_group.refresh()
+        status = feature_group.feature_group_status
         while status == "Creating":
             self.log.debug("FeatureSet being Created…")
             time.sleep(5)
-            status = feature_group.describe().get("FeatureGroupStatus")
+            feature_group.refresh()
+            status = feature_group.feature_group_status
 
         if status == "Created":
-            self.log.info(f"FeatureSet {feature_group.name} successfully created")
+            self.log.info(f"FeatureSet {feature_group.get_name()} successfully created")
         else:
-            # Get the detailed failure reason
-            description = feature_group.describe()
-            failure_reason = description.get("FailureReason", "No failure reason provided")
-            self.log.critical(f"FeatureSet {feature_group.name} creation failed with status: {status}")
+            failure_reason = getattr(feature_group, "failure_reason", "No failure reason provided")
+            self.log.critical(f"FeatureSet {feature_group.get_name()} creation failed with status: {status}")
             self.log.critical(f"Failure reason: {failure_reason}")
 
     def wait_for_rows(self, expected_rows: int):

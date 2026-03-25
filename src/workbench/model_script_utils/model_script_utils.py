@@ -4,6 +4,8 @@ These functions are used across multiple model templates (XGBoost, PyTorch, Chem
 to reduce code duplication and ensure consistent behavior.
 """
 
+import os
+import shutil
 from io import StringIO
 import json
 import numpy as np
@@ -18,6 +20,44 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import GroupKFold, GroupShuffleSplit
 from scipy.stats import spearmanr
+
+
+def include_code_and_meta_for_inference(model_dir: str, entry_point: str) -> None:
+    """Bundle inference code and metadata into the model directory.
+
+    This ensures the inference container knows which script to run. It writes
+    an inference-metadata.json file and copies all code files from the code
+    directory (SM_CHANNEL_CODE or SM_SOURCE_DIR) into the model directory.
+
+    Args:
+        model_dir: Path to model artifacts directory (typically /opt/ml/model)
+        entry_point: Name of the inference entry script (e.g., 'generated_model_script.py')
+    """
+    print("Including code and metadata for inference...")
+
+    # Write inference metadata
+    metadata = {"inference_script": entry_point}
+    metadata_path = os.path.join(model_dir, "inference-metadata.json")
+    with open(metadata_path, "w") as f:
+        json.dump(metadata, f)
+
+    # Determine the code directory (V3 uses SM_CHANNEL_CODE or SM_SOURCE_DIR)
+    code_dir = os.environ.get("SM_SOURCE_DIR") or os.environ.get("SM_CHANNEL_CODE", "")
+    if not code_dir or not os.path.isdir(code_dir):
+        print(f"Warning: Code directory not found ({code_dir}), skipping code copy")
+        return
+
+    # Copy all code files into model directory (except __pycache__)
+    for item in os.listdir(code_dir):
+        if item == "__pycache__":
+            continue
+        src = os.path.join(code_dir, item)
+        dst = os.path.join(model_dir, item)
+        if os.path.isdir(src):
+            shutil.copytree(src, dst, dirs_exist_ok=True)
+        else:
+            shutil.copy2(src, dst)
+        print(f"Copied: {src} -> {dst}")
 
 
 def check_dataframe(df: pd.DataFrame, df_name: str) -> None:

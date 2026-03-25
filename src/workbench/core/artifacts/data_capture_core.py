@@ -6,8 +6,7 @@ import time
 from datetime import datetime
 from typing import Tuple
 import pandas as pd
-from sagemaker import Predictor
-from sagemaker.model_monitor import DataCaptureConfig
+from sagemaker.core.model_monitor import DataCaptureConfig
 import awswrangler as wr
 
 # Workbench Imports
@@ -101,9 +100,7 @@ class DataCaptureCore:
         )
 
         # Update endpoint with the new capture configuration
-        Predictor(self.endpoint_name, sagemaker_session=self.sagemaker_session).update_data_capture_config(
-            data_capture_config=data_capture_config
-        )
+        self._update_data_capture_config(current_endpoint_config_name, data_capture_config)
 
         # Clean up old endpoint configuration
         try:
@@ -132,12 +129,55 @@ class DataCaptureCore:
         data_capture_config = DataCaptureConfig(enable_capture=False, destination_s3_uri=self.data_capture_path)
 
         # Update endpoint with the new configuration
-        Predictor(self.endpoint_name, sagemaker_session=self.sagemaker_session).update_data_capture_config(
-            data_capture_config=data_capture_config
-        )
+        self._update_data_capture_config(current_endpoint_config_name, data_capture_config)
 
         # Clean up old endpoint configuration
         self.sagemaker_client.delete_endpoint_config(EndpointConfigName=current_endpoint_config_name)
+
+    def _update_data_capture_config(self, current_config_name: str, data_capture_config: DataCaptureConfig):
+        """Internal: Update the endpoint with a new data capture configuration.
+
+        Creates a new endpoint config with the data capture settings and updates the endpoint.
+
+        Args:
+            current_config_name (str): The current endpoint config name (will be used as base)
+            data_capture_config (DataCaptureConfig): The new data capture configuration
+        """
+        # Get the current endpoint config to copy production variants
+        current_config = self.sagemaker_client.describe_endpoint_config(EndpointConfigName=current_config_name)
+
+        # Build the new endpoint config name
+        new_config_name = f"{self.endpoint_name}-{int(time.time())}"
+
+        # Build the data capture config dict for boto3
+        capture_dict = {
+            "EnableCapture": data_capture_config.enable_capture,
+            "InitialSamplingPercentage": data_capture_config.sampling_percentage,
+            "DestinationS3Uri": data_capture_config.destination_s3_uri,
+            "CaptureOptions": [{"CaptureMode": "Input"}, {"CaptureMode": "Output"}],
+        }
+        if hasattr(data_capture_config, "capture_options") and data_capture_config.capture_options:
+            capture_dict["CaptureOptions"] = [
+                {"CaptureMode": "Input" if opt == "REQUEST" else "Output"}
+                for opt in data_capture_config.capture_options
+            ]
+
+        # Create a new endpoint config with the updated data capture settings
+        create_config_args = {
+            "EndpointConfigName": new_config_name,
+            "ProductionVariants": current_config["ProductionVariants"],
+            "DataCaptureConfig": capture_dict,
+        }
+        if "KmsKeyId" in current_config:
+            create_config_args["KmsKeyId"] = current_config["KmsKeyId"]
+
+        self.sagemaker_client.create_endpoint_config(**create_config_args)
+
+        # Update the endpoint to use the new config
+        self.sagemaker_client.update_endpoint(
+            EndpointName=self.endpoint_name,
+            EndpointConfigName=new_config_name,
+        )
 
     def is_enabled(self) -> bool:
         """
