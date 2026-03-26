@@ -10,7 +10,7 @@ Custom Docker images for SageMaker training and inference endpoints.
 | Base Inference | `base/inference/` | `aws-ml-images/py312-base-inference` | Same as base training + FastAPI/uvicorn inference server |
 | PyTorch/Chem Training | `pytorch_chem/training/` | `aws-ml-images/py312-pytorch-chem-training` | PyTorch, chemprop, rdkit (GPU training via CUDA base image) |
 | PyTorch/Chem Inference | `pytorch_chem/inference/` | `aws-ml-images/py312-pytorch-chem-inference` | Same stack as pytorch_chem training + FastAPI/uvicorn (runs on CPU instances) |
-| ML Pipelines | `ml_pipelines/` | `aws-ml-images/py312-ml-pipelines` | Pipeline runner for SageMaker ML pipelines |
+| ML Pipelines | `ml_pipelines/` | `aws-ml-images/py312-ml-pipelines` | AWS Batch Pipeline runner for SageMaker ML pipelines |
 
 ### Directory Structure
 
