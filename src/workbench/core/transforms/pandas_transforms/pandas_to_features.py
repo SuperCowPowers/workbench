@@ -262,7 +262,11 @@ class PandasToFeatures(Transform):
             if dtype_name in ("Float64", "Float32", "Float16"):
                 df[column] = df[column].astype(dtype_name.lower())
             elif dtype_name in ("Int64", "Int32", "Int16", "Int8", "UInt64", "UInt32", "UInt16", "UInt8"):
-                df[column] = df[column].astype(dtype_name.lower())
+                if df[column].isna().any():
+                    # Numpy integers can't represent NA, so fall back to float64
+                    df[column] = df[column].astype("float64")
+                else:
+                    df[column] = df[column].astype(dtype_name.lower())
 
         return df
 
