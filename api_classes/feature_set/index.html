@@ -5343,12 +5343,12 @@ can be viewed and explored within the Workbench Dashboard UI.</p>
 </span><span id="__span-0-113"><a id="__codelineno-0-113" name="__codelineno-0-113"></a>
 </span><span id="__span-0-114"><a id="__codelineno-0-114" name="__codelineno-0-114"></a>        <span class="c1"># Set training/inference images based on model framework</span>
 </span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a>        <span class="k">if</span> <span class="n">model_framework</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">PYTORCH</span><span class="p">,</span> <span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">):</span>
-</span><span id="__span-0-116"><a id="__codelineno-0-116" name="__codelineno-0-116"></a>            <span class="n">training_image</span> <span class="o">=</span> <span class="s2">&quot;pytorch_training&quot;</span>
-</span><span id="__span-0-117"><a id="__codelineno-0-117" name="__codelineno-0-117"></a>            <span class="n">inference_image</span> <span class="o">=</span> <span class="s2">&quot;pytorch_inference&quot;</span>
+</span><span id="__span-0-116"><a id="__codelineno-0-116" name="__codelineno-0-116"></a>            <span class="n">training_image</span> <span class="o">=</span> <span class="s2">&quot;pytorch_chem_training&quot;</span>
+</span><span id="__span-0-117"><a id="__codelineno-0-117" name="__codelineno-0-117"></a>            <span class="n">inference_image</span> <span class="o">=</span> <span class="s2">&quot;pytorch_chem_inference&quot;</span>
 </span><span id="__span-0-118"><a id="__codelineno-0-118" name="__codelineno-0-118"></a>            <span class="n">inference_arch</span> <span class="o">=</span> <span class="s2">&quot;x86_64&quot;</span>
 </span><span id="__span-0-119"><a id="__codelineno-0-119" name="__codelineno-0-119"></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="__span-0-120"><a id="__codelineno-0-120" name="__codelineno-0-120"></a>            <span class="n">training_image</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span>
-</span><span id="__span-0-121"><a id="__codelineno-0-121" name="__codelineno-0-121"></a>            <span class="n">inference_image</span> <span class="o">=</span> <span class="s2">&quot;inference&quot;</span>
+</span><span id="__span-0-120"><a id="__codelineno-0-120" name="__codelineno-0-120"></a>            <span class="n">training_image</span> <span class="o">=</span> <span class="s2">&quot;base_training&quot;</span>
+</span><span id="__span-0-121"><a id="__codelineno-0-121" name="__codelineno-0-121"></a>            <span class="n">inference_image</span> <span class="o">=</span> <span class="s2">&quot;base_inference&quot;</span>
 </span><span id="__span-0-122"><a id="__codelineno-0-122" name="__codelineno-0-122"></a>            <span class="n">inference_arch</span> <span class="o">=</span> <span class="s2">&quot;x86_64&quot;</span>
 </span><span id="__span-0-123"><a id="__codelineno-0-123" name="__codelineno-0-123"></a>
 </span><span id="__span-0-124"><a id="__codelineno-0-124" name="__codelineno-0-124"></a>        <span class="c1"># Transform the FeatureSet into a Model</span>
@@ -6471,12 +6471,12 @@ kwargs (dict, optional): Additional keyword arguments to pass to the model
 </span><span id="__span-0-113"><a id="__codelineno-0-113" name="__codelineno-0-113"></a>
 </span><span id="__span-0-114"><a id="__codelineno-0-114" name="__codelineno-0-114"></a>    <span class="c1"># Set training/inference images based on model framework</span>
 </span><span id="__span-0-115"><a id="__codelineno-0-115" name="__codelineno-0-115"></a>    <span class="k">if</span> <span class="n">model_framework</span> <span class="ow">in</span> <span class="p">(</span><span class="n">ModelFramework</span><span class="o">.</span><span class="n">PYTORCH</span><span class="p">,</span> <span class="n">ModelFramework</span><span class="o">.</span><span class="n">CHEMPROP</span><span class="p">):</span>
-</span><span id="__span-0-116"><a id="__codelineno-0-116" name="__codelineno-0-116"></a>        <span class="n">training_image</span> <span class="o">=</span> <span class="s2">&quot;pytorch_training&quot;</span>
-</span><span id="__span-0-117"><a id="__codelineno-0-117" name="__codelineno-0-117"></a>        <span class="n">inference_image</span> <span class="o">=</span> <span class="s2">&quot;pytorch_inference&quot;</span>
+</span><span id="__span-0-116"><a id="__codelineno-0-116" name="__codelineno-0-116"></a>        <span class="n">training_image</span> <span class="o">=</span> <span class="s2">&quot;pytorch_chem_training&quot;</span>
+</span><span id="__span-0-117"><a id="__codelineno-0-117" name="__codelineno-0-117"></a>        <span class="n">inference_image</span> <span class="o">=</span> <span class="s2">&quot;pytorch_chem_inference&quot;</span>
 </span><span id="__span-0-118"><a id="__codelineno-0-118" name="__codelineno-0-118"></a>        <span class="n">inference_arch</span> <span class="o">=</span> <span class="s2">&quot;x86_64&quot;</span>
 </span><span id="__span-0-119"><a id="__codelineno-0-119" name="__codelineno-0-119"></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="__span-0-120"><a id="__codelineno-0-120" name="__codelineno-0-120"></a>        <span class="n">training_image</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span>
-</span><span id="__span-0-121"><a id="__codelineno-0-121" name="__codelineno-0-121"></a>        <span class="n">inference_image</span> <span class="o">=</span> <span class="s2">&quot;inference&quot;</span>
+</span><span id="__span-0-120"><a id="__codelineno-0-120" name="__codelineno-0-120"></a>        <span class="n">training_image</span> <span class="o">=</span> <span class="s2">&quot;base_training&quot;</span>
+</span><span id="__span-0-121"><a id="__codelineno-0-121" name="__codelineno-0-121"></a>        <span class="n">inference_image</span> <span class="o">=</span> <span class="s2">&quot;base_inference&quot;</span>
 </span><span id="__span-0-122"><a id="__codelineno-0-122" name="__codelineno-0-122"></a>        <span class="n">inference_arch</span> <span class="o">=</span> <span class="s2">&quot;x86_64&quot;</span>
 </span><span id="__span-0-123"><a id="__codelineno-0-123" name="__codelineno-0-123"></a>
 </span><span id="__span-0-124"><a id="__codelineno-0-124" name="__codelineno-0-124"></a>    <span class="c1"># Transform the FeatureSet into a Model</span>
