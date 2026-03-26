@@ -4,7 +4,7 @@ Custom Docker images for SageMaker training and inference endpoints.
 
 ### Image Types
 
-| Image | Directory | ECR Repository | Description &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; |
+| Image | Directory | ECR Repository | Description |
 |-------|-----------|----------------|-------------|
 | Base Training | `base/training/` | `aws-ml-images/py312-base-training` | scikit-learn, xgboost, lightgbm, rdkit, workbench-bridges (also used for meta models) |
 | Base Inference | `base/inference/` | `aws-ml-images/py312-base-inference` | Same as base training + FastAPI/uvicorn inference server |

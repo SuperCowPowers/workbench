@@ -97,7 +97,7 @@ endpoint_test = "workbench.scripts.endpoint_test:main"
 training_test = "workbench.scripts.training_test:main"
 
 [tool.pytest.ini_options]
-addopts = "-v --cov-report term-missing"
+addopts = "-v --cov=workbench --cov-report term-missing"
 python_files = "*.py"
 python_functions = "test"
 norecursedirs = [".tox", ".git", "*.egg-info", "__pycache__", "dist", "build"]
@@ -108,3 +108,9 @@ markers = [
 
 [tool.coverage.run]
 relative_files = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "if __name__ == .__main__.",
+    "pragma: no cover",
+]
