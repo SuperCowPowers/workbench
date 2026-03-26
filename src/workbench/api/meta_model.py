@@ -270,7 +270,7 @@ class MetaModel(Model):
         script_path = generate_model_script(template_params)
 
         # Create ModelTrainer (V3 replacement for Estimator)
-        training_image = ModelImages.get_image_uri(sm_session.boto_region_name, "meta_training")
+        training_image = ModelImages.get_image_uri(sm_session.boto_region_name, "base_training")
         log.info(f"Using Meta Training Image: {training_image}")
         trainer = ModelTrainer(
             training_image=training_image,
@@ -328,7 +328,7 @@ class MetaModel(Model):
         model_data_url = training_job.model_artifacts.s3_model_artifacts
 
         # Register the model with meta inference image
-        inference_image = ModelImages.get_image_uri(sm_session.boto_region_name, "meta_inference")
+        inference_image = ModelImages.get_image_uri(sm_session.boto_region_name, "base_inference")
         log.important(f"Registering model {name} with Inference Image {inference_image}...")
 
         container = ContainersItem(image=inference_image, model_data_url=model_data_url)

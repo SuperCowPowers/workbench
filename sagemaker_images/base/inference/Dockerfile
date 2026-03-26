@@ -1,7 +1,7 @@
 FROM python:3.12-slim AS builder
 
 # Copy requirements file
-COPY requirements.txt /tmp/
+COPY base/inference/requirements.txt /tmp/
 # Install dependencies
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
@@ -11,18 +11,18 @@ FROM python:3.12-slim
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Install vim and clean up in a single layer
+# Install vim and libgomp1 (required for LightGBM) and clean up
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends vim && \
+    apt-get install -y --no-install-recommends vim libgomp1 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Add the serve script
-COPY serve /usr/local/bin/
+# Add the shared serve script
+COPY shared/serve /usr/local/bin/
 RUN chmod +x /usr/local/bin/serve
 
-# Copy the main.py/entrypoint script
-COPY main.py /opt/program/
+# Copy the shared main.py/entrypoint script
+COPY shared/main.py /opt/program/
 WORKDIR /opt/program
 
 # Make port 8080 available for the web server
@@ -30,11 +30,6 @@ EXPOSE 8080
 
 # Define environment variable
 ENV PYTHONUNBUFFERED=TRUE
-
-# Temp Fixme: Figure out how to do this in general way
-ENV WORKBENCH_BUCKET=sandbox-sageworks-artifacts
-ENV AWS_DEFAULT_REGION=us-west-2
-ENV AWS_REGION=us-west-2
 
 # SageMaker will look for this
 CMD ["serve"]

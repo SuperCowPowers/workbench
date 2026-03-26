@@ -41,9 +41,12 @@ def install_requirements(requirements_path):
     if os.path.exists(requirements_path):
         logger.info(f"Installing dependencies from {requirements_path}...")
         try:
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", "--break-system-packages", "-r", requirements_path]
-            )
+            cmd = [sys.executable, "-m", "pip", "install"]
+            # GPU containers on Ubuntu use system Python (no venv) and need this flag
+            if os.environ.get("BREAK_SYSTEM_PACKAGES"):
+                cmd.append("--break-system-packages")
+            cmd.extend(["-r", requirements_path])
+            subprocess.check_call(cmd)
             logger.info("Requirements installed successfully.")
         except subprocess.CalledProcessError as e:
             logger.error(f"Error installing requirements: {e}")

@@ -132,7 +132,7 @@ def main():
     """Run the test using a MockEstimator"""
     parser = argparse.ArgumentParser(description="Test SageMaker training container")
     parser.add_argument(
-        "--image", type=str, default="aws-ml-images/py312-sklearn-xgb-training:0.1", help="Training image name:tag"
+        "--image", type=str, default="aws-ml-images/py312-base-training:0.1", help="Training image name:tag"
     )
     parser.add_argument("--entry-point", type=str, default="example_model_script.py", help="Training script name")
     parser.add_argument("--source-dir", type=str, default="tests/", help="Directory containing training scripts")

@@ -1,19 +1,20 @@
 # Core ML packages
 scikit-learn==1.8.0
-xgboost==3.1.3
+xgboost==3.2.0
 lightgbm==4.6.0
-mapie==1.3.0
-ngboost==0.5.8
 
 # Data handling (pandas <3.0 due to breaking changes)
 pandas==2.3.3
-awswrangler==3.15.0
+awswrangler==3.15.1
 joblib==1.5.3
 
 # Chemistry packages
-rdkit==2025.9.4
+rdkit==2025.9.6
 mordredcommunity==2.0.7
 
+# Meta model support
+workbench-bridges==0.1.18
+
 # Inference server
-fastapi==0.128.0
-uvicorn==0.40.0
+fastapi==0.135.2
+uvicorn==0.42.0

@@ -1,0 +1,20 @@
+# PyTorch with CUDA 13.0 index (works on both CPU and GPU instances)
+--index-url https://download.pytorch.org/whl/cu130
+--extra-index-url https://pypi.org/simple/
+torch==2.11.0
+
+# Data handling (pandas <3.0 due to breaking changes)
+pandas==2.3.3
+awswrangler==3.15.1
+joblib==1.5.3
+
+# ML packages
+lightgbm==4.6.0
+
+# Chemistry packages
+chemprop==2.2.2
+rdkit==2025.9.6
+
+# Inference server
+fastapi==0.135.2
+uvicorn==0.42.0

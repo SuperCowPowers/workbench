@@ -61,12 +61,10 @@ class ModelImages:
 
     # Image name mappings
     IMAGE_NAMES = {
-        "training": "py312-general-ml-training",
-        "inference": "py312-general-ml-inference",
-        "pytorch_training": "py312-pytorch-training",
-        "pytorch_inference": "py312-pytorch-inference",
-        "meta_training": "py312-meta-training",
-        "meta_inference": "py312-meta-inference",
+        "base_training": "py312-base-training",
+        "base_inference": "py312-base-inference",
+        "pytorch_chem_training": "py312-pytorch-chem-training",
+        "pytorch_chem_inference": "py312-pytorch-chem-inference",
     }
 
     @classmethod

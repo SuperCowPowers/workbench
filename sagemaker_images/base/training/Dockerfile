@@ -8,13 +8,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file
-COPY requirements.txt /tmp/
+COPY base/training/requirements.txt /tmp/
 
 # Install dependencies
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Copy the SageMaker entrypoint script
-COPY sagemaker_entrypoint.py /opt/program/
+# Copy the shared SageMaker entrypoint script
+COPY shared/sagemaker_entrypoint.py /opt/program/
 WORKDIR /opt/program
 
 # Make the entrypoint executable

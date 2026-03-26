@@ -1,7 +1,7 @@
 FROM python:3.12-slim AS builder
 
 # Copy requirements file
-COPY requirements.txt /tmp/
+COPY pytorch_chem/inference/requirements.txt /tmp/
 # Install dependencies
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
@@ -17,12 +17,12 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Add the serve script
-COPY serve /usr/local/bin/
+# Add the shared serve script
+COPY shared/serve /usr/local/bin/
 RUN chmod +x /usr/local/bin/serve
 
-# Copy the main.py/entrypoint script
-COPY main.py /opt/program/
+# Copy the shared main.py/entrypoint script
+COPY shared/main.py /opt/program/
 WORKDIR /opt/program
 
 # Make port 8080 available for the web server

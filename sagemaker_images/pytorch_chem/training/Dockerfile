@@ -1,6 +1,6 @@
 # Lightweight CUDA base image with Python 3.12 support
 # Uses runtime image (not devel) to minimize size while supporting GPU inference/training
-FROM nvidia/cuda:13.0.0-runtime-ubuntu24.04
+FROM nvidia/cuda:13.0.2-cudnn-runtime-ubuntu24.04
 
 # Install pip and build tools (Python 3.12 is included in Ubuntu 24.04)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -8,14 +8,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# GPU containers on Ubuntu use system Python (no venv) and need --break-system-packages
+ENV BREAK_SYSTEM_PACKAGES=1
+
 # Copy requirements file
-COPY requirements.txt /tmp/
+COPY pytorch_chem/training/requirements.txt /tmp/
 
 # Install dependencies
 RUN pip install --no-cache-dir --break-system-packages -r /tmp/requirements.txt
 
-# Copy the SageMaker entrypoint script
-COPY sagemaker_entrypoint.py /opt/program/
+# Copy the shared SageMaker entrypoint script
+COPY shared/sagemaker_entrypoint.py /opt/program/
 WORKDIR /opt/program
 
 # Make the entrypoint executable

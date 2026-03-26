@@ -42,8 +42,8 @@ class FeaturesToModel(Transform):
         model_import_str=None,
         custom_script=None,
         custom_args=None,
-        training_image="training",
-        inference_image="inference",
+        training_image="base_training",
+        inference_image="base_inference",
         inference_arch="x86_64",
     ):
         """FeaturesToModel Initialization

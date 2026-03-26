@@ -1,23 +1,20 @@
-#!/opt/homebrew/bin/bash
+#!/usr/bin/env bash
 set -e
 
-# Get the directory of this script
+# Get the directory of this script (sagemaker_images/)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # AWS Account ID
 AWS_ACCOUNT_ID="507740646243"
 
-# Map of image types to their repository names and directories
+# Map of image types to their repository names
+# Image types use nested paths (e.g., base/training) matching directory structure
 declare -A REPO_MAP=(
-  ["training"]="aws-ml-images/py312-general-ml-training"
-  ["inference"]="aws-ml-images/py312-general-ml-inference"
-  ["pytorch_training"]="aws-ml-images/py312-pytorch-training"
-  ["pytorch_inference"]="aws-ml-images/py312-pytorch-inference"
+  ["base/training"]="aws-ml-images/py312-base-training"
+  ["base/inference"]="aws-ml-images/py312-base-inference"
+  ["pytorch_chem/training"]="aws-ml-images/py312-pytorch-chem-training"
+  ["pytorch_chem/inference"]="aws-ml-images/py312-pytorch-chem-inference"
   ["ml_pipelines"]="aws-ml-images/py312-ml-pipelines"
-  ["workbench_inference"]="aws-ml-images/py312-workbench-inference"
-  ["meta_training"]="aws-ml-images/py312-meta-training"
-  ["meta_inference"]="aws-ml-images/py312-meta-inference"
 )
 
 # Colors for output
@@ -36,7 +33,7 @@ usage() {
 }
 
 # Validate image type
-if [ -z "$1" ] || [[ ! "${!REPO_MAP[*]}" =~ $1 ]]; then
+if [ -z "$1" ] || [[ ! -v "REPO_MAP[$1]" ]]; then
   echo "Error: You must specify a valid image type"
   usage
 fi
@@ -70,7 +67,7 @@ REGION_LIST=("us-east-1" "us-west-2")
 
 # Get repository and directory for the selected image type
 REPO_NAME=${REPO_MAP[$IMAGE_TYPE]}
-DIR=$PROJECT_ROOT/$IMAGE_TYPE
+DIR=$SCRIPT_DIR/$IMAGE_TYPE
 
 # Function to build a Docker image
 build_image() {
@@ -88,11 +85,12 @@ build_image() {
 
   # Copy pyproject.toml into build context for dependency layer caching (if needed by Dockerfile)
   if grep -q 'pyproject.toml' "$DIR/Dockerfile"; then
-    cp "$PROJECT_ROOT/../pyproject.toml" "$DIR/pyproject.toml"
-    trap 'rm -f "$DIR/pyproject.toml"' EXIT
+    cp "$SCRIPT_DIR/../pyproject.toml" "$SCRIPT_DIR/pyproject.toml"
+    trap 'rm -f "$SCRIPT_DIR/pyproject.toml"' EXIT
   fi
 
-  docker build --platform $platform -t $name $DIR
+  # Build with sagemaker_images/ as context, using -f for the nested Dockerfile
+  docker build --platform $platform -t $name -f $DIR/Dockerfile $SCRIPT_DIR
   echo -e "${GREEN}✅  Successfully built: $name${NC}"
 }
 
@@ -178,7 +176,7 @@ else
 
   echo "======================================"
   echo "📋  Image information:"
-  echo "${IMAGE_TYPE^} image: $REPO_NAME:$IMAGE_VERSION"
+  echo "$IMAGE_TYPE image: $REPO_NAME:$IMAGE_VERSION"
   echo "======================================"
-  echo "To test these containers, run: $PROJECT_ROOT/tests/run_tests.sh $IMAGE_VERSION"
+  echo "To test these containers, run: $SCRIPT_DIR/tests/run_tests.sh $IMAGE_VERSION"
 fi
