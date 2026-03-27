@@ -367,11 +367,11 @@ class ConcordanceMap(PluginInterface):
 
 if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
-    from workbench.utils.test_data_generator import TestDataGenerator
+    from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
     from workbench.algorithms.dataframe.dataset_concordance import DatasetConcordance
 
     # Unit test: synthetic test data
-    ref_df, query_df = TestDataGenerator().aqsol_alignment_data(overlap="low", alignment="high")
+    ref_df, query_df = SyntheticDataGenerator().aqsol_alignment_data(overlap="low", alignment="high")
     dc = DatasetConcordance(ref_df, query_df, target_column="solubility", id_column="id")
     id_col = "id"
     target = "solubility"

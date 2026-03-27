@@ -179,7 +179,7 @@ if __name__ == "__main__":
     import sys
     from pathlib import Path
     from pprint import pprint
-    from workbench.utils.test_data_generator import TestDataGenerator
+    from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 
     # Test to Run
     long_tests = False
@@ -198,7 +198,7 @@ if __name__ == "__main__":
         pprint(test_data.details())
 
     # Create a new Data Source from a Pandas DataFrame
-    gen_data = TestDataGenerator()
+    gen_data = SyntheticDataGenerator()
     df = gen_data.person_data()
     test_data = DataSource(df, name="test_data")
     pprint(test_data.summary())

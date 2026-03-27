@@ -382,8 +382,9 @@ class AthenaSource(DataSourceAbstract):
         sample_rows = self.sample(rows=rows)
         sample_rows["outlier_group"] = "sample"
 
-        # Combine the sample rows with the outlier rows
-        all_rows = pd.concat([outlier_rows, sample_rows]).reset_index(drop=True)
+        # Combine the sample rows with the outlier rows (filter empty to avoid FutureWarning)
+        frames = [df for df in [outlier_rows, sample_rows] if not df.empty]
+        all_rows = pd.concat(frames).reset_index(drop=True) if frames else sample_rows.iloc[:0].copy()
 
         # Drop duplicates
         all_except_outlier_group = [col for col in all_rows.columns if col != "outlier_group"]

@@ -180,10 +180,10 @@ class PandasToData(Transform):
 
 if __name__ == "__main__":
     """Exercise the PandasToData Class"""
-    from workbench.utils.test_data_generator import TestDataGenerator
+    from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 
     # Generate some test data
-    test_data = TestDataGenerator()
+    test_data = SyntheticDataGenerator()
     df = test_data.person_data()
 
     # Create my Pandas to DataSource Transform

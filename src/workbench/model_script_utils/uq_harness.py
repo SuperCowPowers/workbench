@@ -262,7 +262,7 @@ def compute_confidence(
 
     # Confidence = 1 - percentile_rank (low std = high confidence)
     # Clip to [0, 1] for predictions outside the calibration range
-    df["confidence"] = np.clip(1.0 - percentile_ranks, 0.0, 1.0)
+    df.loc[:, "confidence"] = np.clip(1.0 - percentile_ranks, 0.0, 1.0)
 
     return df
 

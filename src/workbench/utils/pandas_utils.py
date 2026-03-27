@@ -1027,7 +1027,7 @@ def stratified_split(df, column_name, test_size=0.2, random_state=42):
 
 if __name__ == "__main__":
     """Exercise the Pandas Utility Methods"""
-    from workbench.utils.test_data_generator import TestDataGenerator
+    from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 
     # Setup Pandas output options
     pd.set_option("display.max_colwidth", 35)
@@ -1035,7 +1035,7 @@ if __name__ == "__main__":
     pd.set_option("display.width", 1000)
 
     # Generate some test data
-    test_data = TestDataGenerator()
+    test_data = SyntheticDataGenerator()
     test_df = test_data.person_data()
 
     # Get the info about this dataframe

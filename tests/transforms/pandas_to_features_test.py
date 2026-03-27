@@ -5,7 +5,7 @@ import pytest
 # Workbench imports
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 from workbench.api import FeatureSet
-from workbench.utils.test_data_generator import TestDataGenerator
+from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 
 
 @pytest.mark.long
@@ -13,7 +13,7 @@ def test():
     """Tests for the Pandas DataFrame to Data Transforms"""
 
     # Generate some test data
-    test_data = TestDataGenerator()
+    test_data = SyntheticDataGenerator()
     df = test_data.person_data()
 
     # Create my Pandas to DataSource Transform

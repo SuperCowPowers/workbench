@@ -1,4 +1,4 @@
-"""A Test Data Generator Class"""
+"""A Synthetic Data Generator Class"""
 
 import os
 import logging
@@ -9,15 +9,15 @@ import tempfile
 from sklearn.datasets import make_classification, make_regression
 
 
-class TestDataGenerator:
+class SyntheticDataGenerator:
     """A Test Data Generator Class
     Usage:
-         test_data = TestDataGenerator()
+         test_data = SyntheticDataGenerator()
          df = test_data.generate(columns=10, rows=100)
     """
 
     def __init__(self):
-        """TestDataGenerator Initialization"""
+        """SyntheticDataGenerator Initialization"""
         self.log = logging.getLogger("workbench")
 
     def ml_data(self, n_samples: int = 1000, n_features: int = 4, target_type: str = "regression") -> pd.DataFrame:
@@ -385,11 +385,11 @@ class TestDataGenerator:
 
 
 if __name__ == "__main__":
-    """Exercise the TestDataGenerator class"""
+    """Exercise the SyntheticDataGenerator class"""
     import matplotlib.pyplot as plt
 
-    # Create a TestDataGenerator
-    test_data = TestDataGenerator()
+    # Create a SyntheticDataGenerator
+    test_data = SyntheticDataGenerator()
     df = test_data.ml_data(10, 100, "regression")
     print(df.head())
 

@@ -222,13 +222,13 @@ class DatasetConcordance:
 # Testing
 # =============================================================================
 if __name__ == "__main__":
-    from workbench.utils.test_data_generator import TestDataGenerator
+    from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 
     # Pandas Options
     pd.set_option("display.max_columns", None)
     pd.set_option("display.width", 1200)
 
-    test_data = TestDataGenerator()
+    test_data = SyntheticDataGenerator()
 
     # Get reference and query DataFrames
     ref_df, query_df = test_data.aqsol_alignment_data(overlap="medium", alignment="high")

@@ -1,7 +1,7 @@
 import pytest
 import workbench  # noqa: F401
 import logging
-from workbench.utils.test_data_generator import TestDataGenerator
+from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 from workbench.api import DataSource, FeatureSet, Model, Endpoint, ModelType
 
 # Set the logging level
@@ -9,7 +9,7 @@ logging.getLogger("workbench").setLevel(logging.DEBUG)
 
 
 def create_data_source():
-    test_data = TestDataGenerator()
+    test_data = SyntheticDataGenerator()
     df = test_data.person_data()
     if not DataSource("delete_test").exists():
         DataSource(df, name="delete_test")
