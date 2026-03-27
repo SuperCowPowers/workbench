@@ -6,6 +6,7 @@ FROM nvidia/cuda:13.0.2-cudnn-runtime-ubuntu24.04
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     build-essential \
+    && ln -sf /usr/bin/python3 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
 # GPU containers on Ubuntu use system Python (no venv) and need --break-system-packages
