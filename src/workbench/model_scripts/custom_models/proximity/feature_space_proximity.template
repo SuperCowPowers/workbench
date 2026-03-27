@@ -57,8 +57,6 @@ def match_features_case_insensitive(df: pd.DataFrame, model_features: list) -> p
 # and save the model artifacts to the model directory.
 #
 if __name__ == "__main__":
-    from model_script_utils import include_code_and_meta_for_inference
-
     # Template Parameters
     id_column = TEMPLATE_PARAMS["id_column"]
     features = TEMPLATE_PARAMS["features"]
@@ -86,9 +84,6 @@ if __name__ == "__main__":
 
     # Now serialize the model
     model.serialize(args.model_dir)
-
-    # Bundle inference code and metadata into model artifacts
-    include_code_and_meta_for_inference(args.model_dir, "generated_model_script.py")
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")
 
