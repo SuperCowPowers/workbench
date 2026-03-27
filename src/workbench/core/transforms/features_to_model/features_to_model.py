@@ -5,7 +5,7 @@ from typing import Union
 from sagemaker.core.resources import ModelPackageGroup
 from sagemaker.core.shapes.shapes import MetricDefinition
 from sagemaker.train.model_trainer import ModelTrainer
-from sagemaker.core.training.configs import SourceCode, Compute
+from sagemaker.core.training.configs import SourceCode, Compute, StoppingCondition
 import awswrangler as wr
 
 import time
@@ -281,13 +281,12 @@ class FeaturesToModel(Transform):
                 command=f"python training_harness.py {entry_point}",
             ),
             compute=Compute(instance_type=train_instance_type, instance_count=1),
+            stopping_condition=StoppingCondition(max_runtime_in_seconds=6 * 3600),
+            base_job_name=self.output_name,
             role=self.workbench_role_arn,
             sagemaker_session=self.sm_session,
         )
         self.model_trainer.with_metric_definitions(v3_metric_definitions)
-
-        # Let ModelTrainer generate the full job name (it appends a timestamp to base_job_name)
-        self.model_trainer.base_job_name = self.output_name
 
         # Train the model
         self.log.important(f"Training the Model {self.output_name} with Training Image {image}...")
