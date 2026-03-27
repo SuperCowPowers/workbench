@@ -257,7 +257,7 @@ if __name__ == "__main__":
         compute_classification_metrics,
         compute_regression_metrics,
         get_split_indices,
-        include_code_and_meta_for_inference,
+
         print_classification_metrics,
         print_confusion_matrix,
         print_regression_metrics,
@@ -706,8 +706,5 @@ if __name__ == "__main__":
 
     if uq_metadata is not None:
         save_uq_metadata(uq_metadata, args.model_dir)
-
-    # Bundle inference code and metadata into model artifacts
-    include_code_and_meta_for_inference(args.model_dir, "generated_model_script.py")
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")

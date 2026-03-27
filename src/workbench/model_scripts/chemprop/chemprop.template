@@ -359,7 +359,7 @@ if __name__ == "__main__":
         compute_classification_metrics,
         compute_regression_metrics,
         get_split_indices,
-        include_code_and_meta_for_inference,
+
         print_classification_metrics,
         print_confusion_matrix,
         print_regression_metrics,
@@ -989,8 +989,5 @@ if __name__ == "__main__":
         print(f"Saved feature metadata for {len(extra_feature_cols)} extra features")
 
     print(f"[DIAG] {time.time() - _diag_t0:.1f}s total post-training", flush=True)  # [DIAG]
-
-    # Bundle inference code and metadata into model artifacts
-    include_code_and_meta_for_inference(args.model_dir, "generated_model_script.py")
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")

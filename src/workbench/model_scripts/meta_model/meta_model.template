@@ -230,8 +230,6 @@ def predict_fn(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 # Training (just saves configuration - no actual training)
 # =============================================================================
 if __name__ == "__main__":
-    from model_script_utils import include_code_and_meta_for_inference
-
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
     parser.add_argument(
@@ -272,8 +270,5 @@ if __name__ == "__main__":
 
     with open(os.path.join(args.model_dir, "meta_config.json"), "w") as f:
         json.dump(config, f, indent=2)
-
-    # Bundle inference code and metadata into model artifacts
-    include_code_and_meta_for_inference(args.model_dir, "generated_model_script.py")
 
     print(f"\nMeta model configuration saved to {args.model_dir}")
