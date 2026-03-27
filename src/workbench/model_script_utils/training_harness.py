@@ -80,7 +80,7 @@ def main():
     code_dir = os.environ.get("SM_SOURCE_DIR", os.path.dirname(os.path.abspath(__file__)))
     training_script_path = os.path.join(code_dir, training_script)
 
-    print(f"[Harness] Training harness started")
+    print("[Harness] Training harness started")
     print(f"[Harness] Code directory: {code_dir}")
     print(f"[Harness] Training script: {training_script}")
     print(f"[Harness] Contents: {os.listdir(code_dir)}")
