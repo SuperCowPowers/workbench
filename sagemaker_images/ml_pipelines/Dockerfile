@@ -8,7 +8,7 @@ RUN apt-get update && \
         gcc
 
 # Layer 1: All heavy dependencies (changes only when requirements.txt changes)
-COPY requirements.txt /tmp/
+COPY ml_pipelines/requirements.txt /tmp/
 COPY pyproject.toml /tmp/pyproject.toml
 RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
     python -c "\
@@ -42,7 +42,7 @@ ARG WORKBENCH_VERSION=0.8.294
 RUN pip install --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}"
 
 # Layer 3: App code (tiny, changes rarely)
-COPY ml_pipeline_runner.py /app/ml_pipeline_runner.py
+COPY ml_pipelines/ml_pipeline_runner.py /app/ml_pipeline_runner.py
 WORKDIR /app
 
 ENTRYPOINT ["python", "/app/ml_pipeline_runner.py"]
