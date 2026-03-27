@@ -272,9 +272,14 @@ class MetaModel(Model):
         # Create ModelTrainer (V3 replacement for Estimator)
         training_image = ModelImages.get_image_uri(sm_session.boto_region_name, "base_training")
         log.info(f"Using Meta Training Image: {training_image}")
+        entry_point = Path(script_path).name
+        source_dir = str(Path(script_path).parent)
         trainer = ModelTrainer(
             training_image=training_image,
-            source_code=SourceCode(source_dir=str(Path(script_path).parent), entry_script=Path(script_path).name),
+            source_code=SourceCode(
+                source_dir=source_dir,
+                command=f"python training_harness.py {entry_point}",
+            ),
             compute=Compute(instance_type="ml.m5.large", instance_count=1),
             role=aws_clamp.aws_session.get_workbench_execution_role_arn(),
             sagemaker_session=sm_session,

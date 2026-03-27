@@ -272,9 +272,14 @@ class FeaturesToModel(Transform):
         v3_metric_definitions = [MetricDefinition(name=m["Name"], regex=m["Regex"]) for m in metric_definitions]
 
         # Create ModelTrainer (V3 replacement for Estimator)
+        # Use command= to run our entrypoint wrapper, which executes the model script
+        # and then bundles inference code/metadata into the model artifacts
         self.model_trainer = ModelTrainer(
             training_image=image,
-            source_code=SourceCode(source_dir=source_dir, entry_script=entry_point),
+            source_code=SourceCode(
+                source_dir=source_dir,
+                command=f"python training_harness.py {entry_point}",
+            ),
             compute=Compute(instance_type=train_instance_type, instance_count=1),
             role=self.workbench_role_arn,
             sagemaker_session=self.sm_session,

@@ -157,6 +157,14 @@ def generate_model_script(template_params: dict) -> str:
             shutil.copy(source_file, output_dir)
             log.info(f"Copied supporting file: {file}")
 
+    # Copy the training_harness.py wrapper (handles post-training inference bundling)
+    entrypoint_path = package_dir.parent / "model_script_utils" / "training_harness.py"
+    if entrypoint_path.exists():
+        shutil.copy(entrypoint_path, output_dir)
+        log.info("Copied training_harness.py")
+    else:
+        log.warning(f"training_harness.py not found at {entrypoint_path}")
+
     # Fill in the template and write the generated script to the temp directory
     output_path = fill_template(template_path, template_params, "generated_model_script.py", output_dir)
 
