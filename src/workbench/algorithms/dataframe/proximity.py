@@ -162,11 +162,11 @@ class Proximity(ABC):
             cmpd_id = row[self.id_column]
             cmpd_target = row[self.target]
 
-            # Get K nearest neighbors (excluding self)
-            nbrs = self.neighbors(cmpd_id, n_neighbors=k_neighbors, include_self=False)
+            # Get K nearest neighbors (excluding self, +1 to compensate for skipping nearest)
+            nbrs = self.neighbors(cmpd_id, n_neighbors=k_neighbors + 1, include_self=False)
 
             # Calculate median target of k neighbors, excluding the nearest neighbor (index 0)
-            neighbor_median = nbrs.iloc[1:k_neighbors][self.target].median()
+            neighbor_median = nbrs.iloc[1:][self.target].median()
             median_diff = abs(cmpd_target - neighbor_median)
 
             # Only keep if compound differs from neighborhood median

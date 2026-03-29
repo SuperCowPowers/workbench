@@ -280,6 +280,11 @@ class NoiseModel:
         overfit_rank = self.df["overfit_residual"].rank(pct=True)
         htg_rank = self.df["htg_score"].rank(pct=True)
 
+        # Note: underfit_residual is intentionally excluded from the combined score.
+        # It conflates noise with legitimate SAR complexity — samples in nonlinear
+        # regions score high even with clean data. It's still available as a
+        # standalone diagnostic via get_scores().
+
         # Weighted average: overfit gets 2x weight based on paper's findings
         # that training error is the best noise detector
         combined = (2.0 * overfit_rank + 1.0 * htg_rank) / 3.0
