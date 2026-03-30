@@ -2,7 +2,7 @@
 
 import time
 from datetime import datetime
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, ReadTimeoutError
 import pandas as pd
 import numpy as np
 from io import StringIO
@@ -831,13 +831,16 @@ class EndpointCore(Artifact):
         # Return the Dataframe
         return converted_df
 
-    def _endpoint_error_handling(self, sm_endpoint, feature_df, drop_error_rows: bool = False) -> pd.DataFrame:
+    def _endpoint_error_handling(
+        self, sm_endpoint, feature_df, drop_error_rows: bool = False, retries: int = 0
+    ) -> pd.DataFrame:
         """Internal: Handles errors, retries, and binary search for problematic rows.
 
         Args:
             sm_endpoint (SagemakerEndpoint): The SageMaker Endpoint object
             feature_df (pd.DataFrame): DataFrame to run predictions on
             drop_error_rows (bool): If True, drop rows that had endpoint errors/issues (default=False)
+            retries (int): Current retry count for transient errors (default=0)
         Returns:
             pd.DataFrame: DataFrame with predictions (NaNs for problematic rows or dropped rows if specified)
         """
@@ -896,6 +899,16 @@ class EndpointCore(Artifact):
                 self.log.critical(f"Unexpected ClientError: {error_code}")
                 self.log.critical(err.response)
                 raise
+
+        except ReadTimeoutError:
+            max_retries = 3
+            if retries < max_retries:
+                sleep_time = min(2 ** retries * 5, 30)
+                self.log.warning(f"ReadTimeoutError (retry {retries + 1}/{max_retries}). Sleeping {sleep_time}s...")
+                time.sleep(sleep_time)
+                return self._endpoint_error_handling(sm_endpoint, feature_df, drop_error_rows, retries + 1)
+            self.log.critical("ReadTimeoutError: max retries exceeded")
+            raise
 
         except Exception as err:
             self.log.critical(f"Unexpected general error: {err}")
