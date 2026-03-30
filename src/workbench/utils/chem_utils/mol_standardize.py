@@ -90,6 +90,61 @@ from rdkit import RDLogger
 
 log = logging.getLogger("workbench")
 RDLogger.DisableLog("rdApp.warning")
+RDLogger.DisableLog("rdApp.error")
+
+
+# ---------------------------------------------------------------------------
+# Known pharmaceutical counterions (canonical SMILES after RDKit Cleanup)
+# ---------------------------------------------------------------------------
+# These fully dissociate in aqueous/organic partition systems and are safe to
+# strip regardless of their size relative to the parent molecule.
+KNOWN_COUNTERIONS: set[str] = {
+    # --- Inorganic / monatomic ---
+    "[Na+]", "[K+]", "[Li+]", "[Ca+2]", "[Mg+2]", "[Zn+2]",
+    "[Fe+2]", "[Fe+3]", "[Al+3]", "[Cu+2]", "[Co+3]", "[NH4+]",
+    "[Cl-]", "[Br-]", "[I-]", "[F-]", "[OH-]",
+    "Cl", "Br", "I", "F", "O",  # neutral HX acids / water after cleanup
+    "[H+]",
+    # --- Sulfate / sulfonate family ---
+    "O=S(=O)(O)O", "O=S(=O)([O-])O", "O=S(=O)([O-])[O-]",       # sulfuric acid / sulfate
+    "CS(=O)(=O)O", "CS(=O)(=O)[O-]",                               # mesylate
+    "Cc1ccc(S(=O)(=O)O)cc1", "Cc1ccc(S(=O)(=O)[O-])cc1",         # tosylate
+    "COS(=O)(=O)O", "COS(=O)(=O)[O-]",                             # methyl sulfate
+    "O=S(=O)(O)CCO", "O=S(=O)([O-])CCO",                           # isethionate
+    "CC1(C)C2CCC1(CS(=O)(=O)O)C(=O)C2",                            # camphorsulfonate (neutral)
+    "CC1(C)C2CCC1(CS(=O)(=O)[O-])C(=O)C2",                        # camphorsulfonate (charged)
+    # --- Phosphate ---
+    "O=P(O)(O)O", "O=P([O-])(O)O", "O=P([O-])([O-])O", "O=P([O-])([O-])[O-]",
+    "CP(=O)(O)O", "CP(=O)([O-])O", "CP(=O)([O-])[O-]",           # methylphosphonate
+    # --- Carboxylate counterions ---
+    "CC(=O)O", "CC(=O)[O-]",                                        # acetate
+    "O=C(O)/C=C\\C(=O)O", "O=C([O-])/C=C\\C(=O)O",                # maleate
+    "O=C(O)/C=C/C(=O)O", "O=C([O-])/C=C/C(=O)O",                  # fumarate
+    "O=C(O)CC(O)(CC(=O)O)C(=O)O",                                   # citric acid
+    "O=C([O-])CC(O)(CC(=O)[O-])C(=O)[O-]",                         # citrate
+    "O=C(O)C(O)C(O)C(=O)O",                                         # tartaric acid
+    "O=C(O)CC(=O)O",                                                 # malonic acid
+    "O=C(O)CCCCC(=O)O",                                             # adipic acid
+    "O=C(O)c1cccnc1",                                                # nicotinic acid
+    "O=C(O)c1ccc(C(=O)O)cc1",                                       # terephthalic acid
+    "O=C(O)O", "O=C([O-])O", "O=C([O-])[O-]",                     # carbonate
+    # --- Nitrate ---
+    "O=[N+]([O-])O", "O=[N+]([O-])[O-]",
+    # --- Fluoroborates / fluorophosphates ---
+    "F[B-](F)(F)F",                                                  # tetrafluoroborate
+    "F[P-](F)(F)(F)(F)F",                                           # hexafluorophosphate
+    # --- Triflate ---
+    "O=S(=O)([O-])C(F)(F)F", "O=S(=O)(O)C(F)(F)F",
+    # --- Common amine counterions ---
+    "OCCN(CCO)CCO",                                                  # triethanolamine
+    "NC(CO)(CO)CO",                                                  # tris (tromethamine)
+    "OCCNCCO",                                                       # diethanolamine
+    "CCN1CCOCC1",                                                    # N-ethylmorpholine
+    "C1CCC(NC2CCCCC2)CC1",                                          # dicyclohexylamine
+    "CCN(CC)CC",                                                      # triethylamine
+    # --- Thiocyanate ---
+    "N#CS", "N#C[S-]",
+}
 
 
 # Helper context manager for timing
@@ -106,16 +161,26 @@ class MolStandardizer:
     Uses ChEMBL standardization pipeline with RDKit
     """
 
-    def __init__(self, canonicalize_tautomer: bool = True, remove_salts: bool = True):
+    def __init__(
+        self,
+        canonicalize_tautomer: bool = True,
+        remove_salts: bool = True,
+        drop_mixtures: bool = False,
+    ):
         """
         Initialize standardizer with ChEMBL defaults
 
         Args:
             canonicalize_tautomer: Whether to canonicalize tautomers (default True)
             remove_salts: Whether to remove salts/counterions (default True)
+            drop_mixtures: Whether to reject multi-component entries where a
+                removed fragment is an unknown large organic (likely a mixture
+                rather than a dissociable salt). When True, standardize()
+                returns (None, None) for such entries. (default False)
         """
         self.canonicalize_tautomer = canonicalize_tautomer
         self.remove_salts = remove_salts
+        self.drop_mixtures = drop_mixtures
         self.params = rdMolStandardize.CleanupParameters()
         self.tautomer_enumerator = rdMolStandardize.TautomerEnumerator(self.params)
 
@@ -158,7 +223,14 @@ class MolStandardizer:
                 parent_mol = rdMolStandardize.FragmentParent(cleaned_mol, self.params)
                 if parent_mol:
                     # Extract salt BEFORE any modifications to parent
-                    salt_smiles = self._extract_salt(cleaned_mol, parent_mol)
+                    salt_smiles, is_mixture = self._extract_salt(cleaned_mol, parent_mol)
+                    if is_mixture:
+                        if self.drop_mixtures:
+                            log.warning("  -> Dropping entry (drop_mixtures=True)")
+                            return None, None
+                        else:
+                            log.warning(f"  -> Keeping largest fragment as parent (drop_mixtures=False)")
+
                     mol = parent_mol
                 else:
                     return None, None
@@ -180,40 +252,57 @@ class MolStandardizer:
             log.warning(f"Standardization failed: {e}")
             return None, None
 
-    def _extract_salt(self, orig_mol: Mol, parent_mol: Mol) -> Optional[str]:
+    # FUTURE WORK: Add a public classify_fragments(mol) method that returns
+    # structured info about each fragment (smiles, heavy_atoms, is_charged,
+    # is_known_counterion, ratio_to_parent, classification).  This would let
+    # callers implement assay-specific drop/keep policies without duplicating
+    # the fragment analysis logic.
+    def _extract_salt(self, orig_mol: Mol, parent_mol: Mol) -> Tuple[Optional[str], bool]:
         """
         Extract salt/counterion by comparing original and parent molecules.
 
-        Detects and handles mixtures vs true salt forms:
-        - True salts: small (<= 6 heavy atoms) or charged fragments
-        - Mixtures: multiple large neutral organic fragments
+        Classification uses the KNOWN_COUNTERIONS list first, then falls back
+        to heuristics based on size, charge, and ratio to parent.
+
+        Heuristics for unknown fragments (applied in order):
+            1. Known counterion (in KNOWN_COUNTERIONS set) → salt
+            2. Charged fragment ≤ 20 heavy atoms → salt
+            3. Any fragment < 50% the size of the parent → salt
+            4. Neutral fragment ≤ 15 heavy atoms → salt
+            5. Everything else → potential mixture component
+
+        When drop_mixtures=True and a mixture is detected, the standardize()
+        method returns (None, None) to signal the entry should be dropped.
 
         Args:
             orig_mol: Original molecule (after Cleanup, before FragmentParent)
             parent_mol: Parent molecule (after FragmentParent, before tautomerization)
 
         Returns:
-            SMILES string of salt components or None if no salts/mixture detected
+            Tuple of:
+              - SMILES string of salt components, or None
+              - bool: True if a mixture was detected (entry should be dropped)
         """
         try:
             # Quick atom count check
             if orig_mol.GetNumAtoms() == parent_mol.GetNumAtoms():
-                return None
+                return None, False
 
             # Quick heavy atom difference check
             heavy_diff = orig_mol.GetNumHeavyAtoms() - parent_mol.GetNumHeavyAtoms()
             if heavy_diff <= 0:
-                return None
+                return None, False
 
             # Get all fragments from original molecule
             orig_frags = Chem.GetMolFrags(orig_mol, asMols=True)
 
             # If only one fragment, no salt
             if len(orig_frags) <= 1:
-                return None
+                return None, False
 
             # Get canonical SMILES of parent for comparison
             parent_smiles = Chem.MolToSmiles(parent_mol, canonical=True)
+            parent_heavy = parent_mol.GetNumHeavyAtoms()
 
             # Separate fragments into salts vs potential mixture components
             salt_frags = []
@@ -226,37 +315,44 @@ class MolStandardizer:
                 if frag_smiles == parent_smiles:
                     continue
 
-                # Classify fragment as salt or mixture component
+                # 1. Check against known counterion list first
+                if frag_smiles in KNOWN_COUNTERIONS:
+                    salt_frags.append(frag_smiles)
+                    continue
+
                 num_heavy = frag.GetNumHeavyAtoms()
                 has_charge = any(atom.GetFormalCharge() != 0 for atom in frag.GetAtoms())
+                size_ratio = num_heavy / parent_heavy if parent_heavy > 0 else 1.0
 
-                # More nuanced classification
-                if has_charge and num_heavy <= 10:  # Small charged fragment - likely a salt
+                # 2-4. Heuristics for unknown fragments
+                if has_charge and num_heavy <= 20:
                     salt_frags.append(frag_smiles)
-                elif not has_charge and num_heavy <= 6:  # Small neutral - could be solvent/salt
+                elif size_ratio < 0.5:
+                    salt_frags.append(frag_smiles)
+                elif not has_charge and num_heavy <= 15:
                     salt_frags.append(frag_smiles)
                 else:
-                    # Large neutral fragment - likely part of a mixture
+                    # 5. Large unknown fragment — likely a mixture component
                     mixture_frags.append(frag_smiles)
 
             # Check if this looks like a mixture
             if mixture_frags:
-                # Log mixture detection
                 total_frags = len(orig_frags)
                 log.warning(
                     f"Mixture detected: {total_frags} total fragments, "
-                    f"{len(mixture_frags)} large neutral organics. "
+                    f"{len(mixture_frags)} large unknown organics. "
+                    f"Parent Fragment: {parent_smiles} ({parent_heavy}ha), "
                     f"Removing: {'.'.join(mixture_frags + salt_frags)}"
                 )
-                # Return None for mixtures - don't pollute the salt column
-                return None
+                return None, True
 
             # Return actual salts only
-            return ".".join(salt_frags) if salt_frags else None
+            salt_str = ".".join(salt_frags) if salt_frags else None
+            return salt_str, False
 
         except Exception as e:
             log.info(f"Salt extraction failed: {e}")
-            return None
+            return None, False
 
 
 def standardize(
