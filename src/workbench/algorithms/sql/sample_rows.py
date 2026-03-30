@@ -33,7 +33,7 @@ def sample_rows(data_source: DataSourceAbstract, rows: int = 100) -> pd.DataFram
     if num_rows > rows:
         # Bernoulli Sampling has reasonable variance, so we're going to add a 10% fudge factor
         # to the sample percentage and then simply clamp it to desired rows
-        percentage = round(rows * 110.0 / num_rows)
+        percentage = max(rows * 110.0 / num_rows, 0.1)
         data_source.log.info(f"DataSource has {num_rows} rows.. sampling down to {rows}...")
         query = f'SELECT {sql_columns} FROM "{table}" TABLESAMPLE BERNOULLI({percentage})'
     else:
