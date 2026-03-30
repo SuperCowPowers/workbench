@@ -1,0 +1,4 @@
+rdkit
+pandas
+requests
+tqdm
