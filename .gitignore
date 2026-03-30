@@ -151,3 +151,6 @@ test_evaluation_data.csv
 
 # PyTorch checkpoint/tmp directories
 .pt_tmp/ 
+
+# Pull public data outputs
+data/pull_public_data/output/
