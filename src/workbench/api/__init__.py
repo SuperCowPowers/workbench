@@ -21,6 +21,7 @@ from .endpoint import Endpoint
 from .meta import Meta
 from .parameter_store import ParameterStore
 from .df_store import DFStore
+from .public_data import PublicData
 
 __all__ = [
     "DataSource",
@@ -33,4 +34,5 @@ __all__ = [
     "Meta",
     "ParameterStore",
     "DFStore",
+    "PublicData",
 ]
