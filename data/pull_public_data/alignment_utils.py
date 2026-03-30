@@ -80,14 +80,14 @@ def run_alignment_checks(
         issues.append(msg)
         print(f"   ** {msg}")
     else:
-        print(f"   OK")
+        print("   OK")
 
     # --- 2. Distribution shape ---
     data_std = vals.std()
     skew = vals.skew()
     kurt = vals.kurtosis()
 
-    print(f"\n2. Distribution Shape")
+    print("\n2. Distribution Shape")
     print(f"   Std: {data_std:.2f}  Skew: {skew:.2f}  Kurtosis: {kurt:.2f}")
 
     std_lo, std_hi = expected_std
@@ -100,7 +100,7 @@ def run_alignment_checks(
         issues.append(msg)
         print(f"   ** {msg}")
     else:
-        print(f"   OK")
+        print("   OK")
 
     mean_lo, mean_hi = expected_mean
     if not (mean_lo <= vals.mean() <= mean_hi):
@@ -113,7 +113,7 @@ def run_alignment_checks(
 
     # --- 3. Per-source scale check ---
     if sources_col in df.columns:
-        print(f"\n3. Per-Source Scale Consistency")
+        print("\n3. Per-Source Scale Consistency")
         sources = df[sources_col].str.split("|").explode().unique()
         overall_mean = vals.mean()
         overall_std = vals.std()
@@ -121,20 +121,23 @@ def run_alignment_checks(
         for src in sorted(sources):
             mask = df[sources_col].str.contains(src, regex=False)
             src_vals = df.loc[mask, value_col]
-            print(f"   {src:<35s} n={len(src_vals):>6,}  mean={src_vals.mean():>6.2f}  std={src_vals.std():.2f}")
+            print(f"   {src:<35s} n={len(src_vals):>6,}  " f"mean={src_vals.mean():>6.2f}  std={src_vals.std():.2f}")
 
             if abs(src_vals.mean() - overall_mean) > 2 * overall_std:
-                msg = f"WARNING: {src} mean ({src_vals.mean():.2f}) deviates significantly from overall ({overall_mean:.2f})"
+                msg = (
+                    f"WARNING: {src} mean ({src_vals.mean():.2f}) deviates "
+                    f"significantly from overall ({overall_mean:.2f})"
+                )
                 issues.append(msg)
                 print(f"   ** {msg}")
 
         if not any("scale" in i.lower() or "deviates" in i.lower() for i in issues):
-            print(f"   OK — sources are on consistent scales")
+            print("   OK — sources are on consistent scales")
 
     # --- 4. Cross-source agreement ---
     if count_col and count_col in df.columns and std_col and std_col in df.columns:
         multi_source = df[df[count_col] > 1]
-        print(f"\n4. Cross-Source Agreement")
+        print("\n4. Cross-Source Agreement")
         print(f"   Compounds in multiple sources: {len(multi_source):,}")
         if len(multi_source) > 0:
             mean_xstd = multi_source[std_col].mean()
@@ -149,12 +152,12 @@ def run_alignment_checks(
                 issues.append(msg)
                 print(f"   ** {msg}")
             else:
-                print(f"   OK")
+                print("   OK")
         else:
-            print(f"   (no overlapping compounds to compare)")
+            print("   (no overlapping compounds to compare)")
 
     # --- 5. Data quality ---
-    print(f"\n5. Data Quality")
+    print("\n5. Data Quality")
     print(f"   Total unique compounds: {len(df):,}")
     smiles_col = "smiles" if "smiles" in df.columns else "canon_smiles"
     n_nan_smiles = df[smiles_col].isna().sum() if smiles_col in df.columns else 0
@@ -166,7 +169,7 @@ def run_alignment_checks(
         issues.append(msg)
 
     # --- Summary ---
-    print(f"\n" + "-" * 60)
+    print("\n" + "-" * 60)
     if issues:
         print(f"ALIGNMENT ISSUES ({len(issues)}):")
         for issue in issues:
@@ -203,7 +206,7 @@ def _print_histogram(vals: pd.Series, expected_lo: float, expected_hi: float):
     counts = [(lo, hi, ((vals >= lo) & (vals < hi)).sum()) for lo, hi in bins]
     max_count = max(c for _, _, c in counts) if counts else 1
 
-    print(f"\n   Distribution:")
+    print("\n   Distribution:")
     for lo, hi, count in counts:
         bar = "#" * int(max_bar * count / max_count) if max_count > 0 else ""
         print(f"   [{lo:>6.1f},{hi:>6.1f}) {count:>6,} {bar}")

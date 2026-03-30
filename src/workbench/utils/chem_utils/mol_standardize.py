@@ -100,50 +100,87 @@ RDLogger.DisableLog("rdApp.error")
 # strip regardless of their size relative to the parent molecule.
 KNOWN_COUNTERIONS: set[str] = {
     # --- Inorganic / monatomic ---
-    "[Na+]", "[K+]", "[Li+]", "[Ca+2]", "[Mg+2]", "[Zn+2]",
-    "[Fe+2]", "[Fe+3]", "[Al+3]", "[Cu+2]", "[Co+3]", "[NH4+]",
-    "[Cl-]", "[Br-]", "[I-]", "[F-]", "[OH-]",
-    "Cl", "Br", "I", "F", "O",  # neutral HX acids / water after cleanup
+    "[Na+]",
+    "[K+]",
+    "[Li+]",
+    "[Ca+2]",
+    "[Mg+2]",
+    "[Zn+2]",
+    "[Fe+2]",
+    "[Fe+3]",
+    "[Al+3]",
+    "[Cu+2]",
+    "[Co+3]",
+    "[NH4+]",
+    "[Cl-]",
+    "[Br-]",
+    "[I-]",
+    "[F-]",
+    "[OH-]",
+    "Cl",
+    "Br",
+    "I",
+    "F",
+    "O",  # neutral HX acids / water after cleanup
     "[H+]",
     # --- Sulfate / sulfonate family ---
-    "O=S(=O)(O)O", "O=S(=O)([O-])O", "O=S(=O)([O-])[O-]",       # sulfuric acid / sulfate
-    "CS(=O)(=O)O", "CS(=O)(=O)[O-]",                               # mesylate
-    "Cc1ccc(S(=O)(=O)O)cc1", "Cc1ccc(S(=O)(=O)[O-])cc1",         # tosylate
-    "COS(=O)(=O)O", "COS(=O)(=O)[O-]",                             # methyl sulfate
-    "O=S(=O)(O)CCO", "O=S(=O)([O-])CCO",                           # isethionate
-    "CC1(C)C2CCC1(CS(=O)(=O)O)C(=O)C2",                            # camphorsulfonate (neutral)
-    "CC1(C)C2CCC1(CS(=O)(=O)[O-])C(=O)C2",                        # camphorsulfonate (charged)
+    "O=S(=O)(O)O",
+    "O=S(=O)([O-])O",
+    "O=S(=O)([O-])[O-]",  # sulfuric acid / sulfate
+    "CS(=O)(=O)O",
+    "CS(=O)(=O)[O-]",  # mesylate
+    "Cc1ccc(S(=O)(=O)O)cc1",
+    "Cc1ccc(S(=O)(=O)[O-])cc1",  # tosylate
+    "COS(=O)(=O)O",
+    "COS(=O)(=O)[O-]",  # methyl sulfate
+    "O=S(=O)(O)CCO",
+    "O=S(=O)([O-])CCO",  # isethionate
+    "CC1(C)C2CCC1(CS(=O)(=O)O)C(=O)C2",  # camphorsulfonate (neutral)
+    "CC1(C)C2CCC1(CS(=O)(=O)[O-])C(=O)C2",  # camphorsulfonate (charged)
     # --- Phosphate ---
-    "O=P(O)(O)O", "O=P([O-])(O)O", "O=P([O-])([O-])O", "O=P([O-])([O-])[O-]",
-    "CP(=O)(O)O", "CP(=O)([O-])O", "CP(=O)([O-])[O-]",           # methylphosphonate
+    "O=P(O)(O)O",
+    "O=P([O-])(O)O",
+    "O=P([O-])([O-])O",
+    "O=P([O-])([O-])[O-]",
+    "CP(=O)(O)O",
+    "CP(=O)([O-])O",
+    "CP(=O)([O-])[O-]",  # methylphosphonate
     # --- Carboxylate counterions ---
-    "CC(=O)O", "CC(=O)[O-]",                                        # acetate
-    "O=C(O)/C=C\\C(=O)O", "O=C([O-])/C=C\\C(=O)O",                # maleate
-    "O=C(O)/C=C/C(=O)O", "O=C([O-])/C=C/C(=O)O",                  # fumarate
-    "O=C(O)CC(O)(CC(=O)O)C(=O)O",                                   # citric acid
-    "O=C([O-])CC(O)(CC(=O)[O-])C(=O)[O-]",                         # citrate
-    "O=C(O)C(O)C(O)C(=O)O",                                         # tartaric acid
-    "O=C(O)CC(=O)O",                                                 # malonic acid
-    "O=C(O)CCCCC(=O)O",                                             # adipic acid
-    "O=C(O)c1cccnc1",                                                # nicotinic acid
-    "O=C(O)c1ccc(C(=O)O)cc1",                                       # terephthalic acid
-    "O=C(O)O", "O=C([O-])O", "O=C([O-])[O-]",                     # carbonate
+    "CC(=O)O",
+    "CC(=O)[O-]",  # acetate
+    "O=C(O)/C=C\\C(=O)O",
+    "O=C([O-])/C=C\\C(=O)O",  # maleate
+    "O=C(O)/C=C/C(=O)O",
+    "O=C([O-])/C=C/C(=O)O",  # fumarate
+    "O=C(O)CC(O)(CC(=O)O)C(=O)O",  # citric acid
+    "O=C([O-])CC(O)(CC(=O)[O-])C(=O)[O-]",  # citrate
+    "O=C(O)C(O)C(O)C(=O)O",  # tartaric acid
+    "O=C(O)CC(=O)O",  # malonic acid
+    "O=C(O)CCCCC(=O)O",  # adipic acid
+    "O=C(O)c1cccnc1",  # nicotinic acid
+    "O=C(O)c1ccc(C(=O)O)cc1",  # terephthalic acid
+    "O=C(O)O",
+    "O=C([O-])O",
+    "O=C([O-])[O-]",  # carbonate
     # --- Nitrate ---
-    "O=[N+]([O-])O", "O=[N+]([O-])[O-]",
+    "O=[N+]([O-])O",
+    "O=[N+]([O-])[O-]",
     # --- Fluoroborates / fluorophosphates ---
-    "F[B-](F)(F)F",                                                  # tetrafluoroborate
-    "F[P-](F)(F)(F)(F)F",                                           # hexafluorophosphate
+    "F[B-](F)(F)F",  # tetrafluoroborate
+    "F[P-](F)(F)(F)(F)F",  # hexafluorophosphate
     # --- Triflate ---
-    "O=S(=O)([O-])C(F)(F)F", "O=S(=O)(O)C(F)(F)F",
+    "O=S(=O)([O-])C(F)(F)F",
+    "O=S(=O)(O)C(F)(F)F",
     # --- Common amine counterions ---
-    "OCCN(CCO)CCO",                                                  # triethanolamine
-    "NC(CO)(CO)CO",                                                  # tris (tromethamine)
-    "OCCNCCO",                                                       # diethanolamine
-    "CCN1CCOCC1",                                                    # N-ethylmorpholine
-    "C1CCC(NC2CCCCC2)CC1",                                          # dicyclohexylamine
-    "CCN(CC)CC",                                                      # triethylamine
+    "OCCN(CCO)CCO",  # triethanolamine
+    "NC(CO)(CO)CO",  # tris (tromethamine)
+    "OCCNCCO",  # diethanolamine
+    "CCN1CCOCC1",  # N-ethylmorpholine
+    "C1CCC(NC2CCCCC2)CC1",  # dicyclohexylamine
+    "CCN(CC)CC",  # triethylamine
     # --- Thiocyanate ---
-    "N#CS", "N#C[S-]",
+    "N#CS",
+    "N#C[S-]",
 }
 
 
@@ -229,7 +266,7 @@ class MolStandardizer:
                             log.warning("  -> Dropping entry (drop_mixtures=True)")
                             return None, None
                         else:
-                            log.warning(f"  -> Keeping largest fragment as parent (drop_mixtures=False)")
+                            log.warning("  -> Keeping largest fragment as parent (drop_mixtures=False)")
 
                     mol = parent_mol
                 else:

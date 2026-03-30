@@ -903,7 +903,7 @@ class EndpointCore(Artifact):
         except ReadTimeoutError:
             max_retries = 3
             if retries < max_retries:
-                sleep_time = min(2 ** retries * 5, 30)
+                sleep_time = min(2**retries * 5, 30)
                 self.log.warning(f"ReadTimeoutError (retry {retries + 1}/{max_retries}). Sleeping {sleep_time}s...")
                 time.sleep(sleep_time)
                 return self._endpoint_error_handling(sm_endpoint, feature_df, drop_error_rows, retries + 1)

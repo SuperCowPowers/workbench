@@ -84,6 +84,7 @@ def standardize_df(df: pd.DataFrame, smiles_col: str, value_col: str, source: st
 # Source pullers
 # ---------------------------------------------------------------------------
 
+
 def pull_opera_physprop() -> pd.DataFrame:
     """PHYSPROP / OPERA logP training data (~14K compounds).
 
@@ -125,8 +126,7 @@ def pull_opera_physprop() -> pd.DataFrame:
                         None,
                     )
                     if smiles_col and logp_col and len(df) > 100:
-                        return standardize_df(df, smiles_col=smiles_col, value_col=logp_col,
-                                              source="opera_physprop")
+                        return standardize_df(df, smiles_col=smiles_col, value_col=logp_col, source="opera_physprop")
             except Exception as e:
                 log.warning(f"Failed to read {logp_file}: {e}")
 
@@ -171,8 +171,7 @@ def pull_graphormer_logp() -> pd.DataFrame:
                         (c for c in df.columns if "logp" in c.lower() or "log_p" in c.lower()), df.columns[1]
                     )
                     if len(df) > 1000:  # sanity check -- we want the big dataset
-                        return standardize_df(df, smiles_col=smiles_col, value_col=logp_col,
-                                              source="graphormer_logp")
+                        return standardize_df(df, smiles_col=smiles_col, value_col=logp_col, source="graphormer_logp")
     except Exception as e:
         log.warning(f"GraphormerLogP zip fallback failed: {e}")
 
@@ -183,6 +182,7 @@ def pull_graphormer_logp() -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Merge & deduplicate
 # ---------------------------------------------------------------------------
+
 
 def merge_and_deduplicate(frames: list[pd.DataFrame]) -> pd.DataFrame:
     """Merge all frames and deduplicate on canonical SMILES.
