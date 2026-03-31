@@ -282,6 +282,11 @@ class PandasToFeatures(Transform):
         if self.one_hot_columns:
             self.output_df = self.one_hot_encode(self.output_df, self.one_hot_columns)
 
+        # Ensure all column names are strings
+        if not all(isinstance(c, str) for c in self.output_df.columns):
+            self.log.warning("Non-string column names detected, converting to strings...")
+            self.output_df.columns = [str(c) for c in self.output_df.columns]
+
         # Convert columns names to lowercase, Athena will not work with uppercase column names
         if str(self.output_df.columns) != str(self.output_df.columns.str.lower()):
             for c in self.output_df.columns:
@@ -353,21 +358,35 @@ class PandasToFeatures(Transform):
         self.delete_existing()
         self.output_feature_group = self.create_feature_group()
 
+    @staticmethod
+    def _ingest_settings():
+        """Return (max_workers, max_processes) based on platform.
+
+        macOS Tahoe 26+ / Python 3.13+ default to 'spawn' for multiprocessing. SageMaker V3's
+        _run_multi_process defines a local function (init_worker) that can't be pickled under
+        spawn, so any value > 1 crashes. On Linux (including AWS Batch) fork is the default
+        and multiprocessing works fine.
+        See: https://github.com/aws/sagemaker-python-sdk/issues/5312
+        """
+        import platform
+
+        if platform.system() == "Darwin":
+            return 1, 1
+        return 8, 4
+
     def transform_impl(self):
         """Transform Implementation: Ingest the data into the Feature Group"""
 
-        # FIXME: max_workers and max_processes must both be 1 to avoid macOS fork/spawn hang.
-        # Any value > 1 routes through multiprocessing.Pool (fork by default on macOS), which
-        # hangs on macOS Tahoe 26+. V3 added a single-threaded fast path that bypasses the Pool
-        # only when both are 1. See https://github.com/aws/sagemaker-python-sdk/issues/5312
+        max_workers, max_processes = self._ingest_settings()
         self.log.important(f"Ingesting rows into Feature Group {self.output_name}...")
+        self.log.info(f"Ingest settings: max_workers={max_workers}, max_processes={max_processes}")
         failed_rows = []
         try:
             ingest_dataframe(
                 feature_group_name=self.output_name,
                 data_frame=self.output_df,
-                max_workers=1,
-                max_processes=1,
+                max_workers=max_workers,
+                max_processes=max_processes,
                 wait=True,
             )
         except IngestionError as exc:
