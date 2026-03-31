@@ -17,17 +17,13 @@ Endpoints:
 
 import logging
 import pandas as pd
-import awswrangler as wr
 
-from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
+from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint, PublicData
 
 log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":
-
-    # Get the path to the dataset in S3
-    s3_path = "s3://workbench-public-data/comp_chem/aqsol_public_data.csv"
 
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False
@@ -35,7 +31,7 @@ if __name__ == "__main__":
     # Create the aqsol_data DataSource
     if recreate or not DataSource("aqsol_data").exists():
         # We could create a Datasource directly,  but we're going to add a column to the data
-        df = wr.s3.read_csv(s3_path)
+        df = PublicData().get("comp_chem/aqsol/aqsol_public_data")
 
         # Create a solubility classification column
         bins = [-float("inf"), -5, -4, float("inf")]

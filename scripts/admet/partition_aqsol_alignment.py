@@ -30,12 +30,13 @@ import awswrangler as wr
 import numpy as np
 import pandas as pd
 
+from workbench.api import PublicData
 from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
 
 log = logging.getLogger("workbench")
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-S3_SOURCE = "s3://workbench-public-data/comp_chem/aqsol_public_data.csv"
+# FIXME: Switch S3_DEST to use PublicData() for writes
 S3_DEST = "s3://workbench-public-data/comp_chem/aqsol_alignment"
 
 # Cumulative similarity thresholds for overlap partitions
@@ -50,8 +51,8 @@ def main():
     args = parser.parse_args()
 
     # Load aqsol data
-    log.info(f"Loading AQSol data from {S3_SOURCE}")
-    df = wr.s3.read_csv(S3_SOURCE)
+    log.info("Loading AQSol data via PublicData")
+    df = PublicData().get("comp_chem/aqsol/aqsol_public_data")
     df.columns = df.columns.str.lower()
     log.info(f"Loaded {len(df)} compounds")
 

@@ -1,12 +1,11 @@
 """A Synthetic Data Generator Class"""
 
-import os
 import logging
 import pandas as pd
 import numpy as np
-import awswrangler as wr
-import tempfile
 from sklearn.datasets import make_classification, make_regression
+
+from workbench.api import PublicData
 
 
 class SyntheticDataGenerator:
@@ -123,25 +122,8 @@ class SyntheticDataGenerator:
 
     def aqsol_data(self) -> pd.DataFrame:
         """Generate a Pandas DataFrame of AQSol Data"""
-
-        # Define a temporary file path
-        temp_file_path = os.path.join(tempfile.gettempdir(), "aqsol_data.csv")
-
-        # First check if the data is already stored in a local temporary file
-        if os.path.exists(temp_file_path):
-            aqsol_data = pd.read_csv(temp_file_path)
-        else:
-            # If not, read the data from S3
-            s3_path = "s3://workbench-public-data/comp_chem/aqsol_public_data.csv"
-            aqsol_data = wr.s3.read_csv(s3_path)
-
-            # Lower case all columns
-            aqsol_data.columns = aqsol_data.columns.str.lower()
-
-            # Now store the data in a local temporary file
-            aqsol_data.to_csv(temp_file_path, index=False)
-
-        # Return the DataFrame
+        aqsol_data = PublicData().get("comp_chem/aqsol/aqsol_public_data")
+        aqsol_data.columns = aqsol_data.columns.str.lower()
         return aqsol_data
 
     def aqsol_features(self) -> list:
@@ -175,6 +157,7 @@ class SyntheticDataGenerator:
     # Run scripts/admet/partition_aqsol_alignment.py to generate the partitions.
     # Overlap levels (feature space) are fixed on disk; target alignment is synthesized dynamically.
 
+    # FIXME: Switch alignment partition reads to use PublicData()
     _ALIGNMENT_S3_PREFIX = "s3://workbench-public-data/comp_chem/aqsol_alignment"
     _ALIGNMENT_PARTITIONS = ["base", "high_overlap", "medium_overlap", "low_overlap"]
 

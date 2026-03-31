@@ -18,7 +18,10 @@ def test():
     output_name = "abalone-regression-temp"
     to_model = FeaturesToModel(input_name, output_name, ModelType.REGRESSOR)
     to_model.set_output_tags(["temp", "abalone", "public"])
-    to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
+    model = to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
+
+    # Delete the model after creation to clean up
+    model.delete()
 
 
 @pytest.mark.long
@@ -37,6 +40,9 @@ def test_categorical():
         description="Test Model with Categorical Features",
     )
     m.set_owner("test")
+
+    # Delete the model after creation to clean up
+    m.delete()
 
 
 if __name__ == "__main__":

@@ -23,6 +23,9 @@ def test():
     endpoint = Endpoint(output_name)
     endpoint.auto_inference()
 
+    # Delete the endpoint after creation to clean up
+    endpoint.delete()
+
 
 if __name__ == "__main__":
     test()
