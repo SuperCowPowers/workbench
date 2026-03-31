@@ -8,9 +8,10 @@ max_workers=1, max_processes=1 to sidestep the issue entirely.
 This test checks whether V3's ingest_dataframe actually works with multiprocessing (values > 1)
 without hanging or crashing. If it passes, we can bump the values back up for performance.
 
-Current status (2026-03-31): FAILS — V3's _run_multi_process defines a local function
+Current status (2026-03-31): FAILS on macOS — V3's _run_multi_process defines a local function
 (init_worker) that can't be pickled under spawn mode, so it crashes with AttributeError.
 Python 3.13 on macOS defaults to spawn, so this is broken out of the box.
+PandasToFeatures._ingest_settings() detects macOS and falls back to (1, 1).
 
 See: https://github.com/aws/sagemaker-python-sdk/issues/5312
 """
@@ -22,6 +23,15 @@ from sagemaker.mlops.feature_store import ingest_dataframe
 from workbench.api import FeatureSet
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
+
+
+def test_ingest_settings():
+    """Verify that _ingest_settings returns (1, 1) on macOS and higher values elsewhere."""
+    max_workers, max_processes = PandasToFeatures._ingest_settings()
+    if platform.system() == "Darwin":
+        assert max_workers == 1 and max_processes == 1, "macOS should use single-process ingest"
+    else:
+        assert max_workers > 1 or max_processes > 1, "Linux should use multiprocess ingest"
 
 FEATURE_SET_NAME = "spawn_test_temp"
 INGEST_TIMEOUT = 120  # seconds — if it hangs longer than this, the fork issue is still present
