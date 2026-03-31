@@ -213,6 +213,8 @@ class SyntheticDataGenerator:
         Returns:
             pd.DataFrame: The partition data with real SMILES, features, and targets
         """
+        import awswrangler as wr
+
         s3_path = f"{self._ALIGNMENT_S3_PREFIX}/aqsol_{partition}.csv"
         self.log.info(f"Loading {partition} partition from {s3_path}")
         return wr.s3.read_csv(s3_path)
