@@ -33,6 +33,7 @@ def test_ingest_settings():
     else:
         assert max_workers > 1 or max_processes > 1, "Linux should use multiprocess ingest"
 
+
 FEATURE_SET_NAME = "spawn_test_temp"
 INGEST_TIMEOUT = 120  # seconds — if it hangs longer than this, the fork issue is still present
 
