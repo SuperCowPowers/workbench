@@ -201,6 +201,40 @@ def logging_setup(color_logs=True):
         log.exception(f"Exception details: {e}")
 
 
+def _disable_sagemaker_rich_logging():
+    """Replace SageMaker's rich logging handler with a plain one.
+
+    The SageMaker SDK uses rich RichHandler + Live/Panel formatting for training
+    job logs, which mangles output (fragments lines, adds ANSI markup). This
+    swaps in a plain StreamHandler so training logs are readable and strips the
+    stream ID prefix (e.g. "job-name/algo-1-xxx:") from log messages.
+    """
+    import re
+
+    class _SageMakerLogFilter(logging.Filter):
+        """Filter that strips the algo stream ID prefix from training log messages."""
+
+        _stream_prefix = re.compile(r"^[^\s]+/algo-\d+-\d+:\n?")
+
+        def filter(self, record):
+            record.msg = self._stream_prefix.sub("", str(record.msg))
+            return True
+
+    sm_logger = logging.getLogger("sagemaker.core.resources")
+    sm_logger.handlers.clear()
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    handler.addFilter(_SageMakerLogFilter())
+    sm_logger.addHandler(handler)
+    sm_logger.propagate = False
+
+    # Suppress noisy SageMaker SDK INFO messages while keeping training log events.
+    # Training logs flow through sagemaker.core.resources (handled above with our plain handler),
+    # so we can suppress INFO on everything else.
+    logging.getLogger("sagemaker").setLevel(logging.WARNING)
+    sm_logger.setLevel(logging.INFO)  # Override for training log events
+
+
 @contextmanager
 def exception_log_forward(call_on_exception=None):
     """Context manager to log exceptions and optionally call a function on exception."""

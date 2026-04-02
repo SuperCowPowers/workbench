@@ -29,6 +29,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.model_scripts.script_generation import generate_model_script
 from workbench.utils.config_manager import ConfigManager
+from workbench.utils.workbench_logging import _disable_sagemaker_rich_logging
 
 # Set up logging
 log = logging.getLogger("workbench")
@@ -288,6 +289,7 @@ class MetaModel(Model):
 
         # Run training (no input data needed - just saves config)
         log.important(f"Creating MetaModel {name}...")
+        _disable_sagemaker_rich_logging()
         trainer.train(wait=True)
 
         return trainer._latest_training_job.training_job_name
