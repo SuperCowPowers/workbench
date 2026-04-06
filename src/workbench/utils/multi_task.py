@@ -95,10 +95,7 @@ def combine_multi_task_data(
     agg_dict = {c: "mean" for c in numeric_cols}
     agg_dict.update({c: "first" for c in non_numeric_cols})
     result = result.groupby(id_column, as_index=False).agg(agg_dict)
-    log.info(
-        f"Collapsing {n_before} rows -> {len(result)} "
-        f"({len(dup_ids)} molecules appear in multiple sources)"
-    )
+    log.info(f"Collapsing {n_before} rows -> {len(result)} " f"({len(dup_ids)} molecules appear in multiple sources)")
 
     # --- Step 3: Diagnostics ---
     input_support = {}
@@ -209,8 +206,6 @@ def validate_multi_task_data(
         log.error(f"  {e}")
 
     if errors:
-        raise ValueError(
-            f"Validation failed with {len(errors)} error(s):\n" + "\n".join(f"  - {e}" for e in errors)
-        )
+        raise ValueError(f"Validation failed with {len(errors)} error(s):\n" + "\n".join(f"  - {e}" for e in errors))
 
     log.info(f"  Validated: {len(df)} rows, {len(target_columns)} targets, {len(feature_cols)} features")

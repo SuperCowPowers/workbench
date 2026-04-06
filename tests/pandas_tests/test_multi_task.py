@@ -241,12 +241,14 @@ def test_validate_passes_clean_data():
 
 
 def test_validate_catches_null_ids():
-    df = pd.DataFrame({
-        "id": ["A", None],
-        "smiles": ["CC", "CCC"],
-        "feat1": [1.0, 2.0],
-        "t1": [0.5, 0.6],
-    })
+    df = pd.DataFrame(
+        {
+            "id": ["A", None],
+            "smiles": ["CC", "CCC"],
+            "feat1": [1.0, 2.0],
+            "t1": [0.5, 0.6],
+        }
+    )
 
     with pytest.raises(ValueError, match="NaN values"):
         validate_multi_task_data(df, ["t1"])
@@ -265,11 +267,13 @@ def test_validate_catches_duplicate_ids():
 
 
 def test_validate_catches_missing_smiles():
-    df = pd.DataFrame({
-        "id": ["A"],
-        "feat1": [1.0],
-        "t1": [0.5],
-    })
+    df = pd.DataFrame(
+        {
+            "id": ["A"],
+            "feat1": [1.0],
+            "t1": [0.5],
+        }
+    )
 
     with pytest.raises(ValueError, match="smiles"):
         validate_multi_task_data(df, ["t1"])
@@ -321,15 +325,15 @@ def test_two_pass_merge():
     assert len(merged) == 4
 
     # Pass 2: External source, merge on SMILES
-    df_logp = pd.DataFrame({
-        "id": ["X1", "X2"],
-        "smiles": ["CC", "CCCCCC"],  # CC=A, CCCCCC=new
-        "feat1": [1.0, 5.0],
-        "logp": [10.0, 50.0],
-    })
-    result = combine_multi_task_data(
-        [merged, df_logp], [["ppb", "logd"], ["logp"]], id_column="smiles"
+    df_logp = pd.DataFrame(
+        {
+            "id": ["X1", "X2"],
+            "smiles": ["CC", "CCCCCC"],  # CC=A, CCCCCC=new
+            "feat1": [1.0, 5.0],
+            "logp": [10.0, 50.0],
+        }
     )
+    result = combine_multi_task_data([merged, df_logp], [["ppb", "logd"], ["logp"]], id_column="smiles")
 
     assert len(result) == 5  # CC, CCC, CCCC, CCCCC, CCCCCC
     # CC (molecule A) gets ppb + logp collapsed onto one row
