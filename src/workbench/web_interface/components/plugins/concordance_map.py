@@ -381,7 +381,7 @@ if __name__ == "__main__":
 
     fs = FeatureSet("caco2_pappab_reg_1")
     df = fs.pull_dataframe()
-    id_col = "udm_mol_bat_id"
+    id_col = "id"
     is_doi = df["udm_asy_protocol"] == "DOI"
     ref_df = df[~is_doi]
     query_df = df[is_doi]
