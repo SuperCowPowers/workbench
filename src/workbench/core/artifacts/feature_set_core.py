@@ -701,6 +701,9 @@ class FeatureSetCore(Artifact):
         self.log.info(f"Deleting supplemental weights table: {weights_table}")
         delete_table(weights_table, self.data_source.database, self.data_source.boto3_session)
 
+        # Small delay to allow Glue catalog to propagate the delete
+        time.sleep(3)
+
     def _create_weights_table(self, weights: Union[Dict[Union[str, int], float], pd.DataFrame]) -> str:
         """Store sample weights as a supplemental data table.
 
