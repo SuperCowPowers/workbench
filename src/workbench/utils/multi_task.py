@@ -1,6 +1,8 @@
 """Utilities for building multi-task DataFrames from single-task sources."""
 
 import logging
+from functools import reduce
+
 import pandas as pd
 
 log = logging.getLogger("workbench")
@@ -10,12 +12,13 @@ def combine_multi_task_data(
     dataframes: list[pd.DataFrame],
     target_columns: list[list[str]],
     id_column: str = "id",
+    merge_on_smiles: bool = False,
 ) -> pd.DataFrame:
     """Combine single-task DataFrames into a multi-task DataFrame.
 
     Computes the shared feature columns across all DataFrames, subsets each to
-    shared features + its targets, concatenates, and collapses rows by id_column
-    (first non-NaN per column). This ensures molecules appearing in multiple
+    shared features + its targets, concatenates, and collapses rows by the merge
+    key (first non-NaN per column). This ensures molecules appearing in multiple
     sources get all their targets on a single row.
 
     Args:
@@ -25,13 +28,17 @@ def combine_multi_task_data(
         target_columns: Parallel list where target_columns[i] names the target column(s)
             in dataframes[i]. Every other column is treated as a shared feature.
         id_column: Column to use as the identifier. Defaults to 'id'.
+        merge_on_smiles: If True, collapse rows by 'smiles' instead of id_column.
+            Use when combining external/public data where IDs have no correspondence
+            to internal IDs. Defaults to False.
 
     Returns:
         Combined DataFrame with shared features + all target columns. Rows from
         sources missing a target will have NaN for that target.
 
     Raises:
-        ValueError: If inputs are invalid (length mismatch, missing columns, etc.).
+        ValueError: If inputs are invalid (length mismatch, missing columns, etc.)
+            or if any target column ends up with all NaN values.
     """
     # --- Input validation ---
     if len(dataframes) != len(target_columns):
@@ -55,49 +62,61 @@ def combine_multi_task_data(
         dupes = [t for t in all_targets if all_targets.count(t) > 1]
         raise ValueError(f"Duplicate target column names across DataFrames: {set(dupes)}")
 
+    merge_key = "smiles" if merge_on_smiles else id_column
+
+    # --- Drop rows with NaN smiles ---
+    for i, df in enumerate(dataframes):
+        n_null = df["smiles"].isna().sum()
+        if n_null > 0:
+            log.warning(f"DataFrame {i}: dropping {n_null} rows with NaN smiles")
+            dataframes[i] = df.dropna(subset=["smiles"])
+
     # --- Step 1: Compute shared feature columns ---
     reserved = {id_column, "smiles"} | set(all_targets)
-    feature_sets = []
-    for i, (df, targets) in enumerate(zip(dataframes, target_columns)):
-        feature_cols = set(df.columns) - reserved - set(targets)
-        feature_sets.append(feature_cols)
-
-    shared_features = feature_sets[0]
-    for fs in feature_sets[1:]:
-        shared_features &= fs
-
-    for i, fs in enumerate(feature_sets):
-        dropped = fs - shared_features
+    all_feature_sets = [set(df.columns) - reserved - set(t) for df, t in zip(dataframes, target_columns)]
+    shared_features = sorted(reduce(set.intersection, all_feature_sets))
+    for i, fs in enumerate(all_feature_sets):
+        dropped = len(fs) - len(shared_features)
         if dropped:
-            log.info(f"DataFrame {i}: dropping {len(dropped)} non-shared columns")
+            log.info(f"DataFrame {i}: dropping {dropped} non-shared columns")
 
-    shared_features = sorted(shared_features)
-    id_cols = [id_column] if id_column == "smiles" else [id_column, "smiles"]
-    keep_cols = id_cols + shared_features
+    keep_cols = [id_column, "smiles"] + shared_features
     log.info(f"Shared feature columns: {len(shared_features)}")
 
     # --- Step 2: Subset each DataFrame to shared columns + its targets, then concat ---
+    col_dtypes = {}
+    for df in dataframes:
+        for col in df.columns:
+            if col not in col_dtypes and not df[col].isna().all():
+                col_dtypes[col] = df[col].dtype
+
     aligned_dfs = []
     for df, targets in zip(dataframes, target_columns):
-        cols = [c for c in keep_cols if c in df.columns] + targets
-        aligned_dfs.append(df[cols])
+        sub = df[keep_cols + targets].copy()
+        # Pre-add missing target columns to avoid FutureWarning on concat
+        for t in all_targets:
+            if t not in sub.columns:
+                sub[t] = pd.array([pd.NA] * len(sub), dtype="Float64")
+        # Cast all-NA columns to match dtype from DataFrames that have data
+        for col in sub.columns:
+            if sub[col].isna().all() and col in col_dtypes:
+                sub[col] = sub[col].astype(col_dtypes[col])
+        aligned_dfs.append(sub)
 
     result = pd.concat(aligned_dfs, ignore_index=True)
 
-    # --- Step 3: Collapse rows by id_column ---
+    # --- Step 3: Collapse rows by merge key ---
     n_before = len(result)
-    dup_counts = result[id_column].value_counts()
+    dup_counts = result[merge_key].value_counts()
     dup_ids = dup_counts[dup_counts > 1]
-    # Use mean for numeric columns (averages replicate measurements),
-    # first for non-numeric columns (smiles, strings, etc.)
     numeric_cols = result.select_dtypes(include="number").columns.tolist()
-    non_numeric_cols = [c for c in result.columns if c not in numeric_cols and c != id_column]
+    non_numeric_cols = [c for c in result.columns if c not in numeric_cols and c != merge_key]
     agg_dict = {c: "mean" for c in numeric_cols}
     agg_dict.update({c: "first" for c in non_numeric_cols})
-    result = result.groupby(id_column, as_index=False).agg(agg_dict)
-    log.info(f"Collapsing {n_before} rows -> {len(result)} " f"({len(dup_ids)} molecules appear in multiple sources)")
+    result = result.groupby(merge_key, as_index=False).agg(agg_dict)
+    log.info(f"Collapsing {n_before} rows -> {len(result)} ({len(dup_ids)} molecules appear in multiple sources)")
 
-    # --- Step 3: Diagnostics ---
+    # --- Step 4: Diagnostics ---
     input_support = {}
     for df, targets in zip(dataframes, target_columns):
         for t in targets:
@@ -117,7 +136,7 @@ def combine_multi_task_data(
             empty_targets.append(t)
 
     if empty_targets:
-        log.warning(f"WARNING: Targets with ALL NaN values (no data): {empty_targets}")
+        raise ValueError(f"Targets with ALL NaN values (no data): {empty_targets}")
 
     # Target coverage patterns
     target_pattern = result[all_targets].notna()

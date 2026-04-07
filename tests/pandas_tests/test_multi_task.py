@@ -333,7 +333,7 @@ def test_two_pass_merge():
             "logp": [10.0, 50.0],
         }
     )
-    result = combine_multi_task_data([merged, df_logp], [["ppb", "logd"], ["logp"]], id_column="smiles")
+    result = combine_multi_task_data([merged, df_logp], [["ppb", "logd"], ["logp"]], merge_on_smiles=True)
 
     assert len(result) == 5  # CC, CCC, CCCC, CCCCC, CCCCCC
     # CC (molecule A) gets ppb + logp collapsed onto one row
