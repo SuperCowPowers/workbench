@@ -6,4 +6,3 @@ if __name__ == "__main__":
     pub_data = PublicData()
     df = pub_data.get("logp/logp_all")
     print(df.head())
-
