@@ -65,16 +65,6 @@ class AWSSession:
             self._cached_boto3_session = self._create_boto3_session()
         return self._cached_boto3_session
 
-    def refresh_session(self):
-        """Recreate the cached boto3 session.
-
-        Multiprocessing with fork can corrupt the parent's HTTP connection pool
-        and credential-provider state, causing MissingAuthenticationTokenException.
-        See: https://github.com/urllib3/urllib3/issues/850
-        """
-        self.log.info("Refreshing boto3 session...")
-        self._cached_boto3_session = self._create_boto3_session()
-
     def _create_boto3_session(self):
         """Internal: Get the AWS Boto3 Session, assuming the Workbench Role if necessary."""
 

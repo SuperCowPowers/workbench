@@ -86,12 +86,6 @@ class Artifact(ABC):
             self.log.info(f"Health Check Passed {self.name}")
 
     @classmethod
-    def refresh_aws_session(cls):
-        """Refresh the class-level boto3 session and propagate to all Artifact subclasses."""
-        cls.aws_account_clamp.refresh_session()
-        cls.boto3_session = cls.aws_account_clamp.boto3_session
-
-    @classmethod
     def is_name_valid(cls, name: str, delimiter: str = "_", lower_case: bool = True) -> bool:
         """Check if the name adheres to the naming conventions for this Artifact.
 

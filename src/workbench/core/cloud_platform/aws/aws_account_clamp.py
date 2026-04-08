@@ -68,11 +68,6 @@ class AWSAccountClamp:
         # Mark the instance as initialized
         self._initialized = True
 
-    def refresh_session(self):
-        """Recreate the boto3 session and update the cached reference."""
-        self.aws_session.refresh_session()
-        self.boto3_session = self.aws_session.boto3_session
-
     def check_aws_identity(self) -> bool:
         """Check the Caller/Base AWS Identity currently active (not the assumed role)"""
 
