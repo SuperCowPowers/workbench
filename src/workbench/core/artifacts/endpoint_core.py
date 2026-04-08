@@ -652,15 +652,15 @@ class EndpointCore(Artifact):
 
         return out_of_fold_df
 
-    def ts_inference(self, date_column: str, start_date: str, exclude_ids: list = None) -> pd.DataFrame:
+    def ts_inference(self, date_column: str, after_date: str, exclude_ids: list = None) -> pd.DataFrame:
         """Run temporal hold-out inference on this Endpoint.
 
         Re-runs the temporal split on the FeatureSet data to identify holdout rows
-        (those with date > start_date), then runs inference on that holdout set.
+        (those with date > after_date), then runs inference on that holdout set.
 
         Args:
             date_column (str): Name of the date column.
-            start_date (str): Run inference on rows strictly after this date.
+            after_date (str): Run inference on rows strictly after this date.
             exclude_ids (list): IDs to exclude from the holdout set (e.g., anomalous
                 compounds from compute_sample_weights).
 
@@ -679,21 +679,21 @@ class EndpointCore(Artifact):
 
         # Pull all data and compute the temporal split
         all_df = fs.pull_dataframe()
-        _train_df, holdout_df = temporal_split(all_df, date_column, end_date=start_date)
+        _train_df, holdout_df = temporal_split(all_df, date_column, end_date=after_date)
 
         # Remove any excluded IDs from the holdout set
         if exclude_set:
             holdout_df = holdout_df[~holdout_df[fs.id_column].isin(exclude_set)].copy()
             self.log.important(f"Temporal Inference: excluded {len(exclude_set)} IDs")
-        self.log.important(f"Temporal Inference: {len(holdout_df)} holdout rows after {start_date}")
+        self.log.important(f"Temporal Inference: {len(holdout_df)} holdout rows after {after_date}")
 
         # Guard against empty hold-out set
         if holdout_df.empty:
             self.log.warning("No hold out rows found, skipping temporal inference")
             return pd.DataFrame()
 
-        # Build capture name from start_date
-        start_dt = pd.to_datetime(start_date)
+        # Build capture name from after_date
+        start_dt = pd.to_datetime(after_date)
         capture_name = f"ts_{start_dt.strftime('%Y%m%d')}"
         return self.inference(holdout_df, capture_name=capture_name)
 

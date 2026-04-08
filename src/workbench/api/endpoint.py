@@ -66,22 +66,22 @@ class Endpoint(EndpointCore):
         """
         return super().full_inference()
 
-    def ts_inference(self, date_column: str, start_date: str, exclude_ids: list = None) -> pd.DataFrame:
+    def ts_inference(self, date_column: str, after_date: str, exclude_ids: list = None) -> pd.DataFrame:
         """Run temporal hold-out inference on this Endpoint.
 
         Re-runs the temporal split on the FeatureSet data to identify holdout rows
-        (those with date > start_date), then runs inference on that holdout set.
+        (those with date > after_date), then runs inference on that holdout set.
 
         Args:
             date_column (str): Name of the date column.
-            start_date (str): Run inference on rows strictly after this date.
+            after_date (str): Run inference on rows strictly after this date.
             exclude_ids (list): IDs to exclude from the holdout set (e.g., anomalous
                 compounds from compute_sample_weights).
 
         Returns:
             pd.DataFrame: DataFrame with the inference results (empty if no hold-out rows)
         """
-        return super().ts_inference(date_column, start_date=start_date, exclude_ids=exclude_ids)
+        return super().ts_inference(date_column, after_date=after_date, exclude_ids=exclude_ids)
 
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame
