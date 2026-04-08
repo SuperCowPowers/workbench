@@ -17,7 +17,7 @@ from workbench.core.artifacts.feature_set_core import FeatureSetCore
 from workbench.core.artifacts.model_core import ModelCore, ModelType, ModelFramework, ModelImages
 from workbench.core.artifacts.artifact import Artifact
 from workbench.model_scripts.script_generation import generate_model_script, fill_template
-from workbench.utils.workbench_logging import _disable_sagemaker_rich_logging
+from workbench.utils.workbench_logging import _suppress_sagemaker_logging
 
 
 class FeaturesToModel(Transform):
@@ -292,7 +292,7 @@ class FeaturesToModel(Transform):
         # Train the model
         self.log.important(f"Training the Model {self.output_name} with Training Image {image}...")
         input_data = self.model_trainer.create_input_data_channel("train", s3_training_path)
-        _disable_sagemaker_rich_logging()
+        _suppress_sagemaker_logging()
         self.model_trainer.train(input_data_config=[input_data], wait=True)
 
         # Capture the actual training job name (ModelTrainer appends a timestamp to base_job_name)
