@@ -652,23 +652,23 @@ class EndpointCore(Artifact):
 
         return out_of_fold_df
 
-    def ts_inference(self, date_column: str, exclude_ids: list = None) -> pd.DataFrame:
-        """Run temporal hold-out inference on this Endpoint
+    def ts_inference(self, date_column: str, start_date: str, exclude_ids: list = None) -> pd.DataFrame:
+        """Run temporal hold-out inference on this Endpoint.
 
-        Note:
-            temporal_split() must be called on the FeatureSet BEFORE model training.
-            This method uses the model's training view to determine what was actually
-            trained on, then computes the holdout as: all_ids - training_ids - exclude_ids.
+        Re-runs the temporal split on the FeatureSet data to identify holdout rows
+        (those with date > start_date), then runs inference on that holdout set.
 
         Args:
-            date_column (str): Name of the date column (used for the capture name)
+            date_column (str): Name of the date column.
+            start_date (str): Run inference on rows strictly after this date.
             exclude_ids (list): IDs to exclude from the holdout set (e.g., anomalous
-                compounds from compute_sample_weights). These are IDs that were
-                excluded for reasons other than the temporal split.
+                compounds from compute_sample_weights).
 
         Returns:
             pd.DataFrame: DataFrame with the inference results (empty if no hold-out rows)
         """
+        from workbench.utils.pandas_utils import temporal_split
+
         if exclude_ids is None:
             exclude_ids = []
         exclude_set = set(exclude_ids)
@@ -677,51 +677,25 @@ class EndpointCore(Artifact):
         model = ModelCore(self.model_name)
         fs = FeatureSetCore(model.get_input())
 
-        # Use the training view as source of truth for what was actually trained on
-        training_df = model.training_view().pull_dataframe()
-        training_ids = set(training_df[fs.id_column])
-        self.log.important(f"Temporal Inference: {len(training_ids)} training IDs")
-
-        # Pull all data and compute holdout: all - trained - excluded
+        # Pull all data and compute the temporal split
         all_df = fs.pull_dataframe()
-        all_ids = set(all_df[fs.id_column])
-        holdout_ids = all_ids - training_ids - exclude_set
+        _train_df, holdout_df = temporal_split(all_df, date_column, end_date=start_date)
 
+        # Remove any excluded IDs from the holdout set
         if exclude_set:
-            self.log.important(f"Temporal Inference: excluded {len(exclude_set)} IDs (anomalous compounds, etc.)")
-        self.log.important(f"Temporal Inference: {len(holdout_ids)} temporal holdout IDs")
-
-        # Filter to holdout rows
-        hold_df = all_df[all_df[fs.id_column].isin(holdout_ids)].copy()
+            holdout_df = holdout_df[~holdout_df[fs.id_column].isin(exclude_set)].copy()
+            self.log.important(f"Temporal Inference: excluded {len(exclude_set)} IDs")
+        self.log.important(f"Temporal Inference: {len(holdout_df)} holdout rows after {start_date}")
 
         # Guard against empty hold-out set
-        if hold_df.empty:
+        if holdout_df.empty:
             self.log.warning("No hold out rows found, skipping temporal inference")
             return pd.DataFrame()
 
-        # Compute the earliest date in the hold-out set for the capture name
-        raw_values = hold_df[date_column].copy()
-        hold_df[date_column] = pd.to_datetime(hold_df[date_column], errors="coerce")
-        nat_count = hold_df[date_column].isna().sum()
-        if nat_count > 0:
-            # Log diagnostic info about the NaT values
-            nat_mask = hold_df[date_column].isna()
-            sample_raw = raw_values[nat_mask].head(5).tolist()
-            self.log.error(
-                f"ts_inference: {nat_count}/{len(hold_df)} '{date_column}' values could not be parsed as dates. "
-                f"Sample raw values: {sample_raw}, dtypes: {raw_values.dtype}"
-            )
-        earliest_ts = hold_df[date_column].min()
-        if pd.isna(earliest_ts):
-            self.log.error(f"ts_inference: ALL '{date_column}' values are NaT, using 'unknown' for capture name")
-            earliest_date = None
-        else:
-            earliest_date = earliest_ts.date()
-        self.log.important(f"Running temporal hold out inference on {len(hold_df)} rows from {earliest_date} and later")
-
-        # Run inference with a temporal split capture name
-        capture_name = f"ts_{earliest_date.strftime('%Y%m%d')}" if earliest_date else "ts_unknown"
-        return self.inference(hold_df, capture_name=capture_name)
+        # Build capture name from start_date
+        start_dt = pd.to_datetime(start_date)
+        capture_name = f"ts_{start_dt.strftime('%Y%m%d')}"
+        return self.inference(holdout_df, capture_name=capture_name)
 
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
         """Run inference on the Endpoint using the provided DataFrame

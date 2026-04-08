@@ -395,58 +395,36 @@ def confidence_profile(
     return accuracy_df
 
 
-def temporal_split(df: pd.DataFrame, date_column: str, test_split: float = 0.2) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Splits a DataFrame into training and testing sets based on chronological order,
-    handling 'clumps' (dates with a large number of rows) separately.
+def temporal_split(df: pd.DataFrame, date_column: str, end_date: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Split a DataFrame into train/test sets based on a date boundary.
+
+    Rows with date <= end_date go to train, rows with date > end_date go to test.
 
     Args:
         df (pd.DataFrame): Input DataFrame.
         date_column (str): The name of the datetime column.
-        test_split (float): Proportion of data to be used for testing (default 0.2).
+        end_date (str): Rows strictly after this date become the test set.
 
     Returns:
         Tuple[pd.DataFrame, pd.DataFrame]: (train_df, test_df)
     """
     df = df.copy()
-    df[date_column] = pd.to_datetime(df[date_column])  # Ensure datetime type
+    raw_values = df[date_column].copy()
+    df[date_column] = pd.to_datetime(df[date_column], errors="coerce")
 
-    # Compute clump threshold (5% of total rows, min 10 rows)
-    clump_threshold = max(int(len(df) * 0.05), 10)
+    # Log diagnostic info about any unparseable dates
+    nat_count = df[date_column].isna().sum()
+    if nat_count > 0:
+        nat_mask = df[date_column].isna()
+        sample_raw = raw_values[nat_mask].head(5).tolist()
+        log.error(
+            f"temporal_split: {nat_count}/{len(df)} '{date_column}' values could not be parsed as dates. "
+            f"Sample raw values: {sample_raw}, dtypes: {raw_values.dtype}"
+        )
 
-    # Count occurrences per date
-    date_counts = df[date_column].value_counts()
-
-    # Identify clump and non-clump dates
-    clump_dates = date_counts[date_counts > clump_threshold].index
-    non_clump_dates = date_counts[date_counts <= clump_threshold].index
-
-    # Separate clump and non-clump data
-    clump_df = df[df[date_column].isin(clump_dates)]
-    non_clump_df = df[df[date_column].isin(non_clump_dates)]
-
-    # Handle clump splits (80/20 within each clump)
-    train_clumps, test_clumps = [], []
-    for date in clump_dates:
-        subset = clump_df[clump_df[date_column] == date]
-        train_size = int(len(subset) * (1 - test_split))
-        train_clumps.append(subset.iloc[:train_size])
-        test_clumps.append(subset.iloc[train_size:])
-
-    # Concatenate clump splits
-    train_clump_df = pd.concat(train_clumps) if train_clumps else pd.DataFrame(columns=df.columns)
-    test_clump_df = pd.concat(test_clumps) if test_clumps else pd.DataFrame(columns=df.columns)
-
-    # Handle non-clump splits (sorted by date, then split)
-    sorted_non_clump_df = non_clump_df.sort_values(by=date_column)
-    split_index = int(len(sorted_non_clump_df) * (1 - test_split))
-    train_non_clump_df = sorted_non_clump_df.iloc[:split_index]
-    test_non_clump_df = sorted_non_clump_df.iloc[split_index:]
-
-    # Final train/test DataFrames
-    train_df = pd.concat([train_clump_df, train_non_clump_df], ignore_index=True)
-    test_df = pd.concat([test_clump_df, test_non_clump_df], ignore_index=True)
-
+    cutoff = pd.to_datetime(end_date)
+    train_df = df[df[date_column] <= cutoff].copy()
+    test_df = df[df[date_column] > cutoff].copy()
     return train_df, test_df
 
 

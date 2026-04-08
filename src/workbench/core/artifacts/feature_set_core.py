@@ -518,17 +518,17 @@ class FeatureSetCore(Artifact):
             time.sleep(1)
         cls.log.info(f"FeatureSet {feature_group.get_name()} successfully deleted")
 
-    def temporal_split(self, date_column: str, holdout_percent: float = 10.0, overwrite: bool = False) -> list:
-        """Compute a temporal split, returning IDs for the most recent holdout rows.
+    def temporal_split(self, date_column: str, end_date: str, overwrite: bool = False) -> list:
+        """Compute a temporal split, returning IDs for rows after end_date.
 
         Args:
             date_column (str): The name of the date/datetime column to split on.
-            holdout_percent (float): Percentage of rows to hold out (default: 10.0).
+            end_date (str): Rows strictly after this date become the holdout set.
             overwrite (bool): If True, replace all existing sample weights. If False (default),
                 additively merge holdout weights with any existing weights.
 
         Returns:
-            list: List of IDs in the holdout set (most recent rows).
+            list: List of IDs in the holdout set (rows after end_date).
         """
 
         # Validate the date column
@@ -536,29 +536,13 @@ class FeatureSetCore(Artifact):
             self.log.error(f"Date column '{date_column}' not found in columns: {self.columns}")
             return []
 
-        # Pull the data, sort by date, and hold out the most recent N% of rows
-        df = self.query(f'SELECT {self.id_column}, {date_column} FROM "{self.athena_table}"')
-        raw_values = df[date_column].copy()
-        df[date_column] = pd.to_datetime(df[date_column], errors="coerce")
-        nat_count = df[date_column].isna().sum()
-        if nat_count > 0:
-            # Log diagnostic info about the NaT values
-            nat_mask = df[date_column].isna()
-            sample_raw = raw_values[nat_mask].head(5).tolist()
-            self.log.error(
-                f"temporal_split: {nat_count}/{len(df)} '{date_column}' values could not be parsed as dates. "
-                f"Sample raw values: {sample_raw}, dtypes: {raw_values.dtype}"
-            )
-        df = df.sort_values(date_column)
+        # Pull the ID and date columns, then delegate to pandas_utils.temporal_split
+        from workbench.utils.pandas_utils import temporal_split
 
-        # Compute the cutoff index to hold out the specified percentage of rows
-        cutoff_index = int(len(df) * (1.0 - holdout_percent / 100.0))
-        holdout_df = df.iloc[cutoff_index:]
-        cutoff_date = holdout_df[date_column].min()
+        df = self.query(f'SELECT {self.id_column}, {date_column} FROM "{self.athena_table}"')
+        _train_df, holdout_df = temporal_split(df, date_column, end_date=end_date)
         holdout_ids = holdout_df[self.id_column].tolist()
-        self.log.important(
-            f"Temporal Split: {holdout_percent}% holdout ({len(holdout_ids)} rows), cutoff date: {cutoff_date}"
-        )
+        self.log.important(f"Temporal Split: end_date={end_date} ({len(holdout_ids)} holdout rows)")
 
         # Set sample weights to 0 for holdout IDs (additive by default, preserving existing weights)
         if overwrite:
