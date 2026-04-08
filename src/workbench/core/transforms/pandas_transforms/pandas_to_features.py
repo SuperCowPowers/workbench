@@ -407,6 +407,9 @@ class PandasToFeatures(Transform):
         """Post-Transform: Populating Offline Storage and onboard()"""
         self.log.info("Post-Transform: Populating Offline Storage and onboard()...")
 
+        # Refresh the AWS session after multiprocessing ingestion
+        Artifact.refresh_aws_session()
+
         # Feature Group Ingestion takes a while, so we need to wait for it to finish
         self.output_feature_set = FeatureSetCore(self.output_name)
         self.log.important("Waiting for AWS Feature Group Offline storage to be ready...")
