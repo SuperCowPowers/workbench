@@ -16,6 +16,8 @@ Workbench blogs highlight interesting functionality and approaches that might be
 
 - **[Molecular Standardization](molecular_standardization.md):** Why molecular standardization matters for ML pipelines. We walk through Workbench's four-step pipeline — cleanup, salt handling, charge neutralization, and tautomer canonicalization. We also describe **2D** and **3D** molecular descriptors computed by our feature endpoints.
 
+- **[3D Molecular Descriptors](3d_descriptors.md):** A deep dive into Workbench's 3D descriptor pipeline — from conformer generation (ETKDGv3 with tiered fallback and MMFF94s optimization) to 75 features covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. We cover the production guardrails (complexity checks, per-molecule timeouts) that keep it reliable as a deployed endpoint.
+
 - **[Feature Endpoints: From Training to LiveDesign](feature_endpoints.md):** How Workbench uses SageMaker-hosted feature endpoints to guarantee identical feature computation — whether the request comes from a training pipeline, an inference endpoint, or a drug discovery platform like LiveDesign or StarDrop. We compare this approach to feature stores, platform UDFs (Databricks/Tecton), and open-source alternatives.
 
 ## Questions?
