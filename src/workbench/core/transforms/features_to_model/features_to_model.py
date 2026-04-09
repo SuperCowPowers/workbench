@@ -1,5 +1,7 @@
 """FeaturesToModel: Train/Create a Model from a Feature Set"""
 
+import importlib.resources as pkg_resources
+import shutil
 from pathlib import Path
 from typing import Union
 from sagemaker.core.resources import ModelPackageGroup
@@ -208,9 +210,8 @@ class FeaturesToModel(Transform):
             source_dir = Path(script_path).parent
             harness_dst = source_dir / "training_harness.py"
             if not harness_dst.exists():
-                harness_src = Path(__file__).resolve().parents[2] / "model_script_utils" / "training_harness.py"
-                import shutil
-                shutil.copy(harness_src, harness_dst)
+                harness_src = pkg_resources.files("workbench") / "model_script_utils" / "training_harness.py"
+                shutil.copy(str(harness_src), harness_dst)
                 self.log.info(f"Copied training_harness.py into {source_dir}")
 
             self.log.info(f"Custom script path: {script_path}")
@@ -292,7 +293,7 @@ class FeaturesToModel(Transform):
                 command=f"python training_harness.py {entry_point}",
             ),
             compute=Compute(instance_type=train_instance_type, instance_count=1),
-            output_data_config=OutputDataConfig(s3_output_path=self.model_training_root),
+            output_data_config=OutputDataConfig(s3_output_path=self.model_training_root, compression_type="GZIP"),
             stopping_condition=StoppingCondition(max_runtime_in_seconds=6 * 3600),
             base_job_name=self.output_name,
             role=self.workbench_role_arn,

@@ -282,7 +282,7 @@ class MetaModel(Model):
                 command=f"python training_harness.py {entry_point}",
             ),
             compute=Compute(instance_type="ml.m5.large", instance_count=1),
-            output_data_config=OutputDataConfig(s3_output_path=f"{models_s3_path}/{name}/training"),
+            output_data_config=OutputDataConfig(s3_output_path=f"{models_s3_path}/{name}/training", compression_type="GZIP"),
             role=aws_clamp.aws_session.get_workbench_execution_role_arn(),
             sagemaker_session=sm_session,
             base_job_name=name,
