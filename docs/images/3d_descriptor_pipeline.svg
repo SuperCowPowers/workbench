@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 340" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="d3-input" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#455A64"/>
+      <stop offset="100%" stop-color="#607D8B"/>
+    </linearGradient>
+    <linearGradient id="d3-std" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#1E88E5"/>
+    </linearGradient>
+    <linearGradient id="d3-conf" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00897B"/>
+      <stop offset="100%" stop-color="#009688"/>
+    </linearGradient>
+    <linearGradient id="d3-desc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a6b8a"/>
+      <stop offset="100%" stop-color="#2196a9"/>
+    </linearGradient>
+    <linearGradient id="d3-out" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2E7D32"/>
+      <stop offset="100%" stop-color="#43A047"/>
+    </linearGradient>
+    <linearGradient id="d3-shape" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#42A5F5"/>
+    </linearGradient>
+    <linearGradient id="d3-mordred" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6A1B9A"/>
+      <stop offset="100%" stop-color="#AB47BC"/>
+    </linearGradient>
+    <linearGradient id="d3-pharm" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00897B"/>
+      <stop offset="100%" stop-color="#26A69A"/>
+    </linearGradient>
+    <linearGradient id="d3-ensemble" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E65100"/>
+      <stop offset="100%" stop-color="#FF9800"/>
+    </linearGradient>
+    <filter id="d3-shadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="480" y="32" text-anchor="middle" font-size="22" font-weight="700" fill="#E0E0E0">3D Descriptor Pipeline</text>
+  <text x="480" y="56" text-anchor="middle" font-size="15" fill="#999">SMILES to 75 Conformer-Based Features</text>
+
+  <!-- ===== Row 1: Main pipeline boxes ===== -->
+
+  <!-- SMILES Input -->
+  <rect x="30" y="80" width="130" height="64" rx="8" fill="url(#d3-input)" filter="url(#d3-shadow)"/>
+  <text x="95" y="108" text-anchor="middle" font-size="16" font-weight="700" fill="white">SMILES</text>
+  <text x="95" y="128" text-anchor="middle" font-size="12" fill="#B0BEC5">Raw Input</text>
+
+  <!-- Arrow 1 -->
+  <line x1="160" y1="112" x2="192" y2="112" stroke="#666" stroke-width="1.5"/>
+  <polygon points="190,107 202,112 190,117" fill="#666"/>
+
+  <!-- Standardize -->
+  <rect x="202" y="80" width="138" height="64" rx="8" fill="url(#d3-std)" filter="url(#d3-shadow)"/>
+  <text x="271" y="108" text-anchor="middle" font-size="16" font-weight="700" fill="white">Standardize</text>
+  <text x="271" y="128" text-anchor="middle" font-size="12" fill="#BBDEFB">Salts + Tautomers</text>
+
+  <!-- Arrow 2 -->
+  <line x1="340" y1="112" x2="372" y2="112" stroke="#666" stroke-width="1.5"/>
+  <polygon points="370,107 382,112 370,117" fill="#666"/>
+
+  <!-- Conformers -->
+  <rect x="382" y="80" width="158" height="64" rx="8" fill="url(#d3-conf)" filter="url(#d3-shadow)"/>
+  <text x="461" y="108" text-anchor="middle" font-size="16" font-weight="700" fill="white">Conformers</text>
+  <text x="461" y="128" text-anchor="middle" font-size="12" fill="#B2DFDB">ETKDGv3 + MMFF94s</text>
+
+  <!-- Arrow 3 -->
+  <line x1="540" y1="112" x2="572" y2="112" stroke="#666" stroke-width="1.5"/>
+  <polygon points="570,107 582,112 570,117" fill="#666"/>
+
+  <!-- Descriptors -->
+  <rect x="582" y="80" width="150" height="64" rx="8" fill="url(#d3-desc)" filter="url(#d3-shadow)"/>
+  <text x="657" y="108" text-anchor="middle" font-size="16" font-weight="700" fill="white">Descriptors</text>
+  <text x="657" y="128" text-anchor="middle" font-size="12" fill="#B2EBF2">75 Features</text>
+
+  <!-- Arrow 4 -->
+  <line x1="732" y1="112" x2="764" y2="112" stroke="#666" stroke-width="1.5"/>
+  <polygon points="762,107 774,112 762,117" fill="#666"/>
+
+  <!-- Output -->
+  <rect x="774" y="80" width="150" height="64" rx="8" fill="url(#d3-out)" filter="url(#d3-shadow)"/>
+  <text x="849" y="108" text-anchor="middle" font-size="16" font-weight="700" fill="white">DataFrame</text>
+  <text x="849" y="128" text-anchor="middle" font-size="12" fill="#C8E6C9">+ 75 Columns</text>
+
+  <!-- ===== Row 2: Descriptor categories ===== -->
+  <!-- Connector from Descriptors box down -->
+  <line x1="657" y1="144" x2="657" y2="178" stroke="#555" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- Horizontal connector -->
+  <line x1="128" y1="178" x2="845" y2="178" stroke="#555" stroke-width="1"/>
+
+  <!-- Vertical drops -->
+  <line x1="128" y1="178" x2="128" y2="198" stroke="#555" stroke-width="1"/>
+  <line x1="367" y1="178" x2="367" y2="198" stroke="#555" stroke-width="1"/>
+  <line x1="606" y1="178" x2="606" y2="198" stroke="#555" stroke-width="1"/>
+  <line x1="845" y1="178" x2="845" y2="198" stroke="#555" stroke-width="1"/>
+
+  <!-- RDKit 3D Shape -->
+  <rect x="20" y="198" width="216" height="110" rx="8" fill="url(#d3-shape)" filter="url(#d3-shadow)"/>
+  <text x="128" y="228" text-anchor="middle" font-size="15" font-weight="700" fill="white">RDKit 3D Shape</text>
+  <text x="128" y="252" text-anchor="middle" font-size="14" fill="#BBDEFB">PMI, NPR, Asphericity</text>
+  <text x="128" y="272" text-anchor="middle" font-size="14" fill="#BBDEFB">Radius of Gyration</text>
+  <text x="128" y="296" text-anchor="middle" font-size="14" font-weight="600" fill="#E3F2FD">10 features</text>
+
+  <!-- Mordred 3D -->
+  <rect x="252" y="198" width="230" height="110" rx="8" fill="url(#d3-mordred)" filter="url(#d3-shadow)"/>
+  <text x="367" y="228" text-anchor="middle" font-size="15" font-weight="700" fill="white">Mordred 3D</text>
+  <text x="367" y="252" text-anchor="middle" font-size="14" fill="#E1BEE7">CPSA, Geometrical Index</text>
+  <text x="367" y="272" text-anchor="middle" font-size="14" fill="#E1BEE7">Gravitational, PBF</text>
+  <text x="367" y="296" text-anchor="middle" font-size="14" font-weight="600" fill="#F3E5F5">52 features</text>
+
+  <!-- Pharmacophore 3D -->
+  <rect x="498" y="198" width="216" height="110" rx="8" fill="url(#d3-pharm)" filter="url(#d3-shadow)"/>
+  <text x="606" y="228" text-anchor="middle" font-size="15" font-weight="700" fill="white">Pharmacophore 3D</text>
+  <text x="606" y="252" text-anchor="middle" font-size="14" fill="#B2DFDB">Amphiphilic Moment, IMHB</text>
+  <text x="606" y="272" text-anchor="middle" font-size="14" fill="#B2DFDB">Nitrogen Span, Elongation</text>
+  <text x="606" y="296" text-anchor="middle" font-size="14" font-weight="600" fill="#E0F2F1">8 features</text>
+
+  <!-- Conformer Stats -->
+  <rect x="730" y="198" width="216" height="110" rx="8" fill="url(#d3-ensemble)" filter="url(#d3-shadow)"/>
+  <text x="838" y="228" text-anchor="middle" font-size="15" font-weight="700" fill="white">Conformer Stats</text>
+  <text x="838" y="252" text-anchor="middle" font-size="14" fill="#FFE0B2">Energy Min, Range, Std</text>
+  <text x="838" y="272" text-anchor="middle" font-size="14" fill="#FFE0B2">Flexibility Index</text>
+  <text x="838" y="296" text-anchor="middle" font-size="14" font-weight="600" fill="#FFF3E0">5 features</text>
+</svg>
