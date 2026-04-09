@@ -101,6 +101,7 @@ References:
 
 import logging
 import re
+import signal
 import pandas as pd
 import numpy as np
 import time
@@ -164,94 +165,152 @@ def is_too_complex(mol: Chem.Mol) -> bool:
 # =============================================================================
 
 
+class _ConformerTimeout(Exception):
+    """Raised when conformer generation exceeds the time limit."""
+
+    pass
+
+
+def _timeout_handler(signum, frame):
+    raise _ConformerTimeout("Conformer generation timed out")
+
+
 def generate_conformers(
     mol: Chem.Mol,
     n_conformers: int = 10,
     random_seed: int = 42,
     optimize: bool = True,
+    timeout: Optional[float] = 10.0,
 ) -> Optional[Chem.Mol]:
     """
-    Generate 3D conformers using ETKDGv3.
+    Generate 3D conformers using ETKDGv3 with tiered fallback.
+
+    Embedding strategy (3 tiers):
+        1. ETKDGv3 with experimental torsion preferences
+        2. ETKDGv3 with random coordinates (for difficult molecules)
+        3. ETKDGv3 with random coordinates + relaxed ring constraints (for strained bridged systems)
+
+    Optimization: MMFF94s preferred (better planar N handling), UFF fallback
+    for molecules with unsupported MMFF atom types.
+
+    Note: Expects mol with explicit Hs already added (via Chem.AddHs).
+          Returns mol with Hs preserved (caller manages Hs).
 
     Args:
-        mol: RDKit molecule object (will be modified in place)
+        mol: RDKit molecule with explicit Hs
         n_conformers: Number of conformers to generate
         random_seed: Random seed for reproducibility
-        optimize: Whether to run MMFF optimization
+        optimize: Whether to run force field optimization
+        timeout: Max seconds per molecule (default 10). None to disable.
 
     Returns:
-        Molecule with conformers, or None if generation failed
+        Molecule with conformers (Hs preserved), or None if generation failed
     """
     if mol is None:
         return None
 
+    # Set per-molecule timeout (Unix only, uses SIGALRM)
+    use_timeout = timeout is not None and hasattr(signal, "SIGALRM")
+    if use_timeout:
+        old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+        signal.alarm(int(timeout))
+
     try:
-        # Add hydrogens (required for proper 3D geometry)
-        mol = Chem.AddHs(mol)
-
-        # Configure ETKDGv3 parameters
-        # ETKDGv3 handles macrocycles by default (useMacrocycleTorsions=True)
-        params = AllChem.ETKDGv3()
-        params.randomSeed = random_seed
-        params.useSmallRingTorsions = True  # Also handle small rings (3-6 membered)
-        params.numThreads = 1  # Single thread to avoid issues in serverless
-
         # Suppress noisy RDKit warnings (UFFTYPER, etc.) during embedding
         rdkit_logger = RDLogger.logger()
         rdkit_logger.setLevel(RDLogger.ERROR)
 
-        # Generate conformers
+        conf_ids = []
+
+        # Tier 1: Standard ETKDGv3 with experimental torsion preferences
+        params = AllChem.ETKDGv3()
+        params.randomSeed = random_seed
+        params.useSmallRingTorsions = True
+        params.numThreads = 1
+        params.pruneRmsThresh = 0.5  # Remove redundant conformers by heavy-atom RMSD
+        params.trackFailures = True
         try:
             conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params)
         except RuntimeError as e:
-            logger.debug(f"ETKDGv3 embedding raised {e}, trying fallback")
+            logger.debug(f"Tier 1 (ETKDGv3) raised {e}")
             conf_ids = []
 
+        # Tier 2: Random coordinates for difficult molecules
         if len(conf_ids) == 0:
-            # Fallback: random coordinates for difficult molecules
-            fallback_params = AllChem.ETKDGv3()
-            fallback_params.randomSeed = random_seed
-            fallback_params.useSmallRingTorsions = True
-            fallback_params.useRandomCoords = True
-            fallback_params.numThreads = 1
+            logger.debug("Tier 1 failed, trying random coordinates")
+            params2 = AllChem.ETKDGv3()
+            params2.randomSeed = random_seed
+            params2.useSmallRingTorsions = True
+            params2.useRandomCoords = True
+            params2.numThreads = 1
+            params2.pruneRmsThresh = 0.5
+            params2.trackFailures = True
             try:
-                conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=fallback_params)
+                conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params2)
             except RuntimeError as e:
-                logger.warning(f"Fallback embedding raised {e}")
+                logger.debug(f"Tier 2 (random coords) raised {e}")
+                conf_ids = []
+
+        # Tier 3: Relaxed ring constraints for strained bridged/polycyclic systems
+        if len(conf_ids) == 0:
+            logger.debug("Tier 2 failed, trying relaxed ring constraints")
+            params3 = AllChem.ETKDGv3()
+            params3.randomSeed = random_seed
+            params3.useRandomCoords = True
+            params3.useBasicKnowledge = False  # Relax flat-ring enforcement
+            params3.maxIterations = 5000
+            params3.numThreads = 1
+            params3.trackFailures = True
+            try:
+                conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params3)
+            except RuntimeError as e:
+                logger.debug(f"Tier 3 (relaxed constraints) raised {e}")
                 conf_ids = []
 
         if len(conf_ids) == 0:
             rdkit_logger.setLevel(RDLogger.WARNING)
-            logger.warning("Failed to generate conformers for molecule")
             return None
 
-        # Optimize conformers with MMFF94 if requested
+        # Optimize conformers: prefer MMFF94s, fall back to UFF
         if optimize:
             try:
-                AllChem.MMFFOptimizeMoleculeConfs(mol, maxIters=100, numThreads=1)
+                if AllChem.MMFFHasAllMoleculeParams(mol):
+                    AllChem.MMFFOptimizeMoleculeConfs(mol, mmffVariant="MMFF94s", maxIters=200, numThreads=1)
+                else:
+                    logger.debug("MMFF94s params unavailable, falling back to UFF")
+                    AllChem.UFFOptimizeMoleculeConfs(mol, maxIters=200, numThreads=1)
             except Exception as e:
-                logger.debug(f"MMFF optimization failed: {e}")
+                logger.debug(f"Force field optimization failed: {e}")
 
         # Restore RDKit logging
         rdkit_logger.setLevel(RDLogger.WARNING)
-        # Continue without optimization
-
-        # Remove explicit Hs (3D coords on heavy atoms are preserved)
-        mol = Chem.RemoveHs(mol)
 
         return mol
+
+    except _ConformerTimeout:
+        logger.warning(f"Conformer generation timed out ({timeout}s)")
+        RDLogger.logger().setLevel(RDLogger.WARNING)
+        return None
 
     except Exception as e:
         logger.warning(f"Conformer generation failed: {e}")
         return None
 
+    finally:
+        if use_timeout:
+            signal.alarm(0)  # Cancel the alarm
+            signal.signal(signal.SIGALRM, old_handler)
+
 
 def get_conformer_energies(mol: Chem.Mol) -> List[float]:
     """
-    Calculate MMFF94 energies for all conformers.
+    Calculate force field energies for all conformers.
+
+    Uses MMFF94s (preferred for drug-like molecules), falls back to UFF
+    for molecules with unsupported MMFF atom types.
 
     Args:
-        mol: RDKit molecule with conformers
+        mol: RDKit molecule with conformers and explicit Hs
 
     Returns:
         List of energies (kcal/mol), NaN for failed calculations
@@ -259,19 +318,26 @@ def get_conformer_energies(mol: Chem.Mol) -> List[float]:
     if mol is None or mol.GetNumConformers() == 0:
         return []
 
+    n_confs = mol.GetNumConformers()
     energies = []
-    mmff_props = AllChem.MMFFGetMoleculeProperties(mol)
 
-    if mmff_props is None:
-        return [np.nan] * mol.GetNumConformers()
-
-    for conf_id in range(mol.GetNumConformers()):
-        try:
-            ff = AllChem.MMFFGetMoleculeForceField(mol, mmff_props, confId=conf_id)
-            if ff is not None:
-                energies.append(ff.CalcEnergy())
-            else:
+    # Try MMFF94s first (better handling of planar nitrogen centers)
+    mmff_props = AllChem.MMFFGetMoleculeProperties(mol, mmffVariant="MMFF94s")
+    if mmff_props is not None:
+        for conf_id in range(n_confs):
+            try:
+                ff = AllChem.MMFFGetMoleculeForceField(mol, mmff_props, confId=conf_id)
+                energies.append(ff.CalcEnergy() if ff is not None else np.nan)
+            except Exception:
                 energies.append(np.nan)
+        return energies
+
+    # Fall back to UFF for molecules with unsupported MMFF atom types
+    logger.debug("MMFF94s params unavailable for energy calc, falling back to UFF")
+    for conf_id in range(n_confs):
+        try:
+            ff = AllChem.UFFGetMoleculeForceField(mol, confId=conf_id)
+            energies.append(ff.CalcEnergy() if ff is not None else np.nan)
         except Exception:
             energies.append(np.nan)
 
@@ -371,8 +437,10 @@ def compute_mordred_3d_descriptors(mol: Chem.Mol) -> Dict[str, float]:
     """
     Compute Mordred 3D descriptors.
 
+    Note: Expects mol with explicit Hs (needed for CPSA partial charge calculations).
+
     Args:
-        mol: RDKit molecule with conformer
+        mol: RDKit molecule with conformer and explicit Hs
 
     Returns:
         Dictionary of descriptor name -> value
@@ -384,9 +452,7 @@ def compute_mordred_3d_descriptors(mol: Chem.Mol) -> Dict[str, float]:
         return {str(desc): np.nan for desc in calc.descriptors}
 
     try:
-        # Mordred CPSA needs explicit Hs for partial charge calculations
-        mol_with_hs = Chem.AddHs(mol, addCoords=True)
-        result_df = calc.pandas([mol_with_hs], nproc=1, quiet=True)
+        result_df = calc.pandas([mol], nproc=1, quiet=True)
 
         # Convert to dictionary with sanitized column names
         result = {}
@@ -842,6 +908,8 @@ def compute_descriptors_3d(
     optimize: bool = True,
     random_seed: int = 42,
     use_lowest_energy: bool = True,
+    timeout: Optional[float] = 10.0,
+    complexity_check: bool = True,
 ) -> pd.DataFrame:
     """
     Compute 3D molecular descriptors for ADMET modeling.
@@ -853,6 +921,10 @@ def compute_descriptors_3d(
         random_seed: Random seed for conformer generation (default 42)
         use_lowest_energy: Use lowest energy conformer for descriptors (default True)
                           If False, uses first conformer
+        timeout: Max seconds per molecule for conformer generation (default 10).
+                 None to disable (useful for local debugging/analysis).
+        complexity_check: Whether to skip molecules that exceed complexity thresholds
+                         (default True). Set False for local analysis of complex molecules.
 
     Returns:
         DataFrame with 75 additional 3D descriptor columns:
@@ -862,8 +934,9 @@ def compute_descriptors_3d(
         - 5 Conformer ensemble statistics
 
     Example:
-        df = compute_descriptors_3d(df)  # Standard usage
+        df = compute_descriptors_3d(df)  # Standard usage (endpoint-safe)
         df = compute_descriptors_3d(df, n_conformers=1, optimize=False)  # Fast mode
+        df = compute_descriptors_3d(df, timeout=None, complexity_check=False)  # No guardrails
     """
     # Find SMILES column (case-insensitive)
     smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
@@ -897,43 +970,51 @@ def compute_descriptors_3d(
                 continue
 
             # Skip molecules that are too complex (would risk endpoint timeout)
-            if is_too_complex(mol):
+            if complexity_check and is_too_complex(mol):
                 continue
 
-            # Generate conformers
+            # Add explicit Hs (required for conformer generation, MMFF, and Mordred CPSA)
+            mol = Chem.AddHs(mol)
+
+            # Generate conformers (mol keeps Hs throughout)
             mol = generate_conformers(
                 mol,
                 n_conformers=n_conformers,
                 random_seed=random_seed,
                 optimize=optimize,
+                timeout=timeout,
             )
 
             if mol is None or mol.GetNumConformers() == 0:
                 continue
 
-            # Select conformer for descriptor calculation
+            # All descriptors computed with explicit Hs preserved
+            # (required for MMFF energies, Mordred CPSA, and more physically
+            # correct shape descriptors)
+
+            # Select conformer by lowest force field energy
             if use_lowest_energy and mol.GetNumConformers() > 1:
                 conf_id = get_lowest_energy_conformer_id(mol)
             else:
                 conf_id = 0
 
-            # Compute RDKit 3D descriptors
+            # RDKit 3D shape descriptors (PMI, NPR, asphericity, etc.)
             rdkit_3d = compute_rdkit_3d_descriptors(mol, conf_id)
             for name, value in rdkit_3d.items():
                 result.at[idx, name] = value
 
-            # Compute Mordred 3D descriptors
+            # Mordred 3D descriptors (CPSA needs explicit Hs for partial charges)
             mordred_3d = compute_mordred_3d_descriptors(mol)
             for name, value in mordred_3d.items():
                 if name in result.columns:
                     result.at[idx, name] = value
 
-            # Compute Pharmacophore 3D descriptors
+            # Pharmacophore 3D descriptors
             pharm_3d = compute_pharmacophore_3d_descriptors(mol, conf_id)
             for name, value in pharm_3d.items():
                 result.at[idx, name] = value
 
-            # Compute conformer ensemble statistics
+            # Conformer ensemble statistics (force field energies)
             conf_stats = compute_conformer_statistics(mol)
             for name, value in conf_stats.items():
                 result.at[idx, name] = value
