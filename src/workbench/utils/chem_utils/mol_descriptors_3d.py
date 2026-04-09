@@ -166,9 +166,11 @@ def is_too_complex(mol: Chem.Mol) -> bool:
     n_spiro = rdMolDescriptors.CalcNumSpiroAtoms(mol)
     ring_complexity = n_rings + n_bridgehead + n_spiro
     if ring_complexity > MAX_RING_COMPLEXITY:
-        logger.warning(f"Skipping molecule: ring_complexity={ring_complexity} "
-                       f"(rings={n_rings} + bridgehead={n_bridgehead} + spiro={n_spiro}) "
-                       f"> {MAX_RING_COMPLEXITY}")
+        logger.warning(
+            f"Skipping molecule: ring_complexity={ring_complexity} "
+            f"(rings={n_rings} + bridgehead={n_bridgehead} + spiro={n_spiro}) "
+            f"> {MAX_RING_COMPLEXITY}"
+        )
         return True
 
     return False

@@ -207,13 +207,11 @@ def run_corner_case_tests():
                 # Corner case: metal-containing / unusual
                 "[Na+].CC(=O)[O-]",  # Sodium acetate — salt
                 # Corner case: boron-containing compounds (UFF/MMFF edge cases)
-                "OB(O)c1ccc(C(F)(F)F)cc1",                      # 4-(trifluoromethyl)phenylboronic acid
-                "O=Cc1ccc(B(O)O)cc1",                            # 4-formylphenylboronic acid
-                "F[B-](F)(F)F.[K+]",                             # Potassium tetrafluoroborate — ionic boron
+                "OB(O)c1ccc(C(F)(F)F)cc1",  # 4-(trifluoromethyl)phenylboronic acid
+                "O=Cc1ccc(B(O)O)cc1",  # 4-formylphenylboronic acid
+                "F[B-](F)(F)F.[K+]",  # Potassium tetrafluoroborate — ionic boron
                 # Corner case: highly constrained polycyclic (optimizer crash)
-                "C12C3C4C1C5C3C2C45",                            # Cubane — dense cage, public
-                # TEMP: row 266 crash investigation — delete after confirming fix
-                r"C/C=C(\C)C(=O)O[C@H]1C[C@@H](OC(C)=O)[C@@]2(C(=O)OC)CO[C@H]3[C@@H](O)[C@@](C)([C@]45O[C@@]4(C)[C@H]4C[C@@H]5O[C@@H]5OC=C[C@@]54O)[C@H]4[C@]1(CO[C@]4(O)C(=O)OC)[C@@H]32",
+                "C12C3C4C1C5C3C2C45",  # Cubane — dense cage, public
             ],
             "label": [
                 "benzene",
@@ -230,7 +228,6 @@ def run_corner_case_tests():
                 "formyl_boronic_acid",
                 "potassium_tetrafluoroborate",
                 "cubane_bridged",
-                "TEMP_row266_crash",
             ],
         }
     )
