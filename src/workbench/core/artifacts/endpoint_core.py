@@ -23,16 +23,8 @@ from sagemaker.core.resources import (
 )
 from sagemaker.core.serializers import CSVSerializer
 from sagemaker.core.deserializers import PandasDeserializer
-
-# FIXME: sagemaker-core bug — DataCaptureConfigSummary.kms_key_id is required but should be
-# Optional, causing Endpoint.get() to fail on endpoints with data capture but no KMS key.
-# See https://github.com/aws/sagemaker-python-sdk/issues/5738
 from sagemaker.core.shapes.shapes import DataCaptureConfigSummary
 from sagemaker.core.utils.utils import Unassigned as _Unassigned
-
-DataCaptureConfigSummary.model_fields["kms_key_id"].default = _Unassigned()
-DataCaptureConfigSummary.model_rebuild(force=True)
-SagemakerEndpoint.model_rebuild(force=True)
 
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
@@ -44,6 +36,13 @@ from workbench.utils.xgboost_model_utils import pull_cv_results as xgboost_pull_
 from workbench.utils.pytorch_utils import pull_cv_results as pytorch_pull_cv
 from workbench.utils.chemprop_utils import pull_cv_results as chemprop_pull_cv
 from workbench_bridges.endpoints.fast_inference import fast_inference
+
+# FIXME: sagemaker-core bug — DataCaptureConfigSummary.kms_key_id is required but should be
+# Optional, causing Endpoint.get() to fail on endpoints with data capture but no KMS key.
+# See https://github.com/aws/sagemaker-python-sdk/issues/5738
+DataCaptureConfigSummary.model_fields["kms_key_id"].default = _Unassigned()
+DataCaptureConfigSummary.model_rebuild(force=True)
+SagemakerEndpoint.model_rebuild(force=True)
 
 
 class WorkbenchDeserializer(PandasDeserializer):
