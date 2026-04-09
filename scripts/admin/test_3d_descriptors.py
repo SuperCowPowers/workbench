@@ -194,26 +194,21 @@ def run_corner_case_tests():
         {
             "smiles": [
                 # Should pass: simple drug-like molecules
-                "c1ccccc1",                                      # Benzene — flat aromatic
-                "CC(=O)Oc1ccccc1C(=O)O",                        # Aspirin — standard drug
-                "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",                 # Caffeine — rigid
-                "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C",          # Testosterone — steroid
-
+                "c1ccccc1",  # Benzene — flat aromatic
+                "CC(=O)Oc1ccccc1C(=O)O",  # Aspirin — standard drug
+                "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",  # Caffeine — rigid
+                "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C",  # Testosterone — steroid
                 # Corner case: bridged polycyclic (known embedding difficulty)
-                "C1CC2CC1CC2O",                                  # Norbornanol — bridged bicyclic, public
-
+                "C1CC2CC1CC2O",  # Norbornanol — bridged bicyclic, public
                 # Corner case: boron (unsupported by UFF/MMFF, caused C++ crash)
-                "OB(O)c1ccccc1",                                 # Phenylboronic acid
-                "CC1=CC(=CC(=C1)B(O)O)C",                       # 3,5-dimethylphenylboronic acid
-
+                "OB(O)c1ccccc1",  # Phenylboronic acid
+                "CC1=CC(=CC(=C1)B(O)O)C",  # 3,5-dimethylphenylboronic acid
                 # Corner case: complex drug with deuterium labels
-                "[2H]C([2H])(F)Oc1ccc(cc1)C(=O)NC",             # Deuterated drug fragment
-
+                "[2H]C([2H])(F)Oc1ccc(cc1)C(=O)NC",  # Deuterated drug fragment
                 # Corner case: large flexible molecule
-                "CCCCCCCCCCCCCCCCCCCC",                          # Eicosane — long chain, very flexible
-
+                "CCCCCCCCCCCCCCCCCCCC",  # Eicosane — long chain, very flexible
                 # Corner case: metal-containing / unusual
-                "[Na+].CC(=O)[O-]",                              # Sodium acetate — salt
+                "[Na+].CC(=O)[O-]",  # Sodium acetate — salt
             ],
             "label": [
                 "benzene",
