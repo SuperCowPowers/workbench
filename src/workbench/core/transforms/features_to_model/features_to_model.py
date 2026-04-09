@@ -203,6 +203,16 @@ class FeaturesToModel(Transform):
                 # Fill in the custom script template with specific parameters (include any custom args)
                 template_params.update(self.custom_args)
                 script_path = fill_template(self.custom_script, template_params, "generated_model_script.py")
+
+            # Ensure training_harness.py is in the custom script's source directory
+            source_dir = Path(script_path).parent
+            harness_dst = source_dir / "training_harness.py"
+            if not harness_dst.exists():
+                harness_src = Path(__file__).resolve().parents[2] / "model_script_utils" / "training_harness.py"
+                import shutil
+                shutil.copy(harness_src, harness_dst)
+                self.log.info(f"Copied training_harness.py into {source_dir}")
+
             self.log.info(f"Custom script path: {script_path}")
 
         # We're using one of the built-in model script templates
