@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../aws_tips_and_tricks/">
+        <link rel="prev" href="../molecular_standardization/">
       
       
-        <link rel="next" href="../aws_client_vpn/">
+        <link rel="next" href="../feature_endpoints/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>AWS Access Management - ADMET Workbench</title>
+        <title>3D Molecular Descriptors - ADMET Workbench</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#aws-acesss-management" class="md-skip">
+        <a href="#3d-molecular-descriptors-shape-surface-and-pharmacophore-features" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              AWS Access Management
+              3D Molecular Descriptors
             
           </span>
         </div>
@@ -1529,18 +1529,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
         
           
           <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
@@ -1561,7 +1563,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1579,7 +1581,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -1607,7 +1609,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/confusion_explorer/" class="md-nav__link">
+      <a href="../confusion_explorer/" class="md-nav__link">
         
   
   
@@ -1635,7 +1637,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/model_confidence/" class="md-nav__link">
+      <a href="../model_confidence/" class="md-nav__link">
         
   
   
@@ -1663,7 +1665,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/chemprop_shap/" class="md-nav__link">
+      <a href="../chemprop_shap/" class="md-nav__link">
         
   
   
@@ -1691,7 +1693,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/aws_endpoint_architecture/" class="md-nav__link">
+      <a href="../aws_endpoint_architecture/" class="md-nav__link">
         
   
   
@@ -1719,7 +1721,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/molecular_standardization/" class="md-nav__link">
+      <a href="../molecular_standardization/" class="md-nav__link">
         
   
   
@@ -1744,10 +1746,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../blogs/3d_descriptors/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Molecular Descriptors
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1763,6 +1792,259 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-3d-descriptors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why 3D Descriptors?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-computation-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Computation Pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Computation Pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-standardization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Standardization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-conformer-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Conformer Generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-descriptor-calculation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Descriptor Calculation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#descriptor-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Descriptor Categories
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Descriptor Categories">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rdkit-3d-shape-descriptors-10-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RDKit 3D Shape Descriptors (10 features)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mordred-3d-descriptors-52-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mordred 3D Descriptors (52 features)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pharmacophore-3d-descriptors-8-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pharmacophore 3D Descriptors (8 features)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conformer-ensemble-statistics-5-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformer Ensemble Statistics (5 features)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#production-guardrails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Production Guardrails
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Production Guardrails">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#molecular-complexity-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Molecular Complexity Check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-molecule-timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Molecule Timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-size-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch Size Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serverless-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serverless Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-the-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deploying the Endpoint
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deploying the Endpoint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-the-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the Endpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1775,7 +2057,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/feature_endpoints/" class="md-nav__link">
+      <a href="../feature_endpoints/" class="md-nav__link">
         
   
   
@@ -3164,20 +3446,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
           <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="0">
@@ -3198,7 +3478,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
@@ -3216,7 +3496,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_setup/" class="md-nav__link">
+      <a href="../../aws_setup/aws_setup/" class="md-nav__link">
         
   
   
@@ -3244,7 +3524,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../full_pipeline/" class="md-nav__link">
+      <a href="../../aws_setup/full_pipeline/" class="md-nav__link">
         
   
   
@@ -3272,7 +3552,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_stack/" class="md-nav__link">
+      <a href="../../aws_setup/core_stack/" class="md-nav__link">
         
   
   
@@ -3300,7 +3580,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dashboard_stack/" class="md-nav__link">
+      <a href="../../aws_setup/dashboard_stack/" class="md-nav__link">
         
   
   
@@ -3328,7 +3608,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../domain_cert_setup/" class="md-nav__link">
+      <a href="../../aws_setup/domain_cert_setup/" class="md-nav__link">
         
   
   
@@ -3356,7 +3636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_tips_and_tricks/" class="md-nav__link">
+      <a href="../../aws_setup/aws_tips_and_tricks/" class="md-nav__link">
         
   
   
@@ -3381,37 +3661,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    AWS Access Management
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../aws_setup/aws_access_management/" class="md-nav__link">
         
   
   
@@ -3427,48 +3680,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#conceptual-slide-deck" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Conceptual Slide Deck
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#aws-resources" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        AWS Resources
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3481,7 +3692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../aws_client_vpn/" class="md-nav__link">
+      <a href="../../aws_setup/aws_client_vpn/" class="md-nav__link">
         
   
   
@@ -4732,10 +4943,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#conceptual-slide-deck" class="md-nav__link">
+  <a href="#why-3d-descriptors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Conceptual Slide Deck
+        Why 3D Descriptors?
       
     </span>
   </a>
@@ -4743,10 +4954,221 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#aws-resources" class="md-nav__link">
+  <a href="#the-computation-pipeline" class="md-nav__link">
     <span class="md-ellipsis">
       
-        AWS Resources
+        The Computation Pipeline
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Computation Pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-standardization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Standardization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-conformer-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Conformer Generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-descriptor-calculation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Descriptor Calculation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#descriptor-categories" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Descriptor Categories
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Descriptor Categories">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rdkit-3d-shape-descriptors-10-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RDKit 3D Shape Descriptors (10 features)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#mordred-3d-descriptors-52-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mordred 3D Descriptors (52 features)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pharmacophore-3d-descriptors-8-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pharmacophore 3D Descriptors (8 features)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conformer-ensemble-statistics-5-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformer Ensemble Statistics (5 features)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#production-guardrails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Production Guardrails
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Production Guardrails">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#molecular-complexity-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Molecular Complexity Check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-molecule-timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Molecule Timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-size-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch Size Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serverless-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serverless Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploying-the-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deploying the Endpoint
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Deploying the Endpoint">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-the-endpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using the Endpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
       
     </span>
   </a>
@@ -4770,21 +5192,181 @@
 
 
 
-<h1 id="aws-acesss-management">AWS Acesss Management</h1>
+<h1 id="3d-molecular-descriptors-shape-surface-and-pharmacophore-features">3D Molecular Descriptors: Shape, Surface, and Pharmacophore Features</h1>
 <div class="admonition tip inline end">
-<p class="admonition-title">Need AWS Help?</p>
-<p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a> </p>
+<p class="admonition-title">Combine 2D + 3D</p>
+<p>Run both the <a href="../molecular_standardization/">2D descriptor endpoint</a> and the 3D endpoint, then concatenate the results for a ~390-feature set covering topological, electronic, and geometric properties.</p>
 </div>
-<p>This page gives an overview of how Workbench sets up roles and policies in a granular way that provides 'least priviledge' and also provides a unified framework for AWS access management.</p>
-<h2 id="conceptual-slide-deck">Conceptual Slide Deck</h2>
-<p><a href="https://docs.google.com/presentation/d/1_KwbaBsyBoiWW_8SEallHg8RMsi9FdK10dr2wwzo3CA/edit?usp=sharing">Workbench AWS Acesss Management</a></p>
-<h2 id="aws-resources">AWS Resources</h2>
+<p>2D molecular descriptors capture a lot about a molecule's chemistry from its connectivity graph alone -- molecular weight, hydrogen bond donors, topological polar surface area, and hundreds of other properties. But some of the most important ADMET properties depend on the molecule's <em>shape</em> in three dimensions: how it fits into a transporter binding site, whether it can fold to mask polar groups for membrane permeation, or how its charge distribution maps onto its surface.</p>
+<p>Workbench's 3D descriptor endpoint computes <strong>75 conformer-based features</strong> from SMILES strings, covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. In this blog we'll walk through the computational pipeline, the descriptor categories, and the production guardrails that make this work reliably as a deployed <a href="../feature_endpoints/">feature endpoint</a>.</p>
+<h2 id="why-3d-descriptors">Why 3D Descriptors?</h2>
+<p>2D descriptors treat molecules as graphs -- atoms are nodes, bonds are edges. This misses geometry-dependent properties that matter for ADMET:</p>
 <ul>
-<li><a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/what-is.html">AWS Identity Center</a></li>
-<li><a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/users-groups-provisioning.html">Users and Groups</a></li>
-<li><a href="https://docs.aws.amazon.com/singlesignon/latest/userguide/permissionsetsconcept.html">Permission Sets</a></li>
-<li><a href="https://docs.aws.amazon.com/cli/latest/userguide/sso-configure-profile-token.html">SSO Command Line/Python Configure</a></li>
+<li><strong>Membrane permeability</strong> depends on molecular shape and the spatial separation of polar and nonpolar regions (amphiphilic moment)</li>
+<li><strong>Transporter interactions</strong> (P-gp, BCRP) correlate with molecular elongation, nitrogen spatial distribution, and overall size</li>
+<li><strong>Protein-ligand binding</strong> depends on 3D shape complementarity, not just functional group counts</li>
+<li><strong>Intramolecular hydrogen bonds</strong> enable "chameleonic" behavior where molecules mask polar groups in nonpolar environments -- a purely 3D phenomenon</li>
 </ul>
+<p>These properties can't be captured from the molecular graph. You need 3D coordinates.</p>
+<h2 id="the-computation-pipeline">The Computation Pipeline</h2>
+<p>The 3D descriptor endpoint runs a multi-step pipeline for each molecule:</p>
+<figure style="margin: 20px auto; text-align: center;">
+<img src="../../images/3d_descriptor_pipeline.svg" alt="3D descriptor pipeline: SMILES to Standardize to Conformers to 75 Descriptors" style="width: 100%; min-height: 300px;">
+<figcaption><em>The 3D descriptor pipeline: standardization, tiered conformer generation with MMFF94s optimization, and four categories of 3D descriptors computed on the lowest-energy conformer.</em></figcaption>
+</figure>
+
+<h3 id="step-1-standardization">Step 1: Standardization</h3>
+<p>The same <a href="../molecular_standardization/">standardization pipeline</a> used by the 2D endpoints runs first -- salt extraction, charge neutralization, and tautomer canonicalization. This ensures the 3D descriptors are computed on the same canonical structure as the 2D descriptors.</p>
+<h3 id="step-2-conformer-generation">Step 2: Conformer Generation</h3>
+<p>Generating realistic 3D coordinates from a SMILES string is the most computationally intensive step. Workbench uses RDKit's <strong>ETKDGv3</strong> (Experimental Torsion Knowledge Distance Geometry v3), which biases conformer sampling toward torsion angles observed in crystal structures -- appropriate for the condensed-phase geometries relevant to ADMET.</p>
+<p>The algorithm uses a three-tier embedding strategy to maximize success rates across diverse chemical structures:</p>
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Tier</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Strategy</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">When It's Needed</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">1. Standard ETKDGv3</td><td style="padding: 8px 16px;">Experimental torsion preferences + small ring handling</td><td style="padding: 8px 16px;">Works for ~95% of drug-like molecules</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">2. Random Coordinates</td><td style="padding: 8px 16px;">Random initial positions instead of distance matrix eigenvalues</td><td style="padding: 8px 16px;">Molecules where distance bounds are hard to satisfy</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">3. Relaxed Constraints</td><td style="padding: 8px 16px;">Random coordinates + relaxed flat-ring enforcement</td><td style="padding: 8px 16px;">Strained bridged polycyclics, unusual ring topologies</td></tr>
+  </tbody>
+</table>
+
+<p>Each tier generates <strong>10 conformers</strong> with RMSD-based pruning (<code>pruneRmsThresh=0.5</code>) to ensure conformational diversity while removing redundant geometries. All conformers are optimized with the <strong>MMFF94s</strong> force field (preferred over MMFF94 for its improved handling of planar nitrogen centers common in drug molecules). For molecules with unsupported MMFF atom types, the pipeline automatically falls back to <strong>UFF</strong> (Universal Force Field).</p>
+<p>The lowest-energy conformer from the ensemble is selected for descriptor calculation. While Boltzmann-weighted ensemble averages are theoretically more rigorous, the energy errors inherent in force-field methods make the weighting unreliable in practice -- the lowest-energy conformer provides a robust single-geometry approximation.</p>
+<h3 id="step-3-descriptor-calculation">Step 3: Descriptor Calculation</h3>
+<p>All 75 descriptors are computed on the molecule with <strong>explicit hydrogens preserved</strong> throughout. This is important -- MMFF94s energy calculations, Mordred CPSA partial charges, and mass-weighted shape descriptors all require explicit Hs for correct results.</p>
+<h2 id="descriptor-categories">Descriptor Categories</h2>
+<h3 id="rdkit-3d-shape-descriptors-10-features">RDKit 3D Shape Descriptors (10 features)</h3>
+<p>These capture the overall molecular shape using the inertia tensor:</p>
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Descriptor</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">What It Captures</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">PMI1, PMI2, PMI3</td><td style="padding: 8px 16px;">Principal moments of inertia -- raw shape information</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">NPR1, NPR2</td><td style="padding: 8px 16px;">Normalized PMI ratios -- classify molecules as rod-like, disc-like, or spherical on the PMI triangle plot</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Asphericity</td><td style="padding: 8px 16px;">How far from spherical (0 = sphere, higher = elongated)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Eccentricity</td><td style="padding: 8px 16px;">Shape elongation (0 = sphere, 1 = linear)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Inertial Shape Factor</td><td style="padding: 8px 16px;">Ratio of smallest to largest PMI -- flat vs compact</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Radius of Gyration</td><td style="padding: 8px 16px;">Overall molecular size (mass-weighted spread from center)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Spherocity Index</td><td style="padding: 8px 16px;">How spherical the molecule is (1 = perfect sphere)</td></tr>
+  </tbody>
+</table>
+
+<p>The NPR1/NPR2 triangle plot is a widely used visualization for molecular shape classification: rod-shaped molecules cluster near (0, 1), disc-shaped near (0.5, 0.5), and spherical near (1, 1). This is particularly useful for understanding transporter substrate preferences -- P-gp tends to prefer elongated, amphipathic molecules.</p>
+<h3 id="mordred-3d-descriptors-52-features">Mordred 3D Descriptors (52 features)</h3>
+<p>Mordred's 3D modules compute surface-area-based descriptors that capture how charge, polarity, and hydrophobicity distribute across the molecular surface:</p>
+<ul>
+<li><strong>CPSA (43 descriptors)</strong>: Charged Partial Surface Area -- the 3D extension of topological polar surface area. Maps partial charges onto the solvent-accessible surface to capture electrostatic features that govern solvation, permeability, and protein binding.</li>
+<li><strong>Geometrical Index (4)</strong>: Petitjean shape indices measuring molecular topology in 3D space.</li>
+<li><strong>Gravitational Index (4)</strong>: Mass-weighted distance descriptors.</li>
+<li><strong>PBF (1)</strong>: Plane of Best Fit -- measures molecular planarity, relevant for membrane intercalation and crystal packing.</li>
+</ul>
+<h3 id="pharmacophore-3d-descriptors-8-features">Pharmacophore 3D Descriptors (8 features)</h3>
+<p>Custom descriptors capturing the spatial distribution of pharmacophoric features:</p>
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Descriptor</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">ADMET Relevance</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Axis Length</td><td style="padding: 8px 16px;">Maximum heavy-atom distance -- P-gp substrates are typically 25-30 &#8491; long</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Volume</td><td style="padding: 8px 16px;">Convex hull volume -- binding site fit, transporter size constraints</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Amphiphilic Moment</td><td style="padding: 8px 16px;">Polar/nonpolar centroid separation -- membrane orientation, transporter recognition</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Charge Centroid Distance</td><td style="padding: 8px 16px;">Distance from center of mass to basic nitrogen centroid -- binding orientation</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Nitrogen Span</td><td style="padding: 8px 16px;">Max distance between any two nitrogens -- multi-point binding</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">HBA Centroid Distance</td><td style="padding: 8px 16px;">H-bond acceptor spatial distribution -- solubility, permeability</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">IMHB Potential</td><td style="padding: 8px 16px;">Intramolecular H-bond potential -- chameleonic permeability (polar group masking)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Elongation</td><td style="padding: 8px 16px;">Axis length / volume^(1/3) -- shape anisotropy</td></tr>
+  </tbody>
+</table>
+
+<p>The <strong>intramolecular hydrogen bond potential</strong> (IMHB) deserves special mention. Molecules that can form intramolecular H-bonds can "mask" their polar groups in nonpolar membrane environments, dramatically increasing permeability despite high polar surface area. This chameleonic behavior is a key design strategy in modern medicinal chemistry and is invisible to 2D descriptors.</p>
+<h3 id="conformer-ensemble-statistics-5-features">Conformer Ensemble Statistics (5 features)</h3>
+<p>Rather than discarding the conformer ensemble after selecting the lowest-energy geometry, we extract statistics that capture conformational flexibility:</p>
+<ul>
+<li><strong>Energy minimum</strong>: The lowest force field energy -- a proxy for strain</li>
+<li><strong>Energy range / standard deviation</strong>: How spread out the conformer energies are</li>
+<li><strong>Conformational flexibility index</strong>: Normalized energy range -- higher values indicate more conformational freedom</li>
+<li><strong>Conformer count</strong>: How many unique conformers were generated (after RMSD pruning)</li>
+</ul>
+<p>Highly flexible molecules tend to have larger energy ranges, more conformers, and higher flexibility indices. These features correlate with permeability (flexible molecules pay higher entropic penalties for binding) and metabolic stability.</p>
+<h2 id="production-guardrails">Production Guardrails</h2>
+<p>The 3D endpoint is significantly more compute-intensive than 2D (~1-2 molecules/second vs. near-instant for 2D). Several safeguards keep it reliable as a deployed service:</p>
+<h3 id="molecular-complexity-check">Molecular Complexity Check</h3>
+<p>Before attempting conformer generation, molecules are screened against complexity thresholds:</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Threshold</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Heavy atoms</td>
+<td>&gt; 100</td>
+<td>Embedding time scales roughly O(n^2)</td>
+</tr>
+<tr>
+<td>Rotatable bonds</td>
+<td>&gt; 30</td>
+<td>Combinatorial explosion of conformer space</td>
+</tr>
+<tr>
+<td>Ring systems</td>
+<td>&gt; 10</td>
+<td>Complex ring topologies cause embedding failures</td>
+</tr>
+</tbody>
+</table>
+<p>Molecules exceeding any threshold receive NaN values for all 75 features -- the same behavior as a failed conformer generation. These thresholds can be disabled for local analysis (<code>complexity_check=False</code>).</p>
+<h3 id="per-molecule-timeout">Per-Molecule Timeout</h3>
+<p>Conformer generation for certain bridged polycyclic systems can hang for minutes even on small molecules. A per-molecule timeout (default 10 seconds) ensures one difficult molecule doesn't consume the entire endpoint response budget. The timeout can be disabled for local debugging (<code>timeout=None</code>).</p>
+<h3 id="batch-size-management">Batch Size Management</h3>
+<p>The endpoint uses a smaller inference batch size (10 molecules) compared to the 2D endpoint, keeping total batch processing time safely under the serverless timeout limit.</p>
+<h3 id="serverless-configuration">Serverless Configuration</h3>
+<p>The 3D endpoint runs with the maximum serverless memory tier (6144 MB), which also provides the most vCPUs -- important since conformer generation and force field optimization are CPU-bound.</p>
+<h2 id="deploying-the-endpoint">Deploying the Endpoint</h2>
+<p>The 3D descriptor endpoint is deployed like any other Workbench feature endpoint:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">python</span> <span class="n">feature_endpoints</span><span class="o">/</span><span class="n">rdkit_3d_v1</span><span class="o">.</span><span class="n">py</span>
+</span></code></pre></div>
+<p>This creates a <code>smiles-to-3d-descriptors-v1</code> endpoint that accepts DataFrames with a SMILES column and returns the same DataFrame with 75 additional descriptor columns. See the <a href="../feature_endpoints/">Feature Endpoints</a> blog for the full architecture discussion.</p>
+<h3 id="using-the-endpoint">Using the Endpoint</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Endpoint</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Compute 3D descriptors</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">end_3d</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-descriptors-v1&quot;</span><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">df_3d</span> <span class="o">=</span> <span class="n">end_3d</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Combine with 2D descriptors for a full feature set</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">end_2d</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-taut-md-stereo-v1&quot;</span><span class="p">)</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">df_2d</span> <span class="o">=</span> <span class="n">end_2d</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="references">References</h2>
+<ul>
+<li><strong>ETKDGv3</strong>: Riniker, S. &amp; Landrum, G.A. <em>"Better Informed Distance Geometry."</em> J. Chem. Inf. Model. 55, 2562-2574 (2015). <a href="https://doi.org/10.1021/acs.jcim.5b00654">DOI: 10.1021/acs.jcim.5b00654</a></li>
+<li><strong>MMFF94s Force Field</strong>: Tosco, P., Stiefl, N. &amp; Landrum, G. <em>"Bringing the MMFF force field to the RDKit."</em> J. Cheminform. 6, 37 (2014). <a href="https://doi.org/10.1186/s13321-014-0037-3">DOI: 10.1186/s13321-014-0037-3</a></li>
+<li><strong>RDKit 3D Descriptors</strong>: <a href="https://www.rdkit.org/docs/source/rdkit.Chem.Descriptors3D.html">https://www.rdkit.org/docs/source/rdkit.Chem.Descriptors3D.html</a></li>
+<li><strong>Mordred Community</strong>: <a href="https://github.com/JacksonBurns/mordred-community">https://github.com/JacksonBurns/mordred-community</a></li>
+<li><strong>CPSA Descriptors</strong>: Stanton, D.T. &amp; Jurs, P.C. <em>"Development and Use of Charged Partial Surface Area Structural Descriptors."</em> Anal. Chem. 62, 2323-2329 (1990). <a href="https://doi.org/10.1021/ac00220a013">DOI: 10.1021/ac00220a013</a></li>
+<li><strong>Chameleonic Molecules</strong>: Whitty, A., et al. <em>"Quantifying the chameleonic properties of macrocycles and other high-molecular-weight drugs."</em> Drug Discov. Today 21, 712-717 (2016). <a href="https://doi.org/10.1016/j.drudis.2016.02.005">DOI: 10.1016/j.drudis.2016.02.005</a></li>
+<li><strong>Conformer Generation Best Practices</strong>: <a href="https://greglandrum.github.io/rdkit-blog/posts/2023-05-17-understanding-confgen-errors.html">RDKit Blog - Understanding Conformer Generation Errors</a></li>
+<li><strong>PMI Descriptor Variability</strong>: <a href="https://greglandrum.github.io/rdkit-blog/posts/2022-06-22-variability-of-pmi-descriptors.html">RDKit Blog - Variability of PMI Descriptors</a></li>
+</ul>
+<h2 id="questions">Questions?</h2>
+<p><img align="right" src="../../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 
 
 
