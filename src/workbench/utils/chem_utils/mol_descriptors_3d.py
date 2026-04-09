@@ -107,7 +107,7 @@ import time
 from typing import Optional, List, Dict
 
 from rdkit import Chem, RDLogger
-from rdkit.Chem import AllChem, Descriptors, Descriptors3D, rdMolDescriptors
+from rdkit.Chem import AllChem, Descriptors3D, rdMolDescriptors
 from mordred import Calculator as MordredCalculator
 from mordred import CPSA, GeometricalIndex, GravitationalIndex, PBF
 from scipy.spatial.distance import pdist
