@@ -183,10 +183,102 @@ def run_diagnostics(df: pd.DataFrame, smiles_col: str = "smiles", sample_size: i
     return result
 
 
+def run_corner_case_tests():
+    """Test specific molecules that exercise known corner cases."""
+
+    print(f"\n{'=' * 80}")
+    print("Corner Case Tests — Known Tricky Molecules")
+    print(f"{'=' * 80}")
+
+    test_cases = pd.DataFrame(
+        {
+            "smiles": [
+                # Should pass: simple drug-like molecules
+                "c1ccccc1",                                      # Benzene — flat aromatic
+                "CC(=O)Oc1ccccc1C(=O)O",                        # Aspirin — standard drug
+                "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",                 # Caffeine — rigid
+                "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C",          # Testosterone — steroid
+
+                # Corner case: bridged polycyclic (known embedding difficulty)
+                "C1CC2CC1CC2O",                                  # Norbornanol — bridged bicyclic, public
+
+                # Corner case: boron (unsupported by UFF/MMFF, caused C++ crash)
+                "OB(O)c1ccccc1",                                 # Phenylboronic acid
+                "CC1=CC(=CC(=C1)B(O)O)C",                       # 3,5-dimethylphenylboronic acid
+
+                # Corner case: complex drug with deuterium labels
+                "[2H]C([2H])(F)Oc1ccc(cc1)C(=O)NC",             # Deuterated drug fragment
+
+                # Corner case: large flexible molecule
+                "CCCCCCCCCCCCCCCCCCCC",                          # Eicosane — long chain, very flexible
+
+                # Corner case: metal-containing / unusual
+                "[Na+].CC(=O)[O-]",                              # Sodium acetate — salt
+            ],
+            "label": [
+                "benzene",
+                "aspirin",
+                "caffeine",
+                "testosterone",
+                "bridged_bicyclic",
+                "phenylboronic_acid",
+                "dimethylphenylboronic_acid",
+                "deuterated_fragment",
+                "eicosane_flexible",
+                "sodium_acetate_salt",
+            ],
+        }
+    )
+
+    n_pass = 0
+    n_fail = 0
+
+    for _, row in test_cases.iterrows():
+        smiles = row["smiles"]
+        label = row["label"]
+
+        # Run standardization + 3D descriptors on single molecule
+        single_df = pd.DataFrame({"smiles": [smiles]})
+        try:
+            std_df = standardize(single_df, extract_salts=True)
+            result = compute_descriptors_3d(std_df, n_conformers=10, optimize=True)
+            feature_names = get_3d_feature_names()
+            has_values = result[feature_names[0]].notna().iloc[0]
+
+            if has_values:
+                status = "PASS"
+                n_pass += 1
+                # Show a few key descriptors
+                pmi1 = result["pmi1"].iloc[0]
+                asph = result["asphericity"].iloc[0]
+                detail = f"pmi1={pmi1:.1f}  asphericity={asph:.3f}"
+            else:
+                status = "SKIP"
+                n_fail += 1
+                detail = "NaN (conformer generation or descriptors failed)"
+
+        except Exception as e:
+            status = "FAIL"
+            n_fail += 1
+            detail = f"Exception: {str(e)[:80]}"
+
+        emoji = {"PASS": "+", "SKIP": "-", "FAIL": "!"}[status]
+        print(f"  [{emoji}] {status:4s}  {label:30s}  {detail}")
+
+    print(f"\n  Results: {n_pass} passed, {n_fail} failed/skipped out of {len(test_cases)}")
+    return n_fail == 0
+
+
 if __name__ == "__main__":
-    # Pull the full molecule dataset
+    # First: run corner case tests
+    all_passed = run_corner_case_tests()
+
+    if not all_passed:
+        print("\nCorner case tests had failures — review before running full dataset")
+
+    # Then: run full dataset diagnostics
     df_store = DFStore()
-    print("Pulling all_molecules dataset...")
+    print("\nPulling all_molecules dataset...")
     df = df_store.get("/harmony/datasets/all_molecules_df_20260325")
     print(f"Dataset shape: {df.shape}")
 
