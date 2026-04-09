@@ -272,13 +272,18 @@ def generate_conformers(
             return None
 
         # Optimize conformers: prefer MMFF94s, fall back to UFF
+        # Note: We must check force field availability before optimizing.
+        # Molecules with unsupported atom types (e.g., boron) can trigger
+        # C++ invariant violations in the BFGS optimizer that crash the process.
         if optimize:
             try:
                 if AllChem.MMFFHasAllMoleculeParams(mol):
                     AllChem.MMFFOptimizeMoleculeConfs(mol, mmffVariant="MMFF94s", maxIters=200, numThreads=1)
-                else:
+                elif AllChem.UFFHasAllMoleculeParams(mol):
                     logger.debug("MMFF94s params unavailable, falling back to UFF")
                     AllChem.UFFOptimizeMoleculeConfs(mol, maxIters=200, numThreads=1)
+                else:
+                    logger.debug("No force field params available, skipping optimization")
             except Exception as e:
                 logger.debug(f"Force field optimization failed: {e}")
 
@@ -332,16 +337,20 @@ def get_conformer_energies(mol: Chem.Mol) -> List[float]:
                 energies.append(np.nan)
         return energies
 
-    # Fall back to UFF for molecules with unsupported MMFF atom types
-    logger.debug("MMFF94s params unavailable for energy calc, falling back to UFF")
-    for conf_id in range(n_confs):
-        try:
-            ff = AllChem.UFFGetMoleculeForceField(mol, confId=conf_id)
-            energies.append(ff.CalcEnergy() if ff is not None else np.nan)
-        except Exception:
-            energies.append(np.nan)
+    # Fall back to UFF if it has params for this molecule
+    if AllChem.UFFHasAllMoleculeParams(mol):
+        logger.debug("MMFF94s params unavailable for energy calc, falling back to UFF")
+        for conf_id in range(n_confs):
+            try:
+                ff = AllChem.UFFGetMoleculeForceField(mol, confId=conf_id)
+                energies.append(ff.CalcEnergy() if ff is not None else np.nan)
+            except Exception:
+                energies.append(np.nan)
+        return energies
 
-    return energies
+    # Neither force field can handle this molecule
+    logger.debug("No force field params available for energy calc")
+    return [np.nan] * n_confs
 
 
 def get_lowest_energy_conformer_id(mol: Chem.Mol) -> int:
