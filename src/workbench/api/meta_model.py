@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 from sagemaker.core.resources import TrainingJob, ModelPackageGroup, ModelPackage
 from sagemaker.core.shapes.model_card_shapes import InferenceSpecification, ContainersItem
 from sagemaker.train.model_trainer import ModelTrainer
-from sagemaker.core.training.configs import SourceCode, Compute
+from sagemaker.core.training.configs import SourceCode, Compute, OutputDataConfig
 
 # Workbench Imports
 from workbench.api.model import Model
@@ -282,6 +282,7 @@ class MetaModel(Model):
                 command=f"python training_harness.py {entry_point}",
             ),
             compute=Compute(instance_type="ml.m5.large", instance_count=1),
+            output_data_config=OutputDataConfig(s3_output_path=f"{models_s3_path}/{name}/training"),
             role=aws_clamp.aws_session.get_workbench_execution_role_arn(),
             sagemaker_session=sm_session,
             base_job_name=name,

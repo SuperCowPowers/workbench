@@ -5,7 +5,7 @@ from typing import Union
 from sagemaker.core.resources import ModelPackageGroup
 from sagemaker.core.shapes.shapes import MetricDefinition
 from sagemaker.train.model_trainer import ModelTrainer
-from sagemaker.core.training.configs import SourceCode, Compute, StoppingCondition
+from sagemaker.core.training.configs import SourceCode, Compute, StoppingCondition, OutputDataConfig
 import awswrangler as wr
 
 import time
@@ -282,6 +282,7 @@ class FeaturesToModel(Transform):
                 command=f"python training_harness.py {entry_point}",
             ),
             compute=Compute(instance_type=train_instance_type, instance_count=1),
+            output_data_config=OutputDataConfig(s3_output_path=self.model_training_root),
             stopping_condition=StoppingCondition(max_runtime_in_seconds=6 * 3600),
             base_job_name=self.output_name,
             role=self.workbench_role_arn,
