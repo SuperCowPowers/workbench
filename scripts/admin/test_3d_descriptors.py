@@ -9,7 +9,6 @@ Usage:
 
 import time
 import pandas as pd
-import numpy as np
 from rdkit import Chem
 from rdkit.Chem import rdMolDescriptors
 
@@ -152,8 +151,10 @@ def run_diagnostics(df: pd.DataFrame, smiles_col: str = "smiles", sample_size: i
                 if prop in numeric_diag.columns:
                     vals = numeric_diag[prop].dropna()
                     if len(vals) > 0:
-                        print(f"  {prop:20s}  min={vals.min():.0f}  median={vals.median():.0f}  "
-                              f"max={vals.max():.0f}  mean={vals.mean():.1f}")
+                        print(
+                            f"  {prop:20s}  min={vals.min():.0f}  median={vals.median():.0f}  "
+                            f"max={vals.max():.0f}  mean={vals.mean():.1f}"
+                        )
 
     # Show slowest molecules (by conformer generation time)
     if "conformer_time_s" in diag_df.columns:
