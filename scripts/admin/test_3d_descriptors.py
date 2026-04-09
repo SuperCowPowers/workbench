@@ -81,11 +81,8 @@ def diagnose_molecule(smiles: str) -> dict:
     return info
 
 
-def run_diagnostics(df: pd.DataFrame, smiles_col: str = "smiles", sample_size: int = None):
+def run_diagnostics(df: pd.DataFrame, smiles_col: str = "smiles"):
     """Run diagnostics on a DataFrame of molecules."""
-
-    if sample_size:
-        df = df.sample(n=min(sample_size, len(df)), random_state=42)
 
     print(f"\n{'=' * 80}")
     print(f"3D Descriptor Diagnostics — {len(df)} molecules")
@@ -209,6 +206,14 @@ def run_corner_case_tests():
                 "CCCCCCCCCCCCCCCCCCCC",  # Eicosane — long chain, very flexible
                 # Corner case: metal-containing / unusual
                 "[Na+].CC(=O)[O-]",  # Sodium acetate — salt
+                # Corner case: boron-containing compounds (UFF/MMFF edge cases)
+                "OB(O)c1ccc(C(F)(F)F)cc1",                      # 4-(trifluoromethyl)phenylboronic acid
+                "O=Cc1ccc(B(O)O)cc1",                            # 4-formylphenylboronic acid
+                "F[B-](F)(F)F.[K+]",                             # Potassium tetrafluoroborate — ionic boron
+                # Corner case: highly constrained polycyclic (optimizer crash)
+                "C12C3C4C1C5C3C2C45",                            # Cubane — dense cage, public
+                # TEMP: row 266 crash investigation — delete after confirming fix
+                r"C/C=C(\C)C(=O)O[C@H]1C[C@@H](OC(C)=O)[C@@]2(C(=O)OC)CO[C@H]3[C@@H](O)[C@@](C)([C@]45O[C@@]4(C)[C@H]4C[C@@H]5O[C@@H]5OC=C[C@@]54O)[C@H]4[C@]1(CO[C@]4(O)C(=O)OC)[C@@H]32",
             ],
             "label": [
                 "benzene",
@@ -221,6 +226,11 @@ def run_corner_case_tests():
                 "deuterated_fragment",
                 "eicosane_flexible",
                 "sodium_acetate_salt",
+                "trifluoromethyl_boronic_acid",
+                "formyl_boronic_acid",
+                "potassium_tetrafluoroborate",
+                "cubane_bridged",
+                "TEMP_row266_crash",
             ],
         }
     )
@@ -278,4 +288,4 @@ if __name__ == "__main__":
     print(f"Dataset shape: {df.shape}")
 
     # Run diagnostics (use sample_size=None for full dataset, or set a number for testing)
-    result = run_diagnostics(df, sample_size=500)
+    result = run_diagnostics(df[270:280])

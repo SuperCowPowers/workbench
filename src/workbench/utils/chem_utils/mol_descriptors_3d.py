@@ -101,7 +101,6 @@ References:
 
 import logging
 import re
-import signal
 import pandas as pd
 import numpy as np
 import time
@@ -124,13 +123,15 @@ logger = logging.getLogger("workbench")
 MAX_HEAVY_ATOMS = 100
 MAX_ROTATABLE_BONDS = 30
 MAX_RING_SYSTEMS = 10
+MAX_BRIDGEHEAD_ATOMS = 3
+MAX_RING_COMPLEXITY = 8  # rings + bridgehead + spiro atoms
 
 
 def is_too_complex(mol: Chem.Mol) -> bool:
     """Check if a molecule is too complex for 3D conformer generation within timeout.
 
     Molecules that exceed any threshold will get NaN features instead of risking
-    a SageMaker endpoint timeout (60s).
+    a SageMaker endpoint timeout (60s) or a C++ crash in the force field optimizer.
 
     Args:
         mol: RDKit molecule object
@@ -143,18 +144,31 @@ def is_too_complex(mol: Chem.Mol) -> bool:
 
     n_heavy = mol.GetNumHeavyAtoms()
     if n_heavy > MAX_HEAVY_ATOMS:
-        logger.info(f"Skipping molecule: {n_heavy} heavy atoms > {MAX_HEAVY_ATOMS}")
+        logger.warning(f"Skipping molecule: {n_heavy} heavy atoms > {MAX_HEAVY_ATOMS}")
         return True
 
     n_rot = rdMolDescriptors.CalcNumRotatableBonds(mol)
     if n_rot > MAX_ROTATABLE_BONDS:
-        logger.info(f"Skipping molecule: {n_rot} rotatable bonds > {MAX_ROTATABLE_BONDS}")
+        logger.warning(f"Skipping molecule: {n_rot} rotatable bonds > {MAX_ROTATABLE_BONDS}")
         return True
 
     ring_info = mol.GetRingInfo()
     n_rings = ring_info.NumRings()
     if n_rings > MAX_RING_SYSTEMS:
-        logger.info(f"Skipping molecule: {n_rings} rings > {MAX_RING_SYSTEMS}")
+        logger.warning(f"Skipping molecule: {n_rings} rings > {MAX_RING_SYSTEMS}")
+        return True
+
+    # Ring complexity score: dense polycyclic cage structures with bridgehead and
+    # spiro atoms create highly constrained geometries where the BFGS force field
+    # optimizer can crash with C++ invariant violations.
+    # Examples: testosterone (score=4, safe), crash compounds (score=8-12, unsafe)
+    n_bridgehead = rdMolDescriptors.CalcNumBridgeheadAtoms(mol)
+    n_spiro = rdMolDescriptors.CalcNumSpiroAtoms(mol)
+    ring_complexity = n_rings + n_bridgehead + n_spiro
+    if ring_complexity > MAX_RING_COMPLEXITY:
+        logger.warning(f"Skipping molecule: ring_complexity={ring_complexity} "
+                       f"(rings={n_rings} + bridgehead={n_bridgehead} + spiro={n_spiro}) "
+                       f"> {MAX_RING_COMPLEXITY}")
         return True
 
     return False
@@ -165,22 +179,11 @@ def is_too_complex(mol: Chem.Mol) -> bool:
 # =============================================================================
 
 
-class _ConformerTimeout(Exception):
-    """Raised when conformer generation exceeds the time limit."""
-
-    pass
-
-
-def _timeout_handler(signum, frame):
-    raise _ConformerTimeout("Conformer generation timed out")
-
-
 def generate_conformers(
     mol: Chem.Mol,
     n_conformers: int = 10,
     random_seed: int = 42,
     optimize: bool = True,
-    timeout: Optional[float] = 10.0,
 ) -> Optional[Chem.Mol]:
     """
     Generate 3D conformers using ETKDGv3 with tiered fallback.
@@ -201,19 +204,12 @@ def generate_conformers(
         n_conformers: Number of conformers to generate
         random_seed: Random seed for reproducibility
         optimize: Whether to run force field optimization
-        timeout: Max seconds per molecule (default 10). None to disable.
 
     Returns:
         Molecule with conformers (Hs preserved), or None if generation failed
     """
     if mol is None:
         return None
-
-    # Set per-molecule timeout (Unix only, uses SIGALRM)
-    use_timeout = timeout is not None and hasattr(signal, "SIGALRM")
-    if use_timeout:
-        old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
-        signal.alarm(int(timeout))
 
     try:
         # Suppress noisy RDKit warnings (UFFTYPER, etc.) during embedding
@@ -272,39 +268,36 @@ def generate_conformers(
             return None
 
         # Optimize conformers: prefer MMFF94s, fall back to UFF
-        # Note: We must check force field availability before optimizing.
-        # Molecules with unsupported atom types (e.g., boron) can trigger
-        # C++ invariant violations in the BFGS optimizer that crash the process.
+        # Note: We check force field availability before optimizing to avoid
+        # C++ invariant violations in the BFGS optimizer that can crash the process.
+        # Even with valid params, highly strained geometries (complex bridged rings)
+        # can trigger optimizer crashes, so we optimize per-conformer to isolate failures.
         if optimize:
-            try:
-                if AllChem.MMFFHasAllMoleculeParams(mol):
-                    AllChem.MMFFOptimizeMoleculeConfs(mol, mmffVariant="MMFF94s", maxIters=200, numThreads=1)
-                elif AllChem.UFFHasAllMoleculeParams(mol):
-                    logger.debug("MMFF94s params unavailable, falling back to UFF")
-                    AllChem.UFFOptimizeMoleculeConfs(mol, maxIters=200, numThreads=1)
-                else:
-                    logger.debug("No force field params available, skipping optimization")
-            except Exception as e:
-                logger.debug(f"Force field optimization failed: {e}")
+            if AllChem.MMFFHasAllMoleculeParams(mol):
+                for conf_id in range(mol.GetNumConformers()):
+                    try:
+                        AllChem.MMFFOptimizeMolecule(mol, mmffVariant="MMFF94s", maxIters=200, confId=conf_id)
+                    except Exception as e:
+                        logger.debug(f"MMFF94s optimization failed for conformer {conf_id}: {e}")
+            elif AllChem.UFFHasAllMoleculeParams(mol):
+                logger.debug("MMFF94s params unavailable, falling back to UFF")
+                for conf_id in range(mol.GetNumConformers()):
+                    try:
+                        AllChem.UFFOptimizeMolecule(mol, maxIters=200, confId=conf_id)
+                    except Exception as e:
+                        logger.debug(f"UFF optimization failed for conformer {conf_id}: {e}")
+            else:
+                logger.debug("No force field params available, skipping optimization")
 
         # Restore RDKit logging
         rdkit_logger.setLevel(RDLogger.WARNING)
 
         return mol
 
-    except _ConformerTimeout:
-        logger.warning(f"Conformer generation timed out ({timeout}s)")
-        RDLogger.logger().setLevel(RDLogger.WARNING)
-        return None
-
     except Exception as e:
         logger.warning(f"Conformer generation failed: {e}")
+        RDLogger.logger().setLevel(RDLogger.WARNING)
         return None
-
-    finally:
-        if use_timeout:
-            signal.alarm(0)  # Cancel the alarm
-            signal.signal(signal.SIGALRM, old_handler)
 
 
 def get_conformer_energies(mol: Chem.Mol) -> List[float]:
@@ -917,7 +910,6 @@ def compute_descriptors_3d(
     optimize: bool = True,
     random_seed: int = 42,
     use_lowest_energy: bool = True,
-    timeout: Optional[float] = 10.0,
     complexity_check: bool = True,
 ) -> pd.DataFrame:
     """
@@ -930,8 +922,6 @@ def compute_descriptors_3d(
         random_seed: Random seed for conformer generation (default 42)
         use_lowest_energy: Use lowest energy conformer for descriptors (default True)
                           If False, uses first conformer
-        timeout: Max seconds per molecule for conformer generation (default 10).
-                 None to disable (useful for local debugging/analysis).
         complexity_check: Whether to skip molecules that exceed complexity thresholds
                          (default True). Set False for local analysis of complex molecules.
 
@@ -945,7 +935,7 @@ def compute_descriptors_3d(
     Example:
         df = compute_descriptors_3d(df)  # Standard usage (endpoint-safe)
         df = compute_descriptors_3d(df, n_conformers=1, optimize=False)  # Fast mode
-        df = compute_descriptors_3d(df, timeout=None, complexity_check=False)  # No guardrails
+        df = compute_descriptors_3d(df, complexity_check=False)  # No guardrails
     """
     # Find SMILES column (case-insensitive)
     smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
@@ -991,7 +981,6 @@ def compute_descriptors_3d(
                 n_conformers=n_conformers,
                 random_seed=random_seed,
                 optimize=optimize,
-                timeout=timeout,
             )
 
             if mol is None or mol.GetNumConformers() == 0:

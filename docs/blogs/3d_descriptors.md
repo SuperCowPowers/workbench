@@ -141,11 +141,11 @@ Before attempting conformer generation, molecules are screened against complexit
 | Heavy atoms | > 100 | Embedding time scales roughly O(n^2) |
 | Rotatable bonds | > 30 | Combinatorial explosion of conformer space |
 | Ring systems | > 10 | Complex ring topologies cause embedding failures |
+| Ring complexity score | > 8 | Dense polycyclic cages crash the force field optimizer |
+
+The **ring complexity score** (rings + bridgehead atoms + spiro atoms) captures dense polycyclic cage structures that can't be detected by ring count alone. Bridgehead atoms sit at junctions where rings share bond paths; spiro atoms connect rings at a single point. Individually these features are fine -- steroids have 4 rings, camphor has 2 bridgehead atoms -- but in combination they create highly constrained geometries where the BFGS force field optimizer can't find a valid descent direction, triggering a C++ crash. Common drug scaffolds score 2--5; the threshold of 8 catches only the extreme cases.
 
 Molecules exceeding any threshold receive NaN values for all 75 features -- the same behavior as a failed conformer generation. These thresholds can be disabled for local analysis (`complexity_check=False`).
-
-### Per-Molecule Timeout
-Conformer generation for certain bridged polycyclic systems can hang for minutes even on small molecules. A per-molecule timeout (default 10 seconds) ensures one difficult molecule doesn't consume the entire endpoint response budget. The timeout can be disabled for local debugging (`timeout=None`).
 
 ### Batch Size Management
 The endpoint uses a smaller inference batch size (10 molecules) compared to the 2D endpoint, keeping total batch processing time safely under the serverless timeout limit.
