@@ -107,12 +107,56 @@ import time
 from typing import Optional, List, Dict
 
 from rdkit import Chem, RDLogger
-from rdkit.Chem import AllChem, Descriptors3D
+from rdkit.Chem import AllChem, Descriptors, Descriptors3D, rdMolDescriptors
 from mordred import Calculator as MordredCalculator
 from mordred import CPSA, GeometricalIndex, GravitationalIndex, PBF
 from scipy.spatial.distance import pdist
 
 logger = logging.getLogger("workbench")
+
+
+# =============================================================================
+# Molecular Complexity Check
+# =============================================================================
+
+# Thresholds for skipping 3D computation (molecules above these are too slow)
+MAX_HEAVY_ATOMS = 100
+MAX_ROTATABLE_BONDS = 30
+MAX_RING_SYSTEMS = 10
+
+
+def is_too_complex(mol: Chem.Mol) -> bool:
+    """Check if a molecule is too complex for 3D conformer generation within timeout.
+
+    Molecules that exceed any threshold will get NaN features instead of risking
+    a SageMaker endpoint timeout (60s).
+
+    Args:
+        mol: RDKit molecule object
+
+    Returns:
+        True if the molecule should be skipped
+    """
+    if mol is None:
+        return True
+
+    n_heavy = mol.GetNumHeavyAtoms()
+    if n_heavy > MAX_HEAVY_ATOMS:
+        logger.info(f"Skipping molecule: {n_heavy} heavy atoms > {MAX_HEAVY_ATOMS}")
+        return True
+
+    n_rot = rdMolDescriptors.CalcNumRotatableBonds(mol)
+    if n_rot > MAX_ROTATABLE_BONDS:
+        logger.info(f"Skipping molecule: {n_rot} rotatable bonds > {MAX_ROTATABLE_BONDS}")
+        return True
+
+    ring_info = mol.GetRingInfo()
+    n_rings = ring_info.NumRings()
+    if n_rings > MAX_RING_SYSTEMS:
+        logger.info(f"Skipping molecule: {n_rings} rings > {MAX_RING_SYSTEMS}")
+        return True
+
+    return False
 
 
 # =============================================================================
@@ -850,6 +894,10 @@ def compute_descriptors_3d(
             # Create molecule
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
+                continue
+
+            # Skip molecules that are too complex (would risk endpoint timeout)
+            if is_too_complex(mol):
                 continue
 
             # Generate conformers
