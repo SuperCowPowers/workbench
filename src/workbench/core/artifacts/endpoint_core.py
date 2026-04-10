@@ -452,9 +452,10 @@ class EndpointCore(Artifact):
                 self.log.info(f"Model Type: {model.model_type} doesn't have metrics...")
                 metrics = pd.DataFrame()
 
-        # Print out the metrics
-        print(f"Performance Metrics for {self.model_name} on {self.name}")
-        print(metrics.head())
+        # If the metrics aren't empty print them out
+        if not metrics.empty:
+            print(f"Performance Metrics for {self.model_name} on {self.name}")
+            print(metrics.head())
 
         # Capture the inference results and metrics
         if primary_target and capture_name:
