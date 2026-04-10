@@ -213,9 +213,11 @@ def run_corner_case_tests():
                 # Corner case: highly constrained polycyclic (optimizer crash)
                 "C12C3C4C1C5C3C2C45",  # Cubane — dense cage, public
                 # Corner case: large steroidal with quaternary ammonium (slow, 6 rings)
-                ("CC(=O)O[C@H]1C[C@@H]2CC[C@@H]3[C@H](CC[C@@]4(C)"
-                 "[C@H]3C[C@H]([N+]3(C)CCCCC3)[C@@H]4OC(C)=O)"
-                 "[C@@]2(C)C[C@@H]1[N+]1(C)CCCCC1"),  # Pancuronium — public (PubChem CID 441289)
+                (
+                    "CC(=O)O[C@H]1C[C@@H]2CC[C@@H]3[C@H](CC[C@@]4(C)"
+                    "[C@H]3C[C@H]([N+]3(C)CCCCC3)[C@@H]4OC(C)=O)"
+                    "[C@@]2(C)C[C@@H]1[N+]1(C)CCCCC1"
+                ),  # Pancuronium — public (PubChem CID 441289)
             ],
             "label": [
                 "benzene",

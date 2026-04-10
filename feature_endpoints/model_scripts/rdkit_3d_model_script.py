@@ -9,8 +9,6 @@
 #     Note: This endpoint is slower than the 2D descriptor endpoint due to
 #     conformer generation (~10-20 molecules/second).
 #
-SCRIPT_VERSION = "0.3.0"
-
 import argparse
 import os
 from io import StringIO
@@ -21,6 +19,8 @@ import json
 # Local imports
 from molecular_utils.mol_standardize import standardize
 from molecular_utils.mol_descriptors_3d import compute_descriptors_3d
+
+SCRIPT_VERSION = "0.3.0"
 
 # TRAINING SECTION
 #

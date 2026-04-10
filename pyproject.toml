@@ -96,6 +96,9 @@ lambda_test = "workbench.scripts.lambda_test:main"
 endpoint_test = "workbench.scripts.endpoint_test:main"
 training_test = "workbench.scripts.training_test:main"
 
+[tool.black]
+line-length = 120
+
 [tool.pytest.ini_options]
 addopts = "-v --cov=workbench --cov-report term-missing"
 python_files = "*.py"
