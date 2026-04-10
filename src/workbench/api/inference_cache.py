@@ -95,48 +95,51 @@ class InferenceCache:
 
         cache_df = self._load_cache()
 
-        # 1. Split cached vs uncached
-        if cache_df.empty:
-            uncached_df = eval_df
-            cached_hits = pd.DataFrame()
-        else:
-            cached_keys = set(cache_df[key_col])
-            is_cached = eval_df[key_col].isin(cached_keys)
-            uncached_df = eval_df[~is_cached]
-            cached_hits = cache_df[cache_df[key_col].isin(eval_df[key_col])]
+        # Split eval rows into cache hits vs rows we still need to compute
+        is_cached = eval_df[key_col].isin(cache_df[key_col])
+        uncached_df = eval_df[~is_cached]
+        cached_hits = cache_df[cache_df[key_col].isin(eval_df[key_col])]
 
         hits = len(eval_df) - len(uncached_df)
         self.log.info(f"InferenceCache[{self._endpoint.name}]: {hits}/{len(eval_df)} cache hits")
 
-        # 2. Run endpoint on uncached rows (dedup on key to avoid recomputing dupes)
+        # Run the endpoint on the uncached rows and persist the new results
         new_results = pd.DataFrame()
         if not uncached_df.empty:
             to_compute = uncached_df.drop_duplicates(subset=[key_col])
+            sent = len(to_compute)
             self.log.info(
-                f"InferenceCache[{self._endpoint.name}]: computing " f"{len(to_compute)} new rows via endpoint"
+                f"InferenceCache[{self._endpoint.name}]: computing {sent} new rows via endpoint"
             )
             new_results = self._endpoint.inference(to_compute, **kwargs)
+            got = len(new_results)
+            if got < sent:
+                # The endpoint should always return one row per input row.
+                # Anything less means something went wrong — log it loudly,
+                # but don't raise so the caller can keep going.
+                self.log.error(
+                    f"InferenceCache[{self._endpoint.name}]: sent {sent} rows to "
+                    f"endpoint but got {got} back ({sent - got} missing). The "
+                    f"missing keys will be re-requested on the next call."
+                )
             self._update_cache(new_results, cache_df)
 
-        # 3. Build the unified feature table (cached + new), dedup on key
-        feature_table = pd.concat([cached_hits, new_results], ignore_index=True)
-        if feature_table.empty:
-            # Nothing came back at all — return eval_df unchanged
+        # Combine cached + new into a single feature table, then left-join
+        # back onto eval_df to preserve row order and any extra input columns.
+        # (Filter out empty frames to dodge a pandas FutureWarning about
+        # dtype inference on empty entries.)
+        frames = [f for f in (cached_hits, new_results) if not f.empty]
+        if not frames:
             return eval_df.copy()
-        feature_table = feature_table.drop_duplicates(subset=[key_col], keep="last")
-
-        # 4. Left-join onto eval_df to preserve original order and extra columns.
-        #    Only pull columns the endpoint added (diff vs eval_df).
-        feature_cols = [c for c in feature_table.columns if c not in eval_df.columns]
-        merged = eval_df.merge(
-            feature_table[[key_col] + feature_cols],
-            on=key_col,
-            how="left",
+        feature_table = pd.concat(frames, ignore_index=True).drop_duplicates(
+            subset=[key_col], keep="last"
         )
-        return merged
+        feature_cols = [c for c in feature_table.columns if c not in eval_df.columns]
+        return eval_df.merge(
+            feature_table[[key_col] + feature_cols], on=key_col, how="left"
+        )
 
     # ---- cache introspection / maintenance ----
-
     def cache_size(self) -> int:
         """Number of rows currently in the cache."""
         return len(self._load_cache())
@@ -157,7 +160,7 @@ class InferenceCache:
             self._df_store.delete(self.cache_path)
         if self._df_store.check(self.manifest_path):
             self._df_store.delete(self.manifest_path)
-        self._cache_df = pd.DataFrame()
+        self._cache_df = pd.DataFrame(columns=[self.cache_key_column])
 
     def delete_entries(self, keys: Union[Any, Iterable[Any]]) -> int:
         """Remove one or more entries from the cache by cache-key value(s).
@@ -199,11 +202,14 @@ class InferenceCache:
     # ---- internals ----
 
     def _load_cache(self) -> pd.DataFrame:
-        """Lazily load the cache DataFrame from DFStore (empty if missing).
+        """Lazily load the cache DataFrame from DFStore.
+
+        If the cache doesn't yet exist, returns an empty DataFrame that
+        still has ``cache_key_column`` defined, so callers can always do
+        ``df[cache_key_column]`` without special-casing the empty case.
 
         On first call, also checks whether the endpoint has been modified
-        since the cache was written. If so, either auto-invalidates the
-        cache (``auto_invalidate=True``) or logs a warning.
+        since the cache was written and auto-invalidates if so.
         """
         if self._cache_df is None:
             if not self._invalidation_checked:
@@ -211,14 +217,19 @@ class InferenceCache:
                 self._invalidation_checked = True
 
             df = self._df_store.get(self.cache_path)
-            self._cache_df = df if df is not None else pd.DataFrame()
+            if df is None:
+                df = pd.DataFrame(columns=[self.cache_key_column])
+            self._cache_df = df
         return self._cache_df
 
     def _update_cache(self, new_results: pd.DataFrame, old_cache: pd.DataFrame) -> None:
         """Append new results to the cache and persist back to DFStore."""
         if new_results.empty:
             return
-        combined = pd.concat([old_cache, new_results], ignore_index=True)
+        # Filter out an empty old_cache to avoid the pandas FutureWarning
+        # about dtype inference when concatenating empty/all-NA columns.
+        frames = [f for f in (old_cache, new_results) if not f.empty]
+        combined = pd.concat(frames, ignore_index=True)
         combined = combined.drop_duplicates(subset=[self.cache_key_column], keep="last")
         self._df_store.upsert(self.cache_path, combined)
         self._save_manifest()
