@@ -1,6 +1,7 @@
 import networkx as nx
 import pandas as pd
 import logging
+from typing import Any
 
 # Workbench Imports
 from workbench.algorithms.dataframe.proximity import Proximity
@@ -91,11 +92,11 @@ class ProximityGraph:
         """
         self.graph_store.upsert(graph_path, self._nx_graph)
 
-    def get_neighborhood(self, node_id, radius: int = 1) -> nx.Graph:
+    def get_neighborhood(self, node_id: Any, radius: int = 1) -> nx.Graph:
         """Get a subgraph containing nodes within a given number of hops around a node.
 
         Args:
-            node_id: The ID of the center node.
+            node_id (Any): The ID of the center node.
             radius (int): Number of hops (default: 1).
 
         Returns:

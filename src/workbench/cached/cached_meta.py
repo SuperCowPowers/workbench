@@ -5,10 +5,14 @@ import time
 import pandas as pd
 from datetime import datetime, timezone
 from functools import wraps
+from typing import TYPE_CHECKING, Optional
 
 # Workbench Imports
 from workbench.core.cloud_platform.cloud_meta import CloudMeta
 from workbench.utils.workbench_cache import WorkbenchCache
+
+if TYPE_CHECKING:
+    from workbench.core.artifacts.artifact import Artifact
 
 
 def cache_result(method):
@@ -272,14 +276,15 @@ class CachedMeta(CloudMeta):
                 return key
         return None
 
-    def get_modified_timestamp(self, artifact):
+    def get_modified_timestamp(self, artifact: "Artifact") -> Optional[datetime]:
         """Look up an artifact's Modified timestamp in the registry.
 
         Args:
-            artifact: Any Workbench artifact object (Model, CachedModel, Endpoint, etc.)
+            artifact (Artifact): Any Workbench artifact object (Model, CachedModel,
+                Endpoint, etc.)
 
         Returns:
-            datetime: The Modified timestamp, or None if not found
+            Optional[datetime]: The Modified timestamp, or None if not found.
         """
         registry_key = self._resolve_registry_key(artifact)
         if registry_key is None:
@@ -287,13 +292,14 @@ class CachedMeta(CloudMeta):
         entries = self.modified_registry.get(registry_key) or {}
         return entries.get(artifact.name)
 
-    def update_modified_timestamp(self, artifact):
+    def update_modified_timestamp(self, artifact: "Artifact") -> None:
         """Update an artifact's Modified timestamp to now.
 
         Pokes the registry so the artifact is detected as stale on next access.
 
         Args:
-            artifact: Any Workbench artifact object (Model, CachedModel, Endpoint, etc.)
+            artifact (Artifact): Any Workbench artifact object (Model, CachedModel,
+                Endpoint, etc.)
         """
         registry_key = self._resolve_registry_key(artifact)
         if registry_key is None:

@@ -214,7 +214,7 @@ class ModelCore(Artifact):
 
         return health_issues
 
-    def sagemaker_model_object(self):
+    def sagemaker_model_object(self) -> dict:
         """Return info about the latest AWS Sagemaker Model for this Workbench Model
 
         Returns:

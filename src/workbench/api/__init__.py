@@ -8,6 +8,7 @@ These class provide high-level APIs for the Workbench package, offering easy acc
 - MetaModel: A Model that aggregates predictions from multiple endpoints
 - ModelType: Enum for the different model types supported by Workbench
 - Endpoint: Manages the deployment and invocations/inference on AWS Endpoints
+- InferenceCache: Client-side S3 caching wrapper around an Endpoint's inference()
 - Meta: Provides an API to retrieve AWS Metadata for the above classes
 - ParameterStore: Manages AWS Parameter Store
 - DFStore: Manages DataFrames in AWS S3
@@ -18,6 +19,7 @@ from .feature_set import FeatureSet
 from .model import Model, ModelType, ModelFramework
 from .meta_model import MetaModel
 from .endpoint import Endpoint
+from .inference_cache import InferenceCache
 from .meta import Meta
 from .parameter_store import ParameterStore
 from .df_store import DFStore
@@ -31,6 +33,7 @@ __all__ = [
     "ModelType",
     "ModelFramework",
     "Endpoint",
+    "InferenceCache",
     "Meta",
     "ParameterStore",
     "DFStore",

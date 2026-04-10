@@ -19,6 +19,7 @@ nav:
     - FeatureSet: api_classes/feature_set.md
     - Model: api_classes/model.md
     - Endpoint: api_classes/endpoint.md
+    - InferenceCache: api_classes/inference_cache.md
     - Views: api_classes/views.md
     - Parameter Store: api_classes/parameter_store.md
     - DataFrame Store: api_classes/df_store.md
