@@ -122,7 +122,7 @@ The **intramolecular hydrogen bond potential** (IMHB) deserves special mention. 
 
 Rather than discarding the conformer ensemble after selecting the lowest-energy geometry, we extract statistics that capture conformational flexibility:
 
-- **Energy minimum**: The lowest force field energy -- a proxy for strain
+- **Energy minimum**: The lowest MMFF94s/UFF energy -- a proxy for strain
 - **Energy range / standard deviation**: How spread out the conformer energies are
 - **Conformational flexibility index**: Normalized energy range -- higher values indicate more conformational freedom
 - **Conformer count**: How many unique conformers were generated (after RMSD pruning)
@@ -142,22 +142,28 @@ Before attempting conformer generation, molecules are screened against complexit
 | Rotatable bonds | > 30 | Combinatorial explosion of conformer space |
 | Ring systems | > 10 | Complex ring topologies cause embedding failures |
 | Ring complexity score | > 8 | Dense polycyclic cages crash the force field optimizer |
+| Problematic substructures | SMARTS match | Specific scaffolds that hang the distance geometry solver |
 
-The **ring complexity score** (rings + bridgehead atoms + spiro atoms) captures dense polycyclic cage structures that can't be detected by ring count alone. Bridgehead atoms sit at junctions where rings share bond paths; spiro atoms connect rings at a single point. Individually these features are fine -- steroids have 4 rings, camphor has 2 bridgehead atoms -- but in combination they create highly constrained geometries where the BFGS force field optimizer can't find a valid descent direction, triggering a C++ crash. Common drug scaffolds score 2--5; the threshold of 8 catches only the extreme cases.
+The **ring complexity score** (rings + bridgehead atoms + spiro atoms) captures dense polycyclic cage structures that can't be detected by ring count alone. Bridgehead atoms sit at junctions where rings share bond paths; spiro atoms connect rings at a single point. Individually these features are fine -- steroids have 4 rings, camphor has 2 bridgehead atoms -- but in combination they create highly constrained geometries where the BFGS force field optimizer can't find a valid descent direction. Common drug scaffolds score 2--5; the threshold of 8 catches only the extreme cases.
+
+The **substructure exclusion** list uses SMARTS patterns to catch specific scaffolds where the distance geometry solver loops indefinitely -- regardless of molecule size or ring count. For example, the bicyclo[2.2.1] (norbornane) core is a strained bridged bicyclic that can hang for 400+ seconds even on a 14-atom molecule. This list is easy to extend as new problematic scaffolds are discovered.
 
 Molecules exceeding any threshold receive NaN values for all 75 features -- the same behavior as a failed conformer generation. These thresholds can be disabled for local analysis (`complexity_check=False`).
 
-### Batch Size Management
-The endpoint uses a smaller inference batch size (10 molecules) compared to the 2D endpoint, keeping total batch processing time safely under the serverless timeout limit.
+### Deployment Configuration
+The 3D endpoint is recommended to run on a **dedicated realtime instance** (`ml.c7i.xlarge`, 4 vCPUs, 8 GB) rather than serverless. Serverless endpoints have a hard 60-second timeout that is too tight for complex drug molecules -- some can take 30-40 seconds each on serverless hardware. A realtime instance has no per-request timeout and provides more consistent CPU performance.
 
-### Serverless Configuration
-The 3D endpoint runs with the maximum serverless memory tier (6144 MB), which also provides the most vCPUs -- important since conformer generation and force field optimization are CPU-bound.
+Batch size is tuned to the deployment mode: **50 molecules per batch** on realtime instances (no timeout pressure), **5 per batch** on serverless (tight timeout budget).
 
 ## Deploying the Endpoint
 
 The 3D descriptor endpoint is deployed like any other Workbench feature endpoint:
 
-```python
+```bash
+# Realtime instance (recommended for 3D — no timeout constraints)
+SERVERLESS=false python feature_endpoints/rdkit_3d_v1.py
+
+# Serverless (lower cost, but 60s timeout limits throughput)
 python feature_endpoints/rdkit_3d_v1.py
 ```
 
