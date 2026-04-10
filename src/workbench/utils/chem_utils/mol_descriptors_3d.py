@@ -123,14 +123,29 @@ logger = logging.getLogger("workbench")
 MAX_HEAVY_ATOMS = 100
 MAX_ROTATABLE_BONDS = 30
 MAX_RING_SYSTEMS = 10
-MAX_RING_COMPLEXITY = 8  # rings + bridgehead + spiro atoms
+MAX_RING_COMPLEXITY = 15  # rings + bridgehead + spiro atoms (backstop; SMARTS handles known bad scaffolds)
 
-# Substructure patterns (SMARTS) known to cause conformer generation to hang or crash.
+# Substructure patterns (SMARTS) known to cause conformer generation to hang.
 # Each entry is (name, compiled_pattern). These are public scaffolds, not specific compounds.
+#
+# Hypothesis: RDKit's ETKDGv3 distance geometry solver uses distance bounds derived
+# from experimental torsion preferences. For strained bridged bicyclics, the bridge
+# bonds create geometric constraints that are near the edge of feasibility — the
+# solver's iterative refinement can't converge because adjusting one bond length to
+# satisfy one constraint violates another. Without an iteration cap, the solver loops
+# indefinitely trying combinations that will never satisfy all bounds simultaneously.
+# The "small ring + bridge" topology is the common element: ring closure constraints
+# are tight, and bridge atoms are overconstrained by multiple ring memberships.
 _PROBLEMATIC_SUBSTRUCTURES = [
-    # Bicyclo[2.2.1] (norbornane) core — strained bridged bicyclic that causes
-    # ETKDGv3 distance geometry to loop indefinitely (400+ seconds on small molecules)
-    ("norbornane_core", Chem.MolFromSmarts("C1CC2CCC1C2")),
+    # Bicyclo[2.2.1] — norbornane, norbornene, camphor, fenchone
+    # Two 5-membered rings fused with a 1-atom bridge. 400+ second hangs observed
+    # on a 14-atom molecule. Bridge carbon is highly constrained by both rings.
+    ("bicyclo_2_2_1", Chem.MolFromSmarts("[#6]1[#6][#6]2[#6][#6][#6]1[#6]2")),
+
+    # Bicyclo[2.2.2] — two 6-membered rings fused with a 2-atom bridge.
+    # Common in natural products (e.g., terpene-derived scaffolds). 1200+ second
+    # hangs observed. The 2-atom bridge adds a second overconstrained carbon.
+    ("bicyclo_2_2_2", Chem.MolFromSmarts("[#6]12[#6][#6][#6](~[#6]~[#6]1)[#6][#6]2")),
 ]
 
 
