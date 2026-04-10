@@ -73,8 +73,8 @@ if __name__ == "__main__":
         end = model.to_endpoint(tags=tags, serverless=True, mem_size=6144, max_concurrency=5)
         end.upsert_workbench_meta({"inference_batch_size": 5})
     else:
-        end = model.to_endpoint(tags=tags, serverless=False, instance="ml.c7i.xlarge")
-        end.upsert_workbench_meta({"inference_batch_size": 50})
+        end = model.to_endpoint(tags=tags, serverless=False, instance="ml.c7i.2xlarge")
+        end.upsert_workbench_meta({"inference_batch_size": 10})
 
     # Run inference on the endpoint (smaller batch due to slower processing)
     end.inference(feature_set.pull_dataframe()[:50])
