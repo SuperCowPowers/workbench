@@ -91,9 +91,7 @@ class InferenceCache:
         """
         key_col = self.cache_key_column
         if key_col not in eval_df.columns:
-            raise ValueError(
-                f"eval_df is missing required cache_key_column '{key_col}'"
-            )
+            raise ValueError(f"eval_df is missing required cache_key_column '{key_col}'")
 
         cache_df = self._load_cache()
 
@@ -108,17 +106,14 @@ class InferenceCache:
             cached_hits = cache_df[cache_df[key_col].isin(eval_df[key_col])]
 
         hits = len(eval_df) - len(uncached_df)
-        self.log.info(
-            f"InferenceCache[{self._endpoint.name}]: {hits}/{len(eval_df)} cache hits"
-        )
+        self.log.info(f"InferenceCache[{self._endpoint.name}]: {hits}/{len(eval_df)} cache hits")
 
         # 2. Run endpoint on uncached rows (dedup on key to avoid recomputing dupes)
         new_results = pd.DataFrame()
         if not uncached_df.empty:
             to_compute = uncached_df.drop_duplicates(subset=[key_col])
             self.log.info(
-                f"InferenceCache[{self._endpoint.name}]: computing "
-                f"{len(to_compute)} new rows via endpoint"
+                f"InferenceCache[{self._endpoint.name}]: computing " f"{len(to_compute)} new rows via endpoint"
             )
             new_results = self._endpoint.inference(to_compute, **kwargs)
             self._update_cache(new_results, cache_df)
@@ -198,9 +193,7 @@ class InferenceCache:
         else:
             self._df_store.upsert(self.cache_path, new_cache)
         self._cache_df = new_cache
-        self.log.info(
-            f"InferenceCache[{self._endpoint.name}]: removed {removed} entries"
-        )
+        self.log.info(f"InferenceCache[{self._endpoint.name}]: removed {removed} entries")
         return removed
 
     # ---- internals ----
