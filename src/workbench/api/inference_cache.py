@@ -108,9 +108,7 @@ class InferenceCache:
         if not uncached_df.empty:
             to_compute = uncached_df.drop_duplicates(subset=[key_col])
             sent = len(to_compute)
-            self.log.info(
-                f"InferenceCache[{self._endpoint.name}]: computing {sent} new rows via endpoint"
-            )
+            self.log.info(f"InferenceCache[{self._endpoint.name}]: computing {sent} new rows via endpoint")
             new_results = self._endpoint.inference(to_compute, **kwargs)
             got = len(new_results)
             if got < sent:
@@ -131,13 +129,9 @@ class InferenceCache:
         frames = [f for f in (cached_hits, new_results) if not f.empty]
         if not frames:
             return eval_df.copy()
-        feature_table = pd.concat(frames, ignore_index=True).drop_duplicates(
-            subset=[key_col], keep="last"
-        )
+        feature_table = pd.concat(frames, ignore_index=True).drop_duplicates(subset=[key_col], keep="last")
         feature_cols = [c for c in feature_table.columns if c not in eval_df.columns]
-        return eval_df.merge(
-            feature_table[[key_col] + feature_cols], on=key_col, how="left"
-        )
+        return eval_df.merge(feature_table[[key_col] + feature_cols], on=key_col, how="left")
 
     # ---- cache introspection / maintenance ----
     def cache_size(self) -> int:
