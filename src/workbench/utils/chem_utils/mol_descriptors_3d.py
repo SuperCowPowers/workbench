@@ -123,8 +123,15 @@ logger = logging.getLogger("workbench")
 MAX_HEAVY_ATOMS = 100
 MAX_ROTATABLE_BONDS = 30
 MAX_RING_SYSTEMS = 10
-MAX_BRIDGEHEAD_ATOMS = 3
 MAX_RING_COMPLEXITY = 8  # rings + bridgehead + spiro atoms
+
+# Substructure patterns (SMARTS) known to cause conformer generation to hang or crash.
+# Each entry is (name, compiled_pattern). These are public scaffolds, not specific compounds.
+_PROBLEMATIC_SUBSTRUCTURES = [
+    # Bicyclo[2.2.1] (norbornane) core — strained bridged bicyclic that causes
+    # ETKDGv3 distance geometry to loop indefinitely (400+ seconds on small molecules)
+    ("norbornane_core", Chem.MolFromSmarts("C1CC2CCC1C2")),
+]
 
 
 def is_too_complex(mol: Chem.Mol) -> bool:
@@ -173,6 +180,13 @@ def is_too_complex(mol: Chem.Mol) -> bool:
         )
         return True
 
+    # Substructure-based exclusions: specific scaffolds known to cause the distance
+    # geometry solver to hang indefinitely or the force field optimizer to crash.
+    for name, pattern in _PROBLEMATIC_SUBSTRUCTURES:
+        if mol.HasSubstructMatch(pattern):
+            logger.warning(f"Skipping molecule: matches problematic substructure '{name}'")
+            return True
+
     return False
 
 
@@ -218,78 +232,41 @@ def generate_conformers(
         rdkit_logger = RDLogger.logger()
         rdkit_logger.setLevel(RDLogger.ERROR)
 
+        # Tiered embedding: each tier relaxes constraints if the previous tier fails
+        embedding_tiers = [
+            ("standard ETKDGv3", {}),
+            ("random coordinates", {"useRandomCoords": True}),
+            ("relaxed ring constraints", {"useRandomCoords": True, "useBasicKnowledge": False}),
+        ]
+
         conf_ids = []
-
-        # Tier 1: Standard ETKDGv3 with experimental torsion preferences
-        params = AllChem.ETKDGv3()
-        params.randomSeed = random_seed
-        params.useSmallRingTorsions = True
-        params.numThreads = 1
-        params.pruneRmsThresh = 0.5  # Remove redundant conformers by heavy-atom RMSD
-        params.trackFailures = True
-        try:
-            conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params)
-        except RuntimeError as e:
-            logger.debug(f"Tier 1 (ETKDGv3) raised {e}")
-            conf_ids = []
-
-        # Tier 2: Random coordinates for difficult molecules
-        if len(conf_ids) == 0:
-            logger.debug("Tier 1 failed, trying random coordinates")
-            params2 = AllChem.ETKDGv3()
-            params2.randomSeed = random_seed
-            params2.useSmallRingTorsions = True
-            params2.useRandomCoords = True
-            params2.numThreads = 1
-            params2.pruneRmsThresh = 0.5
-            params2.trackFailures = True
+        for tier_name, overrides in embedding_tiers:
+            params = AllChem.ETKDGv3()
+            params.randomSeed = random_seed
+            params.useSmallRingTorsions = True
+            params.numThreads = 1
+            params.pruneRmsThresh = 0.5
+            params.trackFailures = True
+            for attr, value in overrides.items():
+                setattr(params, attr, value)
             try:
-                conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params2)
+                conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params)
             except RuntimeError as e:
-                logger.debug(f"Tier 2 (random coords) raised {e}")
+                logger.debug(f"Embedding tier '{tier_name}' raised {e}")
                 conf_ids = []
-
-        # Tier 3: Relaxed ring constraints for strained bridged/polycyclic systems
-        if len(conf_ids) == 0:
-            logger.debug("Tier 2 failed, trying relaxed ring constraints")
-            params3 = AllChem.ETKDGv3()
-            params3.randomSeed = random_seed
-            params3.useRandomCoords = True
-            params3.useBasicKnowledge = False  # Relax flat-ring enforcement
-            params3.maxIterations = 5000
-            params3.numThreads = 1
-            params3.trackFailures = True
-            try:
-                conf_ids = AllChem.EmbedMultipleConfs(mol, numConfs=n_conformers, params=params3)
-            except RuntimeError as e:
-                logger.debug(f"Tier 3 (relaxed constraints) raised {e}")
-                conf_ids = []
+            if len(conf_ids) > 0:
+                break
+            logger.debug(f"Embedding tier '{tier_name}' failed, trying next")
 
         if len(conf_ids) == 0:
             rdkit_logger.setLevel(RDLogger.WARNING)
             return None
 
-        # Optimize conformers: prefer MMFF94s, fall back to UFF
-        # Note: We check force field availability before optimizing to avoid
-        # C++ invariant violations in the BFGS optimizer that can crash the process.
-        # Even with valid params, highly strained geometries (complex bridged rings)
-        # can trigger optimizer crashes, so we optimize per-conformer to isolate failures.
+        # Optimize conformers per-conformer: prefer MMFF94s, fall back to UFF.
+        # We check force field availability first to avoid C++ crashes on
+        # unsupported atom types, and optimize individually to isolate failures.
         if optimize:
-            if AllChem.MMFFHasAllMoleculeParams(mol):
-                for conf_id in range(mol.GetNumConformers()):
-                    try:
-                        AllChem.MMFFOptimizeMolecule(mol, mmffVariant="MMFF94s", maxIters=200, confId=conf_id)
-                    except Exception as e:
-                        logger.debug(f"MMFF94s optimization failed for conformer {conf_id}: {e}")
-            elif AllChem.UFFHasAllMoleculeParams(mol):
-                logger.debug("MMFF94s params unavailable, falling back to UFF")
-                for conf_id in range(mol.GetNumConformers()):
-                    try:
-                        AllChem.UFFOptimizeMolecule(mol, maxIters=200, confId=conf_id)
-                    except Exception as e:
-                        logger.debug(f"UFF optimization failed for conformer {conf_id}: {e}")
-            else:
-                logger.debug("No force field params available, skipping optimization")
+            _optimize_conformers(mol)
 
         # Restore RDKit logging
         rdkit_logger.setLevel(RDLogger.WARNING)
@@ -300,6 +277,25 @@ def generate_conformers(
         logger.warning(f"Conformer generation failed: {e}")
         RDLogger.logger().setLevel(RDLogger.WARNING)
         return None
+
+
+def _optimize_conformers(mol: Chem.Mol) -> None:
+    """Optimize all conformers using MMFF94s (preferred) or UFF fallback."""
+    if AllChem.MMFFHasAllMoleculeParams(mol):
+        for conf_id in range(mol.GetNumConformers()):
+            try:
+                AllChem.MMFFOptimizeMolecule(mol, mmffVariant="MMFF94s", maxIters=200, confId=conf_id)
+            except Exception as e:
+                logger.debug(f"MMFF94s optimization failed for conformer {conf_id}: {e}")
+    elif AllChem.UFFHasAllMoleculeParams(mol):
+        logger.debug("MMFF94s params unavailable, falling back to UFF")
+        for conf_id in range(mol.GetNumConformers()):
+            try:
+                AllChem.UFFOptimizeMolecule(mol, maxIters=200, confId=conf_id)
+            except Exception as e:
+                logger.debug(f"UFF optimization failed for conformer {conf_id}: {e}")
+    else:
+        logger.debug("No force field params available, skipping optimization")
 
 
 def get_conformer_energies(mol: Chem.Mol) -> List[float]:

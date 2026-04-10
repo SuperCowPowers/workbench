@@ -66,16 +66,15 @@ if __name__ == "__main__":
     model.set_owner("BW")
 
     # Create the endpoint for the model
-    # Note: 3D descriptor computation is more memory/CPU intensive
-    # Using higher memory for serverless, larger instance for non-serverless
+    # Note: 3D descriptor computation is CPU-intensive (conformer generation + force field optimization)
+    # Realtime instance recommended — serverless has a hard 60s timeout that's too tight for
+    # complex molecules that can take 30-40s each on serverless hardware.
     if serverless:
         end = model.to_endpoint(tags=tags, serverless=True, mem_size=6144, max_concurrency=5)
+        end.upsert_workbench_meta({"inference_batch_size": 5})
     else:
-        end = model.to_endpoint(tags=tags, serverless=False, instance="ml.c7i.large")
-
-    # Set smaller batch size for 3D endpoint (conformer generation is slow ~1-1.5s per molecule)
-    # At ~0.7 mol/s, 20 molecules takes ~28s, safely under the 60s serverless timeout
-    end.upsert_workbench_meta({"inference_batch_size": 10})
+        end = model.to_endpoint(tags=tags, serverless=False, instance="ml.c7i.xlarge")
+        end.upsert_workbench_meta({"inference_batch_size": 50})
 
     # Run inference on the endpoint (smaller batch due to slower processing)
     end.inference(feature_set.pull_dataframe()[:50])

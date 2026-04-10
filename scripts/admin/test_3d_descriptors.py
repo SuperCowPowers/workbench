@@ -200,8 +200,8 @@ def run_corner_case_tests():
                 # Corner case: boron (unsupported by UFF/MMFF, caused C++ crash)
                 "OB(O)c1ccccc1",  # Phenylboronic acid
                 "CC1=CC(=CC(=C1)B(O)O)C",  # 3,5-dimethylphenylboronic acid
-                # Corner case: complex drug with deuterium labels
-                "[2H]C([2H])(F)Oc1ccc(cc1)C(=O)NC",  # Deuterated drug fragment
+                # Corner case: deuterium labels
+                "[2H]C([2H])([2H])O",  # Deuterated methanol (CD3OD) — public
                 # Corner case: large flexible molecule
                 "CCCCCCCCCCCCCCCCCCCC",  # Eicosane — long chain, very flexible
                 # Corner case: metal-containing / unusual
@@ -212,6 +212,10 @@ def run_corner_case_tests():
                 "F[B-](F)(F)F.[K+]",  # Potassium tetrafluoroborate — ionic boron
                 # Corner case: highly constrained polycyclic (optimizer crash)
                 "C12C3C4C1C5C3C2C45",  # Cubane — dense cage, public
+                # Corner case: large steroidal with quaternary ammonium (slow, 6 rings)
+                ("CC(=O)O[C@H]1C[C@@H]2CC[C@@H]3[C@H](CC[C@@]4(C)"
+                 "[C@H]3C[C@H]([N+]3(C)CCCCC3)[C@@H]4OC(C)=O)"
+                 "[C@@]2(C)C[C@@H]1[N+]1(C)CCCCC1"),  # Pancuronium — public (PubChem CID 441289)
             ],
             "label": [
                 "benzene",
@@ -221,13 +225,14 @@ def run_corner_case_tests():
                 "bridged_bicyclic",
                 "phenylboronic_acid",
                 "dimethylphenylboronic_acid",
-                "deuterated_fragment",
+                "deuterated_methanol",
                 "eicosane_flexible",
                 "sodium_acetate_salt",
                 "trifluoromethyl_boronic_acid",
                 "formyl_boronic_acid",
                 "potassium_tetrafluoroborate",
                 "cubane_bridged",
+                "pancuronium",
             ],
         }
     )

@@ -9,9 +9,12 @@
 #     Note: This endpoint is slower than the 2D descriptor endpoint due to
 #     conformer generation (~10-20 molecules/second).
 #
+SCRIPT_VERSION = "0.3.0"
+
 import argparse
 import os
 from io import StringIO
+import logging
 import pandas as pd
 import json
 
@@ -86,6 +89,9 @@ def output_fn(output_df, accept_type):
 
 # Prediction function
 def predict_fn(df, model):
+    logger = logging.getLogger("workbench")
+    logger.info(f"rdkit_3d_model_script v{SCRIPT_VERSION} — processing {len(df)} molecules")
+
     # Standardize the molecule (extract salts) first
     df = standardize(df, extract_salts=True)
 

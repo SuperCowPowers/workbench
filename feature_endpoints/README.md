@@ -22,10 +22,11 @@ python rdkit_mordred_v1.py
 python rdkit_mordred_keep_salts_v1.py
 
 # 3D Descriptors --> endpoint: smiles-to-3d-descriptors-v1
-python rdkit_3d_v1.py
+# Realtime recommended — serverless has a hard 60s timeout that's tight for 3D conformer generation
+SERVERLESS=false python rdkit_3d_v1.py
 
-# To deploy with a dedicated instance instead of serverless, prefix with:
-SERVERLESS=false python <script>.py
+# 2D endpoints support serverless or dedicated instance:
+SERVERLESS=false python rdkit_mordred_v1.py
 ```
 
 Each script will:
