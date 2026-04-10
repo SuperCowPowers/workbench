@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # Grab our FeatureSet and create the Model
     feature_set = FeatureSet("feature_endpoint_fs")
     tags = ["smiles", "3d descriptors", "conformer", "pharmacophore", "shape"]
-    RECREATE = False
+    RECREATE = True
     if RECREATE:
         model = feature_set.to_model(
             name="smiles-to-3d-descriptors-v1",

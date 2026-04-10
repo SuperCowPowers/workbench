@@ -244,7 +244,7 @@ def generate_conformers(
             params = AllChem.ETKDGv3()
             params.randomSeed = random_seed
             params.useSmallRingTorsions = True
-            params.numThreads = 1
+            params.numThreads = 0  # Use all available cores for conformer generation
             params.pruneRmsThresh = 0.5
             params.trackFailures = True
             for attr, value in overrides.items():
