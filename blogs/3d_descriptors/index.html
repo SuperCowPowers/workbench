@@ -1954,21 +1954,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#batch-size-management" class="md-nav__link">
+  <a href="#deployment-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Batch Size Management
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#serverless-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Serverless Configuration
+        Deployment Configuration
       
     </span>
   </a>
@@ -5077,21 +5066,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#batch-size-management" class="md-nav__link">
+  <a href="#deployment-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Batch Size Management
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#serverless-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Serverless Configuration
+        Deployment Configuration
       
     </span>
   </a>
@@ -5272,7 +5250,7 @@
 <h3 id="conformer-ensemble-statistics-5-features">Conformer Ensemble Statistics (5 features)</h3>
 <p>Rather than discarding the conformer ensemble after selecting the lowest-energy geometry, we extract statistics that capture conformational flexibility:</p>
 <ul>
-<li><strong>Energy minimum</strong>: The lowest force field energy -- a proxy for strain</li>
+<li><strong>Energy minimum</strong>: The lowest MMFF94s/UFF energy -- a proxy for strain</li>
 <li><strong>Energy range / standard deviation</strong>: How spread out the conformer energies are</li>
 <li><strong>Conformational flexibility index</strong>: Normalized energy range -- higher values indicate more conformational freedom</li>
 <li><strong>Conformer count</strong>: How many unique conformers were generated (after RMSD pruning)</li>
@@ -5281,7 +5259,8 @@
 <h2 id="production-guardrails">Production Guardrails</h2>
 <p>The 3D endpoint is significantly more compute-intensive than 2D (~1-2 molecules/second vs. near-instant for 2D). Several safeguards keep it reliable as a deployed service:</p>
 <h3 id="molecular-complexity-check">Molecular Complexity Check</h3>
-<p>Before attempting conformer generation, molecules are screened against complexity thresholds:</p>
+<p>Before attempting conformer generation, molecules are screened against a two-layer guard. Layer 1 is a set of lightweight size/count thresholds that catch obviously oversized molecules. Layer 2 is a curated list of SMARTS patterns that specifically target scaffolds known to hang the conformer generator.</p>
+<p><strong>Layer 1: Size and topology backstops</strong></p>
 <table>
 <thead>
 <tr>
@@ -5304,24 +5283,55 @@
 <tr>
 <td>Ring systems</td>
 <td>&gt; 10</td>
-<td>Complex ring topologies cause embedding failures</td>
+<td>Extreme ring counts indicate cage structures</td>
 </tr>
 <tr>
 <td>Ring complexity score</td>
-<td>&gt; 8</td>
-<td>Dense polycyclic cages crash the force field optimizer</td>
+<td>&gt; 15</td>
+<td>Backstop for highly constrained polycyclic cages</td>
 </tr>
 </tbody>
 </table>
-<p>The <strong>ring complexity score</strong> (rings + bridgehead atoms + spiro atoms) captures dense polycyclic cage structures that can't be detected by ring count alone. Bridgehead atoms sit at junctions where rings share bond paths; spiro atoms connect rings at a single point. Individually these features are fine -- steroids have 4 rings, camphor has 2 bridgehead atoms -- but in combination they create highly constrained geometries where the BFGS force field optimizer can't find a valid descent direction, triggering a C++ crash. Common drug scaffolds score 2--5; the threshold of 8 catches only the extreme cases.</p>
-<p>Molecules exceeding any threshold receive NaN values for all 75 features -- the same behavior as a failed conformer generation. These thresholds can be disabled for local analysis (<code>complexity_check=False</code>).</p>
-<h3 id="batch-size-management">Batch Size Management</h3>
-<p>The endpoint uses a smaller inference batch size (10 molecules) compared to the 2D endpoint, keeping total batch processing time safely under the serverless timeout limit.</p>
-<h3 id="serverless-configuration">Serverless Configuration</h3>
-<p>The 3D endpoint runs with the maximum serverless memory tier (6144 MB), which also provides the most vCPUs -- important since conformer generation and force field optimization are CPU-bound.</p>
+<p>The <strong>ring complexity score</strong> (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15, and the specific problem scaffolds are handled by the SMARTS layer below.</p>
+<p><strong>Layer 2: Substructure exclusions (SMARTS)</strong></p>
+<p>Certain strained bridged bicyclic scaffolds can cause ETKDGv3's distance geometry solver to loop indefinitely -- we've observed hangs ranging from 400 seconds to 20+ minutes on a single small molecule. These scaffolds share a common root cause:</p>
+<blockquote>
+<p>ETKDGv3 derives distance bounds from experimental torsion preferences and iteratively refines atom positions to satisfy all of them. For strained bridged bicyclics, the bridge bonds create geometric constraints at the edge of feasibility -- adjusting one bond length to satisfy one constraint violates another. Without a convergence cap, the solver loops forever trying combinations that will never simultaneously satisfy all bounds.</p>
+</blockquote>
+<p>The current SMARTS exclusion list:</p>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Description</th>
+<th>Observed hang</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bicyclo[2.2.1]</code></td>
+<td>Norbornane, norbornene, camphor, fenchone</td>
+<td>400+ seconds</td>
+</tr>
+<tr>
+<td><code>bicyclo[2.2.2]</code></td>
+<td>Natural-product terpene-like scaffolds</td>
+<td>1200+ seconds</td>
+</tr>
+</tbody>
+</table>
+<p>This list is easy to extend as new problematic scaffolds are discovered -- add a <code>(name, SMARTS)</code> tuple and redeploy. Common drug scaffolds like steroids, morphinans (codeine, morphine), and bicyclo[1.1.1]pentanes all pass through.</p>
+<p>Molecules exceeding any threshold or matching any SMARTS pattern receive NaN values for all 75 features. These guards can be disabled for local analysis (<code>complexity_check=False</code>).</p>
+<h3 id="deployment-configuration">Deployment Configuration</h3>
+<p>The 3D endpoint is recommended to run on a <strong>dedicated realtime instance</strong> (<code>ml.c7i.xlarge</code>, 4 vCPUs, 8 GB) rather than serverless. Serverless endpoints have a hard 60-second timeout that is too tight for complex drug molecules -- some can take 30-40 seconds each on serverless hardware. A realtime instance has no per-request timeout and provides more consistent CPU performance.</p>
+<p>Batch size is tuned to the deployment mode: <strong>50 molecules per batch</strong> on realtime instances (no timeout pressure), <strong>5 per batch</strong> on serverless (tight timeout budget).</p>
 <h2 id="deploying-the-endpoint">Deploying the Endpoint</h2>
 <p>The 3D descriptor endpoint is deployed like any other Workbench feature endpoint:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">python</span> <span class="n">feature_endpoints</span><span class="o">/</span><span class="n">rdkit_3d_v1</span><span class="o">.</span><span class="n">py</span>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Realtime instance (recommended for 3D — no timeout constraints)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nv">SERVERLESS</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span>python<span class="w"> </span>feature_endpoints/rdkit_3d_v1.py
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Serverless (lower cost, but 60s timeout limits throughput)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>python<span class="w"> </span>feature_endpoints/rdkit_3d_v1.py
 </span></code></pre></div>
 <p>This creates a <code>smiles-to-3d-descriptors-v1</code> endpoint that accepts DataFrames with a SMILES column and returns the same DataFrame with 75 additional descriptor columns. See the <a href="../feature_endpoints/">Feature Endpoints</a> blog for the full architecture discussion.</p>
 <h3 id="using-the-endpoint">Using the Endpoint</h3>
