@@ -134,21 +134,35 @@ Highly flexible molecules tend to have larger energy ranges, more conformers, an
 The 3D endpoint is significantly more compute-intensive than 2D (~1-2 molecules/second vs. near-instant for 2D). Several safeguards keep it reliable as a deployed service:
 
 ### Molecular Complexity Check
-Before attempting conformer generation, molecules are screened against complexity thresholds:
+Before attempting conformer generation, molecules are screened against a two-layer guard. Layer 1 is a set of lightweight size/count thresholds that catch obviously oversized molecules. Layer 2 is a curated list of SMARTS patterns that specifically target scaffolds known to hang the conformer generator.
+
+**Layer 1: Size and topology backstops**
 
 | Property | Threshold | Rationale |
 |----------|-----------|-----------|
 | Heavy atoms | > 100 | Embedding time scales roughly O(n^2) |
 | Rotatable bonds | > 30 | Combinatorial explosion of conformer space |
-| Ring systems | > 10 | Complex ring topologies cause embedding failures |
-| Ring complexity score | > 8 | Dense polycyclic cages crash the force field optimizer |
-| Problematic substructures | SMARTS match | Specific scaffolds that hang the distance geometry solver |
+| Ring systems | > 10 | Extreme ring counts indicate cage structures |
+| Ring complexity score | > 15 | Backstop for highly constrained polycyclic cages |
 
-The **ring complexity score** (rings + bridgehead atoms + spiro atoms) captures dense polycyclic cage structures that can't be detected by ring count alone. Bridgehead atoms sit at junctions where rings share bond paths; spiro atoms connect rings at a single point. Individually these features are fine -- steroids have 4 rings, camphor has 2 bridgehead atoms -- but in combination they create highly constrained geometries where the BFGS force field optimizer can't find a valid descent direction. Common drug scaffolds score 2--5; the threshold of 8 catches only the extreme cases.
+The **ring complexity score** (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15, and the specific problem scaffolds are handled by the SMARTS layer below.
 
-The **substructure exclusion** list uses SMARTS patterns to catch specific scaffolds where the distance geometry solver loops indefinitely -- regardless of molecule size or ring count. For example, the bicyclo[2.2.1] (norbornane) core is a strained bridged bicyclic that can hang for 400+ seconds even on a 14-atom molecule. This list is easy to extend as new problematic scaffolds are discovered.
+**Layer 2: Substructure exclusions (SMARTS)**
 
-Molecules exceeding any threshold receive NaN values for all 75 features -- the same behavior as a failed conformer generation. These thresholds can be disabled for local analysis (`complexity_check=False`).
+Certain strained bridged bicyclic scaffolds can cause ETKDGv3's distance geometry solver to loop indefinitely -- we've observed hangs ranging from 400 seconds to 20+ minutes on a single small molecule. These scaffolds share a common root cause:
+
+> ETKDGv3 derives distance bounds from experimental torsion preferences and iteratively refines atom positions to satisfy all of them. For strained bridged bicyclics, the bridge bonds create geometric constraints at the edge of feasibility -- adjusting one bond length to satisfy one constraint violates another. Without a convergence cap, the solver loops forever trying combinations that will never simultaneously satisfy all bounds.
+
+The current SMARTS exclusion list:
+
+| Pattern | Description | Observed hang |
+|---------|-------------|----------|
+| `bicyclo[2.2.1]` | Norbornane, norbornene, camphor, fenchone | 400+ seconds |
+| `bicyclo[2.2.2]` | Natural-product terpene-like scaffolds | 1200+ seconds |
+
+This list is easy to extend as new problematic scaffolds are discovered -- add a `(name, SMARTS)` tuple and redeploy. Common drug scaffolds like steroids, morphinans (codeine, morphine), and bicyclo[1.1.1]pentanes all pass through.
+
+Molecules exceeding any threshold or matching any SMARTS pattern receive NaN values for all 75 features. These guards can be disabled for local analysis (`complexity_check=False`).
 
 ### Deployment Configuration
 The 3D endpoint is recommended to run on a **dedicated realtime instance** (`ml.c7i.xlarge`, 4 vCPUs, 8 GB) rather than serverless. Serverless endpoints have a hard 60-second timeout that is too tight for complex drug molecules -- some can take 30-40 seconds each on serverless hardware. A realtime instance has no per-request timeout and provides more consistent CPU performance.
