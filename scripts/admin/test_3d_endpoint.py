@@ -23,34 +23,41 @@ TEST_COMPOUNDS = pd.DataFrame(
     {
         "smiles": [
             # Should succeed — common public drugs
-            "CCO",                                          # Ethanol
-            "c1ccccc1",                                     # Benzene
-            "CC(=O)Oc1ccccc1C(=O)O",                       # Aspirin
-            "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",                # Caffeine
-            "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C",         # Testosterone
-            "CC(C)Cc1ccc(C(C)C(=O)O)cc1",                  # Ibuprofen
-            "OB(O)c1ccccc1",                                # Phenylboronic acid
-            "CCCCCCCCCCCCCCCCCCCC",                         # Eicosane
-
+            "CCO",  # Ethanol
+            "c1ccccc1",  # Benzene
+            "CC(=O)Oc1ccccc1C(=O)O",  # Aspirin
+            "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",  # Caffeine
+            "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C",  # Testosterone
+            "CC(C)Cc1ccc(C(C)C(=O)O)cc1",  # Ibuprofen
+            "OB(O)c1ccccc1",  # Phenylboronic acid
+            "CCCCCCCCCCCCCCCCCCCC",  # Eicosane
             # Should succeed after salt extraction
-            "[Na+].CC(=O)[O-]",                             # Sodium acetate
-            "F[B-](F)(F)F.[K+]",                            # Potassium tetrafluoroborate
-
+            "[Na+].CC(=O)[O-]",  # Sodium acetate
+            "F[B-](F)(F)F.[K+]",  # Potassium tetrafluoroborate
             # Should be skipped (NaN) — complexity guard / problematic scaffolds
-            "C1CC2CC1CC2O",                                 # Norbornanol — norbornane core
-            "C12C3C4C1C5C3C2C45",                           # Cubane — dense cage
-
+            "C1CC2CC1CC2O",  # Norbornanol — norbornane core
+            "C12C3C4C1C5C3C2C45",  # Cubane — dense cage
             # Edge cases that should not crash the endpoint
-            "",                                             # Empty SMILES
-            "INVALID_SMILES",                               # Invalid SMILES
-            "[2H]C([2H])([2H])O",                           # Deuterated methanol (CD3OD)
+            "",  # Empty SMILES
+            "INVALID_SMILES",  # Invalid SMILES
+            "[2H]C([2H])([2H])O",  # Deuterated methanol (CD3OD)
         ],
         "id": [
-            "ethanol", "benzene", "aspirin", "caffeine", "testosterone",
-            "ibuprofen", "phenylboronic_acid", "eicosane",
-            "sodium_acetate", "potassium_tetrafluoroborate",
-            "norbornanol", "cubane",
-            "empty", "invalid", "deuterated_methanol",
+            "ethanol",
+            "benzene",
+            "aspirin",
+            "caffeine",
+            "testosterone",
+            "ibuprofen",
+            "phenylboronic_acid",
+            "eicosane",
+            "sodium_acetate",
+            "potassium_tetrafluoroborate",
+            "norbornanol",
+            "cubane",
+            "empty",
+            "invalid",
+            "deuterated_methanol",
         ],
     }
 )
@@ -67,10 +74,10 @@ EXPECTED = {
     "eicosane": True,
     "sodium_acetate": True,
     "potassium_tetrafluoroborate": True,
-    "norbornanol": False,       # Norbornane core — skipped by complexity check
-    "cubane": False,            # Dense cage — skipped by complexity check
-    "empty": False,             # No SMILES
-    "invalid": False,           # Unparseable
+    "norbornanol": False,  # Norbornane core — skipped by complexity check
+    "cubane": False,  # Dense cage — skipped by complexity check
+    "empty": False,  # No SMILES
+    "invalid": False,  # Unparseable
     "deuterated_methanol": True,
 }
 
