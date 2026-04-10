@@ -112,6 +112,16 @@ from mordred import Calculator as MordredCalculator
 from mordred import CPSA, GeometricalIndex, GravitationalIndex, PBF
 from scipy.spatial.distance import pdist
 
+# Try both import paths — workbench package locally, molecular_utils on the SageMaker container
+try:
+    from workbench.utils.chem_utils.conformer_timeout import run_with_timeout
+except ImportError:
+    from molecular_utils.conformer_timeout import run_with_timeout
+
+# Hard wall-clock timeout for conformer generation (per molecule, in seconds).
+# Molecules that exceed this are killed in their worker subprocess and get NaN features.
+CONFORMER_TIMEOUT_SECONDS = 30.0
+
 logger = logging.getLogger("workbench")
 
 
@@ -988,12 +998,18 @@ def compute_descriptors_3d(
             # Add explicit Hs (required for conformer generation, MMFF, and Mordred CPSA)
             mol = Chem.AddHs(mol)
 
-            # Generate conformers (mol keeps Hs throughout)
-            mol = generate_conformers(
-                mol,
-                n_conformers=n_conformers,
-                random_seed=random_seed,
-                optimize=optimize,
+            # Generate conformers in a worker subprocess with a wall-clock timeout.
+            # This prevents hangs in RDKit's C++ distance geometry solver from wedging
+            # the endpoint container.
+            mol = run_with_timeout(
+                generate_conformers,
+                args=(mol,),
+                kwargs={
+                    "n_conformers": n_conformers,
+                    "random_seed": random_seed,
+                    "optimize": optimize,
+                },
+                timeout=CONFORMER_TIMEOUT_SECONDS,
             )
 
             if mol is None or mol.GetNumConformers() == 0:

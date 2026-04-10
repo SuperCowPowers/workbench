@@ -436,8 +436,8 @@ class EndpointCore(Artifact):
 
         # Sanity Check that the target column is present
         if primary_target not in prediction_df.columns:
-            self.log.important(f"Target Column {primary_target} not found in prediction_df!")
-            self.log.important("In order to compute metrics, the target column must be present!")
+            self.log.info(f"Target Column {primary_target} not found in prediction_df!")
+            self.log.info("In order to compute metrics, the target column must be present!")
             metrics = pd.DataFrame()
 
         # Compute the standard performance metrics for this model
