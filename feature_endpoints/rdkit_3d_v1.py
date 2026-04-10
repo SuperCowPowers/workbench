@@ -27,7 +27,7 @@ Created Artifacts:
 import os
 
 # Workbench Imports
-from workbench.api import FeatureSet, ModelType, PublicData
+from workbench.api import FeatureSet, Model, ModelType, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 if __name__ == "__main__":
@@ -52,23 +52,26 @@ if __name__ == "__main__":
         fs = FeatureSet("feature_endpoint_fs")
         fs.set_owner("FeatureEndpoint")
 
-    # Grab our FeatureSet
+    # Grab our FeatureSet and create the Model
     feature_set = FeatureSet("feature_endpoint_fs")
     tags = ["smiles", "3d descriptors", "conformer", "pharmacophore", "shape"]
-    model = feature_set.to_model(
-        name="smiles-to-3d-descriptors-v1",
-        model_type=ModelType.TRANSFORMER,
-        feature_list=["smiles"],
-        description="SMILES to 3D Molecular Descriptors (75 features: shape, CPSA, pharmacophore, conformer stats)",
-        tags=tags,
-        custom_script=script_path,
-    )
-    model.set_owner("BW")
+    RECREATE = False
+    if RECREATE:
+        model = feature_set.to_model(
+            name="smiles-to-3d-descriptors-v1",
+            model_type=ModelType.TRANSFORMER,
+            feature_list=["smiles"],
+            description="SMILES to 3D Molecular Descriptors (75 features: shape, CPSA, pharmacophore, conformer stats)",
+            tags=tags,
+            custom_script=script_path,
+        )
+        model.set_owner("BW")
 
     # Create the endpoint for the model
     # Note: 3D descriptor computation is CPU-intensive (conformer generation + force field optimization)
     # Realtime instance recommended — serverless has a hard 60s timeout that's too tight for
     # complex molecules that can take 30-40s each on serverless hardware.
+    model = Model("smiles-to-3d-descriptors-v1")
     if serverless:
         end = model.to_endpoint(tags=tags, serverless=True, mem_size=6144, max_concurrency=5)
         end.upsert_workbench_meta({"inference_batch_size": 5})
