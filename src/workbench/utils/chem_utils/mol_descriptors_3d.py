@@ -151,7 +151,6 @@ _PROBLEMATIC_SUBSTRUCTURES = [
     # Two 5-membered rings fused with a 1-atom bridge. 400+ second hangs observed
     # on a 14-atom molecule. Bridge carbon is highly constrained by both rings.
     ("bicyclo_2_2_1", Chem.MolFromSmarts("[#6]1[#6][#6]2[#6][#6][#6]1[#6]2")),
-
     # Bicyclo[2.2.2] — two 6-membered rings fused with a 2-atom bridge.
     # Common in natural products (e.g., terpene-derived scaffolds). 1200+ second
     # hangs observed. The 2-atom bridge adds a second overconstrained carbon.
