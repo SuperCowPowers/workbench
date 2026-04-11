@@ -112,15 +112,12 @@ from mordred import Calculator as MordredCalculator
 from mordred import CPSA, GeometricalIndex, GravitationalIndex, PBF
 from scipy.spatial.distance import pdist
 
-# Try both import paths — workbench package locally, molecular_utils on the SageMaker container
-try:
-    from workbench.utils.chem_utils.conformer_timeout import run_with_timeout
-except ImportError:
-    from molecular_utils.conformer_timeout import run_with_timeout
-
-# Hard wall-clock timeout for conformer generation (per molecule, in seconds).
-# Molecules that exceed this are killed in their worker subprocess and get NaN features.
-CONFORMER_TIMEOUT_SECONDS = 30.0
+# Per-conformer wall-clock timeout (seconds, must be int) for the distance geometry
+# solver. Enforced natively by RDKit inside EmbedMultipleConfs (added in RDKit
+# 2025.03.1); molecules that exceed this for every conformer attempt simply get
+# no conformers and we fall through to the next tier / return NaN features. No
+# subprocess needed. With numConfs=10, worst case per tier ≈ 10 × 3s = 30s.
+CONFORMER_TIMEOUT_SECONDS = 3
 
 logger = logging.getLogger("workbench")
 
@@ -271,6 +268,10 @@ def generate_conformers(
             params.numThreads = 0  # Use all available cores for conformer generation
             params.pruneRmsThresh = 0.5
             params.trackFailures = True
+            # Hard wall-clock timeout per conformer attempt (requires RDKit >= 2025.03).
+            # Enforced inside the C++ solver, so it actually kills runaway distance
+            # geometry loops without needing subprocess isolation.
+            params.timeout = CONFORMER_TIMEOUT_SECONDS
             for attr, value in overrides.items():
                 setattr(params, attr, value)
             try:
@@ -997,18 +998,14 @@ def compute_descriptors_3d(
             # Add explicit Hs (required for conformer generation, MMFF, and Mordred CPSA)
             mol = Chem.AddHs(mol)
 
-            # Generate conformers in a worker subprocess with a wall-clock timeout.
-            # This prevents hangs in RDKit's C++ distance geometry solver from wedging
-            # the endpoint container.
-            mol = run_with_timeout(
-                generate_conformers,
-                args=(mol,),
-                kwargs={
-                    "n_conformers": n_conformers,
-                    "random_seed": random_seed,
-                    "optimize": optimize,
-                },
-                timeout=CONFORMER_TIMEOUT_SECONDS,
+            # Generate conformers. RDKit's native per-conformer timeout (set in
+            # generate_conformers via CONFORMER_TIMEOUT_SECONDS) prevents hangs
+            # in the distance geometry solver.
+            mol = generate_conformers(
+                mol,
+                n_conformers=n_conformers,
+                random_seed=random_seed,
+                optimize=optimize,
             )
 
             if mol is None or mol.GetNumConformers() == 0:

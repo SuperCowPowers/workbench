@@ -1,2 +1,2 @@
-rdkit>=2024.9.5
+rdkit>=2026.3.1
 mordredcommunity>=2.0.6
