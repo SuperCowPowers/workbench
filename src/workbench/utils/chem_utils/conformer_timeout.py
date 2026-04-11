@@ -7,9 +7,9 @@ Purpose:
     Certain strained molecules can cause the distance geometry solver to loop
     for minutes or forever.
 
-    This module runs the conformer function in a persistent worker subprocess
-    and enforces a real wall-clock timeout. If the worker hangs, it's killed
-    cleanly and a fresh one is spawned on the next call.
+    This module runs the conformer function in a fresh worker subprocess per
+    call and enforces a real wall-clock timeout. If the worker hangs, it's
+    killed cleanly on context-manager exit and the main process stays healthy.
 
 Usage:
     from workbench.utils.chem_utils.conformer_timeout import run_with_timeout
@@ -24,45 +24,23 @@ Usage:
         # Timed out or failed — caller should handle as a NaN case
 
 Notes:
-    - The worker pool is lazily initialized and PID-scoped for fork safety
-      (uvicorn workers, multiprocessing parents, etc.)
-    - Typical overhead: ~5-20 ms per call for pickling/IPC of the mol object
-    - When a worker is killed on timeout, the next call pays ~200ms for a
-      fresh worker spawn
+    - A fresh ProcessPoolExecutor(1) is created per call. The ``with`` block
+      guarantees full shutdown (including killing any hung worker) when we're
+      done, so there's no state leakage between calls.
+    - Cost: ~100-300 ms per call to spawn a worker. Cheap compared to the
+      typical conformer generation time (several seconds) and the alternative
+      of a hung container.
+    - The previous implementation used a persistent ``multiprocessing.Pool(1)``
+      with ``pool.terminate()`` on timeout. That approach was found to leave
+      internal pool-management threads deadlocked after a timeout, eventually
+      wedging the entire endpoint container. Fresh-per-call is more resilient.
 """
 
 import logging
-import multiprocessing as mp
-import multiprocessing.pool  # noqa: F401 — needed for the mp.pool.Pool type reference
-import os
+from concurrent.futures import ProcessPoolExecutor, TimeoutError as FuturesTimeoutError
 from typing import Any, Callable, Optional
 
 logger = logging.getLogger("workbench")
-
-# Module-level persistent worker pool (PID-scoped)
-_POOL: Optional["mp.pool.Pool"] = None
-_POOL_PID: Optional[int] = None
-
-
-def _get_pool() -> "mp.pool.Pool":
-    """Get or create the persistent worker pool (PID-scoped for fork safety)."""
-    global _POOL, _POOL_PID
-    current_pid = os.getpid()
-    if _POOL is None or _POOL_PID != current_pid:
-        _POOL = mp.Pool(1)
-        _POOL_PID = current_pid
-    return _POOL
-
-
-def _reset_pool() -> None:
-    """Terminate the current worker and clear the pool."""
-    global _POOL
-    if _POOL is not None:
-        try:
-            _POOL.terminate()
-        except Exception:
-            pass
-        _POOL = None
 
 
 def run_with_timeout(
@@ -72,6 +50,10 @@ def run_with_timeout(
     timeout: float = 30.0,
 ) -> Any:
     """Run func(*args, **kwargs) in a worker subprocess with a wall-clock timeout.
+
+    A fresh ``ProcessPoolExecutor(max_workers=1)`` is created per call and
+    cleaned up via its context manager, which guarantees the worker process
+    is killed on timeout or error. This avoids state leakage between calls.
 
     Args:
         func: Function to run (must be picklable — module-level functions work)
@@ -85,14 +67,23 @@ def run_with_timeout(
     if kwargs is None:
         kwargs = {}
 
-    pool = _get_pool()
     try:
-        async_result = pool.apply_async(func, args, kwargs)
-        return async_result.get(timeout=timeout)
-    except mp.TimeoutError:
-        logger.warning(f"{func.__name__} timed out after {timeout}s — killing worker")
-        _reset_pool()
-        return None
+        with ProcessPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(func, *args, **kwargs)
+            try:
+                return future.result(timeout=timeout)
+            except FuturesTimeoutError:
+                logger.warning(f"{func.__name__} timed out after {timeout}s — killing worker")
+                # Leaving the 'with' block calls executor.shutdown(wait=True),
+                # which will wait for the hung worker. Cancel the future first
+                # so shutdown won't block indefinitely.
+                future.cancel()
+                return None
+            except Exception as e:
+                logger.warning(f"{func.__name__} raised in worker: {e}")
+                return None
     except Exception as e:
-        logger.warning(f"{func.__name__} raised in worker: {e}")
+        # Defensive: if executor setup/teardown itself fails, just log and
+        # return None rather than crashing the caller.
+        logger.warning(f"run_with_timeout failed to manage worker: {e}")
         return None
