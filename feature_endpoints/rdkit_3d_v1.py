@@ -74,10 +74,10 @@ if __name__ == "__main__":
     model = Model("smiles-to-3d-descriptors-v1")
     if serverless:
         end = model.to_endpoint(tags=tags, serverless=True, mem_size=6144, max_concurrency=5)
-        end.upsert_workbench_meta({"inference_batch_size": 5})
+        end.upsert_workbench_meta({"inference_batch_size": 2})
     else:
         end = model.to_endpoint(tags=tags, serverless=False, instance="ml.c7i.xlarge")
-        end.upsert_workbench_meta({"inference_batch_size": 10})
+        end.upsert_workbench_meta({"inference_batch_size": 5})
 
     # Run inference on the endpoint (smaller batch due to slower processing)
     end.inference(feature_set.pull_dataframe()[:50])

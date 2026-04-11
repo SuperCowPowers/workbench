@@ -23,7 +23,7 @@ import pandas as pd
 
 log = logging.getLogger("workbench")
 
-DEFAULT_CHUNK_SIZE = 500
+DEFAULT_CHUNK_SIZE = 100
 
 
 def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[..., pd.DataFrame]:

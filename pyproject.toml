@@ -42,7 +42,7 @@ dependencies = [
     "requests >= 2.26.0",
     "rdkit>=2024.9.5",
     "mordredcommunity>=2.0.6",
-    "workbench-bridges>=0.2.2",
+    "workbench-bridges>=0.2.3",
     "cleanlab>=2.9.0",
     "pyyaml>=6.0",
 ]
