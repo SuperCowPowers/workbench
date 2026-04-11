@@ -236,15 +236,11 @@ class InferenceCache:
         """
         if new_results.empty:
             return
-        old_cache = self._cache_df if self._cache_df is not None else pd.DataFrame(
-            columns=[self.cache_key_column]
-        )
+        old_cache = self._cache_df if self._cache_df is not None else pd.DataFrame(columns=[self.cache_key_column])
         # Filter empty frames before concat to dodge the pandas FutureWarning
         # about dtype inference on empty entries.
         frames = [f for f in (old_cache, new_results) if not f.empty]
-        combined = pd.concat(frames, ignore_index=True).drop_duplicates(
-            subset=[self.cache_key_column], keep="last"
-        )
+        combined = pd.concat(frames, ignore_index=True).drop_duplicates(subset=[self.cache_key_column], keep="last")
         self._df_store.upsert(self.cache_path, combined)
         self._save_manifest()
         self._cache_df = combined

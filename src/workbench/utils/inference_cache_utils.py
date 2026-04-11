@@ -52,9 +52,7 @@ def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[.
         chunk_size = getattr(self, "chunk_size", DEFAULT_CHUNK_SIZE)
         label = f"InferenceCache[{self._endpoint.name}]"
         n_chunks = (total + chunk_size - 1) // chunk_size
-        self.log.info(
-            f"{label}: chunking {total} rows into {n_chunks} chunks of {chunk_size}"
-        )
+        self.log.info(f"{label}: chunking {total} rows into {n_chunks} chunks of {chunk_size}")
 
         results = []
         for i in range(n_chunks):
@@ -66,9 +64,7 @@ def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[.
             try:
                 chunk_results = method(self, chunk, **kwargs)
             except Exception as e:
-                self.log.error(
-                    f"{label}: chunk {i + 1}/{n_chunks} inference failed: {e}"
-                )
+                self.log.error(f"{label}: chunk {i + 1}/{n_chunks} inference failed: {e}")
                 continue
 
             got = len(chunk_results)

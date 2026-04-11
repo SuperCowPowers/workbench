@@ -855,26 +855,42 @@ class EndpointCore(Artifact):
                 return self._endpoint_error_handling(sm_endpoint, feature_df)
 
             elif error_code == "ModelError":
-                # Log full error response to capture all available debugging info
-                self.log.error(f"Error {error_code}")
-                self.log.error(err.response)
-                self.log.warning("Bisecting the DataFrame and retrying...")
+                # Compact log; full response only at debug level
+                raw_msg = err.response.get("Error", {}).get("Message", "")
+                short_msg = raw_msg.split("See https://")[0].strip()[:200] or str(err)[:200]
+                self.log.debug(err.response)
 
-                # Base case: single row handling
+                # Container hung (CPU pegged) vs. genuinely bad row
+                is_hung_container = "could not get a response" in raw_msg.lower()
+
+                # Base case: single row → record the failure once and move on
                 if len(feature_df) == 1:
                     if not self.endpoint_return_columns:
+                        self.log.error(f"ModelError on first call (no schema yet): {short_msg}")
                         raise
-                    self.log.warning(f"Endpoint Inference failed on: {feature_df}")
+                    self.log.warning(
+                        f"ModelError isolated to single row, "
+                        f"{'dropping' if drop_error_rows else 'filling NaN'}: {short_msg}"
+                    )
                     if drop_error_rows:
-                        self.log.warning("Dropping rows with endpoint errors...")
                         return pd.DataFrame(columns=feature_df.columns)
-                    # Fill with NaNs for inference columns, keeping original feature data
-                    self.log.warning("Filling with NaNs for inference columns...")
                     return self._fill_with_nans(feature_df)
 
-                # Binary search for problematic rows
+                # Multi-row case: log once at this level, then bisect
+                if is_hung_container:
+                    # Let the hung container recover before we bisect into it
+                    recovery_sleep = 90
+                    self.log.warning(
+                        f"ModelError (container unresponsive) on {len(feature_df)} rows: "
+                        f"{short_msg}. Sleeping {recovery_sleep}s before bisecting."
+                    )
+                    time.sleep(recovery_sleep)
+                else:
+                    self.log.warning(f"ModelError on {len(feature_df)} rows: {short_msg}. Bisecting...")
+
+                # Binary search for the problematic row(s)
                 mid_point = len(feature_df) // 2
-                self.log.info(f"Bisect DataFrame: 0 -> {mid_point} and {mid_point} -> {len(feature_df)}")
+                self.log.info(f"Bisect: 0:{mid_point} and {mid_point}:{len(feature_df)}")
                 first_half = self._endpoint_error_handling(sm_endpoint, feature_df.iloc[:mid_point], drop_error_rows)
                 second_half = self._endpoint_error_handling(sm_endpoint, feature_df.iloc[mid_point:], drop_error_rows)
                 return pd.concat([first_half, second_half], ignore_index=True)
