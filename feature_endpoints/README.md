@@ -22,8 +22,10 @@ python rdkit_mordred_v1.py
 python rdkit_mordred_keep_salts_v1.py
 
 # 3D Descriptors --> endpoint: smiles-to-3d-descriptors-v1
-# Realtime recommended — serverless has a hard 60s timeout that's tight for 3D conformer generation
+# Default instance is ml.c7i.xlarge. Override with INSTANCE=ml.c7i.2xlarge for more vCPUs.
+# Batch size is auto-tuned by config: serverless=3, xlarge=5, 2xlarge=10
 SERVERLESS=false python rdkit_3d_v1.py
+SERVERLESS=false INSTANCE=ml.c7i.2xlarge python rdkit_3d_v1.py
 
 # 2D endpoints support serverless or dedicated instance:
 SERVERLESS=false python rdkit_mordred_v1.py

@@ -30,10 +30,21 @@ import os
 from workbench.api import FeatureSet, Model, ModelType, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
+# Inference batch size tuned per deployment config. 3D conformer generation is
+# CPU-heavy, so the ideal batch size scales with available vCPUs.
+BATCH_SIZE_BY_CONFIG = {
+    "serverless":       3,   # 4 GB tier, ~2 vCPUs, hard 60s server timeout
+    "ml.c7i.xlarge":    5,   # 4 vCPUs, 8 GB
+    "ml.c7i.2xlarge":  10,   # 8 vCPUs, 16 GB
+}
+
+# Default realtime instance when SERVERLESS=false
+DEFAULT_INSTANCE = "ml.c7i.xlarge"
+
 if __name__ == "__main__":
 
-    # Serverless and Instance types
     serverless = os.environ.get("SERVERLESS", "True").lower() == "true"
+    instance = os.environ.get("INSTANCE", DEFAULT_INSTANCE)
 
     # Pull in the custom script path
     script_path = "model_scripts/rdkit_3d_model_script.py"
@@ -67,17 +78,17 @@ if __name__ == "__main__":
         )
         model.set_owner("BW")
 
-    # Create the endpoint for the model
-    # Note: 3D descriptor computation is CPU-intensive (conformer generation + force field optimization)
-    # Realtime instance recommended — serverless has a hard 60s timeout that's too tight for
-    # complex molecules that can take 30-40s each on serverless hardware.
+    # Deploy the endpoint and pick the batch size for this config
     model = Model("smiles-to-3d-descriptors-v1")
     if serverless:
         end = model.to_endpoint(tags=tags, serverless=True, mem_size=6144, max_concurrency=5)
-        end.upsert_workbench_meta({"inference_batch_size": 2})
+        batch_size = BATCH_SIZE_BY_CONFIG["serverless"]
     else:
-        end = model.to_endpoint(tags=tags, serverless=False, instance="ml.c7i.xlarge")
-        end.upsert_workbench_meta({"inference_batch_size": 5})
+        end = model.to_endpoint(tags=tags, serverless=False, instance=instance)
+        batch_size = BATCH_SIZE_BY_CONFIG.get(instance, BATCH_SIZE_BY_CONFIG[DEFAULT_INSTANCE])
+
+    end.upsert_workbench_meta({"inference_batch_size": batch_size})
+    print(f"inference_batch_size={batch_size}")
 
     # Run inference on the endpoint (smaller batch due to slower processing)
     end.inference(feature_set.pull_dataframe()[:50])

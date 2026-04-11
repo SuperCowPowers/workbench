@@ -20,7 +20,7 @@ import json
 from molecular_utils.mol_standardize import standardize
 from molecular_utils.mol_descriptors_3d import compute_descriptors_3d
 
-SCRIPT_VERSION = "0.7.0"
+SCRIPT_VERSION = "0.8.0"
 
 # TRAINING SECTION
 #
@@ -96,6 +96,6 @@ def predict_fn(df, model):
     df = standardize(df, extract_salts=True)
 
     # Compute 3D descriptors (molecules that fail get NaN values, rows kept)
-    df = compute_descriptors_3d(df, n_conformers=10, optimize=True)
+    df = compute_descriptors_3d(df, n_conformers=5, optimize=True)
 
     return df

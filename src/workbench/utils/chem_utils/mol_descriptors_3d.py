@@ -112,12 +112,9 @@ from mordred import Calculator as MordredCalculator
 from mordred import CPSA, GeometricalIndex, GravitationalIndex, PBF
 from scipy.spatial.distance import pdist
 
-# Per-conformer wall-clock timeout (seconds, must be int) for the distance geometry
-# solver. Enforced natively by RDKit inside EmbedMultipleConfs (added in RDKit
-# 2025.03.1); molecules that exceed this for every conformer attempt simply get
-# no conformers and we fall through to the next tier / return NaN features. No
-# subprocess needed. With numConfs=10, worst case per tier ≈ 10 × 3s = 30s.
-CONFORMER_TIMEOUT_SECONDS = 3
+# Per-conformer wall-clock timeout (seconds, int) enforced inside RDKit's
+# EmbedMultipleConfs. Requires RDKit >= 2025.03.1.
+CONFORMER_TIMEOUT_SECONDS = 5
 
 logger = logging.getLogger("workbench")
 
@@ -132,25 +129,12 @@ MAX_ROTATABLE_BONDS = 30
 MAX_RING_SYSTEMS = 10
 MAX_RING_COMPLEXITY = 15  # rings + bridgehead + spiro atoms (backstop; SMARTS handles known bad scaffolds)
 
-# Substructure patterns (SMARTS) known to cause conformer generation to hang.
-# Each entry is (name, compiled_pattern). These are public scaffolds, not specific compounds.
-#
-# Hypothesis: RDKit's ETKDGv3 distance geometry solver uses distance bounds derived
-# from experimental torsion preferences. For strained bridged bicyclics, the bridge
-# bonds create geometric constraints that are near the edge of feasibility — the
-# solver's iterative refinement can't converge because adjusting one bond length to
-# satisfy one constraint violates another. Without an iteration cap, the solver loops
-# indefinitely trying combinations that will never satisfy all bounds simultaneously.
-# The "small ring + bridge" topology is the common element: ring closure constraints
-# are tight, and bridge atoms are overconstrained by multiple ring memberships.
+# Strained bridged bicyclic scaffolds whose distance bounds are near infeasible —
+# ETKDGv3 can loop for minutes trying to satisfy conflicting ring constraints.
 _PROBLEMATIC_SUBSTRUCTURES = [
-    # Bicyclo[2.2.1] — norbornane, norbornene, camphor, fenchone
-    # Two 5-membered rings fused with a 1-atom bridge. 400+ second hangs observed
-    # on a 14-atom molecule. Bridge carbon is highly constrained by both rings.
+    # Bicyclo[2.2.1]: norbornane, norbornene, camphor, fenchone.
     ("bicyclo_2_2_1", Chem.MolFromSmarts("[#6]1[#6][#6]2[#6][#6][#6]1[#6]2")),
-    # Bicyclo[2.2.2] — two 6-membered rings fused with a 2-atom bridge.
-    # Common in natural products (e.g., terpene-derived scaffolds). 1200+ second
-    # hangs observed. The 2-atom bridge adds a second overconstrained carbon.
+    # Bicyclo[2.2.2]: common in terpene-derived natural products.
     ("bicyclo_2_2_2", Chem.MolFromSmarts("[#6]12[#6][#6][#6](~[#6]~[#6]1)[#6][#6]2")),
 ]
 
@@ -186,10 +170,8 @@ def is_too_complex(mol: Chem.Mol) -> bool:
         logger.warning(f"Skipping molecule: {n_rings} rings > {MAX_RING_SYSTEMS}")
         return True
 
-    # Ring complexity score: dense polycyclic cage structures with bridgehead and
-    # spiro atoms create highly constrained geometries where the BFGS force field
-    # optimizer can crash with C++ invariant violations.
-    # Examples: testosterone (score=4, safe), crash compounds (score=8-12, unsafe)
+    # Ring complexity backstop for dense polycyclic cages that the SMARTS list
+    # doesn't catch. Typical drug scaffolds score 2-5.
     n_bridgehead = rdMolDescriptors.CalcNumBridgeheadAtoms(mol)
     n_spiro = rdMolDescriptors.CalcNumSpiroAtoms(mol)
     ring_complexity = n_rings + n_bridgehead + n_spiro
@@ -218,7 +200,7 @@ def is_too_complex(mol: Chem.Mol) -> bool:
 
 def generate_conformers(
     mol: Chem.Mol,
-    n_conformers: int = 10,
+    n_conformers: int = 5,
     random_seed: int = 42,
     optimize: bool = True,
 ) -> Optional[Chem.Mol]:
@@ -249,11 +231,11 @@ def generate_conformers(
         return None
 
     try:
-        # Suppress noisy RDKit warnings (UFFTYPER, etc.) during embedding
+        # Silence UFFTYPER warnings during embedding
         rdkit_logger = RDLogger.logger()
         rdkit_logger.setLevel(RDLogger.ERROR)
 
-        # Tiered embedding: each tier relaxes constraints if the previous tier fails
+        # Each tier relaxes constraints if the previous tier returned nothing
         embedding_tiers = [
             ("standard ETKDGv3", {}),
             ("random coordinates", {"useRandomCoords": True}),
@@ -265,13 +247,10 @@ def generate_conformers(
             params = AllChem.ETKDGv3()
             params.randomSeed = random_seed
             params.useSmallRingTorsions = True
-            params.numThreads = 0  # Use all available cores for conformer generation
+            params.numThreads = 0  # all available cores
             params.pruneRmsThresh = 0.5
             params.trackFailures = True
-            # Hard wall-clock timeout per conformer attempt (requires RDKit >= 2025.03).
-            # Enforced inside the C++ solver, so it actually kills runaway distance
-            # geometry loops without needing subprocess isolation.
-            params.timeout = CONFORMER_TIMEOUT_SECONDS
+            params.timeout = CONFORMER_TIMEOUT_SECONDS  # per-conformer, C++-enforced
             for attr, value in overrides.items():
                 setattr(params, attr, value)
             try:
@@ -285,11 +264,12 @@ def generate_conformers(
 
         if len(conf_ids) == 0:
             rdkit_logger.setLevel(RDLogger.WARNING)
+            logger.warning(
+                f"Conformer generation returned 0 conformers "
+                f"(likely timeout >{CONFORMER_TIMEOUT_SECONDS}s on every attempt)"
+            )
             return None
 
-        # Optimize conformers per-conformer: prefer MMFF94s, fall back to UFF.
-        # We check force field availability first to avoid C++ crashes on
-        # unsupported atom types, and optimize individually to isolate failures.
         if optimize:
             _optimize_conformers(mol)
 
@@ -929,7 +909,7 @@ def get_3d_feature_names() -> List[str]:
 
 def compute_descriptors_3d(
     df: pd.DataFrame,
-    n_conformers: int = 10,
+    n_conformers: int = 5,
     optimize: bool = True,
     random_seed: int = 42,
     use_lowest_energy: bool = True,
@@ -940,7 +920,7 @@ def compute_descriptors_3d(
 
     Args:
         df: Input DataFrame with SMILES column
-        n_conformers: Number of conformers to generate (default 10)
+        n_conformers: Number of conformers to generate (default 5)
         optimize: Whether to run MMFF optimization (default True)
         random_seed: Random seed for conformer generation (default 42)
         use_lowest_energy: Use lowest energy conformer for descriptors (default True)
@@ -986,21 +966,16 @@ def compute_descriptors_3d(
             continue
 
         try:
-            # Create molecule
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
                 continue
 
-            # Skip molecules that are too complex (would risk endpoint timeout)
             if complexity_check and is_too_complex(mol):
                 continue
 
-            # Add explicit Hs (required for conformer generation, MMFF, and Mordred CPSA)
+            # Hs are required by ETKDGv3, MMFF, and Mordred CPSA.
             mol = Chem.AddHs(mol)
 
-            # Generate conformers. RDKit's native per-conformer timeout (set in
-            # generate_conformers via CONFORMER_TIMEOUT_SECONDS) prevents hangs
-            # in the distance geometry solver.
             mol = generate_conformers(
                 mol,
                 n_conformers=n_conformers,
@@ -1011,33 +986,29 @@ def compute_descriptors_3d(
             if mol is None or mol.GetNumConformers() == 0:
                 continue
 
-            # All descriptors computed with explicit Hs preserved
-            # (required for MMFF energies, Mordred CPSA, and more physically
-            # correct shape descriptors)
-
-            # Select conformer by lowest force field energy
+            # All descriptors run on the Hs-added mol (required by MMFF and CPSA).
             if use_lowest_energy and mol.GetNumConformers() > 1:
                 conf_id = get_lowest_energy_conformer_id(mol)
             else:
                 conf_id = 0
 
-            # RDKit 3D shape descriptors (PMI, NPR, asphericity, etc.)
+            # RDKit 3D shape (PMI, NPR, asphericity, ...)
             rdkit_3d = compute_rdkit_3d_descriptors(mol, conf_id)
             for name, value in rdkit_3d.items():
                 result.at[idx, name] = value
 
-            # Mordred 3D descriptors (CPSA needs explicit Hs for partial charges)
+            # Mordred 3D (CPSA family)
             mordred_3d = compute_mordred_3d_descriptors(mol)
             for name, value in mordred_3d.items():
                 if name in result.columns:
                     result.at[idx, name] = value
 
-            # Pharmacophore 3D descriptors
+            # Pharmacophore 3D
             pharm_3d = compute_pharmacophore_3d_descriptors(mol, conf_id)
             for name, value in pharm_3d.items():
                 result.at[idx, name] = value
 
-            # Conformer ensemble statistics (force field energies)
+            # Conformer ensemble stats
             conf_stats = compute_conformer_statistics(mol)
             for name, value in conf_stats.items():
                 result.at[idx, name] = value
