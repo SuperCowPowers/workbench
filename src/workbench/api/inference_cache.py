@@ -22,6 +22,10 @@ import pandas as pd
 
 from workbench.api.df_store import DFStore
 from workbench.api.endpoint import Endpoint
+from workbench.utils.inference_cache_utils import (
+    DEFAULT_CHUNK_SIZE,
+    chunked_with_cache_writes,
+)
 
 
 class InferenceCache:
@@ -43,6 +47,13 @@ class InferenceCache:
         cached.details()
         ```
     """
+
+    # Rows per cache write. The endpoint is called once per chunk and the
+    # cache is persisted between chunks, so this also bounds the blast radius
+    # of an interrupted/failed write to one chunk worth of work. Override on
+    # an instance (or via subclass) if a particular endpoint wants different
+    # durability/throughput tradeoffs.
+    chunk_size: int = DEFAULT_CHUNK_SIZE
 
     def __init__(
         self,
@@ -103,24 +114,14 @@ class InferenceCache:
         hits = len(eval_df) - len(uncached_df)
         self.log.info(f"InferenceCache[{self._endpoint.name}]: {hits}/{len(eval_df)} cache hits")
 
-        # Run the endpoint on the uncached rows and persist the new results
+        # Run the endpoint on the uncached rows. The decorator on
+        # _chunked_endpoint_inference handles chunking, per-chunk cache
+        # writes, and error recovery so a single failed write doesn't
+        # destroy the rest of the batch.
         new_results = pd.DataFrame()
         if not uncached_df.empty:
             to_compute = uncached_df.drop_duplicates(subset=[key_col])
-            sent = len(to_compute)
-            self.log.info(f"InferenceCache[{self._endpoint.name}]: computing {sent} new rows via endpoint")
-            new_results = self._endpoint.inference(to_compute, **kwargs)
-            got = len(new_results)
-            if got < sent:
-                # The endpoint should always return one row per input row.
-                # Anything less means something went wrong — log it loudly,
-                # but don't raise so the caller can keep going.
-                self.log.error(
-                    f"InferenceCache[{self._endpoint.name}]: sent {sent} rows to "
-                    f"endpoint but got {got} back ({sent - got} missing). The "
-                    f"missing keys will be re-requested on the next call."
-                )
-            self._update_cache(new_results, cache_df)
+            new_results = self._chunked_endpoint_inference(to_compute, **kwargs)
 
         # Combine cached + new into a single feature table, then left-join
         # back onto eval_df to preserve row order and any extra input columns.
@@ -216,15 +217,34 @@ class InferenceCache:
             self._cache_df = df
         return self._cache_df
 
-    def _update_cache(self, new_results: pd.DataFrame, old_cache: pd.DataFrame) -> None:
-        """Append new results to the cache and persist back to DFStore."""
+    @chunked_with_cache_writes
+    def _chunked_endpoint_inference(self, chunk: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """Run the wrapped endpoint on one chunk of rows.
+
+        The :func:`chunked_with_cache_writes` decorator handles chunking,
+        per-chunk persistence via :meth:`_update_cache`, and error recovery.
+        """
+        return self._endpoint.inference(chunk, **kwargs)
+
+    def _update_cache(self, new_results: pd.DataFrame) -> None:
+        """Merge new results into the in-memory cache and persist to DFStore.
+
+        Reads the current in-memory cache (``self._cache_df``), appends the
+        new rows, dedups on ``cache_key_column``, writes the combined frame
+        back to S3, and refreshes the manifest. Called once per chunk by the
+        decorator on :meth:`_chunked_endpoint_inference`.
+        """
         if new_results.empty:
             return
-        # Filter out an empty old_cache to avoid the pandas FutureWarning
-        # about dtype inference when concatenating empty/all-NA columns.
+        old_cache = self._cache_df if self._cache_df is not None else pd.DataFrame(
+            columns=[self.cache_key_column]
+        )
+        # Filter empty frames before concat to dodge the pandas FutureWarning
+        # about dtype inference on empty entries.
         frames = [f for f in (old_cache, new_results) if not f.empty]
-        combined = pd.concat(frames, ignore_index=True)
-        combined = combined.drop_duplicates(subset=[self.cache_key_column], keep="last")
+        combined = pd.concat(frames, ignore_index=True).drop_duplicates(
+            subset=[self.cache_key_column], keep="last"
+        )
         self._df_store.upsert(self.cache_path, combined)
         self._save_manifest()
         self._cache_df = combined
