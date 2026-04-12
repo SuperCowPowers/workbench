@@ -151,7 +151,10 @@ def create_model_and_endpoint():
 
     # Create a Model/Endpoint from the FeatureSet
     model_reg = my_features.to_model(
-        name="abalone-regression", model_type=ModelType.REGRESSOR, model_framework=ModelFramework.XGBOOST, target_column="class_number_of_rings"
+        name="abalone-regression",
+        model_type=ModelType.REGRESSOR,
+        model_framework=ModelFramework.XGBOOST,
+        target_column="class_number_of_rings",
     )
     model_reg.to_endpoint(name="abalone-regression", tags=["abalone", "public"])
 

@@ -28,7 +28,12 @@ def create_model():
 
     # If the model doesn't exist, create it
     if not Model("delete-test").exists():
-        FeatureSet("delete_test").to_model(name="delete-test", model_type=ModelType.REGRESSOR, model_framework=ModelFramework.XGBOOST, target_column="iq_score")
+        FeatureSet("delete_test").to_model(
+            name="delete-test",
+            model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
+            target_column="iq_score",
+        )
 
 
 def create_endpoint():
