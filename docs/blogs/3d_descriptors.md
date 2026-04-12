@@ -4,7 +4,7 @@
 
 2D molecular descriptors capture a lot about a molecule's chemistry from its connectivity graph alone -- molecular weight, hydrogen bond donors, topological polar surface area, and hundreds of other properties. But some of the most important ADMET properties depend on the molecule's *shape* in three dimensions: how it fits into a transporter binding site, whether it can fold to mask polar groups for membrane permeation, or how its charge distribution maps onto its surface.
 
-Workbench's 3D descriptor endpoints compute **74 conformer-based features** from SMILES strings, covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. Two pipeline modes are available -- a **fast** endpoint for realtime inference and a **Boltzmann** endpoint for high-quality batch processing. Both produce the same 74 features so downstream models can consume either interchangeably.
+Workbench's 3D descriptor endpoints compute **74 conformer-based features** from SMILES strings, covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. Like all Workbench endpoints, the contract is simple: **send a DataFrame, get a DataFrame back** -- the input DataFrame comes back with 74 descriptor columns appended. Two pipeline modes are available -- a **fast** endpoint for realtime inference and a **Boltzmann** endpoint for high-quality batch processing. Both produce the same 74 features so downstream models can consume either interchangeably.
 
 ## Why 3D Descriptors?
 
