@@ -786,15 +786,28 @@ class WorkbenchCoreStack(Stack):
         )
 
     def endpoint_autoscaling(self) -> iam.PolicyStatement:
-        """Application Auto Scaling permissions for endpoint auto-scaling."""
+        """Permissions for endpoint auto-scaling (async scale-to-zero + realtime scaling).
+
+        Covers: Application Auto Scaling registration/policies, CloudWatch alarms
+        (created automatically by target-tracking policies), SageMaker capacity
+        updates, and the one-time service-linked role creation.
+        """
         return iam.PolicyStatement(
             actions=[
+                # Application Auto Scaling
                 "application-autoscaling:RegisterScalableTarget",
                 "application-autoscaling:DeregisterScalableTarget",
                 "application-autoscaling:PutScalingPolicy",
                 "application-autoscaling:DeleteScalingPolicy",
                 "application-autoscaling:DescribeScalableTargets",
                 "application-autoscaling:DescribeScalingPolicies",
+                # CloudWatch alarms (created by target-tracking policies)
+                "cloudwatch:PutMetricAlarm",
+                "cloudwatch:DeleteAlarms",
+                "cloudwatch:DescribeAlarms",
+                # SageMaker capacity management
+                "sagemaker:UpdateEndpointWeightsAndCapacities",
+                # One-time service-linked role creation
                 "iam:CreateServiceLinkedRole",
             ],
             resources=["*"],
