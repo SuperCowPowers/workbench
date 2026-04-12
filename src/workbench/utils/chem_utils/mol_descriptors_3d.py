@@ -375,19 +375,6 @@ def get_conformer_energies(mol: Chem.Mol) -> List[float]:
     return [np.nan] * n_confs
 
 
-def get_lowest_energy_conformer_id(mol: Chem.Mol) -> int:
-    """Get the conformer ID with the lowest MMFF energy."""
-    energies = get_conformer_energies(mol)
-    if not energies or all(np.isnan(e) for e in energies):
-        return 0  # Default to first conformer
-
-    valid_energies = [(i, e) for i, e in enumerate(energies) if not np.isnan(e)]
-    if not valid_energies:
-        return 0
-
-    return min(valid_energies, key=lambda x: x[1])[0]
-
-
 # =============================================================================
 # Boltzmann Ensemble Helpers
 # =============================================================================
@@ -1021,39 +1008,19 @@ def get_3d_feature_names() -> List[str]:
     return rdkit_names + mordred_names + pharmacophore_names + conformer_names
 
 
-def _compute_one_fast(mol: Chem.Mol, use_lowest_energy: bool = True) -> Dict[str, float]:
-    """Compute descriptors on a single conformer (lowest-energy or first).
-
-    This is the original fast-pipeline logic extracted into its own function.
-    No behavior change from the pre-refactor code.
-
-    Args:
-        mol: RDKit molecule with conformer(s) and explicit Hs
-        use_lowest_energy: Pick the lowest-energy conformer (True) or first (False)
-
-    Returns:
-        Dictionary of all 75 feature names → values
-    """
-    if use_lowest_energy and mol.GetNumConformers() > 1:
-        conf_id = get_lowest_energy_conformer_id(mol)
-    else:
-        conf_id = 0
-
-    features: Dict[str, float] = {}
-    features.update(compute_rdkit_3d_descriptors(mol, conf_id))
-    features.update(compute_mordred_3d_descriptors(mol, conf_id))
-    features.update(compute_pharmacophore_3d_descriptors(mol, conf_id))
-    features.update(compute_conformer_statistics(mol))
-    return features
-
-
-def _compute_one_boltzmann(mol: Chem.Mol) -> Dict[str, float]:
+def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Dict[str, float]:
     """Compute Boltzmann-weighted ensemble descriptors.
 
-    For each conformer in the energy window, computes RDKit shape, Mordred 3D,
-    and pharmacophore descriptors, then returns the Boltzmann-weighted average.
-    Conformer ensemble statistics are computed over the *full* generated
-    ensemble (not just the window).
+    Computes energies for all conformers, selects those within the energy
+    window, then returns Boltzmann-weighted averages of RDKit shape, Mordred
+    3D, and pharmacophore descriptors. Conformer ensemble statistics are
+    computed over the *full* generated ensemble (not just the window).
+
+    This is the single descriptor-aggregation path used by both fast and
+    Boltzmann modes. With few conformers (fast mode, n=10) the Boltzmann
+    window typically includes all of them and the weighting naturally
+    emphasizes the lowest-energy geometry. With many conformers (Boltzmann
+    mode, n=50-300) it gives a proper ensemble average.
 
     Args:
         mol: RDKit molecule with conformer(s) and explicit Hs
@@ -1081,11 +1048,9 @@ def _compute_one_boltzmann(mol: Chem.Mol) -> Dict[str, float]:
     features: Dict[str, float] = {}
     for key in descriptor_keys:
         values = np.array([d[key] for d in per_conf_values], dtype=float)
-        # If all values are NaN for this descriptor, the average is NaN
         if np.all(np.isnan(values)):
             features[key] = np.nan
         else:
-            # Replace NaN with 0 for weighting (those conformers don't contribute)
             nan_mask = np.isnan(values)
             w = weights.copy()
             w[nan_mask] = 0.0
@@ -1105,34 +1070,34 @@ def _compute_one_boltzmann(mol: Chem.Mol) -> Dict[str, float]:
 def compute_descriptors_3d(
     df: pd.DataFrame,
     mode: str = "fast",
-    n_conformers: int = 5,
+    n_conformers: int = 10,
     optimize: bool = True,
     random_seed: int = 42,
-    use_lowest_energy: bool = True,
     complexity_check: bool = True,
 ) -> pd.DataFrame:
     """
     Compute 3D molecular descriptors for ADMET modeling.
 
     Two modes:
-        - ``"fast"`` (default): Fixed n_conformers, single lowest-energy
-          conformer for descriptors. Designed for realtime SageMaker endpoints.
+        - ``"fast"`` (default): Fixed n_conformers (default 10), Boltzmann-
+          weighted descriptors across the generated ensemble. Designed for
+          realtime SageMaker endpoints.
         - ``"boltzmann"``: Adaptive n_conformers (50-300 based on rotatable
-          bonds), Boltzmann-weighted ensemble descriptors over a 5 kcal/mol
-          energy window. Designed for overnight batch processing.
+          bonds), same Boltzmann-weighted descriptors. Designed for overnight
+          batch processing where higher conformer counts improve reproducibility.
 
-    Both modes produce the same 75 output features so downstream models can
-    consume either pipeline's output interchangeably.
+    Both modes use the same descriptor aggregation (Boltzmann-weighted
+    ensemble average over a 5 kcal/mol energy window) and produce the same
+    75 output features, so downstream models can consume either pipeline's
+    output interchangeably.
 
     Args:
         df: Input DataFrame with SMILES column
         mode: ``"fast"`` or ``"boltzmann"`` (default ``"fast"``)
-        n_conformers: Number of conformers to generate (default 5, fast mode only;
+        n_conformers: Number of conformers to generate (default 10, fast mode only;
                       Boltzmann mode uses adaptive counts and ignores this)
         optimize: Whether to run MMFF optimization (default True)
         random_seed: Random seed for conformer generation (default 42)
-        use_lowest_energy: Use lowest energy conformer for descriptors (default True,
-                          fast mode only; Boltzmann mode uses weighted ensemble)
         complexity_check: Whether to skip molecules that exceed complexity thresholds
                          (default True). Set False for local analysis of complex molecules.
 
@@ -1159,11 +1124,10 @@ def compute_descriptors_3d(
     result = df.copy()
     n_molecules = len(df)
 
+    n_confs_desc = f"adaptive (50/200/300)" if is_boltzmann else f"{n_conformers}"
     logger.info(f"Computing 3D descriptors for {n_molecules} molecules (mode={mode})...")
-    if mode == "fast":
-        logger.info(f"Parameters: n_conformers={n_conformers}, optimize={optimize}")
-    else:
-        logger.info("Parameters: adaptive n_conformers, Boltzmann ensemble, " f"force_tol={BOLTZMANN_FORCE_TOL}")
+    logger.info(f"Parameters: n_conformers={n_confs_desc}, optimize={optimize}, "
+                f"force_tol={BOLTZMANN_FORCE_TOL}")
 
     # Initialize feature columns
     feature_names = get_3d_feature_names()
@@ -1188,23 +1152,20 @@ def compute_descriptors_3d(
 
             mol = Chem.AddHs(mol)
 
-            # Conformer generation — mode only affects count and force tolerance
+            # Conformer generation — mode only affects count
             n_confs = adaptive_n_conformers(mol) if is_boltzmann else n_conformers
             mol = generate_conformers(
                 mol,
                 n_conformers=n_confs,
                 random_seed=random_seed,
                 optimize=optimize,
-                force_tol=BOLTZMANN_FORCE_TOL if is_boltzmann else None,
+                force_tol=BOLTZMANN_FORCE_TOL,
             )
             if mol is None or mol.GetNumConformers() == 0:
                 continue
 
-            # Descriptor aggregation — single conformer vs Boltzmann ensemble
-            if is_boltzmann:
-                features = _compute_one_boltzmann(mol)
-            else:
-                features = _compute_one_fast(mol, use_lowest_energy)
+            # Both modes: Boltzmann-weighted ensemble descriptors
+            features = _compute_descriptors_boltzmann(mol)
 
             for name, value in features.items():
                 if name in result.columns:

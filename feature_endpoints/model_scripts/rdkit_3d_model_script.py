@@ -96,6 +96,6 @@ def predict_fn(df, model):
     df = standardize(df, extract_salts=True)
 
     # Compute 3D descriptors (molecules that fail get NaN values, rows kept)
-    df = compute_descriptors_3d(df, n_conformers=5, optimize=True)
+    df = compute_descriptors_3d(df)
 
     return df
