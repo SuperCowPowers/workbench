@@ -1124,10 +1124,9 @@ def compute_descriptors_3d(
     result = df.copy()
     n_molecules = len(df)
 
-    n_confs_desc = f"adaptive (50/200/300)" if is_boltzmann else f"{n_conformers}"
+    n_confs_desc = "adaptive (50/200/300)" if is_boltzmann else f"{n_conformers}"
     logger.info(f"Computing 3D descriptors for {n_molecules} molecules (mode={mode})...")
-    logger.info(f"Parameters: n_conformers={n_confs_desc}, optimize={optimize}, "
-                f"force_tol={BOLTZMANN_FORCE_TOL}")
+    logger.info(f"Parameters: n_conformers={n_confs_desc}, optimize={optimize}, " f"force_tol={BOLTZMANN_FORCE_TOL}")
 
     # Initialize feature columns
     feature_names = get_3d_feature_names()
