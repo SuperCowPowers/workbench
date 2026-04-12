@@ -77,12 +77,13 @@ Most clients use variants similar to those listed below but we have the flexibil
   <tbody>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-taut-md-stereo</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Standard ADMET modeling (salt extraction, tautomer canonicalization)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-taut-md-stereo-keep-salts</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Salt-sensitive modeling (solubility, formulation)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-descriptors</td><td style="padding: 8px 16px;">75 3D descriptors</td><td style="padding: 8px 16px;">Shape/pharmacophore features (permeability, transporter interactions)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-descriptors</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">Realtime 3D shape/pharmacophore features (10 conformers)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-boltzmann</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">Batch 3D features with adaptive conformers (50-300), async endpoint</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-fingerprints</td><td style="padding: 8px 16px;">2048-dim Morgan count fingerprints</td><td style="padding: 8px 16px;">Substructure-based similarity models, molecular search</td></tr>
   </tbody>
 </table>
 
-The 2D and 3D endpoints can be combined — run both and concatenate the results for a ~390-feature descriptor set covering topological, electronic, and geometric properties.
+The 2D and 3D endpoints can be combined — run both and concatenate the results for a ~388-feature descriptor set covering topological, electronic, and geometric properties. See the [3D Descriptors](3d_descriptors.md) blog for details on the fast and Boltzmann pipelines.
 
 ### Fingerprint Endpoints
 
@@ -177,7 +178,7 @@ Most Feature Endpoints run a full molecular processing pipeline.
 3. **Mordred descriptors** (~85): Five ADMET-focused modules — AcidBase, Aromatic, Constitutional, Chi connectivity, and CarbonTypes
 4. **Stereochemistry features** (10): R/S center counts, E/Z bond counts, stereo complexity, fraction-defined metrics
 
-Our 3D endpoint typically includes conformer generation using RDKit's ETKDGv3 algorithm and computes 75 additional descriptors covering molecular shape (PMI, NPR, asphericity), charged partial surface area (CPSA), pharmacophore spatial distribution (amphiphilic moment, intramolecular H-bond potential), and conformer ensemble statistics.
+Our [3D endpoints](3d_descriptors.md) use RDKit's ETKDGv3 algorithm for conformer generation and compute 74 Boltzmann-weighted ensemble descriptors covering molecular shape (PMI, NPR, asphericity), charged partial surface area (CPSA), pharmacophore spatial distribution (amphiphilic moment, intramolecular H-bond potential), and conformer ensemble statistics. A fast realtime endpoint and a Boltzmann async endpoint are available for different throughput/quality tradeoffs.
 
 
 ## References
