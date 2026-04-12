@@ -158,12 +158,16 @@ class AsyncEndpointCore(EndpointCore):
             log.error(f"Async request {request_id} failed: {e}")
             return None
 
-        # Parse the output CSV
+        # Parse the output CSV, then clean up S3 artifacts
         try:
-            return pd.read_csv(StringIO(output_body))
+            result_df = pd.read_csv(StringIO(output_body))
         except Exception as e:
             log.error(f"Failed to parse async output for {request_id}: {e}")
             return None
+
+        # Clean up input and output files from S3
+        self._cleanup_s3(s3_client, input_s3_uri, output_location)
+        return result_df
 
     def _poll_s3_output(
         self,
@@ -218,6 +222,15 @@ class AsyncEndpointCore(EndpointCore):
     # -----------------------------------------------------------------
     # Utilities
     # -----------------------------------------------------------------
+    def _cleanup_s3(self, s3_client, *s3_uris: str) -> None:
+        """Delete S3 objects after we've consumed them. Best-effort — failures are logged, not raised."""
+        for uri in s3_uris:
+            try:
+                bucket, key = self._parse_s3_uri(uri)
+                s3_client.delete_object(Bucket=bucket, Key=key)
+            except Exception as e:
+                log.debug(f"Failed to clean up {uri}: {e}")
+
     def _s3_key(self, suffix: str) -> str:
         """Build an S3 key under this endpoint's namespace."""
         return f"endpoints/{self.name}/{suffix}"
