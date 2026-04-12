@@ -14,6 +14,8 @@ from botocore.exceptions import ClientError
 # SageMaker V3 Resource Classes
 from sagemaker.core.resources import Model as SagemakerModel, EndpointConfig, Endpoint as SagemakerEndpoint
 from sagemaker.core.shapes.shapes import (
+    AsyncInferenceConfig,
+    AsyncInferenceOutputConfig,
     ContainerDefinition,
     ProductionVariant,
     ProductionVariantServerlessConfig,
@@ -47,13 +49,23 @@ class ModelToEndpoint(Transform):
         ```
     """
 
-    def __init__(self, model_name: str, endpoint_name: str, serverless: bool = True, instance: str = None):
+    def __init__(
+        self,
+        model_name: str,
+        endpoint_name: str,
+        serverless: bool = True,
+        instance: str = None,
+        async_endpoint: bool = False,
+    ):
         """ModelToEndpoint Initialization
         Args:
             model_name(str): The Name of the input Model
             endpoint_name(str): The Name of the output Endpoint
             serverless(bool): Deploy the Endpoint in serverless mode (default: True)
             instance(str): The instance type for Realtime Endpoints (default: None = auto-select)
+            async_endpoint(bool): Deploy as an async endpoint (default: False). Async
+                endpoints support up to 15-minute invocations and use S3 for I/O.
+                Incompatible with serverless — if both are True, serverless is forced off.
         """
         # Make sure the endpoint_name is a valid name
         Artifact.is_name_valid(endpoint_name, delimiter="-", lower_case=False)
@@ -61,9 +73,15 @@ class ModelToEndpoint(Transform):
         # Call superclass init
         super().__init__(model_name, endpoint_name)
 
+        # Async endpoints are always realtime (not serverless)
+        if async_endpoint and serverless:
+            self.log.warning("Async endpoints are not compatible with serverless. Forcing serverless=False.")
+            serverless = False
+
         # Set up all my instance attributes
         self.serverless = serverless
         self.instance = instance
+        self.async_endpoint = async_endpoint
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
@@ -248,9 +266,22 @@ class ModelToEndpoint(Transform):
             production_variant.instance_type = instance_type
             production_variant.container_startup_health_check_timeout_in_seconds = 300
 
+        # Build async inference config if requested
+        async_inference_config = None
+        if self.async_endpoint:
+            base_path = f"{self.endpoints_s3_path}/{self.output_name}"
+            async_inference_config = AsyncInferenceConfig(
+                output_config=AsyncInferenceOutputConfig(
+                    s3_output_path=f"{base_path}/async-output",
+                    s3_failure_path=f"{base_path}/async-failures",
+                ),
+            )
+            self.log.important(f"Async Endpoint Config: output → {base_path}/async-output")
+
         EndpointConfig.create(
             endpoint_config_name=config_name,
             production_variants=[production_variant],
+            async_inference_config=async_inference_config,
             data_capture_config=data_capture_config,
             tags=tags,
             session=self.boto3_session,

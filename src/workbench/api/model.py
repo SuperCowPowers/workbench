@@ -57,6 +57,7 @@ class Model(ModelCore):
         max_concurrency: int = 5,
         instance: str = None,
         data_capture: bool = False,
+        async_endpoint: bool = False,
     ) -> Endpoint:
         """Create an Endpoint from the Model.
 
@@ -68,9 +69,12 @@ class Model(ModelCore):
             max_concurrency (int): The maximum concurrency for the Endpoint (default: 5)
             instance (str): The instance type for Realtime Endpoints (default: None = auto-select based on model)
             data_capture (bool): Enable data capture for the Endpoint (default: False)
+            async_endpoint (bool): Deploy as an async endpoint (default: False). Async
+                endpoints support up to 15-minute per-invocation timeouts and use S3 for
+                I/O. Useful for long-running inference like Boltzmann 3D descriptors.
 
         Returns:
-            Endpoint: The Endpoint created from the Model
+            Endpoint: The Endpoint (or AsyncEndpoint if async_endpoint=True)
         """
 
         # Ensure the endpoint_name is valid
@@ -86,7 +90,9 @@ class Model(ModelCore):
         tags = [name] if tags is None else tags
 
         # Create an Endpoint from the Model
-        model_to_endpoint = ModelToEndpoint(self.name, name, serverless=serverless, instance=instance)
+        model_to_endpoint = ModelToEndpoint(
+            self.name, name, serverless=serverless, instance=instance, async_endpoint=async_endpoint
+        )
         model_to_endpoint.set_output_tags(tags)
         model_to_endpoint.transform(
             mem_size=mem_size,
@@ -94,8 +100,12 @@ class Model(ModelCore):
             data_capture=data_capture,
         )
 
-        # Set the Endpoint Owner and Return the Endpoint
-        end = Endpoint(name)
+        # Return the appropriate endpoint type
+        if async_endpoint:
+            from workbench.api.async_endpoint import AsyncEndpoint
+            end = AsyncEndpoint(name)
+        else:
+            end = Endpoint(name)
         end.set_owner(self.get_owner())
         return end
 
