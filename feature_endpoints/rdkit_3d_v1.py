@@ -33,7 +33,7 @@ from workbench.core.transforms.pandas_transforms import PandasToFeatures
 # Inference batch size tuned per deployment config. 3D conformer generation is
 # CPU-heavy, so the ideal batch size scales with available vCPUs.
 BATCH_SIZE_BY_CONFIG = {
-    "serverless": 3,  # 4 GB tier, ~2 vCPUs, hard 60s server timeout
+    "serverless": 3,  # ~2 vCPUs, 2-6GB memory
     "ml.c7i.xlarge": 5,  # 4 vCPUs, 8 GB
     "ml.c7i.2xlarge": 10,  # 8 vCPUs, 16 GB
 }
