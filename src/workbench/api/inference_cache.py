@@ -380,4 +380,4 @@ if __name__ == "__main__":
     # Exercise delete_entries: drop the first 5 SMILES, they'll recompute next time
     victims = df["smiles"].iloc[:5].tolist()
     removed = cached_endpoint.delete_entries(victims)
-    print(f"\ndelete_entries removed {removed} rows; cache now {cached.cache_size()}")
+    print(f"\ndelete_entries removed {removed} rows; cache now {cached_endpoint.cache_size()}")
