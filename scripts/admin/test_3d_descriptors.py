@@ -18,7 +18,7 @@ from workbench.utils.chem_utils.mol_standardize import standardize
 from workbench.utils.chem_utils.mol_descriptors_3d import (
     compute_descriptors_3d,
     generate_conformers,
-    is_too_complex,
+    check_complexity,
     get_3d_feature_names,
     MAX_HEAVY_ATOMS,
     MAX_ROTATABLE_BONDS,
@@ -46,21 +46,16 @@ def diagnose_molecule(smiles: str) -> dict:
     info["mol_wt"] = rdMolDescriptors.CalcExactMolWt(mol)
 
     # Step 3: Complexity check
-    if is_too_complex(mol):
-        info["failure_reason"] = "too_complex"
-        if info["heavy_atoms"] > MAX_HEAVY_ATOMS:
-            info["failure_reason"] += f"_heavy_atoms({info['heavy_atoms']})"
-        if info["rotatable_bonds"] > MAX_ROTATABLE_BONDS:
-            info["failure_reason"] += f"_rot_bonds({info['rotatable_bonds']})"
-        if info["rings"] > MAX_RING_SYSTEMS:
-            info["failure_reason"] += f"_rings({info['rings']})"
+    complexity_status = check_complexity(mol)
+    if complexity_status is not None:
+        info["failure_reason"] = complexity_status
         return info
 
     # Step 4: Can we generate conformers?
     start = time.time()
     try:
         mol_h = Chem.AddHs(mol)
-        conf_mol = generate_conformers(mol_h, n_conformers=10, optimize=True)
+        conf_mol, _gen_info = generate_conformers(mol_h, n_conformers=10, optimize=True)
         elapsed = time.time() - start
         info["conformer_time_s"] = round(elapsed, 2)
 

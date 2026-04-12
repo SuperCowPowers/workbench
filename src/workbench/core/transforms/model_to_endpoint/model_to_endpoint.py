@@ -18,6 +18,7 @@ from sagemaker.core.shapes.shapes import (
     AsyncInferenceOutputConfig,
     ContainerDefinition,
     ProductionVariant,
+    ProductionVariantManagedInstanceScaling,
     ProductionVariantServerlessConfig,
     DataCaptureConfig as DataCaptureConfigShape,
     CaptureOption,
@@ -276,7 +277,14 @@ class ModelToEndpoint(Transform):
                     s3_failure_path=f"{base_path}/async-failures",
                 ),
             )
-            self.log.important(f"Async Endpoint Config: output → {base_path}/async-output")
+            # Scale to zero when idle — instance spins down after ~10 min
+            # of no requests and cold-starts on the next invocation.
+            production_variant.managed_instance_scaling = ProductionVariantManagedInstanceScaling(
+                status="ENABLED",
+                min_instance_count=0,
+                max_instance_count=4,
+            )
+            self.log.important(f"Async Endpoint Config: output → {base_path}/async-output (scale-to-zero enabled)")
 
         EndpointConfig.create(
             endpoint_config_name=config_name,

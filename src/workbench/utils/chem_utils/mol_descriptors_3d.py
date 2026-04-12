@@ -159,8 +159,8 @@ _PROBLEMATIC_SUBSTRUCTURES = [
 ]
 
 
-def is_too_complex(mol: Chem.Mol) -> bool:
-    """Check if a molecule is too complex for 3D conformer generation within timeout.
+def check_complexity(mol: Chem.Mol) -> Optional[str]:
+    """Check if a molecule is too complex for 3D conformer generation.
 
     Molecules that exceed any threshold will get NaN features instead of risking
     a SageMaker endpoint timeout (60s) or a C++ crash in the force field optimizer.
@@ -169,26 +169,27 @@ def is_too_complex(mol: Chem.Mol) -> bool:
         mol: RDKit molecule object
 
     Returns:
-        True if the molecule should be skipped
+        None if the molecule passes all checks, or a status string describing
+        the specific failure (e.g. ``"too_complex:heavy_atoms"``).
     """
     if mol is None:
-        return True
+        return "skip:parse"
 
     n_heavy = mol.GetNumHeavyAtoms()
     if n_heavy > MAX_HEAVY_ATOMS:
         logger.warning(f"Skipping molecule: {n_heavy} heavy atoms > {MAX_HEAVY_ATOMS}")
-        return True
+        return "skip:heavy_atoms"
 
     n_rot = rdMolDescriptors.CalcNumRotatableBonds(mol)
     if n_rot > MAX_ROTATABLE_BONDS:
         logger.warning(f"Skipping molecule: {n_rot} rotatable bonds > {MAX_ROTATABLE_BONDS}")
-        return True
+        return "skip:rot_bonds"
 
     ring_info = mol.GetRingInfo()
     n_rings = ring_info.NumRings()
     if n_rings > MAX_RING_SYSTEMS:
         logger.warning(f"Skipping molecule: {n_rings} rings > {MAX_RING_SYSTEMS}")
-        return True
+        return "skip:rings"
 
     # Ring complexity backstop for dense polycyclic cages that the SMARTS list
     # doesn't catch. Typical drug scaffolds score 2-5.
@@ -201,16 +202,16 @@ def is_too_complex(mol: Chem.Mol) -> bool:
             f"(rings={n_rings} + bridgehead={n_bridgehead} + spiro={n_spiro}) "
             f"> {MAX_RING_COMPLEXITY}"
         )
-        return True
+        return "skip:ring_complexity"
 
     # Substructure-based exclusions: specific scaffolds known to cause the distance
     # geometry solver to hang indefinitely or the force field optimizer to crash.
     for name, pattern in _PROBLEMATIC_SUBSTRUCTURES:
         if mol.HasSubstructMatch(pattern):
             logger.warning(f"Skipping molecule: matches problematic substructure '{name}'")
-            return True
+            return f"skip:{name}"
 
-    return False
+    return None
 
 
 # =============================================================================
@@ -224,7 +225,7 @@ def generate_conformers(
     random_seed: int = 42,
     optimize: bool = True,
     force_tol: Optional[float] = None,
-) -> Optional[Chem.Mol]:
+) -> Tuple[Optional[Chem.Mol], Dict[str, any]]:
     """
     Generate 3D conformers using ETKDGv3 with tiered fallback.
 
@@ -249,10 +250,14 @@ def generate_conformers(
             geometry loss. None keeps the RDKit default.
 
     Returns:
-        Molecule with conformers (Hs preserved), or None if generation failed
+        Tuple of (mol, info) where mol is the molecule with conformers
+        (or None on failure) and info is a dict with diagnostic fields:
+        ``embed_tier`` (int), ``force_field`` (str).
     """
+    info = {"embed_tier": 0, "force_field": "none"}
+
     if mol is None:
-        return None
+        return None, info
 
     try:
         # Silence UFFTYPER warnings during embedding
@@ -267,7 +272,7 @@ def generate_conformers(
         ]
 
         conf_ids = []
-        for tier_name, overrides in embedding_tiers:
+        for tier_idx, (tier_name, overrides) in enumerate(embedding_tiers, start=1):
             params = AllChem.ETKDGv3()
             params.randomSeed = random_seed
             params.useSmallRingTorsions = True
@@ -285,6 +290,7 @@ def generate_conformers(
                 logger.debug(f"Embedding tier '{tier_name}' raised {e}")
                 conf_ids = []
             if len(conf_ids) > 0:
+                info["embed_tier"] = tier_idx
                 break
             logger.debug(f"Embedding tier '{tier_name}' failed, trying next")
 
@@ -294,30 +300,35 @@ def generate_conformers(
                 f"Conformer generation returned 0 conformers "
                 f"(likely timeout >{CONFORMER_TIMEOUT_SECONDS}s on every attempt)"
             )
-            return None
+            return None, info
 
         if optimize:
-            _optimize_conformers(mol)
+            info["force_field"] = _optimize_conformers(mol)
 
         # Restore RDKit logging
         rdkit_logger.setLevel(RDLogger.WARNING)
 
-        return mol
+        return mol, info
 
     except Exception as e:
         logger.warning(f"Conformer generation failed: {e}")
         RDLogger.logger().setLevel(RDLogger.WARNING)
-        return None
+        return None, info
 
 
-def _optimize_conformers(mol: Chem.Mol) -> None:
-    """Optimize all conformers using MMFF94s (preferred) or UFF fallback."""
+def _optimize_conformers(mol: Chem.Mol) -> str:
+    """Optimize all conformers using MMFF94s (preferred) or UFF fallback.
+
+    Returns:
+        Name of the force field used: ``"MMFF94s"``, ``"UFF"``, or ``"none"``.
+    """
     if AllChem.MMFFHasAllMoleculeParams(mol):
         for conf_id in range(mol.GetNumConformers()):
             try:
                 AllChem.MMFFOptimizeMolecule(mol, mmffVariant="MMFF94s", maxIters=200, confId=conf_id)
             except Exception as e:
                 logger.debug(f"MMFF94s optimization failed for conformer {conf_id}: {e}")
+        return "MMFF94s"
     elif AllChem.UFFHasAllMoleculeParams(mol):
         logger.debug("MMFF94s params unavailable, falling back to UFF")
         for conf_id in range(mol.GetNumConformers()):
@@ -325,8 +336,10 @@ def _optimize_conformers(mol: Chem.Mol) -> None:
                 AllChem.UFFOptimizeMolecule(mol, maxIters=200, confId=conf_id)
             except Exception as e:
                 logger.debug(f"UFF optimization failed for conformer {conf_id}: {e}")
+        return "UFF"
     else:
         logger.debug("No force field params available, skipping optimization")
+        return "none"
 
 
 def get_conformer_energies(mol: Chem.Mol) -> List[float]:
@@ -1008,7 +1021,25 @@ def get_3d_feature_names() -> List[str]:
     return rdkit_names + mordred_names + pharmacophore_names + conformer_names
 
 
-def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Dict[str, float]:
+def get_3d_diagnostic_names() -> List[str]:
+    """Return the diagnostic column names added alongside the 75 features.
+
+    These columns are prefixed with ``desc3d_`` to distinguish them from
+    model-input features. They can be filtered out with:
+    ``[c for c in df.columns if not c.startswith("desc3d_")]``
+    """
+    return [
+        "desc3d_status",
+        "desc3d_mode",
+        "desc3d_confs_requested",
+        "desc3d_confs_in_window",
+        "desc3d_embed_tier",
+        "desc3d_force_field",
+        "desc3d_compute_time_s",
+    ]
+
+
+def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int]:
     """Compute Boltzmann-weighted ensemble descriptors.
 
     Computes energies for all conformers, selects those within the energy
@@ -1026,7 +1057,8 @@ def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Dict[str, float]:
         mol: RDKit molecule with conformer(s) and explicit Hs
 
     Returns:
-        Dictionary of all 75 feature names → values
+        Tuple of (features_dict, confs_in_window) where confs_in_window is
+        the number of conformers that contributed to the Boltzmann average.
     """
     energies = get_conformer_energies(mol)
     conf_ids, weights = boltzmann_weights(energies)
@@ -1064,7 +1096,7 @@ def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Dict[str, float]:
     # Conformer ensemble stats are computed over the full generated ensemble,
     # not just the Boltzmann window.
     features.update(compute_conformer_statistics(mol))
-    return features
+    return features, len(conf_ids)
 
 
 def compute_descriptors_3d(
@@ -1128,54 +1160,76 @@ def compute_descriptors_3d(
     logger.info(f"Computing 3D descriptors for {n_molecules} molecules (mode={mode})...")
     logger.info(f"Parameters: n_conformers={n_confs_desc}, optimize={optimize}, " f"force_tol={BOLTZMANN_FORCE_TOL}")
 
-    # Initialize feature columns
+    # Initialize feature + diagnostic columns
     feature_names = get_3d_feature_names()
+    diag_names = get_3d_diagnostic_names()
     for col in feature_names:
         result[col] = np.nan
+    for col in diag_names:
+        result[col] = np.nan
+    result["desc3d_status"] = "skipped"
+    result["desc3d_mode"] = mode
 
     start_time = time.time()
 
     for idx, row in result.iterrows():
         smiles = row[smiles_column]
+        mol_start = time.time()
 
         if pd.isna(smiles) or smiles == "":
+            result.at[idx, "desc3d_status"] = "skip:empty"
             continue
 
         try:
             mol = Chem.MolFromSmiles(smiles)
             if mol is None:
+                result.at[idx, "desc3d_status"] = "skip:parse"
                 continue
 
-            if complexity_check and is_too_complex(mol):
-                continue
+            if complexity_check:
+                complexity_status = check_complexity(mol)
+                if complexity_status is not None:
+                    result.at[idx, "desc3d_status"] = complexity_status
+                    continue
 
             mol = Chem.AddHs(mol)
 
             # Conformer generation — mode only affects count
             n_confs = adaptive_n_conformers(mol) if is_boltzmann else n_conformers
-            mol = generate_conformers(
+            result.at[idx, "desc3d_confs_requested"] = n_confs
+
+            mol, gen_info = generate_conformers(
                 mol,
                 n_conformers=n_confs,
                 random_seed=random_seed,
                 optimize=optimize,
                 force_tol=BOLTZMANN_FORCE_TOL,
             )
+            result.at[idx, "desc3d_embed_tier"] = gen_info["embed_tier"]
+            result.at[idx, "desc3d_force_field"] = gen_info["force_field"]
+
             if mol is None or mol.GetNumConformers() == 0:
+                result.at[idx, "desc3d_status"] = "skip:embed"
                 continue
 
             # Both modes: Boltzmann-weighted ensemble descriptors
-            features = _compute_descriptors_boltzmann(mol)
+            features, confs_in_window = _compute_descriptors_boltzmann(mol)
 
             for name, value in features.items():
                 if name in result.columns:
                     result.at[idx, name] = value
 
+            result.at[idx, "desc3d_confs_in_window"] = confs_in_window
+            result.at[idx, "desc3d_status"] = "ok"
+            result.at[idx, "desc3d_compute_time_s"] = round(time.time() - mol_start, 3)
+
         except Exception as e:
             logger.debug(f"3D descriptor calculation failed for index {idx}: {e}")
+            result.at[idx, "desc3d_status"] = f"error:{type(e).__name__}"
             continue
 
     elapsed = time.time() - start_time
-    valid_count = result[feature_names[0]].notna().sum()
+    valid_count = (result["desc3d_status"] == "ok").sum()
     throughput = n_molecules / elapsed if elapsed > 0 else 0
 
     logger.info(f"Computed 3D descriptors for {valid_count}/{n_molecules} molecules")
