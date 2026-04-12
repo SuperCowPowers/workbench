@@ -27,10 +27,10 @@ from workbench.api.inference_cache import InferenceCache
 
 # Wrap in InferenceCache for persistent S3-backed caching
 endpoint = AsyncEndpoint("smiles-to-3d-boltzmann-v1")
-cached = InferenceCache(endpoint, cache_key_column="smiles")
+cached_endpoint = InferenceCache(endpoint, cache_key_column="smiles")
 
 # Only uncached rows are sent to the endpoint
-results_df = cached.inference(big_df)
+results_df = cached_endpoint.inference(big_df)
 ```
 
 **Deploy an Async Endpoint from a Model**

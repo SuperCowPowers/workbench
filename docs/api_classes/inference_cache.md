@@ -14,26 +14,26 @@ from workbench.api import Endpoint, FeatureSet, InferenceCache
 
 # Wrap a slow endpoint in an InferenceCache
 endpoint = Endpoint("smiles-to-3d-descriptors-v1")
-cached = InferenceCache(endpoint, cache_key_column="smiles")
+cached_endpoint = InferenceCache(endpoint, cache_key_column="smiles")
 
 # Pull a DataFrame of molecules and run inference
 df = FeatureSet("feature_endpoint_fs").pull_dataframe()[:50]
 
 # First call: slow (cache is empty, rows go to the endpoint)
-results = cached.inference(df)
+results = cached_endpoint.inference(df)
 
 # Second call with the same SMILES: near-instant (all hits)
-results_again = cached.inference(df)
+results_again = cached_endpoint.inference(df)
 
 # Drop a bad row so it recomputes on the next call
-cached.delete_entries("c1ccc(cc1)C(=O)O")
+cached_endpoint.delete_entries("c1ccc(cc1)C(=O)O")
 
 # Or drop many at once
-cached.delete_entries(["CCO", "CCN", "CCOCC"])
+cached_endpoint.delete_entries(["CCO", "CCN", "CCOCC"])
 
 # Inspect the cache
-print(cached.cache_size())
-print(cached.cache_info())
+print(cached_endpoint.cache_size())
+print(cached_endpoint.cache_info())
 ```
 
 **Output** (log lines)
@@ -51,7 +51,7 @@ InferenceCache[smiles-to-3d-descriptors-v1]: removed 3 entries
 If you redeploy the underlying endpoint, `InferenceCache` notices. A tiny sidecar manifest stores the endpoint's `modified()` timestamp; on the next cache access, if it doesn't match the endpoint's current `modified()`, the cache is cleared automatically so you don't get stale results.
 
 !!! note "Attribute delegation"
-    `InferenceCache` forwards anything it doesn't define to the wrapped endpoint, so `cached.name`, `cached.details()`, `cached.fast_inference()`, etc. all Just Work.
+    `InferenceCache` forwards anything it doesn't define to the wrapped endpoint, so `cached_endpoint.name`, `cached_endpoint.details()`, `cached_endpoint.fast_inference()`, etc. all Just Work.
 
 ## API Reference
 

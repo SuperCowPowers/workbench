@@ -37,14 +37,14 @@ class InferenceCache:
         from workbench.api.inference_cache import InferenceCache
 
         endpoint = Endpoint("smiles-to-3d-descriptors-v1")
-        cached = InferenceCache(endpoint, cache_key_column="smiles")
+        cached_endpoint = InferenceCache(endpoint, cache_key_column="smiles")
 
         # Drop-in replacement for endpoint.inference()
-        result_df = cached.inference(eval_df)
+        result_df = cached_endpoint.inference(eval_df)
 
         # Other endpoint methods still work via attribute delegation
-        print(cached.name)
-        cached.details()
+        print(cached_endpoint.name)
+        cached_endpoint.details()
         ```
     """
 
@@ -339,38 +339,38 @@ if __name__ == "__main__":
     from workbench.api import Endpoint, FeatureSet
 
     endpoint = Endpoint("smiles-to-3d-descriptors-v1")
-    cached = InferenceCache(endpoint, cache_key_column="smiles")
+    cached_endpoint = InferenceCache(endpoint, cache_key_column="smiles")
 
     # Start clean so the timing comparison is meaningful
-    cached.clear_cache()
+    cached_endpoint.clear_cache()
 
     df = FeatureSet("feature_endpoint_fs").pull_dataframe()[:50]
     print(f"Running cached inference on {len(df)} rows ({df['smiles'].nunique()} unique SMILES)")
 
     # First call: cache is empty, full endpoint run
     t0 = time.time()
-    r1 = cached.inference(df)
+    r1 = cached_endpoint.inference(df)
     t1 = time.time()
-    print(f"first call:  {t1 - t0:5.1f}s, cache now has {cached.cache_size()} rows")
+    print(f"first call:  {t1 - t0:5.1f}s, cache now has {cached_endpoint.cache_size()} rows")
 
     # Second call: should be all hits, near-instant
     t0 = time.time()
-    r2 = cached.inference(df)
+    r2 = cached_endpoint.inference(df)
     t1 = time.time()
     print(f"second call: {t1 - t0:5.1f}s (should be ~all cache hits)")
 
     # Partial hit: first 50 are cached, next 25 are new
     df2 = FeatureSet("feature_endpoint_fs").pull_dataframe()[:75]
     t0 = time.time()
-    r3 = cached.inference(df2)
+    r3 = cached_endpoint.inference(df2)
     t1 = time.time()
     print(
-        f"partial:     {t1 - t0:5.1f}s, cache now has {cached.cache_size()} rows "
+        f"partial:     {t1 - t0:5.1f}s, cache now has {cached_endpoint.cache_size()} rows "
         f"(expected ~{df2['smiles'].nunique()})"
     )
 
     print("\nCache info:")
-    print(cached.cache_info())
+    print(cached_endpoint.cache_info())
 
     print("\nResult shapes:")
     print(f"  r1: {r1.shape}")
@@ -379,5 +379,5 @@ if __name__ == "__main__":
 
     # Exercise delete_entries: drop the first 5 SMILES, they'll recompute next time
     victims = df["smiles"].iloc[:5].tolist()
-    removed = cached.delete_entries(victims)
+    removed = cached_endpoint.delete_entries(victims)
     print(f"\ndelete_entries removed {removed} rows; cache now {cached.cache_size()}")

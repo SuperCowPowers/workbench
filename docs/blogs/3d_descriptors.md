@@ -236,8 +236,8 @@ df_3d_boltz = end_boltz.inference(df)
 
 # Both work with InferenceCache for persistent S3-backed caching
 from workbench.api.inference_cache import InferenceCache
-cached = InferenceCache(end_fast, cache_key_column="smiles")
-df_cached = cached.inference(big_df)  # Only computes uncached rows
+cached_endpoint = InferenceCache(end_fast, cache_key_column="smiles")
+df_cached = cached_endpoint.inference(big_df)  # Only computes uncached rows
 ```
 
 ## References
