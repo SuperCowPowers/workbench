@@ -20,9 +20,6 @@ from workbench.utils.chem_utils.mol_descriptors_3d import (
     generate_conformers,
     check_complexity,
     get_3d_feature_names,
-    MAX_HEAVY_ATOMS,
-    MAX_ROTATABLE_BONDS,
-    MAX_RING_SYSTEMS,
 )
 
 
