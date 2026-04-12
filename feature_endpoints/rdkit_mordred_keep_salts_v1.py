@@ -17,7 +17,7 @@ Created Artifacts:
 import os
 
 # Workbench Imports
-from workbench.api import FeatureSet, ModelType, PublicData
+from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 if __name__ == "__main__":
@@ -46,6 +46,7 @@ if __name__ == "__main__":
     model = feature_set.to_model(
         name="smiles-to-taut-md-stereo-v1-keep-salts",
         model_type=ModelType.TRANSFORMER,
+        model_framework=ModelFramework.TRANSFORMER,
         feature_list=["smiles"],
         description="Smiles to Molecular Descriptors",
         tags=tags,

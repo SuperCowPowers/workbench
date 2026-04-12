@@ -30,7 +30,7 @@ Created Artifacts:
 import os
 
 # Workbench Imports
-from workbench.api import FeatureSet, Model, ModelType, PublicData
+from workbench.api import FeatureSet, Model, ModelType, ModelFramework, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 # Async endpoint on a realtime instance — no serverless option for async.
@@ -66,6 +66,7 @@ if __name__ == "__main__":
         model = feature_set.to_model(
             name="smiles-to-3d-boltzmann-v1",
             model_type=ModelType.TRANSFORMER,
+            model_framework=ModelFramework.TRANSFORMER,
             feature_list=["smiles"],
             description="SMILES to 3D Molecular Descriptors — Boltzmann ensemble (75 features)",
             tags=tags,

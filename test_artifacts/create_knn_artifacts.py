@@ -10,7 +10,7 @@ Endpoints:
 
 import logging
 from workbench.api.feature_set import FeatureSet
-from workbench.api.model import Model, ModelType
+from workbench.api.model import Model, ModelType, ModelFramework
 from workbench.api.endpoint import Endpoint
 
 log = logging.getLogger("workbench")
@@ -29,6 +29,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="abalone-knn-reg",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="class_number_of_rings",
             description="Abalone KNN Regression",
             tags=["abalone", "knn"],
@@ -74,6 +75,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="aqsol-knn-reg",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             model_class="KNeighborsRegressor",
             model_import_str="from sklearn.neighbors import KNeighborsRegressor",
             target_column="solubility",

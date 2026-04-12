@@ -20,7 +20,7 @@ import sys
 import logging
 import pandas as pd
 from pathlib import Path
-from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
+from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint
 from workbench.utils.test_data_generator import TestDataGenerator
 
 # Setup the logger
@@ -60,6 +60,7 @@ if __name__ == "__main__":
         m = fs.to_model(
             name="test-regression",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             feature_list=features,
             target_column="salary",
             tags=["test", "regression"],
@@ -81,6 +82,7 @@ if __name__ == "__main__":
         m = fs.to_model(
             name="test-classification",
             model_type=ModelType.CLASSIFIER,
+            model_framework=ModelFramework.XGBOOST,
             feature_list=features,
             target_column="salary_class",
             tags=["test", "classification"],
@@ -122,6 +124,7 @@ if __name__ == "__main__":
         m = fs.to_model(
             name="abalone-regression",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             feature_list=features,
             target_column="class_number_of_rings",
             tags=["abalone", "regression"],

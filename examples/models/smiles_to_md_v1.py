@@ -1,7 +1,7 @@
 """Create the SMILES to Standardize + Tautomer + Molecular Descriptors + Stereo Model and Endpoint"""
 
 # Workbench Imports
-from workbench.api import FeatureSet, ModelType
+from workbench.api import FeatureSet, ModelType, ModelFramework
 from workbench.utils.model_utils import get_custom_script_path
 
 fs_name = "aqsol_features"
@@ -13,6 +13,7 @@ tags = ["smiles", "molecular descriptors", "tautomerized", "stereo"]
 model = feature_set.to_model(
     name="smiles-to-taut-md-stereo-v1",
     model_type=ModelType.TRANSFORMER,
+    model_framework=ModelFramework.TRANSFORMER,
     feature_list=["smiles"],
     description="Smiles to Molecular Descriptors",
     tags=tags,

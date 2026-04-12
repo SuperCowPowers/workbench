@@ -8,7 +8,7 @@ Endpoints:
     - abalone-regression-good
 """
 
-from workbench.api import FeatureSet, Model, ModelType
+from workbench.api import FeatureSet, Model, ModelType, ModelFramework
 
 recreate = False
 
@@ -29,6 +29,7 @@ if recreate or not Model("abalone-regression-bad").exists():
     m = fs.to_model(
         name="abalone-regression-bad",
         model_type=ModelType.REGRESSOR,
+        model_framework=ModelFramework.XGBOOST,
         feature_list=features,
         target_column="class_number_of_rings",
         hyperparameters={
@@ -50,6 +51,7 @@ if recreate or not Model("abalone-regression-good").exists():
     m = fs.to_model(
         name="abalone-regression-good",
         model_type=ModelType.REGRESSOR,
+        model_framework=ModelFramework.XGBOOST,
         feature_list=features,
         target_column="class_number_of_rings",
         hyperparameters={

@@ -5,7 +5,7 @@ from pprint import pprint
 
 # Workbench Imports
 from workbench.api.feature_set import FeatureSet
-from workbench.api.model import Model, ModelType
+from workbench.api.model import Model, ModelType, ModelFramework
 from workbench.api.endpoint import Endpoint
 
 model_reg = Model("abalone-regression")
@@ -151,7 +151,7 @@ def create_model_and_endpoint():
 
     # Create a Model/Endpoint from the FeatureSet
     model_reg = my_features.to_model(
-        name="abalone-regression", model_type=ModelType.REGRESSOR, target_column="class_number_of_rings"
+        name="abalone-regression", model_type=ModelType.REGRESSOR, model_framework=ModelFramework.XGBOOST, target_column="class_number_of_rings"
     )
     model_reg.to_endpoint(name="abalone-regression", tags=["abalone", "public"])
 

@@ -14,7 +14,7 @@ Endpoints:
 
 import logging
 
-from workbench.api import FeatureSet, Model, ModelType, Endpoint
+from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 from workbench.utils.plot_utils import generate_heteroskedastic_data
 
@@ -42,6 +42,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="test-quantile",
             model_type=ModelType.UQ_REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="y",
             description="Test Quantile Regression",
             tags=["test", "quantiles"],
@@ -63,6 +64,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="abalone-quantile",
             model_type=ModelType.UQ_REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="class_number_of_rings",
             description="Abalone Quantile Regression",
             tags=["abalone", "quantiles"],
@@ -105,6 +107,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="aqsol-quantiles",
             model_type=ModelType.UQ_REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="solubility",
             feature_list=features,
             description="AQSol Quantile Regression",

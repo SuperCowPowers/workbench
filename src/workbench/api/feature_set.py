@@ -25,6 +25,7 @@ class FeatureSet(FeatureSetCore):
         my_features.to_model(
             name="abalone-regression",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="class_number_of_rings"
             feature_list=["my", "best", "features"])
         )
@@ -66,7 +67,7 @@ class FeatureSet(FeatureSetCore):
         self,
         name: str,
         model_type: ModelType,
-        model_framework: ModelFramework = ModelFramework.XGBOOST,
+        model_framework: ModelFramework,
         tags: list = None,
         description: str = None,
         feature_list: list = None,
@@ -83,7 +84,7 @@ class FeatureSet(FeatureSetCore):
 
             name (str): The name of the Model to create
             model_type (ModelType): The type of model to create (See workbench.model.ModelType)
-            model_framework (ModelFramework, optional): The framework to use for the model (default: XGBOOST)
+            model_framework (ModelFramework): The framework (SKLEARN, XGBOOST, PYTORCH, CHEMPROP, TRANSFORMER, etc.)
             tags (list, optional): Set the tags for the model.  If not given tags will be generated.
             description (str, optional): Set the description for the model. If not give a description is generated.
             feature_list (list, optional): Set the feature list for the model. If not given a feature list is generated.
@@ -256,6 +257,7 @@ if __name__ == "__main__":
     my_model = my_features.to_model(
         name="test-model",
         model_type=ModelType.REGRESSOR,
+        model_framework=ModelFramework.XGBOOST,
         target_column="salary",
         feature_list=features
     )

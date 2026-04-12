@@ -13,7 +13,7 @@ Endpoints:
 import sys
 
 from pathlib import Path
-from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint
+from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint
 
 if __name__ == "__main__":
 
@@ -38,6 +38,7 @@ if __name__ == "__main__":
         m = fs.to_model(
             name="wine-classification-copy",
             model_type=ModelType.CLASSIFIER,
+            model_framework=ModelFramework.XGBOOST,
             target_column="wine_class",
             tags=["wine", "classification"],
             description="Wine Classification Model",

@@ -2,7 +2,7 @@ import pytest
 import workbench  # noqa: F401
 import logging
 from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
-from workbench.api import DataSource, FeatureSet, Model, Endpoint, ModelType
+from workbench.api import DataSource, FeatureSet, Model, Endpoint, ModelType, ModelFramework
 
 # Set the logging level
 logging.getLogger("workbench").setLevel(logging.DEBUG)
@@ -28,7 +28,7 @@ def create_model():
 
     # If the model doesn't exist, create it
     if not Model("delete-test").exists():
-        FeatureSet("delete_test").to_model(name="delete-test", model_type=ModelType.REGRESSOR, target_column="iq_score")
+        FeatureSet("delete_test").to_model(name="delete-test", model_type=ModelType.REGRESSOR, model_framework=ModelFramework.XGBOOST, target_column="iq_score")
 
 
 def create_endpoint():

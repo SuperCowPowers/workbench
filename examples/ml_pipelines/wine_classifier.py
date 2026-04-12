@@ -10,7 +10,7 @@ Endpoints:
     - wine-classification-end
 """
 
-from workbench.api import DataSource, FeatureSet, Model, ModelType
+from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework
 
 if __name__ == "__main__":
 
@@ -24,6 +24,7 @@ if __name__ == "__main__":
     m = fs.to_model(
         name="wine-classification",
         model_type=ModelType.CLASSIFIER,
+        model_framework=ModelFramework.XGBOOST,
         target_column="wine_class",
         tags=["wine", "classification"],
         description="Wine Classification Model",

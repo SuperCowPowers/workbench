@@ -1,6 +1,6 @@
 import logging
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from workbench.api import DataSource, FeatureSet, Model, ModelType
+from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework
 from workbench.api import Meta
 from workbench.utils.test_data_generator import TestDataGenerator
 
@@ -40,6 +40,7 @@ def create_model_pipeline(model_name):
     m = fs.to_model(
         name=model_name,
         model_type=ModelType.REGRESSOR,
+        model_framework=ModelFramework.XGBOOST,
         target_column="iq_score",
         tags=["test"],
         description=f"Test Model {model_name}",

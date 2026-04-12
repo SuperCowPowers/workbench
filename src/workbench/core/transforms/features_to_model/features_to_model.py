@@ -40,7 +40,7 @@ class FeaturesToModel(Transform):
         feature_name: str,
         model_name: str,
         model_type: ModelType,
-        model_framework=ModelFramework.XGBOOST,
+        model_framework: ModelFramework,
         model_class=None,
         model_import_str=None,
         custom_script=None,
@@ -54,7 +54,7 @@ class FeaturesToModel(Transform):
             feature_name (str): Name of the FeatureSet to use as input
             model_name (str): Name of the Model to create as output
             model_type (ModelType): ModelType.REGRESSOR or ModelType.CLASSIFIER, etc.
-            model_framework (ModelFramework, optional): The model framework (default ModelFramework.XGBOOST)
+            model_framework (ModelFramework): The model framework (SKLEARN, XGBOOST, PYTORCH, CHEMPROP, TRANSFORMER, etc.)
             model_class (str, optional): The scikit model (e.g. KNeighborsRegressor) (default None)
             model_import_str (str, optional): The import string for the model (default None)
             custom_script (str, optional): Custom script to use for the model (default None)

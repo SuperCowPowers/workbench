@@ -18,7 +18,7 @@ Endpoints:
 import logging
 import pandas as pd
 
-from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint, PublicData
+from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint, PublicData
 
 log = logging.getLogger("workbench")
 
@@ -72,6 +72,7 @@ if __name__ == "__main__":
         m = feature_set.to_model(
             name="aqsol-regression",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="solubility",
             feature_list=aqsol_features,
             description="AQSol Regression Model",
@@ -93,6 +94,7 @@ if __name__ == "__main__":
         m = feature_set.to_model(
             name="aqsol-class",
             model_type=ModelType.CLASSIFIER,
+            model_framework=ModelFramework.XGBOOST,
             target_column="solubility_class",
             feature_list=aqsol_features,
             description="AQSol Classification Model",

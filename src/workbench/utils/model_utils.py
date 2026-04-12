@@ -268,9 +268,12 @@ def published_proximity_model(model: Model, prox_model_name: str, include_all_co
 
     # Create the Proximity Model from our FeatureSet
     fs = FeatureSet(model.get_input())
+    from workbench.core.artifacts.model_core import ModelFramework
+
     prox_model = fs.to_model(
         name=prox_model_name,
         model_type=ModelType.PROXIMITY,
+        model_framework=ModelFramework.SKLEARN,
         feature_list=features,
         target_column=target,
         description=f"Proximity Model for {model.name}",

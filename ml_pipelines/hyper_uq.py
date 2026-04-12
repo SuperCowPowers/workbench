@@ -1,6 +1,6 @@
 from pprint import pprint
 from workbench.api.feature_set import FeatureSet
-from workbench.api.model import Model, ModelType
+from workbench.api.model import Model, ModelType, ModelFramework
 
 hyperparameters = {
     "n_estimators": 200,  # Number of trees
@@ -31,6 +31,7 @@ fs = FeatureSet(model.get_input())
 my_model = fs.to_model(
     name="aqsol-uq-hyper",
     model_type=ModelType.UQ_REGRESSOR,
+    model_framework=ModelFramework.XGBOOST,
     feature_list=features,
     target_column=target,
     description="Mapie + XGB Model",

@@ -86,6 +86,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         xgb_model = fs.to_model(
             name=xgb_model_name,
             model_type=ModelType.UQ_REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column=target,
             feature_list=rdkit_features,
             description=f"XGBoost model for {base_name} prediction",
@@ -176,6 +177,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         fingerprint_model = fs.to_model(
             name=fingerprint_model_name,
             model_type=ModelType.UQ_REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column=target,
             feature_list=["fingerprint"],
             description=f"Fingerprint-based model for {base_name} prediction",
@@ -232,6 +234,7 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
         xgb_model = fs.to_model(
             name=xgb_model_name,
             model_type=ModelType.CLASSIFIER,
+            model_framework=ModelFramework.XGBOOST,
             target_column="class",
             feature_list=rdkit_features,
             description=f"XGBoost classification model for {base_name} prediction",

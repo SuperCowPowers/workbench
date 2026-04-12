@@ -27,7 +27,7 @@ Created Artifacts:
 import os
 
 # Workbench Imports
-from workbench.api import FeatureSet, Model, ModelType, PublicData
+from workbench.api import FeatureSet, Model, ModelType, ModelFramework, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 # Inference batch size tuned per deployment config. 3D conformer generation is
@@ -71,6 +71,7 @@ if __name__ == "__main__":
         model = feature_set.to_model(
             name="smiles-to-3d-descriptors-v1",
             model_type=ModelType.TRANSFORMER,
+            model_framework=ModelFramework.TRANSFORMER,
             feature_list=["smiles"],
             description="SMILES to 3D Molecular Descriptors (75 features: shape, CPSA, pharmacophore, conformer stats)",
             tags=tags,

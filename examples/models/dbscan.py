@@ -1,5 +1,5 @@
 from workbench.api.feature_set import FeatureSet
-from workbench.api.model import Model
+from workbench.api.model import Model, ModelFramework
 from pprint import pprint
 
 # Grab a FeatureSet
@@ -12,6 +12,7 @@ tags = ["abalone", "clusters"]
 my_model = my_features.to_model(
     model_class="DBSCAN",
     model_import_str="from sklearn.cluster import DBSCAN",
+    model_framework=ModelFramework.XGBOOST,
     target_column="class_number_of_rings",
     name="abalone-clusters",
     description="Abalone DBSCAN Clustering",

@@ -8,7 +8,7 @@ Endpoints:
 
 import logging
 
-from workbench.api import FeatureSet, Model, ModelType, Endpoint
+from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
 
 log = logging.getLogger("workbench")
 
@@ -47,6 +47,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="aqsol-ensemble",
             model_type=ModelType.ENSEMBLE_REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="solubility",
             feature_list=features,
             description="AQSol Ensemble Regression",

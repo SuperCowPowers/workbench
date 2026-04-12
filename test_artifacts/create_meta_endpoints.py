@@ -9,7 +9,7 @@ Endpoints:
 
 import logging
 
-from workbench.api import FeatureSet, Model, ModelType, Endpoint
+from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
 from workbench.utils.model_utils import get_custom_script_path
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
@@ -31,6 +31,7 @@ if __name__ == "__main__":
         m = fs.to_model(
             name="abalone-regression-meta",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="class_number_of_rings",
             tags=tags,
             description="Abalone Regression Meta Model",

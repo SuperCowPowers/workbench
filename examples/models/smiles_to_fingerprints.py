@@ -1,7 +1,7 @@
 """Create a Smiles to Fingerprint Model/Endpoint"""
 
 # Workbench Imports
-from workbench.api import DataSource, FeatureSet, ModelType, Endpoint
+from workbench.api import DataSource, FeatureSet, ModelType, ModelFramework, Endpoint
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 from workbench.utils.model_utils import get_custom_script_path
 
@@ -17,6 +17,7 @@ if __name__ == "__main__":
         model = feature_set.to_model(
             name="smiles-to-fingerprints-v0",
             model_type=ModelType.TRANSFORMER,
+            model_framework=ModelFramework.TRANSFORMER,
             feature_list=["smiles"],
             description="Smiles to Morgan Fingerprints",
             tags=tags,
@@ -50,6 +51,7 @@ if __name__ == "__main__":
     model = fs.to_model(
         name="aqsol-fingerprint-reg-v0",
         model_type=ModelType.UQ_REGRESSOR,
+        model_framework=ModelFramework.XGBOOST,
         target_column="solubility",
         feature_list=features,
         description="Model for Aqueous Solubility using Morgan Fingerprints",

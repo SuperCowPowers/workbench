@@ -29,7 +29,7 @@ Endpoints:
 import logging
 import pandas as pd
 
-from workbench.api import DataSource, FeatureSet, Model, ModelType, Endpoint, ParameterStore, PublicData
+from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint, ParameterStore, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 from workbench.utils.model_utils import get_custom_script_path
 
@@ -88,6 +88,7 @@ if __name__ == "__main__":
         m = feature_set.to_model(
             name="aqsol-regression",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="solubility",
             feature_list=aqsol_features,
             description="AQSol Regression Model",
@@ -109,6 +110,7 @@ if __name__ == "__main__":
         m = feature_set.to_model(
             name="aqsol-class",
             model_type=ModelType.CLASSIFIER,
+            model_framework=ModelFramework.XGBOOST,
             target_column="solubility_class",
             feature_list=aqsol_features,
             description="AQSol Classification Model",
@@ -145,6 +147,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="aqsol-mol-regression",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="solubility",
             feature_list=features,
             description="AQSol Descriptor Regression Model",
@@ -159,6 +162,7 @@ if __name__ == "__main__":
         m = feature_set.to_model(
             name="aqsol-mol-class",
             model_type=ModelType.CLASSIFIER,
+            model_framework=ModelFramework.XGBOOST,
             target_column="solubility_class",
             feature_list=features,
             description="AQSol Descriptor Classification Model",
@@ -189,6 +193,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="smiles-to-taut-md-stereo-v1",
             model_type=ModelType.TRANSFORMER,
+            model_framework=ModelFramework.TRANSFORMER,
             feature_list=["smiles"],
             description="Smiles to Molecular Descriptors",
             tags=["smiles", "molecular descriptors", "stereo"],
@@ -202,6 +207,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="smiles-to-fingerprints-v0",
             model_type=ModelType.TRANSFORMER,
+            model_framework=ModelFramework.TRANSFORMER,
             feature_list=["smiles"],
             description="Smiles to Morgan Fingerprints",
             tags=["smiles", "morgan fingerprints"],
@@ -248,6 +254,7 @@ if __name__ == "__main__":
         feature_set.to_model(
             name="aqsol-fingerprints",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             feature_list=["fingerprint"],
             target_column="solubility",
             description="Morgan Fingerprints Model",
@@ -273,6 +280,7 @@ if __name__ == "__main__":
         model = feature_set.to_model(
             name="aqsol-fingerprints-plus",
             model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.XGBOOST,
             target_column="solubility",
             feature_list=features,
             description="Morgan Fingerprints + Features Model",
@@ -298,6 +306,7 @@ if __name__ == "__main__":
         model = feature_set.to_model(
             name="aqsol-fingerprints-plus-class",
             model_type=ModelType.CLASSIFIER,
+            model_framework=ModelFramework.XGBOOST,
             target_column="solubility_class",
             feature_list=features,
             description="Morgan Fingerprints + Features Classification Model",

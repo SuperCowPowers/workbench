@@ -3,7 +3,7 @@
 import pytest
 
 # Local Imports
-from workbench.api import FeatureSet
+from workbench.api import FeatureSet, ModelFramework
 from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 from workbench.core.artifacts.model_core import ModelType
 
@@ -34,6 +34,7 @@ def test_categorical():
     m = fs.to_model(
         name="test-regression-temp",
         model_type=ModelType.REGRESSOR,
+        model_framework=ModelFramework.XGBOOST,
         feature_list=features,
         target_column="iq_score",
         tags=["temp", "test", "regression"],
