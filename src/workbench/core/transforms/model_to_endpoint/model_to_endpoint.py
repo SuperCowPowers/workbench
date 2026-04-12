@@ -18,7 +18,6 @@ from sagemaker.core.shapes.shapes import (
     AsyncInferenceOutputConfig,
     ContainerDefinition,
     ProductionVariant,
-    ProductionVariantManagedInstanceScaling,
     ProductionVariantServerlessConfig,
     DataCaptureConfig as DataCaptureConfigShape,
     CaptureOption,
@@ -37,6 +36,7 @@ from workbench.core.transforms.transform import Transform, TransformInput, Trans
 from workbench.core.artifacts.model_core import ModelCore  # noqa: E402
 from workbench.core.artifacts.endpoint_core import EndpointCore  # noqa: E402
 from workbench.core.artifacts.artifact import Artifact  # noqa: E402
+from workbench.utils.endpoint_autoscaling import register_autoscaling  # noqa: E402
 
 
 class ModelToEndpoint(Transform):
@@ -277,14 +277,7 @@ class ModelToEndpoint(Transform):
                     s3_failure_path=f"{base_path}/async-failures",
                 ),
             )
-            # Scale to zero when idle — instance spins down after ~10 min
-            # of no requests and cold-starts on the next invocation.
-            production_variant.managed_instance_scaling = ProductionVariantManagedInstanceScaling(
-                status="ENABLED",
-                min_instance_count=0,
-                max_instance_count=4,
-            )
-            self.log.important(f"Async Endpoint Config: output → {base_path}/async-output (scale-to-zero enabled)")
+            self.log.important(f"Async Endpoint Config: output → {base_path}/async-output")
 
         EndpointConfig.create(
             endpoint_config_name=config_name,
@@ -303,6 +296,12 @@ class ModelToEndpoint(Transform):
             session=self.boto3_session,
         )
         endpoint.wait_for_status("InService")
+
+        # For async endpoints, register a scale-to-zero auto-scaling policy.
+        # This must be done after the endpoint is InService — AWS doesn't
+        # allow managed instance scaling on the ProductionVariant for async configs.
+        if self.async_endpoint:
+            register_autoscaling(self.boto3_session, self.output_name)
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() for the Endpoint"""
