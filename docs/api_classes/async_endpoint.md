@@ -3,6 +3,13 @@
 !!! tip inline end "AsyncEndpoint Examples"
     Examples of using the AsyncEndpoint class are listed at the bottom of this page [Examples](#examples).
 
+AsyncEndpoint is a drop-in replacement for [Endpoint](endpoint.md) that supports long-running inference (up to 15 minutes per invocation). It scales to zero when idle so you only pay for compute during active batch runs. The API is the same as Endpoint: **send a DataFrame, get a DataFrame back**. The async S3 round-trip is handled internally — callers don't see it.
+
+<figure style="margin: 20px auto; text-align: center;">
+<img src="../../images/workbench_async_stack_flow.svg" alt="Async endpoint flow: S3 Upload → SageMaker → Uvicorn → FastAPI → Model → S3 Result" style="width: 100%; min-height: 400px;">
+<figcaption><em>Async endpoints add an S3 I/O layer for long-running invocations and scale to zero when idle.</em></figcaption>
+</figure>
+
 ::: workbench.api.async_endpoint
 
 ## Examples
