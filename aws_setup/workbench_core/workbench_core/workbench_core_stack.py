@@ -755,6 +755,7 @@ class WorkbenchCoreStack(Stack):
                 "sagemaker:DescribeEndpoint",
                 "sagemaker:DescribeEndpointConfig",
                 "sagemaker:InvokeEndpoint",
+                "sagemaker:InvokeEndpointAsync",
                 "sagemaker:ListTags",
             ],
             resources=[
@@ -782,6 +783,20 @@ class WorkbenchCoreStack(Stack):
                 "sagemaker:DeleteTags",
             ],
             resources=read_statement.resources,
+        )
+
+    def endpoint_autoscaling(self) -> iam.PolicyStatement:
+        """Application Auto Scaling permissions for async endpoint scale-to-zero."""
+        return iam.PolicyStatement(
+            actions=[
+                "application-autoscaling:RegisterScalableTarget",
+                "application-autoscaling:DeregisterScalableTarget",
+                "application-autoscaling:PutScalingPolicy",
+                "application-autoscaling:DeleteScalingPolicy",
+                "application-autoscaling:DescribeScalableTargets",
+                "application-autoscaling:DescribeScalingPolicies",
+            ],
+            resources=["*"],
         )
 
     ###########################
@@ -1269,6 +1284,7 @@ class WorkbenchCoreStack(Stack):
             self.models_read(),
             self.endpoint_discover(),
             self.endpoint_full(),
+            self.endpoint_autoscaling(),
             self.endpoint_data_quality(),
             self.endpoint_monitoring_discovery(),
             self.endpoint_monitoring_schedules(),
