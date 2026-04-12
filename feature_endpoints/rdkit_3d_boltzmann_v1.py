@@ -9,7 +9,7 @@ Description:
    - Pharmacophore 3D descriptors (amphiphilic moment, IMHB potential, etc.)
    - Conformer ensemble statistics (energy, flexibility)
 
-   Total: 75 3D descriptors (same features as the fast v1 endpoint)
+   Total: 74 3D descriptors (same features as the fast v1 endpoint)
 
    This endpoint uses adaptive conformer counts (50-300 based on rotatable
    bonds) and Boltzmann-weighted ensemble averaging instead of the single
@@ -68,7 +68,7 @@ if __name__ == "__main__":
             model_type=ModelType.TRANSFORMER,
             model_framework=ModelFramework.TRANSFORMER,
             feature_list=["smiles"],
-            description="SMILES to 3D Molecular Descriptors — Boltzmann ensemble (75 features)",
+            description="SMILES to 3D Molecular Descriptors — Boltzmann ensemble (74 features)",
             tags=tags,
             custom_script=script_path,
         )
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     # Deploy as async endpoint — batch_size=1 because each molecule can take minutes
     model = Model("smiles-to-3d-boltzmann-v1")
     end = model.to_endpoint(tags=tags, async_endpoint=True, instance=instance)
-    end.upsert_workbench_meta({"inference_batch_size": 1})
+    end.upsert_workbench_meta({"inference_batch_size": 10})
     print(f"Async endpoint deployed: {end.name} on {instance}")
 
     # Quick smoke test with a small batch

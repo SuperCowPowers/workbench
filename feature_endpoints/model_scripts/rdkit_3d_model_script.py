@@ -4,7 +4,7 @@
 #     This includes RDKit 3D shape descriptors, Mordred 3D descriptors (CPSA, etc.),
 #     Pharmacophore 3D descriptors, and conformer ensemble statistics.
 #
-#     Total: 75 3D descriptors
+#     Total: 74 3D descriptors
 #
 #     Note: This endpoint is slower than the 2D descriptor endpoint due to
 #     conformer generation (~10-20 molecules/second).

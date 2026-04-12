@@ -5,7 +5,7 @@
 #     rotatable bonds) and Boltzmann-weighted ensemble averaging for higher
 #     quality descriptors at the cost of longer per-molecule compute time.
 #
-#     Total: 75 3D descriptors (same features as the fast v1 endpoint)
+#     Total: 74 3D descriptors (same features as the fast v1 endpoint)
 #
 #     Designed for async SageMaker endpoints with batch_size=1.
 #     Per-molecule compute time: seconds (rigid) to minutes (flexible).

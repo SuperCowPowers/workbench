@@ -9,7 +9,7 @@ Description:
    - Pharmacophore 3D descriptors (amphiphilic moment, IMHB potential, etc.)
    - Conformer ensemble statistics (energy, flexibility)
 
-   Total: 75 3D descriptors
+   Total: 74 3D descriptors
 
    Note: This endpoint is slower than the 2D descriptor endpoint due to
    conformer generation. Recommended for batch processing rather than
@@ -73,7 +73,7 @@ if __name__ == "__main__":
             model_type=ModelType.TRANSFORMER,
             model_framework=ModelFramework.TRANSFORMER,
             feature_list=["smiles"],
-            description="SMILES to 3D Molecular Descriptors (75 features: shape, CPSA, pharmacophore, conformer stats)",
+            description="SMILES to 3D Molecular Descriptors (74 features: shape, CPSA, pharmacophore, conformer stats)",
             tags=tags,
             custom_script=script_path,
         )
