@@ -99,13 +99,9 @@ We use **VGMU** (Variance-Gated Margin Uncertainty), introduced in the [Variance
 
 The formula computes a signal-to-noise ratio between the margin and the ensemble disagreement:
 
-```
-SNR = (p_top1 - p_top2) / (std_top1 + std_top2 + ε)
-gamma = 1 - exp(-SNR)
-raw_confidence = gamma × p_top1
-```
+$$\text{SNR} = \frac{\bar{p}_1 - \bar{p}_2}{\sigma_1 + \sigma_2 + \epsilon}, \qquad \gamma = 1 - e^{-\text{SNR}}, \qquad C = \gamma \cdot \bar{p}_1$$
 
-Where `p_top1` and `p_top2` are the mean probabilities for the top two classes, and `std_top1` and `std_top2` are the standard deviations of those probabilities across the 5 ensemble members.
+where $\bar{p}_1$ and $\bar{p}_2$ are the mean probabilities for the top two classes, and $\sigma_1$ and $\sigma_2$ are the standard deviations of those probabilities across the 5 ensemble members.
 
 This gives us nice behavior across the spectrum:
 

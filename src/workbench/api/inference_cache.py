@@ -1,7 +1,7 @@
 """InferenceCache: Client-side caching wrapper around a Workbench Endpoint.
 
-Wraps an :class:`Endpoint` and stores inference results in a shared S3-backed
-:class:`DFStore` keyed on a cache-key column (SMILES by default). On each
+Wraps an ``Endpoint`` and stores inference results in a shared S3-backed
+``DFStore`` keyed on a cache-key column (SMILES by default). On each
 ``inference(df)`` call, rows whose cache-key value is already in the cache
 are served from S3, and only the remaining rows are sent to the underlying
 endpoint. Newly computed rows are written back to the cache.
@@ -10,7 +10,7 @@ Motivating use case: the ``smiles-to-3d-descriptors-v1`` feature endpoint is
 slow (conformer generation + FF optimization), and the same SMILES is
 frequently re-computed across calls.
 
-Note: this is distinct from :class:`workbench.cached.CachedEndpoint`, which
+Note: this is distinct from ``workbench.cached.CachedEndpoint``, which
 caches *metadata* methods (``summary``, ``details``, ``health_check``). This
 class caches *inference results*.
 """

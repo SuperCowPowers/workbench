@@ -1,6 +1,6 @@
 """AsyncEndpoint: Workbench API wrapper for async SageMaker endpoints.
 
-Drop-in replacement for :class:`Endpoint` that uses the async invocation
+Drop-in replacement for ``Endpoint`` that uses the async invocation
 path internally.  The caller-facing API is identical — ``inference()``
 returns a DataFrame synchronously.
 
