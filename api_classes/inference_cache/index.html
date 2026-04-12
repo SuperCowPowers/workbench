@@ -5115,15 +5115,15 @@
     <div class="doc doc-contents first">
 
         <p>InferenceCache: Client-side caching wrapper around a Workbench Endpoint.</p>
-<p>Wraps an :class:<code>Endpoint</code> and stores inference results in a shared S3-backed
-:class:<code>DFStore</code> keyed on a cache-key column (SMILES by default). On each
+<p>Wraps an <code>Endpoint</code> and stores inference results in a shared S3-backed
+<code>DFStore</code> keyed on a cache-key column (SMILES by default). On each
 <code>inference(df)</code> call, rows whose cache-key value is already in the cache
 are served from S3, and only the remaining rows are sent to the underlying
 endpoint. Newly computed rows are written back to the cache.</p>
 <p>Motivating use case: the <code>smiles-to-3d-descriptors-v1</code> feature endpoint is
 slow (conformer generation + FF optimization), and the same SMILES is
 frequently re-computed across calls.</p>
-<p>Note: this is distinct from :class:<code>workbench.cached.CachedEndpoint</code>, which
+<p>Note: this is distinct from <code>workbench.cached.CachedEndpoint</code>, which
 caches <em>metadata</em> methods (<code>summary</code>, <code>details</code>, <code>health_check</code>). This
 class caches <em>inference results</em>.</p>
 
@@ -6517,6 +6517,10 @@ for uncached rows.</p>
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
     
   </body>

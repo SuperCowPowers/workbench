@@ -5178,11 +5178,8 @@
 <li><strong>Agreement</strong>: Do the 5 models agree on those probabilities, or are they all over the place?</li>
 </ul>
 <p>The formula computes a signal-to-noise ratio between the margin and the ensemble disagreement:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>SNR = (p_top1 - p_top2) / (std_top1 + std_top2 + ε)
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>gamma = 1 - exp(-SNR)
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>raw_confidence = gamma × p_top1
-</span></code></pre></div>
-<p>Where <code>p_top1</code> and <code>p_top2</code> are the mean probabilities for the top two classes, and <code>std_top1</code> and <code>std_top2</code> are the standard deviations of those probabilities across the 5 ensemble members.</p>
+<div class="arithmatex">\[\text{SNR} = \frac{\bar{p}_1 - \bar{p}_2}{\sigma_1 + \sigma_2 + \epsilon}, \qquad \gamma = 1 - e^{-\text{SNR}}, \qquad C = \gamma \cdot \bar{p}_1\]</div>
+<p>where <span class="arithmatex">\(\bar{p}_1\)</span> and <span class="arithmatex">\(\bar{p}_2\)</span> are the mean probabilities for the top two classes, and <span class="arithmatex">\(\sigma_1\)</span> and <span class="arithmatex">\(\sigma_2\)</span> are the standard deviations of those probabilities across the 5 ensemble members.</p>
 <p>This gives us nice behavior across the spectrum:</p>
 <ul>
 <li><strong>Ensemble agrees with clear margin</strong> → high SNR → gamma ≈ 1 → confidence ≈ p_top1</li>
@@ -5195,18 +5192,18 @@
 <p>After calibration, a confidence of <strong>0.85</strong> means that among validation predictions with similar VGMU scores, about 85% were correctly classified. This gives the score a direct probabilistic interpretation.</p>
 <h3 id="training-output">Training output</h3>
 <p>During training, classification models now print calibration diagnostics showing how raw confidence maps to actual accuracy across bins:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>==================================================
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Calibrating Classification Confidence (VGMU)
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>==================================================
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  Validation samples: 2451
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  Overall accuracy: 0.847
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  Raw confidence  - mean: 0.621, std: 0.284
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  Calibrated conf - mean: 0.847, std: 0.128
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  Bin 1: n=  490, accuracy=0.639, calibrated_conf=0.654
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  Bin 2: n=  490, accuracy=0.794, calibrated_conf=0.805
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  Bin 3: n=  490, accuracy=0.871, calibrated_conf=0.873
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  Bin 4: n=  491, accuracy=0.924, calibrated_conf=0.922
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>  Bin 5: n=  490, accuracy=0.998, calibrated_conf=0.982
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>==================================================
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>Calibrating Classification Confidence (VGMU)
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>==================================================
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  Validation samples: 2451
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  Overall accuracy: 0.847
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  Raw confidence  - mean: 0.621, std: 0.284
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  Calibrated conf - mean: 0.847, std: 0.128
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  Bin 1: n=  490, accuracy=0.639, calibrated_conf=0.654
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  Bin 2: n=  490, accuracy=0.794, calibrated_conf=0.805
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>  Bin 3: n=  490, accuracy=0.871, calibrated_conf=0.873
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>  Bin 4: n=  491, accuracy=0.924, calibrated_conf=0.922
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>  Bin 5: n=  490, accuracy=0.998, calibrated_conf=0.982
 </span></code></pre></div>
 <p>This lets you verify that the calibration is working — accuracy should increase monotonically across bins, and calibrated confidence should track accuracy closely.</p>
 <h2 id="unified-across-frameworks">Unified Across Frameworks</h2>
@@ -5320,6 +5317,10 @@
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
     
   </body>

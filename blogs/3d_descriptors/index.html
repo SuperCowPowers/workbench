@@ -5340,7 +5340,9 @@
   </tbody>
 </table>
 
-<p>Both modes use <strong>Boltzmann-weighted ensemble averaging</strong> -- descriptors are computed on every conformer within a 5 kcal/mol energy window of the MMFF minimum, then combined using normalized Boltzmann weights (w_i = exp(-&#916;E_i / kT)). This is more reproducible than single-conformer descriptors, which can vary significantly with random seed, especially for flexible molecules. The MARCEL benchmark and Nikonenko et al. have shown that ensemble approaches produce more stable QSAR models.</p>
+<p>Both modes use <strong>Boltzmann-weighted ensemble averaging</strong> -- descriptors are computed on every conformer within a 5 kcal/mol energy window of the MMFF minimum, then combined using normalized Boltzmann weights:</p>
+<div class="arithmatex">\[w_i = \frac{e^{-\Delta E_i \,/\, k_BT}}{\displaystyle\sum_j e^{-\Delta E_j \,/\, k_BT}}, \qquad \langle d \rangle = \sum_i w_i \, d_i\]</div>
+<p>where <span class="arithmatex">\(\Delta E_i = E_i - E_{\min}\)</span> is the energy above the minimum conformer, <span class="arithmatex">\(k_BT\)</span> is the thermal energy at 298 K (0.592 kcal/mol), and <span class="arithmatex">\(d_i\)</span> is the descriptor value for conformer <span class="arithmatex">\(i\)</span>. This is more reproducible than single-conformer descriptors, which can vary significantly with random seed, especially for flexible molecules. The MARCEL benchmark and Nikonenko et al. have shown that ensemble approaches produce more stable QSAR models.</p>
 <h3 id="adaptive-conformer-counts-boltzmann-mode">Adaptive Conformer Counts (Boltzmann Mode)</h3>
 <p>The Boltzmann endpoint uses the datamol-style tiering that has become the community standard for conformer generation:</p>
 <table>
@@ -5667,6 +5669,10 @@
     
     
       <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../../javascripts/mathjax.js"></script>
+      
+        <script src="https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js"></script>
       
     
   </body>
