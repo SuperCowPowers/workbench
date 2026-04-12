@@ -786,7 +786,7 @@ class WorkbenchCoreStack(Stack):
         )
 
     def endpoint_autoscaling(self) -> iam.PolicyStatement:
-        """Application Auto Scaling permissions for async endpoint scale-to-zero."""
+        """Application Auto Scaling permissions for endpoint auto-scaling."""
         return iam.PolicyStatement(
             actions=[
                 "application-autoscaling:RegisterScalableTarget",
@@ -795,6 +795,7 @@ class WorkbenchCoreStack(Stack):
                 "application-autoscaling:DeleteScalingPolicy",
                 "application-autoscaling:DescribeScalableTargets",
                 "application-autoscaling:DescribeScalingPolicies",
+                "iam:CreateServiceLinkedRole",
             ],
             resources=["*"],
         )
