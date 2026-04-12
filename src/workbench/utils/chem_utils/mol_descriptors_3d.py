@@ -254,7 +254,7 @@ def generate_conformers(
         (or None on failure) and info is a dict with diagnostic fields:
         ``embed_tier`` (int), ``force_field`` (str).
     """
-    info = {"embed_tier": 0, "force_field": "none"}
+    info = {"embed_tier": 0, "force_field": "none", "embed_failures": 0, "timeout_failures": 0}
 
     if mol is None:
         return None, info
@@ -291,6 +291,11 @@ def generate_conformers(
                 conf_ids = []
             if len(conf_ids) > 0:
                 info["embed_tier"] = tier_idx
+                # Capture embedding failure counts from this tier
+                failure_counts = params.GetFailureCounts()
+                info["embed_failures"] = sum(failure_counts)
+                # EXCEEDED_TIMEOUT is the last entry in EmbedFailureCauses
+                info["timeout_failures"] = failure_counts[-1] if failure_counts else 0
                 break
             logger.debug(f"Embedding tier '{tier_name}' failed, trying next")
 
@@ -943,7 +948,6 @@ def compute_conformer_statistics(mol: Chem.Mol) -> Dict[str, float]:
             "conf_energy_min": np.nan,
             "conf_energy_range": np.nan,
             "conf_energy_std": np.nan,
-            "conf_count": 0,
             "conformational_flexibility": np.nan,
         }
 
@@ -955,7 +959,6 @@ def compute_conformer_statistics(mol: Chem.Mol) -> Dict[str, float]:
             "conf_energy_min": np.nan,
             "conf_energy_range": np.nan,
             "conf_energy_std": np.nan,
-            "conf_count": mol.GetNumConformers(),
             "conformational_flexibility": np.nan,
         }
 
@@ -987,11 +990,11 @@ def get_3d_feature_names() -> List[str]:
     Return list of all 3D feature names computed by this module.
 
     Returns:
-        List of feature column names (75 total):
+        List of feature column names (74 total):
         - 10 RDKit 3D shape
         - 52 Mordred 3D (CPSA, Geometrical, Gravitational, PBF)
         - 8 Pharmacophore 3D
-        - 5 Conformer statistics
+        - 4 Conformer statistics
     """
     rdkit_names = [
         "pmi1",
@@ -1014,7 +1017,6 @@ def get_3d_feature_names() -> List[str]:
         "conf_energy_min",
         "conf_energy_range",
         "conf_energy_std",
-        "conf_count",
         "conformational_flexibility",
     ]
 
@@ -1022,7 +1024,7 @@ def get_3d_feature_names() -> List[str]:
 
 
 def get_3d_diagnostic_names() -> List[str]:
-    """Return the diagnostic column names added alongside the 75 features.
+    """Return the diagnostic column names added alongside the 74 features.
 
     These columns are prefixed with ``desc3d_`` to distinguish them from
     model-input features. They can be filtered out with:
@@ -1031,8 +1033,11 @@ def get_3d_diagnostic_names() -> List[str]:
     return [
         "desc3d_status",
         "desc3d_mode",
+        "desc3d_conf_count",
         "desc3d_confs_requested",
         "desc3d_confs_in_window",
+        "desc3d_embed_failures",
+        "desc3d_timeout_failures",
         "desc3d_embed_tier",
         "desc3d_force_field",
         "desc3d_compute_time_s",
@@ -1120,7 +1125,7 @@ def compute_descriptors_3d(
 
     Both modes use the same descriptor aggregation (Boltzmann-weighted
     ensemble average over a 5 kcal/mol energy window) and produce the same
-    75 output features, so downstream models can consume either pipeline's
+    74 output features, so downstream models can consume either pipeline's
     output interchangeably.
 
     Args:
@@ -1134,11 +1139,11 @@ def compute_descriptors_3d(
                          (default True). Set False for local analysis of complex molecules.
 
     Returns:
-        DataFrame with 75 additional 3D descriptor columns:
+        DataFrame with 74 additional 3D descriptor columns:
         - 10 RDKit 3D shape descriptors
         - 52 Mordred 3D descriptors (CPSA, Geometrical, Gravitational, PBF)
         - 8 Pharmacophore 3D descriptors
-        - 5 Conformer ensemble statistics
+        - 4 Conformer ensemble statistics
 
     Example:
         df = compute_descriptors_3d(df)                       # Fast (default)
@@ -1207,10 +1212,14 @@ def compute_descriptors_3d(
             )
             result.at[idx, "desc3d_embed_tier"] = gen_info["embed_tier"]
             result.at[idx, "desc3d_force_field"] = gen_info["force_field"]
+            result.at[idx, "desc3d_embed_failures"] = gen_info["embed_failures"]
+            result.at[idx, "desc3d_timeout_failures"] = gen_info["timeout_failures"]
 
             if mol is None or mol.GetNumConformers() == 0:
                 result.at[idx, "desc3d_status"] = "skip:embed"
                 continue
+
+            result.at[idx, "desc3d_conf_count"] = mol.GetNumConformers()
 
             # Both modes: Boltzmann-weighted ensemble descriptors
             features, confs_in_window = _compute_descriptors_boltzmann(mol)
@@ -1358,7 +1367,7 @@ if __name__ == "__main__":
     print("TEST 6: Conformer Statistics")
     print("-" * 40)
 
-    conf_cols = ["name", "conf_count", "conf_energy_min", "conf_energy_range", "conformational_flexibility"]
+    conf_cols = ["name", "desc3d_conf_count", "conf_energy_min", "conf_energy_range", "conformational_flexibility"]
     print(result[conf_cols].head(8).to_string(index=False))
 
     # Test 7: Performance benchmark
