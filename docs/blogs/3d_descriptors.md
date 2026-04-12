@@ -172,7 +172,7 @@ In addition to the 74 model features, both endpoints produce 10 `desc3d_*` diagn
 
 | Column | Description |
 |--------|-------------|
-| `desc3d_status` | `ok`, `skip:parse`, `skip:heavy_atoms`, `skip:bicyclo_2_2_1`, etc. |
+| `desc3d_status` | `ok`, `skip:parse`, `skip:heavy_atoms`, `skip:rot_bonds`, etc. |
 | `desc3d_mode` | `fast` or `boltzmann` |
 | `desc3d_conf_count` | Conformers after RMSD pruning |
 | `desc3d_confs_requested` | Target conformer count |
@@ -188,9 +188,7 @@ In addition to the 74 model features, both endpoints produce 10 `desc3d_*` diagn
 The 3D endpoints are significantly more compute-intensive than 2D. Several safeguards keep them reliable:
 
 ### Molecular Complexity Check
-Before attempting conformer generation, molecules are screened against a two-layer guard. Layer 1 is a set of lightweight size/count thresholds that catch obviously oversized molecules. Layer 2 is a curated list of SMARTS patterns that specifically target scaffolds known to hang the conformer generator.
-
-**Layer 1: Size and topology backstops**
+Before attempting conformer generation, molecules are screened against size and topology thresholds that catch molecules too large or complex for reliable conformer generation:
 
 | Property | Threshold | Rationale |
 |----------|-----------|-----------|
@@ -199,14 +197,9 @@ Before attempting conformer generation, molecules are screened against a two-lay
 | Ring systems | > 10 | Extreme ring counts indicate cage structures |
 | Ring complexity score | > 15 | Backstop for highly constrained polycyclic cages |
 
-**Layer 2: Substructure exclusions (SMARTS)**
+The **ring complexity score** (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15.
 
-| Pattern | Description | Observed hang |
-|---------|-------------|----------|
-| `bicyclo[2.2.1]` | Norbornane, norbornene, camphor, fenchone | 400+ seconds |
-| `bicyclo[2.2.2]` | Natural-product terpene-like scaffolds | 1200+ seconds |
-
-Molecules exceeding any threshold or matching any SMARTS pattern receive NaN features and a specific `desc3d_status` explaining the skip reason. These guards can be disabled for local analysis (`complexity_check=False`).
+Molecules exceeding any threshold receive NaN features and a specific `desc3d_status` explaining the skip reason. These guards can be disabled for local analysis (`complexity_check=False`).
 
 ## Deploying the Endpoints
 
@@ -216,7 +209,7 @@ Molecules exceeding any threshold or matching any SMARTS pattern receive NaN fea
 # Realtime instance (recommended for 3D)
 SERVERLESS=false python feature_endpoints/rdkit_3d_v1.py
 
-# Serverless (lower cost, but 60s timeout limits throughput)
+# Serverless (lower cost, but slower)
 python feature_endpoints/rdkit_3d_v1.py
 ```
 
@@ -226,7 +219,7 @@ python feature_endpoints/rdkit_3d_v1.py
 python feature_endpoints/rdkit_3d_boltzmann_v1.py
 ```
 
-The Boltzmann endpoint deploys as an **async SageMaker endpoint** with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.
+The Boltzmann endpoint deploys as an [AsyncEndpoint](../api_classes/async_endpoint.md) with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.
 
 ### Using the Endpoints
 

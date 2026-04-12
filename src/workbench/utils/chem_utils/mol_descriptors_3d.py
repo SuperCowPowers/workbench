@@ -147,30 +147,22 @@ logger = logging.getLogger("workbench")
 MAX_HEAVY_ATOMS = 100
 MAX_ROTATABLE_BONDS = 30
 MAX_RING_SYSTEMS = 10
-MAX_RING_COMPLEXITY = 15  # rings + bridgehead + spiro atoms (backstop; SMARTS handles known bad scaffolds)
-
-# Strained bridged bicyclic scaffolds whose distance bounds are near infeasible —
-# ETKDGv3 can loop for minutes trying to satisfy conflicting ring constraints.
-_PROBLEMATIC_SUBSTRUCTURES = [
-    # Bicyclo[2.2.1]: norbornane, norbornene, camphor, fenchone.
-    ("bicyclo_2_2_1", Chem.MolFromSmarts("[#6]1[#6][#6]2[#6][#6][#6]1[#6]2")),
-    # Bicyclo[2.2.2]: common in terpene-derived natural products.
-    ("bicyclo_2_2_2", Chem.MolFromSmarts("[#6]12[#6][#6][#6](~[#6]~[#6]1)[#6][#6]2")),
-]
+MAX_RING_COMPLEXITY = 15  # rings + bridgehead + spiro atoms (backstop for polycyclic cages)
 
 
 def check_complexity(mol: Chem.Mol) -> Optional[str]:
     """Check if a molecule is too complex for 3D conformer generation.
 
-    Molecules that exceed any threshold will get NaN features instead of risking
-    a SageMaker endpoint timeout (60s) or a C++ crash in the force field optimizer.
+    Screens against size and topology thresholds (heavy atoms, rotatable bonds,
+    ring count, ring complexity). Molecules that exceed any threshold get NaN
+    features instead of risking excessive compute time.
 
     Args:
         mol: RDKit molecule object
 
     Returns:
         None if the molecule passes all checks, or a status string describing
-        the specific failure (e.g. ``"too_complex:heavy_atoms"``).
+        the specific failure (e.g. ``"skip:heavy_atoms"``).
     """
     if mol is None:
         return "skip:parse"
@@ -191,8 +183,8 @@ def check_complexity(mol: Chem.Mol) -> Optional[str]:
         logger.warning(f"Skipping molecule: {n_rings} rings > {MAX_RING_SYSTEMS}")
         return "skip:rings"
 
-    # Ring complexity backstop for dense polycyclic cages that the SMARTS list
-    # doesn't catch. Typical drug scaffolds score 2-5.
+    # Ring complexity backstop for dense polycyclic cages.
+    # Typical drug scaffolds score 2-5.
     n_bridgehead = rdMolDescriptors.CalcNumBridgeheadAtoms(mol)
     n_spiro = rdMolDescriptors.CalcNumSpiroAtoms(mol)
     ring_complexity = n_rings + n_bridgehead + n_spiro
@@ -203,13 +195,6 @@ def check_complexity(mol: Chem.Mol) -> Optional[str]:
             f"> {MAX_RING_COMPLEXITY}"
         )
         return "skip:ring_complexity"
-
-    # Substructure-based exclusions: specific scaffolds known to cause the distance
-    # geometry solver to hang indefinitely or the force field optimizer to crash.
-    for name, pattern in _PROBLEMATIC_SUBSTRUCTURES:
-        if mol.HasSubstructMatch(pattern):
-            logger.warning(f"Skipping molecule: matches problematic substructure '{name}'")
-            return f"skip:{name}"
 
     return None
 
