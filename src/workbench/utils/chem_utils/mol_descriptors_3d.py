@@ -114,7 +114,7 @@ from scipy.spatial.distance import pdist
 
 # Per-conformer wall-clock timeout (seconds, int) enforced inside RDKit's
 # EmbedMultipleConfs. Requires RDKit >= 2025.03.1.
-CONFORMER_TIMEOUT_SECONDS = 5
+CONFORMER_TIMEOUT_SECONDS = 10
 
 logger = logging.getLogger("workbench")
 
