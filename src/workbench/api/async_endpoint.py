@@ -8,7 +8,7 @@ Example:
     ```python
     from workbench.api import AsyncEndpoint
 
-    end = AsyncEndpoint("smiles-to-3d-descriptors-boltzmann-v1")
+    end = AsyncEndpoint("smiles-to-3d-boltzmann-v1")
     df_result = end.inference(my_df)
     ```
 """

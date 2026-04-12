@@ -21,10 +21,10 @@ Description:
 Created Artifacts:
 
     Models:
-        - smiles-to-3d-descriptors-boltzmann-v1
+        - smiles-to-3d-boltzmann-v1
 
     Endpoints:
-        - smiles-to-3d-descriptors-boltzmann-v1
+        - smiles-to-3d-boltzmann-v1
 """
 
 import os
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     RECREATE = True
     if RECREATE:
         model = feature_set.to_model(
-            name="smiles-to-3d-descriptors-boltzmann-v1",
+            name="smiles-to-3d-boltzmann-v1",
             model_type=ModelType.TRANSFORMER,
             feature_list=["smiles"],
             description="SMILES to 3D Molecular Descriptors — Boltzmann ensemble (75 features)",
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         model.set_owner("BW")
 
     # Deploy as async endpoint — batch_size=1 because each molecule can take minutes
-    model = Model("smiles-to-3d-descriptors-boltzmann-v1")
+    model = Model("smiles-to-3d-boltzmann-v1")
     end = model.to_endpoint(tags=tags, async_endpoint=True, instance=instance)
     end.upsert_workbench_meta({"inference_batch_size": 1})
     print(f"Async endpoint deployed: {end.name} on {instance}")
