@@ -5041,6 +5041,13 @@
 <p class="admonition-title">Endpoint Examples</p>
 <p>Examples of using the Endpoint class are listed at the bottom of this page <a href="#examples">Examples</a>.</p>
 </div>
+<p>Endpoints manage AWS SageMaker endpoint creation, deployment, and inference. They handle model hosting, auto-scaling, data capture, and performance monitoring. The API is simple: <strong>send a DataFrame, get a DataFrame back</strong>. Workbench endpoints run on a modern ASGI stack (Uvicorn + FastAPI) and every endpoint follows this same DataFrame-in, DataFrame-out contract.</p>
+<p>For long-running inference workloads (&gt;60s per invocation), see <a href="../async_endpoint/">AsyncEndpoint</a>.</p>
+<figure style="margin: 20px auto; text-align: center;">
+<img src="../../images/workbench_stack_flow.svg" alt="Workbench endpoint request flow: Uvicorn → FastAPI → Model Script" style="width: 80%; min-height: 200px;">
+<figcaption><em>Every Workbench endpoint runs on Uvicorn + FastAPI. Any client that can make an HTTP request gets the same results.</em></figcaption>
+</figure>
+
 
 
 <div class="doc doc-object doc-module">

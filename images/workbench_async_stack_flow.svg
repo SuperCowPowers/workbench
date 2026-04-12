@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 500" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="wa-s3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E65100"/>
+      <stop offset="100%" stop-color="#FF9800"/>
+    </linearGradient>
+    <linearGradient id="wa-sm" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#455A64"/>
+      <stop offset="100%" stop-color="#607D8B"/>
+    </linearGradient>
+    <linearGradient id="wa-uvicorn" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#1E88E5"/>
+    </linearGradient>
+    <linearGradient id="wa-fastapi" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00897B"/>
+      <stop offset="100%" stop-color="#009688"/>
+    </linearGradient>
+    <linearGradient id="wa-model" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a6b8a"/>
+      <stop offset="100%" stop-color="#2196a9"/>
+    </linearGradient>
+    <linearGradient id="wa-scale" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#2E7D32"/>
+      <stop offset="100%" stop-color="#43A047"/>
+    </linearGradient>
+    <filter id="wa-shadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="390" y="36" text-anchor="middle" font-size="22" font-weight="700" fill="#E0E0E0">Async Endpoint Stack</text>
+  <text x="390" y="62" text-anchor="middle" font-size="15" fill="#999">Scale-to-Zero · 15-min Timeout</text>
+
+  <!-- Request arrow down (left side) -->
+  <text x="55" y="100" text-anchor="middle" font-size="20" font-weight="600" fill="#66BB6A">Request</text>
+  <line x1="55" y1="112" x2="55" y2="426" stroke="#66BB6A" stroke-width="2.5" stroke-dasharray="7,4"/>
+  <polygon points="48,424 55,440 62,424" fill="#66BB6A"/>
+
+  <!-- Result arrow up (right side) -->
+  <text x="725" y="100" text-anchor="middle" font-size="20" font-weight="600" fill="#42A5F5">Result</text>
+  <line x1="725" y1="426" x2="725" y2="136" stroke="#42A5F5" stroke-width="2.5" stroke-dasharray="7,4"/>
+  <polygon points="718,138 725,122 732,138" fill="#42A5F5"/>
+
+  <!-- S3 box -->
+  <rect x="115" y="86" width="550" height="72" rx="8" fill="url(#wa-s3)" filter="url(#wa-shadow)"/>
+  <text x="390" y="118" text-anchor="middle" font-size="20" font-weight="700" fill="white">S3 Input / Output</text>
+  <text x="390" y="144" text-anchor="middle" font-size="14" fill="#FFE0B2">Client uploads CSV · Retrieves result</text>
+
+  <!-- Connector -->
+  <line x1="390" y1="158" x2="390" y2="190" stroke="#666" stroke-width="1" stroke-dasharray="5,4"/>
+
+  <!-- SageMaker Platform box -->
+  <rect x="115" y="190" width="550" height="64" rx="8" fill="url(#wa-sm)" filter="url(#wa-shadow)"/>
+  <text x="390" y="220" text-anchor="middle" font-size="18" font-weight="700" fill="white">SageMaker Platform</text>
+  <text x="390" y="242" text-anchor="middle" font-size="13" fill="#B0BEC5">Reads from S3 · Queues request · Writes result to S3</text>
+
+  <!-- Connector + container label -->
+  <line x1="390" y1="254" x2="390" y2="286" stroke="#666" stroke-width="1" stroke-dasharray="5,4"/>
+  <text x="390" y="302" text-anchor="middle" font-size="14" fill="#888">Container (same as realtime)</text>
+
+  <!-- Uvicorn box -->
+  <rect x="115" y="312" width="550" height="72" rx="8" fill="url(#wa-uvicorn)" filter="url(#wa-shadow)"/>
+  <text x="390" y="344" text-anchor="middle" font-size="20" font-weight="700" fill="white">Uvicorn</text>
+  <text x="390" y="370" text-anchor="middle" font-size="14" fill="#BBDEFB">ASGI · Async · :8080</text>
+
+  <!-- Connector -->
+  <line x1="390" y1="384" x2="390" y2="410" stroke="#666" stroke-width="1" stroke-dasharray="5,4"/>
+
+  <!-- FastAPI box -->
+  <rect x="115" y="410" width="550" height="72" rx="8" fill="url(#wa-fastapi)" filter="url(#wa-shadow)"/>
+  <text x="390" y="442" text-anchor="middle" font-size="20" font-weight="700" fill="white">FastAPI</text>
+  <text x="390" y="468" text-anchor="middle" font-size="14" fill="#B2DFDB">Pydantic Validation · DataFrame In/Out</text>
+</svg>
