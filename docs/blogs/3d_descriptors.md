@@ -41,7 +41,7 @@ Workbench provides two 3D descriptor endpoints that share the same computation c
 
 Both modes use **Boltzmann-weighted ensemble averaging** -- descriptors are computed on every conformer within a 5 kcal/mol energy window of the MMFF minimum, then combined using normalized Boltzmann weights:
 
-$$w_i = \frac{e^{-\Delta E_i \,/\, k_BT}}{\displaystyle\sum_j e^{-\Delta E_j \,/\, k_BT}}, \qquad \langle d \rangle = \sum_i w_i \, d_i$$
+$$\Large w_i = \frac{e^{-\Delta E_i \,/\, k_BT}}{\displaystyle\sum_j e^{-\Delta E_j \,/\, k_BT}}, \qquad \langle d \rangle = \sum_i w_i \, d_i$$
 
 where $\Delta E_i = E_i - E_{\min}$ is the energy above the minimum conformer, $k_BT$ is the thermal energy at 298 K (0.592 kcal/mol), and $d_i$ is the descriptor value for conformer $i$. This is more reproducible than single-conformer descriptors, which can vary significantly with random seed, especially for flexible molecules. The MARCEL benchmark and Nikonenko et al. have shown that ensemble approaches produce more stable QSAR models.
 
