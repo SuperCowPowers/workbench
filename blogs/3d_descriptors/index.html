@@ -807,6 +807,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../api_classes/async_endpoint/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AsyncEndpoint
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../api_classes/inference_cache/" class="md-nav__link">
         
   
@@ -5446,7 +5474,7 @@
 <tbody>
 <tr>
 <td><code>desc3d_status</code></td>
-<td><code>ok</code>, <code>skip:parse</code>, <code>skip:heavy_atoms</code>, <code>skip:bicyclo_2_2_1</code>, etc.</td>
+<td><code>ok</code>, <code>skip:parse</code>, <code>skip:heavy_atoms</code>, <code>skip:rot_bonds</code>, etc.</td>
 </tr>
 <tr>
 <td><code>desc3d_mode</code></td>
@@ -5489,8 +5517,7 @@
 <h2 id="production-guardrails">Production Guardrails</h2>
 <p>The 3D endpoints are significantly more compute-intensive than 2D. Several safeguards keep them reliable:</p>
 <h3 id="molecular-complexity-check">Molecular Complexity Check</h3>
-<p>Before attempting conformer generation, molecules are screened against a two-layer guard. Layer 1 is a set of lightweight size/count thresholds that catch obviously oversized molecules. Layer 2 is a curated list of SMARTS patterns that specifically target scaffolds known to hang the conformer generator.</p>
-<p><strong>Layer 1: Size and topology backstops</strong></p>
+<p>Before attempting conformer generation, molecules are screened against size and topology thresholds that catch molecules too large or complex for reliable conformer generation:</p>
 <table>
 <thead>
 <tr>
@@ -5522,41 +5549,20 @@
 </tr>
 </tbody>
 </table>
-<p><strong>Layer 2: Substructure exclusions (SMARTS)</strong></p>
-<table>
-<thead>
-<tr>
-<th>Pattern</th>
-<th>Description</th>
-<th>Observed hang</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>bicyclo[2.2.1]</code></td>
-<td>Norbornane, norbornene, camphor, fenchone</td>
-<td>400+ seconds</td>
-</tr>
-<tr>
-<td><code>bicyclo[2.2.2]</code></td>
-<td>Natural-product terpene-like scaffolds</td>
-<td>1200+ seconds</td>
-</tr>
-</tbody>
-</table>
-<p>Molecules exceeding any threshold or matching any SMARTS pattern receive NaN features and a specific <code>desc3d_status</code> explaining the skip reason. These guards can be disabled for local analysis (<code>complexity_check=False</code>).</p>
+<p>The <strong>ring complexity score</strong> (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15.</p>
+<p>Molecules exceeding any threshold receive NaN features and a specific <code>desc3d_status</code> explaining the skip reason. These guards can be disabled for local analysis (<code>complexity_check=False</code>).</p>
 <h2 id="deploying-the-endpoints">Deploying the Endpoints</h2>
 <h3 id="fast-endpoint-realtime">Fast Endpoint (Realtime)</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Realtime instance (recommended for 3D)</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nv">SERVERLESS</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span>python<span class="w"> </span>feature_endpoints/rdkit_3d_v1.py
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Serverless (lower cost, but 60s timeout limits throughput)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Serverless (lower cost, but slower)</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>python<span class="w"> </span>feature_endpoints/rdkit_3d_v1.py
 </span></code></pre></div>
 <h3 id="boltzmann-endpoint-async">Boltzmann Endpoint (Async)</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>feature_endpoints/rdkit_3d_boltzmann_v1.py
 </span></code></pre></div>
-<p>The Boltzmann endpoint deploys as an <strong>async SageMaker endpoint</strong> with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.</p>
+<p>The Boltzmann endpoint deploys as an <a href="../../api_classes/async_endpoint/">AsyncEndpoint</a> with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.</p>
 <h3 id="using-the-endpoints">Using the Endpoints</h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Endpoint</span><span class="p">,</span> <span class="n">AsyncEndpoint</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
