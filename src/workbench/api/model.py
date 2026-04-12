@@ -103,6 +103,7 @@ class Model(ModelCore):
         # Return the appropriate endpoint type
         if async_endpoint:
             from workbench.api.async_endpoint import AsyncEndpoint
+
             end = AsyncEndpoint(name)
         else:
             end = Endpoint(name)

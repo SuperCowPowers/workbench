@@ -1163,8 +1163,7 @@ def compute_descriptors_3d(
     if mode == "fast":
         logger.info(f"Parameters: n_conformers={n_conformers}, optimize={optimize}")
     else:
-        logger.info("Parameters: adaptive n_conformers, Boltzmann ensemble, "
-                     f"force_tol={BOLTZMANN_FORCE_TOL}")
+        logger.info("Parameters: adaptive n_conformers, Boltzmann ensemble, " f"force_tol={BOLTZMANN_FORCE_TOL}")
 
     # Initialize feature columns
     feature_names = get_3d_feature_names()

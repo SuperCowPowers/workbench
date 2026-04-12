@@ -22,13 +22,11 @@ from io import StringIO
 from typing import Optional
 
 import pandas as pd
-import numpy as np
 
-from workbench.core.artifacts.endpoint_core import EndpointCore, WorkbenchDeserializer
+from workbench.core.artifacts.endpoint_core import EndpointCore
 
 # SageMaker V3 Resource Classes
 from sagemaker.core.resources import Endpoint as SagemakerEndpoint
-from sagemaker.core.serializers import CSVSerializer
 
 log = logging.getLogger("workbench")
 
@@ -103,7 +101,7 @@ class AsyncEndpointCore(EndpointCore):
         df_list = []
 
         for start in range(0, total_rows, batch_size):
-            chunk = eval_df.iloc[start: start + batch_size]
+            chunk = eval_df.iloc[start : start + batch_size]
             log.info(f"Async invoke {start}:{min(start + batch_size, total_rows)} of {total_rows} rows...")
 
             result_df = self._invoke_one_async(sm_endpoint, s3_client, chunk)
