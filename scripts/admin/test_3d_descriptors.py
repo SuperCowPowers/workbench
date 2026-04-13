@@ -278,6 +278,7 @@ if __name__ == "__main__":
 
     # Then: run full dataset diagnostics
     from workbench.api import PublicData
+
     pub_data = PublicData()
     print("\nPulling all_molecules dataset...")
     df = pub_data.get("comp_chem/aqsol/aqsol_public_data")
