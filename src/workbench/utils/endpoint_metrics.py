@@ -7,43 +7,68 @@ import pandas as pd
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 
+# Metric presets for different endpoint types
+REALTIME_METRICS = {
+    "metrics": [
+        "Invocations",
+        "ServerlessConcurrentExecutionsUtilization",
+        "ModelLatency",
+        "OverheadLatency",
+        "ModelSetupTime",
+        "Invocation5XXErrors",
+        "Invocation4XXErrors",
+    ],
+    "conversions": {
+        "Invocations": 1,
+        "ServerlessConcurrentExecutionsUtilization": 100,
+        "ModelLatency": 1e-6,
+        "OverheadLatency": 1e-6,
+        "ModelSetupTime": 1e-6,
+        "Invocation5XXErrors": 1,
+        "Invocation4XXErrors": 1,
+    },
+    "stats": ["Sum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum"],
+}
+
+ASYNC_METRICS = {
+    "metrics": [
+        "ModelLatency",
+        "CPUUtilization",
+        "MemoryUtilization",
+        "ApproximateBacklogSize",
+        "Invocation5XXErrors",
+        "Invocation4XXErrors",
+    ],
+    "conversions": {
+        "ModelLatency": 1e-6,
+        "CPUUtilization": 1,
+        "MemoryUtilization": 1,
+        "ApproximateBacklogSize": 1,
+        "Invocation5XXErrors": 1,
+        "Invocation4XXErrors": 1,
+    },
+    "stats": ["Maximum", "Average", "Average", "Maximum", "Maximum", "Maximum"],
+}
+
+
 class EndpointMetrics:
-    def __init__(self):
-        """
-        EndpointMetrics Class
-        - Invocations: The total number of times the endpoint was invoked via the `InvokeEndpoint` API.
-        - ServerlessConcurrentExecutionsUtilization: The percentage of concurrent executions used by the endpoint.
-        - ModelLatency: The time taken by the model to complete inference, excluding network and overhead delays.
-        - OverheadLatency: The total time from request to response, excluding the `ModelLatency`.
-        - ModelSetupTime: The time it takes to launch ^serverless^ endpoints before inference can begin.
-        - InvocationModelErrors: The total number of requests with non-200 HTTP response due to model-level errors.
-        - Invocation5XXErrors: The total number of server-side errors (5xx HTTP status codes).
-        - Invocation4XXErrors: The total number of client-side errors (4xx HTTP status codes).
+    def __init__(self, preset: str = "realtime"):
+        """EndpointMetrics Class
+
+        Args:
+            preset: ``"realtime"`` or ``"async"`` — selects the appropriate
+                CloudWatch metrics for the endpoint type.
         """
         self.aws_account_clamp = AWSAccountClamp()
         self.boto3_session = self.aws_account_clamp.boto3_session
         self.cloudwatch = self.boto3_session.client("cloudwatch")
         self.start_time = None
         self.end_time = None
-        self.metrics = [
-            "Invocations",
-            "ServerlessConcurrentExecutionsUtilization",
-            "ModelLatency",
-            "OverheadLatency",
-            "ModelSetupTime",
-            "Invocation5XXErrors",
-            "Invocation4XXErrors",
-        ]
-        self.metric_conversions = {
-            "Invocations": 1,
-            "ServerlessConcurrentExecutionsUtilization": 100,
-            "ModelLatency": 1e-6,
-            "OverheadLatency": 1e-6,
-            "ModelSetupTime": 1e-6,
-            "Invocation5XXErrors": 1,
-            "Invocation4XXErrors": 1,
-        }
-        self.stats = ["Sum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum"]
+
+        config = ASYNC_METRICS if preset == "async" else REALTIME_METRICS
+        self.metrics = config["metrics"]
+        self.metric_conversions = config["conversions"]
+        self.stats = config["stats"]
 
     def get_metrics(self, endpoint: str, variant: str = "AllTraffic", days_back: int = 3) -> pd.DataFrame:
         """Get the metric data for a given endpoint.
