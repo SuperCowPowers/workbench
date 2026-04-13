@@ -78,10 +78,24 @@ def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[.
                     f"re-requested on the next call."
                 )
 
-            # Step 2: persist this chunk's results to the cache
+            # If the endpoint normalizes the key column (e.g. canonical
+            # SMILES) and places the original values in output_key_column,
+            # swap them so the cache is keyed on the original input values.
+            key_col = getattr(self, "cache_key_column", None)
+            output_key_col = getattr(self, "output_key_column", None)
+            if output_key_col and output_key_col in chunk_results.columns:
+                chunk_results = chunk_results.copy()
+                chunk_results[key_col] = chunk_results[output_key_col]
+
+            # Step 2: persist only the key + endpoint feature columns to the
+            # cache (drop the caller's input columns so they don't leak to
+            # other callers who hit the cache with different input schemas).
             if not chunk_results.empty:
                 try:
-                    self._update_cache(chunk_results)
+                    input_cols = set(chunk.columns)
+                    feature_cols = [c for c in chunk_results.columns if c not in input_cols]
+                    cache_cols = [key_col] + feature_cols if key_col else list(chunk_results.columns)
+                    self._update_cache(chunk_results[cache_cols])
                 except Exception as e:
                     self.log.error(
                         f"{label}: chunk {i + 1}/{n_chunks} cache write failed: {e}. "

@@ -59,6 +59,7 @@ class InferenceCache:
         self,
         endpoint: Endpoint,
         cache_key_column: str = "smiles",
+        output_key_column: Optional[str] = None,
         auto_invalidate_cache: bool = False,
     ):
         """Initialize the InferenceCache.
@@ -67,6 +68,15 @@ class InferenceCache:
             endpoint (Endpoint): The Workbench Endpoint to wrap.
             cache_key_column (str): Name of the column whose values are used
                 as the cache key (default: "smiles").
+            output_key_column (Optional[str]): Name of the column in the
+                endpoint's *output* that contains the original input key
+                values. Some endpoints normalize/canonicalize the key column
+                (e.g. canonical SMILES) and place the original value in a
+                separate column (e.g. "orig_smiles"). When set, the cache
+                uses this column's values as the key so future lookups with
+                the original input values still hit. When None (default),
+                the cache key column in the output is assumed to match the
+                input unchanged.
             auto_invalidate_cache (bool): When True, automatically clear the
                 cache if the endpoint has been modified since the cache was
                 last written. When False (default), the existing cache is
@@ -76,6 +86,7 @@ class InferenceCache:
         """
         self._endpoint = endpoint
         self.cache_key_column = cache_key_column
+        self.output_key_column = output_key_column
         self.cache_path = f"/workbench/inference_cache/{endpoint.name}"
         self.manifest_path = f"{self.cache_path}__meta"
         self._df_store = DFStore()
