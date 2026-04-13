@@ -208,7 +208,6 @@ class AsyncEndpointCore(EndpointCore):
         failure_key = key.replace("/async-output/", "/async-failures/", 1)
 
         deadline = time.time() + timeout_s
-        interval = poll_interval_s
 
         while time.time() < deadline:
             # Check for success
