@@ -31,7 +31,7 @@ from sagemaker.core.resources import Endpoint as SagemakerEndpoint
 log = logging.getLogger("workbench")
 
 # Default polling parameters for async output
-_DEFAULT_POLL_INTERVAL_S = 5
+_DEFAULT_POLL_INTERVAL_S = 3
 _DEFAULT_POLL_TIMEOUT_S = 900  # 15 minutes (SageMaker async max)
 _MAX_POLL_INTERVAL_S = 30
 
@@ -104,7 +104,7 @@ class AsyncEndpointCore(EndpointCore):
     # Internal: async invocation machinery
     # -----------------------------------------------------------------
     def _async_batch_invoke(self, eval_df: pd.DataFrame, batch_size: int) -> pd.DataFrame:
-        """Split eval_df into chunks, invoke each asynchronously, and reassemble."""
+        """Split eval_df into chunks, invoke each sequentially, and reassemble."""
         sm_endpoint = SagemakerEndpoint.get(self.endpoint_name, session=self.boto3_session)
         s3_client = self.boto3_session.client("s3")
 
@@ -134,6 +134,7 @@ class AsyncEndpointCore(EndpointCore):
     ) -> Optional[pd.DataFrame]:
         """Upload one chunk to S3, call invoke_async, poll for output, download result."""
         request_id = uuid.uuid4().hex[:12]
+        t_start = time.time()
 
         # Upload input CSV to S3
         csv_buffer = StringIO()
@@ -154,7 +155,6 @@ class AsyncEndpointCore(EndpointCore):
                 accept="text/csv",
             )
             output_location = response.output_location
-            log.info(f"Async request {request_id}: output → {output_location}")
         except Exception as e:
             log.error(f"invoke_async failed for request {request_id}: {e}")
             return None
@@ -176,7 +176,8 @@ class AsyncEndpointCore(EndpointCore):
             log.error(f"Failed to parse async output for {request_id}: {e}")
             return None
 
-        # Clean up input and output files from S3
+        elapsed = time.time() - t_start
+        log.info(f"Async {request_id}: {len(result_df)} rows in {elapsed:.1f}s")
         self._cleanup_s3(s3_client, input_s3_uri, output_location)
         return result_df
 
@@ -225,8 +226,7 @@ class AsyncEndpointCore(EndpointCore):
             except s3_client.exceptions.NoSuchKey:
                 pass
 
-            time.sleep(interval)
-            interval = min(interval * 1.5, _MAX_POLL_INTERVAL_S)
+            time.sleep(poll_interval_s)
 
         raise TimeoutError(f"Async output not available after {timeout_s}s: {output_location}")
 

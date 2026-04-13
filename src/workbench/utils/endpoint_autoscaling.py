@@ -6,7 +6,7 @@ log = logging.getLogger("workbench")
 
 # Standard scaling metrics for SageMaker endpoints
 ASYNC_METRIC = {
-    "MetricName": "HasBacklogPerInstance",
+    "MetricName": "ApproximateBacklogSizePerInstance",
     "Namespace": "AWS/SageMaker",
     "Statistic": "Average",
 }
@@ -45,7 +45,7 @@ def register_autoscaling(
     # Pick metric and target based on whether this is async (min=0) or realtime
     if min_capacity == 0:
         metric = ASYNC_METRIC
-        target_value = 1.0
+        target_value = 2.0  # Scale out when backlog exceeds 2 requests per instance
     else:
         metric = REALTIME_METRIC
         target_value = 750.0

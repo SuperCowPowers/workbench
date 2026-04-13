@@ -77,7 +77,7 @@ if __name__ == "__main__":
     # Deploy as async endpoint — batch_size=1 because each molecule can take minutes
     model = Model("smiles-to-3d-boltzmann-v1")
     end = model.to_endpoint(tags=tags, async_endpoint=True, instance=instance)
-    end.upsert_workbench_meta({"inference_batch_size": 10})
+    end.upsert_workbench_meta({"inference_batch_size": 50})
     print(f"Async endpoint deployed: {end.name} on {instance}")
 
     # Quick smoke test with a small batch
