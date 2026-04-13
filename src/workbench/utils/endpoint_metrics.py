@@ -6,7 +6,6 @@ import pandas as pd
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-
 # Metric presets for different endpoint types
 REALTIME_METRICS = {
     "metrics": [
