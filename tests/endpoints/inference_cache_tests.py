@@ -5,11 +5,8 @@ key + endpoint features, so any caller gets back their own input columns
 plus the endpoint's features — regardless of what a previous caller sent.
 """
 
-import pandas as pd
-
 from workbench.api import Endpoint, InferenceCache
 from workbench.utils.endpoint_utils import get_evaluation_data
-
 
 endpoint = Endpoint("abalone-regression")
 
@@ -81,9 +78,9 @@ def test_extra_column_not_leaked():
     # Both callers should have the same feature columns from the endpoint
     feature_cols_1 = result1_cols - set(input_cols)
     feature_cols_3 = result3_cols - set(input_cols)
-    assert feature_cols_1 == feature_cols_3, (
-        f"Feature columns should be identical: {feature_cols_1} vs {feature_cols_3}"
-    )
+    assert (
+        feature_cols_1 == feature_cols_3
+    ), f"Feature columns should be identical: {feature_cols_1} vs {feature_cols_3}"
 
     # Clean up
     cached_endpoint.clear_cache()

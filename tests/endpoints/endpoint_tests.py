@@ -3,7 +3,6 @@
 from workbench.api import Endpoint
 from workbench.utils.endpoint_utils import get_evaluation_data
 
-
 endpoint = Endpoint("abalone-regression")
 
 
