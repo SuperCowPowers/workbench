@@ -13,7 +13,6 @@ from rdkit import Chem
 from rdkit.Chem import rdMolDescriptors
 
 # Workbench Imports
-from workbench.api import DFStore
 from workbench.utils.chem_utils.mol_standardize import standardize
 from workbench.utils.chem_utils.mol_descriptors_3d import (
     compute_descriptors_3d,
@@ -278,9 +277,10 @@ if __name__ == "__main__":
         print("\nCorner case tests had failures — review before running full dataset")
 
     # Then: run full dataset diagnostics
-    df_store = DFStore()
+    from workbench.api import PublicData
+    pub_data = PublicData()
     print("\nPulling all_molecules dataset...")
-    df = df_store.get("/harmony/datasets/all_molecules_df_20260325")
+    df = pub_data.get("comp_chem/aqsol/aqsol_public_data")
     print(f"Dataset shape: {df.shape}")
 
     # Run diagnostics (use sample_size=None for full dataset, or set a number for testing)
