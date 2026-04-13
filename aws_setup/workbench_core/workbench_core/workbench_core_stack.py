@@ -957,6 +957,8 @@ class WorkbenchCoreStack(Stack):
         return iam.PolicyStatement(
             actions=[
                 "cloudwatch:GetMetricData",
+                "cloudwatch:GetMetricStatistics",
+                "cloudwatch:ListMetrics",
                 "cloudwatch:PutMetricData",
             ],
             resources=["*"],  # CloudWatch metrics don't support specific resources
