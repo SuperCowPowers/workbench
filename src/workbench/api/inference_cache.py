@@ -59,7 +59,7 @@ class InferenceCache:
         self,
         endpoint: Endpoint,
         cache_key_column: str = "smiles",
-        load_existing_cache: bool = False,
+        auto_invalidate_cache: bool = False,
     ):
         """Initialize the InferenceCache.
 
@@ -67,13 +67,12 @@ class InferenceCache:
             endpoint (Endpoint): The Workbench Endpoint to wrap.
             cache_key_column (str): Name of the column whose values are used
                 as the cache key (default: "smiles").
-            load_existing_cache (bool): When True, skip the auto-invalidation
-                check that clears the cache on endpoint modification. Use
-                this when the endpoint was redeployed for reasons unrelated
-                to the feature computation (e.g., instance type change) and
-                you want to keep the existing cached results. The manifest
-                will be reseeded on first load so subsequent calls have a
-                consistent baseline.
+            auto_invalidate_cache (bool): When True, automatically clear the
+                cache if the endpoint has been modified since the cache was
+                last written. When False (default), the existing cache is
+                kept regardless of endpoint changes — the manifest is
+                reseeded on first load so subsequent calls have a consistent
+                baseline.
         """
         self._endpoint = endpoint
         self.cache_key_column = cache_key_column
@@ -82,7 +81,7 @@ class InferenceCache:
         self._df_store = DFStore()
         self._cache_df: Optional[pd.DataFrame] = None  # lazy-loaded
         self._invalidation_checked = False  # per-instance, one-shot
-        self._load_existing_cache = load_existing_cache
+        self._auto_invalidate_cache = auto_invalidate_cache
         self.log = logging.getLogger("workbench")
 
     def __getattr__(self, name):
@@ -217,17 +216,17 @@ class InferenceCache:
         """
         if self._cache_df is None:
             if not self._invalidation_checked:
-                if self._load_existing_cache:
+                if self._auto_invalidate_cache:
+                    self._check_endpoint_changed()
+                else:
                     # Skip the auto-invalidation check and reseed the manifest
                     # so the stored modified time matches the current endpoint.
                     self.log.info(
-                        f"InferenceCache[{self._endpoint.name}]: load_existing_cache=True, "
+                        f"InferenceCache[{self._endpoint.name}]: auto_invalidate_cache=False, "
                         f"reseeding manifest and keeping existing cache"
                     )
                     if self._df_store.check(self.cache_path):
                         self._save_manifest()
-                else:
-                    self._check_endpoint_changed()
                 self._invalidation_checked = True
 
             df = self._df_store.get(self.cache_path)

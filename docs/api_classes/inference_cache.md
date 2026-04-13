@@ -48,7 +48,13 @@ InferenceCache[smiles-to-3d-descriptors-v1]: removed 3 entries
 
 ## Endpoint change detection
 
-If you redeploy the underlying endpoint, `InferenceCache` notices. A tiny sidecar manifest stores the endpoint's `modified()` timestamp; on the next cache access, if it doesn't match the endpoint's current `modified()`, the cache is cleared automatically so you don't get stale results.
+By default, `InferenceCache` keeps the existing cache regardless of endpoint changes. If you want it to automatically clear the cache when the endpoint has been modified since the cache was last written, pass `auto_invalidate_cache=True`:
+
+```python
+cached_endpoint = InferenceCache(endpoint, cache_key_column="smiles", auto_invalidate_cache=True)
+```
+
+A tiny sidecar manifest stores the endpoint's `modified()` timestamp; when auto-invalidation is enabled, the cache is cleared on the next access if the stored and current timestamps differ.
 
 !!! note "Attribute delegation"
     `InferenceCache` forwards anything it doesn't define to the wrapped endpoint, so `cached_endpoint.name`, `cached_endpoint.details()`, `cached_endpoint.fast_inference()`, etc. all Just Work.
