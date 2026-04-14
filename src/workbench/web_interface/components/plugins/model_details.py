@@ -3,7 +3,8 @@
 from typing import Union
 
 # Dash Imports
-from dash import html, callback, dcc, no_update, Input, Output
+from dash import html, callback, dcc, no_update, Input, Output, State
+from dash.exceptions import PreventUpdate
 
 # Workbench Imports
 from workbench.api import ModelType, ParameterStore
@@ -28,7 +29,6 @@ class ModelSummary(PluginInterface):
     def __init__(self):
         """Initialize the ModelSummary plugin class"""
         self.component_id = None
-        self.model = None
         super().__init__()
 
     def create_component(self, component_id: str) -> html.Div:
@@ -64,18 +64,20 @@ class ModelSummary(PluginInterface):
         Returns:
             list: [header, summary_markdown]
         """
-        self.model = model
         header = model.name
-        summary = self._model_summary()
+        summary = self._model_summary(model)
         return [header, summary]
 
-    def _model_summary(self) -> str:
+    def _model_summary(self, model: CachedModel) -> str:
         """Construct the markdown string for the model summary.
+
+        Args:
+            model (CachedModel): The model to summarize
 
         Returns:
             str: A markdown string
         """
-        summary = self.model.summary()
+        summary = model.summary()
         markdown = ""
 
         # Health tags
@@ -94,7 +96,7 @@ class ModelSummary(PluginInterface):
         markdown += f"**features:** {features_str}  \n"
 
         # Parameter Store metadata
-        model_name = summary["name"]
+        model_name = model.name
         meta_data = self.params.get(f"/workbench/models/{model_name}/meta", warn=False)
         if meta_data:
             markdown += dict_to_markdown(meta_data, title="Additional Metadata")
@@ -120,7 +122,6 @@ class InferenceMetrics(PluginInterface):
     def __init__(self):
         """Initialize the InferenceMetrics plugin class"""
         self.component_id = None
-        self.model = None
         super().__init__()
 
     def create_component(self, component_id: str) -> html.Div:
@@ -139,12 +140,15 @@ class InferenceMetrics(PluginInterface):
                 html.H5(children="Inference Metrics", style={"marginTop": "20px"}),
                 dcc.Dropdown(id=f"{self.component_id}-dropdown", className="dropdown"),
                 dcc.Markdown(id=f"{self.component_id}-metrics", dangerously_allow_html=True),
+                # Hidden store to track the active model name per-tab (avoids multi-tab state leakage)
+                dcc.Store(id=f"{self.component_id}-model-name", data=None),
             ],
         )
         self.properties = [
             (f"{self.component_id}-dropdown", "options"),
             (f"{self.component_id}-dropdown", "value"),
             (f"{self.component_id}-metrics", "children"),
+            (f"{self.component_id}-model-name", "data"),
         ]
         self.signals = [(f"{self.component_id}-dropdown", "value")]
         return self.container
@@ -159,12 +163,10 @@ class InferenceMetrics(PluginInterface):
                 - previous_model_name: Name of the previously selected model
 
         Returns:
-            list: [dropdown_options, dropdown_value, metrics_markdown]
+            list: [dropdown_options, dropdown_value, metrics_markdown, model_name]
         """
-        self.model = model
-
         # Populate the inference runs dropdown
-        inference_runs, default_run = self._get_inference_runs()
+        inference_runs, default_run = self._get_inference_runs(model)
 
         # Check if the model changed
         previous_model_name = kwargs.get("previous_model_name")
@@ -173,11 +175,11 @@ class InferenceMetrics(PluginInterface):
 
         # Only preserve the inference run if the model hasn't changed AND the selection is valid
         if not model_changed and current_inference_run and current_inference_run in inference_runs:
-            metrics = self._inference_metrics(current_inference_run)
-            return [inference_runs, no_update, metrics]
+            metrics = self._inference_metrics(model, current_inference_run)
+            return [inference_runs, no_update, metrics, model.name]
         else:
-            metrics = self._inference_metrics(default_run)
-            return [inference_runs, default_run, metrics]
+            metrics = self._inference_metrics(model, default_run)
+            return [inference_runs, default_run, metrics, model.name]
 
     def register_internal_callbacks(self):
         """Register the dropdown → metrics callback."""
@@ -186,26 +188,29 @@ class InferenceMetrics(PluginInterface):
         @callback(
             Output(f"{self.component_id}-metrics", "children", allow_duplicate=True),
             Input(f"{self.component_id}-dropdown", "value"),
+            State(f"{self.component_id}-model-name", "data"),
             prevent_initial_call=True,
         )
-        def update_inference_run(inference_run):
-            # Uses self.model directly (set by update_properties) instead of
-            # re-instantiating CachedModel from scratch on every dropdown change.
-            return self._inference_metrics(inference_run)
+        def update_inference_run(inference_run, model_name):
+            if not model_name or not inference_run:
+                raise PreventUpdate
+            model = CachedModel(model_name)
+            return self._inference_metrics(model, inference_run)
 
-    def _inference_metrics(self, inference_run: Union[str, None]) -> str:
+    def _inference_metrics(self, model: CachedModel, inference_run: Union[str, None]) -> str:
         """Construct the markdown string for the model metrics.
 
         Args:
+            model (CachedModel): The model to get metrics for
             inference_run (str): The inference run to get the metrics for (None gives a 'not found' markdown)
 
         Returns:
             str: A markdown string
         """
-        if self.model is None:
+        if model is None:
             meta_df = None
         else:
-            meta_df = self.model.get_inference_metadata(inference_run) if inference_run else None
+            meta_df = model.get_inference_metadata(inference_run) if inference_run else None
         if meta_df is None:
             test_data = "Inference Metadata Not Found"
             test_data_hash = " - "
@@ -223,36 +228,39 @@ class InferenceMetrics(PluginInterface):
             markdown += f"**Description:** {description}  \n"
 
         # Grab the Metrics from the model details
-        metrics = self.model.get_inference_metrics(capture_name=inference_run)
+        metrics = model.get_inference_metrics(capture_name=inference_run)
         if metrics is None:
             markdown += "  \nNo Data  \n"
         else:
             markdown += "  \n"
 
             # If the model is a classification model, have the index sorting match the class labels
-            if self.model.model_type == ModelType.CLASSIFIER:
-                class_labels = self.model.class_labels()
+            if model.model_type == ModelType.CLASSIFIER:
+                class_labels = model.class_labels()
                 if set(metrics.index) == set(class_labels):
                     metrics = metrics.reindex(class_labels)
 
             markdown += df_to_html_table(metrics)
 
         # Get additional inference metrics if they exist
-        model_name = self.model.name
+        model_name = model.name
         inference_data = self.params.get(f"/workbench/models/{model_name}/inference/{inference_run}", warn=False)
         if inference_data:
             markdown += "\n\n"
             markdown += dict_to_markdown(inference_data, title="Additional Inference Metrics")
         return markdown
 
-    def _get_inference_runs(self):
+    def _get_inference_runs(self, model: CachedModel):
         """Get the inference runs for the model.
+
+        Args:
+            model (CachedModel): The model to get inference runs for
 
         Returns:
             list[str]: A list of inference runs
             default_run (str): The default inference run
         """
-        inference_runs = self.model.list_inference_runs()
+        inference_runs = model.list_inference_runs()
 
         if not inference_runs:
             return [], None
@@ -302,7 +310,7 @@ class ModelDetails(PluginInterface):
             children=[summary_component, inference_component],
         )
 
-        # Aggregate properties: summary (2) + inference (3) = 5 total (same order as before)
+        # Aggregate properties: summary (2) + inference (4) = 6 total
         self.properties = list(self.summary.properties) + list(self.inference.properties)
         self.signals = list(self.inference.signals)
 
