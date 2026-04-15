@@ -16,7 +16,6 @@ import pandas as pd
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-
 # ---------------------------------------------------------------------------
 # Metric presets — each list is exactly 6 entries so the 2-wide grid is full.
 # ---------------------------------------------------------------------------
@@ -31,7 +30,7 @@ REALTIME_METRICS = {
     ],
     "conversions": {
         "Invocations": 1,
-        "ModelLatency": 1e-6,       # microseconds → seconds
+        "ModelLatency": 1e-6,  # microseconds → seconds
         "OverheadLatency": 1e-6,
         "CPUUtilization": 1,
         "MemoryUtilization": 1,
@@ -47,7 +46,7 @@ SERVERLESS_METRICS = {
         "ModelLatency",
         "OverheadLatency",
         "ServerlessConcurrentExecutionsUtilization",
-        "ModelSetupTime",                  # cold-start — real concern for serverless
+        "ModelSetupTime",  # cold-start — real concern for serverless
         "Invocation5XXErrors",
     ],
     "conversions": {
@@ -227,12 +226,14 @@ class EndpointMetrics:
         # Metric math expressions — evaluated by CloudWatch server-side from the
         # m_* queries above. Label becomes the column name in the returned frame.
         for expr in self.expressions:
-            metric_data_queries.append({
-                "Id": expr["id"],
-                "Expression": expr["expression"],
-                "Label": expr["label"],
-                "ReturnData": True,
-            })
+            metric_data_queries.append(
+                {
+                    "Id": expr["id"],
+                    "Expression": expr["expression"],
+                    "Label": expr["label"],
+                    "ReturnData": True,
+                }
+            )
 
         return metric_data_queries
 
