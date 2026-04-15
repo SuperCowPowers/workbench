@@ -59,10 +59,10 @@ _DEFAULT_STEP_COOLDOWN = 60  # seconds between 0→1 step policy firings
 # Rapid scale-out step policy thresholds (async only). Fires within ~1-2 min of
 # backlog spiking — much faster than target-tracking's ~5-min alarm evaluation.
 # Target-tracking still runs in parallel for steady-state adjustment and scale-in.
-_RAPID_SCALE_OUT_THRESHOLD = 5.0       # backlog per instance
-_RAPID_SCALE_OUT_MINOR_STEP = 1        # backlog/instance in [5, 10) → add 1
-_RAPID_SCALE_OUT_MAJOR_STEP = 3        # backlog/instance in [10, ∞)  → add 3
-_RAPID_SCALE_OUT_COOLDOWN = 120        # don't re-fire within 2 min of acting
+_RAPID_SCALE_OUT_THRESHOLD = 5.0  # backlog per instance
+_RAPID_SCALE_OUT_MINOR_STEP = 1  # backlog/instance in [5, 10) → add 1
+_RAPID_SCALE_OUT_MAJOR_STEP = 3  # backlog/instance in [10, ∞)  → add 3
+_RAPID_SCALE_OUT_COOLDOWN = 120  # don't re-fire within 2 min of acting
 
 _SERVICE_NS = "sagemaker"
 _SCALABLE_DIM = "sagemaker:variant:DesiredInstanceCount"

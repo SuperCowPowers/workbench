@@ -97,9 +97,9 @@ def monitor_timeline(endpoint_name: str, boto3_session, minutes: int, worker=Non
         if worker is not None and not worker.is_alive():
             if not hasattr(monitor_timeline, "_finished_at"):
                 monitor_timeline._finished_at = time.time()
-                print(f"  [inference thread done — monitoring scale-in for 5 more minutes]")
+                print("  [inference thread done — monitoring scale-in for 5 more minutes]")
             elif time.time() - monitor_timeline._finished_at > 300:
-                print(f"  [scale-in window elapsed, exiting]")
+                print("  [scale-in window elapsed, exiting]")
                 return
 
         time.sleep(30)

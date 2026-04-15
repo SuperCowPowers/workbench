@@ -1237,6 +1237,7 @@ class EndpointCore(Artifact):
         # so it's safe to call whether or not registration ever succeeded.
         if getattr(endpoint, "async_inference_config", None) is not None:
             from workbench.utils.endpoint_autoscaling import deregister_autoscaling
+
             cls.log.info(f"Async endpoint detected — deregistering auto-scaling for {endpoint_name}...")
             deregister_autoscaling(cls.boto3_session, endpoint_name)
 
