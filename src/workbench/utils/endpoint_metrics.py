@@ -1,4 +1,14 @@
-"""EndpointMetrics is a utility class that fetches metrics for a SageMaker endpoint."""
+"""EndpointMetrics is a utility class that fetches metrics for a SageMaker endpoint.
+
+One preset per endpoint type:
+  * ``realtime``   — persistent instance-backed endpoints
+  * ``serverless`` — ServerlessConfig endpoints (pay-per-invoke, cold starts)
+  * ``async``      — AsyncInferenceConfig endpoints (queue-backed, scale-to-zero)
+
+Each preset picks a focused, six-metric set that fits a 2-wide × 3-tall subplot
+grid in the dashboard. Metrics specific to one endpoint type (e.g., serverless
+concurrency utilization, async backlog) live only in that type's preset.
+"""
 
 from datetime import datetime, timedelta, timezone
 import pandas as pd
@@ -6,68 +16,129 @@ import pandas as pd
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-# Metric presets for different endpoint types
+# ---------------------------------------------------------------------------
+# Metric presets — each list is exactly 6 entries so the 2-wide grid is full.
+# ---------------------------------------------------------------------------
 REALTIME_METRICS = {
     "metrics": [
         "Invocations",
-        "ServerlessConcurrentExecutionsUtilization",
         "ModelLatency",
         "OverheadLatency",
-        "ModelSetupTime",
+        "CPUUtilization",
+        "MemoryUtilization",
         "Invocation5XXErrors",
-        "Invocation4XXErrors",
     ],
     "conversions": {
         "Invocations": 1,
-        "ServerlessConcurrentExecutionsUtilization": 100,
+        "ModelLatency": 1e-6,  # microseconds → seconds
+        "OverheadLatency": 1e-6,
+        "CPUUtilization": 1,
+        "MemoryUtilization": 1,
+        "Invocation5XXErrors": 1,
+    },
+    "stats": ["Sum", "Maximum", "Maximum", "Average", "Average", "Sum"],
+    "expressions": [],
+}
+
+SERVERLESS_METRICS = {
+    "metrics": [
+        "Invocations",
+        "ModelLatency",
+        "OverheadLatency",
+        "ServerlessConcurrentExecutionsUtilization",
+        "ModelSetupTime",  # cold-start — real concern for serverless
+        "Invocation5XXErrors",
+    ],
+    "conversions": {
+        "Invocations": 1,
         "ModelLatency": 1e-6,
         "OverheadLatency": 1e-6,
+        "ServerlessConcurrentExecutionsUtilization": 100,  # fraction → percent
         "ModelSetupTime": 1e-6,
         "Invocation5XXErrors": 1,
-        "Invocation4XXErrors": 1,
     },
-    "stats": ["Sum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum"],
+    "stats": ["Sum", "Maximum", "Maximum", "Maximum", "Maximum", "Sum"],
+    "expressions": [],
 }
 
 ASYNC_METRICS = {
+    # Async endpoints publish a DIFFERENT metric set than realtime:
+    #   * No `Invocations` — use `InvocationsProcessed`
+    #   * No `Invocation5XXErrors` — use `InvocationFailures`
+    #   * No `OverheadLatency` — replaced conceptually by `TimeInBacklog`
+    #   * Backlog metrics are dimensioned by EndpointName ONLY (no VariantName)
     "metrics": [
-        "ModelLatency",
-        "CPUUtilization",
-        "MemoryUtilization",
         "ApproximateBacklogSize",
-        "Invocation5XXErrors",
-        "Invocation4XXErrors",
+        "ApproximateBacklogSizePerInstance",
+        "InvocationsProcessed",
+        "ModelLatency",
+        "InvocationFailures",
+        # 6th subplot is the derived InstanceCount (see "expressions" below).
     ],
     "conversions": {
-        "ModelLatency": 1e-6,
-        "CPUUtilization": 1,
-        "MemoryUtilization": 1,
         "ApproximateBacklogSize": 1,
-        "Invocation5XXErrors": 1,
-        "Invocation4XXErrors": 1,
+        "ApproximateBacklogSizePerInstance": 1,
+        "InvocationsProcessed": 1,
+        "ModelLatency": 1e-6,
+        "InvocationFailures": 1,
+        # Math expressions (see "expressions" below) pass through as-is.
+        "InstanceCount": 1,
     },
-    "stats": ["Maximum", "Average", "Average", "Maximum", "Maximum", "Maximum"],
+    "stats": ["Maximum", "Average", "Sum", "Maximum", "Sum"],
+    # Async backlog metrics are published with only the EndpointName dimension.
+    # Querying them with VariantName returns no datapoints.
+    "endpoint_only": {"ApproximateBacklogSize", "ApproximateBacklogSizePerInstance"},
+    # CloudWatch Metric Math expressions, evaluated alongside the raw metrics.
+    # `InstanceCount` is derived — SageMaker doesn't publish an instance-count
+    # metric natively, but backlog / backlog-per-instance gives us the divisor.
+    # Guarded against divide-by-zero when there's no backlog (reads 0, which
+    # matches the scale-to-zero idle state).
+    "expressions": [
+        {
+            # CloudWatch requires expression IDs to match ^[a-z][a-zA-Z0-9_]*$
+            # (lowercase first char). The Label becomes the DataFrame column name.
+            "id": "instance_count",
+            "expression": (
+                "IF(m_ApproximateBacklogSizePerInstance > 0, "
+                "m_ApproximateBacklogSize / m_ApproximateBacklogSizePerInstance, 0)"
+            ),
+            "label": "InstanceCount",
+        },
+    ],
+}
+
+_PRESETS = {
+    "realtime": REALTIME_METRICS,
+    "serverless": SERVERLESS_METRICS,
+    "async": ASYNC_METRICS,
 }
 
 
 class EndpointMetrics:
     def __init__(self, preset: str = "realtime"):
-        """EndpointMetrics Class
+        """EndpointMetrics Class.
 
         Args:
-            preset: ``"realtime"`` or ``"async"`` — selects the appropriate
-                CloudWatch metrics for the endpoint type.
+            preset: One of ``"realtime"``, ``"serverless"``, or ``"async"`` —
+                selects the appropriate CloudWatch metrics for the endpoint type.
         """
+        if preset not in _PRESETS:
+            raise ValueError(f"Unknown preset '{preset}'. Expected one of {list(_PRESETS)}")
+
         self.aws_account_clamp = AWSAccountClamp()
         self.boto3_session = self.aws_account_clamp.boto3_session
         self.cloudwatch = self.boto3_session.client("cloudwatch")
         self.start_time = None
         self.end_time = None
 
-        config = ASYNC_METRICS if preset == "async" else REALTIME_METRICS
+        config = _PRESETS[preset]
         self.metrics = config["metrics"]
         self.metric_conversions = config["conversions"]
         self.stats = config["stats"]
+        self.expressions = config.get("expressions", [])
+        # Metrics in this set are queried with only the EndpointName dimension
+        # (no VariantName). Async backlog metrics require this.
+        self.endpoint_only = config.get("endpoint_only", set())
 
     def get_metrics(self, endpoint: str, variant: str = "AllTraffic", days_back: int = 3) -> pd.DataFrame:
         """Get the metric data for a given endpoint.
@@ -146,16 +217,20 @@ class EndpointMetrics:
         metric_data_queries = []
 
         for metric_name, stat in zip(self.metrics, self.stats):
+            dims = [{"Name": "EndpointName", "Value": endpoint}]
+            if metric_name not in self.endpoint_only:
+                dims.append({"Name": "VariantName", "Value": variant})
             query = {
                 "Id": f"m_{metric_name}",
+                # Explicit Label — CloudWatch otherwise prefixes with the variant
+                # name (e.g., "AllTraffic InvocationsProcessed") which breaks the
+                # metric_conversions lookup downstream.
+                "Label": metric_name,
                 "MetricStat": {
                     "Metric": {
                         "Namespace": "AWS/SageMaker",
                         "MetricName": metric_name,
-                        "Dimensions": [
-                            {"Name": "EndpointName", "Value": endpoint},
-                            {"Name": "VariantName", "Value": variant},
-                        ],
+                        "Dimensions": dims,
                     },
                     "Period": period,
                     "Stat": stat,
@@ -163,6 +238,18 @@ class EndpointMetrics:
                 "ReturnData": True,
             }
             metric_data_queries.append(query)
+
+        # Metric math expressions — evaluated by CloudWatch server-side from the
+        # m_* queries above. Label becomes the column name in the returned frame.
+        for expr in self.expressions:
+            metric_data_queries.append(
+                {
+                    "Id": expr["id"],
+                    "Expression": expr["expression"],
+                    "Label": expr["label"],
+                    "ReturnData": True,
+                }
+            )
 
         return metric_data_queries
 

@@ -27,19 +27,11 @@ Created Artifacts:
         - smiles-to-3d-boltzmann-v1
 """
 
-import os
-
 # Workbench Imports
-from workbench.api import FeatureSet, Model, ModelType, ModelFramework, PublicData
+from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
-# Async endpoint on a realtime instance — no serverless option for async.
-# 8 vCPUs lets RDKit's numThreads=0 parallelize conformer embedding.
-DEFAULT_INSTANCE = "ml.c7i.2xlarge"
-
 if __name__ == "__main__":
-
-    instance = os.environ.get("INSTANCE", DEFAULT_INSTANCE)
 
     # Pull in the custom script path
     script_path = "model_scripts/rdkit_3d_boltzmann_model_script.py"
@@ -61,24 +53,41 @@ if __name__ == "__main__":
     # Grab our FeatureSet and create the Model
     feature_set = FeatureSet("feature_endpoint_fs")
     tags = ["smiles", "3d descriptors", "boltzmann", "conformer ensemble"]
-    RECREATE = True
-    if RECREATE:
-        model = feature_set.to_model(
-            name="smiles-to-3d-boltzmann-v1",
-            model_type=ModelType.TRANSFORMER,
-            model_framework=ModelFramework.TRANSFORMER,
-            feature_list=["smiles"],
-            description="SMILES to 3D Molecular Descriptors — Boltzmann ensemble (74 features)",
-            tags=tags,
-            custom_script=script_path,
-        )
-        model.set_owner("BW")
+    model = feature_set.to_model(
+        name="smiles-to-3d-boltzmann-v1",
+        model_type=ModelType.TRANSFORMER,
+        model_framework=ModelFramework.TRANSFORMER,
+        feature_list=["smiles"],
+        description="SMILES to 3D Molecular Descriptors — Boltzmann ensemble (74 features)",
+        tags=tags,
+        custom_script=script_path,
+    )
+    model.set_owner("BW")
 
-    # Deploy as async endpoint — batch_size=1 because each molecule can take minutes
-    model = Model("smiles-to-3d-boltzmann-v1")
-    end = model.to_endpoint(tags=tags, async_endpoint=True, instance=instance)
-    end.upsert_workbench_meta({"inference_batch_size": 50})
-    print(f"Async endpoint deployed: {end.name} on {instance}")
+    # Deploy as the default async endpoint. The framework picks a beefy CPU
+    # instance, batch size, concurrency, and polling timeout that work for the
+    # typical "long-running heavy compute" case. Defaults are usually fine, but
+    # here are the knobs you might want to tune and when:
+    #
+    #   to_endpoint() kwargs:
+    #     instance="ml.c7i.4xlarge"   — bigger instance if your model needs more
+    #                                   CPU/memory per worker (default ml.c7i.2xlarge)
+    #
+    #   model.upsert_workbench_meta({...})  — set BEFORE to_endpoint():
+    #     async_max_concurrent_per_instance=4   — bump up if your model is
+    #                                             IO-bound or lightweight per
+    #                                             invocation (default 1, good
+    #                                             for CPU-saturating work)
+    #
+    #   end.upsert_workbench_meta({...})  — set AFTER to_endpoint():
+    #     inference_batch_size=100     — rows per invocation (default 50).
+    #                                    Higher = better overhead amortization,
+    #                                    but a single chunk must finish inside
+    #                                    SageMaker's 1hr async invocation limit.
+    #     inference_max_in_flight=32   — client-side parallel submissions
+    #                                    (default 16). Higher = more backlog
+    #                                    pressure on autoscaling, more S3 load.
+    end = model.to_endpoint(tags=tags, async_endpoint=True)
 
     # Quick smoke test with a small batch
     end.inference(feature_set.pull_dataframe()[:5])

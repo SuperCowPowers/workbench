@@ -152,7 +152,7 @@ class EndpointCore(Artifact):
 
         # Deep checks (expensive CloudWatch metrics call)
         if deep:
-            # We're going to check for 5xx errors and no activity
+            # We're going to check for errors and no activity
             endpoint_metrics = self.endpoint_metrics()
 
             # Check if we have metrics
@@ -160,22 +160,31 @@ class EndpointCore(Artifact):
                 health_issues.append("unknown_error")
                 return health_issues
 
-            # Check for 5xx errors
-            num_errors = endpoint_metrics["Invocation5XXErrors"].sum()
-            if num_errors > 5:
-                health_issues.append("5xx_errors")
-            elif num_errors > 0:
-                health_issues.append("5xx_errors_min")
+            # Column names depend on endpoint type — async endpoints publish
+            # different metric names than realtime/serverless.
+            if self.is_async():
+                errors_col, invocations_col = "InvocationFailures", "InvocationsProcessed"
             else:
-                self.remove_health_tag("5xx_errors")
-                self.remove_health_tag("5xx_errors_min")
+                errors_col, invocations_col = "Invocation5XXErrors", "Invocations"
+
+            # Check for server errors
+            if errors_col in endpoint_metrics.columns:
+                num_errors = endpoint_metrics[errors_col].sum()
+                if num_errors > 5:
+                    health_issues.append("5xx_errors")
+                elif num_errors > 0:
+                    health_issues.append("5xx_errors_min")
+                else:
+                    self.remove_health_tag("5xx_errors")
+                    self.remove_health_tag("5xx_errors_min")
 
             # Check for Endpoint activity
-            num_invocations = endpoint_metrics["Invocations"].sum()
-            if num_invocations == 0:
-                health_issues.append("no_activity")
-            else:
-                self.remove_health_tag("no_activity")
+            if invocations_col in endpoint_metrics.columns:
+                num_invocations = endpoint_metrics[invocations_col].sum()
+                if num_invocations == 0:
+                    health_issues.append("no_activity")
+                else:
+                    self.remove_health_tag("no_activity")
 
         return health_issues
 
@@ -186,6 +195,14 @@ class EndpointCore(Artifact):
             bool: True if the endpoint is serverless, False otherwise.
         """
         return "Serverless" in self.endpoint_meta["InstanceType"]
+
+    def is_async(self) -> bool:
+        """Check if the current endpoint is an async inference endpoint.
+
+        Returns:
+            bool: True if the endpoint has an AsyncInferenceConfig, False otherwise.
+        """
+        return "AsyncInferenceConfig" in (self.endpoint_meta or {})
 
     def data_capture(self):
         """Get the MonitorCore class for this endpoint"""
@@ -252,16 +269,27 @@ class EndpointCore(Artifact):
         return self.endpoint_meta["InstanceType"]
 
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
-        """Return the metrics for this endpoint
+        """Return the metrics for this endpoint.
+
+        Picks the metric preset based on endpoint type:
+          * async endpoints → backlog + instance count metrics
+          * serverless endpoints → concurrency utilization + cold-start metrics
+          * realtime endpoints → CPU/memory + latency metrics
 
         Returns:
             pd.DataFrame: DataFrame with the metrics for this endpoint (or None if no metrics)
         """
         if "ProductionVariants" not in self.endpoint_meta:
             return None
-        self.log.important("Updating endpoint metrics...")
+        if self.is_async():
+            preset = "async"
+        elif self.is_serverless():
+            preset = "serverless"
+        else:
+            preset = "realtime"
+        self.log.important(f"Updating endpoint metrics (preset={preset})...")
         variant = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
-        return EndpointMetrics().get_metrics(self.name, variant=variant)
+        return EndpointMetrics(preset=preset).get_metrics(self.name, variant=variant)
 
     def details(self) -> dict:
         """Additional Details about this Endpoint
@@ -1202,6 +1230,16 @@ class EndpointCore(Artifact):
                 cls.log.info(f"Endpoint {endpoint_name} not found!")
                 return
             raise  # Re-raise unexpected errors
+
+        # Async endpoints carry auto-scaling policies + alarms that AWS won't
+        # clean up for us — deregister them first so we don't orphan stale
+        # scalable targets on redeploy. deregister_autoscaling is idempotent,
+        # so it's safe to call whether or not registration ever succeeded.
+        if getattr(endpoint, "async_inference_config", None) is not None:
+            from workbench.utils.endpoint_autoscaling import deregister_autoscaling
+
+            cls.log.info(f"Async endpoint detected — deregistering auto-scaling for {endpoint_name}...")
+            deregister_autoscaling(cls.boto3_session, endpoint_name)
 
         # Delete underlying models (Endpoints store/use models internally)
         cls.delete_endpoint_models(endpoint_name)
