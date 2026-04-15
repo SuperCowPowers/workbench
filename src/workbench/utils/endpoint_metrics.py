@@ -62,25 +62,32 @@ SERVERLESS_METRICS = {
 }
 
 ASYNC_METRICS = {
+    # Async endpoints publish a DIFFERENT metric set than realtime:
+    #   * No `Invocations` — use `InvocationsProcessed`
+    #   * No `Invocation5XXErrors` — use `InvocationFailures`
+    #   * No `OverheadLatency` — replaced conceptually by `TimeInBacklog`
+    #   * Backlog metrics are dimensioned by EndpointName ONLY (no VariantName)
     "metrics": [
         "ApproximateBacklogSize",
         "ApproximateBacklogSizePerInstance",
-        "Invocations",
+        "InvocationsProcessed",
         "ModelLatency",
-        "Invocation5XXErrors",
-        # InstanceCount is derived via metric math (see "expressions" below).
-        # We list 5 raw metrics here so the 6th subplot is the derived one.
+        "InvocationFailures",
+        # 6th subplot is the derived InstanceCount (see "expressions" below).
     ],
     "conversions": {
         "ApproximateBacklogSize": 1,
         "ApproximateBacklogSizePerInstance": 1,
-        "Invocations": 1,
+        "InvocationsProcessed": 1,
         "ModelLatency": 1e-6,
-        "Invocation5XXErrors": 1,
+        "InvocationFailures": 1,
         # Math expressions (see "expressions" below) pass through as-is.
         "InstanceCount": 1,
     },
     "stats": ["Maximum", "Average", "Sum", "Maximum", "Sum"],
+    # Async backlog metrics are published with only the EndpointName dimension.
+    # Querying them with VariantName returns no datapoints.
+    "endpoint_only": {"ApproximateBacklogSize", "ApproximateBacklogSizePerInstance"},
     # CloudWatch Metric Math expressions, evaluated alongside the raw metrics.
     # `InstanceCount` is derived — SageMaker doesn't publish an instance-count
     # metric natively, but backlog / backlog-per-instance gives us the divisor.
@@ -88,7 +95,9 @@ ASYNC_METRICS = {
     # matches the scale-to-zero idle state).
     "expressions": [
         {
-            "id": "InstanceCount",
+            # CloudWatch requires expression IDs to match ^[a-z][a-zA-Z0-9_]*$
+            # (lowercase first char). The Label becomes the DataFrame column name.
+            "id": "instance_count",
             "expression": (
                 "IF(m_ApproximateBacklogSizePerInstance > 0, "
                 "m_ApproximateBacklogSize / m_ApproximateBacklogSizePerInstance, 0)"
@@ -127,6 +136,9 @@ class EndpointMetrics:
         self.metric_conversions = config["conversions"]
         self.stats = config["stats"]
         self.expressions = config.get("expressions", [])
+        # Metrics in this set are queried with only the EndpointName dimension
+        # (no VariantName). Async backlog metrics require this.
+        self.endpoint_only = config.get("endpoint_only", set())
 
     def get_metrics(self, endpoint: str, variant: str = "AllTraffic", days_back: int = 3) -> pd.DataFrame:
         """Get the metric data for a given endpoint.
@@ -205,16 +217,20 @@ class EndpointMetrics:
         metric_data_queries = []
 
         for metric_name, stat in zip(self.metrics, self.stats):
+            dims = [{"Name": "EndpointName", "Value": endpoint}]
+            if metric_name not in self.endpoint_only:
+                dims.append({"Name": "VariantName", "Value": variant})
             query = {
                 "Id": f"m_{metric_name}",
+                # Explicit Label — CloudWatch otherwise prefixes with the variant
+                # name (e.g., "AllTraffic InvocationsProcessed") which breaks the
+                # metric_conversions lookup downstream.
+                "Label": metric_name,
                 "MetricStat": {
                     "Metric": {
                         "Namespace": "AWS/SageMaker",
                         "MetricName": metric_name,
-                        "Dimensions": [
-                            {"Name": "EndpointName", "Value": endpoint},
-                            {"Name": "VariantName", "Value": variant},
-                        ],
+                        "Dimensions": dims,
                     },
                     "Period": period,
                     "Stat": stat,
