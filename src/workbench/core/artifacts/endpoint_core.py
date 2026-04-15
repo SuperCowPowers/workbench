@@ -1222,6 +1222,15 @@ class EndpointCore(Artifact):
                 return
             raise  # Re-raise unexpected errors
 
+        # Async endpoints carry auto-scaling policies + alarms that AWS won't
+        # clean up for us — deregister them first so we don't orphan stale
+        # scalable targets on redeploy. deregister_autoscaling is idempotent,
+        # so it's safe to call whether or not registration ever succeeded.
+        if getattr(endpoint, "async_inference_config", None) is not None:
+            from workbench.utils.endpoint_autoscaling import deregister_autoscaling
+            cls.log.info(f"Async endpoint detected — deregistering auto-scaling for {endpoint_name}...")
+            deregister_autoscaling(cls.boto3_session, endpoint_name)
+
         # Delete underlying models (Endpoints store/use models internally)
         cls.delete_endpoint_models(endpoint_name)
 

@@ -36,12 +36,21 @@ _INVOCATIONS_PER_INSTANCE = {
 }
 
 # Default tuning — callers can override via kwargs (typically pulled from workbench_meta).
-_DEFAULT_MAX_CAPACITY = 4
+# max_capacity=8 gives headroom for bursty async batches; scale-to-zero keeps idle cost at 0.
+_DEFAULT_MAX_CAPACITY = 8
 _DEFAULT_ASYNC_TARGET = 2.0  # backlog per instance
 _DEFAULT_REALTIME_TARGET = 750.0  # invocations per instance
 _DEFAULT_SCALE_IN_COOLDOWN = 300
 _DEFAULT_SCALE_OUT_COOLDOWN = 60
 _DEFAULT_STEP_COOLDOWN = 60  # seconds between 0→1 step policy firings
+
+# Rapid scale-out step policy thresholds (async only). Fires within ~1-2 min of
+# backlog spiking — much faster than target-tracking's ~5-min alarm evaluation.
+# Target-tracking still runs in parallel for steady-state adjustment and scale-in.
+_RAPID_SCALE_OUT_THRESHOLD = 5.0       # backlog per instance
+_RAPID_SCALE_OUT_MINOR_STEP = 1        # backlog/instance in [5, 10) → add 1
+_RAPID_SCALE_OUT_MAJOR_STEP = 3        # backlog/instance in [10, ∞)  → add 3
+_RAPID_SCALE_OUT_COOLDOWN = 120        # don't re-fire within 2 min of acting
 
 _SERVICE_NS = "sagemaker"
 _SCALABLE_DIM = "sagemaker:variant:DesiredInstanceCount"
@@ -95,7 +104,10 @@ def register_autoscaling(
         )
 
         if is_async:
-            # 1→N (and N→0) via target tracking on backlog per instance
+            cw = boto3_session.client("cloudwatch")
+
+            # 1→N (and N→0) via target tracking on backlog per instance.
+            # Good for steady-state and scale-in; conservative on scale-out.
             _put_target_tracking(
                 aas,
                 endpoint_name,
@@ -107,8 +119,11 @@ def register_autoscaling(
                 policy_suffix="backlog-target",
             )
             # 0→1 via step scaling on the binary HasBacklogWithoutCapacity metric.
-            cw = boto3_session.client("cloudwatch")
             _put_step_scaling_zero_to_one(aas, cw, endpoint_name, resource_id)
+            # Rapid 1→N scale-out via step scaling on per-instance backlog.
+            # Fires in ~1 min (vs target-tracking's ~5 min) so big batches get
+            # instances in parallel quickly instead of crawling on 1 instance.
+            _put_step_scaling_rapid_scale_out(aas, cw, endpoint_name, resource_id)
         else:
             _put_target_tracking(
                 aas,
@@ -193,6 +208,23 @@ def deregister_autoscaling(boto3_session, endpoint_name: str, raise_on_error: bo
         log.info(f"No scalable target found for '{endpoint_name}' — nothing to deregister")
     except Exception:
         log.exception(f"Failed to deregister scalable target for '{endpoint_name}'")
+        if raise_on_error:
+            raise
+
+    # Clean up manually-created CloudWatch alarms. Target-tracking auto-removes
+    # its own alarms on policy deletion, but step-scaling alarms are ones we
+    # put_metric_alarm'd ourselves and must delete ourselves.
+    cw = boto3_session.client("cloudwatch")
+    step_alarm_names = [
+        f"TargetTracking-endpoint/{endpoint_name}/variant/AllTraffic-has-backlog",
+        f"TargetTracking-endpoint/{endpoint_name}/variant/AllTraffic-rapid-scale-out",
+    ]
+    try:
+        cw.delete_alarms(AlarmNames=step_alarm_names)
+    except Exception:
+        # DeleteAlarms is idempotent — missing alarms are silently ignored by AWS —
+        # so a failure here is a real error (e.g., permissions).
+        log.exception(f"Failed to delete step-scaling alarms for '{endpoint_name}'")
         if raise_on_error:
             raise
 
@@ -289,6 +321,66 @@ def _put_step_scaling_zero_to_one(aas, cw, endpoint_name: str, resource_id: str)
         Threshold=1.0,
         ComparisonOperator="GreaterThanOrEqualToThreshold",
         TreatMissingData="missing",
+        AlarmActions=[policy_arn],
+    )
+
+
+def _put_step_scaling_rapid_scale_out(aas, cw, endpoint_name: str, resource_id: str) -> None:
+    """Register a StepScaling policy for aggressive 1→N scale-out.
+
+    Fires on ``ApproximateBacklogSizePerInstance`` with a 1-minute evaluation
+    period (vs target-tracking's 3-min), so big async batches don't sit on
+    one instance waiting for target-tracking to deliberate. Step ladder:
+
+        backlog_per_instance in [threshold, threshold+5)   → add MINOR_STEP
+        backlog_per_instance in [threshold+5, ∞)           → add MAJOR_STEP
+
+    Target-tracking still runs in parallel — it handles steady-state fine-tuning
+    and scale-in. This policy's job is just to get off 1 instance *fast* when
+    there's a real pile-up.
+    """
+    policy_name = f"{endpoint_name}-rapid-scale-out"
+    pol_resp = aas.put_scaling_policy(
+        PolicyName=policy_name,
+        ServiceNamespace=_SERVICE_NS,
+        ResourceId=resource_id,
+        ScalableDimension=_SCALABLE_DIM,
+        PolicyType="StepScaling",
+        StepScalingPolicyConfiguration={
+            "AdjustmentType": "ChangeInCapacity",
+            "Cooldown": _RAPID_SCALE_OUT_COOLDOWN,
+            "MetricAggregationType": "Average",
+            # MetricIntervalLowerBound/UpperBound are offsets from the alarm's
+            # Threshold (= _RAPID_SCALE_OUT_THRESHOLD), so:
+            #   [0, 5)  means [threshold, threshold+5)
+            #   [5, ∞)  means [threshold+5, ∞)
+            "StepAdjustments": [
+                {
+                    "MetricIntervalLowerBound": 0,
+                    "MetricIntervalUpperBound": 5,
+                    "ScalingAdjustment": _RAPID_SCALE_OUT_MINOR_STEP,
+                },
+                {
+                    "MetricIntervalLowerBound": 5,
+                    "ScalingAdjustment": _RAPID_SCALE_OUT_MAJOR_STEP,
+                },
+            ],
+        },
+    )
+    policy_arn = pol_resp["PolicyARN"]
+
+    cw.put_metric_alarm(
+        AlarmName=f"TargetTracking-endpoint/{endpoint_name}/variant/AllTraffic-rapid-scale-out",
+        MetricName=_BACKLOG_PER_INSTANCE["MetricName"],
+        Namespace=_BACKLOG_PER_INSTANCE["Namespace"],
+        Statistic=_BACKLOG_PER_INSTANCE["Statistic"],
+        Dimensions=[{"Name": "EndpointName", "Value": endpoint_name}],
+        Period=60,
+        EvaluationPeriods=1,
+        DatapointsToAlarm=1,
+        Threshold=_RAPID_SCALE_OUT_THRESHOLD,
+        ComparisonOperator="GreaterThanOrEqualToThreshold",
+        TreatMissingData="notBreaching",
         AlarmActions=[policy_arn],
     )
 

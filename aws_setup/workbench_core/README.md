@@ -33,12 +33,13 @@ command.
 ## Async Endpoint Auto-Scaling
 
 Async SageMaker endpoints deployed via `ModelToEndpoint(..., async_endpoint=True)`
-are registered with two Application Auto Scaling policies:
+are registered with three Application Auto Scaling policies:
 
 | Policy | Metric | Transition | Why |
 | --- | --- | --- | --- |
-| **StepScaling** | `HasBacklogWithoutCapacity` (binary 0/1) | 0 → 1 instance | Target-tracking cannot scale from zero — `ApproximateBacklogSizePerInstance` is undefined when instance count is 0 (divide-by-zero). |
-| **TargetTracking** | `ApproximateBacklogSizePerInstance` (target 2.0) | 1 → N, N → 0 | Drives steady-state scaling once at least one instance exists. |
+| **StepScaling** (0→1) | `HasBacklogWithoutCapacity` (binary 0/1) | 0 → 1 instance | Target-tracking cannot scale from zero — `ApproximateBacklogSizePerInstance` is undefined when instance count is 0 (divide-by-zero). |
+| **StepScaling** (rapid) | `ApproximateBacklogSizePerInstance` ≥ 5 | 1 → N fast | Target-tracking takes ~5 min to deliberate on scale-out. This step policy fires in ~1 min so big batches don't stall on one instance. Ladder: [5, 10) adds 1 instance, [10, ∞) adds 3. |
+| **TargetTracking** | `ApproximateBacklogSizePerInstance` (target 2.0) | 1 ↔ N, N → 0 | Steady-state fine-tuning and scale-in (conservative — 15 min of low backlog before scale-down). |
 
 Registration happens in [`register_autoscaling()`](../../src/workbench/utils/endpoint_autoscaling.py)
 after the endpoint reaches `InService`.
@@ -66,13 +67,13 @@ If an async endpoint isn't scaling out:
        --service-namespace sagemaker \
        --resource-id endpoint/<name>/variant/AllTraffic
    ```
-   Expect to see *two* policies (step + target) for scale-to-zero endpoints.
+   Expect to see *three* policies (2× step + 1× target) for scale-to-zero endpoints.
 3. **Is the step-scaling alarm wired?**
    ```
    aws cloudwatch describe-alarms \
        --alarm-name-prefix TargetTracking-endpoint/<name>/variant/AllTraffic
    ```
-   Expect one `-has-backlog` alarm (for 0→1) plus auto-created target-tracking alarms.
+   Expect one `-has-backlog` alarm (for 0→1), one `-rapid-scale-out` alarm (for rapid 1→N), plus auto-created target-tracking alarms.
 4. **Tuning** — override per-model via `workbench_meta`:
    - `async_max_concurrent_per_instance` (default 2) — SageMaker `MaxConcurrentInvocationsPerInstance`.
    - `inference_max_in_flight` (default 16) — client-side parallel submissions.
