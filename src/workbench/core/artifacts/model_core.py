@@ -57,7 +57,7 @@ class ModelImages:
     """Class for retrieving workbench inference images"""
 
     # Account ID
-    ACCOUNT_ID = "507740646243"
+    ECR_PUBLIC_ACCOUNT_ID = "507740646243"
 
     # Image name mappings
     IMAGE_NAMES = {
@@ -85,7 +85,7 @@ class ModelImages:
             raise ValueError(f"Unknown image_type: {image_type}. Valid types: {list(cls.IMAGE_NAMES.keys())}")
 
         image_name = cls.IMAGE_NAMES[image_type]
-        uri = f"{cls.ACCOUNT_ID}.dkr.ecr.{region}.amazonaws.com/aws-ml-images/{image_name}:{version}"
+        uri = f"{cls.ECR_PUBLIC_ACCOUNT_ID}.dkr.ecr.{region}.amazonaws.com/aws-ml-images/{image_name}:{version}"
 
         return uri
 
