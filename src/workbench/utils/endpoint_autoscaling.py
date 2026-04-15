@@ -52,7 +52,7 @@ _INVOCATIONS_PER_INSTANCE = {
 _DEFAULT_MAX_CAPACITY = 8
 _DEFAULT_ASYNC_TARGET = 2.0  # backlog per instance
 _DEFAULT_REALTIME_TARGET = 750.0  # invocations per instance
-_DEFAULT_SCALE_IN_COOLDOWN = 300
+_DEFAULT_SCALE_IN_COOLDOWN = 900  # 15 min — conservative to avoid mid-burst scale-in wobble
 _DEFAULT_SCALE_OUT_COOLDOWN = 60
 _DEFAULT_STEP_COOLDOWN = 60  # seconds between 0→1 step policy firings
 
@@ -61,7 +61,9 @@ _DEFAULT_STEP_COOLDOWN = 60  # seconds between 0→1 step policy firings
 # Target-tracking still runs in parallel for steady-state adjustment and scale-in.
 _RAPID_SCALE_OUT_THRESHOLD = 5.0  # backlog per instance
 _RAPID_SCALE_OUT_MINOR_STEP = 1  # backlog/instance in [5, 10) → add 1
-_RAPID_SCALE_OUT_MAJOR_STEP = 3  # backlog/instance in [10, ∞)  → add 3
+# Clear "this is a real batch job" signal → go straight to max_capacity-1.
+# Self-limits on small jobs (per_inst < 5 never triggers this alarm at all).
+_RAPID_SCALE_OUT_MAJOR_STEP = 7  # backlog/instance in [10, ∞)  → add 7
 _RAPID_SCALE_OUT_COOLDOWN = 120  # don't re-fire within 2 min of acting
 
 _SERVICE_NS = "sagemaker"
