@@ -152,7 +152,7 @@ class EndpointCore(Artifact):
 
         # Deep checks (expensive CloudWatch metrics call)
         if deep:
-            # We're going to check for 5xx errors and no activity
+            # We're going to check for errors and no activity
             endpoint_metrics = self.endpoint_metrics()
 
             # Check if we have metrics
@@ -160,22 +160,31 @@ class EndpointCore(Artifact):
                 health_issues.append("unknown_error")
                 return health_issues
 
-            # Check for 5xx errors
-            num_errors = endpoint_metrics["Invocation5XXErrors"].sum()
-            if num_errors > 5:
-                health_issues.append("5xx_errors")
-            elif num_errors > 0:
-                health_issues.append("5xx_errors_min")
+            # Column names depend on endpoint type — async endpoints publish
+            # different metric names than realtime/serverless.
+            if self.is_async():
+                errors_col, invocations_col = "InvocationFailures", "InvocationsProcessed"
             else:
-                self.remove_health_tag("5xx_errors")
-                self.remove_health_tag("5xx_errors_min")
+                errors_col, invocations_col = "Invocation5XXErrors", "Invocations"
+
+            # Check for server errors
+            if errors_col in endpoint_metrics.columns:
+                num_errors = endpoint_metrics[errors_col].sum()
+                if num_errors > 5:
+                    health_issues.append("5xx_errors")
+                elif num_errors > 0:
+                    health_issues.append("5xx_errors_min")
+                else:
+                    self.remove_health_tag("5xx_errors")
+                    self.remove_health_tag("5xx_errors_min")
 
             # Check for Endpoint activity
-            num_invocations = endpoint_metrics["Invocations"].sum()
-            if num_invocations == 0:
-                health_issues.append("no_activity")
-            else:
-                self.remove_health_tag("no_activity")
+            if invocations_col in endpoint_metrics.columns:
+                num_invocations = endpoint_metrics[invocations_col].sum()
+                if num_invocations == 0:
+                    health_issues.append("no_activity")
+                else:
+                    self.remove_health_tag("no_activity")
 
         return health_issues
 

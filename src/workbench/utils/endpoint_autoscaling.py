@@ -1,16 +1,28 @@
 """Auto-scaling utilities for SageMaker endpoints (async and realtime).
 
-Async scale-to-zero requires TWO scaling policies because
-``ApproximateBacklogSizePerInstance`` is undefined when the instance
-count is 0 (divide-by-zero), so target-tracking alone cannot make the
-0 → 1 transition:
+Async endpoints use THREE policies because each covers a transition the others
+structurally can't:
 
-    StepScaling    on HasBacklogWithoutCapacity            → 0 → 1
-    TargetTracking on ApproximateBacklogSizePerInstance    → 1 → N
-    (target-tracking also handles N → 0 scale-in)
+    StepScaling    on HasBacklogWithoutCapacity            → 0 → 1  (fast)
+    StepScaling    on ApproximateBacklogSizePerInstance≥5  → 1 → N  (fast)
+    TargetTracking on ApproximateBacklogSizePerInstance    → scale-in + fine-tune
 
-Realtime endpoints use a single target-tracking policy on
-``InvocationsPerInstance``.
+The first step policy is required because target-tracking on per-instance
+metrics hits divide-by-zero at 0 instances. The second exists because
+target-tracking's 3-min alarm evaluation + internal deliberation made real
+scale-out take ~25 min for bursty batch loads — the step policy fires in ~1 min.
+
+Realtime endpoints use a single target-tracking policy on ``InvocationsPerInstance``.
+
+FUTURE NOTE: target-tracking here creates CloudWatch alarms with unreadable
+UUID-suffixed names (``...-AlarmHigh-<uuid>``, ``...-AlarmLow-<uuid>``). If
+those names become a real problem — e.g., the dashboard/alerting surfaces them
+and users get confused — we can swap target-tracking for a third step policy
+(scale-down on ``per_instance < 0.5 for 15min``). Same 3-policy count, all
+human-named alarms, consistent mental model. Tradeoff: we write the scale-in
+logic ourselves and lose AWS's built-in smoothing for bursty loads. Not worth
+doing today for pure "big batch, single call" workloads, but reconsider if the
+endpoint ever sees mixed/variable traffic patterns.
 """
 
 import logging
