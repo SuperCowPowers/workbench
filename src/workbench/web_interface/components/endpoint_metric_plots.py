@@ -57,19 +57,20 @@ class EndpointMetricPlots(ComponentInterface):
         subplot_pos_lookup = subplot_positions(metrics_df)
         num_rows = math.ceil(len(metrics_df.columns) / 2)
 
-        # Create the figure with subplots for each metric
-        fig = make_subplots(rows=num_rows, cols=2, subplot_titles=metrics_df.columns, vertical_spacing=0.12)
+        # Create the figure with subplots for each metric. `vertical_spacing`
+        # leaves room for the next row's title between plots.
+        fig = make_subplots(rows=num_rows, cols=2, subplot_titles=metrics_df.columns, vertical_spacing=0.18)
         for metric in metrics_df.columns:
             row, col = subplot_pos_lookup[metric]
             fig.add_trace(go.Scatter(x=metrics_df.index, y=metrics_df[metric], fill="toself"), row=row, col=col)
 
-        # Update the figure layout
-        fig.update_xaxes(tickfont_size=10)
-        fig.update_yaxes(rangemode="tozero", tickfont_size=10)
+        # Balanced layout: modest outer margins + ~170px per row keeps each
+        # subplot compact without crowding.
+        fig.update_yaxes(rangemode="tozero")
         fig.update_layout(
             showlegend=False,
-            margin={"t": 30, "b": 20, "r": 10, "l": 30},
-            height=500,
+            margin=dict(t=40, b=40, r=30, l=50),
+            height=170 * num_rows,
         )
 
         # Return the figure
