@@ -65,8 +65,12 @@ def _describe_capacity(sm, endpoint_name: str) -> int:
         return -1
 
 
-def monitor_timeline(endpoint_name: str, boto3_session, minutes: int) -> None:
-    """Poll every 30s for ``minutes`` and print a timeline."""
+def monitor_timeline(endpoint_name: str, boto3_session, minutes: int, worker=None) -> None:
+    """Poll every 30s for ``minutes`` and print a timeline.
+
+    Exits early when ``worker`` (the inference thread) finishes, so the monitor
+    tracks the full load cycle but doesn't hang past it.
+    """
     cw = boto3_session.client("cloudwatch")
     sm = boto3_session.client("sagemaker")
 
@@ -87,6 +91,17 @@ def monitor_timeline(endpoint_name: str, boto3_session, minutes: int) -> None:
         hb = "--" if has_backlog is None else f"{has_backlog:.0f}"
         bp = "--" if per_instance is None else f"{per_instance:.1f}"
         print(f"{t_rel:>5d}s  {instances:>9d}  {hb:>11s}  {bp:>21s}")
+
+        # Once inference completes, keep monitoring a short while to capture
+        # the scale-in, then exit instead of waiting out the full deadline.
+        if worker is not None and not worker.is_alive():
+            if not hasattr(monitor_timeline, "_finished_at"):
+                monitor_timeline._finished_at = time.time()
+                print(f"  [inference thread done — monitoring scale-in for 5 more minutes]")
+            elif time.time() - monitor_timeline._finished_at > 300:
+                print(f"  [scale-in window elapsed, exiting]")
+                return
+
         time.sleep(30)
 
 
@@ -99,7 +114,12 @@ def main():
         default=32,
         help="Number of chunks to submit (default 32). " "Total SMILES = chunks × endpoint's inference_batch_size.",
     )
-    parser.add_argument("--minutes", type=int, default=15, help="How long to monitor (default 15 min)")
+    parser.add_argument(
+        "--minutes",
+        type=int,
+        default=60,
+        help="Max time to monitor (default 60 min). Monitor exits early when inference finishes.",
+    )
     args = parser.parse_args()
 
     endpoint = AsyncEndpoint(args.endpoint_name)
@@ -140,7 +160,7 @@ def main():
     bg.start()
 
     try:
-        monitor_timeline(args.endpoint_name, endpoint.boto3_session, args.minutes)
+        monitor_timeline(args.endpoint_name, endpoint.boto3_session, args.minutes, worker=bg)
     except KeyboardInterrupt:
         print("\nInterrupted.")
     finally:
