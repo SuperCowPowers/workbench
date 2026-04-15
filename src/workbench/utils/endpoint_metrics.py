@@ -1,4 +1,14 @@
-"""EndpointMetrics is a utility class that fetches metrics for a SageMaker endpoint."""
+"""EndpointMetrics is a utility class that fetches metrics for a SageMaker endpoint.
+
+One preset per endpoint type:
+  * ``realtime``   — persistent instance-backed endpoints
+  * ``serverless`` — ServerlessConfig endpoints (pay-per-invoke, cold starts)
+  * ``async``      — AsyncInferenceConfig endpoints (queue-backed, scale-to-zero)
+
+Each preset picks a focused, six-metric set that fits a 2-wide × 3-tall subplot
+grid in the dashboard. Metrics specific to one endpoint type (e.g., serverless
+concurrency utilization, async backlog) live only in that type's preset.
+"""
 
 from datetime import datetime, timedelta, timezone
 import pandas as pd
@@ -6,27 +16,49 @@ import pandas as pd
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-# Metric presets for different endpoint types
+
+# ---------------------------------------------------------------------------
+# Metric presets — each list is exactly 6 entries so the 2-wide grid is full.
+# ---------------------------------------------------------------------------
 REALTIME_METRICS = {
     "metrics": [
         "Invocations",
-        "ServerlessConcurrentExecutionsUtilization",
         "ModelLatency",
         "OverheadLatency",
-        "ModelSetupTime",
+        "CPUUtilization",
+        "MemoryUtilization",
         "Invocation5XXErrors",
-        "Invocation4XXErrors",
     ],
     "conversions": {
         "Invocations": 1,
-        "ServerlessConcurrentExecutionsUtilization": 100,
+        "ModelLatency": 1e-6,       # microseconds → seconds
+        "OverheadLatency": 1e-6,
+        "CPUUtilization": 1,
+        "MemoryUtilization": 1,
+        "Invocation5XXErrors": 1,
+    },
+    "stats": ["Sum", "Maximum", "Maximum", "Average", "Average", "Sum"],
+    "expressions": [],
+}
+
+SERVERLESS_METRICS = {
+    "metrics": [
+        "Invocations",
+        "ModelLatency",
+        "OverheadLatency",
+        "ServerlessConcurrentExecutionsUtilization",
+        "ModelSetupTime",                  # cold-start — real concern for serverless
+        "Invocation5XXErrors",
+    ],
+    "conversions": {
+        "Invocations": 1,
         "ModelLatency": 1e-6,
         "OverheadLatency": 1e-6,
+        "ServerlessConcurrentExecutionsUtilization": 100,  # fraction → percent
         "ModelSetupTime": 1e-6,
         "Invocation5XXErrors": 1,
-        "Invocation4XXErrors": 1,
     },
-    "stats": ["Sum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum"],
+    "stats": ["Sum", "Maximum", "Maximum", "Maximum", "Maximum", "Sum"],
     "expressions": [],
 }
 
@@ -34,46 +66,27 @@ ASYNC_METRICS = {
     "metrics": [
         "ApproximateBacklogSize",
         "ApproximateBacklogSizePerInstance",
-        "HasBacklogWithoutCapacity",
         "Invocations",
         "ModelLatency",
-        "OverheadLatency",
-        "CPUUtilization",
-        "MemoryUtilization",
-        "Invocation4XXErrors",
         "Invocation5XXErrors",
+        # InstanceCount is derived via metric math (see "expressions" below).
+        # We list 5 raw metrics here so the 6th subplot is the derived one.
     ],
     "conversions": {
         "ApproximateBacklogSize": 1,
         "ApproximateBacklogSizePerInstance": 1,
-        "HasBacklogWithoutCapacity": 1,
         "Invocations": 1,
         "ModelLatency": 1e-6,
-        "OverheadLatency": 1e-6,
-        "CPUUtilization": 1,
-        "MemoryUtilization": 1,
-        "Invocation4XXErrors": 1,
         "Invocation5XXErrors": 1,
         # Math expressions (see "expressions" below) pass through as-is.
         "InstanceCount": 1,
     },
-    "stats": [
-        "Maximum",   # ApproximateBacklogSize
-        "Average",   # ApproximateBacklogSizePerInstance
-        "Maximum",   # HasBacklogWithoutCapacity
-        "Sum",       # Invocations
-        "Maximum",   # ModelLatency
-        "Maximum",   # OverheadLatency
-        "Average",   # CPUUtilization
-        "Average",   # MemoryUtilization
-        "Sum",       # Invocation4XXErrors
-        "Sum",       # Invocation5XXErrors
-    ],
-    # CloudWatch Metric Math expressions, evaluated alongside the raw metrics above.
-    # `InstanceCount` is derived — SageMaker doesn't publish an instance-count metric
-    # natively, but backlog / backlog-per-instance gives us the divisor. Guarded
-    # against divide-by-zero when there's no backlog (reads 0, which matches the
-    # scale-to-zero idle state).
+    "stats": ["Maximum", "Average", "Sum", "Maximum", "Sum"],
+    # CloudWatch Metric Math expressions, evaluated alongside the raw metrics.
+    # `InstanceCount` is derived — SageMaker doesn't publish an instance-count
+    # metric natively, but backlog / backlog-per-instance gives us the divisor.
+    # Guarded against divide-by-zero when there's no backlog (reads 0, which
+    # matches the scale-to-zero idle state).
     "expressions": [
         {
             "id": "InstanceCount",
@@ -86,22 +99,31 @@ ASYNC_METRICS = {
     ],
 }
 
+_PRESETS = {
+    "realtime": REALTIME_METRICS,
+    "serverless": SERVERLESS_METRICS,
+    "async": ASYNC_METRICS,
+}
+
 
 class EndpointMetrics:
     def __init__(self, preset: str = "realtime"):
-        """EndpointMetrics Class
+        """EndpointMetrics Class.
 
         Args:
-            preset: ``"realtime"`` or ``"async"`` — selects the appropriate
-                CloudWatch metrics for the endpoint type.
+            preset: One of ``"realtime"``, ``"serverless"``, or ``"async"`` —
+                selects the appropriate CloudWatch metrics for the endpoint type.
         """
+        if preset not in _PRESETS:
+            raise ValueError(f"Unknown preset '{preset}'. Expected one of {list(_PRESETS)}")
+
         self.aws_account_clamp = AWSAccountClamp()
         self.boto3_session = self.aws_account_clamp.boto3_session
         self.cloudwatch = self.boto3_session.client("cloudwatch")
         self.start_time = None
         self.end_time = None
 
-        config = ASYNC_METRICS if preset == "async" else REALTIME_METRICS
+        config = _PRESETS[preset]
         self.metrics = config["metrics"]
         self.metric_conversions = config["conversions"]
         self.stats = config["stats"]

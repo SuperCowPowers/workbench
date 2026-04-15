@@ -187,6 +187,14 @@ class EndpointCore(Artifact):
         """
         return "Serverless" in self.endpoint_meta["InstanceType"]
 
+    def is_async(self) -> bool:
+        """Check if the current endpoint is an async inference endpoint.
+
+        Returns:
+            bool: True if the endpoint has an AsyncInferenceConfig, False otherwise.
+        """
+        return "AsyncInferenceConfig" in (self.endpoint_meta or {})
+
     def data_capture(self):
         """Get the MonitorCore class for this endpoint"""
         from workbench.core.artifacts.data_capture_core import DataCaptureCore
@@ -252,16 +260,27 @@ class EndpointCore(Artifact):
         return self.endpoint_meta["InstanceType"]
 
     def endpoint_metrics(self) -> Union[pd.DataFrame, None]:
-        """Return the metrics for this endpoint
+        """Return the metrics for this endpoint.
+
+        Picks the metric preset based on endpoint type:
+          * async endpoints → backlog + instance count metrics
+          * serverless endpoints → concurrency utilization + cold-start metrics
+          * realtime endpoints → CPU/memory + latency metrics
 
         Returns:
             pd.DataFrame: DataFrame with the metrics for this endpoint (or None if no metrics)
         """
         if "ProductionVariants" not in self.endpoint_meta:
             return None
-        self.log.important("Updating endpoint metrics...")
+        if self.is_async():
+            preset = "async"
+        elif self.is_serverless():
+            preset = "serverless"
+        else:
+            preset = "realtime"
+        self.log.important(f"Updating endpoint metrics (preset={preset})...")
         variant = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
-        return EndpointMetrics().get_metrics(self.name, variant=variant)
+        return EndpointMetrics(preset=preset).get_metrics(self.name, variant=variant)
 
     def details(self) -> dict:
         """Additional Details about this Endpoint

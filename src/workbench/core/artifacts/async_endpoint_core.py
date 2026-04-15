@@ -80,17 +80,6 @@ class AsyncEndpointCore(EndpointCore):
         self.async_input_path = f"{base}/async-input"
 
     # -----------------------------------------------------------------
-    # Override: endpoint_metrics  (async endpoints have different CloudWatch metrics)
-    # -----------------------------------------------------------------
-    def endpoint_metrics(self):
-        """Return async-specific metrics (ModelLatency, CPU, Memory, BacklogSize, errors)."""
-        from workbench.utils.endpoint_metrics import EndpointMetrics
-
-        self.log.important("Updating async endpoint metrics...")
-        variant = self.endpoint_meta["ProductionVariants"][0]["VariantName"]
-        return EndpointMetrics(preset="async").get_metrics(self.name, variant=variant)
-
-    # -----------------------------------------------------------------
     # Override: _predict  (called by EndpointCore.inference for modeled endpoints)
     # -----------------------------------------------------------------
     def _predict(self, eval_df: pd.DataFrame, features: list[str], drop_error_rows: bool = False) -> pd.DataFrame:
