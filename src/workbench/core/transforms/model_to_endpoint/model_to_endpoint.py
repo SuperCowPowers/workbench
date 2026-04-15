@@ -14,6 +14,7 @@ from botocore.exceptions import ClientError
 # SageMaker V3 Resource Classes
 from sagemaker.core.resources import Model as SagemakerModel, EndpointConfig, Endpoint as SagemakerEndpoint
 from sagemaker.core.shapes.shapes import (
+    AsyncInferenceClientConfig,
     AsyncInferenceConfig,
     AsyncInferenceOutputConfig,
     ContainerDefinition,
@@ -184,6 +185,17 @@ class ModelToEndpoint(Transform):
                 "Data capture is not supported for serverless endpoints. Skipping data capture configuration."
             )
 
+        # For async endpoints, resolve the per-instance concurrency knob.
+        # Default 2: one instance can process up to 2 invocations at once.
+        # Low enough that backlog grows visibly (driving autoscaling to trigger
+        # quickly) while still allowing some intra-instance parallelism.
+        # Override per-model via workbench_meta["async_max_concurrent_per_instance"].
+        async_max_concurrent = None
+        if self.async_endpoint:
+            model_meta = workbench_model.workbench_meta() or {}
+            async_max_concurrent = int(model_meta.get("async_max_concurrent_per_instance", 2))
+            self.log.important(f"Async MaxConcurrentInvocationsPerInstance={async_max_concurrent}")
+
         # Deploy the Endpoint using V3 Resource Classes
         self.log.important(f"Deploying the Endpoint {self.output_name}...")
         try:
@@ -193,6 +205,7 @@ class ModelToEndpoint(Transform):
                 instance_type=instance_type,
                 data_capture_config=data_capture_config,
                 tags=sagemaker_tags,
+                async_max_concurrent=async_max_concurrent,
             )
         except ClientError as e:
             # Check if this is the "endpoint config already exists" error
@@ -206,6 +219,7 @@ class ModelToEndpoint(Transform):
                     instance_type=instance_type,
                     data_capture_config=data_capture_config,
                     tags=sagemaker_tags,
+                    async_max_concurrent=async_max_concurrent,
                 )
             else:
                 raise
@@ -217,6 +231,7 @@ class ModelToEndpoint(Transform):
         instance_type: str = None,
         data_capture_config=None,
         tags=None,
+        async_max_concurrent: int = None,
     ):
         """Internal: Create the SageMaker Model, EndpointConfig, and Endpoint resources.
 
@@ -226,6 +241,8 @@ class ModelToEndpoint(Transform):
             instance_type (str): Instance type for realtime deployments
             data_capture_config: Data capture configuration
             tags: List of Tag objects
+            async_max_concurrent (int): MaxConcurrentInvocationsPerInstance for async endpoints.
+                Only used when ``self.async_endpoint`` is True.
         """
         model_name = self.output_name
         config_name = self.output_name
@@ -275,6 +292,9 @@ class ModelToEndpoint(Transform):
                 output_config=AsyncInferenceOutputConfig(
                     s3_output_path=f"{base_path}/async-output",
                     s3_failure_path=f"{base_path}/async-failures",
+                ),
+                client_config=AsyncInferenceClientConfig(
+                    max_concurrent_invocations_per_instance=async_max_concurrent,
                 ),
             )
             self.log.important(f"Async Endpoint Config: output → {base_path}/async-output")

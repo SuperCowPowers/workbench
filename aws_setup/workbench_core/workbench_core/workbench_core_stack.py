@@ -785,33 +785,71 @@ class WorkbenchCoreStack(Stack):
             resources=read_statement.resources,
         )
 
-    def endpoint_autoscaling(self) -> iam.PolicyStatement:
+    def endpoint_autoscaling(self) -> List[iam.PolicyStatement]:
         """Permissions for endpoint auto-scaling (async scale-to-zero + realtime scaling).
 
-        Covers: Application Auto Scaling registration/policies, CloudWatch alarms
-        (created automatically by target-tracking policies), SageMaker capacity
-        updates, and the one-time service-linked role creation.
+        Split into four scoped statements:
+          1. Application Auto Scaling registration / policies
+          2. CloudWatch alarms created by target-tracking policies
+          3. SageMaker capacity updates
+          4. One-time service-linked role creation (conditioned on the autoscaling SLR)
+
+        FUTURE NOTE: statements 1 and 3 could be tightened further with an
+        aws:ResourceTag condition once Workbench-managed endpoints carry a
+        stable "workbench:managed=true" tag at the endpoint level (today tags
+        are per-model workbench_meta, not a single boolean we can condition on).
         """
-        return iam.PolicyStatement(
+        # 1. Application Auto Scaling — scalable targets in this account/region
+        app_autoscaling = iam.PolicyStatement(
             actions=[
-                # Application Auto Scaling
                 "application-autoscaling:RegisterScalableTarget",
                 "application-autoscaling:DeregisterScalableTarget",
                 "application-autoscaling:PutScalingPolicy",
                 "application-autoscaling:DeleteScalingPolicy",
                 "application-autoscaling:DescribeScalableTargets",
                 "application-autoscaling:DescribeScalingPolicies",
-                # CloudWatch alarms (created by target-tracking policies)
+            ],
+            resources=[
+                f"arn:aws:application-autoscaling:{self.region}:{self.account}:scalable-target/*",
+            ],
+        )
+
+        # 2. CloudWatch alarms — target-tracking creates alarms named
+        #    "TargetTracking-endpoint/<name>/variant/<variant>-..." so we scope to that prefix.
+        cloudwatch_alarms = iam.PolicyStatement(
+            actions=[
                 "cloudwatch:PutMetricAlarm",
                 "cloudwatch:DeleteAlarms",
                 "cloudwatch:DescribeAlarms",
-                # SageMaker capacity management
-                "sagemaker:UpdateEndpointWeightsAndCapacities",
-                # One-time service-linked role creation
-                "iam:CreateServiceLinkedRole",
             ],
-            resources=["*"],
+            resources=[
+                f"arn:aws:cloudwatch:{self.region}:{self.account}:alarm:TargetTracking-endpoint/*",
+            ],
         )
+
+        # 3. SageMaker capacity management — scoped to endpoints in this account/region.
+        sagemaker_capacity = iam.PolicyStatement(
+            actions=["sagemaker:UpdateEndpointWeightsAndCapacities"],
+            resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/*"],
+        )
+
+        # 4. Service-linked role creation — only the application-autoscaling SLR,
+        #    guarded by a StringLike condition on iam:AWSServiceName.
+        # FUTURE NOTE: this is only needed the *first* time autoscaling is used
+        # in the account. After the SLR exists, this statement could be removed.
+        autoscaling_slr = iam.PolicyStatement(
+            actions=["iam:CreateServiceLinkedRole"],
+            resources=[
+                "arn:aws:iam::*:role/aws-service-role/application-autoscaling.amazonaws.com/*",
+            ],
+            conditions={
+                "StringLike": {
+                    "iam:AWSServiceName": "application-autoscaling.amazonaws.com",
+                },
+            },
+        )
+
+        return [app_autoscaling, cloudwatch_alarms, sagemaker_capacity, autoscaling_slr]
 
     ###########################
     #   Endpoint Monitoring   #
@@ -1300,7 +1338,7 @@ class WorkbenchCoreStack(Stack):
             self.models_read(),
             self.endpoint_discover(),
             self.endpoint_full(),
-            self.endpoint_autoscaling(),
+            *self.endpoint_autoscaling(),
             self.endpoint_data_quality(),
             self.endpoint_monitoring_discovery(),
             self.endpoint_monitoring_schedules(),
