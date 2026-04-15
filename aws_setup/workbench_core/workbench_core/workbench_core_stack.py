@@ -814,17 +814,20 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
-        # 2. CloudWatch alarms — target-tracking creates alarms named
-        #    "TargetTracking-endpoint/<name>/variant/<variant>-..." so we scope to that prefix.
+        # 2. CloudWatch alarms — MUST be Resource: "*" for these three actions.
+        #    The application-autoscaling RegisterScalableTarget call does an upfront
+        #    permission check on cloudwatch:PutMetricAlarm/DeleteAlarms/DescribeAlarms
+        #    without supplying a resource ARN, so any narrower scope (even a prefix
+        #    matching the alarm names target-tracking actually creates) causes
+        #    RegisterScalableTarget to fail with "User is missing the following
+        #    permissions: cloudwatch:PutMetricAlarm, ...". Documented AWS behavior.
         cloudwatch_alarms = iam.PolicyStatement(
             actions=[
                 "cloudwatch:PutMetricAlarm",
                 "cloudwatch:DeleteAlarms",
                 "cloudwatch:DescribeAlarms",
             ],
-            resources=[
-                f"arn:aws:cloudwatch:{self.region}:{self.account}:alarm:TargetTracking-endpoint/*",
-            ],
+            resources=["*"],
         )
 
         # 3. SageMaker capacity management — scoped to endpoints in this account/region.
