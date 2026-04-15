@@ -150,8 +150,7 @@ class AsyncEndpointCore(EndpointCore):
 
         # Slice into (index, chunk) pairs so we can reorder results after the pool returns.
         chunks = [
-            (i, eval_df.iloc[start : start + batch_size])
-            for i, start in enumerate(range(0, len(eval_df), batch_size))
+            (i, eval_df.iloc[start : start + batch_size]) for i, start in enumerate(range(0, len(eval_df), batch_size))
         ]
         total = len(chunks)
         log.important(
@@ -164,8 +163,7 @@ class AsyncEndpointCore(EndpointCore):
 
         with ThreadPoolExecutor(max_workers=max_in_flight) as pool:
             future_to_idx = {
-                pool.submit(self._invoke_one_async, sm_endpoint, s3_client, chunk): idx
-                for idx, chunk in chunks
+                pool.submit(self._invoke_one_async, sm_endpoint, s3_client, chunk): idx for idx, chunk in chunks
             }
             done = 0
             for fut in as_completed(future_to_idx):
@@ -187,9 +185,7 @@ class AsyncEndpointCore(EndpointCore):
                     log.info(f"Async progress: {done}/{total} chunks complete ({len(failed_indices)} failed)")
 
         if not results:
-            raise RuntimeError(
-                f"All {total} async invocations failed for endpoint '{self.endpoint_name}'"
-            )
+            raise RuntimeError(f"All {total} async invocations failed for endpoint '{self.endpoint_name}'")
         if failed_indices:
             log.warning(
                 f"{len(failed_indices)} of {total} chunks failed for '{self.endpoint_name}' "

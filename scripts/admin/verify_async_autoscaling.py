@@ -93,9 +93,12 @@ def monitor_timeline(endpoint_name: str, boto3_session, minutes: int) -> None:
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("endpoint_name", help="Name of the async endpoint to exercise")
-    parser.add_argument("--chunks", type=int, default=32,
-                        help="Number of chunks to submit (default 32). "
-                             "Total SMILES = chunks × endpoint's inference_batch_size.")
+    parser.add_argument(
+        "--chunks",
+        type=int,
+        default=32,
+        help="Number of chunks to submit (default 32). " "Total SMILES = chunks × endpoint's inference_batch_size.",
+    )
     parser.add_argument("--minutes", type=int, default=15, help="How long to monitor (default 15 min)")
     args = parser.parse_args()
 
@@ -112,15 +115,19 @@ def main():
     aqsol = PublicData().get("comp_chem/aqsol/aqsol_public_data")
     aqsol.columns = aqsol.columns.str.lower()
     if len(aqsol) < needed:
-        print(f"aqsol has only {len(aqsol)} rows, need {needed} for chunks={args.chunks} × batch_size={batch_size}",
-              file=sys.stderr)
+        print(
+            f"aqsol has only {len(aqsol)} rows, need {needed} for chunks={args.chunks} × batch_size={batch_size}",
+            file=sys.stderr,
+        )
         sys.exit(1)
     smiles_df = aqsol[["smiles"]].iloc[:needed].reset_index(drop=True)
 
     max_in_flight = int(meta.get("inference_max_in_flight", 16))
-    print(f"Firing one inference() at '{args.endpoint_name}': "
-          f"{needed} SMILES → {args.chunks} chunks of {batch_size}, "
-          f"up to {max_in_flight} in-flight at a time...")
+    print(
+        f"Firing one inference() at '{args.endpoint_name}': "
+        f"{needed} SMILES → {args.chunks} chunks of {batch_size}, "
+        f"up to {max_in_flight} in-flight at a time..."
+    )
 
     # Fire inference in a background thread so the monitor can run in the main thread.
     # A single inference() call reuses internal state (ModelCore, clients) across

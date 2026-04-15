@@ -37,11 +37,11 @@ _INVOCATIONS_PER_INSTANCE = {
 
 # Default tuning — callers can override via kwargs (typically pulled from workbench_meta).
 _DEFAULT_MAX_CAPACITY = 4
-_DEFAULT_ASYNC_TARGET = 2.0      # backlog per instance
+_DEFAULT_ASYNC_TARGET = 2.0  # backlog per instance
 _DEFAULT_REALTIME_TARGET = 750.0  # invocations per instance
 _DEFAULT_SCALE_IN_COOLDOWN = 300
 _DEFAULT_SCALE_OUT_COOLDOWN = 60
-_DEFAULT_STEP_COOLDOWN = 60       # seconds between 0→1 step policy firings
+_DEFAULT_STEP_COOLDOWN = 60  # seconds between 0→1 step policy firings
 
 _SERVICE_NS = "sagemaker"
 _SCALABLE_DIM = "sagemaker:variant:DesiredInstanceCount"

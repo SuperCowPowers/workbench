@@ -28,7 +28,7 @@ Created Artifacts:
 """
 
 # Workbench Imports
-from workbench.api import FeatureSet, Model, ModelType, ModelFramework, PublicData
+from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 if __name__ == "__main__":
