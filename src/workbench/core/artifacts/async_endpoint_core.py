@@ -48,11 +48,14 @@ _POLL_BACKOFF = 1.5
 # well under SageMaker's ~1000 pending-per-endpoint queue limit.
 _DEFAULT_MAX_IN_FLIGHT = 16
 
-# Default rows per invocation. With the 1-hour SageMaker async timeout, 50 rows
-# is safe even for per-row work on the order of a minute, and amortizes the
-# S3 upload + invoke_async + polling overhead across more useful work.
+# Default rows per invocation. Smaller batches give better load balancing
+# across workers — a handful of slow rows in one chunk stretches total time
+# less when there are more chunks to absorb the variance. At ~20s/row (typical
+# async workload) the extra per-chunk overhead (~3s polling startup) is <2%.
+# Fast endpoints (sub-second per row) should override higher via meta so the
+# overhead doesn't dominate.
 # Override per-endpoint via workbench_meta["inference_batch_size"].
-_DEFAULT_BATCH_SIZE = 50
+_DEFAULT_BATCH_SIZE = 10
 
 # Pandas option applied once at import — avoid mutating global state per call.
 pd.set_option("future.no_silent_downcasting", True)
@@ -142,6 +145,7 @@ class AsyncEndpointCore(EndpointCore):
         client_config = Config(max_pool_connections=max(max_in_flight * 2, 10))
         s3_client = self.boto3_session.client("s3", config=client_config)
         runtime_client = self.boto3_session.client("sagemaker-runtime", config=client_config)
+        sm_client = self.boto3_session.client("sagemaker")
 
         # Slice into (index, chunk) pairs so we can reorder results after the pool returns.
         chunks = [
@@ -150,7 +154,8 @@ class AsyncEndpointCore(EndpointCore):
         total = len(chunks)
         log.important(
             f"Async batch invoke: {len(eval_df)} rows, batch_size={batch_size}, "
-            f"chunks={total}, max_in_flight={max_in_flight}"
+            f"chunks={total}, max_in_flight={max_in_flight}, "
+            f"instances={self._current_instance_count(sm_client)}"
         )
 
         results: dict[int, pd.DataFrame] = {}
@@ -177,7 +182,10 @@ class AsyncEndpointCore(EndpointCore):
 
                 results[idx] = result_df
                 if done % 25 == 0 or done == total:
-                    log.info(f"Async progress: {done}/{total} chunks complete ({len(failed_indices)} failed)")
+                    log.info(
+                        f"Async progress: {done}/{total} chunks complete "
+                        f"({len(failed_indices)} failed, instances={self._current_instance_count(sm_client)})"
+                    )
 
         if not results:
             raise RuntimeError(f"All {total} async invocations failed for endpoint '{self.endpoint_name}'")
@@ -255,6 +263,9 @@ class AsyncEndpointCore(EndpointCore):
                 return None
 
             elapsed = time.time() - t_start
+            # FUTURE NOTE: demote to log.debug once batch autoscaling is stable.
+            # With batch_size=10, big runs produce 100+ chunks per cache iteration,
+            # making this log line noisy. Kept at INFO for now to aid debugging.
             log.info(f"Async {request_id[:8]}: {len(result_df)} rows in {elapsed:.1f}s")
             return result_df
 
@@ -302,6 +313,21 @@ class AsyncEndpointCore(EndpointCore):
     # -----------------------------------------------------------------
     # Utilities
     # -----------------------------------------------------------------
+    def _current_instance_count(self, sm_client) -> str:
+        """Format "current/desired" instance counts for logging. Returns '?' on failure.
+
+        When current differs from desired, shows "cur→des" (e.g. "5→8") to
+        make the in-progress scaling transition visible. When they match,
+        shows just the single number.
+        """
+        try:
+            variant = sm_client.describe_endpoint(EndpointName=self.endpoint_name)["ProductionVariants"][0]
+            cur = variant.get("CurrentInstanceCount", "?")
+            des = variant.get("DesiredInstanceCount", "?")
+            return f"{cur}→{des}" if cur != des else str(cur)
+        except Exception:
+            return "?"
+
     def _cleanup_s3(self, s3_client, *s3_uris: str) -> None:
         """Delete S3 objects after we've consumed them. Best-effort — failures are logged, not raised."""
         for uri in s3_uris:
