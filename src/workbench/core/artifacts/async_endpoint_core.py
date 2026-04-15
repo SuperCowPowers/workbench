@@ -36,9 +36,6 @@ from botocore.config import Config
 
 from workbench.core.artifacts.endpoint_core import EndpointCore
 
-# SageMaker V3 Resource Classes
-from sagemaker.core.resources import Endpoint as SagemakerEndpoint
-
 log = logging.getLogger("workbench")
 
 # Polling parameters for async output (exponential backoff, capped).
@@ -133,9 +130,18 @@ class AsyncEndpointCore(EndpointCore):
         # Size the connection pool to match in-flight concurrency plus headroom.
         # Default botocore pool is 10 — anything larger triggers noisy
         # "Connection pool is full" warnings and forces ad-hoc socket creation.
+        # Both S3 (for upload/poll) and sagemaker-runtime (for invoke_endpoint_async)
+        # need configured pools since we hit both from every worker thread.
+        #
+        # Note: We use raw boto3 for sagemaker-runtime (instead of the V3 SDK's
+        # Endpoint.invoke_async) because V3's Base.get_sagemaker_client() creates
+        # its client without a Config parameter — there's no way to pass
+        # max_pool_connections through. The V3 invoke_async is a thin shim around
+        # client.invoke_endpoint_async anyway, so we lose nothing by going direct.
+        # V3 is still used elsewhere for resource lifecycle (Endpoint/Model/Config).
         client_config = Config(max_pool_connections=max(max_in_flight * 2, 10))
-        sm_endpoint = SagemakerEndpoint.get(self.endpoint_name, session=self.boto3_session)
         s3_client = self.boto3_session.client("s3", config=client_config)
+        runtime_client = self.boto3_session.client("sagemaker-runtime", config=client_config)
 
         # Slice into (index, chunk) pairs so we can reorder results after the pool returns.
         chunks = [
@@ -152,7 +158,7 @@ class AsyncEndpointCore(EndpointCore):
 
         with ThreadPoolExecutor(max_workers=max_in_flight) as pool:
             future_to_idx = {
-                pool.submit(self._invoke_one_async, sm_endpoint, s3_client, chunk): idx for idx, chunk in chunks
+                pool.submit(self._invoke_one_async, runtime_client, s3_client, chunk): idx for idx, chunk in chunks
             }
             done = 0
             for fut in as_completed(future_to_idx):
@@ -188,11 +194,15 @@ class AsyncEndpointCore(EndpointCore):
 
     def _invoke_one_async(
         self,
-        sm_endpoint: SagemakerEndpoint,
+        runtime_client,
         s3_client,
         chunk_df: pd.DataFrame,
     ) -> Optional[pd.DataFrame]:
-        """Upload one chunk to S3, call invoke_async, poll for output, download result.
+        """Upload one chunk to S3, call invoke_endpoint_async, poll for output, download result.
+
+        Uses the boto3 ``sagemaker-runtime`` client directly (not the V3 SDK
+        wrapper) so we can pass a configured connection pool — 16+ concurrent
+        in-flight workers need more than the default pool size of 10.
 
         Input is always cleaned up in a ``finally`` block so failures don't
         leak CSV files into S3. Successful output files are cleaned up too.
@@ -216,14 +226,15 @@ class AsyncEndpointCore(EndpointCore):
             )
 
             try:
-                response = sm_endpoint.invoke_async(
-                    input_location=input_s3_uri,
-                    content_type="text/csv",
-                    accept="text/csv",
+                response = runtime_client.invoke_endpoint_async(
+                    EndpointName=self.endpoint_name,
+                    InputLocation=input_s3_uri,
+                    ContentType="text/csv",
+                    Accept="text/csv",
                 )
-                output_location = response.output_location
+                output_location = response["OutputLocation"]
             except Exception as e:
-                log.error(f"invoke_async failed for request {request_id}: {e}")
+                log.error(f"invoke_endpoint_async failed for request {request_id}: {e}")
                 return None
 
             # Poll for the output
