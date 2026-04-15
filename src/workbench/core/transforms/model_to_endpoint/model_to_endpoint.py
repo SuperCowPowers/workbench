@@ -153,10 +153,16 @@ class ModelToEndpoint(Transform):
             instance_type = None  # Not used for serverless
             self.log.important(f"Serverless Config: Memory={mem_size}MB, MaxConcurrency={max_concurrency}")
         else:
-            # For realtime endpoints, use explicit instance if provided, otherwise auto-select
+            # Use explicit instance if provided, otherwise auto-select.
+            # Async endpoints default to a beefier CPU instance — they're typically
+            # used for long-running compute work (RDKit conformer gen, etc.) where
+            # the default realtime sizing would be undersized.
             if self.instance:
                 instance_type = self.instance
-                self.log.important(f"Realtime Endpoint: Using specified instance type: {instance_type}")
+                self.log.important(f"Endpoint: Using specified instance type: {instance_type}")
+            elif self.async_endpoint:
+                instance_type = "ml.c7i.2xlarge"
+                self.log.important(f"Async Endpoint: Default instance type: {instance_type}")
             elif needs_more_resources:
                 instance_type = "ml.c7i.large"
                 self.log.important(f"{workbench_model.model_framework} needs more resources (using {instance_type})")
@@ -186,14 +192,16 @@ class ModelToEndpoint(Transform):
             )
 
         # For async endpoints, resolve the per-instance concurrency knob.
-        # Default 2: one instance can process up to 2 invocations at once.
-        # Low enough that backlog grows visibly (driving autoscaling to trigger
-        # quickly) while still allowing some intra-instance parallelism.
-        # Override per-model via workbench_meta["async_max_concurrent_per_instance"].
+        # Default 1: typical async workloads (RDKit conformers, ML inference)
+        # already saturate the CPU per invocation, so dispatching multiple in
+        # parallel just causes context-switching overhead. Backlog also grows
+        # faster which makes autoscaling trigger sooner.
+        # Override per-model via workbench_meta["async_max_concurrent_per_instance"]
+        # for IO-bound or lightweight async workloads.
         async_max_concurrent = None
         if self.async_endpoint:
             model_meta = workbench_model.workbench_meta() or {}
-            async_max_concurrent = int(model_meta.get("async_max_concurrent_per_instance", 2))
+            async_max_concurrent = int(model_meta.get("async_max_concurrent_per_instance", 1))
             self.log.important(f"Async MaxConcurrentInvocationsPerInstance={async_max_concurrent}")
 
         # Deploy the Endpoint using V3 Resource Classes
