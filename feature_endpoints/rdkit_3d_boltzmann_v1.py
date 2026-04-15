@@ -80,15 +80,13 @@ if __name__ == "__main__":
     #                                             for CPU-saturating work)
     #
     #   end.upsert_workbench_meta({...})  — set AFTER to_endpoint():
-    #     inference_batch_size=50      — rows per invocation (default 10).
-    #                                     Higher = better overhead amortization,
-    #                                     but a single chunk must finish in <1hr.
+    #     inference_batch_size=100     — rows per invocation (default 50).
+    #                                    Higher = better overhead amortization,
+    #                                    but a single chunk must finish inside
+    #                                    SageMaker's 1hr async invocation limit.
     #     inference_max_in_flight=32   — client-side parallel submissions
-    #                                     (default 16). Higher = more backlog
-    #                                     pressure on autoscaling.
-    #     inference_poll_timeout_s=900 — per-chunk polling deadline (default
-    #                                     3600 = SageMaker's async max). Lower
-    #                                     for fast endpoints to fail faster.
+    #                                    (default 16). Higher = more backlog
+    #                                    pressure on autoscaling, more S3 load.
     end = model.to_endpoint(tags=tags, async_endpoint=True)
 
     # Quick smoke test with a small batch

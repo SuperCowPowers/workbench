@@ -76,5 +76,5 @@ If an async endpoint isn't scaling out:
 4. **Tuning** — override per-model via `workbench_meta`:
    - `async_max_concurrent_per_instance` (default 2) — SageMaker `MaxConcurrentInvocationsPerInstance`.
    - `inference_max_in_flight` (default 16) — client-side parallel submissions.
-   - `inference_batch_size` (default 1) — rows per invocation.
+   - `inference_batch_size` (default 50) — rows per invocation.
 

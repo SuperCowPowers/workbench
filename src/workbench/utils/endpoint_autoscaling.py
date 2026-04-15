@@ -145,34 +145,54 @@ def register_autoscaling(
 def deregister_autoscaling(boto3_session, endpoint_name: str, raise_on_error: bool = False) -> None:
     """Remove all scaling policies and the scalable target for an endpoint.
 
-    Useful when tearing down an endpoint or re-registering from scratch.
-    Best-effort by default — individual missing resources are not fatal.
+    Idempotent: a missing scalable target is a quiet no-op (a previously failed
+    deploy may have left nothing to clean up). Other unexpected errors are
+    logged with full traceback and re-raised when ``raise_on_error=True``.
     """
     aas = boto3_session.client("application-autoscaling")
     resource_id = f"endpoint/{endpoint_name}/variant/AllTraffic"
+
+    # Delete all scaling policies attached to the scalable target first.
     try:
-        # Delete all scaling policies attached to the scalable target first.
         policies = aas.describe_scaling_policies(
             ServiceNamespace=_SERVICE_NS,
             ResourceId=resource_id,
             ScalableDimension=_SCALABLE_DIM,
         ).get("ScalingPolicies", [])
-        for pol in policies:
+    except Exception:
+        log.exception(f"Failed to list scaling policies for '{endpoint_name}'")
+        if raise_on_error:
+            raise
+        return
+
+    for pol in policies:
+        try:
             aas.delete_scaling_policy(
                 PolicyName=pol["PolicyName"],
                 ServiceNamespace=_SERVICE_NS,
                 ResourceId=resource_id,
                 ScalableDimension=_SCALABLE_DIM,
             )
-        # Then deregister the scalable target itself.
+        except aas.exceptions.ObjectNotFoundException:
+            pass  # Already gone — fine.
+        except Exception:
+            log.exception(f"Failed to delete scaling policy '{pol['PolicyName']}'")
+            if raise_on_error:
+                raise
+
+    # Then deregister the scalable target itself.
+    try:
         aas.deregister_scalable_target(
             ServiceNamespace=_SERVICE_NS,
             ResourceId=resource_id,
             ScalableDimension=_SCALABLE_DIM,
         )
         log.important(f"Auto-scaling deregistered for '{endpoint_name}'")
+    except aas.exceptions.ObjectNotFoundException:
+        # Nothing to deregister — likely a previously failed deploy never got this far.
+        log.info(f"No scalable target found for '{endpoint_name}' — nothing to deregister")
     except Exception:
-        log.exception(f"Failed to deregister auto-scaling for '{endpoint_name}'")
+        log.exception(f"Failed to deregister scalable target for '{endpoint_name}'")
         if raise_on_error:
             raise
 
@@ -190,7 +210,21 @@ def _put_target_tracking(
     scale_out_cooldown: int,
     policy_suffix: str,
 ) -> None:
-    """Register a TargetTrackingScaling policy on a custom metric."""
+    """Register a TargetTrackingScaling policy on a custom metric.
+
+    FUTURE NOTE: target-tracking auto-creates two CloudWatch alarms with
+    UUID-suffixed, unreadable names like::
+
+        TargetTracking-endpoint/<name>/variant/AllTraffic-AlarmHigh-<uuid>
+        TargetTracking-endpoint/<name>/variant/AllTraffic-AlarmLow-<uuid>
+
+    AWS owns those names; renaming them breaks the policy's alarm lookup.
+    If the UUID noise becomes a real problem, replace this target-tracking
+    policy with two explicit StepScaling policies (high/low) on the same
+    metric — that gives us full alarm-naming control at the cost of writing
+    the scale-up/down math ourselves (step sizes, scale-in thresholds).
+    For now we accept AWS's naming convention.
+    """
     aas.put_scaling_policy(
         PolicyName=f"{endpoint_name}-{policy_suffix}",
         ServiceNamespace=_SERVICE_NS,

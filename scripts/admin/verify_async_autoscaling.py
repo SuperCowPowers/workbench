@@ -1,14 +1,17 @@
 """Manual verification harness for async endpoint auto-scaling.
 
-Fires N parallel invocations at a named async endpoint and prints a timeline
+Submits a large inference call at a named async endpoint and prints a timeline
 of ``DesiredInstanceCount``, ``HasBacklogWithoutCapacity`` and
 ``ApproximateBacklogSizePerInstance`` so you can *see* the scale-out happen.
 
 Usage:
-    python scripts/verify_async_autoscaling.py <endpoint_name> <sample_csv> [--n 32] [--minutes 15]
+    python scripts/admin/verify_async_autoscaling.py <endpoint_name> [--chunks 32] [--minutes 15]
 
-``sample_csv`` should be a small CSV (1-10 rows) with the columns the endpoint
-expects — it's cloned N times to generate the load.
+The load is a single ``endpoint.inference()`` call with ``chunks × batch_size``
+unique SMILES pulled from ``PublicData().get("comp_chem/aqsol/aqsol_public_data")``.
+``AsyncEndpointCore`` splits the frame into chunks and submits them in parallel
+via its internal thread pool (up to ``inference_max_in_flight`` concurrent).
+Assumes the endpoint accepts a ``smiles`` column.
 
 Expected behavior on a correctly-configured scale-to-zero async endpoint,
 starting from 0 instances:
@@ -30,20 +33,11 @@ step-scaling policy isn't wired up. Check:
 
 import argparse
 import sys
+import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
-import pandas as pd
-
-from workbench.api import AsyncEndpoint
-
-
-def _fire_one(endpoint: AsyncEndpoint, sample_df: pd.DataFrame) -> int:
-    """Submit one inference request. Returns the elapsed seconds."""
-    t0 = time.time()
-    _ = endpoint.inference(sample_df)
-    return int(time.time() - t0)
+from workbench.api import AsyncEndpoint, PublicData
 
 
 def _get_metric(cw, endpoint_name: str, metric: str, stat: str, start, end) -> float:
@@ -99,8 +93,9 @@ def monitor_timeline(endpoint_name: str, boto3_session, minutes: int) -> None:
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("endpoint_name", help="Name of the async endpoint to exercise")
-    parser.add_argument("sample_csv", help="Small CSV with the columns the endpoint expects")
-    parser.add_argument("--n", type=int, default=32, help="Number of parallel invocations (default 32)")
+    parser.add_argument("--chunks", type=int, default=32,
+                        help="Number of chunks to submit (default 32). "
+                             "Total SMILES = chunks × endpoint's inference_batch_size.")
     parser.add_argument("--minutes", type=int, default=15, help="How long to monitor (default 15 min)")
     args = parser.parse_args()
 
@@ -109,23 +104,40 @@ def main():
         print(f"Endpoint '{args.endpoint_name}' not found.", file=sys.stderr)
         sys.exit(1)
 
-    sample_df = pd.read_csv(args.sample_csv)
-    print(f"Firing {args.n} parallel inference requests at '{args.endpoint_name}' "
-          f"(sample: {len(sample_df)} rows × {len(sample_df.columns)} cols)...")
+    # Size the load to the endpoint's configured batch size so chunk count matches --chunks.
+    meta = endpoint.workbench_meta() or {}
+    batch_size = int(meta.get("inference_batch_size", 10))
+    needed = args.chunks * batch_size
 
-    # Launch the load generator in a separate thread pool — monitor runs in the main thread
-    # so we see the timeline in real time while load is being applied.
-    pool = ThreadPoolExecutor(max_workers=args.n)
-    futures = [pool.submit(_fire_one, endpoint, sample_df) for _ in range(args.n)]
-    pool.shutdown(wait=False)
+    aqsol = PublicData().get("comp_chem/aqsol/aqsol_public_data")
+    aqsol.columns = aqsol.columns.str.lower()
+    if len(aqsol) < needed:
+        print(f"aqsol has only {len(aqsol)} rows, need {needed} for chunks={args.chunks} × batch_size={batch_size}",
+              file=sys.stderr)
+        sys.exit(1)
+    smiles_df = aqsol[["smiles"]].iloc[:needed].reset_index(drop=True)
+
+    max_in_flight = int(meta.get("inference_max_in_flight", 16))
+    print(f"Firing one inference() at '{args.endpoint_name}': "
+          f"{needed} SMILES → {args.chunks} chunks of {batch_size}, "
+          f"up to {max_in_flight} in-flight at a time...")
+
+    # Fire inference in a background thread so the monitor can run in the main thread.
+    # A single inference() call reuses internal state (ModelCore, clients) across
+    # all chunks — avoids the ListTags throttling you'd see with N parallel callers.
+    bg = threading.Thread(
+        target=lambda: endpoint.inference(smiles_df),
+        daemon=True,
+        name="verify-async-load",
+    )
+    bg.start()
 
     try:
         monitor_timeline(args.endpoint_name, endpoint.boto3_session, args.minutes)
     except KeyboardInterrupt:
-        print("\nInterrupted — cancelling pending futures...")
+        print("\nInterrupted.")
     finally:
-        done = sum(1 for f in futures if f.done())
-        print(f"\nInference requests done: {done}/{args.n}")
+        print(f"\nInference thread alive: {bg.is_alive()}")
 
 
 if __name__ == "__main__":

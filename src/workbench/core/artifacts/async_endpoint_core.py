@@ -32,6 +32,7 @@ from io import StringIO
 from typing import Optional
 
 import pandas as pd
+from botocore.config import Config
 
 from workbench.core.artifacts.endpoint_core import EndpointCore
 
@@ -44,12 +45,17 @@ log = logging.getLogger("workbench")
 _POLL_INITIAL_S = 3
 _POLL_MAX_S = 30
 _POLL_BACKOFF = 1.5
-_DEFAULT_POLL_TIMEOUT_S = 900  # 15 minutes (SageMaker async max)
 
 # Default number of concurrent in-flight invocations. Enough to drive
 # backlog past the autoscaling target (2/instance) even once scaled out,
 # well under SageMaker's ~1000 pending-per-endpoint queue limit.
 _DEFAULT_MAX_IN_FLIGHT = 16
+
+# Default rows per invocation. With the 1-hour SageMaker async timeout, 50 rows
+# is safe even for per-row work on the order of a minute, and amortizes the
+# S3 upload + invoke_async + polling overhead across more useful work.
+# Override per-endpoint via workbench_meta["inference_batch_size"].
+_DEFAULT_BATCH_SIZE = 50
 
 # Pandas option applied once at import — avoid mutating global state per call.
 pd.set_option("future.no_silent_downcasting", True)
@@ -124,7 +130,7 @@ class AsyncEndpointCore(EndpointCore):
         """Split ``eval_df`` into chunks, invoke in parallel, reassemble in input order.
 
         Reads two knobs from ``workbench_meta()``:
-          * ``inference_batch_size``  (default 1):   rows per invocation
+          * ``inference_batch_size``    (default 50): rows per invocation
           * ``inference_max_in_flight`` (default 16): concurrent in-flight requests
 
         Failed chunks are logged and dropped from the output (we raise only
@@ -132,11 +138,15 @@ class AsyncEndpointCore(EndpointCore):
         the input columns would be a lie).
         """
         meta = self.workbench_meta() or {}
-        batch_size = int(meta.get("inference_batch_size", 1))
+        batch_size = int(meta.get("inference_batch_size", _DEFAULT_BATCH_SIZE))
         max_in_flight = int(meta.get("inference_max_in_flight", _DEFAULT_MAX_IN_FLIGHT))
 
+        # Size the connection pool to match in-flight concurrency plus headroom.
+        # Default botocore pool is 10 — anything larger triggers noisy
+        # "Connection pool is full" warnings and forces ad-hoc socket creation.
+        client_config = Config(max_pool_connections=max(max_in_flight * 2, 10))
         sm_endpoint = SagemakerEndpoint.get(self.endpoint_name, session=self.boto3_session)
-        s3_client = self.boto3_session.client("s3")
+        s3_client = self.boto3_session.client("s3", config=client_config)
 
         # Slice into (index, chunk) pairs so we can reorder results after the pool returns.
         chunks = [
@@ -259,34 +269,17 @@ class AsyncEndpointCore(EndpointCore):
             if output_location is not None:
                 self._cleanup_s3(s3_client, output_location)
 
-    def _poll_s3_output(
-        self,
-        s3_client,
-        output_location: str,
-        timeout_s: int = _DEFAULT_POLL_TIMEOUT_S,
-    ) -> str:
+    def _poll_s3_output(self, s3_client, output_location: str) -> str:
         """Poll S3 until the output file appears, then download and return its content.
 
-        Uses exponential backoff from ``_POLL_INITIAL_S`` up to ``_POLL_MAX_S``
-        so long-running jobs don't hammer S3.
-
-        Args:
-            s3_client: Boto3 S3 client
-            output_location: Full S3 URI for the expected output file
-            timeout_s: Maximum time to wait (seconds)
-
-        Returns:
-            The output file contents as a UTF-8 string
-
-        Raises:
-            TimeoutError: if output doesn't appear within timeout_s
-            RuntimeError: if a failure file appears instead
+        Uses exponential backoff from ``_POLL_INITIAL_S`` up to ``_POLL_MAX_S``.
+        Deadline is 3600s to match SageMaker's max async invocation timeout.
         """
         bucket, key = self._parse_s3_uri(output_location)
         # Failure file is at the same key under the failure prefix
         failure_key = key.replace("/async-output/", "/async-failures/", 1)
 
-        deadline = time.time() + timeout_s
+        deadline = time.time() + 3600
         interval = _POLL_INITIAL_S
 
         while time.time() < deadline:
@@ -308,7 +301,7 @@ class AsyncEndpointCore(EndpointCore):
             time.sleep(interval)
             interval = min(interval * _POLL_BACKOFF, _POLL_MAX_S)
 
-        raise TimeoutError(f"Async output not available after {timeout_s}s: {output_location}")
+        raise TimeoutError(f"Async output not available after 3600s: {output_location}")
 
     # -----------------------------------------------------------------
     # Utilities
