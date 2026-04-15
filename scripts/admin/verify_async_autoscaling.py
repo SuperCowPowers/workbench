@@ -109,7 +109,7 @@ def main():
 
     # Size the load to the endpoint's configured batch size so chunk count matches --chunks.
     meta = endpoint.workbench_meta() or {}
-    batch_size = int(meta.get("inference_batch_size", 10))
+    batch_size = int(meta.get("inference_batch_size", 50))
     needed = args.chunks * batch_size
 
     aqsol = PublicData().get("comp_chem/aqsol/aqsol_public_data")

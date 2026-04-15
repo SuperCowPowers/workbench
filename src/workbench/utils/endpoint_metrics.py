@@ -27,26 +27,63 @@ REALTIME_METRICS = {
         "Invocation4XXErrors": 1,
     },
     "stats": ["Sum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum", "Maximum"],
+    "expressions": [],
 }
 
 ASYNC_METRICS = {
     "metrics": [
+        "ApproximateBacklogSize",
+        "ApproximateBacklogSizePerInstance",
+        "HasBacklogWithoutCapacity",
+        "Invocations",
         "ModelLatency",
+        "OverheadLatency",
         "CPUUtilization",
         "MemoryUtilization",
-        "ApproximateBacklogSize",
-        "Invocation5XXErrors",
         "Invocation4XXErrors",
+        "Invocation5XXErrors",
     ],
     "conversions": {
+        "ApproximateBacklogSize": 1,
+        "ApproximateBacklogSizePerInstance": 1,
+        "HasBacklogWithoutCapacity": 1,
+        "Invocations": 1,
         "ModelLatency": 1e-6,
+        "OverheadLatency": 1e-6,
         "CPUUtilization": 1,
         "MemoryUtilization": 1,
-        "ApproximateBacklogSize": 1,
-        "Invocation5XXErrors": 1,
         "Invocation4XXErrors": 1,
+        "Invocation5XXErrors": 1,
+        # Math expressions (see "expressions" below) pass through as-is.
+        "InstanceCount": 1,
     },
-    "stats": ["Maximum", "Average", "Average", "Maximum", "Maximum", "Maximum"],
+    "stats": [
+        "Maximum",   # ApproximateBacklogSize
+        "Average",   # ApproximateBacklogSizePerInstance
+        "Maximum",   # HasBacklogWithoutCapacity
+        "Sum",       # Invocations
+        "Maximum",   # ModelLatency
+        "Maximum",   # OverheadLatency
+        "Average",   # CPUUtilization
+        "Average",   # MemoryUtilization
+        "Sum",       # Invocation4XXErrors
+        "Sum",       # Invocation5XXErrors
+    ],
+    # CloudWatch Metric Math expressions, evaluated alongside the raw metrics above.
+    # `InstanceCount` is derived — SageMaker doesn't publish an instance-count metric
+    # natively, but backlog / backlog-per-instance gives us the divisor. Guarded
+    # against divide-by-zero when there's no backlog (reads 0, which matches the
+    # scale-to-zero idle state).
+    "expressions": [
+        {
+            "id": "InstanceCount",
+            "expression": (
+                "IF(m_ApproximateBacklogSizePerInstance > 0, "
+                "m_ApproximateBacklogSize / m_ApproximateBacklogSizePerInstance, 0)"
+            ),
+            "label": "InstanceCount",
+        },
+    ],
 }
 
 
@@ -68,6 +105,7 @@ class EndpointMetrics:
         self.metrics = config["metrics"]
         self.metric_conversions = config["conversions"]
         self.stats = config["stats"]
+        self.expressions = config.get("expressions", [])
 
     def get_metrics(self, endpoint: str, variant: str = "AllTraffic", days_back: int = 3) -> pd.DataFrame:
         """Get the metric data for a given endpoint.
@@ -163,6 +201,16 @@ class EndpointMetrics:
                 "ReturnData": True,
             }
             metric_data_queries.append(query)
+
+        # Metric math expressions — evaluated by CloudWatch server-side from the
+        # m_* queries above. Label becomes the column name in the returned frame.
+        for expr in self.expressions:
+            metric_data_queries.append({
+                "Id": expr["id"],
+                "Expression": expr["expression"],
+                "Label": expr["label"],
+                "ReturnData": True,
+            })
 
         return metric_data_queries
 
