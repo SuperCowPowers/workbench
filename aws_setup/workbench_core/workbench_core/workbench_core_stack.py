@@ -836,18 +836,23 @@ class WorkbenchCoreStack(Stack):
             resources=[f"arn:aws:sagemaker:{self.region}:{self.account}:endpoint/*"],
         )
 
-        # 4. Service-linked role creation — only the application-autoscaling SLR,
-        #    guarded by a StringLike condition on iam:AWSServiceName.
+        # 4. Service-linked role creation — the SageMaker-endpoint-specific
+        #    application-autoscaling SLR, guarded by a StringLike condition on
+        #    iam:AWSServiceName. Note the "sagemaker." prefix: SageMaker endpoint
+        #    autoscaling uses a DIFFERENT SLR than generic application-autoscaling
+        #    (actual ARN:
+        #    .../aws-service-role/sagemaker.application-autoscaling.amazonaws.com/
+        #    AWSServiceRoleForApplicationAutoScaling_SageMakerEndpoint).
         # FUTURE NOTE: this is only needed the *first* time autoscaling is used
         # in the account. After the SLR exists, this statement could be removed.
         autoscaling_slr = iam.PolicyStatement(
             actions=["iam:CreateServiceLinkedRole"],
             resources=[
-                "arn:aws:iam::*:role/aws-service-role/application-autoscaling.amazonaws.com/*",
+                "arn:aws:iam::*:role/aws-service-role/sagemaker.application-autoscaling.amazonaws.com/*",
             ],
             conditions={
                 "StringLike": {
-                    "iam:AWSServiceName": "application-autoscaling.amazonaws.com",
+                    "iam:AWSServiceName": "sagemaker.application-autoscaling.amazonaws.com",
                 },
             },
         )
