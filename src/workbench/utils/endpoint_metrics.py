@@ -84,7 +84,11 @@ ASYNC_METRICS = {
         # Math expressions (see "expressions" below) pass through as-is.
         "InstanceCount": 1,
     },
-    "stats": ["Maximum", "Average", "Sum", "Maximum", "Sum"],
+    # ApproximateBacklogSize uses Average (not Maximum) so the derived
+    # InstanceCount expression (backlog / per_instance) is self-consistent —
+    # both operands use the same aggregation. Maximum would inflate the ratio
+    # when backlog spikes but per_instance is averaged over the period.
+    "stats": ["Average", "Average", "Sum", "Maximum", "Sum"],
     # Async backlog metrics are published with only the EndpointName dimension.
     # Querying them with VariantName returns no datapoints.
     "endpoint_only": {"ApproximateBacklogSize", "ApproximateBacklogSizePerInstance"},
