@@ -31,7 +31,7 @@ open('/tmp/deps.txt', 'w').write('\n'.join(deps))" && \
     rm /tmp/pyproject.toml /tmp/deps.txt
 
 # Layer 3: Workbench only (changes often, ~20MB)
-ARG WORKBENCH_VERSION=0.8.308
+ARG WORKBENCH_VERSION=0.8.309
 RUN pip install --no-cache-dir --no-deps "workbench[ui]==${WORKBENCH_VERSION}"
 
 # Copy app code and configuration (after pip installs to avoid cache invalidation)
