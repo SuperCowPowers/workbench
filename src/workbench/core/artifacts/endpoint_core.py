@@ -733,6 +733,8 @@ class EndpointCore(Artifact):
         # Build capture name from after_date
         start_dt = pd.to_datetime(after_date)
         capture_name = f"ts_{start_dt.strftime('%Y%m%d')}"
+        if exclude_set:
+            capture_name += "_exc"
         return self.inference(holdout_df, capture_name=capture_name)
 
     def fast_inference(self, eval_df: pd.DataFrame, threads: int = 4) -> pd.DataFrame:
