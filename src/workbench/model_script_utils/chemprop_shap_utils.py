@@ -412,14 +412,21 @@ def compute_chemprop_shap(
         print(f"  Running ablation for {n_extra} extra descriptors...", flush=True)
         # Pull the exact training mean from the model's X_d_transform buffers.
         # This is the value that maps to 0 post-standardization, matching the
-        # "bit set to 0" semantics used for atom/bond features.
+        # "bit set to 0" semantics used for atom/bond features. ScaleTransform
+        # stores the mean buffer as shape (1, n_features) — flatten to (n_features,).
         xd_transform = getattr(model, "X_d_transform", None)
         if xd_transform is not None and hasattr(xd_transform, "mean"):
-            extra_means = xd_transform.mean.detach().cpu().numpy().astype(np.float32)
+            extra_means = xd_transform.mean.detach().cpu().numpy().astype(np.float32).ravel()
         else:
             # Fallback for models without a stored transform (shouldn't happen
             # for a properly wired hybrid model but keeps the code defensive).
             extra_means = np.nanmean(sampled_x_d, axis=0)
+
+        if extra_means.shape[0] != n_extra:
+            raise ValueError(
+                f"X_d_transform mean shape {extra_means.shape} does not match "
+                f"n_extra={n_extra}"
+            )
 
         if is_multiclass:
             extra_ablation = np.zeros((n, n_classes, n_extra), dtype=np.float32)
