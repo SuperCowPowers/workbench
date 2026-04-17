@@ -423,10 +423,7 @@ def compute_chemprop_shap(
             extra_means = np.nanmean(sampled_x_d, axis=0)
 
         if extra_means.shape[0] != n_extra:
-            raise ValueError(
-                f"X_d_transform mean shape {extra_means.shape} does not match "
-                f"n_extra={n_extra}"
-            )
+            raise ValueError(f"X_d_transform mean shape {extra_means.shape} does not match " f"n_extra={n_extra}")
 
         if is_multiclass:
             extra_ablation = np.zeros((n, n_classes, n_extra), dtype=np.float32)
