@@ -394,10 +394,13 @@ def compute_chemprop_shap(
     active_fractions = all_fractions[:, active_indices]
 
     # --- Extra descriptor ablation (hybrid models) ---
-    # Chemprop v2's official Shapley notebook only ablates atom/bond bits. We extend it
-    # to descriptors by replacing each column with its sample mean. Because the model's
-    # X_d_transform standardizes via (x - mean) / scale at eval time, mean-substitution
-    # maps to 0 after the transform — the SHAP-standard "feature absent" baseline.
+    # Natural extension of the per-bit ablation approach to hybrid descriptors:
+    # for atom/bond bits, "ablate" means set the raw bit to 0 — the value the model
+    # sees when the feature is absent. For standardized descriptors, the equivalent
+    # "absent" value in the raw input space is the *training mean*, because the
+    # model's X_d_transform standardizes via (x - train_mean) / train_scale at eval
+    # time, so substituting train_mean produces exactly 0 after the transform.
+    # This keeps the ablation semantics identical across graph bits and descriptors.
     if extra_descriptors is not None and extra_feature_names is not None:
         n_extra = sampled_x_d.shape[1]
         if len(extra_feature_names) != n_extra:
@@ -407,7 +410,16 @@ def compute_chemprop_shap(
             )
 
         print(f"  Running ablation for {n_extra} extra descriptors...", flush=True)
-        extra_means = np.nanmean(sampled_x_d, axis=0)
+        # Pull the exact training mean from the model's X_d_transform buffers.
+        # This is the value that maps to 0 post-standardization, matching the
+        # "bit set to 0" semantics used for atom/bond features.
+        xd_transform = getattr(model, "X_d_transform", None)
+        if xd_transform is not None and hasattr(xd_transform, "mean"):
+            extra_means = xd_transform.mean.detach().cpu().numpy().astype(np.float32)
+        else:
+            # Fallback for models without a stored transform (shouldn't happen
+            # for a properly wired hybrid model but keeps the code defensive).
+            extra_means = np.nanmean(sampled_x_d, axis=0)
 
         if is_multiclass:
             extra_ablation = np.zeros((n, n_classes, n_extra), dtype=np.float32)
