@@ -890,6 +890,7 @@ if __name__ == "__main__":
         model=ensemble_models[0],
         smiles=df_val[smiles_column].tolist(),
         extra_descriptors=val_extra_features if use_extra_features else None,
+        extra_feature_names=extra_feature_cols if use_extra_features else None,
         is_classifier=model_type == "classifier",
     )
     sample_ids = df_val.iloc[shap_indices][id_column].reset_index(drop=True) if id_column in df_val.columns else None

@@ -39,7 +39,7 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Layer 2: Workbench + Bridges (changes often, small layer)
-ARG WORKBENCH_VERSION=0.8.309
+ARG WORKBENCH_VERSION=0.8.310
 RUN pip install --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}" && \
     pip install --no-cache-dir --no-deps workbench-bridges
 

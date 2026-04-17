@@ -254,6 +254,7 @@ def compute_chemprop_shap(
     model,
     smiles: list[str],
     extra_descriptors: np.ndarray | None = None,
+    extra_feature_names: list[str] | None = None,
     sample_size: int = 500,
     seed: int = 42,
     is_classifier: bool = False,
@@ -266,11 +267,20 @@ def compute_chemprop_shap(
     for independent binary features and produces nearly identical rankings to
     PermutationExplainer at ~20-30x the speed.
 
+    For hybrid models (SMILES + extra descriptors), each descriptor column is
+    also ablated by replacing it with the sample mean across explained molecules.
+    Because the model's X_d_transform standardizes raw descriptors via
+    (x - mean) / scale, substituting the column mean maps to 0 after the
+    transform — the SHAP-standard "feature absent" baseline.
+
     Args:
         model (object): A trained chemprop MPNN model (already in eval mode).
         smiles (list): List of SMILES strings to explain.
         extra_descriptors (np.ndarray | None): Optional (n_molecules, n_features) array of extra
             descriptors matching the smiles list. Pass None for SMILES-only models.
+        extra_feature_names (list[str] | None): Column names for extra_descriptors.
+            Required when extra_descriptors is provided so the descriptors appear
+            in the returned feature_names with readable labels.
         sample_size (int): Max molecules to sample (from the provided list).
         seed (int): Random seed for reproducible sampling.
         is_classifier (bool): Whether the model is a classifier (needed to distinguish
@@ -281,11 +291,15 @@ def compute_chemprop_shap(
 
             - shap_values: (n_samples, n_classes, n_active_features) array for multiclass
               classification, or (n_samples, n_active_features) for regression.
-            - feature_names: List of human-readable feature names for active bits.
+            - feature_names: List of human-readable feature names for active bits,
+              followed by any extra descriptor names.
             - indices: Array of sampled molecule indices.
             - feature_fractions: (n_samples, n_active_features) array of per-molecule
-              feature fractions (e.g., fraction of atoms that are nitrogen).
+              feature fractions (atom/bond fractions in [0, 1], extra descriptors
+              min-max normalized to [0, 1] for beeswarm coloring).
     """
+    if extra_descriptors is not None and extra_feature_names is None:
+        raise ValueError("extra_feature_names must be provided when extra_descriptors is not None")
     # Create featurizers with default v2 settings
     atom_feat = BitAblationAtomFeaturizer.v2()
     bond_feat = BitAblationBondFeaturizer()
@@ -370,7 +384,7 @@ def compute_chemprop_shap(
         if (feat_idx + 1) % 10 == 0:
             print(f"  Progress: {feat_idx + 1}/{n_active} features", flush=True)
 
-    print(f"  Ablation complete ({n} molecules x {n_active} features)", flush=True)
+    print(f"  Ablation complete ({n} molecules x {n_active} graph features)", flush=True)
 
     # Reset featurizer masks
     atom_feat.keep_mask = all_on[:n_atom_bits]
@@ -378,6 +392,53 @@ def compute_chemprop_shap(
 
     # Filter fractions to active-only columns to match ablation values
     active_fractions = all_fractions[:, active_indices]
+
+    # --- Extra descriptor ablation (hybrid models) ---
+    # Chemprop v2's official Shapley notebook only ablates atom/bond bits. We extend it
+    # to descriptors by replacing each column with its sample mean. Because the model's
+    # X_d_transform standardizes via (x - mean) / scale at eval time, mean-substitution
+    # maps to 0 after the transform — the SHAP-standard "feature absent" baseline.
+    if extra_descriptors is not None and extra_feature_names is not None:
+        n_extra = sampled_x_d.shape[1]
+        if len(extra_feature_names) != n_extra:
+            raise ValueError(
+                f"extra_feature_names length ({len(extra_feature_names)}) must match "
+                f"extra_descriptors columns ({n_extra})"
+            )
+
+        print(f"  Running ablation for {n_extra} extra descriptors...", flush=True)
+        extra_means = np.nanmean(sampled_x_d, axis=0)
+
+        if is_multiclass:
+            extra_ablation = np.zeros((n, n_classes, n_extra), dtype=np.float32)
+        else:
+            extra_ablation = np.zeros((n, n_extra), dtype=np.float32)
+
+        for desc_idx in range(n_extra):
+            ablated_x_d = sampled_x_d.copy()
+            ablated_x_d[:, desc_idx] = extra_means[desc_idx]
+            ablated_preds = _batched_predict(model, baseline_graphs, ablated_x_d)
+            if is_multiclass:
+                extra_ablation[:, :, desc_idx] = baseline_preds - ablated_preds
+            else:
+                extra_ablation[:, desc_idx] = baseline_preds[:, 0] - ablated_preds[:, 0]
+
+        # Min-max normalize descriptor values for beeswarm coloring (consistent with
+        # atom/bond fractions which are already in [0, 1]).
+        extra_min = np.nanmin(sampled_x_d, axis=0)
+        extra_max = np.nanmax(sampled_x_d, axis=0)
+        extra_range = extra_max - extra_min
+        extra_range = np.where(extra_range > 1e-9, extra_range, 1.0)
+        extra_fractions = (sampled_x_d - extra_min) / extra_range
+
+        # Concatenate graph + descriptor results along the feature axis
+        concat_axis = 2 if is_multiclass else 1
+        ablation_values = np.concatenate([ablation_values, extra_ablation], axis=concat_axis)
+        active_fractions = np.concatenate([active_fractions, extra_fractions], axis=1)
+        feature_names = feature_names + list(extra_feature_names)
+
+        print(f"  Hybrid ablation complete ({n_active} graph + {n_extra} descriptor features)", flush=True)
+
     return ablation_values, feature_names, indices, active_fractions
 
 
