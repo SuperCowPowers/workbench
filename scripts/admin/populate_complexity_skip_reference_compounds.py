@@ -43,7 +43,7 @@ REFERENCE_COMPOUNDS = [
         "name": "eicosanoic_acid",
         "smiles": "CCCCCCCCCCCCCCCCCCCC(=O)O",
         "expected_status": "ok",
-        "notes": "20-carbon fatty acid (18 rot bonds) — just under the 30-rot-bond limit",
+        "notes": "20-carbon fatty acid (18 rot bonds) — well under the 50-rot-bond limit",
     },
     {
         "name": "cyclosporin_a",
@@ -59,19 +59,24 @@ REFERENCE_COMPOUNDS = [
             "NOT block macrocycles; that's a separate design decision."
         ),
     },
-    # skip:rot_bonds (>30 rotatable bonds)
+    # skip:rot_bonds (>50 rotatable bonds)
     {
-        "name": "linear_c40",
-        "smiles": "C" * 40,
+        "name": "linear_c60",
+        "smiles": "C" * 60,
         "expected_status": "skip:rot_bonds",
-        "notes": "C40 n-alkane with 37 rot bonds > 30",
+        "notes": "C60 n-alkane with 57 rot bonds > 50",
     },
-    # skip:heavy_atoms (>100 heavy atoms)
+    # skip:heavy_atoms (>150 heavy atoms, but <500 so standardize doesn't
+    # reject it upstream — standardize has its own 500-atom cap)
     {
-        "name": "glycine_50mer",
-        "smiles": "NCC(=O)" + "NCC(=O)" * 50 + "O",
+        "name": "glycine_40mer",
+        "smiles": "NCC(=O)" + "NCC(=O)" * 39 + "O",
         "expected_status": "skip:heavy_atoms",
-        "notes": "51-residue poly-glycine (205 heavy atoms > 100)",
+        "notes": (
+            "40-residue poly-glycine (161 heavy atoms). Over the 150-heavy-atom "
+            "3D-pipeline guard but under standardize's 500-atom rejection, so this "
+            "specifically exercises the 3D pipeline's skip:heavy_atoms branch."
+        ),
     },
     # skip:rings (>10 ring systems)
     {

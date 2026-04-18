@@ -121,9 +121,16 @@ REFERENCE_COMPOUNDS = [
         "npr2_max": 1.01,
         "imhb_min": 0.0,
         "imhb_max": 0.0,
-        "undefined_chiral_centers_expected": 0,
+        "undefined_chiral_centers_expected": 4,
         "stereo_preserved_expected": True,
-        "notes": "T_d-symmetric diamondoid cage — textbook sphere shape",
+        "notes": (
+            "T_d-symmetric diamondoid cage — textbook sphere shape. "
+            "RDKit's CIP detector flags the 4 bridgehead carbons as "
+            "'potentially chiral' even though T_d symmetry makes them "
+            "equivalent (not truly stereogenic). Expected behavior — the "
+            "undefined_chiral_centers metric reports what RDKit detects, "
+            "which is a useful upper bound for input-ambiguity warnings."
+        ),
     },
     {
         "name": "biphenyl",

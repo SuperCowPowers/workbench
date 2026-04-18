@@ -500,10 +500,14 @@ def standardize(
         # Full standardization with optional salt removal
         std_mol, salt_smiles = standardizer.standardize(mol)
 
-        # After standardization, validate the result
+        # After standardization, validate the result. The upper bound (500
+        # heavy atoms) is a sanity cap that comfortably covers drug-like
+        # molecules, small peptides, PROTACs, and most natural products
+        # while still rejecting truly pathological inputs. Downstream
+        # pipelines (e.g. mol_descriptors_3d) apply their own stricter
+        # caps as needed for compute budget.
         if std_mol is not None:
-            # Check if molecule is reasonable
-            if std_mol.GetNumAtoms() == 0 or std_mol.GetNumAtoms() > 200:  # Arbitrary limits
+            if std_mol.GetNumAtoms() == 0 or std_mol.GetNumAtoms() > 500:
                 log.error(f"Rejecting molecule size: {std_mol.GetNumAtoms()} atoms")
                 log.error(f"Original SMILES: {smiles}")
                 return pd.Series({"smiles": None, "salt": salt_smiles, "undefined_chiral_centers": n_undefined})

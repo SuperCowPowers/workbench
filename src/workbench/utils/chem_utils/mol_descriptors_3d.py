@@ -145,9 +145,17 @@ logger = logging.getLogger("workbench")
 # Molecular Complexity Check
 # =============================================================================
 
-# Thresholds for skipping 3D computation (molecules above these are too slow)
-MAX_HEAVY_ATOMS = 100
-MAX_ROTATABLE_BONDS = 30
+# Thresholds for skipping 3D computation. Sized for the async endpoint's
+# 15-minute invocation budget in Boltzmann mode (adaptive 50-300 conformers);
+# the realtime endpoint's own 60s SageMaker timeout is the tighter practical
+# ceiling for fast-mode calls, so we size these for the async/batch case
+# and let realtime fail its own timeout on pathological inputs.
+#
+# Per-conformer wall-clock is still capped by CONFORMER_TIMEOUT_SECONDS
+# (10s), so worst-case per-molecule = 10s × n_conformers. In practice most
+# conformers finish in <1s and the theoretical ceiling doesn't materialize.
+MAX_HEAVY_ATOMS = 150
+MAX_ROTATABLE_BONDS = 50
 MAX_RING_SYSTEMS = 10
 MAX_RING_COMPLEXITY = 15  # rings + bridgehead + spiro atoms (backstop for polycyclic cages)
 
