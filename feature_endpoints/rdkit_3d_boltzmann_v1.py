@@ -70,8 +70,8 @@ if __name__ == "__main__":
     # here are the knobs you might want to tune and when:
     #
     #   to_endpoint() kwargs:
-    #     instance="ml.c7i.4xlarge"   — bigger instance if your model needs more
-    #                                   CPU/memory per worker (default ml.c7i.2xlarge)
+    #     instance="ml.c7i.2xlarge"   — bigger instance if your model needs more
+    #                                   CPU/memory per worker (default ml.c7i.xlarge)
     #
     #   model.upsert_workbench_meta({...})  — set BEFORE to_endpoint():
     #     async_max_concurrent_per_instance=4   — bump up if your model is

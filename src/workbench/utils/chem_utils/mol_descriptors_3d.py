@@ -132,8 +132,10 @@ BOLTZMANN_ENERGY_WINDOW_KCAL = 5.0
 BOLTZMANN_TEMPERATURE_K = 298.0
 
 # Adaptive conformer counts keyed by rotatable-bond thresholds.
-# rot < 8 → 50, 8 ≤ rot ≤ 12 → 200, rot > 12 → 300.
-ADAPTIVE_CONFORMER_TIERS = [(8, 50), (12, 200)]
+# The tier is selected by the first (threshold, n_confs) whose threshold is
+# strictly greater than the molecule's rotatable-bond count.
+# rot < 8 → 50, 8 ≤ rot ≤ 12 → 200, rot ≥ 13 → 300.
+ADAPTIVE_CONFORMER_TIERS = [(8, 50), (13, 200)]
 ADAPTIVE_CONFORMER_DEFAULT = 300
 
 logger = logging.getLogger("workbench")
@@ -387,9 +389,9 @@ def adaptive_n_conformers(mol: Chem.Mol) -> int:
     """Return the conformer count for Boltzmann mode based on rotatable bonds.
 
     Community-standard tiering (datamol-style):
-        rot_bonds < 8   → 50
-        rot_bonds 8-12  → 200
-        rot_bonds > 12  → 300
+        rot_bonds < 8        → 50
+        rot_bonds 8..12      → 200
+        rot_bonds ≥ 13       → 300
 
     Args:
         mol: RDKit molecule (Hs not required for this calculation)
@@ -608,10 +610,13 @@ def get_mordred_3d_feature_names() -> List[str]:
 
 def _get_atom_positions_and_masses(mol: Chem.Mol, conf_id: int = 0) -> tuple:
     """
-    Get atom positions and masses as numpy arrays.
+    Get heavy-atom positions and masses as numpy arrays.
 
-    Note: Assumes explicit Hs have already been removed (via Chem.RemoveHs)
-    during conformer generation, so all atoms are heavy atoms.
+    Explicit Hs are filtered out inside this function so callers don't need
+    to strip them first. The pipeline keeps Hs attached because Mordred 3D
+    descriptors (CPSA) need them for partial-charge calculations, but the
+    pharmacophore descriptors built on this helper use the cheminformatics
+    convention of heavy-atom-only geometry.
 
     Returns:
         Tuple of (positions array [N, 3], masses array [N]), or (None, None) if failed
@@ -624,6 +629,8 @@ def _get_atom_positions_and_masses(mol: Chem.Mol, conf_id: int = 0) -> tuple:
     masses = []
 
     for atom in mol.GetAtoms():
+        if atom.GetAtomicNum() == 1:
+            continue
         pos = conf.GetAtomPosition(atom.GetIdx())
         positions.append([pos.x, pos.y, pos.z])
         masses.append(atom.GetMass())
@@ -677,6 +684,12 @@ def compute_amphiphilic_moment(mol: Chem.Mol, conf_id: int = 0) -> float:
     """
     Calculate distance between centroids of polar and nonpolar atom regions.
 
+    Polar atoms: N, O, S, P, and halogens (F, Cl, Br, I).
+    Nonpolar atoms: carbons not adjacent to N, O, S, or P (halogen-bonded
+    carbons are classified as nonpolar — C-F/C-Cl are only weakly polarized
+    and would otherwise bias the amphiphilic signal on heavily halogenated
+    scaffolds).
+
     Higher values indicate clearer amphiphilic character, which affects:
     - Membrane partitioning and orientation
     - Transporter recognition (P-gp substrates are typically amphipathic)
@@ -729,12 +742,14 @@ def compute_charge_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
     conf = mol.GetConformer(conf_id)
     com = np.average(positions, axis=0, weights=masses)
 
-    # Find basic nitrogens (protonatable)
+    # Find basic nitrogens (protonatable): aromatic N or N with at least one H.
+    # includeNeighbors=True counts graph H atoms as well as implicit Hs, which
+    # matters because the pipeline calls Chem.AddHs before descriptors run and
+    # the default GetTotalNumHs(False) would return 0 for every N in that mol.
     n_positions = []
     for atom in mol.GetAtoms():
         if atom.GetSymbol() == "N":
-            # Include aromatic N or N with H (potential protonation sites)
-            if atom.GetTotalNumHs() > 0 or atom.GetIsAromatic():
+            if atom.GetTotalNumHs(includeNeighbors=True) > 0 or atom.GetIsAromatic():
                 pos = conf.GetAtomPosition(atom.GetIdx())
                 n_positions.append([pos.x, pos.y, pos.z])
 
@@ -787,14 +802,17 @@ def compute_hba_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
     conf = mol.GetConformer(conf_id)
     com = np.average(positions, axis=0, weights=masses)
 
-    # Find H-bond acceptors (O and N with lone pairs)
+    # Find H-bond acceptors: all O, plus N without any H (pure acceptor like
+    # tertiary/aromatic N). includeNeighbors=True is required because the
+    # pipeline calls Chem.AddHs before descriptors run — default GetTotalNumHs
+    # returns 0 for every N in a mol with explicit graph Hs.
     hba_positions = []
     for atom in mol.GetAtoms():
         symbol = atom.GetSymbol()
         if symbol == "O":
             pos = conf.GetAtomPosition(atom.GetIdx())
             hba_positions.append([pos.x, pos.y, pos.z])
-        elif symbol == "N" and atom.GetTotalNumHs() == 0:
+        elif symbol == "N" and atom.GetTotalNumHs(includeNeighbors=True) == 0:
             pos = conf.GetAtomPosition(atom.GetIdx())
             hba_positions.append([pos.x, pos.y, pos.z])
 
@@ -805,12 +823,34 @@ def compute_hba_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
     return float(np.linalg.norm(com - hba_centroid))
 
 
+IMHB_MIN_ANGLE_DEG = 120.0
+
+
+def _dha_angle_degrees(d_pos, h_pos, a_pos) -> float:
+    """Return the D-H...A angle at the H vertex, in degrees."""
+    hd = np.array([d_pos.x - h_pos.x, d_pos.y - h_pos.y, d_pos.z - h_pos.z])
+    ha = np.array([a_pos.x - h_pos.x, a_pos.y - h_pos.y, a_pos.z - h_pos.z])
+    norm = np.linalg.norm(hd) * np.linalg.norm(ha)
+    if norm == 0:
+        return 0.0
+    cos_angle = np.clip(np.dot(hd, ha) / norm, -1.0, 1.0)
+    return float(np.degrees(np.arccos(cos_angle)))
+
+
 def compute_intramolecular_hbond_potential(mol: Chem.Mol, conf_id: int = 0) -> int:
     """
     Estimate potential for intramolecular hydrogen bonds.
 
-    Counts donor-acceptor pairs within favorable distance (2.5-3.5 Angstroms) and
-    topological separation (4-6 bonds apart).
+    Counts donor-acceptor pairs that satisfy all three geometric criteria:
+      1. D...A heavy-atom distance 2.5-3.5 Angstroms
+      2. Topological separation 4-6 bonds (favors 6-, 7-, 8-membered IMHB
+         pseudo-rings)
+      3. D-H...A angle >= 120 degrees (rules out geometrically-close but
+         non-linear pairs that can't form an H-bond)
+
+    The angle check requires explicit Hs on the molecule; the pipeline
+    calls Chem.AddHs before descriptors run, so this precondition holds.
+    Donors with no explicit H neighbors are silently skipped.
 
     Intramolecular H-bonds enable "chameleonic" behavior:
     - Molecules can mask polar groups in nonpolar membrane environments
@@ -840,7 +880,10 @@ def compute_intramolecular_hbond_potential(mol: Chem.Mol, conf_id: int = 0) -> i
     imhb_count = 0
 
     for d_idx in hbd_indices:
+        d_atom = mol.GetAtomWithIdx(d_idx)
         d_pos = conf.GetAtomPosition(d_idx)
+        h_neighbors = [n.GetIdx() for n in d_atom.GetNeighbors() if n.GetAtomicNum() == 1]
+
         for a_idx in hba_indices:
             # Skip same atom or directly bonded
             if d_idx == a_idx:
@@ -852,13 +895,27 @@ def compute_intramolecular_hbond_potential(mol: Chem.Mol, conf_id: int = 0) -> i
 
             a_pos = conf.GetAtomPosition(a_idx)
             dist = d_pos.Distance(a_pos)
+            if not (2.5 <= dist <= 3.5):
+                continue
 
-            # Typical IMHB distance range
-            if 2.5 <= dist <= 3.5:
-                # Check topological separation (4-6 bonds favors IMHB geometry)
-                path = Chem.GetShortestPath(mol, d_idx, a_idx)
-                if path and 4 <= len(path) <= 7:
-                    imhb_count += 1
+            # Topological separation: GetShortestPath returns atoms, so a
+            # path of N atoms = N-1 bonds. 4-6 bonds covers the favorable
+            # 6-, 7-, and 8-membered IMHB pseudo-rings (salicylate-like
+            # geometry and the β-blocker-style 7-membered case).
+            path = Chem.GetShortestPath(mol, d_idx, a_idx)
+            if not path or not (5 <= len(path) <= 7):
+                continue
+
+            # Angle check: at least one H on the donor must point toward the
+            # acceptor with a D-H...A angle >= IMHB_MIN_ANGLE_DEG.
+            angle_ok = False
+            for h_idx in h_neighbors:
+                h_pos = conf.GetAtomPosition(h_idx)
+                if _dha_angle_degrees(d_pos, h_pos, a_pos) >= IMHB_MIN_ANGLE_DEG:
+                    angle_ok = True
+                    break
+            if angle_ok:
+                imhb_count += 1
 
     return imhb_count
 
@@ -960,7 +1017,6 @@ def compute_conformer_statistics(mol: Chem.Mol) -> Dict[str, float]:
         "conf_energy_min": energy_min,
         "conf_energy_range": energy_range,
         "conf_energy_std": energy_std,
-        "conf_count": mol.GetNumConformers(),
         "conformational_flexibility": flexibility,
     }
 
@@ -1026,7 +1082,41 @@ def get_3d_diagnostic_names() -> List[str]:
         "desc3d_embed_tier",
         "desc3d_force_field",
         "desc3d_compute_time_s",
+        "desc3d_stereo_preserved",
     ]
+
+
+def _stereo_preserved(mol_with_conf: Chem.Mol, input_chirality: frozenset) -> bool:
+    """Return True if the embedded 3D geometry reproduces the input stereo.
+
+    Compares the input's assigned chiral centers (captured before embedding)
+    against the stereo re-derived from the 3D coordinates of the first
+    conformer. Compounds with no assigned stereo return True (trivially
+    preserved — nothing to drift from).
+
+    Args:
+        mol_with_conf: Mol with at least one conformer, post-embedding.
+        input_chirality: frozenset of (atom_idx, CIP_code) tuples captured
+            from the input mol before Chem.AddHs.
+
+    Returns:
+        True if stereo matches or there was no stereo to preserve, False if
+        any center drifted during embedding.
+    """
+    if not input_chirality:
+        return True
+    try:
+        mol_copy = Chem.Mol(mol_with_conf)
+        Chem.AssignStereochemistryFrom3D(mol_copy, confId=0, replaceExistingTags=True)
+        post_chirality = frozenset(
+            Chem.FindMolChiralCenters(
+                mol_copy, includeUnassigned=False, useLegacyImplementation=False
+            )
+        )
+        return post_chirality == input_chirality
+    except Exception as e:
+        logger.debug(f"Stereo preservation check failed: {e}")
+        return False
 
 
 def _compute_descriptors_boltzmann(mol: Chem.Mol) -> Tuple[Dict[str, float], int]:
@@ -1150,13 +1240,21 @@ def compute_descriptors_3d(
     logger.info(f"Computing 3D descriptors for {n_molecules} molecules (mode={mode})...")
     logger.info(f"Parameters: n_conformers={n_confs_desc}, optimize={optimize}, " f"force_tol={BOLTZMANN_FORCE_TOL}")
 
-    # Initialize feature + diagnostic columns
+    # Initialize feature + diagnostic columns. Numeric diagnostics get np.nan;
+    # string and bool diagnostics get object dtype so per-row assignment of
+    # non-float values doesn't raise pandas FutureWarnings.
     feature_names = get_3d_feature_names()
     diag_names = get_3d_diagnostic_names()
+    object_dtype_diagnostics = {
+        "desc3d_status",
+        "desc3d_mode",
+        "desc3d_force_field",
+        "desc3d_stereo_preserved",
+    }
     for col in feature_names:
         result[col] = np.nan
     for col in diag_names:
-        result[col] = np.nan
+        result[col] = pd.Series([pd.NA] * len(result), dtype=object) if col in object_dtype_diagnostics else np.nan
     result["desc3d_status"] = "skipped"
     result["desc3d_mode"] = mode
 
@@ -1182,6 +1280,16 @@ def compute_descriptors_3d(
                     result.at[idx, "desc3d_status"] = complexity_status
                     continue
 
+            # Snapshot the defined chiral centers so we can verify the 3D
+            # embedding reproduces them. Stored as a set of (atom_idx, code)
+            # tuples, restricted to CENTERS WITH ASSIGNED STEREO — undefined
+            # centers are reported separately by mol_standardize.
+            input_chirality = frozenset(
+                Chem.FindMolChiralCenters(
+                    mol, includeUnassigned=False, useLegacyImplementation=False
+                )
+            )
+
             mol = Chem.AddHs(mol)
 
             # Conformer generation — mode only affects count
@@ -1205,6 +1313,11 @@ def compute_descriptors_3d(
                 continue
 
             result.at[idx, "desc3d_conf_count"] = mol.GetNumConformers()
+
+            # Verify the embedded 3D geometry reproduces the input stereo. Only
+            # meaningful when the input actually had assigned stereo; compounds
+            # with no chiral centers are trivially preserved (True).
+            result.at[idx, "desc3d_stereo_preserved"] = _stereo_preserved(mol, input_chirality)
 
             # Both modes: Boltzmann-weighted ensemble descriptors
             features, confs_in_window = _compute_descriptors_boltzmann(mol)

@@ -48,9 +48,10 @@ from workbench.api import Model
 model = Model("smiles-to-3d-boltzmann-v1")
 end = model.to_endpoint(
     async_endpoint=True,
-    instance="ml.c7i.2xlarge",
     tags=["smiles", "3d descriptors", "boltzmann"],
 )
+# Override the default ml.c7i.xlarge with instance="ml.c7i.2xlarge" if your
+# model needs more CPU/memory per worker.
 ```
 
 Async endpoints deploy with **scale-to-zero** auto-scaling -- the instance spins down after ~10 minutes of idle time and cold-starts on the next request. This makes them cost-effective for overnight batch workloads.

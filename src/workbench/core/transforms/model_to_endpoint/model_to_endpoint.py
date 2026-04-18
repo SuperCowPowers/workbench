@@ -161,7 +161,7 @@ class ModelToEndpoint(Transform):
                 instance_type = self.instance
                 self.log.important(f"Endpoint: Using specified instance type: {instance_type}")
             elif self.async_endpoint:
-                instance_type = "ml.c7i.2xlarge"
+                instance_type = "ml.c7i.xlarge"
                 self.log.important(f"Async Endpoint: Default instance type: {instance_type}")
             elif needs_more_resources:
                 instance_type = "ml.c7i.large"

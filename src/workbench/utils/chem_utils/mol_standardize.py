@@ -4,8 +4,17 @@ Following ChEMBL structure standardization pipeline
 
 Purpose:
     Standardizes chemical structures to ensure consistent molecular representations
-    for ADMET modeling. Handles tautomers, salts, charges, and structural variations
-    that can cause the same compound to be represented differently.
+    for ADMET modeling. Handles salts, charges, and structural variations that can
+    cause the same compound to be represented differently, and collapses tautomeric
+    forms to a single canonical tautomer (one-compound-one-structure determinism).
+
+Scope note:
+    This module performs canonical-form standardization, not state enumeration.
+    It does NOT enumerate multiple tautomers, set protonation state to a target
+    pH, or predict pKa. Inputs are mapped to one deterministic canonical form
+    that matches the training-data convention (ChEMBL pipeline). If downstream
+    work requires physiological-pH speciation or tautomer ensembles, that belongs
+    in a separate preprocessing stage.
 
 Standardization Pipeline:
     1. Cleanup
@@ -25,13 +34,18 @@ Standardization Pipeline:
        - Example: CC(=O)[O-] → CC(=O)O
 
     4. Tautomer Canonicalization (optional, default=True)
-       - Generates canonical tautomer form for consistency
+       - Picks RDKit's canonical tautomer (one form per compound — no enumeration)
+       - Uses TautomerEnumerator.Canonicalize, not .Enumerate
        - Example: Oc1ccccn1 → O=c1cccc[nH]1 (2-hydroxypyridine → 2-pyridone)
 
 Output DataFrame Columns:
     - orig_smiles: Original input SMILES (preserved for traceability)
     - smiles: Standardized molecule (with or without salts based on extract_salts)
     - salt: Removed salt/counterion as SMILES (only populated if extract_salts=True)
+    - undefined_chiral_centers: Count of chiral centers in the original input
+        SMILES that have no stereo flag (0 means fully defined). Nonzero values
+        indicate features reflect an arbitrary enantiomer — downstream models
+        and tests should surface this to the caller.
 
 Salt Handling:
     Salt forms can dramatically affect properties like solubility.
@@ -208,7 +222,10 @@ class MolStandardizer:
         Initialize standardizer with ChEMBL defaults
 
         Args:
-            canonicalize_tautomer: Whether to canonicalize tautomers (default True)
+            canonicalize_tautomer: If True, pick RDKit's canonical tautomer
+                (single form via TautomerEnumerator.Canonicalize). This is a
+                deterministic one-compound-one-structure choice, NOT tautomer
+                enumeration. (default True)
             remove_salts: Whether to remove salts/counterions (default True)
             drop_mixtures: Whether to reject multi-component entries where a
                 removed fragment is an unknown large organic (likely a mixture
@@ -219,6 +236,16 @@ class MolStandardizer:
         self.remove_salts = remove_salts
         self.drop_mixtures = drop_mixtures
         self.params = rdMolStandardize.CleanupParameters()
+        # RDKit's tautomer enumerator defaults to stripping sp3 and bond stereo
+        # during Canonicalize() — a conservative choice motivated by the fact
+        # that tautomer graph transformations can occasionally invalidate
+        # stereo labels. In practice, for drug-like molecules, tautomerization
+        # rarely touches the stereo-bearing atoms, and silently dropping @
+        # flags on every L-amino-acid / chiral scaffold is a much bigger
+        # accuracy hit than the rare false-positive stereo it would avoid.
+        # Override to preserve stereo through the canonical-tautomer pass.
+        self.params.tautomerRemoveSp3Stereo = False
+        self.params.tautomerRemoveBondStereo = False
         self.tautomer_enumerator = rdMolStandardize.TautomerEnumerator(self.params)
 
     def standardize(self, mol: Mol) -> Tuple[Optional[Mol], Optional[str]]:
@@ -402,7 +429,9 @@ def standardize(
 
     Args:
         df: Input DataFrame with SMILES column
-        canonicalize_tautomer: Whether to canonicalize tautomers (default: True)
+        canonicalize_tautomer: If True, pick RDKit's canonical tautomer (single
+            form via TautomerEnumerator.Canonicalize). One-compound-one-structure
+            canonicalization, NOT tautomer enumeration. (default: True)
         extract_salts: Whether to remove and extract salts (default: True)
                       If False, keeps full molecule with salts/counterions intact,
                       skipping charge neutralization to preserve ionic character
@@ -443,18 +472,33 @@ def standardize(
         # Handle missing values
         if pd.isna(smiles) or smiles == "":
             log.error("Encountered missing or empty SMILES string")
-            return pd.Series({"smiles": None, "salt": None})
+            return pd.Series({"smiles": None, "salt": None, "undefined_chiral_centers": 0})
 
         # Early check for unreasonably long SMILES
         if len(smiles) > 1000:
             log.error(f"SMILES too long ({len(smiles)} chars): {smiles[:50]}...")
-            return pd.Series({"smiles": None, "salt": None})
+            return pd.Series({"smiles": None, "salt": None, "undefined_chiral_centers": 0})
 
         # Parse molecule
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             log.error(f"Invalid SMILES: {smiles}")
-            return pd.Series({"smiles": None, "salt": None})
+            return pd.Series({"smiles": None, "salt": None, "undefined_chiral_centers": 0})
+
+        # Count undefined chiral centers in the ORIGINAL input. We do this
+        # before standardization so the count reflects what the caller sent,
+        # not what tautomer canonicalization or charge neutralization might
+        # introduce. Undefined stereo means features reflect an arbitrary
+        # enantiomer — downstream code should surface this to the user.
+        undefined_centers = Chem.FindMolChiralCenters(
+            mol, includeUnassigned=True, useLegacyImplementation=False
+        )
+        n_undefined = sum(1 for _, code in undefined_centers if code == "?")
+        if n_undefined > 0:
+            log.warning(
+                f"{n_undefined} undefined chiral center(s) in {smiles} "
+                "— features reflect an arbitrary enantiomer"
+            )
 
         # Full standardization with optional salt removal
         std_mol, salt_smiles = standardizer.standardize(mol)
@@ -465,26 +509,31 @@ def standardize(
             if std_mol.GetNumAtoms() == 0 or std_mol.GetNumAtoms() > 200:  # Arbitrary limits
                 log.error(f"Rejecting molecule size: {std_mol.GetNumAtoms()} atoms")
                 log.error(f"Original SMILES: {smiles}")
-                return pd.Series({"smiles": None, "salt": salt_smiles})
+                return pd.Series({"smiles": None, "salt": salt_smiles, "undefined_chiral_centers": n_undefined})
 
         if std_mol is None:
             return pd.Series(
                 {
                     "smiles": None,
                     "salt": salt_smiles,  # May have extracted salt even if full standardization failed
+                    "undefined_chiral_centers": n_undefined,
                 }
             )
 
         # Convert back to SMILES
         return pd.Series(
-            {"smiles": Chem.MolToSmiles(std_mol, canonical=True), "salt": salt_smiles if extract_salts else None}
+            {
+                "smiles": Chem.MolToSmiles(std_mol, canonical=True),
+                "salt": salt_smiles if extract_salts else None,
+                "undefined_chiral_centers": n_undefined,
+            }
         )
 
     # Process molecules
     processed = result[smiles_column].apply(process_smiles)
 
     # Update the dataframe with processed results
-    for col in ["smiles", "salt"]:
+    for col in ["smiles", "salt", "undefined_chiral_centers"]:
         result[col] = processed[col]
 
     return result
