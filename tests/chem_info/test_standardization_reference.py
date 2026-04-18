@@ -39,13 +39,15 @@ def _get_result() -> pd.DataFrame:
         out = standardize(input_df)
         # Join expected-value columns alongside the actual output
         _result_df = out.merge(
-            ref_df[[
-                "id",
-                "expected_smiles",
-                "expected_salt",
-                "expected_undefined_chiral_centers",
-                "notes",
-            ]],
+            ref_df[
+                [
+                    "id",
+                    "expected_smiles",
+                    "expected_salt",
+                    "expected_undefined_chiral_centers",
+                    "notes",
+                ]
+            ],
             on="id",
             how="left",
         )
@@ -60,8 +62,14 @@ def _get_result() -> pd.DataFrame:
 def test_reference_compounds_loadable():
     ref_df = _get_reference_df()
     assert len(ref_df) > 0
-    expected_cols = {"id", "name", "input_smiles", "expected_smiles",
-                     "expected_salt", "expected_undefined_chiral_centers"}
+    expected_cols = {
+        "id",
+        "name",
+        "input_smiles",
+        "expected_smiles",
+        "expected_salt",
+        "expected_undefined_chiral_centers",
+    }
     assert expected_cols.issubset(ref_df.columns)
     print(f"Loaded {len(ref_df)} reference compounds")
 

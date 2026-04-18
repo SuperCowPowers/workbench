@@ -57,9 +57,7 @@ def run_populate(
 ) -> None:
     """Print the DataFrame, then upload + patch descriptions unless dry-run."""
     log.info(f"\nReference compounds ({len(df)} rows) for {csv_key}:")
-    with pd.option_context(
-        "display.max_columns", None, "display.width", 220, "display.max_colwidth", 40
-    ):
+    with pd.option_context("display.max_columns", None, "display.width", 220, "display.max_colwidth", 40):
         log.info(df.to_string(index=False))
 
     if dry_run:

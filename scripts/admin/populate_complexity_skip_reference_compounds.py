@@ -59,7 +59,6 @@ REFERENCE_COMPOUNDS = [
             "NOT block macrocycles; that's a separate design decision."
         ),
     },
-
     # skip:rot_bonds (>30 rotatable bonds)
     {
         "name": "linear_c40",
@@ -67,7 +66,6 @@ REFERENCE_COMPOUNDS = [
         "expected_status": "skip:rot_bonds",
         "notes": "C40 n-alkane with 37 rot bonds > 30",
     },
-
     # skip:heavy_atoms (>100 heavy atoms)
     {
         "name": "glycine_50mer",
@@ -75,17 +73,13 @@ REFERENCE_COMPOUNDS = [
         "expected_status": "skip:heavy_atoms",
         "notes": "51-residue poly-glycine (205 heavy atoms > 100)",
     },
-
     # skip:rings (>10 ring systems)
     {
         "name": "c60_fullerene",
-        "smiles": (
-            "c12c3c4c5c1c6c7c2c8c3c9c4c%10c5c%11c6c%12c7c8c%13c9c%10c%14c%11c%12c%13%14"
-        ),
+        "smiles": ("c12c3c4c5c1c6c7c2c8c3c9c4c%10c5c%11c6c%12c7c8c%13c9c%10c%14c%11c%12c%13%14"),
         "expected_status": "skip:rings",
         "notes": "C60 fullerene — SSSR reports 15 rings > 10",
     },
-
     # skip:ring_complexity (rings + bridgehead + spiro > 15)
     {
         "name": "kekulene_like_polycycle",
@@ -93,7 +87,6 @@ REFERENCE_COMPOUNDS = [
         "expected_status": "skip:ring_complexity",
         "notes": "Fused polycyclic — ring_complexity=17 (rings=9 + bridgehead=8) > 15",
     },
-
     # skip:embed (passes complexity guards, fails conformer gen)
     {
         "name": "cubane",

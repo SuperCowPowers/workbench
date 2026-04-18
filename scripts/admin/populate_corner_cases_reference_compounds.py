@@ -57,7 +57,6 @@ REFERENCE_COMPOUNDS = [
         "expected_status": "skip:empty",
         "notes": ">1000 char guard — standardize rejects before RDKit sees it",
     },
-
     # --- Isotopes / unusual atoms that should still compute normally ---
     {
         "name": "deuterated_methanol",

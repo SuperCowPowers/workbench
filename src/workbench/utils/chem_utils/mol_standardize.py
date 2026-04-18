@@ -490,14 +490,11 @@ def standardize(
         # not what tautomer canonicalization or charge neutralization might
         # introduce. Undefined stereo means features reflect an arbitrary
         # enantiomer — downstream code should surface this to the user.
-        undefined_centers = Chem.FindMolChiralCenters(
-            mol, includeUnassigned=True, useLegacyImplementation=False
-        )
+        undefined_centers = Chem.FindMolChiralCenters(mol, includeUnassigned=True, useLegacyImplementation=False)
         n_undefined = sum(1 for _, code in undefined_centers if code == "?")
         if n_undefined > 0:
             log.warning(
-                f"{n_undefined} undefined chiral center(s) in {smiles} "
-                "— features reflect an arbitrary enantiomer"
+                f"{n_undefined} undefined chiral center(s) in {smiles} " "— features reflect an arbitrary enantiomer"
             )
 
         # Full standardization with optional salt removal

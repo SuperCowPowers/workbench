@@ -629,9 +629,7 @@ def _nitro_atom_indices(mol: Chem.Mol) -> set:
     return indices
 
 
-def _get_atom_positions_and_masses(
-    mol: Chem.Mol, conf_id: int = 0, include_hs: bool = False
-) -> tuple:
+def _get_atom_positions_and_masses(mol: Chem.Mol, conf_id: int = 0, include_hs: bool = False) -> tuple:
     """
     Get atom positions and masses as numpy arrays.
 
@@ -806,9 +804,7 @@ def compute_charge_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
         if atom.GetSymbol() != "N":
             continue
         is_charge_site = (
-            atom.GetFormalCharge() > 0
-            or atom.GetTotalNumHs(includeNeighbors=True) > 0
-            or atom.GetIsAromatic()
+            atom.GetFormalCharge() > 0 or atom.GetTotalNumHs(includeNeighbors=True) > 0 or atom.GetIsAromatic()
         )
         if is_charge_site:
             pos = conf.GetAtomPosition(atom.GetIdx())
@@ -904,11 +900,7 @@ def compute_hba_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
         if symbol == "O":
             pos = conf.GetAtomPosition(atom.GetIdx())
             hba_positions.append([pos.x, pos.y, pos.z])
-        elif (
-            symbol == "N"
-            and atom.GetTotalNumHs(includeNeighbors=True) == 0
-            and atom.GetFormalCharge() <= 0
-        ):
+        elif symbol == "N" and atom.GetTotalNumHs(includeNeighbors=True) == 0 and atom.GetFormalCharge() <= 0:
             pos = conf.GetAtomPosition(atom.GetIdx())
             hba_positions.append([pos.x, pos.y, pos.z])
 
@@ -973,9 +965,7 @@ def compute_intramolecular_hbond_potential(mol: Chem.Mol, conf_id: int = 0) -> i
     hba_matches = mol.GetSubstructMatches(hba_smarts) if hba_smarts else []
     nitro_indices = _nitro_atom_indices(mol)
     hba_indices = [
-        m[0] for m in hba_matches
-        if m[0] not in nitro_indices
-        and mol.GetAtomWithIdx(m[0]).GetFormalCharge() <= 0
+        m[0] for m in hba_matches if m[0] not in nitro_indices and mol.GetAtomWithIdx(m[0]).GetFormalCharge() <= 0
     ]
 
     if not hbd_indices or not hba_indices:
@@ -1213,9 +1203,7 @@ def _stereo_preserved(mol_with_conf: Chem.Mol, input_chirality: frozenset) -> bo
         mol_copy = Chem.Mol(mol_with_conf)
         Chem.AssignStereochemistryFrom3D(mol_copy, confId=0, replaceExistingTags=True)
         post_chirality = frozenset(
-            Chem.FindMolChiralCenters(
-                mol_copy, includeUnassigned=False, useLegacyImplementation=False
-            )
+            Chem.FindMolChiralCenters(mol_copy, includeUnassigned=False, useLegacyImplementation=False)
         )
         return post_chirality == input_chirality
     except Exception as e:
@@ -1389,9 +1377,7 @@ def compute_descriptors_3d(
             # tuples, restricted to CENTERS WITH ASSIGNED STEREO — undefined
             # centers are reported separately by mol_standardize.
             input_chirality = frozenset(
-                Chem.FindMolChiralCenters(
-                    mol, includeUnassigned=False, useLegacyImplementation=False
-                )
+                Chem.FindMolChiralCenters(mol, includeUnassigned=False, useLegacyImplementation=False)
             )
 
             mol = Chem.AddHs(mol)

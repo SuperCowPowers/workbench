@@ -63,7 +63,6 @@ REFERENCE_COMPOUNDS = [
         "expected_undefined_chiral_centers": 0,
         "notes": "Equal-size fragments — acetic acid is in KNOWN_COUNTERIONS so it's stripped",
     },
-
     # --- Charge neutralization ---
     {
         "name": "phenolate",
@@ -73,7 +72,6 @@ REFERENCE_COMPOUNDS = [
         "expected_undefined_chiral_centers": 0,
         "notes": "Charge neutralization: phenolate → phenol",
     },
-
     # --- Tautomer canonicalization ---
     {
         "name": "2_hydroxypyridine",
@@ -99,7 +97,6 @@ REFERENCE_COMPOUNDS = [
         "expected_undefined_chiral_centers": 0,
         "notes": "Keto-enol — RDKit canonicalizer keeps the diketo form",
     },
-
     # --- Stereo preservation (critical: tautomerRemoveSp3Stereo=False) ---
     {
         "name": "l_alanine",
@@ -141,7 +138,6 @@ REFERENCE_COMPOUNDS = [
         "expected_undefined_chiral_centers": 0,
         "notes": "E/Z bond stereo preservation — cis counterpart to trans_butene",
     },
-
     # --- Isotopes / no-op / corner cases ---
     {
         "name": "deuterated_methanol",
@@ -162,8 +158,11 @@ REFERENCE_COMPOUNDS = [
 ]
 
 COLUMN_ORDER = [
-    "id", "name", "input_smiles",
-    "expected_smiles", "expected_salt",
+    "id",
+    "name",
+    "input_smiles",
+    "expected_smiles",
+    "expected_salt",
     "expected_undefined_chiral_centers",
     "notes",
 ]
