@@ -136,6 +136,26 @@ REFERENCE_COMPOUNDS = [
         "notes": "Aromatic N as pure H-bond acceptor — exercises hba_centroid_distance",
     },
     {
+        "name": "nitrobenzene", "smiles": "[O-][N+](=O)c1ccccc1", "shape_class": "",
+        "imhb_min": 0.0, "imhb_max": 0.0,
+        "undefined_chiral_centers_expected": 0, "stereo_preserved_expected": True,
+        "notes": (
+            "Regression gate: nitro N/O must NOT be counted as HBA. Expected "
+            "pharm3d_hba_centroid_dist=0 (the nitro group is the only "
+            "heteroatom and is excluded from the acceptor filter)."
+        ),
+    },
+    {
+        "name": "tetramethylammonium", "smiles": "C[N+](C)(C)C", "shape_class": "",
+        "imhb_min": 0.0, "imhb_max": 0.0,
+        "undefined_chiral_centers_expected": 0, "stereo_preserved_expected": True,
+        "notes": (
+            "Regression gate: quaternary N+ must be counted as a charge site "
+            "(formal_charge > 0 clause) but NOT as an HBA (no lone pair "
+            "available). Td-symmetric — charge centroid coincides with COM."
+        ),
+    },
+    {
         "name": "morpholine", "smiles": "C1COCCN1", "shape_class": "",
         "undefined_chiral_centers_expected": 0, "stereo_preserved_expected": True,
         "notes": "Aliphatic heterocycle with both O acceptor and N-H donor in a ring",

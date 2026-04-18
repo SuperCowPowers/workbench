@@ -608,15 +608,42 @@ def get_mordred_3d_feature_names() -> List[str]:
 # =============================================================================
 
 
-def _get_atom_positions_and_masses(mol: Chem.Mol, conf_id: int = 0) -> tuple:
-    """
-    Get heavy-atom positions and masses as numpy arrays.
+_NITRO_SMARTS = Chem.MolFromSmarts("[#7+](=[#8])[#8-]")
 
-    Explicit Hs are filtered out inside this function so callers don't need
-    to strip them first. The pipeline keeps Hs attached because Mordred 3D
-    descriptors (CPSA) need them for partial-charge calculations, but the
-    pharmacophore descriptors built on this helper use the cheminformatics
-    convention of heavy-atom-only geometry.
+
+def _nitro_atom_indices(mol: Chem.Mol) -> set:
+    """Return set of atom indices that belong to nitro groups (the N+ and both O's).
+
+    The nitro N has no lone pair available — both are consumed in the N=O /
+    N-O[-] bonds — so it cannot accept H-bonds even though a naive 'N with
+    zero H' filter would include it. The two oxygens are likewise
+    electron-deficient and are not treated as classical H-bond acceptors
+    by medicinal-chemistry convention. Used to exclude these atoms from
+    compute_hba_centroid_distance and compute_intramolecular_hbond_potential.
+    """
+    indices = set()
+    if _NITRO_SMARTS is None:
+        return indices
+    for match in mol.GetSubstructMatches(_NITRO_SMARTS):
+        indices.update(match)
+    return indices
+
+
+def _get_atom_positions_and_masses(
+    mol: Chem.Mol, conf_id: int = 0, include_hs: bool = False
+) -> tuple:
+    """
+    Get atom positions and masses as numpy arrays.
+
+    The pipeline keeps Hs attached because Mordred 3D descriptors (CPSA)
+    need them for partial-charge calculations. Most pharmacophore
+    descriptors use the cheminformatics convention of heavy-atom-only
+    geometry (axis length, CoM centroids), so the default filters Hs.
+
+    Pass ``include_hs=True`` for descriptors where H positions are
+    physically meaningful — notably molecular volume (the convex hull
+    of atom centers is a crude approximation of van der Waals volume
+    and needs H atoms to be non-degenerate for small molecules).
 
     Returns:
         Tuple of (positions array [N, 3], masses array [N]), or (None, None) if failed
@@ -629,7 +656,7 @@ def _get_atom_positions_and_masses(mol: Chem.Mol, conf_id: int = 0) -> tuple:
     masses = []
 
     for atom in mol.GetAtoms():
-        if atom.GetAtomicNum() == 1:
+        if not include_hs and atom.GetAtomicNum() == 1:
             continue
         pos = conf.GetAtomPosition(atom.GetIdx())
         positions.append([pos.x, pos.y, pos.z])
@@ -660,22 +687,27 @@ def compute_molecular_axis_length(mol: Chem.Mol, conf_id: int = 0) -> float:
 
 def compute_molecular_volume_3d(mol: Chem.Mol, conf_id: int = 0) -> float:
     """
-    Calculate molecular volume using convex hull of heavy atoms.
+    Calculate molecular volume using RDKit's grid-based van der Waals volume.
+
+    Uses ``AllChem.ComputeMolVolume`` with a 0.2 Angstrom grid: places every
+    atom's van der Waals sphere on the 3D conformer and counts the grid
+    cells inside the union — a physically-meaningful volume that works for
+    any geometry, including planar aromatics and small molecules.
+
+    (Earlier versions of this function used a convex hull of atom centers,
+    which collapsed to near-zero for flat molecules like benzene and was
+    ill-defined for molecules with fewer than 4 heavy atoms. That approach
+    is no longer used.)
 
     Relevant for:
     - Binding site fit
     - Transporter size constraints
     - Solubility prediction
     """
-    positions, _ = _get_atom_positions_and_masses(mol, conf_id)
-    if positions is None or len(positions) < 4:
+    if mol is None or mol.GetNumConformers() == 0:
         return np.nan
-
     try:
-        from scipy.spatial import ConvexHull
-
-        hull = ConvexHull(positions)
-        return float(hull.volume)
+        return float(AllChem.ComputeMolVolume(mol, confId=conf_id, gridSpacing=0.2))
     except Exception:
         return np.nan
 
@@ -728,30 +760,59 @@ def compute_amphiphilic_moment(mol: Chem.Mol, conf_id: int = 0) -> float:
 
 def compute_charge_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
     """
-    Calculate distance from molecular center of mass to centroid of basic nitrogens.
+    Distance from the molecular center of mass to the centroid of potential
+    charge-bearing nitrogens.
 
-    Captures whether ionizable centers are peripheral or central, which affects:
+    The charge-site filter selects nitrogens that are either (a) already
+    carrying a positive formal charge (quaternary ammonium, pyridinium,
+    permanent cations that survive standardize's ChargeParent), (b) carrying
+    at least one H (primary/secondary/tertiary amine, amide, N-H azole —
+    potential protonation sites), or (c) aromatic (often basic, e.g.
+    pyridine). This is a structural proxy for "N that bears or could bear
+    positive charge" — it's broader than strictly-basic amines (also catches
+    amide N-H, aromatic non-basic N like pyrrole, etc.). For strict basicity,
+    use pKa prediction as a preprocessing step.
+
+    The center-of-mass calculation includes H atoms so it matches the physical
+    definition (and stays consistent with RDKit's Descriptors3D.PMI /
+    RadiusOfGyration, which also use all atoms). The centroid of charge-site
+    nitrogens uses only the N atom positions (heavy-atom only, by construction).
+
+    Returns 0.0 when no qualifying nitrogens are present.
+
+    Captures whether potential charge centers are peripheral or central, which
+    affects:
     - Transporter recognition
     - Binding orientation
     - Membrane interaction
     """
-    positions, masses = _get_atom_positions_and_masses(mol, conf_id)
+    positions, masses = _get_atom_positions_and_masses(mol, conf_id, include_hs=True)
     if positions is None:
         return np.nan
 
     conf = mol.GetConformer(conf_id)
     com = np.average(positions, axis=0, weights=masses)
 
-    # Find basic nitrogens (protonatable): aromatic N or N with at least one H.
-    # includeNeighbors=True counts graph H atoms as well as implicit Hs, which
-    # matters because the pipeline calls Chem.AddHs before descriptors run and
-    # the default GetTotalNumHs(False) would return 0 for every N in that mol.
+    # Charge-site nitrogens: (a) already-cationic N (formal charge > 0,
+    # e.g. quaternary ammonium, pyridinium, permanent cations that survive
+    # standardize's ChargeParent); (b) N carrying at least one H
+    # (primary/secondary/tertiary amine, amide, N-H azole — potential
+    # protonation sites); (c) aromatic N (often basic, e.g. pyridine).
+    # includeNeighbors=True is required because the pipeline calls Chem.AddHs
+    # before descriptors run — the default GetTotalNumHs(False) returns 0 for
+    # every N in that mol, which would miss aliphatic amines entirely.
     n_positions = []
     for atom in mol.GetAtoms():
-        if atom.GetSymbol() == "N":
-            if atom.GetTotalNumHs(includeNeighbors=True) > 0 or atom.GetIsAromatic():
-                pos = conf.GetAtomPosition(atom.GetIdx())
-                n_positions.append([pos.x, pos.y, pos.z])
+        if atom.GetSymbol() != "N":
+            continue
+        is_charge_site = (
+            atom.GetFormalCharge() > 0
+            or atom.GetTotalNumHs(includeNeighbors=True) > 0
+            or atom.GetIsAromatic()
+        )
+        if is_charge_site:
+            pos = conf.GetAtomPosition(atom.GetIdx())
+            n_positions.append([pos.x, pos.y, pos.z])
 
     if len(n_positions) == 0:
         return 0.0
@@ -762,9 +823,18 @@ def compute_charge_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
 
 def compute_nitrogen_span(mol: Chem.Mol, conf_id: int = 0) -> float:
     """
-    Calculate maximum distance between any two nitrogen atoms.
+    Maximum pairwise distance between any two nitrogen atoms in the molecule.
 
-    Captures spatial distribution of basic centers, relevant for:
+    This includes ALL nitrogens — no filter on basicity, protonation state,
+    or bonding pattern. Amide, nitro, cyano, aromatic, and aliphatic N are
+    all counted equally. For chemistry-aware filtering, use
+    compute_charge_centroid_distance (protonation proxy) or a pharmacophore
+    feature-match library.
+
+    Returns 0.0 when fewer than two N atoms are present.
+
+    Captures the overall spatial spread of nitrogen-containing groups,
+    relevant for:
     - Multi-point binding interactions
     - Transporter recognition patterns
     """
@@ -788,14 +858,29 @@ def compute_nitrogen_span(mol: Chem.Mol, conf_id: int = 0) -> float:
 
 def compute_hba_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
     """
-    Calculate distance from molecular center of mass to centroid of H-bond acceptors.
+    Distance from the molecular center of mass to the centroid of pure
+    H-bond acceptors.
 
-    Captures spatial distribution of H-bond acceptors, relevant for:
+    The acceptor filter selects all oxygens (any O — alcohol, ether, carbonyl)
+    plus only those nitrogens with zero attached H atoms (pyridine-like
+    aromatic N, tertiary amines, nitriles, imines). This deliberately excludes
+    primary/secondary amines, amides, and N-H azoles — they have lone pairs
+    and CAN accept H-bonds, but they also donate, so the descriptor's intent
+    is to capture pure-acceptor spatial distribution, distinct from the mixed
+    donor-acceptor nitrogens counted by compute_charge_centroid_distance.
+
+    The center-of-mass calculation includes H atoms so it matches the physical
+    definition (consistent with RDKit's Descriptors3D.PMI / RadiusOfGyration).
+    The acceptor centroid uses only the heavy-atom (O or no-H-N) positions.
+
+    Returns 0.0 when no qualifying acceptors are present.
+
+    Captures spatial distribution of pure H-bond acceptors, relevant for:
     - Binding interactions
     - Solubility
     - Permeability
     """
-    positions, masses = _get_atom_positions_and_masses(mol, conf_id)
+    positions, masses = _get_atom_positions_and_masses(mol, conf_id, include_hs=True)
     if positions is None:
         return np.nan
 
@@ -803,16 +888,27 @@ def compute_hba_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
     com = np.average(positions, axis=0, weights=masses)
 
     # Find H-bond acceptors: all O, plus N without any H (pure acceptor like
-    # tertiary/aromatic N). includeNeighbors=True is required because the
-    # pipeline calls Chem.AddHs before descriptors run — default GetTotalNumHs
-    # returns 0 for every N in a mol with explicit graph Hs.
+    # tertiary/aromatic N). Excluded:
+    #   - Nitro N and its two O's (lone pairs consumed by N+=O / N-O- bonds)
+    #   - Any N with positive formal charge (quaternary ammonium, protonated
+    #     species) — the lone pair is consumed by the extra bond/proton
+    # includeNeighbors=True is required because the pipeline calls
+    # Chem.AddHs before descriptors run — default GetTotalNumHs returns
+    # 0 for every N in a mol with explicit graph Hs.
+    nitro_indices = _nitro_atom_indices(mol)
     hba_positions = []
     for atom in mol.GetAtoms():
+        if atom.GetIdx() in nitro_indices:
+            continue
         symbol = atom.GetSymbol()
         if symbol == "O":
             pos = conf.GetAtomPosition(atom.GetIdx())
             hba_positions.append([pos.x, pos.y, pos.z])
-        elif symbol == "N" and atom.GetTotalNumHs(includeNeighbors=True) == 0:
+        elif (
+            symbol == "N"
+            and atom.GetTotalNumHs(includeNeighbors=True) == 0
+            and atom.GetFormalCharge() <= 0
+        ):
             pos = conf.GetAtomPosition(atom.GetIdx())
             hba_positions.append([pos.x, pos.y, pos.z])
 
@@ -869,10 +965,18 @@ def compute_intramolecular_hbond_potential(mol: Chem.Mol, conf_id: int = 0) -> i
     hbd_matches = mol.GetSubstructMatches(hbd_smarts) if hbd_smarts else []
     hbd_indices = [m[0] for m in hbd_matches]
 
-    # HBA atoms (O, N with lone pairs)
+    # HBA atoms (O, N with lone pairs). Excluded:
+    #   - Nitro N/O (lone pairs consumed by N+=O / N-O- bonds)
+    #   - Any atom with positive formal charge (quaternary ammonium N+,
+    #     protonated species, oxocarbenium O+, etc. — no available lone pair)
     hba_smarts = Chem.MolFromSmarts("[#7X2,#7X3,#8X1,#8X2]")
     hba_matches = mol.GetSubstructMatches(hba_smarts) if hba_smarts else []
-    hba_indices = [m[0] for m in hba_matches]
+    nitro_indices = _nitro_atom_indices(mol)
+    hba_indices = [
+        m[0] for m in hba_matches
+        if m[0] not in nitro_indices
+        and mol.GetAtomWithIdx(m[0]).GetFormalCharge() <= 0
+    ]
 
     if not hbd_indices or not hba_indices:
         return 0
