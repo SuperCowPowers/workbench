@@ -18,10 +18,10 @@ Description:
 Created Artifacts:
 
     Models:
-        - smiles-to-3d-descriptors-v1
+        - smiles-to-3d-fast-v1
 
     Endpoints:
-        - smiles-to-3d-descriptors-v1
+        - smiles-to-3d-fast-v1
 """
 
 import os
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     instance = os.environ.get("INSTANCE", DEFAULT_INSTANCE)
 
     # Pull in the custom script path
-    script_path = "model_scripts/rdkit_3d_model_script.py"
+    script_path = "model_scripts/smiles_to_3d_fast_model_script.py"
 
     # Check if we have an existing FeatureSet, if not create one
     if not FeatureSet("feature_endpoint_fs").exists():
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     RECREATE = True
     if RECREATE:
         model = feature_set.to_model(
-            name="smiles-to-3d-descriptors-v1",
+            name="smiles-to-3d-fast-v1",
             model_type=ModelType.TRANSFORMER,
             model_framework=ModelFramework.TRANSFORMER,
             feature_list=["smiles"],
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         model.set_owner("BW")
 
     # Deploy the endpoint and pick the batch size for this config
-    model = Model("smiles-to-3d-descriptors-v1")
+    model = Model("smiles-to-3d-fast-v1")
     if serverless:
         end = model.to_endpoint(tags=tags, serverless=True, mem_size=6144, max_concurrency=5)
         batch_size = BATCH_SIZE_BY_CONFIG["serverless"]

@@ -1,19 +1,26 @@
-# Model: rdkit_mordred_model_script (
+# Model: smiles_to_3d_fast_model_script
 #
-# Description: The molecular_descriptors model uses RDKit and Mordred to compute a wide array of
-#     molecular descriptors from SMILES strings. These descriptors quantify various chemical properties
-#     and structural features, providing critical insights for cheminformatics applications such as
-#     QSAR modeling and drug discovery.
+# Description: Computes 3D conformer-based molecular descriptors from SMILES strings.
+#     This includes RDKit 3D shape descriptors, Mordred 3D descriptors (CPSA, etc.),
+#     Pharmacophore 3D descriptors, and conformer ensemble statistics.
+#
+#     Total: 74 3D descriptors
+#
+#     Note: This endpoint is slower than the 2D descriptor endpoint due to
+#     conformer generation (~10-20 molecules/second).
 #
 import argparse
 import os
 from io import StringIO
+import logging
 import pandas as pd
 import json
 
 # Local imports
 from molecular_utils.mol_standardize import standardize
-from molecular_utils.mol_descriptors import compute_descriptors
+from molecular_utils.mol_descriptors_3d import compute_descriptors_3d
+
+SCRIPT_VERSION = "0.1.0"
 
 # TRAINING SECTION
 #
@@ -82,8 +89,13 @@ def output_fn(output_df, accept_type):
 
 # Prediction function
 def predict_fn(df, model):
+    logger = logging.getLogger("workbench")
+    logger.info(f"smiles_to_3d_fast_model_script v{SCRIPT_VERSION} — processing {len(df)} molecules")
 
-    # Standardize the molecule (extract salts) and then compute descriptors
+    # Standardize the molecule (extract salts) first
     df = standardize(df, extract_salts=True)
-    df = compute_descriptors(df)
+
+    # Compute 3D descriptors (molecules that fail get NaN values, rows kept)
+    df = compute_descriptors_3d(df)
+
     return df

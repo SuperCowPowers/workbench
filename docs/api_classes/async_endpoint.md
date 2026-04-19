@@ -20,7 +20,7 @@ AsyncEndpoint is a drop-in replacement for [Endpoint](endpoint.md) that supports
 from workbench.api import AsyncEndpoint
 
 # Grab an existing Async Endpoint
-endpoint = AsyncEndpoint("smiles-to-3d-boltzmann-v1")
+endpoint = AsyncEndpoint("smiles-to-3d-full-v1")
 
 # Run inference — same API as Endpoint, async S3 polling is handled internally
 results_df = endpoint.inference(df)
@@ -33,7 +33,7 @@ from workbench.api import AsyncEndpoint
 from workbench.api.inference_cache import InferenceCache
 
 # Wrap in InferenceCache for persistent S3-backed caching
-endpoint = AsyncEndpoint("smiles-to-3d-boltzmann-v1")
+endpoint = AsyncEndpoint("smiles-to-3d-full-v1")
 cached_endpoint = InferenceCache(endpoint, cache_key_column="smiles")
 
 # Only uncached rows are sent to the endpoint
@@ -45,7 +45,7 @@ results_df = cached_endpoint.inference(big_df)
 ```py title="deploy_async_endpoint.py"
 from workbench.api import Model
 
-model = Model("smiles-to-3d-boltzmann-v1")
+model = Model("smiles-to-3d-full-v1")
 end = model.to_endpoint(
     async_endpoint=True,
     tags=["smiles", "3d descriptors", "boltzmann"],

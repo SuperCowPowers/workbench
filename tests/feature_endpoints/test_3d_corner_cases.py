@@ -14,7 +14,7 @@ import pandas as pd
 
 from workbench.api import Endpoint, PublicData
 
-ENDPOINT_NAME = "smiles-to-3d-descriptors-v1"
+ENDPOINT_NAME = "smiles-to-3d-fast-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/corner_cases"
 
 endpoint = Endpoint(ENDPOINT_NAME)

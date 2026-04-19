@@ -87,13 +87,14 @@ In addition to the 2D descriptors above, Workbench offers a separate 3D descript
 Conformers are generated using RDKit's ETKDGv3 algorithm (with a tiered fallback strategy for difficult molecules) and optimized with the MMFF94s force field (UFF fallback for unsupported atom types). By default the endpoint generates 10 conformers per molecule and uses the lowest-energy conformer for descriptor calculation. The 3D endpoint is significantly slower than 2D (~1-2 molecules/second vs. near-instant for 2D) and is recommended for deployment on a dedicated realtime instance. See the [3D Molecular Descriptors](3d_descriptors.md) blog for the full pipeline details.
 
 ## Feature Endpoints: Deployed on AWS
-These standardization and descriptor computations run inside Workbench **feature endpoints** — SageMaker-hosted transformer models that take raw SMILES and return standardized structures plus computed descriptors. Three variants are available:
+These standardization and descriptor computations run inside Workbench **feature endpoints** — SageMaker-hosted transformer models that take raw SMILES and return standardized structures plus computed descriptors. Four variants are available:
 
-- **`smiles-to-taut-md-stereo-v1`**: Standard 2D pipeline with salt extraction (ChEMBL default)
-- **`smiles-to-taut-md-stereo-v1-keep-salts`**: 2D pipeline that preserves salt forms for salt-sensitive modeling
-- **`smiles-to-3d-descriptors-v1`**: 3D conformer-based descriptors (75 features) with salt extraction
+- **`smiles-to-2d-v1`**: Standard 2D pipeline with salt extraction (ChEMBL default)
+- **`smiles-to-2d-keep-salts-v1`**: 2D pipeline that preserves salt forms for salt-sensitive modeling
+- **`smiles-to-3d-fast-v1`**: 3D conformer-based descriptors (74 features), fast realtime mode (10 conformers)
+- **`smiles-to-3d-full-v1`**: 3D conformer-based descriptors (74 features, same set), full async mode (50-500 adaptive conformers)
 
-All three endpoints can be deployed as serverless (cost-efficient for intermittent workloads) or on dedicated instances for higher throughput.
+All four endpoints can be deployed as serverless (cost-efficient for intermittent workloads) or on dedicated instances for higher throughput.
 
 ## The AqSol Dataset: A Real-World Example
 [AqSolDB](https://www.nature.com/articles/s41597-019-0151-1) is a curated reference set of aqueous solubility values containing 9,982 unique compounds from 9 publicly available datasets ([Harvard DataVerse](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8)).

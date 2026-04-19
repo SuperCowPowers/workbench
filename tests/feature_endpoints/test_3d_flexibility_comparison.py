@@ -24,8 +24,8 @@ import pandas as pd
 
 from workbench.api import AsyncEndpoint, Endpoint, PublicData
 
-FAST_ENDPOINT = "smiles-to-3d-descriptors-v1"
-BOLTZMANN_ENDPOINT = "smiles-to-3d-boltzmann-v1"
+FAST_ENDPOINT = "smiles-to-3d-fast-v1"
+BOLTZMANN_ENDPOINT = "smiles-to-3d-full-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/flexibility"
 
 # Features to report on. Shape descriptors (NPR, asphericity) are bounded

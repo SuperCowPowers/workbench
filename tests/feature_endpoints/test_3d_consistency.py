@@ -1,8 +1,8 @@
 """Cross-endpoint consistency tests for the two 3D descriptor endpoints.
 
 Compares the outputs of:
-    - smiles-to-3d-descriptors-v1    (realtime, 10 conformers)
-    - smiles-to-3d-boltzmann-v1      (async,  50-300 adaptive conformers)
+    - smiles-to-3d-fast-v1    (realtime, 10 conformers)
+    - smiles-to-3d-full-v1      (async,  50-300 adaptive conformers)
 
 Both endpoints share the same descriptor computation and Boltzmann-weighted
 aggregation code, so for any given compound the feature values should agree
@@ -21,8 +21,8 @@ import pandas as pd
 from workbench.api import AsyncEndpoint, Endpoint, PublicData
 from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
 
-FAST_ENDPOINT = "smiles-to-3d-descriptors-v1"
-BOLTZMANN_ENDPOINT = "smiles-to-3d-boltzmann-v1"
+FAST_ENDPOINT = "smiles-to-3d-fast-v1"
+BOLTZMANN_ENDPOINT = "smiles-to-3d-full-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/reference_compounds_3d"
 
 fast_endpoint = Endpoint(FAST_ENDPOINT)

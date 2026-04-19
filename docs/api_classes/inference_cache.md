@@ -1,6 +1,6 @@
 # InferenceCache
 
-`InferenceCache` is a caching wrapper around a Workbench `Endpoint`. It's handy when an endpoint is slow to invoke and the same inputs show up across calls — the motivating example is the 3D molecular feature endpoint `smiles-to-3d-descriptors-v1`, which takes real time to generate conformers and force-field optimize each molecule.
+`InferenceCache` is a caching wrapper around a Workbench `Endpoint`. It's handy when an endpoint is slow to invoke and the same inputs show up across calls — the motivating example is the 3D molecular feature endpoint `smiles-to-3d-fast-v1`, which takes real time to generate conformers and force-field optimize each molecule.
 
 On each `inference(df)` call, rows whose cache-key value is already in the cache are served from S3, and only the new rows go to the underlying endpoint. Newly-computed rows are written back to the cache. The cache lives in a shared S3-backed `DFStore`, so once one person has computed a row, everyone gets it for free.
 
@@ -13,7 +13,7 @@ On each `inference(df)` call, rows whose cache-key value is already in the cache
 from workbench.api import Endpoint, FeatureSet, InferenceCache
 
 # Wrap a slow endpoint in an InferenceCache
-endpoint = Endpoint("smiles-to-3d-descriptors-v1")
+endpoint = Endpoint("smiles-to-3d-fast-v1")
 cached_endpoint = InferenceCache(endpoint, cache_key_column="smiles")
 
 # Pull a DataFrame of molecules and run inference
@@ -39,11 +39,11 @@ print(cached_endpoint.cache_info())
 **Output** (log lines)
 
 ```
-InferenceCache[smiles-to-3d-descriptors-v1]: 0/50 cache hits
-InferenceCache[smiles-to-3d-descriptors-v1]: computing 50 new rows via endpoint
-InferenceCache[smiles-to-3d-descriptors-v1]: 50/50 cache hits
-InferenceCache[smiles-to-3d-descriptors-v1]: removed 1 entries
-InferenceCache[smiles-to-3d-descriptors-v1]: removed 3 entries
+InferenceCache[smiles-to-3d-fast-v1]: 0/50 cache hits
+InferenceCache[smiles-to-3d-fast-v1]: computing 50 new rows via endpoint
+InferenceCache[smiles-to-3d-fast-v1]: 50/50 cache hits
+InferenceCache[smiles-to-3d-fast-v1]: removed 1 entries
+InferenceCache[smiles-to-3d-fast-v1]: removed 3 entries
 ```
 
 ## Endpoint change detection

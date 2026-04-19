@@ -1,6 +1,6 @@
-"""Validation tests for the async Boltzmann 3D descriptor endpoint (smiles-to-3d-boltzmann-v1).
+"""Validation tests for the async Boltzmann 3D descriptor endpoint (smiles-to-3d-full-v1).
 
-Pulls the same curated reference compounds used by test_rdkit_3d_v1.py and runs
+Pulls the same curated reference compounds used by test_smiles_to_3d_fast_v1.py and runs
 them through the async (Boltzmann-ensemble) endpoint. Validates the same
 invariants and compound-specific expected ranges — the two endpoints are
 expected to produce numerically similar (though not identical) results because
@@ -17,7 +17,7 @@ import pandas as pd
 from workbench.api import AsyncEndpoint, PublicData
 from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
 
-ENDPOINT_NAME = "smiles-to-3d-boltzmann-v1"
+ENDPOINT_NAME = "smiles-to-3d-full-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/reference_compounds_3d"
 
 endpoint = AsyncEndpoint(ENDPOINT_NAME)

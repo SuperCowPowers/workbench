@@ -516,7 +516,7 @@ if __name__ == "__main__":
     scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"
     my_script = scripts_root / "custom_models" / "chem_info" / "molecular_descriptors.py"
     input_name = "aqsol_features"
-    output_name = "test-smiles-to-taut-md-stereo"
+    output_name = "test-smiles-to-2d"
     to_model = FeaturesToModel(input_name, output_name, model_type=ModelType.TRANSFORMER, custom_script=my_script)
     to_model.set_output_tags(["smiles", "molecular descriptors"])
     to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Molecular Descriptors")

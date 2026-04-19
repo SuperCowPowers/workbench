@@ -12,7 +12,7 @@ Models:
     - aqsol-class
     - aqsol-mol-regression
     - aqsol-mol-class
-    - smiles-to-taut-md-stereo-v1
+    - smiles-to-2d-v1
     - smiles-to-fingerprints-v0
     - tautomerize-v0
 
@@ -21,7 +21,7 @@ Endpoints:
     - aqsol-class
     - aqsol-mol-regression
     - aqsol-mol-class
-    - smiles-to-taut-md-stereo-v1
+    - smiles-to-2d-v1
     - smiles-to-fingerprints-v0
     - tautomerize-v0
 """
@@ -132,7 +132,7 @@ if __name__ == "__main__":
     # Create the rdkit FeatureSet (this is an example of using lower level classes)
     if recreate or not FeatureSet("aqsol_mol_descriptors").exists():
         df = DataSource("aqsol_data").pull_dataframe()
-        end = Endpoint("smiles-to-taut-md-stereo-v1")
+        end = Endpoint("smiles-to-2d-v1")
         mol_df = end.inference(df)
         to_features = PandasToFeatures("aqsol_mol_descriptors")
         to_features.set_output_tags(["aqsol", "public"])
@@ -187,11 +187,11 @@ if __name__ == "__main__":
         end.auto_inference()
 
     # A 'Model' to Compute Molecular Descriptors Features
-    if recreate or not Model("smiles-to-taut-md-stereo-v1").exists():
+    if recreate or not Model("smiles-to-2d-v1").exists():
         script_path = get_custom_script_path("chem_info", "molecular_descriptors.py")
         feature_set = FeatureSet("aqsol_features")
         feature_set.to_model(
-            name="smiles-to-taut-md-stereo-v1",
+            name="smiles-to-2d-v1",
             model_type=ModelType.TRANSFORMER,
             model_framework=ModelFramework.TRANSFORMER,
             feature_list=["smiles"],
@@ -215,8 +215,8 @@ if __name__ == "__main__":
         )
 
     # Endpoints for our Transformer/Custom Models
-    if recreate or not Endpoint("smiles-to-taut-md-stereo-v1").exists():
-        m = Model("smiles-to-taut-md-stereo-v1")
+    if recreate or not Endpoint("smiles-to-2d-v1").exists():
+        m = Model("smiles-to-2d-v1")
         end = m.to_endpoint(tags=["smiles", "molecular descriptors", "stereo"])
 
         # Run inference on the endpoint

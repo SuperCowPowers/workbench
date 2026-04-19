@@ -81,7 +81,7 @@ def main():
     df_features = fp_end.inference(df)
 
     # Run the data through our RDKit+Mordred Feature Endpoint
-    rdkit_end = Endpoint("smiles-to-taut-md-stereo-v1")
+    rdkit_end = Endpoint("smiles-to-2d-v1")
     df_features = rdkit_end.inference(df_features)
 
     # Shove this into the DFStore for inspection/use later

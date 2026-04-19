@@ -134,9 +134,23 @@ BOLTZMANN_TEMPERATURE_K = 298.0
 # Adaptive conformer counts keyed by rotatable-bond thresholds.
 # The tier is selected by the first (threshold, n_confs) whose threshold is
 # strictly greater than the molecule's rotatable-bond count.
-# rot < 8 → 50, 8 ≤ rot ≤ 12 → 200, rot ≥ 13 → 300.
-ADAPTIVE_CONFORMER_TIERS = [(8, 50), (13, 200)]
-ADAPTIVE_CONFORMER_DEFAULT = 300
+# rot < 8 → 50, 8 ≤ rot ≤ 12 → 300, rot ≥ 13 → 500.
+#
+# The upper tiers are bumped above the datamol-style 200/300 to reduce the
+# stochastic seed variance we measured on very flexible molecules (~20%
+# NPR1 spread across seeds at 300 conformers for 13+ rot-bond chains).
+# This is the documented path for reducing single-seed Boltzmann variance —
+# more independent samples from the same seed.
+#
+# Future Note: multi-seed conformer pooling (run k seeds × N/k conformers,
+# merge before Boltzmann averaging) would cut seed variance by ~sqrt(k)
+# at the same total conformer count, but it's not documented practice in
+# the small-molecule conformer-generation literature we checked. Worth
+# revisiting if bigger conformer tiers still leave too much variance, or
+# if we switch embedding algorithms (CONFORGE / Lyrebird) where the
+# sampling trade-offs may differ.
+ADAPTIVE_CONFORMER_TIERS = [(8, 50), (13, 300)]
+ADAPTIVE_CONFORMER_DEFAULT = 500
 
 logger = logging.getLogger("workbench")
 
@@ -396,10 +410,12 @@ def get_conformer_energies(mol: Chem.Mol) -> List[float]:
 def adaptive_n_conformers(mol: Chem.Mol) -> int:
     """Return the conformer count for Boltzmann mode based on rotatable bonds.
 
-    Community-standard tiering (datamol-style):
+    Tiering follows the datamol-style ladder but with bumped upper tiers
+    (300 / 500 instead of 200 / 300) to reduce the stochastic seed variance
+    observed in single-seed Boltzmann runs on flexible molecules:
         rot_bonds < 8        → 50
-        rot_bonds 8..12      → 200
-        rot_bonds ≥ 13       → 300
+        rot_bonds 8..12      → 300
+        rot_bonds ≥ 13       → 500
 
     Args:
         mol: RDKit molecule (Hs not required for this calculation)

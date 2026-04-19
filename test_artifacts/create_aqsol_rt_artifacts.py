@@ -4,7 +4,7 @@
 Endpoints:
     - tautomerize-v0-rt
     - tautomerize-v0-rt-fast1
-    - smiles-to-taut-md-stereo-v1-rt
+    - smiles-to-2d-rt-v1
     - aqsol-mol-class-rt
 """
 
@@ -59,11 +59,11 @@ if __name__ == "__main__":
         end.auto_inference()
 
     # Create a realtime endpoint for Molecular Descriptors Transformer Model
-    if recreate or not Endpoint("smiles-to-taut-md-stereo-v1-rt").exists():
-        m = Model("smiles-to-taut-md-stereo-v1")
+    if recreate or not Endpoint("smiles-to-2d-rt-v1").exists():
+        m = Model("smiles-to-2d-v1")
         m.set_owner("BW")
         end = m.to_endpoint(
-            name="smiles-to-taut-md-stereo-v1-rt",
+            name="smiles-to-2d-rt-v1",
             tags=["smiles", "molecular descriptors", "realtime"],
             serverless=False,
         )

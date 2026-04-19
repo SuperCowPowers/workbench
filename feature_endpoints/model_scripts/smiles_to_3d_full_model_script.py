@@ -1,13 +1,14 @@
-# Model: rdkit_3d_model_script
+# Model: smiles_to_3d_full_model_script
 #
-# Description: Computes 3D conformer-based molecular descriptors from SMILES strings.
-#     This includes RDKit 3D shape descriptors, Mordred 3D descriptors (CPSA, etc.),
-#     Pharmacophore 3D descriptors, and conformer ensemble statistics.
+# Description: Computes Boltzmann-weighted 3D conformer-based molecular descriptors
+#     from SMILES strings. Uses adaptive conformer counts (50-300 based on
+#     rotatable bonds) and Boltzmann-weighted ensemble averaging for higher
+#     quality descriptors at the cost of longer per-molecule compute time.
 #
-#     Total: 74 3D descriptors
+#     Total: 74 3D descriptors (same features as the fast v1 endpoint)
 #
-#     Note: This endpoint is slower than the 2D descriptor endpoint due to
-#     conformer generation (~10-20 molecules/second).
+#     Designed for async SageMaker endpoints with batch_size=1.
+#     Per-molecule compute time: seconds (rigid) to minutes (flexible).
 #
 import argparse
 import os
@@ -90,12 +91,12 @@ def output_fn(output_df, accept_type):
 # Prediction function
 def predict_fn(df, model):
     logger = logging.getLogger("workbench")
-    logger.info(f"rdkit_3d_model_script v{SCRIPT_VERSION} — processing {len(df)} molecules")
+    logger.info(f"smiles_to_3d_full_model_script v{SCRIPT_VERSION} — processing {len(df)} molecules")
 
     # Standardize the molecule (extract salts) first
     df = standardize(df, extract_salts=True)
 
-    # Compute 3D descriptors (molecules that fail get NaN values, rows kept)
-    df = compute_descriptors_3d(df)
+    # Compute Boltzmann-weighted 3D descriptors
+    df = compute_descriptors_3d(df, mode="boltzmann")
 
     return df

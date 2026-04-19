@@ -21,10 +21,10 @@ Description:
 Created Artifacts:
 
     Models:
-        - smiles-to-3d-boltzmann-v1
+        - smiles-to-3d-full-v1
 
     Endpoints:
-        - smiles-to-3d-boltzmann-v1
+        - smiles-to-3d-full-v1
 """
 
 # Workbench Imports
@@ -34,7 +34,7 @@ from workbench.core.transforms.pandas_transforms import PandasToFeatures
 if __name__ == "__main__":
 
     # Pull in the custom script path
-    script_path = "model_scripts/rdkit_3d_boltzmann_model_script.py"
+    script_path = "model_scripts/smiles_to_3d_full_model_script.py"
 
     # Check if we have an existing FeatureSet, if not create one
     if not FeatureSet("feature_endpoint_fs").exists():
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     feature_set = FeatureSet("feature_endpoint_fs")
     tags = ["smiles", "3d descriptors", "boltzmann", "conformer ensemble"]
     model = feature_set.to_model(
-        name="smiles-to-3d-boltzmann-v1",
+        name="smiles-to-3d-full-v1",
         model_type=ModelType.TRANSFORMER,
         model_framework=ModelFramework.TRANSFORMER,
         feature_list=["smiles"],

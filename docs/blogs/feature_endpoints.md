@@ -30,7 +30,7 @@ When you build a predictive model in Workbench, the training pipeline calls the 
 ```python
 # Training: features computed by calling the endpoint
 df = load_training_data()
-feature_endpoint = Endpoint("smiles-to-taut-md-stereo-v1")
+feature_endpoint = Endpoint("smiles-to-2d-v1")
 df_features = feature_endpoint.inference(df)
 
 # Create a FeatureSet and deploy a model that uses those features
@@ -53,7 +53,7 @@ The inference path is the same — for the input data we call the feature endpoi
 
 ```python
 # Inference: same endpoint called for features
-feature_endpoint = Endpoint("smiles-to-taut-md-stereo-v1")
+feature_endpoint = Endpoint("smiles-to-2d-v1")
 df_features = feature_endpoint.inference(input_df)
 
 # Now run the model prediction on the features
@@ -75,15 +75,15 @@ Most clients use variants similar to those listed below but we have the flexibil
     </tr>
   </thead>
   <tbody>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-taut-md-stereo</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Standard ADMET modeling (salt extraction, tautomer canonicalization)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-taut-md-stereo-keep-salts</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Salt-sensitive modeling (solubility, formulation)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-descriptors</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">Realtime 3D shape/pharmacophore features (10 conformers)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-boltzmann</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">Batch 3D features with adaptive conformers (50-300), async endpoint</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-2d</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Standard ADMET modeling (salt extraction, tautomer canonicalization)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-2d-keep-salts</td><td style="padding: 8px 16px;">~315 2D descriptors</td><td style="padding: 8px 16px;">Salt-sensitive modeling (solubility, formulation)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-fast</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">Realtime 3D shape/pharmacophore features (10 conformers)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-3d-full</td><td style="padding: 8px 16px;">74 3D descriptors</td><td style="padding: 8px 16px;">Batch 3D features with adaptive conformers (50-500), async endpoint</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">smiles-to-fingerprints</td><td style="padding: 8px 16px;">2048-dim Morgan count fingerprints</td><td style="padding: 8px 16px;">Substructure-based similarity models, molecular search</td></tr>
   </tbody>
 </table>
 
-The 2D and 3D endpoints can be combined — run both and concatenate the results for a ~388-feature descriptor set covering topological, electronic, and geometric properties. See the [3D Descriptors](3d_descriptors.md) blog for details on the fast and Boltzmann pipelines.
+The 2D and 3D endpoints can be combined — run both and concatenate the results for a ~388-feature descriptor set covering topological, electronic, and geometric properties. See the [3D Descriptors](3d_descriptors.md) blog for details on the fast and full pipelines.
 
 ### Fingerprint Endpoints
 
@@ -108,7 +108,7 @@ You might ask: why not just share a Python function? Or package the code into a 
 
 **Pinned dependencies at the container level.** The feature endpoint runs inside a Docker container with exact versions of RDKit, Mordred, NumPy, and every other dependency. Updating your local Python environment doesn't change what the endpoint computes. This is especially important for chemistry libraries — RDKit descriptor implementations do change between releases, and Mordred edge-case handling varies by version.
 
-**Version management through naming.** Deploy `smiles-to-taut-md-stereo-v2` alongside `v1`, and let downstream models pin whichever version they were trained against. When you improve the descriptor pipeline, existing models keep working with their original features while new models can use the updated set.
+**Version management through naming.** Deploy `smiles-to-2d-v2` alongside `v1`, and let downstream models pin whichever version they were trained against. When you improve the descriptor pipeline, existing models keep working with their original features while new models can use the updated set.
 
 **Any consumer can call it.** A notebook, a training pipeline, an inference endpoint, a scheduled batch job, or an external drug discovery platform — anything that can make an HTTP request gets the same features. No need to install RDKit locally, manage conda environments, or worry about platform-specific compilation issues. A simple `requests.post()` call with a CSV payload is all it takes.
 

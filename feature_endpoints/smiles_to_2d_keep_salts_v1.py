@@ -1,5 +1,5 @@
 """Create the SMILES to Standardize/Tautomer + RDKIT + Mordred Model + Endpoint
-   Note: This version REMOVES salts in the molecules.
+   Note: This version KEEPS salts in the molecules.
 
 Description:
    Feature Endpoint that takes a SMILES string and
@@ -8,10 +8,10 @@ Description:
 Created Artifacts:
 
     Models:
-        - smiles-to-taut-md-stereo-v1
+        - smiles-to-2d-keep-salts-v1
 
     Endpoints:
-        - smiles-to-taut-md-stereo-v1
+        - smiles-to-2d-keep-salts-v1
 """
 
 import os
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     serverless = os.environ.get("SERVERLESS", "True").lower() == "true"
 
     # Pull in the custom script path
-    script_path = "model_scripts/rdkit_mordred_model_script.py"
+    script_path = "model_scripts/smiles_to_2d_keep_salts_model_script.py"
 
     # Check if we have an existing FeatureSet, if not create one
     if not FeatureSet("feature_endpoint_fs").exists():
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     feature_set = FeatureSet("feature_endpoint_fs")
     tags = ["smiles", "molecular descriptors", "tautomerized", "stereo"]
     model = feature_set.to_model(
-        name="smiles-to-taut-md-stereo-v1",
+        name="smiles-to-2d-keep-salts-v1",
         model_type=ModelType.TRANSFORMER,
         model_framework=ModelFramework.TRANSFORMER,
         feature_list=["smiles"],

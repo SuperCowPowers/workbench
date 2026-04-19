@@ -17,7 +17,7 @@ Workbench's 3D descriptor endpoints compute **74 conformer-based features** from
 
 These properties can't be captured from the molecular graph. You need 3D coordinates.
 
-## Two Pipeline Modes: Fast and Boltzmann
+## Two Pipeline Modes: Fast and Full
 
 Workbench provides two 3D descriptor endpoints that share the same computation core but differ in conformer sampling depth:
 
@@ -26,16 +26,16 @@ Workbench provides two 3D descriptor endpoints that share the same computation c
     <tr>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;"></th>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Fast</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Boltzmann</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Full</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Endpoint</td><td style="padding: 8px 16px;">smiles-to-3d-descriptors-v1</td><td style="padding: 8px 16px;">smiles-to-3d-boltzmann-v1</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">10 (fixed)</td><td style="padding: 8px 16px;">50-300 (adaptive by rotatable bonds)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Endpoint</td><td style="padding: 8px 16px;">smiles-to-3d-fast-v1</td><td style="padding: 8px 16px;">smiles-to-3d-full-v1</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">10 (fixed)</td><td style="padding: 8px 16px;">50-500 (adaptive by rotatable bonds)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Aggregation</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Deployment</td><td style="padding: 8px 16px;">Realtime SageMaker endpoint</td><td style="padding: 8px 16px;">Async SageMaker endpoint (scale-to-zero)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Use case</td><td style="padding: 8px 16px;">Synchronous inference from training pipelines</td><td style="padding: 8px 16px;">Overnight batch processing (10k-100k compounds)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 10 diagnostic columns</td><td style="padding: 8px 16px;">74 features + 10 diagnostic columns</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 11 diagnostic columns</td><td style="padding: 8px 16px;">74 features + 11 diagnostic columns</td></tr>
   </tbody>
 </table>
 
@@ -47,15 +47,15 @@ where $\Delta E_i = E_i - E_{\min}$ is the energy above the minimum conformer, $
 
 ### Adaptive Conformer Counts (Boltzmann Mode)
 
-The Boltzmann endpoint uses the datamol-style tiering that has become the community standard for conformer generation:
+The full endpoint uses a datamol-style adaptive tiering, with the upper tiers bumped above the community-standard 200/300 to reduce single-seed stochastic variance observed on flexible molecules:
 
 | Rotatable Bonds | Conformers | Rationale |
 |-----------------|------------|-----------|
 | < 8 | 50 | Low flexibility, few distinct conformers |
-| 8-12 | 200 | Moderate flexibility, needs broader sampling |
-| > 12 | 300 | High flexibility, large conformational space |
+| 8-12 | 300 | Moderate flexibility, needs broader sampling |
+| ≥ 13 | 500 | High flexibility, large conformational space |
 
-This ensures adequate sampling of the conformational landscape without wasting compute on rigid molecules.
+This ensures adequate sampling of the conformational landscape without wasting compute on rigid molecules. On 300-conformer runs at 13+ rotatable bonds we measured ~20% NPR1 variance across random seeds; bumping to 500 conformers uses the documented "more samples" path to reduce that stochastic spread by roughly √(500/300) ≈ 1.29×.
 
 ## The Computation Pipeline
 
@@ -67,7 +67,9 @@ The 3D descriptor endpoint runs a multi-step pipeline for each molecule:
 </figure>
 
 ### Step 1: Standardization
-The same [standardization pipeline](molecular_standardization.md) used by the 2D endpoints runs first -- salt extraction, charge neutralization, and tautomer canonicalization. This ensures the 3D descriptors are computed on the same canonical structure as the 2D descriptors.
+The same [standardization pipeline](molecular_standardization.md) used by the 2D endpoints runs first -- salt extraction, charge neutralization, and tautomer canonicalization. Stereochemistry is preserved through tautomer canonicalization (we override RDKit's default `tautomerRemoveSp3Stereo=True` which would otherwise silently strip `@` markers). This ensures the 3D descriptors are computed on the same canonical, stereo-faithful structure as the 2D descriptors.
+
+Standardize also emits an `undefined_chiral_centers` diagnostic column counting any chiral centers in the input SMILES that lacked a stereo flag. Nonzero values mean the downstream 3D features reflect an arbitrary enantiomer — users should address ambiguous input upstream.
 
 ### Step 2: Conformer Generation
 
@@ -96,9 +98,13 @@ RMSD-based pruning (`pruneRmsThresh=0.5`) removes redundant geometries -- rigid 
 
 ### Step 3: Boltzmann-Weighted Descriptor Calculation
 
-All 74 descriptors are computed on the molecule with **explicit hydrogens preserved** throughout. This is important -- MMFF94s energy calculations, Mordred CPSA partial charges, and mass-weighted shape descriptors all require explicit Hs for correct results.
+All 74 descriptors are computed on the molecule with **explicit hydrogens preserved** throughout — MMFF94s energy calculations, Mordred CPSA partial charges, and RDKit's mass-weighted shape descriptors (PMI, radius of gyration) all require explicit Hs for correct results.
+
+The custom pharmacophore descriptors, however, follow the cheminformatics convention of heavy-atom-only geometry for distance and centroid calculations (molecular axis, nitrogen span, charge/HBA centroids). The one exception is molecular volume, which uses RDKit's grid-based van der Waals volume and does include Hs — this gives a physically meaningful volume even for small molecules where a heavy-atom-only convex hull would be degenerate.
 
 For each conformer within the 5 kcal/mol energy window, shape, surface, and pharmacophore descriptors are computed independently and then combined via Boltzmann-weighted averaging. Conformer ensemble statistics (energy range, flexibility index) are computed over the full generated ensemble, not just the window.
+
+After embedding, the pipeline also verifies that the 3D geometry reproduces the input stereochemistry and reports the result in the `desc3d_stereo_preserved` diagnostic column — a True/False gate that catches the rare case where ETKDGv3 silently drops a stereo specification on strained scaffolds.
 
 ## Descriptor Categories
 
@@ -148,12 +154,12 @@ Custom descriptors capturing the spatial distribution of pharmacophoric features
   </thead>
   <tbody>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Axis Length</td><td style="padding: 8px 16px;">Maximum heavy-atom distance -- P-gp substrates are typically 25-30 &#8491; long</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Volume</td><td style="padding: 8px 16px;">Convex hull volume -- binding site fit, transporter size constraints</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Amphiphilic Moment</td><td style="padding: 8px 16px;">Polar/nonpolar centroid separation -- membrane orientation, transporter recognition</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Charge Centroid Distance</td><td style="padding: 8px 16px;">Distance from center of mass to basic nitrogen centroid -- binding orientation</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Nitrogen Span</td><td style="padding: 8px 16px;">Max distance between any two nitrogens -- multi-point binding</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">HBA Centroid Distance</td><td style="padding: 8px 16px;">H-bond acceptor spatial distribution -- solubility, permeability</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">IMHB Potential</td><td style="padding: 8px 16px;">Intramolecular H-bond potential -- chameleonic permeability (polar group masking)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Volume</td><td style="padding: 8px 16px;">Van der Waals volume via RDKit grid (0.2 &#8491; spacing) -- binding site fit, transporter size constraints</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Amphiphilic Moment</td><td style="padding: 8px 16px;">Polar/nonpolar centroid separation (polar = N/O/S/P + halogens; carbons adjacent to N/O/S/P are neutral) -- membrane orientation, transporter recognition</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Charge Centroid Distance</td><td style="padding: 8px 16px;">Distance from center of mass to centroid of charge-site nitrogens (quaternary/aromatic/N-H) -- captures peripheral vs central ionizable groups</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Nitrogen Span</td><td style="padding: 8px 16px;">Max distance between any two nitrogens (no filter) -- multi-point binding, overall N distribution</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">HBA Centroid Distance</td><td style="padding: 8px 16px;">Distance from COM to centroid of pure H-bond acceptors (all O + N with no H and no + charge; nitro groups excluded) -- solubility, permeability</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">IMHB Potential</td><td style="padding: 8px 16px;">Intramolecular H-bond count: D...A distance 2.5-3.5 &#8491; + 4-6 bond separation + D-H...A angle &#8805; 120&deg; -- chameleonic permeability</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Elongation</td><td style="padding: 8px 16px;">Axis length / volume^(1/3) -- shape anisotropy</td></tr>
   </tbody>
 </table>
@@ -172,11 +178,11 @@ Highly flexible molecules tend to have larger energy ranges and higher flexibili
 
 ### Diagnostic Columns
 
-In addition to the 74 model features, both endpoints produce 10 `desc3d_*` diagnostic columns that track pipeline status, conformer generation quality, and compute time. These are prefixed to distinguish them from model inputs:
+In addition to the 74 model features, both endpoints produce 11 `desc3d_*` diagnostic columns that track pipeline status, conformer generation quality, stereochemistry preservation, and compute time. These are prefixed to distinguish them from model inputs:
 
 | Column | Description |
 |--------|-------------|
-| `desc3d_status` | `ok`, `skip:parse`, `skip:heavy_atoms`, `skip:rot_bonds`, etc. |
+| `desc3d_status` | `ok`, `skip:parse`, `skip:heavy_atoms`, `skip:rot_bonds`, `skip:rings`, `skip:ring_complexity`, `skip:embed`, `skip:empty` |
 | `desc3d_mode` | `fast` or `boltzmann` |
 | `desc3d_conf_count` | Conformers after RMSD pruning |
 | `desc3d_confs_requested` | Target conformer count |
@@ -185,23 +191,26 @@ In addition to the 74 model features, both endpoints produce 10 `desc3d_*` diagn
 | `desc3d_timeout_failures` | Per-conformer RDKit timeout count |
 | `desc3d_embed_tier` | Which embedding tier succeeded (1/2/3) |
 | `desc3d_force_field` | MMFF94s, UFF, or none |
+| `desc3d_stereo_preserved` | True if the 3D geometry reproduces the input's assigned stereo (always True for achiral inputs) |
 | `desc3d_compute_time_s` | Per-molecule wall clock |
+
+Endpoint output also includes the `undefined_chiral_centers` column emitted by the upstream `standardize()` step — count of chiral centers in the original input SMILES that lacked a stereo flag, so users can see when features reflect an arbitrary enantiomer.
 
 ## Production Guardrails
 
 The 3D endpoints are significantly more compute-intensive than 2D. Several safeguards keep them reliable:
 
 ### Molecular Complexity Check
-Before attempting conformer generation, molecules are screened against size and topology thresholds that catch molecules too large or complex for reliable conformer generation:
+Before attempting conformer generation, molecules are screened against size and topology thresholds that catch molecules too large or complex for reliable conformer generation. These are sized for the async endpoint's 15-minute invocation budget in Boltzmann mode, which comfortably accommodates larger drug-like molecules (PROTACs, small peptides, natural products):
 
 | Property | Threshold | Rationale |
 |----------|-----------|-----------|
-| Heavy atoms | > 100 | Embedding time scales roughly O(n^2) |
-| Rotatable bonds | > 30 | Combinatorial explosion of conformer space |
+| Heavy atoms | > 150 | Embedding time scales roughly O(n^2) |
+| Rotatable bonds | > 50 | Combinatorial explosion of conformer space |
 | Ring systems | > 10 | Extreme ring counts indicate cage structures |
 | Ring complexity score | > 15 | Backstop for highly constrained polycyclic cages |
 
-The **ring complexity score** (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15.
+The **ring complexity score** (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15. Molecules that exceed these thresholds get a specific `desc3d_status` (e.g. `skip:heavy_atoms`, `skip:rot_bonds`) instead of feature values, so downstream pipelines can detect and route them appropriately. Upstream, `standardize()` independently rejects molecules over 500 atoms as a sanity cap — its 500-atom limit is intentionally larger than the 3D pipeline's 150-heavy-atom limit so the 3D pipeline's own guards are always the binding constraint.
 
 Molecules exceeding any threshold receive NaN features and a specific `desc3d_status` explaining the skip reason. These guards can be disabled for local analysis (`complexity_check=False`).
 
@@ -211,19 +220,19 @@ Molecules exceeding any threshold receive NaN features and a specific `desc3d_st
 
 ```bash
 # Realtime instance (recommended for 3D)
-SERVERLESS=false python feature_endpoints/rdkit_3d_v1.py
+SERVERLESS=false python feature_endpoints/smiles_to_3d_fast_v1.py
 
 # Serverless (lower cost, but slower)
-python feature_endpoints/rdkit_3d_v1.py
+python feature_endpoints/smiles_to_3d_fast_v1.py
 ```
 
-### Boltzmann Endpoint (Async)
+### Full Endpoint (Async)
 
 ```bash
-python feature_endpoints/rdkit_3d_boltzmann_v1.py
+python feature_endpoints/smiles_to_3d_full_v1.py
 ```
 
-The Boltzmann endpoint deploys as an [AsyncEndpoint](../api_classes/async_endpoint.md) with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.
+The full endpoint deploys as an [AsyncEndpoint](../api_classes/async_endpoint.md) with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.
 
 ### Using the Endpoints
 
@@ -231,12 +240,12 @@ The Boltzmann endpoint deploys as an [AsyncEndpoint](../api_classes/async_endpoi
 from workbench.api import Endpoint, AsyncEndpoint
 
 # Fast endpoint — synchronous, for realtime inference
-end_fast = Endpoint("smiles-to-3d-descriptors-v1")
+end_fast = Endpoint("smiles-to-3d-fast-v1")
 df_3d = end_fast.inference(df)
 
-# Boltzmann endpoint — async, for batch processing
-end_boltz = AsyncEndpoint("smiles-to-3d-boltzmann-v1")
-df_3d_boltz = end_boltz.inference(df)
+# Full endpoint — async, for batch processing (same 74 features, denser sampling)
+end_full = AsyncEndpoint("smiles-to-3d-full-v1")
+df_3d_full = end_full.inference(df)
 
 # Both work with InferenceCache for persistent S3-backed caching
 from workbench.api.inference_cache import InferenceCache

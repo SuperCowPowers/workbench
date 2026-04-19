@@ -95,7 +95,7 @@ test_df = pd.read_csv("test_data_blind.csv")
 
 # Hit Feature Endpoint
 """
-rdkit_end = Endpoint("smiles-to-taut-md-stereo-v1")
+rdkit_end = Endpoint("smiles-to-2d-v1")
 df_features = rdkit_end.inference(test_df)
 
 # Shove this into the DFStore for faster use later

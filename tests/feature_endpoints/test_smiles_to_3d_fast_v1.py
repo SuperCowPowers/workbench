@@ -1,4 +1,4 @@
-"""Validation tests for the realtime 3D descriptor endpoint (smiles-to-3d-descriptors-v1).
+"""Validation tests for the realtime 3D descriptor endpoint (smiles-to-3d-fast-v1).
 
 Pulls a curated set of public compounds with known expected 3D properties,
 invokes the endpoint, and verifies:
@@ -18,7 +18,7 @@ import pandas as pd
 from workbench.api import Endpoint, PublicData
 from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
 
-ENDPOINT_NAME = "smiles-to-3d-descriptors-v1"
+ENDPOINT_NAME = "smiles-to-3d-fast-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/reference_compounds_3d"
 
 endpoint = Endpoint(ENDPOINT_NAME)

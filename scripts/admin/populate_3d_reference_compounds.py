@@ -12,8 +12,8 @@ Access (read-only, unsigned):
     df = PublicData().get("comp_chem/reference_compounds/reference_compounds_3d")
 
 Consumed by:
-    tests/feature_endpoints/test_rdkit_3d_v1.py
-    tests/feature_endpoints/test_rdkit_3d_boltzmann_v1.py
+    tests/feature_endpoints/test_smiles_to_3d_fast_v1.py
+    tests/feature_endpoints/test_smiles_to_3d_full_v1.py
     tests/feature_endpoints/test_3d_consistency.py
 
 Usage:
@@ -340,8 +340,8 @@ DESCRIPTION = {
     "description": (
         "Curated public compounds with known expected 3D molecular descriptor "
         "values. Used by the workbench feature_endpoints tests to validate the "
-        "3D descriptor pipeline (smiles-to-3d-descriptors-v1, "
-        "smiles-to-3d-boltzmann-v1). Expected ranges are intentionally wide — "
+        "3D descriptor pipeline (smiles-to-3d-fast-v1, "
+        "smiles-to-3d-full-v1). Expected ranges are intentionally wide — "
         "the purpose is to catch gross errors, not nitpick numeric accuracy."
     ),
     "columns": {
