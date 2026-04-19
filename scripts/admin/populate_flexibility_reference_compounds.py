@@ -65,7 +65,6 @@ REFERENCE_COMPOUNDS = [
         "flexibility_class": "rigid",
         "notes": "Rigid planar drug, 0 rot bonds",
     },
-
     # --- Semi-rigid (2-4 rot bonds): mild divergence expected ---
     {
         "name": "aspirin",
@@ -88,7 +87,6 @@ REFERENCE_COMPOUNDS = [
         "flexibility_class": "semi_rigid",
         "notes": "Drug with isobutyl + carboxylic-acid chains, 4 rot bonds",
     },
-
     # --- Flexible (7-9 rot bonds): measurable divergence ---
     {
         "name": "decane",
@@ -104,7 +102,6 @@ REFERENCE_COMPOUNDS = [
         "flexibility_class": "flexible",
         "notes": "C12 alkane, 9 rot bonds — Boltzmann tier 200 conformers",
     },
-
     # --- Very flexible (13+ rot bonds): large divergence expected ---
     {
         "name": "hexadecane",

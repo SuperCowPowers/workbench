@@ -10,9 +10,7 @@ fs_name = "solubility_test_features"
 # Molecular Descriptors Custom Model
 my_script_path = get_custom_script_path("chem_info", "molecular_descriptors.py")
 
-to_model = FeaturesToModel(
-    fs_name, "smiles-to-2d-v1", model_type=ModelType.TRANSFORMER, custom_script=my_script_path
-)
+to_model = FeaturesToModel(fs_name, "smiles-to-2d-v1", model_type=ModelType.TRANSFORMER, custom_script=my_script_path)
 to_model.set_output_tags(["smiles", "molecular descriptors"])
 to_model.transform(target_column=None, feature_list=["smiles"], description="Smiles to Molecular Descriptors")
 
