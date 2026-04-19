@@ -1,29 +1,43 @@
-"""Read-side helpers for *feature endpoints* — endpoints that take an input
-column (typically ``smiles``) and emit computed feature columns.
+"""Admin + lookup helpers for *feature endpoints* — endpoints that take an
+input column (typically ``smiles``) and emit computed feature columns
+(descriptors, fingerprints, conformer-derived metrics, etc.).
 
-Feature endpoints register their output columns in ParameterStore via
-:meth:`EndpointCore.register_features`, under the convention:
+Feature endpoints register their output columns in ParameterStore under the
+convention:
 
     /workbench/feature_lists/<endpoint_name>
 
-This module exposes the path convention and a tiny lookup helper so
-downstream scripts don't need an endpoint instance to discover what a
-given feature endpoint produces.
+Write side (admin, from a deploy script):
 
-Example:
+    from workbench.utils.feature_endpoint_utils import register_features
+    register_features(end)   # idempotent — re-registers if the output shape changed
 
-    >>> from workbench.utils.feature_endpoint_utils import get_endpoint_features
-    >>> get_endpoint_features("smiles-to-2d-v1")
-    ['AATS0d', 'AATS0dv', ..., 'Mordred_ZMIC5']
+Read side (downstream model-training scripts):
+
+    from workbench.utils.feature_endpoint_utils import get_endpoint_features
+    feature_cols = get_endpoint_features("smiles-to-2d-v1")
 """
 
 from __future__ import annotations
 
+import logging
 from typing import List, Optional
 
 from workbench.api import ParameterStore
 
+log = logging.getLogger("workbench")
+
 FEATURE_LIST_PREFIX = "/workbench/feature_lists"
+
+# Provenance / preprocessing-metadata columns that feature endpoints emit
+# alongside real features. Excluded from the registered feature list by
+# `register_features`. Add a column here only if it's truly not a feature
+# (e.g. a record of the original SMILES before canonicalization).
+NON_FEATURE_COLUMNS = frozenset({
+    "orig_smiles",
+    "salt",
+    "undefined_chiral_centers",
+})
 
 
 def feature_list_key(endpoint_name: str) -> str:
@@ -45,8 +59,115 @@ def get_endpoint_features(endpoint_name: str) -> Optional[List[str]]:
 
     Returns:
         List of feature column names, or ``None`` if the endpoint hasn't
-        registered its features yet. Call
-        :meth:`Endpoint.register_features` from the endpoint's deploy
-        script to populate the list.
+        registered its features yet. Call :func:`register_features` from
+        the endpoint's deploy script to populate the list.
     """
     return ParameterStore().get(feature_list_key(endpoint_name))
+
+
+def register_features(endpoint) -> List[str]:
+    """Register a feature endpoint's output columns in ParameterStore.
+
+    Runs a small smoke inference with **only the columns the model declares
+    as inputs** (plus the FeatureSet's id column), diffs the output to find
+    the added columns, filters out diagnostic and provenance columns, and
+    upserts the result under ``/workbench/feature_lists/<endpoint_name>``.
+
+    Downstream model-training scripts can then look up the feature set this
+    endpoint produces without re-running inference to diff columns:
+
+        >>> ParameterStore().get("/workbench/feature_lists/smiles-to-2d-v1")
+
+    Idempotent — re-running refreshes the stored list if the endpoint's
+    output shape changed.
+
+    Conventions this function relies on:
+        1. The input FeatureSet has an ``id_column`` (standard Workbench).
+        2. The Model's ``features()`` lists the columns the endpoint actually
+           consumes (e.g. ``["smiles"]``). Only those are passed to the
+           endpoint during the smoke test — this stops output columns from
+           being masked when the source FeatureSet happens to contain
+           pre-baked descriptor columns with the same names.
+        3. Columns whose name starts with ``desc`` are treated as
+           diagnostic/telemetry (e.g. ``desc3d_status``,
+           ``desc3d_compute_time_s``) and excluded from the registered
+           feature list.
+        4. Columns in :data:`NON_FEATURE_COLUMNS` (preprocessing provenance:
+           ``orig_smiles``, ``salt``, ``undefined_chiral_centers``) are also
+           excluded.
+
+    Args:
+        endpoint: A Workbench ``Endpoint`` (or ``AsyncEndpoint``) instance
+            deployed from a Model/FeatureSet.
+
+    Returns:
+        list[str]: The feature columns that were registered.
+
+    Raises:
+        RuntimeError: If the endpoint has no input model / input FeatureSet,
+            the model has no declared feature_list, or the inference produces
+            no new non-diagnostic columns.
+    """
+    # Local imports to avoid pulling core classes into this module's top-level
+    # imports (and to keep this utility file cheap to import).
+    from workbench.core.artifacts import FeatureSetCore, ModelCore
+
+    model = ModelCore(endpoint.get_input())
+    if not model.exists():
+        raise RuntimeError(
+            f"register_features: endpoint {endpoint.name} has no input model — "
+            f"register_features only applies to endpoints deployed from a Model/FeatureSet."
+        )
+    fs = FeatureSetCore(model.get_input())
+    if not fs.exists():
+        raise RuntimeError(
+            f"register_features: input FeatureSet '{model.get_input()}' not found for endpoint {endpoint.name}."
+        )
+    model_inputs = model.features()
+    if not model_inputs:
+        raise RuntimeError(
+            f"register_features: model '{model.name}' has no declared feature_list — "
+            f"cannot build a minimal smoke-test input."
+        )
+
+    # Build a *minimal* smoke-test input: only the columns the model actually
+    # consumes, plus the FeatureSet's id column. This is the key fix for the
+    # "AqSol pre-baked descriptors" problem — if we passed the full FeatureSet,
+    # any output column whose name already exists in the input would be
+    # silently masked by the diff. 5 rows is enough to diff.
+    keep = [fs.id_column] + [c for c in model_inputs if c != fs.id_column]
+    sample_df = fs.pull_dataframe().head(5)[keep].copy()
+
+    # Run inference and diff columns to find what the endpoint adds.
+    input_cols = set(sample_df.columns)
+    result_df = endpoint.inference(sample_df)
+    added = [c for c in result_df.columns if c not in input_cols]
+
+    # Drop non-feature columns. Two buckets:
+    #   - Diagnostics (prefix `desc*`): per-row telemetry like `desc3d_status`,
+    #     `desc3d_compute_time_s`, etc.
+    #   - Preprocessing provenance (:data:`NON_FEATURE_COLUMNS`): columns that
+    #     record the preprocessing pipeline's view of the input (e.g.
+    #     `orig_smiles`, `salt`, `undefined_chiral_centers`).
+    def is_feature(c: str) -> bool:
+        return not c.startswith("desc") and c not in NON_FEATURE_COLUMNS
+
+    feature_cols = sorted(c for c in added if is_feature(c))
+    dropped = sorted(c for c in added if not is_feature(c))
+    if dropped:
+        log.info(
+            f"register_features: filtered {len(dropped)} non-feature column(s) "
+            f"(desc* / NON_FEATURE_COLUMNS): {dropped}"
+        )
+
+    if not feature_cols:
+        raise RuntimeError(
+            f"register_features: {endpoint.name} produced no feature columns after "
+            f"diagnostic filtering. This function is only for feature endpoints "
+            f"(SMILES → descriptors etc.); predictor endpoints should not call it."
+        )
+
+    key = feature_list_key(endpoint.name)
+    ParameterStore().upsert(key, feature_cols)
+    log.info(f"register_features: registered {len(feature_cols)} columns for {endpoint.name} at {key}")
+    return feature_cols
