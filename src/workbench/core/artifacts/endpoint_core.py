@@ -1237,7 +1237,8 @@ class EndpointCore(Artifact):
         # clean up for us — deregister them first so we don't orphan stale
         # scalable targets on redeploy. deregister_autoscaling is idempotent,
         # so it's safe to call whether or not registration ever succeeded.
-        if getattr(endpoint, "async_inference_config", None) is not None:
+        # sagemaker-core uses a falsy Unassigned() sentinel for unset fields; truthy check distinguishes async.
+        if getattr(endpoint, "async_inference_config", None):
             from workbench.utils.endpoint_autoscaling import deregister_autoscaling
 
             cls.log.info(f"Async endpoint detected — deregistering auto-scaling for {endpoint_name}...")
