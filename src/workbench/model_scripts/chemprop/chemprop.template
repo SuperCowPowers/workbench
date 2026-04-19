@@ -900,6 +900,9 @@ if __name__ == "__main__":
     is_multiclass_shap = shap_values_array.ndim == 3 and model_type == "classifier"
     n_shap_classes = shap_values_array.shape[1] if is_multiclass_shap else 1
 
+    # Limit detailed SHAP CSVs to top N features (shap_importance.json retains all)
+    shap_top_n = 20
+
     if is_multiclass_shap:
         # Compute importance averaged across classes (matches XGB/PyTorch)
         mean_abs_shap = np.mean(np.abs(shap_values_array), axis=(0, 1))
@@ -911,7 +914,7 @@ if __name__ == "__main__":
 
         # Save per-class SHAP CSVs (matches XGB/PyTorch pattern)
         class_labels = label_encoder.classes_.tolist()
-        top_n_features = [f[0] for f in shap_importance[:len(shap_feature_names)]]
+        top_n_features = [f[0] for f in shap_importance[:shap_top_n]]
         top_n_indices = [shap_feature_names.index(f) for f in top_n_features]
         for class_idx, class_label in enumerate(class_labels):
             class_shap = shap_values_array[:, class_idx, :][:, top_n_indices]
@@ -931,7 +934,7 @@ if __name__ == "__main__":
     else:
         shap_importance, shap_values_df, feature_vals_df = format_shap_results(
             shap_values_array, shap_feature_names, shap_fractions,
-            sample_ids=sample_ids, id_column=id_column, top_n=len(shap_feature_names),
+            sample_ids=sample_ids, id_column=id_column, top_n=shap_top_n,
         )
         print(f"Top 5 SHAP features: {shap_importance[:5]}")
         wr.s3.to_csv(shap_values_df, f"{model_metrics_s3_path}/shap_values.csv", index=False)
