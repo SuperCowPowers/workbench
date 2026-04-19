@@ -29,6 +29,7 @@ import os
 # Workbench Imports
 from workbench.api import FeatureSet, Model, ModelType, ModelFramework, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
+from workbench.utils.feature_endpoint_utils import register_features
 
 # Inference batch size tuned per deployment config. 3D conformer generation is
 # CPU-heavy, so the ideal batch size scales with available vCPUs.
@@ -91,5 +92,6 @@ if __name__ == "__main__":
     end.upsert_workbench_meta({"inference_batch_size": batch_size})
     print(f"inference_batch_size={batch_size}")
 
-    # Run inference on the endpoint (smaller batch due to slower processing)
-    end.inference(feature_set.pull_dataframe()[:50])
+    # Register output feature columns to ParameterStore at
+    # /workbench/feature_lists/<endpoint_name> (also smoke-tests the endpoint).
+    register_features(end)

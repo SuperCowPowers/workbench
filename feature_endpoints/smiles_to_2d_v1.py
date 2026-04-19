@@ -19,6 +19,7 @@ import os
 # Workbench Imports
 from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
+from workbench.utils.feature_endpoint_utils import register_features
 
 if __name__ == "__main__":
 
@@ -60,5 +61,7 @@ if __name__ == "__main__":
     else:
         end = model.to_endpoint(tags=tags, serverless=False, instance="ml.c7i.large")
 
-    # Run inference on the endpoint
-    end.inference(feature_set.pull_dataframe()[:100])
+    # Register output feature columns to ParameterStore at
+    # /workbench/feature_lists/<endpoint_name> so downstream model scripts can
+    # look up the feature list by endpoint name. This also smoke-tests the endpoint.
+    register_features(end)

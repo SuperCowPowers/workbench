@@ -30,6 +30,7 @@ Created Artifacts:
 # Workbench Imports
 from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
+from workbench.utils.feature_endpoint_utils import register_features
 
 if __name__ == "__main__":
 
@@ -89,5 +90,6 @@ if __name__ == "__main__":
     #                                    pressure on autoscaling, more S3 load.
     end = model.to_endpoint(tags=tags, async_endpoint=True)
 
-    # Quick smoke test with a small batch
-    end.inference(feature_set.pull_dataframe()[:5])
+    # Register output feature columns to ParameterStore at
+    # /workbench/feature_lists/<endpoint_name> (also smoke-tests the endpoint).
+    register_features(end)
