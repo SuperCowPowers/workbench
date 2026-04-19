@@ -5176,13 +5176,14 @@
 
 <p>Conformers are generated using RDKit's ETKDGv3 algorithm (with a tiered fallback strategy for difficult molecules) and optimized with the MMFF94s force field (UFF fallback for unsupported atom types). By default the endpoint generates 10 conformers per molecule and uses the lowest-energy conformer for descriptor calculation. The 3D endpoint is significantly slower than 2D (~1-2 molecules/second vs. near-instant for 2D) and is recommended for deployment on a dedicated realtime instance. See the <a href="../3d_descriptors/">3D Molecular Descriptors</a> blog for the full pipeline details.</p>
 <h2 id="feature-endpoints-deployed-on-aws">Feature Endpoints: Deployed on AWS</h2>
-<p>These standardization and descriptor computations run inside Workbench <strong>feature endpoints</strong> — SageMaker-hosted transformer models that take raw SMILES and return standardized structures plus computed descriptors. Three variants are available:</p>
+<p>These standardization and descriptor computations run inside Workbench <strong>feature endpoints</strong> — SageMaker-hosted transformer models that take raw SMILES and return standardized structures plus computed descriptors. Four variants are available:</p>
 <ul>
-<li><strong><code>smiles-to-taut-md-stereo-v1</code></strong>: Standard 2D pipeline with salt extraction (ChEMBL default)</li>
-<li><strong><code>smiles-to-taut-md-stereo-v1-keep-salts</code></strong>: 2D pipeline that preserves salt forms for salt-sensitive modeling</li>
-<li><strong><code>smiles-to-3d-descriptors-v1</code></strong>: 3D conformer-based descriptors (75 features) with salt extraction</li>
+<li><strong><code>smiles-to-2d-v1</code></strong>: Standard 2D pipeline with salt extraction (ChEMBL default)</li>
+<li><strong><code>smiles-to-2d-keep-salts-v1</code></strong>: 2D pipeline that preserves salt forms for salt-sensitive modeling</li>
+<li><strong><code>smiles-to-3d-fast-v1</code></strong>: 3D conformer-based descriptors (74 features), fast realtime mode (10 conformers)</li>
+<li><strong><code>smiles-to-3d-full-v1</code></strong>: 3D conformer-based descriptors (74 features, same set), full async mode (50-500 adaptive conformers)</li>
 </ul>
-<p>All three endpoints can be deployed as serverless (cost-efficient for intermittent workloads) or on dedicated instances for higher throughput.</p>
+<p>All four endpoints can be deployed as serverless (cost-efficient for intermittent workloads) or on dedicated instances for higher throughput.</p>
 <h2 id="the-aqsol-dataset-a-real-world-example">The AqSol Dataset: A Real-World Example</h2>
 <p><a href="https://www.nature.com/articles/s41597-019-0151-1">AqSolDB</a> is a curated reference set of aqueous solubility values containing 9,982 unique compounds from 9 publicly available datasets (<a href="https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OVHAW8">Harvard DataVerse</a>).</p>
 <p>Running this dataset through the full standardization + descriptor pipeline is a good stress test for real-world chemical data — the dataset includes organometallics, unusual valences, and SMILES notation quirks that exercise every step of the pipeline.</p>

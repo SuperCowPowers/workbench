@@ -1876,15 +1876,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#two-pipeline-modes-fast-and-boltzmann" class="md-nav__link">
+  <a href="#two-pipeline-modes-fast-and-full" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two Pipeline Modes: Fast and Boltzmann
+        Two Pipeline Modes: Fast and Full
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Two Pipeline Modes: Fast and Boltzmann">
+    <nav class="md-nav" aria-label="Two Pipeline Modes: Fast and Full">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2077,10 +2077,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#boltzmann-endpoint-async" class="md-nav__link">
+  <a href="#full-endpoint-async" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Boltzmann Endpoint (Async)
+        Full Endpoint (Async)
       
     </span>
   </a>
@@ -5038,15 +5038,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#two-pipeline-modes-fast-and-boltzmann" class="md-nav__link">
+  <a href="#two-pipeline-modes-fast-and-full" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two Pipeline Modes: Fast and Boltzmann
+        Two Pipeline Modes: Fast and Full
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Two Pipeline Modes: Fast and Boltzmann">
+    <nav class="md-nav" aria-label="Two Pipeline Modes: Fast and Full">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5239,10 +5239,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#boltzmann-endpoint-async" class="md-nav__link">
+  <a href="#full-endpoint-async" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Boltzmann Endpoint (Async)
+        Full Endpoint (Async)
       
     </span>
   </a>
@@ -5320,23 +5320,23 @@
 <li><strong>Intramolecular hydrogen bonds</strong> enable "chameleonic" behavior where molecules mask polar groups in nonpolar environments -- a purely 3D phenomenon</li>
 </ul>
 <p>These properties can't be captured from the molecular graph. You need 3D coordinates.</p>
-<h2 id="two-pipeline-modes-fast-and-boltzmann">Two Pipeline Modes: Fast and Boltzmann</h2>
+<h2 id="two-pipeline-modes-fast-and-full">Two Pipeline Modes: Fast and Full</h2>
 <p>Workbench provides two 3D descriptor endpoints that share the same computation core but differ in conformer sampling depth:</p>
 <table style="width: 100%;">
   <thead>
     <tr>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;"></th>
       <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Fast</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Boltzmann</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Full</th>
     </tr>
   </thead>
   <tbody>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Endpoint</td><td style="padding: 8px 16px;">smiles-to-3d-descriptors-v1</td><td style="padding: 8px 16px;">smiles-to-3d-boltzmann-v1</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">10 (fixed)</td><td style="padding: 8px 16px;">50-300 (adaptive by rotatable bonds)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Endpoint</td><td style="padding: 8px 16px;">smiles-to-3d-fast-v1</td><td style="padding: 8px 16px;">smiles-to-3d-full-v1</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Conformers</td><td style="padding: 8px 16px;">10 (fixed)</td><td style="padding: 8px 16px;">50-500 (adaptive by rotatable bonds)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Aggregation</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble</td><td style="padding: 8px 16px;">Boltzmann-weighted ensemble</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Deployment</td><td style="padding: 8px 16px;">Realtime SageMaker endpoint</td><td style="padding: 8px 16px;">Async SageMaker endpoint (scale-to-zero)</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Use case</td><td style="padding: 8px 16px;">Synchronous inference from training pipelines</td><td style="padding: 8px 16px;">Overnight batch processing (10k-100k compounds)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 10 diagnostic columns</td><td style="padding: 8px 16px;">74 features + 10 diagnostic columns</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Output</td><td style="padding: 8px 16px;">74 features + 11 diagnostic columns</td><td style="padding: 8px 16px;">74 features + 11 diagnostic columns</td></tr>
   </tbody>
 </table>
 
@@ -5344,7 +5344,7 @@
 <div class="arithmatex">\[\Large w_i = \frac{e^{-\Delta E_i \,/\, k_BT}}{\displaystyle\sum_j e^{-\Delta E_j \,/\, k_BT}}, \qquad \langle d \rangle = \sum_i w_i \, d_i\]</div>
 <p>where <span class="arithmatex">\(\Delta E_i = E_i - E_{\min}\)</span> is the energy above the minimum conformer, <span class="arithmatex">\(k_BT\)</span> is the thermal energy at 298 K (0.592 kcal/mol), and <span class="arithmatex">\(d_i\)</span> is the descriptor value for conformer <span class="arithmatex">\(i\)</span>. This is more reproducible than single-conformer descriptors, which can vary significantly with random seed, especially for flexible molecules. The MARCEL benchmark and Nikonenko et al. have shown that ensemble approaches produce more stable QSAR models.</p>
 <h3 id="adaptive-conformer-counts-boltzmann-mode">Adaptive Conformer Counts (Boltzmann Mode)</h3>
-<p>The Boltzmann endpoint uses the datamol-style tiering that has become the community standard for conformer generation:</p>
+<p>The full endpoint uses a datamol-style adaptive tiering, with the upper tiers bumped above the community-standard 200/300 to reduce single-seed stochastic variance observed on flexible molecules:</p>
 <table>
 <thead>
 <tr>
@@ -5361,17 +5361,17 @@
 </tr>
 <tr>
 <td>8-12</td>
-<td>200</td>
+<td>300</td>
 <td>Moderate flexibility, needs broader sampling</td>
 </tr>
 <tr>
-<td>&gt; 12</td>
-<td>300</td>
+<td>≥ 13</td>
+<td>500</td>
 <td>High flexibility, large conformational space</td>
 </tr>
 </tbody>
 </table>
-<p>This ensures adequate sampling of the conformational landscape without wasting compute on rigid molecules.</p>
+<p>This ensures adequate sampling of the conformational landscape without wasting compute on rigid molecules. On 300-conformer runs at 13+ rotatable bonds we measured ~20% NPR1 variance across random seeds; bumping to 500 conformers uses the documented "more samples" path to reduce that stochastic spread by roughly √(500/300) ≈ 1.29×.</p>
 <h2 id="the-computation-pipeline">The Computation Pipeline</h2>
 <p>The 3D descriptor endpoint runs a multi-step pipeline for each molecule:</p>
 <figure style="margin: 20px auto; text-align: center;">
@@ -5380,7 +5380,8 @@
 </figure>
 
 <h3 id="step-1-standardization">Step 1: Standardization</h3>
-<p>The same <a href="../molecular_standardization/">standardization pipeline</a> used by the 2D endpoints runs first -- salt extraction, charge neutralization, and tautomer canonicalization. This ensures the 3D descriptors are computed on the same canonical structure as the 2D descriptors.</p>
+<p>The same <a href="../molecular_standardization/">standardization pipeline</a> used by the 2D endpoints runs first -- salt extraction, charge neutralization, and tautomer canonicalization. Stereochemistry is preserved through tautomer canonicalization (we override RDKit's default <code>tautomerRemoveSp3Stereo=True</code> which would otherwise silently strip <code>@</code> markers). This ensures the 3D descriptors are computed on the same canonical, stereo-faithful structure as the 2D descriptors.</p>
+<p>Standardize also emits an <code>undefined_chiral_centers</code> diagnostic column counting any chiral centers in the input SMILES that lacked a stereo flag. Nonzero values mean the downstream 3D features reflect an arbitrary enantiomer — users should address ambiguous input upstream.</p>
 <h3 id="step-2-conformer-generation">Step 2: Conformer Generation</h3>
 <p>Generating realistic 3D coordinates from a SMILES string is the most computationally intensive step. Workbench uses RDKit's <strong>ETKDGv3</strong> (Experimental Torsion Knowledge Distance Geometry v3), which biases conformer sampling toward torsion angles observed in crystal structures -- appropriate for the condensed-phase geometries relevant to ADMET.</p>
 <p>The algorithm uses a three-tier embedding strategy to maximize success rates across diverse chemical structures:</p>
@@ -5402,8 +5403,10 @@
 <p>All conformers are optimized with the <strong>MMFF94s</strong> force field (preferred over MMFF94 for its improved handling of planar nitrogen centers common in drug molecules), using <code>optimizerForceTol=0.0135</code> which provides a ~20% speedup with negligible geometry loss. For molecules with unsupported MMFF atom types, the pipeline automatically falls back to <strong>UFF</strong> (Universal Force Field).</p>
 <p>RMSD-based pruning (<code>pruneRmsThresh=0.5</code>) removes redundant geometries -- rigid molecules like benzene naturally collapse to 1-2 unique conformers, while flexible chains retain more diversity.</p>
 <h3 id="step-3-boltzmann-weighted-descriptor-calculation">Step 3: Boltzmann-Weighted Descriptor Calculation</h3>
-<p>All 74 descriptors are computed on the molecule with <strong>explicit hydrogens preserved</strong> throughout. This is important -- MMFF94s energy calculations, Mordred CPSA partial charges, and mass-weighted shape descriptors all require explicit Hs for correct results.</p>
+<p>All 74 descriptors are computed on the molecule with <strong>explicit hydrogens preserved</strong> throughout — MMFF94s energy calculations, Mordred CPSA partial charges, and RDKit's mass-weighted shape descriptors (PMI, radius of gyration) all require explicit Hs for correct results.</p>
+<p>The custom pharmacophore descriptors, however, follow the cheminformatics convention of heavy-atom-only geometry for distance and centroid calculations (molecular axis, nitrogen span, charge/HBA centroids). The one exception is molecular volume, which uses RDKit's grid-based van der Waals volume and does include Hs — this gives a physically meaningful volume even for small molecules where a heavy-atom-only convex hull would be degenerate.</p>
 <p>For each conformer within the 5 kcal/mol energy window, shape, surface, and pharmacophore descriptors are computed independently and then combined via Boltzmann-weighted averaging. Conformer ensemble statistics (energy range, flexibility index) are computed over the full generated ensemble, not just the window.</p>
+<p>After embedding, the pipeline also verifies that the 3D geometry reproduces the input stereochemistry and reports the result in the <code>desc3d_stereo_preserved</code> diagnostic column — a True/False gate that catches the rare case where ETKDGv3 silently drops a stereo specification on strained scaffolds.</p>
 <h2 id="descriptor-categories">Descriptor Categories</h2>
 <h3 id="rdkit-3d-shape-descriptors-10-features">RDKit 3D Shape Descriptors (10 features)</h3>
 <p>These capture the overall molecular shape using the inertia tensor:</p>
@@ -5445,12 +5448,12 @@
   </thead>
   <tbody>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Axis Length</td><td style="padding: 8px 16px;">Maximum heavy-atom distance -- P-gp substrates are typically 25-30 &#8491; long</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Volume</td><td style="padding: 8px 16px;">Convex hull volume -- binding site fit, transporter size constraints</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Amphiphilic Moment</td><td style="padding: 8px 16px;">Polar/nonpolar centroid separation -- membrane orientation, transporter recognition</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Charge Centroid Distance</td><td style="padding: 8px 16px;">Distance from center of mass to basic nitrogen centroid -- binding orientation</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Nitrogen Span</td><td style="padding: 8px 16px;">Max distance between any two nitrogens -- multi-point binding</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">HBA Centroid Distance</td><td style="padding: 8px 16px;">H-bond acceptor spatial distribution -- solubility, permeability</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">IMHB Potential</td><td style="padding: 8px 16px;">Intramolecular H-bond potential -- chameleonic permeability (polar group masking)</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Volume</td><td style="padding: 8px 16px;">Van der Waals volume via RDKit grid (0.2 &#8491; spacing) -- binding site fit, transporter size constraints</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Amphiphilic Moment</td><td style="padding: 8px 16px;">Polar/nonpolar centroid separation (polar = N/O/S/P + halogens; carbons adjacent to N/O/S/P are neutral) -- membrane orientation, transporter recognition</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Charge Centroid Distance</td><td style="padding: 8px 16px;">Distance from center of mass to centroid of charge-site nitrogens (quaternary/aromatic/N-H) -- captures peripheral vs central ionizable groups</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Nitrogen Span</td><td style="padding: 8px 16px;">Max distance between any two nitrogens (no filter) -- multi-point binding, overall N distribution</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">HBA Centroid Distance</td><td style="padding: 8px 16px;">Distance from COM to centroid of pure H-bond acceptors (all O + N with no H and no + charge; nitro groups excluded) -- solubility, permeability</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">IMHB Potential</td><td style="padding: 8px 16px;">Intramolecular H-bond count: D...A distance 2.5-3.5 &#8491; + 4-6 bond separation + D-H...A angle &#8805; 120&deg; -- chameleonic permeability</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Elongation</td><td style="padding: 8px 16px;">Axis length / volume^(1/3) -- shape anisotropy</td></tr>
   </tbody>
 </table>
@@ -5465,7 +5468,7 @@
 </ul>
 <p>Highly flexible molecules tend to have larger energy ranges and higher flexibility indices. These features correlate with permeability (flexible molecules pay higher entropic penalties for binding) and metabolic stability.</p>
 <h3 id="diagnostic-columns">Diagnostic Columns</h3>
-<p>In addition to the 74 model features, both endpoints produce 10 <code>desc3d_*</code> diagnostic columns that track pipeline status, conformer generation quality, and compute time. These are prefixed to distinguish them from model inputs:</p>
+<p>In addition to the 74 model features, both endpoints produce 11 <code>desc3d_*</code> diagnostic columns that track pipeline status, conformer generation quality, stereochemistry preservation, and compute time. These are prefixed to distinguish them from model inputs:</p>
 <table>
 <thead>
 <tr>
@@ -5476,7 +5479,7 @@
 <tbody>
 <tr>
 <td><code>desc3d_status</code></td>
-<td><code>ok</code>, <code>skip:parse</code>, <code>skip:heavy_atoms</code>, <code>skip:rot_bonds</code>, etc.</td>
+<td><code>ok</code>, <code>skip:parse</code>, <code>skip:heavy_atoms</code>, <code>skip:rot_bonds</code>, <code>skip:rings</code>, <code>skip:ring_complexity</code>, <code>skip:embed</code>, <code>skip:empty</code></td>
 </tr>
 <tr>
 <td><code>desc3d_mode</code></td>
@@ -5511,15 +5514,20 @@
 <td>MMFF94s, UFF, or none</td>
 </tr>
 <tr>
+<td><code>desc3d_stereo_preserved</code></td>
+<td>True if the 3D geometry reproduces the input's assigned stereo (always True for achiral inputs)</td>
+</tr>
+<tr>
 <td><code>desc3d_compute_time_s</code></td>
 <td>Per-molecule wall clock</td>
 </tr>
 </tbody>
 </table>
+<p>Endpoint output also includes the <code>undefined_chiral_centers</code> column emitted by the upstream <code>standardize()</code> step — count of chiral centers in the original input SMILES that lacked a stereo flag, so users can see when features reflect an arbitrary enantiomer.</p>
 <h2 id="production-guardrails">Production Guardrails</h2>
 <p>The 3D endpoints are significantly more compute-intensive than 2D. Several safeguards keep them reliable:</p>
 <h3 id="molecular-complexity-check">Molecular Complexity Check</h3>
-<p>Before attempting conformer generation, molecules are screened against size and topology thresholds that catch molecules too large or complex for reliable conformer generation:</p>
+<p>Before attempting conformer generation, molecules are screened against size and topology thresholds that catch molecules too large or complex for reliable conformer generation. These are sized for the async endpoint's 15-minute invocation budget in Boltzmann mode, which comfortably accommodates larger drug-like molecules (PROTACs, small peptides, natural products):</p>
 <table>
 <thead>
 <tr>
@@ -5531,12 +5539,12 @@
 <tbody>
 <tr>
 <td>Heavy atoms</td>
-<td>&gt; 100</td>
+<td>&gt; 150</td>
 <td>Embedding time scales roughly O(n^2)</td>
 </tr>
 <tr>
 <td>Rotatable bonds</td>
-<td>&gt; 30</td>
+<td>&gt; 50</td>
 <td>Combinatorial explosion of conformer space</td>
 </tr>
 <tr>
@@ -5551,30 +5559,30 @@
 </tr>
 </tbody>
 </table>
-<p>The <strong>ring complexity score</strong> (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15.</p>
+<p>The <strong>ring complexity score</strong> (rings + bridgehead atoms + spiro atoms) is a permissive backstop -- common drug scaffolds score well under 15. Molecules that exceed these thresholds get a specific <code>desc3d_status</code> (e.g. <code>skip:heavy_atoms</code>, <code>skip:rot_bonds</code>) instead of feature values, so downstream pipelines can detect and route them appropriately. Upstream, <code>standardize()</code> independently rejects molecules over 500 atoms as a sanity cap — its 500-atom limit is intentionally larger than the 3D pipeline's 150-heavy-atom limit so the 3D pipeline's own guards are always the binding constraint.</p>
 <p>Molecules exceeding any threshold receive NaN features and a specific <code>desc3d_status</code> explaining the skip reason. These guards can be disabled for local analysis (<code>complexity_check=False</code>).</p>
 <h2 id="deploying-the-endpoints">Deploying the Endpoints</h2>
 <h3 id="fast-endpoint-realtime">Fast Endpoint (Realtime)</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Realtime instance (recommended for 3D)</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nv">SERVERLESS</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span>python<span class="w"> </span>feature_endpoints/rdkit_3d_v1.py
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nv">SERVERLESS</span><span class="o">=</span><span class="nb">false</span><span class="w"> </span>python<span class="w"> </span>feature_endpoints/smiles_to_3d_fast_v1.py
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Serverless (lower cost, but slower)</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>python<span class="w"> </span>feature_endpoints/rdkit_3d_v1.py
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>python<span class="w"> </span>feature_endpoints/smiles_to_3d_fast_v1.py
 </span></code></pre></div>
-<h3 id="boltzmann-endpoint-async">Boltzmann Endpoint (Async)</h3>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>feature_endpoints/rdkit_3d_boltzmann_v1.py
+<h3 id="full-endpoint-async">Full Endpoint (Async)</h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>feature_endpoints/smiles_to_3d_full_v1.py
 </span></code></pre></div>
-<p>The Boltzmann endpoint deploys as an <a href="../../api_classes/async_endpoint/">AsyncEndpoint</a> with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.</p>
+<p>The full endpoint deploys as an <a href="../../api_classes/async_endpoint/">AsyncEndpoint</a> with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.</p>
 <h3 id="using-the-endpoints">Using the Endpoints</h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Endpoint</span><span class="p">,</span> <span class="n">AsyncEndpoint</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Fast endpoint — synchronous, for realtime inference</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">end_fast</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-descriptors-v1&quot;</span><span class="p">)</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">end_fast</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-fast-v1&quot;</span><span class="p">)</span>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">df_3d</span> <span class="o">=</span> <span class="n">end_fast</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Boltzmann endpoint — async, for batch processing</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">end_boltz</span> <span class="o">=</span> <span class="n">AsyncEndpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-boltzmann-v1&quot;</span><span class="p">)</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">df_3d_boltz</span> <span class="o">=</span> <span class="n">end_boltz</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Full endpoint — async, for batch processing (same 74 features, denser sampling)</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">end_full</span> <span class="o">=</span> <span class="n">AsyncEndpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-full-v1&quot;</span><span class="p">)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">df_3d_full</span> <span class="o">=</span> <span class="n">end_full</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1"># Both work with InferenceCache for persistent S3-backed caching</span>
 </span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api.inference_cache</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceCache</span>
