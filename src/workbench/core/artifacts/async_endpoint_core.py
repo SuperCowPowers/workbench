@@ -39,8 +39,12 @@ from workbench.core.artifacts.endpoint_core import EndpointCore
 log = logging.getLogger("workbench")
 
 # Polling parameters for async output (exponential backoff, capped).
+# _POLL_MAX_S is capped at 10s so the per-batch "waiting for the next poll after
+# compute actually finished" overhead stays small — with batches typically
+# running 50-150s and max poll interval 10s, we see results within ~10s of true
+# completion. Trade-off: a few extra S3 GetObject calls per batch; negligible cost.
 _POLL_INITIAL_S = 3
-_POLL_MAX_S = 30
+_POLL_MAX_S = 10
 _POLL_BACKOFF = 1.5
 
 # Default rows per invocation. Smaller batches give better load balancing

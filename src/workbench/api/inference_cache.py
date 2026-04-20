@@ -62,10 +62,12 @@ class InferenceCache:
     # for sync endpoints or legacy endpoints without max_instances in meta.
     chunk_size: int = DEFAULT_CHUNK_SIZE
 
-    # Number of fleet-waves per chunk when auto-deriving chunk_size. k=2 is a
-    # compromise: small enough to bound crash-recovery loss (1 chunk = 2 waves
-    # of work), large enough that partial-last-wave is a diminishing fraction.
-    _CHUNK_WAVES = 2
+    # Number of fleet-waves per chunk when auto-deriving chunk_size. With k
+    # batches per worker, relative tail-variance scales as 1/√k, so bumping
+    # k from 2 to 4 cuts tail overhead ~30% without changing batch_size (so
+    # per-batch polling cost is unchanged). Crash-recovery loss is one chunk
+    # = 4 fleet-waves of work, modest for any reasonable batch pipeline.
+    _CHUNK_WAVES = 4
 
     def __init__(
         self,
