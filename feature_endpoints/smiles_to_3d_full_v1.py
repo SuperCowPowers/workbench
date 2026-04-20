@@ -24,7 +24,7 @@ ENDPOINT_NAME = "smiles-to-3d-full-v1"
 INSTANCE = None  # None → auto-select (ml.c7i.xlarge for async). Set
 #        "ml.c7i.2xlarge" etc. for more CPU/mem per worker.
 MAX_INSTANCES = 8  # Autoscaler ceiling. Bump for bigger batch jobs.
-IDLE_MINUTES = 15  # Minutes of empty queue before draining to zero.
+IDLE_MINUTES = 5  # Minutes of empty queue before draining to zero.
 
 
 if __name__ == "__main__":

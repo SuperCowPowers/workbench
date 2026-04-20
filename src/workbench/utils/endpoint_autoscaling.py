@@ -42,11 +42,6 @@ log = logging.getLogger("workbench")
 # ---------------------------------------------------------------------------
 # AWS metric definitions
 # ---------------------------------------------------------------------------
-_HAS_BACKLOG_WITHOUT_CAPACITY = {
-    "MetricName": "HasBacklogWithoutCapacity",
-    "Namespace": "AWS/SageMaker",
-    "Statistic": "Average",
-}
 _APPROXIMATE_BACKLOG_SIZE = {
     "MetricName": "ApproximateBacklogSize",
     "Namespace": "AWS/SageMaker",
@@ -62,7 +57,7 @@ _INVOCATIONS_PER_INSTANCE = {
 # Defaults — callers override via kwargs (typically sourced from workbench_meta).
 # ---------------------------------------------------------------------------
 _DEFAULT_MAX_CAPACITY = 8
-_DEFAULT_SCALE_IN_IDLE_MINUTES = 15  # batch mode only
+_DEFAULT_SCALE_IN_IDLE_MINUTES = 5  # batch mode only — minutes of empty queue before draining
 _DEFAULT_REALTIME_TARGET = 750.0  # invocations per instance
 
 _SERVICE_NS = "sagemaker"
@@ -116,27 +111,38 @@ Spec = Union[StepPolicySpec, TargetTrackingSpec]
 # Mode handlers — each returns a list of policy specs for the given params
 # ---------------------------------------------------------------------------
 def _batch_mode_specs(max_capacity: int, min_capacity: int, scale_in_idle_minutes: int) -> List[Spec]:
-    """Specs for batch-async endpoints. Jump 0→max, idle→min, no mid-range dithering."""
+    """Specs for batch-async endpoints. Jump to max on backlog, idle→min, no
+    mid-range dithering. Both triggers key off ``ApproximateBacklogSize`` so
+    they're symmetric and work at any current instance count.
+
+    (We deliberately don't use ``HasBacklogWithoutCapacity`` — it only fires
+    when instances=0, so it can't take us N→max once we already have any
+    instances running.)
+    """
     return [
-        # 0 → max_capacity when backlog arrives and there's no capacity.
-        # Fires within 60s of the first queued request on a cold endpoint.
+        # 0 or N → max_capacity whenever there's meaningful backlog. Fires in
+        # ~60s from the first queued request (CloudWatch metric period floor).
+        # cooldown_seconds=0 means no artificial delay after firing —
+        # ExactCapacity is idempotent so re-fires while the queue drains just
+        # re-assert the full fleet size.
         StepPolicySpec(
             role="scale-out",
-            metric=_HAS_BACKLOG_WITHOUT_CAPACITY,
+            metric=_APPROXIMATE_BACKLOG_SIZE,
             threshold=1.0,
             comparison="GreaterThanOrEqualToThreshold",
             evaluation_periods=1,
             datapoints_to_alarm=1,
             period_seconds=60,
-            treat_missing_data="missing",
+            treat_missing_data="notBreaching",
             adjustment_type="ExactCapacity",
             adjustment=max_capacity,
-            cooldown_seconds=60,
+            cooldown_seconds=0,
         ),
         # max_capacity → min_capacity when the queue has been empty for a
         # sustained window. `ApproximateBacklogSize < 1` with N consecutive
         # 60-s datapoints means N minutes of zero queue. SageMaker won't kill
         # an instance mid-invocation anyway, so this is a "truly idle" signal.
+        # cooldown_seconds=0 — the evaluation window already gates re-firing.
         StepPolicySpec(
             role="scale-in",
             metric=_APPROXIMATE_BACKLOG_SIZE,
@@ -148,7 +154,7 @@ def _batch_mode_specs(max_capacity: int, min_capacity: int, scale_in_idle_minute
             treat_missing_data="notBreaching",
             adjustment_type="ExactCapacity",
             adjustment=min_capacity,
-            cooldown_seconds=60,
+            cooldown_seconds=0,
         ),
     ]
 

@@ -110,14 +110,12 @@ def _featurize(df: pd.DataFrame, refeaturize: bool) -> tuple[pd.DataFrame, list[
     log.info(f"  {ENDPOINT_2D}: {len(cols_2d)} registered features")
     log.info(f"  {ENDPOINT_3D}: {len(cols_3d)} registered features")
 
-    # 2D — fast enough that client-side caching isn't worth it.
+    # Compute our 2D Features (RDKit + Mordred)
     log.info(f"Running {len(df):,} rows through {ENDPOINT_2D} (2D RDKit+Mordred) …")
     df = fe_2d.inference(df)
 
-    # 3D — SMILES-keyed InferenceCache so we never re-compute the same compound.
-    # The cache lives in DFStore at /workbench/inference_cache/smiles-to-3d-full-v1
-    # and auto-invalidates if the endpoint is redeployed.
-    cached_3d = InferenceCache(fe_3d, cache_key_column=SMILES_COL, auto_invalidate_cache=True)
+    # Compute our 3D Features (Boltzmann ensemble)
+    cached_3d = InferenceCache(fe_3d, cache_key_column=SMILES_COL)
     if refeaturize:
         log.info(f"--refeaturize: clearing InferenceCache for {ENDPOINT_3D}")
         cached_3d.clear_cache()
