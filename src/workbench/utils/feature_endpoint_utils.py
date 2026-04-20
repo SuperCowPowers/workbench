@@ -167,9 +167,10 @@ def register_features(endpoint) -> List[str]:
     # consumes, plus the FeatureSet's id column. This is the key fix for the
     # "AqSol pre-baked descriptors" problem — if we passed the full FeatureSet,
     # any output column whose name already exists in the input would be
-    # silently masked by the diff. 5 rows is enough to diff.
+    # silently masked by the diff. 5 rows is enough to diff — pass limit=5 so
+    # we don't pull the whole FeatureSet to Athena just to slice off the top.
     keep = [fs.id_column] + [c for c in model_inputs if c != fs.id_column]
-    sample_df = fs.pull_dataframe().head(5)[keep].copy()
+    sample_df = fs.pull_dataframe(limit=5)[keep].copy()
 
     # Run inference and diff columns to find what the endpoint adds.
     input_cols = set(sample_df.columns)

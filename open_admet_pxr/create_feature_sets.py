@@ -27,8 +27,9 @@ Usage (with WORKBENCH_CONFIG already set, e.g. ideaya_sandbox.json):
     python create_feature_sets.py --refeaturize      # clear the 3D InferenceCache and recompute
     python create_feature_sets.py --rebuild          # force-rebuild DataSource + all FeatureSets
 
-Feature columns are identified by diffing DataFrame columns before/after each
-endpoint call, so we don't depend on ParameterStore feature-list keys.
+Feature column lists come from each endpoint's FeatureEndpoint.feature_list()
+(backed by ParameterStore). The endpoints register these at deploy time via
+workbench.utils.feature_endpoint_utils.register_features.
 """
 
 import argparse
@@ -39,15 +40,13 @@ from pathlib import Path
 import pandas as pd
 
 from workbench.api import (
-    AsyncEndpoint,
     DataSource,
-    Endpoint,
+    FeatureEndpoint,
     FeatureSet,
     PublicData,
 )
 from workbench.api.inference_cache import InferenceCache
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
-from workbench.utils.feature_endpoint_utils import get_endpoint_features
 
 log = logging.getLogger("openadmet_pxr.create_feature_sets")
 
@@ -65,7 +64,7 @@ META_COLS = ["ocnt_id", "pec50_std_error"]  # passthrough for uncertainty-weight
 
 # Feature endpoints
 ENDPOINT_2D = "smiles-to-2d-v1"  # RDKit + Mordred 2D (salts removed) — fast, no cache needed
-ENDPOINT_3D_ASYNC = "smiles-to-3d-full-v1"  # Boltzmann-weighted 3D ensemble (74 features) — cached
+ENDPOINT_3D = "smiles-to-3d-full-v1"  # Boltzmann-weighted 3D ensemble (74 features) — cached
 
 TAGS = ["openadmet_pxr", "activity"]
 
@@ -97,48 +96,39 @@ def _ensure_data_source(df: pd.DataFrame, rebuild: bool) -> None:
         ds.set_owner("open_admet_pxr")
 
 
-def _require_feature_list(endpoint_name: str) -> list[str]:
-    """Look up the endpoint's registered feature list. Fail loudly if it's
-    missing — the fix is to redeploy the endpoint (its deploy script calls
-    ``end.register_features()``)."""
-    cols = get_endpoint_features(endpoint_name)
-    if not cols:
-        raise RuntimeError(
-            f"No feature list registered for endpoint '{endpoint_name}' at "
-            f"/workbench/feature_lists/{endpoint_name}. Redeploy the endpoint "
-            f"(its deploy script calls end.register_features()) and try again."
-        )
-    log.info(f"  {endpoint_name}: {len(cols)} registered features")
-    return cols
-
-
 def _featurize(df: pd.DataFrame, refeaturize: bool) -> tuple[pd.DataFrame, list[str], list[str]]:
-    """Run df through the 2D then the 3D endpoint (3D is SMILES-cached)."""
-    cols_2d = _require_feature_list(ENDPOINT_2D)
-    cols_3d = _require_feature_list(ENDPOINT_3D_ASYNC)
+    """Run df through the 2D then the 3D endpoint (3D is SMILES-cached).
 
-    # 2D — fast enough that client-side caching isn't worth it
+    FeatureEndpoint handles both sides for us:
+      - .feature_list() returns the registered feature columns from ParameterStore
+      - .inference() routes to the right transport (realtime or async) based on
+        how the endpoint was deployed — so we don't need to know or care.
+    """
+    fe_2d = FeatureEndpoint(ENDPOINT_2D)
+    fe_3d = FeatureEndpoint(ENDPOINT_3D)
+    cols_2d = fe_2d.feature_list()
+    cols_3d = fe_3d.feature_list()
+    log.info(f"  {ENDPOINT_2D}: {len(cols_2d)} registered features")
+    log.info(f"  {ENDPOINT_3D}: {len(cols_3d)} registered features")
+
+    # 2D — fast enough that client-side caching isn't worth it.
     log.info(f"Running {len(df):,} rows through {ENDPOINT_2D} (2D RDKit+Mordred) …")
-    df = Endpoint(ENDPOINT_2D).inference(df)
+    df = fe_2d.inference(df)
 
     # 3D — SMILES-keyed InferenceCache so we never re-compute the same compound.
     # The cache lives in DFStore at /workbench/inference_cache/smiles-to-3d-full-v1
     # and auto-invalidates if the endpoint is redeployed.
-    cached_3d = InferenceCache(
-        AsyncEndpoint(ENDPOINT_3D_ASYNC),
-        cache_key_column=SMILES_COL,
-        auto_invalidate_cache=True,
-    )
+    cached_3d = InferenceCache(fe_3d, cache_key_column=SMILES_COL, auto_invalidate_cache=True)
     if refeaturize:
-        log.info(f"--refeaturize: clearing InferenceCache for {ENDPOINT_3D_ASYNC}")
+        log.info(f"--refeaturize: clearing InferenceCache for {ENDPOINT_3D}")
         cached_3d.clear_cache()
 
     log.info(
-        f"Running {len(df):,} rows through {ENDPOINT_3D_ASYNC} (3D Boltzmann, cached). "
+        f"Running {len(df):,} rows through {ENDPOINT_3D} (3D Boltzmann, cached). "
         f"Current cache size: {cached_3d.cache_size():,} SMILES."
     )
     df = cached_3d.inference(df)
-    log.info(f"  {ENDPOINT_3D_ASYNC}: cache now holds {cached_3d.cache_size():,} SMILES")
+    log.info(f"  {ENDPOINT_3D}: cache now holds {cached_3d.cache_size():,} SMILES")
 
     return df, cols_2d, cols_3d
 
