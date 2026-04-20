@@ -53,6 +53,37 @@ def feature_list_key(endpoint_name: str) -> str:
     return f"{FEATURE_LIST_PREFIX}/{endpoint_name}"
 
 
+def ensure_demo_featureset(name: str = "feature_endpoint_fs"):
+    """Ensure the shared demo FeatureSet (used as the smoke-test / training
+    source for all feature endpoints) exists. Backed by the public AqSol
+    dataset.
+
+    Feature endpoints consume SMILES and produce computed descriptors — they
+    don't "learn" from training data. The demo FeatureSet just gives workbench
+    something to hang the Model / Endpoint artifacts off of during creation.
+
+    Idempotent — returns the existing FeatureSet if it's already there.
+    """
+    # Lazy imports to keep this utility module cheap and avoid any circular
+    # import risk if someone imports feature_endpoint_utils from deep in core.
+    from workbench.api import FeatureSet, PublicData
+    from workbench.core.transforms.pandas_transforms import PandasToFeatures
+
+    fs = FeatureSet(name)
+    if fs.exists():
+        return fs
+
+    aqsol = PublicData().get("comp_chem/aqsol/aqsol_public_data")
+    aqsol.columns = aqsol.columns.str.lower()
+    to_features = PandasToFeatures(name)
+    to_features.set_input(aqsol, id_column="id")
+    to_features.set_output_tags(["aqsol", "public"])
+    to_features.transform()
+    fs = FeatureSet(name)
+    fs.set_owner("FeatureEndpoint")
+    return fs
+
+
 def get_endpoint_features(endpoint_name: str) -> Optional[List[str]]:
     """Look up the feature columns registered for a feature endpoint.
 

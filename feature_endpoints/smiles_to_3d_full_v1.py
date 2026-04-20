@@ -1,95 +1,70 @@
-"""Create the SMILES to 3D Molecular Descriptors (Boltzmann) Model + Endpoint
-   Note: This version REMOVES salts in the molecules.
+"""Create the SMILES → 3D Molecular Descriptors (Boltzmann) Async Endpoint.
 
-Description:
-   Async Feature Endpoint that takes a SMILES string and computes Boltzmann-
-   weighted 3D conformer-based molecular descriptors including:
-   - RDKit 3D shape descriptors (PMI, NPR, asphericity, etc.)
-   - Mordred 3D descriptors (CPSA, GeometricalIndex, GravitationalIndex, PBF)
-   - Pharmacophore 3D descriptors (amphiphilic moment, IMHB potential, etc.)
-   - Conformer ensemble statistics (energy, flexibility)
+Salts are removed. Computes 74 Boltzmann-weighted 3D descriptors per SMILES:
+  - RDKit 3D shape      (PMI, NPR, asphericity, …)
+  - Mordred 3D          (CPSA, GeometricalIndex, GravitationalIndex, PBF)
+  - Pharmacophore 3D    (amphiphilic moment, IMHB potential, …)
+  - Conformer ensemble  (energy, flexibility)
 
-   Total: 74 3D descriptors (same features as the fast v1 endpoint)
+Uses adaptive conformer counts (50–300 based on rotatable bonds) and
+Boltzmann-weighted ensemble averaging. Deployed as an async endpoint
+(up to 15-minute invocations) for overnight batch processing of 10k–100k
+compound libraries.
 
-   This endpoint uses adaptive conformer counts (50-300 based on rotatable
-   bonds) and Boltzmann-weighted ensemble averaging instead of the single
-   lowest-energy conformer used by the fast endpoint. Designed for overnight
-   batch processing of 10k-100k compound libraries.
-
-   Deployed as an async SageMaker endpoint (up to 15-minute invocations).
-
-Created Artifacts:
-
-    Models:
-        - smiles-to-3d-full-v1
-
-    Endpoints:
-        - smiles-to-3d-full-v1
+Created artifacts:  Model/Endpoint ``smiles-to-3d-full-v1``
 """
 
-# Workbench Imports
-from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
-from workbench.core.transforms.pandas_transforms import PandasToFeatures
-from workbench.utils.feature_endpoint_utils import register_features
+from workbench.api import ModelType, ModelFramework
+from workbench.utils.feature_endpoint_utils import ensure_demo_featureset, register_features
+
+
+# ─── Deploy-time knobs ──────────────────────────────────────────────────────
+# These are the settings you'll most often want to tweak. Everything else
+# comes from workbench defaults.
+ENDPOINT_NAME = "smiles-to-3d-full-v1"
+INSTANCE = None          # None → auto-select (ml.c7i.xlarge for async). Set
+                         #        "ml.c7i.2xlarge" etc. for more CPU/mem per worker.
+MAX_INSTANCES = 8        # Autoscaler ceiling. Bump for bigger batch jobs.
+IDLE_MINUTES = 15        # Minutes of empty queue before draining to zero.
+
 
 if __name__ == "__main__":
-
-    # Pull in the custom script path
-    script_path = "model_scripts/smiles_to_3d_full_model_script.py"
-
-    # Check if we have an existing FeatureSet, if not create one
-    if not FeatureSet("feature_endpoint_fs").exists():
-
-        # Grab the public AqSol data (contains SMILES and experimental solubility values)
-        aqsol_data = PublicData().get("comp_chem/aqsol/aqsol_public_data")
-        aqsol_data.columns = aqsol_data.columns.str.lower()
-
-        to_features = PandasToFeatures("feature_endpoint_fs")
-        to_features.set_input(aqsol_data, id_column="id")
-        to_features.set_output_tags(["aqsol", "public"])
-        to_features.transform()
-        fs = FeatureSet("feature_endpoint_fs")
-        fs.set_owner("FeatureEndpoint")
-
-    # Grab our FeatureSet and create the Model
-    feature_set = FeatureSet("feature_endpoint_fs")
+    # ── Create the Model (shared AqSol-backed demo FeatureSet as training source).
+    feature_set = ensure_demo_featureset()
     tags = ["smiles", "3d descriptors", "boltzmann", "conformer ensemble"]
     model = feature_set.to_model(
-        name="smiles-to-3d-full-v1",
+        name=ENDPOINT_NAME,
         model_type=ModelType.TRANSFORMER,
         model_framework=ModelFramework.TRANSFORMER,
         feature_list=["smiles"],
         description="SMILES to 3D Molecular Descriptors — Boltzmann ensemble (74 features)",
         tags=tags,
-        custom_script=script_path,
+        custom_script="model_scripts/smiles_to_3d_full_model_script.py",
     )
     model.set_owner("BW")
 
-    # Deploy as the default async endpoint. The framework picks a beefy CPU
-    # instance, batch size, concurrency, and polling timeout that work for the
-    # typical "long-running heavy compute" case. Defaults are usually fine, but
-    # here are the knobs you might want to tune and when:
-    #
-    #   to_endpoint() kwargs:
-    #     instance="ml.c7i.2xlarge"   — bigger instance if your model needs more
-    #                                   CPU/memory per worker (default ml.c7i.xlarge)
-    #
-    #   model.upsert_workbench_meta({...})  — set BEFORE to_endpoint():
-    #     async_max_concurrent_per_instance=4   — bump up if your model is
-    #                                             IO-bound or lightweight per
-    #                                             invocation (default 1, good
-    #                                             for CPU-saturating work)
-    #
-    #   end.upsert_workbench_meta({...})  — set AFTER to_endpoint():
-    #     inference_batch_size=100     — rows per invocation (default 50).
-    #                                    Higher = better overhead amortization,
-    #                                    but a single chunk must finish inside
-    #                                    SageMaker's 1hr async invocation limit.
-    #     inference_max_in_flight=32   — client-side parallel submissions
-    #                                    (default 16). Higher = more backlog
-    #                                    pressure on autoscaling, more S3 load.
-    end = model.to_endpoint(tags=tags, async_endpoint=True)
+    # Advanced: workbench_meta knobs set BEFORE to_endpoint() shape deployment.
+    #   model.upsert_workbench_meta({"async_max_concurrent_per_instance": 4})
+    #     - default 1 (good for CPU-saturating work). Bump for IO-bound inference.
 
-    # Register output feature columns to ParameterStore at
-    # /workbench/feature_lists/<endpoint_name> (also smoke-tests the endpoint).
+    # ── Deploy as an async (batch) endpoint.
+    # Autoscaler runs in "batch" mode: 0 → MAX_INSTANCES in one step on first
+    # traffic, drain to 0 after IDLE_MINUTES of empty queue.
+    end = model.to_endpoint(
+        tags=tags,
+        async_endpoint=True,
+        instance=INSTANCE,
+        max_instances=MAX_INSTANCES,
+        scale_in_idle_minutes=IDLE_MINUTES,
+    )
+
+    # Advanced: workbench_meta knobs set AFTER to_endpoint() tune runtime inference.
+    #   end.upsert_workbench_meta({"inference_batch_size": 100})
+    #     - default 50. Higher = better overhead amortization, but a single chunk
+    #       must finish inside SageMaker's 1hr async invocation limit.
+    #   end.upsert_workbench_meta({"inference_max_in_flight": 32})
+    #     - default 16. Higher = more backlog pressure on autoscaling, more S3 load.
+
+    # Register output columns to ParameterStore at
+    # /workbench/feature_lists/<endpoint_name>. Also smoke-tests the endpoint.
     register_features(end)

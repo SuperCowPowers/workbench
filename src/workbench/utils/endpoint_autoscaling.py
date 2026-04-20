@@ -207,9 +207,7 @@ def register_autoscaling(
         describe calls.
     """
     if auto_scaling_mode not in _MODE_HANDLERS:
-        raise ValueError(
-            f"Unsupported auto_scaling_mode {auto_scaling_mode!r}. Valid: {sorted(_MODE_HANDLERS)}"
-        )
+        raise ValueError(f"Unsupported auto_scaling_mode {auto_scaling_mode!r}. Valid: {sorted(_MODE_HANDLERS)}")
 
     aas = boto3_session.client("application-autoscaling")
     cw = boto3_session.client("cloudwatch")
@@ -244,8 +242,7 @@ def register_autoscaling(
 
     except Exception:
         log.exception(
-            f"Failed to register autoscaling for '{endpoint_name}' "
-            f"(auto_scaling_mode={auto_scaling_mode})"
+            f"Failed to register autoscaling for '{endpoint_name}' " f"(auto_scaling_mode={auto_scaling_mode})"
         )
         if raise_on_error:
             raise

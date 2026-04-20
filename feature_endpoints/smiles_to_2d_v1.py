@@ -1,67 +1,52 @@
-"""Create the SMILES to Standardize/Tautomer + RDKIT + Mordred Model + Endpoint
-   Note: This version REMOVES salts in the molecules.
+"""Create the SMILES → Standardize/Tautomer + RDKit + Mordred Feature Endpoint.
 
-Description:
-   Feature Endpoint that takes a SMILES string and
-   computes RDKIT + Mordred Molecular Descriptors
+Salts are removed. Takes a SMILES string and computes RDKit + Mordred 2D
+molecular descriptors (313 features total).
 
-Created Artifacts:
-
-    Models:
-        - smiles-to-2d-v1
-
-    Endpoints:
-        - smiles-to-2d-v1
+Created artifacts:  Model/Endpoint ``smiles-to-2d-v1``
 """
 
 import os
 
-# Workbench Imports
-from workbench.api import FeatureSet, ModelType, ModelFramework, PublicData
-from workbench.core.transforms.pandas_transforms import PandasToFeatures
-from workbench.utils.feature_endpoint_utils import register_features
+from workbench.api import ModelType, ModelFramework
+from workbench.utils.feature_endpoint_utils import ensure_demo_featureset, register_features
+
+
+# ─── Deploy-time knobs ──────────────────────────────────────────────────────
+# These are the settings you'll most often want to tweak. Everything else
+# comes from workbench defaults.
+ENDPOINT_NAME = "smiles-to-2d-v1"
+# SERVERLESS=True → AWS-managed scaling via max_concurrency; cheap idle.
+# SERVERLESS=False → dedicated instance (more predictable latency).
+SERVERLESS = os.environ.get("SERVERLESS", "True").lower() == "true"
+MEM_SIZE = 4096              # MB — serverless memory ceiling.
+MAX_CONCURRENCY = 5          # serverless concurrent invocations.
+INSTANCE = "ml.c7i.large"    # used only when SERVERLESS=False.
+
 
 if __name__ == "__main__":
-
-    # Serverless and Instance types
-    serverless = os.environ.get("SERVERLESS", "True").lower() == "true"
-
-    # Pull in the custom script path
-    script_path = "model_scripts/smiles_to_2d_model_script.py"
-
-    # Check if we have an existing FeatureSet, if not create one
-    if not FeatureSet("feature_endpoint_fs").exists():
-        aqsol_data = PublicData().get("comp_chem/aqsol/aqsol_public_data")
-        aqsol_data.columns = aqsol_data.columns.str.lower()
-
-        to_features = PandasToFeatures("feature_endpoint_fs")
-        to_features.set_input(aqsol_data, id_column="id")
-        to_features.set_output_tags(["aqsol", "public"])
-        to_features.transform()
-        fs = FeatureSet("feature_endpoint_fs")
-        fs.set_owner("FeatureEndpoint")
-
-    # Grab our FeatureSet
-    feature_set = FeatureSet("feature_endpoint_fs")
+    # ── Create the Model (shared AqSol-backed demo FeatureSet as training source).
+    feature_set = ensure_demo_featureset()
     tags = ["smiles", "molecular descriptors", "tautomerized", "stereo"]
     model = feature_set.to_model(
-        name="smiles-to-2d-v1",
+        name=ENDPOINT_NAME,
         model_type=ModelType.TRANSFORMER,
         model_framework=ModelFramework.TRANSFORMER,
         feature_list=["smiles"],
-        description="Smiles to Molecular Descriptors",
+        description="SMILES to RDKit + Mordred 2D Molecular Descriptors (salts removed)",
         tags=tags,
-        custom_script=script_path,
+        custom_script="model_scripts/smiles_to_2d_model_script.py",
     )
     model.set_owner("BW")
 
-    # Create the endpoint for the model
-    if serverless:
-        end = model.to_endpoint(tags=tags, serverless=True, mem_size=4096, max_concurrency=5)
+    # ── Deploy as a realtime endpoint (serverless or dedicated instance).
+    # 2D descriptors compute fast enough that serverless is almost always the
+    # right choice — scale-to-zero idle cost, AWS-managed concurrency.
+    if SERVERLESS:
+        end = model.to_endpoint(tags=tags, serverless=True, mem_size=MEM_SIZE, max_concurrency=MAX_CONCURRENCY)
     else:
-        end = model.to_endpoint(tags=tags, serverless=False, instance="ml.c7i.large")
+        end = model.to_endpoint(tags=tags, serverless=False, instance=INSTANCE)
 
-    # Register output feature columns to ParameterStore at
-    # /workbench/feature_lists/<endpoint_name> so downstream model scripts can
-    # look up the feature list by endpoint name. This also smoke-tests the endpoint.
+    # Register output columns to ParameterStore at
+    # /workbench/feature_lists/<endpoint_name>. Also smoke-tests the endpoint.
     register_features(end)
