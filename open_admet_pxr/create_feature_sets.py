@@ -47,7 +47,7 @@ from workbench.api import (
 from workbench.api.inference_cache import InferenceCache
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
-log = logging.getLogger("openadmet_pxr.create_feature_sets")
+log = logging.getLogger("workbench")
 
 # ─── Names ──────────────────────────────────────────────────────────────────
 DATA_SOURCE_NAME = "openadmet_pxr_activity"

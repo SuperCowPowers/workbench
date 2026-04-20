@@ -43,10 +43,14 @@ _POLL_INITIAL_S = 3
 _POLL_MAX_S = 30
 _POLL_BACKOFF = 1.5
 
-# Default number of concurrent in-flight invocations. Enough to drive
-# backlog past the autoscaling target (2/instance) even once scaled out,
-# well under SageMaker's ~1000 pending-per-endpoint queue limit.
+# Fallback in-flight concurrency for endpoints whose workbench_meta doesn't
+# declare max_instances (legacy deploys). Used only if the derived value
+# `2 × max_instances` isn't available — see _resolve_max_in_flight.
 _DEFAULT_MAX_IN_FLIGHT = 16
+
+# Floor for derived max_in_flight. Prevents pathological under-parallelism
+# when max_instances is tiny (e.g. max_instances=1 would otherwise give 2).
+_MIN_DERIVED_MAX_IN_FLIGHT = 4
 
 # Default rows per invocation. Smaller batches give better load balancing
 # across workers — a handful of slow rows in one chunk stretches total time
@@ -59,6 +63,28 @@ _DEFAULT_BATCH_SIZE = 10
 
 # Pandas option applied once at import — avoid mutating global state per call.
 pd.set_option("future.no_silent_downcasting", True)
+
+
+def _resolve_max_in_flight(meta: dict) -> int:
+    """Pick the client-side in-flight concurrency for a call.
+
+    Resolution order (first match wins):
+      1. Explicit ``inference_max_in_flight`` in meta — user override.
+      2. ``2 × max_instances`` (floor :data:`_MIN_DERIVED_MAX_IN_FLIGHT`) —
+         scales client parallelism with the fleet's autoscaler ceiling so
+         server-side slots don't sit idle. The 2× factor gives headroom for
+         instances transitioning in/out during scale-out and for S3 upload /
+         poll latency on each worker.
+      3. :data:`_DEFAULT_MAX_IN_FLIGHT` — fallback for legacy endpoints whose
+         workbench_meta doesn't declare max_instances.
+    """
+    explicit = meta.get("inference_max_in_flight")
+    if explicit is not None:
+        return int(explicit)
+    max_instances = meta.get("max_instances")
+    if max_instances is not None:
+        return max(2 * int(max_instances), _MIN_DERIVED_MAX_IN_FLIGHT)
+    return _DEFAULT_MAX_IN_FLIGHT
 
 
 class AsyncEndpointCore(EndpointCore):
@@ -119,8 +145,10 @@ class AsyncEndpointCore(EndpointCore):
         """Split ``eval_df`` into chunks, invoke in parallel, reassemble in input order.
 
         Reads two knobs from ``workbench_meta()``:
-          * ``inference_batch_size``    (default 50): rows per invocation
-          * ``inference_max_in_flight`` (default 16): concurrent in-flight requests
+          * ``inference_batch_size``    (default 10): rows per invocation
+          * ``inference_max_in_flight`` (derived):   concurrent in-flight requests.
+            Resolution order: explicit ``inference_max_in_flight`` → ``2 × max_instances``
+            (floor 4) → fallback 16. See :func:`_resolve_max_in_flight`.
 
         Failed chunks are logged and dropped from the output (we raise only
         if *every* chunk fails — silently returning an empty DataFrame with
@@ -128,7 +156,7 @@ class AsyncEndpointCore(EndpointCore):
         """
         meta = self.workbench_meta() or {}
         batch_size = int(meta.get("inference_batch_size", _DEFAULT_BATCH_SIZE))
-        max_in_flight = int(meta.get("inference_max_in_flight", _DEFAULT_MAX_IN_FLIGHT))
+        max_in_flight = _resolve_max_in_flight(meta)
 
         # Size the connection pool to match in-flight concurrency plus headroom.
         # Default botocore pool is 10 — anything larger triggers noisy

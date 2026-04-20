@@ -37,7 +37,11 @@ from workbench.core.transforms.transform import Transform, TransformInput, Trans
 from workbench.core.artifacts.model_core import ModelCore  # noqa: E402
 from workbench.core.artifacts.endpoint_core import EndpointCore  # noqa: E402
 from workbench.core.artifacts.artifact import Artifact  # noqa: E402
-from workbench.utils.endpoint_autoscaling import register_autoscaling  # noqa: E402
+from workbench.utils.endpoint_autoscaling import (  # noqa: E402
+    _DEFAULT_MAX_CAPACITY,
+    _DEFAULT_SCALE_IN_IDLE_MINUTES,
+    register_autoscaling,
+)
 
 
 class ModelToEndpoint(Transform):
@@ -96,6 +100,18 @@ class ModelToEndpoint(Transform):
         # Serverless endpoints don't use the autoscaler at all, so this is N/A there.
         if auto_scaling_mode is None:
             auto_scaling_mode = "batch" if async_endpoint else "realtime"
+
+        # Resolve autoscaler numeric defaults when the caller didn't specify them.
+        # We pin these at __init__ (rather than letting register_autoscaling's defaults
+        # take over silently) so workbench_meta honestly records the effective values
+        # the endpoint was deployed with — and so downstream consumers
+        # (e.g. _resolve_max_in_flight) can see real numbers. Only meaningful for
+        # non-serverless endpoints; serverless doesn't use the autoscaler.
+        if not serverless:
+            if max_instances is None:
+                max_instances = _DEFAULT_MAX_CAPACITY
+            if scale_in_idle_minutes is None:
+                scale_in_idle_minutes = _DEFAULT_SCALE_IN_IDLE_MINUTES
 
         # Set up all my instance attributes
         self.serverless = serverless
@@ -356,15 +372,14 @@ class ModelToEndpoint(Transform):
         # in register_autoscaling but wiring it up here would be a behavior change
         # for existing deployments, so we defer that to a separate change.
         if self.async_endpoint:
-            autoscale_kwargs = {
-                "auto_scaling_mode": self.auto_scaling_mode,
-                "min_capacity": self.min_instances,
-            }
-            if self.max_instances is not None:
-                autoscale_kwargs["max_capacity"] = self.max_instances
-            if self.scale_in_idle_minutes is not None:
-                autoscale_kwargs["scale_in_idle_minutes"] = self.scale_in_idle_minutes
-            register_autoscaling(self.boto3_session, self.output_name, **autoscale_kwargs)
+            register_autoscaling(
+                self.boto3_session,
+                self.output_name,
+                auto_scaling_mode=self.auto_scaling_mode,
+                min_capacity=self.min_instances,
+                max_capacity=self.max_instances,
+                scale_in_idle_minutes=self.scale_in_idle_minutes,
+            )
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() for the Endpoint"""
