@@ -26,16 +26,15 @@ Usage (with WORKBENCH_CONFIG set, e.g. scp_sandbox.json):
     python all_models.py                  # create anything missing
     python all_models.py --rebuild        # force-rebuild every model/endpoint
 
-Prereq: ``create_feature_sets.py`` has already built the three FeatureSets
-and ``smiles-to-2d-v1`` / ``smiles-to-3d-full-v1`` have registered their
-feature lists via :func:`register_features`.
+Prereq: ``create_feature_sets.py`` has already built the three FeatureSets.
+``FeatureEndpoint.feature_list()`` handles feature-list lookup (with an
+auto-derive fallback if an endpoint's list isn't cached yet).
 """
 
 import argparse
 import logging
 
-from workbench.api import FeatureSet, Model, ModelFramework, ModelType
-from workbench.utils.feature_endpoint_utils import get_endpoint_features
+from workbench.api import FeatureEndpoint, FeatureSet, Model, ModelFramework, ModelType
 
 log = logging.getLogger("openadmet_pxr.all_models")
 
@@ -51,7 +50,7 @@ TARGET_COL = "pec50"
 SMILES_COL = "smiles"
 TAGS_BASE = ["openadmet_pxr", "activity", "regression"]
 
-# Feature-endpoint → feature-list key (registered by register_features)
+# Feature endpoints that contribute to each FeatureSet variant.
 ENDPOINT_2D = "smiles-to-2d-v1"
 ENDPOINT_3D = "smiles-to-3d-full-v1"
 
@@ -60,22 +59,16 @@ ENDPOINT_3D = "smiles-to-3d-full-v1"
 
 
 def _feature_list_for_variant(variant: str) -> list[str]:
-    """Assemble the feature column list for a FeatureSet variant by looking
-    up the contributing feature endpoints' registered lists."""
-    parts = {
+    """Assemble the feature column list for a FeatureSet variant by
+    concatenating the contributing endpoints' feature_list()s."""
+    endpoints = {
         "2d": [ENDPOINT_2D],
         "3d": [ENDPOINT_3D],
         "2d_3d": [ENDPOINT_2D, ENDPOINT_3D],
     }[variant]
     features: list[str] = []
-    for ep in parts:
-        cols = get_endpoint_features(ep)
-        if not cols:
-            raise RuntimeError(
-                f"No feature list registered for '{ep}' at /workbench/feature_lists/{ep}. "
-                f"Run register_features on that endpoint first."
-            )
-        features.extend(cols)
+    for ep in endpoints:
+        features.extend(FeatureEndpoint(ep).feature_list())
     return features
 
 

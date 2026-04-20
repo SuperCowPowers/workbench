@@ -57,19 +57,26 @@ class FeatureEndpoint(Endpoint):
         Fast path: reads ``/workbench/feature_lists/<endpoint_name>`` from
         ParameterStore (populated by :func:`register_features` at deploy time).
 
-        Fallback: if the ParameterStore entry is missing (e.g. the endpoint
-        was deployed before the convention existed), runs a small smoke
-        inference to discover the columns, writes them to ParameterStore so
-        subsequent calls are fast, and returns the list. The smoke inference
-        uses 5 rows from the endpoint's input FeatureSet, subset to just the
-        columns the model declares as inputs — see :func:`register_features`
-        for the filtering rules (``desc*`` diagnostics and ``NON_FEATURE_COLUMNS``
-        provenance columns are excluded).
+        Freshness check: compares the parameter's ``LastModifiedDate`` to the
+        endpoint's ``modified()`` time. If the endpoint has been redeployed
+        since the feature list was cached, the cache is stale — we re-derive
+        via the fallback path below and rewrite the cache. This means any
+        ``to_endpoint()`` call is automatically picked up the next time
+        ``feature_list()`` is called; no manual "remember to rerun
+        register_features" step.
 
-        Note on cost: the fallback path triggers one inference call. For a
-        realtime endpoint that's seconds; for a cold async endpoint it's the
-        time to spin up an instance + run 5 rows (minutes). Happens at most
-        once per endpoint — subsequent calls hit ParameterStore.
+        Fallback (also used when there's no cache yet): runs a small smoke
+        inference to discover the columns, writes them to ParameterStore so
+        subsequent calls are fast, and returns the list. Uses 5 rows from the
+        endpoint's input FeatureSet, subset to just the columns the model
+        declares as inputs — see :func:`register_features` for the filtering
+        rules (``desc*`` diagnostics and ``NON_FEATURE_COLUMNS`` provenance
+        columns are excluded).
+
+        Note on cost: the fallback triggers one inference call. For a realtime
+        endpoint that's seconds; for a cold async endpoint it's the time to
+        spin up an instance + run 5 rows (minutes). Only fires on miss or on
+        endpoint-modified — every other call is just a ParameterStore lookup.
 
         Returns:
             List of feature column names.
@@ -80,15 +87,38 @@ class FeatureEndpoint(Endpoint):
                 produces no new columns — indicating it's not actually a
                 feature endpoint).
         """
-        from workbench.utils.feature_endpoint_utils import get_endpoint_features, register_features
+        from workbench.api.parameter_store import ParameterStore
+        from workbench.utils.feature_endpoint_utils import feature_list_key, register_features
 
-        cols = get_endpoint_features(self.name)
+        ps = ParameterStore()
+        key = feature_list_key(self.name)
+        cols = ps.get(key)
+
+        # Miss → derive and register
         if cols is None:
             self.log.important(
                 f"FeatureEndpoint[{self.name}]: no feature list registered yet — "
                 f"running smoke inference to discover and register columns."
             )
-            cols = register_features(self)
+            return register_features(self)
+
+        # Hit → is it fresh? Compare cache write-time vs endpoint modified-time.
+        # If either timestamp is unavailable (transient AWS error, missing
+        # metadata), fail open and trust the cache — staleness detection is
+        # an optimization, not a correctness gate.
+        param_modified = ps.last_modified(key)
+        try:
+            endpoint_modified = self.modified()
+        except Exception:
+            endpoint_modified = None
+
+        if param_modified is not None and endpoint_modified is not None and endpoint_modified > param_modified:
+            self.log.important(
+                f"FeatureEndpoint[{self.name}]: endpoint modified at {endpoint_modified} "
+                f"is newer than cached feature list ({param_modified}) — re-deriving."
+            )
+            return register_features(self)
+
         return cols
 
     # --------------------------------------------------------------------

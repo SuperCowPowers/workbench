@@ -98,13 +98,22 @@ def get_endpoint_features(endpoint_name: str) -> Optional[List[str]]:
     return ParameterStore().get(feature_list_key(endpoint_name))
 
 
-def register_features(endpoint) -> List[str]:
+def register_features(endpoint, feature_cols: Optional[List[str]] = None) -> List[str]:
     """Register a feature endpoint's output columns in ParameterStore.
 
-    Runs a small smoke inference with **only the columns the model declares
-    as inputs** (plus the FeatureSet's id column), diffs the output to find
-    the added columns, filters out diagnostic and provenance columns, and
-    upserts the result under ``/workbench/feature_lists/<endpoint_name>``.
+    Two modes:
+
+    1. **Auto-discovery (default, ``feature_cols=None``):** runs a small smoke
+       inference with only the columns the model declares as inputs (plus the
+       FeatureSet's id column), diffs the output to find the added columns,
+       filters out diagnostic and provenance columns, and upserts the result
+       under ``/workbench/feature_lists/<endpoint_name>``.
+
+    2. **Explicit (``feature_cols`` provided):** skips the smoke inference
+       entirely and registers the caller-supplied list as-is. Use when you
+       already have the canonical feature list (e.g. from the model script
+       that produced the endpoint) and want deterministic registration
+       without the inference round-trip.
 
     Downstream model-training scripts can then look up the feature set this
     endpoint produces without re-running inference to diff columns:
@@ -114,7 +123,7 @@ def register_features(endpoint) -> List[str]:
     Idempotent — re-running refreshes the stored list if the endpoint's
     output shape changed.
 
-    Conventions this function relies on:
+    Auto-discovery relies on the following conventions:
         1. The input FeatureSet has an ``id_column`` (standard Workbench).
         2. The Model's ``features()`` lists the columns the endpoint actually
            consumes (e.g. ``["smiles"]``). Only those are passed to the
@@ -129,18 +138,41 @@ def register_features(endpoint) -> List[str]:
            ``orig_smiles``, ``salt``, ``undefined_chiral_centers``) are also
            excluded.
 
+    Explicit mode trusts the caller — the list is stored verbatim (sorted for
+    consistency) with no filtering. It's the caller's job to pass the right set.
+
     Args:
         endpoint: A Workbench ``Endpoint`` (or ``AsyncEndpoint``) instance
             deployed from a Model/FeatureSet.
+        feature_cols: Optional explicit list of feature column names to
+            register. When provided, skips auto-discovery.
 
     Returns:
         list[str]: The feature columns that were registered.
 
     Raises:
-        RuntimeError: If the endpoint has no input model / input FeatureSet,
-            the model has no declared feature_list, or the inference produces
-            no new non-diagnostic columns.
+        ValueError: If ``feature_cols`` is provided but empty or contains
+            non-string entries.
+        RuntimeError: In auto-discovery mode, if the endpoint has no input
+            model / input FeatureSet, the model has no declared feature_list,
+            or the inference produces no new non-diagnostic columns.
     """
+    # Explicit-list mode: trust the caller, just persist.
+    if feature_cols is not None:
+        if not feature_cols:
+            raise ValueError("register_features: feature_cols must be a non-empty list")
+        if not all(isinstance(c, str) for c in feature_cols):
+            raise ValueError("register_features: feature_cols must contain only strings")
+        sorted_cols = sorted(feature_cols)
+        key = feature_list_key(endpoint.name)
+        ParameterStore().upsert(key, sorted_cols)
+        log.info(
+            f"register_features: registered {len(sorted_cols)} columns for "
+            f"{endpoint.name} at {key} (explicit — no smoke inference)"
+        )
+        return sorted_cols
+
+    # Auto-discovery mode — run smoke inference and diff.
     # Local imports to avoid pulling core classes into this module's top-level
     # imports (and to keep this utility file cheap to import).
     from workbench.core.artifacts import FeatureSetCore, ModelCore

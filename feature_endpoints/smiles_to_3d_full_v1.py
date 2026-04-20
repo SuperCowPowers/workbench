@@ -15,7 +15,7 @@ Created artifacts:  Model/Endpoint ``smiles-to-3d-full-v1``
 """
 
 from workbench.api import ModelType, ModelFramework
-from workbench.utils.feature_endpoint_utils import ensure_demo_featureset, register_features
+from workbench.utils.feature_endpoint_utils import ensure_demo_featureset
 
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
@@ -63,7 +63,3 @@ if __name__ == "__main__":
     #       must finish inside SageMaker's 1hr async invocation limit.
     #   end.upsert_workbench_meta({"inference_max_in_flight": 32})
     #     - default 16. Higher = more backlog pressure on autoscaling, more S3 load.
-
-    # Register output columns to ParameterStore at
-    # /workbench/feature_lists/<endpoint_name>. Also smoke-tests the endpoint.
-    register_features(end)

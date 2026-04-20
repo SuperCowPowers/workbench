@@ -28,8 +28,7 @@ Usage (with WORKBENCH_CONFIG already set, e.g. ideaya_sandbox.json):
     python create_feature_sets.py --rebuild          # force-rebuild DataSource + all FeatureSets
 
 Feature column lists come from each endpoint's FeatureEndpoint.feature_list()
-(backed by ParameterStore). The endpoints register these at deploy time via
-workbench.utils.feature_endpoint_utils.register_features.
+(backed by ParameterStore, with auto-derive fallback on miss or staleness).
 """
 
 import argparse

@@ -17,7 +17,7 @@ Created artifacts:  Model/Endpoint ``smiles-to-3d-fast-v1``
 import os
 
 from workbench.api import Model, ModelType, ModelFramework
-from workbench.utils.feature_endpoint_utils import ensure_demo_featureset, register_features
+from workbench.utils.feature_endpoint_utils import ensure_demo_featureset
 
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
@@ -65,7 +65,3 @@ if __name__ == "__main__":
 
     end.upsert_workbench_meta({"inference_batch_size": batch_size})
     print(f"inference_batch_size={batch_size}")
-
-    # Register output columns to ParameterStore at
-    # /workbench/feature_lists/<endpoint_name>. Also smoke-tests the endpoint.
-    register_features(end)
