@@ -327,6 +327,7 @@ class InferenceCache:
         """
         try:
             import pyarrow as pa  # deferred import; pa is transitively installed
+
             schema_errs: tuple = (pa.lib.ArrowTypeError, pa.lib.ArrowInvalid)
         except Exception:
             schema_errs = ()
@@ -453,9 +454,7 @@ class InferenceCache:
         self._cache_df = df
         self._canonical_dtypes = df.dtypes
 
-        self.log.info(
-            f"InferenceCache[{self._endpoint.name}]: compacted {before} -> {after} rows"
-        )
+        self.log.info(f"InferenceCache[{self._endpoint.name}]: compacted {before} -> {after} rows")
         return after
 
     # ---- endpoint-change detection ----
@@ -528,8 +527,6 @@ class InferenceCache:
 
 if __name__ == "__main__":
     """Exercise the InferenceCache class against the 3D descriptors endpoint."""
-    import time
-
     from workbench.api import Endpoint, FeatureSet
 
     endpoint = Endpoint("smiles-to-3d-fast-v1")

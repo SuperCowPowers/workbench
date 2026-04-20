@@ -45,8 +45,7 @@ def test_append_concurrent_matching():
     store.delete(path)
 
     def w(tag: str):
-        df = pd.DataFrame({"key": [f"{tag}_{i}" for i in range(50)],
-                           "val": [float(i) for i in range(50)]})
+        df = pd.DataFrame({"key": [f"{tag}_{i}" for i in range(50)], "val": [float(i) for i in range(50)]})
         store.append(path, df)
 
     with ThreadPoolExecutor(max_workers=4) as ex:
@@ -54,8 +53,10 @@ def test_append_concurrent_matching():
 
     df = store.get(path)
     ok = len(df) == 200 and df["key"].str.split("_").str[0].nunique() == 4
-    print(f"  rows={len(df)} tags={df['key'].str.split('_').str[0].nunique()} "
-          f"(expect 200, 4) {'PASS' if ok else 'FAIL'}")
+    print(
+        f"  rows={len(df)} tags={df['key'].str.split('_').str[0].nunique()} "
+        f"(expect 200, 4) {'PASS' if ok else 'FAIL'}"
+    )
     store.delete(path)
 
 
@@ -82,8 +83,7 @@ def test_append_reader_race():
     def writer():
         i = 0
         while not stop.is_set():
-            df = pd.DataFrame({"key": [f"w{i}_{j}" for j in range(20)],
-                               "val": [float(j) for j in range(20)]})
+            df = pd.DataFrame({"key": [f"w{i}_{j}" for j in range(20)], "val": [float(j) for j in range(20)]})
             try:
                 store.append(path, df)
                 i += 1
@@ -91,10 +91,12 @@ def test_append_reader_race():
                 errs.append(f"W {type(e).__name__}: {e}")
 
     rt, wt = threading.Thread(target=reader), threading.Thread(target=writer)
-    rt.start(); wt.start()
+    rt.start()
+    wt.start()
     time.sleep(10)
     stop.set()
-    rt.join(); wt.join()
+    rt.join()
+    wt.join()
 
     ok = len(errs) == 0 and reads[0] > 0
     print(f"  reads ok={reads[0]} errors={len(errs)} {'PASS' if ok else 'FAIL'}")
@@ -170,16 +172,14 @@ def test_concurrent_same_dtype_and_compact():
     # endpoint/parquet round-trip produced).
     dtype_ok = pd.api.types.is_integer_dtype(df["feat"])
     row_ok = len(df) == 210
-    print(f"  read rows={len(df)} feat_dtype={df['feat'].dtype} "
-          f"{'PASS' if row_ok and dtype_ok else 'FAIL'}")
+    print(f"  read rows={len(df)} feat_dtype={df['feat'].dtype} " f"{'PASS' if row_ok and dtype_ok else 'FAIL'}")
 
     before = verify.cache_size()
     after = verify.compact()
     final = verify._df_store.get(cache_path)
     dup = final["key"].duplicated().sum()
     compact_ok = after == before and dup == 0
-    print(f"  compact: {before} -> {after} rows, dup_keys={dup} "
-          f"{'PASS' if compact_ok else 'FAIL'}")
+    print(f"  compact: {before} -> {after} rows, dup_keys={dup} " f"{'PASS' if compact_ok else 'FAIL'}")
 
     verify._df_store.delete(cache_path)
     verify._df_store.delete(verify.manifest_path)
@@ -194,16 +194,18 @@ def test_schema_drift_graceful_fallback():
     store.delete(cache_path)
 
     # Stage two parquet files with incompatible schemas under the prefix.
-    store.append(cache_path, pd.DataFrame({"key": ["a"], "feat": [1]}))       # int
-    store.append(cache_path, pd.DataFrame({"key": ["b"], "feat": [1.5]}))     # float
+    store.append(cache_path, pd.DataFrame({"key": ["a"], "feat": [1]}))  # int
+    store.append(cache_path, pd.DataFrame({"key": ["b"], "feat": [1.5]}))  # float
 
     cache = _fresh_cache("fake", cache_path, "int")
     result = cache._read_cache_with_retry()
     # A raw DFStore.get would raise ArrowTypeError here. The cache's read
     # wrapper must detect that and return None so callers treat it as empty.
     ok = result is None
-    print(f"  _read_cache_with_retry -> {type(result).__name__} "
-          f"{'PASS (graceful fallback)' if ok else 'FAIL (should be None)'}")
+    print(
+        f"  _read_cache_with_retry -> {type(result).__name__} "
+        f"{'PASS (graceful fallback)' if ok else 'FAIL (should be None)'}"
+    )
 
     store.delete(cache_path)
 
