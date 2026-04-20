@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Union
+from typing import Iterable, List, Union
 
 log = logging.getLogger("workbench")
 

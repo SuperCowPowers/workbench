@@ -17,15 +17,14 @@ Created artifacts:  Model/Endpoint ``smiles-to-3d-full-v1``
 from workbench.api import ModelType, ModelFramework
 from workbench.utils.feature_endpoint_utils import ensure_demo_featureset, register_features
 
-
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
 # comes from workbench defaults.
 ENDPOINT_NAME = "smiles-to-3d-full-v1"
-INSTANCE = None          # None → auto-select (ml.c7i.xlarge for async). Set
-                         #        "ml.c7i.2xlarge" etc. for more CPU/mem per worker.
-MAX_INSTANCES = 8        # Autoscaler ceiling. Bump for bigger batch jobs.
-IDLE_MINUTES = 15        # Minutes of empty queue before draining to zero.
+INSTANCE = None  # None → auto-select (ml.c7i.xlarge for async). Set
+#        "ml.c7i.2xlarge" etc. for more CPU/mem per worker.
+MAX_INSTANCES = 8  # Autoscaler ceiling. Bump for bigger batch jobs.
+IDLE_MINUTES = 15  # Minutes of empty queue before draining to zero.
 
 
 if __name__ == "__main__":

@@ -19,23 +19,22 @@ import os
 from workbench.api import Model, ModelType, ModelFramework
 from workbench.utils.feature_endpoint_utils import ensure_demo_featureset, register_features
 
-
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
 # comes from workbench defaults.
 ENDPOINT_NAME = "smiles-to-3d-fast-v1"
 SERVERLESS = os.environ.get("SERVERLESS", "True").lower() == "true"
-INSTANCE = os.environ.get("INSTANCE", "ml.c7i.xlarge")   # only used when SERVERLESS=False
-MEM_SIZE = 6144              # MB — serverless memory ceiling (3D needs more than 2D).
-MAX_CONCURRENCY = 5          # serverless concurrent invocations.
-RECREATE_MODEL = True        # set False to skip model re-create if only redeploying the endpoint
+INSTANCE = os.environ.get("INSTANCE", "ml.c7i.xlarge")  # only used when SERVERLESS=False
+MEM_SIZE = 6144  # MB — serverless memory ceiling (3D needs more than 2D).
+MAX_CONCURRENCY = 5  # serverless concurrent invocations.
+RECREATE_MODEL = True  # set False to skip model re-create if only redeploying the endpoint
 
 # Inference batch size tuned per deployment config. 3D conformer generation is
 # CPU-heavy, so the ideal batch size scales with available vCPUs.
 BATCH_SIZE_BY_CONFIG = {
-    "serverless":      5,   # ~2 vCPUs, 2-6GB memory
-    "ml.c7i.xlarge":  10,   # 4 vCPUs, 8 GB
-    "ml.c7i.2xlarge": 20,   # 8 vCPUs, 16 GB
+    "serverless": 5,  # ~2 vCPUs, 2-6GB memory
+    "ml.c7i.xlarge": 10,  # 4 vCPUs, 8 GB
+    "ml.c7i.2xlarge": 20,  # 8 vCPUs, 16 GB
 }
 
 

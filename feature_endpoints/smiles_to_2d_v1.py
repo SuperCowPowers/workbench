@@ -11,7 +11,6 @@ import os
 from workbench.api import ModelType, ModelFramework
 from workbench.utils.feature_endpoint_utils import ensure_demo_featureset, register_features
 
-
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
 # comes from workbench defaults.
@@ -19,9 +18,9 @@ ENDPOINT_NAME = "smiles-to-2d-v1"
 # SERVERLESS=True → AWS-managed scaling via max_concurrency; cheap idle.
 # SERVERLESS=False → dedicated instance (more predictable latency).
 SERVERLESS = os.environ.get("SERVERLESS", "True").lower() == "true"
-MEM_SIZE = 4096              # MB — serverless memory ceiling.
-MAX_CONCURRENCY = 5          # serverless concurrent invocations.
-INSTANCE = "ml.c7i.large"    # used only when SERVERLESS=False.
+MEM_SIZE = 4096  # MB — serverless memory ceiling.
+MAX_CONCURRENCY = 5  # serverless concurrent invocations.
+INSTANCE = "ml.c7i.large"  # used only when SERVERLESS=False.
 
 
 if __name__ == "__main__":
