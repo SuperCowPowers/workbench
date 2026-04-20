@@ -499,10 +499,10 @@ def _preflight_quota_check(boto3_session, endpoint_name: str, max_capacity: int)
             return
 
         if quota_value < max_capacity:
-            log.important(
+            log.warning(
                 f"⚠ Autoscaling preflight: max_capacity={max_capacity} exceeds account quota "
                 f"'{target_name}' = {quota_value}. Scale-out will be rejected past {quota_value} "
-                f"instances until you request a quota increase: "
+                f"instances — this can dramatically slow batch workflows. Request a quota increase: "
                 f"AWS Console → Service Quotas → SageMaker → search '{instance_type}'."
             )
     except ClientError as e:

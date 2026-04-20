@@ -43,15 +43,6 @@ _POLL_INITIAL_S = 3
 _POLL_MAX_S = 30
 _POLL_BACKOFF = 1.5
 
-# Fallback in-flight concurrency for endpoints whose workbench_meta doesn't
-# declare max_instances (legacy deploys). Used only if the derived value
-# `2 × max_instances` isn't available — see _resolve_max_in_flight.
-_DEFAULT_MAX_IN_FLIGHT = 16
-
-# Floor for derived max_in_flight. Prevents pathological under-parallelism
-# when max_instances is tiny (e.g. max_instances=1 would otherwise give 2).
-_MIN_DERIVED_MAX_IN_FLIGHT = 4
-
 # Default rows per invocation. Smaller batches give better load balancing
 # across workers — a handful of slow rows in one chunk stretches total time
 # less when there are more chunks to absorb the variance. At ~20s/row (typical
@@ -61,30 +52,31 @@ _MIN_DERIVED_MAX_IN_FLIGHT = 4
 # Override per-endpoint via workbench_meta["inference_batch_size"].
 _DEFAULT_BATCH_SIZE = 10
 
+# Safety cap on client-side thread-pool size for direct (non-InferenceCache)
+# calls with large DataFrames. InferenceCache already right-sizes its chunks
+# to ``2 × max_instances × batch_size`` so in the common path the pool is
+# sized exactly to the work. This cap only matters if someone calls
+# ``end.inference(huge_df)`` directly without chunking.
+# Override per-call via workbench_meta["inference_max_in_flight"].
+_MAX_IN_FLIGHT_CAP = 64
+
 # Pandas option applied once at import — avoid mutating global state per call.
 pd.set_option("future.no_silent_downcasting", True)
 
 
-def _resolve_max_in_flight(meta: dict) -> int:
-    """Pick the client-side in-flight concurrency for a call.
+def _resolve_max_in_flight(meta: dict, n_batches: int) -> int:
+    """Size the client-side thread pool for one ``_async_batch_invoke`` call.
 
-    Resolution order (first match wins):
-      1. Explicit ``inference_max_in_flight`` in meta — user override.
-      2. ``2 × max_instances`` (floor :data:`_MIN_DERIVED_MAX_IN_FLIGHT`) —
-         scales client parallelism with the fleet's autoscaler ceiling so
-         server-side slots don't sit idle. The 2× factor gives headroom for
-         instances transitioning in/out during scale-out and for S3 upload /
-         poll latency on each worker.
-      3. :data:`_DEFAULT_MAX_IN_FLIGHT` — fallback for legacy endpoints whose
-         workbench_meta doesn't declare max_instances.
+    Default: ``n_batches`` — one worker per sub-batch, fully parallel, no
+    queueing in the client pool. This is optimal when the caller has already
+    right-sized the input (:class:`InferenceCache` does this automatically).
+
+    Safety cap: ``inference_max_in_flight`` from meta, defaulting to
+    :data:`_MAX_IN_FLIGHT_CAP`. Prevents thread-pool blowup on direct
+    ``end.inference(huge_df)`` calls that bypass chunking.
     """
-    explicit = meta.get("inference_max_in_flight")
-    if explicit is not None:
-        return int(explicit)
-    max_instances = meta.get("max_instances")
-    if max_instances is not None:
-        return max(2 * int(max_instances), _MIN_DERIVED_MAX_IN_FLIGHT)
-    return _DEFAULT_MAX_IN_FLIGHT
+    cap = int(meta.get("inference_max_in_flight", _MAX_IN_FLIGHT_CAP))
+    return min(n_batches, cap)
 
 
 class AsyncEndpointCore(EndpointCore):
@@ -144,11 +136,13 @@ class AsyncEndpointCore(EndpointCore):
     def _async_batch_invoke(self, eval_df: pd.DataFrame) -> pd.DataFrame:
         """Split ``eval_df`` into chunks, invoke in parallel, reassemble in input order.
 
-        Reads two knobs from ``workbench_meta()``:
-          * ``inference_batch_size``    (default 10): rows per invocation
-          * ``inference_max_in_flight`` (derived):   concurrent in-flight requests.
-            Resolution order: explicit ``inference_max_in_flight`` → ``2 × max_instances``
-            (floor 4) → fallback 16. See :func:`_resolve_max_in_flight`.
+        Reads one tunable knob from ``workbench_meta()``:
+          * ``inference_batch_size`` (default 10): rows per invocation.
+
+        Client thread-pool size (``max_in_flight``) is sized to the work itself
+        — one worker per sub-batch — up to :data:`_MAX_IN_FLIGHT_CAP`. Users
+        can override the cap via ``inference_max_in_flight`` in meta; they
+        usually don't need to. See :func:`_resolve_max_in_flight`.
 
         Failed chunks are logged and dropped from the output (we raise only
         if *every* chunk fails — silently returning an empty DataFrame with
@@ -156,7 +150,13 @@ class AsyncEndpointCore(EndpointCore):
         """
         meta = self.workbench_meta() or {}
         batch_size = int(meta.get("inference_batch_size", _DEFAULT_BATCH_SIZE))
-        max_in_flight = _resolve_max_in_flight(meta)
+
+        # Slice into (index, chunk) pairs so we can reorder results after the pool returns.
+        chunks = [
+            (i, eval_df.iloc[start : start + batch_size]) for i, start in enumerate(range(0, len(eval_df), batch_size))
+        ]
+        total = len(chunks)
+        max_in_flight = _resolve_max_in_flight(meta, n_batches=total)
 
         # Size the connection pool to match in-flight concurrency plus headroom.
         # Default botocore pool is 10 — anything larger triggers noisy
@@ -175,11 +175,6 @@ class AsyncEndpointCore(EndpointCore):
         runtime_client = self.boto3_session.client("sagemaker-runtime", config=client_config)
         sm_client = self.boto3_session.client("sagemaker")
 
-        # Slice into (index, chunk) pairs so we can reorder results after the pool returns.
-        chunks = [
-            (i, eval_df.iloc[start : start + batch_size]) for i, start in enumerate(range(0, len(eval_df), batch_size))
-        ]
-        total = len(chunks)
         log.important(
             f"Async batch invoke: {len(eval_df)} rows, batch_size={batch_size}, "
             f"chunks={total}, max_in_flight={max_in_flight}, "
