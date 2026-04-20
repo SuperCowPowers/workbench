@@ -350,12 +350,14 @@ class ModelToEndpoint(Transform):
         # (and operators) can see what the endpoint was deployed with.
         # Only non-None values are stored — no point cluttering meta with defaults.
         deploy_meta = {
-            k: v for k, v in {
+            k: v
+            for k, v in {
                 "instance": self.instance,
                 "max_instances": self.max_instances,
                 "async_endpoint": self.async_endpoint,
                 "serverless": self.serverless,
-            }.items() if v is not None
+            }.items()
+            if v is not None
         }
         if deploy_meta:
             output_endpoint.upsert_workbench_meta(deploy_meta)
