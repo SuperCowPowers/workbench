@@ -58,7 +58,10 @@ class Model(ModelCore):
         instance: str = None,
         data_capture: bool = False,
         async_endpoint: bool = False,
+        min_instances: int = 0,
         max_instances: int = None,
+        auto_scaling_mode: str = None,
+        scale_in_idle_minutes: int = None,
     ) -> Endpoint:
         """Create an Endpoint from the Model.
 
@@ -71,12 +74,21 @@ class Model(ModelCore):
             instance (str): The instance type for Realtime Endpoints (default: None = auto-select based on model)
             data_capture (bool): Enable data capture for the Endpoint (default: False)
             async_endpoint (bool): Deploy as an async endpoint (default: False). Async
-                endpoints support up to 15-minute per-invocation timeouts and use S3 for
-                I/O. Useful for long-running inference like Boltzmann 3D descriptors.
+                endpoints are conceptually *batch* endpoints — support up to 15-minute
+                per-invocation timeouts, use S3 for I/O, and scale 0 → max_instances →
+                0 as traffic arrives and drains.
+            min_instances (int): Autoscaler floor (default: 0 — scale to zero).
             max_instances (int): Autoscaler upper bound for async endpoints (default:
-                None = use the 8-instance default in register_autoscaling). Ignored for
-                realtime endpoints. Persisted to the endpoint's workbench_meta so later
-                reconstructions can see what it was deployed with.
+                None = use the 8-instance default in register_autoscaling).
+            auto_scaling_mode (str): Autoscaling strategy for async endpoints.
+                Defaults to "batch" (step scaling — instant jump 0 → max on traffic,
+                fast drain to min when idle). Other modes may be added in the future.
+            scale_in_idle_minutes (int): Batch-mode only — minutes of empty queue
+                before scaling in to min_instances (default: None = register_autoscaling's
+                default of 15).
+
+        All deploy-time sizing/autoscaling args are persisted to the endpoint's
+        workbench_meta so later reconstructions can see what it was deployed with.
 
         Returns:
             Endpoint: The Endpoint (or AsyncEndpoint if async_endpoint=True)
@@ -101,7 +113,10 @@ class Model(ModelCore):
             serverless=serverless,
             instance=instance,
             async_endpoint=async_endpoint,
+            min_instances=min_instances,
             max_instances=max_instances,
+            auto_scaling_mode=auto_scaling_mode,
+            scale_in_idle_minutes=scale_in_idle_minutes,
         )
         model_to_endpoint.set_output_tags(tags)
         model_to_endpoint.transform(

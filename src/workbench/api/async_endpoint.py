@@ -1,16 +1,31 @@
-"""AsyncEndpoint: Workbench API wrapper for async SageMaker endpoints.
+"""AsyncEndpoint: Workbench API wrapper for async / batch SageMaker endpoints.
 
-Drop-in replacement for ``Endpoint`` that uses the async invocation
-path internally.  The caller-facing API is identical — ``inference()``
-returns a DataFrame synchronously.
+Conceptually this is a **batch** endpoint — it's the right tool when:
+
+  * Per-row inference is slow (seconds to minutes) so the realtime 60-second
+    HTTP timeout would fail.
+  * You have a finite pile of work (e.g. 4,139 compounds) that you want
+    chewed through in parallel, then the endpoint goes cold.
+  * Idle cost should be zero between jobs — instances scale to 0 after the
+    queue drains.
+
+The *transport* is SageMaker's async invocation path (input/output via S3,
+the caller polls for completion). We wrap that so ``inference()`` still
+returns a DataFrame synchronously and feels identical to ``Endpoint``.
 
 Example:
     ```python
     from workbench.api import AsyncEndpoint
 
     end = AsyncEndpoint("smiles-to-3d-full-v1")
-    df_result = end.inference(my_df)
+    df_result = end.inference(my_df)   # 4,000 rows → scales 0 → max_instances,
+                                       # processes in parallel, scales back to 0.
     ```
+
+Scaling for these endpoints is handled by the ``"batch"`` mode of
+:func:`workbench.utils.endpoint_autoscaling.register_autoscaling` — see its
+docstring for the step-scaling policy shape. The mode is configured at
+deploy time via ``Model.to_endpoint(async_endpoint=True, max_instances=N)``.
 """
 
 import pandas as pd
@@ -19,10 +34,16 @@ from workbench.core.artifacts.async_endpoint_core import AsyncEndpointCore
 
 
 class AsyncEndpoint(AsyncEndpointCore):
-    """Workbench AsyncEndpoint API class.
+    """Workbench AsyncEndpoint — a batch-style endpoint on SageMaker's async path.
 
-    Inherits all functionality from AsyncEndpointCore. This thin wrapper
-    exists to match the Endpoint / EndpointCore pattern used elsewhere
+    Semantically this is a *batch endpoint*: it's designed to accept a pile of
+    work, scale out to run it in parallel, then drop back to zero instances
+    when the queue drains. Use this class for long-per-row inference
+    (conformer generation, co-folding, whole-protein scoring, etc.) where the
+    realtime 60s timeout would fail and idle cost between jobs must be zero.
+
+    Inherits all functionality from ``AsyncEndpointCore``. This thin wrapper
+    exists to match the ``Endpoint`` / ``EndpointCore`` pattern used elsewhere
     in the Workbench API layer.
     """
 

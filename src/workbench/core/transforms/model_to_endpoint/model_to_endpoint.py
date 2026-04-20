@@ -58,7 +58,10 @@ class ModelToEndpoint(Transform):
         serverless: bool = True,
         instance: str = None,
         async_endpoint: bool = False,
+        min_instances: int = 0,
         max_instances: int = None,
+        auto_scaling_mode: str = None,
+        scale_in_idle_minutes: int = None,
     ):
         """ModelToEndpoint Initialization
         Args:
@@ -69,8 +72,14 @@ class ModelToEndpoint(Transform):
             async_endpoint(bool): Deploy as an async endpoint (default: False). Async
                 endpoints support up to 15-minute invocations and use S3 for I/O.
                 Incompatible with serverless — if both are True, serverless is forced off.
-            max_instances(int): Autoscaler upper bound for async endpoints (default: None =
-                use register_autoscaling's default of 8). Ignored for realtime endpoints.
+            min_instances(int): Autoscaler floor (default: 0 — scale to zero).
+            max_instances(int): Autoscaler upper bound (default: None = use
+                register_autoscaling's default of 8). Ignored for serverless.
+            auto_scaling_mode(str): Autoscaling strategy for non-serverless endpoints.
+                If None, defaults to "batch" for async endpoints and "realtime" for sync.
+                See :func:`workbench.utils.endpoint_autoscaling.register_autoscaling`.
+            scale_in_idle_minutes(int): Batch-mode only — minutes of empty queue before
+                scaling in to min_instances (default: None = register_autoscaling's default).
         """
         # Make sure the endpoint_name is a valid name
         Artifact.is_name_valid(endpoint_name, delimiter="-", lower_case=False)
@@ -83,11 +92,19 @@ class ModelToEndpoint(Transform):
             self.log.warning("Async endpoints are not compatible with serverless. Forcing serverless=False.")
             serverless = False
 
+        # Default the scaling strategy based on transport if the caller didn't pick one.
+        # Serverless endpoints don't use the autoscaler at all, so this is N/A there.
+        if auto_scaling_mode is None:
+            auto_scaling_mode = "batch" if async_endpoint else "realtime"
+
         # Set up all my instance attributes
         self.serverless = serverless
         self.instance = instance
         self.async_endpoint = async_endpoint
+        self.min_instances = min_instances
         self.max_instances = max_instances
+        self.auto_scaling_mode = auto_scaling_mode
+        self.scale_in_idle_minutes = scale_in_idle_minutes
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
@@ -329,13 +346,24 @@ class ModelToEndpoint(Transform):
         )
         endpoint.wait_for_status("InService")
 
-        # For async endpoints, register a scale-to-zero auto-scaling policy.
-        # This must be done after the endpoint is InService — AWS doesn't
-        # allow managed instance scaling on the ProductionVariant for async configs.
+        # Register the autoscaler for async endpoints. Must happen after the
+        # endpoint is InService — AWS doesn't allow managed instance scaling on
+        # the ProductionVariant for async configs until then.
+        #
+        # Serverless endpoints manage their own capacity via AWS's serverless
+        # config and don't need this. Instance-based realtime endpoints currently
+        # run with fixed capacity — the "realtime" auto_scaling_mode is available
+        # in register_autoscaling but wiring it up here would be a behavior change
+        # for existing deployments, so we defer that to a separate change.
         if self.async_endpoint:
-            autoscale_kwargs = {}
+            autoscale_kwargs = {
+                "auto_scaling_mode": self.auto_scaling_mode,
+                "min_capacity": self.min_instances,
+            }
             if self.max_instances is not None:
                 autoscale_kwargs["max_capacity"] = self.max_instances
+            if self.scale_in_idle_minutes is not None:
+                autoscale_kwargs["scale_in_idle_minutes"] = self.scale_in_idle_minutes
             register_autoscaling(self.boto3_session, self.output_name, **autoscale_kwargs)
 
     def post_transform(self, **kwargs):
@@ -346,14 +374,17 @@ class ModelToEndpoint(Transform):
         output_endpoint = EndpointCore(self.output_name)
         output_endpoint.onboard_with_args(input_model=self.input_name)
 
-        # Persist deploy-time sizing config to workbench_meta so later code
-        # (and operators) can see what the endpoint was deployed with.
+        # Persist deploy-time sizing + autoscaling config to workbench_meta so
+        # later code (and operators) can see what the endpoint was deployed with.
         # Only non-None values are stored — no point cluttering meta with defaults.
         deploy_meta = {
             k: v
             for k, v in {
                 "instance": self.instance,
+                "min_instances": self.min_instances,
                 "max_instances": self.max_instances,
+                "auto_scaling_mode": self.auto_scaling_mode,
+                "scale_in_idle_minutes": self.scale_in_idle_minutes,
                 "async_endpoint": self.async_endpoint,
                 "serverless": self.serverless,
             }.items()
