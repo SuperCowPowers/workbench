@@ -46,6 +46,7 @@ class FeatureEndpoint(Endpoint):
             # Lazy import — keeps the api.endpoint ↔ api.async_endpoint import
             # graph clean (both end up importing EndpointCore).
             from workbench.api.async_endpoint import AsyncEndpoint
+
             self._async: Optional[AsyncEndpoint] = AsyncEndpoint(endpoint_name)
         else:
             self._async = None
