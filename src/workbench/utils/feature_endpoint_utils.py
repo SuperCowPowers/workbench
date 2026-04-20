@@ -33,11 +33,13 @@ FEATURE_LIST_PREFIX = "/workbench/feature_lists"
 # alongside real features. Excluded from the registered feature list by
 # `register_features`. Add a column here only if it's truly not a feature
 # (e.g. a record of the original SMILES before canonicalization).
-NON_FEATURE_COLUMNS = frozenset({
-    "orig_smiles",
-    "salt",
-    "undefined_chiral_centers",
-})
+NON_FEATURE_COLUMNS = frozenset(
+    {
+        "orig_smiles",
+        "salt",
+        "undefined_chiral_centers",
+    }
+)
 
 
 def feature_list_key(endpoint_name: str) -> str:
