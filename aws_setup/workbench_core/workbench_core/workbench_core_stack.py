@@ -788,11 +788,13 @@ class WorkbenchCoreStack(Stack):
     def endpoint_autoscaling(self) -> List[iam.PolicyStatement]:
         """Permissions for endpoint auto-scaling (async scale-to-zero + realtime scaling).
 
-        Split into four scoped statements:
+        Split into five scoped statements:
           1. Application Auto Scaling registration / policies
           2. CloudWatch alarms created by target-tracking policies
           3. SageMaker capacity updates
           4. One-time service-linked role creation (conditioned on the autoscaling SLR)
+          5. Service Quotas read — for the deploy-time preflight that warns when
+             ``max_capacity`` exceeds the account's per-instance-type endpoint quota
 
         FUTURE NOTE: statements 1 and 3 could be tightened further with an
         aws:ResourceTag condition once Workbench-managed endpoints carry a
@@ -857,7 +859,18 @@ class WorkbenchCoreStack(Stack):
             },
         )
 
-        return [app_autoscaling, cloudwatch_alarms, sagemaker_capacity, autoscaling_slr]
+        # 5. Service Quotas read — powers the deploy-time preflight in
+        #    workbench.utils.endpoint_autoscaling._preflight_quota_check, which
+        #    looks up the account's per-instance-type endpoint-usage quota and
+        #    warns if max_capacity exceeds it. Resource must be "*" — the
+        #    servicequotas API does not support resource-level scoping on
+        #    ListServiceQuotas.
+        service_quotas_read = iam.PolicyStatement(
+            actions=["servicequotas:ListServiceQuotas"],
+            resources=["*"],
+        )
+
+        return [app_autoscaling, cloudwatch_alarms, sagemaker_capacity, autoscaling_slr, service_quotas_read]
 
     ###########################
     #   Endpoint Monitoring   #

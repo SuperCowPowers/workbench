@@ -35,7 +35,9 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Iterable, List, Union
+from typing import Iterable, List, Optional, Union
+
+from botocore.exceptions import ClientError
 
 log = logging.getLogger("workbench")
 
@@ -226,6 +228,10 @@ def register_autoscaling(
         specs = _realtime_mode_specs(realtime_target)
     else:  # defensive — _MODE_HANDLERS check above should prevent this
         raise ValueError(f"Unsupported auto_scaling_mode {auto_scaling_mode!r}")
+
+    # Preflight: warn if max_capacity exceeds the account's per-instance-type
+    # endpoint-usage quota. Purely advisory — doesn't block the install.
+    _preflight_quota_check(boto3_session, endpoint_name, max_capacity)
 
     try:
         # Register the scalable target (idempotent). Min/max bound everything else.
@@ -444,6 +450,75 @@ def _chunked(seq: Iterable, size: int) -> Iterable[list]:
             buf = []
     if buf:
         yield buf
+
+
+def _preflight_quota_check(boto3_session, endpoint_name: str, max_capacity: int) -> None:
+    """Warn if ``max_capacity`` exceeds the account's per-instance-type endpoint quota.
+
+    Looks up the SageMaker endpoint's instance type, then queries AWS Service
+    Quotas for the matching ``<instance_type> for endpoint usage`` quota. If
+    that quota is below ``max_capacity``, emits an IMPORTANT log line so the
+    operator knows scale-out will be capped at the quota (and can request an
+    increase proactively).
+
+    Purely advisory — never raises. Fails open on any issue (permissions,
+    serverless endpoint, instance type not found in quotas, unknown region):
+    skipping the preflight is always preferable to blocking a deploy.
+
+    Requires the ``servicequotas:ListServiceQuotas`` IAM permission to actually
+    produce a warning. Without it, the preflight silently passes.
+    """
+    try:
+        sm = boto3_session.client("sagemaker")
+        # Find the endpoint's active config, then the first variant's instance type.
+        ep_desc = sm.describe_endpoint(EndpointName=endpoint_name)
+        config_name = ep_desc["EndpointConfigName"]
+        cfg = sm.describe_endpoint_config(EndpointConfigName=config_name)
+        variants = cfg.get("ProductionVariants", [])
+        if not variants:
+            return
+        instance_type = variants[0].get("InstanceType")
+        if not instance_type:
+            # Serverless or other non-instance-based config — no quota applies.
+            return
+
+        # Look up "ml.<type> for endpoint usage" quota for the SageMaker service.
+        sq = boto3_session.client("service-quotas")
+        target_name = f"{instance_type} for endpoint usage"
+        quota_value: Optional[int] = None
+        for page in sq.get_paginator("list_service_quotas").paginate(ServiceCode="sagemaker"):
+            for q in page.get("Quotas", []):
+                if q.get("QuotaName") == target_name:
+                    quota_value = int(q.get("Value"))
+                    break
+            if quota_value is not None:
+                break
+
+        if quota_value is None:
+            # Quota name didn't match — AWS occasionally renames these. Not worth raising.
+            return
+
+        if quota_value < max_capacity:
+            log.important(
+                f"⚠ Autoscaling preflight: max_capacity={max_capacity} exceeds account quota "
+                f"'{target_name}' = {quota_value}. Scale-out will be rejected past {quota_value} "
+                f"instances until you request a quota increase: "
+                f"AWS Console → Service Quotas → SageMaker → search '{instance_type}'."
+            )
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code", "")
+        if code in ("AccessDeniedException", "AccessDenied", "UnauthorizedOperation"):
+            # Operator-facing one-liner: tell them exactly how to enable the check.
+            log.info(
+                "Autoscaling quota preflight skipped — execution role lacks "
+                "'servicequotas:ListServiceQuotas'. Add it to enable the warning."
+            )
+        else:
+            log.debug(f"Quota preflight skipped for '{endpoint_name}' ({code})", exc_info=True)
+    except Exception:
+        # Any other failure (quota name format drift, region without Service Quotas,
+        # etc.) — preflight is advisory, never a gate. Keep noise to a minimum.
+        log.debug(f"Quota preflight skipped for '{endpoint_name}'", exc_info=True)
 
 
 def _describe_registration(aas, resource_id: str) -> dict:
