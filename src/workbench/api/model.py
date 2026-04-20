@@ -58,6 +58,7 @@ class Model(ModelCore):
         instance: str = None,
         data_capture: bool = False,
         async_endpoint: bool = False,
+        max_instances: int = None,
     ) -> Endpoint:
         """Create an Endpoint from the Model.
 
@@ -72,6 +73,10 @@ class Model(ModelCore):
             async_endpoint (bool): Deploy as an async endpoint (default: False). Async
                 endpoints support up to 15-minute per-invocation timeouts and use S3 for
                 I/O. Useful for long-running inference like Boltzmann 3D descriptors.
+            max_instances (int): Autoscaler upper bound for async endpoints (default:
+                None = use the 8-instance default in register_autoscaling). Ignored for
+                realtime endpoints. Persisted to the endpoint's workbench_meta so later
+                reconstructions can see what it was deployed with.
 
         Returns:
             Endpoint: The Endpoint (or AsyncEndpoint if async_endpoint=True)
@@ -91,7 +96,12 @@ class Model(ModelCore):
 
         # Create an Endpoint from the Model
         model_to_endpoint = ModelToEndpoint(
-            self.name, name, serverless=serverless, instance=instance, async_endpoint=async_endpoint
+            self.name,
+            name,
+            serverless=serverless,
+            instance=instance,
+            async_endpoint=async_endpoint,
+            max_instances=max_instances,
         )
         model_to_endpoint.set_output_tags(tags)
         model_to_endpoint.transform(

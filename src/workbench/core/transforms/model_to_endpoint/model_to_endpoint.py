@@ -58,6 +58,7 @@ class ModelToEndpoint(Transform):
         serverless: bool = True,
         instance: str = None,
         async_endpoint: bool = False,
+        max_instances: int = None,
     ):
         """ModelToEndpoint Initialization
         Args:
@@ -68,6 +69,8 @@ class ModelToEndpoint(Transform):
             async_endpoint(bool): Deploy as an async endpoint (default: False). Async
                 endpoints support up to 15-minute invocations and use S3 for I/O.
                 Incompatible with serverless — if both are True, serverless is forced off.
+            max_instances(int): Autoscaler upper bound for async endpoints (default: None =
+                use register_autoscaling's default of 8). Ignored for realtime endpoints.
         """
         # Make sure the endpoint_name is a valid name
         Artifact.is_name_valid(endpoint_name, delimiter="-", lower_case=False)
@@ -84,6 +87,7 @@ class ModelToEndpoint(Transform):
         self.serverless = serverless
         self.instance = instance
         self.async_endpoint = async_endpoint
+        self.max_instances = max_instances
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
@@ -329,7 +333,10 @@ class ModelToEndpoint(Transform):
         # This must be done after the endpoint is InService — AWS doesn't
         # allow managed instance scaling on the ProductionVariant for async configs.
         if self.async_endpoint:
-            register_autoscaling(self.boto3_session, self.output_name)
+            autoscale_kwargs = {}
+            if self.max_instances is not None:
+                autoscale_kwargs["max_capacity"] = self.max_instances
+            register_autoscaling(self.boto3_session, self.output_name, **autoscale_kwargs)
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() for the Endpoint"""
@@ -338,6 +345,20 @@ class ModelToEndpoint(Transform):
         # Onboard the Endpoint
         output_endpoint = EndpointCore(self.output_name)
         output_endpoint.onboard_with_args(input_model=self.input_name)
+
+        # Persist deploy-time sizing config to workbench_meta so later code
+        # (and operators) can see what the endpoint was deployed with.
+        # Only non-None values are stored — no point cluttering meta with defaults.
+        deploy_meta = {
+            k: v for k, v in {
+                "instance": self.instance,
+                "max_instances": self.max_instances,
+                "async_endpoint": self.async_endpoint,
+                "serverless": self.serverless,
+            }.items() if v is not None
+        }
+        if deploy_meta:
+            output_endpoint.upsert_workbench_meta(deploy_meta)
 
 
 if __name__ == "__main__":
