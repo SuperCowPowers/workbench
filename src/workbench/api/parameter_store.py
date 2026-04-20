@@ -1,10 +1,13 @@
 """ParameterStore: Manages Workbench parameters in a Cloud Based Parameter Store."""
 
 # Workbench Imports
-from workbench.core.artifacts.parameter_store_core import ParameterStoreCore
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+
+# Workbench Bridges Import
+from workbench_bridges.api import ParameterStore as BridgesParameterStore
 
 
-class ParameterStore(ParameterStoreCore):
+class ParameterStore(BridgesParameterStore):
     """ParameterStore: Manages Workbench parameters in a Cloud Based Parameter Store.
 
     Common Usage:
@@ -40,9 +43,7 @@ class ParameterStore(ParameterStoreCore):
 
     def __init__(self):
         """ParameterStore Init Method"""
-
-        # Initialize parent class
-        super().__init__()
+        super().__init__(boto3_session=AWSAccountClamp().boto3_session)
 
 
 if __name__ == "__main__":
