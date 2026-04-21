@@ -344,9 +344,7 @@ def _optimize_conformers(mol: Chem.Mol) -> str:
     """
     if AllChem.MMFFHasAllMoleculeParams(mol):
         try:
-            AllChem.MMFFOptimizeMoleculeConfs(
-                mol, numThreads=0, maxIters=200, mmffVariant="MMFF94s"
-            )
+            AllChem.MMFFOptimizeMoleculeConfs(mol, numThreads=0, maxIters=200, mmffVariant="MMFF94s")
         except Exception as e:
             logger.debug(f"MMFF94s batch optimization failed: {e}")
         return "MMFF94s"

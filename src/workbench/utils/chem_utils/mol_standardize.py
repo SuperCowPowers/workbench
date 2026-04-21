@@ -498,9 +498,7 @@ def standardize(
         # rare with undefined stereo in drug inputs.
         undefined_centers = Chem.FindMolChiralCenters(mol, includeUnassigned=True, useLegacyImplementation=False)
         ring_info = mol.GetRingInfo()
-        n_undefined = sum(
-            1 for idx, code in undefined_centers if code == "?" and ring_info.NumAtomRings(idx) < 2
-        )
+        n_undefined = sum(1 for idx, code in undefined_centers if code == "?" and ring_info.NumAtomRings(idx) < 2)
         if n_undefined > 0:
             log.warning(
                 f"{n_undefined} undefined chiral center(s) in {smiles} " "— features reflect an arbitrary enantiomer"

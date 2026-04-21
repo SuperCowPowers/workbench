@@ -174,8 +174,7 @@ REFERENCE_COMPOUNDS = [
     {
         "name": "ritonavir",
         "smiles": (
-            "CC(C)c1nc(CN(C)C(=O)N[C@@H](C(C)C)C(=O)N[C@@H](Cc2ccccc2)"
-            "C[C@H](O)[C@@H](Cc3ccccc3)NC(=O)OCc4cncs4)cs1"
+            "CC(C)c1nc(CN(C)C(=O)N[C@@H](C(C)C)C(=O)N[C@@H](Cc2ccccc2)" "C[C@H](O)[C@@H](Cc3ccccc3)NC(=O)OCc4cncs4)cs1"
         ),
         "heavy_atoms": 50,
         "rot_bonds": 17,

@@ -52,6 +52,7 @@ REFERENCE_KEY = "comp_chem/reference_compounds/3d_perf"
 @dataclass
 class StageTimings:
     """Per-molecule timing breakdown (seconds)."""
+
     name: str
     smiles: str
     status: str = "ok"
@@ -149,9 +150,7 @@ def print_per_molecule_table(results: List[StageTimings]) -> None:
                 "n_confs": r.n_confs,
                 "n_window": r.n_in_window,
                 "mordred/conf_ms": (
-                    round(1000 * sum(r.per_conf_mordred) / len(r.per_conf_mordred), 1)
-                    if r.per_conf_mordred
-                    else 0.0
+                    round(1000 * sum(r.per_conf_mordred) / len(r.per_conf_mordred), 1) if r.per_conf_mordred else 0.0
                 ),
             }
         )
