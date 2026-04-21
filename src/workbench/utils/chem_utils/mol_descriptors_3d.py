@@ -1012,8 +1012,7 @@ def compute_intramolecular_hbond_potential(mol: Chem.Mol, conf_id: int = 0) -> i
             # Angle check: at least one H on the donor must point toward the
             # acceptor with a D-H...A angle >= IMHB_MIN_ANGLE_DEG.
             angle_ok = any(
-                rdMolTransforms.GetAngleDeg(conf, d_idx, h_idx, a_idx) >= IMHB_MIN_ANGLE_DEG
-                for h_idx in h_neighbors
+                rdMolTransforms.GetAngleDeg(conf, d_idx, h_idx, a_idx) >= IMHB_MIN_ANGLE_DEG for h_idx in h_neighbors
             )
             if angle_ok:
                 imhb_count += 1
