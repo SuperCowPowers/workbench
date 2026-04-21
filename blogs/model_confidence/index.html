@@ -5121,6 +5121,7 @@
 </figure>
 
 <p>This ensemble standard deviation (<code>prediction_std</code>) is the raw uncertainty signal. It comes directly from the model itself — not from an external surrogate or statistical assumption. In our testing, it correlates strongly with actual prediction error (Spearman r &gt; 0.85 for ChemProp on MLM CLint from the <a href="https://openadmet.org/">OpenADMET Blind Challenge</a>), though your mileage will vary depending on the dataset and model type.</p>
+<p>One implementation note: we apply a soft log-compression to extreme <code>prediction_std</code> outliers (values above the IQR fence get log-scaled) before storing. This is a monotonic transform that preserves ranking — so percentile-rank confidence and conformal intervals are unaffected — but it means reported <code>prediction_std</code> values should be read as "uncertainty scores" rather than literal standard deviations.</p>
 <h2 id="the-problem-raw-std-isnt-calibrated">The Problem: Raw Std Isn't Calibrated</h2>
 <p>Ensemble std tells you <em>which</em> predictions to trust more, but the raw numbers don't correspond to meaningful intervals. If std = 0.3, does that mean the true value is within ± 0.3? ± 0.6? There's no guarantee.</p>
 <p>This is the classic <strong>calibration vs. discrimination</strong> trade-off described in <a href="https://doi.org/10.1111/j.1467-9868.2007.00587.x">Gneiting et al., 2007</a>:</p>
@@ -5159,7 +5160,7 @@
 <li><strong>No arbitrary parameters</strong>: No decay rates or normalization constants to tune</li>
 <li><strong>Grounded in the calibration data</strong>: Derived from the same distribution used for interval calibration</li>
 </ul>
-<p>That said, percentile-rank has its own limitations — it's relative to the training set, so a confidence of 0.7 from two different models isn't directly comparable. We think this is an acceptable trade-off for now, but it's an area we're continuing to think about.</p>
+<p>That said, percentile-rank confidence is <strong>relative, not absolute</strong>. A confidence of 0.7 means "tighter than 70% of training predictions," not "70% probability of being correct" — two different models trained on the same data will produce similar confidence <em>distributions</em> even if one is far more accurate. The calibrated conformal intervals (<code>q_025</code>, <code>q_05</code>, … <code>q_975</code>) are where the absolute-coverage guarantee lives; the scalar confidence is for ranking and visualization. We think this is an acceptable trade-off for now, but adding an error-calibrated absolute confidence (analogous to what classification does with isotonic P(correct)) is something we're considering.</p>
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/uq_conf_residual.png" alt="Confidence vs residual plot" style="max-width: 800px; width: 100%;">
 <figcaption><em>Confidence vs. prediction residual — high-confidence predictions (right) cluster near zero error, while low-confidence predictions (left) show the largest residuals.</em></figcaption>
@@ -5232,6 +5233,7 @@
 <li><strong>Novel chemistry may get falsely high confidence</strong> if it happens to fall in a region where the models extrapolate consistently.</li>
 <li><strong>Confidence is relative to the training set.</strong> A confidence of 0.9 on a kinase solubility model doesn't transfer to a PROTAC dataset.</li>
 <li><strong>Conformal coverage assumes exchangeability.</strong> The guarantee holds when test data comes from the same distribution as calibration data. For out-of-distribution compounds, coverage may degrade.</li>
+<li><strong>Training-exposure bias in calibration.</strong> Calibration <code>prediction_std</code> is computed by running all 5 ensemble members on the full training set, so every row was seen by 4 of the 5 models during training. Truly novel molecules (seen by 0 of 5) will tend to produce larger stds than the calibration distribution captures, which can make confidence skew optimistic-then-low on out-of-distribution chemistry. Workbench now defaults to <strong>scaffold-based cross-validation splits</strong> (Bemis-Murcko) for any dataset with a SMILES column — this makes confidence calibration reflect scaffold-hopping performance rather than same-scaffold interpolation. For stricter "novel chemistry" evaluation, set <code>split_strategy="butina"</code> (Morgan-fingerprint clustering).</li>
 </ul>
 <p>For truly out-of-distribution detection, we'd recommend pairing confidence with applicability domain analysis (e.g., feature-space proximity to training data). This is something we're actively exploring for future Workbench releases.</p>
 <h2 id="summary">Summary</h2>
