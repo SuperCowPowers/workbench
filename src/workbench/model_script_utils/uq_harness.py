@@ -216,10 +216,6 @@ def predict_intervals(
     # Set q_50 as the prediction itself (median of the ensemble)
     df["q_50"] = predictions
 
-    # Calculate pseudo-standard deviation from the 68% interval width
-    if "q_84" in df.columns and "q_16" in df.columns:
-        df["prediction_std"] = (df["q_84"] - df["q_16"]).abs() / 2.0
-
     # Reorder quantile columns for easier reading
     quantile_cols = ["q_025", "q_05", "q_10", "q_16", "q_25", "q_50", "q_75", "q_84", "q_90", "q_95", "q_975"]
     existing_q_cols = [c for c in quantile_cols if c in df.columns]
