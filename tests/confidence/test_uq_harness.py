@@ -8,6 +8,7 @@ used for calibration.
 Run:
     pytest tests/confidence/test_uq_harness.py -v
 """
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -109,12 +110,8 @@ class TestCalibrateUQ:
             upper = y_pred + q * safe_std
             coverage = np.mean((y >= lower) & (y <= upper))
             # Conformal guarantees coverage >= level; allow small slack above
-            assert coverage >= lvl - 0.01, (
-                f"Coverage {coverage:.3f} below target {lvl:.2f}"
-            )
-            assert coverage <= lvl + 0.03, (
-                f"Coverage {coverage:.3f} too far above target {lvl:.2f}"
-            )
+            assert coverage >= lvl - 0.01, f"Coverage {coverage:.3f} below target {lvl:.2f}"
+            assert coverage <= lvl + 0.03, f"Coverage {coverage:.3f} too far above target {lvl:.2f}"
 
 
 # =============================================================================
@@ -160,9 +157,7 @@ class TestPredictIntervals:
         for i in range(len(q_cols) - 1):
             lower = df[q_cols[i]].values
             upper = df[q_cols[i + 1]].values
-            assert np.all(lower <= upper + 1e-10), (
-                f"{q_cols[i]} should be <= {q_cols[i + 1]} for all rows"
-            )
+            assert np.all(lower <= upper + 1e-10), f"{q_cols[i]} should be <= {q_cols[i + 1]} for all rows"
 
     def test_q50_equals_prediction(self, regression_calibration_data):
         y, y_pred, std = regression_calibration_data
@@ -209,6 +204,7 @@ class TestComputeConfidence:
         df = compute_confidence(df, uq)
 
         from scipy.stats import spearmanr
+
         rho, _ = spearmanr(df["prediction_std"].values, df["confidence"].values)
         assert rho < -0.99, f"Expected near-perfect inverse correlation, got {rho:.3f}"
 
@@ -294,8 +290,7 @@ class TestClassificationConfidence:
                 accs.append((y_true[mask] == y_pred[mask]).mean())
         assert len(accs) >= 2
         assert accs[-1] > accs[0], (
-            f"Calibrated confidence should discriminate accuracy across bins. "
-            f"Bin accs: {accs}"
+            f"Calibrated confidence should discriminate accuracy across bins. " f"Bin accs: {accs}"
         )
 
     def test_isotonic_is_monotone(self, classification_calibration_data):
@@ -314,4 +309,5 @@ class TestClassificationConfidence:
 if __name__ == "__main__":
     # Allow running directly without pytest
     import sys
+
     sys.exit(pytest.main([__file__, "-v"]))
