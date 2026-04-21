@@ -210,12 +210,77 @@ def test_schema_drift_graceful_fallback():
     store.delete(cache_path)
 
 
+def test_all_null_column_handling():
+    """A column that's all-null in early chunks and gets real values later
+    must not pin a bogus dtype, and the cache must stay readable across
+    the transition."""
+    banner("E: all-null column transitions to real values")
+    cache_path = f"{TEST_ROOT}/E_null_to_real"
+    store = DFStore()
+    store.delete(cache_path)
+    store.delete(f"{cache_path}__meta")
+
+    endpoint = types.SimpleNamespace(
+        name=f"fake-null-{uuid.uuid4().hex[:6]}",
+        inference=lambda chunk, **kw: chunk,  # unused
+        modified=lambda: "2026-01-01 00:00:00+00:00",
+    )
+    c = InferenceCache.__new__(InferenceCache)
+    c._endpoint = endpoint
+    c.cache_key_column = "key"
+    c.output_key_column = None
+    c.cache_path = cache_path
+    c.manifest_path = f"{cache_path}__meta"
+    c._df_store = DFStore()
+    c._cache_df = None
+    c._invalidation_checked = False
+    c._auto_invalidate_cache = False
+    c._canonical_dtypes = None
+    c._coerce_warned = set()
+    c.chunk_size = 25
+    c.log = logging.getLogger("workbench")
+
+    # Chunk 1: salt all-NaN -> should be dropped from write, not pin dtype
+    c._load_cache()
+    c._update_cache(
+        pd.DataFrame({"key": ["k1", "k2"], "feat": [1.0, 2.0], "salt": [None, None]})
+    )
+    # Chunk 2: salt has real strings -> should pin dtype and write with salt
+    c._update_cache(pd.DataFrame({"key": ["k3", "k4"], "feat": [3.0, 4.0], "salt": ["Br", "Cl"]}))
+    # Chunk 3: salt back to all-null -> should drop again; feat stays
+    c._update_cache(pd.DataFrame({"key": ["k5"], "feat": [5.0], "salt": [None]}))
+
+    df = c._df_store.get(cache_path)
+    if df is None:
+        print("  FAIL: cache unreadable")
+        store.delete(cache_path)
+        store.delete(f"{cache_path}__meta")
+        return
+
+    # Expected: all 5 rows, salt column present (from chunk 2), salt dtype
+    # string-like, k1/k2/k5 have NaN salt.
+    row_ok = len(df) == 5
+    salt_str = "salt" in df.columns and pd.api.types.is_object_dtype(df["salt"]) or pd.api.types.is_string_dtype(df["salt"])
+    nans_ok = df.set_index("key").loc[["k1", "k2", "k5"], "salt"].isna().all()
+    vals_ok = set(df.set_index("key").loc[["k3", "k4"], "salt"].tolist()) == {"Br", "Cl"}
+    ok = row_ok and salt_str and nans_ok and vals_ok
+    print(
+        f"  rows={len(df)} salt_dtype={df['salt'].dtype} "
+        f"NaN rows ok={nans_ok} real values ok={vals_ok} "
+        f"{'PASS' if ok else 'FAIL'}"
+    )
+
+    store.delete(cache_path)
+    store.delete(f"{cache_path}__meta")
+
+
 def main():
     try:
         test_append_concurrent_matching()
         test_append_reader_race()
         test_concurrent_same_dtype_and_compact()
         test_schema_drift_graceful_fallback()
+        test_all_null_column_handling()
     finally:
         try:
             DFStore().delete_recursive(TEST_ROOT)

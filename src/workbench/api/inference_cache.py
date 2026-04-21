@@ -117,6 +117,9 @@ class InferenceCache:
         # and used to coerce subsequent appended chunks so concurrent writers
         # never produce a schema-incompatible dataset.
         self._canonical_dtypes: Optional[pd.Series] = None
+        # (column, src_dtype, tgt_dtype) tuples we've already warned about —
+        # keeps the coerce loop quiet when the same mismatch recurs every chunk.
+        self._coerce_warned: set[tuple] = set()
         self.log = logging.getLogger("workbench")
 
         # Resolve chunk_size: explicit override wins; else try fleet-derivation;
@@ -307,7 +310,9 @@ class InferenceCache:
             if df is None:
                 df = pd.DataFrame(columns=[self.cache_key_column])
             if not df.empty:
-                self._canonical_dtypes = df.dtypes
+                # Seed canonical only from columns with real data; all-null
+                # columns carry no dtype signal and must wait for real values.
+                self._seed_canonical_from(df)
             self._cache_df = df
         return self._cache_df
 
@@ -375,13 +380,18 @@ class InferenceCache:
         write race of the old overwrite-based approach. The in-memory view
         (``self._cache_df``) is updated by concat+dedup so subsequent chunks
         in this process skip rows this worker just computed, but S3 only
-        receives the new slice. Dtypes are coerced to the canonical schema
-        so concurrently-appended files remain Arrow-mergeable on read.
+        receives the new slice. All-null columns are dropped from the write
+        (they'd otherwise pin a spurious dtype from pandas inference and
+        drift against later chunks that have real values); missing columns
+        on read are restored as ``NaN``. Remaining columns are coerced to
+        the canonical schema so concurrently-appended files stay
+        Arrow-mergeable.
         """
         if new_results.empty:
             return
 
-        to_write = self._coerce_to_canonical(new_results)
+        to_write = self._drop_all_null_columns(new_results)
+        to_write = self._coerce_to_canonical(to_write)
 
         self._df_store.append(self.cache_path, to_write)
         self._save_manifest()
@@ -393,37 +403,115 @@ class InferenceCache:
             subset=[self.cache_key_column], keep="last"
         )
 
+    @staticmethod
+    def _column_has_data(s: pd.Series) -> bool:
+        """True when a column has at least one non-null value.
+
+        Columns that are entirely null carry no usable dtype signal — pandas
+        infers ``float64`` for all-``NaN``, ``object`` for all-``None``, and
+        pyarrow round-trips can reshape them further (``Int64`` for nullable
+        ints, etc). We treat those columns as dtype-indeterminate.
+        """
+        return len(s) > 0 and not s.isna().all()
+
+    def _drop_all_null_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Drop columns whose values are entirely null in this chunk.
+
+        Dropped columns reappear as ``NaN`` on read thanks to Arrow's
+        dataset-schema unification, so this is lossless for consumers. The
+        win: we don't pin a dtype for a column based on nothing, which would
+        drift against later chunks that contain real values.
+
+        The cache-key column is preserved even if somehow all null so the
+        write still has a valid key column; downstream code relies on it
+        existing.
+        """
+        keep = [
+            c
+            for c in df.columns
+            if c == self.cache_key_column or self._column_has_data(df[c])
+        ]
+        if len(keep) == len(df.columns):
+            return df
+        dropped = [c for c in df.columns if c not in keep]
+        # Only log once per (column, instance) — very chatty otherwise.
+        for c in dropped:
+            key = ("drop_null", c)
+            if key not in self._coerce_warned:
+                self._coerce_warned.add(key)
+                self.log.info(
+                    f"InferenceCache[{self._endpoint.name}]: column '{c}' is "
+                    f"all-null in this write; dropping from parquet (will "
+                    f"read back as NaN until a chunk with real values lands)."
+                )
+        return df[keep]
+
+    def _seed_canonical_from(self, df: pd.DataFrame) -> None:
+        """Add columns with real data to the canonical dtype map.
+
+        Called on first load and on every write so a column's dtype gets
+        pinned the first time we actually see a non-null value for it.
+        Columns that stay all-null remain absent from the map — no pinning.
+        """
+        if self._canonical_dtypes is None:
+            self._canonical_dtypes = {}
+        for col in df.columns:
+            if col in self._canonical_dtypes:
+                continue
+            if self._column_has_data(df[col]):
+                self._canonical_dtypes[col] = df[col].dtype
+
     def _coerce_to_canonical(self, df: pd.DataFrame) -> pd.DataFrame:
         """Cast ``df`` columns to match the canonical schema when one exists.
 
-        Types are preserved as the endpoint produces them. The first non-empty
-        load (or first append on a fresh cache) seeds ``self._canonical_dtypes``;
-        later writes cast to match so a single worker that observes slightly
-        different dtype inference per chunk stays consistent with the cache
-        already on disk. No widening is performed — if an incoming column
-        can't be cast losslessly to the canonical dtype, a warning is logged
-        and the write proceeds with the original dtype. If that happens
-        across workers the dataset can become schema-incompatible on read;
-        :meth:`_read_cache_with_retry` detects that and falls back to an
-        empty-cache result so the affected rows simply recompute.
+        Types are preserved as the endpoint produces them. The canonical map
+        is seeded lazily, column by column, from the first chunk in which a
+        column has at least one non-null value — so an early all-``NaN``
+        observation never pins a spurious dtype. Subsequent writes coerce
+        to match. No widening is performed.
+
+        - Obviously-incompatible pairs (string/object source → numeric
+          target) are skipped silently: the endpoint is the source of truth
+          for its own output types, and attempting the cast would just raise
+          every chunk.
+        - Other coerce failures log a warning **once** per
+          ``(column, src, tgt)`` tuple per instance, to avoid per-chunk
+          log spam when a column genuinely drifts.
+        - If schema drift does poison the dataset on disk,
+          :meth:`_read_cache_with_retry` falls back to an empty result so
+          rows recompute; :meth:`clear_cache` resets cleanly.
         """
-        if self._canonical_dtypes is None:
-            self._canonical_dtypes = df.dtypes
+        # Seed / extend canonical from any newly-observed real data.
+        self._seed_canonical_from(df)
+
+        if not self._canonical_dtypes:
             return df
 
         out = df.copy()
-        for col, dtype in self._canonical_dtypes.items():
+        for col, target_dtype in self._canonical_dtypes.items():
             if col not in out.columns:
                 continue
-            if out[col].dtype == dtype:
+            src_dtype = out[col].dtype
+            if src_dtype == target_dtype:
                 continue
+
+            src_is_stringish = pd.api.types.is_string_dtype(src_dtype) or pd.api.types.is_object_dtype(src_dtype)
+            tgt_is_numeric = pd.api.types.is_numeric_dtype(target_dtype) and not pd.api.types.is_bool_dtype(target_dtype)
+            if src_is_stringish and tgt_is_numeric:
+                continue
+
             try:
-                out[col] = out[col].astype(dtype)
+                out[col] = out[col].astype(target_dtype)
             except Exception as e:
-                self.log.warning(
-                    f"InferenceCache[{self._endpoint.name}]: could not coerce "
-                    f"column '{col}' from {out[col].dtype} to {dtype}: {e}"
-                )
+                key = (col, str(src_dtype), str(target_dtype))
+                if key not in self._coerce_warned:
+                    self._coerce_warned.add(key)
+                    self.log.warning(
+                        f"InferenceCache[{self._endpoint.name}]: could not coerce "
+                        f"column '{col}' from {src_dtype} to {target_dtype}: {e}. "
+                        f"Writes will use the endpoint's dtype; run compact() or "
+                        f"clear_cache() if the dataset becomes unreadable."
+                    )
         return out
 
     def compact(self) -> int:
@@ -454,7 +542,9 @@ class InferenceCache:
         self._df_store.upsert(self.cache_path, df)
         self._save_manifest()
         self._cache_df = df
-        self._canonical_dtypes = df.dtypes
+        # Reseed canonical from real data only (all-null columns stay flexible).
+        self._canonical_dtypes = None
+        self._seed_canonical_from(df)
 
         self.log.info(f"InferenceCache[{self._endpoint.name}]: compacted {before} -> {after} rows")
         return after
