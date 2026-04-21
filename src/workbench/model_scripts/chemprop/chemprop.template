@@ -58,11 +58,13 @@ DEFAULT_HYPERPARAMETERS = {
     "ffn_num_layers": 2,
     # Loss function for regression (mae, mse)
     "criterion": "mae",
-    # Split strategy: "random", "scaffold", or "butina"
-    # - random: Standard random split (default)
-    # - scaffold: Bemis-Murcko scaffold-based grouping
-    # - butina: Morgan fingerprint clustering (recommended for ADMET)
-    "split_strategy": "random",
+    # Split strategy: "scaffold" (default), "butina", or "random"
+    # - scaffold: Bemis-Murcko scaffold-based grouping (requires 'smiles' column in data).
+    #     Falls back to random with a warning if no SMILES column is present.
+    # - butina: Morgan fingerprint clustering (more stringent than scaffold,
+    #     O(n^2) compute — prefer for smaller datasets)
+    # - random: Standard random split (use only for non-molecular data or quick baselines)
+    "split_strategy": "scaffold",
     "butina_cutoff": 0.4,  # Tanimoto distance cutoff for Butina clustering
     # Random seed
     "seed": 42,
@@ -327,6 +329,12 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
                     if tc in uq_metadata:
                         df = compute_confidence(df, uq_metadata[tc], std_col=f"{tc}_pred_std")
                         df.rename(columns={"confidence": f"{tc}_confidence"}, inplace=True)
+                # Alias primary target's confidence + intervals to top-level columns
+                # (matches the prediction/prediction_std aliasing above for UI compatibility)
+                primary = target_columns[0]
+                if primary in uq_metadata and f"{primary}_confidence" in df.columns:
+                    df["confidence"] = df[f"{primary}_confidence"]
+                    df = predict_intervals(df, uq_metadata[primary])
             else:
                 df = predict_intervals(df, uq_metadata)
                 df = compute_confidence(df, uq_metadata)
@@ -581,7 +589,7 @@ if __name__ == "__main__":
     batch_size = hyperparameters["batch_size"]
 
     # Get split strategy parameters
-    split_strategy = hyperparameters.get("split_strategy", "random")
+    split_strategy = hyperparameters.get("split_strategy", "scaffold")
     butina_cutoff = hyperparameters.get("butina_cutoff", 0.4)
 
     # Check for pre-defined training column (overrides split strategy)
@@ -860,6 +868,13 @@ if __name__ == "__main__":
                 df_val = compute_confidence(df_val, t_uq, std_col=f"{t_name}_pred_std")
                 df_val.rename(columns={"confidence": f"{t_name}_confidence"}, inplace=True)
                 uq_metadata[t_name] = t_uq
+            # Alias primary target to top-level columns (matches single-target schema
+            # so validation_predictions.csv has prediction / prediction_std / confidence / q_*)
+            primary = target_columns[0]
+            df_val["prediction"] = df_val[f"{primary}_pred"]
+            df_val["prediction_std"] = df_val[f"{primary}_pred_std"]
+            df_val["confidence"] = df_val[f"{primary}_confidence"]
+            df_val = predict_intervals(df_val, uq_metadata[primary])
         else:
             df_val["prediction"] = df_val[f"{target_columns[0]}_pred"]
             df_val["prediction_std"] = df_val[f"{target_columns[0]}_pred_std"]

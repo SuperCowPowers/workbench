@@ -21,6 +21,8 @@ The idea behind using ensemble disagreement as an uncertainty signal is well-est
 
 This ensemble standard deviation (`prediction_std`) is the raw uncertainty signal. It comes directly from the model itself — not from an external surrogate or statistical assumption. In our testing, it correlates strongly with actual prediction error (Spearman r > 0.85 for ChemProp on MLM CLint from the [OpenADMET Blind Challenge](https://openadmet.org/)), though your mileage will vary depending on the dataset and model type.
 
+One implementation note: we apply a soft log-compression to extreme `prediction_std` outliers (values above the IQR fence get log-scaled) before storing. This is a monotonic transform that preserves ranking — so percentile-rank confidence and conformal intervals are unaffected — but it means reported `prediction_std` values should be read as "uncertainty scores" rather than literal standard deviations.
+
 ## The Problem: Raw Std Isn't Calibrated
 
 Ensemble std tells you *which* predictions to trust more, but the raw numbers don't correspond to meaningful intervals. If std = 0.3, does that mean the true value is within ± 0.3? ± 0.6? There's no guarantee.
@@ -71,7 +73,7 @@ We like this approach for a few reasons:
 - **No arbitrary parameters**: No decay rates or normalization constants to tune
 - **Grounded in the calibration data**: Derived from the same distribution used for interval calibration
 
-That said, percentile-rank has its own limitations — it's relative to the training set, so a confidence of 0.7 from two different models isn't directly comparable. We think this is an acceptable trade-off for now, but it's an area we're continuing to think about.
+That said, percentile-rank confidence is **relative, not absolute**. A confidence of 0.7 means "tighter than 70% of training predictions," not "70% probability of being correct" — two different models trained on the same data will produce similar confidence *distributions* even if one is far more accurate. The calibrated conformal intervals (`q_025`, `q_05`, … `q_975`) are where the absolute-coverage guarantee lives; the scalar confidence is for ranking and visualization. We think this is an acceptable trade-off for now, but adding an error-calibrated absolute confidence (analogous to what classification does with isotonic P(correct)) is something we're considering.
 
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/uq_conf_residual.png" alt="Confidence vs residual plot" style="max-width: 800px; width: 100%;">
@@ -168,6 +170,7 @@ We want to be upfront about the limitations. Confidence reflects how much the en
 - **Novel chemistry may get falsely high confidence** if it happens to fall in a region where the models extrapolate consistently.
 - **Confidence is relative to the training set.** A confidence of 0.9 on a kinase solubility model doesn't transfer to a PROTAC dataset.
 - **Conformal coverage assumes exchangeability.** The guarantee holds when test data comes from the same distribution as calibration data. For out-of-distribution compounds, coverage may degrade.
+- **Training-exposure bias in calibration.** Calibration `prediction_std` is computed by running all 5 ensemble members on the full training set, so every row was seen by 4 of the 5 models during training. Truly novel molecules (seen by 0 of 5) will tend to produce larger stds than the calibration distribution captures, which can make confidence skew optimistic-then-low on out-of-distribution chemistry. Workbench now defaults to **scaffold-based cross-validation splits** (Bemis-Murcko) for any dataset with a SMILES column — this makes confidence calibration reflect scaffold-hopping performance rather than same-scaffold interpolation. For stricter "novel chemistry" evaluation, set `split_strategy="butina"` (Morgan-fingerprint clustering).
 
 For truly out-of-distribution detection, we'd recommend pairing confidence with applicability domain analysis (e.g., feature-space proximity to training data). This is something we're actively exploring for future Workbench releases.
 
