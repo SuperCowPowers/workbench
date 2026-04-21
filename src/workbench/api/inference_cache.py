@@ -426,11 +426,7 @@ class InferenceCache:
         write still has a valid key column; downstream code relies on it
         existing.
         """
-        keep = [
-            c
-            for c in df.columns
-            if c == self.cache_key_column or self._column_has_data(df[c])
-        ]
+        keep = [c for c in df.columns if c == self.cache_key_column or self._column_has_data(df[c])]
         if len(keep) == len(df.columns):
             return df
         dropped = [c for c in df.columns if c not in keep]
@@ -496,7 +492,9 @@ class InferenceCache:
                 continue
 
             src_is_stringish = pd.api.types.is_string_dtype(src_dtype) or pd.api.types.is_object_dtype(src_dtype)
-            tgt_is_numeric = pd.api.types.is_numeric_dtype(target_dtype) and not pd.api.types.is_bool_dtype(target_dtype)
+            tgt_is_numeric = pd.api.types.is_numeric_dtype(target_dtype) and not pd.api.types.is_bool_dtype(
+                target_dtype
+            )
             if src_is_stringish and tgt_is_numeric:
                 continue
 

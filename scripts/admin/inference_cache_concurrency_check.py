@@ -242,9 +242,7 @@ def test_all_null_column_handling():
 
     # Chunk 1: salt all-NaN -> should be dropped from write, not pin dtype
     c._load_cache()
-    c._update_cache(
-        pd.DataFrame({"key": ["k1", "k2"], "feat": [1.0, 2.0], "salt": [None, None]})
-    )
+    c._update_cache(pd.DataFrame({"key": ["k1", "k2"], "feat": [1.0, 2.0], "salt": [None, None]}))
     # Chunk 2: salt has real strings -> should pin dtype and write with salt
     c._update_cache(pd.DataFrame({"key": ["k3", "k4"], "feat": [3.0, 4.0], "salt": ["Br", "Cl"]}))
     # Chunk 3: salt back to all-null -> should drop again; feat stays
@@ -260,7 +258,9 @@ def test_all_null_column_handling():
     # Expected: all 5 rows, salt column present (from chunk 2), salt dtype
     # string-like, k1/k2/k5 have NaN salt.
     row_ok = len(df) == 5
-    salt_str = "salt" in df.columns and pd.api.types.is_object_dtype(df["salt"]) or pd.api.types.is_string_dtype(df["salt"])
+    salt_str = (
+        "salt" in df.columns and pd.api.types.is_object_dtype(df["salt"]) or pd.api.types.is_string_dtype(df["salt"])
+    )
     nans_ok = df.set_index("key").loc[["k1", "k2", "k5"], "salt"].isna().all()
     vals_ok = set(df.set_index("key").loc[["k3", "k4"], "salt"].tolist()) == {"Br", "Cl"}
     ok = row_ok and salt_str and nans_ok and vals_ok
