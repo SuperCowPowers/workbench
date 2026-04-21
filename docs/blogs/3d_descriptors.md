@@ -154,7 +154,7 @@ Custom descriptors capturing the spatial distribution of pharmacophoric features
   </thead>
   <tbody>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Axis Length</td><td style="padding: 8px 16px;">Maximum heavy-atom distance -- P-gp substrates are typically 25-30 &#8491; long</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Volume</td><td style="padding: 8px 16px;">Van der Waals volume via RDKit grid (0.2 &#8491; spacing) -- binding site fit, transporter size constraints</td></tr>
+    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Molecular Volume</td><td style="padding: 8px 16px;">Van der Waals volume via RDKit grid (0.5 &#8491; spacing) -- binding site fit, transporter size constraints</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Amphiphilic Moment</td><td style="padding: 8px 16px;">Polar/nonpolar centroid separation (polar = N/O/S/P + halogens; carbons adjacent to N/O/S/P are neutral) -- membrane orientation, transporter recognition</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Charge Centroid Distance</td><td style="padding: 8px 16px;">Distance from center of mass to centroid of charge-site nitrogens (quaternary/aromatic/N-H) -- captures peripheral vs central ionizable groups</td></tr>
     <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Nitrogen Span</td><td style="padding: 8px 16px;">Max distance between any two nitrogens (no filter) -- multi-point binding, overall N distribution</td></tr>
