@@ -30,11 +30,13 @@ MAX_CONCURRENCY = 5  # serverless concurrent invocations.
 RECREATE_MODEL = True  # set False to skip model re-create if only redeploying the endpoint
 
 # Inference batch size tuned per deployment config. 3D conformer generation is
-# CPU-heavy, so the ideal batch size scales with available vCPUs.
+# CPU-heavy and per-molecule time can reach 5-7s on complex drug-like inputs
+# (bridged bicyclics, multiple stereo centers). Sized so a worst-case batch
+# finishes well inside the 60s SageMaker invocation timeout.
 BATCH_SIZE_BY_CONFIG = {
-    "serverless": 5,  # ~2 vCPUs, 2-6GB memory
-    "ml.c7i.xlarge": 10,  # 4 vCPUs, 8 GB
-    "ml.c7i.2xlarge": 20,  # 8 vCPUs, 16 GB
+    "serverless": 3,  # ~2 vCPUs, 2-6GB memory
+    "ml.c7i.xlarge": 5,  # 4 vCPUs, 8 GB
+    "ml.c7i.2xlarge": 10,  # 8 vCPUs, 16 GB
 }
 
 

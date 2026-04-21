@@ -490,8 +490,17 @@ def standardize(
         # not what tautomer canonicalization or charge neutralization might
         # introduce. Undefined stereo means features reflect an arbitrary
         # enantiomer — downstream code should surface this to the user.
+        #
+        # Exclude atoms in 2+ rings: ring-junction atoms in bridged bicyclics
+        # (tropane, azabicyclics) show up as "undefined" stereo centers but
+        # their geometry is constrained by the ring system and not
+        # actionable by the chemist. Trade-off: also filters spiro centers,
+        # rare with undefined stereo in drug inputs.
         undefined_centers = Chem.FindMolChiralCenters(mol, includeUnassigned=True, useLegacyImplementation=False)
-        n_undefined = sum(1 for _, code in undefined_centers if code == "?")
+        ring_info = mol.GetRingInfo()
+        n_undefined = sum(
+            1 for idx, code in undefined_centers if code == "?" and ring_info.NumAtomRings(idx) < 2
+        )
         if n_undefined > 0:
             log.warning(
                 f"{n_undefined} undefined chiral center(s) in {smiles} " "— features reflect an arbitrary enantiomer"

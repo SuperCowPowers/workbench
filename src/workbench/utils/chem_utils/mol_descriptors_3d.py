@@ -333,23 +333,29 @@ def generate_conformers(
 def _optimize_conformers(mol: Chem.Mol) -> str:
     """Optimize all conformers using MMFF94s (preferred) or UFF fallback.
 
+    Uses the threaded *Confs batch variant — a single C++ call that
+    parallelizes across NUM_THREADS cores, faster than a Python loop over
+    single-conformer optimizers. Individual-conformer failures do not fail
+    the whole call (non-convergent conformers are returned with the best
+    coordinates reached within maxIters).
+
     Returns:
         Name of the force field used: ``"MMFF94s"``, ``"UFF"``, or ``"none"``.
     """
     if AllChem.MMFFHasAllMoleculeParams(mol):
-        for conf_id in range(mol.GetNumConformers()):
-            try:
-                AllChem.MMFFOptimizeMolecule(mol, mmffVariant="MMFF94s", maxIters=200, confId=conf_id)
-            except Exception as e:
-                logger.debug(f"MMFF94s optimization failed for conformer {conf_id}: {e}")
+        try:
+            AllChem.MMFFOptimizeMoleculeConfs(
+                mol, numThreads=0, maxIters=200, mmffVariant="MMFF94s"
+            )
+        except Exception as e:
+            logger.debug(f"MMFF94s batch optimization failed: {e}")
         return "MMFF94s"
     elif AllChem.UFFHasAllMoleculeParams(mol):
         logger.debug("MMFF94s params unavailable, falling back to UFF")
-        for conf_id in range(mol.GetNumConformers()):
-            try:
-                AllChem.UFFOptimizeMolecule(mol, maxIters=200, confId=conf_id)
-            except Exception as e:
-                logger.debug(f"UFF optimization failed for conformer {conf_id}: {e}")
+        try:
+            AllChem.UFFOptimizeMoleculeConfs(mol, numThreads=0, maxIters=200)
+        except Exception as e:
+            logger.debug(f"UFF batch optimization failed: {e}")
         return "UFF"
     else:
         logger.debug("No force field params available, skipping optimization")
@@ -711,11 +717,9 @@ def compute_molecular_volume_3d(mol: Chem.Mol, conf_id: int = 0) -> float:
     """
     Calculate molecular volume using RDKit's grid-based van der Waals volume.
 
-    Uses ``AllChem.ComputeMolVolume`` at 0.5 Angstrom grid spacing: places
-    every atom's van der Waals sphere on the 3D conformer and counts grid
-    cells inside the union. 0.5 A gives ML-quality volume estimates at ~4x
-    the speed of the 0.2 A default; the finer grid is only needed for
-    docking-accuracy work.
+    Uses ``AllChem.ComputeMolVolume`` with a 0.2 Angstrom grid: places every
+    atom's van der Waals sphere on the 3D conformer and counts the grid
+    cells inside the union.
 
     Relevant for:
     - Binding site fit
@@ -725,7 +729,7 @@ def compute_molecular_volume_3d(mol: Chem.Mol, conf_id: int = 0) -> float:
     if mol is None or mol.GetNumConformers() == 0:
         return np.nan
     try:
-        return float(AllChem.ComputeMolVolume(mol, confId=conf_id, gridSpacing=0.5))
+        return float(AllChem.ComputeMolVolume(mol, confId=conf_id, gridSpacing=0.2))
     except Exception:
         return np.nan
 
