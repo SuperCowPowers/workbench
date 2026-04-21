@@ -1310,7 +1310,7 @@ def compute_descriptors_3d(
         - ``"fast"`` (default): Fixed n_conformers (default 10), Boltzmann-
           weighted descriptors across the generated ensemble. Designed for
           realtime SageMaker endpoints.
-        - ``"boltzmann"``: Adaptive n_conformers (50-300 based on rotatable
+        - ``"full"``: Adaptive n_conformers (50-300 based on rotatable
           bonds), same Boltzmann-weighted descriptors. Designed for overnight
           batch processing where higher conformer counts improve reproducibility.
 
@@ -1321,7 +1321,7 @@ def compute_descriptors_3d(
 
     Args:
         df: Input DataFrame with SMILES column
-        mode: ``"fast"`` or ``"boltzmann"`` (default ``"fast"``)
+        mode: ``"fast"`` or ``"full"`` (default ``"fast"``)
         n_conformers: Number of conformers to generate (default 10, fast mode only;
                       Boltzmann mode uses adaptive counts and ignores this)
         optimize: Whether to run MMFF optimization (default True)
@@ -1338,11 +1338,11 @@ def compute_descriptors_3d(
 
     Example:
         df = compute_descriptors_3d(df)                       # Fast (default)
-        df = compute_descriptors_3d(df, mode="boltzmann")     # Boltzmann ensemble
+        df = compute_descriptors_3d(df, mode="full")     # Boltzmann ensemble
     """
-    if mode not in ("fast", "boltzmann"):
-        raise ValueError(f"mode must be 'fast' or 'boltzmann', got '{mode}'")
-    is_boltzmann = mode == "boltzmann"
+    if mode not in ("fast", "full"):
+        raise ValueError(f"mode must be 'fast' or 'full', got '{mode}'")
+    is_full = mode == "full"
 
     # Find SMILES column (case-insensitive)
     smiles_column = next((col for col in df.columns if col.lower() == "smiles"), None)
@@ -1352,7 +1352,7 @@ def compute_descriptors_3d(
     result = df.copy()
     n_molecules = len(df)
 
-    n_confs_desc = "adaptive (50/200/300)" if is_boltzmann else f"{n_conformers}"
+    n_confs_desc = "adaptive (50/200/300)" if is_full else f"{n_conformers}"
     logger.info(f"Computing 3D descriptors for {n_molecules} molecules (mode={mode})...")
     logger.info(f"Parameters: n_conformers={n_confs_desc}, optimize={optimize}, " f"force_tol={BOLTZMANN_FORCE_TOL}")
 
@@ -1407,7 +1407,7 @@ def compute_descriptors_3d(
             mol = Chem.AddHs(mol)
 
             # Conformer generation — mode only affects count
-            n_confs = adaptive_n_conformers(mol) if is_boltzmann else n_conformers
+            n_confs = adaptive_n_conformers(mol) if is_full else n_conformers
             result.at[idx, "desc3d_confs_requested"] = n_confs
 
             mol, gen_info = generate_conformers(

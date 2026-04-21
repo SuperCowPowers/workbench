@@ -81,11 +81,11 @@ def test_all_reference_compounds_succeed():
     assert bad.empty, f"{len(bad)} reference compounds did not compute successfully"
 
 
-def test_boltzmann_mode_declared():
-    """Every row reports desc3d_mode == 'boltzmann'."""
+def test_full_mode_declared():
+    """Every row reports desc3d_mode == 'full'."""
     result = _get_result()
     modes = result["desc3d_mode"].unique().tolist()
-    assert modes == ["boltzmann"], f"Expected desc3d_mode='boltzmann', got {modes}"
+    assert modes == ["full"], f"Expected desc3d_mode='full', got {modes}"
 
 
 def test_adaptive_conformer_count():
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     test_endpoint_exists()
     test_reference_compounds_loadable()
     test_all_reference_compounds_succeed()
-    test_boltzmann_mode_declared()
+    test_full_mode_declared()
     test_adaptive_conformer_count()
     test_all_features_finite()
     test_pmi_ordering()

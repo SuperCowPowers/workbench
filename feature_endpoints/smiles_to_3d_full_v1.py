@@ -30,7 +30,7 @@ IDLE_MINUTES = 5  # Minutes of empty queue before draining to zero.
 if __name__ == "__main__":
     # ── Create the Model (shared AqSol-backed demo FeatureSet as training source).
     feature_set = ensure_demo_featureset()
-    tags = ["smiles", "3d descriptors", "boltzmann", "conformer ensemble"]
+    tags = ["smiles", "3d descriptors", "full", "conformer ensemble"]
     model = feature_set.to_model(
         name=ENDPOINT_NAME,
         model_type=ModelType.TRANSFORMER,

@@ -22,17 +22,17 @@ from workbench.api import AsyncEndpoint, Endpoint, PublicData
 from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
 
 FAST_ENDPOINT = "smiles-to-3d-fast-v1"
-BOLTZMANN_ENDPOINT = "smiles-to-3d-full-v1"
+FULL_ENDPOINT = "smiles-to-3d-full-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/reference_compounds_3d"
 
 fast_endpoint = Endpoint(FAST_ENDPOINT)
-boltzmann_endpoint = AsyncEndpoint(BOLTZMANN_ENDPOINT)
+full_endpoint = AsyncEndpoint(FULL_ENDPOINT)
 
 # ---------------------------------------------------------------------------
 # Per-feature tolerances for cross-endpoint comparison.
 #
 #   feature passes if:
-#       abs(fast - boltzmann) <= max(abs_tol, rel_tol * max(|fast|, |boltzmann|))
+#       abs(fast - full) <= max(abs_tol, rel_tol * max(|fast|, |full|))
 #
 # Conformer-ensemble statistics (conf_energy_*, conformational_flexibility,
 # desc3d_conf_count) intentionally differ between modes — fast mode samples
@@ -106,11 +106,11 @@ def _get_fast_df() -> pd.DataFrame:
     return _fast_df
 
 
-def _get_boltzmann_df() -> pd.DataFrame:
+def _get_full_df() -> pd.DataFrame:
     global _bolt_df
     if _bolt_df is None:
         ref_df = _get_reference_df()
-        _bolt_df = boltzmann_endpoint.inference(ref_df[["id", "smiles"]].copy())
+        _bolt_df = full_endpoint.inference(ref_df[["id", "smiles"]].copy())
     return _bolt_df
 
 
@@ -118,7 +118,7 @@ def _joined() -> pd.DataFrame:
     """Return reference rows joined with both endpoints' outputs (suffixed _fast / _bolt)."""
     ref = _get_reference_df()[["id", "name"]]
     fast = _get_fast_df().add_suffix("_fast").rename(columns={"id_fast": "id"})
-    bolt = _get_boltzmann_df().add_suffix("_bolt").rename(columns={"id_bolt": "id"})
+    bolt = _get_full_df().add_suffix("_bolt").rename(columns={"id_bolt": "id"})
     return ref.merge(fast, on="id", how="inner").merge(bolt, on="id", how="inner")
 
 
@@ -129,7 +129,7 @@ def _joined() -> pd.DataFrame:
 
 def test_both_endpoints_exist():
     assert fast_endpoint.exists(), f"Endpoint '{FAST_ENDPOINT}' does not exist"
-    assert boltzmann_endpoint.exists(), f"Endpoint '{BOLTZMANN_ENDPOINT}' does not exist"
+    assert full_endpoint.exists(), f"Endpoint '{FULL_ENDPOINT}' does not exist"
 
 
 def test_both_endpoints_succeed_on_all_compounds():
@@ -147,15 +147,15 @@ def test_both_endpoints_succeed_on_all_compounds():
 
 
 def test_mode_labels_differ():
-    """Fast endpoint reports mode='fast', Boltzmann reports mode='boltzmann'."""
+    """Fast endpoint reports mode='fast', Boltzmann reports mode='full'."""
     joined = _joined()
     fast_modes = set(joined["desc3d_mode_fast"].unique())
     bolt_modes = set(joined["desc3d_mode_bolt"].unique())
     assert fast_modes == {"fast"}, f"Fast endpoint modes: {fast_modes}"
-    assert bolt_modes == {"boltzmann"}, f"Boltzmann endpoint modes: {bolt_modes}"
+    assert bolt_modes == {"full"}, f"Boltzmann endpoint modes: {bolt_modes}"
 
 
-def test_boltzmann_samples_at_least_as_many_conformers():
+def test_full_samples_at_least_as_many_conformers():
     """For every compound, Boltzmann conformer count >= fast conformer count."""
     joined = _joined()
     bad = joined[joined["desc3d_conf_count_bolt"] < joined["desc3d_conf_count_fast"]]
@@ -200,7 +200,7 @@ def test_feature_agreement():
         # Group failures by compound for readable output
         print(f"Feature agreement failures ({len(failures)} across {checked} checked features):")
         failures_df = pd.DataFrame(
-            failures, columns=["compound", "feature", "reason", "fast", "boltzmann", "threshold"]
+            failures, columns=["compound", "feature", "reason", "fast", "full", "threshold"]
         )
         with pd.option_context("display.max_rows", 100, "display.width", 160):
             print(failures_df.to_string(index=False))
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     test_both_endpoints_exist()
     test_both_endpoints_succeed_on_all_compounds()
     test_mode_labels_differ()
-    test_boltzmann_samples_at_least_as_many_conformers()
+    test_full_samples_at_least_as_many_conformers()
     test_feature_agreement()
     test_shape_descriptors_strongly_agree()
     print("\nAll 3D endpoint consistency tests passed!")

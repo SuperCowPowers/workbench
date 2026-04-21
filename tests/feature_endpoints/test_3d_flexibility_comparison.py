@@ -25,7 +25,7 @@ import pandas as pd
 from workbench.api import AsyncEndpoint, Endpoint, PublicData
 
 FAST_ENDPOINT = "smiles-to-3d-fast-v1"
-BOLTZMANN_ENDPOINT = "smiles-to-3d-full-v1"
+FULL_ENDPOINT = "smiles-to-3d-full-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/flexibility"
 
 # Features to report on. Shape descriptors (NPR, asphericity) are bounded
@@ -56,7 +56,7 @@ BOUNDED_FEATURES = {"npr1", "npr2", "asphericity"}
 CLASS_ORDER = ["rigid", "semi_rigid", "flexible", "very_flexible"]
 
 fast_endpoint = Endpoint(FAST_ENDPOINT)
-boltzmann_endpoint = AsyncEndpoint(BOLTZMANN_ENDPOINT)
+full_endpoint = AsyncEndpoint(FULL_ENDPOINT)
 
 # ---------------------------------------------------------------------------
 # Cached inference results
@@ -81,7 +81,7 @@ def _get_joined_df() -> pd.DataFrame:
         ref_df = _get_reference_df()
         payload = ref_df[["id", "smiles"]].copy()
         fast = fast_endpoint.inference(payload).add_suffix("_fast").rename(columns={"id_fast": "id"})
-        bolt = boltzmann_endpoint.inference(payload).add_suffix("_bolt").rename(columns={"id_bolt": "id"})
+        bolt = full_endpoint.inference(payload).add_suffix("_bolt").rename(columns={"id_bolt": "id"})
         _joined_df = (
             ref_df[["id", "name", "rot_bonds", "flexibility_class", "notes"]]
             .merge(fast, on="id", how="inner")
@@ -96,7 +96,7 @@ def _get_joined_df() -> pd.DataFrame:
 
 
 def _format_delta(fast_val: float, bolt_val: float) -> str:
-    """Pretty-print fast vs boltzmann values and their absolute + relative diff."""
+    """Pretty-print fast vs full values and their absolute + relative diff."""
     if pd.isna(fast_val) or pd.isna(bolt_val):
         return f"fast={fast_val}  bolt={bolt_val}  (NaN)"
     abs_diff = abs(fast_val - bolt_val)
@@ -133,7 +133,7 @@ def _print_report(joined: pd.DataFrame) -> None:
 
 def test_both_endpoints_exist():
     assert fast_endpoint.exists()
-    assert boltzmann_endpoint.exists()
+    assert full_endpoint.exists()
 
 
 def test_reference_compounds_loadable():

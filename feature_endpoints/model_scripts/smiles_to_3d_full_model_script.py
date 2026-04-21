@@ -97,6 +97,6 @@ def predict_fn(df, model):
     df = standardize(df, extract_salts=True)
 
     # Compute Boltzmann-weighted 3D descriptors
-    df = compute_descriptors_3d(df, mode="boltzmann")
+    df = compute_descriptors_3d(df, mode="full")
 
     return df

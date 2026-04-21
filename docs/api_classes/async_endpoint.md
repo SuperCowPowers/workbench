@@ -48,7 +48,7 @@ from workbench.api import Model
 model = Model("smiles-to-3d-full-v1")
 end = model.to_endpoint(
     async_endpoint=True,
-    tags=["smiles", "3d descriptors", "boltzmann"],
+    tags=["smiles", "3d descriptors", "full"],
 )
 # Override the default ml.c7i.xlarge with instance="ml.c7i.2xlarge" if your
 # model needs more CPU/memory per worker.

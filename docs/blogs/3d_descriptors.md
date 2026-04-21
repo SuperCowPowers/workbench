@@ -183,7 +183,7 @@ In addition to the 74 model features, both endpoints produce 11 `desc3d_*` diagn
 | Column | Description |
 |--------|-------------|
 | `desc3d_status` | `ok`, `skip:parse`, `skip:heavy_atoms`, `skip:rot_bonds`, `skip:rings`, `skip:ring_complexity`, `skip:embed`, `skip:empty` |
-| `desc3d_mode` | `fast` or `boltzmann` |
+| `desc3d_mode` | `fast` or `full` |
 | `desc3d_conf_count` | Conformers after RMSD pruning |
 | `desc3d_confs_requested` | Target conformer count |
 | `desc3d_confs_in_window` | Conformers in the Boltzmann energy window |
