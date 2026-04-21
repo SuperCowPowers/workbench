@@ -7,16 +7,22 @@ produce the same model three times).
 
 Layout per FeatureSet variant:
 
-    pxr_activity_2d         ─┬─>  pxr-2d-reg-xgb        (XGBoost UQ  — all 313 features)
-                             └─>  pxr-2d-reg-pytorch    (PyTorch UQ  — top-50 non-zero SHAP from XGB)
+    pxr_activity_2d         ─┬─>  pxr-2d-reg-xgb             (XGBoost UQ  — all features)
+                             ├─>  pxr-2d-reg-pytorch-<N>     (PyTorch UQ — all N features)
+                             ├─>  pxr-2d-reg-pytorch-100     (PyTorch UQ — top-100 non-zero SHAP)
+                             └─>  pxr-2d-reg-pytorch-50      (PyTorch UQ — top-50 non-zero SHAP)
 
-    pxr_activity_3d         ─┬─>  pxr-3d-reg-xgb        (XGBoost UQ  — all 74 features)
-                             └─>  pxr-3d-reg-pytorch    (PyTorch UQ  — top-50 non-zero SHAP)
+    pxr_activity_3d         ─┬─>  pxr-3d-reg-xgb             (XGBoost UQ  — all features)
+                             ├─>  pxr-3d-reg-pytorch-<N>     (PyTorch UQ — all N features)
+                             ├─>  pxr-3d-reg-pytorch-100     (PyTorch UQ — top-100 non-zero SHAP)
+                             └─>  pxr-3d-reg-pytorch-50      (PyTorch UQ — top-50 non-zero SHAP)
 
-    pxr_activity_2d_3d      ─┬─>  pxr-2d-3d-reg-xgb     (XGBoost UQ  — all 387 features)
-                             └─>  pxr-2d-3d-reg-pytorch (PyTorch UQ  — top-50 non-zero SHAP)
+    pxr_activity_2d_3d      ─┬─>  pxr-2d-3d-reg-xgb          (XGBoost UQ  — all features)
+                             ├─>  pxr-2d-3d-reg-pytorch-<N>  (PyTorch UQ — all N features)
+                             ├─>  pxr-2d-3d-reg-pytorch-100  (PyTorch UQ — top-100 non-zero SHAP)
+                             └─>  pxr-2d-3d-reg-pytorch-50   (PyTorch UQ — top-50 non-zero SHAP)
 
-    pxr_activity_2d_3d      ─> pxr-reg-chemprop         (Chemprop D-MPNN — SMILES only, one copy)
+    pxr_activity_2d_3d      ─> pxr-reg-chemprop              (Chemprop D-MPNN — SMILES only, one copy)
 
 Each deployed endpoint runs auto / full / cross-fold inference so validation
 metrics (MAE, RAE, R², Spearman, Kendall) are captured for leaderboard scoring.
@@ -114,19 +120,27 @@ def _create_xgb_and_pytorch(variant: str, rebuild: bool) -> None:
         xgb.set_owner("open_admet_pxr")
         _deploy_and_validate(xgb, variant, "xgboost")
 
-    # 2. PyTorch UQ — uses top-50 non-zero SHAP features from the XGB above.
-    pytorch_name = f"pxr-{variant.replace('_', '-')}-reg-pytorch"
-    if rebuild or not Model(pytorch_name).exists():
-        top_features = _top_n_shap(xgb_name, n=50)
-        log.info(f"Creating PyTorch model: {pytorch_name}  (top-{len(top_features)} SHAP features)")
+    # 2. PyTorch UQ — three variants: all features, top-100 SHAP, top-50 SHAP.
+    pytorch_variants = [
+        (len(feature_cols), feature_cols, f"all {len(feature_cols)} features"),
+        (100, None, "top-100 non-zero SHAP"),
+        (50, None, "top-50 non-zero SHAP"),
+    ]
+    v_tag = variant.replace("_", "-")
+    for count, feats, label in pytorch_variants:
+        pytorch_name = f"pxr-{v_tag}-reg-pytorch-{count}"
+        if not (rebuild or not Model(pytorch_name).exists()):
+            continue
+        features = feats if feats is not None else _top_n_shap(xgb_name, n=count)
+        log.info(f"Creating PyTorch model: {pytorch_name}  ({label}, {len(features)} cols)")
         pyt = fs.to_model(
             name=pytorch_name,
             model_type=ModelType.UQ_REGRESSOR,
             model_framework=ModelFramework.PYTORCH,
             target_column=TARGET_COL,
-            feature_list=top_features,
-            description=f"PXR pEC50 PyTorch Tabular UQ on top-50 SHAP from {xgb_name}",
-            tags=TAGS_BASE + [variant, "pytorch"],
+            feature_list=features,
+            description=f"PXR pEC50 PyTorch Tabular UQ — {label}",
+            tags=TAGS_BASE + [variant, "pytorch", f"feat{count}"],
         )
         pyt.set_owner("open_admet_pxr")
         _deploy_and_validate(pyt, variant, "pytorch")
@@ -168,8 +182,11 @@ def main(rebuild: bool) -> None:
     log.info("\nDone. Models + endpoints deployed:")
     for variant in ("2d", "3d", "2d_3d"):
         v = variant.replace("_", "-")
+        total = len(_feature_list_for_variant(variant))
         log.info(f"  pxr-{v}-reg-xgb")
-        log.info(f"  pxr-{v}-reg-pytorch")
+        log.info(f"  pxr-{v}-reg-pytorch-{total}")
+        log.info(f"  pxr-{v}-reg-pytorch-100")
+        log.info(f"  pxr-{v}-reg-pytorch-50")
     log.info("  pxr-reg-chemprop")
 
 
