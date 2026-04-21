@@ -199,9 +199,7 @@ def test_feature_agreement():
     if failures:
         # Group failures by compound for readable output
         print(f"Feature agreement failures ({len(failures)} across {checked} checked features):")
-        failures_df = pd.DataFrame(
-            failures, columns=["compound", "feature", "reason", "fast", "full", "threshold"]
-        )
+        failures_df = pd.DataFrame(failures, columns=["compound", "feature", "reason", "fast", "full", "threshold"])
         with pd.option_context("display.max_rows", 100, "display.width", 160):
             print(failures_df.to_string(index=False))
 
