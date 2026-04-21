@@ -107,7 +107,7 @@ import time
 from typing import Optional, List, Dict, Tuple
 
 from rdkit import Chem, RDLogger
-from rdkit.Chem import AllChem, Descriptors3D, rdMolDescriptors
+from rdkit.Chem import AllChem, Descriptors3D, rdMolDescriptors, rdMolTransforms
 from mordred import Calculator as MordredCalculator
 from mordred import CPSA, GeometricalIndex, GravitationalIndex, PBF
 from scipy.spatial.distance import pdist
@@ -711,15 +711,11 @@ def compute_molecular_volume_3d(mol: Chem.Mol, conf_id: int = 0) -> float:
     """
     Calculate molecular volume using RDKit's grid-based van der Waals volume.
 
-    Uses ``AllChem.ComputeMolVolume`` with a 0.2 Angstrom grid: places every
-    atom's van der Waals sphere on the 3D conformer and counts the grid
-    cells inside the union — a physically-meaningful volume that works for
-    any geometry, including planar aromatics and small molecules.
-
-    (Earlier versions of this function used a convex hull of atom centers,
-    which collapsed to near-zero for flat molecules like benzene and was
-    ill-defined for molecules with fewer than 4 heavy atoms. That approach
-    is no longer used.)
+    Uses ``AllChem.ComputeMolVolume`` at 0.5 Angstrom grid spacing: places
+    every atom's van der Waals sphere on the 3D conformer and counts grid
+    cells inside the union. 0.5 A gives ML-quality volume estimates at ~4x
+    the speed of the 0.2 A default; the finer grid is only needed for
+    docking-accuracy work.
 
     Relevant for:
     - Binding site fit
@@ -729,7 +725,7 @@ def compute_molecular_volume_3d(mol: Chem.Mol, conf_id: int = 0) -> float:
     if mol is None or mol.GetNumConformers() == 0:
         return np.nan
     try:
-        return float(AllChem.ComputeMolVolume(mol, confId=conf_id, gridSpacing=0.2))
+        return float(AllChem.ComputeMolVolume(mol, confId=conf_id, gridSpacing=0.5))
     except Exception:
         return np.nan
 
@@ -938,17 +934,6 @@ def compute_hba_centroid_distance(mol: Chem.Mol, conf_id: int = 0) -> float:
 IMHB_MIN_ANGLE_DEG = 120.0
 
 
-def _dha_angle_degrees(d_pos, h_pos, a_pos) -> float:
-    """Return the D-H...A angle at the H vertex, in degrees."""
-    hd = np.array([d_pos.x - h_pos.x, d_pos.y - h_pos.y, d_pos.z - h_pos.z])
-    ha = np.array([a_pos.x - h_pos.x, a_pos.y - h_pos.y, a_pos.z - h_pos.z])
-    norm = np.linalg.norm(hd) * np.linalg.norm(ha)
-    if norm == 0:
-        return 0.0
-    cos_angle = np.clip(np.dot(hd, ha) / norm, -1.0, 1.0)
-    return float(np.degrees(np.arccos(cos_angle)))
-
-
 def compute_intramolecular_hbond_potential(mol: Chem.Mol, conf_id: int = 0) -> int:
     """
     Estimate potential for intramolecular hydrogen bonds.
@@ -1026,12 +1011,10 @@ def compute_intramolecular_hbond_potential(mol: Chem.Mol, conf_id: int = 0) -> i
 
             # Angle check: at least one H on the donor must point toward the
             # acceptor with a D-H...A angle >= IMHB_MIN_ANGLE_DEG.
-            angle_ok = False
-            for h_idx in h_neighbors:
-                h_pos = conf.GetAtomPosition(h_idx)
-                if _dha_angle_degrees(d_pos, h_pos, a_pos) >= IMHB_MIN_ANGLE_DEG:
-                    angle_ok = True
-                    break
+            angle_ok = any(
+                rdMolTransforms.GetAngleDeg(conf, d_idx, h_idx, a_idx) >= IMHB_MIN_ANGLE_DEG
+                for h_idx in h_neighbors
+            )
             if angle_ok:
                 imhb_count += 1
 
@@ -1054,28 +1037,23 @@ def compute_pharmacophore_3d_descriptors(mol: Chem.Mol, conf_id: int = 0) -> Dic
     Returns:
         Dictionary of descriptor name -> value (8 descriptors)
     """
+    axis = compute_molecular_axis_length(mol, conf_id)
+    volume = compute_molecular_volume_3d(mol, conf_id)
+    if np.isnan(axis) or np.isnan(volume) or volume <= 0:
+        elongation = np.nan
+    else:
+        elongation = axis / (volume ** (1 / 3))
+
     return {
-        "pharm3d_molecular_axis": compute_molecular_axis_length(mol, conf_id),
-        "pharm3d_molecular_volume": compute_molecular_volume_3d(mol, conf_id),
+        "pharm3d_molecular_axis": axis,
+        "pharm3d_molecular_volume": volume,
         "pharm3d_amphiphilic_moment": compute_amphiphilic_moment(mol, conf_id),
         "pharm3d_charge_centroid_dist": compute_charge_centroid_distance(mol, conf_id),
         "pharm3d_nitrogen_span": compute_nitrogen_span(mol, conf_id),
         "pharm3d_hba_centroid_dist": compute_hba_centroid_distance(mol, conf_id),
         "pharm3d_imhb_potential": compute_intramolecular_hbond_potential(mol, conf_id),
-        # Derived: ratio of axis to volume^(1/3) - measures elongation
-        "pharm3d_elongation": _compute_elongation(mol, conf_id),
+        "pharm3d_elongation": elongation,
     }
-
-
-def _compute_elongation(mol: Chem.Mol, conf_id: int = 0) -> float:
-    """Compute elongation as axis_length / volume^(1/3)."""
-    axis = compute_molecular_axis_length(mol, conf_id)
-    volume = compute_molecular_volume_3d(mol, conf_id)
-
-    if np.isnan(axis) or np.isnan(volume) or volume <= 0:
-        return np.nan
-
-    return axis / (volume ** (1 / 3))
 
 
 def get_pharmacophore_3d_feature_names() -> List[str]:
