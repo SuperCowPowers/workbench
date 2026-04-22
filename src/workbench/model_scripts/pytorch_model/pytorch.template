@@ -58,8 +58,17 @@ DEFAULT_HYPERPARAMETERS = {
     "layers": "512-256-128",
     "learning_rate": 1e-3,
     "dropout": 0.05,
+    "weight_decay": 1e-4,
     # Loss function for regression (L1Loss=MAE, MSELoss=MSE, HuberLoss, SmoothL1Loss)
     "loss": "L1Loss",
+    # When False (default), each fold keeps its FINAL training weights instead of
+    # restoring to the best-val-loss checkpoint. Workbench "models" are a 5-fold
+    # ensemble, and we care about ensemble diversity for UQ.
+    # Letting each fold stop a few epochs past its best val loss produces
+    # slightly-overfit-but-distinct weights across folds, which turns out to be
+    # the dominant mechanism for meaningful ensemble std on MLP tabular models.
+    # Set to True for classical single-model "restore best" semantics.
+    "restore_best_weights": False,
     # Split strategy: "scaffold" (default), "butina", or "random"
     # - scaffold: Bemis-Murcko scaffold-based grouping (requires 'smiles' column in data).
     #     Falls back to random with a warning if no SMILES column is present.
@@ -451,8 +460,10 @@ if __name__ == "__main__":
             patience=hyperparameters["early_stopping_patience"],
             batch_size=hyperparameters["batch_size"],
             learning_rate=hyperparameters["learning_rate"],
-            loss=hyperparameters.get("loss", "L1Loss"),
+            weight_decay=hyperparameters["weight_decay"],
+            loss=hyperparameters["loss"],
             device=device,
+            restore_best_weights=hyperparameters["restore_best_weights"],
         )
         ensemble_models.append(model)
 

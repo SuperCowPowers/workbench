@@ -236,10 +236,19 @@ def train_model(
     patience: int = 20,
     batch_size: int = 128,
     learning_rate: float = 1e-3,
+    weight_decay: float = 1e-4,
     loss: str = "L1Loss",
     device: str = "cpu",
+    restore_best_weights: bool = False,
 ) -> tuple[TabularMLP, dict]:
     """Train the model with early stopping.
+
+    Args:
+        weight_decay: AdamW L2 regularization coefficient. Default 1e-4.
+        restore_best_weights: If False (default for Workbench UQ ensembles), keep
+            the final weights — each fold stops `patience` epochs past its
+            best-val-loss point and holds that slightly-overfit state. This
+            produces genuine ensemble diversity on MLP tabular models
 
     Returns:
         Tuple of (trained model, training history dict)
@@ -275,7 +284,7 @@ def train_model(
             raise ValueError(f"Unknown loss '{loss}'. Supported: {list(loss_map.keys())}")
         criterion = loss_map[loss]()
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-4)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=patience // 3)
 
     # Training loop with early stopping
@@ -341,8 +350,8 @@ def train_model(
             print(f"Early stopping at epoch {epoch + 1}")
             break
 
-    # Load best weights
-    if best_state is not None:
+    # Load best weights (if the flag is set)
+    if restore_best_weights and best_state is not None:
         model.load_state_dict(best_state)
 
     model = model.to("cpu")
