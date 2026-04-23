@@ -415,6 +415,9 @@ def get_scaffold(smiles: str) -> str:
     from rdkit import Chem
     from rdkit.Chem.Scaffolds import MurckoScaffold
 
+    # RDKit raises TypeError on non-strings (e.g. NaN floats from CSV), so guard first
+    if not isinstance(smiles, str) or not smiles:
+        return ""
     mol = Chem.MolFromSmiles(smiles)
     if mol is None:
         return ""
@@ -473,6 +476,9 @@ def get_butina_clusters(smiles_list: list[str], cutoff: float = 0.4) -> np.ndarr
     fps = []
     valid_indices = []
     for i, smi in enumerate(smiles_list):
+        # Guard non-strings (e.g. NaN) before RDKit — it raises TypeError on floats
+        if not isinstance(smi, str) or not smi:
+            continue
         mol = Chem.MolFromSmiles(smi)
         if mol is not None:
             fp = fp_gen.GetFingerprint(mol)
