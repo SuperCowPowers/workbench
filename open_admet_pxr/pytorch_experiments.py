@@ -149,9 +149,12 @@ def _metrics_for_model(model_name: str) -> dict[str, Any] | None:
         return None
 
     target = next(
-        (c for c in df.columns
-         if c not in {"molecule_name", "smiles", "prediction", "prediction_std", "confidence"}
-         and not c.startswith("q_")),
+        (
+            c
+            for c in df.columns
+            if c not in {"molecule_name", "smiles", "prediction", "prediction_std", "confidence"}
+            and not c.startswith("q_")
+        ),
         None,
     )
     if target is None or "prediction" not in df.columns or "prediction_std" not in df.columns:
@@ -164,7 +167,7 @@ def _metrics_for_model(model_name: str) -> dict[str, Any] | None:
     return {
         "model": model_name,
         "mae": float(np.mean(residual)),
-        "rmse": float(np.sqrt(np.mean(residual ** 2))),
+        "rmse": float(np.sqrt(np.mean(residual**2))),
         "r2": float(1 - np.sum((y - p) ** 2) / np.sum((y - y.mean()) ** 2)),
         "spearman_std_res": float(spearman_sr),
         "std_ratio": float(p.std() / y.std()) if y.std() > 0 else float("nan"),
@@ -189,7 +192,6 @@ def summarize(sort_by: str = "spearman_std_res") -> pd.DataFrame:
         return pd.DataFrame()
 
     df = pd.DataFrame(rows).sort_values(sort_by, ascending=False).reset_index(drop=True)
-    float_cols = ["mae", "rmse", "r2", "spearman_std_res", "std_ratio"]
     with pd.option_context("display.max_columns", None, "display.width", 160, "display.float_format", "{:.3f}".format):
         print("\n" + df.to_string(index=False))
     return df
@@ -213,7 +215,10 @@ def main(rebuild: bool, summarize_only: bool) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rebuild", action="store_true", help="Force-rebuild every grid cell.")
-    parser.add_argument("--summarize", action="store_true",
-                        help="Skip training; print a leaderboard of existing grid cells' UQ metrics.")
+    parser.add_argument(
+        "--summarize",
+        action="store_true",
+        help="Skip training; print a leaderboard of existing grid cells' UQ metrics.",
+    )
     args = parser.parse_args()
     main(rebuild=args.rebuild, summarize_only=args.summarize)
