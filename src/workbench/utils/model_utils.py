@@ -392,10 +392,11 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     """
     Evaluate uncertainty quantification model with essential metrics.
     Args:
-        df: DataFrame with predictions and uncertainty estimates.
-            Must contain the target column, a prediction column ("prediction"), and either
-            quantile columns ("q_025", "q_975", "q_25", "q_75") or a standard deviation
-            column ("prediction_std").
+        df: DataFrame with predictions and uncertainty estimates. Must contain the target
+            column, a "prediction" column, and a "prediction_std" column (required for
+            CRPS and median_std). Quantile columns ("q_025", "q_975", "q_05", "q_95",
+            "q_10", "q_90", "q_25", "q_75") are used for coverage/width when present;
+            otherwise Gaussian bounds are derived from "prediction_std".
         target_col: Name of the true target column in the DataFrame.
     Returns:
         Dictionary of computed metrics.

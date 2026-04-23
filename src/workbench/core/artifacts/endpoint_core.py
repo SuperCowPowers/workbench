@@ -618,22 +618,26 @@ class EndpointCore(Artifact):
             self.log.info(f"UQ columns from training: {', '.join(additional_columns)}")
 
         is_multi_target = len(target_list) > 1
+        is_regression = model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
 
-        # Capture uncertainty metrics
-        if is_multi_target:
+        # Capture uncertainty metrics (regression only — uq_metrics requires prediction_std)
+        if is_regression and is_multi_target:
             # Multi-target: compute UQ metrics per target using per-target columns
             for target in target_list:
-                std_col = f"{target}_pred_std"
-                if std_col not in out_of_fold_df.columns:
-                    continue
                 uq_df = out_of_fold_df.dropna(subset=[target]).copy()
                 uq_df["prediction"] = uq_df[f"{target}_pred"]
-                uq_df["prediction_std"] = uq_df[std_col]
+                uq_df["prediction_std"] = uq_df[f"{target}_pred_std"]
                 if f"{target}_confidence" in uq_df.columns:
                     uq_df["confidence"] = uq_df[f"{target}_confidence"]
                 metrics = uq_metrics(uq_df, target)
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/cv_{target}", metrics)
-        elif "prediction_std" in out_of_fold_df.columns:
+            # Also capture full_cross_fold metrics for the primary target so default
+            # UI views (which look up "full_cross_fold") work on multi-target models.
+            primary_metrics = uq_metrics(out_of_fold_df.dropna(subset=[primary_target]), primary_target)
+            self.param_store.upsert(
+                f"/workbench/models/{model.name}/inference/full_cross_fold", primary_metrics
+            )
+        elif is_regression:
             metrics = uq_metrics(out_of_fold_df, primary_target)
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/full_cross_fold", metrics)
         for target in target_list:
@@ -673,6 +677,22 @@ class EndpointCore(Artifact):
                     id_column=id_column,
                     include_quantiles=include_quantiles,
                 )
+
+                # Primary target also drives a "full_cross_fold" capture so default
+                # UI views (scatter_plot, model_plot, model_details, etc.) work on
+                # multi-target models by showing the primary target's predictions.
+                if target == primary_target:
+                    self._capture_inference_results(
+                        "full_cross_fold",
+                        mt_df,
+                        target,
+                        model_type,
+                        target_metrics,
+                        "Full Cross Fold",
+                        features=additional_columns,
+                        id_column=id_column,
+                        include_quantiles=include_quantiles,
+                    )
 
             # Single-target: save as "full_cross_fold"
             if not is_multi_target:
