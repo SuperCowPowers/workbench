@@ -634,9 +634,7 @@ class EndpointCore(Artifact):
             # Also capture full_cross_fold metrics for the primary target so default
             # UI views (which look up "full_cross_fold") work on multi-target models.
             primary_metrics = uq_metrics(out_of_fold_df.dropna(subset=[primary_target]), primary_target)
-            self.param_store.upsert(
-                f"/workbench/models/{model.name}/inference/full_cross_fold", primary_metrics
-            )
+            self.param_store.upsert(f"/workbench/models/{model.name}/inference/full_cross_fold", primary_metrics)
         elif is_regression:
             metrics = uq_metrics(out_of_fold_df, primary_target)
             self.param_store.upsert(f"/workbench/models/{model.name}/inference/full_cross_fold", metrics)
