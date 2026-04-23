@@ -105,4 +105,3 @@ class FeatureEndpoint(Endpoint):
             return register_features(self)
 
         return cols
-
