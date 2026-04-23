@@ -22,7 +22,7 @@ Deploy-time writer: :func:`workbench.utils.feature_endpoint_utils.register_featu
 entry that ``feature_list()`` reads back.
 """
 
-from typing import List, Optional
+from typing import List
 
 from workbench.api.endpoint import Endpoint
 
@@ -30,26 +30,11 @@ from workbench.api.endpoint import Endpoint
 class FeatureEndpoint(Endpoint):
     """Workbench Endpoint that reports its registered feature columns.
 
-    Auto-detects whether the underlying endpoint was deployed as async or
-    realtime (via ``workbench_meta["async_endpoint"]``). For async endpoints,
-    inference is routed through an internal ``AsyncEndpoint`` so the
-    S3-based async invocation path is used — callers get correct behavior
-    from a single object.
+    Inherits async/realtime auto-routing from :class:`Endpoint` — for
+    async-deployed endpoints, inference is transparently routed through an
+    internal ``AsyncEndpoint`` so callers get correct behavior from a single
+    object.
     """
-
-    def __init__(self, endpoint_name: str):
-        super().__init__(endpoint_name)
-        # If this endpoint was deployed async, keep an internal AsyncEndpoint
-        # for inference delegation. All other Endpoint methods are inherited
-        # from EndpointCore and work identically on either transport.
-        if (self.workbench_meta() or {}).get("async_endpoint"):
-            # Lazy import — keeps the api.endpoint ↔ api.async_endpoint import
-            # graph clean (both end up importing EndpointCore).
-            from workbench.api.async_endpoint import AsyncEndpoint
-
-            self._async: Optional[AsyncEndpoint] = AsyncEndpoint(endpoint_name)
-        else:
-            self._async = None
 
     def feature_list(self) -> List[str]:
         """Return this endpoint's feature columns.
@@ -121,19 +106,3 @@ class FeatureEndpoint(Endpoint):
 
         return cols
 
-    # --------------------------------------------------------------------
-    # Inference delegation — routes to the async path for async-deployed
-    # endpoints. All Endpoint methods that do inference (auto_inference,
-    # full_inference, ts_inference, cross_fold_inference, etc.) internally
-    # call self.inference() / self.fast_inference(), so overriding just
-    # these two routes the whole family correctly.
-    # --------------------------------------------------------------------
-    def inference(self, *args, **kwargs):
-        if self._async is not None:
-            return self._async.inference(*args, **kwargs)
-        return super().inference(*args, **kwargs)
-
-    def fast_inference(self, *args, **kwargs):
-        if self._async is not None:
-            return self._async.fast_inference(*args, **kwargs)
-        return super().fast_inference(*args, **kwargs)

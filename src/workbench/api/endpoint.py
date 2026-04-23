@@ -18,7 +18,21 @@ class Endpoint(EndpointCore):
         my_endpoint.details()
         my_endpoint.inference(eval_df)
         ```
+
+    If the underlying endpoint was deployed as async (``workbench_meta["async_endpoint"]``),
+    ``inference()`` / ``fast_inference()`` transparently route through an internal
+    ``AsyncEndpoint`` so callers get correct behavior from a single object.
     """
+
+    def __init__(self, endpoint_name: str):
+        super().__init__(endpoint_name)
+        if (self.workbench_meta() or {}).get("async_endpoint"):
+            # Lazy import keeps api.endpoint ↔ api.async_endpoint clean.
+            from workbench.api.async_endpoint import AsyncEndpoint
+
+            self._async = AsyncEndpoint(endpoint_name)
+        else:
+            self._async = None
 
     def details(self, **kwargs) -> dict:
         """Endpoint Details
@@ -48,6 +62,8 @@ class Endpoint(EndpointCore):
         Returns:
             pd.DataFrame: The DataFrame with predictions
         """
+        if self._async is not None:
+            return self._async.inference(eval_df, capture_name, id_column, drop_error_rows, include_quantiles)
         return super().inference(eval_df, capture_name, id_column, drop_error_rows, include_quantiles)
 
     def auto_inference(self) -> pd.DataFrame:
@@ -96,6 +112,8 @@ class Endpoint(EndpointCore):
         Note:
             There's no sanity checks or error handling... just FAST Inference!
         """
+        if self._async is not None:
+            return self._async.fast_inference(eval_df, threads=threads)
         return super().fast_inference(eval_df, threads=threads)
 
     def cross_fold_inference(self, include_quantiles: bool = False) -> pd.DataFrame:
