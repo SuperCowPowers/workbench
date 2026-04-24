@@ -497,7 +497,7 @@ class EndpointCore(Artifact):
             target_list = targets if isinstance(targets, list) else [targets]
             primary_target = target_list[0]
 
-            # For single-target models (99% of cases), just save with capture_name
+            # For single-target models, just save with capture_name
             # For multi-target models, save each as {prefix}_{target} plus primary as capture_name
             is_multi_target = len(target_list) > 1
 
@@ -550,7 +550,8 @@ class EndpointCore(Artifact):
                     )
 
             # Capture uncertainty metrics if prediction_std is available (UQ, ChemProp, etc.)
-            if "prediction_std" in prediction_df.columns:
+            regressor_types = [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
+            if model.model_type in regressor_types and "prediction_std" in prediction_df.columns:
                 metrics = uq_metrics(prediction_df, primary_target)
                 self.param_store.upsert(f"/workbench/models/{model.name}/inference/{capture_name}", metrics)
 
