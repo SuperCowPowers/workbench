@@ -1,189 +1,32 @@
-"""Auto-scaling for SageMaker endpoints (batch-async and realtime).
+"""Auto-scaling for SageMaker endpoints.
 
-Architecture
-------------
-Scaling is modeled as a **mode** — a named strategy that emits a list of
-policy specs. The mode shapes the endpoint's behaviour:
+Two modes:
+  - "batch": step policies for async endpoints. ApproximateBacklogSize >= 1
+    jumps to max in one step; < 1 for N minutes drains to min. Pile of work
+    arrives, chew through it, go cold.
+  - "realtime": single target-tracking policy on InvocationsPerInstance.
 
-    "batch"      → async endpoints. Step policies:
-                     - scale-out on HasBacklogWithoutCapacity >= 1
-                       ExactCapacity = max_capacity  (instant jump to full fleet)
-                     - scale-in on ApproximateBacklogSize < 1 for N minutes
-                       ExactCapacity = min_capacity  (drop to zero fast)
-                   Optimized for "pile of work arrives, chew through it, go
-                   cold." Predictable, no target-tracking to fight the jumps.
-
-    "realtime"   → realtime endpoints. Target-tracking on InvocationsPerInstance.
-
-    "dynamic"    → (future) async with target-tracking on backlog-per-instance
-                   for continuous / unpredictable traffic.
-
-Extending with a new mode is a single-function change: define
-``_<mode>_mode_specs(...)`` that returns a list of ``StepPolicySpec`` /
-``TargetTrackingSpec``, then add it to ``_MODE_HANDLERS``. Generic
-installers translate specs → AWS API calls.
-
-Naming convention
------------------
-Scaling policies and manually-created CloudWatch alarms are named
-``{endpoint_name}-{role}`` (e.g. ``smiles-to-3d-full-v1-scale-out``).
-``deregister_autoscaling`` finds them by prefix, so we're not hard-coding
-a name list that drifts when modes evolve.
+Resources are named ``{endpoint_name}-{role}`` (e.g. ``ep-scale-out``).
+``deregister_autoscaling`` finds them by prefix.
 """
 
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from typing import Iterable, List, Optional, Union
+from typing import Optional
 
 from botocore.exceptions import ClientError
 
 log = logging.getLogger("workbench")
 
-# ---------------------------------------------------------------------------
-# AWS metric definitions
-# ---------------------------------------------------------------------------
-_APPROXIMATE_BACKLOG_SIZE = {
-    "MetricName": "ApproximateBacklogSize",
-    "Namespace": "AWS/SageMaker",
-    "Statistic": "Maximum",
-}
-_INVOCATIONS_PER_INSTANCE = {
-    "MetricName": "InvocationsPerInstance",
-    "Namespace": "AWS/SageMaker",
-    "Statistic": "Sum",
-}
-
-# ---------------------------------------------------------------------------
-# Defaults — callers override via kwargs (typically sourced from workbench_meta).
-# ---------------------------------------------------------------------------
-_DEFAULT_MAX_CAPACITY = 8
-_DEFAULT_SCALE_IN_IDLE_MINUTES = 5  # batch mode only — minutes of empty queue before draining
-_DEFAULT_REALTIME_TARGET = 750.0  # invocations per instance
-
 _SERVICE_NS = "sagemaker"
 _SCALABLE_DIM = "sagemaker:variant:DesiredInstanceCount"
 
-
-# ---------------------------------------------------------------------------
-# Policy specs (data-only — installation logic is elsewhere)
-# ---------------------------------------------------------------------------
-@dataclass(frozen=True)
-class StepPolicySpec:
-    """A step-scaling policy + its triggering CloudWatch alarm.
-
-    ``adjustment_type="ExactCapacity"`` is preferred for batch mode because
-    it's idempotent — an alarm re-firing won't overshoot. ``ChangeInCapacity``
-    is available for future modes that want additive semantics.
-    """
-
-    role: str  # "scale-out" | "scale-in" — suffix for policy & alarm names
-    metric: dict
-    threshold: float
-    comparison: str  # "GreaterThanOrEqualToThreshold" | "LessThanThreshold" | ...
-    evaluation_periods: int
-    datapoints_to_alarm: int
-    period_seconds: int
-    treat_missing_data: str
-    adjustment_type: str  # "ExactCapacity" | "ChangeInCapacity"
-    adjustment: int
-    cooldown_seconds: int
+_DEFAULT_MAX_CAPACITY = 8
+_DEFAULT_SCALE_IN_IDLE_MINUTES = 5
+_DEFAULT_REALTIME_TARGET = 750.0
 
 
-@dataclass(frozen=True)
-class TargetTrackingSpec:
-    """A target-tracking scaling policy on a custom metric.
-
-    AWS auto-creates the high/low alarms (with UUID-suffixed names we don't
-    control); they're auto-cleaned when the policy is deleted.
-    """
-
-    role: str  # e.g. "invocations-target" | "backlog-target"
-    metric: dict
-    target_value: float
-    scale_in_cooldown: int
-    scale_out_cooldown: int
-
-
-Spec = Union[StepPolicySpec, TargetTrackingSpec]
-
-
-# ---------------------------------------------------------------------------
-# Mode handlers — each returns a list of policy specs for the given params
-# ---------------------------------------------------------------------------
-def _batch_mode_specs(max_capacity: int, min_capacity: int, scale_in_idle_minutes: int) -> List[Spec]:
-    """Specs for batch-async endpoints. Jump to max on backlog, idle→min, no
-    mid-range dithering. Both triggers key off ``ApproximateBacklogSize`` so
-    they're symmetric and work at any current instance count.
-
-    (We deliberately don't use ``HasBacklogWithoutCapacity`` — it only fires
-    when instances=0, so it can't take us N→max once we already have any
-    instances running.)
-    """
-    return [
-        # 0 or N → max_capacity whenever there's meaningful backlog. Fires in
-        # ~60s from the first queued request (CloudWatch metric period floor).
-        # cooldown_seconds=0 means no artificial delay after firing —
-        # ExactCapacity is idempotent so re-fires while the queue drains just
-        # re-assert the full fleet size.
-        StepPolicySpec(
-            role="scale-out",
-            metric=_APPROXIMATE_BACKLOG_SIZE,
-            threshold=1.0,
-            comparison="GreaterThanOrEqualToThreshold",
-            evaluation_periods=1,
-            datapoints_to_alarm=1,
-            period_seconds=60,
-            treat_missing_data="notBreaching",
-            adjustment_type="ExactCapacity",
-            adjustment=max_capacity,
-            cooldown_seconds=0,
-        ),
-        # max_capacity → min_capacity when the queue has been empty for a
-        # sustained window. `ApproximateBacklogSize < 1` with N consecutive
-        # 60-s datapoints means N minutes of zero queue. SageMaker won't kill
-        # an instance mid-invocation anyway, so this is a "truly idle" signal.
-        # cooldown_seconds=0 — the evaluation window already gates re-firing.
-        StepPolicySpec(
-            role="scale-in",
-            metric=_APPROXIMATE_BACKLOG_SIZE,
-            threshold=1.0,
-            comparison="LessThanThreshold",
-            evaluation_periods=scale_in_idle_minutes,
-            datapoints_to_alarm=scale_in_idle_minutes,
-            period_seconds=60,
-            treat_missing_data="notBreaching",
-            adjustment_type="ExactCapacity",
-            adjustment=min_capacity,
-            cooldown_seconds=0,
-        ),
-    ]
-
-
-def _realtime_mode_specs(target_value: float) -> List[Spec]:
-    """Specs for realtime endpoints — single target-tracking policy."""
-    return [
-        TargetTrackingSpec(
-            role="invocations-target",
-            metric=_INVOCATIONS_PER_INSTANCE,
-            target_value=target_value,
-            scale_in_cooldown=900,
-            scale_out_cooldown=60,
-        ),
-    ]
-
-
-_MODE_HANDLERS = {
-    "batch": _batch_mode_specs,
-    "realtime": _realtime_mode_specs,
-    # Future: "dynamic": _dynamic_mode_specs,
-}
-
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
 def register_autoscaling(
     boto3_session,
     endpoint_name: str,
@@ -193,48 +36,32 @@ def register_autoscaling(
     scale_in_idle_minutes: int = _DEFAULT_SCALE_IN_IDLE_MINUTES,
     realtime_target: float = _DEFAULT_REALTIME_TARGET,
     raise_on_error: bool = True,
-) -> dict:
+) -> None:
     """Register autoscaling policies for a SageMaker endpoint.
 
     Args:
         boto3_session: Active boto3 Session.
         endpoint_name: SageMaker endpoint name.
-        auto_scaling_mode: Scaling strategy. One of ``"batch"`` (async step-scaling) or
-            ``"realtime"`` (invocations target-tracking). Default ``"batch"``.
-        min_capacity: Autoscaler floor. Default 0 (scale-to-zero). Batch mode's
-            scale-in action drops to this value; realtime should usually be >= 1.
+        auto_scaling_mode: ``"batch"`` (async step-scaling) or ``"realtime"``
+            (invocations target-tracking). Default ``"batch"``.
+        min_capacity: Autoscaler floor. Default 0 (scale-to-zero). Realtime
+            should usually be >= 1.
         max_capacity: Autoscaler ceiling. Default 8.
-        scale_in_idle_minutes: Batch mode only. Minutes of empty queue before
-            scaling in. Default 15.
-        realtime_target: Realtime mode only. Target InvocationsPerInstance for
-            the target-tracking policy. Default 750.
-        raise_on_error: If True, re-raise exceptions after logging.
-
-    Returns:
-        Dict with 'scalable_targets' and 'scaling_policies' from post-registration
-        describe calls.
+        scale_in_idle_minutes: Batch only. Minutes of empty queue before
+            scaling in. Default 5.
+        realtime_target: Realtime only. Target InvocationsPerInstance. Default 750.
+        raise_on_error: If True, re-raise after logging.
     """
-    if auto_scaling_mode not in _MODE_HANDLERS:
-        raise ValueError(f"Unsupported auto_scaling_mode {auto_scaling_mode!r}. Valid: {sorted(_MODE_HANDLERS)}")
+    if auto_scaling_mode not in ("batch", "realtime"):
+        raise ValueError(f"Unsupported auto_scaling_mode {auto_scaling_mode!r}. Valid: ['batch', 'realtime']")
 
     aas = boto3_session.client("application-autoscaling")
     cw = boto3_session.client("cloudwatch")
     resource_id = f"endpoint/{endpoint_name}/variant/AllTraffic"
 
-    # Build mode-specific specs. Each mode owns exactly the params it needs.
-    if auto_scaling_mode == "batch":
-        specs = _batch_mode_specs(max_capacity, min_capacity, scale_in_idle_minutes)
-    elif auto_scaling_mode == "realtime":
-        specs = _realtime_mode_specs(realtime_target)
-    else:  # defensive — _MODE_HANDLERS check above should prevent this
-        raise ValueError(f"Unsupported auto_scaling_mode {auto_scaling_mode!r}")
-
-    # Preflight: warn if max_capacity exceeds the account's per-instance-type
-    # endpoint-usage quota. Purely advisory — doesn't block the install.
     _preflight_quota_check(boto3_session, endpoint_name, max_capacity)
 
     try:
-        # Register the scalable target (idempotent). Min/max bound everything else.
         aas.register_scalable_target(
             ServiceNamespace=_SERVICE_NS,
             ResourceId=resource_id,
@@ -242,273 +69,200 @@ def register_autoscaling(
             MinCapacity=min_capacity,
             MaxCapacity=max_capacity,
         )
-
-        # Install each spec. Dispatch by type keeps add-a-new-spec-kind simple.
-        for spec in specs:
-            if isinstance(spec, StepPolicySpec):
-                _install_step_policy(aas, cw, endpoint_name, resource_id, spec)
-            elif isinstance(spec, TargetTrackingSpec):
-                _install_target_tracking(aas, endpoint_name, resource_id, spec)
-            else:  # defensive
-                raise TypeError(f"Unknown spec type: {type(spec).__name__}")
-
+        if auto_scaling_mode == "batch":
+            _install_batch(aas, cw, endpoint_name, resource_id, min_capacity, max_capacity, scale_in_idle_minutes)
+        else:
+            _install_realtime(aas, endpoint_name, resource_id, realtime_target)
     except Exception:
-        log.exception(
-            f"Failed to register autoscaling for '{endpoint_name}' " f"(auto_scaling_mode={auto_scaling_mode})"
-        )
+        log.exception(f"Failed to register autoscaling for '{endpoint_name}' (mode={auto_scaling_mode})")
         if raise_on_error:
             raise
-        return {"scalable_targets": [], "scaling_policies": []}
+        return
 
-    verified = _describe_registration(aas, resource_id)
     log.important(
-        f"Autoscaling registered: endpoint='{endpoint_name}' "
-        f"auto_scaling_mode={auto_scaling_mode} "
-        f"min={min_capacity} max={max_capacity} "
-        f"policies={len(verified['scaling_policies'])} "
-        f"specs={[s.role for s in specs]}"
+        f"Autoscaling registered: endpoint='{endpoint_name}' mode={auto_scaling_mode} "
+        f"min={min_capacity} max={max_capacity}"
     )
-    for spec in specs:
-        _log_spec(endpoint_name, spec)
-    return verified
 
 
-def deregister_autoscaling(boto3_session, endpoint_name: str, raise_on_error: bool = False) -> None:
-    """Remove all scaling policies, the scalable target, and our manually-created
-    CloudWatch alarms for an endpoint.
+def deregister_autoscaling(boto3_session, endpoint_name: str) -> None:
+    """Best-effort cleanup of all scaling policies, the scalable target, and our
+    CloudWatch alarms for an endpoint. Errors are logged, never raised.
 
-    Discovery-based: we don't keep a hardcoded list of policy/alarm names, so
-    this cleans up regardless of which mode the endpoint was deployed with
-    (and across mode changes over the endpoint's lifetime).
+    Discovery-based: works regardless of which mode the endpoint was deployed
+    with (and across mode changes over its lifetime).
     """
     aas = boto3_session.client("application-autoscaling")
     cw = boto3_session.client("cloudwatch")
     resource_id = f"endpoint/{endpoint_name}/variant/AllTraffic"
 
-    # 1. Delete every scaling policy attached to this scalable target.
     try:
         policies = aas.describe_scaling_policies(
             ServiceNamespace=_SERVICE_NS,
             ResourceId=resource_id,
             ScalableDimension=_SCALABLE_DIM,
         ).get("ScalingPolicies", [])
-    except Exception:
-        log.exception(f"Failed to list scaling policies for '{endpoint_name}'")
-        if raise_on_error:
-            raise
-        return
+        for pol in policies:
+            try:
+                aas.delete_scaling_policy(
+                    PolicyName=pol["PolicyName"],
+                    ServiceNamespace=_SERVICE_NS,
+                    ResourceId=resource_id,
+                    ScalableDimension=_SCALABLE_DIM,
+                )
+            except aas.exceptions.ObjectNotFoundException:
+                pass
 
-    for pol in policies:
         try:
-            aas.delete_scaling_policy(
-                PolicyName=pol["PolicyName"],
+            aas.deregister_scalable_target(
                 ServiceNamespace=_SERVICE_NS,
                 ResourceId=resource_id,
                 ScalableDimension=_SCALABLE_DIM,
             )
+            log.important(f"Autoscaling deregistered for '{endpoint_name}'")
         except aas.exceptions.ObjectNotFoundException:
-            pass  # already gone
-        except Exception:
-            log.exception(f"Failed to delete scaling policy '{pol['PolicyName']}'")
-            if raise_on_error:
-                raise
+            log.info(f"No scalable target for '{endpoint_name}' — nothing to deregister")
 
-    # 2. Deregister the scalable target itself.
-    try:
-        aas.deregister_scalable_target(
-            ServiceNamespace=_SERVICE_NS,
-            ResourceId=resource_id,
-            ScalableDimension=_SCALABLE_DIM,
-        )
-        log.important(f"Autoscaling deregistered for '{endpoint_name}'")
-    except aas.exceptions.ObjectNotFoundException:
-        log.info(f"No scalable target found for '{endpoint_name}' — nothing to deregister")
+        # Sweep our endpoint-prefixed CloudWatch alarms. Target-tracking alarms
+        # have UUID names (no endpoint prefix) and are auto-deleted by AWS when
+        # their policy is deleted above.
+        alarms = []
+        for page in cw.get_paginator("describe_alarms").paginate(AlarmNamePrefix=f"{endpoint_name}-"):
+            alarms.extend(a["AlarmName"] for a in page.get("MetricAlarms", []))
+        if alarms:
+            cw.delete_alarms(AlarmNames=alarms)
     except Exception:
-        log.exception(f"Failed to deregister scalable target for '{endpoint_name}'")
-        if raise_on_error:
-            raise
-
-    # 3. Clean up our step-scaling alarms by prefix. Target-tracking alarms
-    #    are auto-deleted by AWS when the policy is deleted above, so we only
-    #    need to handle ones we put_metric_alarm'd ourselves.
-    _delete_alarms_by_prefix(cw, endpoint_name, raise_on_error=raise_on_error)
+        log.exception(f"Failed to deregister autoscaling for '{endpoint_name}'")
 
 
-# ---------------------------------------------------------------------------
-# Installers — translate specs → AWS API calls
-# ---------------------------------------------------------------------------
-def _install_step_policy(aas, cw, endpoint_name: str, resource_id: str, spec: StepPolicySpec) -> None:
-    """Install a StepScaling policy + the CloudWatch alarm that fires it."""
-    policy_name = _policy_name(endpoint_name, spec.role)
-    alarm_name = _alarm_name(endpoint_name, spec.role)
+def _install_batch(aas, cw, endpoint_name, resource_id, min_capacity, max_capacity, scale_in_idle_minutes):
+    """Step policies for async/batch endpoints.
 
-    pol_resp = aas.put_scaling_policy(
-        PolicyName=policy_name,
+    Both triggers key off ApproximateBacklogSize so they're symmetric and work
+    at any current instance count. (HasBacklogWithoutCapacity only fires when
+    instances=0, so it can't take us N→max once instances are running.)
+    """
+    _put_step_policy_with_alarm(
+        aas, cw, endpoint_name, resource_id,
+        role="scale-out",
+        adjustment=max_capacity,
+        comparison="GreaterThanOrEqualToThreshold",
+        evaluation_periods=1,
+    )
+    _put_step_policy_with_alarm(
+        aas, cw, endpoint_name, resource_id,
+        role="scale-in",
+        adjustment=min_capacity,
+        comparison="LessThanThreshold",
+        evaluation_periods=scale_in_idle_minutes,
+    )
+
+
+def _put_step_policy_with_alarm(aas, cw, endpoint_name, resource_id, role, adjustment, comparison, evaluation_periods):
+    """Install one ExactCapacity step policy + its CloudWatch alarm.
+
+    Step bound is signed against the alarm threshold: GreaterThan* alarms use
+    LowerBound=0 (positive breach), LessThan* alarms use UpperBound=0 (negative
+    breach). Picking the wrong bound silently no-ops — the alarm fires but no
+    step matches the breach.
+    """
+    name = f"{endpoint_name}-{role}"
+    bound = "MetricIntervalUpperBound" if comparison.startswith("Less") else "MetricIntervalLowerBound"
+
+    pol = aas.put_scaling_policy(
+        PolicyName=name,
         ServiceNamespace=_SERVICE_NS,
         ResourceId=resource_id,
         ScalableDimension=_SCALABLE_DIM,
         PolicyType="StepScaling",
         StepScalingPolicyConfiguration={
-            "AdjustmentType": spec.adjustment_type,
-            "Cooldown": spec.cooldown_seconds,
+            "AdjustmentType": "ExactCapacity",
+            "Cooldown": 0,
             "MetricAggregationType": "Average",
-            "StepAdjustments": [
-                # MetricIntervalLowerBound=0 means "at or above the alarm's threshold."
-                {"MetricIntervalLowerBound": 0, "ScalingAdjustment": spec.adjustment},
-            ],
+            "StepAdjustments": [{bound: 0, "ScalingAdjustment": adjustment}],
         },
     )
 
     cw.put_metric_alarm(
-        AlarmName=alarm_name,
-        MetricName=spec.metric["MetricName"],
-        Namespace=spec.metric["Namespace"],
-        Statistic=spec.metric["Statistic"],
+        AlarmName=name,
+        MetricName="ApproximateBacklogSize",
+        Namespace="AWS/SageMaker",
+        Statistic="Maximum",
         Dimensions=[{"Name": "EndpointName", "Value": endpoint_name}],
-        Period=spec.period_seconds,
-        EvaluationPeriods=spec.evaluation_periods,
-        DatapointsToAlarm=spec.datapoints_to_alarm,
-        Threshold=spec.threshold,
-        ComparisonOperator=spec.comparison,
-        TreatMissingData=spec.treat_missing_data,
-        AlarmActions=[pol_resp["PolicyARN"]],
+        Period=60,
+        EvaluationPeriods=evaluation_periods,
+        DatapointsToAlarm=evaluation_periods,
+        Threshold=1.0,
+        ComparisonOperator=comparison,
+        TreatMissingData="notBreaching",
+        AlarmActions=[pol["PolicyARN"]],
     )
 
 
-def _install_target_tracking(aas, endpoint_name: str, resource_id: str, spec: TargetTrackingSpec) -> None:
-    """Install a TargetTrackingScaling policy. AWS auto-creates the alarms."""
+def _install_realtime(aas, endpoint_name, resource_id, target_value):
+    """Target-tracking on InvocationsPerInstance. AWS auto-creates the alarms."""
     aas.put_scaling_policy(
-        PolicyName=_policy_name(endpoint_name, spec.role),
+        PolicyName=f"{endpoint_name}-invocations-target",
         ServiceNamespace=_SERVICE_NS,
         ResourceId=resource_id,
         ScalableDimension=_SCALABLE_DIM,
         PolicyType="TargetTrackingScaling",
         TargetTrackingScalingPolicyConfiguration={
-            "TargetValue": spec.target_value,
+            "TargetValue": target_value,
             "CustomizedMetricSpecification": {
-                **spec.metric,
+                "MetricName": "InvocationsPerInstance",
+                "Namespace": "AWS/SageMaker",
+                "Statistic": "Sum",
                 "Dimensions": [{"Name": "EndpointName", "Value": endpoint_name}],
             },
-            "ScaleInCooldown": spec.scale_in_cooldown,
-            "ScaleOutCooldown": spec.scale_out_cooldown,
+            "ScaleInCooldown": 900,
+            "ScaleOutCooldown": 60,
         },
     )
 
 
-# ---------------------------------------------------------------------------
-# Naming conventions (one source of truth — no drift between install & cleanup)
-# ---------------------------------------------------------------------------
-def _policy_name(endpoint_name: str, role: str) -> str:
-    return f"{endpoint_name}-{role}"
-
-
-def _alarm_name(endpoint_name: str, role: str) -> str:
-    return f"{endpoint_name}-{role}"
-
-
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
-def _delete_alarms_by_prefix(cw, endpoint_name: str, raise_on_error: bool = False) -> None:
-    """Delete all CloudWatch alarms whose name starts with the endpoint name.
-
-    Also sweeps legacy alarm names (pre-refactor) so cleanup works across the
-    rename. Legacy names: ``TargetTracking-endpoint/{name}/variant/AllTraffic-has-backlog``
-    and ``...-rapid-scale-out``.
-    """
-    try:
-        # Current convention: alarms prefixed with the endpoint name.
-        matching: List[str] = []
-        paginator = cw.get_paginator("describe_alarms")
-        for page in paginator.paginate(AlarmNamePrefix=f"{endpoint_name}-"):
-            matching.extend(a["AlarmName"] for a in page.get("MetricAlarms", []))
-
-        # Legacy names from the pre-refactor code. Harmless if they don't exist —
-        # delete_alarms ignores missing names silently.
-        legacy = [
-            f"TargetTracking-endpoint/{endpoint_name}/variant/AllTraffic-has-backlog",
-            f"TargetTracking-endpoint/{endpoint_name}/variant/AllTraffic-rapid-scale-out",
-        ]
-
-        all_alarms = list(dict.fromkeys(matching + legacy))  # dedupe, preserve order
-        if all_alarms:
-            # delete_alarms accepts up to 100 names per call.
-            for batch in _chunked(all_alarms, 100):
-                cw.delete_alarms(AlarmNames=list(batch))
-    except Exception:
-        log.exception(f"Failed to delete CloudWatch alarms for '{endpoint_name}'")
-        if raise_on_error:
-            raise
-
-
-def _chunked(seq: Iterable, size: int) -> Iterable[list]:
-    buf: list = []
-    for item in seq:
-        buf.append(item)
-        if len(buf) >= size:
-            yield buf
-            buf = []
-    if buf:
-        yield buf
-
-
 def _preflight_quota_check(boto3_session, endpoint_name: str, max_capacity: int) -> None:
-    """Warn if ``max_capacity`` exceeds the account's per-instance-type endpoint quota.
+    """Warn if max_capacity exceeds the account's per-instance-type endpoint quota.
 
-    Looks up the SageMaker endpoint's instance type, then queries AWS Service
-    Quotas for the matching ``<instance_type> for endpoint usage`` quota. If
-    that quota is below ``max_capacity``, emits an IMPORTANT log line so the
-    operator knows scale-out will be capped at the quota (and can request an
-    increase proactively).
+    Purely advisory — never raises. Fails open on permissions, serverless,
+    quota-not-found, or unknown region.
 
-    Purely advisory — never raises. Fails open on any issue (permissions,
-    serverless endpoint, instance type not found in quotas, unknown region):
-    skipping the preflight is always preferable to blocking a deploy.
-
-    Requires the ``servicequotas:ListServiceQuotas`` IAM permission to actually
-    produce a warning. Without it, the preflight silently passes.
+    Requires ``servicequotas:ListServiceQuotas`` IAM permission. Without it,
+    the preflight silently passes.
     """
     try:
         sm = boto3_session.client("sagemaker")
-        # Find the endpoint's active config, then the first variant's instance type.
-        ep_desc = sm.describe_endpoint(EndpointName=endpoint_name)
-        config_name = ep_desc["EndpointConfigName"]
-        cfg = sm.describe_endpoint_config(EndpointConfigName=config_name)
+        ep = sm.describe_endpoint(EndpointName=endpoint_name)
+        cfg = sm.describe_endpoint_config(EndpointConfigName=ep["EndpointConfigName"])
         variants = cfg.get("ProductionVariants", [])
         if not variants:
             return
         instance_type = variants[0].get("InstanceType")
-        if not instance_type:
-            # Serverless or other non-instance-based config — no quota applies.
+        if not instance_type:  # serverless
             return
 
-        # Look up "ml.<type> for endpoint usage" quota for the SageMaker service.
-        sq = boto3_session.client("service-quotas")
         target_name = f"{instance_type} for endpoint usage"
-        quota_value: Optional[int] = None
+        sq = boto3_session.client("service-quotas")
+        quota: Optional[int] = None
         for page in sq.get_paginator("list_service_quotas").paginate(ServiceCode="sagemaker"):
             for q in page.get("Quotas", []):
                 if q.get("QuotaName") == target_name:
-                    quota_value = int(q.get("Value"))
+                    quota = int(q["Value"])
                     break
-            if quota_value is not None:
+            if quota is not None:
                 break
 
-        if quota_value is None:
-            # Quota name didn't match — AWS occasionally renames these. Not worth raising.
+        if quota is None:
             return
-
-        if quota_value < max_capacity:
+        if quota < max_capacity:
             log.warning(
                 f"⚠ Autoscaling preflight: max_capacity={max_capacity} exceeds account quota "
-                f"'{target_name}' = {quota_value}. Scale-out will be rejected past {quota_value} "
-                f"instances — this can dramatically slow batch workflows. Request a quota increase: "
-                f"AWS Console → Service Quotas → SageMaker → search '{instance_type}'."
+                f"'{target_name}' = {quota}. Scale-out will be capped at {quota} instances. "
+                f"Request increase: AWS Console → Service Quotas → SageMaker → '{instance_type}'."
             )
     except ClientError as e:
         code = e.response.get("Error", {}).get("Code", "")
         if code in ("AccessDeniedException", "AccessDenied", "UnauthorizedOperation"):
-            # Operator-facing one-liner: tell them exactly how to enable the check.
             log.info(
                 "Autoscaling quota preflight skipped — execution role lacks "
                 "'servicequotas:ListServiceQuotas'. Add it to enable the warning."
@@ -516,50 +270,4 @@ def _preflight_quota_check(boto3_session, endpoint_name: str, max_capacity: int)
         else:
             log.debug(f"Quota preflight skipped for '{endpoint_name}' ({code})", exc_info=True)
     except Exception:
-        # Any other failure (quota name format drift, region without Service Quotas,
-        # etc.) — preflight is advisory, never a gate. Keep noise to a minimum.
         log.debug(f"Quota preflight skipped for '{endpoint_name}'", exc_info=True)
-
-
-def _describe_registration(aas, resource_id: str) -> dict:
-    """Describe scalable targets and policies for post-registration verification."""
-    try:
-        targets = aas.describe_scalable_targets(
-            ServiceNamespace=_SERVICE_NS,
-            ResourceIds=[resource_id],
-            ScalableDimension=_SCALABLE_DIM,
-        ).get("ScalableTargets", [])
-        policies = aas.describe_scaling_policies(
-            ServiceNamespace=_SERVICE_NS,
-            ResourceId=resource_id,
-            ScalableDimension=_SCALABLE_DIM,
-        ).get("ScalingPolicies", [])
-        return {"scalable_targets": targets, "scaling_policies": policies}
-    except Exception:
-        log.exception("Failed to describe autoscaling registration")
-        return {"scalable_targets": [], "scaling_policies": []}
-
-
-_COMPARISON_SYMBOLS = {
-    "GreaterThanOrEqualToThreshold": ">=",
-    "GreaterThanThreshold": ">",
-    "LessThanOrEqualToThreshold": "<=",
-    "LessThanThreshold": "<",
-}
-
-
-def _log_spec(endpoint_name: str, spec: Spec) -> None:
-    """One structured line per policy: trigger → effect. Useful when debugging
-    'why did (or didn't) this endpoint scale'."""
-    if isinstance(spec, StepPolicySpec):
-        window_s = spec.evaluation_periods * spec.period_seconds
-        cmp_sym = _COMPARISON_SYMBOLS.get(spec.comparison, spec.comparison)
-        log.info(
-            f"  [{spec.role}] {spec.metric['MetricName']} {cmp_sym} {spec.threshold} "
-            f"for {window_s}s → {spec.adjustment_type}={spec.adjustment}"
-        )
-    elif isinstance(spec, TargetTrackingSpec):
-        log.info(
-            f"  [{spec.role}] target {spec.metric['MetricName']}={spec.target_value} "
-            f"(scale-in cooldown {spec.scale_in_cooldown}s, scale-out {spec.scale_out_cooldown}s)"
-        )
