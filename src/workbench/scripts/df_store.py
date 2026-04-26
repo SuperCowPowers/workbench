@@ -20,7 +20,6 @@ import pyarrow.parquet as pq
 
 from workbench.api import DFStore
 
-
 LOCAL_BASE = Path.home() / "tmp" / "workbench" / "df_store"
 
 
@@ -46,7 +45,7 @@ def _pa_s3_filesystem(boto3_session) -> pa_fs.S3FileSystem:
 
 def get_shape(df_store: DFStore, fs: pa_fs.S3FileSystem, location: str) -> tuple:
     s3_uri = df_store._generate_s3_uri(location)
-    path = s3_uri[len("s3://"):]
+    path = s3_uri[len("s3://") :]
     dataset = pq.ParquetDataset(path, filesystem=fs)
     num_cols = len(dataset.schema.names)
     num_rows = sum(pq.ParquetFile(f, filesystem=fs).metadata.num_rows for f in dataset.files)
@@ -111,9 +110,7 @@ def push():
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Pull and push DataFrames between a local cache and the AWS DFStore"
-    )
+    parser = argparse.ArgumentParser(description="Pull and push DataFrames between a local cache and the AWS DFStore")
     subparsers = parser.add_subparsers(dest="mode", required=True)
 
     pull_parser = subparsers.add_parser("pull", help="Pull DataFrames from DFStore to local cache")
