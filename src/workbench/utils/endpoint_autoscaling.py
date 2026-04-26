@@ -143,14 +143,20 @@ def _install_batch(aas, cw, endpoint_name, resource_id, min_capacity, max_capaci
     instances=0, so it can't take us N→max once instances are running.)
     """
     _put_step_policy_with_alarm(
-        aas, cw, endpoint_name, resource_id,
+        aas,
+        cw,
+        endpoint_name,
+        resource_id,
         role="scale-out",
         adjustment=max_capacity,
         comparison="GreaterThanOrEqualToThreshold",
         evaluation_periods=1,
     )
     _put_step_policy_with_alarm(
-        aas, cw, endpoint_name, resource_id,
+        aas,
+        cw,
+        endpoint_name,
+        resource_id,
         role="scale-in",
         adjustment=min_capacity,
         comparison="LessThanThreshold",
