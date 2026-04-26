@@ -86,6 +86,7 @@ packages = { find = { where = ["src"] } }
 workbench = "workbench.repl.workbench_shell:launch_shell"
 cloud_watch = "workbench.scripts.monitor_cloud_watch:main"
 workbench_config = "workbench.scripts.show_config:main"
+df_store = "workbench.scripts.df_store:main"
 glue_launcher = "workbench.scripts.glue_launcher:main"
 ml_pipeline_batch = "workbench.scripts.ml_pipeline_batch:main"
 ml_pipeline_sqs = "workbench.scripts.ml_pipeline_sqs:main"
