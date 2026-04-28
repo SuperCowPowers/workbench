@@ -435,7 +435,7 @@ if __name__ == "__main__":
     def _build_ffn(
         task: str, input_dim: int, hyperparameters: dict,
         num_classes: int | None, n_targets: int,
-        output_transform: nn.UnscaleTransform | None, task_weights: np.ndarray | None,
+        output_transform: nn.UnscaleTransform | None,
     ) -> nn.Predictor:
         """Build task-specific FFN head."""
         dropout = hyperparameters["dropout"]
@@ -454,18 +454,22 @@ if __name__ == "__main__":
         if criterion_name not in criterion_map:
             raise ValueError(f"Unknown criterion '{criterion_name}'. Supported: {list(criterion_map.keys())}")
 
-        weights_tensor = torch.tensor(task_weights, dtype=torch.float32) if task_weights is not None else None
+        # Per chemprop's docs ("Missing Target Values" section in tutorial/cli/train.rst),
+        # multi-task models with sparse labels need no manual task weighting: the loss is
+        # automatically rescaled by mask.sum() over non-missing entries, and target
+        # normalization (see normalize_targets below) puts all tasks on a comparable scale.
+        # Chemprop's official multi_task.ipynb example also passes no task_weights.
         return nn.RegressionFFN(
             input_dim=input_dim, hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers,
             dropout=dropout, n_tasks=n_targets, output_transform=output_transform,
-            task_weights=weights_tensor, criterion=criterion_map[criterion_name](),
+            criterion=criterion_map[criterion_name](),
         )
 
     def build_mpnn_model(
         hyperparameters: dict, task: str = "regression", num_classes: int | None = None,
         n_targets: int = 1, n_extra_descriptors: int = 0,
         x_d_transform: nn.ScaleTransform | None = None,
-        output_transform: nn.UnscaleTransform | None = None, task_weights: np.ndarray | None = None,
+        output_transform: nn.UnscaleTransform | None = None,
     ) -> models.MPNN:
         """Build MPNN model, optionally loading pretrained weights."""
         from_foundation = hyperparameters.get("from_foundation")
@@ -481,7 +485,7 @@ if __name__ == "__main__":
             agg = nn.NormAggregation()
             ffn_input_dim = hyperparameters["hidden_dim"] + n_extra_descriptors
 
-        ffn = _build_ffn(task, ffn_input_dim, hyperparameters, num_classes, n_targets, output_transform, task_weights)
+        ffn = _build_ffn(task, ffn_input_dim, hyperparameters, num_classes, n_targets, output_transform)
         return models.MPNN(message_passing=mp, agg=agg, predictor=ffn, batch_norm=True, metrics=None, X_d_transform=x_d_transform)
 
     # -------------------------------------------------------------------------
@@ -575,13 +579,6 @@ if __name__ == "__main__":
         all_extra_features = all_extra_features[valid_indices]
     print(f"Data after SMILES validation: {all_df.shape}")
 
-    # Task weights for multi-task (inverse sample count)
-    task_weights = None
-    if n_targets > 1 and model_type != "classifier":
-        counts = np.array([np.sum(~np.isnan(all_targets[:, t])) for t in range(n_targets)])
-        task_weights = (1.0 / counts) / (1.0 / counts).min()
-        print(f"Task weights: {dict(zip(target_columns, task_weights.round(3)))}")
-
     # -------------------------------------------------------------------------
     # Cross-validation setup
     # -------------------------------------------------------------------------
@@ -660,7 +657,7 @@ if __name__ == "__main__":
         mpnn = build_mpnn_model(
             hyperparameters, task=task, num_classes=num_classes, n_targets=n_targets,
             n_extra_descriptors=n_extra, x_d_transform=x_d_transform,
-            output_transform=output_transform, task_weights=task_weights,
+            output_transform=output_transform,
         )
 
         # Train model (with optional two-phase foundation training)
