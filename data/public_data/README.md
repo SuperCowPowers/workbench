@@ -1,92 +1,137 @@
-# Pull Public LogP Data
+# Public Lipophilicity Data (LogP / LogD)
 
-Script to download, standardize, and merge publicly available LogP (octanol-water partition coefficient) datasets into a single deduplicated CSV.
+**Maintainer scripts** that build the lipophilicity datasets published at
+`s3://workbench-public-data`. End users should consume the data via
+`PublicData()` — not by running anything in this directory.
 
-## Quick Start
+```python
+from workbench.api import PublicData
+pub = PublicData()
+pub.list()                                  # discover datasets
+pub.get("comp_chem/logp/logp_all")          # DataFrame
+pub.describe("comp_chem/logd/logd_all")     # metadata dict
+```
+
+Two distinct properties live here. They are kept separate because they are
+different physicochemical measurements:
+
+- **LogP** — neutral-form octanol-water partition coefficient (single species,
+  no pH dependence)
+- **LogD** — pH-dependent octanol-water distribution coefficient that includes
+  ionized forms; nearly always reported at pH 7.4
+
+For non-ionizable compounds LogP ≈ LogD, but for acids/bases they can differ
+by several log units.
+
+## Maintainer Workflow
 
 ```bash
 pip install -r requirements.txt
-python pull_logp_data.py
+
+python pull_logp_data.py        # populates output/logp/
+python pull_logd_data.py        # populates output/logd/
+
+# Push to S3 — maintainer-only, requires AWS credentials for the public bucket.
+# Dry run by default; --apply actually uploads.
+AWS_PROFILE=scp_sandbox_admin python upload_data.py --apply
 ```
 
-Output lands in `output/`. Pull a subset of sources with:
+> **Have a public dataset you'd like to see hosted here?** We're happy to add
+> it — contact **support@supercowpowers.com** with the source and license info
+> and we'll handle the upload.
 
-```bash
-python pull_logp_data.py --sources tdc opera graphormer
+## Layout
+
+```
+data/public_data/
+├── pull_logp_data.py     # LogP pipeline
+├── pull_logd_data.py     # LogD pipeline
+├── pull_common.py        # shared standardization / merge helpers
+├── alignment_utils.py    # post-merge sanity checks
+├── upload_data.py        # push CSVs + descriptions.json to S3
+├── descriptions.json     # local copy of the public-bucket index
+└── output/
+    ├── logp/
+    │   ├── logp_all.csv
+    │   ├── logp_opera_physprop.csv
+    │   └── logp_graphormer_logp.csv
+    └── logd/
+        ├── logd_all.csv
+        └── logd_astrazeneca_chembl.csv
 ```
 
-## Data Sources
+`upload_data.py` mirrors `output/<subdir>/<file>.csv` to
+`s3://workbench-public-data/comp_chem/<subdir>/<file>.csv` and merges entries
+from the local `descriptions.json` into the top-level
+`s3://workbench-public-data/descriptions.json` (existing remote entries for
+unrelated datasets are preserved).
 
-### 1. TDC Lipophilicity_AstraZeneca (~4,200 compounds)
-- **Property**: logD at pH 7.4
-- **Origin**: AstraZeneca experimental data curated from ChEMBL
-- **Access**: `pip install PyTDC` -- loaded programmatically
-- **License**: MIT
-- **Reference**: https://tdcommons.ai/single_pred_tasks/adme/
+## LogP Sources
 
-### 2. DeepChem / MoleculeNet Lipophilicity (~4,200 compounds)
-- **Property**: logD at pH 7.4
-- **Origin**: Same underlying ChEMBL data as TDC (cross-check; duplicates removed during merge)
-- **Access**: `pip install deepchem` -- `dc.molnet.load_lipo()`
-- **License**: MIT
-- **Reference**: https://moleculenet.org/datasets-1
+All values are experimental octanol-water partition coefficients.
 
-### 3. PubChem XLogP (~26,000 compounds)
-- **Property**: XLogP (computed partition coefficient)
-- **Origin**: NCBI PubChem compound database
-- **Access**: PUG REST API (batch query by CID ranges)
-- **License**: Public domain
-- **Reference**: https://pubchem.ncbi.nlm.nih.gov/
+| Source | Compounds | License | Notes |
+|--------|-----------|---------|-------|
+| **OPERA / PHYSPROP** | ~4,200 | MIT | EPA PHYSPROP curation, training data for OPERA/KOWWIN. [github.com/NIEHS/OPERA](https://github.com/NIEHS/OPERA) |
+| **GraphormerLogP (GLP)** | ~42,000 | MIT | Multi-source curation by CIMM Kazan (OpenChem, Huuskonen, SAMPL6/7, etc.). [github.com/cimm-kzn/GraphormerLogP](https://github.com/cimm-kzn/GraphormerLogP) |
 
-### 4. OPERA / PHYSPROP (~14,050 compounds)
-- **Property**: Experimental logP
-- **Origin**: EPA PHYSPROP database, curated as OPERA training data (originally used for EPA's KOWWIN model)
-- **Access**: Downloaded from the OPERA GitHub repository (NIEHS/OPERA)
-- **License**: MIT
-- **Reference**: https://github.com/NIEHS/OPERA
+## LogD Sources
 
-### 5. GraphormerLogP / GLP (~42,000 compounds)
-- **Property**: Experimental logP
-- **Origin**: Multi-source curation by Kazan Federal University (CIMM lab)
-- **Access**: Downloaded from GitHub (cimm-kzn/GraphormerLogP)
-- **License**: MIT
-- **Reference**: https://github.com/cimm-kzn/GraphormerLogP
+All values are experimental octanol-water distribution coefficients at pH 7.4.
+
+| Source | Compounds | License | Notes |
+|--------|-----------|---------|-------|
+| **AstraZeneca / ChEMBL** | ~4,200 | MIT (MoleculeNet) | AstraZeneca-measured logD@7.4 from ChEMBL. Fetched directly from the MoleculeNet S3 mirror — single static CSV, no extra deps. Same data is also redistributed by DeepChem and Therapeutic Data Commons (as `Lipophilicity_AstraZeneca`). [moleculenet.org](https://moleculenet.org/datasets-1) |
+
+## LogP ↔ LogD Overlap
+
+Both pipelines run the same RDKit + ChEMBL standardization
+(`workbench.utils.chem_utils.mol_standardize.MolStandardizer`), so the
+canonical `smiles` column is directly joinable across the two merged files:
+
+```python
+import pandas as pd
+logp = pd.read_csv("output/logp/logp_all.csv")
+logd = pd.read_csv("output/logd/logd_all.csv")
+both = logp.merge(logd[["smiles", "logd"]], on="smiles")  # rows where both are reported
+```
+
+`pull_logd_data.py` prints the overlap count against `logp_all.csv` at the end
+of its run.
 
 ## Output Format
 
-### Per-source files (`output/logp_<source>.csv`)
+### Per-source files (`output/<assay>/<assay>_<source>.csv`)
 
 | Column | Description |
 |--------|-------------|
 | `smiles` | Original SMILES from the source |
-| `canon_smiles` | RDKit canonical SMILES |
-| `logp` | LogP or logD value |
+| `canon_smiles` | RDKit canonical SMILES (post-standardization) |
+| `logp` *or* `logd` | Measured value |
 | `source` | Source identifier |
 
-### Merged file (`output/logp_all.csv`)
+### Merged files (`output/<assay>/<assay>_all.csv`)
 
-Deduplicated on canonical SMILES. When a compound appears in multiple sources, values are aggregated:
+Deduplicated on canonical SMILES; multi-source compounds are aggregated.
 
 | Column | Description |
 |--------|-------------|
-| `canon_smiles` | RDKit canonical SMILES (unique key) |
-| `logp_mean` | Mean logP across all sources |
-| `logp_std` | Standard deviation (0 if single source) |
-| `logp_count` | Number of sources reporting this compound |
-| `sources` | Pipe-delimited list of source names |
-| `logp_values` | Pipe-delimited individual logP values |
+| `id` | Integer row index |
+| `smiles` | RDKit canonical SMILES (unique key) |
+| `logp` *or* `logd` | Mean across sources |
+| `<value>_std` | Standard deviation (0 if single source) |
+| `<value>_count` | Number of sources reporting this compound |
+| `sources` | Pipe-delimited source names |
+| `<value>_values` | Pipe-delimited individual values |
 
-## Other Notable Sources (Not Yet Integrated)
+## Sources Considered but Not Integrated
 
-These are additional datasets that could be added in the future:
-
-| Source | Compounds | Notes |
-|--------|-----------|-------|
-| **EPA CompTox Dashboard** | 750K+ | OPERA predictions + experimental subset; bulk download available |
-| **DrugBank** | ~14K drugs | Both experimental and ALOGPS predicted; free academic license required |
-| **SAMPL6/7 Challenges** | 11+ | Gold-standard potentiometric measurements; very small but high quality |
-| **PharmaBench** (mindrank-ai) | 52K entries across 11 ADMET tasks | CC0 license; LLM-curated from ChEMBL |
-| **ADMET-AI** (swansonk14) | 41 ADMET datasets | Pre-trained models on all TDC endpoints |
-| **OpenADMET** (OMSF) | Growing | ARPA-H funded open-science consortium |
-| **lipophilicity-prediction** (jbr-ai-labs) | 17,603 | Merged logP/logD from multiple sources |
-| **Martel et al. UHPLC** | 707 | High-quality UHPLC-measured logP |
+| Source | Reason |
+|--------|--------|
+| **PubChem XLogP** | *Computed* values (XLogP3 algorithm), not experimental — would dilute the experimental-only set |
+| **EPA CompTox Dashboard** | Mostly OPERA *predictions*; experimental subset already covered by PHYSPROP |
+| **DrugBank** | Mixed experimental/predicted; requires academic license |
+| **PharmaBench** | LLM-curated from ChEMBL; not yet validated against experimental ground truth |
+| **lipophilicity-prediction (jbr-ai-labs)** | Mixes LogP and LogD; would need to be split before integration |
+| **Martel et al. UHPLC** | High-quality but small (707 compounds); useful as a held-out test set, not training |
+| **SAMPL6/7** | Already absorbed into GraphormerLogP |

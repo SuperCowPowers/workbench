@@ -1,10 +1,10 @@
 {
     "logp_all.csv": {
-        "description": "Merged and deduplicated experimental LogP (octanol-water partition coefficient) dataset from multiple public sources. Standardized using the ChEMBL pipeline (salt removal, charge neutralization, tautomer canonicalization). Multi-component mixtures dropped; known pharmaceutical counterions stripped.",
+        "description": "Merged and deduplicated experimental LogP (octanol-water partition coefficient) dataset from multiple public sources. Standardized using the ChEMBL pipeline (salt removal, charge neutralization, tautomer canonicalization). Multi-component mixtures dropped; known pharmaceutical counterions stripped. Joinable on `smiles` to logd_all.csv.",
         "columns": {
             "id": "Integer row index (0 to N)",
             "smiles": "Standardized canonical SMILES (RDKit, neutralized, canonical tautomer)",
-            "logp": "Mean experimental logP across sources",
+            "logp": "Mean experimental logP (octanol-water partition coefficient) across sources",
             "logp_std": "Standard deviation of logP across sources (0 if single source)",
             "logp_count": "Number of sources reporting this compound",
             "sources": "Pipe-delimited list of source names",
@@ -32,7 +32,7 @@
         ]
     },
     "logp_graphormer_logp.csv": {
-        "description": "GraphormerLogP (GLP) experimental LogP dataset (~42,000 compounds). Multi-source curation by the Chemoinformatics and Molecular Modeling Laboratory (CIMM) at Kazan Federal University. Aggregated from OpenChem, AstraZeneca, Huuskonen, SAMPL6/7, and other published datasets.",
+        "description": "GraphormerLogP (GLP) experimental LogP dataset (~42,000 compounds). Multi-source curation by the Chemoinformatics and Molecular Modeling Laboratory (CIMM) at Kazan Federal University. Aggregated from OpenChem, Huuskonen, SAMPL6/7, and other published datasets.",
         "columns": {
             "smiles": "Original SMILES from source",
             "canon_smiles": "Standardized canonical SMILES",
@@ -43,6 +43,37 @@
         "references": [
             "https://github.com/cimm-kzn/GraphormerLogP",
             "https://doi.org/10.1021/acs.jcim.4c00654 (Safin et al., GraphormerLogP, J Chem Inf Model 2024)"
+        ]
+    },
+    "logd_all.csv": {
+        "description": "Merged and deduplicated experimental LogD (octanol-water distribution coefficient at pH 7.4) dataset. Standardized using the ChEMBL pipeline so SMILES are joinable to logp_all.csv. Currently a single source; structured for additional sources to be merged in.",
+        "columns": {
+            "id": "Integer row index (0 to N)",
+            "smiles": "Standardized canonical SMILES (RDKit, neutralized, canonical tautomer)",
+            "logd": "Mean experimental logD at pH 7.4 across sources",
+            "logd_std": "Standard deviation of logD across sources (0 if single source)",
+            "logd_count": "Number of sources reporting this compound",
+            "sources": "Pipe-delimited list of source names",
+            "logd_values": "Pipe-delimited individual logD values from each source"
+        },
+        "num_compounds": null,
+        "references": [
+            "https://moleculenet.org/datasets-1 (AstraZeneca logD via ChEMBL, MoleculeNet mirror)"
+        ]
+    },
+    "logd_astrazeneca_chembl.csv": {
+        "description": "AstraZeneca experimental logD measurements at pH 7.4 (~4,200 compounds), originally published in ChEMBL. Fetched directly from the MoleculeNet S3 mirror; same data is also redistributed by DeepChem and Therapeutic Data Commons (as `Lipophilicity_AstraZeneca`).",
+        "columns": {
+            "smiles": "Original SMILES from source",
+            "canon_smiles": "Standardized canonical SMILES",
+            "logd": "Experimental logD at pH 7.4 (octanol-water distribution coefficient)",
+            "source": "Source identifier (astrazeneca_chembl)"
+        },
+        "num_compounds": null,
+        "references": [
+            "https://moleculenet.org/datasets-1",
+            "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/Lipophilicity.csv",
+            "https://www.ebi.ac.uk/chembl/ (original AstraZeneca measurements)"
         ]
     }
 }

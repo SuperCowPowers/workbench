@@ -2,3 +2,5 @@ rdkit
 pandas
 requests
 tqdm
+boto3
+awswrangler

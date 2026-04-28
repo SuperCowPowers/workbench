@@ -376,18 +376,6 @@ if __name__ == "__main__":
     id_col = "id"
     target = "solubility"
 
-    # Temporary client test (comment out unit test above and uncomment below)
-    from workbench.api import FeatureSet
-
-    fs = FeatureSet("caco2_pappab_reg_1")
-    df = fs.pull_dataframe()
-    id_col = "id"
-    is_doi = df["udm_asy_protocol"] == "DOI"
-    ref_df = df[~is_doi]
-    query_df = df[is_doi]
-    target = "udm_asy_res_pappa_b_10_6_cm_per_s"
-    dc = DatasetConcordance(ref_df, query_df, target_column=target, id_column=id_col)
-
     # Only use the columns of interest for the plugin unit test
     results_df = dc.concordance_results()
     cols = [id_col, "smiles", "x", "y", "dataset", target, "tanimoto_sim", "target_residual"]
