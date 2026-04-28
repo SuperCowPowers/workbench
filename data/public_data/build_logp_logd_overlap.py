@@ -64,8 +64,10 @@ def main(top_k: int) -> None:
     results = dc.results()
     logp_scored = results[results["dataset"] == "query"].copy()
     logp_scored = logp_scored.sort_values("tanimoto_sim", ascending=False).head(top_k)
-    log.info(f"Top-{top_k} LogP picked (sim range {logp_scored['tanimoto_sim'].min():.3f}"
-             f" – {logp_scored['tanimoto_sim'].max():.3f})")
+    log.info(
+        f"Top-{top_k} LogP picked (sim range {logp_scored['tanimoto_sim'].min():.3f}"
+        f" – {logp_scored['tanimoto_sim'].max():.3f})"
+    )
 
     # Outer-merge on canonical SMILES — one row per unique compound, NaN where missing
     logp_subset = logp[logp["smiles"].isin(logp_scored["smiles"])][["smiles", "logp"]]
@@ -88,7 +90,9 @@ def main(top_k: int) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
-        "--top-k", type=int, default=DEFAULT_TOP_K,
+        "--top-k",
+        type=int,
+        default=DEFAULT_TOP_K,
         help=f"Number of LogP compounds to retain by similarity (default: {DEFAULT_TOP_K})",
     )
     args = parser.parse_args()

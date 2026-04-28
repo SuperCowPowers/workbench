@@ -44,7 +44,7 @@ def _print_summary(s: dict) -> None:
     print(f"  Query (LogD):      {s['n_query']:>7,} compounds")
 
     t = s["tanimoto"]
-    print(f"\nBest LogD->LogP Tanimoto (ECFP4)")
+    print("\nBest LogD->LogP Tanimoto (ECFP4)")
     print(f"  mean={t['mean']:.3f}  median={t['median']:.3f}  min={t['min']:.3f}  max={t['max']:.3f}")
 
     print("\nCoverage at similarity thresholds")
@@ -54,22 +54,28 @@ def _print_summary(s: dict) -> None:
     if s["residual"]:
         r = s["residual"]
         print("\nResidual = LogD - median(LogP near-neighbors)")
-        print(f"  n={r['n']:,}  mean={r['mean']:+.3f}  median={r['median']:+.3f}  "
-              f"|res|_mean={r['abs_mean']:.3f}  |res|_p95={r['abs_p95']:.3f}")
+        print(
+            f"  n={r['n']:,}  mean={r['mean']:+.3f}  median={r['median']:+.3f}  "
+            f"|res|_mean={r['abs_mean']:.3f}  |res|_p95={r['abs_p95']:.3f}"
+        )
 
     if s["residual_by_sim_band"]:
         print("\nResidual by similarity band  (does agreement tighten as similarity rises?)")
         print(f"  {'sim band':>14s}  {'n':>6s}  {'mean res':>10s}  {'|res| mean':>11s}  {'|res| p95':>11s}")
         for b in reversed(s["residual_by_sim_band"]):  # descending sim
             band = f"[{b['sim_lo']:.2f}, {b['sim_hi']:.2f})"
-            print(f"  {band:>14s}  {b['n']:>6,}  {b['residual_mean']:>+9.3f}  "
-                  f"{b['residual_abs_mean']:>10.3f}  {b['residual_abs_p95']:>10.3f}")
+            print(
+                f"  {band:>14s}  {b['n']:>6,}  {b['residual_mean']:>+9.3f}  "
+                f"{b['residual_abs_mean']:>10.3f}  {b['residual_abs_p95']:>10.3f}"
+            )
 
     o = s["exact_smiles_overlap"]
-    print(f"\nExact SMILES intersection: {o['count']:,}  "
-          f"({100 * o['fraction_of_query']:.1f}% of LogD, {100 * o['fraction_of_reference']:.1f}% of LogP)")
+    print(
+        f"\nExact SMILES intersection: {o['count']:,}  "
+        f"({100 * o['fraction_of_query']:.1f}% of LogD, {100 * o['fraction_of_reference']:.1f}% of LogP)"
+    )
     if "pearson" in o:
-        print(f"  LogP vs LogD on shared compounds:")
+        print("  LogP vs LogD on shared compounds:")
         print(f"    Pearson correlation: {o['pearson']:.3f}")
         print(f"    Mean(LogP - LogD):   {o['mean_diff']:+.3f}")
         print(f"    |LogP - LogD| mean:  {o['abs_mean_diff']:.3f}")
@@ -88,14 +94,20 @@ def _multitask_verdict(s: dict) -> None:
     print(f"  LogP <-> LogD Pearson on exact-SMILES overlap: {corr:.3f}")
     print()
     if cov_05 > 0.8 and corr > 0.5:
-        verdict = ("Strong overlap and decent LogP<->LogD correlation — a multi-task "
-                   "chemprop model should benefit from the LogP auxiliary task.")
+        verdict = (
+            "Strong overlap and decent LogP<->LogD correlation — a multi-task "
+            "chemprop model should benefit from the LogP auxiliary task."
+        )
     elif cov_05 > 0.6:
-        verdict = ("Moderate overlap — multi-task should help on the covered subset; "
-                   "consider a hold-out split where LogD test compounds have LogP coverage.")
+        verdict = (
+            "Moderate overlap — multi-task should help on the covered subset; "
+            "consider a hold-out split where LogD test compounds have LogP coverage."
+        )
     else:
-        verdict = ("Limited overlap — LogP and LogD occupy partially different chemical spaces. "
-                   "Multi-task value will hinge on representation transfer rather than direct neighbor support.")
+        verdict = (
+            "Limited overlap — LogP and LogD occupy partially different chemical spaces. "
+            "Multi-task value will hinge on representation transfer rather than direct neighbor support."
+        )
     print(f"  -> {verdict}")
 
 
@@ -127,8 +139,11 @@ def main() -> None:
     _multitask_verdict(s)
 
     results = dc.results()
-    keep = [c for c in ["id", "smiles", "dataset", "logp", "logd", "x", "y", "tanimoto_sim", "target_residual"]
-            if c in results.columns]
+    keep = [
+        c
+        for c in ["id", "smiles", "dataset", "logp", "logd", "x", "y", "tanimoto_sim", "target_residual"]
+        if c in results.columns
+    ]
     results[keep].to_csv(SUMMARY_CSV, index=False)
     print(f"\nPer-compound results saved -> {SUMMARY_CSV}")
 

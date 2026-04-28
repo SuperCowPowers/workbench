@@ -162,9 +162,7 @@ if __name__ == "__main__":
 
     # Unit test: synthetic test data
     ref_df, query_df = SyntheticDataGenerator().aqsol_alignment_data(overlap="low", alignment="high")
-    dc = DatasetComparison(
-        ref_df, query_df, reference_target="solubility", query_target="solubility", id_column="id"
-    )
+    dc = DatasetComparison(ref_df, query_df, reference_target="solubility", query_target="solubility", id_column="id")
     id_col = "id"
     target = "solubility"
 

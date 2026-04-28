@@ -26,13 +26,12 @@ class Endpoint(EndpointCore):
 
     def __init__(self, endpoint_name: str):
         super().__init__(endpoint_name)
-        if (self.workbench_meta() or {}).get("async_endpoint"):
+        self._async = None
+        if self.exists() and (self.workbench_meta() or {}).get("async_endpoint"):
             # Lazy import keeps api.endpoint ↔ api.async_endpoint clean.
             from workbench.api.async_endpoint import AsyncEndpoint
 
             self._async = AsyncEndpoint(endpoint_name)
-        else:
-            self._async = None
 
     def details(self, **kwargs) -> dict:
         """Endpoint Details
