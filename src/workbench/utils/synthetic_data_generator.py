@@ -166,7 +166,7 @@ class SyntheticDataGenerator:
         overlap: str = "medium",
         alignment: str = "high",
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """Get reference/query DataFrames for DatasetConcordance testing.
+        """Get reference/query DataFrames for DatasetComparison testing.
 
         Returns a (reference, query) pair where:
         - The **reference** is always the base partition (40% of AQSol)

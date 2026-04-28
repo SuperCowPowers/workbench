@@ -21,7 +21,7 @@ class ConcordanceMap(PluginInterface):
     Uses go.Scatter (SVG) for compatibility with external highlight overlays
     triggered from external components (e.g. table row selection).
 
-    Expects a unified DataFrame from DatasetConcordance.concordance_results()
+    Expects a unified DataFrame from DatasetComparison.results()
     with columns: x, y, dataset, tanimoto_sim, target_residual, etc.
     """
 
@@ -115,8 +115,8 @@ class ConcordanceMap(PluginInterface):
         """Update the concordance map with new data.
 
         Args:
-            input_data (pd.DataFrame): Unified DataFrame from DatasetConcordance.concordance_results().
-            **kwargs (dict): Must include ``target_column`` and ``id_column``.
+            input_data (pd.DataFrame): Unified DataFrame from DatasetComparison.results().
+            **kwargs (dict): Must include ``reference_target`` and ``id_column``.
 
         Returns:
             list: Single-element list containing the Plotly figure.
@@ -132,9 +132,9 @@ class ConcordanceMap(PluginInterface):
         self.has_smiles = self.smiles_column is not None
 
         # Compute concordance colorscale max from reference target variability
-        target_column = kwargs.get("target_column")
-        if target_column and target_column in input_data.columns and "dataset" in input_data.columns:
-            ref_std = input_data.loc[input_data["dataset"] == "reference", target_column].std()
+        reference_target = kwargs.get("reference_target")
+        if reference_target and reference_target in input_data.columns and "dataset" in input_data.columns:
+            ref_std = input_data.loc[input_data["dataset"] == "reference", reference_target].std()
             self.concordance_cmax = 2.0 * ref_std
         else:
             self.concordance_cmax = None
@@ -368,16 +368,18 @@ class ConcordanceMap(PluginInterface):
 if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
     from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
-    from workbench.algorithms.dataframe.dataset_concordance import DatasetConcordance
+    from workbench.algorithms.dataframe.dataset_comparison import DatasetComparison
 
     # Unit test: synthetic test data
     ref_df, query_df = SyntheticDataGenerator().aqsol_alignment_data(overlap="low", alignment="high")
-    dc = DatasetConcordance(ref_df, query_df, target_column="solubility", id_column="id")
+    dc = DatasetComparison(
+        ref_df, query_df, reference_target="solubility", query_target="solubility", id_column="id"
+    )
     id_col = "id"
     target = "solubility"
 
     # Only use the columns of interest for the plugin unit test
-    results_df = dc.concordance_results()
+    results_df = dc.results()
     cols = [id_col, "smiles", "x", "y", "dataset", target, "tanimoto_sim", "target_residual"]
     results_df = results_df[[c for c in cols if c in results_df.columns]]
 
@@ -388,5 +390,5 @@ if __name__ == "__main__":
         theme="dark",
         height="1000px",
         id_column=dc.id_column,
-        target_column=dc.target_column,
+        reference_target=dc.reference_target,
     ).run()

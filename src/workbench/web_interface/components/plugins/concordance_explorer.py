@@ -81,8 +81,8 @@ class ConcordanceExplorer(PluginInterface):
         """Update properties for both child plugins.
 
         Args:
-            input_data (pd.DataFrame): Unified DataFrame from DatasetConcordance.concordance_results().
-            **kwargs (dict): Must include ``dc`` (DatasetConcordance object). Other kwargs
+            input_data (pd.DataFrame): Unified DataFrame from DatasetComparison.results().
+            **kwargs (dict): Must include ``dc`` (DatasetComparison object). Other kwargs
                 are passed through to ConcordanceMap.
 
         Returns:
@@ -158,11 +158,13 @@ class ConcordanceExplorer(PluginInterface):
 if __name__ == "__main__":
     from workbench.web_interface.components.plugin_unit_test import PluginUnitTest
     from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
-    from workbench.algorithms.dataframe.dataset_concordance import DatasetConcordance
+    from workbench.algorithms.dataframe.dataset_comparison import DatasetComparison
 
     # Unit test: synthetic test data
     ref_df, query_df = SyntheticDataGenerator().aqsol_alignment_data(overlap="low", alignment="high")
-    dc = DatasetConcordance(ref_df, query_df, target_column="solubility", id_column="id")
+    dc = DatasetComparison(
+        ref_df, query_df, reference_target="solubility", query_target="solubility", id_column="id"
+    )
     id_col = "id"
     target = "solubility"
 
@@ -176,10 +178,10 @@ if __name__ == "__main__":
     ref_df = df[~is_doi]
     query_df = df[is_doi]
     target = "udm_asy_res_pappa_b_10_6_cm_per_s"
-    dc = DatasetConcordance(ref_df, query_df, target_column=target, id_column=id_col)
+    dc = DatasetComparison(ref_df, query_df, reference_target=target, query_target=target, id_column=id_col)
 
     # Only use the columns of interest for the plugin unit test
-    results_df = dc.concordance_results()
+    results_df = dc.results()
     cols = [id_col, "smiles", "x", "y", "dataset", target, "tanimoto_sim", "target_residual"]
     results_df = results_df[[c for c in cols if c in results_df.columns]]
 
@@ -190,5 +192,5 @@ if __name__ == "__main__":
         theme="dark",
         dc=dc,
         id_column=dc.id_column,
-        target_column=dc.target_column,
+        reference_target=dc.reference_target,
     ).run()
