@@ -155,4 +155,4 @@ test_evaluation_data.csv
 .pt_tmp/ 
 
 # Pull public data outputs
-data/pull_public_data/output/
+data/public_data/output/
