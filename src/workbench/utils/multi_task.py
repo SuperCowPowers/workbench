@@ -3,9 +3,36 @@
 import logging
 from functools import reduce
 
+import numpy as np
 import pandas as pd
 
 log = logging.getLogger("workbench")
+
+
+def compute_inverse_count_task_weights(targets: np.ndarray) -> np.ndarray:
+    """Per-task loss weights inversely proportional to non-NaN row counts, mean-normalized to 1.
+
+    Use to equalize each task's gradient contribution when target columns have
+    unequal coverage in a multi-task model.
+
+    Args:
+        targets: (n_rows, n_tasks) float array of target values; NaN means missing.
+
+    Returns:
+        (n_tasks,) float32 array of weights, mean-normalized to 1.
+
+    Raises:
+        ValueError: If any task has zero non-NaN rows.
+    """
+    if targets.ndim != 2:
+        raise ValueError(f"targets must be 2D (n_rows, n_tasks), got shape {targets.shape}")
+
+    counts = np.array([np.sum(~np.isnan(targets[:, t])) for t in range(targets.shape[1])], dtype=np.float32)
+    if not (counts > 0).all():
+        raise ValueError(f"All tasks must have at least one non-NaN row; got counts {counts.tolist()}")
+
+    inv = 1.0 / counts
+    return (inv / inv.mean()).astype(np.float32)
 
 
 def combine_multi_task_data(
