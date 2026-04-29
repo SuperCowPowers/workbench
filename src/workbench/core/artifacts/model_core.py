@@ -304,7 +304,7 @@ class ModelCore(Artifact):
 
         else:  # Specific capture_name (could return None)
             s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_metrics.csv"
-            metrics = pull_s3_data(s3_path, embedded_index=True)
+            metrics = pull_s3_data(s3_path)
             if metrics is not None:
                 return metrics
             else:
@@ -338,7 +338,7 @@ class ModelCore(Artifact):
 
         else:  # Specific capture_name
             s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_cm.csv"
-            cm = pull_s3_data(s3_path, embedded_index=True)
+            cm = pull_s3_data(s3_path)
             if cm is not None:
                 return cm
             else:
@@ -1206,6 +1206,10 @@ class ModelCore(Artifact):
 
         # Convert the values in cm_df to integers
         cm_df = cm_df.astype(int)
+
+        # Move labels out of the index into a regular "labels" column
+        cm_df = cm_df.reset_index().rename(columns={"row_class": "labels"})
+        cm_df = cm_df.rename_axis(None, axis=1)
 
         return metrics_df, cm_df
 

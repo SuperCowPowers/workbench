@@ -56,7 +56,7 @@ runs = [
 model = Model("open-admet-chemprop-mt")
 mt_metrics = {}
 for run in runs:
-    metrics = model.get_inference_metrics(run).reset_index()
+    metrics = model.get_inference_metrics(run)
     print(f"Metrics for run {run}:")
     print(metrics)
     model_name = run.replace("cv_", "").replace("_", "-") + "-mt"
@@ -68,7 +68,7 @@ for run in runs:
 metric_rows = []
 for model_name in model_list:
     model = Model(model_name)
-    metrics = model.get_inference_metrics("full_cross_fold").reset_index()
+    metrics = model.get_inference_metrics("full_cross_fold")
     print(metrics)
 
     # Now convert to DataFrame rows (with model name + metrics)

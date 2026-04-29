@@ -67,7 +67,7 @@ for strategy in split_strategies:
     model = Model(model_name)
 
     # Get the cross-fold metrics
-    metrics = model.get_inference_metrics("full_cross_fold").reset_index().to_dict(orient="records")[0]
+    metrics = model.get_inference_metrics("full_cross_fold").to_dict(orient="records")[0]
     results[strategy] = metrics
 
     print(f"\n{strategy.upper()} Split:")

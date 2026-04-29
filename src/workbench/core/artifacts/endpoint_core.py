@@ -1047,8 +1047,7 @@ class EndpointCore(Artifact):
         if model_type == ModelType.CLASSIFIER:
             conf_mtx = self.generate_confusion_matrix(target, pred_results_df)
             self.log.info(f"Writing confusion matrix to {inference_capture_path}/inference_cm.csv")
-            # Note: Unlike other dataframes here, we want to write the index (labels) to the CSV
-            wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=True)
+            wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=False)
 
         # Now recompute the details for our Model
         self.log.important(f"Loading inference metrics for {self.model_name}...")
@@ -1198,10 +1197,10 @@ class EndpointCore(Artifact):
         else:
             labels = sorted(list(set(y_true) | set(y_pred)))
 
-        # Compute confusion matrix and create DataFrame
+        # Compute confusion matrix and create DataFrame with labels as a regular column
         conf_mtx = confusion_matrix(y_true, y_pred, labels=labels)
-        conf_mtx_df = pd.DataFrame(conf_mtx, index=labels, columns=labels)
-        conf_mtx_df.index.name = "labels"
+        conf_mtx_df = pd.DataFrame(conf_mtx, columns=labels)
+        conf_mtx_df.insert(0, "labels", labels)
         return conf_mtx_df
 
     def endpoint_config_name(self) -> str:

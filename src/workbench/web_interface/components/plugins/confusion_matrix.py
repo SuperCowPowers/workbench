@@ -63,6 +63,10 @@ class ConfusionMatrix(PluginInterface):
         if df is None:
             return [self.display_text("No Data")]
 
+        # Move the labels column into the index for heatmap rendering
+        if "labels" in df.columns:
+            df = df.set_index("labels")
+
         # Get the colorscale from the current theme
         colorscale = add_alpha_to_first_color(self.theme_manager.colorscale("heatmap"))
 
