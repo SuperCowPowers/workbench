@@ -33,9 +33,9 @@ recreate = False
 
 TIERS = [
     # (suffix, label,    description fragment)
-    ("07_10", "high",   "high overlap (Tanimoto 0.7-1.0)"),
-    ("03_07", "med",    "medium overlap (Tanimoto 0.3-0.7)"),
-    ("00_03", "low",    "low overlap (Tanimoto 0.0-0.3)"),
+    ("07_10", "high", "high overlap (Tanimoto 0.7-1.0)"),
+    ("03_07", "med", "medium overlap (Tanimoto 0.3-0.7)"),
+    ("00_03", "low", "low overlap (Tanimoto 0.0-0.3)"),
 ]
 
 
