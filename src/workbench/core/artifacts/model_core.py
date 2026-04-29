@@ -591,9 +591,7 @@ class ModelCore(Artifact):
                     wr.s3.to_csv(reordered, cm_path, index=False)
                     self.log.info(f"Reordered confusion matrix for inference run '{run_name}'")
                 else:
-                    self.log.warning(
-                        f"Skipping CM reorder for '{run_name}': labels do not match new label set"
-                    )
+                    self.log.warning(f"Skipping CM reorder for '{run_name}': labels do not match new label set")
         except Exception as e:
             self.log.warning(f"Failed to reorder CM for '{run_name}': {e}")
 
@@ -607,9 +605,7 @@ class ModelCore(Artifact):
                     wr.s3.to_csv(reordered, metrics_path, index=False)
                     self.log.info(f"Reordered inference metrics for inference run '{run_name}'")
                 else:
-                    self.log.warning(
-                        f"Skipping metrics reorder for '{run_name}': cannot identify label column"
-                    )
+                    self.log.warning(f"Skipping metrics reorder for '{run_name}': cannot identify label column")
         except Exception as e:
             self.log.warning(f"Failed to reorder metrics for '{run_name}': {e}")
 

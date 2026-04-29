@@ -5,6 +5,17 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
+from scipy.stats import spearmanr
+from sklearn.metrics import (
+    mean_absolute_error,
+    median_absolute_error,
+    precision_recall_fscore_support,
+    r2_score,
+    roc_auc_score,
+    root_mean_squared_error,
+)
+
+log = logging.getLogger("workbench")
 
 
 def reorder_cm_df(cm: pd.DataFrame, labels: List[str]) -> Optional[pd.DataFrame]:
@@ -59,17 +70,6 @@ def reorder_metrics_df(df: pd.DataFrame, labels: List[str]) -> Optional[pd.DataF
     all_rows = df[all_mask]
     class_rows = df[~all_mask].set_index(label_col).reindex(labels).reset_index()
     return pd.concat([class_rows, all_rows], ignore_index=True)
-from scipy.stats import spearmanr
-from sklearn.metrics import (
-    mean_absolute_error,
-    median_absolute_error,
-    precision_recall_fscore_support,
-    r2_score,
-    roc_auc_score,
-    root_mean_squared_error,
-)
-
-log = logging.getLogger("workbench")
 
 
 def validate_proba_columns(predictions_df: pd.DataFrame, class_labels: List[str], guessing: bool = False) -> bool:
