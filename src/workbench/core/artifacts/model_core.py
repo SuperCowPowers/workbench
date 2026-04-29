@@ -20,6 +20,7 @@ from sagemaker.core.resources import (
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
 from workbench.utils.aws_utils import newest_path, pull_s3_data
+from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
@@ -539,15 +540,106 @@ class ModelCore(Artifact):
             return None
 
     def set_class_labels(self, labels: list[str]):
-        """Return the class labels for this Model (if it's a classifier)
+        """Set the class labels for this Model (if it's a classifier)
+
+        Also reorders existing inference artifacts (confusion matrix and inference
+        metrics) and training-time metadata to match the new label order. Reordering
+        is value-preserving: per-class metrics and OvR roc_auc don't depend on the
+        order of the other classes.
 
         Args:
-            labels (list[str]): List of class labels
+            labels (list[str]): List of class labels in the desired order
         """
-        if self.model_type == ModelType.CLASSIFIER:
-            self.upsert_workbench_meta({"class_labels": labels})
-        else:
+        if self.model_type != ModelType.CLASSIFIER:
             self.log.error(f"Model {self.model_name} is not a classifier!")
+            return
+
+        self.upsert_workbench_meta({"class_labels": labels})
+        self._reorder_class_artifacts(labels)
+
+    def _reorder_class_artifacts(self, labels: list[str]):
+        """Reorder CM and metrics artifacts (S3 + metadata) to match the new label order.
+
+        Skips artifacts whose label set doesn't match the new labels (e.g., classes
+        added/removed) and warns. Best-effort: per-artifact failures are logged and
+        do not abort the overall reorder.
+        """
+        # S3 inference runs
+        if self.endpoint_inference_path:
+            try:
+                directories = wr.s3.list_directories(path=self.endpoint_inference_path + "/")
+                run_names = [urlparse(d).path.split("/")[-2] for d in directories]
+            except Exception as e:
+                self.log.warning(f"Could not list inference runs for reorder: {e}")
+                run_names = []
+
+            for run in run_names:
+                self._reorder_inference_run(run, labels)
+
+        # Training-time metadata
+        self._reorder_training_metadata(labels)
+
+    def _reorder_inference_run(self, run_name: str, labels: list[str]):
+        """Reorder the CM and inference metrics CSVs for a single inference run."""
+        # Confusion matrix
+        cm_path = f"{self.endpoint_inference_path}/{run_name}/inference_cm.csv"
+        try:
+            cm = pull_s3_data(cm_path)
+            if cm is not None:
+                reordered = reorder_cm_df(cm, labels)
+                if reordered is not None:
+                    wr.s3.to_csv(reordered, cm_path, index=False)
+                    self.log.info(f"Reordered confusion matrix for inference run '{run_name}'")
+                else:
+                    self.log.warning(
+                        f"Skipping CM reorder for '{run_name}': labels do not match new label set"
+                    )
+        except Exception as e:
+            self.log.warning(f"Failed to reorder CM for '{run_name}': {e}")
+
+        # Inference metrics
+        metrics_path = f"{self.endpoint_inference_path}/{run_name}/inference_metrics.csv"
+        try:
+            metrics = pull_s3_data(metrics_path)
+            if metrics is not None:
+                reordered = reorder_metrics_df(metrics, labels)
+                if reordered is not None:
+                    wr.s3.to_csv(reordered, metrics_path, index=False)
+                    self.log.info(f"Reordered inference metrics for inference run '{run_name}'")
+                else:
+                    self.log.warning(
+                        f"Skipping metrics reorder for '{run_name}': cannot identify label column"
+                    )
+        except Exception as e:
+            self.log.warning(f"Failed to reorder metrics for '{run_name}': {e}")
+
+    def _reorder_training_metadata(self, labels: list[str]):
+        """Reorder workbench_training_metrics and workbench_training_cm in metadata."""
+        meta = self.workbench_meta() or {}
+        new_set = set(labels)
+
+        cm_dict = meta.get("workbench_training_cm")
+        if cm_dict:
+            cm = pd.DataFrame.from_dict(cm_dict)
+            # Migrate legacy format where labels were the index
+            if "labels" not in cm.columns and set(cm.index) == new_set:
+                cm = cm.reset_index().rename(columns={"index": "labels"})
+            reordered = reorder_cm_df(cm, labels)
+            if reordered is not None:
+                self.upsert_workbench_meta({"workbench_training_cm": reordered.to_dict()})
+                self.log.info("Reordered training-time confusion matrix")
+            else:
+                self.log.warning("Skipping training CM reorder: labels do not match new label set")
+
+        metrics_dict = meta.get("workbench_training_metrics")
+        if metrics_dict:
+            metrics = pd.DataFrame.from_dict(metrics_dict)
+            reordered = reorder_metrics_df(metrics, labels)
+            if reordered is not None:
+                self.upsert_workbench_meta({"workbench_training_metrics": reordered.to_dict()})
+                self.log.info("Reordered training-time metrics")
+            else:
+                self.log.warning("Skipping training metrics reorder: cannot identify label column")
 
     def summary(self) -> dict:
         """Summary information about this Model

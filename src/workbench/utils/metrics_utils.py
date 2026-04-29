@@ -5,6 +5,60 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
+
+
+def reorder_cm_df(cm: pd.DataFrame, labels: List[str]) -> Optional[pd.DataFrame]:
+    """Reorder a confusion-matrix DataFrame's rows and class-columns to the given label order.
+
+    The input is expected to have a "labels" column plus one numeric column per class
+    (the format produced by `generate_confusion_matrix`). Returns None if the label set
+    in the DataFrame doesn't match `labels` (e.g., classes added or removed).
+
+    Args:
+        cm: Confusion matrix DataFrame with a "labels" column and per-class columns.
+        labels: Desired class label order.
+
+    Returns:
+        Reordered DataFrame, or None if the label sets don't match.
+    """
+    if "labels" not in cm.columns:
+        return None
+    new_set = set(labels)
+    row_set = set(cm["labels"])
+    col_set = set(cm.columns) - {"labels"}
+    if row_set != new_set or not new_set.issubset(col_set):
+        return None
+    return cm.set_index("labels").reindex(labels)[labels].reset_index()
+
+
+def reorder_metrics_df(df: pd.DataFrame, labels: List[str]) -> Optional[pd.DataFrame]:
+    """Reorder per-class rows in a metrics DataFrame to the given label order.
+
+    Identifies the label column by finding the column whose values match `labels`
+    (ignoring an optional 'all' aggregate row). Pins the 'all' row to the bottom
+    if present. Returns None if no column matches the label set.
+
+    Args:
+        df: Metrics DataFrame (e.g., output of `compute_classification_metrics`).
+        labels: Desired class label order.
+
+    Returns:
+        Reordered DataFrame, or None if no label column matches.
+    """
+    new_set = set(labels)
+    label_col = None
+    for col in df.columns:
+        vals = set(df[col].astype(str)) - {"all"}
+        if vals == new_set:
+            label_col = col
+            break
+    if label_col is None:
+        return None
+
+    all_mask = df[label_col].astype(str) == "all"
+    all_rows = df[all_mask]
+    class_rows = df[~all_mask].set_index(label_col).reindex(labels).reset_index()
+    return pd.concat([class_rows, all_rows], ignore_index=True)
 from scipy.stats import spearmanr
 from sklearn.metrics import (
     mean_absolute_error,
