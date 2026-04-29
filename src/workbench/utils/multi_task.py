@@ -15,6 +15,12 @@ def compute_inverse_count_task_weights(targets: np.ndarray) -> np.ndarray:
     Use to equalize each task's gradient contribution when target columns have
     unequal coverage in a multi-task model.
 
+    Only appropriate for *symmetric* multi-task setups where every task is an end
+    product. For *primary + auxiliary* setups (only one task's predictions are
+    used downstream), this is the wrong knob — it up-weights smaller auxiliaries
+    and starves the primary. Use manual primary-favored weights instead, e.g.
+    [1.0, 0.3] with the primary first.
+
     Args:
         targets: (n_rows, n_tasks) float array of target values; NaN means missing.
 

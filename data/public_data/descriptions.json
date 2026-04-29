@@ -75,5 +75,44 @@
             "https://deepchemdata.s3-us-west-1.amazonaws.com/datasets/Lipophilicity.csv",
             "https://www.ebi.ac.uk/chembl/ (original AstraZeneca measurements)"
         ]
+    },
+    "logp_logd_overlap_07_10.csv": {
+        "description": "Multi-task LogD/LogP dataset, HIGH-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.7, 1.0]. The band includes Tanimoto = 1.0 (exact-SMILES matches), so a portion of rows have both `logp` and `logd` populated — these are the same compounds measured in both source datasets. Auxiliary chemistry is close to LogD's; this tier represents the 'duplicate / nearby supervision' mode. Built by data/public_data/build_logp_logd_overlap.py.",
+        "columns": {
+            "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
+            "logp": "Experimental logP (NaN if not measured)",
+            "logd": "Experimental logD at pH 7.4 (NaN if not measured)"
+        },
+        "num_compounds": null,
+        "references": [
+            "comp_chem/logp/logp_all (primary LogP source)",
+            "comp_chem/logd/logd_all (primary LogD source)"
+        ]
+    },
+    "logp_logd_overlap_03_07.csv": {
+        "description": "Multi-task LogD/LogP dataset, MEDIUM-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.3, 0.7). The band excludes Tanimoto = 1.0, so the auxiliary LogP rows share no SMILES with LogD — no rows have both columns populated. Auxiliary chemistry is similar to LogD's neighborhood without duplicating it; this tier represents the 'complementary supervision' mode. Built by data/public_data/build_logp_logd_overlap.py.",
+        "columns": {
+            "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
+            "logp": "Experimental logP (NaN if not measured)",
+            "logd": "Experimental logD at pH 7.4 (NaN if not measured)"
+        },
+        "num_compounds": null,
+        "references": [
+            "comp_chem/logp/logp_all (primary LogP source)",
+            "comp_chem/logd/logd_all (primary LogD source)"
+        ]
+    },
+    "logp_logd_overlap_00_03.csv": {
+        "description": "Multi-task LogD/LogP dataset, LOW-overlap tier. All 4,199 LogD compounds plus LogP rows whose best-Tanimoto-to-LogD falls in [0.0, 0.3) — auxiliary chemistry the LogD set doesn't cover. Tests whether 'novel' auxiliary representation transfers to LogD prediction. Auxiliary LogP rows share no SMILES with LogD. Built by data/public_data/build_logp_logd_overlap.py.",
+        "columns": {
+            "smiles": "Standardized canonical SMILES (joinable to logp_all.csv and logd_all.csv)",
+            "logp": "Experimental logP (NaN if not measured)",
+            "logd": "Experimental logD at pH 7.4 (NaN if not measured)"
+        },
+        "num_compounds": null,
+        "references": [
+            "comp_chem/logp/logp_all (primary LogP source)",
+            "comp_chem/logd/logd_all (primary LogD source)"
+        ]
     }
 }
