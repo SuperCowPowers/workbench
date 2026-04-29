@@ -76,6 +76,11 @@ DEFAULT_HYPERPARAMETERS = {
     # Freeze MPNN for N epochs, then unfreeze (0 = no freezing, train all params from start)
     # Recommended: 5-20 epochs when using foundation models to stabilize FFN before fine-tuning MPNN
     "freeze_mpnn_epochs": 0,
+    # Per-task loss weights for multi-task regression: list[float] of length
+    # n_targets, or None for no weighting. See
+    # workbench.utils.multi_task.compute_inverse_count_task_weights for one
+    # common scheme. Ignored when n_targets == 1.
+    "task_weights": None,
 }
 
 # Template parameters (filled in by Workbench)
@@ -436,6 +441,7 @@ if __name__ == "__main__":
         task: str, input_dim: int, hyperparameters: dict,
         num_classes: int | None, n_targets: int,
         output_transform: nn.UnscaleTransform | None,
+        task_weights: np.ndarray | None,
     ) -> nn.Predictor:
         """Build task-specific FFN head."""
         dropout = hyperparameters["dropout"]
@@ -454,15 +460,11 @@ if __name__ == "__main__":
         if criterion_name not in criterion_map:
             raise ValueError(f"Unknown criterion '{criterion_name}'. Supported: {list(criterion_map.keys())}")
 
-        # Per chemprop's docs ("Missing Target Values" section in tutorial/cli/train.rst),
-        # multi-task models with sparse labels need no manual task weighting: the loss is
-        # automatically rescaled by mask.sum() over non-missing entries, and target
-        # normalization (see normalize_targets below) puts all tasks on a comparable scale.
-        # Chemprop's official multi_task.ipynb example also passes no task_weights.
+        criterion_kwargs = {"task_weights": task_weights} if task_weights is not None else {}
         return nn.RegressionFFN(
             input_dim=input_dim, hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers,
             dropout=dropout, n_tasks=n_targets, output_transform=output_transform,
-            criterion=criterion_map[criterion_name](),
+            criterion=criterion_map[criterion_name](**criterion_kwargs),
         )
 
     def build_mpnn_model(
@@ -470,6 +472,7 @@ if __name__ == "__main__":
         n_targets: int = 1, n_extra_descriptors: int = 0,
         x_d_transform: nn.ScaleTransform | None = None,
         output_transform: nn.UnscaleTransform | None = None,
+        task_weights: np.ndarray | None = None,
     ) -> models.MPNN:
         """Build MPNN model, optionally loading pretrained weights."""
         from_foundation = hyperparameters.get("from_foundation")
@@ -485,7 +488,7 @@ if __name__ == "__main__":
             agg = nn.NormAggregation()
             ffn_input_dim = hyperparameters["hidden_dim"] + n_extra_descriptors
 
-        ffn = _build_ffn(task, ffn_input_dim, hyperparameters, num_classes, n_targets, output_transform)
+        ffn = _build_ffn(task, ffn_input_dim, hyperparameters, num_classes, n_targets, output_transform, task_weights)
         return models.MPNN(message_passing=mp, agg=agg, predictor=ffn, batch_norm=True, metrics=None, X_d_transform=x_d_transform)
 
     # -------------------------------------------------------------------------
@@ -550,7 +553,10 @@ if __name__ == "__main__":
     num_classes = None
     if model_type == "classifier":
         if n_targets > 1:
-            raise ValueError("Multi-task classification not supported")
+            raise ValueError(
+                "Multi-task classification is not yet supported in workbench (planned for a future release). "
+                "Chemprop itself supports it via BinaryClassificationFFN(n_tasks=N)."
+            )
         label_encoder = LabelEncoder()
         all_df[target_columns[0]] = label_encoder.fit_transform(all_df[target_columns[0]])
         num_classes = len(label_encoder.classes_)
@@ -578,6 +584,17 @@ if __name__ == "__main__":
     if all_extra_features is not None:
         all_extra_features = all_extra_features[valid_indices]
     print(f"Data after SMILES validation: {all_df.shape}")
+
+    task_weights = None
+    if n_targets > 1:
+        user_weights = hyperparameters.get("task_weights")
+        if user_weights is not None:
+            if len(user_weights) != n_targets:
+                raise ValueError(
+                    f"task_weights length ({len(user_weights)}) must match n_targets ({n_targets})"
+                )
+            task_weights = np.asarray(user_weights, dtype=np.float32)
+            print(f"Task weights: {dict(zip(target_columns, task_weights.round(3).tolist()))}")
 
     # -------------------------------------------------------------------------
     # Cross-validation setup
@@ -657,7 +674,7 @@ if __name__ == "__main__":
         mpnn = build_mpnn_model(
             hyperparameters, task=task, num_classes=num_classes, n_targets=n_targets,
             n_extra_descriptors=n_extra, x_d_transform=x_d_transform,
-            output_transform=output_transform,
+            output_transform=output_transform, task_weights=task_weights,
         )
 
         # Train model (with optional two-phase foundation training)
