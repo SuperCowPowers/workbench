@@ -15,9 +15,10 @@ auxiliary to teach chemistry the primary doesn't already cover.
   3. Multi-task LogD + LogP, MEDIUM overlap (Tanimoto 0.3 - 0.7)
   4. Multi-task LogD + LogP, LOW overlap    (Tanimoto 0.0 - 0.3)
 
-All four models use task weights inversely proportional to per-task row counts
-(applied in the chemprop template — equalizes each task's gradient contribution
-so the auxiliary doesn't dominate just because it has more rows).
+Multi-task models down-weight the LogP auxiliary to 0.3 (LogD primary at 1.0)
+to keep the primary task dominant in the gradient. Without this, auxiliary
+gradient share exceeds 50% (4,300 LogP vs 4,199 LogD) and negative transfer
+degrades LogD predictions across all tiers.
 
 Source datasets (built by data/public_data/build_logp_logd_overlap.py):
     s3://workbench-public-data/comp_chem/experiments/logp_logd_overlap_07_10.csv
@@ -114,6 +115,7 @@ for suffix, label, frag in TIERS:
             model_framework=ModelFramework.CHEMPROP,
             target_column=["logd", "logp"],  # Multi-task: list, LogD primary
             feature_list=["smiles"],
+            hyperparameters={"task_weights": [1.0, 0.3]},  # LogD=1.0, LogP=0.3
             description=f"Multi-task ChemProp LogD (primary) + LogP auxiliary, {frag}",
             tags=tags,
         )
