@@ -6,28 +6,33 @@ the chemprop multi-task wiring is correct independent of data quality, we genera
 multiple synthetic LogP recipes — fully fake, no chemistry-correctness constraint —
 on mid-tier compounds (chemistry distinct from the LogD set).
 
-Three recipes, increasing in "guaranteed informativeness":
+Four recipes, increasing in "guaranteed informativeness":
 
   Recipe A — pure Crippen.MolLogP. Atom-additive lipophilicity. Pearson with
              real LogD on this dataset ~0.39.
   Recipe B — Crippen + aromatic-fraction + rotatable-bond terms. Forces the GNN
              to learn additional structural features. Pearson ~0.42.
   Recipe C — Random Forest predictions of LogD trained on the full LogD corpus.
-             Synthetic LogP literally is "predicted LogD on extended chemistry."
-             By construction, this auxiliary supervises the GNN on a deterministic
-             function of structure that shares all of LogD's structural determinants.
-             If the MT implementation can't beat ST with this auxiliary, something
-             is wired wrong.
+             Synthetic LogP is "predicted LogD on extended chemistry" — a
+             deterministic function of structure that captures LogD's
+             descriptor-level structure-property relationships.
+  Recipe D — Real LogD on extended chemistry, stuffed into the logp column.
+             The auxiliary is literally LogD on 3,199 LogD-corpus compounds the
+             primary head never sees. MT under this recipe has access to ~4x more
+             LogD-relevant supervision than the 1k-compound ST baseline. Cross-
+             the-board lift is essentially guaranteed if MT works at all; if it
+             doesn't beat ST here, the wiring is broken.
 
 Inputs (must already exist):
     output/experiments/logp_logd_overlap_03_07.csv   (band-strict mid-tier)
-    output/logd/logd_all.csv                         (full LogD corpus for Recipe C training)
+    output/logd/logd_all.csv                         (full LogD corpus)
 
 Outputs:
     output/synthetic/multi_task/log_d.csv          (1,000 real LogD rows)
     output/synthetic/multi_task/log_p.csv          (Recipe A)
     output/synthetic/multi_task/log_p_blended.csv  (Recipe B)
     output/synthetic/multi_task/log_p_strong.csv   (Recipe C)
+    output/synthetic/multi_task/log_p_real.csv     (Recipe D, real LogD on extended)
 """
 
 import argparse
@@ -157,7 +162,7 @@ def main(n_per_set: int, seed: int) -> None:
     # ---- Recipe C: fit teacher model on full LogD corpus ----
     teacher = fit_logd_teacher(LOGD_CORPUS_PATH)
 
-    # ---- LogP sets (three recipes): mid-tier chemistry, synthetic labels ----
+    # ---- LogP sets A, B, C: mid-tier chemistry, synthetic labels ----
     logp_smiles = logp_pool.sample(n=n_per_set, random_state=seed + 1).reset_index(drop=True)
 
     logp_set_a = logp_smiles.copy()
@@ -169,10 +174,19 @@ def main(n_per_set: int, seed: int) -> None:
     logp_set_c = logp_smiles.copy()
     logp_set_c["logp"] = logp_set_c["smiles"].apply(teacher)
 
+    # ---- Recipe D: extended LogD compounds with real LogD as the "synthetic" logp ----
+    # Pull every LogD compound NOT in the primary set; their real LogD values become
+    # the synthetic logp. The auxiliary head is supervised by real LogD on chemistry
+    # the primary head never sees -> ~4x more LogD-relevant supervision than ST.
+    primary_smiles = set(logd_set["smiles"])
+    extended = logd_pool[~logd_pool["smiles"].isin(primary_smiles)].reset_index(drop=True)
+    logp_set_d = extended.rename(columns={"logd": "logp"})[["smiles", "logp"]]
+
     for name, df in [
         ("Recipe A (Crippen)", logp_set_a),
         ("Recipe B (blended)", logp_set_b),
         ("Recipe C (RF teacher)", logp_set_c),
+        ("Recipe D (real LogD on extended)", logp_set_d),
     ]:
         n_invalid = df["logp"].isna().sum()
         if n_invalid > 0:
@@ -180,20 +194,24 @@ def main(n_per_set: int, seed: int) -> None:
             df.dropna(subset=["logp"], inplace=True)
             df.reset_index(drop=True, inplace=True)
 
-    for df in (logp_set_a, logp_set_b, logp_set_c):
+    for df in (logp_set_a, logp_set_b, logp_set_c, logp_set_d):
         df.insert(0, "id", [f"logp_{i}" for i in range(len(df))])
 
     log.info(
-        f"LogP set A (pure Crippen):    {len(logp_set_a):,} rows  "
+        f"LogP set A (pure Crippen):                {len(logp_set_a):,} rows  "
         f"range [{logp_set_a['logp'].min():.2f}, {logp_set_a['logp'].max():.2f}]"
     )
     log.info(
-        f"LogP set B (blended):         {len(logp_set_b):,} rows  "
+        f"LogP set B (blended):                     {len(logp_set_b):,} rows  "
         f"range [{logp_set_b['logp'].min():.2f}, {logp_set_b['logp'].max():.2f}]"
     )
     log.info(
-        f"LogP set C (RF teacher):      {len(logp_set_c):,} rows  "
+        f"LogP set C (RF teacher):                  {len(logp_set_c):,} rows  "
         f"range [{logp_set_c['logp'].min():.2f}, {logp_set_c['logp'].max():.2f}]"
+    )
+    log.info(
+        f"LogP set D (real LogD on extended):       {len(logp_set_d):,} rows  "
+        f"range [{logp_set_d['logp'].min():.2f}, {logp_set_d['logp'].max():.2f}]"
     )
 
     # ---- Sanity check: each recipe's Pearson with real LogD on the LogD set ----
@@ -212,13 +230,14 @@ def main(n_per_set: int, seed: int) -> None:
     log.info(f"  Recipe A (pure Crippen):       r = {r_a:.3f}")
     log.info(f"  Recipe B (Crippen + aro/rot):  r = {r_b:.3f}")
     log.info(f"  Recipe C (RF teacher):         r = {r_c:.3f}  (training fit; teacher saw these)")
+    log.info(f"  Recipe D (real LogD on ext.):  r = 1.000  (by construction; aux IS real LogD)")
     log.info("  Reference: RTlogD paper        r = 0.628  -> 3% RMSE MT lift")
     log.info("")
-    log.info("Recipe C is the 'guaranteed lift' recipe: synthetic LogP is literally a")
-    log.info("teacher model's predicted LogD on the LogP-set compounds. If the GNN can")
-    log.info("learn to reproduce these labels via its LogP head, the shared embedding")
-    log.info("must encode LogD-relevant structural features. If MT-with-Recipe-C fails")
-    log.info("to beat ST, the chemprop multi-task wiring is broken.")
+    log.info("Recipe D is the cross-the-board guaranteed-lift recipe: the auxiliary head")
+    log.info("is supervised by real LogD on 3,199 LogD-corpus compounds the primary never")
+    log.info("sees. MT-with-D has access to ~4x more LogD-relevant supervision than ST.")
+    log.info("If MT-D doesn't beat ST on every metric, the chemprop multi-task wiring")
+    log.info("is broken.")
 
     # ---- Write outputs ----
     SYNTH_DIR.mkdir(parents=True, exist_ok=True)
@@ -226,15 +245,18 @@ def main(n_per_set: int, seed: int) -> None:
     log_p_out = SYNTH_DIR / "log_p.csv"
     log_p_blended_out = SYNTH_DIR / "log_p_blended.csv"
     log_p_strong_out = SYNTH_DIR / "log_p_strong.csv"
+    log_p_real_out = SYNTH_DIR / "log_p_real.csv"
     logd_set[["id", "smiles", "logd"]].to_csv(log_d_out, index=False)
     logp_set_a[["id", "smiles", "logp"]].to_csv(log_p_out, index=False)
     logp_set_b[["id", "smiles", "logp"]].to_csv(log_p_blended_out, index=False)
     logp_set_c[["id", "smiles", "logp"]].to_csv(log_p_strong_out, index=False)
+    logp_set_d[["id", "smiles", "logp"]].to_csv(log_p_real_out, index=False)
     log.info("")
     log.info(f"Saved -> {log_d_out}")
     log.info(f"Saved -> {log_p_out}")
     log.info(f"Saved -> {log_p_blended_out}")
     log.info(f"Saved -> {log_p_strong_out}")
+    log.info(f"Saved -> {log_p_real_out}")
     log.info("")
     log.info("Next steps:")
     log.info("  1. Upload to public data:")
@@ -242,6 +264,7 @@ def main(n_per_set: int, seed: int) -> None:
     log.info("       comp_chem/synthetic/multi_task/log_p")
     log.info("       comp_chem/synthetic/multi_task/log_p_blended")
     log.info("       comp_chem/synthetic/multi_task/log_p_strong")
+    log.info("       comp_chem/synthetic/multi_task/log_p_real")
     log.info("  2. Run examples/models/chemprop_logp_logd_synthetic.py to train and compare.")
 
 

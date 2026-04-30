@@ -5,17 +5,18 @@ because the real LogP/LogD overlap has Pearson 0.967 (auxiliary nearly redundant
 script validates the chemprop MT wiring independent of data quality, using deterministic
 synthetic LogP labels on a 1k-row subset.
 
-Trains four models against synthetic 1k datasets:
+Trains five models against synthetic 1k datasets:
 
   1. ST baseline                  — single-task LogD on 1k real LogD compounds
   2. MT crippen   (Recipe A)      — auxiliary = Crippen.MolLogP, Pearson(aux, LogD) ~0.39
   3. MT blended   (Recipe B)      — auxiliary = Crippen + aromaticity + rotatable, ~0.42
   4. MT strong    (Recipe C)      — auxiliary = RandomForest predicted LogD, ~0.97 (training)
+  5. MT real      (Recipe D)      — auxiliary = REAL LogD on 3,199 extended LogD compounds
 
-Recipe C is the guaranteed-informative recipe: the auxiliary literally is a teacher model's
-predicted LogD on extended chemistry. If MT-strong fails to beat ST, the chemprop
-multi-task wiring is broken; if it beats ST while the real-data experiments don't, the
-real-data flatness is auxiliary redundancy and the implementation is fine.
+Recipe D is the cross-the-board guaranteed-lift recipe: the auxiliary head is supervised
+by real LogD on chemistry the primary never sees. MT-real has access to ~4x more
+LogD-relevant supervision than ST. If MT-real doesn't beat ST on every metric, the
+chemprop multi-task wiring is broken — there is no other defensible explanation.
 
 Each MT model uses task_weights=[1.0, 0.3] to keep LogD primary in the gradient. LogD is
 listed first in target_column for downstream UI consistency.
@@ -25,6 +26,7 @@ Source datasets (built by data/public_data/build_synthetic_multi_task.py):
     comp_chem/synthetic/multi_task/log_p            (Recipe A: pure Crippen)
     comp_chem/synthetic/multi_task/log_p_blended    (Recipe B: blended chemistry)
     comp_chem/synthetic/multi_task/log_p_strong     (Recipe C: RF-teacher LogD)
+    comp_chem/synthetic/multi_task/log_p_real       (Recipe D: real LogD on extended)
 """
 
 import pandas as pd
@@ -33,7 +35,7 @@ from workbench.api import Endpoint, FeatureSet, Model, ModelFramework, ModelType
 from workbench.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
 
 # Recreate flag — flip to True to rebuild artifacts that already exist
-recreate = True
+recreate = False
 
 PUBLIC_PREFIX = "comp_chem/synthetic/multi_task"
 
@@ -42,6 +44,7 @@ RECIPES = [
     ("crippen", "log_p", "pure Crippen.MolLogP"),
     ("blended", "log_p_blended", "Crippen + aromaticity + rotatable bonds"),
     ("strong", "log_p_strong", "RandomForest-predicted LogD (synthetic teacher)"),
+    ("real", "log_p_real", "real LogD on extended chemistry (guaranteed-lift control)"),
 ]
 
 
