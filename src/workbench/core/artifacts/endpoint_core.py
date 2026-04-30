@@ -505,18 +505,21 @@ class EndpointCore(Artifact):
                 prefix = "auto" if capture_name == "auto_inference" else capture_name
 
             for target in target_list:
-                # Drop rows with NaN target values for metrics/plots
-                target_df = prediction_df.dropna(subset=[target])
-
-                # For multi-target models, prediction column is {target}_pred, otherwise "prediction"
+                # If the target ground-truth column isn't in the eval frame (e.g.
+                # external comparison set with no labels for this species), skip
+                # metrics but still capture predictions.
                 pred_col = f"{target}_pred" if is_multi_target else "prediction"
-
-                # Compute per-target metrics
-                if model.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
-                    target_metrics = self.regression_metrics(target, target_df, prediction_col=pred_col)
-                elif model.model_type == ModelType.CLASSIFIER:
-                    target_metrics = self.classification_metrics(target, target_df, prediction_col=pred_col)
+                if target in prediction_df.columns:
+                    target_df = prediction_df.dropna(subset=[target])
+                    if model.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
+                        target_metrics = self.regression_metrics(target, target_df, prediction_col=pred_col)
+                    elif model.model_type == ModelType.CLASSIFIER:
+                        target_metrics = self.classification_metrics(target, target_df, prediction_col=pred_col)
+                    else:
+                        target_metrics = pd.DataFrame()
                 else:
+                    self.log.info(f"Target Column {target} not found in prediction_df; skipping metrics for this target.")
+                    target_df = prediction_df
                     target_metrics = pd.DataFrame()
 
                 if is_multi_target:
