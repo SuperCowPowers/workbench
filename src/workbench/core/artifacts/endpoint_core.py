@@ -518,7 +518,9 @@ class EndpointCore(Artifact):
                     else:
                         target_metrics = pd.DataFrame()
                 else:
-                    self.log.info(f"Target Column {target} not found in prediction_df; skipping metrics for this target.")
+                    self.log.info(
+                        f"Target Column {target} not found in prediction_df; skipping metrics for this target."
+                    )
                     target_df = prediction_df
                     target_metrics = pd.DataFrame()
 
