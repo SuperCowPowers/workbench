@@ -230,7 +230,7 @@ def main(n_per_set: int, seed: int) -> None:
     log.info(f"  Recipe A (pure Crippen):       r = {r_a:.3f}")
     log.info(f"  Recipe B (Crippen + aro/rot):  r = {r_b:.3f}")
     log.info(f"  Recipe C (RF teacher):         r = {r_c:.3f}  (training fit; teacher saw these)")
-    log.info(f"  Recipe D (real LogD on ext.):  r = 1.000  (by construction; aux IS real LogD)")
+    log.info("  Recipe D (real LogD on ext.):  r = 1.000  (by construction; aux IS real LogD)")
     log.info("  Reference: RTlogD paper        r = 0.628  -> 3% RMSE MT lift")
     log.info("")
     log.info("Recipe D is the cross-the-board guaranteed-lift recipe: the auxiliary head")
