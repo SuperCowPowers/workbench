@@ -410,7 +410,10 @@ def temporal_split(df: pd.DataFrame, date_column: str, end_date: str) -> Tuple[p
     """
     df = df.copy()
     raw_values = df[date_column].copy()
-    df[date_column] = pd.to_datetime(df[date_column], errors="coerce")
+    # format="mixed" handles columns that contain both 'YYYY-MM-DD' and
+    # 'YYYY-MM-DD HH:MM:SS' style strings (which can happen when a sentinel
+    # Timestamp is filled into a column that otherwise holds date-only strings).
+    df[date_column] = pd.to_datetime(df[date_column], errors="coerce", format="mixed")
 
     # Log diagnostic info about any unparseable dates
     nat_count = df[date_column].isna().sum()
