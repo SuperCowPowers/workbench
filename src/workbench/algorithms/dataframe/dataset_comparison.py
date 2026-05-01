@@ -44,6 +44,9 @@ class DatasetComparison:
     respective target columns. Use ``results()`` for the unified per-compound
     DataFrame, ``summary()`` for aggregate roll-up stats, and
     ``exact_smiles_overlap()`` for the canonical-SMILES inner join.
+
+    For a quick label-only pre-flight on a pre-combined multi-task DataFrame
+    (no fingerprint cost), see ``workbench.utils.multi_task.assess_multi_task_data``.
     """
 
     def __init__(
