@@ -187,7 +187,7 @@ def combine_multi_task_data(
     return result
 
 
-def build_multi_task_featureset(
+def pull_multi_task_data(
     id_based_sources: dict,
     smiles_based_sources: dict = None,
     id_column: str = "id",
