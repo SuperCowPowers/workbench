@@ -259,9 +259,7 @@ def pull_multi_task_data(
     merged_targets = [t for tl in id_targets for t in tl]
     for fs_name, fs_config in smiles_based_sources.items():
         df, target_cols = _pull_and_normalize(fs_name, fs_config)
-        merged = combine_multi_task_data(
-            [merged, df], [merged_targets, target_cols], merge_on_smiles=True
-        )
+        merged = combine_multi_task_data([merged, df], [merged_targets, target_cols], merge_on_smiles=True)
         merged_targets.extend(target_cols)
 
     return merged
@@ -373,23 +371,27 @@ def assess_multi_task_data(
         value_range, value_range_reason = _value_range_check(df[primary], df[aux])
         reason = f"overlap: {overlap_reason}. extension: {extension_reason}. -> {rec_reason}"
 
-        rows.append({
-            "auxiliary": aux,
-            "n_primary": n_primary,
-            "n_aux": n_aux,
-            "n_shared": n_shared,
-            "n_aux_only": n_aux_only,
-            "pearson_r": r,
-            "r_confidence": r_confidence,
-            "overlap": overlap,
-            "extension": extension,
-            "recommendation": recommendation,
-            "value_range": value_range,
-            "reason": reason,
-        })
+        rows.append(
+            {
+                "auxiliary": aux,
+                "n_primary": n_primary,
+                "n_aux": n_aux,
+                "n_shared": n_shared,
+                "n_aux_only": n_aux_only,
+                "pearson_r": r,
+                "r_confidence": r_confidence,
+                "overlap": overlap,
+                "extension": extension,
+                "recommendation": recommendation,
+                "value_range": value_range,
+                "reason": reason,
+            }
+        )
         r_str = f"r={r:.3f}" if not np.isnan(r) else "r=NA"
-        log.info(f"  {aux}: shared={n_shared:,} aux_only={n_aux_only:,} {r_str} ({r_confidence}) "
-                 f"-> overlap={overlap}, extension={extension} -> {recommendation}")
+        log.info(
+            f"  {aux}: shared={n_shared:,} aux_only={n_aux_only:,} {r_str} ({r_confidence}) "
+            f"-> overlap={overlap}, extension={extension} -> {recommendation}"
+        )
         if value_range == "WARN":
             log.warning(f"  {aux}: value-range WARN — {value_range_reason}")
 
@@ -422,8 +424,10 @@ def _value_range_check(primary_vals: pd.Series, aux_vals: pd.Series) -> tuple[st
 
     p_med, p_q1, p_q3 = float(p.median()), float(p.quantile(0.25)), float(p.quantile(0.75))
     a_med, a_q1, a_q3 = float(a.median()), float(a.quantile(0.25)), float(a.quantile(0.75))
-    summary = (f"primary median={p_med:.2f} IQR=[{p_q1:.2f}, {p_q3:.2f}]; "
-               f"aux median={a_med:.2f} IQR=[{a_q1:.2f}, {a_q3:.2f}]")
+    summary = (
+        f"primary median={p_med:.2f} IQR=[{p_q1:.2f}, {p_q3:.2f}]; "
+        f"aux median={a_med:.2f} IQR=[{a_q1:.2f}, {a_q3:.2f}]"
+    )
 
     iqr_overlap = (p_q3 >= a_q1) and (a_q3 >= p_q1)
     if iqr_overlap:
@@ -439,7 +443,10 @@ def _assess_overlap(r: float, n_shared: int, min_n_shared: int) -> tuple[str, st
         return ("Beneficial", f"sweet-spot r={r:.2f} on {n_shared:,} shared compounds — encoder learns richer features")
     if r > 0.95:
         return ("Neutral", f"redundant r={r:.2f} on {n_shared:,} shared compounds — aux head just re-weights primary")
-    return ("Harmful", f"discordant r={r:.2f} on {n_shared:,} shared compounds — gradient conflict, negative-transfer risk")
+    return (
+        "Harmful",
+        f"discordant r={r:.2f} on {n_shared:,} shared compounds — gradient conflict, negative-transfer risk",
+    )
 
 
 def _assess_extension(
@@ -584,41 +591,48 @@ if __name__ == "__main__":
     # 1. compute_inverse_count_task_weights
     # =====================================================================
     print("\n=== compute_inverse_count_task_weights ===")
-    targets_arr = np.array([
-        [1.0,    np.nan, np.nan],
-        [2.0,    5.0,    np.nan],
-        [np.nan, 6.0,    np.nan],
-        [3.0,    7.0,    9.0],
-        [np.nan, np.nan, 10.0],
-    ])
+    targets_arr = np.array(
+        [
+            [1.0, np.nan, np.nan],
+            [2.0, 5.0, np.nan],
+            [np.nan, 6.0, np.nan],
+            [3.0, 7.0, 9.0],
+            [np.nan, np.nan, 10.0],
+        ]
+    )
     weights = compute_inverse_count_task_weights(targets_arr)
-    print(f"  per-task non-NaN counts: [3, 3, 2]")
+    print("  per-task non-NaN counts: [3, 3, 2]")
     print(f"  inverse-count weights (mean-normalized to 1): {weights.tolist()}")
 
     # =====================================================================
     # 2. combine_multi_task_data — id-based merge with partial overlap
     # =====================================================================
     print("\n=== combine_multi_task_data (id merge) ===")
-    df_p = pd.DataFrame({
-        "id": [1, 2, 3, 4],
-        "smiles": ["CC", "CCC", "CCCC", "CCCCC"],
-        "feat_a": [0.1, 0.2, 0.3, 0.4],
-        "primary": [10.0, 20.0, 30.0, 40.0],
-    })
-    df_a = pd.DataFrame({
-        "id": [3, 4, 5, 6],
-        "smiles": ["CCCC", "CCCCC", "C1CC1", "C1CCC1"],
-        "feat_a": [0.3, 0.4, 0.5, 0.6],
-        "aux": [33.0, 44.0, 55.0, 66.0],
-    })
+    df_p = pd.DataFrame(
+        {
+            "id": [1, 2, 3, 4],
+            "smiles": ["CC", "CCC", "CCCC", "CCCCC"],
+            "feat_a": [0.1, 0.2, 0.3, 0.4],
+            "primary": [10.0, 20.0, 30.0, 40.0],
+        }
+    )
+    df_a = pd.DataFrame(
+        {
+            "id": [3, 4, 5, 6],
+            "smiles": ["CCCC", "CCCCC", "C1CC1", "C1CCC1"],
+            "feat_a": [0.3, 0.4, 0.5, 0.6],
+            "aux": [33.0, 44.0, 55.0, 66.0],
+        }
+    )
     combined = combine_multi_task_data([df_p, df_a], [["primary"], ["aux"]], id_column="id")
     print(combined.sort_values("id").to_string(index=False))
 
     # =====================================================================
     # 3. assess_multi_task_data — exercise each verdict path
     # =====================================================================
-    def make_mt_df(n_shared: int, n_primary_only: int, n_aux_only: int,
-                   signal: float = 1.0, noise: float = 4.0) -> pd.DataFrame:
+    def make_mt_df(
+        n_shared: int, n_primary_only: int, n_aux_only: int, signal: float = 1.0, noise: float = 4.0
+    ) -> pd.DataFrame:
         """Build a synthetic MT df with the requested overlap structure.
 
         signal/noise tune label correlation on shared rows: aux = signal*primary + N(0, noise).
@@ -627,26 +641,84 @@ if __name__ == "__main__":
         primary_vals = rng.standard_normal(n_shared + n_primary_only) * 5
         aux_shared = signal * primary_vals[:n_shared] + rng.standard_normal(n_shared) * noise
         aux_only_vals = rng.standard_normal(n_aux_only) * 5
-        return pd.DataFrame({
-            "primary": np.concatenate([primary_vals, [np.nan] * n_aux_only]),
-            "aux":     np.concatenate([aux_shared, [np.nan] * n_primary_only, aux_only_vals]),
-        })
+        return pd.DataFrame(
+            {
+                "primary": np.concatenate([primary_vals, [np.nan] * n_aux_only]),
+                "aux": np.concatenate([aux_shared, [np.nan] * n_primary_only, aux_only_vals]),
+            }
+        )
 
     # Each case checks (overlap, extension, recommendation, r_confidence) as a tuple.
     cases = [
         # (label, df, expected_overlap, expected_extension, expected_recommendation, expected_r_confidence)
-        ("sweet-spot + extended",       make_mt_df(100, 100, 800, signal=1.0, noise=4.0), "Beneficial", "Strong",  "Use",      "high"),
-        ("sweet-spot, no extended",     make_mt_df(100, 100,   0, signal=1.0, noise=4.0), "Beneficial", "None",    "Use",      "high"),
-        ("redundant + extended",        make_mt_df(100, 100, 800, signal=1.0, noise=0.5), "Neutral",    "Strong",  "Use",      "high"),
-        ("redundant, no extended",      make_mt_df(100, 100,   0, signal=1.0, noise=0.5), "Neutral",    "None",    "Skip",     "high"),
-        ("discordant + extended",       make_mt_df(100, 100, 800, signal=0.1, noise=5.0), "Harmful",    "Modest",  "Risky",    "high"),
-        ("discordant, no extended",     make_mt_df(100, 100,   0, signal=0.1, noise=5.0), "Harmful",    "None",    "Skip",     "high"),
-        ("discordant + low-volume",     make_mt_df(100, 100,  20, signal=0.1, noise=5.0), "Harmful",    "Minimal", "Skip",     "high"),
-        ("zero overlap, extended",      make_mt_df(  0, 100, 500, signal=1.0, noise=0.5), "N/A",        "Strong",  "Use",      "unmeasured"),
-        ("redundant + low-volume",      make_mt_df(100, 100,  20, signal=1.0, noise=0.5), "Neutral",    "Modest",  "Marginal", "high"),
+        (
+            "sweet-spot + extended",
+            make_mt_df(100, 100, 800, signal=1.0, noise=4.0),
+            "Beneficial",
+            "Strong",
+            "Use",
+            "high",
+        ),
+        (
+            "sweet-spot, no extended",
+            make_mt_df(100, 100, 0, signal=1.0, noise=4.0),
+            "Beneficial",
+            "None",
+            "Use",
+            "high",
+        ),
+        ("redundant + extended", make_mt_df(100, 100, 800, signal=1.0, noise=0.5), "Neutral", "Strong", "Use", "high"),
+        ("redundant, no extended", make_mt_df(100, 100, 0, signal=1.0, noise=0.5), "Neutral", "None", "Skip", "high"),
+        (
+            "discordant + extended",
+            make_mt_df(100, 100, 800, signal=0.1, noise=5.0),
+            "Harmful",
+            "Modest",
+            "Risky",
+            "high",
+        ),
+        ("discordant, no extended", make_mt_df(100, 100, 0, signal=0.1, noise=5.0), "Harmful", "None", "Skip", "high"),
+        (
+            "discordant + low-volume",
+            make_mt_df(100, 100, 20, signal=0.1, noise=5.0),
+            "Harmful",
+            "Minimal",
+            "Skip",
+            "high",
+        ),
+        (
+            "zero overlap, extended",
+            make_mt_df(0, 100, 500, signal=1.0, noise=0.5),
+            "N/A",
+            "Strong",
+            "Use",
+            "unmeasured",
+        ),
+        (
+            "redundant + low-volume",
+            make_mt_df(100, 100, 20, signal=1.0, noise=0.5),
+            "Neutral",
+            "Modest",
+            "Marginal",
+            "high",
+        ),
         # r_confidence tiers driven by n_shared
-        ("sweet-spot, n_shared=15 (low confidence)", make_mt_df( 15, 100, 200, signal=1.0, noise=4.0), "Beneficial", "Strong", "Use", "low"),
-        ("sweet-spot, n_shared=50 (moderate)",       make_mt_df( 50, 100, 200, signal=1.0, noise=4.0), "Beneficial", "Strong", "Use", "moderate"),
+        (
+            "sweet-spot, n_shared=15 (low confidence)",
+            make_mt_df(15, 100, 200, signal=1.0, noise=4.0),
+            "Beneficial",
+            "Strong",
+            "Use",
+            "low",
+        ),
+        (
+            "sweet-spot, n_shared=50 (moderate)",
+            make_mt_df(50, 100, 200, signal=1.0, noise=4.0),
+            "Beneficial",
+            "Strong",
+            "Use",
+            "moderate",
+        ),
     ]
     print("\n=== assess_multi_task_data ===")
     for label, df, exp_overlap, exp_ext, exp_rec, exp_conf in cases:
@@ -656,8 +728,12 @@ if __name__ == "__main__":
         row = result.iloc[0]
         assert row["overlap"] == exp_overlap, f"  overlap MISMATCH: expected {exp_overlap}, got {row['overlap']}"
         assert row["extension"] == exp_ext, f"  extension MISMATCH: expected {exp_ext}, got {row['extension']}"
-        assert row["recommendation"] == exp_rec, f"  recommendation MISMATCH: expected {exp_rec}, got {row['recommendation']}"
-        assert row["r_confidence"] == exp_conf, f"  r_confidence MISMATCH: expected {exp_conf}, got {row['r_confidence']}"
+        assert (
+            row["recommendation"] == exp_rec
+        ), f"  recommendation MISMATCH: expected {exp_rec}, got {row['recommendation']}"
+        assert (
+            row["r_confidence"] == exp_conf
+        ), f"  r_confidence MISMATCH: expected {exp_conf}, got {row['r_confidence']}"
         assert row["value_range"] == "ok", f"  value_range MISMATCH: expected ok, got {row['value_range']}"
 
     # value_range WARN: aux on a totally different scale than primary
