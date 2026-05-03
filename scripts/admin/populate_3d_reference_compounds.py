@@ -121,15 +121,15 @@ REFERENCE_COMPOUNDS = [
         "npr2_max": 1.01,
         "imhb_min": 0.0,
         "imhb_max": 0.0,
-        "undefined_chiral_centers_expected": 4,
+        "undefined_chiral_centers_expected": 0,
         "stereo_preserved_expected": True,
         "notes": (
             "T_d-symmetric diamondoid cage — textbook sphere shape. "
             "RDKit's CIP detector flags the 4 bridgehead carbons as "
-            "'potentially chiral' even though T_d symmetry makes them "
-            "equivalent (not truly stereogenic). Expected behavior — the "
-            "undefined_chiral_centers metric reports what RDKit detects, "
-            "which is a useful upper bound for input-ambiguity warnings."
+            "'potentially chiral' but each is in 3 rings, so the "
+            "ring-junction filter in standardize() excludes them. Net "
+            "count is 0, which also reflects the chemistry (T_d symmetry "
+            "means adamantane has no stereoisomers)."
         ),
     },
     {
@@ -299,9 +299,15 @@ REFERENCE_COMPOUNDS = [
         "name": "testosterone",
         "smiles": "CC12CCC3C(C1CCC2O)CCC4=CC(=O)CCC34C",
         "shape_class": "",
-        "undefined_chiral_centers_expected": 6,
+        "undefined_chiral_centers_expected": 1,
         "stereo_preserved_expected": True,
-        "notes": "Steroid SMILES with no stereo markers — exercises undefined_chiral_centers=6 reporting",
+        "notes": (
+            "Steroid SMILES with no stereo markers. The fused-ring scaffold "
+            "has 6 potential stereocenters, but 5 are ring-junction atoms "
+            "(in 2 rings each) and excluded by the ring-junction filter in "
+            "standardize(); only C17 (bearing -OH, in a single ring) is "
+            "counted. Exercises undefined_chiral_centers=1 reporting."
+        ),
     },
 ]
 
