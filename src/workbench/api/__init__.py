@@ -8,8 +8,8 @@ These class provide high-level APIs for the Workbench package, offering easy acc
 - MetaModel: A Model that aggregates predictions from multiple endpoints
 - ModelType: Enum for the different model types supported by Workbench
 - Endpoint: Manages the deployment and invocations/inference on AWS Endpoints
-- AsyncEndpoint: Async variant of Endpoint for long-running inference (e.g., Boltzmann 3D descriptors)
-- FeatureEndpoint: Endpoint that reports its registered feature columns via feature_list()
+  (auto-routes to the async transport for endpoints deployed with
+  ``async_endpoint=True``; ``feature_list()`` is available on feature endpoints)
 - InferenceCache: Client-side S3 caching wrapper around an Endpoint's inference()
 - Meta: Provides an API to retrieve AWS Metadata for the above classes
 - ParameterStore: Manages AWS Parameter Store
@@ -21,8 +21,6 @@ from .feature_set import FeatureSet
 from .model import Model, ModelType, ModelFramework
 from .meta_model import MetaModel
 from .endpoint import Endpoint
-from .async_endpoint import AsyncEndpoint
-from .feature_endpoint import FeatureEndpoint
 from .inference_cache import InferenceCache
 from .meta import Meta
 from .parameter_store import ParameterStore
@@ -37,8 +35,6 @@ __all__ = [
     "ModelType",
     "ModelFramework",
     "Endpoint",
-    "AsyncEndpoint",
-    "FeatureEndpoint",
     "InferenceCache",
     "Meta",
     "ParameterStore",

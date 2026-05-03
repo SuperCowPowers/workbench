@@ -91,7 +91,8 @@ class Model(ModelCore):
         workbench_meta so later reconstructions can see what it was deployed with.
 
         Returns:
-            Endpoint: The Endpoint (or AsyncEndpoint if async_endpoint=True)
+            Endpoint: The Endpoint (auto-routes to the async transport when
+            ``async_endpoint=True``).
         """
 
         # Ensure the endpoint_name is valid
@@ -125,13 +126,7 @@ class Model(ModelCore):
             data_capture=data_capture,
         )
 
-        # Return the appropriate endpoint type
-        if async_endpoint:
-            from workbench.api.async_endpoint import AsyncEndpoint
-
-            end = AsyncEndpoint(name)
-        else:
-            end = Endpoint(name)
+        end = Endpoint(name)
         end.set_owner(self.get_owner())
         return end
 

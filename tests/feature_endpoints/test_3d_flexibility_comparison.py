@@ -22,7 +22,7 @@ Populated by: scripts/admin/populate_flexibility_reference_compounds.py
 
 import pandas as pd
 
-from workbench.api import AsyncEndpoint, Endpoint, PublicData
+from workbench.api import Endpoint, PublicData
 
 FAST_ENDPOINT = "smiles-to-3d-fast-v1"
 FULL_ENDPOINT = "smiles-to-3d-full-v1"
@@ -56,7 +56,7 @@ BOUNDED_FEATURES = {"npr1", "npr2", "asphericity"}
 CLASS_ORDER = ["rigid", "semi_rigid", "flexible", "very_flexible"]
 
 fast_endpoint = Endpoint(FAST_ENDPOINT)
-full_endpoint = AsyncEndpoint(FULL_ENDPOINT)
+full_endpoint = Endpoint(FULL_ENDPOINT)
 
 # ---------------------------------------------------------------------------
 # Cached inference results

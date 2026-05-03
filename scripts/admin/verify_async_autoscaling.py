@@ -37,7 +37,7 @@ import threading
 import time
 from datetime import datetime, timedelta, timezone
 
-from workbench.api import AsyncEndpoint, PublicData
+from workbench.api import Endpoint, PublicData
 
 
 def _get_metric(cw, endpoint_name: str, metric: str, stat: str, start, end) -> float:
@@ -122,7 +122,7 @@ def main():
     )
     args = parser.parse_args()
 
-    endpoint = AsyncEndpoint(args.endpoint_name)
+    endpoint = Endpoint(args.endpoint_name)
     if not endpoint.exists():
         print(f"Endpoint '{args.endpoint_name}' not found.", file=sys.stderr)
         sys.exit(1)

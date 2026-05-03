@@ -14,13 +14,13 @@ Populated by: scripts/admin/populate_3d_reference_compounds.py
 
 import pandas as pd
 
-from workbench.api import AsyncEndpoint, PublicData
+from workbench.api import Endpoint, PublicData
 from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
 
 ENDPOINT_NAME = "smiles-to-3d-full-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/reference_compounds_3d"
 
-endpoint = AsyncEndpoint(ENDPOINT_NAME)
+endpoint = Endpoint(ENDPOINT_NAME)
 
 # Module-level caches — Boltzmann inference is expensive (minutes for the full
 # reference set) so we run it exactly once and reuse the result for every test.
@@ -61,7 +61,7 @@ def _get_result() -> pd.DataFrame:
 def test_endpoint_exists():
     """Async endpoint is deployed and healthy."""
     assert endpoint.exists(), f"Endpoint '{ENDPOINT_NAME}' does not exist"
-    print(f"AsyncEndpoint: {endpoint.name}")
+    print(f"Endpoint: {endpoint.name}")
 
 
 def test_reference_compounds_loadable():

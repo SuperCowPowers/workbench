@@ -142,8 +142,8 @@ def register_features(endpoint, feature_cols: Optional[List[str]] = None) -> Lis
     consistency) with no filtering. It's the caller's job to pass the right set.
 
     Args:
-        endpoint: A Workbench ``Endpoint`` (or ``AsyncEndpoint``) instance
-            deployed from a Model/FeatureSet.
+        endpoint: A Workbench ``Endpoint`` instance deployed from a
+            Model/FeatureSet (auto-routes async transparently).
         feature_cols: Optional explicit list of feature column names to
             register. When provided, skips auto-discovery.
 

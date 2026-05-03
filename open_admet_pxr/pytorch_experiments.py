@@ -29,7 +29,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
-from workbench.api import FeatureEndpoint, FeatureSet, Model, ModelFramework, ModelType
+from workbench.api import Endpoint, FeatureSet, Model, ModelFramework, ModelType
 
 log = logging.getLogger("openadmet_pxr.pytorch_experiments")
 
@@ -84,7 +84,7 @@ def _feature_list_2d_3d() -> list[str]:
     """Assemble the 2d_3d FeatureSet's feature column list."""
     features: list[str] = []
     for ep in (ENDPOINT_2D, ENDPOINT_3D):
-        features.extend(FeatureEndpoint(ep).feature_list())
+        features.extend(Endpoint(ep).feature_list())
     return features
 
 

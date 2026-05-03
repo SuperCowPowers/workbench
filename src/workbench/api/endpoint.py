@@ -3,6 +3,8 @@ Endpoints are automatically set up and provisioned for deployment into AWS.
 Endpoints can be viewed in the AWS Sagemaker interfaces or in the Workbench
 Dashboard UI, which provides additional model details and performance metrics"""
 
+from typing import List
+
 import pandas as pd
 
 # Workbench Imports
@@ -21,17 +23,19 @@ class Endpoint(EndpointCore):
 
     If the underlying endpoint was deployed as async (``workbench_meta["async_endpoint"]``),
     ``inference()`` / ``fast_inference()`` transparently route through an internal
-    ``AsyncEndpoint`` so callers get correct behavior from a single object.
+    async core so callers get correct behavior from a single object.
+
+    For feature endpoints (those that emit registered feature columns), use
+    :meth:`feature_list` to retrieve the column list.
     """
 
     def __init__(self, endpoint_name: str):
         super().__init__(endpoint_name)
         self._async = None
         if self.exists() and (self.workbench_meta() or {}).get("async_endpoint"):
-            # Lazy import keeps api.endpoint ↔ api.async_endpoint clean.
-            from workbench.api.async_endpoint import AsyncEndpoint
+            from workbench.core.artifacts.async_endpoint_core import AsyncEndpointCore
 
-            self._async = AsyncEndpoint(endpoint_name)
+            self._async = AsyncEndpointCore(endpoint_name)
 
     def details(self, **kwargs) -> dict:
         """Endpoint Details
@@ -125,6 +129,63 @@ class Endpoint(EndpointCore):
             pd.DataFrame: A DataFrame with cross fold predictions
         """
         return super().cross_fold_inference(include_quantiles)
+
+    def feature_list(self) -> List[str]:
+        """Return this endpoint's registered feature columns.
+
+        Only meaningful for *feature endpoints* — endpoints that take an input
+        column (typically ``smiles``) and emit computed feature columns
+        (descriptors, fingerprints, etc.).
+
+        Fast path: reads ``/workbench/feature_lists/<endpoint_name>`` from
+        ParameterStore (populated by
+        :func:`workbench.utils.feature_endpoint_utils.register_features` at
+        deploy time).
+
+        Freshness check: compares the parameter's ``LastModifiedDate`` to the
+        endpoint's ``modified()`` time. If the endpoint has been redeployed
+        since the feature list was cached, the cache is stale — we re-derive
+        via the fallback path below and rewrite the cache.
+
+        Fallback (also used when there's no cache yet): runs a small smoke
+        inference to discover the columns, writes them to ParameterStore so
+        subsequent calls are fast, and returns the list.
+
+        Returns:
+            List of feature column names.
+
+        Raises:
+            RuntimeError: If the fallback inference fails (e.g. the endpoint
+                isn't actually a feature endpoint and produces no new columns).
+        """
+        from workbench.api.parameter_store import ParameterStore
+        from workbench.utils.feature_endpoint_utils import feature_list_key, register_features
+
+        ps = ParameterStore()
+        key = feature_list_key(self.name)
+        cols = ps.get(key)
+
+        if cols is None:
+            self.log.important(
+                f"Endpoint[{self.name}]: no feature list registered yet — "
+                f"running smoke inference to discover and register columns."
+            )
+            return register_features(self)
+
+        param_modified = ps.last_modified(key)
+        try:
+            endpoint_modified = self.modified()
+        except Exception:
+            endpoint_modified = None
+
+        if param_modified is not None and endpoint_modified is not None and endpoint_modified > param_modified:
+            self.log.important(
+                f"Endpoint[{self.name}]: endpoint modified at {endpoint_modified} "
+                f"is newer than cached feature list ({param_modified}) — re-deriving."
+            )
+            return register_features(self)
+
+        return cols
 
 
 if __name__ == "__main__":

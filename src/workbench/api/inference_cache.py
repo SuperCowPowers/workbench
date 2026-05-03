@@ -148,8 +148,8 @@ class InferenceCache:
         max_instances = meta.get("max_instances")
         if max_instances is None:
             return None
-        # Mirror AsyncEndpoint's own resolution: explicit meta override wins,
-        # otherwise the core default.
+        # Mirror AsyncEndpointCore's own resolution: explicit meta override
+        # wins, otherwise the core default.
         from workbench.core.artifacts.async_endpoint_core import _DEFAULT_BATCH_SIZE
 
         batch_size = int(meta.get("inference_batch_size", _DEFAULT_BATCH_SIZE))

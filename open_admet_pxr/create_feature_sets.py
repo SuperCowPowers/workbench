@@ -27,7 +27,7 @@ Usage (with WORKBENCH_CONFIG already set, e.g. ideaya_sandbox.json):
     python create_feature_sets.py --refeaturize      # clear the 3D InferenceCache and recompute
     python create_feature_sets.py --rebuild          # force-rebuild DataSource + all FeatureSets
 
-Feature column lists come from each endpoint's FeatureEndpoint.feature_list()
+Feature column lists come from each endpoint's Endpoint.feature_list()
 (backed by ParameterStore, with auto-derive fallback on miss or staleness).
 """
 
@@ -40,7 +40,7 @@ import pandas as pd
 
 from workbench.api import (
     DataSource,
-    FeatureEndpoint,
+    Endpoint,
     FeatureSet,
     PublicData,
 )
@@ -98,13 +98,13 @@ def _ensure_data_source(df: pd.DataFrame, rebuild: bool) -> None:
 def _featurize(df: pd.DataFrame, refeaturize: bool) -> tuple[pd.DataFrame, list[str], list[str]]:
     """Run df through the 2D then the 3D endpoint (3D is SMILES-cached).
 
-    FeatureEndpoint handles both sides for us:
+    Endpoint handles both sides for us:
       - .feature_list() returns the registered feature columns from ParameterStore
       - .inference() routes to the right transport (realtime or async) based on
         how the endpoint was deployed — so we don't need to know or care.
     """
-    fe_2d = FeatureEndpoint(ENDPOINT_2D)
-    fe_3d = FeatureEndpoint(ENDPOINT_3D)
+    fe_2d = Endpoint(ENDPOINT_2D)
+    fe_3d = Endpoint(ENDPOINT_3D)
     cols_2d = fe_2d.feature_list()
     cols_3d = fe_3d.feature_list()
     log.info(f"  {ENDPOINT_2D}: {len(cols_2d)} registered features")

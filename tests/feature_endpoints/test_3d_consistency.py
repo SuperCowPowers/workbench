@@ -18,7 +18,7 @@ Populated by: scripts/admin/populate_3d_reference_compounds.py
 
 import pandas as pd
 
-from workbench.api import AsyncEndpoint, Endpoint, PublicData
+from workbench.api import Endpoint, PublicData
 from workbench.utils.chem_utils.mol_descriptors_3d import get_3d_feature_names
 
 FAST_ENDPOINT = "smiles-to-3d-fast-v1"
@@ -26,7 +26,7 @@ FULL_ENDPOINT = "smiles-to-3d-full-v1"
 REFERENCE_DATASET = "comp_chem/reference_compounds/reference_compounds_3d"
 
 fast_endpoint = Endpoint(FAST_ENDPOINT)
-full_endpoint = AsyncEndpoint(FULL_ENDPOINT)
+full_endpoint = Endpoint(FULL_ENDPOINT)
 
 # ---------------------------------------------------------------------------
 # Per-feature tolerances for cross-endpoint comparison.
