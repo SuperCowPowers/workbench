@@ -34,23 +34,15 @@ budget needs to accommodate the slowest child.
 from __future__ import annotations
 
 import logging
-import time
-from pathlib import Path
-
-from sagemaker.core.resources import ModelPackage, ModelPackageGroup, TrainingJob
-from sagemaker.core.shapes.model_card_shapes import ContainersItem, InferenceSpecification
-from sagemaker.core.training.configs import Compute, OutputDataConfig, SourceCode, StoppingCondition
-from sagemaker.train.model_trainer import ModelTrainer
 
 from workbench.api.endpoint import Endpoint
+from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model
 from workbench.core.artifacts.artifact import Artifact
-from workbench.core.artifacts.model_core import ModelCore, ModelFramework, ModelImages, ModelType
+from workbench.core.artifacts.model_core import ModelCore, ModelFramework, ModelType
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from workbench.model_scripts.script_generation import generate_model_script
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.meta_endpoint_dag import MetaEndpointDAG
-from workbench.utils.workbench_logging import _suppress_sagemaker_logging
 
 log = logging.getLogger("workbench")
 
@@ -77,9 +69,10 @@ class MetaEndpoint(Endpoint):
           1. Validate the DAG; populate per-endpoint async flags.
           2. Backtrace lineage from a primary endpoint to satisfy
              Workbench's Model machinery (FeatureSet, target, features).
-          3. Run a SageMaker training job that writes the DAG JSON +
-             runtime config as the model artifact.
-          4. Register a Model package with the meta inference container.
+          3. Run the standard ``FeatureSet.to_model()`` flow, passing the
+             DAG / region / bucket as ``custom_args`` so the meta-endpoint
+             template fills them in at training time.
+          4. Set DAG-specific ``workbench_meta`` keys on the resulting Model.
           5. Deploy the endpoint (async if any DAG child is async).
 
         Args:
@@ -106,20 +99,55 @@ class MetaEndpoint(Endpoint):
         # machinery (every Model needs a FeatureSet to hang off of).
         feature_list, feature_set_name, target_column = cls._derive_lineage(dag)
 
-        log.important(f"Trying to delete existing model {name}...")
-        ModelCore.managed_delete(name)
-
+        # Build the model via the standard FeatureSet → Model flow. The
+        # meta-endpoint template's `{{dag}}`, `{{aws_region}}`, `{{s3_bucket}}`
+        # placeholders are filled from custom_args.
         aws_clamp = AWSAccountClamp()
-        training_job_name = cls._run_training(name, dag, aws_clamp)
-        cls._register_model(name, dag, description, tags, training_job_name, aws_clamp)
-        cls._set_metadata(name, dag, target_column, feature_list, feature_set_name)
+        sm_session = aws_clamp.sagemaker_session()
+        workbench_bucket = ConfigManager().get_config("WORKBENCH_BUCKET")
 
+        feature_set = FeatureSet(feature_set_name)
+        feature_set.to_model(
+            name=name,
+            model_type=ModelType.REGRESSOR,
+            model_framework=ModelFramework.META,
+            tags=tags or [name],
+            description=description or f"MetaEndpoint DAG over: {', '.join(dag._endpoints.values())}",
+            target_column=target_column,
+            feature_list=feature_list,
+            custom_args={
+                "dag": dag.to_dict(),
+                "aws_region": sm_session.boto_region_name,
+                "s3_bucket": workbench_bucket,
+            },
+        )
+
+        # Append DAG-specific workbench_meta on top of what FeaturesToModel
+        # already set (model_type, framework, features, target, training view).
+        output_model = ModelCore(name)
+        output_model.upsert_workbench_meta({"endpoints": list(dag._endpoints.values())})
+        output_model.upsert_workbench_meta({"meta_endpoint_dag": dag.to_dict()})
+
+        # Deploy. MetaEndpoint containers are thin orchestrators — actual
+        # compute happens in the child endpoints, which scale on their own
+        # backlog. One meta instance can already drive 100s of concurrent
+        # child calls (async_inference uses a 64-thread worker pool
+        # internally), so additional meta instances don't help. Async deploy
+        # is therefore 0→1 with idle drain; sync is fixed 1.
         log.important(f"Deploying MetaEndpoint '{name}' ({'async' if is_async else 'sync'})...")
         model = Model(name)
-        endpoint = model.to_endpoint(
-            tags=tags or [name],
-            async_endpoint=is_async,
-        )
+        if is_async:
+            endpoint = model.to_endpoint(
+                tags=tags or [name],
+                async_endpoint=True,
+                max_instances=1,
+                scale_in_idle_minutes=5,
+            )
+        else:
+            endpoint = model.to_endpoint(
+                tags=tags or [name],
+                async_endpoint=False,
+            )
 
         # Auto-derive inference_batch_size from the smallest tolerance among
         # children — chunks the meta receives from SageMaker get fanned out
@@ -167,130 +195,14 @@ class MetaEndpoint(Endpoint):
         )
         return feature_list, feature_set_name, target_column
 
-    @classmethod
-    def _run_training(cls, name: str, dag: MetaEndpointDAG, aws_clamp: AWSAccountClamp) -> str:
-        """Run the training job that persists the DAG JSON as a model artifact."""
-        sm_session = aws_clamp.sagemaker_session()
-        cm = ConfigManager()
-        workbench_bucket = cm.get_config("WORKBENCH_BUCKET")
-        models_s3_path = f"s3://{workbench_bucket}/models"
-
-        template_params = {
-            "model_type": ModelType.REGRESSOR,
-            "model_framework": ModelFramework.META,
-            "dag_json": dag.to_json(),
-            "aws_region": sm_session.boto_region_name,
-            "s3_bucket": workbench_bucket,
-            "model_metrics_s3_path": f"{models_s3_path}/{name}/training",
-        }
-        script_path = generate_model_script(template_params)
-
-        training_image = ModelImages.get_image_uri(sm_session.boto_region_name, "base_training")
-        log.info(f"Using Meta Training Image: {training_image}")
-        entry_point = Path(script_path).name
-        source_dir = str(Path(script_path).parent)
-        trainer = ModelTrainer(
-            training_image=training_image,
-            source_code=SourceCode(
-                source_dir=source_dir,
-                command=f"python training_harness.py {entry_point}",
-            ),
-            compute=Compute(instance_type="ml.m5.large", instance_count=1),
-            output_data_config=OutputDataConfig(
-                s3_output_path=f"{models_s3_path}/{name}/training", compression_type="GZIP"
-            ),
-            # Training is a no-op (just writes the DAG JSON as the model artifact);
-            # 10 minutes is plenty for container cold-start + a JSON dump.
-            stopping_condition=StoppingCondition(max_runtime_in_seconds=600),
-            role=aws_clamp.aws_session.get_workbench_execution_role_arn(),
-            sagemaker_session=sm_session,
-            base_job_name=name,
-        )
-
-        log.important(f"Running training job for MetaEndpoint {name}...")
-        _suppress_sagemaker_logging()
-        trainer.train(wait=True)
-
-        return trainer._latest_training_job.training_job_name
-
-    @classmethod
-    def _register_model(
-        cls,
-        name: str,
-        dag: MetaEndpointDAG,
-        description: str | None,
-        tags: list[str] | None,
-        training_job_name: str,
-        aws_clamp: AWSAccountClamp,
-    ) -> None:
-        """Create model group + register the model package with the meta inference image."""
-        sm_session = aws_clamp.sagemaker_session()
-        boto3_session = aws_clamp.boto3_session
-        endpoint_names = list(dag._endpoints.values())
-        model_description = description or f"MetaEndpoint DAG over: {', '.join(endpoint_names)}"
-
-        aws_tags = [{"key": "workbench_tags", "value": "::".join(tags or [name])}]
-        try:
-            ModelPackageGroup.create(
-                model_package_group_name=name,
-                model_package_group_description=model_description,
-                tags=aws_tags,
-                session=boto3_session,
-            )
-        except Exception:
-            log.info(f"Model Package Group {name} may already exist, continuing...")
-
-        training_job = TrainingJob.get(training_job_name, session=boto3_session)
-        model_data_url = training_job.model_artifacts.s3_model_artifacts
-
-        inference_image = ModelImages.get_image_uri(sm_session.boto_region_name, "base_inference")
-        log.important(f"Registering model {name} with Inference Image {inference_image}...")
-
-        container = ContainersItem(image=inference_image, model_data_url=model_data_url)
-        ModelPackage.create(
-            model_package_group_name=name,
-            model_package_description=model_description,
-            inference_specification=InferenceSpecification(containers=[container]),
-            model_approval_status="Approved",
-            tags=aws_tags,
-            session=boto3_session,
-        )
-
-    @classmethod
-    def _set_metadata(
-        cls,
-        name: str,
-        dag: MetaEndpointDAG,
-        target_column: str | None,
-        feature_list: list[str],
-        feature_set_name: str,
-    ) -> None:
-        """Populate workbench_meta with DAG-derived fields for downstream introspection."""
-        # Brief delay to let the model package settle before we read it back.
-        time.sleep(3)
-        output_model = ModelCore(name)
-        output_model._set_model_type(ModelType.REGRESSOR)
-        output_model._set_model_framework(ModelFramework.META)
-        if feature_set_name:
-            output_model.set_input(feature_set_name, force=True)
-        if target_column:
-            output_model.upsert_workbench_meta({"workbench_model_target": target_column})
-        if feature_list:
-            output_model.upsert_workbench_meta({"workbench_model_features": feature_list})
-        output_model.upsert_workbench_meta({"endpoints": list(dag._endpoints.values())})
-        output_model.upsert_workbench_meta({"meta_endpoint_dag": dag.to_dict()})
-        output_model.onboard_with_args(ModelType.REGRESSOR, target_column, feature_list=feature_list)
-
     def get_dag(self) -> MetaEndpointDAG:
         """Reconstruct the MetaEndpointDAG from this endpoint's stored metadata."""
         meta = self.workbench_meta() or {}
         dag_dict = meta.get("meta_endpoint_dag")
         if not dag_dict:
             raise ValueError(
-                f"MetaEndpoint '{self.name}' has no DAG in workbench_meta. " f"Recreate via MetaEndpoint.create()."
+                f"MetaEndpoint '{self.name}' has no DAG in workbench_meta. Recreate via MetaEndpoint.create()."
             )
-        if isinstance(dag_dict, str):
-            return MetaEndpointDAG.from_json(dag_dict)
         return MetaEndpointDAG.from_dict(dag_dict)
 
 

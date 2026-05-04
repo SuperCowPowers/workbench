@@ -195,15 +195,19 @@ class FeaturesToModel(Transform):
             "id_column": feature_set.id_column,
             "hyperparameters": kwargs.get("hyperparameters", {}),
         }
+
+        # Caller-supplied template params (used by MetaEndpoint to inject DAG
+        # config, region, s3_bucket; available for any framework that needs
+        # extra placeholders beyond the standard set above).
+        if self.custom_args:
+            template_params.update(self.custom_args)
+
         # Custom Script
         if self.custom_script:
             script_path = self.custom_script
             if self.custom_script.endswith(".template"):
                 # Model Type is an enumerated type, so we need to convert it to a string
                 template_params["model_type"] = template_params["model_type"].value
-
-                # Fill in the custom script template with specific parameters (include any custom args)
-                template_params.update(self.custom_args)
                 script_path = fill_template(self.custom_script, template_params, "generated_model_script.py")
 
             # Ensure training_harness.py is in the custom script's source directory

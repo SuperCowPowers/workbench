@@ -8,12 +8,13 @@
 #   - Async child endpoints → workbench_bridges.async_inference
 #
 # The dispatch decision uses the per-endpoint `is_async` flags captured in
-# the DAG JSON at MetaEndpoint creation time, so the container does not
+# the DAG dict at MetaEndpoint creation time, so the container does not
 # need full Workbench config (no WORKBENCH_BUCKET, no Athena).
 #
-# This template:
-#   - Has no real training phase — just persists the DAG JSON + runtime config.
-#   - At inference time, deserializes the DAG and runs it via the walker.
+# Placeholders (filled by Workbench at training time, via fill_template):
+#   - DAG_DICT     — Python dict literal (the DAG topology + per-endpoint async flags)
+#   - AWS_REGION   — region string
+#   - S3_BUCKET    — bucket for async-input staging
 
 import argparse
 import json
@@ -27,12 +28,11 @@ from workbench_bridges.endpoints.fast_inference import fast_inference
 
 from meta_endpoint_dag import MetaEndpointDAG  # bundled via symlink
 
-# Template parameters (filled in by Workbench at training time)
-TEMPLATE_PARAMS = {
-    "dag_json": "{{dag_json}}",
-    "aws_region": "{{aws_region}}",
-    "s3_bucket": "{{s3_bucket}}",
-}
+DAG_DICT = "{{dag}}"
+AWS_REGION = "{{aws_region}}"
+S3_BUCKET = "{{s3_bucket}}"
+
+CONFIG_FILENAME = "meta_endpoint_config.json"
 
 
 # =============================================================================
@@ -40,15 +40,15 @@ TEMPLATE_PARAMS = {
 # =============================================================================
 def model_fn(model_dir: str) -> dict:
     """Load the serialized DAG + runtime config and reconstruct the walker."""
-    with open(os.path.join(model_dir, "meta_endpoint_config.json")) as f:
+    with open(os.path.join(model_dir, CONFIG_FILENAME)) as f:
         config = json.load(f)
 
     if config.get("aws_region"):
         os.environ["AWS_REGION"] = config["aws_region"]
 
-    dag = MetaEndpointDAG.from_json(config["dag_json"])
+    dag = MetaEndpointDAG.from_dict(config["dag"])
 
-    print(f"MetaEndpoint loaded: {len(dag._endpoints)} endpoints, " f"{len(dag._aggregations)} aggregation nodes")
+    print(f"MetaEndpoint loaded: {len(dag._endpoints)} endpoints, {len(dag._aggregations)} aggregation nodes")
     print(f"Async children: {[n for n, is_async in dag._endpoint_async_flags.items() if is_async]}")
     print(f"AWS region: {config.get('aws_region')}")
     print(f"S3 staging bucket: {config.get('s3_bucket')}")
@@ -103,7 +103,7 @@ def predict_fn(df: pd.DataFrame, loaded: dict) -> pd.DataFrame:
 
 
 # =============================================================================
-# Training (just persists the DAG + runtime config)
+# Training (writes the substituted config dict to the model artifact)
 # =============================================================================
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -114,24 +114,18 @@ if __name__ == "__main__":
     parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
     args = parser.parse_args()
 
-    config = {
-        "dag_json": TEMPLATE_PARAMS["dag_json"],
-        "aws_region": TEMPLATE_PARAMS["aws_region"],
-        "s3_bucket": TEMPLATE_PARAMS["s3_bucket"],
-    }
+    config = {"dag": DAG_DICT, "aws_region": AWS_REGION, "s3_bucket": S3_BUCKET}
 
     print("=" * 60)
     print("MetaEndpoint Configuration")
     print("=" * 60)
-    print(f"AWS region: {config['aws_region']}")
-    print(f"S3 staging bucket: {config['s3_bucket']}")
-    # The DAG JSON itself is large — print only a summary.
-    dag_preview = MetaEndpointDAG.from_json(config["dag_json"])
+    print(f"AWS region: {AWS_REGION}")
+    print(f"S3 staging bucket: {S3_BUCKET}")
+    dag_preview = MetaEndpointDAG.from_dict(DAG_DICT)
     print(f"Endpoints: {list(dag_preview._endpoints.values())}")
     print(f"Aggregations: {[type(a).__name__ for a in dag_preview._aggregations.values()]}")
     print(f"Async children: {[n for n, f in dag_preview._endpoint_async_flags.items() if f]}")
 
-    with open(os.path.join(args.model_dir, "meta_endpoint_config.json"), "w") as f:
+    with open(os.path.join(args.model_dir, CONFIG_FILENAME), "w") as f:
         json.dump(config, f, indent=2)
-
-    print(f"\nMetaEndpoint config saved to {args.model_dir}")
+    print(f"\nMetaEndpoint config saved to {args.model_dir}/{CONFIG_FILENAME}")

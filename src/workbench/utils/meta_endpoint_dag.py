@@ -165,32 +165,12 @@ class MetaEndpointDAG:
     # Column contract
     # ------------------------------------------------------------------
 
-    def output_columns(self) -> List[str]:
-        """Static analysis: the columns the DAG emits at its output node.
-
-        Resolves each node's contribution by walking the topology. For
-        endpoint nodes this calls ``Endpoint(name).output_columns()``;
-        for aggregation nodes this asks the node what columns it emits
-        given its upstream column lists.
-        """
-        from workbench.api import Endpoint
-
-        if self._output_node is None:
-            raise ValueError("DAG has no output node — call set_output_node() first")
-
-        per_node: Dict[str, List[str]] = {}
-        for node in self.topological_order():
-            if node in self._endpoints:
-                per_node[node] = Endpoint(self._endpoints[node]).output_columns()
-            else:
-                parents = self._parents_of(node)
-                upstream_outputs = [per_node[p] for p in parents]
-                per_node[node] = self._aggregations[node].output_columns(upstream_outputs)
-        return per_node[self._output_node]
-
     def input_columns(self) -> List[str]:
-        """Static analysis: the union of input columns required by every
-        node that receives the caller's input directly.
+        """Union of input columns required by every node that receives the
+        caller's input directly.
+
+        Used by :class:`MetaEndpoint` as a fallback when deriving the
+        feature list during lineage anchoring.
         """
         from workbench.api import Endpoint
 
@@ -368,7 +348,7 @@ class MetaEndpointDAG:
         return agg.apply(upstream)
 
     # ------------------------------------------------------------------
-    # Serialization (Phase 3 will use this for the model artifact)
+    # Serialization (model artifact + workbench_meta storage)
     # ------------------------------------------------------------------
 
     def to_dict(self) -> dict:
