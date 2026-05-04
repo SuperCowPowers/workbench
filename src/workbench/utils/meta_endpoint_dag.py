@@ -424,6 +424,30 @@ class MetaEndpointDAG:
         sizes = [Endpoint(ep_name).inference_batch_size() for ep_name in set(self._endpoints.values())]
         return min(sizes)
 
+    def max_child_max_instances(self) -> int:
+        """Maximum ``max_instances`` across all child endpoints.
+
+        :class:`MetaEndpoint.create` uses this to publish an
+        ``effective_max_instances`` hint into the meta endpoint's
+        ``workbench_meta``. The meta itself deploys with ``max_instances=1``
+        (it's a thin orchestrator), but downstream tooling like
+        :class:`InferenceCache` sizes its work units to fill fleet capacity —
+        and the relevant capacity is the child fleets, not the meta's
+        single orchestrator instance.
+
+        Returns:
+            int: Maximum ``max_instances`` seen on any child endpoint;
+            ``1`` if no child has it set or the DAG has no endpoints.
+        """
+        from workbench.api import Endpoint
+
+        seen: List[int] = []
+        for ep_name in set(self._endpoints.values()):
+            meta = Endpoint(ep_name).workbench_meta() or {}
+            if meta.get("max_instances") is not None:
+                seen.append(int(meta["max_instances"]))
+        return max(seen) if seen else 1
+
     @classmethod
     def from_dict(cls, data: dict) -> "MetaEndpointDAG":
         dag = cls()

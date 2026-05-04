@@ -157,6 +157,14 @@ class MetaEndpoint(Endpoint):
         endpoint.upsert_workbench_meta({"inference_batch_size": min_batch})
         log.important(f"Set inference_batch_size={min_batch} (min across DAG children)")
 
+        # Publish the largest child fleet size as effective_max_instances so
+        # callers (e.g. InferenceCache) can size their work units to fill
+        # downstream child capacity rather than the meta's own
+        # max_instances=1 (which only describes the orchestrator layer).
+        effective_max = dag.max_child_max_instances()
+        endpoint.upsert_workbench_meta({"effective_max_instances": effective_max})
+        log.important(f"Set effective_max_instances={effective_max} (max across DAG children)")
+
         log.important(f"MetaEndpoint '{name}' created successfully!")
         return cls(name)
 

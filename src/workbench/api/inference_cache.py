@@ -134,29 +134,33 @@ class InferenceCache:
     def _derive_chunk_size(self) -> Optional[int]:
         """Derive chunk_size from the wrapped endpoint's fleet capacity.
 
-        Returns ``max_instances × batch_size × _CHUNK_WAVES`` so each chunk
+        Returns ``capacity × batch_size × _CHUNK_WAVES`` so each chunk
         holds an integer number of full fleet-waves — preventing the
         "10 batches / 8 instances → 2-batch tail" utilization loss on async
-        endpoints. Returns ``None`` (→ caller should use DEFAULT_CHUNK_SIZE)
-        when the endpoint's meta doesn't have ``max_instances``, which is
-        the case for sync endpoints and legacy async deploys.
+        endpoints. ``capacity`` prefers ``effective_max_instances`` when
+        present (set by MetaEndpoint to reflect the largest child fleet,
+        since the meta itself deploys with ``max_instances=1`` regardless
+        of downstream capacity), otherwise falls back to ``max_instances``.
+        Returns ``None`` (→ caller should use DEFAULT_CHUNK_SIZE) when the
+        endpoint's meta has neither, which is the case for sync endpoints
+        and legacy async deploys.
         """
         try:
             meta = self._endpoint.workbench_meta() or {}
         except Exception:
             return None
-        max_instances = meta.get("max_instances")
-        if max_instances is None:
+        capacity = meta.get("effective_max_instances", meta.get("max_instances"))
+        if capacity is None:
             return None
         # Mirror AsyncEndpointCore's own resolution: explicit meta override
         # wins, otherwise the core default.
         from workbench.core.artifacts.async_endpoint_core import _DEFAULT_BATCH_SIZE
 
         batch_size = int(meta.get("inference_batch_size", _DEFAULT_BATCH_SIZE))
-        derived = int(max_instances) * batch_size * self._CHUNK_WAVES
+        derived = int(capacity) * batch_size * self._CHUNK_WAVES
         self.log.info(
             f"InferenceCache[{self._endpoint.name}]: chunk_size={derived} "
-            f"(max_instances={max_instances} × batch_size={batch_size} × "
+            f"(capacity={capacity} × batch_size={batch_size} × "
             f"{self._CHUNK_WAVES} waves — full fleet utilization per chunk)"
         )
         return derived
