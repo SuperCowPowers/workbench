@@ -29,11 +29,18 @@ before any inference round-trips.
 from __future__ import annotations
 
 import json
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 import pandas as pd
 
-from workbench.utils.aggregation_nodes import AggregationNode
+# Dual-import: workbench-package path (normal) and bare path (when this file is
+# bundled as a sibling of aggregation_nodes.py inside a SageMaker model script).
+try:
+    from workbench.utils.aggregation_nodes import AggregationNode
+except ImportError:  # pragma: no cover — exercised inside SageMaker containers only
+    from aggregation_nodes import AggregationNode
+
+EndpointInvoker = Callable[[str, pd.DataFrame], pd.DataFrame]
 
 
 class MetaEndpointDAG:
@@ -48,6 +55,7 @@ class MetaEndpointDAG:
     def __init__(self, id_column: str = "id"):
         self.id_column = id_column
         self._endpoints: Dict[str, str] = {}  # node_name → endpoint_name
+        self._endpoint_async_flags: Dict[str, bool] = {}  # populated by populate_async_flags()
         self._aggregations: Dict[str, AggregationNode] = {}
         self._edges: List[tuple[str, str]] = []  # (from_node, to_node)
         self._input_nodes: List[str] = []
@@ -257,7 +265,11 @@ class MetaEndpointDAG:
     # Execution (client-side walker)
     # ------------------------------------------------------------------
 
-    def run(self, input_df: pd.DataFrame) -> pd.DataFrame:
+    def run(
+        self,
+        input_df: pd.DataFrame,
+        endpoint_invoker: Optional[EndpointInvoker] = None,
+    ) -> pd.DataFrame:
         """Execute the DAG against ``input_df`` and return the output node's DataFrame.
 
         Walks nodes in topological order. Endpoint nodes call
@@ -273,6 +285,12 @@ class MetaEndpointDAG:
             input_df: DataFrame supplied by the caller. Must contain
                 ``self.id_column`` and the columns required by every
                 input-node endpoint.
+            endpoint_invoker: Optional callable ``(endpoint_name, df) -> df``
+                used to invoke endpoint nodes. Defaults to using the full
+                Workbench ``Endpoint`` API class — appropriate for client-side
+                use. Pass a ``fast_inference``-backed invoker when running
+                inside a deployed SageMaker container where the full
+                Workbench config isn't available.
 
         Returns:
             The DataFrame at the DAG's output node.
@@ -285,13 +303,19 @@ class MetaEndpointDAG:
         outputs: Dict[str, pd.DataFrame] = {}
         for node in self.topological_order():
             if node in self._endpoints:
-                outputs[node] = self._run_endpoint(node, input_df, outputs)
+                outputs[node] = self._run_endpoint(node, input_df, outputs, endpoint_invoker)
             else:
                 outputs[node] = self._run_aggregation(node, outputs)
 
         return outputs[self._output_node]
 
-    def _run_endpoint(self, node: str, input_df: pd.DataFrame, outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    def _run_endpoint(
+        self,
+        node: str,
+        input_df: pd.DataFrame,
+        outputs: Dict[str, pd.DataFrame],
+        endpoint_invoker: Optional[EndpointInvoker],
+    ) -> pd.DataFrame:
         """Execute a single endpoint node.
 
         Source DataFrame is the caller's input for input nodes, or the
@@ -300,12 +324,16 @@ class MetaEndpointDAG:
         (project_id, owner, etc.) flow through alongside the endpoint's
         added columns, matching standard Workbench inference behavior.
         """
-        from workbench.api import Endpoint
-
-        endpoint = Endpoint(self._endpoints[node])
+        endpoint_name = self._endpoints[node]
         parents = self._parents_of(node)
         source_df = input_df if not parents else outputs[parents[0]]
-        return endpoint.inference(source_df)
+
+        if endpoint_invoker is not None:
+            return endpoint_invoker(endpoint_name, source_df)
+
+        from workbench.api import Endpoint
+
+        return Endpoint(endpoint_name).inference(source_df)
 
     def _run_aggregation(self, node: str, outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Execute a single aggregation node."""
@@ -323,10 +351,16 @@ class MetaEndpointDAG:
         Aggregation nodes are serialized by class name + constructor kwargs;
         deserialization (:meth:`from_dict`) requires the same class to be
         importable.
+
+        Per-endpoint ``is_async`` flags are included only if
+        :meth:`populate_async_flags` has been called. The deployed
+        inference container relies on these flags to dispatch invocations
+        to ``fast_inference`` or ``async_inference``.
         """
         return {
             "id_column": self.id_column,
             "endpoints": dict(self._endpoints),
+            "endpoint_async": dict(self._endpoint_async_flags),
             "aggregations": [_serialize_aggregation(a) for a in self._aggregations.values()],
             "edges": [list(e) for e in self._edges],
             "input_nodes": list(self._input_nodes),
@@ -336,11 +370,39 @@ class MetaEndpointDAG:
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=2)
 
+    def populate_async_flags(self) -> None:
+        """Look up each endpoint's async flag via ``workbench_meta`` and store it.
+
+        Flags are keyed by endpoint name (not node name) so the deployed
+        invoker can dispatch directly on the value passed by the walker.
+
+        Called by :meth:`MetaEndpoint.create` before serializing the DAG
+        for deployment. Hits AWS once per unique endpoint name, so isolated
+        as an explicit step rather than running implicitly in :meth:`to_dict`.
+        """
+        from workbench.api import Endpoint
+
+        for endpoint_name in set(self._endpoints.values()):
+            meta = Endpoint(endpoint_name).workbench_meta() or {}
+            self._endpoint_async_flags[endpoint_name] = bool(meta.get("async_endpoint"))
+
+    def has_async_endpoint(self) -> bool:
+        """Return True if any endpoint in the DAG is deployed as async.
+
+        Used by :meth:`MetaEndpoint.create` to decide whether the meta
+        endpoint itself must be deployed as async. Lazily calls
+        :meth:`populate_async_flags` if not yet populated.
+        """
+        if not self._endpoint_async_flags and self._endpoints:
+            self.populate_async_flags()
+        return any(self._endpoint_async_flags.values())
+
     @classmethod
     def from_dict(cls, data: dict) -> "MetaEndpointDAG":
         dag = cls(id_column=data.get("id_column", "id"))
         for node_name, endpoint_name in data.get("endpoints", {}).items():
             dag.add_endpoint(endpoint_name, node_name=node_name)
+        dag._endpoint_async_flags = dict(data.get("endpoint_async", {}))
         for agg_data in data.get("aggregations", []):
             dag.add_aggregation(_deserialize_aggregation(agg_data))
         for src, dst in data.get("edges", []):
@@ -375,7 +437,11 @@ def _serialize_aggregation(node: AggregationNode) -> dict:
 
 
 def _deserialize_aggregation(data: dict) -> AggregationNode:
-    from workbench.utils import aggregation_nodes as agg_module
+    # Dual-resolve: workbench-package path (normal) and bare path (container).
+    try:
+        from workbench.utils import aggregation_nodes as agg_module
+    except ImportError:  # pragma: no cover — SageMaker container only
+        import aggregation_nodes as agg_module
 
     cls_name = data["class"]
     cls = getattr(agg_module, cls_name)

@@ -11,6 +11,8 @@ These class provide high-level APIs for the Workbench package, offering easy acc
   (auto-routes to the async transport for endpoints deployed with
   ``async_endpoint=True``; ``output_columns()`` and ``input_columns()`` are
   available on feature endpoints)
+- MetaEndpoint: Endpoint backed by a directed acyclic graph (DAG) of child
+  endpoints + aggregation nodes. Use ``MetaEndpoint.create(name, dag)``.
 - InferenceCache: Client-side S3 caching wrapper around an Endpoint's inference()
 - Meta: Provides an API to retrieve AWS Metadata for the above classes
 - ParameterStore: Manages AWS Parameter Store
@@ -22,6 +24,7 @@ from .feature_set import FeatureSet
 from .model import Model, ModelType, ModelFramework
 from .meta_model import MetaModel
 from .endpoint import Endpoint
+from .meta_endpoint import MetaEndpoint
 from .inference_cache import InferenceCache
 from .meta import Meta
 from .parameter_store import ParameterStore
@@ -36,6 +39,7 @@ __all__ = [
     "ModelType",
     "ModelFramework",
     "Endpoint",
+    "MetaEndpoint",
     "InferenceCache",
     "Meta",
     "ParameterStore",

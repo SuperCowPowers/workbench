@@ -400,5 +400,39 @@ def test_json_roundtrip_preserves_topology():
     assert rebuilt._aggregations["ensemble"].weights.tolist() == dag._aggregations["ensemble"].weights.tolist()
 
 
+def test_run_with_custom_endpoint_invoker():
+    """A caller-supplied invoker bypasses the workbench.api.Endpoint path
+    entirely — the mechanism the deployed SageMaker container will use to
+    swap in ``fast_inference``."""
+    captured: dict[str, pd.DataFrame] = {}
+
+    def fake_invoker(endpoint_name: str, df: pd.DataFrame) -> pd.DataFrame:
+        captured[endpoint_name] = df.copy()
+        # Mirror real-endpoint pass-through: input columns + added column.
+        added = pd.DataFrame({"id": df["id"], f"out_{endpoint_name}": [1.0] * len(df)})
+        new_cols = [c for c in added.columns if c != "id" and c not in df.columns]
+        return df.merge(added[["id"] + new_cols], on="id", how="inner")
+
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("ep-a")
+    dag.add_endpoint("ep-b")
+    dag.add_aggregation(Concat(name="merge"))
+    dag.add_edge("ep-a", "merge")
+    dag.add_edge("ep-b", "merge")
+    dag.set_input_node("ep-a", "ep-b")
+    dag.set_output_node("merge")
+    dag.validate()
+
+    input_df = pd.DataFrame({"id": [1, 2], "smiles": ["CCO", "CCN"]})
+    out = dag.run(input_df, endpoint_invoker=fake_invoker)
+
+    # The invoker received the input (no Endpoint class involved at all).
+    assert set(captured.keys()) == {"ep-a", "ep-b"}
+    assert set(captured["ep-a"].columns) == {"id", "smiles"}
+
+    # Concat merged the invoker's outputs.
+    assert {"id", "smiles", "out_ep-a", "out_ep-b"}.issubset(out.columns)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

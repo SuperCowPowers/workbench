@@ -1,0 +1,137 @@
+# MetaEndpoint Template
+#
+# Server-side script for a deployed MetaEndpoint. Loads a serialized DAG of
+# child endpoints + aggregation nodes and runs it against incoming inference
+# requests using a per-endpoint dispatching invoker:
+#
+#   - Sync child endpoints  → workbench_bridges.fast_inference
+#   - Async child endpoints → workbench_bridges.async_inference
+#
+# The dispatch decision uses the per-endpoint `is_async` flags captured in
+# the DAG JSON at MetaEndpoint creation time, so the container does not
+# need full Workbench config (no WORKBENCH_BUCKET, no Athena).
+#
+# This template:
+#   - Has no real training phase — just persists the DAG JSON + runtime config.
+#   - At inference time, deserializes the DAG and runs it via the walker.
+
+import argparse
+import json
+import os
+from io import StringIO
+
+import pandas as pd
+
+from workbench_bridges.endpoints.async_inference import async_inference
+from workbench_bridges.endpoints.fast_inference import fast_inference
+
+from meta_endpoint_dag import MetaEndpointDAG  # bundled via symlink
+
+# Template parameters (filled in by Workbench at training time)
+TEMPLATE_PARAMS = {
+    "dag_json": "{{dag_json}}",
+    "aws_region": "{{aws_region}}",
+    "s3_bucket": "{{s3_bucket}}",
+}
+
+
+# =============================================================================
+# Model Loading (SageMaker hook)
+# =============================================================================
+def model_fn(model_dir: str) -> dict:
+    """Load the serialized DAG + runtime config and reconstruct the walker."""
+    with open(os.path.join(model_dir, "meta_endpoint_config.json")) as f:
+        config = json.load(f)
+
+    if config.get("aws_region"):
+        os.environ["AWS_REGION"] = config["aws_region"]
+
+    dag = MetaEndpointDAG.from_json(config["dag_json"])
+
+    print(f"MetaEndpoint loaded: {len(dag._endpoints)} endpoints, " f"{len(dag._aggregations)} aggregation nodes")
+    print(f"Async children: {[n for n, is_async in dag._endpoint_async_flags.items() if is_async]}")
+    print(f"AWS region: {config.get('aws_region')}")
+    print(f"S3 staging bucket: {config.get('s3_bucket')}")
+
+    return {
+        "dag": dag,
+        "s3_bucket": config["s3_bucket"],
+        "async_flags": dag._endpoint_async_flags,
+    }
+
+
+def input_fn(input_data, content_type):
+    """Parse incoming request into a DataFrame."""
+    if not input_data:
+        raise ValueError("Empty input data is not supported!")
+    if isinstance(input_data, bytes):
+        input_data = input_data.decode("utf-8")
+
+    if "text/csv" in content_type:
+        return pd.read_csv(StringIO(input_data))
+    elif "application/json" in content_type:
+        return pd.DataFrame(json.loads(input_data))
+    else:
+        raise ValueError(f"{content_type} not supported!")
+
+
+def output_fn(output_df, accept_type):
+    """Serialize the DAG output for return to the caller."""
+    if "text/csv" in accept_type:
+        return output_df.to_csv(index=False), "text/csv"
+    elif "application/json" in accept_type:
+        return output_df.to_json(orient="records"), "application/json"
+    else:
+        raise RuntimeError(f"{accept_type} accept type is not supported by this script.")
+
+
+# =============================================================================
+# Inference
+# =============================================================================
+def predict_fn(df: pd.DataFrame, loaded: dict) -> pd.DataFrame:
+    """Run the DAG against the input DataFrame using a dispatching invoker."""
+    dag: MetaEndpointDAG = loaded["dag"]
+    s3_bucket: str = loaded["s3_bucket"]
+    async_flags: dict = loaded["async_flags"]
+
+    def server_invoker(endpoint_name: str, eval_df: pd.DataFrame) -> pd.DataFrame:
+        if async_flags.get(endpoint_name):
+            return async_inference(endpoint_name, eval_df, s3_bucket=s3_bucket)
+        return fast_inference(endpoint_name, eval_df)
+
+    return dag.run(df, endpoint_invoker=server_invoker)
+
+
+# =============================================================================
+# Training (just persists the DAG + runtime config)
+# =============================================================================
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--model-dir", type=str, default=os.environ.get("SM_MODEL_DIR", "/opt/ml/model"))
+    parser.add_argument(
+        "--output-data-dir", type=str, default=os.environ.get("SM_OUTPUT_DATA_DIR", "/opt/ml/output/data")
+    )
+    parser.add_argument("--train", type=str, default=os.environ.get("SM_CHANNEL_TRAIN", "/opt/ml/input/data/train"))
+    args = parser.parse_args()
+
+    config = {
+        "dag_json": TEMPLATE_PARAMS["dag_json"],
+        "aws_region": TEMPLATE_PARAMS["aws_region"],
+        "s3_bucket": TEMPLATE_PARAMS["s3_bucket"],
+    }
+
+    print("=" * 60)
+    print("MetaEndpoint Configuration")
+    print("=" * 60)
+    print(f"AWS region: {config['aws_region']}")
+    print(f"S3 staging bucket: {config['s3_bucket']}")
+    # The DAG JSON itself is large — print only a summary.
+    dag_preview = MetaEndpointDAG.from_json(config["dag_json"])
+    print(f"Endpoints: {list(dag_preview._endpoints.values())}")
+    print(f"Aggregations: {[type(a).__name__ for a in dag_preview._aggregations.values()]}")
+    print(f"Async children: {[n for n, f in dag_preview._endpoint_async_flags.items() if f]}")
+
+    with open(os.path.join(args.model_dir, "meta_endpoint_config.json"), "w") as f:
+        json.dump(config, f, indent=2)
+
+    print(f"\nMetaEndpoint config saved to {args.model_dir}")

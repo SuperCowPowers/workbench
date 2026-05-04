@@ -25,10 +25,18 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 
-from workbench.model_script_utils.meta_model_utils import (
-    conf_weights_with_fallback,
-    ensemble_confidence,
-)
+# Dual-import: workbench-package path (normal) and bare path (when this file is
+# bundled as a sibling of meta_model_utils.py inside a SageMaker model script).
+try:
+    from workbench.model_script_utils.meta_model_utils import (
+        conf_weights_with_fallback,
+        ensemble_confidence,
+    )
+except ImportError:  # pragma: no cover — exercised inside SageMaker containers only
+    from meta_model_utils import (
+        conf_weights_with_fallback,
+        ensemble_confidence,
+    )
 
 
 class AggregationNode:
