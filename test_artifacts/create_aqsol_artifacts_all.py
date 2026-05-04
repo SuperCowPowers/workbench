@@ -29,7 +29,7 @@ Endpoints:
 import logging
 import pandas as pd
 
-from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint, ParameterStore, PublicData
+from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint, PublicData
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 from workbench.utils.model_utils import get_custom_script_path
 
@@ -37,9 +37,6 @@ log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":
-
-    # Parameter Store
-    params = ParameterStore()
 
     # Recreate Flag in case you want to recreate the artifacts
     recreate = False
@@ -143,7 +140,7 @@ if __name__ == "__main__":
     if recreate or not Model("aqsol-mol-regression").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_mol_descriptors")
-        features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
+        features = Endpoint("smiles-to-2d-v1").output_columns()
         feature_set.to_model(
             name="aqsol-mol-regression",
             model_type=ModelType.REGRESSOR,
@@ -158,7 +155,7 @@ if __name__ == "__main__":
     if recreate or not Model("aqsol-mol-class").exists():
         # Compute our features
         feature_set = FeatureSet("aqsol_mol_descriptors")
-        features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
+        features = Endpoint("smiles-to-2d-v1").output_columns()
         m = feature_set.to_model(
             name="aqsol-mol-class",
             model_type=ModelType.CLASSIFIER,

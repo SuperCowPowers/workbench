@@ -5,17 +5,12 @@ strategies, then compares the cross-fold validation results to see how much
 splitting strategy affects model metrics.
 """
 
-from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint, ParameterStore
-
-# Access Parameter Store
-params = ParameterStore()
+from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
 
 # Configuration
 feature_set_name = "open_admet_logd"
 target = "logd"
-
-# Top SHAP features from LogD XGBoost model
-features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
+features = Endpoint("smiles-to-2d-v1").output_columns()
 
 # Recreate Flag in case you want to recreate the artifacts
 recreate = False

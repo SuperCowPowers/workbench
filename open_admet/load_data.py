@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from workbench.api import DataSource, FeatureSet, Endpoint, ParameterStore, DFStore
+from workbench.api import DataSource, FeatureSet, Endpoint, DFStore
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 # Log transformation config from OpenADMET tutorial
@@ -45,8 +45,6 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def main():
-    # Access the Parameter Store and DataFrame Store
-    params = ParameterStore()
     df_store = DFStore()
 
     # Load the original training data
@@ -87,8 +85,7 @@ def main():
     # Shove this into the DFStore for inspection/use later
     df_store.upsert("/workbench/datasets/open_admet_xformed_featurized", df_features)
 
-    # Grab the Feature List created by the Endpoint
-    features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
+    features = Endpoint("smiles-to-2d-v1").output_columns()
 
     # Now Split these into separate FeatureSets for each assay
     for assay in TRANSFORM_CONFIG.keys():

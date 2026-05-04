@@ -1,6 +1,5 @@
 # Description: Create XGBoost, PyTorch, and ChemProp models for all Open ADMET FeatureSets
-from workbench.api import FeatureSet, Model, ModelType, ModelFramework
-from workbench_bridges.api import ParameterStore
+from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
 
 # Set to True to recreate models even if they already exist
 RECREATE = True
@@ -301,9 +300,7 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
 
 
 if __name__ == "__main__":
-    # Pull features from Parameter Store
-    params = ParameterStore()
-    rdkit_features = params.get("/workbench/feature_lists/rdkit_mordred_stereo_v1")
+    rdkit_features = Endpoint("smiles-to-2d-v1").output_columns()
 
     print(f"Processing {len(FS_LIST)} FeatureSets")
     print(f"Using {len(rdkit_features)} RDKit/Mordred features")
