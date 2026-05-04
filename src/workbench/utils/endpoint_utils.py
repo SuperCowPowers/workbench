@@ -245,9 +245,7 @@ def lookup_cached_columns(endpoint, key: str, register_fn, kind: str) -> List[st
     cols = ps.get(key)
 
     if cols is None:
-        endpoint.log.important(
-            f"Endpoint[{endpoint.name}]: no {kind} registered yet — deriving and caching."
-        )
+        endpoint.log.important(f"Endpoint[{endpoint.name}]: no {kind} registered yet — deriving and caching.")
         return register_fn(endpoint)
 
     param_modified = ps.last_modified(key)
@@ -322,8 +320,7 @@ def register_input_columns(endpoint, input_cols: Optional[List[str]] = None) -> 
         key = input_columns_key(endpoint.name)
         ParameterStore().upsert(key, sorted_cols)
         log.info(
-            f"register_input_columns: registered {len(sorted_cols)} columns for "
-            f"{endpoint.name} at {key} (explicit)"
+            f"register_input_columns: registered {len(sorted_cols)} columns for " f"{endpoint.name} at {key} (explicit)"
         )
         return sorted_cols
 
@@ -337,9 +334,7 @@ def register_input_columns(endpoint, input_cols: Optional[List[str]] = None) -> 
         )
     features = model.features()
     if not features:
-        raise RuntimeError(
-            f"register_input_columns: model '{model.name}' has no declared features."
-        )
+        raise RuntimeError(f"register_input_columns: model '{model.name}' has no declared features.")
 
     sorted_cols = sorted(features)
     key = input_columns_key(endpoint.name)

@@ -23,7 +23,6 @@ from workbench.utils.aggregation_nodes import (
 )
 from workbench.utils.meta_endpoint_dag import MetaEndpointDAG
 
-
 # ---------------------------------------------------------------------------
 # Fake endpoint for stubbing inference
 # ---------------------------------------------------------------------------
@@ -276,12 +275,8 @@ def test_run_mean_ensemble(monkeypatch):
 
 
 def test_run_weighted_mean(monkeypatch):
-    pred_a = _FakeEndpoint(
-        "a", pd.DataFrame({"id": [1], "prediction": [10.0], "confidence": [1.0]}), input_cols=["x"]
-    )
-    pred_b = _FakeEndpoint(
-        "b", pd.DataFrame({"id": [1], "prediction": [20.0], "confidence": [1.0]}), input_cols=["x"]
-    )
+    pred_a = _FakeEndpoint("a", pd.DataFrame({"id": [1], "prediction": [10.0], "confidence": [1.0]}), input_cols=["x"])
+    pred_b = _FakeEndpoint("b", pd.DataFrame({"id": [1], "prediction": [20.0], "confidence": [1.0]}), input_cols=["x"])
     _patch_endpoints(monkeypatch, {"a": pred_a, "b": pred_b})
 
     dag = MetaEndpointDAG()
@@ -300,15 +295,9 @@ def test_run_weighted_mean(monkeypatch):
 
 
 def test_run_vote_classifier(monkeypatch):
-    pred_a = _FakeEndpoint(
-        "a", pd.DataFrame({"id": [1, 2], "prediction": ["pos", "neg"]}), input_cols=["x"]
-    )
-    pred_b = _FakeEndpoint(
-        "b", pd.DataFrame({"id": [1, 2], "prediction": ["pos", "pos"]}), input_cols=["x"]
-    )
-    pred_c = _FakeEndpoint(
-        "c", pd.DataFrame({"id": [1, 2], "prediction": ["neg", "neg"]}), input_cols=["x"]
-    )
+    pred_a = _FakeEndpoint("a", pd.DataFrame({"id": [1, 2], "prediction": ["pos", "neg"]}), input_cols=["x"])
+    pred_b = _FakeEndpoint("b", pd.DataFrame({"id": [1, 2], "prediction": ["pos", "pos"]}), input_cols=["x"])
+    pred_c = _FakeEndpoint("c", pd.DataFrame({"id": [1, 2], "prediction": ["neg", "neg"]}), input_cols=["x"])
     _patch_endpoints(monkeypatch, {"a": pred_a, "b": pred_b, "c": pred_c})
 
     dag = MetaEndpointDAG()
@@ -354,9 +343,7 @@ def test_run_features_then_predictor(monkeypatch):
     )
     fake_predictor = _FakeEndpoint(
         "predictor",
-        pd.DataFrame(
-            {"id": [1, 2], "prediction": [42.0, 99.0], "confidence": [0.95, 0.88]}
-        ),
+        pd.DataFrame({"id": [1, 2], "prediction": [42.0, 99.0], "confidence": [0.95, 0.88]}),
         input_cols=["f2d", "f3d"],
     )
     _patch_endpoints(
@@ -376,9 +363,7 @@ def test_run_features_then_predictor(monkeypatch):
     dag.set_output_node("predictor")
     dag.validate()
 
-    input_df = pd.DataFrame(
-        {"id": [1, 2], "smiles": ["CCO", "CCN"], "project_id": ["P1", "P2"]}
-    )
+    input_df = pd.DataFrame({"id": [1, 2], "smiles": ["CCO", "CCN"], "project_id": ["P1", "P2"]})
     out = dag.run(input_df)
 
     assert list(out.sort_values("id")["prediction"]) == [42.0, 99.0]

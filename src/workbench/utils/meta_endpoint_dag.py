@@ -31,6 +31,8 @@ from __future__ import annotations
 import json
 from typing import Dict, List, Optional
 
+import pandas as pd
+
 from workbench.utils.aggregation_nodes import AggregationNode
 
 
@@ -247,9 +249,7 @@ class MetaEndpointDAG:
                     if src == node:
                         reachable.add(dst)
         if self._output_node not in reachable:
-            raise ValueError(
-                f"Output node '{self._output_node}' is not reachable from input nodes {self._input_nodes}"
-            )
+            raise ValueError(f"Output node '{self._output_node}' is not reachable from input nodes {self._input_nodes}")
 
         return self
 
@@ -257,7 +257,7 @@ class MetaEndpointDAG:
     # Execution (client-side walker)
     # ------------------------------------------------------------------
 
-    def run(self, input_df: "pd.DataFrame") -> "pd.DataFrame":
+    def run(self, input_df: pd.DataFrame) -> pd.DataFrame:
         """Execute the DAG against ``input_df`` and return the output node's DataFrame.
 
         Walks nodes in topological order. Endpoint nodes call
@@ -277,15 +277,12 @@ class MetaEndpointDAG:
         Returns:
             The DataFrame at the DAG's output node.
         """
-        import pandas as pd  # noqa: F401  (typing/runtime)
-        from workbench.api import Endpoint
-
         if self._output_node is None:
             raise ValueError("DAG has no output node — call set_output_node() first")
         if self.id_column not in input_df.columns:
             raise ValueError(f"input_df is missing id_column '{self.id_column}'")
 
-        outputs: Dict[str, "pd.DataFrame"] = {}
+        outputs: Dict[str, pd.DataFrame] = {}
         for node in self.topological_order():
             if node in self._endpoints:
                 outputs[node] = self._run_endpoint(node, input_df, outputs)
@@ -294,7 +291,7 @@ class MetaEndpointDAG:
 
         return outputs[self._output_node]
 
-    def _run_endpoint(self, node: str, input_df, outputs: Dict[str, "pd.DataFrame"]):
+    def _run_endpoint(self, node: str, input_df: pd.DataFrame, outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Execute a single endpoint node.
 
         Source DataFrame is the caller's input for input nodes, or the
@@ -310,7 +307,7 @@ class MetaEndpointDAG:
         source_df = input_df if not parents else outputs[parents[0]]
         return endpoint.inference(source_df)
 
-    def _run_aggregation(self, node: str, outputs: Dict[str, "pd.DataFrame"]):
+    def _run_aggregation(self, node: str, outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Execute a single aggregation node."""
         agg = self._aggregations[node]
         upstream = [outputs[p] for p in self._parents_of(node)]

@@ -147,6 +147,7 @@ class Endpoint(EndpointCore):
             output_columns_key,
             register_output_columns,
         )
+
         return lookup_cached_columns(self, output_columns_key(self.name), register_output_columns, "output columns")
 
     def input_columns(self) -> List[str]:
@@ -166,6 +167,7 @@ class Endpoint(EndpointCore):
             lookup_cached_columns,
             register_input_columns,
         )
+
         return lookup_cached_columns(self, input_columns_key(self.name), register_input_columns, "input columns")
 
     def inference_batch_size(self) -> int:

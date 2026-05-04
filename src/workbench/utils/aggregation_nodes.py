@@ -138,13 +138,18 @@ class _PredictionAggregator(AggregationNode):
             ids = ids.merge(df[[self.id_column]], on=self.id_column, how="inner")
 
         preds = np.column_stack(
-            [ids.merge(df[[self.id_column, "prediction"]], on=self.id_column)["prediction"].to_numpy() for df in upstream]
+            [
+                ids.merge(df[[self.id_column, "prediction"]], on=self.id_column)["prediction"].to_numpy()
+                for df in upstream
+            ]
         )
         confs = np.column_stack(
             [
-                ids.merge(df[[self.id_column, "confidence"]], on=self.id_column)["confidence"].to_numpy()
-                if "confidence" in df.columns
-                else np.ones(len(ids))
+                (
+                    ids.merge(df[[self.id_column, "confidence"]], on=self.id_column)["confidence"].to_numpy()
+                    if "confidence" in df.columns
+                    else np.ones(len(ids))
+                )
                 for df in upstream
             ]
         )
@@ -180,8 +185,7 @@ class WeightedMean(_PredictionAggregator):
     def apply(self, upstream: List[pd.DataFrame]) -> pd.DataFrame:
         if len(upstream) != len(self.weights):
             raise ValueError(
-                f"WeightedMean[{self.name}]: got {len(upstream)} upstream frames "
-                f"but {len(self.weights)} weights"
+                f"WeightedMean[{self.name}]: got {len(upstream)} upstream frames " f"but {len(self.weights)} weights"
             )
         ids, preds, confs = self._stack(upstream)
         out = ids.copy()
@@ -283,9 +287,7 @@ class ConfidenceWeighted(_StrategyAggregator):
         out = ids.copy()
         out["prediction"] = (preds * weights).sum(axis=1)
         out["prediction_std"] = preds.std(axis=1)
-        out["confidence"] = ensemble_confidence(
-            preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha
-        )
+        out["confidence"] = ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha)
         return out
 
 
@@ -303,9 +305,7 @@ class InverseMaeWeighted(_StrategyAggregator):
         out = ids.copy()
         out["prediction"] = (preds * self.model_weights).sum(axis=1)
         out["prediction_std"] = preds.std(axis=1)
-        out["confidence"] = ensemble_confidence(
-            preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha
-        )
+        out["confidence"] = ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha)
         return out
 
 
@@ -324,9 +324,7 @@ class ScaledConfidenceWeighted(_StrategyAggregator):
         out = ids.copy()
         out["prediction"] = (preds * weights).sum(axis=1)
         out["prediction_std"] = preds.std(axis=1)
-        out["confidence"] = ensemble_confidence(
-            preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha
-        )
+        out["confidence"] = ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha)
         return out
 
 
@@ -344,7 +342,5 @@ class CalibratedConfidenceWeighted(_StrategyAggregator):
         out = ids.copy()
         out["prediction"] = (preds * weights).sum(axis=1)
         out["prediction_std"] = preds.std(axis=1)
-        out["confidence"] = ensemble_confidence(
-            preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha
-        )
+        out["confidence"] = ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha)
         return out
