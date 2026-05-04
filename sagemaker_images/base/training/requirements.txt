@@ -12,5 +12,5 @@ joblib==1.5.3
 rdkit==2026.3.1
 mordredcommunity==2.0.7
 
-# Meta model support
-workbench-bridges==0.2.0
+# MetaEndpoint support (async_inference added in 0.2.7)
+workbench-bridges==0.2.7
