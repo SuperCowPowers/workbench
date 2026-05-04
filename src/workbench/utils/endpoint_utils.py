@@ -220,6 +220,134 @@ def input_columns_key(endpoint_name: str) -> str:
     return f"{ENDPOINT_PARAM_PREFIX}/{endpoint_name}/input_columns"
 
 
+def lookup_cached_columns(endpoint, key: str, register_fn, kind: str) -> List[str]:
+    """Cache-with-freshness lookup for an endpoint's registered column list.
+
+    Used by both :meth:`Endpoint.output_columns` and :meth:`Endpoint.input_columns`.
+
+    Reads ``key`` from ParameterStore. If it's missing, or the parameter's
+    ``LastModifiedDate`` is older than the endpoint's ``modified()`` time,
+    invokes ``register_fn(endpoint)`` to re-derive and rewrite the cache.
+
+    Args:
+        endpoint: The Workbench Endpoint instance.
+        key: ParameterStore key (e.g. from :func:`output_columns_key`).
+        register_fn: Callable taking the endpoint, returning the fresh column
+            list and writing it to ParameterStore (e.g.
+            :func:`register_output_columns`, :func:`register_input_columns`).
+        kind: Short label for log messages (e.g. ``"output columns"``).
+
+    Returns:
+        List of column names — fresh from cache, or just-rewritten by
+        ``register_fn``.
+    """
+    ps = ParameterStore()
+    cols = ps.get(key)
+
+    if cols is None:
+        endpoint.log.important(
+            f"Endpoint[{endpoint.name}]: no {kind} registered yet — deriving and caching."
+        )
+        return register_fn(endpoint)
+
+    param_modified = ps.last_modified(key)
+    try:
+        endpoint_modified = endpoint.modified()
+    except Exception:
+        endpoint_modified = None
+
+    if param_modified is not None and endpoint_modified is not None and endpoint_modified > param_modified:
+        endpoint.log.important(
+            f"Endpoint[{endpoint.name}]: cached {kind} are stale "
+            f"(endpoint modified {endpoint_modified} > param modified {param_modified}) — re-deriving."
+        )
+        return register_fn(endpoint)
+
+    return cols
+
+
+def get_input_columns(endpoint_name: str) -> Optional[List[str]]:
+    """Look up the input columns registered for an endpoint.
+
+    Args:
+        endpoint_name: e.g. ``"smiles-to-2d-v1"`` or ``"abalone-regression"``.
+
+    Returns:
+        List of input column names, or ``None`` if the endpoint hasn't
+        registered its input columns yet. Call :func:`register_input_columns`
+        from the endpoint's deploy script (or rely on the lazy fallback in
+        :meth:`workbench.api.endpoint.Endpoint.input_columns`) to populate.
+    """
+    return ParameterStore().get(input_columns_key(endpoint_name))
+
+
+def register_input_columns(endpoint, input_cols: Optional[List[str]] = None) -> List[str]:
+    """Register an endpoint's input columns in ParameterStore.
+
+    Two modes:
+
+    1. **Auto-discovery (default, ``input_cols=None``):** backtraces
+       endpoint → model and reads ``model.features()`` — the columns the
+       endpoint actually consumes. Upserts the result under
+       ``/workbench/endpoints/<endpoint_name>/input_columns``.
+
+    2. **Explicit (``input_cols`` provided):** stores the caller-supplied
+       list as-is. Use when the model's declared features() list is wrong
+       or incomplete.
+
+    Idempotent — re-running refreshes the stored list if the model's
+    feature contract changed.
+
+    Args:
+        endpoint: A Workbench ``Endpoint`` instance deployed from a
+            Model/FeatureSet.
+        input_cols: Optional explicit list of input column names. When
+            provided, skips auto-discovery.
+
+    Returns:
+        list[str]: The input columns that were registered.
+
+    Raises:
+        ValueError: If ``input_cols`` is provided but empty or contains
+            non-string entries.
+        RuntimeError: In auto-discovery mode, if the endpoint has no input
+            model, or the model has no declared features.
+    """
+    if input_cols is not None:
+        if not input_cols:
+            raise ValueError("register_input_columns: input_cols must be a non-empty list")
+        if not all(isinstance(c, str) for c in input_cols):
+            raise ValueError("register_input_columns: input_cols must contain only strings")
+        sorted_cols = sorted(input_cols)
+        key = input_columns_key(endpoint.name)
+        ParameterStore().upsert(key, sorted_cols)
+        log.info(
+            f"register_input_columns: registered {len(sorted_cols)} columns for "
+            f"{endpoint.name} at {key} (explicit)"
+        )
+        return sorted_cols
+
+    from workbench.core.artifacts import ModelCore
+
+    model = ModelCore(endpoint.get_input())
+    if not model.exists():
+        raise RuntimeError(
+            f"register_input_columns: endpoint {endpoint.name} has no input model — "
+            f"register_input_columns only applies to endpoints deployed from a Model/FeatureSet."
+        )
+    features = model.features()
+    if not features:
+        raise RuntimeError(
+            f"register_input_columns: model '{model.name}' has no declared features."
+        )
+
+    sorted_cols = sorted(features)
+    key = input_columns_key(endpoint.name)
+    ParameterStore().upsert(key, sorted_cols)
+    log.info(f"register_input_columns: registered {len(sorted_cols)} columns for {endpoint.name} at {key}")
+    return sorted_cols
+
+
 def get_output_columns(endpoint_name: str) -> Optional[List[str]]:
     """Look up the output columns registered for an endpoint.
 

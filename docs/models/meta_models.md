@@ -191,7 +191,7 @@ meta_model_sim logd-xgb-end logd-pytorch-end logd-chemprop-end \
 When you call `MetaModel.create()`, the following happens:
 
 1. **Lineage resolution** — Backtraces the first endpoint's lineage (endpoint → model → FeatureSet) to automatically resolve the target column, ID column, and feature list
-2. **Simulation** — Runs `MetaModelSimulator` to evaluate all aggregation strategies on cross-fold prediction data
+2. **Simulation** — Runs `EnsembleSimulator` to evaluate all aggregation strategies on cross-fold prediction data
 3. **Strategy selection** — Picks the best-performing strategy, including checking if dropping the worst model helps
 4. **Training job** — Runs a minimal SageMaker training job that saves the meta configuration (endpoints, weights, strategy) as a model artifact
 5. **Registration** — Creates a SageMaker Model Package with the meta inference container

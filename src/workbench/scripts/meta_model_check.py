@@ -171,11 +171,11 @@ def main():
     print(f"\n{'='*70}")
     print("REPRODUCING DEPLOYED AGGREGATION FROM CHILD CAPTURES")
     print(f"{'='*70}")
-    from workbench.utils.meta_model_simulator import MetaModelSimulator
+    from workbench.utils.ensemble_simulator import EnsembleSimulator
 
     id_column = MetaModel._resolve_id_column(endpoints[0])
     model_names = list(ep_to_model.values())
-    sim = MetaModelSimulator(model_names, id_column=id_column, capture_name=args.capture_name)
+    sim = EnsembleSimulator(model_names, id_column=id_column, capture_name=args.capture_name)
 
     # Reproduce the deployed template's exact logic
     sim_df = sim.reproduce_deployed(

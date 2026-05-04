@@ -13,7 +13,7 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from workbench.utils.meta_model_simulator import MetaModelSimulator
+    from workbench.utils.ensemble_simulator import EnsembleSimulator
 
 from sagemaker.core.resources import TrainingJob, ModelPackageGroup, ModelPackage
 from sagemaker.core.shapes.model_card_shapes import InferenceSpecification, ContainersItem
@@ -61,7 +61,7 @@ class MetaModel(Model):
         cls,
         endpoints: list[str],
         capture_name: str = "full_cross_fold",
-    ) -> "MetaModelSimulator":
+    ) -> "EnsembleSimulator":
         """Run ensemble simulation to analyze how different strategies perform.
 
         Backtraces the first endpoint's lineage to automatically resolve the
@@ -73,13 +73,13 @@ class MetaModel(Model):
                 (default: 'full_cross_fold')
 
         Returns:
-            MetaModelSimulator: Simulator instance for analysis and reporting
+            EnsembleSimulator: Simulator instance for analysis and reporting
         """
-        from workbench.utils.meta_model_simulator import MetaModelSimulator
+        from workbench.utils.ensemble_simulator import EnsembleSimulator
 
         id_column = cls._resolve_id_column(endpoints[0])
         model_names = [Endpoint(ep).get_input() for ep in endpoints]
-        return MetaModelSimulator(model_names, id_column=id_column, capture_name=capture_name)
+        return EnsembleSimulator(model_names, id_column=id_column, capture_name=capture_name)
 
     @classmethod
     def create(
@@ -107,7 +107,7 @@ class MetaModel(Model):
         Returns:
             MetaModel: The created meta model
         """
-        from workbench.utils.meta_model_simulator import MetaModelSimulator
+        from workbench.utils.ensemble_simulator import EnsembleSimulator
 
         Artifact.is_name_valid(name, delimiter="-", lower_case=False)
 
@@ -121,7 +121,7 @@ class MetaModel(Model):
 
         # Run ensemble simulation to find best strategy
         log.important("Running ensemble simulation to find best strategy...")
-        sim = MetaModelSimulator(model_names, id_column=id_column, capture_name=capture_name)
+        sim = EnsembleSimulator(model_names, id_column=id_column, capture_name=capture_name)
         sim.report()
         config = sim.get_best_strategy_config()
 

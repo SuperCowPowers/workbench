@@ -1,6 +1,6 @@
-"""MetaModelSimulator: Simulate and analyze ensemble model performance.
+"""EnsembleSimulator: Simulate and analyze ensemble model performance.
 
-CLI tool for evaluating whether a meta model (ensemble) would outperform
+CLI tool for evaluating whether an ensemble of models would outperform
 individual child models by analyzing endpoint inference predictions.
 
 For creating a MetaModel, use `MetaModel.create()` which auto-simulates internally.

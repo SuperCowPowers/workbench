@@ -134,67 +134,50 @@ class Endpoint(EndpointCore):
         """Return this endpoint's registered output columns.
 
         Works for any endpoint that emits new columns during inference:
-        feature endpoints emit computed feature columns (descriptors,
-        fingerprints, etc.); predictor endpoints emit prediction / confidence /
-        quantile columns.
+        feature endpoints emit computed feature columns; predictor endpoints
+        emit prediction / confidence / quantile columns.
 
-        Fast path: reads ``/workbench/endpoints/<endpoint_name>/output_columns``
-        from ParameterStore (populated by
-        :func:`workbench.utils.endpoint_utils.register_output_columns` at
-        deploy time, or lazily on first call to this method).
-
-        Freshness check: compares the parameter's ``LastModifiedDate`` to the
-        endpoint's ``modified()`` time. If the endpoint has been redeployed
-        since the columns were cached, the cache is stale — we re-derive via
-        the fallback path below and rewrite the cache.
-
-        Fallback (also used when there's no cache yet): runs a small smoke
-        inference to discover the columns, writes them to ParameterStore so
-        subsequent calls are fast, and returns the list.
-
-        Returns:
-            List of output column names.
-
-        Raises:
-            RuntimeError: If the fallback inference fails (e.g. the endpoint
-                emits no new columns beyond the input it received).
+        Cached at ``/workbench/endpoints/<name>/output_columns``; lazily
+        populated by :func:`workbench.utils.endpoint_utils.register_output_columns`
+        on first call (smoke inference) and refreshed when the endpoint is
+        redeployed.
         """
-        from workbench.api.parameter_store import ParameterStore
-        from workbench.utils.endpoint_utils import output_columns_key, register_output_columns
-
-        ps = ParameterStore()
-        key = output_columns_key(self.name)
-        cols = ps.get(key)
-
-        if cols is None:
-            self.log.important(
-                f"Endpoint[{self.name}]: no output columns registered yet — "
-                f"running smoke inference to discover and register columns."
-            )
-            return register_output_columns(self)
-
-        param_modified = ps.last_modified(key)
-        try:
-            endpoint_modified = self.modified()
-        except Exception:
-            endpoint_modified = None
-
-        if param_modified is not None and endpoint_modified is not None and endpoint_modified > param_modified:
-            self.log.important(
-                f"Endpoint[{self.name}]: endpoint modified at {endpoint_modified} "
-                f"is newer than cached output columns ({param_modified}) — re-deriving."
-            )
-            return register_output_columns(self)
-
-        return cols
+        from workbench.utils.endpoint_utils import (
+            lookup_cached_columns,
+            output_columns_key,
+            register_output_columns,
+        )
+        return lookup_cached_columns(self, output_columns_key(self.name), register_output_columns, "output columns")
 
     def input_columns(self) -> List[str]:
         """Return this endpoint's declared input columns.
 
-        Placeholder — returns an empty list until input-column registration
-        is wired up (planned alongside the MetaEndpoint contract work).
+        The columns the endpoint consumes during inference (e.g. ``["smiles"]``
+        for a feature endpoint, or the model's training features for a
+        predictor endpoint).
+
+        Cached at ``/workbench/endpoints/<name>/input_columns``; lazily
+        populated by :func:`workbench.utils.endpoint_utils.register_input_columns`
+        on first call (reads ``model.features()``) and refreshed when the
+        endpoint is redeployed.
         """
-        return []
+        from workbench.utils.endpoint_utils import (
+            input_columns_key,
+            lookup_cached_columns,
+            register_input_columns,
+        )
+        return lookup_cached_columns(self, input_columns_key(self.name), register_input_columns, "input columns")
+
+    def inference_batch_size(self) -> int:
+        """Return the per-invocation batch size declared for this endpoint.
+
+        Reads ``workbench_meta["inference_batch_size"]`` if set; otherwise
+        returns the framework default — 10 for async endpoints, 100 for sync.
+        """
+        meta = self.workbench_meta() or {}
+        if "inference_batch_size" in meta:
+            return int(meta["inference_batch_size"])
+        return 10 if meta.get("async_endpoint") else 100
 
 
 if __name__ == "__main__":

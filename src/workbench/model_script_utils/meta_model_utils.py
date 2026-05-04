@@ -1,7 +1,7 @@
 """Shared utilities for meta model aggregation.
 
 Used by both the deployed template (meta_model.template) and the
-MetaModelSimulator so that confidence and weight computations are
+EnsembleSimulator so that confidence and weight computations are
 guaranteed to be identical.
 """
 

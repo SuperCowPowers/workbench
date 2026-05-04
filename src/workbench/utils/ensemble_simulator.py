@@ -1,6 +1,6 @@
-"""MetaModelSimulator: Simulate and analyze ensemble model performance.
+"""EnsembleSimulator: Simulate and analyze ensemble model performance.
 
-This class helps evaluate whether a meta model (ensemble) would outperform
+This class helps evaluate whether an ensemble of models would outperform
 individual child models by analyzing endpoint inference predictions.
 """
 
@@ -16,8 +16,8 @@ from workbench.model_script_utils.meta_model_utils import conf_weights_with_fall
 log = logging.getLogger("workbench")
 
 
-class MetaModelSimulator:
-    """Simulate meta model performance from child model predictions.
+class EnsembleSimulator:
+    """Simulate ensemble performance from child model predictions.
 
     This class loads cross-validation predictions from multiple models and
     analyzes how different ensemble strategies would perform compared to
@@ -25,9 +25,9 @@ class MetaModelSimulator:
 
     Example:
         ```python
-        from workbench.utils.meta_model_simulator import MetaModelSimulator
+        from workbench.utils.ensemble_simulator import EnsembleSimulator
 
-        sim = MetaModelSimulator(["model-a", "model-b", "model-c"])
+        sim = EnsembleSimulator(["model-a", "model-b", "model-c"])
         sim.report()  # Print full analysis
         sim.strategy_comparison()  # Compare ensemble strategies
         ```
@@ -870,7 +870,7 @@ if __name__ == "__main__":
     print("\n" + "*" * 80)
     print("Full ensemble analysis: XGB + PyTorch + ChemProp")
     print("*" * 80)
-    sim = MetaModelSimulator(
+    sim = EnsembleSimulator(
         ["logd-reg-xgb", "logd-reg-pytorch", "logd-reg-chemprop"],
         id_column="molecule_name",
     )
@@ -879,7 +879,7 @@ if __name__ == "__main__":
     print("\n" + "*" * 80)
     print("Two model ensemble analysis: PyTorch + ChemProp")
     print("*" * 80)
-    sim = MetaModelSimulator(
+    sim = EnsembleSimulator(
         ["logd-reg-pytorch", "logd-reg-chemprop"],
         id_column="molecule_name",
     )
