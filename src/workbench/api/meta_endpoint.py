@@ -23,6 +23,7 @@ Common usage::
     dag.set_output_node("combine")
 
     end = MetaEndpoint.create(name="my-features-meta", dag=dag)
+    # Input does not need any id column — the DAG handles row alignment internally.
     df = end.inference(input_df)
 
 If any child endpoint in the DAG is async (e.g. ``smiles-to-3d-full-v1``),

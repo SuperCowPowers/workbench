@@ -12,15 +12,20 @@ A DAG has two kinds of nodes:
 
 DAG construction is explicit::
 
-    dag = MetaEndpointDAG(id_column="id")
+    dag = MetaEndpointDAG()
     dag.add_endpoint("smiles-to-2d-v1")
     dag.add_endpoint("smiles-to-3d-fast-v1")
-    dag.add_aggregation(Concat(name="combine", id_column="id"))
+    dag.add_aggregation(Concat(name="combine"))
     dag.add_edge("smiles-to-2d-v1", "combine")
     dag.add_edge("smiles-to-3d-fast-v1", "combine")
     dag.set_input_node("smiles-to-2d-v1", "smiles-to-3d-fast-v1")
     dag.set_output_node("combine")
     dag.validate()
+
+Row-alignment across parallel branches: the walker injects a synthetic
+:data:`DAG_ROW_ID` column at the start of every ``run()`` and strips it
+before returning. Aggregation nodes use it as the join key, so callers
+do not need to supply (or care about) any id column on their input data.
 
 Validation runs at construction time so misconfigured DAGs fail loud
 before any inference round-trips.
@@ -36,9 +41,9 @@ import pandas as pd
 # Dual-import: workbench-package path (normal) and bare path (when this file is
 # bundled as a sibling of aggregation_nodes.py inside a SageMaker model script).
 try:
-    from workbench.utils.aggregation_nodes import AggregationNode
+    from workbench.utils.aggregation_nodes import DAG_ROW_ID, AggregationNode
 except ImportError:  # pragma: no cover — exercised inside SageMaker containers only
-    from aggregation_nodes import AggregationNode
+    from aggregation_nodes import DAG_ROW_ID, AggregationNode
 
 EndpointInvoker = Callable[[str, pd.DataFrame], pd.DataFrame]
 
@@ -46,14 +51,12 @@ EndpointInvoker = Callable[[str, pd.DataFrame], pd.DataFrame]
 class MetaEndpointDAG:
     """A typed DAG of endpoints + aggregation nodes.
 
-    Args:
-        id_column: Name of the column used to join across nodes (default
-            ``"id"``). Must be present on the caller's input DataFrame and
-            on every endpoint output.
+    The DAG joins parallel branches using an internal synthetic row id
+    (:data:`DAG_ROW_ID`) injected by :meth:`run` — callers don't need to
+    supply any id column on their input.
     """
 
-    def __init__(self, id_column: str = "id"):
-        self.id_column = id_column
+    def __init__(self):
         self._endpoints: Dict[str, str] = {}  # node_name → endpoint_name
         self._endpoint_async_flags: Dict[str, bool] = {}  # populated by populate_async_flags()
         self._aggregations: Dict[str, AggregationNode] = {}
@@ -217,7 +220,6 @@ class MetaEndpointDAG:
           - Endpoint nodes are either input nodes (zero parents) or have
             exactly one upstream parent — never both
           - The output node is reachable from the input nodes
-          - Every aggregation node's ``id_column`` matches the DAG's
         """
         if not self._input_nodes:
             raise ValueError("DAG has no input nodes")
@@ -240,15 +242,9 @@ class MetaEndpointDAG:
                     f"declared as an input node — it has no source for its input DataFrame."
                 )
 
-        for name, agg in self._aggregations.items():
-            parents = self._parents_of(name)
-            if not parents:
+        for name in self._aggregations:
+            if not self._parents_of(name):
                 raise ValueError(f"Aggregation node '{name}' has no upstream parents")
-            if agg.id_column != self.id_column:
-                raise ValueError(
-                    f"Aggregation node '{name}' has id_column='{agg.id_column}' "
-                    f"but DAG id_column='{self.id_column}'"
-                )
 
         reachable = set(self._input_nodes)
         for node in order:
@@ -272,6 +268,11 @@ class MetaEndpointDAG:
     ) -> pd.DataFrame:
         """Execute the DAG against ``input_df`` and return the output node's DataFrame.
 
+        The walker injects a synthetic :data:`DAG_ROW_ID` column at entry
+        (used internally to align rows across parallel branches) and
+        strips it before returning. Callers don't need to supply any id
+        column.
+
         Walks nodes in topological order. Endpoint nodes call
         :meth:`Endpoint.inference` on either the caller's ``input_df`` (input
         nodes) or their upstream parent's cached output. Aggregation nodes
@@ -282,9 +283,9 @@ class MetaEndpointDAG:
         out and the DAG run aborts.
 
         Args:
-            input_df: DataFrame supplied by the caller. Must contain
-                ``self.id_column`` and the columns required by every
-                input-node endpoint.
+            input_df: DataFrame supplied by the caller. Must contain the
+                columns required by every input-node endpoint. No id
+                column is required.
             endpoint_invoker: Optional callable ``(endpoint_name, df) -> df``
                 used to invoke endpoint nodes. Defaults to using the full
                 Workbench ``Endpoint`` API class — appropriate for client-side
@@ -293,12 +294,21 @@ class MetaEndpointDAG:
                 Workbench config isn't available.
 
         Returns:
-            The DataFrame at the DAG's output node.
+            The DataFrame at the DAG's output node, with the synthetic
+            :data:`DAG_ROW_ID` column removed.
         """
         if self._output_node is None:
             raise ValueError("DAG has no output node — call set_output_node() first")
-        if self.id_column not in input_df.columns:
-            raise ValueError(f"input_df is missing id_column '{self.id_column}'")
+        if DAG_ROW_ID in input_df.columns:
+            raise ValueError(
+                f"input_df already contains the reserved column '{DAG_ROW_ID}'. "
+                f"Remove it before calling run()."
+            )
+
+        # Inject the synthetic row id. Endpoints will pass this through as an
+        # unknown input column; aggregation nodes use it as their join key.
+        input_df = input_df.copy()
+        input_df[DAG_ROW_ID] = range(len(input_df))
 
         outputs: Dict[str, pd.DataFrame] = {}
         for node in self.topological_order():
@@ -307,7 +317,10 @@ class MetaEndpointDAG:
             else:
                 outputs[node] = self._run_aggregation(node, outputs)
 
-        return outputs[self._output_node]
+        result = outputs[self._output_node]
+        if DAG_ROW_ID in result.columns:
+            result = result.drop(columns=[DAG_ROW_ID])
+        return result
 
     def _run_endpoint(
         self,
@@ -323,17 +336,31 @@ class MetaEndpointDAG:
         passed to ``endpoint.inference()`` — metadata columns
         (project_id, owner, etc.) flow through alongside the endpoint's
         added columns, matching standard Workbench inference behavior.
+
+        The walker-injected :data:`DAG_ROW_ID` column must survive the
+        endpoint round-trip so downstream aggregation nodes can join on
+        it. If an endpoint silently strips unknown input columns, this
+        will fail loudly — better than misaligned rows.
         """
         endpoint_name = self._endpoints[node]
         parents = self._parents_of(node)
         source_df = input_df if not parents else outputs[parents[0]]
 
         if endpoint_invoker is not None:
-            return endpoint_invoker(endpoint_name, source_df)
+            result = endpoint_invoker(endpoint_name, source_df)
+        else:
+            from workbench.api import Endpoint
 
-        from workbench.api import Endpoint
+            result = Endpoint(endpoint_name).inference(source_df)
 
-        return Endpoint(endpoint_name).inference(source_df)
+        if DAG_ROW_ID not in result.columns:
+            raise RuntimeError(
+                f"Endpoint '{endpoint_name}' dropped the walker-injected '{DAG_ROW_ID}' "
+                f"column from its output. The DAG can't align rows across branches "
+                f"without it. Endpoints must pass unknown input columns through to "
+                f"their output."
+            )
+        return result
 
     def _run_aggregation(self, node: str, outputs: Dict[str, pd.DataFrame]) -> pd.DataFrame:
         """Execute a single aggregation node."""
@@ -358,7 +385,6 @@ class MetaEndpointDAG:
         to ``fast_inference`` or ``async_inference``.
         """
         return {
-            "id_column": self.id_column,
             "endpoints": dict(self._endpoints),
             "endpoint_async": dict(self._endpoint_async_flags),
             "aggregations": [_serialize_aggregation(a) for a in self._aggregations.values()],
@@ -399,7 +425,7 @@ class MetaEndpointDAG:
 
     @classmethod
     def from_dict(cls, data: dict) -> "MetaEndpointDAG":
-        dag = cls(id_column=data.get("id_column", "id"))
+        dag = cls()
         for node_name, endpoint_name in data.get("endpoints", {}).items():
             dag.add_endpoint(endpoint_name, node_name=node_name)
         dag._endpoint_async_flags = dict(data.get("endpoint_async", {}))
@@ -425,7 +451,7 @@ def _serialize_aggregation(node: AggregationNode) -> dict:
     pluck them off the instance for round-tripping. Numpy arrays
     (``model_weights``, ``corr_scale``) are converted back to lists.
     """
-    state = {"class": type(node).__name__, "name": node.name, "id_column": node.id_column}
+    state = {"class": type(node).__name__, "name": node.name}
     for attr in ("weights", "model_weights", "corr_scale", "optimal_alpha"):
         if hasattr(node, attr):
             val = getattr(node, attr)

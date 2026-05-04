@@ -39,20 +39,28 @@ except ImportError:  # pragma: no cover — exercised inside SageMaker container
     )
 
 
+# Synthetic row identifier the walker injects into the input DataFrame
+# at the start of every DAG run and strips before returning. Aggregation
+# nodes use it as the join key to align rows across upstream branches.
+# The user never sees it: callers don't supply it, endpoints pass it
+# through as just another column, and the walker removes it on exit.
+DAG_ROW_ID = "__dag_row_id"
+
+
 class AggregationNode:
     """Base class for DAG aggregation nodes.
 
     Subclasses implement ``apply()`` to combine upstream DataFrames and
-    declare ``input_columns()`` / ``output_columns()`` for static DAG
-    validation.
+    declare ``output_columns()`` for static DAG validation.
 
-    All aggregation nodes carry a ``name`` (unique within a DAG) and an
-    ``id_column`` used to join across upstream DataFrames.
+    Aggregation nodes always join across upstream branches using the
+    walker-injected :data:`DAG_ROW_ID` column, so they don't need to
+    know anything about the caller's id conventions (or whether the
+    caller has any).
     """
 
-    def __init__(self, name: str, id_column: str = "id"):
+    def __init__(self, name: str):
         self.name = name
-        self.id_column = id_column
 
     def apply(self, upstream: List[pd.DataFrame]) -> pd.DataFrame:
         """Combine upstream DataFrames into one. Subclasses must override."""
@@ -84,11 +92,12 @@ class AggregationNode:
 
 
 class Concat(AggregationNode):
-    """Column-union aggregator. Joins upstream DataFrames on ``id_column``.
+    """Column-union aggregator. Joins upstream DataFrames on the walker's
+    synthetic row id.
 
     Use for feature-pipeline DAGs where parallel feature endpoints
     contribute disjoint feature column sets that need to be merged into a
-    single wide row per ``id``.
+    single wide row.
     """
 
     def apply(self, upstream: List[pd.DataFrame]) -> pd.DataFrame:
@@ -96,9 +105,9 @@ class Concat(AggregationNode):
             raise ValueError(f"Concat[{self.name}]: requires at least one upstream DataFrame")
 
         out = upstream[0]
-        for i, df in enumerate(upstream[1:], start=1):
-            new_cols = [c for c in df.columns if c == self.id_column or c not in out.columns]
-            out = out.merge(df[new_cols], on=self.id_column, how="inner")
+        for df in upstream[1:]:
+            new_cols = [c for c in df.columns if c == DAG_ROW_ID or c not in out.columns]
+            out = out.merge(df[new_cols], on=DAG_ROW_ID, how="inner")
         return out
 
     def output_columns(self, upstream_outputs: List[List[str]]) -> List[str]:
@@ -122,39 +131,62 @@ class _PredictionAggregator(AggregationNode):
     from multiple predictor endpoints.
 
     Each upstream is expected to carry at minimum:
-      - ``id_column``
+      - :data:`DAG_ROW_ID` (injected by the walker)
       - ``prediction``
       - ``confidence`` (optional, depending on strategy)
 
-    The output is a single DataFrame with ``id_column``, ``prediction``,
-    ``prediction_std`` (ensemble disagreement), and ``confidence``.
+    The output is a single DataFrame with ``prediction``,
+    ``prediction_std`` (ensemble disagreement), and ``confidence``,
+    aligned on :data:`DAG_ROW_ID` and inner-joined across upstream.
     """
 
     OUTPUT_COLS = ["prediction", "prediction_std", "confidence"]
 
     def output_columns(self, upstream_outputs: List[List[str]]) -> List[str]:
-        return [self.id_column] + self.OUTPUT_COLS
+        return list(self.OUTPUT_COLS)
+
+    def _build_output(
+        self,
+        upstream: List[pd.DataFrame],
+        ids: pd.DataFrame,
+        prediction,
+        prediction_std,
+        confidence,
+    ) -> pd.DataFrame:
+        """Merge pass-through columns from ``upstream[0]`` with the aggregated values.
+
+        Upstream prediction columns (``prediction`` / ``prediction_std`` /
+        ``confidence``) are dropped so the aggregated values replace them.
+        Other user columns (``id``, ``smiles``, metadata) flow through.
+        """
+        drop = [c for c in self.OUTPUT_COLS if c in upstream[0].columns]
+        passthrough = upstream[0].drop(columns=drop)
+        aggregated = ids.copy()
+        aggregated["prediction"] = prediction
+        aggregated["prediction_std"] = prediction_std
+        aggregated["confidence"] = confidence
+        return passthrough.merge(aggregated, on=DAG_ROW_ID, how="inner")
 
     def _stack(self, upstream: List[pd.DataFrame]) -> tuple[pd.DataFrame, np.ndarray, np.ndarray]:
-        """Align upstream frames on ``id_column`` and return (aligned ids,
-        prediction matrix N×M, confidence matrix N×M)."""
+        """Align upstream frames on :data:`DAG_ROW_ID` and return
+        (aligned ids, prediction matrix N×M, confidence matrix N×M)."""
         if not upstream:
             raise ValueError(f"{type(self).__name__}[{self.name}]: requires at least one upstream DataFrame")
 
-        ids = upstream[0][[self.id_column]].copy()
+        ids = upstream[0][[DAG_ROW_ID]].copy()
         for df in upstream[1:]:
-            ids = ids.merge(df[[self.id_column]], on=self.id_column, how="inner")
+            ids = ids.merge(df[[DAG_ROW_ID]], on=DAG_ROW_ID, how="inner")
 
         preds = np.column_stack(
             [
-                ids.merge(df[[self.id_column, "prediction"]], on=self.id_column)["prediction"].to_numpy()
+                ids.merge(df[[DAG_ROW_ID, "prediction"]], on=DAG_ROW_ID)["prediction"].to_numpy()
                 for df in upstream
             ]
         )
         confs = np.column_stack(
             [
                 (
-                    ids.merge(df[[self.id_column, "confidence"]], on=self.id_column)["confidence"].to_numpy()
+                    ids.merge(df[[DAG_ROW_ID, "confidence"]], on=DAG_ROW_ID)["confidence"].to_numpy()
                     if "confidence" in df.columns
                     else np.ones(len(ids))
                 )
@@ -169,18 +201,20 @@ class Mean(_PredictionAggregator):
 
     def apply(self, upstream: List[pd.DataFrame]) -> pd.DataFrame:
         ids, preds, confs = self._stack(upstream)
-        out = ids.copy()
-        out["prediction"] = preds.mean(axis=1)
-        out["prediction_std"] = preds.std(axis=1)
-        out["confidence"] = confs.mean(axis=1)
-        return out
+        return self._build_output(
+            upstream,
+            ids,
+            prediction=preds.mean(axis=1),
+            prediction_std=preds.std(axis=1),
+            confidence=confs.mean(axis=1),
+        )
 
 
 class WeightedMean(_PredictionAggregator):
     """Static-weight mean — caller supplies one weight per upstream."""
 
-    def __init__(self, name: str, weights: List[float], id_column: str = "id"):
-        super().__init__(name, id_column=id_column)
+    def __init__(self, name: str, weights: List[float]):
+        super().__init__(name)
         if not weights:
             raise ValueError("WeightedMean: weights must be a non-empty list")
         w = np.asarray(weights, dtype=np.float64)
@@ -196,11 +230,13 @@ class WeightedMean(_PredictionAggregator):
                 f"WeightedMean[{self.name}]: got {len(upstream)} upstream frames " f"but {len(self.weights)} weights"
             )
         ids, preds, confs = self._stack(upstream)
-        out = ids.copy()
-        out["prediction"] = (preds * self.weights).sum(axis=1)
-        out["prediction_std"] = preds.std(axis=1)
-        out["confidence"] = (confs * self.weights).sum(axis=1)
-        return out
+        return self._build_output(
+            upstream,
+            ids,
+            prediction=(preds * self.weights).sum(axis=1),
+            prediction_std=preds.std(axis=1),
+            confidence=(confs * self.weights).sum(axis=1),
+        )
 
 
 class Vote(_PredictionAggregator):
@@ -217,13 +253,13 @@ class Vote(_PredictionAggregator):
         if not upstream:
             raise ValueError(f"Vote[{self.name}]: requires at least one upstream DataFrame")
 
-        ids = upstream[0][[self.id_column]].copy()
+        ids = upstream[0][[DAG_ROW_ID]].copy()
         for df in upstream[1:]:
-            ids = ids.merge(df[[self.id_column]], on=self.id_column, how="inner")
+            ids = ids.merge(df[[DAG_ROW_ID]], on=DAG_ROW_ID, how="inner")
 
         labels = pd.concat(
             [
-                ids.merge(df[[self.id_column, "prediction"]], on=self.id_column)["prediction"].rename(f"_p{i}")
+                ids.merge(df[[DAG_ROW_ID, "prediction"]], on=DAG_ROW_ID)["prediction"].rename(f"_p{i}")
                 for i, df in enumerate(upstream)
             ],
             axis=1,
@@ -232,11 +268,13 @@ class Vote(_PredictionAggregator):
         modes = labels.mode(axis=1)[0]
         winner_share = (labels.eq(modes, axis=0)).sum(axis=1) / labels.shape[1]
 
-        out = ids.copy()
-        out["prediction"] = modes
-        out["prediction_std"] = 0.0
-        out["confidence"] = winner_share.to_numpy()
-        return out
+        return self._build_output(
+            upstream,
+            ids,
+            prediction=modes.to_numpy(),
+            prediction_std=0.0,
+            confidence=winner_share.to_numpy(),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -258,9 +296,8 @@ class _StrategyAggregator(_PredictionAggregator):
         model_weights: List[float],
         corr_scale: Optional[List[float]] = None,
         optimal_alpha: float = 0.5,
-        id_column: str = "id",
     ):
-        super().__init__(name, id_column=id_column)
+        super().__init__(name)
         w = np.asarray(model_weights, dtype=np.float64)
         if (w < 0).any() or w.sum() <= 0:
             raise ValueError(f"{type(self).__name__}: model_weights must be non-negative and sum to > 0")
@@ -292,11 +329,13 @@ class ConfidenceWeighted(_StrategyAggregator):
         self._check_arity(upstream)
         ids, preds, confs = self._stack(upstream)
         weights = conf_weights_with_fallback(confs, self.model_weights)
-        out = ids.copy()
-        out["prediction"] = (preds * weights).sum(axis=1)
-        out["prediction_std"] = preds.std(axis=1)
-        out["confidence"] = ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha)
-        return out
+        return self._build_output(
+            upstream,
+            ids,
+            prediction=(preds * weights).sum(axis=1),
+            prediction_std=preds.std(axis=1),
+            confidence=ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha),
+        )
 
 
 class InverseMaeWeighted(_StrategyAggregator):
@@ -310,11 +349,13 @@ class InverseMaeWeighted(_StrategyAggregator):
     def apply(self, upstream: List[pd.DataFrame]) -> pd.DataFrame:
         self._check_arity(upstream)
         ids, preds, confs = self._stack(upstream)
-        out = ids.copy()
-        out["prediction"] = (preds * self.model_weights).sum(axis=1)
-        out["prediction_std"] = preds.std(axis=1)
-        out["confidence"] = ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha)
-        return out
+        return self._build_output(
+            upstream,
+            ids,
+            prediction=(preds * self.model_weights).sum(axis=1),
+            prediction_std=preds.std(axis=1),
+            confidence=ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha),
+        )
 
 
 class ScaledConfidenceWeighted(_StrategyAggregator):
@@ -329,11 +370,13 @@ class ScaledConfidenceWeighted(_StrategyAggregator):
         ids, preds, confs = self._stack(upstream)
         scaled = confs * self.model_weights
         weights = conf_weights_with_fallback(scaled, self.model_weights)
-        out = ids.copy()
-        out["prediction"] = (preds * weights).sum(axis=1)
-        out["prediction_std"] = preds.std(axis=1)
-        out["confidence"] = ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha)
-        return out
+        return self._build_output(
+            upstream,
+            ids,
+            prediction=(preds * weights).sum(axis=1),
+            prediction_std=preds.std(axis=1),
+            confidence=ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha),
+        )
 
 
 class CalibratedConfidenceWeighted(_StrategyAggregator):
@@ -347,8 +390,10 @@ class CalibratedConfidenceWeighted(_StrategyAggregator):
         ids, preds, confs = self._stack(upstream)
         calibrated = confs * self.corr_scale
         weights = conf_weights_with_fallback(calibrated, self.model_weights)
-        out = ids.copy()
-        out["prediction"] = (preds * weights).sum(axis=1)
-        out["prediction_std"] = preds.std(axis=1)
-        out["confidence"] = ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha)
-        return out
+        return self._build_output(
+            upstream,
+            ids,
+            prediction=(preds * weights).sum(axis=1),
+            prediction_std=preds.std(axis=1),
+            confidence=ensemble_confidence(preds, confs, self.corr_scale, self.model_weights, self.optimal_alpha),
+        )

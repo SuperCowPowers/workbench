@@ -50,9 +50,14 @@ class _FakeEndpoint:
     def inference(self, df: pd.DataFrame) -> pd.DataFrame:
         self.received = df.copy()
         # Mirror real Workbench endpoint behavior: input columns pass through
-        # alongside the new output columns. Metadata flows naturally.
+        # alongside the new output columns. Output rows are positionally
+        # aligned with input — no id-based merging.
         new_cols = [c for c in self._output.columns if c != "id" and c not in df.columns]
-        return df.merge(self._output[["id"] + new_cols], on="id", how="inner")
+        result = df.reset_index(drop=True).copy()
+        output_subset = self._output[new_cols].reset_index(drop=True).iloc[: len(result)]
+        for c in new_cols:
+            result[c] = output_subset[c].values
+        return result
 
 
 def _patch_endpoints(monkeypatch, endpoints: dict[str, _FakeEndpoint]):
@@ -110,17 +115,6 @@ def test_validate_rejects_endpoint_with_no_source():
     dag.set_input_node("ep-a")
     dag.set_output_node("ep-a")
     with pytest.raises(ValueError, match="no upstream parent and is not"):
-        dag.validate()
-
-
-def test_validate_rejects_id_column_mismatch():
-    dag = MetaEndpointDAG(id_column="molecule_id")
-    dag.add_endpoint("ep-a")
-    dag.add_aggregation(Concat(name="c1", id_column="id"))  # wrong id_column
-    dag.add_edge("ep-a", "c1")
-    dag.set_input_node("ep-a")
-    dag.set_output_node("c1")
-    with pytest.raises(ValueError, match="id_column"):
         dag.validate()
 
 
@@ -221,10 +215,12 @@ def test_run_passes_metadata_through(monkeypatch):
     )
     out = dag.run(input_df)
 
-    # Endpoint receives the full DataFrame — no pre-slicing.
-    assert set(fake.received.columns) == {"id", "smiles", "project_id", "owner"}
+    # Endpoint receives the full DataFrame — no pre-slicing — plus the
+    # walker-injected synthetic row id used for downstream alignment.
+    assert set(fake.received.columns) == {"id", "smiles", "project_id", "owner", "__dag_row_id"}
 
-    # Metadata flows through to the output, alongside the new feature column.
+    # Metadata flows through to the output. The synthetic id is stripped
+    # by the walker before returning.
     assert set(out.columns) == {"id", "smiles", "project_id", "owner", "feature_x"}
     assert list(out.sort_values("id")["project_id"]) == ["P1", "P2"]
     assert list(out.sort_values("id")["owner"]) == ["alice", "bob"]
@@ -400,6 +396,53 @@ def test_json_roundtrip_preserves_topology():
     assert rebuilt._aggregations["ensemble"].weights.tolist() == dag._aggregations["ensemble"].weights.tolist()
 
 
+def test_run_with_no_id_column_in_input(monkeypatch):
+    """The walker injects a synthetic row id so callers don't need any id column."""
+    fake_2d = _FakeEndpoint(
+        "ep-2d",
+        pd.DataFrame({"id": [1, 2], "f2d": [0.1, 0.2]}),
+        input_cols=["smiles"],
+    )
+    fake_3d = _FakeEndpoint(
+        "ep-3d",
+        pd.DataFrame({"id": [1, 2], "f3d": [9.0, 8.0]}),
+        input_cols=["smiles"],
+    )
+    _patch_endpoints(monkeypatch, {"ep-2d": fake_2d, "ep-3d": fake_3d})
+
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("ep-2d")
+    dag.add_endpoint("ep-3d")
+    dag.add_aggregation(Concat(name="combine"))
+    dag.add_edge("ep-2d", "combine")
+    dag.add_edge("ep-3d", "combine")
+    dag.set_input_node("ep-2d", "ep-3d")
+    dag.set_output_node("combine")
+    dag.validate()
+
+    # NOTE: input_df has no id column at all — just SMILES.
+    input_df = pd.DataFrame({"smiles": ["CCO", "CCN"]})
+    out = dag.run(input_df)
+
+    # Walker stripped its synthetic id; output is what the user expects.
+    assert "__dag_row_id" not in out.columns
+    assert {"smiles", "f2d", "f3d"}.issubset(out.columns)
+    assert len(out) == 2
+
+
+def test_run_rejects_input_with_reserved_column():
+    """Caller using ``__dag_row_id`` collides with the walker — fail loudly."""
+    dag = MetaEndpointDAG()
+    dag.add_endpoint("ep-a")
+    dag.set_input_node("ep-a")
+    dag.set_output_node("ep-a")
+    dag.validate()
+
+    bad_input = pd.DataFrame({"smiles": ["CCO"], "__dag_row_id": [99]})
+    with pytest.raises(ValueError, match="reserved column"):
+        dag.run(bad_input)
+
+
 def test_run_with_custom_endpoint_invoker():
     """A caller-supplied invoker bypasses the workbench.api.Endpoint path
     entirely — the mechanism the deployed SageMaker container will use to
@@ -427,8 +470,9 @@ def test_run_with_custom_endpoint_invoker():
     out = dag.run(input_df, endpoint_invoker=fake_invoker)
 
     # The invoker received the input (no Endpoint class involved at all).
+    # Walker also injected the synthetic row id for downstream alignment.
     assert set(captured.keys()) == {"ep-a", "ep-b"}
-    assert set(captured["ep-a"].columns) == {"id", "smiles"}
+    assert set(captured["ep-a"].columns) == {"id", "smiles", "__dag_row_id"}
 
     # Concat merged the invoker's outputs.
     assert {"id", "smiles", "out_ep-a", "out_ep-b"}.issubset(out.columns)
