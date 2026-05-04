@@ -178,10 +178,7 @@ class _PredictionAggregator(AggregationNode):
             ids = ids.merge(df[[DAG_ROW_ID]], on=DAG_ROW_ID, how="inner")
 
         preds = np.column_stack(
-            [
-                ids.merge(df[[DAG_ROW_ID, "prediction"]], on=DAG_ROW_ID)["prediction"].to_numpy()
-                for df in upstream
-            ]
+            [ids.merge(df[[DAG_ROW_ID, "prediction"]], on=DAG_ROW_ID)["prediction"].to_numpy() for df in upstream]
         )
         confs = np.column_stack(
             [

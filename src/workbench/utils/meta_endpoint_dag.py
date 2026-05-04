@@ -301,8 +301,7 @@ class MetaEndpointDAG:
             raise ValueError("DAG has no output node — call set_output_node() first")
         if DAG_ROW_ID in input_df.columns:
             raise ValueError(
-                f"input_df already contains the reserved column '{DAG_ROW_ID}'. "
-                f"Remove it before calling run()."
+                f"input_df already contains the reserved column '{DAG_ROW_ID}'. " f"Remove it before calling run()."
             )
 
         # Inject the synthetic row id. Endpoints will pass this through as an
