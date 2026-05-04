@@ -11,7 +11,7 @@ Workbench supports multiple model frameworks — all using the same API. Just ch
 | **PyTorch** | Neural network on molecular descriptors | **[PyTorch Models](pytorch_models.md)** |
 | **Fingerprint** | Count fingerprint models for molecular similarity | **[Fingerprint Models](fingerprint_models.md)** |
 | **ChemProp** | Message Passing Neural Network on molecular graphs | **[ChemProp Models](chemprop_models.md)** |
-| **Meta Model** | Ensemble aggregating multiple endpoints | **[Meta Models](meta_models.md)** |
+| **Meta Endpoint** | DAG of endpoints + aggregation nodes (feature pipelines, ensembles) | **[Meta Endpoints](meta_endpoints.md)** |
 
 ## Quick Example
 

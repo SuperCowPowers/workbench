@@ -55,7 +55,7 @@ model.set_class_labels(["low", "medium", "high"])
 ```
 
 !!! note
-    Classification is single-target only. For multi-target classification, train separate models and combine them with a [MetaModel](meta_models.md).
+    Classification is single-target only. For multi-target classification, train separate models and combine them with a [MetaEndpoint](meta_endpoints.md).
 
 ## Multi-Task ChemProp
 

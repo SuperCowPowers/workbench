@@ -422,6 +422,28 @@ class MetaEndpointDAG:
             self.populate_async_flags()
         return any(self._endpoint_async_flags.values())
 
+    def min_child_batch_size(self) -> int:
+        """Minimum ``inference_batch_size`` across all child endpoints.
+
+        :meth:`MetaEndpoint.create` uses this to set the meta endpoint's
+        own ``inference_batch_size`` — chunks the meta receives from
+        SageMaker get fanned out as-is to every child, so the meta's
+        chunk size shouldn't exceed the smallest tolerance among children.
+
+        Smaller chunks at the meta level also mean smaller failure blast
+        radius (one bad row fails one small chunk, not a large one).
+
+        Returns:
+            int: Minimum batch size; ``100`` if the DAG has no endpoints
+            (the standard sync default).
+        """
+        from workbench.api import Endpoint
+
+        if not self._endpoints:
+            return 100
+        sizes = [Endpoint(ep_name).inference_batch_size() for ep_name in set(self._endpoints.values())]
+        return min(sizes)
+
     @classmethod
     def from_dict(cls, data: dict) -> "MetaEndpointDAG":
         dag = cls()

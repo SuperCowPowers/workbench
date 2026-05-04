@@ -1,8 +1,9 @@
-"""Shared utilities for meta model aggregation.
+"""Shared utilities for ensemble aggregation math.
 
-Used by both the deployed template (meta_model.template) and the
-EnsembleSimulator so that confidence and weight computations are
-guaranteed to be identical.
+Used by :mod:`workbench.utils.aggregation_nodes` (the prediction
+aggregator subclasses) and :class:`workbench.utils.ensemble_simulator.EnsembleSimulator`
+so that the confidence/weight computations stay identical between
+DAG-runtime aggregation and offline strategy simulation.
 """
 
 import numpy as np

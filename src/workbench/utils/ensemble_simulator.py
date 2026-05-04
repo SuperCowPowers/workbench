@@ -10,7 +10,7 @@ from scipy import stats
 import logging
 
 from workbench.api import Model
-from workbench.model_script_utils.meta_model_utils import conf_weights_with_fallback, ensemble_confidence
+from workbench.model_script_utils.ensemble_utils import conf_weights_with_fallback, ensemble_confidence
 
 # Set up the log
 log = logging.getLogger("workbench")
@@ -657,10 +657,10 @@ class EnsembleSimulator:
         return result
 
     def get_best_strategy_config(self) -> dict:
-        """Get the best ensemble strategy configuration for MetaModel creation.
+        """Get the best ensemble strategy configuration.
 
         Evaluates all strategies, picks the best one by MAE, and returns the
-        template parameters needed for MetaModel.create().
+        parameters needed to construct the corresponding aggregation node.
 
         If "Drop Worst" wins, the worst model is excluded from endpoints
         and the remaining strategies are re-evaluated on the reduced set.

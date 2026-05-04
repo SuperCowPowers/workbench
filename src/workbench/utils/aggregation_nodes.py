@@ -26,14 +26,14 @@ import numpy as np
 import pandas as pd
 
 # Dual-import: workbench-package path (normal) and bare path (when this file is
-# bundled as a sibling of meta_model_utils.py inside a SageMaker model script).
+# bundled as a sibling of ensemble_utils.py inside a SageMaker model script).
 try:
-    from workbench.model_script_utils.meta_model_utils import (
+    from workbench.model_script_utils.ensemble_utils import (
         conf_weights_with_fallback,
         ensemble_confidence,
     )
 except ImportError:  # pragma: no cover — exercised inside SageMaker containers only
-    from meta_model_utils import (
+    from ensemble_utils import (
         conf_weights_with_fallback,
         ensemble_confidence,
     )
@@ -275,7 +275,7 @@ class Vote(_PredictionAggregator):
 
 
 # ---------------------------------------------------------------------------
-# Ensemble strategy nodes (ports of MetaModel's 5 strategies)
+# Ensemble strategy nodes (calibrated weighting strategies)
 # ---------------------------------------------------------------------------
 
 

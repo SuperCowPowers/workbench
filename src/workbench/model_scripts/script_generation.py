@@ -122,13 +122,8 @@ def generate_model_script(template_params: dict) -> str:
         template_name = "chemprop.template"
         model_script_dir_name = "chemprop"
     elif template_params["model_framework"] == ModelFramework.META:
-        # MetaEndpoint (DAG-based) carries `dag_json`; legacy MetaModel doesn't.
-        if "dag_json" in template_params:
-            template_name = "meta_endpoint.template"
-            model_script_dir_name = "meta_endpoint"
-        else:
-            template_name = "meta_model.template"
-            model_script_dir_name = "meta_model"
+        template_name = "meta_endpoint.template"
+        model_script_dir_name = "meta_endpoint"
     elif template_params["model_type"] in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.CLASSIFIER]:
         template_name = "xgb_model.template"
         model_script_dir_name = "xgb_model"

@@ -39,7 +39,7 @@ from pathlib import Path
 
 from sagemaker.core.resources import ModelPackage, ModelPackageGroup, TrainingJob
 from sagemaker.core.shapes.model_card_shapes import ContainersItem, InferenceSpecification
-from sagemaker.core.training.configs import Compute, OutputDataConfig, SourceCode
+from sagemaker.core.training.configs import Compute, OutputDataConfig, SourceCode, StoppingCondition
 from sagemaker.train.model_trainer import ModelTrainer
 
 from workbench.api.endpoint import Endpoint
@@ -116,10 +116,18 @@ class MetaEndpoint(Endpoint):
 
         log.important(f"Deploying MetaEndpoint '{name}' ({'async' if is_async else 'sync'})...")
         model = Model(name)
-        model.to_endpoint(
+        endpoint = model.to_endpoint(
             tags=tags or [name],
             async_endpoint=is_async,
         )
+
+        # Auto-derive inference_batch_size from the smallest tolerance among
+        # children — chunks the meta receives from SageMaker get fanned out
+        # as-is to every child, so the meta's chunk size shouldn't exceed
+        # the smallest child's batch size.
+        min_batch = dag.min_child_batch_size()
+        endpoint.upsert_workbench_meta({"inference_batch_size": min_batch})
+        log.important(f"Set inference_batch_size={min_batch} (min across DAG children)")
 
         log.important(f"MetaEndpoint '{name}' created successfully!")
         return cls(name)
@@ -191,6 +199,9 @@ class MetaEndpoint(Endpoint):
             output_data_config=OutputDataConfig(
                 s3_output_path=f"{models_s3_path}/{name}/training", compression_type="GZIP"
             ),
+            # Training is a no-op (just writes the DAG JSON as the model artifact);
+            # 10 minutes is plenty for container cold-start + a JSON dump.
+            stopping_condition=StoppingCondition(max_runtime_in_seconds=600),
             role=aws_clamp.aws_session.get_workbench_execution_role_arn(),
             sagemaker_session=sm_session,
             base_job_name=name,
