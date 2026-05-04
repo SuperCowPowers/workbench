@@ -8,14 +8,14 @@ Salts are removed. Computes 74 Boltzmann-weighted 3D descriptors per SMILES:
 
 Uses adaptive conformer counts (50–300 based on rotatable bonds) and
 Boltzmann-weighted ensemble averaging. Deployed as an async endpoint
-(up to 15-minute invocations) for overnight batch processing of 10k–100k
+(up to 60-minute invocations) for overnight batch processing of 10k–100k
 compound libraries.
 
 Created artifacts:  Model/Endpoint ``smiles-to-3d-full-v1``
 """
 
 from workbench.api import ModelType, ModelFramework
-from workbench.utils.feature_endpoint_utils import ensure_demo_featureset
+from _common import ensure_featureset
 
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
@@ -29,7 +29,7 @@ IDLE_MINUTES = 5  # Minutes of empty queue before draining to zero.
 
 if __name__ == "__main__":
     # ── Create the Model (shared AqSol-backed demo FeatureSet as training source).
-    feature_set = ensure_demo_featureset()
+    feature_set = ensure_featureset()
     tags = ["smiles", "3d descriptors", "full", "conformer ensemble"]
     model = feature_set.to_model(
         name=ENDPOINT_NAME,

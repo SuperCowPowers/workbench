@@ -84,7 +84,7 @@ def _feature_list_2d_3d() -> list[str]:
     """Assemble the 2d_3d FeatureSet's feature column list."""
     features: list[str] = []
     for ep in (ENDPOINT_2D, ENDPOINT_3D):
-        features.extend(Endpoint(ep).feature_list())
+        features.extend(Endpoint(ep).output_columns())
     return features
 
 

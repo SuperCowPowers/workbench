@@ -160,7 +160,7 @@ logger = logging.getLogger("workbench")
 # =============================================================================
 
 # Thresholds for skipping 3D computation. Sized for the async endpoint's
-# 15-minute invocation budget in Boltzmann mode (adaptive 50-300 conformers);
+# 60-minute invocation budget in Boltzmann mode (adaptive 50-300 conformers);
 # the realtime endpoint's own 60s SageMaker timeout is the tighter practical
 # ceiling for fast-mode calls, so we size these for the async/batch case
 # and let realtime fail its own timeout on pathological inputs.

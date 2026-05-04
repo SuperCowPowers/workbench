@@ -74,7 +74,7 @@ class Model(ModelCore):
             instance (str): The instance type for Realtime Endpoints (default: None = auto-select based on model)
             data_capture (bool): Enable data capture for the Endpoint (default: False)
             async_endpoint (bool): Deploy as an async endpoint (default: False). Async
-                endpoints are conceptually *batch* endpoints — support up to 15-minute
+                endpoints are conceptually *batch* endpoints — support up to 60-minute
                 per-invocation timeouts, use S3 for I/O, and scale 0 → max_instances →
                 0 as traffic arrives and drains.
             min_instances (int): Autoscaler floor (default: 0 — scale to zero).

@@ -10,7 +10,7 @@ Created artifacts:  Model/Endpoint ``smiles-to-2d-keep-salts-v1``
 import os
 
 from workbench.api import ModelType, ModelFramework
-from workbench.utils.feature_endpoint_utils import ensure_demo_featureset
+from _common import ensure_featureset
 
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
@@ -24,7 +24,7 @@ INSTANCE = "ml.c7i.large"  # used only when SERVERLESS=False.
 
 if __name__ == "__main__":
     # ── Create the Model (shared AqSol-backed demo FeatureSet as training source).
-    feature_set = ensure_demo_featureset()
+    feature_set = ensure_featureset()
     tags = ["smiles", "molecular descriptors", "tautomerized", "stereo", "keep-salts"]
     model = feature_set.to_model(
         name=ENDPOINT_NAME,

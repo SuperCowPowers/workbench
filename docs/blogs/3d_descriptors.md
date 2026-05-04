@@ -201,7 +201,7 @@ Endpoint output also includes the `undefined_chiral_centers` column emitted by t
 The 3D endpoints are significantly more compute-intensive than 2D. Several safeguards keep them reliable:
 
 ### Molecular Complexity Check
-Before attempting conformer generation, molecules are screened against size and topology thresholds that catch molecules too large or complex for reliable conformer generation. These are sized for the async endpoint's 15-minute invocation budget in Boltzmann mode, which comfortably accommodates larger drug-like molecules (PROTACs, small peptides, natural products):
+Before attempting conformer generation, molecules are screened against size and topology thresholds that catch molecules too large or complex for reliable conformer generation. These are sized for the async endpoint's 60-minute invocation budget in Boltzmann mode, which comfortably accommodates larger drug-like molecules (PROTACs, small peptides, natural products):
 
 | Property | Threshold | Rationale |
 |----------|-----------|-----------|
@@ -232,19 +232,19 @@ python feature_endpoints/smiles_to_3d_fast_v1.py
 python feature_endpoints/smiles_to_3d_full_v1.py
 ```
 
-The full endpoint deploys as an [AsyncEndpoint](../api_classes/async_endpoint.md) with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.
+The full endpoint deploys as an [async endpoint](../api_classes/async_endpoint.md) with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.
 
 ### Using the Endpoints
 
 ```python
-from workbench.api import Endpoint, AsyncEndpoint
+from workbench.api import Endpoint
 
 # Fast endpoint — synchronous, for realtime inference
 end_fast = Endpoint("smiles-to-3d-fast-v1")
 df_3d = end_fast.inference(df)
 
-# Full endpoint — async, for batch processing (same 74 features, denser sampling)
-end_full = AsyncEndpoint("smiles-to-3d-full-v1")
+# Full endpoint — async deployment, same Endpoint API (auto-routes through async core)
+end_full = Endpoint("smiles-to-3d-full-v1")
 df_3d_full = end_full.inference(df)
 
 # Both work with InferenceCache for persistent S3-backed caching

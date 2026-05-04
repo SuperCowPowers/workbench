@@ -74,7 +74,7 @@ class ModelToEndpoint(Transform):
             serverless(bool): Deploy the Endpoint in serverless mode (default: True)
             instance(str): The instance type for Realtime Endpoints (default: None = auto-select)
             async_endpoint(bool): Deploy as an async endpoint (default: False). Async
-                endpoints support up to 15-minute invocations and use S3 for I/O.
+                endpoints support up to 60-minute invocations and use S3 for I/O.
                 Incompatible with serverless — if both are True, serverless is forced off.
             min_instances(int): Autoscaler floor (default: 0 — scale to zero).
             max_instances(int): Autoscaler upper bound (default: None = use

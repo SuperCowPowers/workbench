@@ -9,7 +9,8 @@ These class provide high-level APIs for the Workbench package, offering easy acc
 - ModelType: Enum for the different model types supported by Workbench
 - Endpoint: Manages the deployment and invocations/inference on AWS Endpoints
   (auto-routes to the async transport for endpoints deployed with
-  ``async_endpoint=True``; ``feature_list()`` is available on feature endpoints)
+  ``async_endpoint=True``; ``output_columns()`` and ``input_columns()`` are
+  available on feature endpoints)
 - InferenceCache: Client-side S3 caching wrapper around an Endpoint's inference()
 - Meta: Provides an API to retrieve AWS Metadata for the above classes
 - ParameterStore: Manages AWS Parameter Store

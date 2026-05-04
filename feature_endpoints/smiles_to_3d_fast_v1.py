@@ -17,7 +17,7 @@ Created artifacts:  Model/Endpoint ``smiles-to-3d-fast-v1``
 import os
 
 from workbench.api import Model, ModelType, ModelFramework
-from workbench.utils.feature_endpoint_utils import ensure_demo_featureset
+from _common import ensure_featureset
 
 # ─── Deploy-time knobs ──────────────────────────────────────────────────────
 # These are the settings you'll most often want to tweak. Everything else
@@ -42,7 +42,7 @@ BATCH_SIZE_BY_CONFIG = {
 
 if __name__ == "__main__":
     # ── Create the Model (shared AqSol-backed demo FeatureSet as training source).
-    feature_set = ensure_demo_featureset()
+    feature_set = ensure_featureset()
     tags = ["smiles", "3d descriptors", "conformer", "pharmacophore", "shape"]
     if RECREATE_MODEL:
         model = feature_set.to_model(

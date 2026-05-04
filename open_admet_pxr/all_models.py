@@ -33,7 +33,7 @@ Usage (with WORKBENCH_CONFIG set, e.g. scp_sandbox.json):
     python all_models.py --rebuild        # force-rebuild every model/endpoint
 
 Prereq: ``create_feature_sets.py`` has already built the three FeatureSets.
-``Endpoint.feature_list()`` handles feature-list lookup (with an
+``Endpoint.output_columns()`` handles output-column lookup (with an
 auto-derive fallback if an endpoint's list isn't cached yet).
 """
 
@@ -74,7 +74,7 @@ def _feature_list_for_variant(variant: str) -> list[str]:
     }[variant]
     features: list[str] = []
     for ep in endpoints:
-        features.extend(Endpoint(ep).feature_list())
+        features.extend(Endpoint(ep).output_columns())
     return features
 
 

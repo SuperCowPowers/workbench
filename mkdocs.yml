@@ -19,7 +19,7 @@ nav:
     - FeatureSet: api_classes/feature_set.md
     - Model: api_classes/model.md
     - Endpoint: api_classes/endpoint.md
-    - AsyncEndpoint: api_classes/async_endpoint.md
+    - Async Endpoints: api_classes/async_endpoint.md
     - InferenceCache: api_classes/inference_cache.md
     - Views: api_classes/views.md
     - Parameter Store: api_classes/parameter_store.md
@@ -59,6 +59,7 @@ nav:
       - FeatureSetCore: core_classes/artifacts/feature_set_core.md
       - ModelCore: core_classes/artifacts/model_core.md
       - EndpointCore: core_classes/artifacts/endpoint_core.md
+      - AsyncEndpointCore: core_classes/artifacts/async_endpoint_core.md
       - MonitorCore: core_classes/artifacts/monitor_core.md
       - Artifact: core_classes/artifacts/artifact.md
     - Views:

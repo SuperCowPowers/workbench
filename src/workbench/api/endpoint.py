@@ -130,47 +130,48 @@ class Endpoint(EndpointCore):
         """
         return super().cross_fold_inference(include_quantiles)
 
-    def feature_list(self) -> List[str]:
-        """Return this endpoint's registered feature columns.
+    def output_columns(self) -> List[str]:
+        """Return this endpoint's registered output columns.
 
-        Only meaningful for *feature endpoints* — endpoints that take an input
-        column (typically ``smiles``) and emit computed feature columns
-        (descriptors, fingerprints, etc.).
+        Works for any endpoint that emits new columns during inference:
+        feature endpoints emit computed feature columns (descriptors,
+        fingerprints, etc.); predictor endpoints emit prediction / confidence /
+        quantile columns.
 
-        Fast path: reads ``/workbench/feature_lists/<endpoint_name>`` from
-        ParameterStore (populated by
-        :func:`workbench.utils.feature_endpoint_utils.register_features` at
-        deploy time).
+        Fast path: reads ``/workbench/endpoints/<endpoint_name>/output_columns``
+        from ParameterStore (populated by
+        :func:`workbench.utils.endpoint_utils.register_output_columns` at
+        deploy time, or lazily on first call to this method).
 
         Freshness check: compares the parameter's ``LastModifiedDate`` to the
         endpoint's ``modified()`` time. If the endpoint has been redeployed
-        since the feature list was cached, the cache is stale — we re-derive
-        via the fallback path below and rewrite the cache.
+        since the columns were cached, the cache is stale — we re-derive via
+        the fallback path below and rewrite the cache.
 
         Fallback (also used when there's no cache yet): runs a small smoke
         inference to discover the columns, writes them to ParameterStore so
         subsequent calls are fast, and returns the list.
 
         Returns:
-            List of feature column names.
+            List of output column names.
 
         Raises:
             RuntimeError: If the fallback inference fails (e.g. the endpoint
-                isn't actually a feature endpoint and produces no new columns).
+                emits no new columns beyond the input it received).
         """
         from workbench.api.parameter_store import ParameterStore
-        from workbench.utils.feature_endpoint_utils import feature_list_key, register_features
+        from workbench.utils.endpoint_utils import output_columns_key, register_output_columns
 
         ps = ParameterStore()
-        key = feature_list_key(self.name)
+        key = output_columns_key(self.name)
         cols = ps.get(key)
 
         if cols is None:
             self.log.important(
-                f"Endpoint[{self.name}]: no feature list registered yet — "
+                f"Endpoint[{self.name}]: no output columns registered yet — "
                 f"running smoke inference to discover and register columns."
             )
-            return register_features(self)
+            return register_output_columns(self)
 
         param_modified = ps.last_modified(key)
         try:
@@ -181,11 +182,19 @@ class Endpoint(EndpointCore):
         if param_modified is not None and endpoint_modified is not None and endpoint_modified > param_modified:
             self.log.important(
                 f"Endpoint[{self.name}]: endpoint modified at {endpoint_modified} "
-                f"is newer than cached feature list ({param_modified}) — re-deriving."
+                f"is newer than cached output columns ({param_modified}) — re-deriving."
             )
-            return register_features(self)
+            return register_output_columns(self)
 
         return cols
+
+    def input_columns(self) -> List[str]:
+        """Return this endpoint's declared input columns.
+
+        Placeholder — returns an empty list until input-column registration
+        is wired up (planned alongside the MetaEndpoint contract work).
+        """
+        return []
 
 
 if __name__ == "__main__":
