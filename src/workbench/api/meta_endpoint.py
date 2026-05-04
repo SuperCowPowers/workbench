@@ -109,7 +109,7 @@ class MetaEndpoint(Endpoint):
         feature_set = FeatureSet(feature_set_name)
         feature_set.to_model(
             name=name,
-            model_type=ModelType.REGRESSOR,
+            model_type=cls._derive_model_type(dag),
             model_framework=ModelFramework.META,
             tags=tags or [name],
             description=description or f"MetaEndpoint DAG over: {', '.join(dag._endpoints.values())}",
@@ -163,6 +163,35 @@ class MetaEndpoint(Endpoint):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    @classmethod
+    def _derive_model_type(cls, dag: MetaEndpointDAG) -> ModelType:
+        """Pick the most accurate :class:`ModelType` for the DAG's output.
+
+        - Output node is a terminal endpoint → borrow that endpoint's declared
+          type (e.g., a downstream predictor endpoint contributes its own type).
+        - Output node is :class:`~workbench.utils.aggregation_nodes.Concat` →
+          ``TRANSFORMER`` (column-union of feature outputs).
+        - Output node is :class:`~workbench.utils.aggregation_nodes.Vote` →
+          ``CLASSIFIER`` (majority vote of class labels).
+        - Output node is any other prediction aggregator → ``REGRESSOR``.
+        """
+        from workbench.utils.aggregation_nodes import Concat, Vote
+
+        output_name = dag._output_node
+        if output_name in dag._endpoints:
+            ep_name = dag._endpoints[output_name]
+            try:
+                return Model(ep_name).model_type
+            except Exception:
+                return ModelType.REGRESSOR
+
+        agg = dag._aggregations[output_name]
+        if isinstance(agg, Concat):
+            return ModelType.TRANSFORMER
+        if isinstance(agg, Vote):
+            return ModelType.CLASSIFIER
+        return ModelType.REGRESSOR
 
     @classmethod
     def _derive_lineage(cls, dag: MetaEndpointDAG) -> tuple[list[str], str, str | None]:
