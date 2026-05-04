@@ -557,14 +557,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/meta_models/" class="md-nav__link">
+      <a href="../../models/meta_endpoints/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Meta Models
+    Meta Endpoints
   
 
     
@@ -814,7 +814,7 @@
   <span class="md-ellipsis">
     
   
-    AsyncEndpoint
+    Async Endpoints
   
 
     
@@ -2418,6 +2418,34 @@
     
   
     EndpointCore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../core_classes/artifacts/async_endpoint_core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AsyncEndpointCore
   
 
     
@@ -5527,7 +5555,7 @@
 <h2 id="production-guardrails">Production Guardrails</h2>
 <p>The 3D endpoints are significantly more compute-intensive than 2D. Several safeguards keep them reliable:</p>
 <h3 id="molecular-complexity-check">Molecular Complexity Check</h3>
-<p>Before attempting conformer generation, molecules are screened against size and topology thresholds that catch molecules too large or complex for reliable conformer generation. These are sized for the async endpoint's 15-minute invocation budget in Boltzmann mode, which comfortably accommodates larger drug-like molecules (PROTACs, small peptides, natural products):</p>
+<p>Before attempting conformer generation, molecules are screened against size and topology thresholds that catch molecules too large or complex for reliable conformer generation. These are sized for the async endpoint's 60-minute invocation budget in Boltzmann mode, which comfortably accommodates larger drug-like molecules (PROTACs, small peptides, natural products):</p>
 <table>
 <thead>
 <tr>
@@ -5572,16 +5600,16 @@
 <h3 id="full-endpoint-async">Full Endpoint (Async)</h3>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>python<span class="w"> </span>feature_endpoints/smiles_to_3d_full_v1.py
 </span></code></pre></div>
-<p>The full endpoint deploys as an <a href="../../api_classes/async_endpoint/">AsyncEndpoint</a> with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.</p>
+<p>The full endpoint deploys as an <a href="../../api_classes/async_endpoint/">async endpoint</a> with scale-to-zero -- the instance spins down when idle and cold-starts on the next request. This is ideal for overnight batch runs where you don't want to pay for idle compute during the day.</p>
 <h3 id="using-the-endpoints">Using the Endpoints</h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Endpoint</span><span class="p">,</span> <span class="n">AsyncEndpoint</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">Endpoint</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Fast endpoint — synchronous, for realtime inference</span>
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">end_fast</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-fast-v1&quot;</span><span class="p">)</span>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">df_3d</span> <span class="o">=</span> <span class="n">end_fast</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Full endpoint — async, for batch processing (same 74 features, denser sampling)</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">end_full</span> <span class="o">=</span> <span class="n">AsyncEndpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-full-v1&quot;</span><span class="p">)</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Full endpoint — async deployment, same Endpoint API (auto-routes through async core)</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">end_full</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;smiles-to-3d-full-v1&quot;</span><span class="p">)</span>
 </span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">df_3d_full</span> <span class="o">=</span> <span class="n">end_full</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
 </span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1"># Both work with InferenceCache for persistent S3-backed caching</span>

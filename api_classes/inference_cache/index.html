@@ -557,14 +557,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/meta_models/" class="md-nav__link">
+      <a href="../../models/meta_endpoints/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Meta Models
+    Meta Endpoints
   
 
     
@@ -816,7 +816,7 @@
   <span class="md-ellipsis">
     
   
-    AsyncEndpoint
+    Async Endpoints
   
 
     
@@ -2306,6 +2306,34 @@
     
   
     EndpointCore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../core_classes/artifacts/async_endpoint_core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AsyncEndpointCore
   
 
     
@@ -5916,8 +5944,8 @@ class caches <em>inference results</em>.</p>
 </span><span id="__span-0-148"><a id="__codelineno-0-148" name="__codelineno-0-148"></a>        <span class="n">max_instances</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_instances&quot;</span><span class="p">)</span>
 </span><span id="__span-0-149"><a id="__codelineno-0-149" name="__codelineno-0-149"></a>        <span class="k">if</span> <span class="n">max_instances</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="__span-0-150"><a id="__codelineno-0-150" name="__codelineno-0-150"></a>            <span class="k">return</span> <span class="kc">None</span>
-</span><span id="__span-0-151"><a id="__codelineno-0-151" name="__codelineno-0-151"></a>        <span class="c1"># Mirror AsyncEndpoint&#39;s own resolution: explicit meta override wins,</span>
-</span><span id="__span-0-152"><a id="__codelineno-0-152" name="__codelineno-0-152"></a>        <span class="c1"># otherwise the core default.</span>
+</span><span id="__span-0-151"><a id="__codelineno-0-151" name="__codelineno-0-151"></a>        <span class="c1"># Mirror AsyncEndpointCore&#39;s own resolution: explicit meta override</span>
+</span><span id="__span-0-152"><a id="__codelineno-0-152" name="__codelineno-0-152"></a>        <span class="c1"># wins, otherwise the core default.</span>
 </span><span id="__span-0-153"><a id="__codelineno-0-153" name="__codelineno-0-153"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">workbench.core.artifacts.async_endpoint_core</span><span class="w"> </span><span class="kn">import</span> <span class="n">_DEFAULT_BATCH_SIZE</span>
 </span><span id="__span-0-154"><a id="__codelineno-0-154" name="__codelineno-0-154"></a>
 </span><span id="__span-0-155"><a id="__codelineno-0-155" name="__codelineno-0-155"></a>        <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inference_batch_size&quot;</span><span class="p">,</span> <span class="n">_DEFAULT_BATCH_SIZE</span><span class="p">))</span>

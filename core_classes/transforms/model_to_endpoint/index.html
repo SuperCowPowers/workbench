@@ -557,14 +557,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../models/meta_models/" class="md-nav__link">
+      <a href="../../../models/meta_endpoints/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Meta Models
+    Meta Endpoints
   
 
     
@@ -814,7 +814,7 @@
   <span class="md-ellipsis">
     
   
-    AsyncEndpoint
+    Async Endpoints
   
 
     
@@ -2110,6 +2110,34 @@
     
   
     EndpointCore
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../artifacts/async_endpoint_core/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AsyncEndpointCore
   
 
     
@@ -5375,7 +5403,7 @@ built-in serving stack). See https://sagemaker.readthedocs.io/en/stable/inferenc
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a><span class="sd">            serverless(bool): Deploy the Endpoint in serverless mode (default: True)</span>
 </span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="sd">            instance(str): The instance type for Realtime Endpoints (default: None = auto-select)</span>
 </span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a><span class="sd">            async_endpoint(bool): Deploy as an async endpoint (default: False). Async</span>
-</span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a><span class="sd">                endpoints support up to 15-minute invocations and use S3 for I/O.</span>
+</span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a><span class="sd">                endpoints support up to 60-minute invocations and use S3 for I/O.</span>
 </span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a><span class="sd">                Incompatible with serverless — if both are True, serverless is forced off.</span>
 </span><span id="__span-0-79"><a id="__codelineno-0-79" name="__codelineno-0-79"></a><span class="sd">            min_instances(int): Autoscaler floor (default: 0 — scale to zero).</span>
 </span><span id="__span-0-80"><a id="__codelineno-0-80" name="__codelineno-0-80"></a><span class="sd">            max_instances(int): Autoscaler upper bound (default: None = use</span>
@@ -5742,7 +5770,7 @@ Args:
     serverless(bool): Deploy the Endpoint in serverless mode (default: True)
     instance(str): The instance type for Realtime Endpoints (default: None = auto-select)
     async_endpoint(bool): Deploy as an async endpoint (default: False). Async
-        endpoints support up to 15-minute invocations and use S3 for I/O.
+        endpoints support up to 60-minute invocations and use S3 for I/O.
         Incompatible with serverless — if both are True, serverless is forced off.
     min_instances(int): Autoscaler floor (default: 0 — scale to zero).
     max_instances(int): Autoscaler upper bound (default: None = use
@@ -5842,7 +5870,7 @@ Args:
 </span><span id="__span-0-74"><a id="__codelineno-0-74" name="__codelineno-0-74"></a><span class="sd">        serverless(bool): Deploy the Endpoint in serverless mode (default: True)</span>
 </span><span id="__span-0-75"><a id="__codelineno-0-75" name="__codelineno-0-75"></a><span class="sd">        instance(str): The instance type for Realtime Endpoints (default: None = auto-select)</span>
 </span><span id="__span-0-76"><a id="__codelineno-0-76" name="__codelineno-0-76"></a><span class="sd">        async_endpoint(bool): Deploy as an async endpoint (default: False). Async</span>
-</span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a><span class="sd">            endpoints support up to 15-minute invocations and use S3 for I/O.</span>
+</span><span id="__span-0-77"><a id="__codelineno-0-77" name="__codelineno-0-77"></a><span class="sd">            endpoints support up to 60-minute invocations and use S3 for I/O.</span>
 </span><span id="__span-0-78"><a id="__codelineno-0-78" name="__codelineno-0-78"></a><span class="sd">            Incompatible with serverless — if both are True, serverless is forced off.</span>
 </span><span id="__span-0-79"><a id="__codelineno-0-79" name="__codelineno-0-79"></a><span class="sd">        min_instances(int): Autoscaler floor (default: 0 — scale to zero).</span>
 </span><span id="__span-0-80"><a id="__codelineno-0-80" name="__codelineno-0-80"></a><span class="sd">        max_instances(int): Autoscaler upper bound (default: None = use</span>
