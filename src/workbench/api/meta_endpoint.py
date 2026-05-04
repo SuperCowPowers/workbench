@@ -275,8 +275,7 @@ class MetaEndpoint(Endpoint):
         dag_dict = meta.get("meta_endpoint_dag")
         if not dag_dict:
             raise ValueError(
-                f"MetaEndpoint '{self.name}' has no DAG in workbench_meta. "
-                f"Recreate via MetaEndpoint.create()."
+                f"MetaEndpoint '{self.name}' has no DAG in workbench_meta. " f"Recreate via MetaEndpoint.create()."
             )
         if isinstance(dag_dict, str):
             return MetaEndpointDAG.from_json(dag_dict)
