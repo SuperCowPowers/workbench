@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../chemprop_shap/">
       
       
-        <link rel="next" href="../themes/">
+        <link rel="next" href="../aws_endpoint_architecture/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>Private SaaS - ADMET Workbench</title>
+        <title>Chemprop Multi-Task - ADMET Workbench</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#benefits-of-a-private-saas-architecture" class="md-skip">
+        <a href="#multi-task-chemprop-two-mechanisms-one-model" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Private SaaS
+              Chemprop Multi-Task
             
           </span>
         </div>
@@ -1585,18 +1585,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
         
           
           <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
@@ -1617,7 +1619,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1635,7 +1637,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         
   
   
@@ -1663,7 +1665,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/confusion_explorer/" class="md-nav__link">
+      <a href="../confusion_explorer/" class="md-nav__link">
         
   
   
@@ -1691,7 +1693,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/model_confidence/" class="md-nav__link">
+      <a href="../model_confidence/" class="md-nav__link">
         
   
   
@@ -1719,7 +1721,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/chemprop_shap/" class="md-nav__link">
+      <a href="../chemprop_shap/" class="md-nav__link">
         
   
   
@@ -1744,10 +1746,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../blogs/chemprop_multi_task/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chemprop Multi-Task
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1763,6 +1792,103 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#mechanism-1-transfer-learning-through-the-shared-encoder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mechanism 1: Transfer Learning Through the Shared Encoder
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mechanism-2-chemical-space-expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mechanism 2: Chemical-Space Expansion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#putting-both-axes-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Putting Both Axes Together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-multi-task-helps-in-practice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When Multi-Task Helps in Practice
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1775,7 +1901,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/aws_endpoint_architecture/" class="md-nav__link">
+      <a href="../aws_endpoint_architecture/" class="md-nav__link">
         
   
   
@@ -1803,7 +1929,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/molecular_standardization/" class="md-nav__link">
+      <a href="../molecular_standardization/" class="md-nav__link">
         
   
   
@@ -1831,7 +1957,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/3d_descriptors/" class="md-nav__link">
+      <a href="../3d_descriptors/" class="md-nav__link">
         
   
   
@@ -1859,7 +1985,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../blogs/feature_endpoints/" class="md-nav__link">
+      <a href="../feature_endpoints/" class="md-nav__link">
         
   
   
@@ -3002,20 +3128,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
         
           
           <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
@@ -3036,7 +3160,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_16">
             <span class="md-nav__icon md-icon"></span>
             
@@ -3054,7 +3178,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../enterprise/" class="md-nav__link">
         
   
   
@@ -3079,37 +3203,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Private SaaS
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../enterprise/private_saas/" class="md-nav__link">
         
   
   
@@ -3125,48 +3222,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#self-hosted-vs-private-saas-vs-public-saas" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Self Hosted vs Private SaaS vs Public SaaS?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#resources" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Resources
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3179,7 +3234,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../themes/" class="md-nav__link">
+      <a href="../../enterprise/themes/" class="md-nav__link">
         
   
   
@@ -3207,7 +3262,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../project_branding/" class="md-nav__link">
+      <a href="../../enterprise/project_branding/" class="md-nav__link">
         
   
   
@@ -4844,10 +4899,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#self-hosted-vs-private-saas-vs-public-saas" class="md-nav__link">
+  <a href="#mechanism-1-transfer-learning-through-the-shared-encoder" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Self Hosted vs Private SaaS vs Public SaaS?
+        Mechanism 1: Transfer Learning Through the Shared Encoder
       
     </span>
   </a>
@@ -4855,10 +4910,65 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#resources" class="md-nav__link">
+  <a href="#mechanism-2-chemical-space-expansion" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Resources
+        Mechanism 2: Chemical-Space Expansion
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#putting-both-axes-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Putting Both Axes Together
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-multi-task-helps-in-practice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When Multi-Task Helps in Practice
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        References
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Questions?
       
     </span>
   </a>
@@ -4882,25 +4992,120 @@
 
 
 
-<h1 id="benefits-of-a-private-saas-architecture">Benefits of a Private SaaS Architecture</h1>
-<h3 id="self-hosted-vs-private-saas-vs-public-saas">Self Hosted vs Private SaaS vs Public SaaS?</h3>
-<p>At the top level your team/project is making a decision about how they are going to build, expand, support, and maintain a machine learning pipeline.</p>
-<p><strong>Conceptual ML Pipeline</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Data ⮕ Features ⮕ Models ⮕ Deployment (end-user application)
-</span></code></pre></div>
-<p><strong>Concrete/Real World Example</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>S3 ⮕ Glue Job ⮕ Data Catalog ⮕ FeatureGroups ⮕ Models ⮕ Endpoints ⮕ App
-</span></code></pre></div>
-<p>When building out a framework to support ML Pipelines there are three main options:</p>
+<h1 id="multi-task-chemprop-two-mechanisms-one-model">Multi-Task ChemProp: Two Mechanisms, One Model</h1>
+<div class="admonition tip inline end">
+<p class="admonition-title">ChemProp in Workbench</p>
+<p>Workbench supports four ChemProp variants — single-task, multi-task, hybrid, and foundation. See the <a href="../../models/chemprop_models/">ChemProp Models</a> page for the full API.</p>
+</div>
+<p>A multi-task ChemProp model trains <strong>one</strong> message-passing encoder to predict <strong>several</strong> target properties at once. Each target gets its own feedforward head, but they all share the molecular representation that the MPNN learns. That shared encoder is where the wins come from — and where the failures come from when the setup is wrong.</p>
+<p>In this blog we'll separate the two distinct mechanisms that drive multi-task lift:</p>
+<ol>
+<li><strong>Transfer learning</strong> — gradients from auxiliary tasks regularize and enrich the shared encoder</li>
+<li><strong>Chemical-space expansion</strong> — auxiliary datasets bring compounds the primary task never saw</li>
+</ol>
+<p>These mechanisms are independent. A multi-task setup can lift from one, the other, or both — and recognizing which is at play guides how you design the data.</p>
+<h2 id="mechanism-1-transfer-learning-through-the-shared-encoder">Mechanism 1: Transfer Learning Through the Shared Encoder</h2>
+<p>In a single-task ChemProp model, the encoder is supervised by exactly one signal — the gradient flowing back from one head, derived from one target column. In a multi-task model, the same encoder receives gradients from <strong>every</strong> head. Each task pulls the embedding space in its own direction, and the encoder converges to a representation that satisfies all of them at once.</p>
+<figure style="margin: 20px 0; width: 100%; display: block;">
+<img src="../../images/chemprop_mt_transfer.svg" alt="Multi-task transfer learning: shared MPNN encoder with N task-specific FFN heads, gradients flowing back to the shared encoder" style="width: 100%; height: auto; display: block;">
+<figcaption><em>One encoder, N heads, N gradients flowing back into the same weights — auxiliaries co-supervise the primary's representation.</em></figcaption>
+</figure>
+
+<p>This sounds like a tug-of-war, and it is — but a productive one when the tasks are related. The encoder ends up encoding the molecular features useful <strong>across</strong> the family of tasks, rather than overfitting cues specific to any single one. That is exactly the transfer-learning setup, except the "transfer" happens <em>during</em> training rather than after.</p>
+<p>Whether you get lift depends on the label relationship between primary and auxiliary on <strong>shared</strong> compounds (the rows where both have ground truth):</p>
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Pearson r on shared rows</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Verdict</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">What happens to the encoder</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">0.4 – 0.95</td><td style="padding: 8px 16px;">Beneficial</td><td style="padding: 8px 16px;">Sweet spot — heads predict related but distinct targets, encoder learns richer features</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">&gt; 0.95</td><td style="padding: 8px 16px;">Neutral</td><td style="padding: 8px 16px;">Labels redundant; aux head just re-weights primary supervision — no harm, no new info</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">&lt; 0.4</td><td style="padding: 8px 16px;">Harmful</td><td style="padding: 8px 16px;">Heads disagree; encoder gradients conflict — negative-transfer risk</td></tr>
+  </tbody>
+</table>
+
+<p>The "sweet spot" is the regime where transfer learning earns its name. The auxiliary task is related enough that its gradient pushes the encoder toward useful chemistry, but distinct enough that it brings new information. Outside that band, multi-task either contributes nothing or actively hurts — picking auxiliaries blindly is the most common cause of a multi-task model that underperforms its single-task baseline.</p>
+<h2 id="mechanism-2-chemical-space-expansion">Mechanism 2: Chemical-Space Expansion</h2>
+<p>The transfer-learning story above plays out on the <strong>overlap region</strong> — compounds where both primary and auxiliary tasks have ground truth. But auxiliary datasets often contain compounds the primary task never saw at all. When the auxiliary is, say, public ChEMBL data while the primary is in-house screening data, the auxiliary brings in <strong>chemistry</strong> the primary doesn't have.</p>
+<figure style="margin: 20px 0; width: 100%; display: block;">
+<img src="../../images/chemprop_mt_expansion.svg" alt="Chemical-space expansion: single-task encoder sees only primary chemistry; multi-task encoder also sees auxiliary chemistry that surrounds and extends beyond the primary" style="width: 100%; height: auto; display: block;">
+<figcaption><em>A test compound outside the primary's chemistry is an extrapolation for the single-task encoder; the multi-task encoder has already seen that region via auxiliary data.</em></figcaption>
+</figure>
+
+<p>For aux-only compounds, the primary head's loss is masked — there's no primary label to supervise against — so the primary head sees no direct gradient on those rows. But the <strong>encoder</strong> does. Every aux-only molecule pushes the encoder to handle a broader range of chemistry, and the encoder's representation generalizes accordingly. The primary head, downstream, inherits a more capable encoder.</p>
+<p>Two important consequences follow:</p>
 <ul>
-<li><strong>Self Hosted</strong></li>
-<li><strong>Private SaaS</strong></li>
-<li><strong>Public SaaS</strong></li>
+<li><strong>Extension can lift even with zero label correlation.</strong> It doesn't require the auxiliary task to <em>predict</em> anything related to the primary — it just requires the auxiliary to bring relevant chemistry. A noisy public dataset on a marginally related endpoint can still expand the encoder's coverage.</li>
+<li><strong>Extension cannot actively hurt the primary.</strong> The worst case for an aux-only compound is "encoder learns features that don't help" — not "encoder learns features that mislead." There's no primary gradient on those rows to be corrupted.</li>
 </ul>
-<p>The other choice, that we're not going to cover here, is whether you use AWS, Azure, GCP, or something else. Workbench is architected and powered by a broad and rich set of AWS ML Pipeline services. We believe that AWS provides the best set of functionality and APIs for flexible, real world ML architectures.</p>
-<p><img alt="private_saas_compare" src="https://github.com/user-attachments/assets/2f6d3724-e340-4a70-bb97-d05383917cfe"></p>
-<h3 id="resources">Resources</h3>
-<p>See our full presentation on the Workbench <a href="https://docs.google.com/presentation/d/1f_1gmE4-UAeUDDsoNdzK_d_MxALFXIkxORZwbJBjPq4/edit?usp=sharing``">Private SaaS Architecture</a></p>
+<p>This is why extension and overlap are scored as independent axes in our pre-flight check.</p>
+<h2 id="putting-both-axes-together">Putting Both Axes Together</h2>
+<p>Workbench's <code>assess_multi_task_data</code> utility scores each auxiliary along these two axes from labels alone — no training required — then combines them into an actionable recommendation:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.utils.multi_task</span><span class="w"> </span><span class="kn">import</span> <span class="n">assess_multi_task_data</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">assessment</span> <span class="o">=</span> <span class="n">assess_multi_task_data</span><span class="p">(</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">df</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">target_columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;logd&quot;</span><span class="p">,</span> <span class="s2">&quot;ksol&quot;</span><span class="p">,</span> <span class="s2">&quot;hlm_clint&quot;</span><span class="p">,</span> <span class="s2">&quot;mlm_clint&quot;</span><span class="p">],</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">assessment</span><span class="p">[[</span><span class="s2">&quot;auxiliary&quot;</span><span class="p">,</span> <span class="s2">&quot;overlap&quot;</span><span class="p">,</span> <span class="s2">&quot;extension&quot;</span><span class="p">,</span> <span class="s2">&quot;recommendation&quot;</span><span class="p">]])</span>
+</span></code></pre></div>
+<p>The recommendation logic is straightforward once both axes are scored:</p>
+<table style="width: 100%;">
+  <thead>
+    <tr>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Recommendation</th>
+      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">When</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Use</td><td style="padding: 8px 16px;">Either axis is genuinely lifting and there are no harm signals</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Marginal</td><td style="padding: 8px 16px;">Limited contribution from either axis — proceed only if domain knowledge supports it</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Risky</td><td style="padding: 8px 16px;">Harmful overlap, but extension might rescue it — validate against single-task baseline</td></tr>
+    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Skip</td><td style="padding: 8px 16px;">No useful contribution from either axis</td></tr>
+  </tbody>
+</table>
+
+<h2 id="when-multi-task-helps-in-practice">When Multi-Task Helps in Practice</h2>
+<p>The mechanism breakdown suggests a few practical heuristics:</p>
+<ol>
+<li>
+<p><strong>Pick auxiliaries that are mechanistically related to the primary.</strong> ADMET endpoints (LogD, solubility, clearance, permeability) all share underlying physicochemistry — a textbook MT setup. Mixing unrelated bioactivity with ADMET tends to fall in the negative-transfer zone.</p>
+</li>
+<li>
+<p><strong>Public data is often valuable purely for chemical-space expansion.</strong> Even when public labels are noisy or measured under different protocols, the chemistry they bring can sharpen the encoder. Use SMILES-based merging via <code>combine_multi_task_data(..., merge_on_smiles=True)</code> to fold them in without needing a shared id namespace.</p>
+</li>
+<li>
+<p><strong>Use task weights deliberately.</strong> When all tasks are end products, <code>compute_inverse_count_task_weights</code> balances each task's gradient contribution. When you have a primary + auxiliaries that are only there to help the primary, use manual primary-favored weights (e.g. <code>[1.0, 0.3, 0.3]</code>) so the auxiliaries don't swamp the primary signal.</p>
+</li>
+<li>
+<p><strong>Validate against single-task baselines.</strong> Multi-task is an architectural choice, not a free lunch. Always train the matched single-task model and compare on a held-out test set — especially for "Risky" and "Marginal" auxiliaries.</p>
+</li>
+</ol>
+<h2 id="summary">Summary</h2>
+<p>Multi-task ChemProp lift comes from two distinct mechanisms — transfer learning through the shared encoder, and chemical-space expansion from non-overlapping auxiliary compounds. Recognizing which mechanism is operating (or whether neither is) lets you design the multi-task setup deliberately rather than hoping it works. Workbench's pre-flight assessment quantifies both axes from the labels alone, before you spend the training cycles.</p>
+<h2 id="references">References</h2>
+<p><strong>ChemProp v2</strong> — The message-passing neural network framework that Workbench uses for molecular property prediction:</p>
+<ul>
+<li>Chemprop v2 Paper: Graff, D.E., Morgan, N.K., Burns, J.W., et al. <em>"Chemprop v2: An Efficient, Modular Machine Learning Package for Chemical Property Prediction."</em> Journal of Chemical Information and Modeling 66(1), 28–33 (2026). <a href="https://doi.org/10.1021/acs.jcim.5c02332">DOI: 10.1021/acs.jcim.5c02332</a></li>
+<li>GitHub: <a href="https://github.com/chemprop/chemprop">https://github.com/chemprop/chemprop</a></li>
+</ul>
+<p><strong>Multi-Task Learning</strong> — Foundational and survey work on shared-representation learning:</p>
+<ul>
+<li>Caruana, R. <em>"Multitask Learning."</em> Machine Learning 28, 41–75 (1997). <a href="https://doi.org/10.1023/A:1007379606734">DOI: 10.1023/A:1007379606734</a></li>
+<li>Ruder, S. <em>"An Overview of Multi-Task Learning in Deep Neural Networks."</em> arXiv:1706.05098 (2017). <a href="https://arxiv.org/abs/1706.05098">https://arxiv.org/abs/1706.05098</a></li>
+</ul>
+<p><strong>Multi-Task Learning for Molecular Property Prediction</strong>:</p>
+<ul>
+<li>Ramsundar, B., Kearnes, S., Riley, P., et al. <em>"Massively Multitask Networks for Drug Discovery."</em> arXiv:1502.02072 (2015). <a href="https://arxiv.org/abs/1502.02072">https://arxiv.org/abs/1502.02072</a></li>
+<li>Wenzel, J., Matter, H., Schmidt, F. <em>"Predictive Multitask Deep Neural Network Models for ADME-Tox Properties."</em> Journal of Chemical Information and Modeling 59(3), 1253–1268 (2019). <a href="https://doi.org/10.1021/acs.jcim.8b00785">DOI: 10.1021/acs.jcim.8b00785</a></li>
+</ul>
+<h2 id="questions">Questions?</h2>
+<p><img align="right" src="../../images/scp.png" width="180"></p>
+<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
 
 
 

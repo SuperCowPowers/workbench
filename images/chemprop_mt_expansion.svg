@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 540" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <radialGradient id="exp-primary" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1E88E5" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#1565C0" stop-opacity="0.15"/>
+    </radialGradient>
+    <radialGradient id="exp-aux" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FB8C00" stop-opacity="0.40"/>
+      <stop offset="100%" stop-color="#EF6C00" stop-opacity="0.08"/>
+    </radialGradient>
+    <filter id="exp-shadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.18"/>
+    </filter>
+    <marker id="exp-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#888"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="500" y="38" text-anchor="middle" font-size="26" font-weight="700" fill="#E0E0E0">Chemical-Space Expansion</text>
+  <text x="500" y="64" text-anchor="middle" font-size="17" fill="#9E9E9E">Auxiliary tasks bring novel chemistry the primary never saw</text>
+
+  <!-- ============================================================== -->
+  <!-- LEFT PANEL: Single-task encoder                                  -->
+  <!-- ============================================================== -->
+  <rect x="30" y="90" width="430" height="380" rx="14" fill="#1F2A33" stroke="#37474F" stroke-width="1.5"/>
+  <text x="245" y="121" text-anchor="middle" font-size="19" font-weight="700" fill="#E0E0E0">Single-Task Encoder</text>
+  <text x="245" y="143" text-anchor="middle" font-size="16" fill="#90A4AE">trained on primary task only</text>
+
+  <!-- Primary cluster -->
+  <ellipse cx="220" cy="295" rx="105" ry="90" fill="url(#exp-primary)" stroke="#1E88E5" stroke-width="2"/>
+  <text x="220" y="298" text-anchor="middle" font-size="16" font-weight="700" fill="#BBDEFB">Primary task</text>
+  <text x="220" y="319" text-anchor="middle" font-size="15" fill="#90CAF9">in-house chemotypes</text>
+
+  <!-- Primary dots -->
+  <g fill="#1E88E5">
+    <circle cx="180" cy="255" r="3.5"/><circle cx="210" cy="245" r="3.5"/>
+    <circle cx="245" cy="260" r="3.5"/><circle cx="275" cy="280" r="3.5"/>
+    <circle cx="170" cy="295" r="3.5"/><circle cx="200" cy="340" r="3.5"/>
+    <circle cx="240" cy="350" r="3.5"/><circle cx="265" cy="325" r="3.5"/>
+    <circle cx="155" cy="325" r="3.5"/><circle cx="225" cy="275" r="3.5"/>
+  </g>
+
+  <!-- Test compound (out-of-distribution for primary) -->
+  <g>
+    <circle cx="380" cy="200" r="7" fill="none" stroke="#FF5252" stroke-width="2.5"/>
+    <circle cx="380" cy="200" r="3" fill="#FF5252"/>
+    <text x="395" y="195" font-size="16" font-weight="700" fill="#FF5252">test compound</text>
+    <text x="395" y="215" font-size="14" fill="#EF9A9A">(out of distribution)</text>
+  </g>
+  <line x1="370" y1="207" x2="320" y2="240" stroke="#FF5252" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <!-- Verdict -->
+  <rect x="55" y="408" width="380" height="50" rx="8" fill="#2D1B1B" stroke="#FF5252" stroke-width="1.5"/>
+  <text x="245" y="431" text-anchor="middle" font-size="16" font-weight="700" fill="#FF8A80">Encoder never saw this chemistry</text>
+  <text x="245" y="450" text-anchor="middle" font-size="14" fill="#EF9A9A">unreliable extrapolation, brittle predictions</text>
+
+  <!-- ============================================================== -->
+  <!-- RIGHT PANEL: Multi-task encoder                                  -->
+  <!-- ============================================================== -->
+  <rect x="540" y="90" width="430" height="380" rx="14" fill="#1F2A33" stroke="#37474F" stroke-width="1.5"/>
+  <text x="755" y="121" text-anchor="middle" font-size="19" font-weight="700" fill="#E0E0E0">Multi-Task Encoder</text>
+  <text x="755" y="143" text-anchor="middle" font-size="16" fill="#90A4AE">trained on primary + auxiliary tasks</text>
+
+  <!-- Aux extension cloud (large, behind primary) -->
+  <ellipse cx="755" cy="290" rx="180" ry="140" fill="url(#exp-aux)" stroke="#FB8C00" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="845" y="180" text-anchor="middle" font-size="17" font-weight="700" fill="#FFCC80">Aux chemistry</text>
+  <text x="845" y="200" text-anchor="middle" font-size="15" fill="#FFB74D">public / related endpoints</text>
+
+  <!-- Primary cluster (same as left panel) -->
+  <ellipse cx="700" cy="300" rx="80" ry="68" fill="url(#exp-primary)" stroke="#1E88E5" stroke-width="2"/>
+  <text x="700" y="305" text-anchor="middle" font-size="15" font-weight="700" fill="#BBDEFB">Primary</text>
+
+  <!-- Primary dots -->
+  <g fill="#1E88E5">
+    <circle cx="680" cy="275" r="3.5"/><circle cx="705" cy="267" r="3.5"/>
+    <circle cx="730" cy="283" r="3.5"/><circle cx="660" cy="300" r="3.5"/>
+    <circle cx="695" cy="335" r="3.5"/><circle cx="725" cy="325" r="3.5"/>
+    <circle cx="710" cy="300" r="3.5"/><circle cx="675" cy="325" r="3.5"/>
+  </g>
+
+  <!-- Aux-only dots (scattered around the larger cloud, NOT in primary) -->
+  <g fill="#FB8C00">
+    <circle cx="610" cy="225" r="3"/><circle cx="640" cy="205" r="3"/>
+    <circle cx="600" cy="275" r="3"/><circle cx="585" cy="325" r="3"/>
+    <circle cx="610" cy="370" r="3"/><circle cx="650" cy="390" r="3"/>
+    <circle cx="720" cy="400" r="3"/><circle cx="790" cy="390" r="3"/>
+    <circle cx="845" cy="365" r="3"/><circle cx="880" cy="325" r="3"/>
+    <circle cx="890" cy="265" r="3"/><circle cx="800" cy="205" r="3"/>
+    <circle cx="755" cy="200" r="3"/><circle cx="700" cy="205" r="3"/>
+    <circle cx="870" cy="290" r="3"/><circle cx="595" cy="300" r="3"/>
+    <circle cx="620" cy="340" r="3"/>
+  </g>
+
+  <!-- Test compound (now INSIDE the union, sitting on an aux dot) -->
+  <g>
+    <circle cx="820" cy="225" r="7" fill="none" stroke="#69F0AE" stroke-width="2.5"/>
+    <circle cx="820" cy="225" r="3" fill="#69F0AE"/>
+    <text x="836" y="222" font-size="16" font-weight="700" fill="#69F0AE">test compound</text>
+    <text x="836" y="241" font-size="14" fill="#A5D6A7">(covered by aux)</text>
+  </g>
+
+  <!-- Verdict -->
+  <rect x="565" y="408" width="380" height="50" rx="8" fill="#152418" stroke="#69F0AE" stroke-width="1.5"/>
+  <text x="755" y="431" text-anchor="middle" font-size="16" font-weight="700" fill="#A5D6A7">Encoder learned features across both</text>
+  <text x="755" y="450" text-anchor="middle" font-size="14" fill="#C8E6C9">extends to chemistry the primary never labeled</text>
+
+  <!-- Bottom annotation -->
+  <rect x="30" y="488" width="940" height="42" rx="10" fill="none" stroke="#FF9800" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="500" y="515" text-anchor="middle" font-size="16" fill="#BDBDBD">Aux-only compounds give the <tspan font-weight="700" fill="#FF9800">encoder</tspan> more chemistry to learn from — even without a primary gradient</text>
+</svg>

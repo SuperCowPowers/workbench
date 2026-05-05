@@ -1818,6 +1818,34 @@
   
   
     <li class="md-nav__item">
+      <a href="chemprop_multi_task/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chemprop Multi-Task
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="aws_endpoint_architecture/" class="md-nav__link">
         
   
@@ -4870,6 +4898,9 @@
 </li>
 <li>
 <p><strong><a href="chemprop_shap/">SHAP Values for ChemProp Models</a>:</strong> How do you explain a graph neural network? In this blog we explore our per-bit ablation approach for computing <a href="https://shap.readthedocs.io/">SHAP values</a> on <a href="https://github.com/chemprop/chemprop">ChemProp</a> MPNN models. We walk through the technical approach, show key code snippets, and analyze real SHAP output from a LogD regression model — validating that the model independently learns known structure-lipophilicity relationships.</p>
+</li>
+<li>
+<p><strong><a href="chemprop_multi_task/">Multi-Task ChemProp: Two Mechanisms, One Model</a>:</strong> Multi-task ChemProp lifts come from two distinct mechanisms — transfer learning through a shared MPNN encoder, and chemical-space expansion from non-overlapping auxiliary compounds. We separate the two with conceptual diagrams, show when each one helps (vs. hurts), and tie the discussion back to Workbench's pre-flight <code>assess_multi_task_data</code> utility that scores both axes from labels alone.</p>
 </li>
 <li>
 <p><strong><a href="aws_endpoint_architecture/">Inside a Workbench AWS Endpoint</a>:</strong> A deep dive into endpoint architecture — comparing the default SageMaker stack (Nginx, Gunicorn, Flask) with Workbench's modern ASGI stack (Uvicorn, FastAPI). We cover the custom image with pre-loaded chemistry packages, and Workbench's binary-search error handling that isolates bad rows instead of failing entire batches.</p>
