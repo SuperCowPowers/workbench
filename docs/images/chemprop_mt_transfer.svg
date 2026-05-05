@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" font-family="'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <linearGradient id="mt-smiles" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6A1B9A"/>
+      <stop offset="100%" stop-color="#8E24AA"/>
+    </linearGradient>
+    <linearGradient id="mt-encoder" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#00897B"/>
+      <stop offset="100%" stop-color="#009688"/>
+    </linearGradient>
+    <linearGradient id="mt-head1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1565C0"/>
+      <stop offset="100%" stop-color="#1E88E5"/>
+    </linearGradient>
+    <linearGradient id="mt-head2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1a6b8a"/>
+      <stop offset="100%" stop-color="#2196a9"/>
+    </linearGradient>
+    <linearGradient id="mt-head3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#5E35B1"/>
+      <stop offset="100%" stop-color="#7E57C2"/>
+    </linearGradient>
+    <linearGradient id="mt-pred" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#EF6C00"/>
+      <stop offset="100%" stop-color="#FB8C00"/>
+    </linearGradient>
+    <filter id="mt-shadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.18"/>
+    </filter>
+    <marker id="mt-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#888"/>
+    </marker>
+    <marker id="mt-grad-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 Z" fill="#FF9800"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="500" y="38" text-anchor="middle" font-size="26" font-weight="700" fill="#E0E0E0">Multi-Task Transfer Learning</text>
+  <text x="500" y="64" text-anchor="middle" font-size="17" fill="#9E9E9E">One shared encoder, N task-specific heads, N gradient signals</text>
+
+  <!-- SMILES (input) -->
+  <rect x="30" y="195" width="140" height="74" rx="10" fill="url(#mt-smiles)" filter="url(#mt-shadow)"/>
+  <text x="100" y="228" text-anchor="middle" font-size="22" font-weight="700" fill="white">SMILES</text>
+  <text x="100" y="252" text-anchor="middle" font-size="16" fill="#E1BEE7">Input batch</text>
+
+  <!-- Forward arrow SMILES -> encoder -->
+  <line x1="170" y1="232" x2="240" y2="232" stroke="#888" stroke-width="2.5" marker-end="url(#mt-arrow)"/>
+
+  <!-- Shared MPNN encoder (highlighted) -->
+  <rect x="245" y="170" width="240" height="124" rx="12" fill="url(#mt-encoder)" filter="url(#mt-shadow)" stroke="#FF9800" stroke-width="2.5"/>
+  <text x="365" y="210" text-anchor="middle" font-size="24" font-weight="700" fill="white">Shared MPNN</text>
+  <text x="365" y="238" text-anchor="middle" font-size="24" font-weight="700" fill="white">Encoder</text>
+  <text x="365" y="270" text-anchor="middle" font-size="16" fill="#B2DFDB">learned molecular vector</text>
+
+  <!-- Forward arrows encoder -> 3 heads (slight fan-out) -->
+  <line x1="485" y1="195" x2="600" y2="115" stroke="#888" stroke-width="2.5" marker-end="url(#mt-arrow)"/>
+  <line x1="485" y1="232" x2="600" y2="232" stroke="#888" stroke-width="2.5" marker-end="url(#mt-arrow)"/>
+  <line x1="485" y1="270" x2="600" y2="350" stroke="#888" stroke-width="2.5" marker-end="url(#mt-arrow)"/>
+
+  <!-- Three FFN heads (widened to 150 to fit larger labels) -->
+  <rect x="603" y="80" width="150" height="74" rx="9" fill="url(#mt-head1)" filter="url(#mt-shadow)"/>
+  <text x="678" y="111" text-anchor="middle" font-size="19" font-weight="700" fill="white">FFN Head 1</text>
+  <text x="678" y="136" text-anchor="middle" font-size="16" fill="#BBDEFB">primary</text>
+
+  <rect x="603" y="197" width="150" height="74" rx="9" fill="url(#mt-head2)" filter="url(#mt-shadow)"/>
+  <text x="678" y="228" text-anchor="middle" font-size="19" font-weight="700" fill="white">FFN Head 2</text>
+  <text x="678" y="253" text-anchor="middle" font-size="16" fill="#B2EBF2">auxiliary</text>
+
+  <rect x="603" y="315" width="150" height="74" rx="9" fill="url(#mt-head3)" filter="url(#mt-shadow)"/>
+  <text x="678" y="346" text-anchor="middle" font-size="19" font-weight="700" fill="white">FFN Head 3</text>
+  <text x="678" y="371" text-anchor="middle" font-size="16" fill="#D1C4E9">auxiliary</text>
+
+  <!-- Forward arrows: heads -> predictions -->
+  <line x1="753" y1="117" x2="785" y2="117" stroke="#888" stroke-width="2.5" marker-end="url(#mt-arrow)"/>
+  <line x1="753" y1="234" x2="785" y2="234" stroke="#888" stroke-width="2.5" marker-end="url(#mt-arrow)"/>
+  <line x1="753" y1="352" x2="785" y2="352" stroke="#888" stroke-width="2.5" marker-end="url(#mt-arrow)"/>
+
+  <!-- Three predictions -->
+  <rect x="788" y="80" width="182" height="74" rx="9" fill="url(#mt-pred)" filter="url(#mt-shadow)"/>
+  <text x="879" y="111" text-anchor="middle" font-size="18" font-weight="700" fill="white">y&#770;&#8321; (e.g. LogD)</text>
+  <text x="879" y="136" text-anchor="middle" font-size="16" fill="#FFE0B2">in-house, sparse</text>
+
+  <rect x="788" y="197" width="182" height="74" rx="9" fill="url(#mt-pred)" filter="url(#mt-shadow)"/>
+  <text x="879" y="228" text-anchor="middle" font-size="18" font-weight="700" fill="white">y&#770;&#8322; (e.g. solubility)</text>
+  <text x="879" y="253" text-anchor="middle" font-size="16" fill="#FFE0B2">related ADMET</text>
+
+  <rect x="788" y="315" width="182" height="74" rx="9" fill="url(#mt-pred)" filter="url(#mt-shadow)"/>
+  <text x="879" y="346" text-anchor="middle" font-size="18" font-weight="700" fill="white">y&#770;&#8323; (e.g. clearance)</text>
+  <text x="879" y="371" text-anchor="middle" font-size="16" fill="#FFE0B2">public + in-house</text>
+
+  <!-- Gradient flow back to encoder (curved, orange dashed) -->
+  <path d="M 625 154 C 580 170, 540 165, 485 180" fill="none" stroke="#FF9800" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#mt-grad-arrow)"/>
+  <path d="M 625 270 C 570 272, 540 252, 485 240" fill="none" stroke="#FF9800" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#mt-grad-arrow)"/>
+  <path d="M 625 315 C 580 300, 540 295, 485 285" fill="none" stroke="#FF9800" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#mt-grad-arrow)"/>
+
+  <!-- Gradient legend -->
+  <line x1="60" y1="338" x2="100" y2="338" stroke="#FF9800" stroke-width="2" stroke-dasharray="6,4"/>
+  <text x="108" y="344" font-size="16" fill="#FF9800" font-weight="600">backprop gradients</text>
+
+  <!-- Bottom annotation -->
+  <rect x="40" y="402" width="920" height="56" rx="10" fill="none" stroke="#FF9800" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="500" y="427" text-anchor="middle" font-size="17" font-weight="700" fill="#FF9800">All heads back-propagate through the SAME encoder</text>
+  <text x="500" y="449" text-anchor="middle" font-size="16" fill="#BDBDBD">Auxiliaries co-supervise the primary's representation</text>
+</svg>

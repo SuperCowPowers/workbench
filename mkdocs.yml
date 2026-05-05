@@ -47,6 +47,7 @@ nav:
     - Confusion Explorer: blogs/confusion_explorer.md
     - Model Confidence: blogs/model_confidence.md
     - Chemprop Shap Values: blogs/chemprop_shap.md
+    - Chemprop Multi-Task: blogs/chemprop_multi_task.md
     - AWS Endpoint Architecture: blogs/aws_endpoint_architecture.md
     - Molecular Standardization: blogs/molecular_standardization.md
     - 3D Molecular Descriptors: blogs/3d_descriptors.md
