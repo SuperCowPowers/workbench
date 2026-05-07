@@ -39,7 +39,7 @@ from workbench.api.endpoint import Endpoint
 from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model
 from workbench.core.artifacts.artifact import Artifact
-from workbench.core.artifacts.model_core import ModelCore, ModelFramework, ModelType
+from workbench.core.artifacts.model_core import ModelFramework, ModelType
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.meta_endpoint_dag import MetaEndpointDAG
@@ -84,14 +84,15 @@ class MetaEndpoint(Endpoint):
         Returns:
             The deployed MetaEndpoint, ready for ``.inference()``.
         """
-        Artifact.is_name_valid(name, delimiter="-", lower_case=False)
+        if not Artifact.is_name_valid(name, delimiter="-", lower_case=False):
+            raise ValueError(f"Invalid MetaEndpoint name: '{name}' (use only alphanumerics and '-')")
 
         log.important(f"Validating DAG for MetaEndpoint '{name}'...")
         dag.validate()
         dag.populate_async_flags()
         is_async = dag.has_async_endpoint()
         log.important(
-            f"DAG: {len(dag._endpoints)} endpoints, {len(dag._aggregations)} aggregation nodes "
+            f"DAG: {len(dag.endpoints)} endpoints, {len(dag.aggregations)} aggregation nodes "
             f"({'async' if is_async else 'sync'} deployment)"
         )
 
@@ -112,7 +113,7 @@ class MetaEndpoint(Endpoint):
             model_type=cls._derive_model_type(dag),
             model_framework=ModelFramework.META,
             tags=tags or [name],
-            description=description or f"MetaEndpoint DAG over: {', '.join(dag._endpoints.values())}",
+            description=description or f"MetaEndpoint DAG over: {', '.join(dag.endpoints.values())}",
             target_column=target_column,
             feature_list=feature_list,
             custom_args={
@@ -124,9 +125,13 @@ class MetaEndpoint(Endpoint):
 
         # Append DAG-specific workbench_meta on top of what FeaturesToModel
         # already set (model_type, framework, features, target, training view).
-        output_model = ModelCore(name)
-        output_model.upsert_workbench_meta({"endpoints": list(dag._endpoints.values())})
-        output_model.upsert_workbench_meta({"meta_endpoint_dag": dag.to_dict()})
+        model = Model(name)
+        model.upsert_workbench_meta(
+            {
+                "endpoints": list(dag.endpoints.values()),
+                "meta_endpoint_dag": dag.to_dict(),
+            }
+        )
 
         # Deploy. MetaEndpoint containers are thin orchestrators — actual
         # compute happens in the child endpoints, which scale on their own
@@ -135,7 +140,6 @@ class MetaEndpoint(Endpoint):
         # internally), so additional meta instances don't help. Async deploy
         # is therefore 0→1 with idle drain; sync is fixed 1.
         log.important(f"Deploying MetaEndpoint '{name}' ({'async' if is_async else 'sync'})...")
-        model = Model(name)
         if is_async:
             endpoint = model.to_endpoint(
                 tags=tags or [name],
@@ -154,15 +158,20 @@ class MetaEndpoint(Endpoint):
         # as-is to every child, so the meta's chunk size shouldn't exceed
         # the smallest child's batch size.
         min_batch = dag.min_child_batch_size()
-        endpoint.upsert_workbench_meta({"inference_batch_size": min_batch})
-        log.important(f"Set inference_batch_size={min_batch} (min across DAG children)")
 
         # Publish the largest child fleet size as effective_max_instances so
         # callers (e.g. InferenceCache) can size their work units to fill
         # downstream child capacity rather than the meta's own
         # max_instances=1 (which only describes the orchestrator layer).
         effective_max = dag.max_child_max_instances()
-        endpoint.upsert_workbench_meta({"effective_max_instances": effective_max})
+
+        endpoint.upsert_workbench_meta(
+            {
+                "inference_batch_size": min_batch,
+                "effective_max_instances": effective_max,
+            }
+        )
+        log.important(f"Set inference_batch_size={min_batch} (min across DAG children)")
         log.important(f"Set effective_max_instances={effective_max} (max across DAG children)")
 
         log.important(f"MetaEndpoint '{name}' created successfully!")
@@ -186,15 +195,15 @@ class MetaEndpoint(Endpoint):
         """
         from workbench.utils.aggregation_nodes import Concat, Vote
 
-        output_name = dag._output_node
-        if output_name in dag._endpoints:
-            ep_name = dag._endpoints[output_name]
+        output_name = dag.output_node
+        if output_name in dag.endpoints:
+            ep_name = dag.endpoints[output_name]
             try:
                 return Model(ep_name).model_type
             except Exception:
                 return ModelType.REGRESSOR
 
-        agg = dag._aggregations[output_name]
+        agg = dag.aggregations[output_name]
         if isinstance(agg, Concat):
             return ModelType.TRANSFORMER
         if isinstance(agg, Vote):
@@ -213,9 +222,9 @@ class MetaEndpoint(Endpoint):
         ``target_column`` may be ``None`` for pure feature-pipeline DAGs
         whose primary endpoint is a feature endpoint.
         """
-        if not dag._input_nodes:
+        if not dag.input_nodes:
             raise ValueError("DAG has no input nodes — cannot derive lineage")
-        primary_endpoint_name = dag._endpoints[dag._input_nodes[0]]
+        primary_endpoint_name = dag.endpoints[dag.input_nodes[0]]
 
         ep = Endpoint(primary_endpoint_name)
         if not ep.exists():

@@ -48,15 +48,15 @@ def model_fn(model_dir: str) -> dict:
 
     dag = MetaEndpointDAG.from_dict(config["dag"])
 
-    print(f"MetaEndpoint loaded: {len(dag._endpoints)} endpoints, {len(dag._aggregations)} aggregation nodes")
-    print(f"Async children: {[n for n, is_async in dag._endpoint_async_flags.items() if is_async]}")
+    print(f"MetaEndpoint loaded: {len(dag.endpoints)} endpoints, {len(dag.aggregations)} aggregation nodes")
+    print(f"Async children: {[n for n, is_async in dag.endpoint_async_flags.items() if is_async]}")
     print(f"AWS region: {config.get('aws_region')}")
     print(f"S3 staging bucket: {config.get('s3_bucket')}")
 
     return {
         "dag": dag,
         "s3_bucket": config["s3_bucket"],
-        "async_flags": dag._endpoint_async_flags,
+        "async_flags": dag.endpoint_async_flags,
     }
 
 
@@ -122,9 +122,9 @@ if __name__ == "__main__":
     print(f"AWS region: {AWS_REGION}")
     print(f"S3 staging bucket: {S3_BUCKET}")
     dag_preview = MetaEndpointDAG.from_dict(DAG_DICT)
-    print(f"Endpoints: {list(dag_preview._endpoints.values())}")
-    print(f"Aggregations: {[type(a).__name__ for a in dag_preview._aggregations.values()]}")
-    print(f"Async children: {[n for n, f in dag_preview._endpoint_async_flags.items() if f]}")
+    print(f"Endpoints: {list(dag_preview.endpoints.values())}")
+    print(f"Aggregations: {[type(a).__name__ for a in dag_preview.aggregations.values()]}")
+    print(f"Async children: {[n for n, f in dag_preview.endpoint_async_flags.items() if f]}")
 
     with open(os.path.join(args.model_dir, CONFIG_FILENAME), "w") as f:
         json.dump(config, f, indent=2)

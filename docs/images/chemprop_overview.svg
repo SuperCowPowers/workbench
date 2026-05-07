@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 1080" font-family="Inter, Helvetica, Arial, sans-serif">
+  <defs>
+    <!-- Gradient fills for each stage -->
+    <linearGradient id="g-input" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#4338ca"/>
+    </linearGradient>
+    <linearGradient id="g-encoder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#0891b2"/>
+    </linearGradient>
+    <linearGradient id="g-fingerprint" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#7c6ba8"/>
+    </linearGradient>
+    <linearGradient id="g-ffn" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#d4926b"/>
+      <stop offset="100%" stop-color="#a87149"/>
+    </linearGradient>
+    <linearGradient id="g-output" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7fa982"/>
+      <stop offset="100%" stop-color="#5a8062"/>
+    </linearGradient>
+
+    <!-- Arrow marker -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#cbd5e1"/>
+    </marker>
+
+    <!-- Soft drop shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+      <feOffset dx="0" dy="4" result="off"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.22"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <!-- Glow for the star (fingerprint) -->
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="240" y="50" text-anchor="middle" font-size="28" font-weight="700" fill="#f8fafc" letter-spacing="-0.5">
+    Molecule → Prediction
+  </text>
+  <text x="240" y="84" text-anchor="middle" font-size="18" font-weight="500" fill="#cbd5e1">
+    The ChemProp pipeline
+  </text>
+
+  <!-- ============ Box 1: Molecule (input) ============ -->
+  <g filter="url(#shadow)">
+    <rect x="80" y="120" width="320" height="130" rx="20" fill="url(#g-input)"/>
+  </g>
+  <text x="240" y="167" text-anchor="middle" font-size="24" font-weight="700" fill="#ffffff">Molecule</text>
+  <text x="240" y="200" text-anchor="middle" font-size="17" fill="#e0e7ff">SMILES / molecular graph</text>
+  <text x="240" y="228" text-anchor="middle" font-size="16" fill="#c7d2fe">atoms = nodes · bonds = edges</text>
+
+  <!-- Arrow 1 -->
+  <line x1="240" y1="258" x2="240" y2="298" stroke="#cbd5e1" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- ============ Box 2: D-MPNN Encoder ============ -->
+  <g filter="url(#shadow)">
+    <rect x="80" y="305" width="320" height="130" rx="20" fill="url(#g-encoder)"/>
+  </g>
+  <text x="240" y="352" text-anchor="middle" font-size="24" font-weight="700" fill="#ffffff">D-MPNN Encoder</text>
+  <text x="240" y="385" text-anchor="middle" font-size="17" fill="#cffafe">message passing along bonds</text>
+  <text x="240" y="413" text-anchor="middle" font-size="16" font-style="italic" fill="#a5f3fc">learned</text>
+
+  <!-- Arrow 2 -->
+  <line x1="240" y1="443" x2="240" y2="483" stroke="#cbd5e1" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- ============ Box 3: Molecular Fingerprint (THE STAR) ============ -->
+  <g filter="url(#glow)">
+    <rect x="60" y="490" width="360" height="160" rx="22" fill="url(#g-fingerprint)" stroke="#ffffff" stroke-width="3"/>
+  </g>
+  <text x="240" y="540" text-anchor="middle" font-size="26" font-weight="800" fill="#ffffff">Molecular</text>
+  <text x="240" y="572" text-anchor="middle" font-size="26" font-weight="800" fill="#ffffff">Fingerprint</text>
+  <text x="240" y="605" text-anchor="middle" font-size="16" fill="#f5f3ff">learned vector representation</text>
+  <text x="240" y="632" text-anchor="middle" font-size="15" font-weight="600" font-style="italic" fill="#ede9fe">★ shared in multi-task ★</text>
+
+  <!-- Arrow 3 -->
+  <line x1="240" y1="658" x2="240" y2="698" stroke="#cbd5e1" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- ============ Box 4: FFN ============ -->
+  <g filter="url(#shadow)">
+    <rect x="80" y="705" width="320" height="130" rx="20" fill="url(#g-ffn)"/>
+  </g>
+  <text x="240" y="752" text-anchor="middle" font-size="24" font-weight="700" fill="#ffffff">FFN</text>
+  <text x="240" y="785" text-anchor="middle" font-size="17" fill="#faf0e6">feed-forward network</text>
+  <text x="240" y="813" text-anchor="middle" font-size="16" font-style="italic" fill="#f0dcc4">task head</text>
+
+  <!-- Arrow 4 -->
+  <line x1="240" y1="843" x2="240" y2="883" stroke="#cbd5e1" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- ============ Box 5: Prediction ============ -->
+  <g filter="url(#shadow)">
+    <rect x="80" y="890" width="320" height="130" rx="20" fill="url(#g-output)"/>
+  </g>
+  <text x="240" y="937" text-anchor="middle" font-size="24" font-weight="700" fill="#ffffff">Property Prediction</text>
+  <text x="240" y="970" text-anchor="middle" font-size="17" fill="#e8f2ea">logP · IC50 · solubility · …</text>
+  <text x="240" y="998" text-anchor="middle" font-size="16" font-style="italic" fill="#d4e4d6">one head per task</text>
+
+  <!-- Footer accent -->
+  <line x1="80" y1="1050" x2="400" y2="1050" stroke="#475569" stroke-width="1"/>
+  <text x="240" y="1072" text-anchor="middle" font-size="14" font-weight="500" fill="#cbd5e1" letter-spacing="1.5">
+    SHARED ENCODER · MULTIPLE HEADS
+  </text>
+</svg>

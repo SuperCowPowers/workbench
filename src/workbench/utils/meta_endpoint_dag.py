@@ -130,6 +130,31 @@ class MetaEndpointDAG:
     # Inspection
     # ------------------------------------------------------------------
 
+    @property
+    def endpoints(self) -> Dict[str, str]:
+        """Mapping of node_name → endpoint_name (read-only view)."""
+        return self._endpoints
+
+    @property
+    def aggregations(self) -> Dict[str, AggregationNode]:
+        """Mapping of node_name → :class:`AggregationNode` (read-only view)."""
+        return self._aggregations
+
+    @property
+    def input_nodes(self) -> List[str]:
+        """Node names that receive the DAG's input DataFrame directly (read-only)."""
+        return self._input_nodes
+
+    @property
+    def output_node(self) -> Optional[str]:
+        """Node name whose output is the DAG's output."""
+        return self._output_node
+
+    @property
+    def endpoint_async_flags(self) -> Dict[str, bool]:
+        """Mapping of endpoint_name → is_async (populated by :meth:`populate_async_flags`)."""
+        return self._endpoint_async_flags
+
     def _all_nodes(self) -> List[str]:
         return list(self._endpoints.keys()) + list(self._aggregations.keys())
 
