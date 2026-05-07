@@ -1328,16 +1328,17 @@ def compute_descriptors_3d(
     if smiles_column is None:
         raise ValueError("Input DataFrame must have a 'smiles' column")
 
-    result = df.copy()
     n_molecules = len(df)
 
     n_confs_desc = "adaptive (50/200/300)" if is_full else f"{n_conformers}"
     logger.info(f"Computing 3D descriptors for {n_molecules} molecules (mode={mode})...")
     logger.info(f"Parameters: n_conformers={n_confs_desc}, optimize={optimize}, " f"force_tol={BOLTZMANN_FORCE_TOL}")
 
-    # Initialize feature + diagnostic columns. Numeric diagnostics get np.nan;
-    # string and bool diagnostics get object dtype so per-row assignment of
-    # non-float values doesn't raise pandas FutureWarnings.
+    # Build all output columns up front in one DataFrame and concat once.
+    # Inserting 80+ columns one at a time on the input DataFrame triggers
+    # pandas' fragmentation warning. Numeric columns get float64/NaN; string
+    # and bool diagnostics get object dtype so per-row assignment of
+    # non-float values doesn't raise FutureWarnings.
     feature_names = get_3d_feature_names()
     diag_names = get_3d_diagnostic_names()
     object_dtype_diagnostics = {
@@ -1346,10 +1347,15 @@ def compute_descriptors_3d(
         "desc3d_force_field",
         "desc3d_stereo_preserved",
     }
+    new_columns: Dict[str, pd.Series] = {}
     for col in feature_names:
-        result[col] = np.nan
+        new_columns[col] = pd.Series(np.full(n_molecules, np.nan, dtype=np.float64), index=df.index)
     for col in diag_names:
-        result[col] = pd.Series([pd.NA] * len(result), dtype=object) if col in object_dtype_diagnostics else np.nan
+        if col in object_dtype_diagnostics:
+            new_columns[col] = pd.Series([pd.NA] * n_molecules, dtype=object, index=df.index)
+        else:
+            new_columns[col] = pd.Series(np.full(n_molecules, np.nan, dtype=np.float64), index=df.index)
+    result = pd.concat([df.copy(), pd.DataFrame(new_columns, index=df.index)], axis=1)
     result["desc3d_status"] = "skipped"
     result["desc3d_mode"] = mode
 
