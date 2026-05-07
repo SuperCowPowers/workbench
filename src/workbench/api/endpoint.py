@@ -70,11 +70,16 @@ class Endpoint(EndpointCore):
         return super().inference(eval_df, capture_name, id_column, drop_error_rows, include_quantiles)
 
     def auto_inference(self) -> pd.DataFrame:
-        """Run inference on the Endpoint using the test data from the model training view
+        """Run inference on the Endpoint using the test data from the model training view.
+
+        Async endpoints cap this at a 10-row smoke test (per-row cost is too
+        high to send the full holdout); sync endpoints use the full holdout.
 
         Returns:
             pd.DataFrame: The DataFrame with predictions
         """
+        if self._async is not None:
+            return self._async.auto_inference()
         return super().auto_inference()
 
     def full_inference(self) -> pd.DataFrame:

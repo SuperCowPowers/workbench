@@ -117,6 +117,33 @@ class AsyncEndpointCore(EndpointCore):
         return self._async_batch_invoke(eval_df)
 
     # -----------------------------------------------------------------
+    # Override: auto_inference  (smoke test capped at 10 rows)
+    # -----------------------------------------------------------------
+    def auto_inference(self) -> pd.DataFrame:
+        """Run a 10-row smoke test on this async endpoint.
+
+        Async workloads can run at seconds-to-minutes per row, so the
+        sync default of "all holdout rows (~20% of the FeatureSet)" turns
+        a smoke test into a multi-minute round-trip. This override caps
+        the eval set at 10 rows — enough to verify the endpoint responds
+        end-to-end without paying for a full holdout pass.
+        """
+        from workbench.core.artifacts.model_core import ModelCore
+
+        model = ModelCore(self.get_input())
+        if not model.exists():
+            self.log.error("No model found for this endpoint. Returning empty DataFrame.")
+            return pd.DataFrame()
+
+        all_df = model.training_view().pull_dataframe()
+        eval_df = all_df[~all_df["training"]].head(10)
+
+        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+        eval_df = eval_df.drop(columns=aws_cols, errors="ignore")
+
+        return self.inference(eval_df, "auto_inference")
+
+    # -----------------------------------------------------------------
     # Internal: delegate to the lightweight bridges client
     # -----------------------------------------------------------------
     def _async_batch_invoke(self, eval_df: pd.DataFrame) -> pd.DataFrame:
