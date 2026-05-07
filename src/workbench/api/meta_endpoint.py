@@ -35,6 +35,8 @@ from __future__ import annotations
 
 import logging
 
+import pandas as pd
+
 from workbench.api.endpoint import Endpoint
 from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model
@@ -123,16 +125,6 @@ class MetaEndpoint(Endpoint):
             },
         )
 
-        # Append DAG-specific workbench_meta on top of what FeaturesToModel
-        # already set (model_type, framework, features, target, training view).
-        model = Model(name)
-        model.upsert_workbench_meta(
-            {
-                "endpoints": list(dag.endpoints.values()),
-                "meta_endpoint_dag": dag.to_dict(),
-            }
-        )
-
         # Deploy. MetaEndpoint containers are thin orchestrators — actual
         # compute happens in the child endpoints, which scale on their own
         # backlog. One meta instance can already drive 100s of concurrent
@@ -140,6 +132,7 @@ class MetaEndpoint(Endpoint):
         # internally), so additional meta instances don't help. Async deploy
         # is therefore 0→1 with idle drain; sync is fixed 1.
         log.important(f"Deploying MetaEndpoint '{name}' ({'async' if is_async else 'sync'})...")
+        model = Model(name)
         if is_async:
             endpoint = model.to_endpoint(
                 tags=tags or [name],
@@ -165,10 +158,14 @@ class MetaEndpoint(Endpoint):
         # max_instances=1 (which only describes the orchestrator layer).
         effective_max = dag.max_child_max_instances()
 
+        # The DAG dict is the runtime artifact get_dag() / run_dag_test()
+        # rehydrate from. Stored on the endpoint (not the model) since it
+        # describes inference-time orchestration, not training.
         endpoint.upsert_workbench_meta(
             {
                 "inference_batch_size": min_batch,
                 "effective_max_instances": effective_max,
+                "meta_endpoint_dag": dag.to_dict(),
             }
         )
         log.important(f"Set inference_batch_size={min_batch} (min across DAG children)")
@@ -197,11 +194,7 @@ class MetaEndpoint(Endpoint):
 
         output_name = dag.output_node
         if output_name in dag.endpoints:
-            ep_name = dag.endpoints[output_name]
-            try:
-                return Model(ep_name).model_type
-            except Exception:
-                return ModelType.REGRESSOR
+            return Model(dag.endpoints[output_name]).model_type
 
         agg = dag.aggregations[output_name]
         if isinstance(agg, Concat):
@@ -250,6 +243,20 @@ class MetaEndpoint(Endpoint):
                 f"MetaEndpoint '{self.name}' has no DAG in workbench_meta. Recreate via MetaEndpoint.create()."
             )
         return MetaEndpointDAG.from_dict(dag_dict)
+
+    def run_dag_test(self, input_df: pd.DataFrame) -> pd.DataFrame:
+        """Execute the DAG client-side against ``input_df``.
+
+        Bypasses the deployed meta endpoint entirely: each child endpoint is
+        invoked directly via the regular ``Endpoint(name).inference()`` API
+        from this process. Useful for debugging the DAG topology, isolating
+        which child is misbehaving, or running the DAG when the deployed
+        meta endpoint is unavailable.
+
+        Result is identical to ``self.inference(input_df)`` modulo transport
+        and any container-only side effects (data capture, etc.).
+        """
+        return self.get_dag().run(input_df)
 
 
 if __name__ == "__main__":
