@@ -166,9 +166,7 @@ class AsyncEndpointCore(EndpointCore):
         if not dag_dict:
             return None
 
-        async_children = [
-            name for name, is_async in dag_dict.get("endpoint_async", {}).items() if is_async
-        ]
+        async_children = [name for name, is_async in dag_dict.get("endpoint_async", {}).items() if is_async]
         if not async_children:
             return lambda: ""
 
