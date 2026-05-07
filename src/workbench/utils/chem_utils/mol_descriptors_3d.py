@@ -139,16 +139,25 @@ BOLTZMANN_TEMPERATURE_K = 298.0
 # The upper tiers are bumped above the datamol-style 200/300 to reduce the
 # stochastic seed variance we measured on very flexible molecules (~20%
 # NPR1 spread across seeds at 300 conformers for 13+ rot-bond chains).
-# This is the documented path for reducing single-seed Boltzmann variance —
-# more independent samples from the same seed.
+# More samples from a single seed reduces *within-seed* variance by sqrt(N).
+# It does not eliminate cross-seed variance — different random seeds will
+# still produce slightly different Boltzmann averages on highly flexible
+# molecules. For most ADMET endpoints this residual is below downstream
+# model noise and not worth chasing further.
 #
-# Future Note: multi-seed conformer pooling (run k seeds × N/k conformers,
-# merge before Boltzmann averaging) would cut seed variance by ~sqrt(k)
-# at the same total conformer count, but it's not documented practice in
-# the small-molecule conformer-generation literature we checked. Worth
-# revisiting if bigger conformer tiers still leave too much variance, or
-# if we switch embedding algorithms (CONFORGE / Lyrebird) where the
-# sampling trade-offs may differ.
+# Forward-looking notes (evidence-backed, not yet implemented):
+#   - Single-point xTB / tblite re-ranking of MMFF-optimized conformers
+#     before Boltzmann weighting. Kong et al., ChemPhysChem 2025 show
+#     GFN2-xTB is the most suitable energy filter for drug-like conformer
+#     ranking. Pip-installable via tblite-python, deterministic.
+#   - CONFORGE (Seidel et al., JCIM 2023, CDPKit) as an alternative
+#     embedder for macrocycles and very-flexible scaffolds where ETKDGv3
+#     sampling plateaus. Open source, pip-installable.
+#   - Replace Gasteiger partial charges in CPSA with AM1-BCC or an ML
+#     charge model (DASH, Mahmoud et al. 2023). Gasteiger is documented
+#     as the least accurate common partial-charge method, and CPSA
+#     accounts for 43 of our 52 Mordred 3D features — highest-leverage
+#     upgrade for the existing feature set.
 ADAPTIVE_CONFORMER_TIERS = [(8, 50), (13, 300)]
 ADAPTIVE_CONFORMER_DEFAULT = 500
 

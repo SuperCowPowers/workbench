@@ -1,21 +1,33 @@
 # 3D Molecular Descriptors: Shape, Surface, and Pharmacophore Features
-!!! tip inline end "Combine 2D + 3D"
-    Run both the [2D descriptor endpoint](molecular_standardization.md) and the 3D endpoint, then concatenate the results for a ~388-feature set covering topological, electronic, and geometric properties.
+!!! tip inline end "When to reach for 3D"
+    On most TDC ADMET endpoints, careful 2D fingerprints + learned graph representations are highly competitive on their own. Use the 3D endpoint when you need shape-aware features for geometry-sensitive endpoints (passive permeability, P-gp / BCRP interactions, conformer-dependent solubility), typically alongside the 2D feature set, not as a replacement for it.
 
-2D molecular descriptors capture a lot about a molecule's chemistry from its connectivity graph alone -- molecular weight, hydrogen bond donors, topological polar surface area, and hundreds of other properties. But some of the most important ADMET properties depend on the molecule's *shape* in three dimensions: how it fits into a transporter binding site, whether it can fold to mask polar groups for membrane permeation, or how its charge distribution maps onto its surface.
+2D molecular descriptors capture a lot about a molecule's chemistry from its connectivity graph alone -- molecular weight, hydrogen bond donors, topological polar surface area, and hundreds of other properties. Some ADMET properties have geometric components that 2D descriptors capture only indirectly through their correlations with the molecular graph: how a molecule fits into a transporter binding site, whether it can fold to mask polar groups for membrane permeation, or how its charge distribution maps onto its surface. The 3D endpoint exposes these directly as engineered features -- whether they help on a given task is an empirical question, not a foregone conclusion.
 
 Workbench's 3D descriptor endpoints compute **74 conformer-based features** from SMILES strings, covering molecular shape, charged partial surface area, pharmacophore spatial distribution, and conformational flexibility. Like all Workbench endpoints, the contract is simple: **send a DataFrame, get a DataFrame back** -- the input DataFrame comes back with 74 descriptor columns appended. Two pipeline modes are available -- a **fast** endpoint for realtime inference and a **Boltzmann** endpoint for high-quality batch processing. Both produce the same 74 features so downstream models can consume either interchangeably.
 
-## Why 3D Descriptors?
+## When 3D Descriptors Help (and When They Don't)
 
-2D descriptors treat molecules as graphs -- atoms are nodes, bonds are edges. This misses geometry-dependent properties that matter for ADMET:
+2D descriptors treat molecules as graphs -- atoms are nodes, bonds are edges. There are ADMET-relevant properties whose geometric components 2D captures only indirectly:
 
 - **Membrane permeability** depends on molecular shape and the spatial separation of polar and nonpolar regions (amphiphilic moment)
 - **Transporter interactions** (P-gp, BCRP) correlate with molecular elongation, nitrogen spatial distribution, and overall size
 - **Protein-ligand binding** depends on 3D shape complementarity, not just functional group counts
-- **Intramolecular hydrogen bonds** enable "chameleonic" behavior where molecules mask polar groups in nonpolar environments -- a purely 3D phenomenon
+- **Intramolecular hydrogen bonds** enable "chameleonic" behavior where molecules mask polar groups in nonpolar environments -- a 3D phenomenon
 
-These properties can't be captured from the molecular graph. You need 3D coordinates.
+3D descriptors expose these directly as engineered features. Whether they actually move the needle on a given downstream model is a separate, empirical question -- and the answer is more nuanced than the bullets above suggest.
+
+### When 2D Alone Is Enough
+
+There is a real and well-supported skeptical position in the cheminformatics community: for most ADMET endpoints, well-engineered 2D fingerprints + learned graph representations are competitive with -- or better than -- 2D + 3D combined.
+
+The evidence:
+
+- On the [TDC ADMET leaderboards](https://tdcommons.ai/benchmark/overview/) through 2024-2026, top reproducible models (MapLight, MapLight+GNN, CaliciBoost, NovoExpert-2) use **ECFP/Avalon/ErG + 200 RDKit 2D physchem + GIN embeddings**, with **no explicit 3D features**. The Konopka et al. 2026 critical assessment of TDC leaderboard reproducibility makes this concrete.
+- **PharmaBench** (Niu et al., *Sci. Data* 2024) finds no statistically significant 2D-vs-3D difference on most ADMET endpoints across thousands of compounds.
+- **Bahia et al.** (*Mol. Inform.* 2023) report a 2D + 3D advantage over 2D alone -- but the delta is low single-digit AUC / R², not transformative.
+
+So treat the 3D feature stream honestly: a *complementary* set that may give modest, endpoint-dependent gains (most plausibly on passive permeability, P-gp / BCRP recognition, conformer-dependent solubility) on top of a strong 2D + learned-representation baseline. It is not a foregone conclusion that 3D features improve any specific ADMET model -- run an ablation. See the [Limitations & Future Work](#limitations-future-work) section for forward-looking upgrades and a fuller honest accounting.
 
 ## Two Pipeline Modes: Fast and Full
 
@@ -55,7 +67,7 @@ The full endpoint uses a datamol-style adaptive tiering, with the upper tiers bu
 | 8-12 | 300 | Moderate flexibility, needs broader sampling |
 | ≥ 13 | 500 | High flexibility, large conformational space |
 
-This ensures adequate sampling of the conformational landscape without wasting compute on rigid molecules. On 300-conformer runs at 13+ rotatable bonds we measured ~20% NPR1 variance across random seeds; bumping to 500 conformers uses the documented "more samples" path to reduce that stochastic spread by roughly √(500/300) ≈ 1.29×.
+This ensures adequate sampling of the conformational landscape without wasting compute on rigid molecules. On 300-conformer runs at 13+ rotatable bonds we measured ~20% NPR1 variance across random seeds; bumping to 500 conformers reduces *within-seed* variance by roughly √(500/300) ≈ 1.29× via the documented "more samples" path. It does not eliminate *cross-seed* variance — different random seeds will still produce slightly different Boltzmann averages on highly flexible molecules — but for most ADMET endpoints this residual is below downstream model noise.
 
 ## The Computation Pipeline
 
@@ -253,6 +265,22 @@ cached_endpoint = InferenceCache(end_fast, cache_key_column="smiles")
 df_cached = cached_endpoint.inference(big_df)  # Only computes uncached rows
 ```
 
+## Limitations & Future Work
+
+The pipeline is conservative by design — production ADMET targets stable, deterministic features over the latest research methods. A few areas worth flagging for downstream users and future iterations:
+
+**3D vs 2D in ADMET reality.** As noted in the introduction, top reproducible TDC ADMET models lean on 2D fingerprints + learned graph representations. The published evidence (PharmaBench *Sci. Data* 2024; Bahia *Mol. Inform.* 2023) is that 3D descriptors give marginal-but-real gains on geometry-sensitive endpoints and roughly neutral effects on most others. The 3D feature stream complements rather than replaces a strong 2D + learned-representation baseline.
+
+**Cross-seed variance on highly flexible molecules.** The 500-conformer top tier reduces within-seed stochastic variance, but different random seeds will still produce slightly different Boltzmann averages on 13+ rotatable-bond molecules. For most ADMET endpoints this residual is below downstream model noise; for tasks that genuinely depend on a single conformer geometry it is not.
+
+**Forward-looking upgrades** (evidence-backed; not yet implemented):
+
+1. **Single-point xTB / tblite re-ranking** of MMFF-optimized conformers before Boltzmann weighting. Kong et al. (*ChemPhysChem* 2025) show GFN2-xTB is currently the most suitable energy filter for drug-like conformer ranking. Pip-installable via `tblite-python`, deterministic.
+2. **CONFORGE as alternative embedder** for macrocycles and very-flexible scaffolds. Seidel et al. (*JCIM* 2023, CDPKit) — open source, slightly outperforms RDKit on small molecules and matches it on macrocycles where ETKDGv3 sampling plateaus.
+3. **Replace Gasteiger partial charges in CPSA** with AM1-BCC or an ML charge model (DASH; Mahmoud et al. 2023). Gasteiger is documented as the least accurate common partial-charge method, and CPSA accounts for 43 of our 52 Mordred 3D features — the highest-leverage upgrade for the existing feature set.
+
+Deliberately *not* on this list: ML conformer generators (ETFlow, GeoMol, Lyrebird) — research-stage with no proven ADMET benefit; MACE-OFF / ANI-2x routine optimization — too heavy for production throughput; tautomer/protomer ensemble enumeration — mature in research, niche in production. We may revisit any of these as the surrounding tooling matures.
+
 ## References
 
 **Conformer Ensemble Methods**
@@ -271,16 +299,27 @@ df_cached = cached_endpoint.inference(big_df)  # Only computes uncached rows
 - Landrum, G. *"Understanding conformer generation failures."* RDKit Blog (2023). [Blog post](https://greglandrum.github.io/rdkit-blog/posts/2023-05-17-understanding-confgen-errors.html)
 - Landrum, G. *"Scaling conformer generation."* RDKit Blog (2025). [Blog post](https://greglandrum.github.io/rdkit-blog/posts/2025-08-30-confgen-scaling.html)
 - Datamol conformer generation with adaptive tiering. [Documentation](https://docs.datamol.io/stable/tutorials/Conformers.html)
+- Seidel, T., Permann, C., Wieder, O., Kohlbacher, S. & Langer, T. *"High-Quality Conformer Generation with CONFORGE: Algorithm and Performance Assessment."* J. Chem. Inf. Model. 63, 5549-5570 (2023). [DOI: 10.1021/acs.jcim.3c00563](https://doi.org/10.1021/acs.jcim.3c00563)
 
 **Force Fields**
 
 - Tosco, P., Stiefl, N. & Landrum, G. *"Bringing the MMFF force field to the RDKit: implementation and validation."* J. Cheminform. 6, 37 (2014). [DOI: 10.1186/s13321-014-0037-3](https://doi.org/10.1186/s13321-014-0037-3)
+- Kong, Z., et al. *"Discriminating High from Low Energy Conformers of Druglike Molecules."* ChemPhysChem (2025). [DOI: 10.1002/cphc.202400992](https://doi.org/10.1002/cphc.202400992)
 
 **Descriptors**
 
 - RDKit 3D Descriptors: [Documentation](https://www.rdkit.org/docs/source/rdkit.Chem.Descriptors3D.html)
 - Mordred Community: [GitHub](https://github.com/JacksonBurns/mordred-community)
 - Stanton, D.T. & Jurs, P.C. *"Development and Use of Charged Partial Surface Area Structural Descriptors in Computer-Assisted Quantitative Structure-Property Relationship Studies."* Anal. Chem. 62, 2323-2329 (1990). [DOI: 10.1021/ac00220a013](https://doi.org/10.1021/ac00220a013)
+- Bleiziffer, P., Schaller, K. & Riniker, S. *"Machine Learning of Partial Charges Derived from High-Quality Quantum-Mechanical Calculations."* J. Chem. Inf. Model. 58, 579-589 (2018). [DOI: 10.1021/acs.jcim.7b00663](https://doi.org/10.1021/acs.jcim.7b00663)
+- Mahmoud, A.H., Masters, M.R., Lill, M.A., et al. *"DASH: Dynamic Attention-Based Substructure Hierarchy for Partial Charge Assignment."* J. Chem. Inf. Model. (2023). [DOI: 10.1021/acs.jcim.3c00800](https://doi.org/10.1021/acs.jcim.3c00800)
+
+**ADMET Benchmarks and 2D vs 3D Evidence**
+
+- Huang, K., et al. *"Therapeutics Data Commons: Machine Learning Datasets and Tasks for Drug Discovery and Development."* [TDC ADMET Leaderboards](https://tdcommons.ai/benchmark/overview/)
+- Konopka, M., et al. *"Critical Assessment of ML Models for ADMET Prediction in TDC Leaderboards."* bioRxiv (2026). [DOI: 10.64898/2026.02.26.708193](https://www.biorxiv.org/content/10.64898/2026.02.26.708193v1)
+- Niu, Z., et al. *"PharmaBench: Enhancing ADMET Benchmarks with Large Language Models."* Sci. Data 11, 985 (2024). [DOI: 10.1038/s41597-024-03793-0](https://doi.org/10.1038/s41597-024-03793-0)
+- Bahia, M.S., et al. *"Comparison Between 2D and 3D Descriptors in QSAR Modeling Based on Bio-Activities."* Mol. Inform. 42, 2200186 (2023). [DOI: 10.1002/minf.202200186](https://doi.org/10.1002/minf.202200186)
 
 **ADMET and Chameleonic Molecules**
 
