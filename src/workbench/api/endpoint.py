@@ -192,13 +192,43 @@ class Endpoint(EndpointCore):
         Refreshes endpoint metadata from AWS first so the result reflects
         live autoscaling state, not the snapshot from construction time.
 
-        Returns:
-            ``{"current": N, "desired": M}`` for instance-backed endpoints
-            (realtime/async). Returns ``{}`` for serverless endpoints (which
-            have a concurrency config rather than an instance count) or if
-            the AWS describe-endpoint metadata is unavailable.
+        Shape depends on the endpoint:
+
+        - Regular endpoint: ``{"current": N, "desired": M}``.
+        - MetaEndpoint: a flat dict keyed by endpoint name listing the
+          meta itself plus each async child, e.g.
+          ``{"meta-name":  {"current": 1, "desired": 1},
+              "child-a":   {"current": 8, "desired": 8}}``.
+
+        Returns ``{}`` for serverless endpoints (no meaningful instance
+        count) or if the AWS describe-endpoint metadata is unavailable.
         """
         self.refresh_meta()
+        own = self._read_instance_counts()
+
+        meta = self.workbench_meta() or {}
+        dag_dict = meta.get("meta_endpoint_dag")
+        if not dag_dict:
+            return own
+
+        # Meta endpoint — list itself + async children. Children are read
+        # via construction (fresh describe_endpoint) + cached helper to
+        # avoid the double-fetch of a recursive instance_counts() call.
+        result = {self.name: own}
+        async_children = [
+            name for name, is_async in dag_dict.get("endpoint_async", {}).items() if is_async
+        ]
+        for child_name in async_children:
+            result[child_name] = Endpoint(child_name)._read_instance_counts()
+        return result
+
+    def _read_instance_counts(self) -> dict:
+        """Read current/desired from the cached ``endpoint_meta`` (no refresh).
+
+        Internal helper for callers that have already obtained fresh
+        metadata (e.g. via ``__init__`` or an explicit ``refresh_meta``)
+        and want to avoid a redundant AWS round-trip.
+        """
         try:
             variant = self.endpoint_meta["ProductionVariants"][0]
             return {

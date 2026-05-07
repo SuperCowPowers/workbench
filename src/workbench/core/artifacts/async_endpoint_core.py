@@ -202,7 +202,9 @@ class AsyncEndpointCore(EndpointCore):
         def fn() -> str:
             parts = []
             for child_name in async_children:
-                counts = Endpoint(child_name).instance_counts()
+                # Construction fetches fresh; use the cached read helper
+                # to avoid a redundant refresh round-trip.
+                counts = Endpoint(child_name)._read_instance_counts()
                 if not counts:
                     parts.append(f"{child_name}:?")
                     continue
