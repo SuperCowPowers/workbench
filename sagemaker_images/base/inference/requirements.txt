@@ -13,7 +13,7 @@ rdkit==2026.3.1
 mordredcommunity==2.0.7
 
 # MetaEndpoint support (async_inference added in 0.2.7)
-workbench-bridges==0.2.7
+workbench-bridges==0.2.9
 
 # Inference server
 fastapi==0.135.2
