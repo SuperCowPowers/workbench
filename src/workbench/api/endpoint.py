@@ -215,9 +215,7 @@ class Endpoint(EndpointCore):
         # via construction (fresh describe_endpoint) + cached helper to
         # avoid the double-fetch of a recursive instance_counts() call.
         result = {self.name: own}
-        async_children = [
-            name for name, is_async in dag_dict.get("endpoint_async", {}).items() if is_async
-        ]
+        async_children = [name for name, is_async in dag_dict.get("endpoint_async", {}).items() if is_async]
         for child_name in async_children:
             result[child_name] = Endpoint(child_name)._read_instance_counts()
         return result
