@@ -473,6 +473,49 @@ class MetaEndpointDAG:
                 seen.append(int(meta["max_instances"]))
         return max(seen) if seen else 1
 
+    def terminal_target(self) -> Optional[str]:
+        """Target column the DAG ultimately predicts, or ``None`` for feature pipelines.
+
+        - Output is an endpoint → return its model's target.
+        - Output is an aggregation → walk back to the closest endpoint(s),
+          collect their targets. Returns the unique target if all agree;
+          ``None`` if zero predictors are upstream or their targets disagree.
+
+        Used by :meth:`MetaEndpoint._derive_lineage` to anchor the meta's
+        ``target_column`` on what the DAG actually predicts rather than
+        inheriting from the (possibly target-less) input endpoint.
+        """
+        from workbench.api import Endpoint, Model
+
+        def _target_of(ep_name: str) -> Optional[str]:
+            ep = Endpoint(ep_name)
+            if not ep.exists():
+                return None
+            return Model(ep.get_input()).target()
+
+        if self._output_node in self._endpoints:
+            return _target_of(self._endpoints[self._output_node])
+
+        # Aggregation output — BFS back until we hit endpoints, collecting targets.
+        targets: set = set()
+        seen: set = set()
+        queue: List[str] = list(self._parents_of(self._output_node))
+        while queue:
+            node = queue.pop(0)
+            if node in seen:
+                continue
+            seen.add(node)
+            if node in self._endpoints:
+                t = _target_of(self._endpoints[node])
+                if t:
+                    targets.add(t)
+            else:
+                queue.extend(self._parents_of(node))
+
+        if len(targets) == 1:
+            return targets.pop()
+        return None
+
     @classmethod
     def from_dict(cls, data: dict) -> "MetaEndpointDAG":
         dag = cls()

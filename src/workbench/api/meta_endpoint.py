@@ -205,15 +205,23 @@ class MetaEndpoint(Endpoint):
 
     @classmethod
     def _derive_lineage(cls, dag: MetaEndpointDAG) -> tuple[list[str], str, str | None]:
-        """Backtrace from the first input endpoint to find a FeatureSet + lineage.
+        """Derive a (feature_list, feature_set_name, target_column) tuple for the meta.
 
-        Workbench Models need to trace back to a FeatureSet. For DAG-based
-        MetaEndpoints there isn't a single canonical FeatureSet, so we use
-        the first input node's lineage as a representative anchor.
+        Workbench Models need to trace back to a FeatureSet, and downstream
+        tooling (``auto_inference``, ``register_input_columns`` /
+        ``register_output_columns``) all anchor on
+        ``model.features()`` + ``model.get_input()``. For DAG-based
+        MetaEndpoints we satisfy that contract by:
 
-        Returns ``(feature_list, feature_set_name, target_column)``.
-        ``target_column`` may be ``None`` for pure feature-pipeline DAGs
-        whose primary endpoint is a feature endpoint.
+          - ``feature_list`` / ``feature_set_name`` — borrowed from the first
+            input endpoint, since the meta consumes that endpoint's input
+            columns and that endpoint's FeatureSet is guaranteed to contain
+            usable smoke-test data.
+          - ``target_column`` — :meth:`MetaEndpointDAG.terminal_target`,
+            which walks back from the output node to the closest predictor
+            endpoint(s) so mixed DAGs (smiles → features → predictor) report
+            what the meta actually predicts, not what the input endpoint
+            happens to produce.
         """
         if not dag.input_nodes:
             raise ValueError("DAG has no input nodes — cannot derive lineage")
@@ -226,7 +234,11 @@ class MetaEndpoint(Endpoint):
         primary_model = Model(ep.get_input())
         feature_list = primary_model.features() or list(dag.input_columns())
         feature_set_name = primary_model.get_input()
-        target_column = primary_model.target()
+        # Target reflects what the DAG ultimately predicts (walks back from
+        # the output node), not what the input endpoint happens to produce.
+        # For mixed DAGs (smiles → features → predictor), this surfaces the
+        # downstream predictor's target instead of the feature endpoint's None.
+        target_column = dag.terminal_target()
 
         log.info(
             f"Lineage anchor: {primary_endpoint_name} -> {primary_model.name} -> {feature_set_name} "
