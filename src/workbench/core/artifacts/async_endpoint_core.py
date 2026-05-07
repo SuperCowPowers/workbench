@@ -127,6 +127,12 @@ class AsyncEndpointCore(EndpointCore):
           * ``inference_max_in_flight`` (default :data:`_MAX_IN_FLIGHT_CAP`):
             outstanding invocation cap for direct calls bypassing
             :class:`InferenceCache`.
+
+        For MetaEndpoints (detected via ``workbench_meta["meta_endpoint_dag"]``),
+        an ``instances_str_fn`` callable is passed to ``async_inference`` so
+        its ``instances=`` log field renders per-child counts instead of the
+        meta orchestrator's own (always-1) count. The callable composes
+        :meth:`Endpoint.instance_counts` per async child.
         """
         meta = self.workbench_meta() or {}
         batch_size = int(meta.get("inference_batch_size", _DEFAULT_BATCH_SIZE))
@@ -142,4 +148,42 @@ class AsyncEndpointCore(EndpointCore):
             max_in_flight=max_in_flight,
             s3_bucket=self.workbench_bucket,
             s3_input_prefix=f"endpoints/{self.name}/async-input",
+            instances_str_fn=self._meta_instances_str_fn(meta),
         )
+
+    def _meta_instances_str_fn(self, meta: dict):
+        """Build the ``instances_str_fn`` callable for a MetaEndpoint, or None.
+
+        For non-meta endpoints, returns ``None`` so workbench-bridges renders
+        its default (``endpoint_name``'s own count).
+
+        For MetaEndpoints, returns a callable that composes
+        :meth:`Endpoint.instance_counts` per async child:
+        ``[child_a:2, child_b:1→3]``. Returns an empty string when the meta
+        has no async children, which suppresses the ``instances=`` field.
+        """
+        dag_dict = meta.get("meta_endpoint_dag")
+        if not dag_dict:
+            return None
+
+        async_children = [
+            name for name, is_async in dag_dict.get("endpoint_async", {}).items() if is_async
+        ]
+        if not async_children:
+            return lambda: ""
+
+        from workbench.api.endpoint import Endpoint
+
+        def fn() -> str:
+            parts = []
+            for child_name in async_children:
+                counts = Endpoint(child_name).instance_counts()
+                if not counts:
+                    parts.append(f"{child_name}:?")
+                    continue
+                c, d = counts["current"], counts["desired"]
+                val = str(c) if c == d else f"{c}→{d}"
+                parts.append(f"{child_name}:{val}")
+            return "[" + ", ".join(parts) + "]"
+
+        return fn

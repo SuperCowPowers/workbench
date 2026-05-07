@@ -181,6 +181,28 @@ class Endpoint(EndpointCore):
             return int(meta["inference_batch_size"])
         return 10 if meta.get("async_endpoint") else 100
 
+    def instance_counts(self) -> dict:
+        """Return this endpoint's current and desired instance counts.
+
+        Refreshes endpoint metadata from AWS first so the result reflects
+        live autoscaling state, not the snapshot from construction time.
+
+        Returns:
+            ``{"current": N, "desired": M}`` for instance-backed endpoints
+            (realtime/async). Returns ``{}`` for serverless endpoints (which
+            have a concurrency config rather than an instance count) or if
+            the AWS describe-endpoint metadata is unavailable.
+        """
+        self.refresh_meta()
+        try:
+            variant = self.endpoint_meta["ProductionVariants"][0]
+            return {
+                "current": int(variant["CurrentInstanceCount"]),
+                "desired": int(variant["DesiredInstanceCount"]),
+            }
+        except (KeyError, TypeError):
+            return {}
+
 
 if __name__ == "__main__":
     """Exercise the Endpoint Class"""
