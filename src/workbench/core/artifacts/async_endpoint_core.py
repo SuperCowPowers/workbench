@@ -25,7 +25,7 @@ import logging
 import pandas as pd
 
 from workbench.core.artifacts.endpoint_core import EndpointCore
-from workbench_bridges.endpoints.async_inference import async_inference
+from workbench_bridges.endpoints.async_inference import async_inference, purge_async_queue
 
 log = logging.getLogger("workbench")
 
@@ -73,13 +73,6 @@ class AsyncEndpointCore(EndpointCore):
     def __init__(self, endpoint_name: str, **kwargs):
         super().__init__(endpoint_name, **kwargs)
 
-        # S3 paths for async I/O — these mirror the paths configured in
-        # AsyncInferenceConfig during deployment.
-        base = f"{self.endpoints_s3_path}/{self.name}"
-        self.async_output_path = f"{base}/async-output"
-        self.async_failure_path = f"{base}/async-failures"
-        self.async_input_path = f"{base}/async-input"
-
     # -----------------------------------------------------------------
     # Override: _predict  (called by EndpointCore.inference for modeled endpoints)
     # -----------------------------------------------------------------
@@ -112,6 +105,21 @@ class AsyncEndpointCore(EndpointCore):
             return pd.DataFrame(columns=eval_df.columns)
 
         return self._async_batch_invoke(eval_df)
+
+    # -----------------------------------------------------------------
+    # Queue management
+    # -----------------------------------------------------------------
+    def purge_async_queue(self) -> int:
+        """Cancel all queued async invocations for this endpoint.
+
+        Thin wrapper over :func:`workbench_bridges.async_inference.purge_async_queue`.
+        See that function for behavior, caveats, and return semantics.
+        """
+        return purge_async_queue(
+            endpoint_name=self.name,
+            s3_bucket=self.workbench_bucket,
+            sm_session=self.boto3_session,
+        )
 
     # -----------------------------------------------------------------
     # Override: auto_inference  (smoke test capped at 10 rows)

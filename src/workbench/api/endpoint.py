@@ -82,6 +82,23 @@ class Endpoint(EndpointCore):
             return self._async.auto_inference()
         return super().auto_inference()
 
+    def purge_async_queue(self) -> int:
+        """Cancel queued async invocations by deleting their staged S3 inputs.
+
+        Useful when a long-running client was killed and you want to abandon
+        the orphaned backlog instead of waiting for the fleet to drain it.
+        Only valid on async endpoints — raises on sync endpoints.
+
+        Returns:
+            int: Number of staged input objects deleted.
+        """
+        if self._async is None:
+            raise RuntimeError(
+                f"Endpoint '{self.name}' is not async — purge_async_queue is only "
+                f"meaningful for endpoints with an async invocation queue."
+            )
+        return self._async.purge_async_queue()
+
     def full_inference(self) -> pd.DataFrame:
         """Run inference on the Endpoint using the full data from the model training view
 
