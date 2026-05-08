@@ -139,11 +139,11 @@ class MetaEndpoint(Endpoint):
 
         # inference_batch_size is large so callers send the full DF in one
         # invocation — the meta delegates batching to the children, who
-        # already know how to saturate their own fleets. 10k rows is well
+        # already know how to saturate their own fleets. 1k rows is well
         # under SageMaker async's 60-minute per-invocation cap.
         endpoint.upsert_workbench_meta(
             {
-                "inference_batch_size": 10_000,
+                "inference_batch_size": 1_000,
                 "meta_endpoint_dag": dag.to_dict(),
             }
         )
