@@ -25,6 +25,8 @@ INSTANCE = None  # None → auto-select (ml.c7i.xlarge for async). Set
 #        "ml.c7i.2xlarge" etc. for more CPU/mem per worker.
 MAX_INSTANCES = 8  # Autoscaler ceiling. Bump for bigger batch jobs.
 IDLE_MINUTES = 5  # Minutes of empty queue before draining to zero.
+BATCH_SIZE = 5  # Rows per invocation. 5 fits ml.c7i.xlarge; bump to 10
+#         when running on ml.c7i.2xlarge (twice the CPU/mem).
 
 
 if __name__ == "__main__":
@@ -50,3 +52,6 @@ if __name__ == "__main__":
         max_instances=MAX_INSTANCES,
         scale_in_idle_minutes=IDLE_MINUTES,
     )
+
+    # Per-invocation batch size (overrides the workbench default of 10).
+    end.upsert_workbench_meta({"inference_batch_size": BATCH_SIZE})

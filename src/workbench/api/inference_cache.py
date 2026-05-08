@@ -52,7 +52,7 @@ class InferenceCache:
         cache_key_column: str = "smiles",
         output_key_column: Optional[str] = None,
         auto_invalidate_cache: bool = False,
-        snapshot: int = 1000,
+        snapshot: int = 500,
     ):
         """Initialize the InferenceCache.
 
@@ -75,7 +75,7 @@ class InferenceCache:
                 kept regardless of endpoint changes — the manifest is
                 reseeded on first load so subsequent calls have a consistent
                 baseline.
-            snapshot (int): Rows per cache write (default: 1000). The
+            snapshot (int): Rows per cache write (default: 500). The
                 endpoint is called once per snapshot's worth of rows and the
                 cache is persisted between calls, so this also bounds the
                 blast radius of an interrupted run to one snapshot's worth
