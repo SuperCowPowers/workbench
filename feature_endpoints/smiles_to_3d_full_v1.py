@@ -42,13 +42,7 @@ if __name__ == "__main__":
     )
     model.set_owner("BW")
 
-    # Advanced: workbench_meta knobs set BEFORE to_endpoint() shape deployment.
-    #   model.upsert_workbench_meta({"async_max_concurrent_per_instance": 4})
-    #     - default 1 (good for CPU-saturating work). Bump for IO-bound inference.
-
     # ── Deploy as an async (batch) endpoint.
-    # Autoscaler runs in "batch" mode: 0 → MAX_INSTANCES in one step on first
-    # traffic, drain to 0 after IDLE_MINUTES of empty queue.
     end = model.to_endpoint(
         tags=tags,
         async_endpoint=True,
@@ -56,10 +50,3 @@ if __name__ == "__main__":
         max_instances=MAX_INSTANCES,
         scale_in_idle_minutes=IDLE_MINUTES,
     )
-
-    # Advanced: workbench_meta knobs set AFTER to_endpoint() tune runtime inference.
-    #   end.upsert_workbench_meta({"inference_batch_size": 100})
-    #     - default 50. Higher = better overhead amortization, but a single chunk
-    #       must finish inside SageMaker's 1hr async invocation limit.
-    #   end.upsert_workbench_meta({"inference_max_in_flight": 32})
-    #     - default 16. Higher = more backlog pressure on autoscaling, more S3 load.

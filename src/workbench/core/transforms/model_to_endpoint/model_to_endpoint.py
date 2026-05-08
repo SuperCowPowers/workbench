@@ -66,6 +66,7 @@ class ModelToEndpoint(Transform):
         max_instances: int = None,
         auto_scaling_mode: str = None,
         scale_in_idle_minutes: int = None,
+        async_max_concurrent: int = 1,
     ):
         """ModelToEndpoint Initialization
         Args:
@@ -84,6 +85,9 @@ class ModelToEndpoint(Transform):
                 See :func:`workbench.utils.endpoint_autoscaling.register_autoscaling`.
             scale_in_idle_minutes(int): Batch-mode only — minutes of empty queue before
                 scaling in to min_instances (default: None = register_autoscaling's default).
+            async_max_concurrent(int): MaxConcurrentInvocationsPerInstance for async
+                endpoints (default: 1). The default fits CPU-bound predict_fn workloads;
+                bump it for I/O-bound orchestrators (e.g. MetaEndpoints).
         """
         # Make sure the endpoint_name is a valid name
         Artifact.is_name_valid(endpoint_name, delimiter="-", lower_case=False)
@@ -121,6 +125,7 @@ class ModelToEndpoint(Transform):
         self.max_instances = max_instances
         self.auto_scaling_mode = auto_scaling_mode
         self.scale_in_idle_minutes = scale_in_idle_minutes
+        self.async_max_concurrent = async_max_concurrent
         self.input_type = TransformInput.MODEL
         self.output_type = TransformOutput.ENDPOINT
 
@@ -228,18 +233,8 @@ class ModelToEndpoint(Transform):
                 "Data capture is not supported for serverless endpoints. Skipping data capture configuration."
             )
 
-        # For async endpoints, resolve the per-instance concurrency knob.
-        # Default 1: typical async workloads (RDKit conformers, ML inference)
-        # already saturate the CPU per invocation, so dispatching multiple in
-        # parallel just causes context-switching overhead. Backlog also grows
-        # faster which makes autoscaling trigger sooner.
-        # Override per-model via workbench_meta["async_max_concurrent_per_instance"]
-        # for IO-bound or lightweight async workloads.
-        async_max_concurrent = None
         if self.async_endpoint:
-            model_meta = workbench_model.workbench_meta() or {}
-            async_max_concurrent = int(model_meta.get("async_max_concurrent_per_instance", 1))
-            self.log.important(f"Async MaxConcurrentInvocationsPerInstance={async_max_concurrent}")
+            self.log.important(f"Async MaxConcurrentInvocationsPerInstance={self.async_max_concurrent}")
 
         # Deploy the Endpoint using V3 Resource Classes
         self.log.important(f"Deploying the Endpoint {self.output_name}...")
@@ -250,7 +245,6 @@ class ModelToEndpoint(Transform):
                 instance_type=instance_type,
                 data_capture_config=data_capture_config,
                 tags=sagemaker_tags,
-                async_max_concurrent=async_max_concurrent,
             )
         except ClientError as e:
             # Check if this is the "endpoint config already exists" error
@@ -264,7 +258,6 @@ class ModelToEndpoint(Transform):
                     instance_type=instance_type,
                     data_capture_config=data_capture_config,
                     tags=sagemaker_tags,
-                    async_max_concurrent=async_max_concurrent,
                 )
             else:
                 raise
@@ -276,7 +269,6 @@ class ModelToEndpoint(Transform):
         instance_type: str = None,
         data_capture_config=None,
         tags=None,
-        async_max_concurrent: int = None,
     ):
         """Internal: Create the SageMaker Model, EndpointConfig, and Endpoint resources.
 
@@ -286,8 +278,6 @@ class ModelToEndpoint(Transform):
             instance_type (str): Instance type for realtime deployments
             data_capture_config: Data capture configuration
             tags: List of Tag objects
-            async_max_concurrent (int): MaxConcurrentInvocationsPerInstance for async endpoints.
-                Only used when ``self.async_endpoint`` is True.
         """
         model_name = self.output_name
         config_name = self.output_name
@@ -339,7 +329,7 @@ class ModelToEndpoint(Transform):
                     s3_failure_path=f"{base_path}/async-failures",
                 ),
                 client_config=AsyncInferenceClientConfig(
-                    max_concurrent_invocations_per_instance=async_max_concurrent,
+                    max_concurrent_invocations_per_instance=self.async_max_concurrent,
                 ),
             )
             self.log.important(f"Async Endpoint Config: output → {base_path}/async-output")
@@ -401,6 +391,7 @@ class ModelToEndpoint(Transform):
                 "auto_scaling_mode": self.auto_scaling_mode,
                 "scale_in_idle_minutes": self.scale_in_idle_minutes,
                 "async_endpoint": self.async_endpoint,
+                "async_max_concurrent": self.async_max_concurrent if self.async_endpoint else None,
                 "serverless": self.serverless,
             }.items()
             if v is not None

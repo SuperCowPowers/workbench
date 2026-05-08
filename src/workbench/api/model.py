@@ -62,6 +62,7 @@ class Model(ModelCore):
         max_instances: int = None,
         auto_scaling_mode: str = None,
         scale_in_idle_minutes: int = None,
+        async_max_concurrent: int = 1,
     ) -> Endpoint:
         """Create an Endpoint from the Model.
 
@@ -86,6 +87,9 @@ class Model(ModelCore):
             scale_in_idle_minutes (int): Batch-mode only — minutes of empty queue
                 before scaling in to min_instances (default: None = register_autoscaling's
                 default of 15).
+            async_max_concurrent (int): MaxConcurrentInvocationsPerInstance for async
+                endpoints (default: 1, suits CPU-bound predict_fn). Bump for I/O-bound
+                orchestrators (e.g. MetaEndpoints).
 
         All deploy-time sizing/autoscaling args are persisted to the endpoint's
         workbench_meta so later reconstructions can see what it was deployed with.
@@ -118,6 +122,7 @@ class Model(ModelCore):
             max_instances=max_instances,
             auto_scaling_mode=auto_scaling_mode,
             scale_in_idle_minutes=scale_in_idle_minutes,
+            async_max_concurrent=async_max_concurrent,
         )
         model_to_endpoint.set_output_tags(tags)
         model_to_endpoint.transform(

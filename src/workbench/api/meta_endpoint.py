@@ -125,12 +125,8 @@ class MetaEndpoint(Endpoint):
             },
         )
 
-        # Deploy. MetaEndpoint containers are thin orchestrators — actual
-        # compute happens in the child endpoints, which scale on their own
-        # backlog. One meta instance can already drive 100s of concurrent
-        # child calls (async_inference uses a 64-thread worker pool
-        # internally), so additional meta instances don't help. Async deploy
-        # is therefore 0→1 with idle drain; sync is fixed 1.
+        # MetaEndpoint containers are I/O-bound orchestrators (S3 staging,
+        # child invocations, S3 polling) — so max_instances=1 and concurrency=32.
         log.important(f"Deploying MetaEndpoint '{name}' ({'async' if is_async else 'sync'})...")
         model = Model(name)
         if is_async:
@@ -139,6 +135,7 @@ class MetaEndpoint(Endpoint):
                 async_endpoint=True,
                 max_instances=1,
                 scale_in_idle_minutes=5,
+                async_max_concurrent=32,
             )
         else:
             endpoint = model.to_endpoint(
