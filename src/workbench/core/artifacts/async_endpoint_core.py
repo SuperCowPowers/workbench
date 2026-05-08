@@ -39,11 +39,9 @@ log = logging.getLogger("workbench")
 _DEFAULT_BATCH_SIZE = 10
 
 # Safety cap on client-side thread-pool size for direct (non-InferenceCache)
-# calls with large DataFrames. InferenceCache already right-sizes its chunks
-# to ``2 × max_instances × batch_size`` so in the common path the pool is
-# sized exactly to the work. This cap only matters if someone calls
-# ``end.inference(huge_df)`` directly without chunking.
-# Override per-call via workbench_meta["inference_max_in_flight"].
+# calls with large DataFrames. Prevents thread-pool blowup on calls like
+# ``end.inference(huge_df)``. Override per-call via
+# workbench_meta["inference_max_in_flight"].
 _MAX_IN_FLIGHT_CAP = 64
 
 # Pandas option applied once at import — avoid mutating global state per call.
@@ -54,12 +52,11 @@ def _resolve_max_in_flight(meta: dict, n_batches: int) -> int:
     """Size the client-side thread pool for one ``_async_batch_invoke`` call.
 
     Default: ``n_batches`` — one worker per sub-batch, fully parallel, no
-    queueing in the client pool. This is optimal when the caller has already
-    right-sized the input (:class:`InferenceCache` does this automatically).
+    queueing in the client pool.
 
     Safety cap: ``inference_max_in_flight`` from meta, defaulting to
-    :data:`_MAX_IN_FLIGHT_CAP`. Prevents thread-pool blowup on direct
-    ``end.inference(huge_df)`` calls that bypass chunking.
+    :data:`_MAX_IN_FLIGHT_CAP`. Prevents thread-pool blowup on calls with
+    very large DataFrames.
     """
     cap = int(meta.get("inference_max_in_flight", _MAX_IN_FLIGHT_CAP))
     return min(n_batches, cap)

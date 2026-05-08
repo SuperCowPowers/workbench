@@ -5,14 +5,15 @@ on long-running endpoint inference jobs. SSO tokens expire, network links
 hiccup, and a single failed S3 write can otherwise destroy hours of compute.
 
 The :func:`chunked_with_cache_writes` decorator wraps a bound method that
-performs inference on a single chunk and turns it into one that:
+performs inference on a single snapshot's worth of rows and turns it into
+one that:
 
-1. Slices its input DataFrame into chunks of ``self.chunk_size`` rows.
-2. Calls the wrapped method on each chunk.
-3. After each chunk, calls ``self._update_cache(chunk_results)`` to persist.
+1. Slices its input DataFrame into snapshots of ``self.snapshot`` rows.
+2. Calls the wrapped method on each snapshot.
+3. After each snapshot, calls ``self._update_cache(results)`` to persist.
 4. Catches exceptions from both inference and cache writes — a single bad
-   chunk does not kill the rest of the batch.
-5. Concatenates surviving chunks and returns the merged DataFrame.
+   snapshot does not kill the rest of the batch.
+5. Concatenates surviving snapshots and returns the merged DataFrame.
 """
 
 import functools
@@ -23,23 +24,21 @@ import pandas as pd
 
 log = logging.getLogger("workbench")
 
-DEFAULT_CHUNK_SIZE = 100
-
 
 def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[..., pd.DataFrame]:
-    """Decorator: chunk a DataFrame argument and persist after each chunk.
+    """Decorator: chunk a DataFrame argument and persist after each snapshot.
 
     The decorated method must have the signature
     ``method(self, chunk_df: pd.DataFrame, **kwargs) -> pd.DataFrame``
     and the host class must provide:
 
-    - ``self.chunk_size`` (int): rows per chunk
+    - ``self.snapshot`` (int): rows per snapshot/chunk
     - ``self._update_cache(new_results: pd.DataFrame) -> None``: persist hook
     - ``self._endpoint.name`` (str): used in log messages
     - ``self.log``: a workbench logger
 
-    Returns the concatenation of every successful chunk's results. May be
-    shorter than the input if any chunks failed (failures are logged at
+    Returns the concatenation of every successful snapshot's results. May be
+    shorter than the input if any snapshots failed (failures are logged at
     ERROR level).
     """
 
@@ -49,14 +48,14 @@ def chunked_with_cache_writes(method: Callable[..., pd.DataFrame]) -> Callable[.
         if total == 0:
             return to_compute.iloc[:0]
 
-        chunk_size = getattr(self, "chunk_size", DEFAULT_CHUNK_SIZE)
+        snapshot = self.snapshot
         label = f"InferenceCache[{self._endpoint.name}]"
-        n_chunks = (total + chunk_size - 1) // chunk_size
-        self.log.info(f"{label}: chunking {total} rows into {n_chunks} chunks of {chunk_size}")
+        n_chunks = (total + snapshot - 1) // snapshot
+        self.log.info(f"{label}: chunking {total} rows into {n_chunks} snapshots of {snapshot}")
 
         results = []
         for i in range(n_chunks):
-            chunk = to_compute.iloc[i * chunk_size : (i + 1) * chunk_size]
+            chunk = to_compute.iloc[i * snapshot : (i + 1) * snapshot]
             sent = len(chunk)
             self.log.info(f"{label}: chunk {i + 1}/{n_chunks} ({sent} rows)")
 

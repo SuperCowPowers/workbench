@@ -135,7 +135,7 @@ def _fresh_cache(endpoint_name: str, cache_path: str, dtype_mode: str) -> Infere
     c._invalidation_checked = False
     c._auto_invalidate_cache = False
     c._canonical_dtypes = None
-    c.chunk_size = 25
+    c.snapshot = 25
     c.log = logging.getLogger("workbench")
     return c
 
@@ -237,7 +237,7 @@ def test_all_null_column_handling():
     c._auto_invalidate_cache = False
     c._canonical_dtypes = None
     c._coerce_warned = set()
-    c.chunk_size = 25
+    c.snapshot = 25
     c.log = logging.getLogger("workbench")
 
     # Chunk 1: salt all-NaN -> should be dropped from write, not pin dtype

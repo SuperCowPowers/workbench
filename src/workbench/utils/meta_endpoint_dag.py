@@ -427,52 +427,6 @@ class MetaEndpointDAG:
             self.populate_async_flags()
         return any(self._endpoint_async_flags.values())
 
-    def min_child_batch_size(self) -> int:
-        """Minimum ``inference_batch_size`` across all child endpoints.
-
-        :meth:`MetaEndpoint.create` uses this to set the meta endpoint's
-        own ``inference_batch_size`` — chunks the meta receives from
-        SageMaker get fanned out as-is to every child, so the meta's
-        chunk size shouldn't exceed the smallest tolerance among children.
-
-        Smaller chunks at the meta level also mean smaller failure blast
-        radius (one bad row fails one small chunk, not a large one).
-
-        Returns:
-            int: Minimum batch size; ``100`` if the DAG has no endpoints
-            (the standard sync default).
-        """
-        from workbench.api import Endpoint
-
-        if not self._endpoints:
-            return 100
-        sizes = [Endpoint(ep_name).inference_batch_size() for ep_name in set(self._endpoints.values())]
-        return min(sizes)
-
-    def max_child_max_instances(self) -> int:
-        """Maximum ``max_instances`` across all child endpoints.
-
-        :class:`MetaEndpoint.create` uses this to publish an
-        ``effective_max_instances`` hint into the meta endpoint's
-        ``workbench_meta``. The meta itself deploys with ``max_instances=1``
-        (it's a thin orchestrator), but downstream tooling like
-        :class:`InferenceCache` sizes its work units to fill fleet capacity —
-        and the relevant capacity is the child fleets, not the meta's
-        single orchestrator instance.
-
-        Returns:
-            int: Maximum ``max_instances`` seen on any child endpoint;
-            ``1`` if no child has it set or the DAG has no endpoints.
-        """
-        from workbench.api import Endpoint
-
-        seen: List[int] = []
-        for ep_name in set(self._endpoints.values()):
-            meta = Endpoint(ep_name).workbench_meta() or {}
-            if meta.get("max_instances") is not None:
-                seen.append(int(meta["max_instances"]))
-        return max(seen) if seen else 1
-
     def terminal_target(self) -> Optional[str]:
         """Target column the DAG ultimately predicts, or ``None`` for feature pipelines.
 

@@ -74,8 +74,8 @@ class MetaEndpoint(Endpoint):
           3. Run the standard ``FeatureSet.to_model()`` flow, passing the
              DAG / region / bucket as ``custom_args`` so the meta-endpoint
              template fills them in at training time.
-          4. Set DAG-specific ``workbench_meta`` keys on the resulting Model.
-          5. Deploy the endpoint (async if any DAG child is async).
+          4. Deploy the endpoint (async if any DAG child is async) and
+             stash the serialized DAG on it.
 
         Args:
             name: Endpoint / Model name.
@@ -125,48 +125,28 @@ class MetaEndpoint(Endpoint):
             },
         )
 
-        # MetaEndpoint containers are I/O-bound orchestrators (S3 staging,
-        # child invocations, S3 polling) — so max_instances=1 and concurrency=32.
+        # MetaEndpoint containers are thin orchestrators — they receive the
+        # full input as one invocation and let each child's own async_inference
+        # do the row-level fan-out against the child fleet.
         log.important(f"Deploying MetaEndpoint '{name}' ({'async' if is_async else 'sync'})...")
         model = Model(name)
-        if is_async:
-            endpoint = model.to_endpoint(
-                tags=tags or [name],
-                async_endpoint=True,
-                max_instances=1,
-                scale_in_idle_minutes=5,
-                async_max_concurrent=32,
-            )
-        else:
-            endpoint = model.to_endpoint(
-                tags=tags or [name],
-                async_endpoint=False,
-            )
+        endpoint = model.to_endpoint(
+            tags=tags or [name],
+            async_endpoint=is_async,
+            max_instances=1 if is_async else None,
+            scale_in_idle_minutes=5 if is_async else None,
+        )
 
-        # Auto-derive inference_batch_size from the smallest tolerance among
-        # children — chunks the meta receives from SageMaker get fanned out
-        # as-is to every child, so the meta's chunk size shouldn't exceed
-        # the smallest child's batch size.
-        min_batch = dag.min_child_batch_size()
-
-        # Publish the largest child fleet size as effective_max_instances so
-        # callers (e.g. InferenceCache) can size their work units to fill
-        # downstream child capacity rather than the meta's own
-        # max_instances=1 (which only describes the orchestrator layer).
-        effective_max = dag.max_child_max_instances()
-
-        # The DAG dict is the runtime artifact get_dag() / run_dag_test()
-        # rehydrate from. Stored on the endpoint (not the model) since it
-        # describes inference-time orchestration, not training.
+        # inference_batch_size is large so callers send the full DF in one
+        # invocation — the meta delegates batching to the children, who
+        # already know how to saturate their own fleets. 10k rows is well
+        # under SageMaker async's 60-minute per-invocation cap.
         endpoint.upsert_workbench_meta(
             {
-                "inference_batch_size": min_batch,
-                "effective_max_instances": effective_max,
+                "inference_batch_size": 10_000,
                 "meta_endpoint_dag": dag.to_dict(),
             }
         )
-        log.important(f"Set inference_batch_size={min_batch} (min across DAG children)")
-        log.important(f"Set effective_max_instances={effective_max} (max across DAG children)")
 
         log.important(f"MetaEndpoint '{name}' created successfully!")
         return cls(name)

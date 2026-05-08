@@ -23,10 +23,7 @@ import pandas as pd
 
 from workbench.api.df_store import DFStore
 from workbench.api.endpoint import Endpoint
-from workbench.utils.inference_cache_utils import (
-    DEFAULT_CHUNK_SIZE,
-    chunked_with_cache_writes,
-)
+from workbench.utils.inference_cache_utils import chunked_with_cache_writes
 
 
 class InferenceCache:
@@ -49,33 +46,13 @@ class InferenceCache:
         ```
     """
 
-    # Rows per cache write. The endpoint is called once per chunk and the
-    # cache is persisted between chunks, so this also bounds the blast radius
-    # of an interrupted/failed write to one chunk worth of work.
-    #
-    # The actual chunk_size on each instance is set in __init__: either the
-    # explicit ``chunk_size`` constructor kwarg, or — for async endpoints with
-    # max_instances in their workbench_meta — derived from fleet capacity
-    # (max_instances × batch_size × 2) so each chunk holds an integer number
-    # of full fleet-waves. This avoids the "10 batches / 8 instances → tail"
-    # utilization loss. Falls back to this class attribute (DEFAULT_CHUNK_SIZE)
-    # for sync endpoints or legacy endpoints without max_instances in meta.
-    chunk_size: int = DEFAULT_CHUNK_SIZE
-
-    # Number of fleet-waves per chunk when auto-deriving chunk_size. With k
-    # batches per worker, relative tail-variance scales as 1/√k, so bumping
-    # k from 2 to 4 cuts tail overhead ~30% without changing batch_size (so
-    # per-batch polling cost is unchanged). Crash-recovery loss is one chunk
-    # = 4 fleet-waves of work, modest for any reasonable batch pipeline.
-    _CHUNK_WAVES = 4
-
     def __init__(
         self,
         endpoint: Endpoint,
         cache_key_column: str = "smiles",
         output_key_column: Optional[str] = None,
         auto_invalidate_cache: bool = False,
-        chunk_size: Optional[int] = None,
+        snapshot: int = 1000,
     ):
         """Initialize the InferenceCache.
 
@@ -98,15 +75,16 @@ class InferenceCache:
                 kept regardless of endpoint changes — the manifest is
                 reseeded on first load so subsequent calls have a consistent
                 baseline.
-            chunk_size (Optional[int]): Rows per cache write. If ``None``
-                (default), derived from the endpoint's ``max_instances`` and
-                ``inference_batch_size`` to produce full fleet-waves — see
-                :meth:`_derive_chunk_size`. Falls back to
-                ``DEFAULT_CHUNK_SIZE`` when fleet info isn't available.
+            snapshot (int): Rows per cache write (default: 1000). The
+                endpoint is called once per snapshot's worth of rows and the
+                cache is persisted between calls, so this also bounds the
+                blast radius of an interrupted run to one snapshot's worth
+                of work.
         """
         self._endpoint = endpoint
         self.cache_key_column = cache_key_column
         self.output_key_column = output_key_column
+        self.snapshot = int(snapshot)
         self.cache_path = f"/workbench/inference_cache/{endpoint.name}"
         self.manifest_path = f"{self.cache_path}__meta"
         self._df_store = DFStore()
@@ -121,49 +99,6 @@ class InferenceCache:
         # keeps the coerce loop quiet when the same mismatch recurs every chunk.
         self._coerce_warned: set[tuple] = set()
         self.log = logging.getLogger("workbench")
-
-        # Resolve chunk_size: explicit override wins; else try fleet-derivation;
-        # else fall through to the class-level DEFAULT_CHUNK_SIZE.
-        if chunk_size is not None:
-            self.chunk_size = int(chunk_size)
-        else:
-            derived = self._derive_chunk_size()
-            if derived is not None:
-                self.chunk_size = derived
-
-    def _derive_chunk_size(self) -> Optional[int]:
-        """Derive chunk_size from the wrapped endpoint's fleet capacity.
-
-        Returns ``capacity × batch_size × _CHUNK_WAVES`` so each chunk
-        holds an integer number of full fleet-waves — preventing the
-        "10 batches / 8 instances → 2-batch tail" utilization loss on async
-        endpoints. ``capacity`` prefers ``effective_max_instances`` when
-        present (set by MetaEndpoint to reflect the largest child fleet,
-        since the meta itself deploys with ``max_instances=1`` regardless
-        of downstream capacity), otherwise falls back to ``max_instances``.
-        Returns ``None`` (→ caller should use DEFAULT_CHUNK_SIZE) when the
-        endpoint's meta has neither, which is the case for sync endpoints
-        and legacy async deploys.
-        """
-        try:
-            meta = self._endpoint.workbench_meta() or {}
-        except Exception:
-            return None
-        capacity = meta.get("effective_max_instances", meta.get("max_instances"))
-        if capacity is None:
-            return None
-        # Mirror AsyncEndpointCore's own resolution: explicit meta override
-        # wins, otherwise the core default.
-        from workbench.core.artifacts.async_endpoint_core import _DEFAULT_BATCH_SIZE
-
-        batch_size = int(meta.get("inference_batch_size", _DEFAULT_BATCH_SIZE))
-        derived = int(capacity) * batch_size * self._CHUNK_WAVES
-        self.log.info(
-            f"InferenceCache[{self._endpoint.name}]: chunk_size={derived} "
-            f"(capacity={capacity} × batch_size={batch_size} × "
-            f"{self._CHUNK_WAVES} waves — full fleet utilization per chunk)"
-        )
-        return derived
 
     def __getattr__(self, name):
         """Delegate any unrecognized attribute access to the wrapped Endpoint."""

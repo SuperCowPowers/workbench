@@ -87,7 +87,7 @@ class ModelToEndpoint(Transform):
                 scaling in to min_instances (default: None = register_autoscaling's default).
             async_max_concurrent(int): MaxConcurrentInvocationsPerInstance for async
                 endpoints (default: 1). The default fits CPU-bound predict_fn workloads;
-                bump it for I/O-bound orchestrators (e.g. MetaEndpoints).
+                bump it for I/O-bound workloads that can share a single instance.
         """
         # Make sure the endpoint_name is a valid name
         Artifact.is_name_valid(endpoint_name, delimiter="-", lower_case=False)

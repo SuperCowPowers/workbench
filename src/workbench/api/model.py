@@ -89,7 +89,7 @@ class Model(ModelCore):
                 default of 15).
             async_max_concurrent (int): MaxConcurrentInvocationsPerInstance for async
                 endpoints (default: 1, suits CPU-bound predict_fn). Bump for I/O-bound
-                orchestrators (e.g. MetaEndpoints).
+                workloads where multiple invocations can share a single instance.
 
         All deploy-time sizing/autoscaling args are persisted to the endpoint's
         workbench_meta so later reconstructions can see what it was deployed with.
