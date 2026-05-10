@@ -128,20 +128,12 @@ class MetaEndpoint(Endpoint):
         # MetaEndpoint containers are thin orchestrators — they receive the
         # full input as one invocation and let each child's own async_inference
         # do the row-level fan-out against the child fleet.
-        #
-        # scale_in_idle_minutes=60 matches SageMaker async's per-invocation
-        # 60-minute ceiling — so the autoscaler cannot terminate an instance
-        # any earlier than SageMaker would have killed the request itself.
-        # The autoscaler's idle clock ticks from queue=0 (which happens within
-        # seconds of pickup), not from predict_fn completion, so a shorter
-        # window than 60 min would race with long-running orchestrator calls.
         log.important(f"Deploying MetaEndpoint '{name}' ({'async' if is_async else 'sync'})...")
         model = Model(name)
         endpoint = model.to_endpoint(
             tags=tags or [name],
             async_endpoint=is_async,
             max_instances=1 if is_async else None,
-            scale_in_idle_minutes=60 if is_async else None,
         )
 
         # inference_batch_size is large so callers send big batches in a

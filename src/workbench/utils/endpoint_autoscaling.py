@@ -23,7 +23,11 @@ _SERVICE_NS = "sagemaker"
 _SCALABLE_DIM = "sagemaker:variant:DesiredInstanceCount"
 
 _DEFAULT_MAX_CAPACITY = 8
-_DEFAULT_SCALE_IN_IDLE_MINUTES = 5
+# 60-min default matches SageMaker async's per-invocation 60-minute ceiling —
+# so the autoscaler can't terminate an instance any earlier than SageMaker
+# would have killed the request itself. Shorter windows risk orphaning long
+# predict_fns while their queue is empty.
+_DEFAULT_SCALE_IN_IDLE_MINUTES = 60
 _DEFAULT_REALTIME_TARGET = 750.0
 
 
