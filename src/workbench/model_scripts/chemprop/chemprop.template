@@ -58,6 +58,12 @@ DEFAULT_HYPERPARAMETERS = {
     "ffn_num_layers": 2,
     # Loss function for regression (mae, mse)
     "criterion": "mae",
+    # Bounded loss for censored targets. When True, the trainer reads
+    # per-target boolean columns "{target}_gt" / "{target}_lt" from the
+    # FeatureSet and swaps the criterion for its Bounded* variant so that
+    # censored rows only contribute loss when the prediction crosses the
+    # bound. Default False ignores these columns even if present.
+    "bounded_loss": False,
     # Split strategy: "scaffold" (default), "butina", or "random"
     # - scaffold: Bemis-Murcko scaffold-based grouping (requires 'smiles' column in data).
     #     Falls back to random with a warning if no SMILES column is present.
@@ -122,8 +128,15 @@ def _create_molecule_datapoints(
     smiles_list: list[str],
     targets: np.ndarray | None = None,
     extra_descriptors: np.ndarray | None = None,
+    gt_mask: np.ndarray | None = None,
+    lt_mask: np.ndarray | None = None,
 ) -> tuple[list[data.MoleculeDatapoint], list[int]]:
-    """Create ChemProp MoleculeDatapoints from SMILES strings."""
+    """Create ChemProp MoleculeDatapoints from SMILES strings.
+
+    gt_mask/lt_mask are per-(row, target) boolean arrays for bounded-loss training:
+    gt_mask[i, j] == True means target j on row i is right-censored (true value >= y).
+    lt_mask[i, j] == True means target j on row i is left-censored (true value <= y).
+    """
     from rdkit import Chem
 
     datapoints, valid_indices = [], []
@@ -134,7 +147,12 @@ def _create_molecule_datapoints(
             continue
         y = targets[i].tolist() if targets is not None else None
         x_d = extra_descriptors[i] if extra_descriptors is not None else None
-        datapoints.append(data.MoleculeDatapoint.from_smi(smi, y=y, x_d=x_d))
+        kwargs = {"y": y, "x_d": x_d}
+        if gt_mask is not None:
+            kwargs["gt_mask"] = gt_mask[i]
+        if lt_mask is not None:
+            kwargs["lt_mask"] = lt_mask[i]
+        datapoints.append(data.MoleculeDatapoint.from_smi(smi, **kwargs))
         valid_indices.append(i)
 
     return datapoints, valid_indices
@@ -442,8 +460,14 @@ if __name__ == "__main__":
         num_classes: int | None, n_targets: int,
         output_transform: nn.UnscaleTransform | None,
         task_weights: np.ndarray | None,
+        use_bounded_loss: bool = False,
     ) -> nn.Predictor:
-        """Build task-specific FFN head."""
+        """Build task-specific FFN head.
+
+        When use_bounded_loss is True, swaps the regression criterion for its bounded
+        variant (BoundedMAE/BoundedMSE) so gt_mask/lt_mask censoring is honored at
+        train time. The mask data itself flows through MoleculeDatapoint, not here.
+        """
         dropout = hyperparameters["dropout"]
         ffn_hidden_dim = hyperparameters["ffn_hidden_dim"]
         ffn_num_layers = hyperparameters["ffn_num_layers"]
@@ -454,8 +478,11 @@ if __name__ == "__main__":
                 hidden_dim=ffn_hidden_dim, n_layers=ffn_num_layers, dropout=dropout,
             )
 
-        from chemprop.nn.metrics import MAE, MSE
-        criterion_map = {"mae": MAE, "mse": MSE}
+        from chemprop.nn.metrics import MAE, MSE, BoundedMAE, BoundedMSE
+        if use_bounded_loss:
+            criterion_map = {"mae": BoundedMAE, "mse": BoundedMSE}
+        else:
+            criterion_map = {"mae": MAE, "mse": MSE}
         criterion_name = hyperparameters.get("criterion", "mae")
         if criterion_name not in criterion_map:
             raise ValueError(f"Unknown criterion '{criterion_name}'. Supported: {list(criterion_map.keys())}")
@@ -473,6 +500,7 @@ if __name__ == "__main__":
         x_d_transform: nn.ScaleTransform | None = None,
         output_transform: nn.UnscaleTransform | None = None,
         task_weights: np.ndarray | None = None,
+        use_bounded_loss: bool = False,
     ) -> models.MPNN:
         """Build MPNN model, optionally loading pretrained weights."""
         from_foundation = hyperparameters.get("from_foundation")
@@ -488,7 +516,10 @@ if __name__ == "__main__":
             agg = nn.NormAggregation()
             ffn_input_dim = hyperparameters["hidden_dim"] + n_extra_descriptors
 
-        ffn = _build_ffn(task, ffn_input_dim, hyperparameters, num_classes, n_targets, output_transform, task_weights)
+        ffn = _build_ffn(
+            task, ffn_input_dim, hyperparameters, num_classes, n_targets,
+            output_transform, task_weights, use_bounded_loss=use_bounded_loss,
+        )
         return models.MPNN(message_passing=mp, agg=agg, predictor=ffn, batch_norm=True, metrics=None, X_d_transform=x_d_transform)
 
     # -------------------------------------------------------------------------
@@ -577,12 +608,58 @@ if __name__ == "__main__":
 
     all_targets = all_df[target_columns].values.astype(np.float32)
 
+    # ---------------------------------------------------------------------
+    # Bounded-loss masks (regression only). Opt-in via hyperparameter
+    # `bounded_loss=True`. By convention reads per-target boolean columns
+    # {target}_gt (right-censored, true value >= y) and {target}_lt
+    # (left-censored, true value <= y). When `bounded_loss` is False (the
+    # default), these columns are ignored even if present in the data --
+    # this keeps baseline-vs-bounded A/B comparisons clean against the
+    # same FeatureSet.
+    # NOTE: validation metrics and UQ calibration currently treat the
+    # bound value as exact truth, which slightly understates accuracy on
+    # censored rows. Revisit when adding censored-aware metrics.
+    # ---------------------------------------------------------------------
+    all_gt_mask, all_lt_mask = None, None
+    use_bounded_loss = bool(hyperparameters.get("bounded_loss", False)) and model_type != "classifier"
+    resolved_bound_columns: dict = {}
+    if use_bounded_loss:
+        gt_arr = np.zeros((len(all_df), n_targets), dtype=bool)
+        lt_arr = np.zeros((len(all_df), n_targets), dtype=bool)
+        for t_idx, t_name in enumerate(target_columns):
+            gt_col, lt_col = f"{t_name}_gt", f"{t_name}_lt"
+            target_meta: dict = {}
+            if gt_col in all_df.columns:
+                gt_arr[:, t_idx] = all_df[gt_col].fillna(False).astype(bool).values
+                target_meta["gt"] = gt_col
+            if lt_col in all_df.columns:
+                lt_arr[:, t_idx] = all_df[lt_col].fillna(False).astype(bool).values
+                target_meta["lt"] = lt_col
+            if target_meta:
+                resolved_bound_columns[t_name] = target_meta
+        if not resolved_bound_columns:
+            raise ValueError(
+                f"bounded_loss=True but no bound columns found. Expected one or more of: "
+                f"{[f'{t}_gt or {t}_lt' for t in target_columns]} in training data."
+            )
+        all_gt_mask, all_lt_mask = gt_arr, lt_arr
+        for t_name, cols in resolved_bound_columns.items():
+            t_idx = target_columns.index(t_name)
+            gt_n = int(gt_arr[:, t_idx].sum())
+            lt_n = int(lt_arr[:, t_idx].sum())
+            print(f"Bounded loss for '{t_name}': gt={gt_n} ({cols.get('gt', '-')}), lt={lt_n} ({cols.get('lt', '-')})")
+        print(f"Criterion -> bounded variant ({hyperparameters.get('criterion', 'mae')}).")
+
     # Filter invalid SMILES
     _, valid_indices = _create_molecule_datapoints(all_df[smiles_column].tolist(), all_targets, all_extra_features)
     all_df = all_df.iloc[valid_indices].reset_index(drop=True)
     all_targets = all_targets[valid_indices]
     if all_extra_features is not None:
         all_extra_features = all_extra_features[valid_indices]
+    if all_gt_mask is not None:
+        all_gt_mask = all_gt_mask[valid_indices]
+    if all_lt_mask is not None:
+        all_lt_mask = all_lt_mask[valid_indices]
     print(f"Data after SMILES validation: {all_df.shape}")
 
     task_weights = None
@@ -646,10 +723,20 @@ if __name__ == "__main__":
         train_extra = all_extra_features[train_idx] if all_extra_features is not None else None
         val_extra = all_extra_features[val_idx] if all_extra_features is not None else None
         val_extra_raw = val_extra.copy() if val_extra is not None else None
+        train_gt = all_gt_mask[train_idx] if all_gt_mask is not None else None
+        train_lt = all_lt_mask[train_idx] if all_lt_mask is not None else None
+        val_gt = all_gt_mask[val_idx] if all_gt_mask is not None else None
+        val_lt = all_lt_mask[val_idx] if all_lt_mask is not None else None
 
         # Create datasets
-        train_dps, _ = _create_molecule_datapoints(df_train[smiles_column].tolist(), train_targets, train_extra)
-        val_dps, _ = _create_molecule_datapoints(df_val[smiles_column].tolist(), val_targets, val_extra)
+        train_dps, _ = _create_molecule_datapoints(
+            df_train[smiles_column].tolist(), train_targets, train_extra,
+            gt_mask=train_gt, lt_mask=train_lt,
+        )
+        val_dps, _ = _create_molecule_datapoints(
+            df_val[smiles_column].tolist(), val_targets, val_extra,
+            gt_mask=val_gt, lt_mask=val_lt,
+        )
         train_dataset, val_dataset = data.MoleculeDataset(train_dps), data.MoleculeDataset(val_dps)
 
         # Scale features/targets
@@ -675,6 +762,7 @@ if __name__ == "__main__":
             hyperparameters, task=task, num_classes=num_classes, n_targets=n_targets,
             n_extra_descriptors=n_extra, x_d_transform=x_d_transform,
             output_transform=output_transform, task_weights=task_weights,
+            use_bounded_loss=use_bounded_loss,
         )
 
         # Train model (with optional two-phase foundation training)
@@ -1005,6 +1093,8 @@ if __name__ == "__main__":
         # Foundation model provenance (for tracking/reproducibility)
         "from_foundation": hyperparameters.get("from_foundation", None),
         "freeze_mpnn_epochs": hyperparameters.get("freeze_mpnn_epochs", 0),
+        # Bounded-loss censoring config (None when no mask columns were found)
+        "bound_columns": resolved_bound_columns if use_bounded_loss else None,
     }
     joblib.dump(ensemble_metadata, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
 
