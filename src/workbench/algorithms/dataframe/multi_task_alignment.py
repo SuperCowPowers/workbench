@@ -80,9 +80,7 @@ class MultiTaskAlignment:
 
         if auxiliaries is None:
             reserved = {id_column, "smiles", primary}
-            auxiliaries = [
-                c for c in df.columns if c not in reserved and pd.api.types.is_numeric_dtype(df[c])
-            ]
+            auxiliaries = [c for c in df.columns if c not in reserved and pd.api.types.is_numeric_dtype(df[c])]
         else:
             for aux in auxiliaries:
                 if aux not in df.columns:
@@ -114,10 +112,7 @@ class MultiTaskAlignment:
             log.warning(f"Dropping {dup_mask.sum()} duplicate {id_column!r} value(s) (keeping first)")
             df = df.loc[~dup_mask].copy()
 
-        log.info(
-            f"MultiTaskAlignment: {len(df)} compounds, primary={primary!r}, "
-            f"auxiliaries={self.auxiliaries}"
-        )
+        log.info(f"MultiTaskAlignment: {len(df)} compounds, primary={primary!r}, " f"auxiliaries={self.auxiliaries}")
 
         self._prox = FingerprintProximity(
             df,
@@ -230,9 +225,7 @@ class MultiTaskAlignment:
         result.loc[result[self.id_column].isin(primary_ids), "tanimoto_to_primary"] = 1.0
 
         # Z-scored "predicted primary" from top-k primary-having neighbors
-        primary_nbrs = primary_nbrs.sort_values(
-            [self.id_column, "similarity"], ascending=[True, False]
-        )
+        primary_nbrs = primary_nbrs.sort_values([self.id_column, "similarity"], ascending=[True, False])
         primary_nbrs["_rank"] = primary_nbrs.groupby(self.id_column).cumcount() + 1
         topk = primary_nbrs[primary_nbrs["_rank"] <= self.k_neighbors].copy()
 
@@ -283,9 +276,7 @@ class MultiTaskAlignment:
             res_abs_p95 = float(residuals.abs().quantile(0.95)) if len(residuals) else float("nan")
 
             overlap, _ = _assess_overlap(pearson_r, n_shared, self.min_n_shared)
-            extension, _ = _assess_extension(
-                pearson_r, n_aux_only, n_primary, self.extension_ratio_threshold
-            )
+            extension, _ = _assess_extension(pearson_r, n_aux_only, n_primary, self.extension_ratio_threshold)
             recommendation, _ = _combine_assessments(overlap, extension)
 
             rows.append(
