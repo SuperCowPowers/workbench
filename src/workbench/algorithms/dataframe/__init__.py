@@ -10,7 +10,7 @@ from .feature_space_proximity import FeatureSpaceProximity
 from .fingerprint_proximity import FingerprintProximity
 from .projection_2d import Projection2D
 from .smart_aggregator import smart_aggregator
-from .dataset_comparison import DatasetComparison
+from .multi_task_alignment import MultiTaskAlignment
 
 __all__ = [
     "Proximity",
@@ -18,5 +18,5 @@ __all__ = [
     "FingerprintProximity",
     "Projection2D",
     "smart_aggregator",
-    "DatasetComparison",
+    "MultiTaskAlignment",
 ]

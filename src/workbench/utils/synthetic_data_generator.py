@@ -166,9 +166,10 @@ class SyntheticDataGenerator:
         overlap: str = "medium",
         alignment: str = "high",
     ) -> tuple[pd.DataFrame, pd.DataFrame]:
-        """Get reference/query DataFrames for DatasetComparison testing.
+        """Get reference/query DataFrames for MultiTaskAlignment testing.
 
-        Returns a (reference, query) pair where:
+        Returns a (reference, query) pair (caller can build a wide multi-task
+        DataFrame from these for ``MultiTaskAlignment``) where:
         - The **reference** is always the base partition (40% of AQSol)
         - The **query** partition is selected by `overlap` (chemical space similarity to base)
         - Target values in the query are dynamically modified by `alignment` level

@@ -25,9 +25,9 @@ Per-tier construction
 * Band selections capped at --max-aux (default 1,558) via deterministic
   random sample (--seed) when more candidates exist than the cap.
 
-Approach: run DatasetComparison with logd as reference and logp as query, so
-each LogP compound gets a per-row Tanimoto-to-LogD score. Filter by band, cap,
-merge with the LogD primary, write CSV.
+Approach: build a MultiTaskAlignment with logd as primary and logp as aux. Each
+LogP-only row in the unified results gets a `tanimoto_to_primary` score. Filter
+by band, cap, merge with the LogD primary, write CSV.
 
 Output: output/experiments/logp_logd_overlap_<suffix>.csv
 """
@@ -38,7 +38,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from workbench.algorithms.dataframe import DatasetComparison
+from workbench.algorithms.dataframe import MultiTaskAlignment
 
 log = logging.getLogger("workbench")
 
@@ -58,7 +58,7 @@ TIERS = [
 
 
 def build_one(
-    dc: DatasetComparison,
+    mta: MultiTaskAlignment,
     logp: pd.DataFrame,
     logd: pd.DataFrame,
     suffix: str,
@@ -67,15 +67,18 @@ def build_one(
     max_aux: int,
     seed: int,
 ) -> Path:
-    """Build a single tier CSV. Reuses the already-built DatasetComparison model."""
-    results = dc.results()
-    logp_scored = results[results["dataset"] == "query"].copy()
+    """Build a single tier CSV. Reuses the already-built MultiTaskAlignment model."""
+    results = mta.results()
+    # LogP-only rows in the unified results — `tanimoto_to_primary` is best Tanimoto to any LogD compound.
+    logp_scored = results[results["logp"].notna()].copy()
 
     # Inclusive band [min, max]. The high tier ([0.7, 1.0]) naturally captures
     # exact-SMILES compounds (Tanimoto == 1.0); their merged rows show both
     # logp and logd populated. Lower tiers (< 1.0) by definition have no
     # smiles in common with LogD.
-    band_mask = (logp_scored["tanimoto_sim"] >= tanimoto_min) & (logp_scored["tanimoto_sim"] <= tanimoto_max)
+    band_mask = (logp_scored["tanimoto_to_primary"] >= tanimoto_min) & (
+        logp_scored["tanimoto_to_primary"] <= tanimoto_max
+    )
     band = logp_scored.loc[band_mask].copy()
 
     n_band_total = len(band)
@@ -84,7 +87,7 @@ def build_one(
     log.info(
         f"[{suffix}]  Band [{tanimoto_min:.2f}, {tanimoto_max:.2f}]  "
         f"candidates={n_band_total:,}  selected={len(band):,}  "
-        f"sim_range={band['tanimoto_sim'].min():.3f}-{band['tanimoto_sim'].max():.3f}"
+        f"sim_range={band['tanimoto_to_primary'].min():.3f}-{band['tanimoto_to_primary'].max():.3f}"
     )
 
     # Take selected LogP rows and outer-merge with LogD primary.
@@ -122,14 +125,21 @@ def main(max_aux: int, seed: int, only: list[str] | None) -> None:
     logp_ids = logp.assign(id=logp["id"].astype(str).radd("logp_"))
     logd_ids = logd.assign(id=logd["id"].astype(str).radd("logd_"))
 
-    # Build the comparison once (logd=ref, logp=query) — gives each LogP a Tanimoto-to-LogD score.
-    # All three tiers are derived from the same scored set, so we only build the FP/UMAP model once.
-    log.info("Building DatasetComparison (logd=reference, logp=query) ...")
-    dc = DatasetComparison(
-        df_reference=logd_ids[["id", "smiles", "logd"]],
-        df_query=logp_ids[["id", "smiles", "logp"]],
-        reference_target="logd",
-        query_target="logp",
+    # Wide multi-task DataFrame: LogD-only rows + LogP-only rows. The shared FP/UMAP model
+    # is built once, and every LogP row gets a tanimoto_to_primary score against LogD.
+    mt_df = pd.concat(
+        [
+            logd_ids[["id", "smiles"]].assign(logd=logd_ids["logd"]),
+            logp_ids[["id", "smiles"]].assign(logp=logp_ids["logp"]),
+        ],
+        ignore_index=True,
+    )
+
+    log.info("Building MultiTaskAlignment (primary=logd, aux=logp) ...")
+    mta = MultiTaskAlignment(
+        mt_df,
+        primary="logd",
+        auxiliaries=["logp"],
         id_column="id",
     )
 
@@ -138,7 +148,7 @@ def main(max_aux: int, seed: int, only: list[str] | None) -> None:
         raise ValueError(f"--only filtered out all tiers; valid suffixes: {[t[0] for t in TIERS]}")
 
     for suffix, lo, hi in selected_tiers:
-        build_one(dc, logp, logd, suffix, lo, hi, max_aux, seed)
+        build_one(mta, logp, logd, suffix, lo, hi, max_aux, seed)
 
 
 if __name__ == "__main__":

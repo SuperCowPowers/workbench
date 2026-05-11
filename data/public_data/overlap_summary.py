@@ -10,13 +10,11 @@ a LogD-only model. That depends on two things:
                  Strong agreement suggests easy auxiliary signal; mild disagreement
                  is exactly what multi-task learning can exploit.
 
-Thin CLI wrapper around `workbench.algorithms.dataframe.DatasetComparison`:
+Thin CLI wrapper around `workbench.algorithms.dataframe.MultiTaskAlignment`:
 
-    DatasetComparison(logp, logd,
-                      reference_target="logp", query_target="logd",
-                      id_column="id")
+    MultiTaskAlignment(df, primary="logd", auxiliaries=["logp"], id_column="id")
 
-We then print `dc.summary()` and the multi-task verdict. Per-compound details
+We then print the per-aux summary and the multi-task verdict. Per-compound details
 are written to `output/overlap_summary.csv` for downstream slicing/plotting.
 """
 
@@ -25,7 +23,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from workbench.algorithms.dataframe import DatasetComparison
+from workbench.algorithms.dataframe import MultiTaskAlignment
 
 log = logging.getLogger("workbench")
 
@@ -36,79 +34,39 @@ LOGD_PATH = OUTPUT_DIR / "logd" / "logd_all.csv"
 SUMMARY_CSV = OUTPUT_DIR / "overlap_summary.csv"
 
 
-def _print_summary(s: dict) -> None:
+def _print_summary(summary_row: pd.Series, n_logp: int, n_logd: int) -> None:
     print("\n" + "=" * 72)
-    print("Dataset Comparison Summary  (reference=LogP, query=LogD)")
+    print("MultiTaskAlignment Summary  (primary=LogD, auxiliary=LogP)")
     print("=" * 72)
-    print(f"  Reference (LogP):  {s['n_reference']:>7,} compounds")
-    print(f"  Query (LogD):      {s['n_query']:>7,} compounds")
+    print(f"  Primary (LogD):    {n_logd:>7,} compounds")
+    print(f"  Auxiliary (LogP):  {n_logp:>7,} compounds")
+    print(f"  Shared compounds:  {int(summary_row['n_shared']):>7,}")
+    print(f"  LogP-only:         {int(summary_row['n_aux_only']):>7,}")
 
-    t = s["tanimoto"]
-    print("\nBest LogD->LogP Tanimoto (ECFP4)")
-    print(f"  mean={t['mean']:.3f}  median={t['median']:.3f}  min={t['min']:.3f}  max={t['max']:.3f}")
+    print("\nLabel correlation on shared compounds")
+    r = summary_row["pearson_r"]
+    if pd.notna(r):
+        print(f"  Pearson r = {r:.3f}  ({summary_row['r_confidence']} confidence)")
+    else:
+        print(f"  Pearson r = N/A  ({summary_row['r_confidence']})")
 
-    print("\nCoverage at similarity thresholds")
-    for label, b in s["coverage"].items():
-        print(f"  {label}  n={b['count']:>6,}  ({100 * b['fraction']:5.1f}% of LogD)")
+    print("\nChemical-space coverage (LogP -> nearest LogD)")
+    print(f"  mean Tanimoto:        {summary_row['tanimoto_coverage_mean']:.3f}")
+    print(f"  fraction sim >= 0.50: {100 * summary_row['frac_coverage_ge_05']:5.1f}%")
+    print(f"  fraction sim >= 0.30: {100 * summary_row['frac_coverage_ge_03']:5.1f}%")
 
-    if s["residual"]:
-        r = s["residual"]
-        print("\nResidual = LogD - median(LogP near-neighbors)")
-        print(
-            f"  n={r['n']:,}  mean={r['mean']:+.3f}  median={r['median']:+.3f}  "
-            f"|res|_mean={r['abs_mean']:.3f}  |res|_p95={r['abs_p95']:.3f}"
-        )
-
-    if s["residual_by_sim_band"]:
-        print("\nResidual by similarity band  (does agreement tighten as similarity rises?)")
-        print(f"  {'sim band':>14s}  {'n':>6s}  {'mean res':>10s}  {'|res| mean':>11s}  {'|res| p95':>11s}")
-        for b in reversed(s["residual_by_sim_band"]):  # descending sim
-            band = f"[{b['sim_lo']:.2f}, {b['sim_hi']:.2f})"
-            print(
-                f"  {band:>14s}  {b['n']:>6,}  {b['residual_mean']:>+9.3f}  "
-                f"{b['residual_abs_mean']:>10.3f}  {b['residual_abs_p95']:>10.3f}"
-            )
-
-    o = s["exact_smiles_overlap"]
-    print(
-        f"\nExact SMILES intersection: {o['count']:,}  "
-        f"({100 * o['fraction_of_query']:.1f}% of LogD, {100 * o['fraction_of_reference']:.1f}% of LogP)"
-    )
-    if "pearson" in o:
-        print("  LogP vs LogD on shared compounds:")
-        print(f"    Pearson correlation: {o['pearson']:.3f}")
-        print(f"    Mean(LogP - LogD):   {o['mean_diff']:+.3f}")
-        print(f"    |LogP - LogD| mean:  {o['abs_mean_diff']:.3f}")
+    print("\nZ-scored residual on aux-having rows")
+    print(f"  |residual| mean: {summary_row['residual_abs_mean']:.3f}")
+    print(f"  |residual| p95:  {summary_row['residual_abs_p95']:.3f}")
 
 
-def _multitask_verdict(s: dict) -> None:
+def _print_verdict(summary_row: pd.Series) -> None:
     print("\n" + "=" * 72)
     print("Multi-Task Recommendation")
     print("=" * 72)
-    cov_07 = s["coverage"].get(">= 0.70", {}).get("fraction", 0.0)
-    cov_05 = s["coverage"].get(">= 0.50", {}).get("fraction", 0.0)
-    corr = s["exact_smiles_overlap"].get("pearson", float("nan"))
-
-    print(f"  LogD compounds with a LogP near-neighbor (Tanimoto >= 0.70): {100*cov_07:.1f}%")
-    print(f"  LogD compounds with a LogP near-neighbor (Tanimoto >= 0.50): {100*cov_05:.1f}%")
-    print(f"  LogP <-> LogD Pearson on exact-SMILES overlap: {corr:.3f}")
-    print()
-    if cov_05 > 0.8 and corr > 0.5:
-        verdict = (
-            "Strong overlap and decent LogP<->LogD correlation — a multi-task "
-            "chemprop model should benefit from the LogP auxiliary task."
-        )
-    elif cov_05 > 0.6:
-        verdict = (
-            "Moderate overlap — multi-task should help on the covered subset; "
-            "consider a hold-out split where LogD test compounds have LogP coverage."
-        )
-    else:
-        verdict = (
-            "Limited overlap — LogP and LogD occupy partially different chemical spaces. "
-            "Multi-task value will hinge on representation transfer rather than direct neighbor support."
-        )
-    print(f"  -> {verdict}")
+    print(f"  Overlap verdict:    {summary_row['overlap']}")
+    print(f"  Extension verdict:  {summary_row['extension']}")
+    print(f"  Recommendation:     {summary_row['recommendation']}")
 
 
 def main() -> None:
@@ -126,22 +84,40 @@ def main() -> None:
     logp = logp.assign(id=logp["id"].astype(str).radd("logp_"))
     logd = logd.assign(id=logd["id"].astype(str).radd("logd_"))
 
-    dc = DatasetComparison(
-        logp[["id", "smiles", "logp"]],
-        logd[["id", "smiles", "logd"]],
-        reference_target="logp",
-        query_target="logd",
+    # Build a wide multi-task DataFrame: one row per source compound with NaN where missing
+    mt_df = pd.concat(
+        [
+            logd[["id", "smiles"]].assign(logd=logd["logd"]),
+            logp[["id", "smiles"]].assign(logp=logp["logp"]),
+        ],
+        ignore_index=True,
+    )
+
+    mta = MultiTaskAlignment(
+        mt_df,
+        primary="logd",
+        auxiliaries=["logp"],
         id_column="id",
     )
 
-    s = dc.summary()
-    _print_summary(s)
-    _multitask_verdict(s)
+    summary = mta.summary()
+    summary_row = summary.iloc[0]
+    _print_summary(summary_row, n_logp=len(logp), n_logd=len(logd))
+    _print_verdict(summary_row)
 
-    results = dc.results()
+    results = mta.results()
     keep = [
         c
-        for c in ["id", "smiles", "dataset", "logp", "logd", "x", "y", "tanimoto_sim", "target_residual"]
+        for c in [
+            "id",
+            "smiles",
+            "logd",
+            "logp",
+            "x",
+            "y",
+            "tanimoto_to_primary",
+            "residual_logp",
+        ]
         if c in results.columns
     ]
     results[keep].to_csv(SUMMARY_CSV, index=False)
