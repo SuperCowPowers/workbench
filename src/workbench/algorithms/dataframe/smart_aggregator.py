@@ -10,7 +10,7 @@ import logging
 log = logging.getLogger("workbench")
 
 
-def smart_aggregator(df: pd.DataFrame, target_rows: int = 5000, outlier_column: str = "residual") -> pd.DataFrame:
+def smart_aggregator(df: pd.DataFrame, target_rows: int = 50000, outlier_column: str = "residual") -> pd.DataFrame:
     """
     Reduce DataFrame rows by aggregating similar rows based on numeric column similarity.
 
@@ -36,11 +36,9 @@ def smart_aggregator(df: pd.DataFrame, target_rows: int = 5000, outlier_column: 
     # Preserve original column order
     original_columns = df.columns.tolist()
 
-    # If already at or below target, just add the count column and return
+    # If already at or below target, just return the dataframe
     if n_rows <= target_rows:
-        result = df.copy()
-        result["aggregation_count"] = 1
-        return result
+        return df
 
     log.info(f"smart_aggregator: Reducing {n_rows} rows to ~{target_rows} rows")
 
@@ -103,7 +101,7 @@ if __name__ == "__main__":
 
     # Create test data with clusters
     np.random.seed(42)
-    n_samples = 10000
+    n_samples = 100000
 
     # Create 3 distinct clusters
     cluster_1 = np.random.randn(n_samples // 3, 3) + np.array([0, 0, 0])
