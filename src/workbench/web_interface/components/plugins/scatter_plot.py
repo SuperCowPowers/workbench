@@ -396,12 +396,17 @@ class ScatterPlot(PluginInterface):
         # clientside callback moves onto the hovered marker. Same renderer as the
         # data (WebGL) so z-order is deterministic: last trace draws on top.
         ring_size = float(np.asarray(marker_sizes).max()) + 4
-        figure.add_trace(go.Scattergl(
-            x=[None], y=[None], mode="markers", hoverinfo="skip", showlegend=False,
-            name=_HOVER_OVERLAY_NAME,
-            marker=dict(size=ring_size, color="rgba(0,0,0,0)",
-                        line=dict(color="white", width=3)),
-        ))
+        figure.add_trace(
+            go.Scattergl(
+                x=[None],
+                y=[None],
+                mode="markers",
+                hoverinfo="skip",
+                showlegend=False,
+                name=_HOVER_OVERLAY_NAME,
+                marker=dict(size=ring_size, color="rgba(0,0,0,0)", line=dict(color="white", width=3)),
+            )
+        )
 
         # Set up axes.
         if self.show_axes:

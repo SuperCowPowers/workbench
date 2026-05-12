@@ -21,18 +21,18 @@ from dash import Input, Output, callback, clientside_callback, dcc, html, no_upd
 from dash.exceptions import PreventUpdate
 
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
-from workbench.web_interface.utils.clientside_callbacks import (
-    external_highlight_callback,
-    hover_ring_overlay_callback,
-)
-
-_HOVER_OVERLAY_NAME = "__hover_overlay__"
 from workbench.web_interface.components.plugin_interface import (
     PluginInputType,
     PluginInterface,
     PluginPage,
 )
 from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.web_interface.utils.clientside_callbacks import (
+    external_highlight_callback,
+    hover_ring_overlay_callback,
+)
+
+_HOVER_OVERLAY_NAME = "__hover_overlay__"
 
 log = logging.getLogger("workbench")
 
@@ -359,12 +359,17 @@ class MultiTaskAlignmentMap(PluginInterface):
     @staticmethod
     def _add_hover_overlay(figure: go.Figure) -> None:
         """Append a hidden single-point ring trace for the clientside hover callback."""
-        figure.add_trace(go.Scatter(
-            x=[None], y=[None], mode="markers", hoverinfo="skip", showlegend=False,
-            name=_HOVER_OVERLAY_NAME,
-            marker=dict(size=16, color="rgba(0,0,0,0)",
-                        line=dict(color="white", width=3)),
-        ))
+        figure.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="markers",
+                hoverinfo="skip",
+                showlegend=False,
+                name=_HOVER_OVERLAY_NAME,
+                marker=dict(size=16, color="rgba(0,0,0,0)", line=dict(color="white", width=3)),
+            )
+        )
 
     @staticmethod
     def _apply_layout(figure: go.Figure) -> None:

@@ -255,12 +255,17 @@ class ConfusionTriangle(PluginInterface):
             )
 
         # Hover-ring overlay (last trace, so it draws on top via Scattergl order)
-        figure.add_trace(go.Scattergl(
-            x=[None], y=[None], mode="markers", hoverinfo="skip", showlegend=False,
-            name=_HOVER_OVERLAY_NAME,
-            marker=dict(size=16, color="rgba(0,0,0,0)",
-                        line=dict(color="white", width=3)),
-        ))
+        figure.add_trace(
+            go.Scattergl(
+                x=[None],
+                y=[None],
+                mode="markers",
+                hoverinfo="skip",
+                showlegend=False,
+                name=_HOVER_OVERLAY_NAME,
+                marker=dict(size=16, color="rgba(0,0,0,0)", line=dict(color="white", width=3)),
+            )
+        )
 
         # Vertex labels + title annotation below the triangle
         pad = 0.03
