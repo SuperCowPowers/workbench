@@ -609,12 +609,17 @@ class EndpointCore(Artifact):
         target_list = targets if isinstance(targets, list) else [targets]
         primary_target = target_list[0]
 
-        # If we don't have a smiles column, try to merge it from the FeatureSet
-        if "smiles" not in out_of_fold_df.columns and "smiles" in fs.columns:
-            fs_df = fs.query(f'SELECT {fs.id_column}, "smiles" FROM "{fs.athena_table}"')
-            if "smiles" in fs_df.columns:
-                self.log.info("Merging 'smiles' column from FeatureSet into out-of-fold predictions.")
-                out_of_fold_df = out_of_fold_df.merge(fs_df, on=fs.id_column, how="left")
+        # Templates don't save smiles or user-specified meta columns to
+        # validation_predictions.csv — merge them in from the FeatureSet so
+        # cross_fold captures match the live-inference column set.
+        meta_cols = self.workbench_meta().get("inference_meta", []) or []
+        merge_candidates = ["smiles"] + [c for c in meta_cols if c != "smiles"]
+        to_merge = [c for c in merge_candidates if c not in out_of_fold_df.columns and c in fs.columns]
+        if to_merge:
+            quoted = ", ".join(f'"{c}"' for c in to_merge)
+            fs_df = fs.query(f'SELECT {fs.id_column}, {quoted} FROM "{fs.athena_table}"')
+            self.log.info(f"Merging columns from FeatureSet into out-of-fold predictions: {to_merge}")
+            out_of_fold_df = out_of_fold_df.merge(fs_df, on=fs.id_column, how="left")
 
         # Collect UQ columns (q_*, confidence) for additional tracking (used for hashing)
         additional_columns = [col for col in out_of_fold_df.columns if col.startswith("q_") or col == "confidence"]
@@ -1099,6 +1104,12 @@ class EndpointCore(Artifact):
         # Add smiles column if present
         if "smiles" in cols:
             output_columns.append("smiles")
+
+        # Add user-specified passthrough columns (workbench_meta["inference_meta"])
+        meta_cols = self.workbench_meta().get("inference_meta", []) or []
+        for c in meta_cols:
+            if c in cols and c not in output_columns:
+                output_columns.append(c)
 
         # Write the predictions to S3
         output_file = f"{inference_capture_path}/inference_predictions.csv"
