@@ -1,4 +1,3 @@
-import base64
 import numpy as np
 import pandas as pd
 from dash import dcc, html, callback, clientside_callback, Input, Output, no_update
@@ -7,6 +6,7 @@ from dash.exceptions import PreventUpdate
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
+from workbench.web_interface.utils import circle_overlay_data_uri
 from workbench.utils.plot_utils import prediction_intervals
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
 from workbench.utils.clientside_callbacks import circle_overlay_callback
@@ -19,11 +19,7 @@ class ScatterPlot(PluginInterface):
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
 
-    # Pre-computed circle overlay SVG
-    _circle_svg = """<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" style="overflow: visible;">
-        <circle cx="50" cy="50" r="10" stroke="rgba(255, 255, 255, 1)" stroke-width="3" fill="none" />
-    </svg>"""
-    _circle_data_uri = f"data:image/svg+xml;base64,{base64.b64encode(_circle_svg.encode('utf-8')).decode('utf-8')}"
+    _circle_data_uri = circle_overlay_data_uri(marker_size=15)
 
     def __init__(self, show_axes: bool = True, show_controls: bool = True):
         """Initialize the Scatter Plot Plugin
