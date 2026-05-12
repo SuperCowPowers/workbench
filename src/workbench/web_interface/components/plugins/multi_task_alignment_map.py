@@ -21,8 +21,12 @@ from dash import Input, Output, callback, clientside_callback, dcc, html, no_upd
 from dash.exceptions import PreventUpdate
 
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
-from workbench.utils.clientside_callbacks import circle_overlay_callback, external_highlight_callback
-from workbench.web_interface.utils import circle_overlay_data_uri
+from workbench.web_interface.utils.clientside_callbacks import (
+    external_highlight_callback,
+    hover_ring_overlay_callback,
+)
+
+_HOVER_OVERLAY_NAME = "__hover_overlay__"
 from workbench.web_interface.components.plugin_interface import (
     PluginInputType,
     PluginInterface,
@@ -54,8 +58,6 @@ class MultiTaskAlignmentMap(PluginInterface):
         [0.75, "rgb(225, 99, 71)"],
         [1.0, "rgb(220, 60, 60)"],
     ]
-
-    _circle_data_uri = circle_overlay_data_uri(marker_size=15)
 
     def __init__(
         self,
@@ -92,7 +94,6 @@ class MultiTaskAlignmentMap(PluginInterface):
     def create_component(self, component_id: str) -> html.Div:
         self.component_id = component_id
         graph_id = f"{component_id}-graph"
-        overlay_id = f"{component_id}-overlay"
         molecule_tt_id = f"{component_id}-molecule-tooltip"
         table_id = f"{component_id}-table"
         store_id = f"{component_id}-hover-store"
@@ -135,19 +136,16 @@ class MultiTaskAlignmentMap(PluginInterface):
                     clear_on_unhover=True,
                 ),
                 dcc.Tooltip(
-                    id=overlay_id,
-                    background_color="rgba(0,0,0,0)",
-                    border_color="rgba(0,0,0,0)",
-                    direction="bottom",
-                    loading_text="",
-                ),
-                dcc.Tooltip(
                     id=molecule_tt_id,
                     background_color="rgba(0,0,0,0)",
                     border_color="rgba(0,0,0,0)",
                     direction="bottom",
                     loading_text="",
                 ),
+                # Dummy output target for the hover-ring clientside callback
+                # (the JS does an imperative Plotly.restyle and returns no_update,
+                # so this Store is never actually written).
+                dcc.Store(id=f"{component_id}-hover-circle-dummy-output"),
             ],
             style={"display": "flex", "flexDirection": "column"},
         )
@@ -216,6 +214,11 @@ class MultiTaskAlignmentMap(PluginInterface):
     # ------------------------------------------------------------------
 
     def _build_figure(self, aux: str) -> go.Figure:
+        # NOTE: traces below use go.Scatter (SVG), not go.Scattergl (WebGL).
+        # The table-row-click highlight (see external_highlight_callback) needs
+        # per-point DOM <path> elements to compute pixel position; WebGL points
+        # are canvas pixels with no DOM handle. Until we have a renderer-agnostic
+        # way to trigger Plotly hover by trace+point index, this plugin stays SVG.
         df = self.df
         figure = go.Figure()
         custom_cols = [c for c in (self.smiles_column, self.id_column) if c in df.columns]
@@ -223,6 +226,7 @@ class MultiTaskAlignmentMap(PluginInterface):
         primary_mask = df[self.primary].notna() if self.primary in df.columns else pd.Series(False, index=df.index)
         if aux is None or aux not in df.columns:
             self._add_layer(figure, df, custom_cols, name="All Compounds", color="rgba(128, 128, 128, 0.75)")
+            self._add_hover_overlay(figure)
             self._apply_layout(figure)
             return figure
 
@@ -280,7 +284,7 @@ class MultiTaskAlignmentMap(PluginInterface):
                     hoverinfo="none",
                     customdata=colored[custom_cols] if custom_cols else None,
                     marker=dict(
-                        size=15,
+                        size=12,
                         color=abs_res,
                         colorscale=self.ALIGNMENT_COLORSCALE,
                         cmin=0,
@@ -325,6 +329,7 @@ class MultiTaskAlignmentMap(PluginInterface):
                     )
                 figure.add_trace(go.Scatter(**trace_kwargs))
 
+        self._add_hover_overlay(figure)
         self._apply_layout(figure)
         return figure
 
@@ -347,9 +352,19 @@ class MultiTaskAlignmentMap(PluginInterface):
                 showlegend=True,
                 hoverinfo="none",
                 customdata=df[custom_cols] if custom_cols else None,
-                marker=dict(size=15, color=color, line=dict(color="rgba(0, 0, 0, 0.25)", width=0.5)),
+                marker=dict(size=12, color=color, line=dict(color="rgba(0, 0, 0, 0.25)", width=0.5)),
             )
         )
+
+    @staticmethod
+    def _add_hover_overlay(figure: go.Figure) -> None:
+        """Append a hidden single-point ring trace for the clientside hover callback."""
+        figure.add_trace(go.Scatter(
+            x=[None], y=[None], mode="markers", hoverinfo="skip", showlegend=False,
+            name=_HOVER_OVERLAY_NAME,
+            marker=dict(size=16, color="rgba(0,0,0,0)",
+                        line=dict(color="white", width=3)),
+        ))
 
     @staticmethod
     def _apply_layout(figure: go.Figure) -> None:
@@ -378,7 +393,6 @@ class MultiTaskAlignmentMap(PluginInterface):
 
     def register_internal_callbacks(self):
         graph_id = f"{self.component_id}-graph"
-        overlay_id = f"{self.component_id}-overlay"
         molecule_tt_id = f"{self.component_id}-molecule-tooltip"
         table_id = f"{self.component_id}-table"
         store_id = f"{self.component_id}-hover-store"
@@ -403,12 +417,11 @@ class MultiTaskAlignmentMap(PluginInterface):
             prevent_initial_call=True,
         )
 
-        # Hover circle overlay (clientside)
+        # Hover-ring overlay: JS does an imperative Plotly.restyle and returns no_update.
+        # The Store Output is a placeholder that's never actually written.
         clientside_callback(
-            circle_overlay_callback(self._circle_data_uri),
-            Output(overlay_id, "show"),
-            Output(overlay_id, "bbox"),
-            Output(overlay_id, "children"),
+            hover_ring_overlay_callback(graph_id, _HOVER_OVERLAY_NAME),
+            Output(f"{self.component_id}-hover-circle-dummy-output", "data"),
             Input(graph_id, "hoverData"),
         )
 

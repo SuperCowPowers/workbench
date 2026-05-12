@@ -8,13 +8,13 @@ from dash.exceptions import PreventUpdate
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.web_interface.utils import circle_overlay_data_uri
-from workbench.utils.clientside_callbacks import circle_overlay_callback
+from workbench.web_interface.utils.clientside_callbacks import hover_ring_overlay_callback
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
 
 # Marker style constants
 _MARKER_LINE = dict(color="rgba(0,0,0,0.25)", width=1)
 _DIMMED_MARKER = dict(size=10, color="rgba(128, 128, 128, 0.3)", line=dict(color="rgba(0,0,0,0.3)", width=1))
+_HOVER_OVERLAY_NAME = "__hover_overlay__"
 
 
 class ConfusionTriangle(PluginInterface):
@@ -28,8 +28,6 @@ class ConfusionTriangle(PluginInterface):
 
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
-
-    _circle_data_uri = circle_overlay_data_uri(marker_size=15)
 
     def __init__(self):
         """Initialize the ConfusionTriangle plugin class."""
@@ -98,19 +96,16 @@ class ConfusionTriangle(PluginInterface):
                     style={"padding": "0px 20px 10px 20px", "display": "flex", "alignItems": "center", "gap": "5px"},
                 ),
                 dcc.Tooltip(
-                    id=f"{component_id}-overlay",
-                    background_color="rgba(0,0,0,0)",
-                    border_color="rgba(0,0,0,0)",
-                    direction="bottom",
-                    loading_text="",
-                ),
-                dcc.Tooltip(
                     id=f"{component_id}-molecule-tooltip",
                     background_color="rgba(0,0,0,0)",
                     border_color="rgba(0,0,0,0)",
                     direction="bottom",
                     loading_text="",
                 ),
+                # Dummy output target for the hover-ring clientside callback
+                # (the JS does an imperative Plotly.restyle and returns no_update,
+                # so this Store is never actually written).
+                dcc.Store(id=f"{component_id}-hover-circle-dummy-output"),
             ],
             style={"height": "100%", "display": "flex", "flexDirection": "column"},
         )
@@ -259,6 +254,14 @@ class ConfusionTriangle(PluginInterface):
                 )
             )
 
+        # Hover-ring overlay (last trace, so it draws on top via Scattergl order)
+        figure.add_trace(go.Scattergl(
+            x=[None], y=[None], mode="markers", hoverinfo="skip", showlegend=False,
+            name=_HOVER_OVERLAY_NAME,
+            marker=dict(size=16, color="rgba(0,0,0,0)",
+                        line=dict(color="white", width=3)),
+        ))
+
         # Vertex labels + title annotation below the triangle
         pad = 0.03
         annotations = [
@@ -336,7 +339,7 @@ class ConfusionTriangle(PluginInterface):
         if color_col in plot_df.columns and pd.api.types.is_numeric_dtype(plot_df[color_col]):
             colorscale = self.theme_manager.colorscale("muted_heatmap")
             marker = dict(
-                size=15,
+                size=12,
                 color=plot_df[color_col],
                 colorscale=colorscale,
                 colorbar=dict(title=color_col, thickness=10, len=0.6, x=0.95, y=1.0, yanchor="top", xpad=0),
@@ -379,7 +382,7 @@ class ConfusionTriangle(PluginInterface):
                         hoverinfo="none",
                         name=cat,
                         customdata=cdata,
-                        marker=dict(size=15, color=colors[i % len(colors)], line=_MARKER_LINE),
+                        marker=dict(size=12, color=colors[i % len(colors)], line=_MARKER_LINE),
                     )
                 )
 
@@ -397,12 +400,11 @@ class ConfusionTriangle(PluginInterface):
                 raise PreventUpdate
             return self.create_ternary_plot(self.df, self.class_labels, self.proba_cols, color_value)
 
-        # Clientside callback for circle overlay - runs in browser, no server round trip
+        # Hover-ring overlay: JS does an imperative Plotly.restyle and returns no_update.
+        # The Store Output is a placeholder that's never actually written.
         clientside_callback(
-            circle_overlay_callback(self._circle_data_uri),
-            Output(f"{self.component_id}-overlay", "show"),
-            Output(f"{self.component_id}-overlay", "bbox"),
-            Output(f"{self.component_id}-overlay", "children"),
+            hover_ring_overlay_callback(f"{self.component_id}-graph", _HOVER_OVERLAY_NAME),
+            Output(f"{self.component_id}-hover-circle-dummy-output", "data"),
             Input(f"{self.component_id}-graph", "hoverData"),
         )
 
@@ -449,7 +451,7 @@ if __name__ == "__main__":
     from workbench.cached.cached_model import CachedModel
 
     model = CachedModel("aqsol-mol-class")
-    df = model.get_inference_predictions()
+    df = model.get_inference_predictions("auto_inference")
     class_labels = model.class_labels()
     target_col = model.target()
     proba_cols = [f"{label}_proba" for label in class_labels]

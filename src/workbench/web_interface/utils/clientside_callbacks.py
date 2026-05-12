@@ -5,33 +5,27 @@ Using clientside callbacks avoids server round-trips for simple UI interactions.
 """
 
 
-def circle_overlay_callback(circle_data_uri: str) -> str:
-    """Return JS that shows a white circle overlay on scatter plot hover.
+def hover_ring_overlay_callback(graph_id: str, overlay_name: str = "__hover_overlay__") -> str:
+    """Return JS that moves a hidden overlay trace to the hovered point.
 
-    Args:
-        circle_data_uri (str): Base64-encoded SVG data URI for the circle image.
-
-    Returns:
-        str: JavaScript function string for use with clientside_callback.
+    Pairs with a single-point trace (named ``overlay_name``) appended to the figure.
+    The callback uses ``Plotly.restyle`` to set the overlay's x/y to the hovered
+    point's coordinates (or null on unhover). Since the ring is a real Plotly
+    point, alignment is exact. Same pattern extends to line overlays (mode="lines")
+    for things like dynamic node-to-node links.
     """
     return f"""
     function(hoverData) {{
-        if (!hoverData) {{
-            return [false, window.dash_clientside.no_update, window.dash_clientside.no_update];
-        }}
-        var bbox = hoverData.points[0].bbox;
-        var centerX = (bbox.x0 + bbox.x1) / 2;
-        var centerY = (bbox.y0 + bbox.y1) / 2;
-        var adjustedBbox = {{
-            x0: centerX - 50, x1: centerX + 50,
-            y0: centerY - 162, y1: centerY - 62
-        }};
-        var imgElement = {{
-            type: 'Img',
-            namespace: 'dash_html_components',
-            props: {{ src: '{circle_data_uri}', style: {{width: '100px', height: '100px'}} }}
-        }};
-        return [true, adjustedBbox, [imgElement]];
+        var plotDiv = (document.getElementById('{graph_id}') || {{}}).querySelector
+            && document.getElementById('{graph_id}').querySelector('.js-plotly-plot');
+        if (!plotDiv || !plotDiv.data || !window.Plotly) return window.dash_clientside.no_update;
+        var idx = plotDiv.data.findIndex(function(t) {{ return t.name === '{overlay_name}'; }});
+        if (idx < 0) return window.dash_clientside.no_update;
+        var pt = (hoverData && hoverData.points && hoverData.points[0].curveNumber !== idx)
+            ? hoverData.points[0] : null;
+        window.Plotly.restyle(plotDiv,
+            {{x: [[pt ? pt.x : null]], y: [[pt ? pt.y : null]]}}, [idx]);
+        return window.dash_clientside.no_update;
     }}
     """
 
@@ -43,6 +37,9 @@ def external_highlight_callback(graph_id: str) -> str:
     ``<path>`` element, reads its bounding rect, and dispatches a ``mousemove``
     on Plotly's drag layer. This triggers Plotly's own hover machinery, which
     computes the correct bbox internally — no manual pixel math needed.
+
+    Requires SVG-rendered scatter traces (``go.Scatter``, not ``go.Scattergl``)
+    since it relies on per-point ``<path>`` DOM elements being queryable.
 
     Args:
         graph_id (str): DOM id of the dcc.Graph wrapper element.

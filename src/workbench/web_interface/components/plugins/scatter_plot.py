@@ -6,10 +6,13 @@ from dash.exceptions import PreventUpdate
 
 # Workbench Imports
 from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
-from workbench.web_interface.utils import circle_overlay_data_uri
 from workbench.utils.plot_utils import prediction_intervals
 from workbench.utils.chem_utils.vis import molecule_hover_tooltip
-from workbench.utils.clientside_callbacks import circle_overlay_callback
+from workbench.web_interface.utils.clientside_callbacks import hover_ring_overlay_callback
+
+# Name of the hidden overlay trace used for hover ring highlighting.
+# The clientside callback finds the trace by this name and restyles its x/y.
+_HOVER_OVERLAY_NAME = "__hover_overlay__"
 
 
 class ScatterPlot(PluginInterface):
@@ -18,8 +21,6 @@ class ScatterPlot(PluginInterface):
     # Initialize this Plugin Component Class with required attributes
     auto_load_page = PluginPage.NONE
     plugin_input_type = PluginInputType.DATAFRAME
-
-    _circle_data_uri = circle_overlay_data_uri(marker_size=15)
 
     def __init__(self, show_axes: bool = True, show_controls: bool = True):
         """Initialize the Scatter Plot Plugin
@@ -141,14 +142,6 @@ class ScatterPlot(PluginInterface):
                         "gap": "5px",
                     },
                 ),
-                # Circle overlay tooltip (centered on hovered point)
-                dcc.Tooltip(
-                    id=f"{component_id}-overlay",
-                    background_color="rgba(0,0,0,0)",
-                    border_color="rgba(0,0,0,0)",
-                    direction="bottom",
-                    loading_text="",
-                ),
                 # Molecule tooltip (offset from hovered point) - only used when smiles column exists
                 dcc.Tooltip(
                     id=f"{component_id}-molecule-tooltip",
@@ -157,6 +150,10 @@ class ScatterPlot(PluginInterface):
                     direction="bottom",
                     loading_text="",
                 ),
+                # Dummy output target for the hover-ring clientside callback
+                # (the JS does an imperative Plotly.restyle and returns no_update,
+                # so this Store is never actually written).
+                dcc.Store(id=f"{component_id}-hover-circle-dummy-output"),
             ],
             style={"height": "100%", "display": "flex", "flexDirection": "column"},  # Full viewport height
         )
@@ -279,9 +276,9 @@ class ScatterPlot(PluginInterface):
 
         # Compute marker sizes based on aggregation count (if present)
         if "aggregation_count" in df.columns:
-            marker_sizes = 15 + (np.sqrt(df["aggregation_count"]) - 1) * 3
+            marker_sizes = 12 + (np.sqrt(df["aggregation_count"]) - 1) * 3
         else:
-            marker_sizes = 15
+            marker_sizes = 12
 
         # Helper to generate hover text for each point.
         def generate_hover_text(row):
@@ -395,6 +392,17 @@ class ScatterPlot(PluginInterface):
         # Now add the scatter plot data on last (on top)
         figure.add_traces(data)
 
+        # Hover-ring overlay: a hidden single-point Scattergl trace that the
+        # clientside callback moves onto the hovered marker. Same renderer as the
+        # data (WebGL) so z-order is deterministic: last trace draws on top.
+        ring_size = float(np.asarray(marker_sizes).max()) + 4
+        figure.add_trace(go.Scattergl(
+            x=[None], y=[None], mode="markers", hoverinfo="skip", showlegend=False,
+            name=_HOVER_OVERLAY_NAME,
+            marker=dict(size=ring_size, color="rgba(0,0,0,0)",
+                        line=dict(color="white", width=3)),
+        ))
+
         # Set up axes.
         if self.show_axes:
             xaxis = dict(
@@ -444,12 +452,11 @@ class ScatterPlot(PluginInterface):
 
             raise PreventUpdate
 
-        # Clientside callback for circle overlay - runs in browser, no server round trip
+        # Hover-ring overlay: the JS does an imperative Plotly.restyle and returns
+        # no_update. The Store Output is a placeholder that's never actually written.
         clientside_callback(
-            circle_overlay_callback(self._circle_data_uri),
-            Output(f"{self.component_id}-overlay", "show"),
-            Output(f"{self.component_id}-overlay", "bbox"),
-            Output(f"{self.component_id}-overlay", "children"),
+            hover_ring_overlay_callback(f"{self.component_id}-graph", _HOVER_OVERLAY_NAME),
+            Output(f"{self.component_id}-hover-circle-dummy-output", "data"),
             Input(f"{self.component_id}-graph", "hoverData"),
         )
 
