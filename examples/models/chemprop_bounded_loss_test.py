@@ -42,9 +42,9 @@ FS_NAME = "bounded_loss_test_fs"
 PUBLIC_KEY = "comp_chem/logp/logp_all"
 
 # Tunables -- these define how visible the bounded-loss effect will be.
-N_ROWS = 3000           # subsample size (keeps training fast)
+N_ROWS = 3000  # subsample size (keeps training fast)
 CENSOR_THRESHOLD = 3.0  # T: cap above which rows can be censored (top ~25% of LogP)
-CENSOR_FRACTION = 0.5   # fraction of >T rows to actually censor
+CENSOR_FRACTION = 0.5  # fraction of >T rows to actually censor
 RANDOM_SEED = 42
 
 
