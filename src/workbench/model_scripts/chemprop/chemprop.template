@@ -15,6 +15,11 @@ import json
 import os
 import time
 
+# Startup diagnostic prints (flush=True so we don't lose them if a downstream
+# step hangs/crashes before its buffer flushes). The bare-import phase below
+# is the most common source of silent inference-container startup hangs.
+print("[startup] importing heavy deps...", flush=True)
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -39,6 +44,8 @@ from uq_harness import (
     load_uq_metadata,
     predict_intervals,
 )
+
+print("[startup] heavy deps imported", flush=True)
 
 # =============================================================================
 # Default Hyperparameters
@@ -167,15 +174,19 @@ def model_fn(model_dir: str) -> dict:
     Optimized for serverless cold starts - uses direct PyTorch inference
     instead of Lightning Trainer to minimize startup time.
     """
+    print(f"[model_fn] loading from {model_dir}", flush=True)
     metadata = joblib.load(os.path.join(model_dir, "ensemble_metadata.joblib"))
+    print(f"[model_fn] metadata loaded, n_ensemble={metadata['n_ensemble']}", flush=True)
 
     # Load all ensemble models (keep on CPU for serverless compatibility)
     # ChemProp handles device placement internally
     ensemble_models = []
     for i in range(metadata["n_ensemble"]):
+        print(f"[model_fn] loading chemprop_model_{i}.pt...", flush=True)
         model = models.MPNN.load_from_file(os.path.join(model_dir, f"chemprop_model_{i}.pt"))
         model.eval()
         ensemble_models.append(model)
+    print(f"[model_fn] all {len(ensemble_models)} models loaded", flush=True)
 
     # Load UQ metadata (regression or classification confidence)
     uq_metadata = None
@@ -630,10 +641,10 @@ if __name__ == "__main__":
             gt_col, lt_col = f"{t_name}_gt", f"{t_name}_lt"
             target_meta: dict = {}
             if gt_col in all_df.columns:
-                gt_arr[:, t_idx] = all_df[gt_col].fillna(False).astype(bool).values
+                gt_arr[:, t_idx] = all_df[gt_col].fillna(0).astype(bool).values
                 target_meta["gt"] = gt_col
             if lt_col in all_df.columns:
-                lt_arr[:, t_idx] = all_df[lt_col].fillna(False).astype(bool).values
+                lt_arr[:, t_idx] = all_df[lt_col].fillna(0).astype(bool).values
                 target_meta["lt"] = lt_col
             if target_meta:
                 resolved_bound_columns[t_name] = target_meta
