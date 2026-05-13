@@ -21,7 +21,8 @@ class AGTable(PluginInterface):
     max_height = 500
     header_height = 36
     row_height = 25
-    thin_columns = {"Health", "Owner"}
+    # Thin columns: small by default (auto-size cap) but user can drag wider
+    thin_columns = {"Health": 100, "Owner": 100}
 
     def create_component(self, component_id: str, max_height: int = 500, row_selection: str = "single") -> AgGrid:
         """Create a Table Component without any data.
@@ -38,12 +39,17 @@ class AGTable(PluginInterface):
         self.max_height = max_height
 
         # AG Grid configuration for tighter rows and columns
+        column_limits = [{"colId": col, "maxWidth": w} for col, w in self.thin_columns.items()]
         grid_options = {
             "rowSelection": row_selection,
             "suppressCellFocus": True,
             "rowHeight": self.row_height,
             "defaultColDef": {"sortable": True, "filter": True, "resizable": True},
-            "autoSizeStrategy": {"type": "fitCellContents", "defaultMaxWidth": 200},
+            "autoSizeStrategy": {
+                "type": "fitCellContents",
+                "defaultMaxWidth": 400,
+                "columnLimits": column_limits,
+            },
         }
 
         self.container = AgGrid(
@@ -86,12 +92,7 @@ class AGTable(PluginInterface):
         table_data = table_df.to_dict("records")
 
         # Create column definitions for AG Grid
-        column_defs = []
-        for col in table_df.columns:
-            col_def = {"headerName": col, "field": col}
-            if col in self.thin_columns:
-                col_def["maxWidth"] = 60
-            column_defs.append(col_def)
+        column_defs = [{"headerName": col, "field": col} for col in table_df.columns]
 
         # Dynamically adjust height based on row count
         row_count = len(table_df)
