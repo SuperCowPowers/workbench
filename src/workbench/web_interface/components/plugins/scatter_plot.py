@@ -229,9 +229,7 @@ class ScatterPlot(PluginInterface):
         pred_intervals = kwargs.get("pred_intervals", True)
 
         # Create the default scatter plot
-        figure = self.create_scatter_plot(
-            self.df, x_default, y_default, color_default, regression_line, pred_intervals
-        )
+        figure = self.create_scatter_plot(self.df, x_default, y_default, color_default, regression_line, pred_intervals)
 
         # Dropdown options for x and y: use provided dropdown_columns or fallback to numeric columns
         dropdown_columns = kwargs.get("dropdown_columns", numeric_columns)
