@@ -49,6 +49,24 @@ class CachedArtifactMixin:
 
         return wrapper
 
+    def refresh(self) -> int:
+        """Invalidate all cached method results for this artifact.
+
+        Forces subsequent method calls to bypass the cache and re-fetch fresh
+        data. Useful when post-processing logic has changed but the underlying
+        artifact's Modified timestamp has not.
+
+        Returns:
+            int: Number of cache entries deleted.
+        """
+        class_name = self.__class__.__name__.lower()
+        prefix = f"{class_name}_{self.name}_"
+        keys = self.artifact_cache.list_subkeys(prefix)
+        for key in keys:
+            self.artifact_cache.delete(key)
+        self.log.info(f"Refresh: Cleared {len(keys)} cached entries for {self.name}")
+        return len(keys)
+
 
 # Example usage of CachedModel
 if __name__ == "__main__":
