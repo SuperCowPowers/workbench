@@ -1,33 +1,49 @@
-"""Bounded-loss sanity check: verify ChemProp's bounded loss path actually fires.
+"""Bounded-Loss Sanity Check (ChemProp)
 
-Builds a small synthetic FeatureSet from public LogP data with artificial
-right-censoring, then trains two ChemProp models against the same FeatureSet:
+This script verifies that ChemProp's bounded-loss path (BoundedMAE / BoundedMSE)
+fires correctly when a FeatureSet provides per-target `_gt` / `_lt` censor
+columns and the model is trained with hyperparameters={"bounded_loss": True}.
+
+It builds a small synthetic FeatureSet from public LogP data with artificial
+right-censoring, then trains two ChemProp variants against the same FeatureSet:
 
     1. logp-bounded-off  -- hyperparameters omitted (bounded_loss defaults to False)
     2. logp-bounded-on   -- hyperparameters={"bounded_loss": True}
 
-If the bounded loss machinery is working, predictions on the *artificially
-censored* rows should look very different between the two models:
+Predictions on the *artificially censored* rows should look very different:
 
     bounded_loss=False:  predictions cluster near the censor value T because the
-                         labels are exactly T and MSE/MAE punish predictions on
-                         either side of T.
+                         labels are exactly T and MAE punishes deviations in
+                         either direction.
     bounded_loss=True:   predictions are free to go above T without penalty, and
-                         since the uncensored half of the high-LogP chemistry is
-                         still present at its true (>T) value, the model can
-                         learn that high-LogP chemistry actually exists.
+                         since the uncensored half of the high-LogP chemistry
+                         remains at its true (>T) value, the model can learn
+                         that high-LogP chemistry actually exists.
 
-To make the difference visible:
-- Use a real LogP dataset (chemistry signal the model can actually learn).
+Test design notes
+-----------------
+- Use a real LogP dataset so the model has actual chemistry signal to learn.
 - Pick T at a percentile that leaves a meaningful population above the cap.
 - Censor ONLY half of the rows above T -- the other half stays at its true
   value so the bounded model has uncensored examples to learn from. Without
   any uncensored examples above T, even bounded_loss=True can't pull
   predictions above T (no information to push them there).
 
-After training, compare predictions on the originally-censored rows in the
-two endpoints' cross-fold inference dataframes -- bounded-on should show
-predictions distributed above T, bounded-off should show them piled at T.
+Verifying the bounded-loss effect after training
+------------------------------------------------
+Note: workbench stores boolean FS columns as nullable Int64, so cast logp_gt to
+bool before boolean indexing (or compare with == 1):
+
+    fs = FeatureSet("bounded_loss_test_fs").pull_dataframe()
+    fs["logp_gt"] = fs["logp_gt"].fillna(0).astype(bool)
+    off = Model("logp-bounded-off").get_inference_predictions("full_cross_fold")
+    on  = Model("logp-bounded-on" ).get_inference_predictions("full_cross_fold")
+    off_m = off.merge(fs[["id", "logp_gt", "logp_true"]], on="id")
+    on_m  = on .merge(fs[["id", "logp_gt", "logp_true"]], on="id")
+    for name, m in [("off", off_m), ("on", on_m)]:
+        c = m[m["logp_gt"]]
+        err = (c["prediction"] - c["logp_true"]).abs()
+        print(f"{name}: MAE on censored vs true = {err.mean():.3f}")
 """
 
 import numpy as np
@@ -35,24 +51,26 @@ import numpy as np
 from workbench.api import Endpoint, FeatureSet, Model, ModelFramework, ModelType, PublicData
 from workbench.core.transforms.pandas_transforms.pandas_to_features import PandasToFeatures
 
-# Flip to True to rebuild artifacts that already exist
+# Recreate Flag in case you want to recreate the artifacts
 recreate = False
 
+# Synthetic dataset tunables -- these define how visible the bounded-loss effect is
 FS_NAME = "bounded_loss_test_fs"
 PUBLIC_KEY = "comp_chem/logp/logp_all"
-
-# Tunables -- these define how visible the bounded-loss effect will be.
-N_ROWS = 3000  # subsample size (keeps training fast)
+N_ROWS = 3000           # subsample size (keeps training fast)
 CENSOR_THRESHOLD = 3.0  # T: cap above which rows can be censored (top ~25% of LogP)
-CENSOR_FRACTION = 0.5  # fraction of >T rows to actually censor
+CENSOR_FRACTION = 0.5   # fraction of >T rows to actually censor
 RANDOM_SEED = 42
 
 
-def _build_featureset() -> str:
-    """Build a synthetic FeatureSet with logp + logp_gt censoring annotation."""
-    if not recreate and FeatureSet(FS_NAME).exists():
-        return FS_NAME
+# =============================================================================
+# Build Synthetic FeatureSet (LogP with artificial right-censoring)
+# =============================================================================
+# Pulls real LogP data from public storage, censors half of the rows above T
+# (recorded logp clipped to T, logp_gt flag set), and keeps the other half at
+# their true values. logp_true is preserved for post-training analysis.
 
+if recreate or not FeatureSet(FS_NAME).exists():
     df = PublicData().get(PUBLIC_KEY)
     if df is None:
         raise RuntimeError(f"Could not load {PUBLIC_KEY} from public data")
@@ -87,73 +105,71 @@ def _build_featureset() -> str:
     to_features.set_input(df, id_column="id")
     to_features.set_output_tags(["chemprop", "bounded-loss", "synthetic", "logp"])
     to_features.transform()
-    return FS_NAME
-
-
-def _train_variant(model_name: str, bounded_loss: bool, description: str) -> None:
-    """Train one variant of the model and stand up an endpoint."""
-    tags = ["chemprop", "bounded-loss", "synthetic", "logp", "on" if bounded_loss else "off"]
-
-    if recreate or not Model(model_name).exists():
-        fs = FeatureSet(FS_NAME)
-        kwargs = {}
-        if bounded_loss:
-            kwargs["hyperparameters"] = {"bounded_loss": True}
-        m = fs.to_model(
-            name=model_name,
-            model_type=ModelType.UQ_REGRESSOR,
-            model_framework=ModelFramework.CHEMPROP,
-            target_column="logp",
-            feature_list=["smiles"],
-            description=description,
-            tags=tags,
-            **kwargs,
-        )
-        m.set_owner("BW")
-
-    if recreate or not Endpoint(model_name).exists():
-        end = Model(model_name).to_endpoint(tags=tags)
-        end.set_owner("BW")
-        end.auto_inference()
-        end.cross_fold_inference()
 
 
 # =============================================================================
-# Build FeatureSet, then train two model variants on it
+# Control Model (bounded_loss=False -- default MAE)
 # =============================================================================
-_build_featureset()
+# Trained without the bounded_loss hyperparameter so the censor labels are
+# treated as exact targets. Predictions on censored rows should cluster near
+# the cap value (T=3.0) because MAE punishes deviations in either direction.
 
-_train_variant(
-    "logp-bounded-off",
-    bounded_loss=False,
-    description=(
-        "Bounded-loss sanity check (control): standard MAE on artificially censored LogP. "
-        f"Censored rows have logp = {CENSOR_THRESHOLD} and logp_gt = True; trained without "
-        "bounded_loss hyperparameter so the censor labels are treated as exact."
-    ),
-)
+if recreate or not Model("logp-bounded-off").exists():
+    feature_set = FeatureSet(FS_NAME)
+    m = feature_set.to_model(
+        name="logp-bounded-off",
+        model_type=ModelType.UQ_REGRESSOR,
+        model_framework=ModelFramework.CHEMPROP,
+        target_column="logp",
+        feature_list=["smiles"],
+        description=(
+            "Bounded-loss sanity check (control): standard MAE on artificially censored "
+            f"LogP. Censored rows have logp = {CENSOR_THRESHOLD} and logp_gt = True; "
+            "trained without bounded_loss hyperparameter so censor labels are treated as exact."
+        ),
+        tags=["chemprop", "bounded-loss", "synthetic", "logp", "off"],
+    )
+    m.set_owner("BW")
 
-_train_variant(
-    "logp-bounded-on",
-    bounded_loss=True,
-    description=(
-        "Bounded-loss sanity check (treatment): BoundedMAE on artificially censored LogP. "
-        f"Censored rows have logp = {CENSOR_THRESHOLD} and logp_gt = True; trained with "
-        "bounded_loss=True so the censor labels are treated as lower bounds."
-    ),
-)
+# Create an Endpoint
+if recreate or not Endpoint("logp-bounded-off").exists():
+    m = Model("logp-bounded-off")
+    end = m.to_endpoint(tags=["chemprop", "bounded-loss", "synthetic", "logp", "off"])
+    end.set_owner("BW")
+    end.auto_inference()
+    end.cross_fold_inference()
 
-print(
-    "\nDone. To verify the bounded-loss effect, compare cross-fold predictions "
-    "on the censored rows between the two endpoints. NOTE: workbench stores "
-    "boolean columns as nullable Int64, so cast logp_gt to bool before "
-    "boolean indexing (or compare with == 1):\n\n"
-    "  fs   = FeatureSet('bounded_loss_test_fs').pull_dataframe()\n"
-    "  fs['logp_gt'] = fs['logp_gt'].fillna(0).astype(bool)\n"
-    "  off  = Model('logp-bounded-off').get_inference_predictions('full_cross_fold')\n"
-    "  on   = Model('logp-bounded-on' ).get_inference_predictions('full_cross_fold')\n"
-    "  off_m = off.merge(fs[['id', 'logp_gt', 'logp_true']], on='id')\n"
-    "  on_m  = on.merge(fs[['id', 'logp_gt', 'logp_true']], on='id')\n"
-    "  print('off censored preds:', off_m[off_m['logp_gt']]['prediction'].describe())\n"
-    "  print('on  censored preds:', on_m [on_m ['logp_gt']]['prediction'].describe())"
-)
+
+# =============================================================================
+# Treatment Model (bounded_loss=True -- BoundedMAE)
+# =============================================================================
+# Trained with hyperparameters={"bounded_loss": True} so the logp_gt column is
+# read by the template and censor labels become lower bounds. Predictions on
+# censored rows should spread above the cap, using the chemistry signal from
+# the uncensored half of the high-LogP rows.
+
+if recreate or not Model("logp-bounded-on").exists():
+    feature_set = FeatureSet(FS_NAME)
+    m = feature_set.to_model(
+        name="logp-bounded-on",
+        model_type=ModelType.UQ_REGRESSOR,
+        model_framework=ModelFramework.CHEMPROP,
+        target_column="logp",
+        feature_list=["smiles"],
+        description=(
+            "Bounded-loss sanity check (treatment): BoundedMAE on artificially censored "
+            f"LogP. Censored rows have logp = {CENSOR_THRESHOLD} and logp_gt = True; "
+            "trained with bounded_loss=True so censor labels are treated as lower bounds."
+        ),
+        tags=["chemprop", "bounded-loss", "synthetic", "logp", "on"],
+        hyperparameters={"bounded_loss": True},
+    )
+    m.set_owner("BW")
+
+# Create an Endpoint
+if recreate or not Endpoint("logp-bounded-on").exists():
+    m = Model("logp-bounded-on")
+    end = m.to_endpoint(tags=["chemprop", "bounded-loss", "synthetic", "logp", "on"])
+    end.set_owner("BW")
+    end.auto_inference()
+    end.cross_fold_inference()
