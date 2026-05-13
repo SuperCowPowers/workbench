@@ -377,6 +377,7 @@ class ScatterPlot(PluginInterface):
                     y=sub_df[y_col],
                     mode="markers",
                     name=cat,
+                    uid=f"cat-{cat}",
                     hoverinfo=hoverinfo,
                     hovertext=sub_hovertext,
                     hovertemplate=hovertemplate,

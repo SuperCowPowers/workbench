@@ -23,8 +23,15 @@ def hover_ring_overlay_callback(graph_id: str, overlay_name: str = "__hover_over
         if (idx < 0) return window.dash_clientside.no_update;
         var pt = (hoverData && hoverData.points && hoverData.points[0].curveNumber !== idx)
             ? hoverData.points[0] : null;
-        window.Plotly.restyle(plotDiv,
-            {{x: [[pt ? pt.x : null]], y: [[pt ? pt.y : null]]}}, [idx]);
+        var update = {{x: [[pt ? pt.x : null]], y: [[pt ? pt.y : null]]}};
+        if (pt) {{
+            // Plotly resolves per-point marker.size on the hover point when it's an array.
+            // For scalar marker.size, fall back to reading it off the trace.
+            var sz = plotDiv.data[pt.curveNumber].marker && plotDiv.data[pt.curveNumber].marker.size;
+            var pointSize = typeof pt['marker.size'] === 'number' ? pt['marker.size'] : sz;
+            if (typeof pointSize === 'number') update['marker.size'] = pointSize + 4;
+        }}
+        window.Plotly.restyle(plotDiv, update, [idx]);
         return window.dash_clientside.no_update;
     }}
     """
