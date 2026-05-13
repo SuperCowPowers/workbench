@@ -63,6 +63,7 @@ class ScatterPlot(PluginInterface):
             (f"{component_id}-y-dropdown", "value"),
             (f"{component_id}-color-dropdown", "value"),
             (f"{component_id}-regression-line", "value"),
+            (f"{component_id}-pred-intervals", "value"),
         ]
         self.signals = [(f"{component_id}-graph", "hoverData"), (f"{component_id}-graph", "clickData")]
 
@@ -132,6 +133,12 @@ class ScatterPlot(PluginInterface):
                             id=f"{component_id}-regression-line",
                             options=[{"label": " Diagonal", "value": "show"}],
                             value=[],
+                            style={"marginLeft": "20px", "display": "flex", "alignItems": "center"},
+                        ),
+                        dcc.Checklist(
+                            id=f"{component_id}-pred-intervals",
+                            options=[{"label": " Pred Intervals", "value": "show"}],
+                            value=["show"],
                             style={"marginLeft": "20px", "display": "flex", "alignItems": "center"},
                         ),
                     ],
@@ -219,9 +226,12 @@ class ScatterPlot(PluginInterface):
         default_color = "confidence" if "confidence" in self.df.columns else numeric_columns[2]
         color_default = kwargs.get("color", default_color)
         regression_line = kwargs.get("regression_line", False)
+        pred_intervals = kwargs.get("pred_intervals", True)
 
         # Create the default scatter plot
-        figure = self.create_scatter_plot(self.df, x_default, y_default, color_default, regression_line)
+        figure = self.create_scatter_plot(
+            self.df, x_default, y_default, color_default, regression_line, pred_intervals
+        )
 
         # Dropdown options for x and y: use provided dropdown_columns or fallback to numeric columns
         dropdown_columns = kwargs.get("dropdown_columns", numeric_columns)
@@ -234,10 +244,21 @@ class ScatterPlot(PluginInterface):
         color_columns = numeric_columns + cat_columns
         color_options = [{"label": col, "value": col} for col in color_columns]
 
-        # Regression line checklist value (list with "show" if enabled, empty list if disabled)
+        # Checklist values (list with "show" if enabled, empty list if disabled)
         regression_line_value = ["show"] if regression_line else []
+        pred_intervals_value = ["show"] if pred_intervals else []
 
-        return [figure, x_options, y_options, color_options, x_default, y_default, color_default, regression_line_value]
+        return [
+            figure,
+            x_options,
+            y_options,
+            color_options,
+            x_default,
+            y_default,
+            color_default,
+            regression_line_value,
+            pred_intervals_value,
+        ]
 
     def set_theme(self, theme: str) -> list:
         """Re-render the scatter plot when the theme changes."""
@@ -255,6 +276,7 @@ class ScatterPlot(PluginInterface):
         y_col: str,
         color_col: str,
         regression_line: bool = False,
+        pred_intervals: bool = True,
     ) -> go.Figure:
         """Create a Plotly Scatter Plot figure.
 
@@ -264,6 +286,8 @@ class ScatterPlot(PluginInterface):
             y_col (str): The column to use for the y-axis.
             color_col (str): The column to use for the color scale.
             regression_line (bool): Whether to include a regression line.
+            pred_intervals (bool): Whether to draw prediction interval bands (only relevant when
+                                   'prediction' is on an axis). Default True.
 
         Returns:
             go.Figure: A Plotly Figure object.
@@ -373,7 +397,7 @@ class ScatterPlot(PluginInterface):
         # Note: We're going to add the prediction interval bands and regression line before
         #       the scatter plot data to ensure they appear below the scatter points.
         figure = go.Figure()
-        if y_col == "prediction" or x_col == "prediction":
+        if pred_intervals and (y_col == "prediction" or x_col == "prediction"):
             figure = prediction_intervals(df, figure, x_col)
 
         # Add regression line if enabled.
@@ -444,15 +468,18 @@ class ScatterPlot(PluginInterface):
                 Input(f"{self.component_id}-y-dropdown", "value"),
                 Input(f"{self.component_id}-color-dropdown", "value"),
                 Input(f"{self.component_id}-regression-line", "value"),
+                Input(f"{self.component_id}-pred-intervals", "value"),
             ],
             prevent_initial_call=True,
         )
-        def _update_scatter_plot(x_value, y_value, color_value, regression_line):
+        def _update_scatter_plot(x_value, y_value, color_value, regression_line, pred_intervals):
             """Update the Scatter Plot Graph based on the dropdown values."""
 
             # Check if the dataframe is not empty and the values are not None
             if not self.df.empty and x_value and y_value and color_value:
-                figure = self.create_scatter_plot(self.df, x_value, y_value, color_value, regression_line)
+                figure = self.create_scatter_plot(
+                    self.df, x_value, y_value, color_value, regression_line, pred_intervals
+                )
                 return figure
 
             raise PreventUpdate
