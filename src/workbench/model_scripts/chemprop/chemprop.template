@@ -361,7 +361,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
                 # Multi-target: per-target confidence using per-target UQ metadata
                 for tc in target_columns:
                     if tc in uq_metadata:
-                        df = compute_confidence(df, uq_metadata[tc], std_col=f"{tc}_pred_std")
+                        df = compute_confidence(df, uq_metadata[tc], std_col=f"{tc}_pred_std", prediction_col=f"{tc}_pred")
                         df.rename(columns={"confidence": f"{tc}_confidence"}, inplace=True)
                 # Alias primary target's confidence + intervals to top-level columns
                 # (matches the prediction/prediction_std aliasing above for UI compatibility)
@@ -978,7 +978,7 @@ if __name__ == "__main__":
                     df_val.loc[valid, f"{t_name}_pred"].values,
                     df_val.loc[valid, f"{t_name}_pred_std"].values,
                 )
-                df_val = compute_confidence(df_val, t_uq, std_col=f"{t_name}_pred_std")
+                df_val = compute_confidence(df_val, t_uq, std_col=f"{t_name}_pred_std", prediction_col=f"{t_name}_pred")
                 df_val.rename(columns={"confidence": f"{t_name}_confidence"}, inplace=True)
                 uq_metadata[t_name] = t_uq
             # Alias primary target to top-level columns (matches single-target schema

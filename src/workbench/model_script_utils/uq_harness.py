@@ -60,6 +60,119 @@ import pandas as pd
 # Default confidence levels for prediction intervals
 DEFAULT_CONFIDENCE_LEVELS = [0.50, 0.68, 0.80, 0.90, 0.95]
 
+# Default number of prediction bins for the residual-aware calibrator
+DEFAULT_RESIDUAL_CALIBRATOR_BINS = 10
+MIN_SAMPLES_PER_BIN = 20
+
+
+def _fit_residual_calibrator(
+    y_pred: np.ndarray,
+    prediction_std: np.ndarray,
+    abs_residual: np.ndarray,
+    n_bins: int = DEFAULT_RESIDUAL_CALIBRATOR_BINS,
+) -> dict:
+    """Fit a residual-aware calibrator: (prediction, std) -> expected |residual|.
+
+    Addresses the failure mode where the ensemble agrees tightly (low std) but
+    the prediction is still wrong — common in dense regions of target space,
+    especially near censoring boundaries. Standard `1 - percentile_rank(std)`
+    confidence cannot surface this because there is no ensemble disagreement
+    to leverage; only the residual carries the signal.
+
+    Approach (locally adaptive, post-hoc):
+        - Bin predictions into `n_bins` quantile bins
+        - Within each bin, fit IsotonicRegression(std -> |residual|)
+        - Store as piecewise-linear thresholds for lightweight inference
+          (np.interp at apply time, no sklearn dep in production)
+
+    Reference: Lei et al. (2018) "Distribution-Free Predictive Inference for
+    Regression" — locally adaptive conformal prediction via a learned scale
+    function.
+
+    Args:
+        y_pred: Predictions on calibration data, shape (n,)
+        prediction_std: Ensemble std on calibration data, shape (n,)
+        abs_residual: |y_true - y_pred| on calibration data, shape (n,)
+        n_bins: Number of prediction-quantile bins (default: 10)
+
+    Returns:
+        dict: JSON-serializable calibrator with prediction_bin_edges and per-bin
+              isotonic thresholds.
+    """
+    from sklearn.isotonic import IsotonicRegression
+
+    y_pred = np.asarray(y_pred).flatten()
+    prediction_std = np.asarray(prediction_std).flatten()
+    abs_residual = np.asarray(abs_residual).flatten()
+
+    # Quantile-based bin edges on prediction; collapse duplicates from ties
+    quantile_points = np.linspace(0, 100, n_bins + 1)
+    bin_edges = np.unique(np.percentile(y_pred, quantile_points))
+    # Expand outer bounds so all cal-set predictions strictly fall inside
+    bin_edges[0] -= 1e-6
+    bin_edges[-1] += 1e-6
+
+    # Per-bin isotonic fits with a small-sample fallback to a global fit
+    isotonic_bins = []
+    global_iso = IsotonicRegression(y_min=0, out_of_bounds="clip")
+    global_iso.fit(prediction_std, abs_residual)
+
+    for i in range(len(bin_edges) - 1):
+        mask = (y_pred >= bin_edges[i]) & (y_pred < bin_edges[i + 1])
+        if mask.sum() < MIN_SAMPLES_PER_BIN:
+            iso = global_iso
+        else:
+            iso = IsotonicRegression(y_min=0, out_of_bounds="clip")
+            iso.fit(prediction_std[mask], abs_residual[mask])
+        isotonic_bins.append(
+            {
+                "x_thresholds": iso.X_thresholds_.tolist(),
+                "y_thresholds": iso.y_thresholds_.tolist(),
+            }
+        )
+
+    return {
+        "prediction_bin_edges": bin_edges.tolist(),
+        "isotonic_bins": isotonic_bins,
+    }
+
+
+def _apply_residual_calibrator(
+    predictions: np.ndarray,
+    stds: np.ndarray,
+    calibrator: dict,
+) -> np.ndarray:
+    """Apply a stored residual calibrator to (prediction, std) pairs.
+
+    Args:
+        predictions: Prediction values, shape (n,)
+        stds: prediction_std values, shape (n,)
+        calibrator: Calibrator dict from _fit_residual_calibrator()
+
+    Returns:
+        np.ndarray: Expected |residual| for each (prediction, std) pair, shape (n,)
+    """
+    bin_edges = np.asarray(calibrator["prediction_bin_edges"])
+    isotonic_bins = calibrator["isotonic_bins"]
+    n_bins = len(isotonic_bins)
+
+    predictions = np.asarray(predictions).flatten()
+    stds = np.asarray(stds).flatten()
+
+    # Locate each prediction in its bin (clipped to valid range for out-of-cal preds)
+    bin_idx = np.clip(np.searchsorted(bin_edges, predictions, side="right") - 1, 0, n_bins - 1)
+
+    expected_residual = np.empty(len(predictions), dtype=float)
+    for i, iso in enumerate(isotonic_bins):
+        mask = bin_idx == i
+        if not mask.any():
+            continue
+        x_thr = np.asarray(iso["x_thresholds"])
+        y_thr = np.asarray(iso["y_thresholds"])
+        expected_residual[mask] = np.interp(stds[mask], x_thr, y_thr)
+
+    return np.clip(expected_residual, 0.0, None)
+
 
 def calibrate_uq(
     y_val: np.ndarray,
@@ -80,7 +193,8 @@ def calibrate_uq(
         confidence_levels (list[float]): Confidence levels (default: [0.50, 0.68, 0.80, 0.90, 0.95])
 
     Returns:
-        dict: UQ metadata with scale_factors, std_percentiles, and confidence_levels
+        dict: UQ metadata with confidence_levels, scale_factors, residual_calibrator,
+              and residual_percentiles
     """
     if confidence_levels is None:
         confidence_levels = DEFAULT_CONFIDENCE_LEVELS
@@ -116,10 +230,6 @@ def calibrate_uq(
         coverage = np.mean((y_val >= lower) & (y_val <= upper))
         print(f"  {confidence_level * 100:.0f}% CI: scale_factor={q:.3f}, coverage={coverage * 100:.1f}%")
 
-    # Store the std distribution for percentile-rank confidence scoring
-    # 101 percentile values (0th, 1st, ..., 100th) for smooth interpolation at inference
-    std_percentiles = [float(np.percentile(prediction_std_val, p)) for p in range(101)]
-
     # Compute interval width analysis
     print("\nInterval Width Analysis:")
     for confidence_level in confidence_levels:
@@ -127,10 +237,27 @@ def calibrate_uq(
         widths = 2 * q * safe_std
         print(f"  {confidence_level * 100:.0f}% CI: Mean width={np.mean(widths):.3f}, Std={np.std(widths):.3f}")
 
+    # Fit the residual-aware calibrator and its reference percentile distribution.
+    # See _fit_residual_calibrator for motivation (low-std-but-high-error case).
+    abs_residual = np.abs(y_val - y_pred_val)
+    residual_calibrator = _fit_residual_calibrator(y_pred_val, prediction_std_val, abs_residual)
+    expected_residual_cal = _apply_residual_calibrator(y_pred_val, prediction_std_val, residual_calibrator)
+    residual_percentiles = [float(np.percentile(expected_residual_cal, p)) for p in range(101)]
+
+    print("\nResidual-aware confidence calibrator fit:")
+    print(f"  Prediction bins: {len(residual_calibrator['isotonic_bins'])}")
+    print(
+        f"  Expected |residual| on cal set: "
+        f"min={expected_residual_cal.min():.4f}, "
+        f"median={np.median(expected_residual_cal):.4f}, "
+        f"max={expected_residual_cal.max():.4f}"
+    )
+
     uq_metadata = {
         "confidence_levels": confidence_levels,
         "scale_factors": scale_factors,
-        "std_percentiles": std_percentiles,
+        "residual_calibrator": residual_calibrator,
+        "residual_percentiles": residual_percentiles,
     }
 
     return uq_metadata
@@ -156,7 +283,8 @@ def load_uq_metadata(model_dir: str) -> dict:
         model_dir (str): Directory containing saved metadata
 
     Returns:
-        dict: UQ metadata with scale_factors, std_percentiles, and confidence_levels
+        dict: UQ metadata with confidence_levels, scale_factors, residual_calibrator,
+              and residual_percentiles
     """
     uq_metadata_path = os.path.join(model_dir, "uq_metadata.json")
     with open(uq_metadata_path) as fp:
@@ -229,35 +357,42 @@ def compute_confidence(
     df: pd.DataFrame,
     uq_metadata: dict,
     std_col: str = "prediction_std",
+    prediction_col: str = "prediction",
 ) -> pd.DataFrame:
-    """Compute confidence scores (0.0 to 1.0) based on ensemble prediction std.
+    """Compute confidence scores (0.0 to 1.0) for each prediction.
 
-    Uses percentile-rank of prediction_std against the calibration distribution:
-    - confidence = 1 - percentile_rank(std)
-    - Low std (ensemble agreement) → high percentile rank → high confidence
-    - High std (ensemble disagreement) → low percentile rank → low confidence
+    Applies the residual-aware calibrator stored in `uq_metadata`: a locally-adaptive
+    map (prediction, std) -> expected |residual|, then ranks the expected residual
+    against the cal-set distribution. Confidence = 1 - percentile_rank.
 
-    Interpretation: confidence of 0.7 means this prediction's uncertainty is lower
-    than 70% of predictions in the calibration set.
+    This surfaces the failure mode where ensemble disagreement is artificially low
+    in dense regions of target space (e.g. near censoring boundaries) — the std
+    cannot warn us, but historical residuals can.
+
+    Reference: Lei et al. (2018), "Distribution-Free Predictive Inference for
+    Regression" — locally adaptive conformal prediction.
+
+    Interpretation: confidence of 0.7 means this prediction's expected error is
+    lower than 70% of predictions in the calibration set.
 
     Args:
-        df (pd.DataFrame): DataFrame with prediction_std column
-        uq_metadata (dict): UQ metadata containing std_percentiles
+        df (pd.DataFrame): DataFrame with prediction and prediction_std columns
+        uq_metadata (dict): UQ metadata from calibrate_uq()
         std_col (str): Name of the std column (default: 'prediction_std')
+        prediction_col (str): Name of the prediction column (default: 'prediction')
 
     Returns:
         pd.DataFrame: DataFrame with added 'confidence' column (values between 0 and 1)
     """
-    std_percentiles = np.array(uq_metadata["std_percentiles"])
+    predictions = df[prediction_col].values
     std_values = df[std_col].abs().values
 
-    # For each prediction's std, find where it falls in the calibration distribution
-    # np.searchsorted gives the index where each value would be inserted to maintain order
-    # Dividing by 100 (len - 1) gives us the percentile rank (0.0 to 1.0)
-    percentile_ranks = np.searchsorted(std_percentiles, std_values, side="right") / len(std_percentiles)
+    expected_residual = _apply_residual_calibrator(predictions, std_values, uq_metadata["residual_calibrator"])
+    residual_percentiles = np.asarray(uq_metadata["residual_percentiles"])
+    percentile_ranks = np.searchsorted(residual_percentiles, expected_residual, side="right") / len(
+        residual_percentiles
+    )
 
-    # Confidence = 1 - percentile_rank (low std = high confidence)
-    # Clip to [0, 1] for predictions outside the calibration range
     df.loc[:, "confidence"] = np.clip(1.0 - percentile_ranks, 0.0, 1.0)
 
     return df

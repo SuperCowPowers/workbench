@@ -78,18 +78,19 @@ class TestCalibrateUQ:
         uq = calibrate_uq(y, y_pred, std)
         assert "confidence_levels" in uq
         assert "scale_factors" in uq
-        assert "std_percentiles" in uq
+        assert "residual_calibrator" in uq
+        assert "residual_percentiles" in uq
 
-    def test_std_percentiles_length(self, regression_calibration_data):
+    def test_residual_percentiles_length(self, regression_calibration_data):
         y, y_pred, std = regression_calibration_data
         uq = calibrate_uq(y, y_pred, std)
-        assert len(uq["std_percentiles"]) == 101  # 0th through 100th percentile
+        assert len(uq["residual_percentiles"]) == 101  # 0th through 100th percentile
 
-    def test_std_percentiles_monotonic(self, regression_calibration_data):
+    def test_residual_percentiles_monotonic(self, regression_calibration_data):
         y, y_pred, std = regression_calibration_data
         uq = calibrate_uq(y, y_pred, std)
-        percentiles = np.asarray(uq["std_percentiles"])
-        assert np.all(np.diff(percentiles) >= 0), "std_percentiles must be non-decreasing"
+        percentiles = np.asarray(uq["residual_percentiles"])
+        assert np.all(np.diff(percentiles) >= 0), "residual_percentiles must be non-decreasing"
 
     def test_scale_factors_monotonic(self, regression_calibration_data):
         """Higher confidence levels must use larger scale factors."""
@@ -197,7 +198,13 @@ class TestComputeConfidence:
         assert 0.70 <= q75 <= 0.80, f"Expected q75≈0.75 for uniform confidence, got {q75:.3f}"
 
     def test_confidence_monotone_decreasing_in_std(self, regression_calibration_data):
-        """Higher std must map to lower confidence (Spearman = -1 on calibration data)."""
+        """Higher std must map to lower confidence on data where std is the only signal.
+
+        Note: the new residual-aware metric conditions on (prediction, std), so the
+        std→confidence relationship is no longer strictly monotonic. On synthetic
+        data where the residual depends only on std, expect very strong (but not
+        perfect) inverse correlation.
+        """
         y, y_pred, std = regression_calibration_data
         uq = calibrate_uq(y, y_pred, std)
         df = pd.DataFrame({"prediction": y_pred, "prediction_std": std})
@@ -206,7 +213,7 @@ class TestComputeConfidence:
         from scipy.stats import spearmanr
 
         rho, _ = spearmanr(df["prediction_std"].values, df["confidence"].values)
-        assert rho < -0.99, f"Expected near-perfect inverse correlation, got {rho:.3f}"
+        assert rho < -0.85, f"Expected strong inverse correlation, got {rho:.3f}"
 
     def test_pipeline_round_trip(self, regression_calibration_data):
         """Full pipeline: calibrate → predict_intervals → compute_confidence.
@@ -237,6 +244,83 @@ class TestComputeConfidence:
         assert "confidence" in df.columns
         q50 = np.median(df["confidence"].values)
         assert 0.45 <= q50 <= 0.55
+
+
+# =============================================================================
+# Residual-aware calibrator tests
+# =============================================================================
+class TestResidualAwareConfidence:
+    def test_residual_calibrator_keys_present(self, regression_calibration_data):
+        """calibrate_uq must include the residual calibrator and its reference percentiles."""
+        y, y_pred, std = regression_calibration_data
+        uq = calibrate_uq(y, y_pred, std)
+        assert "residual_calibrator" in uq
+        assert "residual_percentiles" in uq
+        assert "prediction_bin_edges" in uq["residual_calibrator"]
+        assert "isotonic_bins" in uq["residual_calibrator"]
+        assert len(uq["residual_percentiles"]) == 101
+
+    def test_residual_calibrator_uniform_on_calibration_data(self, regression_calibration_data):
+        """Residual-aware confidence on calibration data must be ~uniform on [0, 1]."""
+        y, y_pred, std = regression_calibration_data
+        uq = calibrate_uq(y, y_pred, std)
+        df = pd.DataFrame({"prediction": y_pred, "prediction_std": std})
+        df = compute_confidence(df, uq)
+
+        q25, q50, q75 = np.percentile(df["confidence"].values, [25, 50, 75])
+        assert 0.20 <= q25 <= 0.30
+        assert 0.45 <= q50 <= 0.55
+        assert 0.70 <= q75 <= 0.80
+
+    def test_residual_aware_tracks_residuals(self, regression_calibration_data):
+        """Residual-aware confidence must positively correlate with -|residual|.
+
+        On synthetic data with residual = std·|z| (z ~ N(0,1)), per-row residuals are
+        noisy at fixed std, so the achievable correlation is bounded by Spearman(std,
+        std·|z|) — typically around 0.6–0.7 for this data. We assert the metric is
+        meaningfully tracking residual magnitude, not perfect."""
+        from scipy.stats import spearmanr
+
+        y, y_pred, std = regression_calibration_data
+        uq = calibrate_uq(y, y_pred, std)
+        df = pd.DataFrame({"prediction": y_pred, "prediction_std": std})
+        df = compute_confidence(df, uq)
+
+        abs_residual = np.abs(y - y_pred)
+        rho = spearmanr(df["confidence"].values, -abs_residual).correlation
+        assert rho > 0.5, f"Residual-aware confidence should track -|residual| (rho={rho:.3f})"
+
+    def test_red_strip_failure_mode(self):
+        """Synthetic 'red strip': dense cluster of predictions at 5 with tight std, but 20%
+        are 2 units off. Residual-aware confidence must NOT pin these near 1.0 the way the
+        legacy std-percentile metric would have."""
+        rng = np.random.default_rng(0)
+        # Background: spread of predictions with std-correlated residuals
+        n_bg = 3000
+        y_pred_bg = rng.uniform(0, 10, size=n_bg)
+        std_bg = np.abs(rng.normal(0, 0.5, size=n_bg)) + 0.05
+        y_bg = y_pred_bg + rng.normal(0, 1.5, size=n_bg) * std_bg
+
+        # Red strip: predictions clustered at 5, tight std, but 20% are 2 units off
+        n_strip = 500
+        y_pred_strip = np.full(n_strip, 5.0) + rng.normal(0, 0.05, size=n_strip)
+        std_strip = np.full(n_strip, 0.05) + rng.normal(0, 0.005, size=n_strip)
+        red_mask = rng.uniform(size=n_strip) < 0.2
+        y_strip = y_pred_strip + np.where(red_mask, rng.choice([-2, 2], size=n_strip), 0.0)
+
+        y_pred = np.concatenate([y_pred_bg, y_pred_strip])
+        std = np.concatenate([std_bg, np.abs(std_strip) + 1e-3])
+        y = np.concatenate([y_bg, y_strip])
+
+        uq = calibrate_uq(y, y_pred, std)
+        df = pd.DataFrame({"prediction": y_pred, "prediction_std": std})
+        df = compute_confidence(df, uq)
+
+        strip_conf = df["confidence"].values[n_bg:]
+        # ~80% of these compounds are correct — confidence should reflect that, not pin near 1.0
+        assert strip_conf.mean() < 0.95, (
+            f"Residual-aware confidence on red strip should not be near-1.0 (mean={strip_conf.mean():.3f})"
+        )
 
 
 # =============================================================================

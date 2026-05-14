@@ -16,7 +16,7 @@ Every Workbench model — whether XGBoost, PyTorch, or ChemProp — is actually 
 The idea behind using ensemble disagreement as an uncertainty signal is well-established in the ML literature (see [Lakshminarayanan et al., 2017](https://arxiv.org/abs/1612.01474)): **when the models disagree, the prediction is less reliable.** If all 5 models predict log CLint = 2.4 ± 0.02, we have reason to be confident. If they predict 2.4 ± 0.71, something about that compound is tricky and we should be cautious.
 
 <figure style="margin: 20px auto; text-align: center;">
-<img src="../../images/ensemble_disagreement.svg" alt="Ensemble disagreement drives confidence" style="max-width: 800px; width: 100%; min-height: 250px;">
+<img src="../../images/ensemble_disagreement.svg" alt="Ensemble disagreement drives confidence" style="width: 100%; height: auto; min-height: 400px;">
 </figure>
 
 This ensemble standard deviation (`prediction_std`) is the raw uncertainty signal. It comes directly from the model itself — not from an external surrogate or statistical assumption. In our testing, it correlates strongly with actual prediction error (Spearman r > 0.85 for ChemProp on MLM CLint from the [OpenADMET Blind Challenge](https://openadmet.org/)), though your mileage will vary depending on the dataset and model type.
@@ -52,35 +52,33 @@ In practice, this gives us intervals that inherit the ensemble's discrimination 
 
 ## Confidence Scores
 
-With calibrated intervals in hand, we compute a **confidence score** between 0 and 1 for every prediction. We explored several approaches (exponential decay, z-score normalization) and settled on a simple percentile-rank method inspired by the nonparametric statistics literature:
+With calibrated intervals in hand, we compute a **confidence score** between 0 and 1 for every prediction. The naïve approach is to use ensemble std directly: rank a prediction's std against the cal-set distribution. That works most of the time but has a known failure mode — when the ensemble unanimously agrees on a prediction that's nonetheless wrong, std-based confidence has no way to surface the problem.
+
+This happens most often near **censoring boundaries** or in dense regions of target space. Solubility is a textbook example: kinetic-sol assays cap at ~-3.5 LogS, producing a large training cluster at -3.5 to -3.7. When the model encounters a chemically similar compound whose true LogS is much lower (say -5.5), all 5 ensemble members tend to converge on the attractor and predict -3.6 anyway — including the one that didn't see the compound during training. The ensemble agreement is genuine but uninformative; the prediction is confidently wrong.
+
+To address this, we use a **residual-aware confidence** metric. Instead of ranking std directly, we fit a locally adaptive calibrator that maps `(prediction, prediction_std) → expected |residual|`, then rank the *expected residual* against the cal-set distribution:
+
+```
+expected_residual = calibrator(prediction, prediction_std)
+confidence = 1 - percentile_rank(expected_residual)
+```
+
+The calibrator is fit on the cross-fold validation data, where every compound's residual comes from a model that didn't see it during training. We bin predictions into quantile bins along the prediction axis and fit an `IsotonicRegression(std → |residual|)` within each bin. At inference this becomes a fast `np.interp` lookup — no sklearn dependency in production.
+
+This is the standard **locally adaptive conformal prediction** approach from [Lei et al. (2018)](https://www.tandfonline.com/doi/abs/10.1080/01621459.2017.1307116) applied to the scalar confidence score: instead of treating ensemble disagreement as a constant indicator of uncertainty, we let the data tell us how std actually relates to error in different regions of prediction space.
 
 <figure style="margin: 20px auto; text-align: center;">
-<img src="../../images/confidence_percentile.svg" alt="Confidence bands showing prediction uncertainty" style="max-width: 800px; width: 100%; min-height: 300px;">
+<img src="../../images/confidence_percentile.svg" alt="Residual-aware confidence: same std means different expected error depending on prediction band" style="max-width: 800px; width: 100%; min-height: 300px;">
 </figure>
 
-Specifically, confidence is the **percentile rank** of the prediction's `prediction_std` within the training set's std distribution:
-
-```
-confidence = 1 - percentile_rank(prediction_std)
-```
-
-A confidence of **0.7** means this prediction's ensemble disagreement is lower than 70% of the training set — it's a relatively tight prediction. A confidence of **0.1** means 90% of training predictions had lower uncertainty — this compound is an outlier in some way.
-
-We like this approach for a few reasons:
-
-- **Full range**: Confidence scores spread across the entire 0–1 range, rather than clustering near zero
-- **Directly interpretable**: "confidence 0.7" means "tighter than 70% of training predictions"
-- **No arbitrary parameters**: No decay rates or normalization constants to tune
-- **Grounded in the calibration data**: Derived from the same distribution used for interval calibration
-
-That said, percentile-rank confidence is **relative, not absolute**. A confidence of 0.7 means "tighter than 70% of training predictions," not "70% probability of being correct" — two different models trained on the same data will produce similar confidence *distributions* even if one is far more accurate. The calibrated conformal intervals (`q_025`, `q_05`, … `q_975`) are where the absolute-coverage guarantee lives; the scalar confidence is for ranking and visualization. We think this is an acceptable trade-off for now, but adding an error-calibrated absolute confidence (analogous to what classification does with isotonic P(correct)) is something we're considering.
+**Interpretation:** confidence of 0.7 means "this prediction's expected error is lower than 70% of cal-set predictions." Unlike the naïve std-percentile approach, this is now a *probabilistically meaningful* statement: among compounds with similar `(prediction, std)` signatures, roughly 70% will have lower error than this one. Two compounds with identical std but predictions in different regions of target space can now get different confidence scores — which is the right behavior, because std means different things in different regions.
 
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/uq_conf_residual.png" alt="Confidence vs residual plot" style="max-width: 800px; width: 100%;">
 <figcaption><em>Confidence vs. prediction residual — high-confidence predictions (right) cluster near zero error, while low-confidence predictions (left) show the largest residuals.</em></figcaption>
 </figure>
 
-You'll notice the outlier around confidence ~0.55 with a residual near 1.0 — the model is moderately confident on that compound but clearly getting it wrong. We're not going to pretend this doesn't happen. The value of this plot is that it gives us **visibility** into exactly these cases, so we can investigate individual compounds where the model's confidence doesn't match reality.
+A residual-aware metric isn't magic. When good and bad predictions share the same `(prediction, std)` signature — same prediction, same ensemble agreement — no post-hoc calibrator can distinguish them. In our solubility example, ~96% of compounds with `prediction ≈ -3.6` and tight std are correctly predicted; the remaining 4% have true values far from -3.6. The calibrator will assign them all roughly the same moderate-high confidence, because that's what the population-level evidence supports. Distinguishing the unlucky 4% requires either fixing the upstream model bias (e.g., censored-aware training with `bounded_loss=True`) or adding chemistry-aware applicability-domain features — both of which are orthogonal to the UQ pipeline itself.
 
 ## Classification Confidence
 
@@ -170,7 +168,8 @@ We want to be upfront about the limitations. Confidence reflects how much the en
 - **Novel chemistry may get falsely high confidence** if it happens to fall in a region where the models extrapolate consistently.
 - **Confidence is relative to the training set.** A confidence of 0.9 on a kinase solubility model doesn't transfer to a PROTAC dataset.
 - **Conformal coverage assumes exchangeability.** The guarantee holds when test data comes from the same distribution as calibration data. For out-of-distribution compounds, coverage may degrade.
-- **Training-exposure bias in calibration.** Calibration `prediction_std` is computed by running all 5 ensemble members on the full training set, so every row was seen by 4 of the 5 models during training. Truly novel molecules (seen by 0 of 5) will tend to produce larger stds than the calibration distribution captures, which can make confidence skew optimistic-then-low on out-of-distribution chemistry. Workbench now defaults to **scaffold-based cross-validation splits** (Bemis-Murcko) for any dataset with a SMILES column — this makes confidence calibration reflect scaffold-hopping performance rather than same-scaffold interpolation. For stricter "novel chemistry" evaluation, set `split_strategy="butina"` (Morgan-fingerprint clustering).
+- **Training-exposure bias in calibration.** Calibration `prediction_std` is computed by running all 5 ensemble members on the full training set, so every row was seen by 4 of the 5 models during training. Truly novel molecules (seen by 0 of 5) will tend to produce larger stds than the calibration distribution captures, which can make confidence skew optimistic-then-low on out-of-distribution chemistry. The residual-aware calibrator helps here by anchoring confidence to historical *errors* rather than raw std — but it doesn't eliminate the bias. Workbench now defaults to **scaffold-based cross-validation splits** (Bemis-Murcko) for any dataset with a SMILES column, which makes confidence calibration reflect scaffold-hopping performance rather than same-scaffold interpolation. For stricter "novel chemistry" evaluation, set `split_strategy="butina"` (Morgan-fingerprint clustering).
+- **Indistinguishable populations within a calibration bin.** When a chunk of compounds shares the same `(prediction, std)` signature but a subset are wrong (e.g. censored-data attractors in solubility), the residual-aware metric assigns them all roughly the same confidence — population-correct, but unable to flag individual unlucky misses. Addressing this requires either upstream model fixes (censored-aware training) or chemistry-aware applicability-domain features, neither of which is part of the confidence pipeline itself.
 
 For truly out-of-distribution detection, we'd recommend pairing confidence with applicability domain analysis (e.g., feature-space proximity to training data). This is something we're actively exploring for future Workbench releases.
 
@@ -182,7 +181,7 @@ Here's how Workbench approaches model confidence today:
 
 1. **Ensemble disagreement** — Building on [Lakshminarayanan et al.](https://arxiv.org/abs/1612.01474), the 5-fold CV ensemble provides `prediction_std` as the raw uncertainty signal
 2. **Conformal calibration** — Following [Angelopoulos & Bates](https://arxiv.org/abs/2107.07511), we scale std into prediction intervals with target coverage (80% CI → ~80% coverage)
-3. **Percentile-rank confidence** — Ranks each prediction's std against the training distribution (0.0 – 1.0)
+3. **Residual-aware confidence** — Following [Lei et al. (2018)](https://www.tandfonline.com/doi/abs/10.1080/01621459.2017.1307116), a locally adaptive calibrator maps `(prediction, std) → expected |residual|`, then ranks the expected residual against the cal-set distribution. This surfaces the failure mode where ensemble disagreement is artificially low in dense regions of target space (e.g. near censoring boundaries)
 
 **Classification models:**
 
@@ -197,6 +196,7 @@ Both approaches share the same philosophy: leverage the ensemble's own disagreem
 - [Lakshminarayanan et al., "Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles" (2017)](https://arxiv.org/abs/1612.01474) — Foundational work on using ensemble disagreement for uncertainty
 - [Vovk et al., "Algorithmic Learning in a Random World"](https://link.springer.com/book/10.1007/978-3-031-06649-8) — Foundational text on conformal prediction
 - [Angelopoulos & Bates, "Conformal Prediction: A Gentle Introduction" (2021)](https://arxiv.org/abs/2107.07511) — Accessible introduction to conformal methods
+- [Lei et al., "Distribution-Free Predictive Inference for Regression" (2018)](https://www.tandfonline.com/doi/abs/10.1080/01621459.2017.1307116) — Locally adaptive conformal prediction; basis for the residual-aware confidence calibrator
 - [Gneiting et al., "Probabilistic Forecasts, Calibration and Sharpness" (2007)](https://doi.org/10.1111/j.1467-9868.2007.00587.x) — Calibration vs. discrimination framework
 - [Ovadia et al., "Can You Trust Your Model's Uncertainty?" (2019)](https://arxiv.org/abs/1906.02530) — Analysis of ensemble UQ under dataset shift
 - [Gillis et al., "Variance-Gated Ensembles: An Epistemic-Aware Framework" (2025)](https://arxiv.org/abs/2602.08142) — VGMU approach for combining margin and ensemble variance in classification
