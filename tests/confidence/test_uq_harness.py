@@ -318,9 +318,9 @@ class TestResidualAwareConfidence:
 
         strip_conf = df["confidence"].values[n_bg:]
         # ~80% of these compounds are correct — confidence should reflect that, not pin near 1.0
-        assert strip_conf.mean() < 0.95, (
-            f"Residual-aware confidence on red strip should not be near-1.0 (mean={strip_conf.mean():.3f})"
-        )
+        assert (
+            strip_conf.mean() < 0.95
+        ), f"Residual-aware confidence on red strip should not be near-1.0 (mean={strip_conf.mean():.3f})"
 
 
 # =============================================================================
