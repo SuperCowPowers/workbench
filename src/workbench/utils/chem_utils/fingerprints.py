@@ -60,7 +60,13 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int =
     if "molecule" not in df.columns:
         log.info("Converting SMILES to RDKit Molecules...")
         delete_mol_column = True
-        df["molecule"] = df[smiles_column].apply(Chem.MolFromSmiles)
+
+        def _safe_mol_from_smiles(smi):
+            if smi is None or pd.isna(smi) or not isinstance(smi, str) or not smi:
+                return None
+            return Chem.MolFromSmiles(smi)
+
+        df["molecule"] = df[smiles_column].apply(_safe_mol_from_smiles)
         # Make sure our molecules are not None
         failed_smiles = df[df["molecule"].isnull()][smiles_column].tolist()
         if failed_smiles:

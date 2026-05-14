@@ -217,10 +217,14 @@ class FingerprintProximity(Proximity):
         For binary fingerprints: uses Jaccard distance directly on the fingerprint matrix.
         """
         if self._is_count_fp:
-            # Use the already-computed Ruzicka distance matrix for a consistent projection
-            self.df = Projection2D().fit_transform(
-                self.df, feature_matrix=self._ruzicka_dist_matrix, metric="precomputed"
-            )
+            # Symmetric jitter breaks tied eigenvalues in UMAP's spectral init
+            rng = np.random.default_rng(seed=0)
+            n = self._ruzicka_dist_matrix.shape[0]
+            noise = rng.uniform(0.0, 1e-4, size=(n, n)).astype(np.float32)
+            noise = (noise + noise.T) / 2.0
+            np.fill_diagonal(noise, 0.0)
+            jittered = np.clip(self._ruzicka_dist_matrix + noise, 0.0, 1.0)
+            self.df = Projection2D().fit_transform(self.df, feature_matrix=jittered, metric="precomputed")
         else:
             self.df = Projection2D().fit_transform(self.df, feature_matrix=self.X, metric="jaccard")
 
