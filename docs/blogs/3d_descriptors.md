@@ -23,7 +23,7 @@ There is a real and well-supported skeptical position in the cheminformatics com
 
 The evidence:
 
-- On the [TDC ADMET leaderboards](https://tdcommons.ai/benchmark/overview/) through 2024-2026, top reproducible models (MapLight, MapLight+GNN, CaliciBoost, NovoExpert-2) use **ECFP/Avalon/ErG + 200 RDKit 2D physchem + GIN embeddings**, with **no explicit 3D features**. The Konopka et al. 2026 critical assessment of TDC leaderboard reproducibility makes this concrete.
+- On the [TDC ADMET leaderboards](https://tdcommons.ai/benchmark/overview/) through 2024-2026, top reproducible models (MapLight, MapLight+GNN, CaliciBoost, NovoExpert-2) use **ECFP/Avalon/ErG + 200 RDKit 2D physchem + GIN embeddings**, with **no explicit 3D features**. The Koleiev et al. 2026 critical assessment of TDC leaderboard reproducibility makes this concrete.
 - **PharmaBench** (Niu et al., *Sci. Data* 2024) finds no statistically significant 2D-vs-3D difference on most ADMET endpoints across thousands of compounds.
 - **Bahia et al.** (*Mol. Inform.* 2023) report a 2D + 3D advantage over 2D alone -- but the delta is low single-digit AUC / R², not transformative.
 
@@ -285,7 +285,7 @@ Deliberately *not* on this list: ML conformer generators (ETFlow, GeoMol, Lyrebi
 
 **Conformer Ensemble Methods**
 
-- Zhu, J., Xia, Y., Wu, L., et al. *"Learning Over Molecular Conformer Ensembles: Datasets and Benchmarks."* ICLR 2024. [arXiv: 2310.00115](https://arxiv.org/abs/2310.00115)
+- Zhu, Y., Hwang, J., Adams, K., et al. *"Learning Over Molecular Conformer Ensembles: Datasets and Benchmarks."* ICLR 2024. [arXiv: 2310.00115](https://arxiv.org/abs/2310.00115)
 - Nikonenko, A., Zankov, D., Baskin, I., et al. *"Multiple Conformer Descriptors for QSAR Modeling."* Mol. Inform. 40, 2060030 (2021). [DOI: 10.1002/minf.202060030](https://doi.org/10.1002/minf.202060030)
 - Hamakawa, Y. & Miyao, T. *"Understanding Conformation Importance in Data-Driven Property Prediction Models."* J. Chem. Inf. Model. 65, 3388-3404 (2025). [DOI: 10.1021/acs.jcim.5c00018](https://doi.org/10.1021/acs.jcim.5c00018)
 - Adams, K. & Coley, C.W. *"The Impact of Conformer Quality on Learned Representations of Molecular Conformer Ensembles."* arXiv (2025). [arXiv: 2502.13220](https://arxiv.org/abs/2502.13220)
@@ -312,12 +312,12 @@ Deliberately *not* on this list: ML conformer generators (ETFlow, GeoMol, Lyrebi
 - Mordred Community: [GitHub](https://github.com/JacksonBurns/mordred-community)
 - Stanton, D.T. & Jurs, P.C. *"Development and Use of Charged Partial Surface Area Structural Descriptors in Computer-Assisted Quantitative Structure-Property Relationship Studies."* Anal. Chem. 62, 2323-2329 (1990). [DOI: 10.1021/ac00220a013](https://doi.org/10.1021/ac00220a013)
 - Bleiziffer, P., Schaller, K. & Riniker, S. *"Machine Learning of Partial Charges Derived from High-Quality Quantum-Mechanical Calculations."* J. Chem. Inf. Model. 58, 579-589 (2018). [DOI: 10.1021/acs.jcim.7b00663](https://doi.org/10.1021/acs.jcim.7b00663)
-- Mahmoud, A.H., Masters, M.R., Lill, M.A., et al. *"DASH: Dynamic Attention-Based Substructure Hierarchy for Partial Charge Assignment."* J. Chem. Inf. Model. (2023). [DOI: 10.1021/acs.jcim.3c00800](https://doi.org/10.1021/acs.jcim.3c00800)
+- Lehner, M.T., Katzberger, P., Maeder, N., et al. *"DASH: Dynamic Attention-Based Substructure Hierarchy for Partial Charge Assignment."* J. Chem. Inf. Model. 63, 6014-6028 (2023). [DOI: 10.1021/acs.jcim.3c00800](https://doi.org/10.1021/acs.jcim.3c00800)
 
 **ADMET Benchmarks and 2D vs 3D Evidence**
 
 - Huang, K., et al. *"Therapeutics Data Commons: Machine Learning Datasets and Tasks for Drug Discovery and Development."* [TDC ADMET Leaderboards](https://tdcommons.ai/benchmark/overview/)
-- Konopka, M., et al. *"Critical Assessment of ML Models for ADMET Prediction in TDC Leaderboards."* bioRxiv (2026). [DOI: 10.64898/2026.02.26.708193](https://www.biorxiv.org/content/10.64898/2026.02.26.708193v1)
+- Koleiev, I., Stratiichuk, R., Shevchuk, N., et al. *"Critical Assessment of ML Models for ADMET Prediction in TDC Leaderboards."* bioRxiv (2026). [DOI: 10.64898/2026.02.26.708193](https://www.biorxiv.org/content/10.64898/2026.02.26.708193v1)
 - Niu, Z., et al. *"PharmaBench: Enhancing ADMET Benchmarks with Large Language Models."* Sci. Data 11, 985 (2024). [DOI: 10.1038/s41597-024-03793-0](https://doi.org/10.1038/s41597-024-03793-0)
 - Bahia, M.S., et al. *"Comparison Between 2D and 3D Descriptors in QSAR Modeling Based on Bio-Activities."* Mol. Inform. 42, 2200186 (2023). [DOI: 10.1002/minf.202200186](https://doi.org/10.1002/minf.202200186)
 
