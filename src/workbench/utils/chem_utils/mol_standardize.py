@@ -422,9 +422,7 @@ class MolStandardizer:
 # Module-level default for the single-string helper. Constructing a
 # MolStandardizer (specifically its TautomerEnumerator) is non-trivial, so reuse
 # a single instance configured with the ChEMBL canonical-form pipeline.
-_default_smiles_standardizer = MolStandardizer(
-    canonicalize_tautomer=True, remove_salts=True, drop_mixtures=True
-)
+_default_smiles_standardizer = MolStandardizer(canonicalize_tautomer=True, remove_salts=True, drop_mixtures=True)
 
 
 def standardize_smiles(smiles: str) -> Optional[str]:
