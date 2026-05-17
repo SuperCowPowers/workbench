@@ -5436,7 +5436,7 @@
 <p>There is a real and well-supported skeptical position in the cheminformatics community: for most ADMET endpoints, well-engineered 2D fingerprints + learned graph representations are competitive with -- or better than -- 2D + 3D combined.</p>
 <p>The evidence:</p>
 <ul>
-<li>On the <a href="https://tdcommons.ai/benchmark/overview/">TDC ADMET leaderboards</a> through 2024-2026, top reproducible models (MapLight, MapLight+GNN, CaliciBoost, NovoExpert-2) use <strong>ECFP/Avalon/ErG + 200 RDKit 2D physchem + GIN embeddings</strong>, with <strong>no explicit 3D features</strong>. The Konopka et al. 2026 critical assessment of TDC leaderboard reproducibility makes this concrete.</li>
+<li>On the <a href="https://tdcommons.ai/benchmark/overview/">TDC ADMET leaderboards</a> through 2024-2026, top reproducible models (MapLight, MapLight+GNN, CaliciBoost, NovoExpert-2) use <strong>ECFP/Avalon/ErG + 200 RDKit 2D physchem + GIN embeddings</strong>, with <strong>no explicit 3D features</strong>. The Koleiev et al. 2026 critical assessment of TDC leaderboard reproducibility makes this concrete.</li>
 <li><strong>PharmaBench</strong> (Niu et al., <em>Sci. Data</em> 2024) finds no statistically significant 2D-vs-3D difference on most ADMET endpoints across thousands of compounds.</li>
 <li><strong>Bahia et al.</strong> (<em>Mol. Inform.</em> 2023) report a 2D + 3D advantage over 2D alone -- but the delta is low single-digit AUC / R², not transformative.</li>
 </ul>
@@ -5724,7 +5724,7 @@
 <h2 id="references">References</h2>
 <p><strong>Conformer Ensemble Methods</strong></p>
 <ul>
-<li>Zhu, J., Xia, Y., Wu, L., et al. <em>"Learning Over Molecular Conformer Ensembles: Datasets and Benchmarks."</em> ICLR 2024. <a href="https://arxiv.org/abs/2310.00115">arXiv: 2310.00115</a></li>
+<li>Zhu, Y., Hwang, J., Adams, K., et al. <em>"Learning Over Molecular Conformer Ensembles: Datasets and Benchmarks."</em> ICLR 2024. <a href="https://arxiv.org/abs/2310.00115">arXiv: 2310.00115</a></li>
 <li>Nikonenko, A., Zankov, D., Baskin, I., et al. <em>"Multiple Conformer Descriptors for QSAR Modeling."</em> Mol. Inform. 40, 2060030 (2021). <a href="https://doi.org/10.1002/minf.202060030">DOI: 10.1002/minf.202060030</a></li>
 <li>Hamakawa, Y. &amp; Miyao, T. <em>"Understanding Conformation Importance in Data-Driven Property Prediction Models."</em> J. Chem. Inf. Model. 65, 3388-3404 (2025). <a href="https://doi.org/10.1021/acs.jcim.5c00018">DOI: 10.1021/acs.jcim.5c00018</a></li>
 <li>Adams, K. &amp; Coley, C.W. <em>"The Impact of Conformer Quality on Learned Representations of Molecular Conformer Ensembles."</em> arXiv (2025). <a href="https://arxiv.org/abs/2502.13220">arXiv: 2502.13220</a></li>
@@ -5751,12 +5751,12 @@
 <li>Mordred Community: <a href="https://github.com/JacksonBurns/mordred-community">GitHub</a></li>
 <li>Stanton, D.T. &amp; Jurs, P.C. <em>"Development and Use of Charged Partial Surface Area Structural Descriptors in Computer-Assisted Quantitative Structure-Property Relationship Studies."</em> Anal. Chem. 62, 2323-2329 (1990). <a href="https://doi.org/10.1021/ac00220a013">DOI: 10.1021/ac00220a013</a></li>
 <li>Bleiziffer, P., Schaller, K. &amp; Riniker, S. <em>"Machine Learning of Partial Charges Derived from High-Quality Quantum-Mechanical Calculations."</em> J. Chem. Inf. Model. 58, 579-589 (2018). <a href="https://doi.org/10.1021/acs.jcim.7b00663">DOI: 10.1021/acs.jcim.7b00663</a></li>
-<li>Mahmoud, A.H., Masters, M.R., Lill, M.A., et al. <em>"DASH: Dynamic Attention-Based Substructure Hierarchy for Partial Charge Assignment."</em> J. Chem. Inf. Model. (2023). <a href="https://doi.org/10.1021/acs.jcim.3c00800">DOI: 10.1021/acs.jcim.3c00800</a></li>
+<li>Lehner, M.T., Katzberger, P., Maeder, N., et al. <em>"DASH: Dynamic Attention-Based Substructure Hierarchy for Partial Charge Assignment."</em> J. Chem. Inf. Model. 63, 6014-6028 (2023). <a href="https://doi.org/10.1021/acs.jcim.3c00800">DOI: 10.1021/acs.jcim.3c00800</a></li>
 </ul>
 <p><strong>ADMET Benchmarks and 2D vs 3D Evidence</strong></p>
 <ul>
 <li>Huang, K., et al. <em>"Therapeutics Data Commons: Machine Learning Datasets and Tasks for Drug Discovery and Development."</em> <a href="https://tdcommons.ai/benchmark/overview/">TDC ADMET Leaderboards</a></li>
-<li>Konopka, M., et al. <em>"Critical Assessment of ML Models for ADMET Prediction in TDC Leaderboards."</em> bioRxiv (2026). <a href="https://www.biorxiv.org/content/10.64898/2026.02.26.708193v1">DOI: 10.64898/2026.02.26.708193</a></li>
+<li>Koleiev, I., Stratiichuk, R., Shevchuk, N., et al. <em>"Critical Assessment of ML Models for ADMET Prediction in TDC Leaderboards."</em> bioRxiv (2026). <a href="https://www.biorxiv.org/content/10.64898/2026.02.26.708193v1">DOI: 10.64898/2026.02.26.708193</a></li>
 <li>Niu, Z., et al. <em>"PharmaBench: Enhancing ADMET Benchmarks with Large Language Models."</em> Sci. Data 11, 985 (2024). <a href="https://doi.org/10.1038/s41597-024-03793-0">DOI: 10.1038/s41597-024-03793-0</a></li>
 <li>Bahia, M.S., et al. <em>"Comparison Between 2D and 3D Descriptors in QSAR Modeling Based on Bio-Activities."</em> Mol. Inform. 42, 2200186 (2023). <a href="https://doi.org/10.1002/minf.202200186">DOI: 10.1002/minf.202200186</a></li>
 </ul>
