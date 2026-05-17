@@ -1,19 +1,38 @@
 {
     "logp_all.csv": {
-        "description": "Merged and deduplicated experimental LogP (octanol-water partition coefficient) dataset from multiple public sources. Standardized using the ChEMBL pipeline (salt removal, charge neutralization, tautomer canonicalization). Multi-component mixtures dropped; known pharmaceutical counterions stripped. Joinable on `smiles` to logd_all.csv.",
+        "description": "Merged and deduplicated experimental LogP (octanol-water partition coefficient) dataset from multiple public sources. Standardized using the ChEMBL pipeline (salt removal, charge neutralization, tautomer canonicalization). Multi-component mixtures dropped; known pharmaceutical counterions stripped. For compounds present in SangsterLogP (Cirino et al. 2026 — the most rigorously curated source), the `logp` value is taken from SangsterLogP; otherwise it is the cross-source mean (see `primary_source` column). Joinable on `smiles` to logd_all.csv.",
         "columns": {
             "id": "Integer row index (0 to N)",
             "smiles": "Standardized canonical SMILES (RDKit, neutralized, canonical tautomer)",
-            "logp": "Mean experimental logP (octanol-water partition coefficient) across sources",
-            "logp_std": "Standard deviation of logP across sources (0 if single source)",
+            "logp": "Experimental logP — Sangster value if present, else cross-source mean",
+            "logp_std": "Standard deviation of logP across all reporting sources (0 if single source)",
             "logp_count": "Number of sources reporting this compound",
-            "sources": "Pipe-delimited list of source names",
+            "sources": "Pipe-delimited list of source names that reported this compound",
+            "primary_source": "Which source the `logp` value was taken from: 'sangster' or 'consensus' (mean across non-Sangster sources)",
             "logp_values": "Pipe-delimited individual logP values from each source"
         },
-        "num_compounds": 41226,
+        "num_compounds": null,
         "references": [
             "https://github.com/NIEHS/OPERA (PHYSPROP/OPERA)",
-            "https://github.com/cimm-kzn/GraphormerLogP (GLP dataset)"
+            "https://github.com/cimm-kzn/GraphormerLogP (GLP dataset)",
+            "https://doi.org/10.5281/zenodo.19387551 (SangsterLogP dataset)",
+            "https://doi.org/10.1038/s41597-026-07357-2 (Cirino et al., SangsterLogP, Sci Data 2026)"
+        ]
+    },
+    "logp_sangster.csv": {
+        "description": "SangsterLogP experimental LogP dataset (~23,500 compounds), the largest publicly curated logP collection. Originates from Dr. James Sangster's review of >3,000 published sources, curated via the OCHEM platform with systematic logD-to-logP correction for ionisable compounds (ChemAxon pKa + ΔDP shift) and consensus-based outlier/duplicate removal. Spans -3.8 to 11.7 log units and includes ~800 beyond-Rule-of-5 (MW > 700) compounds, substantially expanding chemical space coverage vs PHYSPROP. Distributed under CC-BY-4.0 via Zenodo. The `logp` column here is the experimental-or-adjusted value (logD measurements corrected to logP via ΔDP) from the main sheet of the source XLSX.",
+        "columns": {
+            "smiles": "Original SMILES from source",
+            "canon_smiles": "Standardized canonical SMILES",
+            "logp": "Experimental or adjusted logP (octanol-water partition coefficient)",
+            "source": "Source identifier (sangster)"
+        },
+        "num_compounds": null,
+        "references": [
+            "https://doi.org/10.5281/zenodo.19387551 (SangsterLogP dataset on Zenodo, v1.0)",
+            "https://doi.org/10.1038/s41597-026-07357-2 (Cirino, Caron, Ermondi, Charochkina, Tetko; SangsterLogP: the largest publicly available dataset of logP values, Sci Data 2026)",
+            "https://ochem.eu/article/161956 (OCHEM dataset article)",
+            "Sangster, J. Octanol-Water Partition Coefficients of Simple Organic Compounds. J. Phys. Chem. Ref. Data 18, 1111-1229 (1989). https://doi.org/10.1063/1.555833"
         ]
     },
     "logp_opera_physprop.csv": {

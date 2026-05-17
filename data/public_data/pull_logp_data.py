@@ -3,6 +3,7 @@
 Sources (octanol-water partition coefficient, experimental measurements only):
   1. PHYSPROP / OPERA      (~4.2K compounds via EPA / NIEHS)
   2. GraphormerLogP (GLP)  (~42K compounds, multi-source curation by CIMM Kazan)
+  3. SangsterLogP          (~23.5K compounds, Cirino et al. 2026, Sci Data, Zenodo)
 
 Output:
   output/logp/logp_all.csv              -- merged, deduplicated on canonical SMILES
@@ -131,9 +132,39 @@ def pull_graphormer_logp() -> pd.DataFrame:
     return pd.DataFrame(columns=["smiles", "canon_smiles", VALUE_NAME, "source"])
 
 
+def pull_sangster_logp() -> pd.DataFrame:
+    """SangsterLogP dataset (~23.5K experimental logP values, Cirino et al. 2026).
+
+    The largest publicly curated logP dataset, originating from Dr. James
+    Sangster's literature review of >3,000 sources. Curated via the OCHEM
+    platform with systematic logD-to-logP correction for ionisable compounds
+    and consensus-based outlier removal. Includes ~800 beyond-Rule-of-5
+    (MW > 700) compounds. We use the adjusted ``logP`` column from the main
+    sheet (logD measurements have been corrected to logP via ΔDP).
+
+    Distributed under CC-BY-4.0 via Zenodo (DOI: 10.5281/zenodo.19387551).
+    """
+    log.info("Pulling SangsterLogP dataset ...")
+
+    url = "https://zenodo.org/api/records/19387552/files/Datasets.xlsx/content"
+    raw = download(url, desc="SangsterLogP Datasets.xlsx")
+    df = pd.read_excel(io.BytesIO(raw), sheet_name="SangsterLogP (N=23,520)")
+    log.info(f"  loaded {len(df):,} rows, columns={df.columns.tolist()}")
+
+    # 'logP' column is the experimental-or-adjusted value (post logD-to-logP correction).
+    return standardize_df(
+        df,
+        smiles_col="SMILES",
+        value_col="logP",
+        source="sangster",
+        value_name=VALUE_NAME,
+    )
+
+
 SOURCES = {
     "opera": pull_opera_physprop,
     "graphormer": pull_graphormer_logp,
+    "sangster": pull_sangster_logp,
 }
 
 
@@ -164,7 +195,13 @@ def main():
         log.error("No data pulled from any source!")
         return
 
-    merged = merge_and_deduplicate(frames, output_dir=args.output_dir, value_name=VALUE_NAME, file_prefix=FILE_PREFIX)
+    merged = merge_and_deduplicate(
+        frames,
+        output_dir=args.output_dir,
+        value_name=VALUE_NAME,
+        file_prefix=FILE_PREFIX,
+        priority_source="sangster",
+    )
     out_path = args.output_dir / f"{FILE_PREFIX}_all.csv"
     merged.to_csv(out_path, index=False)
     log.info(f"Saved merged dataset -> {out_path}  ({len(merged)} unique compounds)")

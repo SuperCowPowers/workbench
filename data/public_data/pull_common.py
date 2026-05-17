@@ -73,11 +73,19 @@ def merge_and_deduplicate(
     output_dir: Path,
     value_name: str,
     file_prefix: str,
+    priority_source: str | None = None,
 ) -> pd.DataFrame:
     """Save per-source CSVs and return a deduplicated dataframe keyed on canonical SMILES.
 
     Per-source files: ``{output_dir}/{file_prefix}_{source}.csv``.
-    Merged columns: id, smiles, <value_name>, <value_name>_std, <value_name>_count, sources, <value_name>_values.
+    Merged columns: id, smiles, <value_name>, <value_name>_std, <value_name>_count,
+    sources, primary_source, <value_name>_values.
+
+    Args:
+        priority_source: If given, the merged ``<value_name>`` for a compound is
+            taken from this source whenever it reports the compound. Otherwise
+            the cross-source mean is used. ``primary_source`` records which path
+            was used per row (the source name, or ``"consensus"``).
     """
     combined = pd.concat(frames, ignore_index=True)
     log.info(f"Total rows before dedup: {len(combined)}")
@@ -91,30 +99,43 @@ def merge_and_deduplicate(
     count_col = f"{value_name}_count"
     values_col = f"{value_name}_values"
 
-    dedup = (
-        combined.groupby("canon_smiles")
-        .agg(
-            mean_val=(value_name, "mean"),
-            std_val=(value_name, "std"),
-            count_val=(value_name, "count"),
-            sources=("source", lambda x: "|".join(sorted(set(x)))),
-            values=(value_name, lambda x: "|".join(f"{v:.3f}" for v in x)),
+    def reduce(group: pd.DataFrame) -> pd.Series:
+        srcs = group["source"].tolist()
+        vals = group[value_name].tolist()
+        if priority_source is not None and priority_source in srcs:
+            value = group.loc[group["source"] == priority_source, value_name].mean()
+            primary = priority_source
+        else:
+            value = group[value_name].mean()
+            primary = "consensus"
+        return pd.Series(
+            {
+                value_name: value,
+                std_col: group[value_name].std(),
+                count_col: len(group),
+                "sources": "|".join(sorted(set(srcs))),
+                "primary_source": primary,
+                values_col: "|".join(f"{v:.3f}" for v in vals),
+            }
         )
-        .reset_index()
-    )
-    dedup["std_val"] = dedup["std_val"].fillna(0.0)
 
-    dedup = dedup.rename(
-        columns={
-            "canon_smiles": "smiles",
-            "mean_val": value_name,
-            "std_val": std_col,
-            "count_val": count_col,
-            "values": values_col,
-        }
-    )
+    dedup = combined.groupby("canon_smiles").apply(reduce, include_groups=False).reset_index()
+    dedup[std_col] = dedup[std_col].fillna(0.0)
+    dedup[count_col] = dedup[count_col].astype(int)
+    dedup = dedup.rename(columns={"canon_smiles": "smiles"})
     dedup.insert(0, "id", range(len(dedup)))
-    dedup = dedup[["id", "smiles", value_name, std_col, count_col, "sources", values_col]]
+
+    # Only expose primary_source when a priority was actually applied — keeps
+    # the legacy schema for single-priority pipelines (e.g., LogD) unchanged.
+    cols = ["id", "smiles", value_name, std_col, count_col, "sources"]
+    if priority_source is not None:
+        cols.append("primary_source")
+    cols.append(values_col)
+    dedup = dedup[cols]
 
     log.info(f"Unique compounds after dedup: {len(dedup)}")
+    if priority_source is not None:
+        n_pri = (dedup["primary_source"] == priority_source).sum()
+        log.info(f"  primary_source='{priority_source}': {n_pri:,} rows ({n_pri/len(dedup)*100:.1f}%)")
+        log.info(f"  primary_source='consensus':       {len(dedup)-n_pri:,} rows")
     return dedup

@@ -54,13 +54,13 @@ def prep_sdf_file(filepath: str) -> pd.DataFrame:
     if "smiles" not in df.columns and "molecule" in df.columns:
         df["smiles"] = df["molecule"].apply(lambda mol: Chem.MolToSmiles(mol) if mol else None)
 
-    # Apply the new tagging system
-    # Use all tag categories by default
+    # Apply the tagging system (all categories: composition, structure,
+    # physchem, liabilities, curation).
     df = tag_molecules(
         df,
         smiles_column="smiles",
         tag_column="tags",
-        tag_categories=None,  # This will include all: metals, halogens, druglike, structure
+        categories=None,
     )
 
     # Add toxicity-specific tags
