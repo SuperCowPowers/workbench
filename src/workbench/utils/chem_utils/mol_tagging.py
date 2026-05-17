@@ -108,8 +108,8 @@ _FILTER_CATALOG_MAP = {
     "pains_a": FilterCatalogParams.FilterCatalogs.PAINS_A,
     "pains_b": FilterCatalogParams.FilterCatalogs.PAINS_B,
     "pains_c": FilterCatalogParams.FilterCatalogs.PAINS_C,
-    "brenk":   FilterCatalogParams.FilterCatalogs.BRENK,
-    "nih":     FilterCatalogParams.FilterCatalogs.NIH,
+    "brenk": FilterCatalogParams.FilterCatalogs.BRENK,
+    "nih": FilterCatalogParams.FilterCatalogs.NIH,
 }
 
 
@@ -166,10 +166,7 @@ def _structure_tags(mol: Mol) -> Set[str]:
     if not atom_rings:
         tags.add("structure:acyclic")
     else:
-        if any(
-            any(mol.GetAtomWithIdx(idx).GetIsAromatic() for idx in ring)
-            for ring in atom_rings
-        ):
+        if any(any(mol.GetAtomWithIdx(idx).GetIsAromatic() for idx in ring) for ring in atom_rings):
             tags.add("structure:aromatic")
         if any(len(ring) >= MACROCYCLE_RING_SIZE for ring in atom_rings):
             tags.add("structure:macrocycle")
@@ -203,12 +200,12 @@ def _physchem_tags(mol: Mol) -> Set[str]:
     """
     tags: Set[str] = set()
 
-    mw       = Descriptors.MolWt(mol)
-    logp     = Descriptors.MolLogP(mol)
-    hbd      = Descriptors.NumHDonors(mol)
-    hba      = Descriptors.NumHAcceptors(mol)
+    mw = Descriptors.MolWt(mol)
+    logp = Descriptors.MolLogP(mol)
+    hbd = Descriptors.NumHDonors(mol)
+    hba = Descriptors.NumHAcceptors(mol)
     rotbonds = Descriptors.NumRotatableBonds(mol)
-    tpsa     = Descriptors.TPSA(mol)
+    tpsa = Descriptors.TPSA(mol)
 
     ro5_violations = int(mw > 500) + int(logp > 5) + int(hbd > 5) + int(hba > 10)
     if ro5_violations <= 1:
@@ -298,8 +295,8 @@ def _curation_tags(
 
 _CATEGORY_BUILDERS = {
     "composition": _composition_tags,
-    "structure":   _structure_tags,
-    "physchem":    _physchem_tags,
+    "structure": _structure_tags,
+    "physchem": _physchem_tags,
     "liabilities": _liability_tags,
 }
 ALL_CATEGORIES: List[str] = list(_CATEGORY_BUILDERS.keys()) + ["curation"]
@@ -346,9 +343,7 @@ def tag_molecules(
         raise ValueError(f"Unknown tag categories: {sorted(unknown)}")
 
     need_curation = "curation" in requested
-    compute_set = (requested & set(_CATEGORY_BUILDERS)) | (
-        set(_CATEGORY_BUILDERS) if need_curation else set()
-    )
+    compute_set = (requested & set(_CATEGORY_BUILDERS)) | (set(_CATEGORY_BUILDERS) if need_curation else set())
     emit_set = requested
 
     out = df.copy()
@@ -380,15 +375,10 @@ def tag_molecules(
 
     total = len(out)
     valid = int((out[tag_column].apply(lambda t: t != ["invalid_smiles"])).sum())
-    excludes = int(out[tag_column].apply(
-        lambda t: any(x.startswith("curation:exclude:") for x in t)
-    ).sum())
-    cautions = int(out[tag_column].apply(
-        lambda t: any(x.startswith("curation:caution:") for x in t)
-    ).sum())
+    excludes = int(out[tag_column].apply(lambda t: any(x.startswith("curation:exclude:") for x in t)).sum())
+    cautions = int(out[tag_column].apply(lambda t: any(x.startswith("curation:caution:") for x in t)).sum())
     logger.info(
-        f"Tagged {total} molecules: {valid} valid, "
-        f"{excludes} curation:exclude, {cautions} curation:caution"
+        f"Tagged {total} molecules: {valid} valid, " f"{excludes} curation:exclude, {cautions} curation:caution"
     )
     return out
 
@@ -433,13 +423,9 @@ def filter_by_tags(
         for t in exclude:
             mask &= tags_series.apply(lambda tags, _t=t: _t not in tags)
     if require_prefix:
-        mask &= tags_series.apply(
-            lambda tags: any(t.startswith(p) for t in tags for p in require_prefix)
-        )
+        mask &= tags_series.apply(lambda tags: any(t.startswith(p) for t in tags for p in require_prefix))
     if exclude_prefix:
-        mask &= tags_series.apply(
-            lambda tags: not any(t.startswith(p) for t in tags for p in exclude_prefix)
-        )
+        mask &= tags_series.apply(lambda tags: not any(t.startswith(p) for t in tags for p in exclude_prefix))
 
     result = df[mask]
     logger.info(f"Filtered {len(df)} → {len(result)} molecules")
@@ -517,16 +503,16 @@ if __name__ == "__main__":
         {
             "compound_id": [f"C{i:03d}" for i in range(1, 13)],
             "smiles": [
-                "CC(=O)Oc1ccccc1C(=O)O",                                  # Aspirin
-                "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",                           # Caffeine
-                "C" * 50,                                                  # Long alkane
-                "C(Cl)(Cl)(Cl)Cl",                                         # CCl4
-                "[Zn+2].[Cl-].[Cl-]",                                     # ZnCl2 (inorganic)
-                "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",                          # Ibuprofen
-                "[Pb+2].[O-]C(=O)C",                                       # Lead acetate
+                "CC(=O)Oc1ccccc1C(=O)O",  # Aspirin
+                "CN1C=NC2=C1C(=O)N(C(=O)N2C)C",  # Caffeine
+                "C" * 50,  # Long alkane
+                "C(Cl)(Cl)(Cl)Cl",  # CCl4
+                "[Zn+2].[Cl-].[Cl-]",  # ZnCl2 (inorganic)
+                "CC(C)CC1=CC=C(C=C1)C(C)C(=O)O",  # Ibuprofen
+                "[Pb+2].[O-]C(=O)C",  # Lead acetate
                 "N[C@@H](C)C(=O)N[C@@H](C)C(=O)N[C@@H](C)C(=O)N[C@@H](C)C(=O)O",  # Tetra-Ala
-                "C1CCCCCCCCCCC1",                                          # Cyclododecane
-                "[2H]C([2H])([2H])C(=O)O",                                # d3-acetate
+                "C1CCCCCCCCCCC1",  # Cyclododecane
+                "[2H]C([2H])([2H])C(=O)O",  # d3-acetate
                 "",
                 "INVALID_SMILES",
             ],
@@ -546,9 +532,7 @@ if __name__ == "__main__":
     print(list(kept["compound_id"]))
 
     print("\nfilter_by_tags(require=['physchem:ro5_compliant','physchem:veber_compliant']):")
-    oral = filter_by_tags(
-        tagged, require=["physchem:ro5_compliant", "physchem:veber_compliant"]
-    )
+    oral = filter_by_tags(tagged, require=["physchem:ro5_compliant", "physchem:veber_compliant"])
     print(list(oral["compound_id"]))
 
     print("\nadmet_training_set(drop_cautions=False):")
