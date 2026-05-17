@@ -46,6 +46,7 @@ def combine_multi_task_data(
     target_columns: list[list[str]],
     id_column: str = "id",
     merge_on_smiles: bool = False,
+    standardize_smiles: bool = True,
 ) -> pd.DataFrame:
     """Combine single-task DataFrames into a multi-task DataFrame.
 
@@ -67,10 +68,18 @@ def combine_multi_task_data(
         merge_on_smiles: If True, collapse rows by 'smiles' instead of id_column.
             Use when combining external/public data where IDs have no correspondence
             to internal IDs. Defaults to False.
+        standardize_smiles: If True (and ``merge_on_smiles`` is True), canonicalize
+            each DataFrame's 'smiles' column with the same ChEMBL pipeline used by
+            the public-data pull scripts (salt removal, charge neutralization,
+            tautomer canonicalization). Without this, a SMILES-keyed merge of
+            sources with different conventions (e.g. internal LIMS salts vs public
+            canonical) silently misses overlap and emits duplicate canonical rows
+            after downstream feature-endpoint normalization. Defaults to True.
 
     Returns:
         Combined DataFrame with shared features + all target columns. Rows from
-        sources missing a target will have NaN for that target.
+        sources missing a target will have NaN for that target. When standardized,
+        the 'smiles' column holds canonical (post-standardization) SMILES.
 
     Raises:
         ValueError: If inputs are invalid (length mismatch, missing columns, etc.)
@@ -99,6 +108,28 @@ def combine_multi_task_data(
         raise ValueError(f"Duplicate target column names across DataFrames: {set(dupes)}")
 
     merge_key = "smiles" if merge_on_smiles else id_column
+
+    # --- Standardize SMILES for cross-source merges ---
+    # Lazy RDKit import: keeps the module light for id-based merges.
+    #
+    # Future Me: standardize_smiles uses drop_mixtures=True, so a multi-component
+    # entry (e.g. a co-crystal or true mixture in the LIMS) is dropped here before
+    # the merge. The production feature endpoints, however, use drop_mixtures=False
+    # — they keep the largest fragment and featurize it. So if a row vanishes from
+    # the multi-task merge but its compound id appears in downstream prediction
+    # logs, this asymmetry is the reason. We deliberately leave the endpoints alone
+    # to avoid silent behavior changes for already-trained models.
+    if merge_on_smiles and standardize_smiles:
+        from workbench.utils.chem_utils.mol_standardize import standardize_smiles as _std_smiles
+
+        log.info("Standardizing SMILES across input DataFrames (ChEMBL pipeline)...")
+        for i, df in enumerate(dataframes):
+            df = df.copy()
+            df["smiles"] = df["smiles"].apply(_std_smiles)
+            n_fail = df["smiles"].isna().sum()
+            if n_fail > 0:
+                log.warning(f"DataFrame {i}: dropping {n_fail} rows where SMILES standardization failed")
+            dataframes[i] = df.dropna(subset=["smiles"]).reset_index(drop=True)
 
     # --- Drop rows with NaN smiles ---
     for i, df in enumerate(dataframes):

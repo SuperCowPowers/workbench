@@ -11,30 +11,12 @@ from pathlib import Path
 
 import pandas as pd
 import requests
-from rdkit import Chem
 from tqdm import tqdm
 
-from workbench.utils.chem_utils.mol_standardize import MolStandardizer
+# Single source of truth — shared with workbench.utils.multi_task.combine_multi_task_data.
+from workbench.utils.chem_utils.mol_standardize import standardize_smiles  # noqa: F401  (re-exported)
 
 log = logging.getLogger("workbench")
-
-
-# Full ChEMBL pipeline: cleanup → salt removal → charge neutralization → tautomer canonicalization.
-# Multi-component mixtures with unknown large fragments are dropped.
-_standardizer = MolStandardizer(canonicalize_tautomer=True, remove_salts=True, drop_mixtures=True)
-
-
-def standardize_smiles(smiles: str) -> str | None:
-    """Standardize a SMILES string. Returns canonical SMILES of the parent, or None if invalid."""
-    if not smiles or not isinstance(smiles, str):
-        return None
-    mol = Chem.MolFromSmiles(smiles.strip())
-    if mol is None:
-        return None
-    std_mol, _salt = _standardizer.standardize(mol)
-    if std_mol is None:
-        return None
-    return Chem.MolToSmiles(std_mol, canonical=True)
 
 
 def download(url: str, desc: str = "") -> bytes:

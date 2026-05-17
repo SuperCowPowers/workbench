@@ -419,6 +419,37 @@ class MolStandardizer:
             return None, False
 
 
+# Module-level default for the single-string helper. Constructing a
+# MolStandardizer (specifically its TautomerEnumerator) is non-trivial, so reuse
+# a single instance configured with the ChEMBL canonical-form pipeline.
+_default_smiles_standardizer = MolStandardizer(
+    canonicalize_tautomer=True, remove_salts=True, drop_mixtures=True
+)
+
+
+def standardize_smiles(smiles: str) -> Optional[str]:
+    """Canonicalize a single SMILES string via the ChEMBL pipeline.
+
+    Returns the canonical SMILES of the standardized parent (salts removed,
+    charges neutralized, canonical tautomer), or ``None`` if the input is
+    invalid or standardization failed. Use this as the one-call canonicalizer
+    for "do these two SMILES refer to the same compound?" comparisons before
+    merging cross-source data (e.g. internal assays vs public datasets).
+
+    For DataFrame-level standardization with salt extraction and chiral-center
+    diagnostics, use :func:`standardize` instead.
+    """
+    if not smiles or not isinstance(smiles, str):
+        return None
+    mol = Chem.MolFromSmiles(smiles.strip())
+    if mol is None:
+        return None
+    std_mol, _ = _default_smiles_standardizer.standardize(mol)
+    if std_mol is None:
+        return None
+    return Chem.MolToSmiles(std_mol, canonical=True)
+
+
 def standardize(
     df: pd.DataFrame,
     canonicalize_tautomer: bool = True,
