@@ -6,7 +6,7 @@ A prediction without a confidence score is just a number. In drug discovery, kno
 
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/uq_pred_scatter.png" alt="Prediction scatter plot colored by confidence" style="max-width: 800px; width: 100%;">
-<figcaption><em>A target vs. prediction scatter from a ChemProp MLM CLint model. Points are colored by confidence — the high confidence points cluster along the diagonal, low confidence (blue) are scattered.</em></figcaption>
+<figcaption><em>A target vs. prediction scatter from a LogD model on the <a href="https://openadmet.org/">OpenADMET ExpansionRX</a> challenge test data. Points are colored by confidence — the high confidence points cluster along the diagonal, low confidence (blue) are scattered.</em></figcaption>
 </figure>
 
 ## The Core Idea: Ensemble Disagreement
