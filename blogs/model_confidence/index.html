@@ -5166,7 +5166,7 @@
 <p>A prediction without a confidence score is just a number. In drug discovery, knowing <em>how much to trust</em> a prediction is often more valuable than the prediction itself — it determines whether you synthesize a compound, run an experiment, or move on. In this blog we'll walk through how Workbench approaches model confidence, the trade-offs we've considered, and where we think there's room to improve.</p>
 <figure style="margin: 20px auto; text-align: center;">
 <img src="../../images/uq_pred_scatter.png" alt="Prediction scatter plot colored by confidence" style="max-width: 800px; width: 100%;">
-<figcaption><em>A target vs. prediction scatter from a ChemProp MLM CLint model. Points are colored by confidence — the high confidence points cluster along the diagonal, low confidence (blue) are scattered.</em></figcaption>
+<figcaption><em>A target vs. prediction scatter from a LogD model on the <a href="https://openadmet.org/">OpenADMET ExpansionRX</a> challenge test data. Points are colored by confidence — the high confidence points cluster along the diagonal, low confidence (blue) are scattered.</em></figcaption>
 </figure>
 
 <h2 id="the-core-idea-ensemble-disagreement">The Core Idea: Ensemble Disagreement</h2>
