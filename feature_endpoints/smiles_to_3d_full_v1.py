@@ -23,6 +23,8 @@ from _common import ensure_featureset
 ENDPOINT_NAME = "smiles-to-3d-full-v1"
 INSTANCE = None  # None → auto-select (ml.c7i.xlarge for async). Set
 #        "ml.c7i.2xlarge" etc. for more CPU/mem per worker.
+MIN_INSTANCES = 0  # Autoscaler floor. 0 in dev (scale to zero); set to 1 in
+#         production to keep one instance warm.
 MAX_INSTANCES = 8  # Autoscaler ceiling. Bump for bigger batch jobs.
 BATCH_SIZE = 5  # Rows per invocation. 5 fits ml.c7i.xlarge; bump to 10
 #         when running on ml.c7i.2xlarge (twice the CPU/mem).
@@ -48,6 +50,7 @@ if __name__ == "__main__":
         tags=tags,
         async_endpoint=True,
         instance=INSTANCE,
+        min_instances=MIN_INSTANCES,
         max_instances=MAX_INSTANCES,
     )
 

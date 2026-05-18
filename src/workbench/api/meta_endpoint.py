@@ -64,6 +64,8 @@ class MetaEndpoint(Endpoint):
         dag: MetaEndpointDAG,
         description: str | None = None,
         tags: list[str] | None = None,
+        min_instances: int = 0,
+        max_instances: int = 1,
     ) -> "MetaEndpoint":
         """Build, register, and deploy a MetaEndpoint from a DAG.
 
@@ -82,6 +84,13 @@ class MetaEndpoint(Endpoint):
             dag: A :class:`MetaEndpointDAG` describing the data flow.
             description: Optional description for the registered model.
             tags: Optional list of Workbench tags.
+            min_instances: Autoscaler floor for async deployments (default: 0 —
+                scale to zero when idle). Set to 1 in production to keep the
+                meta warm. Ignored for sync deployments.
+            max_instances: Autoscaler ceiling for async deployments (default: 1).
+                The meta is a thin orchestrator that fans out to children, so
+                it rarely needs more than one instance. Ignored for sync
+                deployments.
 
         Returns:
             The deployed MetaEndpoint, ready for ``.inference()``.
@@ -133,7 +142,8 @@ class MetaEndpoint(Endpoint):
         endpoint = model.to_endpoint(
             tags=tags or [name],
             async_endpoint=is_async,
-            max_instances=1 if is_async else None,
+            min_instances=min_instances if is_async else 0,
+            max_instances=max_instances if is_async else None,
         )
 
         # inference_batch_size is large so callers send big batches in a

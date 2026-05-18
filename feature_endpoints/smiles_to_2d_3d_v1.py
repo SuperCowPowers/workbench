@@ -25,6 +25,13 @@ from workbench.utils.meta_endpoint_dag import MetaEndpointDAG
 ENDPOINT_NAME = "smiles-to-2d-3d-v1"
 TAGS = ["smiles", "2d", "3d", "meta"]
 
+# ─── Autoscaler knobs (async deployment only) ───────────────────────────────
+# The meta is a thin orchestrator that fans work out to its children, so one
+# instance is plenty. Floor stays at 0 in dev (scale to zero); set to 1 in
+# production to keep the meta warm.
+MIN_INSTANCES = 0
+MAX_INSTANCES = 1
+
 
 if __name__ == "__main__":
     # Build the DAG: 2D + 3D-full → Concat
@@ -43,6 +50,8 @@ if __name__ == "__main__":
         dag=dag,
         description="SMILES → RDKit/Mordred 2D + Boltzmann 3D molecular descriptors",
         tags=TAGS,
+        min_instances=MIN_INSTANCES,
+        max_instances=MAX_INSTANCES,
     )
     end.set_owner("BW")
 
