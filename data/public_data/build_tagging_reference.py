@@ -213,9 +213,7 @@ def build_dataframe(verify: bool = True) -> pd.DataFrame:
     if verify:
         mismatches = []
         for _, row in df.iterrows():
-            actual = sorted(
-                t for t in tagged.loc[row["id"], "tags"] if t.startswith("curation:")
-            )
+            actual = sorted(t for t in tagged.loc[row["id"], "tags"] if t.startswith("curation:"))
             expected = sorted(row["expected_curation_tags"])
             if actual != expected:
                 mismatches.append((row["name"], expected, actual))
