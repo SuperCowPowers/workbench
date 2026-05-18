@@ -183,6 +183,7 @@ class WorkbenchShell:
         self.commands["direct_meta"] = self.switch_to_direct_meta
         self.commands["log_theme"] = log_theme
         self.commands["reconnect"] = self.check_aws_account
+        self.commands["pub_data"] = importlib.import_module("workbench.api.public_data").PublicData()
 
         # Add cheminformatics utils if available
         if HAVE_CHEM_UTILS:
