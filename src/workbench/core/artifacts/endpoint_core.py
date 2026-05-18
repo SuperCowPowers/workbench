@@ -904,12 +904,17 @@ class EndpointCore(Artifact):
 
         except ClientError as err:
             error_code = err.response["Error"]["Code"]
-            if error_code == "ModelNotReadyException":
-                self.log.error(f"Error {error_code}")
-                self.log.error(err.response)
-                self.log.error("Model not ready. Sleeping and retrying...")
-                time.sleep(60)
-                return self._endpoint_error_handling(sm_endpoint, feature_df)
+            if error_code in ("ModelNotReadyException", "ThrottlingException"):
+                max_retries = 5
+                if retries < max_retries:
+                    sleep_time = min(2**retries * 30, 120)
+                    self.log.warning(
+                        f"{error_code} (retry {retries + 1}/{max_retries}). Sleeping {sleep_time}s..."
+                    )
+                    time.sleep(sleep_time)
+                    return self._endpoint_error_handling(sm_endpoint, feature_df, drop_error_rows, retries + 1)
+                self.log.critical(f"{error_code}: max retries exceeded")
+                raise
 
             elif error_code == "ModelError":
                 # Compact log; full response only at debug level
