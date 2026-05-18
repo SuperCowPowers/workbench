@@ -908,9 +908,7 @@ class EndpointCore(Artifact):
                 max_retries = 5
                 if retries < max_retries:
                     sleep_time = min(2**retries * 30, 120)
-                    self.log.warning(
-                        f"{error_code} (retry {retries + 1}/{max_retries}). Sleeping {sleep_time}s..."
-                    )
+                    self.log.warning(f"{error_code} (retry {retries + 1}/{max_retries}). Sleeping {sleep_time}s...")
                     time.sleep(sleep_time)
                     return self._endpoint_error_handling(sm_endpoint, feature_df, drop_error_rows, retries + 1)
                 self.log.critical(f"{error_code}: max retries exceeded")
