@@ -27,6 +27,8 @@ authors = [{ name = "SuperCowPowers LLC", email = "support@supercowpowers.com" }
 dependencies = [
     "boto3 >= 1.31.76",
     "botocore >= 1.31.76",
+    # Anchors the sagemaker-mlops -> s3fs -> aiobotocore chain to a botocore-compatible version
+    "aiobotocore >= 3.4.0",
     "redis >= 5.0.1",
     "numpy >= 1.26.4",
     "pandas >= 2.2.1, < 3.0",
