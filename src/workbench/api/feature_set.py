@@ -174,9 +174,11 @@ class FeatureSet(FeatureSetCore):
         include_all_columns: bool = False,
         radius: int = 2,
         n_bits: int = 2048,
-        counts: bool = False,
     ) -> "FingerprintProximity":  # noqa: F821
         """Create a local FingerprintProximity Model for this FeatureSet
+
+        Note: FingerprintProximity auto-detects binary vs. count fingerprints from the
+        fingerprint column format (comma-separated → count, otherwise binary).
 
         Args:
            target (str): The target column name
@@ -185,7 +187,6 @@ class FeatureSet(FeatureSetCore):
            include_all_columns (bool): Include all DataFrame columns in results (default: False)
            radius (int): Radius for Morgan fingerprint computation (default: 2)
            n_bits (int): Number of bits for fingerprint (default: 2048)
-           counts (bool): Whether to use count simulation (default: False)
 
         Returns:
            FingerprintProximity: A local FingerprintProximity Model

@@ -142,16 +142,17 @@ def fingerprint_prox_model_local(
     include_all_columns: bool = False,
     radius: int = 2,
     n_bits: int = 2048,
-    counts: bool = False,
 ) -> FingerprintProximity:
     """Create a FingerprintProximity Model for this Model
+
+    Note: FingerprintProximity auto-detects binary vs. count fingerprints from the
+    fingerprint column format (comma-separated → count, otherwise binary).
 
     Args:
         model (Model): The Model used to create the fingerprint proximity model
         include_all_columns (bool): Include all DataFrame columns in neighbor results (default: False)
         radius (int): Morgan fingerprint radius (default: 2)
         n_bits (int): Number of bits for the fingerprint (default: 2048)
-        counts (bool): Use count fingerprints instead of binary (default: False)
 
     Returns:
         FingerprintProximity: The fingerprint proximity model
