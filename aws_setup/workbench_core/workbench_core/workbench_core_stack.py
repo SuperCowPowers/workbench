@@ -816,7 +816,7 @@ class WorkbenchCoreStack(Stack):
             ],
         )
 
-        # 2. CloudWatch alarms — MUST be Resource: "*" for these three actions.
+        # 2. CloudWatch alarms — Resource: "*" required.
         #    The application-autoscaling RegisterScalableTarget call does an upfront
         #    permission check on cloudwatch:PutMetricAlarm/DeleteAlarms/DescribeAlarms
         #    without supplying a resource ARN, so any narrower scope (even a prefix
@@ -828,6 +828,7 @@ class WorkbenchCoreStack(Stack):
                 "cloudwatch:PutMetricAlarm",
                 "cloudwatch:DeleteAlarms",
                 "cloudwatch:DescribeAlarms",
+                "cloudwatch:TagResource",
             ],
             resources=["*"],
         )
@@ -1054,23 +1055,6 @@ class WorkbenchCoreStack(Stack):
                 f"arn:aws:logs:{self.region}:{self.account}:log-group:WorkbenchLogGroup",
                 f"arn:aws:logs:{self.region}:{self.account}:log-group:WorkbenchLogGroup:*",
             ],
-        )
-
-    # For CloudWatch alarm operations
-    def cloudwatch_alarms(self) -> iam.PolicyStatement:
-        """Create a policy statement for managing CloudWatch alarms.
-
-        Returns:
-            iam.PolicyStatement: The policy statement for CloudWatch alarms.
-        """
-        return iam.PolicyStatement(
-            actions=[
-                "cloudwatch:PutMetricAlarm",
-                "cloudwatch:DescribeAlarms",
-                "cloudwatch:DeleteAlarms",
-                "cloudwatch:TagResource",
-            ],
-            resources=[f"arn:aws:cloudwatch:{self.region}:{self.account}:alarm:*"],
         )
 
     ##########################
