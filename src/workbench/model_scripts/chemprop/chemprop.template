@@ -15,10 +15,21 @@ import json
 import os
 import time
 
+
+def _ts() -> str:
+    """Short HH:MM:SS timestamp for startup-phase prints.
+
+    CloudWatch attaches its own timestamps to every log event, but the AWS console
+    and default `aws logs get-log-events` text output strip them. Prefixing prints
+    with a clock lets us read raw log text without an extra round-trip.
+    """
+    return time.strftime("%H:%M:%S")
+
+
 # Startup diagnostic prints (flush=True so we don't lose them if a downstream
 # step hangs/crashes before its buffer flushes). The bare-import phase below
 # is the most common source of silent inference-container startup hangs.
-print("[startup] importing heavy deps...", flush=True)
+print(f"[{_ts()}] [startup] importing heavy deps...", flush=True)
 
 import joblib
 import numpy as np
@@ -37,15 +48,14 @@ from model_script_utils import (
     output_fn,
     save_to_s3,
 )
-from uq_harness import (
+from model_script_utils.uq_harness import (
     apply_classification_confidence,
-    compute_confidence,
     compute_vgmu_confidence,
-    load_uq_metadata,
-    predict_intervals,
+    load_classification_uq,
 )
+from model_script_utils.uq_model import UQModel
 
-print("[startup] heavy deps imported", flush=True)
+print(f"[{_ts()}] [startup] heavy deps imported", flush=True)
 
 # =============================================================================
 # Default Hyperparameters
@@ -188,18 +198,23 @@ def model_fn(model_dir: str) -> dict:
         ensemble_models.append(model)
     print(f"[model_fn] all {len(ensemble_models)} models loaded", flush=True)
 
-    # Load UQ metadata (regression or classification confidence)
-    uq_metadata = None
-    uq_path = os.path.join(model_dir, "uq_metadata.json")
-    if os.path.exists(uq_path):
-        uq_metadata = load_uq_metadata(model_dir)
+    # Load UQ artifacts:
+    #   - Regression: fitted UQModel for the primary target (uq_model.joblib + uq_metadata.json + uq_proximity.joblib)
+    #   - Classification: VGMU isotonic calibration (classification_uq.json)
+    uq_model = None
+    classification_uq = None
+    if os.path.exists(os.path.join(model_dir, "uq_model.joblib")):
+        uq_model = UQModel.load(model_dir)
+    if os.path.exists(os.path.join(model_dir, "classification_uq.json")):
+        classification_uq = load_classification_uq(model_dir)
 
     print(f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}")
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": metadata["n_ensemble"],
         "target_columns": metadata["target_columns"],
-        "uq_metadata": uq_metadata,
+        "uq_model": uq_model,
+        "classification_uq": classification_uq,
     }
 
 
@@ -329,8 +344,8 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df = expand_proba_column(df, label_encoder.classes_)
 
         # VGMU classification confidence
-        uq_metadata = model_dict.get("uq_metadata")
-        if uq_metadata and "classification_confidence" in uq_metadata:
+        classification_uq = model_dict.get("classification_uq")
+        if classification_uq and "classification_confidence" in classification_uq:
             all_probs_stack = np.stack(all_preds, axis=0)
             if all_probs_stack.shape[2] == 1:
                 # Binary sigmoid → expand to 2-class for each model
@@ -339,7 +354,7 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
                 )
             raw_conf = compute_vgmu_confidence(avg_probs, all_probs_stack)
             conf_values = apply_classification_confidence(
-                raw_conf, uq_metadata["classification_confidence"]
+                raw_conf, classification_uq["classification_confidence"]
             )
             df["confidence"] = np.nan
             df.loc[valid_mask, "confidence"] = conf_values
@@ -350,28 +365,30 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         # FIXME: Multi-target models don't have a "primary target" — aliasing to the first
         #  target here is a shortcut so the web UI (which expects a single "prediction" column)
         #  continues to work. Per-target columns ({target}_pred, {target}_pred_std) are the
-        #  real source of truth. Remove this once the web UI supports multi-target natively.
+        #  real source of truth.
         df["prediction"] = df[f"{target_columns[0]}_pred"]
         df["prediction_std"] = df[f"{target_columns[0]}_pred_std"]
 
-        # Add calibrated UQ intervals and confidence if available
-        uq_metadata = model_dict.get("uq_metadata")
-        if uq_metadata:
-            if len(target_columns) > 1:
-                # Multi-target: per-target confidence using per-target UQ metadata
-                for tc in target_columns:
-                    if tc in uq_metadata:
-                        df = compute_confidence(df, uq_metadata[tc], std_col=f"{tc}_pred_std", prediction_col=f"{tc}_pred")
-                        df.rename(columns={"confidence": f"{tc}_confidence"}, inplace=True)
-                # Alias primary target's confidence + intervals to top-level columns
-                # (matches the prediction/prediction_std aliasing above for UI compatibility)
+        # UQModel UQ for the primary target. Multi-target UQ is not yet supported
+        # in the new pipeline — only the primary target gets full UQ treatment.
+        uq_model = model_dict.get("uq_model")
+        if uq_model is not None:
+            if "smiles" in df.columns:
+                query_df = df.loc[valid_mask, ["smiles"]]
                 primary = target_columns[0]
-                if primary in uq_metadata and f"{primary}_confidence" in df.columns:
-                    df["confidence"] = df[f"{primary}_confidence"]
-                    df = predict_intervals(df, uq_metadata[primary])
+                uq_out = uq_model.predict(
+                    query_df,
+                    df.loc[valid_mask, f"{primary}_pred"].values,
+                    df.loc[valid_mask, f"{primary}_pred_std"].values,
+                )
+                for col in uq_out.columns:
+                    df[col] = np.nan
+                    df.loc[valid_mask, col] = uq_out[col].values
             else:
-                df = predict_intervals(df, uq_metadata)
-                df = compute_confidence(df, uq_metadata)
+                print(
+                    "[uq] Skipping UQModel inference: input DataFrame has no "
+                    "'smiles' column for neighborhood lookups."
+                )
 
     return df
 
@@ -406,13 +423,14 @@ if __name__ == "__main__":
         print_confusion_matrix,
         print_regression_metrics,
     )
-    from uq_harness import (
+    from model_script_utils.uq_harness import (
         apply_classification_confidence,
         calibrate_classification_confidence,
-        calibrate_uq,
         compute_vgmu_confidence,
-        save_uq_metadata,
+        save_classification_uq,
     )
+    from model_script_utils.fingerprint_proximity import FingerprintProximity
+    from model_script_utils.uq_model import UQModel
 
     # -------------------------------------------------------------------------
     # Training-only helper functions
@@ -913,13 +931,15 @@ if __name__ == "__main__":
                 )
             avg_probs = np.mean(all_probs_stack, axis=0)
             raw_conf = compute_vgmu_confidence(avg_probs, all_probs_stack)
-            uq_metadata = calibrate_classification_confidence(raw_conf, y_true_decoded, preds_decoded)
+            classification_uq = calibrate_classification_confidence(raw_conf, y_true_decoded, preds_decoded)
             df_val["confidence"] = apply_classification_confidence(
-                raw_conf, uq_metadata["classification_confidence"]
+                raw_conf, classification_uq["classification_confidence"]
             )
         else:
-            uq_metadata = None
+            classification_uq = None
+        uq_model = None
     else:
+        classification_uq = None
         # Compute ensemble std using direct PyTorch inference (faster, no Trainer overhead)
         preds_std = None
         if len(ensemble_models) > 1:
@@ -963,41 +983,52 @@ if __name__ == "__main__":
             df_val[f"{t_name}_pred"] = preds[:, t_idx]
             df_val[f"{t_name}_pred_std"] = preds_std[:, t_idx] if preds_std is not None else 0.0
 
-        # Calibrate UQ intervals and confidence
+        # Fit UQModel on the primary target's validation predictions.
+        # Multi-target UQ is not yet supported in the new pipeline — only the primary
+        # target gets full UQ treatment. Per-target {target}_pred / {target}_pred_std
+        # columns remain available for downstream multi-target needs.
         print("\n" + "=" * 50)
-        print("Calibrating UQ Intervals")
+        print("Fitting UQModel (UQ residual estimator, primary target)")
         print("=" * 50)
 
-        if n_targets > 1:
-            # Multi-target: calibrate per-target confidence independently
-            uq_metadata = {}
-            for t_idx, t_name in enumerate(target_columns):
-                valid = df_val[t_name].notna()
-                t_uq = calibrate_uq(
-                    df_val.loc[valid, t_name].values,
-                    df_val.loc[valid, f"{t_name}_pred"].values,
-                    df_val.loc[valid, f"{t_name}_pred_std"].values,
-                )
-                df_val = compute_confidence(df_val, t_uq, std_col=f"{t_name}_pred_std", prediction_col=f"{t_name}_pred")
-                df_val.rename(columns={"confidence": f"{t_name}_confidence"}, inplace=True)
-                uq_metadata[t_name] = t_uq
-            # Alias primary target to top-level columns (matches single-target schema
-            # so validation_predictions.csv has prediction / prediction_std / confidence / q_*)
-            primary = target_columns[0]
-            df_val["prediction"] = df_val[f"{primary}_pred"]
-            df_val["prediction_std"] = df_val[f"{primary}_pred_std"]
-            df_val["confidence"] = df_val[f"{primary}_confidence"]
-            df_val = predict_intervals(df_val, uq_metadata[primary])
-        else:
-            df_val["prediction"] = df_val[f"{target_columns[0]}_pred"]
-            df_val["prediction_std"] = df_val[f"{target_columns[0]}_pred_std"]
-            uq_metadata = calibrate_uq(
-                df_val[target_columns[0]].values,
-                df_val["prediction"].values,
-                df_val["prediction_std"].values,
+        primary = target_columns[0]
+        df_val["prediction"] = df_val[f"{primary}_pred"]
+        df_val["prediction_std"] = df_val[f"{primary}_pred_std"]
+
+        if smiles_column not in df_train.columns and smiles_column not in df_val.columns:
+            raise ValueError(
+                f"UQModel requires a '{smiles_column}' column for fingerprint-based "
+                "neighborhood lookups."
             )
-            df_val = predict_intervals(df_val, uq_metadata)
-            df_val = compute_confidence(df_val, uq_metadata)
+        # Use all training rows as the proximity reference set
+        all_df = pd.concat([df_train, df_val], ignore_index=True)
+        prox_df = all_df[[id_column, smiles_column, primary]].copy()
+        prox_df = prox_df.rename(columns={smiles_column: "smiles"})
+        prox_df["in_model"] = True  # see XGB template for rationale on CV folds
+
+        # Only fit UQModel if we have a primary target with valid rows
+        valid = df_val[primary].notna()
+        if valid.sum() > 0:
+            prox = FingerprintProximity(prox_df, id_column=id_column, target=primary)
+            uq_model = UQModel(prox)
+            uq_model.fit(
+                df_val.loc[valid, id_column].tolist(),
+                df_val.loc[valid, primary].values,
+                df_val.loc[valid, f"{primary}_pred"].values,
+                df_val.loc[valid, f"{primary}_pred_std"].values,
+            )
+
+            uq_out = uq_model.predict(
+                df_val.loc[valid, id_column].tolist(),
+                df_val.loc[valid, f"{primary}_pred"].values,
+                df_val.loc[valid, f"{primary}_pred_std"].values,
+            )
+            for col in uq_out.columns:
+                df_val[col] = np.nan
+                df_val.loc[valid, col] = uq_out[col].values
+        else:
+            uq_model = None
+            print("[uq] No valid primary-target rows; skipping UQModel fit.")
 
     # -------------------------------------------------------------------------
     # Compute SHAP values for feature importance
@@ -1011,7 +1042,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 50, flush=True)
     print("Computing SHAP Values", flush=True)
     print("=" * 50, flush=True)
-    from chemprop_shap_utils import compute_chemprop_shap, format_shap_results
+    from model_script_utils.chemprop_shap_utils import compute_chemprop_shap, format_shap_results
     print("[DIAG] SHAP imports loaded", flush=True)  # [DIAG]
 
     shap_values_array, shap_feature_names, shap_indices, shap_fractions = compute_chemprop_shap(
@@ -1109,8 +1140,10 @@ if __name__ == "__main__":
     }
     joblib.dump(ensemble_metadata, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
 
-    if uq_metadata is not None:
-        save_uq_metadata(uq_metadata, args.model_dir)
+    if uq_model is not None:
+        uq_model.save(args.model_dir)
+    if classification_uq is not None:
+        save_classification_uq(classification_uq, args.model_dir)
 
     with open(os.path.join(args.model_dir, "hyperparameters.json"), "w") as f:
         json.dump(hyperparameters, f, indent=2)

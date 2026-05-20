@@ -1,3 +1,22 @@
+"""Proximity ABC: a swappable contract for neighbor-lookup backends.
+
+Concrete subclasses (FingerprintProximity, FeatureSpaceProximity) provide different
+similarity definitions but share this query contract so downstream analysis classes
+(ActivityLandscape, ApplicabilityDomain) can be polymorphic over the backend.
+
+The ABC enforces:
+    - Both id-based and novel-query lookups
+    - A canonical neighbor-result DataFrame shape: id, neighbor_id, distance,
+      [target], [in_model], plus any backend-specific extras (e.g. similarity)
+    - Shared reference attributes (id_column, target, df) for downstream consumption
+
+What the ABC deliberately does NOT enforce:
+    - The distance metric (Jaccard / Ruzicka / Euclidean — subclass detail)
+    - The index data structure (ball_tree / sparse on-the-fly / KDTree — subclass detail)
+    - The "novel query" input representation — query_df is structural; each subclass
+      declares its own column requirements in the docstring
+"""
+
 import pandas as pd
 import numpy as np
 from abc import ABC, abstractmethod
@@ -9,7 +28,7 @@ log = logging.getLogger("workbench")
 
 
 class Proximity(ABC):
-    """Abstract base class for proximity/neighbor computations."""
+    """Abstract base for compound proximity backends."""
 
     def __init__(
         self,
@@ -23,11 +42,12 @@ class Proximity(ABC):
         Initialize the Proximity class.
 
         Args:
-            df: DataFrame containing data for neighbor computations.
+            df: DataFrame containing the reference set for neighbor computations.
             id_column: Name of the column used as the identifier.
-            features: List of feature column names to be used for neighbor computations.
+            features: List of feature column names used for neighbor computations.
             target: Name of the target column. Defaults to None.
-            include_all_columns: Include all DataFrame columns in neighbor results. Defaults to False.
+            include_all_columns: Include all DataFrame columns in neighbor results.
+                Defaults to False.
         """
         self.id_column = id_column
         self.features = features
@@ -37,172 +57,40 @@ class Proximity(ABC):
         # Store the DataFrame (subclasses may filter/modify in _prepare_data)
         self.df = df.copy()
 
-        # Prepare data (subclasses can override)
+        # Subclass hooks
         self._prepare_data()
-
-        # Compute target range if target is provided
-        self.target_range = None
-        if self.target and self.target in self.df.columns:
-            self.target_range = self.df[self.target].max() - self.df[self.target].min()
-
-        # Build the proximity model (subclass-specific)
         self._build_model()
 
-        # Precompute landscape metrics
-        self._precompute_metrics()
-
-        # Define core columns for output (subclasses can override)
-        self._set_core_columns()
-
-        # Project the data to 2D (subclass-specific)
-        self._project_2d()
+    # ------------------------------------------------------------------
+    # Subclass hooks
+    # ------------------------------------------------------------------
 
     def _prepare_data(self) -> None:
-        """Prepare the data before building the model. Subclasses can override."""
-        pass
+        """Prepare the reference DataFrame before building the model.
 
-    def _set_core_columns(self) -> None:
-        """Set the core columns for output. Subclasses can override."""
-        self.core_columns = [self.id_column, "nn_distance", "nn_id"]
-        if self.target:
-            self.core_columns.extend([self.target, "nn_target", "nn_target_diff"])
+        Default: no-op. Subclasses can override to compute / validate / filter columns.
+        """
+        pass
 
     @abstractmethod
     def _build_model(self) -> None:
-        """Build the proximity model. Must set self.nn (NearestNeighbors instance)."""
-        pass
+        """Build the underlying NN index.
+
+        Must set `self.nn` to an object with sklearn-compatible
+        kneighbors(X, n_neighbors) and radius_neighbors(X, radius) methods.
+        """
 
     @abstractmethod
-    def _transform_features(self, df: pd.DataFrame) -> np.ndarray:
-        """Transform features for querying. Returns feature matrix for nearest neighbor lookup."""
-        pass
+    def _transform_features(self, df: pd.DataFrame) -> Union[np.ndarray, "object"]:
+        """Transform a DataFrame into the feature representation expected by self.nn.
 
-    @abstractmethod
-    def _project_2d(self) -> None:
-        """Project the data to 2D for visualization. Updates self.df with 'x' and 'y' columns."""
-        pass
-
-    def isolated(self, top_percent: float = 1.0) -> pd.DataFrame:
+        For id-based queries this is called with a slice of self.df. For novel
+        queries this is called with the caller-supplied query_df.
         """
-        Find isolated data points based on distance to nearest neighbor.
 
-        Args:
-            top_percent: Percentage of most isolated data points to return (e.g., 1.0 returns top 1%)
-
-        Returns:
-            DataFrame of observations above the percentile threshold, sorted by distance (descending)
-        """
-        percentile = 100 - top_percent
-        threshold = np.percentile(self.df["nn_distance"], percentile)
-        isolated = self.df[self.df["nn_distance"] >= threshold].copy()
-        isolated = isolated.sort_values("nn_distance", ascending=False).reset_index(drop=True)
-        return isolated if self.include_all_columns else isolated[self.core_columns]
-
-    def proximity_stats(self) -> pd.DataFrame:
-        """
-        Return distribution statistics for nearest neighbor distances.
-
-        Returns:
-            DataFrame with proximity distribution statistics (count, mean, std, percentiles)
-        """
-        return (
-            self.df["nn_distance"].describe(percentiles=[0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]).to_frame()
-        )
-
-    def target_gradients(
-        self,
-        top_percent: float = 1.0,
-        min_delta: Optional[float] = None,
-        k_neighbors: int = 4,
-        only_coincident: bool = False,
-    ) -> pd.DataFrame:
-        """
-        Find compounds with steep target gradients (data quality issues and activity cliffs).
-
-        Uses a two-phase approach:
-        1. Quick filter using nearest neighbor gradient
-        2. Verify using k-neighbor median to handle cases where the nearest neighbor is the outlier
-
-        Args:
-            top_percent: Percentage of compounds with steepest gradients to return (e.g., 1.0 = top 1%)
-            min_delta: Minimum absolute target difference to consider. If None, defaults to target_range/100
-            k_neighbors: Number of neighbors to use for median calculation (default: 4)
-            only_coincident: If True, only consider compounds that are coincident (default: False)
-
-        Returns:
-            DataFrame of compounds with steepest gradients, sorted by gradient (descending)
-        """
-        if self.target is None:
-            raise ValueError("Target column must be specified")
-
-        epsilon = 1e-6
-
-        # Phase 1: Quick filter using precomputed nearest neighbor
-        candidates = self.df.copy()
-        candidates["gradient"] = candidates["nn_target_diff"] / (candidates["nn_distance"] + epsilon)
-
-        # Apply min_delta
-        if min_delta is None:
-            min_delta = self.target_range / 100.0 if self.target_range > 0 else 0.0
-        candidates = candidates[candidates["nn_target_diff"] >= min_delta]
-
-        # Filter based on mode
-        if only_coincident:
-            # Only keep coincident points (nn_distance ~= 0)
-            candidates = candidates[candidates["nn_distance"] < epsilon].copy()
-        else:
-            # Get top X% by initial gradient
-            percentile = 100 - top_percent
-            threshold = np.percentile(candidates["gradient"], percentile)
-            candidates = candidates[candidates["gradient"] >= threshold].copy()
-
-        # Phase 2: Verify with K-neighbor median to filter out cases where nearest neighbor is the outlier
-        results = []
-        for _, row in candidates.iterrows():
-            cmpd_id = row[self.id_column]
-            cmpd_target = row[self.target]
-
-            # Get K nearest neighbors (excluding self, +1 to compensate for skipping nearest)
-            nbrs = self.neighbors(cmpd_id, n_neighbors=k_neighbors + 1, include_self=False)
-
-            # Calculate median target of k neighbors, excluding the nearest neighbor (index 0)
-            neighbor_median = nbrs.iloc[1:][self.target].median()
-            median_diff = abs(cmpd_target - neighbor_median)
-
-            # Only keep if compound differs from neighborhood median
-            # This filters out cases where the nearest neighbor is the outlier
-            if median_diff >= min_delta:
-                results.append(
-                    {
-                        self.id_column: cmpd_id,
-                        self.target: cmpd_target,
-                        "nn_target": row["nn_target"],
-                        "nn_target_diff": row["nn_target_diff"],
-                        "nn_distance": row["nn_distance"],
-                        "gradient": row["gradient"],  # Keep Phase 1 gradient
-                        "neighbor_median": neighbor_median,
-                        "neighbor_median_diff": median_diff,
-                    }
-                )
-
-        # Handle empty results
-        if not results:
-            return pd.DataFrame(
-                columns=[
-                    self.id_column,
-                    self.target,
-                    "nn_target",
-                    "nn_target_diff",
-                    "nn_distance",
-                    "gradient",
-                    "neighbor_median",
-                    "neighbor_median_diff",
-                ]
-            )
-
-        results_df = pd.DataFrame(results)
-        results_df = results_df.sort_values("gradient", ascending=False).reset_index(drop=True)
-        return results_df
+    # ------------------------------------------------------------------
+    # Concrete neighbor query API (the ABC contract)
+    # ------------------------------------------------------------------
 
     def neighbors(
         self,
@@ -211,17 +99,17 @@ class Proximity(ABC):
         radius: Optional[float] = None,
         include_self: bool = True,
     ) -> pd.DataFrame:
-        """
-        Return neighbors for ID(s) from the existing dataset.
+        """Look up neighbors for IDs already in the reference set.
 
         Args:
-            id_or_ids (Union[str, int, List[Union[str, int]]]): Single ID or list of IDs to look up.
-            n_neighbors (int): Number of neighbors to return (default: 5, ignored if radius is set).
-            radius (float): If provided, find all neighbors within this radius.
-            include_self (bool): Whether to include self in results (default: True).
+            id_or_ids: Single ID or list of IDs to look up.
+            n_neighbors: Number of neighbors to return (ignored if radius is set).
+            radius: If provided, find all neighbors within this distance.
+            include_self: Whether to include self in results.
 
         Returns:
-            pd.DataFrame: DataFrame containing neighbors and distances.
+            DataFrame with columns: id_column, neighbor_id, distance, [target],
+            [in_model], plus any backend-specific extras.
         """
         # Normalize to list
         ids = [id_or_ids] if not isinstance(id_or_ids, list) else id_or_ids
@@ -235,27 +123,88 @@ class Proximity(ABC):
         query_df = self.df[self.df[self.id_column].isin(ids)]
         query_df = query_df.set_index(self.id_column).loc[ids].reset_index()
 
+        return self._neighbors_impl(
+            query_df=query_df,
+            query_ids=query_df[self.id_column].values,
+            n_neighbors=n_neighbors,
+            radius=radius,
+            include_self=include_self,
+            id_col_name=self.id_column,
+        )
+
+    def neighbors_from_query_df(
+        self,
+        query_df: pd.DataFrame,
+        n_neighbors: Optional[int] = 5,
+        radius: Optional[float] = None,
+    ) -> pd.DataFrame:
+        """Look up neighbors for novel queries (not yet in the reference set).
+
+        Each subclass documents the required columns of query_df:
+            - FingerprintProximity: 'smiles' column (or precomputed 'fingerprint')
+            - FeatureSpaceProximity: the feature columns the model was built with
+
+        Args:
+            query_df: Novel-query DataFrame. If a 'query_id' column is present it's
+                used to label results; otherwise positional indices are used.
+            n_neighbors: Number of neighbors to return (ignored if radius is set).
+            radius: If provided, find all neighbors within this distance.
+
+        Returns:
+            DataFrame with columns: query_id, neighbor_id, distance, [target],
+            [in_model], plus any backend-specific extras.
+        """
+        # Determine query labels
+        if "query_id" in query_df.columns:
+            query_ids = query_df["query_id"].values
+        else:
+            query_ids = np.arange(len(query_df))
+
+        # include_self isn't meaningful for novel queries
+        return self._neighbors_impl(
+            query_df=query_df,
+            query_ids=query_ids,
+            n_neighbors=n_neighbors,
+            radius=radius,
+            include_self=True,
+            id_col_name="query_id",
+        )
+
+    # ------------------------------------------------------------------
+    # Internal: shared neighbor-result construction
+    # ------------------------------------------------------------------
+
+    def _neighbors_impl(
+        self,
+        query_df: pd.DataFrame,
+        query_ids: np.ndarray,
+        n_neighbors: Optional[int],
+        radius: Optional[float],
+        include_self: bool,
+        id_col_name: str,
+    ) -> pd.DataFrame:
+        """Shared backend for neighbors() and neighbors_from_query_df()."""
         # Transform query features (subclass-specific)
         X_query = self._transform_features(query_df)
 
-        # Get neighbors from sklearn
+        # Get neighbors from the backend NN index
         if radius is not None:
             distances, indices = self.nn.radius_neighbors(X_query, radius=radius)
-            # Ragged arrays — concatenate into flat arrays
-            flat_distances = np.concatenate(distances)
-            flat_indices = np.concatenate(indices)
+            # Ragged arrays — concatenate
+            flat_distances = np.concatenate(distances) if len(distances) else np.array([])
+            flat_indices = np.concatenate(indices) if len(indices) else np.array([], dtype=int)
             repeat_counts = [len(d) for d in distances]
-            query_ids_repeated = np.repeat(query_df[self.id_column].values, repeat_counts)
+            query_ids_repeated = np.repeat(query_ids, repeat_counts)
         else:
             distances, indices = self.nn.kneighbors(X_query, n_neighbors=n_neighbors)
             flat_distances = distances.ravel()
             flat_indices = indices.ravel()
-            query_ids_repeated = np.repeat(query_df[self.id_column].values, n_neighbors)
+            query_ids_repeated = np.repeat(query_ids, n_neighbors)
 
-        # Vectorized column extraction (replaces per-row df.iloc[] calls)
+        # Vectorized neighbor lookup
         neighbor_ids = self.df[self.id_column].values[flat_indices]
 
-        # Filter self-hits if requested
+        # Filter self-hits if requested (only meaningful for id-based lookups)
         if not include_self:
             mask = neighbor_ids != query_ids_repeated
             flat_distances = flat_distances[mask]
@@ -266,66 +215,32 @@ class Proximity(ABC):
         # Clean near-zero distances
         flat_distances = np.where(flat_distances < 1e-6, 0.0, flat_distances)
 
-        # Build result dict with core columns
+        # Build the canonical result dict
         result = {
-            self.id_column: query_ids_repeated,
+            id_col_name: query_ids_repeated,
             "neighbor_id": neighbor_ids,
             "distance": flat_distances,
         }
 
-        # Add target column if present
+        # Add target if present
         if self.target and self.target in self.df.columns:
             result[self.target] = self.df[self.target].values[flat_indices]
 
-        # Add prediction/probability/residual columns if they exist
+        # Pass through prediction-related and in_model columns
         for col in self.df.columns:
             if col == "prediction" or "_proba" in col or "residual" in col or col == "in_model":
                 result[col] = self.df[col].values[flat_indices]
 
-        # Include all columns if requested (bulk iloc is much faster than per-row)
+        # Include all columns if requested
         if self.include_all_columns:
             neighbor_rows = self.df.iloc[flat_indices]
             for col in neighbor_rows.columns:
                 if col not in result:
                     result[col] = neighbor_rows[col].values
-            # Restore query_id and neighbor_id (neighbor_rows may have overwritten id column)
-            result[self.id_column] = query_ids_repeated
+            # Restore query / neighbor id columns
+            result[id_col_name] = query_ids_repeated
             result["neighbor_id"] = neighbor_ids
 
         df_results = pd.DataFrame(result)
-        df_results = df_results.sort_values([self.id_column, "distance"], ascending=[True, True])
+        df_results = df_results.sort_values([id_col_name, "distance"], ascending=[True, True])
         return df_results.reset_index(drop=True)
-
-    def _precompute_metrics(self) -> None:
-        """
-        Precompute landscape metrics for all compounds.
-
-        Adds columns to self.df:
-        - nn_distance: Distance to nearest neighbor
-        - nn_id: ID of nearest neighbor
-
-        If target is specified, also adds:
-        - nn_target: Target value of nearest neighbor
-        - nn_target_diff: Absolute difference from nearest neighbor target
-        """
-        log.info("Precomputing proximity metrics...")
-
-        # Get nearest neighbors for all points (n=2 because index 0 is self)
-        X = self._transform_features(self.df)
-        distances, indices = self.nn.kneighbors(X, n_neighbors=2)
-
-        # Extract nearest neighbor (index 1, since index 0 is self)
-        self.df["nn_distance"] = distances[:, 1]
-        self.df["nn_id"] = self.df.iloc[indices[:, 1]][self.id_column].values
-
-        # If target exists, compute target-based metrics
-        if self.target and self.target in self.df.columns:
-            # Get target values for nearest neighbor
-            nn_target_values = self.df.iloc[indices[:, 1]][self.target].values
-            self.df["nn_target"] = nn_target_values
-            self.df["nn_target_diff"] = np.abs(self.df[self.target].values - nn_target_values)
-
-            # Precompute target range for min_delta default
-            self.target_range = self.df[self.target].max() - self.df[self.target].min()
-
-        log.info("Proximity metrics precomputed successfully")

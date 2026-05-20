@@ -148,14 +148,29 @@ def generate_model_script(template_params: dict) -> str:
     output_dir = tempfile.mkdtemp(prefix=f"workbench_{model_script_dir_name}_")
     log.info(f"Generating model script in temp directory: {output_dir}")
 
-    # Copy all supporting files (except templates and generated scripts) to the temp directory
-    for file in os.listdir(source_script_dir):
-        if file.endswith(".template") or file.startswith("generated_"):
+    # Copy all supporting files and directories (except templates and generated scripts)
+    # to the temp directory. `os.path.isfile` / `os.path.isdir` follow symlinks, so both
+    # individual-file symlinks and directory symlinks (e.g. `model_script_utils ->
+    # ../../model_script_utils`) get materialized into real files / real directories
+    # in the bundle. `symlinks=False` in copytree resolves nested symlinks too — so the
+    # ones inside the symlinked model_script_utils/ dir (proximity.py, uq_model.py, ...)
+    # land in the bundle as real files, not dangling symlinks.
+    for entry in os.listdir(source_script_dir):
+        if entry.endswith(".template") or entry.startswith("generated_") or entry == "__pycache__":
             continue
-        source_file = os.path.join(source_script_dir, file)
-        if os.path.isfile(source_file):
-            shutil.copy(source_file, output_dir)
-            log.info(f"Copied supporting file: {file}")
+        source_path = os.path.join(source_script_dir, entry)
+        if os.path.isfile(source_path):
+            shutil.copy(source_path, output_dir)
+            log.info(f"Copied supporting file: {entry}")
+        elif os.path.isdir(source_path):
+            dst = os.path.join(output_dir, entry)
+            shutil.copytree(
+                source_path,
+                dst,
+                symlinks=False,
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+            )
+            log.info(f"Copied supporting directory: {entry}")
 
     # Copy the training_harness.py wrapper (handles post-training inference bundling)
     entrypoint_path = package_dir.parent / "model_script_utils" / "training_harness.py"
