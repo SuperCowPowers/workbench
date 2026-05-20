@@ -1068,6 +1068,7 @@ class WorkbenchCoreStack(Stack):
                 "cloudwatch:PutMetricAlarm",
                 "cloudwatch:DescribeAlarms",
                 "cloudwatch:DeleteAlarms",
+                "cloudwatch:TagResource",
             ],
             resources=[f"arn:aws:cloudwatch:{self.region}:{self.account}:alarm:*"],
         )
