@@ -206,6 +206,15 @@ def _put_step_policy_with_alarm(aas, cw, endpoint_name, resource_id, role, adjus
         ComparisonOperator=comparison,
         TreatMissingData="notBreaching",
         AlarmActions=[pol["PolicyARN"]],
+        AlarmDescription=(
+            f"Workbench auto-scaling alarm ({role}) for SageMaker async endpoint '{endpoint_name}'. "
+            f"Managed by workbench.utils.endpoint_autoscaling."
+        ),
+        Tags=[
+            {"Key": "ManagedBy", "Value": "workbench"},
+            {"Key": "Component", "Value": "endpoint-autoscaling"},
+            {"Key": "Endpoint", "Value": endpoint_name},
+        ],
     )
 
 
