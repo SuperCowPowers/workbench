@@ -10,7 +10,7 @@ import logging
 
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
-from workbench_bridges.utils.execution_environment import running_as_service
+from workbench.utils.execution_environment import running_as_service
 
 # Attempt to import IPython-related utilities
 try:

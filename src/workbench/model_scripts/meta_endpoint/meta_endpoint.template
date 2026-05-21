@@ -4,8 +4,8 @@
 # child endpoints + aggregation nodes and runs it against incoming inference
 # requests using a per-endpoint dispatching invoker:
 #
-#   - Sync child endpoints  → workbench_bridges.fast_inference
-#   - Async child endpoints → workbench_bridges.async_inference
+#   - Sync child endpoints  → workbench.endpoints.fast_inference
+#   - Async child endpoints → workbench.endpoints.async_inference
 #
 # The dispatch decision uses the per-endpoint `is_async` flags captured in
 # the DAG dict at MetaEndpoint creation time, so the container does not
@@ -23,10 +23,9 @@ from io import StringIO
 
 import pandas as pd
 
-from workbench_bridges.endpoints.async_inference import async_inference
-from workbench_bridges.endpoints.fast_inference import fast_inference
-
-from meta_endpoint_dag import MetaEndpointDAG  # bundled via symlink
+from workbench.endpoints.async_inference import async_inference
+from workbench.endpoints.fast_inference import fast_inference
+from workbench.utils.meta_endpoint_dag import MetaEndpointDAG
 
 DAG_DICT = "{{dag}}"
 AWS_REGION = "{{aws_region}}"

@@ -6,8 +6,8 @@ import time
 import pandas as pd
 import logging
 
-# Workbench-Bridge Imports
-from workbench_bridges.endpoints.fast_inference import fast_inference
+# Workbench Imports
+from workbench.endpoints.fast_inference import fast_inference
 
 # Set up logging
 log = logging.getLogger()

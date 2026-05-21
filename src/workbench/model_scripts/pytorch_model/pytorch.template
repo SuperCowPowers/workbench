@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from model_script_utils import (
+from workbench.endpoints.inference import (
     compress_std_outliers,
     convert_categorical_types,
     decompress_features,
@@ -31,18 +31,18 @@ from model_script_utils import (
     output_fn,
     save_to_s3,
 )
-from model_script_utils.pytorch_utils import (
+from workbench.endpoints.pytorch_utils import (
     FeatureScaler,
     load_model,
     predict,
     prepare_data,
 )
-from model_script_utils.uq_harness import (
+from workbench.endpoints.uq_harness import (
     apply_classification_confidence,
     compute_vgmu_confidence,
     load_classification_uq,
 )
-from model_script_utils.uq_model import UQModel
+from workbench.algorithms.dataframe.uq_model import UQModel
 
 # =============================================================================
 # Default Hyperparameters
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     # Enable Tensor Core optimization for GPUs that support it
     torch.set_float32_matmul_precision("medium")
 
-    from model_script_utils import (
+    from workbench.endpoints.inference import (
         check_dataframe,
         compute_classification_metrics,
         compute_regression_metrics,
@@ -289,19 +289,19 @@ if __name__ == "__main__":
         print_confusion_matrix,
         print_regression_metrics,
     )
-    from model_script_utils.pytorch_utils import (
+    from workbench.endpoints.pytorch_utils import (
         create_model,
         save_model,
         train_model,
     )
-    from model_script_utils.uq_harness import (
+    from workbench.endpoints.uq_harness import (
         apply_classification_confidence,
         calibrate_classification_confidence,
         compute_vgmu_confidence,
         save_classification_uq,
     )
-    from model_script_utils.fingerprint_proximity import FingerprintProximity
-    from model_script_utils.uq_model import UQModel
+    from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
+    from workbench.algorithms.dataframe.uq_model import UQModel
 
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data

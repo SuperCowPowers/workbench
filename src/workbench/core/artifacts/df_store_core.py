@@ -1,4 +1,10 @@
-"""DFStoreCore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy"""
+"""DFStoreCore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy
+
+Orchestration-side wrapper around the endpoint-safe core class. Adds the
+``ConfigManager`` + ``AWSAccountClamp`` (refreshable credentials) defaults
+that workbench code expects, while reusing the storage logic from the
+underlying :class:`workbench.core.df_store_core.DFStoreCore`.
+"""
 
 import logging
 from typing import Union
@@ -6,12 +12,10 @@ from typing import Union
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-
-# Workbench Bridges Import
-from workbench_bridges.api import DFStore as BridgesDFStore
+from workbench.core.df_store_core import DFStoreCore as DFStoreCoreLite
 
 
-class DFStoreCore(BridgesDFStore):
+class DFStoreCore(DFStoreCoreLite):
     """DFStoreCore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy
 
         Common Usage:

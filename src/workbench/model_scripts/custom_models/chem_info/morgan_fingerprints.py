@@ -14,8 +14,8 @@ from io import StringIO
 import pandas as pd
 import json
 
-# Local imports
-from fingerprints import compute_morgan_fingerprints
+# Workbench imports (provided by the workbench install in the SageMaker container)
+from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
 
 # TRAINING SECTION
 #

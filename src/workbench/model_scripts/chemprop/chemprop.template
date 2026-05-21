@@ -33,19 +33,19 @@ RDLogger.logger().setLevel(RDLogger.ERROR)
 
 from chemprop import data, models
 
-from model_script_utils import (
+from workbench.endpoints.inference import (
     compress_std_outliers,
     expand_proba_column,
     input_fn,
     output_fn,
     save_to_s3,
 )
-from model_script_utils.uq_harness import (
+from workbench.endpoints.uq_harness import (
     apply_classification_confidence,
     compute_vgmu_confidence,
     load_classification_uq,
 )
-from model_script_utils.uq_model import UQModel
+from workbench.algorithms.dataframe.uq_model import UQModel
 
 print(f"[{time.strftime('%H:%M:%S')}] [startup] heavy deps imported", flush=True)
 
@@ -405,7 +405,7 @@ if __name__ == "__main__":
 
     from chemprop import nn
 
-    from model_script_utils import (
+    from workbench.endpoints.inference import (
         check_dataframe,
         compute_classification_metrics,
         compute_regression_metrics,
@@ -415,14 +415,14 @@ if __name__ == "__main__":
         print_confusion_matrix,
         print_regression_metrics,
     )
-    from model_script_utils.uq_harness import (
+    from workbench.endpoints.uq_harness import (
         apply_classification_confidence,
         calibrate_classification_confidence,
         compute_vgmu_confidence,
         save_classification_uq,
     )
-    from model_script_utils.fingerprint_proximity import FingerprintProximity
-    from model_script_utils.uq_model import UQModel
+    from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
+    from workbench.algorithms.dataframe.uq_model import UQModel
 
     # -------------------------------------------------------------------------
     # Training-only helper functions
@@ -1034,7 +1034,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 50, flush=True)
     print("Computing SHAP Values", flush=True)
     print("=" * 50, flush=True)
-    from model_script_utils.chemprop_shap_utils import compute_chemprop_shap, format_shap_results
+    from workbench.endpoints.chemprop_shap_utils import compute_chemprop_shap, format_shap_results
     print("[DIAG] SHAP imports loaded", flush=True)  # [DIAG]
 
     shap_values_array, shap_feature_names, shap_indices, shap_fractions = compute_chemprop_shap(

@@ -1,0 +1,57 @@
+name: Endpoint Import Surface Smoke Test
+
+# Enforces the lightweight-install contract: `pip install workbench` (no extras)
+# must be able to import every module a SageMaker endpoint container needs,
+# without transitively pulling in any heavy dep that only lives in extras.
+#
+# If this job fails, an endpoint container would also fail on first cold-start
+# after the change deploys.
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  endpoint-import-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install workbench (core only, no extras)
+        run: |
+          pip install -e .
+
+      - name: Import endpoint-runtime surface
+        run: |
+          python -c "
+          from workbench.endpoints.fast_inference import fast_inference
+          from workbench.endpoints.async_inference import async_inference
+          from workbench.endpoints.inference import check_dataframe
+          from workbench.endpoints.uq_harness import compute_vgmu_confidence
+          from workbench.algorithms.dataframe.uq_model import UQModel
+          from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
+          from workbench.algorithms.dataframe.proximity import Proximity
+          from workbench.algorithms.dataframe.residual_features import ResidualFeatures
+          from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
+          from workbench.core.parameter_store_core import ParameterStoreCore
+          from workbench.core.df_store_core import DFStoreCore
+          from workbench.utils.execution_environment import running_as_service
+          from workbench.core.cloud_platform.aws.boto_session import get_boto3_session
+          print('endpoint import surface OK')
+          "
+
+      - name: Verify heavy extras are NOT installed
+        run: |
+          python -c "
+          import importlib.util
+          heavy = ['sagemaker', 'aiobotocore', 'cleanlab', 'umap', 'dash', 'matplotlib', 'mordred']
+          leaked = [m for m in heavy if importlib.util.find_spec(m) is not None]
+          assert not leaked, f'Heavy deps installed in endpoint-safe env: {leaked}'
+          print('endpoint extras are correctly excluded')
+          "
