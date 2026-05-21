@@ -25,7 +25,6 @@ import sys
 
 from workbench.api import Meta
 
-
 SCALE_ROLES = ("scale-out", "scale-in")
 
 
