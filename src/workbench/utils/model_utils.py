@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from workbench.api import Model
     from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
+    from workbench.algorithms.dataframe.uq_model import UQModel
     from workbench.algorithms.models.noise_model import NoiseModel
     from workbench.algorithms.models.cleanlab_model import CleanlabModels
 
@@ -184,6 +185,65 @@ def fingerprint_prox_model_local(
         radius=radius,
         n_bits=n_bits,
     )
+
+
+def uq_model_local(
+    model: Model,
+    refresh_proximity: bool = False,
+    radius: int = 2,
+    n_bits: int = 2048,
+) -> "UQModel":
+    """Load the fitted UQModel from this Model's artifact.
+
+    Pairs with the existing `fp_prox_model()` / `proximity_model()` factory pattern:
+        model = Model("my-model")
+        rm = model.uq_model()
+        out = rm.predict(test_df[["smiles"]], predictions, prediction_std)
+
+    Args:
+        model: The Workbench Model whose artifact contains a fitted UQModel
+            (saved during training via `uq_model.save(model_dir)`).
+        refresh_proximity: If False (default), use the proximity backend that was
+            embedded in the model artifact at training time — exact reference set
+            used to fit the residual estimator, reproducible, no fingerprint
+            recomputation. If True, build a fresh FingerprintProximity from the
+            current source FeatureSet (consistent with `fp_prox_model()` behavior
+            but recomputes Morgan fingerprints and uses today's reference set).
+        radius / n_bits: Morgan fingerprint parameters (only used when
+            refresh_proximity=True).
+
+    Returns:
+        A ready-to-use UQModel.
+
+    Raises:
+        FileNotFoundError: If the model artifact does not contain a fitted
+            UQModel (uq_model.joblib not present).
+    """
+    from workbench.algorithms.dataframe.uq_model import UQModel  # noqa: F401 (avoid circular import)
+
+    model_artifact_uri = model.model_data_url()
+    if model_artifact_uri is None:
+        raise ValueError(f"No model artifact found for {model.uuid}")
+
+    # Optionally build a fresh proximity to override the embedded one
+    fresh_prox = None
+    if refresh_proximity:
+        fresh_prox = fingerprint_prox_model_local(model, radius=radius, n_bits=n_bits)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        local_tar_path = os.path.join(tmpdir, "model.tar.gz")
+        wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
+        safe_extract_tarfile(local_tar_path, tmpdir)
+
+        if not os.path.exists(os.path.join(tmpdir, "uq_model.joblib")):
+            raise FileNotFoundError(
+                f"Model '{model.uuid}' does not have a fitted UQModel. "
+                "Expected uq_model.joblib in the model artifact."
+            )
+
+        # UQModel.load loads joblib + parses metadata into memory before
+        # the tempdir is cleaned, so the returned instance is self-contained.
+        return UQModel.load(tmpdir, prox=fresh_prox)
 
 
 def noise_model_local(model: Model) -> NoiseModel:

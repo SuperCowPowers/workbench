@@ -31,19 +31,18 @@ from model_script_utils import (
     output_fn,
     save_to_s3,
 )
-from pytorch_utils import (
+from model_script_utils.pytorch_utils import (
     FeatureScaler,
     load_model,
     predict,
     prepare_data,
 )
-from uq_harness import (
+from model_script_utils.uq_harness import (
     apply_classification_confidence,
-    compute_confidence,
     compute_vgmu_confidence,
-    load_uq_metadata,
-    predict_intervals,
+    load_classification_uq,
 )
+from model_script_utils.uq_model import UQModel
 
 # =============================================================================
 # Default Hyperparameters
@@ -121,17 +120,22 @@ def model_fn(model_dir: str) -> dict:
     # Load feature scaler
     scaler = FeatureScaler.load(os.path.join(model_dir, "scaler.joblib"))
 
-    # Load UQ metadata (regression or classification confidence)
-    uq_metadata = None
-    uq_path = os.path.join(model_dir, "uq_metadata.json")
-    if os.path.exists(uq_path):
-        uq_metadata = load_uq_metadata(model_dir)
+    # Load UQ artifacts:
+    #   - Regression: fitted UQModel (uq_model.joblib + uq_metadata.json + uq_proximity.joblib)
+    #   - Classification: VGMU isotonic calibration (classification_uq.json)
+    uq_model = None
+    classification_uq = None
+    if os.path.exists(os.path.join(model_dir, "uq_model.joblib")):
+        uq_model = UQModel.load(model_dir)
+    if os.path.exists(os.path.join(model_dir, "classification_uq.json")):
+        classification_uq = load_classification_uq(model_dir)
 
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": n_ensemble,
         "scaler": scaler,
-        "uq_metadata": uq_metadata,
+        "uq_model": uq_model,
+        "classification_uq": classification_uq,
     }
 
 
@@ -147,7 +151,8 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
     # Load artifacts
     ensemble_models = model_dict["ensemble_models"]
     scaler = model_dict["scaler"]
-    uq_metadata = model_dict.get("uq_metadata")
+    uq_model = model_dict.get("uq_model")
+    classification_uq = model_dict.get("classification_uq")
 
     with open(os.path.join(model_dir, "feature_columns.json")) as f:
         features = json.load(f)
@@ -227,10 +232,10 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df = expand_proba_column(df, label_encoder.classes_)
 
         # VGMU classification confidence
-        if uq_metadata and "classification_confidence" in uq_metadata:
+        if classification_uq and "classification_confidence" in classification_uq:
             raw_conf = compute_vgmu_confidence(avg_probs, ensemble_preds)
             df["confidence"] = apply_classification_confidence(
-                raw_conf, uq_metadata["classification_confidence"]
+                raw_conf, classification_uq["classification_confidence"]
             )
     else:
         # Regression
@@ -238,10 +243,21 @@ def predict_fn(df: pd.DataFrame, model_dict: dict) -> pd.DataFrame:
         df["prediction"] = predictions
         df["prediction_std"] = preds_std.flatten()
 
-        # Add calibrated UQ intervals and confidence if available
-        if uq_metadata:
-            df = predict_intervals(df, uq_metadata)
-            df = compute_confidence(df, uq_metadata)
+        # UQModel UQ: expected_residual, confidence, conformal intervals
+        if uq_model is not None:
+            if "smiles" in df.columns or "fingerprint" in df.columns:
+                uq_out = uq_model.predict(
+                    df[[c for c in ("smiles", "fingerprint") if c in df.columns]],
+                    df["prediction"].values,
+                    df["prediction_std"].values,
+                )
+                for col in uq_out.columns:
+                    df[col] = uq_out[col].values
+            else:
+                print(
+                    "[uq] Skipping UQModel inference: input DataFrame has no "
+                    "'smiles' or 'fingerprint' column for neighborhood lookups."
+                )
 
     df["prediction"] = predictions
     return df
@@ -273,18 +289,19 @@ if __name__ == "__main__":
         print_confusion_matrix,
         print_regression_metrics,
     )
-    from pytorch_utils import (
+    from model_script_utils.pytorch_utils import (
         create_model,
         save_model,
         train_model,
     )
-    from uq_harness import (
+    from model_script_utils.uq_harness import (
         apply_classification_confidence,
         calibrate_classification_confidence,
-        calibrate_uq,
         compute_vgmu_confidence,
-        save_uq_metadata,
+        save_classification_uq,
     )
+    from model_script_utils.fingerprint_proximity import FingerprintProximity
+    from model_script_utils.uq_model import UQModel
 
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data
@@ -522,15 +539,17 @@ if __name__ == "__main__":
             all_probs = np.stack([predict(m, x_cont, x_cat) for m in ensemble_models])
             avg_probs = np.mean(all_probs, axis=0)
             raw_conf = compute_vgmu_confidence(avg_probs, all_probs)
-            uq_metadata = calibrate_classification_confidence(raw_conf, y_true, y_pred)
+            classification_uq = calibrate_classification_confidence(raw_conf, y_true, y_pred)
             df_val["confidence"] = apply_classification_confidence(
-                raw_conf, uq_metadata["classification_confidence"]
+                raw_conf, classification_uq["classification_confidence"]
             )
         else:
-            uq_metadata = None
+            classification_uq = None
+        uq_model = None
     else:
         metrics = compute_regression_metrics(y_true, y_pred)
         print_regression_metrics(metrics)
+        classification_uq = None
 
         # Compute ensemble prediction_std
         if n_folds > 1:
@@ -544,13 +563,35 @@ if __name__ == "__main__":
         else:
             df_val["prediction_std"] = 0.0
 
-        # Calibrate UQ intervals from ensemble std
+        # Fit UQModel on validation predictions
         print("\n" + "=" * 50)
-        print("Calibrating UQ Intervals")
+        print("Fitting UQModel (UQ residual estimator)")
         print("=" * 50)
-        uq_metadata = calibrate_uq(y_true, y_pred, df_val["prediction_std"].values)
-        df_val = predict_intervals(df_val, uq_metadata)
-        df_val = compute_confidence(df_val, uq_metadata)
+        if "smiles" not in all_df.columns:
+            raise ValueError(
+                "UQModel requires a 'smiles' column in the training data for "
+                "fingerprint-based neighborhood lookups. Add SMILES to your FeatureSet."
+            )
+        prox_df = all_df[[id_column, "smiles", target]].copy()
+        prox_df["in_model"] = True  # see XGB template for rationale on CV folds
+
+        prox = FingerprintProximity(prox_df, id_column=id_column, target=target)
+        uq_model = UQModel(prox)
+        uq_model.fit(
+            df_val[id_column].tolist(),
+            y_true,
+            y_pred,
+            df_val["prediction_std"].values,
+        )
+
+        # Apply UQ to the validation set for validation_predictions.csv
+        uq_out = uq_model.predict(
+            df_val[id_column].tolist(),
+            y_pred,
+            df_val["prediction_std"].values,
+        )
+        for col in uq_out.columns:
+            df_val[col] = uq_out[col].values
 
     # -------------------------------------------------------------------------
     # Compute SHAP values for feature importance (continuous features only)
@@ -717,7 +758,9 @@ if __name__ == "__main__":
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
-    if uq_metadata is not None:
-        save_uq_metadata(uq_metadata, args.model_dir)
+    if uq_model is not None:
+        uq_model.save(args.model_dir)
+    if classification_uq is not None:
+        save_classification_uq(classification_uq, args.model_dir)
 
     print(f"\nModel training complete! Artifacts saved to {args.model_dir}")

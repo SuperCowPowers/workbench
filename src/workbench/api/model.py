@@ -24,6 +24,7 @@ from workbench.api.endpoint import Endpoint
 from workbench.utils.model_utils import (
     proximity_model_local,
     fingerprint_prox_model_local,
+    uq_model_local,
     noise_model_local,
     cleanlab_model_local,
 )
@@ -166,6 +167,36 @@ class Model(ModelCore):
             FingerprintProximity: A local FingerprintProximity Model
         """
         return fingerprint_prox_model_local(self, include_all_columns=include_all_columns, radius=radius, n_bits=n_bits)
+
+    def uq_model(
+        self,
+        refresh_proximity: bool = False,
+        radius: int = 2,
+        n_bits: int = 2048,
+    ) -> "UQModel":  # noqa: F821
+        """Load this model's fitted UQModel for uncertainty-quantified inference.
+
+        Usage:
+            model = Model("my-model")
+            uq = model.uq_model()
+            out = uq.predict(test_df[["smiles"]], predictions, prediction_std)
+
+        Args:
+            refresh_proximity (bool): If False (default), use the proximity backend
+                that was embedded in the model artifact at training time — exact
+                reference set used to fit the residual estimator, reproducible.
+                If True, build a fresh FingerprintProximity from the current source
+                FeatureSet (recomputes fingerprints, uses today's data).
+            radius (int): Morgan fingerprint radius (only used if refresh_proximity=True).
+            n_bits (int): Fingerprint bit width (only used if refresh_proximity=True).
+
+        Returns:
+            UQModel: A ready-to-use UQModel for inference (.predict).
+
+        Raises:
+            FileNotFoundError: If the model artifact does not contain a fitted UQModel.
+        """
+        return uq_model_local(self, refresh_proximity=refresh_proximity, radius=radius, n_bits=n_bits)
 
     def noise_model(self) -> NoiseModel:
         """Create a local Noise Model for this Model
