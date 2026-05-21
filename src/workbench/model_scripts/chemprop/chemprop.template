@@ -15,21 +15,13 @@ import json
 import os
 import time
 
-
-def _ts() -> str:
-    """Short HH:MM:SS timestamp for startup-phase prints.
-
-    CloudWatch attaches its own timestamps to every log event, but the AWS console
-    and default `aws logs get-log-events` text output strip them. Prefixing prints
-    with a clock lets us read raw log text without an extra round-trip.
-    """
-    return time.strftime("%H:%M:%S")
-
-
 # Startup diagnostic prints (flush=True so we don't lose them if a downstream
 # step hangs/crashes before its buffer flushes). The bare-import phase below
 # is the most common source of silent inference-container startup hangs.
-print(f"[{_ts()}] [startup] importing heavy deps...", flush=True)
+# CloudWatch attaches its own timestamps, but the AWS console and default
+# `aws logs get-log-events` text output strip them — inline HH:MM:SS so we can
+# read raw log text without an extra round-trip.
+print(f"[{time.strftime('%H:%M:%S')}] [startup] importing heavy deps...", flush=True)
 
 import joblib
 import numpy as np
@@ -55,7 +47,7 @@ from model_script_utils.uq_harness import (
 )
 from model_script_utils.uq_model import UQModel
 
-print(f"[{_ts()}] [startup] heavy deps imported", flush=True)
+print(f"[{time.strftime('%H:%M:%S')}] [startup] heavy deps imported", flush=True)
 
 # =============================================================================
 # Default Hyperparameters
