@@ -63,9 +63,7 @@ class DFStoreCore:
 
         # Resolve bucket: explicit arg > env var > parameter store
         self.workbench_bucket = (
-            s3_bucket
-            or os.getenv("WORKBENCH_BUCKET")
-            or ParameterStoreCore().get("/workbench/config/workbench_bucket")
+            s3_bucket or os.getenv("WORKBENCH_BUCKET") or ParameterStoreCore().get("/workbench/config/workbench_bucket")
         )
         if not self.workbench_bucket:
             raise ValueError(
