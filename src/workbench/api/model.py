@@ -166,9 +166,7 @@ class Model(ModelCore):
         Returns:
             FingerprintProximity: A local FingerprintProximity Model
         """
-        return fingerprint_prox_model_local(
-            self, include_all_columns=include_all_columns, radius=radius, n_bits=n_bits
-        )
+        return fingerprint_prox_model_local(self, include_all_columns=include_all_columns, radius=radius, n_bits=n_bits)
 
     def uq_model(
         self,
@@ -198,9 +196,7 @@ class Model(ModelCore):
         Raises:
             FileNotFoundError: If the model artifact does not contain a fitted UQModel.
         """
-        return uq_model_local(
-            self, refresh_proximity=refresh_proximity, radius=radius, n_bits=n_bits
-        )
+        return uq_model_local(self, refresh_proximity=refresh_proximity, radius=radius, n_bits=n_bits)
 
     def noise_model(self) -> NoiseModel:
         """Create a local Noise Model for this Model

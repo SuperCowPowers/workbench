@@ -323,8 +323,7 @@ class FingerprintProximity(Proximity):
         if self.fingerprint_column not in df.columns:
             if "smiles" not in df.columns and "SMILES" not in df.columns:
                 raise ValueError(
-                    f"Query DataFrame must contain either '{self.fingerprint_column}' "
-                    "or a 'smiles' column"
+                    f"Query DataFrame must contain either '{self.fingerprint_column}' " "or a 'smiles' column"
                 )
             df = compute_morgan_fingerprints(df, radius=self._fp_radius, n_bits=self._fp_n_bits)
 
@@ -411,9 +410,8 @@ class FingerprintProximity(Proximity):
         """Append `similarity = 1 - distance` and drop the raw distance column."""
         result_df["similarity"] = 1 - result_df["distance"]
         result_df.drop(columns=["distance"], inplace=True)
-        # Re-sort: similarity descending (was ascending by distance)
-        sort_cols = [c for c in result_df.columns if c in ("query_id",) or c == result_df.columns[0]]
-        # Use the leading id column (first column) and similarity
+        # Re-sort: similarity descending (was ascending by distance).
+        # Use the leading id column (first column) and similarity.
         id_col = result_df.columns[0]
         return result_df.sort_values([id_col, "similarity"], ascending=[True, False]).reset_index(drop=True)
 

@@ -166,9 +166,7 @@ class UQModel:
             self.scale_factors[f"{alpha:.2f}"] = float(np.quantile(nonconformity, adjusted_quantile))
 
         # 4. Percentile distribution of expected residuals (for confidence ranking)
-        self.residual_percentiles = np.asarray(
-            [float(np.percentile(expected_cal, p)) for p in range(101)]
-        )
+        self.residual_percentiles = np.asarray([float(np.percentile(expected_cal, p)) for p in range(101)])
 
         # Diagnostics
         self._log_fit_diagnostics(y_true, predictions, expected_cal)
@@ -246,18 +244,12 @@ class UQModel:
 
         # Auto-dispatch
         if isinstance(query, pd.DataFrame):
-            feat = self.features.compute_from_query_df(
-                query, predictions=predictions, k=self.k, training_only=False
-            )
+            feat = self.features.compute_from_query_df(query, predictions=predictions, k=self.k, training_only=False)
         else:
             ids = list(query) if not isinstance(query, list) else query
             if len(predictions) != len(ids):
-                raise ValueError(
-                    f"predictions length ({len(predictions)}) must match number of queries ({len(ids)})"
-                )
-            feat = self.features.compute(
-                ids, predictions=predictions, k=self.k, training_only=False
-            )
+                raise ValueError(f"predictions length ({len(predictions)}) must match number of queries ({len(ids)})")
+            feat = self.features.compute(ids, predictions=predictions, k=self.k, training_only=False)
 
         X_test = self._stack_features(predictions, prediction_std, feat)
         expected_residual = self.error_model.predict(X_test)
@@ -381,17 +373,13 @@ class UQModel:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _stack_features(
-        predictions: np.ndarray, prediction_std: np.ndarray, feat: pd.DataFrame
-    ) -> np.ndarray:
+    def _stack_features(predictions: np.ndarray, prediction_std: np.ndarray, feat: pd.DataFrame) -> np.ndarray:
         """Build the (n, 5) feature matrix in canonical column order."""
         # NaN-fill: queries with no valid neighbors (rare) get neutral values
         knn_distance = np.nan_to_num(feat["knn_distance"].values, nan=0.5)
         knn_target_std = np.nan_to_num(feat["knn_target_std"].values, nan=0.0)
         local_pred_gap = np.nan_to_num(feat.get("local_pred_gap", pd.Series(0.0, index=feat.index)).values, nan=0.0)
-        return np.column_stack(
-            [predictions, prediction_std, knn_distance, knn_target_std, local_pred_gap]
-        )
+        return np.column_stack([predictions, prediction_std, knn_distance, knn_target_std, local_pred_gap])
 
     @staticmethod
     def _slim_proximity(prox: Proximity) -> Proximity:

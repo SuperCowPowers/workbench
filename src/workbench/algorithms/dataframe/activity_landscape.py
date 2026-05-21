@@ -167,7 +167,9 @@ class ActivityLandscape:
             cmpd_target = row[self.prox.target]
 
             nbrs = self.prox.neighbors(cmpd_id, n_neighbors=k_neighbors + 1, include_self=False)
-            neighbor_median = nbrs.iloc[1:][self.prox.target].median() if len(nbrs) > 1 else nbrs[self.prox.target].median()
+            neighbor_median = (
+                nbrs.iloc[1:][self.prox.target].median() if len(nbrs) > 1 else nbrs[self.prox.target].median()
+            )
             median_diff = abs(cmpd_target - neighbor_median)
 
             if median_diff >= min_delta:
@@ -224,9 +226,7 @@ class ActivityLandscape:
             The proximity model's reference DataFrame with 'x' / 'y' columns added.
         """
         if not hasattr(self.prox, "project_2d"):
-            raise NotImplementedError(
-                f"Proximity backend {type(self.prox).__name__} does not implement project_2d()"
-            )
+            raise NotImplementedError(f"Proximity backend {type(self.prox).__name__} does not implement project_2d()")
         return self.prox.project_2d()
 
     # ------------------------------------------------------------------

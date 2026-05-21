@@ -147,7 +147,8 @@ def main():
     print(f"Summary for N={n:,} compounds:")
     print("=" * 80)
     print(f"  Build min-cost:           {t_build_min.elapsed:.2f}s")
-    print(f"  Build w/ precompute:      {t_build_pre.elapsed:.2f}s  (+{t_build_pre.elapsed - t_build_min.elapsed:.2f}s for nn metrics)")
+    precompute_delta = t_build_pre.elapsed - t_build_min.elapsed
+    print(f"  Build w/ precompute:      {t_build_pre.elapsed:.2f}s  (+{precompute_delta:.2f}s for nn metrics)")
     print(f"  Project 2D (lazy):        {t_proj.elapsed:.2f}s")
     print(f"  Single-id query (avg):    {t_single.elapsed / 50 * 1000:.1f} ms")
     if "smiles" in df.columns:

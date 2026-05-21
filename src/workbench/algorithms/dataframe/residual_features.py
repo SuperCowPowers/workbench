@@ -209,8 +209,7 @@ class ResidualFeatures:
             predictions = np.asarray(predictions, dtype=float)
             if len(predictions) != len(query_ids):
                 raise ValueError(
-                    f"predictions length ({len(predictions)}) does not match "
-                    f"number of queries ({len(query_ids)})"
+                    f"predictions length ({len(predictions)}) does not match " f"number of queries ({len(query_ids)})"
                 )
             agg["local_pred_gap"] = predictions - agg["knn_target_mean"].values
 
