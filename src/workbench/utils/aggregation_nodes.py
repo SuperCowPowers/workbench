@@ -30,7 +30,6 @@ from workbench.utils.ensemble_utils import (
     ensemble_confidence,
 )
 
-
 # Synthetic row identifier the walker injects into the input DataFrame
 # at the start of every DAG run and strips before returning. Aggregation
 # nodes use it as the join key to align rows across upstream branches.
