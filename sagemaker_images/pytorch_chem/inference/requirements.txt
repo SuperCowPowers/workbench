@@ -11,7 +11,7 @@
 --extra-index-url https://pypi.org/simple/
 torch==2.11.0
 
-workbench>=0.8.339
+workbench>=0.8.340
 workbench-bridges==0.2.10
 
 # Framework-specific
