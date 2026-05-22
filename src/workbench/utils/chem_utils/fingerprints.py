@@ -43,6 +43,20 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int =
     Note:
         Count fingerprints outperform binary for ADMET prediction.
         See: https://pubs.acs.org/doi/10.1021/acs.est.3c02198
+
+    Future Me:
+        This silently drops rows whose SMILES RDKit can't parse, so the output
+        has fewer rows than the input. Callers downstream (FingerprintProximity,
+        residual_features, UQModel) currently work around this by pre-validating
+        SMILES at their own layer — which means MolFromSmiles runs twice per
+        SMILES on the inference path. The cleaner fix is one of:
+          (a) preserve the input's DataFrame index when dropping rows so
+              callers can derive a survivor mask via `df_out.index`, or
+          (b) keep all rows and put NaN in the fingerprint column for failures
+              (more pandas/sklearn-idiomatic).
+        Either would let `FingerprintProximity.neighbors_from_query_df` drop
+        its redundant pre-validate. Deferred — see the workaround in
+        fingerprint_proximity.py.
     """
     delete_mol_column = False
 

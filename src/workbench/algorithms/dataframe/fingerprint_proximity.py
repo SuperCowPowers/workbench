@@ -396,7 +396,35 @@ class FingerprintProximity(Proximity):
 
         Returns:
             DataFrame with columns: query_id, neighbor_id, similarity, [target], [in_model].
+            Queries whose SMILES couldn't be parsed by RDKit are dropped with a
+            warning — their rows simply don't appear in the result. Upstream
+            consumers (residual_features._aggregate) reindex against the full
+            input id list so missing queries surface as NaN rows there.
         """
+        # Pre-validate SMILES. `compute_morgan_fingerprints` (called downstream
+        # by _transform_features for novel queries) silently drops rows with
+        # invalid SMILES, which then causes an array-length mismatch in
+        # _neighbors_impl's result assembly. Drop bad rows here so the feature
+        # matrix and query_ids stay aligned.
+        smiles_col = next((c for c in ("smiles", "SMILES") if c in query_df.columns), None)
+        if smiles_col is not None and self.fingerprint_column not in query_df.columns:
+            from rdkit import Chem
+
+            valid = query_df[smiles_col].apply(lambda s: Chem.MolFromSmiles(s) is not None)
+            if not valid.all():
+                n_bad = int((~valid).sum())
+                bad_sample = query_df.loc[~valid, smiles_col].head(3).tolist()
+                log.warning(
+                    f"FingerprintProximity.neighbors_from_query_df: dropping {n_bad} "
+                    f"row(s) with SMILES that RDKit can't parse "
+                    f"(sample: {bad_sample}{'...' if n_bad > 3 else ''}). "
+                    "These rows will be absent from the result."
+                )
+                query_df = query_df[valid].reset_index(drop=True)
+                if len(query_df) == 0:
+                    # All queries invalid — return an empty result rather than crash in the NN backend.
+                    return pd.DataFrame(columns=["query_id", "neighbor_id", "similarity"])
+
         radius = 1 - min_similarity if min_similarity is not None else None
         result = super().neighbors_from_query_df(
             query_df=query_df,
