@@ -16,8 +16,10 @@ Used by ``ParameterStoreCore``, ``InferenceStore``, and the raw
 contexts without requiring a Workbench config.
 """
 
+import os
 import boto3
 import logging
+from typing import Optional
 from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
 
 from workbench.utils.execution_environment import running_as_service
@@ -25,13 +27,34 @@ from workbench.utils.execution_environment import running_as_service
 log = logging.getLogger("workbench")
 
 
+def get_aws_region() -> Optional[str]:
+    """Resolve the AWS region from env / boto3 defaults.
+
+    Checks ``SAGEMAKER_REGION``, ``AWS_REGION``, ``AWS_DEFAULT_REGION`` in order,
+    then falls back to ``boto3.Session().region_name`` (which itself consults
+    config files and IMDS). Returns ``None`` if no region can be determined —
+    callers can decide whether that's fatal.
+    """
+    return (
+        os.environ.get("SAGEMAKER_REGION")
+        or os.environ.get("AWS_REGION")
+        or os.environ.get("AWS_DEFAULT_REGION")
+        or boto3.Session().region_name
+    )
+
+
 def get_boto3_session() -> boto3.Session:
     """Get a boto3 session, optionally assuming the Workbench execution role.
+
+    Sets ``region_name`` explicitly when one can be resolved so the returned
+    session has a region even in environments where boto3's default chain
+    might not pick one up directly (matches the old ``AWSSession`` behavior).
 
     Returns:
         boto3.Session: A boto3 session (with assumed role credentials when running locally).
     """
-    session = boto3.Session()
+    region = get_aws_region()
+    session = boto3.Session(region_name=region) if region else boto3.Session()
 
     # Only assume Workbench role when running locally (not as a service)
     if not running_as_service():
@@ -46,6 +69,7 @@ def get_boto3_session() -> boto3.Session:
                 aws_access_key_id=credentials["AccessKeyId"],
                 aws_secret_access_key=credentials["SecretAccessKey"],
                 aws_session_token=credentials["SessionToken"],
+                region_name=region,
             )
         except (ClientError, NoCredentialsError, PartialCredentialsError) as e:
             # Log the failure and proceed with the default session

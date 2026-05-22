@@ -25,18 +25,10 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 
-# Dual-import: workbench-package path (normal) and bare path (when this file is
-# bundled as a sibling of ensemble_utils.py inside a SageMaker model script).
-try:
-    from workbench.model_script_utils.ensemble_utils import (
-        conf_weights_with_fallback,
-        ensemble_confidence,
-    )
-except ImportError:  # pragma: no cover — exercised inside SageMaker containers only
-    from ensemble_utils import (
-        conf_weights_with_fallback,
-        ensemble_confidence,
-    )
+from workbench.utils.ensemble_utils import (
+    conf_weights_with_fallback,
+    ensemble_confidence,
+)
 
 
 # Synthetic row identifier the walker injects into the input DataFrame

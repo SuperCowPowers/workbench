@@ -9,7 +9,13 @@ from typing import Union
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 from workbench.core.artifacts.df_store_core import DFStoreCore
-from workbench.api.parameter_store import ParameterStore
+
+# Use the core class directly (not `workbench.api.ParameterStore`) because this
+# file is imported early in the workbench.api bootstrap — going through the
+# api package here would circle back through DataSource → Artifact and fail.
+# Functionally equivalent: the call site below passes an explicit boto3_session
+# so the AWSAccountClamp wrapping in the api class would be bypassed anyway.
+from workbench.core.parameter_store_core import ParameterStoreCore as ParameterStore
 from workbench.utils.aws_utils import dict_to_aws_tags
 from sagemaker.core.resources import Tag
 from workbench.utils.config_manager import ConfigManager, FatalConfigError

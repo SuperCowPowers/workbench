@@ -38,12 +38,7 @@ from typing import Callable, Dict, List, Optional
 
 import pandas as pd
 
-# Dual-import: workbench-package path (normal) and bare path (when this file is
-# bundled as a sibling of aggregation_nodes.py inside a SageMaker model script).
-try:
-    from workbench.utils.aggregation_nodes import DAG_ROW_ID, AggregationNode
-except ImportError:  # pragma: no cover — exercised inside SageMaker containers only
-    from aggregation_nodes import DAG_ROW_ID, AggregationNode
+from workbench.utils.aggregation_nodes import DAG_ROW_ID, AggregationNode
 
 EndpointInvoker = Callable[[str, pd.DataFrame], pd.DataFrame]
 

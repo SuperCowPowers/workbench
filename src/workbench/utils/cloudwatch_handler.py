@@ -6,6 +6,7 @@ import time  # For managing send intervals
 
 # Workbench imports
 from workbench.utils.execution_environment import (
+    running_as_service,
     running_on_lambda,
     running_on_glue,
     running_on_ecs,
@@ -13,7 +14,39 @@ from workbench.utils.execution_environment import (
     glue_job_name,
     ecs_job_name,
 )
-from workbench.core.cloud_platform.aws.aws_session import AWSSession
+
+
+def _build_boto3_session():
+    """Pick the right boto3 session for the runtime context.
+
+    * Service contexts (SageMaker endpoint, Lambda, ECS, Glue, Docker) — use the
+      lightweight :func:`get_boto3_session`. The container has its own attached
+      IAM role with CloudWatch Logs permissions; no role assumption or refresh
+      needed, and crucially no transitive dependency on ``ConfigManager`` /
+      ``LicenseManager`` / ``cryptography`` (those live in the ``[aws]`` extra,
+      not in endpoint-safe core).
+    * Local dev — use :class:`AWSSession` for refreshable credentials so
+      long-running processes (dashboard, multi-hour scripts) don't lose
+      CloudWatch logging when their STS token expires (~1 hour).
+
+    Lazy imports here keep CloudWatchHandler's module-top endpoint-safe.
+    """
+    if running_as_service():
+        from workbench.core.cloud_platform.aws.boto_session import get_boto3_session
+
+        return get_boto3_session()
+    try:
+        from workbench.core.cloud_platform.aws.aws_session import AWSSession
+
+        return AWSSession().boto3_session
+    except ImportError:
+        # Dev install without [aws] extras (no cryptography → LicenseManager
+        # import chain fails). Fall back to the lightweight session — CloudWatch
+        # logging still works for short-running scripts; long-running processes
+        # would need [aws] for refreshable creds.
+        from workbench.core.cloud_platform.aws.boto_session import get_boto3_session
+
+        return get_boto3_session()
 
 
 class CloudWatchHandler(logging.Handler):
@@ -29,7 +62,7 @@ class CloudWatchHandler(logging.Handler):
         self.last_sent_time = time.time()
 
         # Get our session and log stream name
-        self.boto3_session = AWSSession().boto3_session
+        self.boto3_session = _build_boto3_session()
         self.log_stream_name = self.determine_log_stream()
         self.cloudwatch_client = self.boto3_session.client("logs")
         self.sequence_token = None
