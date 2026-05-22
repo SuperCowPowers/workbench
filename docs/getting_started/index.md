@@ -10,7 +10,7 @@ For the initial setup of ADMET Workbench we'll be using the Workbench REPL. When
 Okay so **after** you've completed your [AWS Setup](../aws_setup/aws_setup.md) you can now install ADMET Workbench.
 
 ```
-> pip install workbench
+> pip install 'workbench[all]'
 > workbench <-- This starts the REPL
 
 Welcome to Workbench!

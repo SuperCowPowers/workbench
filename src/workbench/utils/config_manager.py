@@ -9,7 +9,7 @@ from importlib.resources import files, as_file
 
 # Workbench imports
 from workbench.utils.license_manager import LicenseManager
-from workbench_bridges.utils.execution_environment import running_as_service
+from workbench.utils.execution_environment import running_as_service
 
 
 class FatalConfigError(Exception):

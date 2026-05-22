@@ -15,7 +15,7 @@ The API surface is identical to EndpointCore — ``inference()`` and
 S3 round-trip from the caller.
 
 Implementation: the protocol-level invocation lives in
-``workbench_bridges.endpoints.async_inference``; this class adds
+``workbench.endpoints.async_inference``; this class adds
 Workbench-specific concerns (``workbench_meta`` knobs for batch sizing
 and concurrency, capture/monitoring, S3 path resolution).
 """
@@ -25,7 +25,7 @@ import logging
 import pandas as pd
 
 from workbench.core.artifacts.endpoint_core import EndpointCore
-from workbench_bridges.endpoints.async_inference import async_inference, purge_async_queue
+from workbench.endpoints.async_inference import async_inference, purge_async_queue
 
 log = logging.getLogger("workbench")
 
@@ -112,7 +112,7 @@ class AsyncEndpointCore(EndpointCore):
     def purge_async_queue(self) -> int:
         """Cancel all queued async invocations for this endpoint.
 
-        Thin wrapper over :func:`workbench_bridges.async_inference.purge_async_queue`.
+        Thin wrapper over :func:`workbench.endpoints.async_inference.purge_async_queue`.
         See that function for behavior, caveats, and return semantics.
         """
         return purge_async_queue(
@@ -152,7 +152,7 @@ class AsyncEndpointCore(EndpointCore):
     # Internal: delegate to the lightweight bridges client
     # -----------------------------------------------------------------
     def _async_batch_invoke(self, eval_df: pd.DataFrame) -> pd.DataFrame:
-        """Delegate batch invocation to ``workbench_bridges.async_inference``.
+        """Delegate batch invocation to ``workbench.endpoints.async_inference``.
 
         Reads two tunable knobs from ``workbench_meta()``:
           * ``inference_batch_size`` (default 10): rows per invocation.

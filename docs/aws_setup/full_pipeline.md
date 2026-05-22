@@ -37,6 +37,6 @@ cd workbench/application/aws_dashboard
 
 
 !!! success
-    Congratulations: Workbench is now deployed to your AWS Account. Deploying the AWS Stack only needs to be done once. Now that this is complete your developers can simply `pip install workbench` and start using the API.
+    Congratulations: Workbench is now deployed to your AWS Account. Deploying the AWS Stack only needs to be done once. Now that this is complete your developers can simply `pip install 'workbench[all]'` and start using the API.
     
 If you ran into any issues with this procedure please contact us via [Discord](https://discord.gg/WHAJuz8sw8) or email [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) and the SCP team will provide **free** setup and support for new Workbench users.

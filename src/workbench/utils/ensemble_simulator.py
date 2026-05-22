@@ -10,7 +10,7 @@ from scipy import stats
 import logging
 
 from workbench.api import Model
-from workbench.model_script_utils.ensemble_utils import conf_weights_with_fallback, ensemble_confidence
+from workbench.utils.ensemble_utils import conf_weights_with_fallback, ensemble_confidence
 
 # Set up the log
 log = logging.getLogger("workbench")

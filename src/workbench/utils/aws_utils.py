@@ -6,21 +6,23 @@ import json
 import base64
 import re
 import os
-from typing import Union, List, Callable, Optional
+from typing import Union, List, Callable, Optional, TYPE_CHECKING
 import pandas as pd
 import awswrangler as wr
 from awswrangler.exceptions import NoFilesFound
 from pathlib import Path
 import posixpath
 from botocore.exceptions import ClientError
-from sagemaker.core.helper.session_helper import Session as SageSession
 
-# Workbench Imports
-from workbench.utils.config_manager import ConfigManager
+# `SageSession` is only used as a type hint in `newest_path` below — keeping
+# the import lazy avoids dragging the (heavy, [aws]-extra) `sagemaker` package
+# into the endpoint-runtime import surface. The endpoint-import-smoke CI job
+# enforces that this module imports cleanly without `sagemaker` installed.
+if TYPE_CHECKING:
+    from sagemaker.core.helper.session_helper import Session as SageSession
 
 # Workbench Logger
 log = logging.getLogger("workbench")
-cm = ConfigManager()
 
 
 def client_error_printout(err: botocore.exceptions.ClientError):
@@ -335,7 +337,7 @@ def list_s3_files(s3_path: str, extensions: str = "*.csv") -> List[str]:
     return files
 
 
-def newest_path(s3_locations: list[str], sm_session: SageSession) -> Union[str, None]:
+def newest_path(s3_locations: list[str], sm_session: "SageSession") -> Union[str, None]:
     """Determine which S3 bucket and prefix combination has the newest files.
 
     Args:

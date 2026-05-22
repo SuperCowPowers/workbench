@@ -35,7 +35,7 @@ from workbench.utils.model_utils import uq_metrics
 from workbench.utils.xgboost_model_utils import pull_cv_results as xgboost_pull_cv
 from workbench.utils.pytorch_utils import pull_cv_results as pytorch_pull_cv
 from workbench.utils.chemprop_utils import pull_cv_results as chemprop_pull_cv
-from workbench_bridges.endpoints.fast_inference import fast_inference
+from workbench.endpoints.fast_inference import fast_inference
 
 # FIXME: sagemaker-core bug — DataCaptureConfigSummary.kms_key_id is required but should be
 # Optional, causing Endpoint.get() to fail on endpoints with data capture but no KMS key.

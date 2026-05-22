@@ -11,7 +11,7 @@
 **Initial Setup of the Endpoint Monitor**
 
 ```py title="monitor_setup.py"
-from workbench.api.monitor import Monitor
+from workbench.api import Monitor
 
 # Create an Endpoint Monitor Class and perform initial Setup
 endpoint_name = "abalone-regression-end-rt"
@@ -30,7 +30,7 @@ mon.create_monitoring_schedule(schedule="hourly")
 **Pulling Information from an Existing Monitor**
 
 ```py title="monitor_usage.py"
-from workbench.api.monitor import Monitor
+from workbench.api import Monitor
 from workbench.api.endpoint import Endpoint
 
 # Construct a Monitor Class in one of Two Ways

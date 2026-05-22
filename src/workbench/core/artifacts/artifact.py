@@ -8,8 +8,8 @@ from typing import Union
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
-from workbench.core.artifacts.df_store_core import DFStoreCore
-from workbench_bridges.api import ParameterStore
+from workbench.core.df_store_core import DFStoreCore
+from workbench.core.parameter_store_core import ParameterStoreCore as ParameterStore
 from workbench.utils.aws_utils import dict_to_aws_tags
 from sagemaker.core.resources import Tag
 from workbench.utils.config_manager import ConfigManager, FatalConfigError
@@ -47,12 +47,19 @@ class Artifact(ABC):
     # Delimiter for storing lists in AWS Tags
     tag_delimiter = "::"
 
-    # Grab our Dataframe Cache Storage
-    df_cache = DFStoreCore(path_prefix="/workbench/dataframe_cache")
+    # Grab our Dataframe Cache Storage (use the endpoint-safe core class directly
+    # with our refreshable session + config-loaded bucket — equivalent to going
+    # through workbench.api.DFStore but without triggering workbench.api.__init__
+    # while artifact.py is still loading).
+    df_cache = DFStoreCore(
+        path_prefix="/workbench/dataframe_cache",
+        s3_bucket=workbench_bucket,
+        boto3_session=boto3_session,
+    )
 
     # Artifact may want to use the Parameter Store or Dataframe Store
     param_store = ParameterStore(boto3_session=boto3_session)
-    df_store = DFStoreCore()
+    df_store = DFStoreCore(s3_bucket=workbench_bucket, boto3_session=boto3_session)
 
     def __init__(self, name: str, **kwargs):
         """Initialize the Artifact Base Class

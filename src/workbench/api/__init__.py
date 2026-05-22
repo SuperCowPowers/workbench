@@ -17,6 +17,8 @@ These class provide high-level APIs for the Workbench package, offering easy acc
 - Meta: Provides an API to retrieve AWS Metadata for the above classes
 - ParameterStore: Manages AWS Parameter Store
 - DFStore: Manages DataFrames in AWS S3
+- InferenceStore: Manages inference results in Athena-queryable parquet on S3
+- Monitor: Wraps a deployed Endpoint with data-capture / model-quality monitors
 """
 
 from .data_source import DataSource
@@ -28,7 +30,9 @@ from .inference_cache import InferenceCache
 from .meta import Meta
 from .parameter_store import ParameterStore
 from .df_store import DFStore
+from .inference_store import InferenceStore
 from .public_data import PublicData
+from .monitor import Monitor
 
 __all__ = [
     "DataSource",
@@ -42,5 +46,7 @@ __all__ = [
     "Meta",
     "ParameterStore",
     "DFStore",
+    "InferenceStore",
     "PublicData",
+    "Monitor",
 ]

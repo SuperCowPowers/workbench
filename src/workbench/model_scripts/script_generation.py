@@ -1,45 +1,22 @@
-"""Model Script Utilities for Workbench endpoints"""
+"""Model Script Utilities for Workbench endpoints.
+
+Assembles a SageMaker training/inference bundle from a per-framework template
+and its supporting files. The bundle is *not* self-contained — it relies on
+``workbench`` being pip-installed in the SageMaker base image. Templates
+import everything they need via ``from workbench.endpoints... import ...`` /
+``from workbench.algorithms... import ...``; this module only fills the
+template's placeholders and copies any framework-specific supporting files
+that live alongside the template.
+"""
 
 import os
 import shutil
 import logging
 import tempfile
 from pathlib import Path
-import importlib.util
 
 # Setup the logger
 log = logging.getLogger("workbench")
-
-
-def copy_imports_to_script_dir(script_path: str, imports: list[str]) -> None:
-    """
-    Copy specified utility files to the script directory by resolving their locations dynamically.
-
-    Args:
-        script_path (str): Full path of the script file (we will copy the imports to the same directory).
-        imports (list[str]): A list of imports (e.g., "workbench.utils.chem_utils") to copy.
-    """
-    # Compute the script directory from the script path
-    script_dir = Path(script_path).parent
-
-    for import_path in imports:
-        # Try to locate the module's file path
-        spec = importlib.util.find_spec(import_path)
-        if spec is None or spec.origin is None:
-            raise ImportError(f"Cannot find module: {import_path}")
-
-        source_path = Path(spec.origin)  # Get the file path from the module spec
-
-        # Ensure the source file exists
-        if not source_path.exists():
-            raise FileNotFoundError(f"Source file not found for: {import_path}")
-
-        # Resolve destination path
-        destination_path = script_dir / source_path.name
-
-        # Copy the file
-        shutil.copy(source_path, destination_path)
-        print(f"Copied {source_path} to {destination_path}")
 
 
 def fill_template(template_path: str, params: dict, output_script: str, output_dir: str = None) -> str:
@@ -148,13 +125,10 @@ def generate_model_script(template_params: dict) -> str:
     output_dir = tempfile.mkdtemp(prefix=f"workbench_{model_script_dir_name}_")
     log.info(f"Generating model script in temp directory: {output_dir}")
 
-    # Copy all supporting files and directories (except templates and generated scripts)
-    # to the temp directory. `os.path.isfile` / `os.path.isdir` follow symlinks, so both
-    # individual-file symlinks and directory symlinks (e.g. `model_script_utils ->
-    # ../../model_script_utils`) get materialized into real files / real directories
-    # in the bundle. `symlinks=False` in copytree resolves nested symlinks too — so the
-    # ones inside the symlinked model_script_utils/ dir (proximity.py, uq_model.py, ...)
-    # land in the bundle as real files, not dangling symlinks.
+    # Copy any non-template supporting files that live alongside the template
+    # (e.g. requirements.txt). The workbench package itself is pip-installed
+    # in the SageMaker container, so we no longer bundle workbench source —
+    # templates import via ``from workbench... import ...``.
     for entry in os.listdir(source_script_dir):
         if entry.endswith(".template") or entry.startswith("generated_") or entry == "__pycache__":
             continue
@@ -162,18 +136,9 @@ def generate_model_script(template_params: dict) -> str:
         if os.path.isfile(source_path):
             shutil.copy(source_path, output_dir)
             log.info(f"Copied supporting file: {entry}")
-        elif os.path.isdir(source_path):
-            dst = os.path.join(output_dir, entry)
-            shutil.copytree(
-                source_path,
-                dst,
-                symlinks=False,
-                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
-            )
-            log.info(f"Copied supporting directory: {entry}")
 
     # Copy the training_harness.py wrapper (handles post-training inference bundling)
-    entrypoint_path = package_dir.parent / "model_script_utils" / "training_harness.py"
+    entrypoint_path = package_dir.parent / "endpoints" / "training_harness.py"
     if entrypoint_path.exists():
         shutil.copy(entrypoint_path, output_dir)
         log.info("Copied training_harness.py")
@@ -189,8 +154,6 @@ def generate_model_script(template_params: dict) -> str:
 if __name__ == "__main__":
     """Exercise the Model Script Utilities"""
     from workbench.api import ModelType, ModelFramework
-
-    copy_imports_to_script_dir("/tmp/model.py", ["workbench.utils.chem_utils"])
 
     # Define the parameters for the model script (Classifier)
     my_params = {

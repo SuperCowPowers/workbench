@@ -9,8 +9,11 @@ import requests
 from contextlib import contextmanager
 from importlib.metadata import version
 
-# Import the CloudWatchHandler
-from workbench.utils.cloudwatch_handler import CloudWatchHandler
+# Note: CloudWatchHandler is imported lazily inside logging_setup() because its
+# import chain (AWSSession → ConfigManager → LicenseManager → cryptography) is
+# orchestration-only and would otherwise force every `import workbench` to pay
+# that cost — including endpoint containers that don't have the [aws] extra
+# installed. The endpoint-import-smoke CI job enforces this.
 
 # New botocore version barfs a bunch of checksum logs
 logging.getLogger("botocore.httpchecksum").setLevel(logging.WARNING)
@@ -185,20 +188,34 @@ def logging_setup(color_logs=True):
     # Suppress specific logger
     logging.getLogger("sagemaker.config").setLevel(logging.WARNING)
 
-    # Add a CloudWatch handler
+    # Add a CloudWatch handler (lazy-imported — see note at module top).
+    # Expected silent-fallback cases (log at debug, no traceback):
+    #   - ImportError/ModuleNotFoundError: endpoint-safe install without [aws] extras
+    #   - NoRegionError: no AWS region configured (smoke tests, offline dev)
+    #   - NoCredentialsError: no creds available (smoke tests, sandboxed CI)
+    # Anything else is a real fault and gets the full log.exception treatment.
     try:
-        cloudwatch_handler = CloudWatchHandler()
-        # We're going to remove the time because CloudWatch adds its own timestamp
-        formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
-        cloudwatch_handler.setFormatter(formatter)
-        log.info("Adding CloudWatch logging handler...")
-        log.info(f"Log Stream Name: {cloudwatch_handler.log_stream_name}")
-        log.addHandler(cloudwatch_handler)
-        check_latest_version(log)
-    except Exception as e:
-        log.error("Failed to add CloudWatch logging handler....")
-        log.monitor("Failed to add CloudWatch logging handler....")
-        log.exception(f"Exception details: {e}")
+        from workbench.utils.cloudwatch_handler import CloudWatchHandler
+    except (ImportError, ModuleNotFoundError) as e:
+        log.debug(f"CloudWatch logging unavailable (endpoint-safe install): {e}")
+    else:
+        from botocore.exceptions import NoRegionError, NoCredentialsError
+
+        try:
+            cloudwatch_handler = CloudWatchHandler()
+            # We're going to remove the time because CloudWatch adds its own timestamp
+            formatter = ColoredFormatter("(%(filename)s:%(lineno)d) %(levelname)s %(message)s")
+            cloudwatch_handler.setFormatter(formatter)
+            log.info("Adding CloudWatch logging handler...")
+            log.info(f"Log Stream Name: {cloudwatch_handler.log_stream_name}")
+            log.addHandler(cloudwatch_handler)
+            check_latest_version(log)
+        except (NoRegionError, NoCredentialsError) as e:
+            log.debug(f"CloudWatch logging skipped (AWS not configured): {e}")
+        except Exception as e:
+            log.error("Failed to add CloudWatch logging handler....")
+            log.monitor("Failed to add CloudWatch logging handler....")
+            log.exception(f"Exception details: {e}")
 
 
 def _suppress_sagemaker_logging():

@@ -3,11 +3,11 @@
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
-# Workbench Bridges Import
-from workbench_bridges.api import ParameterStore as BridgesParameterStore
+# Workbench Imports (continued)
+from workbench.core.parameter_store_core import ParameterStoreCore
 
 
-class ParameterStore(BridgesParameterStore):
+class ParameterStore(ParameterStoreCore):
     """ParameterStore: Manages Workbench parameters in a Cloud Based Parameter Store.
 
     Common Usage:
