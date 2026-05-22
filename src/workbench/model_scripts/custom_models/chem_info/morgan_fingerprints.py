@@ -15,7 +15,7 @@ import pandas as pd
 import json
 
 # Workbench imports (provided by the workbench install in the SageMaker container)
-from workbench.utils.chem_utils.fingerprints import compute_morgan_fingerprints
+from workbench.endpoints.fingerprints import compute_morgan_fingerprints
 
 # TRAINING SECTION
 #

@@ -37,7 +37,7 @@ from workbench.endpoints.uq_harness import (
     compute_vgmu_confidence,
     load_classification_uq,
 )
-from workbench.algorithms.dataframe.uq_model import UQModel
+from workbench.endpoints.uq_model import UQModel
 
 # =============================================================================
 # Default Hyperparameters
@@ -255,8 +255,8 @@ if __name__ == "__main__":
         compute_vgmu_confidence,
         save_classification_uq,
     )
-    from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
-    from workbench.algorithms.dataframe.uq_model import UQModel
+    from workbench.endpoints.fingerprint_proximity import FingerprintProximity
+    from workbench.endpoints.uq_model import UQModel
 
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data

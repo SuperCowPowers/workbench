@@ -1,13 +1,23 @@
 """DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy"""
 
+import logging
 from typing import Union
 
 # Workbench Imports
-from workbench.core.artifacts.df_store_core import DFStoreCore
+from workbench.core.df_store_core import DFStoreCore
+from workbench.utils.config_manager import ConfigManager
+from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
 
 
 class DFStore(DFStoreCore):
     """DFStore: Fast/efficient storage of DataFrames using AWS S3/Parquet/Snappy
+
+    Orchestration-side wrapper around the endpoint-safe :class:`DFStoreCore`.
+    Pulls the workbench bucket from :class:`ConfigManager` and a refreshable
+    boto3 session from :class:`AWSAccountClamp` — what you almost always want
+    for interactive / long-running workbench code. Endpoint-side code should
+    use :class:`workbench.endpoints.df_store.DFStore` instead, which auto-
+    discovers ``s3_bucket`` and ``boto3_session`` from the container env.
 
         Common Usage:
     ```python
@@ -35,7 +45,10 @@ class DFStore(DFStoreCore):
         Args:
             path_prefix (Union[str, None], optional): Add a path prefix to storage locations (Defaults to None)
         """
-        super().__init__(path_prefix=path_prefix)
+        bucket = ConfigManager().get_config("WORKBENCH_BUCKET")
+        session = AWSAccountClamp().boto3_session
+        super().__init__(path_prefix=path_prefix, s3_bucket=bucket, boto3_session=session)
+        self.log = logging.getLogger("workbench")
 
 
 if __name__ == "__main__":

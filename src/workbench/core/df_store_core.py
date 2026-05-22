@@ -1,11 +1,11 @@
 """DFStoreCore: Endpoint-safe storage of DataFrames using AWS S3/Parquet/Snappy.
 
 This is the lightweight core class. The orchestration-side wrapper is
-:class:`workbench.core.artifacts.df_store_core.DFStoreCore` (note: same
-class name, different module — the artifacts version subclasses this one
-and supplies a ``ConfigManager`` + ``AWSAccountClamp`` session). Endpoint
-code that needs DataFrame storage can instantiate this directly with
-explicit ``s3_bucket`` / ``boto3_session`` args, or fall back to env vars.
+:class:`workbench.api.DFStore`, which subclasses this one and supplies a
+``ConfigManager``-loaded bucket + ``AWSAccountClamp`` refreshable session.
+Endpoint code that needs DataFrame storage can instantiate this directly
+with explicit ``s3_bucket`` / ``boto3_session`` args, or fall back to env
+vars.
 """
 
 from datetime import datetime
