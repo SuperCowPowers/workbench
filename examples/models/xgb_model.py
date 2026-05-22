@@ -1,4 +1,4 @@
-from workbench.api import FeatureSet, Model, ModelType, Endpoint
+from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
 
 # Grab a FeatureSet
 my_features = FeatureSet("aqsol_features")
@@ -33,6 +33,7 @@ if recreate or not Model("aqsol-regression").exists():
     m = feature_set.to_model(
         name="aqsol-regression",
         model_type=ModelType.UQ_REGRESSOR,
+        model_framework=ModelFramework.XGBOOST,
         feature_list=feature_list,
         target_column=target,
         description="XGBoost Regression Model for AQSol",
@@ -57,6 +58,7 @@ if recreate or not Model("aqsol-class").exists():
     m = feature_set.to_model(
         name="aqsol-class",
         model_type=ModelType.CLASSIFIER,
+        model_framework=ModelFramework.XGBOOST,
         feature_list=feature_list,
         target_column="solubility_class",
         description="XGBoost Classification Model for AQSol",
