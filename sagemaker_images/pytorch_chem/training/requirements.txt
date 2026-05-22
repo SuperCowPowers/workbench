@@ -1,17 +1,11 @@
-# Workbench training image — pytorch_chem flavor (PyTorch / ChemProp models).
-# `workbench-bridges==0.2.10` is retained for backward compatibility with
-# existing deployed-endpoint model bundles; drop in a future image rev once
-# no production endpoint references workbench_bridges.
+# Framework extras for pytorch_chem/training — workbench + bridges live in
+# the Dockerfile (auto-extracted from pyproject.toml + ARG-driven version pin).
 
 # PyTorch with CUDA 13.0 index (works on both CPU and GPU instances)
 --index-url https://download.pytorch.org/whl/cu130
 --extra-index-url https://pypi.org/simple/
 torch==2.11.0
 
-workbench[modeling]>=0.8.340
-workbench-bridges==0.2.10
-
-# Framework-specific
 chemprop==2.2.2
 
 # Model interpretability (used by chemprop SHAP utilities)

@@ -34,7 +34,6 @@ dependencies = [
     "joblib >= 1.3.2",
     "rdkit>=2026.3.1",
     "pyyaml>=6.0",
-    "pyreadline3; sys_platform == 'win32'",
 ]
 
 [project.optional-dependencies]
@@ -50,6 +49,7 @@ modeling = [
 ]
 repl = [
     "ipython >=8.37.0",
+    "pyreadline3; sys_platform == 'win32'",
 ]
 ui = [
     "plotly>=6.5.0",

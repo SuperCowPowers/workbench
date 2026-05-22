@@ -1,13 +1,5 @@
-# Workbench inference image — base flavor (XGB / sklearn models).
-# `workbench[modeling]` pulls workbench core + xgboost (for unpickling XGB
-# models at model_fn() time) + mordredcommunity (for feature endpoints).
-# `workbench-bridges==0.2.10` is retained for backward compatibility with
-# existing deployed-endpoint model bundles; drop in a future image rev once
-# no production endpoint references workbench_bridges.
+# Framework extras for base/inference — workbench + bridges live in the
+# Dockerfile (auto-extracted from pyproject.toml + ARG-driven version pin).
 
-workbench[modeling]>=0.8.340
-workbench-bridges==0.2.10
-
-# Inference server
 fastapi==0.135.2
 uvicorn==0.42.0

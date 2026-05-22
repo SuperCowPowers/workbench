@@ -1,7 +1,0 @@
-# Workbench training image — base flavor (XGB / sklearn models).
-# `workbench-bridges==0.2.10` is retained for backward compatibility with
-# existing deployed-endpoint model bundles; drop in a future image rev once
-# no production endpoint references workbench_bridges.
-
-workbench[modeling]>=0.8.340
-workbench-bridges==0.2.10

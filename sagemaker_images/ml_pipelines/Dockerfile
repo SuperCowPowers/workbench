@@ -8,14 +8,13 @@ RUN apt-get update && \
         gcc
 
 # Layer 1: All heavy dependencies (changes only when requirements.txt or pyproject.toml changes)
-# Excludes workbench-bridges since it's installed alongside workbench in Layer 2
 COPY ml_pipelines/requirements.txt /tmp/
 COPY pyproject.toml /tmp/pyproject.toml
 RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
     python -c "\
 import tomllib; \
 data = tomllib.load(open('/tmp/pyproject.toml', 'rb')); \
-deps = [d for d in data['project']['dependencies'] if not d.startswith('workbench-bridges')]; \
+deps = data['project']['dependencies']; \
 open('/tmp/workbench_deps.txt', 'w').write('\n'.join(deps))" && \
     pip install --no-cache-dir -r /tmp/workbench_deps.txt && \
     rm /tmp/pyproject.toml /tmp/workbench_deps.txt
