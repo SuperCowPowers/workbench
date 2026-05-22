@@ -137,7 +137,7 @@ When the deployed MetaEndpoint receives a request:
 
 1. The container deserializes the DAG from the model artifact.
 2. The walker traverses nodes in topological order.
-3. Endpoint nodes call **`fast_inference`** (sync child) or **`async_inference`** (async child) via `workbench_bridges` — the transport is decided per child by the async flags captured at deploy time.
+3. Endpoint nodes call **`fast_inference`** (sync child) or **`async_inference`** (async child) via `workbench.endpoints` — the transport is decided per child by the async flags captured at deploy time.
 4. Aggregation nodes apply their combination logic on the upstream outputs.
 5. The output node's DataFrame is returned to the caller (with the synthetic `__dag_row_id` stripped).
 

@@ -94,7 +94,7 @@ Now that the `Workbench-ExecutionRole` has been deployed via AWS Stack. These gu
 After deploying the Workbench Core Stack and setting up users to assume that Role, you can run this account setup script. If the results ends with `INFO AWS Account Clamp: AOK!` you're in good shape. If not feel free to contact us on [Discord](https://discord.gg/WHAJuz8sw8) and we'll get it straightened out for you :)
 
 ```bash
-pip install workbench (if not already installed)
+pip install 'workbench[all]' (if not already installed)
 cd workbench/aws_setup
 python aws_account_setup.py
 <lot of print outs for various checks>
@@ -117,6 +117,6 @@ aws glue create-database --database-input '{"Name": "workbench"}'
 Just rerun the script after doing this and after (2 or 3) of these you should see the script run successfully and give a message `AWS Account Clamp: AOK!`
 
 !!! success
-    Congratulations: Workbench is now deployed to your AWS Account. Deploying the AWS Stack only needs to be done once. Now that this is complete your developers can simply `pip install workbench` and start using the API.
+    Congratulations: Workbench is now deployed to your AWS Account. Deploying the AWS Stack only needs to be done once. Now that this is complete your developers can simply `pip install 'workbench[all]'` and start using the API.
     
 If you ran into any issues with this procedure please contact us via [Discord](https://discord.gg/WHAJuz8sw8) or email [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com) and the SCP team will provide **free** setup and support for new Workbench users.

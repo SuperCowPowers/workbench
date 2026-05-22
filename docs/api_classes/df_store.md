@@ -13,7 +13,7 @@ These example show how to use the `DFStore()` class to list, add, and get datafr
     If you'd like to experiment with listing, adding, and getting dataframe with the `DFStore()` class, you can spin up the Workbench REPL, use the class and test out all the methods. Try it out! [Workbench REPL](../repl/index.md)
 
 ```py title="Using DataFrame Store"
-from workbench.api mport DFStore
+from workbench.api import DFStore
 df_store = DFStore()
 
 # List DataFrames

@@ -9,8 +9,15 @@ These classes provide high-level APIs for the Workbench package, they enable you
 - **[DataSource](data_source.md):** Manages AWS Data Catalog and Athena
 - **[FeatureSet](feature_set.md):** Manages AWS Feature Store and Feature Groups
 - **[Model](model.md):** Manages the training and deployment of AWS Model Groups and Packages
-- **[Endpoint](endpoint.md):** Manages the deployment and invocations/inference on AWS Endpoints
+- **[Endpoint](endpoint.md):** Manages the deployment and invocations/inference on AWS Endpoints (auto-routes to the async transport when deployed with `async_endpoint=True`)
+- **[MetaEndpoint](../models/meta_endpoints.md):** Endpoint backed by a DAG of child endpoints + aggregation nodes — feature pipelines and ensembles
 - **[Monitor](monitor.md):** Manages the setup and deployment of AWS Endpoint Monitors
+- **[Meta](meta.md):** API to retrieve AWS metadata for the above artifacts
+- **[InferenceCache](inference_cache.md):** Client-side S3 caching wrapper around an Endpoint's `inference()`
+- **[ParameterStore](parameter_store.md):** Manages AWS Parameter Store (workbench-bucket config, model metadata, feature lists)
+- **[DFStore](df_store.md):** Manages DataFrames in AWS S3 (Parquet/Snappy)
+- **InferenceStore:** Manages inference results in Athena-queryable Parquet on S3
+- **PublicData:** Read-only access to public S3 datasets (`comp_chem/*`)
 
 ![ML Pipeline](../images/workbench_concepts.png)
 
