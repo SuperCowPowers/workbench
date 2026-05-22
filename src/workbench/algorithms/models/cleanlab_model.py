@@ -1,40 +1,56 @@
 """Cleanlab-based label quality detection for regression and classification.
 
-Note: Users must install cleanlab separately: pip install cleanlab
+Cleanlab is an **optional** dependency — not installed by ``workbench`` or any
+of its extras. Users who want to use :class:`CleanlabModels` (via
+:meth:`workbench.api.Model.cleanlab_model` or
+:meth:`workbench.api.FeatureSet.cleanlab_model`) must install it separately::
+
+    pip install 'cleanlab[datalab]' 'datasets<4.0.0'
+
+The ``datasets<4.0.0`` pin works around a Datalab bug:
+https://github.com/cleanlab/cleanlab/issues/1253
+
+This module imports cleanly even when cleanlab is not installed; the
+ImportError is deferred to :class:`CleanlabModels.__init__` so importing
+workbench (or its api submodules) doesn't require cleanlab.
 """
 
 import logging
 from typing import List, Optional
 
-import datasets
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor, HistGradientBoostingClassifier
 from sklearn.preprocessing import LabelEncoder
 
 from workbench.core.artifacts.model_core import ModelType
 
-# Check datasets version - Datalab has a bug with datasets>=4.0.0
-# See: https://github.com/cleanlab/cleanlab/issues/1253
-_datasets_major = int(datasets.__version__.split(".")[0])
-if _datasets_major >= 4:
-    raise ImportError(
-        "cleanlab's Datalab requires datasets<4.0.0 due to a known bug.\n"
-        "See: https://github.com/cleanlab/cleanlab/issues/1253\n"
-        "Fix: pip install 'datasets<4.0.0'"
-    )
-
-# Check for cleanlab package
+# Optional dependency check — see module docstring.
+_CLEANLAB_IMPORT_ERROR: Optional[str] = None
 try:
+    import datasets
+
+    _datasets_major = int(datasets.__version__.split(".")[0])
+    if _datasets_major >= 4:
+        raise ImportError(
+            "cleanlab's Datalab requires datasets<4.0.0 due to a known bug "
+            "(https://github.com/cleanlab/cleanlab/issues/1253). "
+            "Fix: pip install 'datasets<4.0.0'"
+        )
     from cleanlab.regression.learn import CleanLearning as CleanLearningRegressor
     from cleanlab.classification import CleanLearning as CleanLearningClassifier
     from cleanlab import Datalab
 
     CLEANLAB_AVAILABLE = True
-except ImportError:
+except ImportError as _e:
     CLEANLAB_AVAILABLE = False
     CleanLearningRegressor = None
     CleanLearningClassifier = None
     Datalab = None
+    _CLEANLAB_IMPORT_ERROR = (
+        f"{_e}. "
+        "cleanlab is an optional workbench dependency — install with: "
+        "pip install 'cleanlab[datalab]' 'datasets<4.0.0'"
+    )
 
 # Regressor types for convenience
 REGRESSOR_TYPES = [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]
@@ -88,7 +104,7 @@ class CleanlabModels:
             model_type: ModelType (REGRESSOR, CLASSIFIER, etc.).
         """
         if not CLEANLAB_AVAILABLE:
-            raise ImportError("cleanlab is not installed. Install with: pip install 'cleanlab[datalab]'")
+            raise ImportError(_CLEANLAB_IMPORT_ERROR)
 
         self.id_column = id_column
         self.target = target

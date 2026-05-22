@@ -1,19 +1,12 @@
-# Core ML packages
-scikit-learn==1.8.0
-xgboost==3.2.0
-lightgbm==4.6.0
+# Workbench inference image — base flavor (XGB / sklearn models).
+# `workbench[modeling]` pulls workbench core + xgboost (for unpickling XGB
+# models at model_fn() time) + mordredcommunity (for feature endpoints).
+# `workbench-bridges==0.2.10` is retained for backward compatibility with
+# existing deployed-endpoint model bundles; drop in a future image rev once
+# no production endpoint references workbench_bridges.
 
-# Data handling (pandas <3.0 due to breaking changes)
-pandas==2.3.3
-awswrangler==3.15.1
-joblib==1.5.3
-
-# Chemistry packages
-rdkit==2026.3.1
-mordredcommunity==2.0.7
-
-# MetaEndpoint support (async_inference added in 0.2.7)
-workbench-bridges==0.2.9
+workbench[modeling]>=0.8.339
+workbench-bridges==0.2.10
 
 # Inference server
 fastapi==0.135.2

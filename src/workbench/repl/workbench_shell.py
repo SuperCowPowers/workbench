@@ -12,11 +12,32 @@ import readline  # noqa: F401
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 
-import IPython
-from IPython import start_ipython
+# IPython is optional (`workbench[repl]` extra). When missing, this module
+# still imports — `launch_shell()` raises a clean error pointing the user at
+# the right pip install command. Placeholder names below let the rest of the
+# module load (the WorkbenchPrompts class needs `Prompts` at definition time).
+try:
+    import IPython
+    from IPython import start_ipython
+    from IPython.terminal.prompts import Prompts
+    from IPython.terminal.ipapp import load_default_config
+
+    _IPYTHON_AVAILABLE = True
+except ImportError:
+    _IPYTHON_AVAILABLE = False
+    IPython = None  # type: ignore[assignment]
+    start_ipython = None  # type: ignore[assignment]
+    load_default_config = None  # type: ignore[assignment]
+
+    class Prompts:  # type: ignore[no-redef]
+        """Placeholder used when IPython is not installed — the REPL exits
+        cleanly via :func:`launch_shell` before any prompt-class instance
+        would actually be created."""
+
+        pass
+
+
 from distutils.version import LooseVersion
-from IPython.terminal.prompts import Prompts
-from IPython.terminal.ipapp import load_default_config
 from pygments.token import Token
 import botocore
 import pandas as pd
@@ -572,6 +593,13 @@ class WorkbenchShell:
 
 # Launch Shell Entry Point
 def launch_shell():
+    if not _IPYTHON_AVAILABLE:
+        print(
+            "The `workbench` REPL requires IPython, which is an optional dependency.\n"
+            "Install with: pip install 'workbench[repl]'  (or: pip install 'workbench[all]')",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     global workbench_shell
     workbench_shell = WorkbenchShell()
     workbench_shell.start()

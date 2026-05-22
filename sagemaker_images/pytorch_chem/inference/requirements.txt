@@ -1,19 +1,21 @@
+# Workbench inference image — pytorch_chem flavor (PyTorch / ChemProp models).
+# Bare `workbench` (no extras) — chemprop endpoints don't import xgboost or
+# mordred at runtime. If a future chemprop inference path needs them, switch
+# this to `workbench[modeling]`.
+# `workbench-bridges==0.2.10` is retained for backward compatibility with
+# existing deployed-endpoint model bundles; drop in a future image rev once
+# no production endpoint references workbench_bridges.
+
 # PyTorch with CUDA 13.0 index (works on both CPU and GPU instances)
 --index-url https://download.pytorch.org/whl/cu130
 --extra-index-url https://pypi.org/simple/
 torch==2.11.0
 
-# Data handling (pandas <3.0 due to breaking changes)
-pandas==2.3.3
-awswrangler==3.15.1
-joblib==1.5.3
+workbench>=0.8.339
+workbench-bridges==0.2.10
 
-# ML packages
-lightgbm==4.6.0
-
-# Chemistry packages
+# Framework-specific
 chemprop==2.2.2
-rdkit==2026.3.1
 
 # Inference server
 fastapi==0.135.2

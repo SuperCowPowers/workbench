@@ -6,7 +6,7 @@ Custom Docker images for SageMaker training and inference endpoints.
 
 | Image | Directory | ECR Repository | Description |
 |-------|-----------|----------------|-------------|
-| Base Training | `base/training/` | `aws-ml-images/py312-base-training` | scikit-learn, xgboost, lightgbm, rdkit, workbench-bridges (also used for meta models) |
+| Base Training | `base/training/` | `aws-ml-images/py312-base-training` | scikit-learn, xgboost, rdkit, workbench (also used for meta models) |
 | Base Inference | `base/inference/` | `aws-ml-images/py312-base-inference` | Same as base training + FastAPI/uvicorn inference server |
 | PyTorch/Chem Training | `pytorch_chem/training/` | `aws-ml-images/py312-pytorch-chem-training` | PyTorch, chemprop, rdkit (GPU training via CUDA base image) |
 | PyTorch/Chem Inference | `pytorch_chem/inference/` | `aws-ml-images/py312-pytorch-chem-inference` | Same stack as pytorch_chem training + FastAPI/uvicorn (runs on CPU instances) |

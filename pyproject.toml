@@ -24,23 +24,12 @@ classifiers = [
 ]
 authors = [{ name = "SuperCowPowers LLC", email = "support@supercowpowers.com" }]
 
-# Core dependencies — installed by `pip install workbench`.
-# This set is intentionally narrow: it's everything a SageMaker endpoint
-# inference container needs (numpy/pandas/sklearn/scipy/rdkit + AWS clients)
-# without dragging in sagemaker-SDK, dashboard, or training-only ML libs.
-#
-# Bigger surface lives in extras below. The endpoint import-surface CI
-# smoke test enforces that the lightweight install can import the runtime
-# modules (workbench.endpoints.*, workbench.algorithms.dataframe.uq_model,
-# workbench.utils.chem_utils.fingerprints) without those extras.
 dependencies = [
     "boto3 >= 1.31.76",
     "botocore >= 1.31.76",
     "awswrangler >= 3.4.0",
     "requests >= 2.26.0",
-    "numpy >= 1.26.4",
     "pandas >= 2.2.1, < 3.0",
-    "scipy",
     "scikit-learn >=1.5.2",
     "joblib >= 1.3.2",
     "rdkit>=2026.3.1",
@@ -49,23 +38,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# AWS orchestration / training-side SDKs. Needed by anything that builds
-# pipelines, deploys endpoints, or talks to SageMaker training (the
-# orchestration side of workbench, not the endpoint runtime).
 aws = [
     "sagemaker >= 3.6.0, < 4.0",
-    # Anchors the sagemaker-mlops -> s3fs -> aiobotocore chain to a botocore-compatible version
     "aiobotocore >= 3.4.0",
     "redis >= 5.0.1",
     "cryptography >= 44.0.2",
 ]
-# Training-time ML libs. Inference containers get xgboost/torch/etc.
-# pre-installed in the SageMaker base image, so they don't need these.
 modeling = [
     "xgboost >=3.0.3",
-    "umap-learn >=0.5.8",
     "mordredcommunity>=2.0.6",
-    "cleanlab>=2.9.0",
+]
+repl = [
     "ipython >=8.37.0",
 ]
 ui = [
@@ -80,8 +63,12 @@ ui = [
 dev = ["pytest", "pytest-sugar", "pytest-xdist", "coverage", "pytest-cov", "flake8", "black"]
 all = [
     "networkx>=3.2",
+    "cleanlab>=2.9.0",
+    "datasets<4.0.0",
+    "umap-learn>=0.5.8",
     "workbench[aws]",
     "workbench[modeling]",
+    "workbench[repl]",
     "workbench[ui]",
     "workbench[dev]",
 ]
