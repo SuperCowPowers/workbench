@@ -114,10 +114,29 @@ class Proximity(ABC):
         # Normalize to list
         ids = [id_or_ids] if not isinstance(id_or_ids, list) else id_or_ids
 
-        # Validate IDs exist
-        missing_ids = set(ids) - set(self.df[self.id_column])
+        # Be tolerant of unknown IDs: backends can silently drop rows during
+        # indexing (e.g. FingerprintProximity drops compounds whose SMILES
+        # RDKit can't convert), and we'd rather log + skip than blow up the
+        # caller. Upstream consumers (residual_features._aggregate, UQModel
+        # ._stack_features) already turn missing-id rows into NaN/neutral
+        # values via reindex + nan_to_num, so dropped IDs flow through
+        # harmlessly. Symmetric benefit on the query side too — typos or
+        # stale caches no longer crash the call.
+        known_ids = set(self.df[self.id_column])
+        missing_ids = [i for i in ids if i not in known_ids]
         if missing_ids:
-            raise ValueError(f"IDs not found in dataset: {missing_ids}")
+            sample = missing_ids[:5]
+            log.warning(
+                f"proximity.neighbors: skipping {len(missing_ids)} ID(s) not in dataset "
+                f"(sample: {sample}{'...' if len(missing_ids) > 5 else ''}). "
+                "Usually means the backend dropped rows during indexing — check earlier "
+                "logs for warnings like 'Failed to convert SMILES' or similar."
+            )
+            ids = [i for i in ids if i in known_ids]
+            if not ids:
+                # All IDs missing — return an empty frame rather than crashing in
+                # the backend. Callers using _aggregate() will get all-NaN rows.
+                return pd.DataFrame()
 
         # Filter to requested IDs and preserve order
         query_df = self.df[self.df[self.id_column].isin(ids)]
