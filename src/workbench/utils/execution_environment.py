@@ -70,14 +70,42 @@ def running_on_docker() -> bool:
     return running_on_ecs()
 
 
+def running_on_sagemaker() -> bool:
+    """
+    Check if the current environment is a SageMaker training job or inference container.
+
+    SageMaker doesn't set ECS env vars and modern containers don't always have
+    /.dockerenv, so running_on_docker() can return False even when we're clearly
+    running as a service. This adds an explicit SageMaker check so role assumption
+    is skipped in endpoint/training containers (where the attached execution role
+    already provides credentials).
+
+    Returns:
+        bool: True if running in a SageMaker container, False otherwise.
+    """
+    return bool(
+        os.environ.get("SAGEMAKER_BIND_TO_PORT")  # inference endpoint
+        or os.environ.get("SM_MODEL_DIR")  # training job
+        or os.path.isdir("/opt/ml")  # belt-and-suspenders: SageMaker always mounts /opt/ml
+    )
+
+
 def running_as_service() -> bool:
     """
-    Check if the current environment is running as a service (e.g. Docker, ECS, Glue, Lambda).
+    Check if the current environment is running as a service (e.g. Docker, ECS, Glue, Lambda, SageMaker).
 
     Returns:
         bool: True if running as a service, False otherwise.
     """
-    return any([running_on_glue(), running_on_lambda(), running_on_ecs(), running_on_docker()])
+    return any(
+        [
+            running_on_glue(),
+            running_on_lambda(),
+            running_on_ecs(),
+            running_on_docker(),
+            running_on_sagemaker(),
+        ]
+    )
 
 
 def glue_job_name() -> str:

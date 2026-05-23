@@ -7,7 +7,7 @@ feature_list = model.features()
 target = model.target()
 
 # Recreate Flag in case you want to recreate the artifacts
-recreate = False
+recreate = True
 
 # PyTorch Regression Model
 if recreate or not Model("aqsol-reg-pytorch").exists():
