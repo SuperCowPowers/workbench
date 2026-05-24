@@ -126,8 +126,8 @@ def model_fn(model_dir: str) -> dict:
     # Load feature scaler
     scaler = FeatureScaler.load(os.path.join(model_dir, "scaler.joblib"))
 
-    # Regression UQ — load both V0 and V1, pick active by hyperparameters.json.
-    uq_dict = load_regression_uq(model_dir)
+    # Regression UQ — load the active version per hyperparameters.json.
+    uq_model = load_regression_uq(model_dir)
 
     classification_uq = None
     if os.path.exists(os.path.join(model_dir, "classification_uq.json")):
@@ -137,7 +137,7 @@ def model_fn(model_dir: str) -> dict:
         "ensemble_models": ensemble_models,
         "n_ensemble": n_ensemble,
         "scaler": scaler,
-        **uq_dict,
+        "uq_model": uq_model,
         "classification_uq": classification_uq,
     }
 
@@ -548,8 +548,7 @@ if __name__ == "__main__":
         else:
             classification_uq = None
         # No regression UQ on classification tasks
-        uq_dict = {"uq_model": None, "uq_model_v0": None, "uq_model_v1": None,
-                   "active_uq_version": str(hyperparameters.get("uq_version", "v0")).lower()}
+        uq_dict = None
     else:
         metrics = compute_regression_metrics(y_true, y_pred)
         print_regression_metrics(metrics)

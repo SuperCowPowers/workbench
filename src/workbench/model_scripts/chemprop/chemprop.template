@@ -196,24 +196,23 @@ def model_fn(model_dir: str) -> dict:
         ensemble_models.append(model)
     print(f"[model_fn] all {len(ensemble_models)} models loaded", flush=True)
 
-    # Regression UQ — load both V0 and V1, pick active by hyperparameters.json.
-    # The shared helper returns {uq_model (active), uq_model_v0, uq_model_v1,
-    # active_uq_version}; predict_fn keeps using model_dict["uq_model"].
-    uq_dict = load_regression_uq(model_dir)
+    # Regression UQ — load the active version per hyperparameters.json.
+    uq_model = load_regression_uq(model_dir)
 
     classification_uq = None
     if os.path.exists(os.path.join(model_dir, "classification_uq.json")):
         classification_uq = load_classification_uq(model_dir)
 
+    active_uq = uq_model.UQ_VERSION if uq_model is not None else "none"
     print(
         f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}, "
-        f"active_uq={uq_dict['active_uq_version']}"
+        f"active_uq={active_uq}"
     )
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": metadata["n_ensemble"],
         "target_columns": metadata["target_columns"],
-        **uq_dict,
+        "uq_model": uq_model,
         "classification_uq": classification_uq,
     }
 
@@ -994,8 +993,7 @@ if __name__ == "__main__":
         df_val["prediction"] = df_val[f"{primary}_pred"]
         df_val["prediction_std"] = df_val[f"{primary}_pred_std"]
 
-        uq_dict = {"uq_model": None, "uq_model_v0": None, "uq_model_v1": None,
-                   "active_uq_version": str(hyperparameters.get("uq_version", "v0")).lower()}
+        uq_dict = None  # set in the valid-rows branch below; save handles None
 
         if smiles_column not in df_train.columns and smiles_column not in df_val.columns:
             raise ValueError(

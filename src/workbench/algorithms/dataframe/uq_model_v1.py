@@ -323,7 +323,6 @@ class UQModelV1:
             "max_depth": self.max_depth,
             "feature_order": self.FEATURE_ORDER,
             "proximity_saved": save_proximity,
-            "uq_version": 1,
         }
         with open(os.path.join(model_dir, self.METADATA_FILENAME), "w") as fp:
             json.dump(metadata, fp, indent=2)

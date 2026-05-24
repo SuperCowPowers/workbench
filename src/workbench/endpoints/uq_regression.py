@@ -7,34 +7,23 @@ regression UQ:
     2. Fit ``UQModelV0`` and ``UQModelV1`` on the same validation predictions
        and ensemble std.
     3. Save both artifacts into the model bundle.
-    4. At inference (``model_fn``), load whichever artifacts exist and pick an
-       active version from ``hyperparameters["uq_version"]`` (default ``"v0"``).
+    4. At inference (``model_fn``), load whichever version
+       ``hyperparameters["uq_version"]`` selects (default ``"v0"``).
 
 That logic lives here so each template can call:
 
     # ---- Training ----
-    uq_dict = fit_regression_uq(
-        y_true=y_val_true,
-        y_pred=y_val_pred,
-        y_std=y_val_std,
-        val_ids=val_ids,
-        prox_df=prox_df,
-        id_column=id_column,
-        target=target,
-        active_version=hyperparameters.get("uq_version", "v0"),
-    )
-    # apply active UQ to df_val columns ...
-    save_regression_uq(uq_dict, args.model_dir)
+    uq_dict = fit_regression_uq(...)
+    uq_out = uq_dict["uq_model"].predict(...)         # active for df_val cols
+    save_regression_uq(uq_dict, args.model_dir)       # writes both V0 and V1
 
     # ---- Inference (model_fn) ----
-    uq_dict = load_regression_uq(model_dir)
-    # model_dict["uq_model"] is the active one; uq_model_v0 / uq_model_v1 are
-    # both retained for comparison.
+    uq_model = load_regression_uq(model_dir)          # returns just the active
+    return {..., "uq_model": uq_model, ...}
 
-Returned dicts always carry the same keys regardless of which version was
-active: ``uq_model`` (active), ``uq_model_v0``, ``uq_model_v1``,
-``active_uq_version``. Templates plug the whole dict into the model_fn return
-value so predict_fn can keep using ``model_dict["uq_model"]`` unchanged.
+For offline comparison of the non-active version, callers use
+``Model.uq_model(version="v0"|"v1")`` — that loads either version explicitly
+without going through the endpoint.
 """
 
 from __future__ import annotations
@@ -42,7 +31,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from typing import Optional
+from typing import Optional, Union
 
 from workbench.endpoints.fingerprint_proximity import FingerprintProximity
 from workbench.endpoints.uq_model_v0 import UQModelV0
@@ -86,12 +75,11 @@ def fit_regression_uq(
         id_column: Name of the ID column in ``prox_df``.
         target: Name of the target column in ``prox_df``.
         active_version: Which version is the "primary" one (``"v0"`` or
-            ``"v1"``). Returned in the result dict; doesn't affect what gets
-            fit (both always do).
+            ``"v1"``). Doesn't affect what gets fit (both always do); only
+            determines which is returned under the ``uq_model`` key.
 
     Returns:
-        dict with keys: ``uq_model`` (the active instance), ``uq_model_v0``,
-        ``uq_model_v1``, ``active_uq_version``.
+        dict with keys ``uq_model`` (the active instance), ``v0``, ``v1``.
     """
     active = _normalize_version(active_version)
 
@@ -106,43 +94,38 @@ def fit_regression_uq(
     uq_model_active = uq_model_v1 if active == "v1" else uq_model_v0
     log.info(f"Active UQ version for training-time df_val columns: {active}")
 
-    return {
-        "uq_model": uq_model_active,
-        "uq_model_v0": uq_model_v0,
-        "uq_model_v1": uq_model_v1,
-        "active_uq_version": active,
-    }
+    return {"uq_model": uq_model_active, "v0": uq_model_v0, "v1": uq_model_v1}
 
 
-def save_regression_uq(uq_dict: dict, model_dir: str) -> None:
-    """Save both V0 and V1 artifacts from a fit_regression_uq() result."""
-    if uq_dict.get("uq_model_v0") is not None:
-        uq_dict["uq_model_v0"].save(model_dir)
-    if uq_dict.get("uq_model_v1") is not None:
-        uq_dict["uq_model_v1"].save(model_dir)
+def save_regression_uq(uq_dict: Optional[dict], model_dir: str) -> None:
+    """Save V0 and V1 artifacts from a fit_regression_uq() result.
 
-
-def load_regression_uq(model_dir: str) -> dict:
-    """Load V0 + V1 UQ artifacts from a model bundle and pick the active one.
-
-    The active version is read from ``hyperparameters.json["uq_version"]`` in
-    ``model_dir`` (defaults to ``"v0"`` if missing). If the active version's
-    artifact isn't present, falls back to the other one. If neither is present,
-    every returned value is ``None``.
-
-    Args:
-        model_dir: Directory containing the model artifacts.
-
-    Returns:
-        dict with keys: ``uq_model`` (active or None), ``uq_model_v0``,
-        ``uq_model_v1``, ``active_uq_version``.
+    ``None`` is a no-op so classification-task code paths can pass it
+    unconditionally without first building an empty placeholder dict.
     """
-    uq_model_v0 = None
-    uq_model_v1 = None
-    if os.path.exists(os.path.join(model_dir, UQModelV0.METADATA_FILENAME)):
-        uq_model_v0 = UQModelV0.load(model_dir)
-    if os.path.exists(os.path.join(model_dir, "uq_model.joblib")):
-        uq_model_v1 = UQModelV1.load(model_dir)
+    if uq_dict is None:
+        return
+    if uq_dict.get("v0") is not None:
+        uq_dict["v0"].save(model_dir)
+    if uq_dict.get("v1") is not None:
+        uq_dict["v1"].save(model_dir)
+
+
+def load_regression_uq(model_dir: str) -> Optional[Union[UQModelV0, UQModelV1]]:
+    """Load the active regression UQ model from a bundle.
+
+    Reads ``hyperparameters.json["uq_version"]`` to decide which version is
+    active (defaults to ``"v0"``), then loads that one. Falls back to the
+    other if the requested version's artifact isn't present. Returns ``None``
+    if neither is in the bundle (e.g. a classification model).
+
+    For explicit offline access to a specific version (or to both for
+    comparison), use ``Model.uq_model(version=...)`` instead.
+    """
+    v0_present = os.path.exists(os.path.join(model_dir, UQModelV0.METADATA_FILENAME))
+    v1_present = os.path.exists(os.path.join(model_dir, "uq_model.joblib"))
+    if not (v0_present or v1_present):
+        return None
 
     bundle_hp_path = os.path.join(model_dir, "hyperparameters.json")
     bundle_hp = {}
@@ -151,17 +134,9 @@ def load_regression_uq(model_dir: str) -> dict:
             bundle_hp = json.load(fp)
     active_version = _normalize_version(bundle_hp.get("uq_version", "v0"))
 
-    if active_version == "v1" and uq_model_v1 is not None:
-        active = uq_model_v1
-    elif uq_model_v0 is not None:
-        active = uq_model_v0
-    else:
-        # Either V1-only bundle, or no UQ at all.
-        active = uq_model_v1
-
-    return {
-        "uq_model": active,
-        "uq_model_v0": uq_model_v0,
-        "uq_model_v1": uq_model_v1,
-        "active_uq_version": active_version,
-    }
+    if active_version == "v1" and v1_present:
+        return UQModelV1.load(model_dir)
+    if v0_present:
+        return UQModelV0.load(model_dir)
+    # active was v0 but no v0 artifact → fall back to v1
+    return UQModelV1.load(model_dir)
