@@ -936,6 +936,8 @@ if __name__ == "__main__":
         else:
             classification_uq = None
         uq_model = None
+        # No regression UQ on classification tasks (save_regression_uq accepts None)
+        uq_dict = None
     else:
         classification_uq = None
         # Compute ensemble std using direct PyTorch inference (faster, no Trainer overhead)

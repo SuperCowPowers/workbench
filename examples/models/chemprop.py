@@ -1,7 +1,7 @@
 from workbench.api import FeatureSet, Model, ModelType, ModelFramework, Endpoint
 
 # Recreate Flag in case you want to recreate the artifacts
-recreate = False
+recreate = True
 
 # =============================================================================
 # Single-Target Chemprop Regression Model
