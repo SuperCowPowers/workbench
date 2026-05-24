@@ -296,9 +296,7 @@ class UQModelV0:
         else:
             index = list(query)
             if len(index) != len(predictions):
-                raise ValueError(
-                    f"query length ({len(index)}) must match predictions length ({len(predictions)})"
-                )
+                raise ValueError(f"query length ({len(index)}) must match predictions length ({len(predictions)})")
 
         safe_std = np.maximum(prediction_std, 1e-10)
 

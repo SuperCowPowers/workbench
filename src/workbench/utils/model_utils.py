@@ -20,8 +20,6 @@ if TYPE_CHECKING:
     from workbench.api import Model
     from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
-    from workbench.algorithms.dataframe.uq_model_v0 import UQModelV0
-    from workbench.algorithms.dataframe.uq_model_v1 import UQModelV1
     from workbench.algorithms.models.noise_model import NoiseModel
     from workbench.algorithms.models.cleanlab_model import CleanlabModels
 
