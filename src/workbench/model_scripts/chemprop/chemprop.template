@@ -99,8 +99,9 @@ DEFAULT_HYPERPARAMETERS = {
     # UQ version to use as the primary confidence source at inference:
     #   "v0" (default): isotonic on (prediction, std), no proximity required
     #   "v1": proximity-augmented RandomForest error model
-    # Both V0 and V1 are always fit + saved when regression UQ is enabled, so
-    # the other version stays available for comparison via Model.uq_model(version=...).
+    #   "v2": pure applicability-domain confidence from fingerprint neighbors
+    # All three are always fit + saved when regression UQ is enabled, so the
+    # other versions stay available for comparison via Model.uq_model(version=...).
     "uq_version": "v0",
 }
 
