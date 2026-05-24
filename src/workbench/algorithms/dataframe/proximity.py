@@ -117,7 +117,7 @@ class Proximity(ABC):
         # Be tolerant of unknown IDs: backends can silently drop rows during
         # indexing (e.g. FingerprintProximity drops compounds whose SMILES
         # RDKit can't convert), and we'd rather log + skip than blow up the
-        # caller. Upstream consumers (residual_features._aggregate, UQModel
+        # caller. Upstream consumers (residual_features._aggregate, UQModelV1
         # ._stack_features) already turn missing-id rows into NaN/neutral
         # values via reindex + nan_to_num, so dropped IDs flow through
         # harmlessly. Symmetric benefit on the query side too — typos or

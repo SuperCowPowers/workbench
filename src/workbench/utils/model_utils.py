@@ -20,7 +20,8 @@ if TYPE_CHECKING:
     from workbench.api import Model
     from workbench.algorithms.dataframe.feature_space_proximity import FeatureSpaceProximity
     from workbench.algorithms.dataframe.fingerprint_proximity import FingerprintProximity
-    from workbench.algorithms.dataframe.uq_model import UQModel
+    from workbench.algorithms.dataframe.uq_model_v0 import UQModelV0
+    from workbench.algorithms.dataframe.uq_model_v1 import UQModelV1
     from workbench.algorithms.models.noise_model import NoiseModel
     from workbench.algorithms.models.cleanlab_model import CleanlabModels
 
@@ -187,13 +188,36 @@ def fingerprint_prox_model_local(
     )
 
 
+def _resolve_uq_version(model: "Model", version: Optional[str]) -> str:
+    """Resolve the effective UQ version for a model artifact.
+
+    Order of precedence:
+        1. Explicit `version` argument ("v0" or "v1").
+        2. `hyperparameters["uq_version"]` from the model artifact.
+        3. Default "v0" (the active version going forward).
+    """
+    if version is not None:
+        return version
+
+    # Try to read uq_version from the model's hyperparameters
+    try:
+        hp = model.hyperparameters() if hasattr(model, "hyperparameters") else None
+        if hp and "uq_version" in hp:
+            return str(hp["uq_version"])
+    except Exception:  # noqa: BLE001 — best-effort lookup, fall through to default
+        pass
+
+    return "v0"
+
+
 def uq_model_local(
     model: Model,
+    version: Optional[str] = None,
     refresh_proximity: bool = False,
     radius: int = 2,
     n_bits: int = 2048,
-) -> "UQModel":
-    """Load the fitted UQModel from this Model's artifact.
+):
+    """Load the fitted UQModel (V0 or V1) from this Model's artifact.
 
     Pairs with the existing `fp_prox_model()` / `proximity_model()` factory pattern:
         model = Model("my-model")
@@ -201,33 +225,40 @@ def uq_model_local(
         out = rm.predict(test_df[["smiles"]], predictions, prediction_std)
 
     Args:
-        model: The Workbench Model whose artifact contains a fitted UQModel
-            (saved during training via `uq_model.save(model_dir)`).
-        refresh_proximity: If False (default), use the proximity backend that was
-            embedded in the model artifact at training time — exact reference set
-            used to fit the residual estimator, reproducible, no fingerprint
-            recomputation. If True, build a fresh FingerprintProximity from the
-            current source FeatureSet (consistent with `fp_prox_model()` behavior
-            but recomputes Morgan fingerprints and uses today's reference set).
-        radius / n_bits: Morgan fingerprint parameters (only used when
+        model: The Workbench Model whose artifact contains a fitted UQModel.
+        version: Which UQ version to load — ``"v0"`` (isotonic on prediction+std)
+            or ``"v1"`` (proximity-augmented RF). If ``None``, reads
+            ``hyperparameters["uq_version"]`` from the bundle and falls back
+            to ``"v0"``.
+        refresh_proximity: V1-only. If False (default), use the proximity backend
+            that was embedded in the model artifact at training time — exact
+            reference set used to fit the residual estimator, reproducible, no
+            fingerprint recomputation. If True, build a fresh FingerprintProximity
+            from the current source FeatureSet. Ignored for V0 (no proximity).
+        radius / n_bits: Morgan fingerprint parameters (only used for V1 when
             refresh_proximity=True).
 
     Returns:
-        A ready-to-use UQModel.
+        A ready-to-use UQModelV0 or UQModelV1 instance.
 
     Raises:
-        FileNotFoundError: If the model artifact does not contain a fitted
-            UQModel (uq_model.joblib not present).
+        FileNotFoundError: If the requested version's artifact is not in the
+            bundle.
     """
-    from workbench.algorithms.dataframe.uq_model import UQModel  # noqa: F401 (avoid circular import)
+    from workbench.algorithms.dataframe.uq_model_v0 import UQModelV0  # noqa: F401
+    from workbench.algorithms.dataframe.uq_model_v1 import UQModelV1  # noqa: F401
 
     model_artifact_uri = model.model_data_url()
     if model_artifact_uri is None:
         raise ValueError(f"No model artifact found for {model.uuid}")
 
-    # Optionally build a fresh proximity to override the embedded one
+    effective_version = _resolve_uq_version(model, version)
+    if effective_version not in ("v0", "v1"):
+        raise ValueError(f"Unknown UQ version '{effective_version}' (expected 'v0' or 'v1')")
+
+    # V1-only: optionally build a fresh proximity to override the embedded one
     fresh_prox = None
-    if refresh_proximity:
+    if effective_version == "v1" and refresh_proximity:
         fresh_prox = fingerprint_prox_model_local(model, radius=radius, n_bits=n_bits)
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -235,15 +266,18 @@ def uq_model_local(
         wr.s3.download(path=model_artifact_uri, local_file=local_tar_path)
         safe_extract_tarfile(local_tar_path, tmpdir)
 
+        if effective_version == "v0":
+            return UQModelV0.load(tmpdir)
+
+        # V1 path
         if not os.path.exists(os.path.join(tmpdir, "uq_model.joblib")):
             raise FileNotFoundError(
-                f"Model '{model.uuid}' does not have a fitted UQModel. "
+                f"Model '{model.uuid}' does not have a fitted UQModelV1. "
                 "Expected uq_model.joblib in the model artifact."
             )
-
-        # UQModel.load loads joblib + parses metadata into memory before
-        # the tempdir is cleaned, so the returned instance is self-contained.
-        return UQModel.load(tmpdir, prox=fresh_prox)
+        # UQModelV1.load reads joblib + parses metadata into memory before the
+        # tempdir is cleaned, so the returned instance is self-contained.
+        return UQModelV1.load(tmpdir, prox=fresh_prox)
 
 
 def noise_model_local(model: Model) -> NoiseModel:

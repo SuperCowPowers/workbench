@@ -2,7 +2,7 @@
 
 Computes scalar features that describe each compound's local context in the
 training set. These features feed into a residual estimator (RandomForestRegressor
-inside UQModel) that predicts |residual| for an upstream ML model.
+inside UQModelV1) that predicts |residual| for an upstream ML model.
 
 Validated by the 2025 J Chem Inf Model paper (PMC12848971): error models built
 on [prediction, ensemble_variance, distance_to_training] outperform standard UQ

@@ -45,7 +45,7 @@ from workbench.endpoints.uq_harness import (
     compute_vgmu_confidence,
     load_classification_uq,
 )
-from workbench.endpoints.uq_model import UQModel
+from workbench.endpoints.uq_regression import load_regression_uq
 
 print(f"[{time.strftime('%H:%M:%S')}] [startup] heavy deps imported", flush=True)
 
@@ -96,6 +96,12 @@ DEFAULT_HYPERPARAMETERS = {
     # workbench.utils.multi_task.compute_inverse_count_task_weights for one
     # common scheme. Ignored when n_targets == 1.
     "task_weights": None,
+    # UQ version to use as the primary confidence source at inference:
+    #   "v0" (default): isotonic on (prediction, std), no proximity required
+    #   "v1": proximity-augmented RandomForest error model
+    # Both V0 and V1 are always fit + saved when regression UQ is enabled, so
+    # the other version stays available for comparison via Model.uq_model(version=...).
+    "uq_version": "v0",
 }
 
 # Template parameters (filled in by Workbench)
@@ -190,22 +196,24 @@ def model_fn(model_dir: str) -> dict:
         ensemble_models.append(model)
     print(f"[model_fn] all {len(ensemble_models)} models loaded", flush=True)
 
-    # Load UQ artifacts:
-    #   - Regression: fitted UQModel for the primary target (uq_model.joblib + uq_metadata.json + uq_proximity.joblib)
-    #   - Classification: VGMU isotonic calibration (classification_uq.json)
-    uq_model = None
+    # Regression UQ — load both V0 and V1, pick active by hyperparameters.json.
+    # The shared helper returns {uq_model (active), uq_model_v0, uq_model_v1,
+    # active_uq_version}; predict_fn keeps using model_dict["uq_model"].
+    uq_dict = load_regression_uq(model_dir)
+
     classification_uq = None
-    if os.path.exists(os.path.join(model_dir, "uq_model.joblib")):
-        uq_model = UQModel.load(model_dir)
     if os.path.exists(os.path.join(model_dir, "classification_uq.json")):
         classification_uq = load_classification_uq(model_dir)
 
-    print(f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}")
+    print(
+        f"Loaded {len(ensemble_models)} model(s), targets={metadata['target_columns']}, "
+        f"active_uq={uq_dict['active_uq_version']}"
+    )
     return {
         "ensemble_models": ensemble_models,
         "n_ensemble": metadata["n_ensemble"],
         "target_columns": metadata["target_columns"],
-        "uq_model": uq_model,
+        **uq_dict,
         "classification_uq": classification_uq,
     }
 
@@ -421,8 +429,7 @@ if __name__ == "__main__":
         compute_vgmu_confidence,
         save_classification_uq,
     )
-    from workbench.endpoints.fingerprint_proximity import FingerprintProximity
-    from workbench.endpoints.uq_model import UQModel
+    from workbench.endpoints.uq_regression import fit_regression_uq, save_regression_uq
 
     # -------------------------------------------------------------------------
     # Training-only helper functions
@@ -975,52 +982,54 @@ if __name__ == "__main__":
             df_val[f"{t_name}_pred"] = preds[:, t_idx]
             df_val[f"{t_name}_pred_std"] = preds_std[:, t_idx] if preds_std is not None else 0.0
 
-        # Fit UQModel on the primary target's validation predictions.
-        # Multi-target UQ is not yet supported in the new pipeline — only the primary
-        # target gets full UQ treatment. Per-target {target}_pred / {target}_pred_std
-        # columns remain available for downstream multi-target needs.
+        # Fit both UQ models on the primary target's validation predictions.
+        # Multi-target UQ is not yet supported — only the primary target gets
+        # UQ treatment. Per-target {target}_pred / {target}_pred_std columns
+        # remain available for downstream multi-target needs.
         print("\n" + "=" * 50)
-        print("Fitting UQModel (UQ residual estimator, primary target)")
+        print("Fitting UQ models on primary target")
         print("=" * 50)
 
         primary = target_columns[0]
         df_val["prediction"] = df_val[f"{primary}_pred"]
         df_val["prediction_std"] = df_val[f"{primary}_pred_std"]
 
+        uq_dict = {"uq_model": None, "uq_model_v0": None, "uq_model_v1": None,
+                   "active_uq_version": str(hyperparameters.get("uq_version", "v0")).lower()}
+
         if smiles_column not in df_train.columns and smiles_column not in df_val.columns:
             raise ValueError(
-                f"UQModel requires a '{smiles_column}' column for fingerprint-based "
-                "neighborhood lookups."
+                f"Regression UQ requires a '{smiles_column}' column for fingerprint-based "
+                "neighborhood lookups (used by UQModelV1)."
             )
-        # Use all training rows as the proximity reference set
-        all_df = pd.concat([df_train, df_val], ignore_index=True)
-        prox_df = all_df[[id_column, smiles_column, primary]].copy()
-        prox_df = prox_df.rename(columns={smiles_column: "smiles"})
-        prox_df["in_model"] = True  # see XGB template for rationale on CV folds
 
-        # Only fit UQModel if we have a primary target with valid rows
+        # Only fit UQ if we have valid primary-target rows
         valid = df_val[primary].notna()
         if valid.sum() > 0:
-            prox = FingerprintProximity(prox_df, id_column=id_column, target=primary)
-            uq_model = UQModel(prox)
-            uq_model.fit(
-                df_val.loc[valid, id_column].tolist(),
-                df_val.loc[valid, primary].values,
-                df_val.loc[valid, f"{primary}_pred"].values,
-                df_val.loc[valid, f"{primary}_pred_std"].values,
+            val_ids = df_val.loc[valid, id_column].tolist()
+            val_y = df_val.loc[valid, primary].values
+            val_pred = df_val.loc[valid, f"{primary}_pred"].values
+            val_std = df_val.loc[valid, f"{primary}_pred_std"].values
+
+            all_df = pd.concat([df_train, df_val], ignore_index=True)
+            prox_df = all_df[[id_column, smiles_column, primary]].copy()
+            prox_df = prox_df.rename(columns={smiles_column: "smiles"})
+            prox_df["in_model"] = True  # see XGB template for rationale on CV folds
+
+            uq_dict = fit_regression_uq(
+                y_true=val_y, y_pred=val_pred, y_std=val_std,
+                val_ids=val_ids, prox_df=prox_df,
+                id_column=id_column, target=primary,
+                active_version=hyperparameters.get("uq_version", "v0"),
             )
 
-            uq_out = uq_model.predict(
-                df_val.loc[valid, id_column].tolist(),
-                df_val.loc[valid, f"{primary}_pred"].values,
-                df_val.loc[valid, f"{primary}_pred_std"].values,
-            )
+            # Apply active UQ to df_val columns for validation_predictions.csv
+            uq_out = uq_dict["uq_model"].predict(val_ids, val_pred, val_std)
             for col in uq_out.columns:
                 df_val[col] = np.nan
                 df_val.loc[valid, col] = uq_out[col].values
         else:
-            uq_model = None
-            print("[uq] No valid primary-target rows; skipping UQModel fit.")
+            print("[uq] No valid primary-target rows; skipping UQ fits.")
 
     # -------------------------------------------------------------------------
     # Compute SHAP values for feature importance
@@ -1132,8 +1141,8 @@ if __name__ == "__main__":
     }
     joblib.dump(ensemble_metadata, os.path.join(args.model_dir, "ensemble_metadata.joblib"))
 
-    if uq_model is not None:
-        uq_model.save(args.model_dir)
+    # Save both UQ artifacts when fitted — bundle carries V0 + V1 side-by-side.
+    save_regression_uq(uq_dict, args.model_dir)
     if classification_uq is not None:
         save_classification_uq(classification_uq, args.model_dir)
 

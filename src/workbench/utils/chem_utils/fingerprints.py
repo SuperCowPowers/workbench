@@ -47,7 +47,7 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int =
     Future Me:
         This silently drops rows whose SMILES RDKit can't parse, so the output
         has fewer rows than the input. Callers downstream (FingerprintProximity,
-        residual_features, UQModel) currently work around this by pre-validating
+        residual_features, UQModelV1) currently work around this by pre-validating
         SMILES at their own layer — which means MolFromSmiles runs twice per
         SMILES on the inference path. The cleaner fix is one of:
           (a) preserve the input's DataFrame index when dropping rows so

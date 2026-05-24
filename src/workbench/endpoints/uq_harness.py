@@ -1,7 +1,10 @@
 """Classification UQ: VGMU + isotonic calibration.
 
-For regression UQ, see workbench.algorithms.dataframe.uq_model.UQModel
-(conformalized residual estimator with neighborhood-derived features).
+For regression UQ, see workbench.algorithms.dataframe.uq_model_v1.UQModelV1
+(proximity-augmented RandomForest error model) or
+workbench.algorithms.dataframe.uq_model_v0.UQModelV0 (original isotonic-on-
+(prediction, std) calibrator). The active version per model bundle is selected
+by ``hyperparameters["uq_version"]`` (default ``"v0"``).
 
 Classification approach:
     1. Each ensemble member outputs softmax probabilities

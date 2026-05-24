@@ -1,4 +1,4 @@
-"""UQModel: conformalized residual-estimator UQ for regression.
+"""UQModelV1: conformalized residual-estimator UQ for regression.
 
 Encapsulates the full regression UQ pipeline:
     1. A learned error model (Random Forest) predicting |residual| from
@@ -48,17 +48,17 @@ _QUANTILE_COLUMNS = {
 }
 
 
-class UQModel:
+class UQModelV1:
     """Conformalized residual-estimator UQ for regression models.
 
     Usage:
         prox = FingerprintProximity(train_df, id_column="id", target="logp")
-        uq = UQModel(prox)
+        uq = UQModelV1(prox)
         uq.fit(val_df["id"], val_df["logp"], val_df["prediction"], val_df["prediction_std"])
         uq.save(model_dir)
 
         # Inference:
-        uq = UQModel.load(model_dir, prox)
+        uq = UQModelV1.load(model_dir, prox)
         out = uq.predict(test_df[["smiles"]], y_pred, y_pred_std)
         # → DataFrame[expected_residual, confidence, q_025, q_05, ..., q_50, ..., q_975]
     """
@@ -109,7 +109,7 @@ class UQModel:
         y_true: Union[np.ndarray, pd.Series],
         predictions: Union[np.ndarray, pd.Series],
         prediction_std: Union[np.ndarray, pd.Series],
-    ) -> "UQModel":
+    ) -> "UQModelV1":
         """Fit the error model and conformal calibration on validation predictions.
 
         Args:
@@ -132,7 +132,7 @@ class UQModel:
                 f"predictions={len(predictions)}, prediction_std={len(prediction_std)}"
             )
 
-        log.info(f"Fitting UQModel on {len(ids)} validation samples (k={self.k})")
+        log.info(f"Fitting UQModelV1 on {len(ids)} validation samples (k={self.k})")
 
         # 1. Compute neighborhood features
         feat = self.features.compute(
@@ -181,7 +181,7 @@ class UQModel:
     ):
         """Print a fit summary block — coverage, sharpness, feature importance."""
         print("\n" + "=" * 60)
-        print("UQModel fit diagnostics")
+        print("UQModelV1 fit diagnostics")
         print("=" * 60)
         print(f"  Cal samples:           {len(y_true)}")
         print(f"  k (neighbors):         {self.k}")
@@ -237,7 +237,7 @@ class UQModel:
             indexed by query id (or query_id / positional index for novel queries).
         """
         if self.error_model is None:
-            raise RuntimeError("UQModel not fitted. Call .fit(...) first or .load(...).")
+            raise RuntimeError("UQModelV1 not fitted. Call .fit(...) first or .load(...).")
 
         predictions = np.asarray(predictions, dtype=float).ravel()
         prediction_std = np.asarray(prediction_std, dtype=float).ravel()
@@ -288,13 +288,16 @@ class UQModel:
     # Persistence
     # ------------------------------------------------------------------
 
+    METADATA_FILENAME = "uq_metadata_v1.json"
+    UQ_VERSION = "v1"
+
     def save(self, model_dir: str, save_proximity: bool = True) -> None:
         """Save fitted state to a model directory.
 
         Writes:
-            uq_model.joblib       — pickled RandomForestRegressor
-            uq_metadata.json      — scale_factors, residual_percentiles, hyperparams
-            uq_proximity.joblib   — pickled Proximity backend (if save_proximity=True)
+            uq_model.joblib        — pickled RandomForestRegressor
+            uq_metadata_v1.json    — scale_factors, residual_percentiles, hyperparams
+            uq_proximity.joblib    — pickled Proximity backend (if save_proximity=True)
 
         For SageMaker / self-contained inference, leave save_proximity=True so the
         full pipeline can be reconstructed from the model artifact alone. For
@@ -302,7 +305,7 @@ class UQModel:
         the source FeatureSet, set save_proximity=False to keep artifacts lean.
         """
         if self.error_model is None:
-            raise RuntimeError("UQModel not fitted; nothing to save.")
+            raise RuntimeError("UQModelV1 not fitted; nothing to save.")
         os.makedirs(model_dir, exist_ok=True)
 
         joblib.dump(self.error_model, os.path.join(model_dir, "uq_model.joblib"))
@@ -320,19 +323,19 @@ class UQModel:
             "max_depth": self.max_depth,
             "feature_order": self.FEATURE_ORDER,
             "proximity_saved": save_proximity,
-            "uq_version": 2,
+            "uq_version": 1,
         }
-        with open(os.path.join(model_dir, "uq_metadata.json"), "w") as fp:
+        with open(os.path.join(model_dir, self.METADATA_FILENAME), "w") as fp:
             json.dump(metadata, fp, indent=2)
 
-        log.info(f"Saved UQModel to {model_dir} (proximity={'embedded' if save_proximity else 'external'})")
+        log.info(f"Saved UQModelV1 to {model_dir} (proximity={'embedded' if save_proximity else 'external'})")
 
     @classmethod
-    def load(cls, model_dir: str, prox: Optional[Proximity] = None) -> "UQModel":
-        """Load a fitted UQModel from disk.
+    def load(cls, model_dir: str, prox: Optional[Proximity] = None) -> "UQModelV1":
+        """Load a fitted UQModelV1 from disk.
 
         Args:
-            model_dir: Directory containing uq_model.joblib + uq_metadata.json
+            model_dir: Directory containing uq_model.joblib + uq_metadata_v1.json
                 (and optionally uq_proximity.joblib).
             prox: Proximity backend to use for inference-time neighbor lookups.
                 If None, load the embedded proximity from uq_proximity.joblib.
@@ -341,9 +344,10 @@ class UQModel:
                 the latest FeatureSet on demand.
 
         Returns:
-            A UQModel ready to .predict(...).
+            A UQModelV1 ready to .predict(...).
         """
-        with open(os.path.join(model_dir, "uq_metadata.json")) as fp:
+        metadata_path = os.path.join(model_dir, cls.METADATA_FILENAME)
+        with open(metadata_path) as fp:
             metadata = json.load(fp)
 
         if prox is None:
@@ -386,7 +390,7 @@ class UQModel:
         """Return a slimmed copy of the proximity backend suitable for embedding in the
         model artifact.
 
-        The slim is consumed exclusively by `UQModel.predict()` at inference time.
+        The slim is consumed exclusively by `UQModelV1.predict()` at inference time.
         The only columns the inference path reads from `prox.df` are:
             - `id_column`       — for neighbor_id values in result + `_id_to_row` cache
             - `target` column   — for aggregating into knn_target_mean / knn_target_std

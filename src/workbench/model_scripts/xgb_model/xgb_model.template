@@ -37,7 +37,7 @@ from workbench.endpoints.uq_harness import (
     compute_vgmu_confidence,
     load_classification_uq,
 )
-from workbench.endpoints.uq_model import UQModel
+from workbench.endpoints.uq_regression import load_regression_uq
 
 # =============================================================================
 # Default Hyperparameters
@@ -67,6 +67,12 @@ DEFAULT_HYPERPARAMETERS = {
     "butina_cutoff": 0.4,  # Tanimoto distance cutoff for Butina clustering
     # Random seed
     "seed": 42,
+    # UQ version to use as the primary confidence source at inference:
+    #   "v0" (default): isotonic on (prediction, std), no proximity required
+    #   "v1": proximity-augmented RandomForest error model
+    # Both V0 and V1 are always fit + saved when regression UQ is enabled, so
+    # the other version stays available for comparison via Model.uq_model(version=...).
+    "uq_version": "v0",
 }
 
 # Workbench-specific parameters (not passed to XGBoost)
@@ -124,13 +130,10 @@ def model_fn(model_dir: str) -> dict:
         with open(category_path) as f:
             category_mappings = json.load(f)
 
-    # Load UQ artifacts:
-    #   - Regression: a fitted UQModel (uq_model.joblib + uq_metadata.json + uq_proximity.joblib)
-    #   - Classification: VGMU isotonic calibration (classification_uq.json)
-    uq_model = None
+    # Regression UQ — load both V0 and V1, pick active by hyperparameters.json.
+    uq_dict = load_regression_uq(model_dir)
+
     classification_uq = None
-    if os.path.exists(os.path.join(model_dir, "uq_model.joblib")):
-        uq_model = UQModel.load(model_dir)  # loads embedded proximity
     if os.path.exists(os.path.join(model_dir, "classification_uq.json")):
         classification_uq = load_classification_uq(model_dir)
 
@@ -139,7 +142,7 @@ def model_fn(model_dir: str) -> dict:
         "n_ensemble": n_ensemble,
         "label_encoder": label_encoder,
         "category_mappings": category_mappings,
-        "uq_model": uq_model,
+        **uq_dict,
         "classification_uq": classification_uq,
     }
 
@@ -255,8 +258,7 @@ if __name__ == "__main__":
         compute_vgmu_confidence,
         save_classification_uq,
     )
-    from workbench.endpoints.fingerprint_proximity import FingerprintProximity
-    from workbench.endpoints.uq_model import UQModel
+    from workbench.endpoints.uq_regression import fit_regression_uq, save_regression_uq
 
     # -------------------------------------------------------------------------
     # Setup: Parse arguments and load data
@@ -448,7 +450,9 @@ if __name__ == "__main__":
             )
         else:
             classification_uq = None
-        uq_model = None
+        # No regression UQ on classification tasks
+        uq_dict = {"uq_model": None, "uq_model_v0": None, "uq_model_v1": None,
+                   "active_uq_version": str(hyperparameters.get("uq_version", "v0")).lower()}
     else:
         metrics = compute_regression_metrics(y_true, y_pred)
         print_regression_metrics(metrics)
@@ -462,41 +466,34 @@ if __name__ == "__main__":
         else:
             df_val["prediction_std"] = 0.0
 
-        # Build the proximity reference set from the full training data.
-        # `in_model` marks rows actually used to fit at least one ensemble member —
-        # UQModel's training_only_features=True filter will use this to exclude
-        # held-out cal/test rows from the AD-feature k-NN.
+        # Fit both UQ models on validation predictions and apply active to df_val.
+        # `in_model` marks rows eligible for the V1 proximity reference set. Under
+        # CV every row participated in 4/5 folds, so the strict "training set" is
+        # fold-specific; we treat all CV rows as eligible neighbors (in_model=True),
+        # which matches the 2025 J Chem Inf Model error-model approach.
         print("\n" + "=" * 50)
-        print("Fitting UQModel (UQ residual estimator)")
+        print("Fitting UQ models")
         print("=" * 50)
         if "smiles" not in all_df.columns:
             raise ValueError(
-                "UQModel requires a 'smiles' column in the training data for "
-                "fingerprint-based neighborhood lookups. Add SMILES to your FeatureSet."
+                "Regression UQ requires a 'smiles' column in the training data for "
+                "fingerprint-based neighborhood lookups (used by UQModelV1). Add "
+                "SMILES to your FeatureSet."
             )
+
+        val_ids = df_val[id_column].tolist()
+        val_std = df_val["prediction_std"].values
         prox_df = all_df[[id_column, "smiles", target]].copy()
-        prox_df["in_model"] = prox_df[id_column].isin(df_val[id_column])  # placeholder; see note below
-        # NOTE: every row participated in 4/5 folds under CV, so the strict "training
-        # set" is fold-specific. For UQModel calibration we treat all CV rows
-        # as eligible neighbors (in_model=True) — this matches the 2025 J Chem Inf
-        # Model error-model approach. Set to True for all rows.
         prox_df["in_model"] = True
 
-        prox = FingerprintProximity(prox_df, id_column=id_column, target=target)
-        uq_model = UQModel(prox)
-        uq_model.fit(
-            df_val[id_column].tolist(),
-            y_true,
-            y_pred,
-            df_val["prediction_std"].values,
+        uq_dict = fit_regression_uq(
+            y_true=y_true, y_pred=y_pred, y_std=val_std,
+            val_ids=val_ids, prox_df=prox_df,
+            id_column=id_column, target=target,
+            active_version=hyperparameters.get("uq_version", "v0"),
         )
 
-        # Apply UQ to the validation set for the validation_predictions.csv output
-        uq_out = uq_model.predict(
-            df_val[id_column].tolist(),
-            y_pred,
-            df_val["prediction_std"].values,
-        )
+        uq_out = uq_dict["uq_model"].predict(val_ids, y_pred, val_std)
         for col in uq_out.columns:
             df_val[col] = uq_out[col].values
 
@@ -607,8 +604,8 @@ if __name__ == "__main__":
     if label_encoder:
         joblib.dump(label_encoder, os.path.join(args.model_dir, "label_encoder.joblib"))
 
-    if uq_model is not None:
-        uq_model.save(args.model_dir)  # saves error model + metadata + embedded proximity
+    # Save both UQ artifacts when fitted — bundle carries V0 + V1 side-by-side.
+    save_regression_uq(uq_dict, args.model_dir)
     if classification_uq is not None:
         save_classification_uq(classification_uq, args.model_dir)
 

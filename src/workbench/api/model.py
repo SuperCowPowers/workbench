@@ -170,33 +170,46 @@ class Model(ModelCore):
 
     def uq_model(
         self,
+        version: str = None,
         refresh_proximity: bool = False,
         radius: int = 2,
         n_bits: int = 2048,
-    ) -> "UQModel":  # noqa: F821
-        """Load this model's fitted UQModel for uncertainty-quantified inference.
+    ):
+        """Load this model's fitted UQ model (V0 or V1) for uncertainty-quantified inference.
 
         Usage:
             model = Model("my-model")
-            uq = model.uq_model()
+            uq = model.uq_model()                    # bundle-default version
+            uq_v0 = model.uq_model(version="v0")     # original isotonic calibrator
+            uq_v1 = model.uq_model(version="v1")     # proximity-augmented RF
             out = uq.predict(test_df[["smiles"]], predictions, prediction_std)
 
         Args:
-            refresh_proximity (bool): If False (default), use the proximity backend
-                that was embedded in the model artifact at training time — exact
-                reference set used to fit the residual estimator, reproducible.
-                If True, build a fresh FingerprintProximity from the current source
-                FeatureSet (recomputes fingerprints, uses today's data).
-            radius (int): Morgan fingerprint radius (only used if refresh_proximity=True).
-            n_bits (int): Fingerprint bit width (only used if refresh_proximity=True).
+            version (str | None): Which UQ version to load — ``"v0"`` (original
+                isotonic-on-(prediction, std) calibrator) or ``"v1"`` (proximity-
+                augmented RandomForest error model). If ``None``, reads
+                ``hyperparameters["uq_version"]`` from the bundle and falls back
+                to ``"v0"`` if not set.
+            refresh_proximity (bool): V1-only. If False (default), use the
+                proximity backend embedded in the model artifact at training
+                time. If True, build a fresh FingerprintProximity from the
+                current source FeatureSet. Ignored for V0.
+            radius (int): Morgan fingerprint radius (V1 + refresh_proximity only).
+            n_bits (int): Fingerprint bit width (V1 + refresh_proximity only).
 
         Returns:
-            UQModel: A ready-to-use UQModel for inference (.predict).
+            A ready-to-use ``UQModelV0`` or ``UQModelV1`` for inference (``.predict``).
 
         Raises:
-            FileNotFoundError: If the model artifact does not contain a fitted UQModel.
+            FileNotFoundError: If the requested version's artifact is not in the bundle.
         """
-        return uq_model_local(self, refresh_proximity=refresh_proximity, radius=radius, n_bits=n_bits)
+        return uq_model_local(
+            self,
+            version=version,
+            refresh_proximity=refresh_proximity,
+            radius=radius,
+            n_bits=n_bits,
+        )
 
     def noise_model(self) -> NoiseModel:
         """Create a local Noise Model for this Model
