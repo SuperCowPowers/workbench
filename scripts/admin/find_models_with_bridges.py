@@ -29,7 +29,6 @@ import boto3
 
 from workbench.api import Meta, Model
 
-
 # Match `import workbench_bridges` or `from workbench_bridges...`
 _BRIDGES_PATTERN = re.compile(rb"^\s*(?:import\s+workbench_bridges|from\s+workbench_bridges)", re.MULTILINE)
 
@@ -121,9 +120,7 @@ def find_models_with_bridges(model_filter: str | None = None) -> list[dict]:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Find Workbench models whose bundles still import workbench_bridges."
-    )
+    parser = argparse.ArgumentParser(description="Find Workbench models whose bundles still import workbench_bridges.")
     parser.add_argument(
         "--model",
         help="Restrict the sweep to a single model name (default: scan every model).",
