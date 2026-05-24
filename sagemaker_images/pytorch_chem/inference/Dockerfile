@@ -40,7 +40,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Layer 2: Workbench + bridges — rebuilds per version bump, ~20MB delta.
 # workbench-bridges==0.2.10 retained for backward compat with existing
 # deployed-endpoint model bundles.
-ARG WORKBENCH_VERSION=0.8.345
+ARG WORKBENCH_VERSION=0.8.346
 RUN pip install --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}" && \
     pip install --no-cache-dir --no-deps "workbench-bridges==0.2.10"
 

@@ -274,18 +274,31 @@ class UQModelV2:
 
         # Auto-dispatch on query type (parallel to V1.predict). Cap n_neighbors
         # at the reference set size to avoid the proximity's broadcasting bug.
+        # Capture the *expected* result identifiers so we can reindex the output
+        # back to the input length even when the proximity silently drops rows
+        # (e.g. unparseable SMILES). Callers do `df_val[col] = uq_out[col].values`
+        # and expect len(uq_out) == len(query).
         n_request = self._request_count()
         if isinstance(query, pd.DataFrame):
             raw_nbrs = self.prox.neighbors_from_query_df(query, n_neighbors=n_request)
             query_col = "query_id"
+            if "query_id" in query.columns:
+                expected_index = list(query["query_id"].values)
+            else:
+                expected_index = list(range(len(query)))
         else:
             ids = list(query) if not isinstance(query, list) else query
             raw_nbrs = self.prox.neighbors(ids, n_neighbors=n_request, include_self=False)
             query_col = self.prox.id_column
+            expected_index = ids
 
         if raw_nbrs.empty:
-            # Nothing to score against — return an empty result with the right schema
-            return pd.DataFrame(columns=self._result_columns())
+            # Nothing to score against — return an all-NaN frame matching the input
+            return pd.DataFrame(
+                index=pd.Index(expected_index, name=query_col),
+                columns=self._result_columns(),
+                dtype=float,
+            )
 
         unique_nbrs = _unique_neighbors_per_query(raw_nbrs, query_col=query_col, k=self.k)
         unique_nbrs = unique_nbrs.assign(distance=1.0 - unique_nbrs["similarity"])
@@ -316,7 +329,10 @@ class UQModelV2:
         agg["variance_percentile"] = var_pct
         agg["confidence"] = np.clip((1.0 - dist_pct) * (1.0 - var_pct), 0.0, 1.0)
 
-        return agg[self._result_columns()]
+        # Reindex back to the input query's identifiers so that rows dropped by
+        # the proximity (unparseable SMILES, missing ids) show up as NaN rather
+        # than vanishing. Guarantees len(result) == len(query).
+        return agg.reindex(expected_index)[self._result_columns()]
 
     @staticmethod
     def _result_columns() -> List[str]:
