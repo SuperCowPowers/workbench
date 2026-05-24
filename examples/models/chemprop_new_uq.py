@@ -15,8 +15,9 @@ if recreate or not Model(model_name).exists():
         model_framework=ModelFramework.CHEMPROP,
         target_column="logd",  # Single target (string)
         feature_list=["smiles"],
-        description="Single-target Chemprop Regression Model for LogD",
-        tags=["chemprop", "open_admet"],
+        description="Single-target Chemprop Regression Model for LogD (V1 UQ)",
+        tags=["chemprop", "open_admet", "new_uq"],
+        hyperparameters={"uq_version": "v1"},
     )
     m.set_owner("BW")
 
