@@ -32,6 +32,7 @@ if recreate or not Endpoint("aqsol-reg-pytorch").exists():
 
     # Run inference on the endpoint
     end.auto_inference()
+    end.cross_fold_inference()
 
 # Pytorch Classification Model
 if recreate or not Model("aqsol-class-pytorch").exists():
@@ -56,3 +57,4 @@ if recreate or not Endpoint("aqsol-class-pytorch").exists():
 
     # Run inference on the endpoint
     end.auto_inference()
+    end.cross_fold_inference()
