@@ -303,16 +303,12 @@ class UQModelV2:
             agg[col_name] = unique_nbrs.groupby(query_col)[target_col].quantile(q_num / 100.0)
 
         # Rank each query's mean_distance / target_std against stored distributions
-        dist_pct = (
-            np.searchsorted(self.distance_percentiles, agg["neighbor_distance"].values, side="right")
-            / len(self.distance_percentiles)
+        dist_pct = np.searchsorted(self.distance_percentiles, agg["neighbor_distance"].values, side="right") / len(
+            self.distance_percentiles
         )
         # std can be NaN for queries with <2 neighbors; treat as worst-case (pct=1)
         var_values = agg["neighbor_target_std"].fillna(np.inf).values
-        var_pct = (
-            np.searchsorted(self.variance_percentiles, var_values, side="right")
-            / len(self.variance_percentiles)
-        )
+        var_pct = np.searchsorted(self.variance_percentiles, var_values, side="right") / len(self.variance_percentiles)
         dist_pct = np.clip(dist_pct, 0.0, 1.0)
         var_pct = np.clip(var_pct, 0.0, 1.0)
 
@@ -358,6 +354,7 @@ class UQModelV2:
             # Use V1's slim helper if available (avoid bloat); fall back to dumping prox
             try:
                 from workbench.algorithms.dataframe.uq_model_v1 import UQModelV1
+
                 slim = UQModelV1._slim_proximity(self.prox)
             except Exception:  # noqa: BLE001 — slim is an optimization, not required
                 slim = self.prox

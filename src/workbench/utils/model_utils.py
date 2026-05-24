@@ -256,9 +256,7 @@ def uq_model_local(
 
     effective_version = _resolve_uq_version(model, version)
     if effective_version not in _VALID_UQ_VERSIONS:
-        raise ValueError(
-            f"Unknown UQ version '{effective_version}' (expected one of {_VALID_UQ_VERSIONS})"
-        )
+        raise ValueError(f"Unknown UQ version '{effective_version}' (expected one of {_VALID_UQ_VERSIONS})")
 
     # V1/V2 share the proximity artifact; optionally build a fresh one to override
     fresh_prox = None
