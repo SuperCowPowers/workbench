@@ -14,7 +14,8 @@ Three kinds of modules live here:
   :mod:`inference`, :mod:`training_harness`, :mod:`uq_harness`,
   :mod:`pytorch_utils`, :mod:`chemprop_shap_utils`.
 * **Re-exports** of code that lives at its "real" location in
-  ``workbench.algorithms`` or ``workbench.utils`` — :mod:`uq_model`,
+  ``workbench.algorithms`` or ``workbench.utils`` — :mod:`uq_model_v0`,
+  :mod:`uq_model_v1`, :mod:`uq_model_v2`, :mod:`uq_regression`,
   :mod:`fingerprint_proximity`, :mod:`proximity`, :mod:`residual_features`,
   :mod:`fingerprints`, :mod:`meta_endpoint_dag`. Keeps internal moves
   invisible to deployed model scripts.

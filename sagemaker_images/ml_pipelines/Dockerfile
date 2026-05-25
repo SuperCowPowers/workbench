@@ -38,9 +38,11 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Layer 2: Workbench + Bridges (changes often, small layer)
+# workbench-bridges==0.2.10 pinned for reproducibility while we still depend
+# on it; on track for deprecation once nothing references workbench_bridges.
 ARG WORKBENCH_VERSION=0.8.347
 RUN pip install --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}" && \
-    pip install --no-cache-dir --no-deps workbench-bridges
+    pip install --no-cache-dir --no-deps "workbench-bridges==0.2.10"
 
 # Layer 3: App code (tiny, changes rarely)
 COPY ml_pipelines/ml_pipeline_runner.py /app/ml_pipeline_runner.py

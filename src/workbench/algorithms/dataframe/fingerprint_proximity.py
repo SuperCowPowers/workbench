@@ -283,7 +283,7 @@ class FingerprintProximity(Proximity):
 
         # Cache: id → row index in the reference set. Used by _transform_features to
         # answer id-based queries without re-parsing fingerprint strings (and works
-        # even after the artifact is slimmed by UQModel._slim_proximity).
+        # even after the artifact is slimmed by UQModelV1._slim_proximity).
         self._id_to_row = {row_id: i for i, row_id in enumerate(self.df[self.id_column].values)}
 
     def _transform_features(self, df: pd.DataFrame) -> Union[np.ndarray, csr_matrix]:
