@@ -522,8 +522,16 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
         "prediction_std",
         "confidence",
         target_col,
-        "q_025", "q_05", "q_10", "q_16", "q_25",
-        "q_75", "q_84", "q_90", "q_95", "q_975",
+        "q_025",
+        "q_05",
+        "q_10",
+        "q_16",
+        "q_25",
+        "q_75",
+        "q_84",
+        "q_90",
+        "q_95",
+        "q_975",
     ]
     required_cols = [c for c in candidate_cols if c in df.columns]
     df = df.dropna(subset=required_cols)
