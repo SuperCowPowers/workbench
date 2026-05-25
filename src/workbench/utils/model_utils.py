@@ -512,12 +512,24 @@ def uq_metrics(df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
     if "prediction" not in df.columns:
         raise ValueError("Prediction column 'prediction' not found in DataFrame.")
 
-    # Drop rows with NaN predictions (e.g., from models that can't handle missing features)
+    # Drop rows with NaN in any column the metrics depend on. UQ versions that
+    # emit NaN for unscored compounds (no proximity match, etc.) would
+    # otherwise poison np.median and scipy.spearmanr, which propagate NaN to
+    # the entire scalar metric.
     n_total = len(df)
-    df = df.dropna(subset=["prediction", target_col])
+    candidate_cols = [
+        "prediction",
+        "prediction_std",
+        "confidence",
+        target_col,
+        "q_025", "q_05", "q_10", "q_16", "q_25",
+        "q_75", "q_84", "q_90", "q_95", "q_975",
+    ]
+    required_cols = [c for c in candidate_cols if c in df.columns]
+    df = df.dropna(subset=required_cols)
     n_valid = len(df)
     if n_valid < n_total:
-        log.info(f"UQ metrics: dropped {n_total - n_valid} rows with NaN predictions")
+        log.info(f"UQ metrics: dropped {n_total - n_valid} of {n_total} rows with NaN in metric inputs")
 
     # --- Coverage and Interval Width ---
     if "q_025" in df.columns and "q_975" in df.columns:

@@ -251,6 +251,13 @@ class UQModelV1:
                 raise ValueError(f"predictions length ({len(predictions)}) must match number of queries ({len(ids)})")
             feat = self.features.compute(ids, predictions=predictions, k=self.k, training_only=False)
 
+        # Detect rows where the proximity couldn't resolve the query (all feature
+        # columns NaN after reindex). _stack_features runs nan_to_num so the RF
+        # doesn't crash, but we'll overwrite those rows' outputs to NaN below —
+        # producing a "missing" signal rather than synthetic feature substitution
+        # that would look like a real prediction.
+        nan_mask = feat[["knn_distance", "knn_target_std"]].isna().any(axis=1).to_numpy()
+
         X_test = self._stack_features(predictions, prediction_std, feat)
         expected_residual = self.error_model.predict(X_test)
 
@@ -278,6 +285,19 @@ class UQModelV1:
                 lo_col, hi_col = _QUANTILE_COLUMNS[alpha]
                 result[lo_col] = lower
                 result[hi_col] = upper
+
+        # Overwrite outputs for rows the proximity couldn't resolve: confidence
+        # and intervals become NaN (q_50 keeps the model's prediction as a
+        # passthrough). Mirrors UQModelV2's missing-id behavior. Proximity
+        # already logged the underlying skip upstream; we log a summary here.
+        if nan_mask.any():
+            n_missing = int(nan_mask.sum())
+            log.info(
+                f"UQModelV1.predict: {n_missing} of {len(nan_mask)} query rows had no "
+                "proximity match; setting confidence + intervals to NaN."
+            )
+            interval_cols = [c for c in result.columns if c.startswith("q_") and c != "q_50"]
+            result.loc[nan_mask, ["confidence", "expected_residual", *interval_cols]] = np.nan
 
         # Reorder columns for readability
         quantile_cols = ["q_025", "q_05", "q_10", "q_16", "q_25", "q_50", "q_75", "q_84", "q_90", "q_95", "q_975"]
