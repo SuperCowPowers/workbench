@@ -7,14 +7,22 @@ RUN apt-get update && \
         build-essential \
         gcc
 
-# Layer 1: All heavy dependencies (changes only when requirements.txt or pyproject.toml changes)
+# Layer 1: All heavy dependencies (changes only when requirements.txt or
+# pyproject.toml changes). ml_pipelines runs arbitrary user pipelines that
+# touch the full workbench surface, so we bundle:
+#   - core dependencies         (rdkit, pandas, scikit-learn, boto3, ...)
+#   - [aws] extras              (sagemaker, aiobotocore, redis, cryptography)
+#   - [modeling] extras         (xgboost, mordredcommunity)
+# Skipping [ui] (dash/plotly/matplotlib) and [repl] (ipython) — ml_pipelines
+# is a headless runner.
 COPY ml_pipelines/requirements.txt /tmp/
 COPY pyproject.toml /tmp/pyproject.toml
 RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
     python -c "\
 import tomllib; \
 data = tomllib.load(open('/tmp/pyproject.toml', 'rb')); \
-deps = data['project']['dependencies']; \
+extras = data['project']['optional-dependencies']; \
+deps = data['project']['dependencies'] + extras['aws'] + extras['modeling']; \
 open('/tmp/workbench_deps.txt', 'w').write('\n'.join(deps))" && \
     pip install --no-cache-dir -r /tmp/workbench_deps.txt && \
     rm /tmp/pyproject.toml /tmp/workbench_deps.txt
