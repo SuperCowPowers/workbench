@@ -33,6 +33,9 @@ requests == 2.34.2
 numpy == 2.4.6
 pandas == 2.3.3
 scikit-learn == 1.8.0
+# xgboost bundles nvidia/CUDA libs (~400 MB) for GPU acceleration support.
+# If image size matters, swap to `xgboost-cpu` in non-GPU image requirements
+# files — same `import xgboost` API, no CUDA payload.
 xgboost == 3.2.0
 joblib == 1.5.3
 networkx == 3.6.1
