@@ -1,10 +1,13 @@
 """Tests for workbench.utils.multi_task."""
 
+import sys
+import types
+
 import numpy as np
 import pandas as pd
 import pytest
 
-from workbench.utils.multi_task import combine_multi_task_data, validate_multi_task_data
+from workbench.utils.multi_task import combine_multi_task_data, pull_multi_task_data, validate_multi_task_data
 
 
 def _make_df(ids, smiles, features, targets):
@@ -345,3 +348,136 @@ def test_two_pass_merge():
     assert np.isnan(row_new["ppb"])
     assert np.isnan(row_new["logd"])
     assert row_new["logp"] == 50.0
+
+
+# --- pull_multi_task_data: date_col leakage-safety ---
+
+
+def _fake_featureset_module(fakes: dict[str, pd.DataFrame]) -> types.ModuleType:
+    """Build a stand-in `workbench.api` module exposing only `FeatureSet`.
+
+    Keeps the test isolated from the real workbench.api (which pulls in AWS).
+    """
+
+    class FakeFS:
+        def __init__(self, name):
+            self.name = name
+
+        def pull_dataframe(self):
+            return fakes[self.name].copy()
+
+    fake_mod = types.ModuleType("workbench.api")
+    fake_mod.FeatureSet = FakeFS
+    return fake_mod
+
+
+def test_pull_multi_task_data_date_col_max(monkeypatch):
+    """date_col is renamed per-source then collapsed to row-wise max."""
+    df_human = pd.DataFrame(
+        {
+            "id": ["A", "B", "C"],
+            "smiles": ["CC", "CCC", "CCCC"],
+            "feat1": [1.0, 2.0, 3.0],
+            "ppb_human": [0.1, 0.2, 0.3],
+            "udm_asy_date": pd.to_datetime(["2024-01-15", "2025-06-01", "2025-11-01"]),
+        }
+    )
+    df_mouse = pd.DataFrame(
+        {
+            "id": ["B", "C", "D"],
+            "smiles": ["CCC", "CCCC", "CCCCC"],
+            "feat1": [2.0, 3.0, 4.0],
+            "ppb_mouse": [0.4, 0.5, 0.6],
+            "udm_asy_date": pd.to_datetime(["2024-03-15", "2025-12-01", "2025-09-01"]),
+        }
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "workbench.api",
+        _fake_featureset_module({"ppb_human_fs": df_human, "ppb_mouse_fs": df_mouse}),
+    )
+
+    id_based_sources = {
+        "ppb_human_fs": {"target_info": {"ppb_human": "ppb_human"}},
+        "ppb_mouse_fs": {"target_info": {"ppb_mouse": "ppb_mouse"}},
+    }
+    result = pull_multi_task_data(id_based_sources, id_column="id", date_col="udm_asy_date")
+
+    # Canonical date column survives; per-source privates are dropped.
+    assert "udm_asy_date" in result.columns
+    assert not any(c.startswith("__date_") for c in result.columns)
+
+    # Row B in both sources: max(2025-06-01, 2024-03-15) = 2025-06-01 (human is later)
+    assert result.loc[result["id"] == "B", "udm_asy_date"].iloc[0] == pd.Timestamp("2025-06-01")
+    # Row C in both: max(2025-11-01, 2025-12-01) = 2025-12-01 (mouse is later)
+    assert result.loc[result["id"] == "C", "udm_asy_date"].iloc[0] == pd.Timestamp("2025-12-01")
+    # Row A only in human → human date
+    assert result.loc[result["id"] == "A", "udm_asy_date"].iloc[0] == pd.Timestamp("2024-01-15")
+    # Row D only in mouse → mouse date
+    assert result.loc[result["id"] == "D", "udm_asy_date"].iloc[0] == pd.Timestamp("2025-09-01")
+
+
+def test_pull_multi_task_data_date_col_missing_raises(monkeypatch):
+    """A source missing date_col raises ValueError loudly."""
+    df_human = pd.DataFrame(
+        {
+            "id": ["A"],
+            "smiles": ["CC"],
+            "feat1": [1.0],
+            "ppb_human": [0.1],
+            "udm_asy_date": pd.to_datetime(["2024-01-15"]),
+        }
+    )
+    df_mouse_no_date = pd.DataFrame(
+        {
+            "id": ["B"],
+            "smiles": ["CCC"],
+            "feat1": [2.0],
+            "ppb_mouse": [0.4],
+        }
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "workbench.api",
+        _fake_featureset_module({"human_fs": df_human, "mouse_fs": df_mouse_no_date}),
+    )
+
+    sources = {
+        "human_fs": {"target_info": {"ppb_human": "ppb_human"}},
+        "mouse_fs": {"target_info": {"ppb_mouse": "ppb_mouse"}},
+    }
+    with pytest.raises(ValueError, match="missing date_col"):
+        pull_multi_task_data(sources, id_column="id", date_col="udm_asy_date")
+
+
+def test_pull_multi_task_data_no_date_col_unchanged(monkeypatch):
+    """Without date_col, behavior matches the pre-existing merge path."""
+    df1 = pd.DataFrame(
+        {
+            "id": ["A", "B"],
+            "smiles": ["CC", "CCC"],
+            "feat1": [1.0, 2.0],
+            "t1": [0.1, 0.2],
+        }
+    )
+    df2 = pd.DataFrame(
+        {
+            "id": ["B", "C"],
+            "smiles": ["CCC", "CCCC"],
+            "feat1": [2.0, 3.0],
+            "t2": [0.3, 0.4],
+        }
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "workbench.api",
+        _fake_featureset_module({"fs1": df1, "fs2": df2}),
+    )
+
+    sources = {
+        "fs1": {"target_info": {"t1": "t1"}},
+        "fs2": {"target_info": {"t2": "t2"}},
+    }
+    result = pull_multi_task_data(sources, id_column="id")
+    assert set(result["id"]) == {"A", "B", "C"}
+    assert not any(c.startswith("__date_") for c in result.columns)

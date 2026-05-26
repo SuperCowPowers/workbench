@@ -222,6 +222,7 @@ def pull_multi_task_data(
     id_based_sources: dict,
     smiles_based_sources: dict = None,
     id_column: str = "id",
+    date_col: str | None = None,
 ) -> pd.DataFrame:
     """Pull and combine multiple FeatureSets into a multi-task DataFrame.
 
@@ -247,6 +248,17 @@ def pull_multi_task_data(
             on canonical SMILES rather than id_column. Defaults to None / empty.
         id_column: Canonical id column name across the id-based sources.
             Defaults to "id".
+        date_col: Optional name of a per-source date column (e.g. "udm_asy_date")
+            shared across all sources. When set, each source's date is carried
+            through the merge as a private per-source column and then collapsed
+            post-merge as the row-wise max into the canonical `date_col`. This
+            makes a downstream temporal split on `date_col` leakage-safe: a
+            compound assayed post-cutoff in *any* source is held out, so future
+            information cannot reach training via any task. Every source must
+            contain `date_col` or a ValueError is raised. Defaults to None
+            (no special date handling — `date_col` would flow through as a
+            shared feature and collapse to an arbitrary "first" value across
+            sources, which is unsafe for temporal splits).
 
     Returns:
         Combined multi-task DataFrame from `combine_multi_task_data`, with all
@@ -275,6 +287,18 @@ def pull_multi_task_data(
         else:
             target_cols = list(target_info)
 
+        # Carry per-source date through the merge as a private, source-specific
+        # column. If left as a shared feature, the outer-join collapse would
+        # take an arbitrary "first" date across sources, breaking temporal-split
+        # safety. The canonical `date_col` is synthesized as a row-wise max
+        # after all merging completes (see post-merge block below).
+        if date_col is not None:
+            if date_col not in df.columns:
+                raise ValueError(f"Source '{fs_name}' missing date_col '{date_col}'")
+            private_date = f"__date_{fs_name}"
+            df = df.rename(columns={date_col: private_date})
+            target_cols.append(private_date)
+
         log.info(f"  {fs_name}: {len(df):,} rows, {len(df.columns)} cols")
         return df, target_cols
 
@@ -292,6 +316,14 @@ def pull_multi_task_data(
         df, target_cols = _pull_and_normalize(fs_name, fs_config)
         merged = combine_multi_task_data([merged, df], [merged_targets, target_cols], merge_on_smiles=True)
         merged_targets.extend(target_cols)
+
+    # Synthesize the canonical date as the row-wise max of all per-source
+    # dates. Holding out on the latest date across any task ensures no future
+    # information leaks into training through any auxiliary task.
+    if date_col is not None:
+        private_cols = [f"__date_{n}" for n in list(id_based_sources) + list(smiles_based_sources)]
+        merged[date_col] = merged[private_cols].max(axis=1)
+        merged = merged.drop(columns=private_cols)
 
     return merged
 
