@@ -1,0 +1,22 @@
+# Lean common subset of every deployed endpoint container's deps.
+# This is THE contract for workbench.endpoints — every module under
+# src/workbench/endpoints/ must import cleanly with only these packages
+# installed. Image-specific extras (xgboost+mordredcommunity in
+# base/inference, torch+chemprop in pytorch_chem/inference) are available
+# inside their respective containers for LAZY imports only — endpoint
+# modules must not top-level-import them, or they'd break in the other
+# container.
+#
+# Used by tox -e endpoint-import-smoke + .github/workflows/endpoint-import-smoke.yml.
+# Names only — versions are pinned by repo-root constraints.txt.
+boto3
+botocore
+awswrangler
+requests
+pandas
+scikit-learn
+joblib
+rdkit
+pyyaml
+fastapi
+uvicorn

@@ -4,9 +4,9 @@
 The Workbench REPL is a customized iPython shell. It provides tailored functionality for easy interaction with Workbench objects and since it's based on iPython developers will feel right at home using autocomplete, history, help, etc. Both easy and powerful, the Workbench REPL puts control of AWS ML Pipelines at your fingertips.
 
 ### Installation
-`pip install 'workbench[all]'`
+`pip install workbench`
 
-The REPL needs the orchestration and UI extras — bare `pip install workbench` is the lightweight endpoint-safe install (no AWS SDK, no dashboard).
+That covers the API, REPL, and orchestration — everything you need to spin up the shell.
 
 ### Usage
 Just type `workbench` at the command line and the Workbench shell will spin up and provide a command view of your AWS Machine Learning Pipelines.

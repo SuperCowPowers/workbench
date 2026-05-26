@@ -1,0 +1,83 @@
+# Reproducible version pins for the workbench image stack.
+#
+# Single source of truth for version numbers. Every package referenced by
+# pyproject.toml (deps + extras) and by every <image>-deps.txt under
+# sagemaker_images/ and applications/ MUST appear here with an exact `==` pin.
+# Coverage is enforced by scripts/check_constraints.py (CI-gated).
+#
+# Each Dockerfile builds with:
+#     pip install -c constraints.txt -r <image>-deps.txt
+# so bumping a library here flows to every image on the next rebuild without
+# editing per-image manifests.
+#
+# Lower bounds in pyproject.toml encode the *minimum* API workbench needs;
+# the pins below encode what we actually ship. A pip-installer who pulls
+# workbench from PyPI does NOT see this file — they get pyproject's specs
+# and pip resolves to the latest compatible release. This file only governs
+# our own image builds.
+
+# --- AWS clients & SDKs -----------------------------------------------------
+boto3 == 1.40.0
+botocore == 1.40.0
+awswrangler == 3.13.0
+aiobotocore == 3.4.0
+sagemaker == 3.12.0
+redis == 5.2.1
+cryptography == 44.0.2
+requests == 2.32.5
+
+# --- Data / ML core ---------------------------------------------------------
+# numpy is pulled transitively by pandas/sklearn in the main stack; pinned
+# explicitly because applications/compound_explorer/requirements.txt
+# references it directly.
+numpy == 2.1.3
+pandas == 2.2.5
+scikit-learn == 1.5.2
+xgboost == 3.0.3
+joblib == 1.4.2
+networkx == 3.4.2
+cleanlab == 2.9.0
+datasets == 3.6.0
+umap-learn == 0.5.8
+
+# --- Cheminformatics --------------------------------------------------------
+rdkit == 2026.3.1
+mordredcommunity == 2.0.6
+
+# --- REPL & config ----------------------------------------------------------
+ipython == 8.37.0
+pyreadline3 == 3.5.4
+pyyaml == 6.0.2
+
+# --- UI (workbench[ui]) -----------------------------------------------------
+plotly == 6.5.0
+dash == 4.0.0
+dash-bootstrap-components == 1.6.0
+dash-bootstrap-templates == 1.3.0
+dash_ag_grid == 33.3.3
+tabulate == 0.9.0
+matplotlib == 3.9.2
+
+# --- Dev (workbench[dev]) ---------------------------------------------------
+pytest == 8.3.4
+pytest-sugar == 1.0.0
+pytest-xdist == 3.6.1
+coverage == 7.6.10
+pytest-cov == 6.0.0
+flake8 == 7.1.1
+black == 24.10.0
+
+# --- Per-image framework extras --------------------------------------------
+# fastapi/uvicorn: endpoint serving (base/inference, pytorch_chem/inference)
+fastapi == 0.135.2
+uvicorn == 0.42.0
+asgiref == 3.8.1
+# torch: pinned to one version across all images that need it; pytorch_chem
+# uses the cu130 wheel (its Dockerfile pins the index URL), dashboard +
+# ml_pipelines use the +cpu wheel (pre-installed before sagemaker-serve
+# can grab the default CUDA wheel)
+torch == 2.11.0
+# chemprop: pytorch_chem inference + training
+chemprop == 2.2.2
+# shap: pytorch_chem training (model interpretability)
+shap == 0.51.0

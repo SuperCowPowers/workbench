@@ -2,10 +2,10 @@
 
 This subpackage is the contract: every symbol a generated model script
 imports comes from ``workbench.endpoints.*``, full stop. The CI smoke test
-(:file:`scripts/endpoint_import_smoke.py`, run via the
-``endpoint-import-smoke`` tox env) enumerates every module here and verifies
-they all import cleanly in the lightweight install (no ``[aws]`` /
-``[modeling]`` / ``[ui]`` extras). Adding a new module under this directory
+(:file:`ci/endpoint_import_smoke.py`, run via the ``endpoint-import-smoke``
+tox env) enumerates every module here and verifies they all import cleanly
+against the leanest endpoint dep manifest (intersection of every deployed
+endpoint container's requirements). Adding a new module under this directory
 automatically extends the contract.
 
 Three kinds of modules live here:

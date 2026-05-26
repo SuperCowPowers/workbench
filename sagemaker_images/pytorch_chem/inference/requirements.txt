@@ -1,12 +1,17 @@
-# Framework extras for pytorch_chem/inference — workbench + bridges live in
-# the Dockerfile (auto-extracted from pyproject.toml + ARG-driven version pin).
-
-# PyTorch with CUDA 13.0 index (works on both CPU and GPU instances)
---index-url https://download.pytorch.org/whl/cu130
---extra-index-url https://pypi.org/simple/
-torch==2.11.0
-
-chemprop==2.2.2
-
-fastapi==0.135.2
-uvicorn==0.42.0
+# Deps for the chemprop inference image. The Dockerfile passes the PyTorch
+# cu130 index URL to pip; torch + chemprop come from there, everything else
+# falls back to pypi via --extra-index-url.
+# Names only — versions are pinned by repo-root constraints.txt.
+boto3
+botocore
+awswrangler
+requests
+pandas
+scikit-learn
+joblib
+rdkit
+pyyaml
+fastapi
+uvicorn
+torch
+chemprop

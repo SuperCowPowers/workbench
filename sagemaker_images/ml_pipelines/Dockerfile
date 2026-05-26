@@ -1,4 +1,8 @@
-# Multi-stage build for dependency resolution
+# Multi-stage build for the headless pipeline runner. Layer 1a pre-installs
+# CPU-only torch (claiming the torch slot before sagemaker-serve's
+# transitive resolution would grab the multi-GB CUDA wheel from pypi);
+# Layer 1b installs the full workbench dep cone. Layer 2 installs workbench
+# itself with --no-deps for small per-version-bump deltas.
 FROM python:3.12-slim AS builder
 
 # Install build dependencies
@@ -7,30 +11,25 @@ RUN apt-get update && \
         build-essential \
         gcc
 
-# Layer 1: All heavy dependencies (changes only when requirements.txt or
-# pyproject.toml changes). ml_pipelines runs arbitrary user pipelines that
-# touch the full workbench surface, so we bundle:
-#   - core dependencies         (rdkit, pandas, scikit-learn, boto3, ...)
-#   - [aws] extras              (sagemaker, aiobotocore, redis, cryptography)
-#   - [modeling] extras         (xgboost, mordredcommunity)
-# Skipping [ui] (dash/plotly/matplotlib) and [repl] (ipython) — ml_pipelines
-# is a headless runner.
+COPY constraints.txt /tmp/
 COPY ml_pipelines/requirements.txt /tmp/
-COPY pyproject.toml /tmp/pyproject.toml
-RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
-    python -c "\
-import tomllib; \
-data = tomllib.load(open('/tmp/pyproject.toml', 'rb')); \
-extras = data['project']['optional-dependencies']; \
-deps = data['project']['dependencies'] + extras['aws'] + extras['modeling']; \
-open('/tmp/workbench_deps.txt', 'w').write('\n'.join(deps))" && \
-    pip install --no-cache-dir -r /tmp/workbench_deps.txt && \
-    rm /tmp/pyproject.toml /tmp/workbench_deps.txt
+
+# Layer 1a: Pre-install CPU torch from PyTorch's index. requirements.txt
+# also lists torch (by name) so the version pin in constraints.txt is
+# centralized; pip sees torch already installed when it processes
+# requirements.txt below and skips re-resolving it.
+RUN pip install --no-cache-dir -c /tmp/constraints.txt torch \
+    --index-url https://download.pytorch.org/whl/cpu \
+    --extra-index-url https://pypi.org/simple/
+
+# Layer 1b: Full workbench dep cone for the pipeline runner — runs arbitrary
+# user code that touches the full workbench surface.
+RUN pip install --no-cache-dir -c /tmp/constraints.txt -r /tmp/requirements.txt
 
 # Final runtime image
 FROM python:3.12-slim
 
-# System packages (single apt-get update)
+# System packages
 RUN apt-get update && apt-get upgrade -y openssl && \
     apt-get install -y --no-install-recommends \
         libxrender1 \

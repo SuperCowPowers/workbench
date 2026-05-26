@@ -27,11 +27,9 @@ Since many jobs are run nightly/often, the stream will also have a date on the e
     The Workbench `cloud_watch` command line tool gives you access to important logs without the hassle. Automatic display of important event and the context around those events.
 
 ```
-pip install 'workbench[aws]'
+pip install workbench
 cloud_watch
 ```
-
-(The `cloud_watch` script uses workbench's orchestration AWS surface, so the `[aws]` extra is required.)
 
 The `cloud_watch` script will automatically show the interesting (WARNING and CRITICAL) messages from any source within the last hour. There are lots of options to the script, just use `--help` to see options and descriptions.
 

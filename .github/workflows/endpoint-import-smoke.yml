@@ -1,8 +1,10 @@
 name: Endpoint Import Surface Smoke Test
 
-# Enforces the lightweight-install contract: `pip install workbench` (no extras)
-# must be able to import every module a SageMaker endpoint container needs,
-# without transitively pulling in any heavy dep that only lives in extras.
+# Enforces the endpoint-image-contract: every module under workbench.endpoints
+# must import cleanly against the leanest endpoint dep manifest in the stack
+# (ci/endpoint_smoke_requirements.txt — the intersection of every
+# deployed endpoint container's requirements), without pulling in any heavy
+# orchestration/UI/analysis lib transitively.
 #
 # If this job fails, an endpoint container would also fail on first cold-start
 # after the change deploys.
@@ -23,14 +25,19 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install workbench (core only, no extras)
+      - name: Install lean endpoint surface + workbench --no-deps
+        # Mirrors tox.ini's `endpoint-import-smoke` env. Installing against
+        # the lean smoke requirements file (intersection of every endpoint
+        # container's deps, not `pip install workbench` which is fat by
+        # design) is what makes the heavy-deps blocklist below meaningful.
         run: |
-          pip install -e .
+          pip install -c constraints.txt -r ci/endpoint_smoke_requirements.txt
+          pip install --no-deps -e .
 
-      # Single source of truth: scripts/endpoint_import_smoke.py dynamically
+      # Single source of truth: ci/endpoint_import_smoke.py dynamically
       # enumerates every module under workbench/endpoints/ and checks the
       # heavy-deps blocklist. Adding a new module there auto-extends coverage —
       # no YAML edit needed.
       - name: Run endpoint-import-smoke contract check
         run: |
-          python scripts/endpoint_import_smoke.py
+          python ci/endpoint_import_smoke.py

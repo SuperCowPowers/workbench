@@ -36,9 +36,10 @@ VERSION_TAG="v${VERSION}_amd64"
 
 echo "📦 Building Docker image version: $VERSION_TAG"
 
-# Copy pyproject.toml into build context for dependency layer caching
-cp ../../pyproject.toml pyproject.toml
-trap 'rm -f pyproject.toml' EXIT
+# Copy constraints.txt into build context — version pins are centralized at
+# the repo root; Dockerfile copies it into the image at build time.
+cp ../../constraints.txt constraints.txt
+trap 'rm -f constraints.txt' EXIT
 
 docker buildx build \
     --platform $PLATFORM \

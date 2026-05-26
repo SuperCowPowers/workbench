@@ -83,11 +83,12 @@ build_image() {
     exit 1
   fi
 
-  # Copy pyproject.toml into build context for dependency layer caching (if needed by Dockerfile)
-  if grep -q 'pyproject.toml' "$DIR/Dockerfile"; then
-    cp "$SCRIPT_DIR/../pyproject.toml" "$SCRIPT_DIR/pyproject.toml"
-    trap 'rm -f "$SCRIPT_DIR/pyproject.toml"' EXIT
-  fi
+  # Copy constraints.txt into build context — every Dockerfile under
+  # sagemaker_images/ uses it now (version pins are centralized at the
+  # repo root). build context is $SCRIPT_DIR (sagemaker_images/), so the
+  # file lands at the root of the context where Dockerfiles `COPY constraints.txt`.
+  cp "$SCRIPT_DIR/../constraints.txt" "$SCRIPT_DIR/constraints.txt"
+  trap 'rm -f "$SCRIPT_DIR/constraints.txt"' EXIT
 
   # Build with sagemaker_images/ as context, using -f for the nested Dockerfile
   docker build --platform $platform -t $name -f $DIR/Dockerfile $SCRIPT_DIR

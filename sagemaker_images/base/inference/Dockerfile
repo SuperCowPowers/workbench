@@ -1,27 +1,19 @@
-# Multi-stage build for dependency layer isolation. Layer 1 has all the heavy
-# pip deps (auto-extracted from workbench's pyproject.toml plus framework
-# extras from requirements.txt). Layer 2 installs workbench itself with
-# --no-deps so per-version-bump deltas are small (~20MB instead of full
-# pip resolve).
+# Multi-stage build. Layer 1 has the endpoint runtime deps; Layer 2 installs
+# workbench itself with --no-deps so per-version-bump deltas are ~20 MB
+# instead of a full pip resolve. Version pins are centralized in
+# /constraints.txt (copied into the build context by build_deploy.sh).
 FROM python:3.12-slim AS builder
 
 # Build deps for any packages that need compilation
 RUN apt-get update && \
     apt-get install -y --no-install-recommends build-essential gcc
 
-# Layer 1: Framework extras (fastapi/uvicorn for the inference server) +
-# workbench's transitive deps + [modeling] extras (xgboost for unpickling,
-# mordred for feature endpoints). Auto-extract from pyproject.toml.
+# Layer 1: Endpoint runtime deps. requirements.txt lists what this image
+# actually needs (no sagemaker SDK, no orchestration clients — the endpoint
+# surface is a strict subset of what `pip install workbench` delivers).
+COPY constraints.txt /tmp/
 COPY base/inference/requirements.txt /tmp/
-COPY pyproject.toml /tmp/pyproject.toml
-RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
-    python -c "\
-import tomllib; \
-data = tomllib.load(open('/tmp/pyproject.toml', 'rb')); \
-deps = data['project']['dependencies'] + data['project']['optional-dependencies']['modeling']; \
-open('/tmp/workbench_deps.txt', 'w').write('\n'.join(deps))" && \
-    pip install --no-cache-dir -r /tmp/workbench_deps.txt && \
-    rm /tmp/pyproject.toml /tmp/workbench_deps.txt
+RUN pip install --no-cache-dir -c /tmp/constraints.txt -r /tmp/requirements.txt
 
 # Final runtime image
 FROM python:3.12-slim
@@ -36,7 +28,7 @@ RUN apt-get update && \
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Layer 2: Workbench + bridges — rebuilds per version bump, ~20MB delta.
+# Layer 2: Workbench + bridges — rebuilds per version bump, ~20 MB delta.
 # workbench-bridges==0.2.10 retained for backward compat with existing
 # deployed-endpoint model bundles; drop in a future image rev once no
 # production endpoint references workbench_bridges.

@@ -1,5 +1,16 @@
-# Framework extras for base/inference — workbench + bridges live in the
-# Dockerfile (auto-extracted from pyproject.toml + ARG-driven version pin).
-
-fastapi==0.135.2
-uvicorn==0.42.0
+# Endpoint runtime deps for the base inference image.
+# Serves sklearn/xgboost models + feature endpoints that compute mordred
+# descriptors. Names only — versions are pinned by repo-root constraints.txt.
+boto3
+botocore
+awswrangler
+requests
+pandas
+scikit-learn
+xgboost
+joblib
+rdkit
+mordredcommunity
+pyyaml
+fastapi
+uvicorn

@@ -1,13 +1,27 @@
-# ML Pipeline Docker Image: Extra dependencies not covered by workbench's pyproject.toml
-#
-# The Dockerfile uses a two-pass dependency install for layer isolation:
-#   1. This file: Heavy ML deps that need special index URLs or aren't in pyproject.toml
-#   2. pyproject.toml extraction: All workbench dependencies (auto-extracted at build time)
-#   3. workbench installed with --no-deps (~20MB layer that rebuilds on every version bump)
-#
-# This keeps the frequently-changing workbench layer thin, while the ~2GB dependency
-# layer stays cached until these pins or pyproject.toml deps change.
-
---index-url https://download.pytorch.org/whl/cpu
---extra-index-url https://pypi.org/simple/
-torch==2.11.0
+# Deps for the headless pipeline runner. Touches the full workbench surface
+# (orchestration + modeling + analysis). The Dockerfile pre-installs torch
+# from the PyTorch CPU index URL before processing this file, to claim the
+# torch slot before sagemaker-serve's transitive resolution would otherwise
+# grab the multi-GB CUDA wheel from pypi.
+# Names only — versions are pinned by repo-root constraints.txt.
+boto3
+botocore
+awswrangler
+aiobotocore
+sagemaker
+redis
+cryptography
+requests
+pandas
+scikit-learn
+xgboost
+joblib
+networkx
+cleanlab
+datasets
+umap-learn
+rdkit
+mordredcommunity
+ipython
+pyyaml
+torch

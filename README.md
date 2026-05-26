@@ -69,15 +69,17 @@ ADMET Workbench is architected as a **Private SaaS** (also called BYOC: Bring Yo
 
 ### API Installation
 
-For typical use (the API, REPL, dashboard, training pipelines):
+```
+pip install workbench    # Default — gives you the API, REPL, and
+                         # orchestration. Ready to use out of the box.
+workbench                # Runs the Workbench REPL / initial setup
+```
 
-- ```pip install 'workbench[all]'```  Full install — recommended
-- ```workbench```                     Runs the Workbench REPL / initial setup
-
-`pip install workbench` (no extras) is intentionally lightweight — it's the
-endpoint-safe surface that ships inside SageMaker inference containers (and
-the lambdas / scripts that just need to invoke endpoints). See
-[Installation extras](#installation-extras) below for the breakdown.
+`pip install workbench` is the recommended path for everyone using the
+Python API or REPL. The dashboard is a separate opt-in
+(`pip install 'workbench[ui]'`) because dash/plotly/matplotlib are heavy
+and most API users don't need them. See [Installation extras](#installation-extras)
+below for the breakdown.
 
 For the full instructions for connecting your AWS Account see:
 
@@ -110,48 +112,41 @@ Using ADMET Workbench will minimize the time and manpower needed to incorporate 
 
 ### Installation extras
 
-Workbench's dependencies are organized so you can install exactly what you
-need. The `workbench.endpoints.*` surface is enforced by a CI smoke test
-that runs the lightweight install in a clean venv and verifies every module
-under that namespace imports without any extras pulled in — which is what
-makes the base install safe to drop into a SageMaker endpoint container or
-a lambda.
-
 ```
-pip install workbench               # Endpoint-safe core only:
-                                    #   boto3, awswrangler, numpy, pandas,
-                                    #   sklearn, scipy, rdkit, joblib
-                                    # Use in lambdas, endpoint containers,
-                                    # or anywhere you just need to invoke
-                                    # endpoints and read/write S3.
-
-pip install 'workbench[aws]'        # + sagemaker SDK + aiobotocore + redis +
-                                    #   cryptography. Needed for the orchestration
-                                    #   side: building pipelines, deploying
-                                    #   endpoints, talking to SageMaker training.
-
-pip install 'workbench[modeling]'   # + xgboost, umap-learn, mordred,
-                                    #   cleanlab, ipython. Training-time ML
-                                    #   libs (SageMaker training containers
-                                    #   have most of these pre-installed).
+pip install workbench               # Default — API + REPL + orchestration.
+                                    # Covers building pipelines, deploying
+                                    # endpoints, training jobs, and most
+                                    # interactive use.
 
 pip install 'workbench[ui]'         # + plotly, dash, dash-ag-grid,
                                     #   matplotlib. The Workbench Dashboard.
 
+pip install 'workbench[misc]'       # + networkx, cleanlab, datasets,
+                                    #   umap-learn. Specialized analysis libs
+                                    #   used by a handful of workflows.
+
 pip install 'workbench[dev]'        # + pytest, pytest-xdist, coverage,
                                     #   flake8, black. Local development.
 
-pip install 'workbench[all]'        # All of the above — typical full install
-                                    #   for interactive use, dashboards, and
-                                    #   building/deploying pipelines.
+pip install 'workbench[all]'        # ui + misc + dev — full install for
+                                    #   contributors and dashboard users.
 ```
 
 *Note: shells may interpret square brackets as globs, so the quotes are needed.*
 
+#### Endpoint container surface
+
 Model-script code running inside SageMaker endpoint containers should
-import exclusively from `workbench.endpoints.*` — that's the contract the
-endpoint-import-smoke CI job enforces. See `workbench/endpoints/__init__.py`
-for the full surface.
+import exclusively from `workbench.endpoints.*`. This surface is contract-
+enforced by a CI smoke test (`tox -e endpoint-import-smoke`) that installs
+the leanest plausible endpoint dep set (matching what the inference
+Dockerfiles ship) and verifies every module under that namespace imports
+without any heavy orchestration/UI lib leaking in. See
+`workbench/endpoints/__init__.py` for the full surface.
+
+Each image's `requirements.txt` lives next to its Dockerfile
+(`sagemaker_images/*/requirements.txt`, `applications/aws_dashboard/requirements.txt`),
+with versions pinned in the repo-root `constraints.txt` for reproducible builds.
 
 ### Contributions
 If you'd like to contribute to the ADMET Workbench project, you're more than welcome. All contributions will fall under the existing project [license](https://github.com/SuperCowPowers/workbench/blob/main/LICENSE). If you are interested in contributing or have questions please feel free to contact us at [workbench@supercowpowers.com](mailto:workbench@supercowpowers.com).
