@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # Multi-stage build. Layer 1 has the endpoint runtime deps; Layer 2 installs
 # workbench itself with --no-deps so per-version-bump deltas are ~20 MB
 # instead of a full pip resolve. Version pins are centralized in
@@ -11,9 +13,12 @@ RUN apt-get update && \
 # Layer 1: Endpoint runtime deps. requirements.txt lists what this image
 # actually needs (no sagemaker SDK, no orchestration clients — the endpoint
 # surface is a strict subset of what `pip install workbench` delivers).
+# The pip cache mount keeps downloaded wheels between builds — rebuilding
+# after a constraints.txt bump only re-installs, doesn't re-download.
 COPY constraints.txt /tmp/
 COPY base/inference/requirements.txt /tmp/
-RUN pip install --no-cache-dir -c /tmp/constraints.txt -r /tmp/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -c /tmp/constraints.txt -r /tmp/requirements.txt
 
 # Final runtime image
 FROM python:3.12-slim
@@ -33,8 +38,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # deployed-endpoint model bundles; drop in a future image rev once no
 # production endpoint references workbench_bridges.
 ARG WORKBENCH_VERSION=0.8.350
-RUN pip install --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}" && \
-    pip install --no-cache-dir --no-deps "workbench-bridges==0.2.10"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
+    pip install --no-deps "workbench-bridges==0.2.10"
 
 # Add the shared serve script
 COPY shared/serve /usr/local/bin/

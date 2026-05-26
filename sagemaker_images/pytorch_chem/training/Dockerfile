@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # GPU-capable training image. Lightweight CUDA base with Python 3.12.
 # Uses the runtime image (not devel) to minimize size while supporting GPU
 # inference/training. Single-stage build because the CUDA base image doesn't
@@ -16,10 +18,13 @@ ENV BREAK_SYSTEM_PACKAGES=1
 
 # Layer 1: All deps in one pass. torch + chemprop come from the cu130 wheel
 # index; the rest (incl. shap and the workbench python libs) fall back to
-# pypi via --extra-index-url.
+# pypi via --extra-index-url. The pip cache mount keeps downloaded wheels
+# between builds — rebuilds after a constraints.txt bump only re-install,
+# don't re-download.
 COPY constraints.txt /tmp/
 COPY pytorch_chem/training/requirements.txt /tmp/
-RUN pip install --break-system-packages --no-cache-dir \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --break-system-packages \
     -c /tmp/constraints.txt \
     --index-url https://download.pytorch.org/whl/cu130 \
     --extra-index-url https://pypi.org/simple/ \
@@ -29,5 +34,6 @@ RUN pip install --break-system-packages --no-cache-dir \
 # workbench-bridges==0.2.10 retained for backward compat with existing
 # deployed-endpoint model bundles.
 ARG WORKBENCH_VERSION=0.8.350
-RUN pip install --break-system-packages --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}" && \
-    pip install --break-system-packages --no-cache-dir --no-deps "workbench-bridges==0.2.10"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --break-system-packages --no-deps "workbench==${WORKBENCH_VERSION}" && \
+    pip install --break-system-packages --no-deps "workbench-bridges==0.2.10"

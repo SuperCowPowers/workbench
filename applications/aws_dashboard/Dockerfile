@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 FROM python:3.12.5-bookworm AS base
 WORKDIR /app
 EXPOSE 8000
@@ -15,9 +17,11 @@ RUN apt-get update && apt-get upgrade -y openssl && \
 # Layer 1a: CPU-only PyTorch first — sagemaker v3 requires torch via
 # sagemaker-serve; the default linux wheel is the multi-GB CUDA build.
 # Pre-installing the CPU variant claims the torch slot so the later deps
-# resolve doesn't drag the CUDA wheel in.
+# resolve doesn't drag the CUDA wheel in. The pip cache mount (shared with
+# Layer 1b) keeps downloaded wheels between builds.
 COPY constraints.txt /tmp/
-RUN pip install --no-cache-dir -c /tmp/constraints.txt torch \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -c /tmp/constraints.txt torch \
     --index-url https://download.pytorch.org/whl/cpu \
     --extra-index-url https://pypi.org/simple/
 
@@ -27,11 +31,13 @@ RUN pip install --no-cache-dir -c /tmp/constraints.txt torch \
 # torch is also listed there but already installed in Layer 1a — pip skips
 # re-resolving it. deploy.sh copies constraints.txt into the build context.
 COPY requirements.txt /tmp/
-RUN pip install --no-cache-dir -c /tmp/constraints.txt -r /tmp/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -c /tmp/constraints.txt -r /tmp/requirements.txt
 
 # Layer 2: Workbench only (changes often, ~20 MB)
 ARG WORKBENCH_VERSION=0.8.350
-RUN pip install --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-deps "workbench==${WORKBENCH_VERSION}"
 
 # Copy app code and configuration (after pip installs to avoid cache invalidation)
 COPY app.py /app/

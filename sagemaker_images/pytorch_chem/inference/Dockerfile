@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # Multi-stage build for the chemprop inference image. Layer 1 installs all
 # deps in one pass — pip uses PyTorch's cu130 index for torch + chemprop
 # and falls back to pypi (via --extra-index-url) for everything else.
@@ -9,10 +11,13 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends build-essential gcc
 
 # Layer 1: All deps in one pass. torch + chemprop come from the cu130
-# wheel index; the rest fall back to pypi via --extra-index-url.
+# wheel index; the rest fall back to pypi via --extra-index-url. The pip
+# cache mount keeps downloaded wheels between builds — rebuilds after a
+# constraints.txt bump only re-install, don't re-download.
 COPY constraints.txt /tmp/
 COPY pytorch_chem/inference/requirements.txt /tmp/
-RUN pip install --no-cache-dir -c /tmp/constraints.txt \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -c /tmp/constraints.txt \
     --index-url https://download.pytorch.org/whl/cu130 \
     --extra-index-url https://pypi.org/simple/ \
     -r /tmp/requirements.txt
@@ -34,8 +39,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # workbench-bridges==0.2.10 retained for backward compat with existing
 # deployed-endpoint model bundles.
 ARG WORKBENCH_VERSION=0.8.350
-RUN pip install --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}" && \
-    pip install --no-cache-dir --no-deps "workbench-bridges==0.2.10"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
+    pip install --no-deps "workbench-bridges==0.2.10"
 
 # Add the shared serve script
 COPY shared/serve /usr/local/bin/

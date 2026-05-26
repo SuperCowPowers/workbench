@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 # Multi-stage build. Layer 1 has the training runtime deps; Layer 2
 # installs workbench with --no-deps for small per-version-bump deltas.
 # Version pins are centralized in /constraints.txt (copied into the build
@@ -11,9 +13,12 @@ RUN apt-get update && \
 # Layer 1: Training runtime deps. requirements.txt lists the workbench
 # python libs this image needs (no orchestration SDKs — training jobs run
 # under SageMaker's orchestration, not as orchestrators themselves).
+# The pip cache mount keeps downloaded wheels between builds — rebuilding
+# after a constraints.txt bump only re-installs, doesn't re-download.
 COPY constraints.txt /tmp/
 COPY base/training/requirements.txt /tmp/
-RUN pip install --no-cache-dir -c /tmp/constraints.txt -r /tmp/requirements.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -c /tmp/constraints.txt -r /tmp/requirements.txt
 
 # Final runtime image
 FROM python:3.12-slim
@@ -31,5 +36,6 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # existing deployed-endpoint model bundles; drop in a future image rev once
 # no production endpoint references workbench_bridges.
 ARG WORKBENCH_VERSION=0.8.350
-RUN pip install --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}" && \
-    pip install --no-cache-dir --no-deps "workbench-bridges==0.2.10"
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
+    pip install --no-deps "workbench-bridges==0.2.10"
