@@ -17,8 +17,8 @@
 # and pip resolves to the latest compatible release.
 
 # --- AWS clients & SDKs -----------------------------------------------------
-boto3 == 1.43.14
-botocore == 1.43.14
+boto3 == 1.43.0
+botocore == 1.43.0
 awswrangler == 3.16.1
 aiobotocore == 3.7.0
 sagemaker == 3.12.0

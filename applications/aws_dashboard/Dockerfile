@@ -30,7 +30,7 @@ COPY requirements.txt /tmp/
 RUN pip install --no-cache-dir -c /tmp/constraints.txt -r /tmp/requirements.txt
 
 # Layer 2: Workbench only (changes often, ~20 MB)
-ARG WORKBENCH_VERSION=0.8.349
+ARG WORKBENCH_VERSION=0.8.350
 RUN pip install --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}"
 
 # Copy app code and configuration (after pip installs to avoid cache invalidation)

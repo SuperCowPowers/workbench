@@ -28,6 +28,6 @@ RUN pip install --break-system-packages --no-cache-dir \
 # Layer 2: Workbench + bridges — rebuilds per version bump, ~20 MB delta.
 # workbench-bridges==0.2.10 retained for backward compat with existing
 # deployed-endpoint model bundles.
-ARG WORKBENCH_VERSION=0.8.349
+ARG WORKBENCH_VERSION=0.8.350
 RUN pip install --break-system-packages --no-cache-dir --no-deps "workbench==${WORKBENCH_VERSION}" && \
     pip install --break-system-packages --no-cache-dir --no-deps "workbench-bridges==0.2.10"
