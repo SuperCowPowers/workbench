@@ -90,8 +90,11 @@ build_image() {
   cp "$SCRIPT_DIR/../constraints.txt" "$SCRIPT_DIR/constraints.txt"
   trap 'rm -f "$SCRIPT_DIR/constraints.txt"' EXIT
 
-  # Build with sagemaker_images/ as context, using -f for the nested Dockerfile
-  docker build --platform $platform -t $name -f $DIR/Dockerfile $SCRIPT_DIR
+  # Build with sagemaker_images/ as context, using -f for the nested Dockerfile.
+  # `buildx build --load` shares the cache with applications/aws_dashboard/deploy.sh
+  # (both use the active buildx builder) and loads the result into `docker images`
+  # so the subsequent `docker tag` / `docker push` find it.
+  docker buildx build --platform $platform -t $name -f $DIR/Dockerfile --load $SCRIPT_DIR
   echo -e "${GREEN}✅  Successfully built: $name${NC}"
 }
 
