@@ -52,7 +52,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Layer 2: Workbench + Bridges (changes often, small layer)
 # workbench-bridges==0.2.10 pinned for reproducibility while we still depend
 # on it; on track for deprecation once nothing references workbench_bridges.
-ARG WORKBENCH_VERSION=0.8.350
+ARG WORKBENCH_VERSION=0.8.351
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
     pip install --no-deps "workbench-bridges==0.2.10"

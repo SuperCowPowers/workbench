@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -c /tmp/constraints.txt -r /tmp/requirements.txt
 
 # Layer 2: Workbench only (changes often, ~20 MB)
-ARG WORKBENCH_VERSION=0.8.350
+ARG WORKBENCH_VERSION=0.8.351
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --no-deps "workbench==${WORKBENCH_VERSION}"
 
