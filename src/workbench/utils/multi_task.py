@@ -47,6 +47,7 @@ def combine_multi_task_data(
     id_column: str = "id",
     merge_on_smiles: bool = False,
     standardize_smiles: bool = True,
+    passthrough_columns: list[list[str]] | None = None,
 ) -> pd.DataFrame:
     """Combine single-task DataFrames into a multi-task DataFrame.
 
@@ -75,11 +76,20 @@ def combine_multi_task_data(
             sources with different conventions (e.g. internal LIMS salts vs public
             canonical) silently misses overlap and emits duplicate canonical rows
             after downstream feature-endpoint normalization. Defaults to True.
+        passthrough_columns: Optional parallel list of per-source columns that
+            should survive the merge with the same mechanics as targets (excluded
+            from the shared-feature intersection, NaN-filled across sources,
+            dtype-cast from peers) but are *not* tasks. Excluded from the
+            "Targets" log section, the coverage-pattern log, and the all-NaN
+            validation. Used by `pull_multi_task_data` to carry per-source date
+            columns through the merge without polluting target diagnostics.
+            Defaults to None (no passthrough columns).
 
     Returns:
-        Combined DataFrame with shared features + all target columns. Rows from
-        sources missing a target will have NaN for that target. When standardized,
-        the 'smiles' column holds canonical (post-standardization) SMILES.
+        Combined DataFrame with shared features + all target columns + any
+        passthrough columns. Rows from sources missing a target or passthrough
+        will have NaN there. When standardized, the 'smiles' column holds
+        canonical (post-standardization) SMILES.
 
     Raises:
         ValueError: If inputs are invalid (length mismatch, missing columns, etc.)
@@ -93,7 +103,14 @@ def combine_multi_task_data(
     if not dataframes:
         raise ValueError("dataframes must be non-empty")
 
-    for i, (df, targets) in enumerate(zip(dataframes, target_columns)):
+    if passthrough_columns is None:
+        passthrough_columns = [[] for _ in dataframes]
+    elif len(passthrough_columns) != len(dataframes):
+        raise ValueError(
+            f"passthrough_columns ({len(passthrough_columns)}) and dataframes ({len(dataframes)}) must have the same length"
+        )
+
+    for i, (df, targets, passthrough) in enumerate(zip(dataframes, target_columns, passthrough_columns)):
         if id_column not in df.columns:
             raise ValueError(f"DataFrame {i} missing id_column '{id_column}'")
         if "smiles" not in df.columns:
@@ -101,11 +118,18 @@ def combine_multi_task_data(
         missing = [t for t in targets if t not in df.columns]
         if missing:
             raise ValueError(f"DataFrame {i} missing target columns: {missing}")
+        missing_pt = [p for p in passthrough if p not in df.columns]
+        if missing_pt:
+            raise ValueError(f"DataFrame {i} missing passthrough columns: {missing_pt}")
 
     all_targets = [t for targets in target_columns for t in targets]
-    if len(all_targets) != len(set(all_targets)):
-        dupes = [t for t in all_targets if all_targets.count(t) > 1]
-        raise ValueError(f"Duplicate target column names across DataFrames: {set(dupes)}")
+    all_passthrough = [p for ps in passthrough_columns for p in ps]
+    # Combined set of columns that must survive the merge (treated as task-like
+    # for join mechanics — excluded from features, NaN-filled across sources).
+    all_merge_cols = all_targets + all_passthrough
+    if len(all_merge_cols) != len(set(all_merge_cols)):
+        dupes = [c for c in all_merge_cols if all_merge_cols.count(c) > 1]
+        raise ValueError(f"Duplicate target/passthrough column names across DataFrames: {set(dupes)}")
 
     merge_key = "smiles" if merge_on_smiles else id_column
 
@@ -139,8 +163,13 @@ def combine_multi_task_data(
             dataframes[i] = df.dropna(subset=["smiles"])
 
     # --- Step 1: Compute shared feature columns ---
-    reserved = {id_column, "smiles"} | set(all_targets)
-    all_feature_sets = [set(df.columns) - reserved - set(t) for df, t in zip(dataframes, target_columns)]
+    # Reserve both targets and passthroughs: neither should be intersected
+    # away as a "shared feature" — each is per-source and must survive the join.
+    reserved = {id_column, "smiles"} | set(all_merge_cols)
+    all_feature_sets = [
+        set(df.columns) - reserved - set(t) - set(p)
+        for df, t, p in zip(dataframes, target_columns, passthrough_columns)
+    ]
     shared_features = sorted(reduce(set.intersection, all_feature_sets))
     for i, fs in enumerate(all_feature_sets):
         dropped = len(fs) - len(shared_features)
@@ -150,7 +179,7 @@ def combine_multi_task_data(
     keep_cols = [id_column, "smiles"] + shared_features
     log.info(f"Shared feature columns: {len(shared_features)}")
 
-    # --- Step 2: Subset each DataFrame to shared columns + its targets, then concat ---
+    # --- Step 2: Subset each DataFrame to shared columns + its targets + passthroughs, then concat ---
     col_dtypes = {}
     for df in dataframes:
         for col in df.columns:
@@ -158,12 +187,12 @@ def combine_multi_task_data(
                 col_dtypes[col] = df[col].dtype
 
     aligned_dfs = []
-    for df, targets in zip(dataframes, target_columns):
-        sub = df[keep_cols + targets].copy()
-        # Pre-add missing target columns to avoid FutureWarning on concat
-        for t in all_targets:
-            if t not in sub.columns:
-                sub[t] = pd.array([pd.NA] * len(sub), dtype="Float64")
+    for df, targets, passthrough in zip(dataframes, target_columns, passthrough_columns):
+        sub = df[keep_cols + targets + passthrough].copy()
+        # Pre-add missing merge columns to avoid FutureWarning on concat
+        for c in all_merge_cols:
+            if c not in sub.columns:
+                sub[c] = pd.array([pd.NA] * len(sub), dtype="Float64")
         # Cast all-NA columns to match dtype from DataFrames that have data
         for col in sub.columns:
             if sub[col].isna().all() and col in col_dtypes:
@@ -269,7 +298,7 @@ def pull_multi_task_data(
 
     smiles_based_sources = smiles_based_sources or {}
 
-    def _pull_and_normalize(fs_name: str, fs_config: dict) -> tuple[pd.DataFrame, list[str]]:
+    def _pull_and_normalize(fs_name: str, fs_config: dict) -> tuple[pd.DataFrame, list[str], list[str]]:
         target_info = fs_config["target_info"]
         src_id = fs_config.get("src_id_col", id_column)
 
@@ -290,32 +319,47 @@ def pull_multi_task_data(
         # Carry per-source date through the merge as a private, source-specific
         # column. If left as a shared feature, the outer-join collapse would
         # take an arbitrary "first" date across sources, breaking temporal-split
-        # safety. The canonical `date_col` is synthesized as a row-wise max
-        # after all merging completes (see post-merge block below).
+        # safety. Passed to combine_multi_task_data as a passthrough (survives
+        # merge, but not reported as a target). The canonical `date_col` is
+        # synthesized as a row-wise max after all merging completes.
+        passthrough_cols: list[str] = []
         if date_col is not None:
             if date_col not in df.columns:
                 raise ValueError(f"Source '{fs_name}' missing date_col '{date_col}'")
             private_date = f"__date_{fs_name}"
             df = df.rename(columns={date_col: private_date})
-            target_cols.append(private_date)
+            passthrough_cols.append(private_date)
 
         log.info(f"  {fs_name}: {len(df):,} rows, {len(df.columns)} cols")
-        return df, target_cols
+        return df, target_cols, passthrough_cols
 
     # Pass 1: id-based outer join
-    id_dfs, id_targets = [], []
+    id_dfs, id_targets, id_passthrough = [], [], []
     for fs_name, fs_config in id_based_sources.items():
-        df, target_cols = _pull_and_normalize(fs_name, fs_config)
+        df, target_cols, passthrough_cols = _pull_and_normalize(fs_name, fs_config)
         id_dfs.append(df)
         id_targets.append(target_cols)
-    merged = combine_multi_task_data(id_dfs, id_targets, id_column=id_column)
+        id_passthrough.append(passthrough_cols)
+    merged = combine_multi_task_data(
+        id_dfs, id_targets, id_column=id_column, passthrough_columns=id_passthrough
+    )
 
-    # Pass 2: smiles-based join (e.g. external/public data)
+    # Pass 2: smiles-based join (e.g. external/public data). The accumulated
+    # `merged_targets` / `merged_passthrough` lists describe what already lives
+    # in `merged` so combine_multi_task_data treats those columns correctly on
+    # the next pass.
     merged_targets = [t for tl in id_targets for t in tl]
+    merged_passthrough = [p for pl in id_passthrough for p in pl]
     for fs_name, fs_config in smiles_based_sources.items():
-        df, target_cols = _pull_and_normalize(fs_name, fs_config)
-        merged = combine_multi_task_data([merged, df], [merged_targets, target_cols], merge_on_smiles=True)
+        df, target_cols, passthrough_cols = _pull_and_normalize(fs_name, fs_config)
+        merged = combine_multi_task_data(
+            [merged, df],
+            [merged_targets, target_cols],
+            merge_on_smiles=True,
+            passthrough_columns=[merged_passthrough, passthrough_cols],
+        )
         merged_targets.extend(target_cols)
+        merged_passthrough.extend(passthrough_cols)
 
     # Synthesize the canonical date as the row-wise max of all per-source
     # dates. Holding out on the latest date across any task ensures no future
