@@ -4298,10 +4298,9 @@
 <p class="admonition-title">Logs in Easy Mode</p>
 <p>The Workbench <code>cloud_watch</code> command line tool gives you access to important logs without the hassle. Automatic display of important event and the context around those events.</p>
 </div>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip install &#39;workbench[aws]&#39;
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip install workbench
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>cloud_watch
 </span></code></pre></div>
-<p>(The <code>cloud_watch</code> script uses workbench's orchestration AWS surface, so the <code>[aws]</code> extra is required.)</p>
 <p>The <code>cloud_watch</code> script will automatically show the interesting (WARNING and CRITICAL) messages from any source within the last hour. There are lots of options to the script, just use <code>--help</code> to see options and descriptions.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>cloud_watch --help
 </span></code></pre></div>
