@@ -107,7 +107,8 @@ def combine_multi_task_data(
         passthrough_columns = [[] for _ in dataframes]
     elif len(passthrough_columns) != len(dataframes):
         raise ValueError(
-            f"passthrough_columns ({len(passthrough_columns)}) and dataframes ({len(dataframes)}) must have the same length"
+            f"passthrough_columns ({len(passthrough_columns)}) and dataframes ({len(dataframes)}) "
+            "must have the same length"
         )
 
     for i, (df, targets, passthrough) in enumerate(zip(dataframes, target_columns, passthrough_columns)):
@@ -340,9 +341,7 @@ def pull_multi_task_data(
         id_dfs.append(df)
         id_targets.append(target_cols)
         id_passthrough.append(passthrough_cols)
-    merged = combine_multi_task_data(
-        id_dfs, id_targets, id_column=id_column, passthrough_columns=id_passthrough
-    )
+    merged = combine_multi_task_data(id_dfs, id_targets, id_column=id_column, passthrough_columns=id_passthrough)
 
     # Pass 2: smiles-based join (e.g. external/public data). The accumulated
     # `merged_targets` / `merged_passthrough` lists describe what already lives
