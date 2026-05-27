@@ -24,7 +24,6 @@ umap-learn
 rdkit
 mordredcommunity
 ipython
-pyyaml
 matplotlib
 torch
 
@@ -32,9 +31,7 @@ torch
 plotly
 dash
 dash-bootstrap-components
-dash-bootstrap-templates
 dash_ag_grid
-tabulate
 
 # Server
 uvicorn

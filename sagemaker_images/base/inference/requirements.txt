@@ -11,6 +11,5 @@ xgboost
 joblib
 rdkit
 mordredcommunity
-pyyaml
 fastapi
 uvicorn

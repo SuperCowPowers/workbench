@@ -11,4 +11,3 @@ xgboost
 joblib
 rdkit
 mordredcommunity
-pyyaml

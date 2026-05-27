@@ -22,5 +22,4 @@ umap-learn
 rdkit
 mordredcommunity
 ipython
-pyyaml
 torch
