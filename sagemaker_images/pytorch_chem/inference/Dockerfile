@@ -1,26 +1,28 @@
 # syntax=docker/dockerfile:1
 
 # Multi-stage build for the chemprop inference image. Layer 1 installs all
-# deps in one pass — pip uses PyTorch's cu130 index for torch + chemprop
-# and falls back to pypi (via --extra-index-url) for everything else.
-# Layer 2 installs workbench with --no-deps for small per-version-bump deltas.
+# locked deps from requirements.lock (every transitive pinned, including
+# torch==X.Y.Z+cpu from the PyTorch CPU index). Chemprop inference on small
+# batches is CPU-bound; GPU buys no real speedup at low batch sizes. Layer 2
+# installs workbench with --no-deps for small per-version-bump deltas.
 FROM python:3.12-slim AS builder
 
 # Build deps for any packages that need compilation
 RUN apt-get update && \
     apt-get install -y --no-install-recommends build-essential gcc
 
-# Layer 1: All deps in one pass. torch + chemprop come from the cu130
-# wheel index; the rest fall back to pypi via --extra-index-url. The pip
-# cache mount keeps downloaded wheels between builds — rebuilds after a
-# constraints.txt bump only re-install, don't re-download.
-COPY constraints.txt /tmp/
-COPY pytorch_chem/inference/requirements.txt /tmp/
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -c /tmp/constraints.txt \
-    --index-url https://download.pytorch.org/whl/cu130 \
-    --extra-index-url https://pypi.org/simple/ \
-    -r /tmp/requirements.txt
+# Install uv (single static binary; used to install from the lockfile)
+RUN pip install uv
+
+# Layer 1: All locked deps (every transitive pinned). torch+cpu comes from
+# the PyTorch CPU index — --extra-index-url + --index-strategy
+# unsafe-best-match tell uv which index hosts the +cpu wheel.
+COPY pytorch_chem/inference/requirements.lock /tmp/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system \
+        --extra-index-url https://download.pytorch.org/whl/cpu \
+        --index-strategy unsafe-best-match \
+        -r /tmp/requirements.lock
 
 # Final runtime image
 FROM python:3.12-slim
@@ -39,8 +41,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # workbench-bridges==0.2.10 retained for backward compat with existing
 # deployed-endpoint model bundles.
 ARG WORKBENCH_VERSION=0.8.351
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
+RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
     pip install --no-deps "workbench-bridges==0.2.10"
 
 # Add the shared serve script

@@ -14,30 +14,23 @@ RUN apt-get update && apt-get upgrade -y openssl && \
     apt-get autoremove -y && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Layer 1a: CPU-only PyTorch first — sagemaker v3 requires torch via
-# sagemaker-serve; the default linux wheel is the multi-GB CUDA build.
-# Pre-installing the CPU variant claims the torch slot so the later deps
-# resolve doesn't drag the CUDA wheel in. The pip cache mount (shared with
-# Layer 1b) keeps downloaded wheels between builds.
-COPY constraints.txt /tmp/
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -c /tmp/constraints.txt torch \
-    --index-url https://download.pytorch.org/whl/cpu \
-    --extra-index-url https://pypi.org/simple/
+# Install uv (single static binary; used to install from the lockfile)
+RUN pip install uv
 
-# Layer 1b: All other dependencies (changes only when requirements.txt or
-# constraints.txt changes). requirements.txt is the full workbench surface
-# + [ui] extras (dash/plotly/matplotlib) + uvicorn/asgiref for the server.
-# torch is also listed there but already installed in Layer 1a — pip skips
-# re-resolving it. deploy.sh copies constraints.txt into the build context.
-COPY requirements.txt /tmp/
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -c /tmp/constraints.txt -r /tmp/requirements.txt
+# Layer 1: All locked dependencies (every transitive pinned; lockfile pins
+# torch==X.Y.Z+cpu directly so we don't need the old two-step torch dance).
+# --extra-index-url + --index-strategy unsafe-best-match tell uv which index
+# hosts the +cpu wheel.
+COPY requirements.lock /tmp/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system \
+        --extra-index-url https://download.pytorch.org/whl/cpu \
+        --index-strategy unsafe-best-match \
+        -r /tmp/requirements.lock
 
 # Layer 2: Workbench only (changes often, ~20 MB)
 ARG WORKBENCH_VERSION=0.8.351
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-deps "workbench==${WORKBENCH_VERSION}"
+RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}"
 
 # Copy app code and configuration (after pip installs to avoid cache invalidation)
 COPY app.py /app/

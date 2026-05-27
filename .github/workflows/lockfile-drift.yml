@@ -1,0 +1,37 @@
+name: Lockfile Drift Check
+
+# Verifies every image's requirements.lock is in sync with its inputs
+# (pyproject.toml + the per-image requirements.in). Regenerates all lockfiles
+# via ci/lock.sh and fails if `git diff` shows changes — telling us when a
+# pyproject bump or requirements.in edit wasn't accompanied by a fresh lock.
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Regenerate all lockfiles
+        run: ./ci/lock.sh
+
+      - name: Verify no drift
+        run: |
+          if ! git diff --exit-code; then
+            echo ""
+            echo "❌  Lockfiles are out of sync with their inputs (pyproject.toml / requirements.in)."
+            echo "    Run ./ci/lock.sh locally and commit the diff."
+            exit 1
+          fi

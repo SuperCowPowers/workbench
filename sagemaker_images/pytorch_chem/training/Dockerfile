@@ -13,27 +13,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -sf /usr/bin/python3 /usr/bin/python \
     && rm -rf /var/lib/apt/lists/*
 
-# GPU containers on Ubuntu use system Python (no venv) and need --break-system-packages
-ENV BREAK_SYSTEM_PACKAGES=1
+# GPU containers on Ubuntu use system Python (no venv) and need
+# --break-system-packages to install into the externally-managed Python.
+ENV UV_BREAK_SYSTEM_PACKAGES=1
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
 
-# Layer 1: All deps in one pass. torch + chemprop come from the cu130 wheel
-# index; the rest (incl. shap and the workbench python libs) fall back to
-# pypi via --extra-index-url. The pip cache mount keeps downloaded wheels
-# between builds — rebuilds after a constraints.txt bump only re-install,
-# don't re-download.
-COPY constraints.txt /tmp/
-COPY pytorch_chem/training/requirements.txt /tmp/
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --break-system-packages \
-    -c /tmp/constraints.txt \
-    --index-url https://download.pytorch.org/whl/cu130 \
-    --extra-index-url https://pypi.org/simple/ \
-    -r /tmp/requirements.txt
+# Install uv (single static binary; used to install from the lockfile)
+RUN pip install uv
+
+# Layer 1: All locked deps (every transitive pinned). torch+cu130 comes from
+# the PyTorch CUDA index — --extra-index-url + --index-strategy
+# unsafe-best-match tell uv which index hosts the +cu130 wheel.
+COPY pytorch_chem/training/requirements.lock /tmp/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system \
+        --extra-index-url https://download.pytorch.org/whl/cu130 \
+        --index-strategy unsafe-best-match \
+        -r /tmp/requirements.lock
 
 # Layer 2: Workbench + bridges — rebuilds per version bump, ~20 MB delta.
 # workbench-bridges==0.2.10 retained for backward compat with existing
 # deployed-endpoint model bundles.
 ARG WORKBENCH_VERSION=0.8.351
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --break-system-packages --no-deps "workbench==${WORKBENCH_VERSION}" && \
-    pip install --break-system-packages --no-deps "workbench-bridges==0.2.10"
+RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
+    pip install --no-deps "workbench-bridges==0.2.10"

@@ -1,0 +1,20 @@
+# Deps for the chemprop training image. Smoke-contract subset + chemprop +
+# shap overlay + CUDA torch (lockfile pins torch==X.Y.Z+cu130 via the PyTorch
+# cu130 index, passed in ci/lock.sh). No fastapi/uvicorn — training jobs
+# don't serve.
+#
+# Version floors mirror pyproject.toml where applicable.
+
+boto3 >= 1.42.2
+botocore >= 1.42.2
+awswrangler >= 3.4.0
+requests >= 2.26.0
+pandas >= 2.2.1, < 3.0
+scikit-learn >= 1.5.2
+joblib >= 1.3.2
+rdkit >= 2026.3.1
+
+# Image-specific (chemprop + CUDA torch + shap for SHAP feature importance during training)
+torch
+chemprop
+shap

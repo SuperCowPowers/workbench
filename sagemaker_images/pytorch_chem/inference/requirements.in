@@ -1,0 +1,24 @@
+# Deps for the chemprop inference image. Smoke-contract subset + chemprop
+# overlay + CPU torch (lockfile pins torch==X.Y.Z+cpu via the PyTorch
+# CPU index, passed in ci/lock.sh). Chemprop inference on small batches
+# (typical real-time scoring) is CPU-bound work; GPU buys no real speedup
+# at low batch sizes and ~3GB of extra image weight.
+#
+# Version floors mirror pyproject.toml where applicable.
+
+boto3 >= 1.42.2
+botocore >= 1.42.2
+awswrangler >= 3.4.0
+requests >= 2.26.0
+pandas >= 2.2.1, < 3.0
+scikit-learn >= 1.5.2
+joblib >= 1.3.2
+rdkit >= 2026.3.1
+
+# Endpoint server
+fastapi
+uvicorn
+
+# Image-specific (chemprop + CUDA torch from the PyTorch index)
+torch
+chemprop

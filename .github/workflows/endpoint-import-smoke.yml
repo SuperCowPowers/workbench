@@ -31,7 +31,7 @@ jobs:
         # container's deps, not `pip install workbench` which is fat by
         # design) is what makes the heavy-deps blocklist below meaningful.
         run: |
-          pip install -c constraints.txt -r ci/endpoint_smoke_requirements.txt
+          pip install -r ci/endpoint_smoke_requirements.txt
           pip install --no-deps -e .
 
       # Single source of truth: ci/endpoint_import_smoke.py dynamically

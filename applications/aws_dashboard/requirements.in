@@ -1,0 +1,10 @@
+# Overlay deps for the dashboard image — anything beyond what `pyproject.toml`
+# (main + [misc] + [ui] extras) already provides.
+#
+# torch comes in transitively via sagemaker-serve and is picked up as
+# torch==X.Y.Z+cpu by the lockfile generation (ci/lock.sh passes the
+# PyTorch CPU index URL).
+
+# Server (Uvicorn runs the Flask/Dash app via the WSGI-to-ASGI wrapper)
+uvicorn
+asgiref

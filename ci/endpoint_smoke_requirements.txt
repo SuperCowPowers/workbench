@@ -17,6 +17,5 @@ pandas
 scikit-learn
 joblib
 rdkit
-pyyaml
 fastapi
 uvicorn

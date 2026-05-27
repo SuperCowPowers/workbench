@@ -36,11 +36,6 @@ VERSION_TAG="v${VERSION}_amd64"
 
 echo "📦 Building Docker image version: $VERSION_TAG"
 
-# Copy constraints.txt into build context — version pins are centralized at
-# the repo root; Dockerfile copies it into the image at build time.
-cp ../../constraints.txt constraints.txt
-trap 'rm -f constraints.txt' EXIT
-
 docker buildx build \
     --platform $PLATFORM \
     --build-arg WORKBENCH_CONFIG=$CONFIG \

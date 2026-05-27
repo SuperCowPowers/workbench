@@ -1,10 +1,9 @@
 # syntax=docker/dockerfile:1
 
-# Multi-stage build for the headless pipeline runner. Layer 1a pre-installs
-# CPU-only torch (claiming the torch slot before sagemaker-serve's
-# transitive resolution would grab the multi-GB CUDA wheel from pypi);
-# Layer 1b installs the full workbench dep cone. Layer 2 installs workbench
-# itself with --no-deps for small per-version-bump deltas.
+# Multi-stage build for the headless pipeline runner. Layer 1 installs the
+# full workbench dep cone from requirements.lock (every transitive pinned
+# with hashes). Layer 2 installs workbench itself with --no-deps for small
+# per-version-bump deltas.
 FROM python:3.12-slim AS builder
 
 # Install build dependencies
@@ -13,23 +12,20 @@ RUN apt-get update && \
         build-essential \
         gcc
 
-COPY constraints.txt /tmp/
-COPY ml_pipelines/requirements.txt /tmp/
+# Install uv (single static binary; used to install from the lockfile)
+RUN pip install uv
 
-# Layer 1a: Pre-install CPU torch from PyTorch's index. requirements.txt
-# also lists torch (by name) so the version pin in constraints.txt is
-# centralized; pip sees torch already installed when it processes
-# requirements.txt below and skips re-resolving it. The pip cache mount
-# (shared with Layer 1b) keeps downloaded wheels between builds.
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -c /tmp/constraints.txt torch \
-    --index-url https://download.pytorch.org/whl/cpu \
-    --extra-index-url https://pypi.org/simple/
+COPY ml_pipelines/requirements.lock /tmp/
 
-# Layer 1b: Full workbench runtime deps for the pipeline runner — runs
-# arbitrary user code that touches the full workbench surface.
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install -c /tmp/constraints.txt -r /tmp/requirements.txt
+# Layer 1: Install all locked dependencies (every transitive pinned —
+# no silent cascades on rebuild). torch comes from the PyTorch CPU index
+# (lockfile pins torch==2.12.0+cpu); --extra-index-url +
+# --index-strategy unsafe-best-match tell uv which index hosts the +cpu wheel.
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system \
+        --extra-index-url https://download.pytorch.org/whl/cpu \
+        --index-strategy unsafe-best-match \
+        -r /tmp/requirements.lock
 
 # Final runtime image
 FROM python:3.12-slim
@@ -53,8 +49,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # workbench-bridges==0.2.10 pinned for reproducibility while we still depend
 # on it; on track for deprecation once nothing references workbench_bridges.
 ARG WORKBENCH_VERSION=0.8.351
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
+RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
     pip install --no-deps "workbench-bridges==0.2.10"
 
 # Layer 3: App code (tiny, changes rarely)
