@@ -243,30 +243,40 @@ class PandasToFeatures(Transform):
 
     @staticmethod
     def convert_column_types(df: pd.DataFrame) -> pd.DataFrame:
-        """Convert the types of the DataFrame to the correct types for the Feature Store"""
-        for column in list(df.select_dtypes(include="bool").columns):
-            df[column] = df[column].astype("int32")
-        for column in list(df.select_dtypes(include="category").columns):
+        """Convert DataFrame columns to types compatible with SageMaker Feature Store.
+
+        Feature Store supports only three scalar types: Integral, Fractional, String.
+        Everything else gets coerced:
+          - bool / nullable boolean -> int32, or float64 if NAs are present (Integral/Fractional)
+          - category                -> str          (String)
+          - datetime                -> ISO-8601 str (String)
+          - pandas nullable Int/Float -> numpy int/float (or float64 if Int has NAs).
+            SageMaker V3's load_feature_definitions_from_dataframe() only recognizes
+            numpy dtypes, not pandas nullable dtypes. See
+            https://github.com/aws/sagemaker-python-sdk/issues/5675
+        """
+        # Bool -> Integral (or Fractional if NAs are present)
+        for column in df.select_dtypes(include=["bool", "boolean"]).columns:
+            col = df[column]
+            df[column] = col.astype("float64" if col.isna().any() else "int32")
+
+        # Category -> String
+        for column in df.select_dtypes(include="category").columns:
             df[column] = df[column].astype("str")
 
-        # Select all columns that are of datetime dtype and convert them to ISO-8601 strings
-        for column in [col for col in df.columns if pd.api.types.is_datetime64_any_dtype(df[col])]:
+        # Datetime -> String (ISO-8601)
+        for column in df.select_dtypes(include="datetime").columns:
             df[column] = df[column].map(datetime_to_iso8601).astype("string")
 
-        # FIXME: Downcast pandas nullable dtypes to numpy dtypes for Feature Store compatibility.
-        # SageMaker V3's load_feature_definitions_from_dataframe() only recognizes numpy dtypes
-        # (e.g. 'float64', 'int64') not pandas nullable dtypes ('Float64', 'Int64').
-        # See https://github.com/aws/sagemaker-python-sdk/issues/5675
+        # Pandas nullable numeric -> numpy equivalent (float64 fallback for Int with NAs)
         for column in df.columns:
-            dtype_name = str(df[column].dtype)
-            if dtype_name in ("Float64", "Float32", "Float16"):
-                df[column] = df[column].astype(dtype_name.lower())
-            elif dtype_name in ("Int64", "Int32", "Int16", "Int8", "UInt64", "UInt32", "UInt16", "UInt8"):
-                if df[column].isna().any():
-                    # Numpy integers can't represent NA, so fall back to float64
-                    df[column] = df[column].astype("float64")
+            dtype = df[column].dtype
+            if pd.api.types.is_extension_array_dtype(dtype) and dtype.kind in "iuf":
+                col = df[column]
+                if dtype.kind in "iu" and col.isna().any():
+                    df[column] = col.astype("float64")
                 else:
-                    df[column] = df[column].astype(dtype_name.lower())
+                    df[column] = col.astype(str(dtype).lower())
 
         return df
 
