@@ -9,7 +9,6 @@
 boto3
 botocore
 awswrangler
-aiobotocore
 sagemaker
 redis
 cryptography
