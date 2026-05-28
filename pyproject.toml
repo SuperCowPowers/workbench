@@ -55,8 +55,6 @@ dependencies = [
 [project.optional-dependencies]
 misc = [
     "networkx >= 3.2",
-    "cleanlab >= 2.9.0",
-    "datasets < 4.0.0",
     "umap-learn >= 0.5.8",
 ]
 ui = [

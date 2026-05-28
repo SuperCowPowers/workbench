@@ -4,7 +4,6 @@ aiohappyeyeballs==2.6.2
     # via aiohttp
 aiohttp==3.13.5
     # via
-    #   fsspec
     #   mlflow
     #   tritonclient
 aiosignal==1.4.0
@@ -12,17 +11,13 @@ aiosignal==1.4.0
 alembic==1.18.4
     # via mlflow
 annotated-doc==0.0.4
-    # via
-    #   fastapi
-    #   typer
+    # via fastapi
 annotated-types==0.7.0
     # via pydantic
 antlr4-python3-runtime==4.9.3
     # via omegaconf
 anyio==4.13.0
-    # via
-    #   httpx
-    #   starlette
+    # via starlette
 asgiref==3.11.1
     # via -r applications/aws_dashboard/requirements.in
 asttokens==3.0.1
@@ -69,8 +64,6 @@ cachetools==6.2.6
 certifi==2026.5.20
     # via
     #   geventhttpclient
-    #   httpcore
-    #   httpx
     #   requests
 cffi==2.0.0
     # via
@@ -78,15 +71,11 @@ cffi==2.0.0
     #   pynacl
 charset-normalizer==3.4.7
     # via requests
-cleanlab==2.9.0
-    # via workbench (pyproject.toml)
 click==8.4.1
     # via
     #   flask
-    #   huggingface-hub
     #   mlflow-skinny
     #   pyiceberg
-    #   typer
     #   uvicorn
 cloudpickle==3.1.2
     # via
@@ -117,16 +106,10 @@ databricks-sdk==0.112.0
     # via
     #   mlflow-skinny
     #   mlflow-tracing
-datasets==3.6.0
-    # via workbench (pyproject.toml)
 decorator==5.3.1
     # via ipython
 deepdiff==9.1.0
     # via sagemaker-serve
-dill==0.3.8
-    # via
-    #   datasets
-    #   multiprocess
 docker==7.1.0
     # via mlflow
 executing==2.2.1
@@ -134,10 +117,7 @@ executing==2.2.1
 fastapi==0.136.3
     # via mlflow-skinny
 filelock==3.29.0
-    # via
-    #   datasets
-    #   huggingface-hub
-    #   torch
+    # via torch
 flask==3.1.3
     # via
     #   dash
@@ -155,8 +135,6 @@ frozenlist==1.8.0
     #   aiosignal
 fsspec==2025.3.0
     # via
-    #   datasets
-    #   huggingface-hub
     #   pyiceberg
     #   s3fs
     #   torch
@@ -188,23 +166,12 @@ greenlet==3.3.2
 gunicorn==25.3.0
     # via mlflow
 h11==0.16.0
-    # via
-    #   httpcore
-    #   uvicorn
-hf-xet==1.5.0
-    # via huggingface-hub
-httpcore==1.0.9
-    # via httpx
-httpx==0.28.1
-    # via huggingface-hub
+    # via uvicorn
 huey==2.6.0
     # via mlflow
-huggingface-hub==1.16.4
-    # via datasets
 idna==3.16
     # via
     #   anyio
-    #   httpx
     #   requests
     #   yarl
 importlib-metadata==6.11.0
@@ -292,8 +259,6 @@ multidict==6.7.1
     # via
     #   aiohttp
     #   yarl
-multiprocess==0.70.16
-    # via datasets
 narwhals==2.21.2
     # via plotly
 nest-asyncio==1.6.0
@@ -312,9 +277,7 @@ numba==0.65.1
 numpy==2.4.6
     # via
     #   awswrangler
-    #   cleanlab
     #   contourpy
-    #   datasets
     #   matplotlib
     #   ml-dtypes
     #   mlflow
@@ -360,9 +323,7 @@ orderly-set==5.5.0
 packaging==26.2
     # via
     #   awswrangler
-    #   datasets
     #   gunicorn
-    #   huggingface-hub
     #   matplotlib
     #   mlflow-skinny
     #   mlflow-tracing
@@ -376,8 +337,6 @@ pandas==2.3.3
     # via
     #   workbench (pyproject.toml)
     #   awswrangler
-    #   cleanlab
-    #   datasets
     #   mlflow
     #   sagemaker-core
 paramiko==5.0.0
@@ -428,7 +387,6 @@ pure-eval==0.2.3
 pyarrow==23.0.1
     # via
     #   awswrangler
-    #   datasets
     #   mlflow
     #   sagemaker-mlops
 pyasn1==0.6.3
@@ -483,8 +441,6 @@ pytz==2026.2
     #   sagemaker-core
 pyyaml==6.0.3
     # via
-    #   datasets
-    #   huggingface-hub
     #   mlflow-skinny
     #   omegaconf
     #   sagemaker-core
@@ -504,7 +460,6 @@ requests==2.34.2
     #   workbench (pyproject.toml)
     #   dash
     #   databricks-sdk
-    #   datasets
     #   docker
     #   mlflow-skinny
     #   pyiceberg
@@ -515,7 +470,6 @@ rich==14.3.4
     # via
     #   pyiceberg
     #   sagemaker-core
-    #   typer
 rpds-py==0.30.0
     # via
     #   jsonschema
@@ -552,7 +506,6 @@ schema==0.7.8
 scikit-learn==1.8.0
     # via
     #   workbench (pyproject.toml)
-    #   cleanlab
     #   mlflow
     #   pynndescent
     #   skops
@@ -571,8 +524,6 @@ setuptools==82.0.1
     #   awswrangler
     #   dash
     #   torch
-shellingham==1.5.4
-    # via typer
 six==1.17.0
     # via
     #   mordredcommunity
@@ -605,17 +556,12 @@ tblib==3.2.2
     #   sagemaker-train
 tenacity==9.1.4
     # via pyiceberg
-termcolor==3.3.0
-    # via cleanlab
 threadpoolctl==3.6.0
     # via scikit-learn
 torch==2.10.0+cpu
     # via sagemaker-serve
 tqdm==4.67.3
     # via
-    #   cleanlab
-    #   datasets
-    #   huggingface-hub
     #   sagemaker-serve
     #   umap-learn
 traitlets==5.15.0
@@ -624,8 +570,6 @@ traitlets==5.15.0
     #   matplotlib-inline
 tritonclient==2.68.0
     # via sagemaker-serve
-typer==0.25.1
-    # via huggingface-hub
 typing-extensions==4.15.0
     # via
     #   aiosignal
@@ -635,7 +579,6 @@ typing-extensions==4.15.0
     #   dash
     #   fastapi
     #   graphene
-    #   huggingface-hub
     #   mlflow-skinny
     #   onnx
     #   opentelemetry-api
@@ -680,8 +623,6 @@ werkzeug==3.1.8
     #   flask-cors
 xgboost==3.2.0
     # via workbench (pyproject.toml)
-xxhash==3.7.0
-    # via datasets
 yarl==1.24.2
     # via aiohttp
 zipp==4.1.0
