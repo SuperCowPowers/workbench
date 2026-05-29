@@ -266,7 +266,7 @@ class View:
         Raises:
             ValueError: If the view type is not supported
         """
-        from workbench.core.views import DisplayView, ComputationView, TrainingView
+        from workbench.core.views import DisplayView, ComputationView
 
         # First if we're going to auto-create, we need to make sure the data source exists
         if not self.data_source.exists():
@@ -284,17 +284,6 @@ class View:
             self.log.important(f"Auto creating View {self.view_name} for {self.data_source.name}...")
             ComputationView.create(self.data_source)
             return True
-
-        # TrainingView
-        if self.view_name == "training":
-            # We're only going to create training views for FeatureSets
-            if self.is_feature_set:
-                self.log.important(f"Auto creating View {self.view_name} for {self.data_source.name}...")
-                TrainingView.create(self.data_source, id_column=self.auto_id_column)
-                return True
-            else:
-                self.log.warning("Training Views are only supported for FeatureSets...")
-                return False
 
         # If we get here, we don't support auto-creating this view
         self.log.warning(f"Auto-Create for {self.view_name} not implemented yet...")

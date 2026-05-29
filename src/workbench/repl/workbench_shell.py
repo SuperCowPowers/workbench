@@ -284,7 +284,6 @@ class WorkbenchShell:
             self.commands["CachedMeta"] = importlib.import_module("workbench.cached.cached_meta").CachedMeta
             self.commands["View"] = importlib.import_module("workbench.core.views.view").View
             self.commands["DisplayView"] = importlib.import_module("workbench.core.views.display_view").DisplayView
-            self.commands["TrainingView"] = importlib.import_module("workbench.core.views.training_view").TrainingView
             self.commands["ComputationView"] = importlib.import_module(
                 "workbench.core.views.computation_view"
             ).ComputationView
