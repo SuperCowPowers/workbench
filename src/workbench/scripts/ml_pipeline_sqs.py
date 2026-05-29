@@ -254,7 +254,7 @@ def main():
     parser.add_argument(
         "--script-args",
         default=None,
-        help="JSON-encoded list of args forwarded verbatim to the pipeline script (e.g., '[\"--epochs\", \"10\"]')",
+        help='JSON-encoded list of args forwarded verbatim to the pipeline script (e.g., \'["--epochs", "10"]\')',
     )
     args = parser.parse_args()
 
