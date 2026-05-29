@@ -8,7 +8,7 @@ Example:
     python model_script_harness.py pytorch.py aqsol-reg-pytorch
 
 This allows you to test LOCAL changes to a model script against deployed model artifacts.
-Evaluation data is automatically pulled from the FeatureSet (training = FALSE rows).
+Evaluation data is automatically pulled from the model's training view.
 
 Optional: testing/env.json with additional environment variables
 """
@@ -43,10 +43,10 @@ def get_eval_data(workbench_model: Model) -> pd.DataFrame:
     if not fs.exists():
         raise ValueError(f"No FeatureSet found: {fs_name}")
 
-    # Get evaluation data (training = FALSE)
+    # Pull data from the model's training view
     table = workbench_model.training_view().table
     print(f"Querying evaluation data from {table}...")
-    eval_df = fs.query(f'SELECT * FROM "{table}" WHERE training = FALSE')
+    eval_df = fs.query(f'SELECT * FROM "{table}"')
     print(f"Retrieved {len(eval_df)} evaluation rows")
 
     return eval_df
