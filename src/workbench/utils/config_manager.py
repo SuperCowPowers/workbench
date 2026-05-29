@@ -1,7 +1,6 @@
 # Configuration Manager Class (Singleton Pattern)
 import json
 import os
-import sys
 import platform
 import logging
 from typing import Any, Dict
@@ -14,9 +13,6 @@ from workbench.utils.execution_environment import running_as_service
 
 class FatalConfigError(Exception):
     """Exception raised for errors in the configuration."""
-
-    def __init__(self):
-        sys.exit(1)
 
 
 class ConfigManager:
