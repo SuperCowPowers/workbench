@@ -53,7 +53,6 @@ class PandasToFeatures(Transform):
         self.categorical_dtypes = {}  # Used for streaming/chunking
         self.output_df = None
         self.table_format = TableFormatEnum.ICEBERG
-        self.incoming_hold_out_ids = None
 
         # These will be set in the transform method
         self.output_feature_group = None
@@ -315,13 +314,9 @@ class PandasToFeatures(Transform):
         self._ensure_id_column()
         self._ensure_event_time()
 
-        # Check for a training column (Workbench uses dynamic training columns)
+        # The 'training' column is a model-training concern, not FeatureSet data
         if "training" in self.output_df.columns:
-            self.log.important(
-                """Training column detected: Since FeatureSets are read-only, Workbench creates a training view
-                that can be dynamically changed. We'll use this training column to create a training view."""
-            )
-            self.incoming_hold_out_ids = self.output_df[~self.output_df["training"]][self.id_column].tolist()
+            self.log.important("Dropping 'training' column (train/val splits are handled at model training)")
             self.output_df = self.output_df.drop(columns=["training"])
 
         # We need to convert some of our column types to the correct types
@@ -427,10 +422,6 @@ class PandasToFeatures(Transform):
         # Call the FeatureSet onboard method to compute a bunch of EDA stuff
         self.output_feature_set.onboard()
 
-        # Set Hold Out Ids (if we got them during creation)
-        if self.incoming_hold_out_ids:
-            self.output_feature_set.set_training_holdouts(self.incoming_hold_out_ids)
-
     def ensure_feature_group_created(self, feature_group):
         feature_group.refresh()
         status = feature_group.feature_group_status
@@ -484,10 +475,6 @@ if __name__ == "__main__":
     # Grab the test_data DataSource
     ds = DataSource("test_data")
     data_df = ds.sample()
-
-    # Test setting a training column
-    data_df["training"] = False
-    data_df.loc[0:80, "training"] = True
 
     # Create my DF to Feature Set Transform (with one-hot encoding)
     df_to_features = PandasToFeatures("test_features")
