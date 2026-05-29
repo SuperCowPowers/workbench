@@ -15,7 +15,7 @@ from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.data_source_factory import DataSourceFactory
 from workbench.core.artifacts.athena_source import AthenaSource
 
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Union
 
 from workbench.utils.aws_utils import aws_throttle
 
@@ -363,16 +363,6 @@ class FeatureSetCore(Artifact):
         full_s3_path = s3_output_path + f"/{query_execution['QueryExecution']['QueryExecutionId']}.csv"
         return full_s3_path
 
-    def get_training_data(self) -> pd.DataFrame:
-        """Get the training data for this FeatureSet
-
-        Returns:
-            pd.DataFrame: The training data for this FeatureSet
-        """
-        from workbench.core.views.view import View
-
-        return View(self, "training").pull_dataframe(limit=1_000_000)
-
     def snapshot_query(self, table_name: str = None) -> str:
         """An Athena query to get the latest snapshot of features
 
@@ -544,172 +534,6 @@ class FeatureSetCore(Artifact):
         holdout_ids = holdout_df[self.id_column].tolist()
         self.log.important(f"Temporal Split: end_date={end_date} ({len(holdout_ids)} holdout rows)")
         return {hid: 0.0 for hid in holdout_ids}
-
-    def set_training_holdouts(self, holdout_ids: list[str]):
-        """Set the hold out ids for the training view for this FeatureSet
-
-        Args:
-            holdout_ids (list[str]): The list of holdout ids.
-        """
-        from workbench.core.views import TrainingView
-
-        self.log.important(f"Setting Training Holdouts: {len(holdout_ids)} ids...")
-        TrainingView.create(self, id_column=self.id_column, holdout_ids=holdout_ids)
-
-    def get_training_holdouts(self) -> list[str]:
-        """Get the hold out ids for the training view for this FeatureSet
-
-        Returns:
-            list[str]: The list of holdout ids.
-        """
-
-        # Grab the holdouts from the training view
-        self.log.important("Getting Training Holdouts...")
-        table = self.view("training").table
-        hold_out_ids = self.query(f'SELECT {self.id_column} FROM "{table}" where training = FALSE')[
-            self.id_column
-        ].tolist()
-        return hold_out_ids
-
-    def set_sample_weights(
-        self,
-        weights: Union[Dict[Union[str, int], float], pd.DataFrame],
-        default_weight: float = 1.0,
-        exclude_zero_weights: bool = True,
-    ):
-        """Configure training view with sample weights for each ID.
-
-        Args:
-            weights (Union[dict, pd.DataFrame]): Sample weights as either:
-                - dict: Mapping of ID to sample weight (sparse/small)
-                - DataFrame: Two columns [id_column, "sample_weight"] (dense/large)
-                Weight semantics:
-                - weight > 1.0: oversample/emphasize
-                - weight = 1.0: normal (default)
-                - 0 < weight < 1.0: downweight/de-emphasize
-                - weight = 0.0: exclude from training
-            default_weight (float): Weight for IDs not in weights (default: 1.0)
-            exclude_zero_weights (bool): If True, filter out rows with sample_weight=0 (default: True)
-
-        Note:
-            Weights are stored as a supplemental table and joined to the training view.
-        """
-        from workbench.core.views import TrainingView
-
-        # Handle empty weights (dict or DataFrame)
-        is_empty = (isinstance(weights, dict) and not weights) or (isinstance(weights, pd.DataFrame) and weights.empty)
-        if is_empty:
-            self.log.important("Empty weights, creating standard training view")
-            self._delete_weights_table()
-            TrainingView.create(self, id_column=self.id_column)
-            return
-
-        self.log.important(f"Setting sample weights for {len(weights)} IDs")
-        weights_table = self._create_weights_table(weights)
-
-        # Build JOIN query with COALESCE for default weight
-        inner_sql = f"""SELECT t.*, COALESCE(w.sample_weight, {default_weight}) AS sample_weight
-            FROM {self.table} t
-            LEFT JOIN {weights_table} w ON t.{self.id_column} = w.{self.id_column}"""
-
-        # Optionally filter out zero weights
-        if exclude_zero_weights:
-            if isinstance(weights, dict):
-                zero_count = sum(1 for w in weights.values() if w == 0.0)
-            else:
-                zero_count = int((weights["sample_weight"] == 0.0).sum())
-            if zero_count:
-                self.log.important(f"Filtering out {zero_count} rows with sample_weight = 0")
-            sql_query = f"SELECT * FROM ({inner_sql}) WHERE sample_weight > 0"
-        else:
-            sql_query = inner_sql
-
-        TrainingView.create_with_sql(self, sql_query=sql_query, id_column=self.id_column)
-
-    def get_sample_weights(self) -> pd.DataFrame:
-        """Read current sample weights from the supplemental weights table.
-
-        Returns:
-            pd.DataFrame: DataFrame with columns [id_column, "sample_weight"].
-                Returns empty DataFrame if no weights table exists.
-        """
-        weights_table = f"_{self.table}___sample_weights"
-        database = self.data_source.database
-
-        # Check if the table exists before querying
-        if not wr.catalog.does_table_exist(database, weights_table, boto3_session=self.data_source.boto3_session):
-            return pd.DataFrame(columns=[self.id_column, "sample_weight"])
-
-        df = self.query(f'SELECT * FROM "{weights_table}"')
-        if df is not None and len(df) > 0:
-            return df[[self.id_column, "sample_weight"]].reset_index(drop=True)
-        return pd.DataFrame(columns=[self.id_column, "sample_weight"])
-
-    def add_filter(self, id_list: list, exclude_zero_weights: bool = True):
-        """Additively filter out IDs from the training view.
-
-        Reads existing sample weights, sets weight=0.0 for the given IDs,
-        and recreates the training view. This is additive -- existing weights
-        are preserved for IDs not in the filter list.
-
-        Args:
-            id_list (list): List of IDs to filter out (set to weight 0.0)
-            exclude_zero_weights (bool): If True, filter out rows with sample_weight=0 (default: True)
-        """
-        # Read existing weights
-        existing = self.get_sample_weights()
-
-        # Create filter DataFrame (all zeros)
-        filter_df = pd.DataFrame({self.id_column: id_list, "sample_weight": 0.0})
-
-        # Merge: filter_df overwrites existing weights for those IDs
-        if not existing.empty:
-            combined = pd.concat([existing, filter_df]).drop_duplicates(subset=[self.id_column], keep="last")
-        else:
-            combined = filter_df
-
-        # Apply combined weights
-        self.set_sample_weights(combined, exclude_zero_weights=exclude_zero_weights)
-
-    def _delete_weights_table(self):
-        """Delete the supplemental weights table if it exists."""
-        from workbench.core.views.view_utils import delete_table
-
-        weights_table = f"_{self.table}___sample_weights"
-        self.log.info(f"Deleting supplemental weights table: {weights_table}")
-        delete_table(weights_table, self.data_source.database, self.data_source.boto3_session)
-
-        # Small delay to allow Glue catalog to propagate the delete
-        time.sleep(3)
-
-    def _create_weights_table(self, weights: Union[Dict[Union[str, int], float], pd.DataFrame]) -> str:
-        """Store sample weights as a supplemental data table.
-
-        Args:
-            weights (Union[dict, pd.DataFrame]): Sample weights as dict or DataFrame
-
-        Returns:
-            str: The name of the created supplemental table
-        """
-        from workbench.core.views.view_utils import dataframe_to_table
-
-        # Convert dict to DataFrame if needed
-        if isinstance(weights, dict):
-            df = pd.DataFrame(
-                list(weights.items()),
-                columns=[self.id_column, "sample_weight"],
-            )
-        else:
-            df = weights[[self.id_column, "sample_weight"]].copy()
-
-        # Supplemental table name follows convention: _{base_table}___sample_weights
-        weights_table = f"_{self.table}___sample_weights"
-
-        # Store as supplemental data table
-        self.log.info(f"Creating supplemental weights table: {weights_table}")
-        dataframe_to_table(self.data_source, df, weights_table)
-
-        return weights_table
 
     @classmethod
     def delete_views(cls, table: str, database: str):
@@ -893,11 +717,6 @@ if __name__ == "__main__":
     print("\nStorage Details:")
     pprint(storage.details())
 
-    # Test getting the holdout ids
-    print("Getting the hold out ids...")
-    holdout_ids = my_features.get_training_holdouts()
-    print(f"Holdout IDs: {holdout_ids}")
-
     # Get a sample of the data
     df = my_features.sample()
     print(f"Sample Data: {df.shape}")
@@ -911,33 +730,6 @@ if __name__ == "__main__":
     # Get outliers for all the columns
     outlier_df = my_features.outliers()
     print(outlier_df)
-
-    # Set the holdout ids for the training view
-    print("Setting hold out ids...")
-    table = my_features.view("training").table
-    df = my_features.query(f'SELECT auto_id, length FROM "{table}"')
-    my_holdout_ids = [id for id in df["auto_id"] if id < 20]
-    my_features.set_training_holdouts(my_holdout_ids)
-
-    # Get the training data
-    print("Getting the training data...")
-    training_data = my_features.get_training_data()
-    print(f"Training Data: {training_data.shape}")
-
-    # Test set_sample_weights
-    print("\n--- Testing set_sample_weights ---")
-    sample_ids = df["auto_id"].tolist()[:5]
-    weight_dict = {sample_ids[0]: 0.0, sample_ids[1]: 0.5, sample_ids[2]: 2.0}
-    my_features.set_sample_weights(weight_dict)
-    training_view = my_features.view("training")
-    training_df = training_view.pull_dataframe()
-    print(f"Training view shape after set_sample_weights: {training_df.shape}")
-    print(f"Columns: {training_df.columns.tolist()}")
-    assert "sample_weight" in training_df.columns, "sample_weight column missing!"
-    assert "training" in training_df.columns, "training column missing!"
-    # Verify zero-weight row was excluded
-    assert sample_ids[0] not in training_df["auto_id"].values, "Zero-weight ID should be excluded!"
-    print("set_sample_weights test passed!")
 
     # Now delete the AWS artifacts associated with this Feature Set
     # print("Deleting Workbench Feature Set...")
