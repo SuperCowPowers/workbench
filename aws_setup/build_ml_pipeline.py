@@ -1,10 +1,8 @@
-"""This Script creates the Workbench Artifacts in AWS needed for the tests
+"""This Script creates a basic ML Pipeline for the abalone dataset to test that the Workbench is setup correctly.
 
 DataSources:
-    - test_data
     - abalone_data
 FeatureSets:
-    - test_features
     - abalone_features
 Models:
     - abalone-regression
@@ -20,30 +18,13 @@ from workbench.api.feature_set import FeatureSet
 from workbench.api.model import Model, ModelType, ModelFramework
 from workbench.api.endpoint import Endpoint
 
-
-def redis_check():
-    """Check if the Redis Database is available"""
-    print("*** Redis Database Check ***")
-    try:
-        from workbench.utils.redis_cache import RedisCache
-
-        RedisCache(prefix="test")
-        print("Redis Database Check Success...")
-    except RuntimeError as err:
-        print(f"Redis Database Check Failed: {err} but this is fine.. Redis is optional")
-
-
 if __name__ == "__main__":
     # Get the path to the dataset in the repository data directory
-    test_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "test_data.csv"
     abalone_data_path = Path(sys.modules["workbench"].__file__).parent.parent.parent / "data" / "abalone.csv"
 
     """Check if the AWS Account is Setup Correctly"""
     print("*** AWS Identity Check ***")
     AWSAccountClamp().check_aws_identity()
-
-    # Check that the Redis Database is available
-    redis_check()
 
     # Create the abalone_data DataSource
     if not DataSource("abalone_data").exists():
