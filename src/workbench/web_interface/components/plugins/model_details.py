@@ -261,19 +261,9 @@ class InferenceMetrics(PluginInterface):
             default_run (str): The default inference run
         """
         inference_runs = model.list_inference_runs()
-
         if not inference_runs:
             return [], None
-
-        # Default inference run (full_cross_fold if it exists, then auto_inference, then first)
-        if "full_cross_fold" in inference_runs:
-            default_inference_run = "full_cross_fold"
-        elif "auto_inference" in inference_runs:
-            default_inference_run = "auto_inference"
-        else:
-            default_inference_run = inference_runs[0]
-
-        return inference_runs, default_inference_run
+        return inference_runs, model.default_inference_run()
 
 
 class ModelDetails(PluginInterface):

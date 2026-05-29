@@ -250,6 +250,24 @@ class ModelCore(Artifact):
             inference_runs.append("model_training")
         return inference_runs
 
+    def default_inference_run(self) -> Union[str, None]:
+        """Resolve the default inference capture name for this model.
+
+        Priority: full_cross_fold -> test_inference -> first available inference run.
+        The model_training capture is excluded from this resolution.
+
+        Returns:
+            str | None: The capture name, or None if no inference runs exist.
+        """
+        inference_runs = [run for run in self.list_inference_runs() if run != "model_training"]
+        if not inference_runs:
+            return None
+        if "full_cross_fold" in inference_runs:
+            return "full_cross_fold"
+        if "test_inference" in inference_runs:
+            return "test_inference"
+        return inference_runs[0]
+
     def delete_inference_run(self, inference_run_name: str):
         """Delete the inference run for this model
 
@@ -271,22 +289,23 @@ class ModelCore(Artifact):
         else:
             self.log.important(f"No inference data found for {self.model_name}!")
 
-    def get_inference_metrics(self, capture_name: str = "auto") -> Union[pd.DataFrame, None]:
+    def get_inference_metrics(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the inference performance metrics for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: "auto")
+            capture_name (str, optional): Specific capture_name (default: "default")
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
 
         Note:
-            If a capture_name isn't specified this will try to the 'first' available metrics
+            With "default" this resolves via default_inference_run()
+            (full_cross_fold -> test_inference -> first run).
         """
-        # Try to get the auto_capture 'training_holdout' or the training
-        if capture_name == "auto":
-            metric_list = self.list_inference_runs()
-            if metric_list:
-                return self.get_inference_metrics(metric_list[0])
+        # Resolve the default capture (full_cross_fold -> test_inference -> first run)
+        if capture_name == "default":
+            run = self.default_inference_run()
+            if run:
+                return self.get_inference_metrics(run)
             else:
                 self.log.warning(f"No performance metrics found for {self.model_name}!")
                 return None
@@ -311,11 +330,11 @@ class ModelCore(Artifact):
                 self.log.warning(f"Performance metrics {capture_name} not found for {self.model_name}!")
                 return None
 
-    def confusion_matrix(self, capture_name: str = "auto") -> Union[pd.DataFrame, None]:
+    def confusion_matrix(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name or "training" (default: "auto")
+            capture_name (str, optional): Specific capture_name or "model_training" (default: "default")
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
@@ -326,10 +345,10 @@ class ModelCore(Artifact):
             self.log.critical(error_msg)
             raise ValueError(error_msg)
 
-        # Grab the metrics from the Workbench Metadata (try inference first, then training)
-        if capture_name == "auto":
-            cm = self.confusion_matrix("auto_inference")
-            return cm if cm is not None else self.confusion_matrix("model_training")
+        # Resolve the default capture (full_cross_fold -> test_inference -> first run)
+        if capture_name == "default":
+            run = self.default_inference_run()
+            return self.confusion_matrix(run) if run else None
 
         # Grab the confusion matrix captured during model training (could return None)
         if capture_name == "model_training":
