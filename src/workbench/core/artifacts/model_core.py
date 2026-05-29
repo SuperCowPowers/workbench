@@ -1179,15 +1179,23 @@ class ModelCore(Artifact):
                 {"workbench_training_metrics": metrics_df.to_dict(), "workbench_training_cm": cm_df.to_dict()}
             )
 
-    def _load_inference_metrics(self, capture_name: str = "test_inference"):
+    def _load_inference_metrics(self, capture_name: str = "default"):
         """Internal: Retrieve the inference model metrics for this model
                      and load the data into the Workbench Metadata
 
         Args:
-            capture_name (str, optional): A specific capture_name (default: "test_inference")
+            capture_name (str, optional): A specific capture_name, or "default" to
+                resolve via default_inference_run() (default: "default")
         Notes:
             This may or may not exist based on whether an Endpoint ran Inference
         """
+        # Resolve the default capture (full_cross_fold -> test_inference -> first run)
+        if capture_name == "default":
+            capture_name = self.default_inference_run()
+        if capture_name is None:
+            self.upsert_workbench_meta({"workbench_inference_metrics": None})
+            return
+
         s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_metrics.csv"
         inference_metrics = pull_s3_data(s3_path)
 
@@ -1195,11 +1203,12 @@ class ModelCore(Artifact):
         metrics_storage = None if inference_metrics is None else inference_metrics.to_dict("records")
         self.upsert_workbench_meta({"workbench_inference_metrics": metrics_storage})
 
-    def get_inference_metadata(self, capture_name: str = "test_inference") -> Union[pd.DataFrame, None]:
+    def get_inference_metadata(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the inference metadata for this model
 
         Args:
-            capture_name (str, optional): A specific capture_name (default: "test_inference")
+            capture_name (str, optional): A specific capture_name, or "default" to
+                resolve via default_inference_run() (default: "default")
 
         Returns:
             dict: Dictionary of the inference metadata (might be None)
@@ -1209,6 +1218,12 @@ class ModelCore(Artifact):
         # Sanity check the inference path (which may or may not exist)
         if self.endpoint_inference_path is None:
             return None
+
+        # Resolve the default capture (full_cross_fold -> test_inference -> first run)
+        if capture_name == "default":
+            capture_name = self.default_inference_run()
+            if capture_name is None:
+                return None
 
         # Check for model_training capture_name
         if capture_name == "model_training":
@@ -1233,17 +1248,16 @@ class ModelCore(Artifact):
             self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
 
-    def get_inference_predictions(self, capture_name: str = "full_cross_fold") -> Union[pd.DataFrame, None]:
+    def get_inference_predictions(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: full_cross_fold)
+            capture_name (str, optional): A specific capture_name, or "default" to
+                resolve via default_inference_run() (default: "default")
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
-        self.log.important(f"Grabbing {capture_name} predictions for {self.model_name}...")
-
         # Sanity check that the model should have predictions
         has_predictions = self.model_type in [
             ModelType.CLASSIFIER,
@@ -1254,6 +1268,14 @@ class ModelCore(Artifact):
         if not has_predictions:
             self.log.warning(f"No Predictions for {self.model_name}...")
             return None
+
+        # Resolve the default capture (full_cross_fold -> test_inference -> first run)
+        if capture_name == "default":
+            capture_name = self.default_inference_run()
+            if capture_name is None:
+                self.log.warning(f"No inference runs for {self.model_name}...")
+                return None
+        self.log.important(f"Grabbing {capture_name} predictions for {self.model_name}...")
 
         # Special case for model_training
         if capture_name == "model_training":

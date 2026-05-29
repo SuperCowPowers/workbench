@@ -86,14 +86,14 @@ class ModelPlot(PluginInterface):
         Args:
             model (CachedModel): The model to visualize
             **kwargs:
-                - inference_run (str): Inference capture name (default: "full_cross_fold")
+                - inference_run (str): Inference capture name (default: resolved via default_inference_run())
 
         Returns:
             list: Property values [scatter_style, confusion_style, ...scatter_props, ...confusion_props]
         """
         # Cache for theme re-rendering
         self.model = model
-        self.inference_run = kwargs.get("inference_run", "full_cross_fold")
+        self.inference_run = kwargs.get("inference_run") or model.default_inference_run()
 
         # Determine model type and set visibility
         # Use visibility/height instead of display:none to preserve Bootstrap grid layout

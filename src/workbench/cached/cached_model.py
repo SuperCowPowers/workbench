@@ -86,12 +86,13 @@ class CachedModel(CachedArtifactMixin, ModelCore):
 
     @CachedArtifactMixin.cache_result
     def get_inference_predictions(
-        self, capture_name: str = "full_cross_fold", target_rows: int = 50000
+        self, capture_name: str = "default", target_rows: int = 50000
     ) -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: full_cross_fold)
+            capture_name (str, optional): A specific capture_name, or "default" to
+                resolve via default_inference_run() (default: "default")
             target_rows (int, optional): Target number of rows to return (default: 2000)
 
         Returns:
