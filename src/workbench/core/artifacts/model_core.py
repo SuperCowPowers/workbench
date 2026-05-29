@@ -877,9 +877,8 @@ class ModelCore(Artifact):
         if owner:
             self.set_owner(owner)
 
-        # Load the training metrics and inference metrics
+        # Load the training metrics
         self._load_training_metrics()
-        self._load_inference_metrics()
 
         # Remove the needs_onboard tag
         self.remove_health_tag("needs_onboard")
@@ -1178,30 +1177,6 @@ class ModelCore(Artifact):
             self.upsert_workbench_meta(
                 {"workbench_training_metrics": metrics_df.to_dict(), "workbench_training_cm": cm_df.to_dict()}
             )
-
-    def _load_inference_metrics(self, capture_name: str = "default"):
-        """Internal: Retrieve the inference model metrics for this model
-                     and load the data into the Workbench Metadata
-
-        Args:
-            capture_name (str, optional): A specific capture_name, or "default" to
-                resolve via default_inference_run() (default: "default")
-        Notes:
-            This may or may not exist based on whether an Endpoint ran Inference
-        """
-        # Resolve the default capture (full_cross_fold -> test_inference -> first run)
-        if capture_name == "default":
-            capture_name = self.default_inference_run()
-        if capture_name is None:
-            self.upsert_workbench_meta({"workbench_inference_metrics": None})
-            return
-
-        s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_metrics.csv"
-        inference_metrics = pull_s3_data(s3_path)
-
-        # Store data into the Workbench Metadata
-        metrics_storage = None if inference_metrics is None else inference_metrics.to_dict("records")
-        self.upsert_workbench_meta({"workbench_inference_metrics": metrics_storage})
 
     def get_inference_metadata(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the inference metadata for this model

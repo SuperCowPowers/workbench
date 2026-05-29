@@ -1070,11 +1070,6 @@ class EndpointCore(Artifact):
             self.log.info(f"Writing confusion matrix to {inference_capture_path}/inference_cm.csv")
             wr.s3.to_csv(conf_mtx, f"{inference_capture_path}/inference_cm.csv", index=False)
 
-        # Now recompute the details for our Model
-        self.log.important(f"Loading inference metrics for {self.model_name}...")
-        model = ModelCore(self.model_name)
-        model._load_inference_metrics(capture_name)
-
     def _save_target_inference(
         self,
         inference_capture_path: str,
