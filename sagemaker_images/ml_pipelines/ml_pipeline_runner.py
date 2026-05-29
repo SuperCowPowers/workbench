@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import subprocess
 import boto3
 import logging
@@ -20,14 +21,18 @@ def download_ml_pipeline_from_s3(s3_path: str, local_path: str):
     s3_client.download_file(bucket, key, local_path)
 
 
-def run_ml_pipeline(script_path: str):
-    """Execute the ML pipeline script."""
-    log.info(f"Executing ML pipeline: {script_path}")
+def run_ml_pipeline(script_path: str, script_args: list[str] | None = None):
+    """Execute the ML pipeline script.
+
+    Args:
+        script_path (str): Local path to the downloaded pipeline script
+        script_args (list[str] | None): Args forwarded verbatim to the script
+    """
+    cmd = [sys.executable, script_path, *(script_args or [])]
+    log.info(f"Executing ML pipeline: {' '.join(cmd)}")
     try:
-        # Run the script with python
-        result = subprocess.run(
-            [sys.executable, script_path], check=False, text=True  # Don't raise exception on non-zero exit
-        )
+        # Run the script with python (don't raise on non-zero exit)
+        result = subprocess.run(cmd, check=False, text=True)
         if result.returncode == 0:
             log.info("ML pipeline completed successfully")
         else:
@@ -51,6 +56,9 @@ def main():
         log.error("ML_PIPELINE_S3_PATH environment variable not set")
         sys.exit(1)
 
+    # Args to forward to the pipeline script (JSON-encoded list, if any)
+    script_args = json.loads(os.environ.get("PIPELINE_ARGS", "[]"))
+
     # Construct filename for local download
     script_name = os.path.basename(ml_pipeline_s3_path)
     local_script_path = f"/tmp/{script_name}"
@@ -59,7 +67,7 @@ def main():
         download_ml_pipeline_from_s3(ml_pipeline_s3_path, local_script_path)
 
         # Execute the ML pipeline
-        exit_code = run_ml_pipeline(local_script_path)
+        exit_code = run_ml_pipeline(local_script_path, script_args)
 
         # Clean up
         os.remove(local_script_path)

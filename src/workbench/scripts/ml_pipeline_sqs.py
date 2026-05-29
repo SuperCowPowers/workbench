@@ -25,6 +25,7 @@ def submit_to_sqs(
     pipeline_meta: str | None = None,
     outputs: list[str] | None = None,
     inputs: list[str] | None = None,
+    script_args: list[str] | None = None,
 ) -> None:
     """
     Upload script to S3 and submit message to SQS queue for processing.
@@ -41,12 +42,15 @@ def submit_to_sqs(
         pipeline_meta (str | None): Optional JSON string for PIPELINE_META environment variable
         outputs (list[str] | None): Stage outputs for dependency tracking (e.g., ["dag:stage_0"])
         inputs (list[str] | None): Stage inputs for dependency tracking (e.g., ["dag:stage_0"])
+        script_args (list[str] | None): Args forwarded verbatim to the pipeline script,
+            passed to the Batch container as the PIPELINE_ARGS environment variable
 
     Raises:
         ValueError: If size is invalid or script file not found
     """
     outputs = outputs or []
     inputs = inputs or []
+    script_args = script_args or []
 
     print(f"\n{'=' * 60}")
     print("SUBMITTING ML PIPELINE JOB")
@@ -73,6 +77,8 @@ def submit_to_sqs(
     print(f"  Temporal Split: {temporal_split}")
     if pipeline_meta:
         print(f"  Pipeline Meta: {pipeline_meta}")
+    if script_args:
+        print(f"  Script Args: {script_args}")
     print(f"  Bucket: {workbench_bucket}")
     if outputs:
         print(f"  Outputs: {outputs}")
@@ -144,6 +150,8 @@ def submit_to_sqs(
     }
     if pipeline_meta:
         message["environment"]["PIPELINE_META"] = pipeline_meta
+    if script_args:
+        message["environment"]["PIPELINE_ARGS"] = json.dumps(script_args)
 
     # Stage dependency info for batch_trigger
     if outputs:
@@ -243,10 +251,16 @@ def main():
         default=None,
         help="Comma-separated stage inputs for dependency tracking (e.g., 'dag:stage_0')",
     )
+    parser.add_argument(
+        "--script-args",
+        default=None,
+        help="JSON-encoded list of args forwarded verbatim to the pipeline script (e.g., '[\"--epochs\", \"10\"]')",
+    )
     args = parser.parse_args()
 
     outputs = args.outputs.split(",") if args.outputs else []
     inputs = args.inputs.split(",") if args.inputs else []
+    script_args = json.loads(args.script_args) if args.script_args else []
 
     try:
         submit_to_sqs(
@@ -261,6 +275,7 @@ def main():
             pipeline_meta=args.pipeline_meta,
             outputs=outputs,
             inputs=inputs,
+            script_args=script_args,
         )
     except Exception as e:
         print(f"\n  ERROR: {e}")

@@ -14,6 +14,9 @@ Usage:
     ml_pipeline_launcher my_script.py            # Launch exact script (modeless, via SQS)
     ml_pipeline_launcher --dt --dry-run          # Show what would be launched without launching
     ml_pipeline_launcher --local --dt ppb_human  # Run a single pipeline locally
+
+Args after a literal '--' are forwarded verbatim to the underlying script:
+    ml_pipeline_launcher --dt my_script.py -- --epochs 10 --lr 0.01
 """
 
 import argparse
@@ -394,8 +397,15 @@ def print_summary(plan: RunPlan, selection_desc: str, mode: str | None, args: ar
     print()
 
 
-def run_pipelines(plan: RunPlan, args: argparse.Namespace):
-    """Execute all pipeline runs (local or SQS)."""
+def run_pipelines(plan: RunPlan, args: argparse.Namespace, extra_args: list[str]):
+    """Execute all pipeline runs (local or SQS).
+
+    Args:
+        plan (RunPlan): Execution plan from sort_pipelines()
+        args (argparse.Namespace): Parsed launcher arguments
+        extra_args (list[str]): Args after the ``--`` separator, forwarded
+            verbatim to each underlying pipeline script
+    """
     serverless = not args.realtime
 
     # Countdown before launching (skip for local runs)
@@ -420,7 +430,7 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace):
                 env["PIPELINE_META"] = pipeline_meta
                 print(f"with ENV: PIPELINE_META='{pipeline_meta}'")
             print(f"{'─' * 60}\n")
-            cmd = [sys.executable, str(script)]
+            cmd = [sys.executable, str(script), *extra_args]
             result = subprocess.run(cmd, env=env)
         else:
             cmd = ["ml_pipeline_sqs", str(script)]
@@ -430,6 +440,8 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace):
                 cmd.append("--realtime")
             if pipeline_meta:
                 cmd.extend(["--pipeline-meta", pipeline_meta])
+            if extra_args:
+                cmd.extend(["--script-args", json.dumps(extra_args)])
             group_id = plan.group_ids.get((script, mode))
             if group_id:
                 cmd.extend(["--group-id", group_id])
@@ -450,8 +462,23 @@ def run_pipelines(plan: RunPlan, args: argparse.Namespace):
     print(f"{'=' * 60}\n")
 
 
-def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments."""
+def parse_args() -> tuple[argparse.Namespace, list[str]]:
+    """Parse command-line arguments.
+
+    A literal ``--`` separates launcher args from args meant for the underlying
+    pipeline script. Everything after ``--`` is left unparsed and forwarded
+    verbatim to the script (locally or via SQS → Batch).
+
+    Returns:
+        tuple[argparse.Namespace, list[str]]: Parsed launcher args, and the list
+            of args to forward to the script (empty if no ``--`` is present).
+    """
+    argv = sys.argv[1:]
+    extra_args: list[str] = []
+    if "--" in argv:
+        idx = argv.index("--")
+        argv, extra_args = argv[:idx], argv[idx + 1 :]
+
     parser = argparse.ArgumentParser(description="Launch ML pipelines via SQS or locally")
     parser.add_argument(
         "patterns",
@@ -474,11 +501,11 @@ def parse_args() -> argparse.Namespace:
     mode_group.add_argument("--promote", action="store_true", help="Run all scripts in PROMOTE mode")
     mode_group.add_argument("--test-promote", action="store_true", help="Run all scripts in TEST_PROMOTE mode")
 
-    return parser.parse_args()
+    return parser.parse_args(argv), extra_args
 
 
 def main():
-    args = parse_args()
+    args, extra_args = parse_args()
 
     # Discover all pipelines and DAG definitions
     all_pipelines, all_dags = get_all_pipelines()
@@ -505,13 +532,15 @@ def main():
 
     # Display summary
     print_summary(plan, selection_desc, mode, args)
+    if extra_args:
+        print(f"Forwarding to script: {' '.join(extra_args)}\n")
 
     # Execute (unless dry run)
     if args.dry_run:
         print("Dry run complete. No pipelines were launched.\n")
         return
 
-    run_pipelines(plan, args)
+    run_pipelines(plan, args, extra_args)
 
 
 if __name__ == "__main__":
