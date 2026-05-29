@@ -36,6 +36,10 @@ dependencies = [
     "redis >= 5.0.1",
     "cryptography >= 46.0.0",
     "requests >= 2.26.0",
+    # aiobotocore floor — each release pins botocore to a one-minor window,
+    # so without this pip backtracks through every historical version hunting
+    # for a botocore match. Bump if installs feel slow again.
+    "aiobotocore >= 3.7.0",
     # Data / ML
     "pandas >= 2.2.1, < 3.0",
     "scikit-learn >= 1.5.2",
@@ -47,8 +51,8 @@ dependencies = [
     # REPL & config
     "ipython >= 8.37.0",
     "pyreadline3; sys_platform == 'win32'",
-    # Plotting (matplotlib lives here because workbench_shell sets `plt.ion()`
-    # at REPL startup; dash/plotly are dashboard-side and stay in [ui])
+    # Plotting (matplotlib lives here because workbench_shell has a show()
+    # command that's useful for showing 2D plots of chemical structures
     "matplotlib >= 3.9.2",
 ]
 

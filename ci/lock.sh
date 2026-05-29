@@ -14,6 +14,13 @@ PYTHON_PLATFORM=x86_64-unknown-linux-gnu
 PYTORCH_CPU=https://download.pytorch.org/whl/cpu
 PYTORCH_CUDA=https://download.pytorch.org/whl/cu130
 
+# Flags that force fresh resolutions on every run:
+#   --no-cache: don't read uv's cached PyPI metadata
+#   --upgrade:  don't treat the existing output lock as a preferred-versions
+#               hint (uv's default would otherwise minimize churn by reusing
+#               whatever versions are already pinned)
+FRESH="--no-cache --upgrade"
+
 # Compile one image's lockfile.
 #   $1: output path
 #   $@: additional uv pip compile args (extras, extra-index-url, requirements.in inputs, etc.)
@@ -24,6 +31,7 @@ compile() {
     uv pip compile pyproject.toml \
         --python-version "$PYTHON_VERSION" \
         --python-platform "$PYTHON_PLATFORM" \
+        $FRESH \
         -o "$out" \
         "$@"
 }
@@ -50,6 +58,7 @@ echo "==> sagemaker_images/base/inference/requirements.lock"
 uv pip compile sagemaker_images/base/inference/requirements.in \
     --python-version "$PYTHON_VERSION" \
     --python-platform "$PYTHON_PLATFORM" \
+    $FRESH \
     -o sagemaker_images/base/inference/requirements.lock
 
 # base/training: same strict-subset pattern as base/inference, minus fastapi/uvicorn
@@ -58,6 +67,7 @@ echo "==> sagemaker_images/base/training/requirements.lock"
 uv pip compile sagemaker_images/base/training/requirements.in \
     --python-version "$PYTHON_VERSION" \
     --python-platform "$PYTHON_PLATFORM" \
+    $FRESH \
     -o sagemaker_images/base/training/requirements.lock
 
 # pytorch_chem/inference: smoke-contract subset + chemprop + fastapi/uvicorn,
@@ -73,6 +83,7 @@ uv pip compile sagemaker_images/pytorch_chem/inference/requirements.in \
     --python-platform "$PYTHON_PLATFORM" \
     --extra-index-url "$PYTORCH_CPU" \
     --index-strategy unsafe-best-match \
+    $FRESH \
     -o sagemaker_images/pytorch_chem/inference/requirements.lock
 
 # pytorch_chem/training: smoke-contract subset + chemprop + shap, CUDA torch,
@@ -83,6 +94,7 @@ uv pip compile sagemaker_images/pytorch_chem/training/requirements.in \
     --python-platform "$PYTHON_PLATFORM" \
     --extra-index-url "$PYTORCH_CUDA" \
     --index-strategy unsafe-best-match \
+    $FRESH \
     -o sagemaker_images/pytorch_chem/training/requirements.lock
 
 # compound_explorer: full workbench + [misc] + [ui] + shap + uvicorn/asgiref overlay, CPU torch
