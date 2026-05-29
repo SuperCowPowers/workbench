@@ -991,12 +991,6 @@ if __name__ == "__main__":
 
         uq_dict = None  # set in the valid-rows branch below; save handles None
 
-        if smiles_column not in df_train.columns and smiles_column not in df_val.columns:
-            raise ValueError(
-                f"Regression UQ requires a '{smiles_column}' column for fingerprint-based "
-                "neighborhood lookups (used by UQModelV1)."
-            )
-
         # Only fit UQ if we have valid primary-target rows
         valid = df_val[primary].notna()
         if valid.sum() > 0:
@@ -1006,9 +1000,16 @@ if __name__ == "__main__":
             val_std = df_val.loc[valid, f"{primary}_pred_std"].values
 
             all_df = pd.concat([df_train, df_val], ignore_index=True)
-            prox_df = all_df[[id_column, smiles_column, primary]].copy()
-            prox_df = prox_df.rename(columns={smiles_column: "smiles"})
-            prox_df["in_model"] = True  # see XGB template for rationale on CV folds
+
+            # V1/V2 need a fingerprint proximity set (smiles); with smiles we fit all
+            # three, otherwise just V0 (fit_regression_uq handles the prox_df=None case).
+            if smiles_column in all_df.columns:
+                prox_df = all_df[[id_column, smiles_column, primary]].copy()
+                prox_df = prox_df.rename(columns={smiles_column: "smiles"})
+                prox_df["in_model"] = True  # see XGB template for rationale on CV folds
+            else:
+                prox_df = None
+                print(f"No '{smiles_column}' column: fitting UQ V0 only (V1/V2 need fingerprints)")
 
             uq_dict = fit_regression_uq(
                 y_true=val_y, y_pred=val_pred, y_std=val_std,

@@ -467,17 +467,17 @@ if __name__ == "__main__":
         print("\n" + "=" * 50)
         print("Fitting UQ models")
         print("=" * 50)
-        if "smiles" not in all_df.columns:
-            raise ValueError(
-                "Regression UQ requires a 'smiles' column in the training data for "
-                "fingerprint-based neighborhood lookups (used by UQModelV1). Add "
-                "SMILES to your FeatureSet."
-            )
-
         val_ids = df_val[id_column].tolist()
         val_std = df_val["prediction_std"].values
-        prox_df = all_df[[id_column, "smiles", target]].copy()
-        prox_df["in_model"] = True
+
+        # V1/V2 need a fingerprint proximity set ('smiles'); with smiles we fit all
+        # three, otherwise just V0 (fit_regression_uq handles the prox_df=None case).
+        if "smiles" in all_df.columns:
+            prox_df = all_df[[id_column, "smiles", target]].copy()
+            prox_df["in_model"] = True
+        else:
+            prox_df = None
+            print("No 'smiles' column: fitting UQ V0 only (V1/V2 need fingerprints)")
 
         uq_dict = fit_regression_uq(
             y_true=y_true, y_pred=y_pred, y_std=val_std,
