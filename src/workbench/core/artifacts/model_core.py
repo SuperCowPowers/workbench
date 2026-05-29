@@ -694,6 +694,7 @@ class ModelCore(Artifact):
         """Get the training view for this model"""
         from workbench.core.artifacts.feature_set_core import FeatureSetCore
         from workbench.core.views import View
+        from workbench.core.views.view_utils import create_model_training_view
 
         # Grab our FeatureSet
         fs = FeatureSetCore(self.get_input())
@@ -705,9 +706,14 @@ class ModelCore(Artifact):
             if view.exists():
                 return view
 
-        # No model-specific training view, return the FeatureSet default
-        self.log.important("No model-specific training view, returning default training view")
-        return fs.view("training")
+        # No model-specific training view: create a default one (all rows, weight 1.0)
+        self.log.error(f"No model training view for {self.model_name}, creating a default view...")
+        default_view_name = f"{self.name.replace('-', '_')}_training_default".lower()
+        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+        feature_columns = [c for c in fs.columns if c not in aws_cols]
+        create_model_training_view(fs.data_source, default_view_name, feature_columns, fs.id_column)
+        self.upsert_workbench_meta({"workbench_training_view": default_view_name})
+        return View(fs, default_view_name, auto_create_view=False)
 
     # Pipeline for this model
     def get_pipeline(self) -> str:

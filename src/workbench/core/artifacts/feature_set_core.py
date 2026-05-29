@@ -518,23 +518,23 @@ class FeatureSetCore(Artifact):
             time.sleep(1)
         cls.log.info(f"FeatureSet {feature_group.get_name()} successfully deleted")
 
-    def temporal_split(self, date_column: str, end_date: str, overwrite: bool = False) -> list:
-        """Compute a temporal split, returning IDs for rows after end_date.
+    def temporal_split(self, date_column: str, end_date: str) -> dict:
+        """Compute a temporal split as sample weights that exclude rows after end_date.
 
         Args:
             date_column (str): The name of the date/datetime column to split on.
-            end_date (str): Rows strictly after this date become the holdout set.
-            overwrite (bool): If True, replace all existing sample weights. If False (default),
-                additively merge holdout weights with any existing weights.
+            end_date (str): Rows strictly after this date become the holdout set (weight 0).
 
         Returns:
-            list: List of IDs in the holdout set (rows after end_date).
+            dict: Sparse ``{id: 0.0}`` for each holdout row (rows after end_date). Pass to
+                ``FeaturesToModel.transform(sample_weights=...)``; ids not listed default to 1.0.
+                Compose with other weight sources via dict merge.
         """
 
         # Validate the date column
         if date_column not in self.columns:
             self.log.error(f"Date column '{date_column}' not found in columns: {self.columns}")
-            return []
+            return {}
 
         # Pull the ID and date columns, then delegate to pandas_utils.temporal_split
         from workbench.utils.pandas_utils import temporal_split
@@ -543,13 +543,7 @@ class FeatureSetCore(Artifact):
         _train_df, holdout_df = temporal_split(df, date_column, end_date=end_date)
         holdout_ids = holdout_df[self.id_column].tolist()
         self.log.important(f"Temporal Split: end_date={end_date} ({len(holdout_ids)} holdout rows)")
-
-        # Set sample weights to 0 for holdout IDs (additive by default, preserving existing weights)
-        if overwrite:
-            self.set_sample_weights({id: 0.0 for id in holdout_ids})
-        else:
-            self.add_filter(holdout_ids)
-        return holdout_ids
+        return {hid: 0.0 for hid in holdout_ids}
 
     def set_training_holdouts(self, holdout_ids: list[str]):
         """Set the hold out ids for the training view for this FeatureSet
