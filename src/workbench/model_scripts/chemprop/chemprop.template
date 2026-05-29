@@ -711,25 +711,18 @@ if __name__ == "__main__":
     split_strategy = hyperparameters.get("split_strategy", "scaffold")
     butina_cutoff = hyperparameters.get("butina_cutoff", 0.4)
 
-    # Check for pre-defined training column (overrides split strategy)
-    if n_folds == 1 and "training" in all_df.columns:
-        print("Using 'training' column for train/val split")
-        train_idx = np.where(all_df["training"])[0]
-        val_idx = np.where(~all_df["training"])[0]
-        folds = [(train_idx, val_idx)]
-    else:
-        # Use unified split interface (auto-detects 'smiles' column for scaffold/butina)
-        target_col = target_columns[0] if model_type == "classifier" else None
-        folds = get_split_indices(
-            all_df,
-            n_splits=n_folds,
-            strategy=split_strategy,
-            target_column=target_col,
-            test_size=0.2,
-            random_state=42,
-            butina_cutoff=butina_cutoff,
-        )
-        print(f"Split strategy: {split_strategy}")
+    # Split into folds (unified interface auto-detects 'smiles' for scaffold/butina)
+    target_col = target_columns[0] if model_type == "classifier" else None
+    folds = get_split_indices(
+        all_df,
+        n_splits=n_folds,
+        strategy=split_strategy,
+        target_column=target_col,
+        test_size=0.2,
+        random_state=42,
+        butina_cutoff=butina_cutoff,
+    )
+    print(f"Split strategy: {split_strategy}")
 
     print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold ensemble'}...")
 
