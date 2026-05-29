@@ -85,7 +85,7 @@ if __name__ == "__main__":
         m = Model("aqsol-regression")
         end = m.to_endpoint(tags=["aqsol", "regression"])
         end.set_owner("test")
-        end.auto_inference()
+        end.test_inference()
 
     # Create the aqsol solubility classification Model
     if recreate or not Model("aqsol-class").exists():
@@ -108,6 +108,6 @@ if __name__ == "__main__":
         m = Model("aqsol-class")
         end = m.to_endpoint(tags=["aqsol", "classification"])
         end.set_owner("test")
-        end.auto_inference()
+        end.test_inference()
 
     log.info("AQSol Artifacts creation complete.")

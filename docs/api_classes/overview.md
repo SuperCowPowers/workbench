@@ -50,7 +50,7 @@ model.to_endpoint(name="abalone-regression-end", tags=["abalone", "regression"])
 endpoint = Endpoint("abalone-regression-end")
 
 # Run inference on the Endpoint
-results = endpoint.auto_inference()
+results = endpoint.test_inference()
 print(results[["class_number_of_rings", "prediction"]])
 ```
 

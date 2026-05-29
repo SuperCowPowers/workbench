@@ -31,7 +31,7 @@ model = feature_set.to_model(
 
 # Create the endpoint for the model
 end = model.to_endpoint(tags=tags)
-end.auto_inference()
+end.test_inference()
 ```
 
 ### Step 1: Compute Fingerprints and Create a FeatureSet
@@ -76,7 +76,7 @@ model = fs.to_model(
     tags=["aqsol", "fingerprints", "regression"],
 )
 end = model.to_endpoint(tags=["aqsol", "fingerprints", "regression"])
-end.auto_inference()
+end.test_inference()
 ```
 
 ## Fingerprints + Descriptors

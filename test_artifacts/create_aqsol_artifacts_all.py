@@ -98,7 +98,7 @@ if __name__ == "__main__":
         m = Model("aqsol-regression")
         end = m.to_endpoint(tags=["aqsol", "regression"])
         end.set_owner("test")
-        end.auto_inference()
+        end.test_inference()
 
     # Create the aqsol solubility classification Model
     if recreate or not Model("aqsol-class").exists():
@@ -121,7 +121,7 @@ if __name__ == "__main__":
         m = Model("aqsol-class")
         end = m.to_endpoint(tags=["aqsol", "classification"])
         end.set_owner("test")
-        end.auto_inference()
+        end.test_inference()
 
     #
     # Molecular Descriptor Artifacts
@@ -173,7 +173,7 @@ if __name__ == "__main__":
         end = m.to_endpoint(tags=["aqsol", "mol", "regression"])
 
         # Run inference on the endpoint
-        end.auto_inference()
+        end.test_inference()
 
     # Create the Molecular Descriptor Classification Endpoint
     if recreate or not Endpoint("aqsol-mol-class").exists():
@@ -181,7 +181,7 @@ if __name__ == "__main__":
         end = m.to_endpoint(tags=["aqsol", "mol", "classification"])
 
         # Run inference on the endpoint
-        end.auto_inference()
+        end.test_inference()
 
     # A 'Model' to Compute Molecular Descriptors Features
     if recreate or not Model("smiles-to-2d-v1").exists():
@@ -217,14 +217,14 @@ if __name__ == "__main__":
         end = m.to_endpoint(tags=["smiles", "molecular descriptors", "stereo"])
 
         # Run inference on the endpoint
-        end.auto_inference()
+        end.test_inference()
 
     if recreate or not Endpoint("smiles-to-fingerprints-v0").exists():
         m = Model("smiles-to-fingerprints-v0")
         end = m.to_endpoint(tags=["smiles", "morgan fingerprints"])
 
         # Run inference on the endpoint
-        end.auto_inference()
+        end.test_inference()
 
     # Fingerprint FeatureSet
     if recreate or not FeatureSet("aqsol_fingerprints").exists():
@@ -264,7 +264,7 @@ if __name__ == "__main__":
         end = m.to_endpoint(tags=["smiles", "fingerprints"])
 
         # Run inference on the endpoint
-        end.auto_inference()
+        end.test_inference()
 
     # Fingerprint + Other Features Model
     if recreate or not Model("aqsol-fingerprints-plus").exists():
@@ -290,7 +290,7 @@ if __name__ == "__main__":
         end = m.to_endpoint(tags=["smiles", "fingerprints", "plus"])
 
         # Run inference on the endpoint
-        end.auto_inference()
+        end.test_inference()
 
     # Fingerprint + Other Features CLASSIFICATION Model
     if recreate or not Model("aqsol-fingerprints-plus-class").exists():
@@ -317,4 +317,4 @@ if __name__ == "__main__":
         end = m.to_endpoint(tags=["smiles", "fingerprints", "plus"])
 
         # Run inference on the endpoint
-        end.auto_inference()
+        end.test_inference()

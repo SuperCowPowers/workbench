@@ -125,7 +125,7 @@ if recreate or not Model("logp-logd-synth-st").exists():
 if recreate or not Endpoint("logp-logd-synth-st").exists():
     end = Model("logp-logd-synth-st").to_endpoint(tags=["chemprop", "logd", "synthetic", "single-task"])
     end.set_owner("BW")
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()
 
 # =============================================================================
@@ -153,5 +153,5 @@ for label, _logp_key, frag in RECIPES:
     if recreate or not Endpoint(model_name).exists():
         end = Model(model_name).to_endpoint(tags=tags)
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.cross_fold_inference()

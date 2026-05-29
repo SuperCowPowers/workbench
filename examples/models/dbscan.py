@@ -26,4 +26,4 @@ my_model = Model("abalone-clusters")
 endpoint = my_model.to_endpoint(tags=tags)
 
 # Run auto-inference on the Endpoint
-endpoint.auto_inference()
+endpoint.test_inference()

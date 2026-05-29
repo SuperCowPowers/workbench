@@ -48,7 +48,7 @@ if recreate or not Endpoint("chemeleon-logd").exists():
     m = Model("chemeleon-logd")
     end = m.to_endpoint(tags=["chemprop", "chemeleon", "foundation", "open_admet"])
     end.set_owner("BW")
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()
 
 
@@ -83,7 +83,7 @@ if recreate or not Endpoint("chemeleon-logd-frozen").exists():
     m = Model("chemeleon-logd-frozen")
     end = m.to_endpoint(tags=["chemprop", "chemeleon", "foundation", "frozen", "open_admet"])
     end.set_owner("BW")
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()
 
 
@@ -129,7 +129,7 @@ if recreate or not Endpoint("chemeleon-mt").exists():
     m = Model("chemeleon-mt")
     end = m.to_endpoint(tags=["chemprop", "chemeleon", "foundation", "multitask", "open_admet"])
     end.set_owner("BW")
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()
 
 
@@ -181,7 +181,7 @@ if recreate or not Endpoint("chemeleon-logd-hybrid").exists():
     m = Model("chemeleon-logd-hybrid")
     end = m.to_endpoint(tags=["chemprop", "chemeleon", "foundation", "hybrid", "open_admet"])
     end.set_owner("BW")
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()
 
 

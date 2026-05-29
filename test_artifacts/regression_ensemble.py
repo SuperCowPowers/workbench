@@ -60,4 +60,4 @@ if __name__ == "__main__":
         end = m.to_endpoint(tags=["aqsol", "ensemble"])
 
         # Run auto-inference on the AQSol Ensemble Regression Endpoint
-        end.auto_inference()
+        end.test_inference()

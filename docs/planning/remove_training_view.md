@@ -109,12 +109,12 @@ default_inference_run() -> str | None
   in the chain.
 - Rename the `"auto"` capture sentinel to `"default"` to match the resolver name.
 
-### `auto_inference` -> `test_inference`
+### `test_inference` -> `test_inference`
 
 - Method `endpoint.auto_inference()` -> `endpoint.test_inference()`; body changes
   to pull N random rows from the FeatureSet (smoke test that the endpoint serves),
   captured under `"test_inference"`.
-- All capture-name lookups `"auto_inference"` -> `"test_inference"`.
+- All capture-name lookups `"test_inference"` -> `"test_inference"`.
 
 ### Model templates
 
@@ -131,7 +131,7 @@ handles `n_splits=1` for random / scaffold / butina (verified).
 | --- | --- | --- |
 | D1 | `temporal_split` location/shape | Stays on FeatureSet, **pure**, returns `{id: weight}` dict (was `list` of holdout ids); no persistence |
 | D2 | Sample weights ownership | Per-model input to `transform(sample_weights=...)`; FeatureSet weight-mutation methods removed |
-| D3 | `auto_inference` | Rename method -> `test_inference()` (N random rows); rename capture string everywhere |
+| D3 | `test_inference` | Rename method -> `test_inference()` (N random rows); rename capture string everywhere |
 | D4 | `full_inference` | **Unchanged** — uses `model.training_view()` (per-model view), which legitimately reflects outlier removal |
 | D5 | `model_training` metrics scrape | **Leave for now**; just keep it out of `default_inference_run()` |
 | M1 | `model.training_view()` fallback | If per-model view missing: log **error** + create a default per-model view (all rows, weight 1.0); drop the shared-view fallback |
@@ -156,7 +156,7 @@ handles `n_splits=1` for random / scaffold / butina (verified).
    `confusion_matrix`/`performance_metrics` "auto" -> "default" through it;
    repoint web plugins (`model_details`, `model_plot`, `confusion_explorer`).
 
-5. **`auto_inference` -> `test_inference`** — rename method + capture string in
+5. **`test_inference` -> `test_inference`** — rename method + capture string in
    `endpoint_core`, `async_endpoint_core`, `model_core` defaults,
    `shapley_values`, and the web plugins.
 

@@ -96,7 +96,7 @@ if recreate or not Model("logp-logd-chemprop-st").exists():
 if recreate or not Endpoint("logp-logd-chemprop-st").exists():
     end = Model("logp-logd-chemprop-st").to_endpoint(tags=["chemprop", "logd", "single-task"])
     end.set_owner("BW")
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()
 
 # =============================================================================
@@ -124,5 +124,5 @@ for suffix, label, frag in TIERS:
     if recreate or not Endpoint(model_name).exists():
         end = Model(model_name).to_endpoint(tags=tags)
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.cross_fold_inference()

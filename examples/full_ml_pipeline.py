@@ -45,5 +45,5 @@ if __name__ == "__main__":
     endpoint = Endpoint("abalone-regression")
 
     # Run inference on the Endpoint
-    results = endpoint.auto_inference()
+    results = endpoint.test_inference()
     print(results[["class_number_of_rings", "prediction"]])

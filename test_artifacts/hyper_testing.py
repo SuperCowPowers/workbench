@@ -42,7 +42,7 @@ if recreate or not Model("abalone-regression-bad").exists():
     )
     m.set_owner("test")
     end = m.to_endpoint()
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()
 
 # Create the 'good' Model and Endpoint
@@ -68,5 +68,5 @@ if recreate or not Model("abalone-regression-good").exists():
     )
     m.set_owner("test")
     end = m.to_endpoint()
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()

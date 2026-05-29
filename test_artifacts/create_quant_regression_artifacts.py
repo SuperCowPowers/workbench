@@ -54,7 +54,7 @@ if __name__ == "__main__":
         end = m.to_endpoint(tags=["test", "quantiles"])
 
         # Run auto-inference on the Test Quantile Regression Endpoint
-        end.auto_inference()
+        end.test_inference()
 
     # Create the Abalone Quantile Regression Model
     if recreate or not Model("abalone-quantile").exists():
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         end = m.to_endpoint(tags=["abalone", "quantiles"])
 
         # Run auto-inference on the Abalone Quantile Regression Endpoint
-        end.auto_inference()
+        end.test_inference()
 
     # Create the AQSol Quantile Regression Model
     if recreate or not Model("aqsol-quantiles").exists():
@@ -120,4 +120,4 @@ if __name__ == "__main__":
         end = m.to_endpoint(tags=["aqsol", "quantiles"])
 
         # Run auto-inference on the AQSol Quantile Regression Endpoint
-        end.auto_inference()
+        end.test_inference()

@@ -94,7 +94,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         xgb_model.set_owner("BW")
         end = xgb_model.to_endpoint(tags=["open_admet", base_name, "xgboost"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.full_inference()
         end.cross_fold_inference()
 
@@ -120,7 +120,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         pytorch_model.set_owner("BW")
         end = pytorch_model.to_endpoint(tags=["open_admet", base_name, "pytorch"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.full_inference()
         end.cross_fold_inference()
 
@@ -140,7 +140,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         chemprop_model.set_owner("BW")
         end = chemprop_model.to_endpoint(tags=["open_admet", base_name, "chemprop"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.full_inference()
         end.cross_fold_inference()
 
@@ -165,7 +165,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         chemprop_hybrid_model.set_owner("BW")
         end = chemprop_hybrid_model.to_endpoint(tags=["open_admet", base_name, "chemprop", "hybrid"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.full_inference()
         end.cross_fold_inference()
 
@@ -185,7 +185,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         fingerprint_model.set_owner("BW")
         end = fingerprint_model.to_endpoint(tags=["open_admet", base_name, "fingerprint"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.full_inference()
         end.cross_fold_inference()
 
@@ -207,7 +207,7 @@ def create_models_for_featureset(fs_name: str, rdkit_features: list[str]):
         pytorch_fp_model.set_owner("BW")
         end = pytorch_fp_model.to_endpoint(tags=["open_admet", base_name, "fingerprint", "pytorch"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.full_inference()
         end.cross_fold_inference()
 
@@ -243,7 +243,7 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
         xgb_model.set_class_labels(["low", "moderate", "high"])
         end = xgb_model.to_endpoint(tags=["open_admet", base_name, "classification", "xgboost"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.full_inference()
         end.cross_fold_inference()
 
@@ -269,7 +269,7 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
         pytorch_model.set_class_labels(["low", "moderate", "high"])
         end = pytorch_model.to_endpoint(tags=["open_admet", base_name, "classification", "pytorch"], max_concurrency=1)
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.full_inference()
         end.cross_fold_inference()
 
@@ -292,7 +292,7 @@ def create_classification_models(fs_name: str, rdkit_features: list[str]):
             tags=["open_admet", base_name, "classification", "chemprop"], max_concurrency=1
         )
         end.set_owner("BW")
-        end.auto_inference()
+        end.test_inference()
         end.full_inference()
         end.cross_fold_inference()
 
