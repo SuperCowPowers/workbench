@@ -122,31 +122,21 @@ class AsyncEndpointCore(EndpointCore):
         )
 
     # -----------------------------------------------------------------
-    # Override: auto_inference  (smoke test capped at 10 rows)
+    # Override: test_inference  (smaller default sample)
     # -----------------------------------------------------------------
-    def auto_inference(self) -> pd.DataFrame:
-        """Run a 10-row smoke test on this async endpoint.
+    def test_inference(self, num_rows: int = 10) -> pd.DataFrame:
+        """Smoke-test this async endpoint on a small sample.
 
-        Async workloads can run at seconds-to-minutes per row, so the
-        sync default of "all holdout rows (~20% of the FeatureSet)" turns
-        a smoke test into a multi-minute round-trip. This override caps
-        the eval set at 10 rows — enough to verify the endpoint responds
-        end-to-end without paying for a full holdout pass.
+        Async workloads can run at seconds-to-minutes per row, so the sample is
+        capped low by default — enough to verify the endpoint responds end-to-end.
+
+        Args:
+            num_rows (int): Max number of rows to sample (default 10).
+
+        Returns:
+            pd.DataFrame: The inference results (empty if no model/data).
         """
-        from workbench.core.artifacts.model_core import ModelCore
-
-        model = ModelCore(self.get_input())
-        if not model.exists():
-            self.log.error("No model found for this endpoint. Returning empty DataFrame.")
-            return pd.DataFrame()
-
-        all_df = model.training_view().pull_dataframe()
-        eval_df = all_df[~all_df["training"]].head(10)
-
-        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
-        eval_df = eval_df.drop(columns=aws_cols, errors="ignore")
-
-        return self.inference(eval_df, "auto_inference")
+        return super().test_inference(num_rows=num_rows)
 
     # -----------------------------------------------------------------
     # Internal: delegate to the lightweight bridges client

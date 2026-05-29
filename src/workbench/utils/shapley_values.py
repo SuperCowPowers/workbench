@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     # Define the input parameters
     model_type = "regressor"  # or "classifier"
-    pred_results_df = end.auto_inference()
+    pred_results_df = end.test_inference()
     inference_capture_path = f"{end.endpoint_inference_path}/test_capture"
 
     # Generate the SHAP values

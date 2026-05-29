@@ -1179,12 +1179,12 @@ class ModelCore(Artifact):
                 {"workbench_training_metrics": metrics_df.to_dict(), "workbench_training_cm": cm_df.to_dict()}
             )
 
-    def _load_inference_metrics(self, capture_name: str = "auto_inference"):
+    def _load_inference_metrics(self, capture_name: str = "test_inference"):
         """Internal: Retrieve the inference model metrics for this model
                      and load the data into the Workbench Metadata
 
         Args:
-            capture_name (str, optional): A specific capture_name (default: "auto_inference")
+            capture_name (str, optional): A specific capture_name (default: "test_inference")
         Notes:
             This may or may not exist based on whether an Endpoint ran Inference
         """
@@ -1195,11 +1195,11 @@ class ModelCore(Artifact):
         metrics_storage = None if inference_metrics is None else inference_metrics.to_dict("records")
         self.upsert_workbench_meta({"workbench_inference_metrics": metrics_storage})
 
-    def get_inference_metadata(self, capture_name: str = "auto_inference") -> Union[pd.DataFrame, None]:
+    def get_inference_metadata(self, capture_name: str = "test_inference") -> Union[pd.DataFrame, None]:
         """Retrieve the inference metadata for this model
 
         Args:
-            capture_name (str, optional): A specific capture_name (default: "auto_inference")
+            capture_name (str, optional): A specific capture_name (default: "test_inference")
 
         Returns:
             dict: Dictionary of the inference metadata (might be None)

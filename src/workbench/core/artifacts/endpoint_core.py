@@ -377,8 +377,19 @@ class EndpointCore(Artifact):
         self.details()
         return True
 
-    def auto_inference(self) -> pd.DataFrame:
-        """Run inference on the endpoint using the test data from the model training view"""
+    def test_inference(self, num_rows: int = 100) -> pd.DataFrame:
+        """Smoke-test the endpoint by running inference on a sample of rows.
+
+        Pulls up to num_rows from the model's training view and runs them through the
+        endpoint to confirm it serves predictions. These rows may overlap training data,
+        so this is a functional check, not a holdout evaluation.
+
+        Args:
+            num_rows (int): Max number of rows to sample (default 100).
+
+        Returns:
+            pd.DataFrame: The inference results (empty if no model/data).
+        """
 
         # Sanity Check that we have a model
         model = ModelCore(self.get_input())
@@ -386,16 +397,15 @@ class EndpointCore(Artifact):
             self.log.error("No model found for this endpoint. Returning empty DataFrame.")
             return pd.DataFrame()
 
-        # Grab the evaluation data from the Model's training view
-        all_df = model.training_view().pull_dataframe()
-        eval_df = all_df[~all_df["training"]]
+        # Pull a sample from the model's training view
+        eval_df = model.training_view().pull_dataframe(limit=num_rows)
 
         # Remove AWS created columns
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
         eval_df = eval_df.drop(columns=aws_cols, errors="ignore")
 
         # Run inference
-        return self.inference(eval_df, "auto_inference")
+        return self.inference(eval_df, "test_inference")
 
     def full_inference(self) -> pd.DataFrame:
         """Run inference on the endpoint using all the data from the model training view"""
@@ -500,7 +510,7 @@ class EndpointCore(Artifact):
             is_multi_target = len(target_list) > 1
 
             if is_multi_target:
-                prefix = "auto" if capture_name == "auto_inference" else capture_name
+                prefix = "test" if capture_name == "test_inference" else capture_name
 
             for target in target_list:
                 # If the target ground-truth column isn't in the eval frame (e.g.
@@ -1448,9 +1458,9 @@ if __name__ == "__main__":
     except ValueError as e:
         print(f"Expected error for missing feature: {e}")
 
-    # Run Auto Inference on the Endpoint (uses the FeatureSet)
-    print("Running Auto Inference...")
-    my_endpoint.auto_inference()
+    # Run a smoke-test inference on the Endpoint (uses the FeatureSet)
+    print("Running Test Inference...")
+    my_endpoint.test_inference()
 
     # Run Inference where we provide the data
     # Note: This dataframe could be from a FeatureSet or any other source
@@ -1472,11 +1482,11 @@ if __name__ == "__main__":
 
     # Run Inference and metrics for a Classification Endpoint
     class_endpoint = EndpointCore("wine-classification")
-    auto_predictions = class_endpoint.auto_inference()
+    test_predictions = class_endpoint.test_inference()
 
     # Generate the confusion matrix
     target = "wine_class"
-    print(class_endpoint.generate_confusion_matrix(target, auto_predictions))
+    print(class_endpoint.generate_confusion_matrix(target, test_predictions))
 
     # Test the cross_fold_inference method
     print("Running Cross-Fold Inference...")

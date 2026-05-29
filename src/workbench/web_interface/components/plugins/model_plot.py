@@ -86,7 +86,7 @@ class ModelPlot(PluginInterface):
         Args:
             model (CachedModel): The model to visualize
             **kwargs:
-                - inference_run (str): Inference capture name (default: "auto_inference")
+                - inference_run (str): Inference capture name (default: "full_cross_fold")
 
         Returns:
             list: Property values [scatter_style, confusion_style, ...scatter_props, ...confusion_props]
