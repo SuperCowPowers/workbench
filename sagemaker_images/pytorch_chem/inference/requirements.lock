@@ -20,11 +20,11 @@ attrs==26.1.0
     # via aiohttp
 awswrangler==3.16.1
     # via -r sagemaker_images/pytorch_chem/inference/requirements.in
-boto3==1.43.17
+boto3==1.43.18
     # via
     #   -r sagemaker_images/pytorch_chem/inference/requirements.in
     #   awswrangler
-botocore==1.43.17
+botocore==1.43.18
     # via
     #   -r sagemaker_images/pytorch_chem/inference/requirements.in
     #   awswrangler

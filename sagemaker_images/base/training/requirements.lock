@@ -2,11 +2,11 @@
 #    uv pip compile sagemaker_images/base/training/requirements.in --python-version 3.12 --python-platform x86_64-unknown-linux-gnu --no-cache -o sagemaker_images/base/training/requirements.lock
 awswrangler==3.16.1
     # via -r sagemaker_images/base/training/requirements.in
-boto3==1.43.17
+boto3==1.43.18
     # via
     #   -r sagemaker_images/base/training/requirements.in
     #   awswrangler
-botocore==1.43.17
+botocore==1.43.18
     # via
     #   -r sagemaker_images/base/training/requirements.in
     #   awswrangler
