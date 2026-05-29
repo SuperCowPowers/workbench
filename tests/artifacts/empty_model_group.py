@@ -52,7 +52,7 @@ def test_confusion_matrix():
 
 def test_metrics_with_capture_name():
     """Test the Performance Metrics using a Capture Name"""
-    metrics = model.get_inference_metrics("auto_inference")
+    metrics = model.get_inference_metrics("test_inference")
     print("\n\n*** Performance Metrics with Capture Name ***")
     pprint(metrics)
 

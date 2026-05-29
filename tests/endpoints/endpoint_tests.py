@@ -19,19 +19,19 @@ def test_endpoint_exists():
     print(f"Tags: {reg_endpoint.get_tags()}")
 
 
-def test_regression_auto_inference():
-    pred_df = reg_endpoint.auto_inference()
+def test_regression_test_inference():
+    pred_df = reg_endpoint.test_inference()
     assert not pred_df.empty
     assert "prediction" in pred_df.columns
-    print(f"Auto inference shape: {pred_df.shape}")
+    print(f"Test inference shape: {pred_df.shape}")
     print(pred_df.head())
 
 
-def test_classification_auto_inference():
-    pred_df = class_endpoint.auto_inference()
+def test_classification_test_inference():
+    pred_df = class_endpoint.test_inference()
     assert not pred_df.empty
     assert "prediction" in pred_df.columns
-    print(f"Auto inference shape: {pred_df.shape}")
+    print(f"Test inference shape: {pred_df.shape}")
     print(pred_df.head())
 
 
@@ -164,8 +164,8 @@ def test_categorical_features():
 
 if __name__ == "__main__":
     test_endpoint_exists()
-    test_regression_auto_inference()
-    test_classification_auto_inference()
+    test_regression_test_inference()
+    test_classification_test_inference()
     test_manual_inference()
     test_classification_inference_with_subset_of_labels()
     test_regression_metrics()

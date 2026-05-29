@@ -21,7 +21,7 @@ def test():
 
     # Now run inference on the endpoint
     endpoint = Endpoint(output_name)
-    endpoint.auto_inference()
+    endpoint.test_inference()
 
     # Delete the endpoint after creation to clean up
     endpoint.delete()

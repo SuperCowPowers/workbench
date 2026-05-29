@@ -4,7 +4,6 @@ import pytest
 
 # Workbench imports
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
-from workbench.api import FeatureSet
 from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 
 
@@ -23,10 +22,6 @@ def test():
     df_to_data.set_output_tags(["temp", "test", "small"])
     df_to_data.transform()
     print(f"{test_name} stored as a Workbench FeatureSet")
-
-    # Set holdout ids
-    fs = FeatureSet(test_name)
-    fs.set_training_holdouts([1, 2, 3])
 
 
 if __name__ == "__main__":

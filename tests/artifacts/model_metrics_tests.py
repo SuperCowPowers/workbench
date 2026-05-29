@@ -52,9 +52,9 @@ def test_inference_predictions():
 
     # Make sure we have inference predictions
     end = Endpoint("abalone-regression")
-    end.auto_inference()
+    end.test_inference()
     end = Endpoint("wine-classification")
-    end.auto_inference()
+    end.test_inference()
 
     # Retrieve the inference predictions
     model_reg = Model("abalone-regression")
@@ -109,23 +109,23 @@ def test_shap_values():
 
 def test_metrics_with_capture_name():
     """Test the Performance Metrics using a Capture Name"""
-    metrics = model_reg.get_inference_metrics("auto_inference")
+    metrics = model_reg.get_inference_metrics("test_inference")
     print("\n\n*** Performance Metrics with Capture Name ***")
     pprint(metrics)
-    metrics = model_class.get_inference_metrics("auto_inference")
+    metrics = model_class.get_inference_metrics("test_inference")
     pprint(metrics)
 
 
 @pytest.mark.long
-def test_auto_inference():
-    # Run auto_inference (back track to FeatureSet)
+def test_endpoint_inference():
+    # Run test_inference (back track to FeatureSet)
     my_endpoint = Endpoint("abalone-regression")
-    pred_results = my_endpoint.auto_inference()
-    print("\n\n*** Auto Inference ***")
+    pred_results = my_endpoint.test_inference()
+    print("\n\n*** Test Inference ***")
     pprint(pred_results.head())
 
     my_endpoint = Endpoint("wine-classification")
-    pred_results = my_endpoint.auto_inference()
+    pred_results = my_endpoint.test_inference()
     pprint(pred_results.head())
 
 
@@ -136,8 +136,7 @@ def test_inference_with_capture_name():
 
     # Grab a dataframe for inference
     my_features = FeatureSet("abalone_features")
-    table = my_features.view("training").table
-    df = my_features.query(f'SELECT * FROM "{table}" where training = FALSE')
+    df = my_features.pull_dataframe()
 
     # Run inference
     my_endpoint = Endpoint("abalone-regression")
@@ -182,5 +181,5 @@ if __name__ == "__main__":
     test_metrics_with_capture_name()
 
     # These are longer tests (commented out for now)
-    # test_auto_inference()
+    # test_endpoint_inference()
     # test_inference_with_capture_name("my_holdout_test")
