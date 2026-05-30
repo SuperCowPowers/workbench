@@ -250,6 +250,24 @@ class ModelCore(Artifact):
             inference_runs.append("model_training")
         return inference_runs
 
+    def default_inference_run(self) -> Union[str, None]:
+        """Resolve the default inference capture name for this model.
+
+        Priority: full_cross_fold -> test_inference -> first available inference run.
+        The model_training capture is excluded from this resolution.
+
+        Returns:
+            str | None: The capture name, or None if no inference runs exist.
+        """
+        inference_runs = [run for run in self.list_inference_runs() if run != "model_training"]
+        if not inference_runs:
+            return None
+        if "full_cross_fold" in inference_runs:
+            return "full_cross_fold"
+        if "test_inference" in inference_runs:
+            return "test_inference"
+        return inference_runs[0]
+
     def delete_inference_run(self, inference_run_name: str):
         """Delete the inference run for this model
 
@@ -271,22 +289,23 @@ class ModelCore(Artifact):
         else:
             self.log.important(f"No inference data found for {self.model_name}!")
 
-    def get_inference_metrics(self, capture_name: str = "auto") -> Union[pd.DataFrame, None]:
+    def get_inference_metrics(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the inference performance metrics for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: "auto")
+            capture_name (str, optional): Specific capture_name (default: "default")
         Returns:
             pd.DataFrame: DataFrame of the Model Metrics
 
         Note:
-            If a capture_name isn't specified this will try to the 'first' available metrics
+            With "default" this resolves via default_inference_run()
+            (full_cross_fold -> test_inference -> first run).
         """
-        # Try to get the auto_capture 'training_holdout' or the training
-        if capture_name == "auto":
-            metric_list = self.list_inference_runs()
-            if metric_list:
-                return self.get_inference_metrics(metric_list[0])
+        # Resolve the default capture (full_cross_fold -> test_inference -> first run)
+        if capture_name == "default":
+            run = self.default_inference_run()
+            if run:
+                return self.get_inference_metrics(run)
             else:
                 self.log.warning(f"No performance metrics found for {self.model_name}!")
                 return None
@@ -311,11 +330,11 @@ class ModelCore(Artifact):
                 self.log.warning(f"Performance metrics {capture_name} not found for {self.model_name}!")
                 return None
 
-    def confusion_matrix(self, capture_name: str = "auto") -> Union[pd.DataFrame, None]:
+    def confusion_matrix(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the confusion_matrix for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name or "training" (default: "auto")
+            capture_name (str, optional): Specific capture_name or "model_training" (default: "default")
         Returns:
             pd.DataFrame: DataFrame of the Confusion Matrix (might be None)
         """
@@ -326,10 +345,10 @@ class ModelCore(Artifact):
             self.log.critical(error_msg)
             raise ValueError(error_msg)
 
-        # Grab the metrics from the Workbench Metadata (try inference first, then training)
-        if capture_name == "auto":
-            cm = self.confusion_matrix("auto_inference")
-            return cm if cm is not None else self.confusion_matrix("model_training")
+        # Resolve the default capture (full_cross_fold -> test_inference -> first run)
+        if capture_name == "default":
+            run = self.default_inference_run()
+            return self.confusion_matrix(run) if run else None
 
         # Grab the confusion matrix captured during model training (could return None)
         if capture_name == "model_training":
@@ -694,6 +713,7 @@ class ModelCore(Artifact):
         """Get the training view for this model"""
         from workbench.core.artifacts.feature_set_core import FeatureSetCore
         from workbench.core.views import View
+        from workbench.core.views.view_utils import create_model_training_view
 
         # Grab our FeatureSet
         fs = FeatureSetCore(self.get_input())
@@ -705,9 +725,14 @@ class ModelCore(Artifact):
             if view.exists():
                 return view
 
-        # No model-specific training view, return the FeatureSet default
-        self.log.important("No model-specific training view, returning default training view")
-        return fs.view("training")
+        # No model-specific training view: create a default one (all rows, weight 1.0)
+        self.log.error(f"No model training view for {self.model_name}, creating a default view...")
+        default_view_name = f"{self.name.replace('-', '_')}_training_default".lower()
+        aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
+        feature_columns = [c for c in fs.columns if c not in aws_cols]
+        create_model_training_view(fs.data_source, default_view_name, feature_columns, fs.id_column)
+        self.upsert_workbench_meta({"workbench_training_view": default_view_name})
+        return View(fs, default_view_name, auto_create_view=False)
 
     # Pipeline for this model
     def get_pipeline(self) -> str:
@@ -852,9 +877,8 @@ class ModelCore(Artifact):
         if owner:
             self.set_owner(owner)
 
-        # Load the training metrics and inference metrics
+        # Load the training metrics
         self._load_training_metrics()
-        self._load_inference_metrics()
 
         # Remove the needs_onboard tag
         self.remove_health_tag("needs_onboard")
@@ -1154,27 +1178,12 @@ class ModelCore(Artifact):
                 {"workbench_training_metrics": metrics_df.to_dict(), "workbench_training_cm": cm_df.to_dict()}
             )
 
-    def _load_inference_metrics(self, capture_name: str = "auto_inference"):
-        """Internal: Retrieve the inference model metrics for this model
-                     and load the data into the Workbench Metadata
-
-        Args:
-            capture_name (str, optional): A specific capture_name (default: "auto_inference")
-        Notes:
-            This may or may not exist based on whether an Endpoint ran Inference
-        """
-        s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_metrics.csv"
-        inference_metrics = pull_s3_data(s3_path)
-
-        # Store data into the Workbench Metadata
-        metrics_storage = None if inference_metrics is None else inference_metrics.to_dict("records")
-        self.upsert_workbench_meta({"workbench_inference_metrics": metrics_storage})
-
-    def get_inference_metadata(self, capture_name: str = "auto_inference") -> Union[pd.DataFrame, None]:
+    def get_inference_metadata(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the inference metadata for this model
 
         Args:
-            capture_name (str, optional): A specific capture_name (default: "auto_inference")
+            capture_name (str, optional): A specific capture_name, or "default" to
+                resolve via default_inference_run() (default: "default")
 
         Returns:
             dict: Dictionary of the inference metadata (might be None)
@@ -1184,6 +1193,12 @@ class ModelCore(Artifact):
         # Sanity check the inference path (which may or may not exist)
         if self.endpoint_inference_path is None:
             return None
+
+        # Resolve the default capture (full_cross_fold -> test_inference -> first run)
+        if capture_name == "default":
+            capture_name = self.default_inference_run()
+            if capture_name is None:
+                return None
 
         # Check for model_training capture_name
         if capture_name == "model_training":
@@ -1208,17 +1223,16 @@ class ModelCore(Artifact):
             self.log.info(f"Could not find model inference meta at {s3_path}...")
             return None
 
-    def get_inference_predictions(self, capture_name: str = "full_cross_fold") -> Union[pd.DataFrame, None]:
+    def get_inference_predictions(self, capture_name: str = "default") -> Union[pd.DataFrame, None]:
         """Retrieve the captured prediction results for this model
 
         Args:
-            capture_name (str, optional): Specific capture_name (default: full_cross_fold)
+            capture_name (str, optional): A specific capture_name, or "default" to
+                resolve via default_inference_run() (default: "default")
 
         Returns:
             pd.DataFrame: DataFrame of the Captured Predictions (might be None)
         """
-        self.log.important(f"Grabbing {capture_name} predictions for {self.model_name}...")
-
         # Sanity check that the model should have predictions
         has_predictions = self.model_type in [
             ModelType.CLASSIFIER,
@@ -1229,6 +1243,14 @@ class ModelCore(Artifact):
         if not has_predictions:
             self.log.warning(f"No Predictions for {self.model_name}...")
             return None
+
+        # Resolve the default capture (full_cross_fold -> test_inference -> first run)
+        if capture_name == "default":
+            capture_name = self.default_inference_run()
+            if capture_name is None:
+                self.log.warning(f"No inference runs for {self.model_name}...")
+                return None
+        self.log.important(f"Grabbing {capture_name} predictions for {self.model_name}...")
 
         # Special case for model_training
         if capture_name == "model_training":

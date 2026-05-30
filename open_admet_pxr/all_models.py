@@ -89,7 +89,7 @@ def _deploy_and_validate(model, variant_tag: str, framework_tag: str) -> None:
     """Create the endpoint and kick off the three validation inference runs."""
     end = model.to_endpoint(tags=TAGS_BASE + [variant_tag, framework_tag], max_concurrency=1)
     end.set_owner("open_admet_pxr")
-    end.auto_inference()
+    end.test_inference()
     end.full_inference()
     end.cross_fold_inference()
 

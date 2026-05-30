@@ -112,11 +112,11 @@ def internal_model_data_url(endpoint_config_name: str, session: boto3.Session) -
         return None
 
 
-def get_training_data(end: Endpoint) -> pd.DataFrame:
-    """Code to get the training data from the FeatureSet used to train the Model
+def get_evaluation_data(end: Endpoint) -> pd.DataFrame:
+    """Code to get data from the FeatureSet behind an Endpoint (for inference testing)
 
     Args:
-        end (Endpoint): Endpoint to backtrace: End -> Model -> FeatureSet (training data)
+        end (Endpoint): Endpoint to backtrace: End -> Model -> FeatureSet
 
     Returns:
         pd.DataFrame: Dataframe with the features from the FeatureSet
@@ -129,33 +129,7 @@ def get_training_data(end: Endpoint) -> pd.DataFrame:
         log.error("No FeatureSet found for this endpoint. Returning empty dataframe.")
         return pd.DataFrame()
 
-    # Get the training data
-    table = fs.view("training").table
-    train_df = fs.query(f'SELECT * FROM "{table}" where training = TRUE')
-    return train_df
-
-
-def get_evaluation_data(end: Endpoint) -> pd.DataFrame:
-    """Code to get the evaluation data from the FeatureSet NOT used for training
-
-    Args:
-        end (Endpoint): Endpoint to backtrace: End -> Model -> FeatureSet (evaluation data)
-
-    Returns:
-        pd.DataFrame: The training data in a dataframe with the features from the FeatureSet
-    """
-    # Grab the FeatureSet by backtracking from the Endpoint
-    fs = backtrack_to_fs(end)
-
-    # Sanity check that we have a FeatureSet
-    if fs is None:
-        log.error("No FeatureSet found for this endpoint. Returning empty dataframe.")
-        return pd.DataFrame()
-
-    # Get the evaluation data
-    table = fs.view("training").table
-    eval_df = fs.query(f'SELECT * FROM "{table}" where training = FALSE')
-    return eval_df
+    return fs.pull_dataframe()
 
 
 def backtrack_to_fs(end: Endpoint) -> Union[FeatureSet, None]:
@@ -511,10 +485,6 @@ if __name__ == "__main__":
     # Get the Model Data URL
     model_data_url = internal_model_data_url(my_endpoint.endpoint_config_name(), my_endpoint.boto3_session)
     print(model_data_url)
-
-    # Get the training data
-    my_train_df = get_training_data(my_endpoint)
-    print(my_train_df)
 
     # Get the evaluation data
     my_eval_df = get_evaluation_data(my_endpoint)

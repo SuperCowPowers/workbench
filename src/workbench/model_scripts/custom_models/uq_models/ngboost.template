@@ -99,13 +99,8 @@ if __name__ == "__main__":
         print("Training on all data...")
         df_train = df.copy()
         df_val = df.copy()
-    elif "training" in df.columns:
-        # Split data based on a 'training' column if it exists
-        print("Splitting data based on 'training' column...")
-        df_train = df[df["training"]].copy()
-        df_val = df[~df["training"]].copy()
     else:
-        # Perform a random split if no 'training' column is found
+        # Perform a random split
         print("Splitting data randomly...")
         df_train, df_val = train_test_split(df, test_size=validation_split, random_state=42)
 

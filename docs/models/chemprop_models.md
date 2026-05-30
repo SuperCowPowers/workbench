@@ -32,7 +32,7 @@ model = feature_set.to_model(
 
 # Deploy and run inference
 endpoint = model.to_endpoint(tags=["chemprop", "logd"])
-endpoint.auto_inference()
+endpoint.test_inference()
 ```
 
 **How it works:** The MPNN reads the molecular graph directly — atoms are nodes, bonds are edges. Through multiple rounds of message passing, each atom aggregates information from its neighbors to build a learned molecular representation. This representation feeds into a feedforward network (FFN) that outputs the prediction.

@@ -711,25 +711,18 @@ if __name__ == "__main__":
     split_strategy = hyperparameters.get("split_strategy", "scaffold")
     butina_cutoff = hyperparameters.get("butina_cutoff", 0.4)
 
-    # Check for pre-defined training column (overrides split strategy)
-    if n_folds == 1 and "training" in all_df.columns:
-        print("Using 'training' column for train/val split")
-        train_idx = np.where(all_df["training"])[0]
-        val_idx = np.where(~all_df["training"])[0]
-        folds = [(train_idx, val_idx)]
-    else:
-        # Use unified split interface (auto-detects 'smiles' column for scaffold/butina)
-        target_col = target_columns[0] if model_type == "classifier" else None
-        folds = get_split_indices(
-            all_df,
-            n_splits=n_folds,
-            strategy=split_strategy,
-            target_column=target_col,
-            test_size=0.2,
-            random_state=42,
-            butina_cutoff=butina_cutoff,
-        )
-        print(f"Split strategy: {split_strategy}")
+    # Split into folds (unified interface auto-detects 'smiles' for scaffold/butina)
+    target_col = target_columns[0] if model_type == "classifier" else None
+    folds = get_split_indices(
+        all_df,
+        n_splits=n_folds,
+        strategy=split_strategy,
+        target_column=target_col,
+        test_size=0.2,
+        random_state=42,
+        butina_cutoff=butina_cutoff,
+    )
+    print(f"Split strategy: {split_strategy}")
 
     print(f"Training {'single model' if n_folds == 1 else f'{n_folds}-fold ensemble'}...")
 
@@ -998,12 +991,6 @@ if __name__ == "__main__":
 
         uq_dict = None  # set in the valid-rows branch below; save handles None
 
-        if smiles_column not in df_train.columns and smiles_column not in df_val.columns:
-            raise ValueError(
-                f"Regression UQ requires a '{smiles_column}' column for fingerprint-based "
-                "neighborhood lookups (used by UQModelV1)."
-            )
-
         # Only fit UQ if we have valid primary-target rows
         valid = df_val[primary].notna()
         if valid.sum() > 0:
@@ -1013,9 +1000,16 @@ if __name__ == "__main__":
             val_std = df_val.loc[valid, f"{primary}_pred_std"].values
 
             all_df = pd.concat([df_train, df_val], ignore_index=True)
-            prox_df = all_df[[id_column, smiles_column, primary]].copy()
-            prox_df = prox_df.rename(columns={smiles_column: "smiles"})
-            prox_df["in_model"] = True  # see XGB template for rationale on CV folds
+
+            # V1/V2 need a fingerprint proximity set (smiles); with smiles we fit all
+            # three, otherwise just V0 (fit_regression_uq handles the prox_df=None case).
+            if smiles_column in all_df.columns:
+                prox_df = all_df[[id_column, smiles_column, primary]].copy()
+                prox_df = prox_df.rename(columns={smiles_column: "smiles"})
+                prox_df["in_model"] = True  # see XGB template for rationale on CV folds
+            else:
+                prox_df = None
+                print(f"No '{smiles_column}' column: fitting UQ V0 only (V1/V2 need fingerprints)")
 
             uq_dict = fit_regression_uq(
                 y_true=val_y, y_pred=val_pred, y_std=val_std,

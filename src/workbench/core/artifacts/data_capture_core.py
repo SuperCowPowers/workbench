@@ -380,7 +380,7 @@ if __name__ == "__main__":
     my_endpoint.enable_data_capture()
 
     # Test the data capture by running some predictions
-    # pred_df = my_endpoint.auto_inference()
+    # pred_df = my_endpoint.test_inference()
     # print(pred_df.head())
 
     # Check that data capture is working

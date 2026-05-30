@@ -17,6 +17,6 @@ from workbench.api import Endpoint  # noqa: E402
 
 # Run Inference on a particular model (using its endpoint)
 end = Endpoint("abalone-regression")
-df = end.auto_inference()
+df = end.test_inference()
 print(df.columns)
 print(df.head())

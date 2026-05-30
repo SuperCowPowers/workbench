@@ -1,8 +1,7 @@
 """Scan Workbench FeatureSets for NaN SMILES.
 
 Usage:
-    WORKBENCH_CONFIG=/Users/briford/.workbench/ideaya_prod.json \
-    AWS_PROFILE=idb-prod-admin \
+    WORKBENCH_CONFIG=/path/to/your_config.json \
     python smiles_nan_investigation.py
 """
 

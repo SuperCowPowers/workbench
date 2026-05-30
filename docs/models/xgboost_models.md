@@ -21,7 +21,7 @@ model = fs.to_model(
 
 # Deploy and run inference
 endpoint = model.to_endpoint()
-endpoint.auto_inference()
+endpoint.test_inference()
 ```
 
 ### Classification

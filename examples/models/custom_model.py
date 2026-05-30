@@ -19,4 +19,4 @@ my_model = Model("smiles-to-2d-v1")
 endpoint = my_model.to_endpoint(name="smiles-to-2d-v1", tags=["smiles", "molecular descriptors"])
 
 # Run auto-inference on the Endpoint
-endpoint.auto_inference()
+endpoint.test_inference()

@@ -136,7 +136,7 @@ if recreate or not Endpoint("logp-bounded-off").exists():
     m = Model("logp-bounded-off")
     end = m.to_endpoint(tags=["chemprop", "bounded-loss", "synthetic", "logp", "off"])
     end.set_owner("BW")
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()
 
 
@@ -171,5 +171,5 @@ if recreate or not Endpoint("logp-bounded-on").exists():
     m = Model("logp-bounded-on")
     end = m.to_endpoint(tags=["chemprop", "bounded-loss", "synthetic", "logp", "on"])
     end.set_owner("BW")
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()

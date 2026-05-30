@@ -9,28 +9,28 @@ end_class = Endpoint("test-classification")
 
 def test_reg_to_reg():
     """Test chaining two regression endpoints"""
-    pred_df = end_reg.inference(end_reg.auto_inference())
+    pred_df = end_reg.inference(end_reg.test_inference())
     print(pred_df.columns)
     print(pred_df)
 
 
 def test_reg_to_class():
     """Test chaining a regression endpoint to a classification endpoint"""
-    pred_df = end_class.inference(end_reg.auto_inference())
+    pred_df = end_class.inference(end_reg.test_inference())
     print(pred_df.columns)
     print(pred_df)
 
 
 def test_class_to_class():
     """Test chaining two classification endpoints"""
-    pred_df = end_class.inference(end_class.auto_inference())
+    pred_df = end_class.inference(end_class.test_inference())
     print(pred_df.columns)
     print(pred_df)
 
 
 def test_class_to_reg():
     """Test chaining a classification endpoint to a regression endpoint"""
-    pred_df = end_reg.inference(end_class.auto_inference())
+    pred_df = end_reg.inference(end_class.test_inference())
     print(pred_df.columns)
     print(pred_df)
 

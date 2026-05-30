@@ -69,18 +69,17 @@ class Endpoint(EndpointCore):
             return self._async.inference(eval_df, capture_name, id_column, drop_error_rows, include_quantiles)
         return super().inference(eval_df, capture_name, id_column, drop_error_rows, include_quantiles)
 
-    def auto_inference(self) -> pd.DataFrame:
-        """Run inference on the Endpoint using the test data from the model training view.
+    def test_inference(self, *args, **kwargs) -> pd.DataFrame:
+        """Smoke-test the Endpoint by running inference on a sample of rows.
 
-        Async endpoints cap this at a 10-row smoke test (per-row cost is too
-        high to send the full holdout); sync endpoints use the full holdout.
+        Async endpoints default to a smaller sample (per-row cost is high).
 
         Returns:
             pd.DataFrame: The DataFrame with predictions
         """
         if self._async is not None:
-            return self._async.auto_inference()
-        return super().auto_inference()
+            return self._async.test_inference(*args, **kwargs)
+        return super().test_inference(*args, **kwargs)
 
     def purge_async_queue(self) -> int:
         """Cancel queued async invocations by deleting their staged S3 inputs.
@@ -267,15 +266,14 @@ if __name__ == "__main__":
     # Run predictions on the Endpoint
     model = Model(my_endpoint.get_input())
     my_features = FeatureSet(model.get_input())
-    table = my_features.view("training").table
-    df = my_features.query(f'SELECT * FROM "{table}" where training = FALSE')
+    df = my_features.pull_dataframe()
     results = my_endpoint.inference(df)
     target = model.target()
     pprint(results[[target, "prediction"]])
 
-    # Run predictions using the auto_inference method
-    auto_results = my_endpoint.auto_inference()
-    pprint(auto_results[[target, "prediction"]])
+    # Run predictions using the test_inference method
+    test_results = my_endpoint.test_inference()
+    pprint(test_results[[target, "prediction"]])
 
     # Run predictions using the fast_inference method
     fast_results = my_endpoint.fast_inference(df)

@@ -195,7 +195,7 @@ class MetaEndpoint(Endpoint):
         """Derive a (feature_list, feature_set_name, target_column) tuple for the meta.
 
         Workbench Models need to trace back to a FeatureSet, and downstream
-        tooling (``auto_inference``, ``register_input_columns`` /
+        tooling (``test_inference``, ``register_input_columns`` /
         ``register_output_columns``) all anchor on
         ``model.features()`` + ``model.get_input()``. For DAG-based
         MetaEndpoints we satisfy that contract by:

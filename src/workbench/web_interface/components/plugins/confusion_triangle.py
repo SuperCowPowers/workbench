@@ -456,7 +456,7 @@ if __name__ == "__main__":
     from workbench.cached.cached_model import CachedModel
 
     model = CachedModel("aqsol-mol-class")
-    df = model.get_inference_predictions("auto_inference")
+    df = model.get_inference_predictions("test_inference")
     class_labels = model.class_labels()
     target_col = model.target()
     proba_cols = [f"{label}_proba" for label in class_labels]

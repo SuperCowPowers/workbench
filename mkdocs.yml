@@ -107,7 +107,8 @@ nav:
   - Road Maps: 
     - 0.9.0:  road_maps/0_9_0.md
     - 0.9.5:  road_maps/0_9_5.md
-  - Release Notes: 
+  - Release Notes:
+    - 0.8.357:  release_notes/0_8_357.md
     - 0.8.339:  release_notes/0_8_339.md
     - 0.8.158:  release_notes/0_8_158.md
   - Admin: 

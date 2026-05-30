@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
         # Create the endpoint for the model
         end = model.to_endpoint(tags=tags)
-        end.auto_inference()
+        end.test_inference()
 
     # Now we take a DataSource, compute the fingerprints, and create a new Model/Endpoint for solubility prediction
     ds = DataSource("aqsol_data")
@@ -59,4 +59,4 @@ if __name__ == "__main__":
     )
     model.set_owner("test")
     end = model.to_endpoint(tags=["aqsol", "fingerprints", "regression"])
-    end.auto_inference()
+    end.test_inference()

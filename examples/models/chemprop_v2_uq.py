@@ -38,7 +38,7 @@ if recreate or not Endpoint(model_name).exists():
     m = Model(model_name)
     end = m.to_endpoint(tags=["chemprop", "open_admet", "v2_uq"])
     end.set_owner("BW")
-    end.auto_inference()
+    end.test_inference()
     end.cross_fold_inference()
 
     # Pull test data for inference

@@ -608,4 +608,4 @@ if __name__ == "__main__":
     # Use the aqsol-mol-class model (3-class classifier)
     model = CachedModel("aqsol-mol-class")
     # model = CachedModel("caco2-pappab-class-pytorch-1-dt")
-    PluginUnitTest(ConfusionExplorer, input_data=model, theme="dark", inference_run="auto_inference").run()
+    PluginUnitTest(ConfusionExplorer, input_data=model, theme="dark", inference_run="test_inference").run()

@@ -151,6 +151,58 @@ def dataframe_to_table(data_source: DataSource, df: pd.DataFrame, table_name: st
         log.critical(f"Failed to create table {table_name} in database {database}.")
 
 
+def create_model_training_view(
+    data_source: DataSource,
+    model_view_name: str,
+    feature_columns: list,
+    id_column: str,
+    weights_df: pd.DataFrame = None,
+) -> str:
+    """Create a model-owned training view: the feature columns plus a sample_weight column.
+
+    When weights_df is provided, it's stored in a sparse model-scoped weights table (only ids
+    whose weight differs from the 1.0 default). The view left-joins that table and coalesces
+    missing ids to 1.0. Rows with sample_weight == 0 are excluded from the view, so every model
+    (including custom models) trains only on the retained rows without repeating exclusion logic.
+
+    Args:
+        data_source (DataSource): The FeatureSet's DataSource.
+        model_view_name (str): The model training view name (e.g. "my_model_training").
+        feature_columns (list): Feature columns to include (AWS-generated columns already excluded).
+        id_column (str): The id column used for the weights join.
+        weights_df (pd.DataFrame): Sparse [id_column, "sample_weight"] frame, or None for all 1.0.
+
+    Returns:
+        str: The created view's table name.
+    """
+    base_table = data_source.table
+    model_view_table = f"{base_table}___{model_view_name}"
+    sql_columns = ", ".join([f't."{c}"' for c in feature_columns])
+
+    if weights_df is None or weights_df.empty:
+        # No exceptions: every row gets the default weight of 1.0
+        create_view_sql = f"""
+        CREATE OR REPLACE VIEW "{model_view_table}" AS
+        SELECT {sql_columns}, 1.0 AS sample_weight
+        FROM "{base_table}" t
+        """
+    else:
+        # Sparse weights table; ids absent from it coalesce to 1.0, weight 0 is excluded
+        model_weights_table = f"_{base_table}___{model_view_name}_weights"
+        log.info(f"Creating model weights table: {model_weights_table} ({len(weights_df)} rows)")
+        dataframe_to_table(data_source, weights_df, model_weights_table)
+        create_view_sql = f"""
+        CREATE OR REPLACE VIEW "{model_view_table}" AS
+        SELECT {sql_columns}, COALESCE(w."sample_weight", 1.0) AS sample_weight
+        FROM "{base_table}" t
+        LEFT JOIN "{model_weights_table}" w ON t."{id_column}" = w."{id_column}"
+        WHERE COALESCE(w."sample_weight", 1.0) > 0
+        """
+
+    data_source.execute_statement(create_view_sql)
+    return model_view_table
+
+
 def delete_views_and_supplemental_data(base_table_name: str, database: str, boto3_session):
     """Delete all views and supplemental data in a database
 

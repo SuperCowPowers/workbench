@@ -60,52 +60,64 @@ def fit_regression_uq(
     y_pred,
     y_std,
     val_ids: list,
-    prox_df,
+    prox_df=None,
     id_column: str,
     target: str,
     active_version: str = "v0",
 ) -> dict:
-    """Fit UQModelV0, UQModelV1, and UQModelV2 on the same training slice.
+    """Fit the regression UQ models on the validation predictions.
 
-    V0 and V1 use the validation predictions/std for calibration. V2 uses only
-    the proximity reference set and doesn't need ensemble predictions, but it's
-    fit here alongside V0/V1 so the bundle always carries all three.
+    V0 (isotonic calibration on prediction+std) needs no molecular structure and
+    is always fit. V1 and V2 are fingerprint-proximity models, so they're fit only
+    when ``prox_df`` is provided (i.e. the FeatureSet has a 'smiles' column). With
+    smiles the bundle carries all three; without it, V0 only.
+
+    Future me: the smiles detection + prox_df construction is currently duplicated
+    in the xgb/pytorch/chemprop templates. Consider passing the training df here and
+    building the proximity set in this one place so the templates just call this.
 
     Args:
         y_true: True target values for the validation set, shape (n,).
         y_pred: Predicted values (ensemble mean), shape (n,).
         y_std: Ensemble standard deviation, shape (n,).
         val_ids: List of compound IDs aligned with the above arrays.
-        prox_df: DataFrame for the V1/V2 FingerprintProximity reference set.
-            Must contain ``id_column``, a ``smiles`` column, and the target
-            column. Typically built from the full training set (CV rows
-            marked ``in_model=True``).
+        prox_df: DataFrame for the V1/V2 FingerprintProximity reference set, or
+            None. When provided, must contain ``id_column``, a ``smiles`` column,
+            and the target column (CV rows marked ``in_model=True``). When None,
+            only V0 is fit.
         id_column: Name of the ID column in ``prox_df``.
         target: Name of the target column in ``prox_df``.
         active_version: Which version is the "primary" one (``"v0"``, ``"v1"``,
-            or ``"v2"``). Doesn't affect what gets fit (all three always do);
-            only determines which is returned under the ``uq_model`` key.
+            or ``"v2"``). If the requested version wasn't fit (no ``prox_df``),
+            falls back to v0.
 
     Returns:
-        dict with keys ``uq_model`` (the active instance), ``v0``, ``v1``, ``v2``.
+        dict with keys ``uq_model`` (the active instance), ``v0``, ``v1``, ``v2``
+        (``v1``/``v2`` are None when no ``prox_df`` was provided).
     """
     active = _normalize_version(active_version)
 
     log.info("Fitting UQModelV0 (isotonic on prediction+std) ...")
     uq_model_v0 = UQModelV0.fit(y_true, y_pred, y_std)
 
-    # V1 and V2 share the same FingerprintProximity instance — built once.
-    prox = FingerprintProximity(prox_df, id_column=id_column, target=target)
+    # V1 and V2 need a FingerprintProximity reference set (a 'smiles' column).
+    uq_model_v1 = None
+    uq_model_v2 = None
+    if prox_df is not None:
+        prox = FingerprintProximity(prox_df, id_column=id_column, target=target)
 
-    log.info("Fitting UQModelV1 (proximity-augmented RF error model) ...")
-    uq_model_v1 = UQModelV1(prox)
-    uq_model_v1.fit(val_ids, y_true, y_pred, y_std)
+        log.info("Fitting UQModelV1 (proximity-augmented RF error model) ...")
+        uq_model_v1 = UQModelV1(prox)
+        uq_model_v1.fit(val_ids, y_true, y_pred, y_std)
 
-    log.info("Fitting UQModelV2 (applicability-domain from proximity) ...")
-    uq_model_v2 = UQModelV2.fit(prox)
+        log.info("Fitting UQModelV2 (applicability-domain from proximity) ...")
+        uq_model_v2 = UQModelV2.fit(prox)
 
     active_lookup = {"v0": uq_model_v0, "v1": uq_model_v1, "v2": uq_model_v2}
-    uq_model_active = active_lookup[active]
+    uq_model_active = active_lookup.get(active)
+    if uq_model_active is None:
+        log.warning(f"UQ version '{active}' not fit (no fingerprint/smiles data); using v0")
+        uq_model_active = uq_model_v0
     log.info(f"Active UQ version for training-time df_val columns: {active}")
 
     return {

@@ -9,6 +9,7 @@ from sagemaker.core.shapes.shapes import MetricDefinition
 from sagemaker.train.model_trainer import ModelTrainer
 from sagemaker.core.training.configs import SourceCode, Compute, StoppingCondition, OutputDataConfig
 import awswrangler as wr
+import pandas as pd
 
 import time
 import uuid
@@ -96,6 +97,7 @@ class FeaturesToModel(Transform):
         description: str = None,
         feature_list: list = None,
         train_all_data=False,
+        sample_weights: Union[dict, pd.DataFrame] = None,
         **kwargs,
     ):
         """Generic Features to Model: Note you should create a new class and inherit from
@@ -105,16 +107,20 @@ class FeaturesToModel(Transform):
             description (str): Description of the model (optional)
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
             train_all_data (bool): Train on ALL (100%) of the data (default False)
+            sample_weights (dict | pd.DataFrame): Sparse per-id sample weights as a
+                ``{id: weight}`` dict or a ``[id_column, "sample_weight"]`` DataFrame.
+                Any id not listed defaults to weight 1.0; rows with weight 0 are
+                excluded from training (default None: all rows weight 1.0).
         """
         # Set our model description
         self.model_description = description if description is not None else f"Model created from {self.input_name}"
 
-        # Get our Feature Set and snapshot the training view immediately
+        # Get our Feature Set and build the model's own training view
         feature_set = FeatureSetCore(self.input_name)
         short_id = uuid.uuid4().hex[:6]
         self.model_training_view_name = f"{self.output_name.replace('-', '_')}_training_{short_id}".lower()
         self.log.important(f"Creating Model Training View: {self.model_training_view_name}...")
-        self._create_model_training_view(feature_set, self.model_training_view_name)
+        self._create_model_training_view(feature_set, self.model_training_view_name, sample_weights)
 
         # Delete the existing model (if it exists)
         self.log.important(f"Trying to delete existing model {self.output_name}...")
@@ -325,55 +331,58 @@ class FeaturesToModel(Transform):
         self.log.important(f"Creating new model {self.output_name}...")
         self.create_and_register_model(**kwargs)
 
-    def _create_model_training_view(self, feature_set: FeatureSetCore, model_view_name: str):
-        """Create a model-owned training view with its own isolated weights table.
+    def _create_model_training_view(
+        self, feature_set: FeatureSetCore, model_view_name: str, sample_weights: Union[dict, pd.DataFrame] = None
+    ):
+        """Create a model-owned training view of the FeatureSet's features plus a sample_weight column.
 
-        Instead of copying the FeatureSet's training view (which references a shared weights table),
-        this snapshots the current training state into a model-scoped weights table and builds
-        a self-contained view that won't break if the shared weights table is later deleted.
+        When sample_weights are provided, they're stored in a sparse model-scoped weights table
+        (only ids whose weight differs from the 1.0 default). The view left-joins that table and
+        coalesces missing ids to 1.0. Rows with sample_weight == 0 are excluded from the view, so
+        every model (including custom models) trains only on the retained rows without repeating
+        exclusion logic.
 
         Args:
             feature_set (FeatureSetCore): The source FeatureSet
             model_view_name (str): The model training view name (e.g. "my_model_training")
+            sample_weights (dict | pd.DataFrame): Sparse per-id weights as a ``{id: weight}`` dict
+                or a ``[id_column, "sample_weight"]`` DataFrame. None means all rows weight 1.0.
         """
-        from workbench.core.views.view_utils import dataframe_to_table
+        from workbench.core.views.view_utils import create_model_training_view
 
-        # Snapshot the current training view state (id, training flag, optional sample_weight)
-        training_view = feature_set.view("training")
-        tv_columns = training_view.columns
         id_column = feature_set.id_column
 
-        select_cols = [f'"{id_column}"', '"training"']
-        has_weights = "sample_weight" in tv_columns
-        if has_weights:
-            select_cols.append('"sample_weight"')
-
-        col_str = ", ".join(select_cols)
-        tv_df = feature_set.data_source.query(f'SELECT {col_str} FROM "{training_view.table}"')
-
-        # Add default sample_weight if the training view didn't have one
-        if not has_weights:
-            tv_df["sample_weight"] = 1.0
-
-        # Create model-scoped weights table
-        base_table = feature_set.data_source.table
-        model_weights_table = f"_{base_table}___{model_view_name}_weights"
-        self.log.info(f"Creating model weights table: {model_weights_table}")
-        dataframe_to_table(feature_set.data_source, tv_df, model_weights_table)
-
-        # Build model training view SQL: JOIN base table with model's own weights table
+        # Feature columns (exclude AWS-generated columns)
         aws_cols = ["write_time", "api_invocation_time", "is_deleted", "event_time"]
         feature_columns = [c for c in feature_set.columns if c not in aws_cols]
-        sql_columns = ", ".join([f't."{c}"' for c in feature_columns])
 
-        model_view_table = f"{base_table}___{model_view_name}"
-        create_view_sql = f"""
-        CREATE OR REPLACE VIEW "{model_view_table}" AS
-        SELECT {sql_columns}, w."sample_weight", w."training"
-        FROM "{base_table}" t
-        INNER JOIN "{model_weights_table}" w ON t."{id_column}" = w."{id_column}"
+        # Normalize to a sparse [id_column, sample_weight] DataFrame (or None), then build the view
+        weights_df = self._normalize_sample_weights(sample_weights, id_column)
+        create_model_training_view(feature_set.data_source, model_view_name, feature_columns, id_column, weights_df)
+
+    @staticmethod
+    def _normalize_sample_weights(
+        sample_weights: Union[dict, pd.DataFrame, None], id_column: str
+    ) -> Union[pd.DataFrame, None]:
+        """Normalize sample_weights into a sparse [id_column, sample_weight] DataFrame.
+
+        Args:
+            sample_weights (dict | pd.DataFrame | None): A ``{id: weight}`` dict or a
+                ``[id_column, "sample_weight"]`` DataFrame.
+            id_column (str): The FeatureSet id column name.
+
+        Returns:
+            pd.DataFrame | None: A two-column DataFrame, or None when there are no weights.
         """
-        feature_set.data_source.execute_statement(create_view_sql)
+        if sample_weights is None:
+            return None
+        if isinstance(sample_weights, dict):
+            if not sample_weights:
+                return None
+            return pd.DataFrame(list(sample_weights.items()), columns=[id_column, "sample_weight"])
+        if sample_weights.empty:
+            return None
+        return sample_weights[[id_column, "sample_weight"]].copy()
 
     def post_transform(self, **kwargs):
         """Post-Transform: Calling onboard() on the Model"""

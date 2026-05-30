@@ -40,10 +40,10 @@ pytorch_model = fs.to_model(
 
 # Deploy Endpoints
 xgb_end = xgb_model.to_endpoint()
-xgb_end.auto_inference()
+xgb_end.test_inference()
 
 pytorch_end = pytorch_model.to_endpoint()
-pytorch_end.auto_inference()
+pytorch_end.test_inference()
 ```
 
 ---

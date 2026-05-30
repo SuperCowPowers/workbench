@@ -19,10 +19,10 @@ model = CachedModel("abalone-regression")
 
 # List the inference runs
 model.list_inference_runs()
-['auto_inference', 'model_training']
+['test_inference', 'model_training']
 
 # Grab specific inference results
-model.get_inference_predictions("auto_inference")
+model.get_inference_predictions("test_inference")
      class_number_of_rings  prediction    id
 0                       16   10.516158     7
 1                        9    9.031365     8

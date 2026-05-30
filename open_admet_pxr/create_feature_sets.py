@@ -21,7 +21,7 @@ Pipeline:
   Mordred    ensemble      descriptor sets)
   2D)        3D)
 
-Usage (with WORKBENCH_CONFIG already set, e.g. ideaya_sandbox.json):
+Usage (with WORKBENCH_CONFIG already set):
 
     python create_feature_sets.py                    # build anything missing
     python create_feature_sets.py --refeaturize      # clear the 3D InferenceCache and recompute

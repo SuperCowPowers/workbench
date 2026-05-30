@@ -10,7 +10,7 @@ def test_confusion_matrix():
 
     # Instantiate model
     model = Model("wine-classification")
-    inference_run = "auto_inference"
+    inference_run = "test_inference"
 
     # Instantiate the ConfusionMatrix class
     cm = ConfusionMatrix()
