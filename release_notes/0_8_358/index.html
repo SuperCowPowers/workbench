@@ -23,7 +23,7 @@
     
     
       
-        <title>0.8.357 - ADMET Workbench</title>
+        <title>0.8.358 - ADMET Workbench</title>
       
     
     
@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#release-08357" class="md-skip">
+        <a href="#release-08358" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.8.357
+              0.8.358
             
           </span>
         </div>
@@ -3704,7 +3704,7 @@
   <span class="md-ellipsis">
     
   
-    0.8.357
+    0.8.358
   
 
     
@@ -3722,7 +3722,7 @@
   <span class="md-ellipsis">
     
   
-    0.8.357
+    0.8.358
   
 
     
@@ -3752,6 +3752,17 @@
     <span class="md-ellipsis">
       
         API changes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#code-example-for-api-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code example for API change
       
     </span>
   </a>
@@ -4217,6 +4228,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#code-example-for-api-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Code example for API change
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#removed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4277,7 +4299,7 @@
 
 
 
-<h1 id="release-08357">Release 0.8.357</h1>
+<h1 id="release-08358">Release 0.8.358</h1>
 <div class="admonition tip inline end">
 <p class="admonition-title">Need Help?</p>
 <p>The SuperCowPowers team is happy to give any assistance needed when setting up AWS and Workbench. So please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
@@ -4293,7 +4315,39 @@
   Rows with weight 0 are excluded from training at the view level, so every model (including custom ones) gets exclusion for free.</li>
 <li><strong><code>endpoint.auto_inference()</code> → <code>endpoint.test_inference()</code>.</strong> It is now an endpoint smoke test (a sample of rows), not a holdout evaluation.</li>
 <li><strong><code>fs.temporal_split(date_col, end_date)</code> returns a <code>{id: weight}</code> dict</strong> (was a list of holdout ids) and no longer persists anything — compose it with other weight sources and hand it to <code>to_model(sample_weights=...)</code>.</li>
-<li><strong><code>model.default_inference_run()</code></strong> is the single resolver for the default inference capture (<code>full_cross_fold → test_inference → first run</code>). The <code>get_inference_metrics</code> / <code>confusion_matrix</code> sentinel is now <code>"default"</code> (was <code>"auto"</code>).</li>
+</ul>
+<h3 id="code-example-for-api-change">Code example for API change</h3>
+<p><strong>Before</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Weights were shared mutable state on the FeatureSet</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">fs</span><span class="o">.</span><span class="n">set_sample_weights</span><span class="p">({</span><span class="n">id_1</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">id_2</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">})</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># temporal_split mutated the FeatureSet (additively merged holdout weights)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">fs</span><span class="o">.</span><span class="n">temporal_split</span><span class="p">(</span><span class="s2">&quot;date_col&quot;</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="s2">&quot;2025-10-17&quot;</span><span class="p">)</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">model</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">end</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">end</span><span class="o">.</span><span class="n">auto_inference</span><span class="p">()</span>
+</span></code></pre></div>
+<p><strong>After</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Weights are a plain local dict</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">sample_weights</span> <span class="o">=</span> <span class="p">{</span><span class="n">id_1</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">id_2</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">}</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># temporal_split now RETURNS {id: 0.0}; merge it to keep the old additive behavior</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">sample_weights</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">sample_weights</span><span class="p">,</span> <span class="o">**</span><span class="n">fs</span><span class="o">.</span><span class="n">temporal_split</span><span class="p">(</span><span class="s2">&quot;date_col&quot;</span><span class="p">,</span> <span class="n">end_date</span><span class="o">=</span><span class="s2">&quot;2025-10-17&quot;</span><span class="p">)}</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Hand the composed weights to the model transform</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">model</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">to_model</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">sample_weights</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">end</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">end</span><span class="o">.</span><span class="n">test_inference</span><span class="p">()</span>
+</span></code></pre></div>
+<p>Highlights:</p>
+<ul>
+<li><strong>Merge, don't overwrite.</strong> <code>temporal_split</code> used to be additive — composing with
+  <code>{**sample_weights, **fs.temporal_split(...)}</code> keeps existing exclusions in place.</li>
+<li><strong>Empty weights are a no-op.</strong> <code>sample_weights={}</code> (or omitting the arg) trains on
+  all rows, so a bare <code>fs.set_sample_weights({})</code> can simply be dropped.</li>
 </ul>
 <h3 id="removed">Removed</h3>
 <ul>
