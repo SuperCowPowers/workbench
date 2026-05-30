@@ -13,7 +13,6 @@ These classes provide APIs for creating Views for DataSources and FeatureSets.
 
 - **[DisplayView](display_view.md):** The Display View is leveraged by the web views/components and allows fine tuning of the UI for the Workbench Dashboard.
 - **[ComputationView](computation_view.md):** The Computation View controls which columns have descriptive stats, outliers, and correlation calculations. Typically the computation view is a superset of the display view.
-- **[TrainingView](training_view.md):** The Training View will add a 'training' column to the data for model training, validation, and testing. Each row will have a 1 or 0 indicated whether is was used in the model training.
 - **[InferenceView](inference_view.md):** The Inference View runs endpoint inference and computes residuals"""
 
 ## Examples
@@ -27,7 +26,7 @@ from workbench.api.data_source import DataSource
 # Convert the Data Source to a Feature Set
 test_data = DataSource('test_data')
 test_data.views()
-["display", "training", "computation"]
+["display", "computation"]
 ```
 
 **Getting a Particular View**

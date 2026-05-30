@@ -67,7 +67,6 @@ nav:
       - OverView: core_classes/views/overview.md
       - ComputationView: core_classes/views/computation_view.md
       - DisplayView: core_classes/views/display_view.md
-      - TrainingView: core_classes/views/training_view.md
       - InferenceView: core_classes/views/inference_view.md
     - Transforms: 
       - OverView: core_classes/transforms/overview.md

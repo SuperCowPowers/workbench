@@ -19,7 +19,7 @@ from workbench.api.data_source import DataSource
 # Convert the Data Source to a Feature Set
 test_data = DataSource('test_data')
 test_data.views()
-["display", "training", "computation"]
+["display", "computation"]
 ```
 
 **Getting a Particular View**
