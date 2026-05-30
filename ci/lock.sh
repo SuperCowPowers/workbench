@@ -14,12 +14,22 @@ PYTHON_PLATFORM=x86_64-unknown-linux-gnu
 PYTORCH_CPU=https://download.pytorch.org/whl/cpu
 PYTORCH_CUDA=https://download.pytorch.org/whl/cu130
 
-# Flags that force fresh resolutions on every run:
-#   --no-cache: don't read uv's cached PyPI metadata
-#   --upgrade:  don't treat the existing output lock as a preferred-versions
-#               hint (uv's default would otherwise minimize churn by reusing
-#               whatever versions are already pinned)
-FRESH="--no-cache --upgrade"
+# By default uv pip compile reuses the versions already pinned in each output
+# lock as preferred-version hints, so re-running only changes what a constraint
+# edit in pyproject.toml / requirements.in actually forces. New upstream
+# releases don't cause churn.
+#
+# Escape hatches when you do want movement:
+#   UPGRADE=1 ./ci/lock.sh           re-resolve everything to the latest (the
+#                                    old aggressive behavior; --no-cache forces
+#                                    fresh PyPI metadata, --upgrade drops the
+#                                    preferred-versions hint)
+#   add --upgrade-package <name>     bump a single package on a compile call
+if [[ "${UPGRADE:-}" == "1" ]]; then
+    FRESH="--no-cache --upgrade"
+else
+    FRESH=""
+fi
 
 # Compile one image's lockfile.
 #   $1: output path
