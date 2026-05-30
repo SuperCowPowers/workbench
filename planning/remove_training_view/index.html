@@ -9,10 +9,6 @@
       
       
       
-        <link rel="prev" href="../chemprop_multi_task/">
-      
-      
-        <link rel="next" href="../molecular_standardization/">
       
       
         
@@ -23,7 +19,7 @@
     
     
       
-        <title>AWS Endpoint Architecture - ADMET Workbench</title>
+        <title>Remove the Shared Training View + Sample-Weight State - ADMET Workbench</title>
       
     
     
@@ -78,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#inside-a-workbench-aws-endpoint-a-modern-web-stack-for-ml-inference" class="md-skip">
+        <a href="#remove-the-shared-training-view-sample-weight-state" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +109,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              AWS Endpoint Architecture
+              Remove the Shared Training View + Sample-Weight State
             
           </span>
         </div>
@@ -1585,20 +1581,18 @@
       
   
   
-    
   
   
-  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
         
           
           <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
@@ -1619,7 +1613,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1637,7 +1631,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../" class="md-nav__link">
+      <a href="../../blogs/" class="md-nav__link">
         
   
   
@@ -1665,7 +1659,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../confusion_explorer/" class="md-nav__link">
+      <a href="../../blogs/confusion_explorer/" class="md-nav__link">
         
   
   
@@ -1693,7 +1687,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_confidence/" class="md-nav__link">
+      <a href="../../blogs/model_confidence/" class="md-nav__link">
         
   
   
@@ -1721,7 +1715,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chemprop_shap/" class="md-nav__link">
+      <a href="../../blogs/chemprop_shap/" class="md-nav__link">
         
   
   
@@ -1749,7 +1743,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../chemprop_multi_task/" class="md-nav__link">
+      <a href="../../blogs/chemprop_multi_task/" class="md-nav__link">
         
   
   
@@ -1774,37 +1768,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    AWS Endpoint Architecture
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../blogs/aws_endpoint_architecture/" class="md-nav__link">
         
   
   
@@ -1820,253 +1787,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#the-default-sagemaker-stack-nginx-gunicorn-flask" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Default SageMaker Stack: Nginx + Gunicorn + Flask
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The Default SageMaker Stack: Nginx + Gunicorn + Flask">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#nginx-reverse-proxy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Nginx (Reverse Proxy)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#gunicorn-wsgi-application-server" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Gunicorn (WSGI Application Server)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#flask-web-framework" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Flask (Web Framework)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-request-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Request Flow
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#whats-wrong-with-the-default-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What's Wrong with the Default Stack?
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-workbench-stack-uvicorn-fastapi" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Workbench Stack: Uvicorn + FastAPI
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The Workbench Stack: Uvicorn + FastAPI">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#uvicorn-asgi-server" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Uvicorn (ASGI Server)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#fastapi-asgi-web-framework" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FastAPI (ASGI Web Framework)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-workbench-request-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Workbench Request Flow
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dataframe-in-dataframe-out" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        DataFrame In, DataFrame Out
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="DataFrame In, DataFrame Out">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#why-dataframes-matter" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why DataFrames Matter
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#custom-image-more-than-just-the-web-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom Image: More Than Just the Web Stack
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#side-by-side-comparison" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Side-by-Side Comparison
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#why-it-matters-for-ml-inference" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why It Matters for ML Inference
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#robust-error-handling-binary-search-for-bad-rows" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Robust Error Handling: Binary Search for Bad Rows
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        References
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#questions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Questions?
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2079,7 +1799,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../molecular_standardization/" class="md-nav__link">
+      <a href="../../blogs/molecular_standardization/" class="md-nav__link">
         
   
   
@@ -2107,7 +1827,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../3d_descriptors/" class="md-nav__link">
+      <a href="../../blogs/3d_descriptors/" class="md-nav__link">
         
   
   
@@ -2135,7 +1855,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../feature_endpoints/" class="md-nav__link">
+      <a href="../../blogs/feature_endpoints/" class="md-nav__link">
         
   
   
@@ -4378,22 +4098,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-default-sagemaker-stack-nginx-gunicorn-flask" class="md-nav__link">
+  <a href="#motivation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Default SageMaker Stack: Nginx + Gunicorn + Flask
+        Motivation
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="The Default SageMaker Stack: Nginx + Gunicorn + Flask">
+    <nav class="md-nav" aria-label="Motivation">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#nginx-reverse-proxy" class="md-nav__link">
+  <a href="#root-cause" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Nginx (Reverse Proxy)
+        Root cause
       
     </span>
   </a>
@@ -4401,32 +4121,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#gunicorn-wsgi-application-server" class="md-nav__link">
+  <a href="#compounding-the-split-has-aged-out" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Gunicorn (WSGI Application Server)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#flask-web-framework" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Flask (Web Framework)
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#the-request-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Request Flow
+        Compounding: the split has aged out
       
     </span>
   </a>
@@ -4439,10 +4137,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#whats-wrong-with-the-default-stack" class="md-nav__link">
+  <a href="#design-principles" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What's Wrong with the Default Stack?
+        Design Principles
       
     </span>
   </a>
@@ -4450,22 +4148,33 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-workbench-stack-uvicorn-fastapi" class="md-nav__link">
+  <a href="#background-aws-feature-store-types" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Workbench Stack: Uvicorn + FastAPI
+        Background: AWS Feature Store types
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="The Workbench Stack: Uvicorn + FastAPI">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Changes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What Changes">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#uvicorn-asgi-server" class="md-nav__link">
+  <a href="#shared-vs-per-model-the-core-distinction" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Uvicorn (ASGI Server)
+        Shared vs per-model (the core distinction)
       
     </span>
   </a>
@@ -4473,10 +4182,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fastapi-asgi-web-framework" class="md-nav__link">
+  <a href="#sample-weights-new-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        FastAPI (ASGI Web Framework)
+        Sample weights: new flow
       
     </span>
   </a>
@@ -4484,10 +4193,43 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#the-workbench-request-flow" class="md-nav__link">
+  <a href="#holdout-evaluation" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Workbench Request Flow
+        Holdout / evaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#metrics-unified-default_inference_run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics: unified default_inference_run()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test_inference-test_inference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        test_inference -&gt; test_inference
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model-templates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model templates
       
     </span>
   </a>
@@ -4500,38 +4242,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dataframe-in-dataframe-out" class="md-nav__link">
+  <a href="#decisions-log" class="md-nav__link">
     <span class="md-ellipsis">
       
-        DataFrame In, DataFrame Out
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="DataFrame In, DataFrame Out">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#why-dataframes-matter" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why DataFrames Matter
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#custom-image-more-than-just-the-web-stack" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Custom Image: More Than Just the Web Stack
+        Decisions Log
       
     </span>
   </a>
@@ -4539,10 +4253,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#side-by-side-comparison" class="md-nav__link">
+  <a href="#implementation-plan-ordered-to-keep-the-tree-runnable" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Side-by-Side Comparison
+        Implementation Plan (ordered to keep the tree runnable)
       
     </span>
   </a>
@@ -4550,10 +4264,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-it-matters-for-ml-inference" class="md-nav__link">
+  <a href="#out-of-scope-deferred-downstream-consumers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Why It Matters for ML Inference
+        Out of Scope (deferred — downstream consumers)
       
     </span>
   </a>
@@ -4561,43 +4275,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#robust-error-handling-binary-search-for-bad-rows" class="md-nav__link">
+  <a href="#risks-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Robust Error Handling: Binary Search for Bad Rows
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Summary
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        References
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#questions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Questions?
+        Risks / Notes
       
     </span>
   </a>
@@ -4621,187 +4302,247 @@
 
 
 
-<h1 id="inside-a-workbench-aws-endpoint-a-modern-web-stack-for-ml-inference">Inside a Workbench AWS Endpoint: A Modern Web Stack for ML Inference</h1>
-<div class="admonition tip inline end">
-<p class="admonition-title">Deploy Your Own</p>
-<p>Ready to deploy? The <a href="../../api_classes/endpoint/">Endpoint API</a> walks you through creating and managing endpoints on AWS.</p>
-</div>
-<p>When you deploy a model endpoint on AWS SageMaker, the default architecture gives you a battle-tested but aging web stack. Workbench takes a different approach — building custom container images with a modern ASGI stack that delivers better performance and native async support. In this blog we'll compare the two architectures and explain why the Workbench stack is a better foundation for production ML inference.</p>
-<figure style="margin: 20px 0;">
-<img src="../../images/endpoint_architecture.png" alt="Components of a Workbench AWS Endpoint" style="width: 100%;">
-<figcaption><em>The layered architecture of a Workbench endpoint: from the custom image down to the model artifacts.</em></figcaption>
-</figure>
-
-<h2 id="the-default-sagemaker-stack-nginx-gunicorn-flask">The Default SageMaker Stack: Nginx + Gunicorn + Flask</h2>
-<p>When you follow AWS's canonical "bring your own container" pattern for SageMaker endpoints, you get a three-tier web stack that's been the reference architecture for years:</p>
-<h3 id="nginx-reverse-proxy">Nginx (Reverse Proxy)</h3>
-<p>Nginx sits at the front, listening on port 8080 (SageMaker's required port). It accepts incoming HTTP requests from the SageMaker runtime infrastructure and forwards them to the application server over a Unix socket. It handles buffering, connection management, and returns 404 for anything that isn't <code>/ping</code> or <code>/invocations</code>.</p>
-<h3 id="gunicorn-wsgi-application-server">Gunicorn (WSGI Application Server)</h3>
-<p>Gunicorn is a pre-fork worker server that spawns multiple copies of the Flask application — typically one worker per CPU core. Each worker is an independent OS process running the <strong>synchronous WSGI</strong> protocol, meaning it handles exactly <strong>one request at a time</strong>. When a worker is processing an inference request, it's blocked until that request completes.</p>
-<h3 id="flask-web-framework">Flask (Web Framework)</h3>
-<p>Flask defines the two required endpoints: <code>GET /ping</code> for health checks and <code>POST /invocations</code> for inference. It's lightweight and well-understood, but it's a synchronous WSGI framework — no native support for async I/O, streaming responses, or WebSocket connections.</p>
-<h3 id="the-request-flow">The Request Flow</h3>
-<figure style="margin: 20px auto;">
-<img src="../../images/default_stack_flow.svg" alt="Default SageMaker request flow: Nginx → Gunicorn → Flask → Model" style="min-height: 350px;">
-</figure>
-
-<p>Each request passes through three layers of process/socket boundaries before reaching your model code. Gunicorn's sync workers mean that concurrency is limited to the number of worker processes — and each worker loads a full copy of the model into memory.</p>
-<h2 id="whats-wrong-with-the-default-stack">What's Wrong with the Default Stack?</h2>
-<p>The Nginx/Gunicorn/Flask stack works, but it has real limitations for modern ML inference workloads:</p>
-<p><strong>Synchronous-only processing.</strong> WSGI is a synchronous protocol from 2003. Each Gunicorn worker blocks on a single request. If your inference involves any I/O — loading data, calling external services, batching — the worker sits idle waiting instead of handling other requests.</p>
-<p><strong>No native streaming support.</strong> SageMaker now supports response streaming via <code>InvokeEndpointWithResponseStream</code>, but WSGI and Flask can't do this natively. You need a fundamentally different server architecture to stream tokens or partial results back to the client.</p>
-<p><strong>Memory-heavy concurrency.</strong> Gunicorn achieves concurrency by forking worker processes. Each process loads the full Python interpreter and model into memory. Want 8 concurrent requests? You need 8 copies of your model in RAM.</p>
-<p><strong>An aging ecosystem.</strong> Flask and Gunicorn are mature and stable, but the Python web ecosystem has moved on. The ASGI standard, async/await, and frameworks like FastAPI represent the modern approach to building high-performance Python web services.</p>
-<h2 id="the-workbench-stack-uvicorn-fastapi">The Workbench Stack: Uvicorn + FastAPI</h2>
-<p>Workbench endpoints replace the entire default stack with a modern ASGI architecture built on two components:</p>
-<h3 id="uvicorn-asgi-server">Uvicorn (ASGI Server)</h3>
-<p><a href="https://www.uvicorn.org/">Uvicorn</a> is a high-performance ASGI server built on <code>uvloop</code> (a fast, drop-in replacement for Python's <code>asyncio</code> event loop) and <code>httptools</code> (a fast HTTP parser based on Node.js's http-parser). It handles HTTP connections directly — no Nginx reverse proxy needed.</p>
-<p>Key advantages over Gunicorn + Nginx:</p>
-<ul>
-<li><strong>Async I/O</strong>: A single Uvicorn worker can handle many concurrent connections using Python's <code>async/await</code>. While one request waits on model loading or I/O, other requests proceed.</li>
-<li><strong>Fewer moving parts</strong>: One server process replaces two (Nginx + Gunicorn). Fewer processes means simpler debugging, fewer configuration files, and fewer failure modes.</li>
-<li><strong>Native HTTP/1.1 and WebSocket support</strong>: ASGI natively supports streaming responses and bidirectional communication — critical for streaming inference results.</li>
-</ul>
-<h3 id="fastapi-asgi-web-framework">FastAPI (ASGI Web Framework)</h3>
-<p><a href="https://fastapi.tiangolo.com/">FastAPI</a> is a modern Python web framework built on ASGI and Pydantic. It's what makes Workbench endpoints type-safe and production-ready:</p>
-<ul>
-<li><strong>Pydantic models for request/response validation</strong>: Input data is validated against typed schemas before your model code ever sees it. Bad requests get clear error messages automatically.</li>
-<li><strong>Dependency injection</strong>: Shared resources (model loading, configuration) are managed cleanly without global state or singletons.</li>
-<li><strong>Native async/await</strong>: Endpoint handlers can be <code>async def</code>, enabling non-blocking I/O throughout the request lifecycle.</li>
-</ul>
-<h3 id="the-workbench-request-flow">The Workbench Request Flow</h3>
-<figure style="margin: 20px auto;">
-<img src="../../images/workbench_stack_flow.svg" alt="Workbench request flow: Uvicorn → FastAPI → Model" style="min-height: 300px;">
-</figure>
-
-<p>Two layers instead of three. Async instead of sync. Typed schemas instead of manual parsing.</p>
-<h2 id="dataframe-in-dataframe-out">DataFrame In, DataFrame Out</h2>
-<p>At the heart of every Workbench endpoint is a simple contract: <strong>send a DataFrame, get a DataFrame back</strong>. The model script layer handles the translation between HTTP and pandas, so your inference code works with familiar DataFrames rather than raw bytes or JSON blobs.</p>
-<p>The FastAPI <code>/invocations</code> handler orchestrates three functions that every model script defines:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nd">@app</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;/invocations&quot;</span><span class="p">)</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">invoke</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">Request</span><span class="p">):</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">body</span> <span class="o">=</span> <span class="k">await</span> <span class="n">request</span><span class="o">.</span><span class="n">body</span><span class="p">()</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">data</span> <span class="o">=</span> <span class="n">inference_module</span><span class="o">.</span><span class="n">input_fn</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">content_type</span><span class="p">)</span>      <span class="c1"># → DataFrame</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">inference_module</span><span class="o">.</span><span class="n">predict_fn</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>         <span class="c1"># → DataFrame</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">output_data</span> <span class="o">=</span> <span class="n">inference_module</span><span class="o">.</span><span class="n">output_fn</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">accept</span><span class="p">)</span>  <span class="c1"># → CSV/JSON</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">content</span><span class="o">=</span><span class="n">output_data</span><span class="p">)</span>
+<h1 id="remove-the-shared-training-view-sample-weight-state">Remove the Shared Training View + Sample-Weight State</h1>
+<h2 id="motivation">Motivation</h2>
+<p>Workbench batch jobs intermittently fail (~1 in 50 overnight) with:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>INVALID_VIEW: Failed analyzing stored view &#39;...___training&#39;:
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Table &#39;..._...___sample_weights&#39; does not exist
 </span></code></pre></div>
+<h3 id="root-cause">Root cause</h3>
+<p>Sample weights and the train/holdout split live as <strong>shared mutable state on the
+FeatureSet</strong>:</p>
 <ul>
-<li><strong><code>input_fn</code></strong> parses the raw request body into a DataFrame — supports both CSV and JSON. </li>
-<li><strong><code>predict_fn</code></strong> runs dataframe through the model, and returns a new DataFrame with predictions appended. </li>
-<li><strong><code>output_fn</code></strong> serializes the result back to CSV or JSON for the response.</li>
+<li><code>_&lt;base&gt;___sample_weights</code> — a supplemental weights table</li>
+<li><code>&lt;base&gt;___training</code> — a view that JOINs the base table against that weights table</li>
 </ul>
-<p>This pattern means model scripts are simplier and that calling inference on an endpoint is as easy as sending a DataFrame:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Grab Endpoint</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">end</span> <span class="o">=</span> <span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;my_awesome_endpoint&quot;</span><span class="p">)</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Grab data that I want to predict on</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">my_data</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">my</span> <span class="n">inference</span> <span class="n">data</span><span class="o">&gt;</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Send DataFrame to endpoint and get predictions back as a new DataFrame</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">predictions</span> <span class="o">=</span> <span class="n">end</span><span class="o">.</span><span class="n">inference</span><span class="p">(</span><span class="n">my_data</span><span class="p">)</span>
-</span></code></pre></div>
-<h3 id="why-dataframes-matter">Why DataFrames Matter</h3>
-<p>This isn't just a convenience — it's a design decision that pays off across the entire ML lifecycle:</p>
-<p><strong>Column preservation.</strong> The input DataFrame passes through prediction intact. ID columns, target values, metadata — everything comes back alongside the predictions. No need to rejoin predictions to your original data by row index and hope the alignment is correct.</p>
-<p><strong>Case-insensitive feature matching.</strong> Workbench model scripts use <code>match_features_case_insensitive()</code> to handle column name variations. If your FeatureSet has <code>LogP</code> but your eval DataFrame has <code>logp</code>, inference still works — the model script renames columns to match the model's expectations automatically.</p>
-<p><strong>Type handling across the wire.</strong> CSV serialization strips type information — everything becomes a string. The client-side <code>_predict</code> method handles the round-trip automatically: numeric columns are converted back with <code>pd.to_numeric()</code>, <code>N/A</code> placeholders (used because CSV can't represent <code>NaN</code> natively) are restored to proper <code>NaN</code> values, <code>__NA__</code> placeholders for <code>pd.NA</code> survive the round-trip, and boolean strings (<code>"true"/"false"</code>) are converted back to Python booleans. The result is a DataFrame that looks like you never serialized it at all.</p>
-<p><strong>Consistent interface across model frameworks.</strong> Whether your model is XGBoost, PyTorch, or ChemProp, the contract is the same: DataFrame in, DataFrame out. The model script handles framework-specific details (loading XGBoost models, running ChemProp graph inference, expanding classifier probability columns) while the caller always works with the same pandas interface.</p>
-<h2 id="custom-image-more-than-just-the-web-stack">Custom Image: More Than Just the Web Stack</h2>
-<p>The Workbench custom image isn't only about Uvicorn and FastAPI — it's a purpose-built environment for computational chemistry and ADMET modeling. The image comes pre-loaded with:</p>
-<table style="width: 100%;">
-  <thead>
-    <tr>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Package</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Purpose</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">RDKit</td><td style="padding: 8px 16px;">Molecular parsing, descriptor computation, substructure search</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">Mordred</td><td style="padding: 8px 16px;">Additional molecular descriptors (ADMET-focused modules)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">ChemProp</td><td style="padding: 8px 16px;">Message-passing neural network (MPNN) inference for molecular property prediction</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">XGBoost</td><td style="padding: 8px 16px;">Gradient-boosted tree model inference</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">PyTorch</td><td style="padding: 8px 16px;">Neural network inference (ChemProp backend)</td></tr>
-    <tr><td class="text-teal" style="padding: 8px 16px; font-weight: bold;">scikit-learn</td><td style="padding: 8px 16px;">Classical ML model inference and preprocessing</td></tr>
-  </tbody>
+<p><code>set_sample_weights()</code> mutates this state by <strong>delete-then-recreate</strong> with a
+<code>time.sleep(3)</code> gap (<code>_delete_weights_table</code>). Promoted models (xgb, pytorch,
+chemprop) all train off the <em>same</em> FeatureSet and each call <code>set_sample_weights()</code>
+at startup. When two jobs run concurrently, one job's delete/recreate window
+overlaps another job's read of the shared <code>___training</code> view → <code>INVALID_VIEW</code>.</p>
+<p>The crash is the visible symptom. The deeper problem: <strong>sample weights and the
+holdout split are per-model-training concerns modeled as shared FeatureSet state.</strong>
+A silent failure mode also exists — Job B overwriting Job A's weights between A's
+write and A's read means A can train on the wrong weights with no error.</p>
+<h3 id="compounding-the-split-has-aged-out">Compounding: the split has aged out</h3>
+<p>The <code>training</code> view was an 80/20 split from when "the split" was a single global
+property of a dataset. Modern models do their own internal scaffold/butina/random
+split via <code>get_split_indices()</code>. The FeatureSet's <code>training</code> flag and the model's
+actual internal split have <strong>already diverged</strong>, so any "holdout" metrics derived
+from the shared view are already partially leaked.</p>
+<h2 id="design-principles">Design Principles</h2>
+<ol>
+<li><strong>FeatureSet = pure data abstraction.</strong> Columns, rows, types, id, event_time.
+   No training/holdout/weight state.</li>
+<li><strong>Splits and weights are per-model-training concerns.</strong> They belong to a
+   specific training run, owned by <code>FeaturesToModel</code>, materialized as per-model
+   artifacts (<code>_&lt;base&gt;___&lt;model&gt;_*</code>).</li>
+<li><strong>Holdouts are computed on demand, not persisted.</strong> Either user-managed or
+   temporal (<code>ts_inference</code> already recomputes the temporal split statelessly).</li>
+<li><strong>Minimize API surface.</strong> Backward compatibility is secondary to simplification.</li>
+</ol>
+<h2 id="background-aws-feature-store-types">Background: AWS Feature Store types</h2>
+<p>Feature Store supports only three scalar types — <code>Integral</code>, <code>Fractional</code>,
+<code>String</code> (plus <code>List</code>/<code>Set</code>/<code>Vector</code> collections). No native bool or datetime.
+Irrelevant to this change directly, but context for why the supplemental-table
+pattern exists.</p>
+<hr />
+<h2 id="what-changes">What Changes</h2>
+<h3 id="shared-vs-per-model-the-core-distinction">Shared vs per-model (the core distinction)</h3>
+<table>
+<thead>
+<tr>
+<th>Artifact</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;base&gt;___training</code> (shared view)</td>
+<td><strong>REMOVE</strong></td>
+</tr>
+<tr>
+<td><code>_&lt;base&gt;___sample_weights</code> (shared table)</td>
+<td><strong>REMOVE</strong></td>
+</tr>
+<tr>
+<td>FeatureSet weight-mutation methods</td>
+<td><strong>REMOVE</strong></td>
+</tr>
+<tr>
+<td>Per-model training view (<code>workbench_training_view</code>)</td>
+<td><strong>KEEP</strong> — rebuilt from <code>transform(sample_weights=...)</code></td>
+</tr>
+<tr>
+<td>Per-model weights table</td>
+<td><strong>KEEP</strong> — now <strong>sparse</strong></td>
+</tr>
+</tbody>
 </table>
-
-<p>This means endpoint model scripts can import these packages directly without bundling them into the model artifact. The container image handles the complex dependency chain (RDKit's C++ extensions, PyTorch's CUDA bindings, Mordred's dependency on NetworkX) so your model script stays focused on inference logic.</p>
-<h2 id="side-by-side-comparison">Side-by-Side Comparison</h2>
-<table style="width: 100%;">
-  <thead>
-    <tr>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Aspect</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Default Stack</th>
-      <th style="background-color: rgba(58, 134, 255, 0.5); color: white; padding: 10px 16px;">Workbench Stack</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Web Server</td><td style="padding: 8px 16px;">Nginx + Gunicorn</td><td style="padding: 8px 16px;">Uvicorn</td></tr>
-    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Framework</td><td style="padding: 8px 16px;">Flask (WSGI)</td><td style="padding: 8px 16px;">FastAPI (ASGI)</td></tr>
-    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Protocol</td><td style="padding: 8px 16px;">WSGI (synchronous)</td><td style="padding: 8px 16px;">ASGI (async-native)</td></tr>
-    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Concurrency Model</td><td style="padding: 8px 16px;">Process forking (1 req/worker)</td><td style="padding: 8px 16px;">Async event loop (many req/worker)</td></tr>
-    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Streaming</td><td style="padding: 8px 16px;">Not natively supported</td><td style="padding: 8px 16px;">Native ASGI streaming</td></tr>
-    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Request Validation</td><td style="padding: 8px 16px;">Manual</td><td style="padding: 8px 16px;">Automatic (Pydantic)</td></tr>
-    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Process Count</td><td style="padding: 8px 16px;">3 (Nginx + Gunicorn + Flask)</td><td style="padding: 8px 16px;">1 (Uvicorn + FastAPI)</td></tr>
-    <tr><td class="text-orange" style="padding: 8px 16px; font-weight: bold;">Chemistry Packages</td><td style="padding: 8px 16px;">Install yourself</td><td style="padding: 8px 16px;">Pre-loaded (RDKit, Mordred, ChemProp)</td></tr>
-  </tbody>
-</table>
-
-<h2 id="why-it-matters-for-ml-inference">Why It Matters for ML Inference</h2>
-<p>The architecture differences aren't academic — they translate directly to operational benefits:</p>
-<p><strong>Simpler debugging.</strong> One server process with structured FastAPI logging beats digging through Nginx access logs, Gunicorn error logs, and Flask tracebacks across three processes.</p>
-<p><strong>Better resource utilization.</strong> Async I/O means a single worker can overlap model loading, preprocessing, and response serialization. You're not paying for idle workers blocked on I/O.</p>
-<p><strong>Ready for advanced patterns.</strong> Streaming inference results, health checks with detailed model status, batch preprocessing with async gathering — these patterns fall out naturally from the ASGI architecture. With WSGI, each one requires workarounds.</p>
-<p><strong>Production-ready chemistry stack.</strong> The custom image means you don't spend hours debugging RDKit compilation issues or Mordred version conflicts inside a SageMaker container. Deploy your model script, and the chemistry packages are already there.</p>
-<h2 id="robust-error-handling-binary-search-for-bad-rows">Robust Error Handling: Binary Search for Bad Rows</h2>
-<p>Production inference means dealing with messy data — invalid SMILES strings, malformed feature values, and edge cases that crash model scripts. The default SageMaker pattern gives you nothing here: if a single bad row exists in your batch, the entire request fails with a <code>ModelError</code> and you get no predictions back.</p>
-<p>Workbench takes a fundamentally different approach. When the endpoint returns a <code>ModelError</code>, Workbench automatically <strong>bisects</strong> the batch and retries each half recursively. This binary search narrows down to the exact problematic row(s) while still returning predictions for every valid row:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">_endpoint_error_handling</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictor</span><span class="p">,</span> <span class="n">feature_df</span><span class="p">,</span> <span class="n">drop_error_rows</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="k">try</span><span class="p">:</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>        <span class="n">results</span> <span class="o">=</span> <span class="n">predictor</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">csv_buffer</span><span class="o">.</span><span class="n">getvalue</span><span class="p">())</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">columns</span><span class="o">=</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="k">except</span> <span class="n">botocore</span><span class="o">.</span><span class="n">exceptions</span><span class="o">.</span><span class="n">ClientError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="k">if</span> <span class="n">err</span><span class="o">.</span><span class="n">response</span><span class="p">[</span><span class="s2">&quot;Error&quot;</span><span class="p">][</span><span class="s2">&quot;Code&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;ModelError&quot;</span><span class="p">:</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>            <span class="c1"># Base case: single row that fails</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>                <span class="k">if</span> <span class="n">drop_error_rows</span><span class="p">:</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>                    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">feature_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fill_with_nans</span><span class="p">(</span><span class="n">feature_df</span><span class="p">)</span>  <span class="c1"># NaN placeholder</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>            <span class="c1"># Binary search: split and retry both halves</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>            <span class="n">mid_point</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_df</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>            <span class="n">first_half</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_endpoint_error_handling</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">feature_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="n">mid_point</span><span class="p">])</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>            <span class="n">second_half</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_endpoint_error_handling</span><span class="p">(</span><span class="n">predictor</span><span class="p">,</span> <span class="n">feature_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">mid_point</span><span class="p">:])</span>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">first_half</span><span class="p">,</span> <span class="n">second_half</span><span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<h3 id="sample-weights-new-flow">Sample weights: new flow</h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">sample_weights</span> <span class="o">=</span> <span class="n">fs</span><span class="o">.</span><span class="n">temporal_split</span><span class="p">(</span><span class="n">date_col</span><span class="p">,</span> <span class="n">end_date</span><span class="p">)</span>   <span class="c1"># pure, returns {id: weight}</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># compose freely from multiple producers:</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1">#   {**outlier_weights, **temporal_weights, ...}</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">transform</span><span class="p">(</span><span class="n">sample_weights</span><span class="o">=</span><span class="n">sample_weights</span><span class="p">)</span>
 </span></code></pre></div>
-<p>The algorithm handles several scenarios gracefully:</p>
 <ul>
-<li><strong><code>ModelNotReadyException</code></strong>: Sleeps and retries — common with serverless endpoints that cold-start.</li>
-<li><strong><code>ModelError</code> with multiple rows</strong>: Bisects the batch recursively until the bad row(s) are isolated.</li>
-<li><strong>Single bad row</strong>: Either fills with NaN placeholders (preserving row alignment) or drops the row entirely, based on the <code>drop_error_rows</code> parameter.</li>
-<li><strong>Unexpected errors</strong>: Logs full error context and raises — no silent failures.</li>
+<li><code>sample_weights</code> is a <strong>sparse</strong> dict (or <code>[id, weight]</code> DataFrame): default
+  weight is <code>1.0</code>, only exceptions are stored.</li>
+<li><code>FeaturesToModel.transform(sample_weights=...)</code> writes the per-model weights
+  table and builds the per-model view directly — no shared state, no race.</li>
+<li>Per-model weights table columns: <code>[id, sample_weight]</code> (the old <code>training</code>
+  column is dropped; the model does its own internal split).</li>
+<li>Per-model view: <code>base LEFT JOIN weights ... COALESCE(w.sample_weight, 1.0)</code>.</li>
 </ul>
-<p>This means you can send 10,000 rows to an endpoint, have 3 of them contain invalid data, and get back 10,000 predictions — 9,997 real values and 3 NaN placeholders. The alternative? Manually chunking your data, catching errors, and hoping you can figure out which rows caused the failure. Workbench handles all of this automatically with logarithmic overhead (a batch of 1,000 with one bad row requires only ~10 extra endpoint calls to isolate it).</p>
-<p>The <code>N/A</code> → <code>NaN</code> conversion and automatic type recovery in <code>_predict</code> further smooths over the rough edges of CSV serialization — numeric columns that SageMaker's CSV deserializer returns as strings get converted back to proper numeric types, and <code>pd.NA</code> placeholders survive the round-trip through <code>__NA__</code> encoding.</p>
-<h2 id="summary">Summary</h2>
-<p>AWS SageMaker's default endpoint architecture — Nginx, Gunicorn, and Flask — is a proven stack that's been serving models reliably for years. But it's a synchronous, WSGI-era design that shows its age when you need async processing, or streaming responses.</p>
-<p>Workbench replaces this with Uvicorn and FastAPI: a modern ASGI stack that's simpler (fewer processes), more capable (async, streaming, auto-docs), and purpose-built for computational chemistry workloads. The DataFrame-in/DataFrame-out contract means model scripts work with familiar pandas code while the framework handles serialization, type recovery, and case-insensitive feature matching automatically. On top of that, robust error handling uses binary search to isolate bad rows in inference batches — so a single malformed SMILES string doesn't take down your entire prediction run. Combined with a custom image pre-loaded with RDKit, Mordred, and ChemProp, Workbench endpoints give you a production-ready ML inference platform without the infrastructure headaches.</p>
-<h2 id="references">References</h2>
+<h3 id="holdout-evaluation">Holdout / evaluation</h3>
 <ul>
-<li><strong>FastAPI</strong>: Ramírez, S. <em>FastAPI: Modern, Fast (high-performance) Web Framework for Building APIs.</em> <a href="https://fastapi.tiangolo.com/">https://fastapi.tiangolo.com/</a></li>
-<li><strong>Uvicorn</strong>: Encode. <em>Uvicorn: An ASGI Web Server.</em> <a href="https://www.uvicorn.org/">https://www.uvicorn.org/</a></li>
-<li><strong>ASGI Specification</strong>: Django Software Foundation. <em>Asynchronous Server Gateway Interface.</em> <a href="https://asgi.readthedocs.io/">https://asgi.readthedocs.io/</a></li>
-<li><strong>SageMaker Custom Containers</strong>: AWS. <em>Use Your Own Inference Code with Hosting Services.</em> <a href="https://docs.aws.amazon.com/sagemaker/latest/dg/your-algorithms-inference-code.html">https://docs.aws.amazon.com/sagemaker/latest/dg/your-algorithms-inference-code.html</a></li>
-<li><strong>Gunicorn</strong>: Chesneau, B. <em>Gunicorn: Python WSGI HTTP Server for UNIX.</em> <a href="https://gunicorn.org/">https://gunicorn.org/</a></li>
-<li><strong>RDKit</strong>: <a href="https://github.com/rdkit/rdkit">https://github.com/rdkit/rdkit</a></li>
-<li><strong>ChemProp</strong>: <a href="https://github.com/chemprop/chemprop">https://github.com/chemprop/chemprop</a></li>
-<li><strong>Mordred</strong>: <a href="https://github.com/mordred-descriptor/mordred">https://github.com/mordred-descriptor/mordred</a></li>
+<li><strong>User-managed:</strong> user splits their data, trains on train, calls
+  <code>end.inference(test_df)</code>.</li>
+<li><strong>Temporal:</strong> <code>fs.temporal_split()</code> produces weights for the cutoff;
+  <code>end.ts_inference()</code> recomputes the temporal holdout statelessly at eval time
+  (already implemented — no change).</li>
 </ul>
-<h2 id="questions">Questions?</h2>
-<p><img align="right" src="../../images/scp.png" width="180"></p>
-<p>The SuperCowPowers team is happy to answer any questions you may have about AWS and Workbench. Please contact us at <a href="mailto:workbench@supercowpowers.com">workbench@supercowpowers.com</a> or on chat us up on <a href="https://discord.gg/WHAJuz8sw8">Discord</a></p>
+<h3 id="metrics-unified-default_inference_run">Metrics: unified <code>default_inference_run()</code></h3>
+<p>The "auto" capture priority is currently implemented three inconsistent ways
+(<code>model_details</code> plugin, <code>confusion_matrix</code>, <code>performance_metrics</code>). Consolidate
+into one resolver on <code>ModelCore</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>default_inference_run() -&gt; str | None
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    priority: full_cross_fold -&gt; test_inference -&gt; first inference run -&gt; None
+</span></code></pre></div>
+<ul>
+<li><code>confusion_matrix</code>, <code>performance_metrics</code>, and the web plugins all call it.</li>
+<li><code>model_training</code> (regexp-scraped from AWS logs, effectively unused) is <strong>not</strong>
+  in the chain.</li>
+<li>Rename the <code>"auto"</code> capture sentinel to <code>"default"</code> to match the resolver name.</li>
+</ul>
+<h3 id="test_inference-test_inference"><code>test_inference</code> -&gt; <code>test_inference</code></h3>
+<ul>
+<li>Method <code>endpoint.auto_inference()</code> -&gt; <code>endpoint.test_inference()</code>; body changes
+  to pull N random rows from the FeatureSet (smoke test that the endpoint serves),
+  captured under <code>"test_inference"</code>.</li>
+<li>All capture-name lookups <code>"test_inference"</code> -&gt; <code>"test_inference"</code>.</li>
+</ul>
+<h3 id="model-templates">Model templates</h3>
+<p>Remove the <code>if n_folds == 1 and "training" in df.columns:</code> branch in all six
+templates (chemprop, xgb, scikit_learn, ngboost, bayesian_ridge,
+gaussian_process). They fall through to <code>get_split_indices()</code>, which already
+handles <code>n_splits=1</code> for random / scaffold / butina (verified).</p>
+<hr />
+<h2 id="decisions-log">Decisions Log</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Decision</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1</td>
+<td><code>temporal_split</code> location/shape</td>
+<td>Stays on FeatureSet, <strong>pure</strong>, returns <code>{id: weight}</code> dict (was <code>list</code> of holdout ids); no persistence</td>
+</tr>
+<tr>
+<td>D2</td>
+<td>Sample weights ownership</td>
+<td>Per-model input to <code>transform(sample_weights=...)</code>; FeatureSet weight-mutation methods removed</td>
+</tr>
+<tr>
+<td>D3</td>
+<td><code>test_inference</code></td>
+<td>Rename method -&gt; <code>test_inference()</code> (N random rows); rename capture string everywhere</td>
+</tr>
+<tr>
+<td>D4</td>
+<td><code>full_inference</code></td>
+<td><strong>Unchanged</strong> — uses <code>model.training_view()</code> (per-model view), which legitimately reflects outlier removal</td>
+</tr>
+<tr>
+<td>D5</td>
+<td><code>model_training</code> metrics scrape</td>
+<td><strong>Leave for now</strong>; just keep it out of <code>default_inference_run()</code></td>
+</tr>
+<tr>
+<td>M1</td>
+<td><code>model.training_view()</code> fallback</td>
+<td>If per-model view missing: log <strong>error</strong> + create a default per-model view (all rows, weight 1.0); drop the shared-view fallback</td>
+</tr>
+<tr>
+<td>M2</td>
+<td>Weight data structure</td>
+<td><strong>Sparse</strong> — default 1.0, store only exceptions; sparse per-model table; <code>LEFT JOIN ... COALESCE(., 1.0)</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="implementation-plan-ordered-to-keep-the-tree-runnable">Implementation Plan (ordered to keep the tree runnable)</h2>
+<ol>
+<li>
+<p><strong><code>FeaturesToModel.transform(sample_weights=...)</code></strong> — add the parameter; write
+   the sparse per-model weights table from it; build the per-model view via
+   <code>LEFT JOIN ... COALESCE</code>. Stop snapshotting <code>fs.view("training")</code>. Drop the
+   <code>training</code> column references (features_to_model.py 138, 159, 346, 372).</p>
+</li>
+<li>
+<p><strong><code>fs.temporal_split()</code></strong> — make pure: return <code>{id: weight}</code> dict, remove the
+   <code>set_sample_weights</code>/<code>add_filter</code> persistence.</p>
+</li>
+<li>
+<p><strong><code>model.training_view()</code></strong> — M1 fallback (error + create default per-model
+   view); remove the line-710 shared-view fallback.</p>
+</li>
+<li>
+<p><strong>Metrics consolidation</strong> — add <code>ModelCore.default_inference_run()</code>; route
+   <code>confusion_matrix</code>/<code>performance_metrics</code> "auto" -&gt; "default" through it;
+   repoint web plugins (<code>model_details</code>, <code>model_plot</code>, <code>confusion_explorer</code>).</p>
+</li>
+<li>
+<p><strong><code>test_inference</code> -&gt; <code>test_inference</code></strong> — rename method + capture string in
+   <code>endpoint_core</code>, <code>async_endpoint_core</code>, <code>model_core</code> defaults,
+   <code>shapley_values</code>, and the web plugins.</p>
+</li>
+<li>
+<p><strong>Model templates</strong> — remove the <code>"training"</code>-column split branch in all six.</p>
+</li>
+<li>
+<p><strong><code>pandas_to_features</code></strong> — remove the <code>incoming_hold_out_ids</code> flow
+   (319-325, 431-432) and the <code>set_training_holdouts</code> call.</p>
+</li>
+<li>
+<p><strong>Delete <code>TrainingView</code></strong> — <code>views/training_view.py</code>, the export in
+   <code>views/__init__.py</code>, the <code>view_name == "training"</code> auto-create case in
+   <code>view.py</code> (288-293), and the shell registration in <code>workbench_shell.py:287</code>.</p>
+</li>
+<li>
+<p><strong>Delete FeatureSet methods</strong> — <code>set_sample_weights</code>, <code>get_sample_weights</code>,
+   <code>add_filter</code>, <code>set_training_holdouts</code>, <code>get_training_holdouts</code>,
+   <code>_create_weights_table</code>, <code>_delete_weights_table</code>, the <code>pull_training_data</code>
+   helper (line 374), and the <code>view("training")</code> usages.</p>
+</li>
+<li>
+<p><strong>Stragglers</strong> — <code>endpoint_utils.get_training_data</code> / <code>get_evaluation_data</code>
+    (remove; they read <code>fs.view("training")</code>); <code>api/endpoint.py:270</code>.</p>
+</li>
+</ol>
+<p>After step 6 no library code reads the shared training view; after step 7 no
+ingest path writes it; steps 8-10 are pure deletion.</p>
+<h2 id="out-of-scope-deferred-downstream-consumers">Out of Scope (deferred — downstream consumers)</h2>
+<ul>
+<li>Updating downstream model pipelines (~40 call sites using <code>fs.set_sample_weights</code>).</li>
+<li>Downstream eval taxonomy / capture-name conventions for nightly vs promoted holdouts.</li>
+<li>Whether nightly eval should move to temporal (<code>ts_inference</code>) as canonical.</li>
+<li>D5 full removal of the <code>model_training</code> metrics scrape.</li>
+</ul>
+<h2 id="risks-notes">Risks / Notes</h2>
+<ul>
+<li>Existing FeatureSets in production have a shared <code>___sample_weights</code> table and
+  <code>___training</code> view. New code ignores them; they become orphaned until the
+  FeatureSet is recreated or cleaned up. <code>list_supplemental_data_tables</code> enumerates
+  by <code>_&lt;base&gt;___*</code> prefix, so FeatureSet deletion still sweeps them.</li>
+<li>Per-model weights tables/views are swept by the same prefix mechanism on
+  FeatureSet delete and by model deletion — verify both paths.</li>
+</ul>
 
 
 

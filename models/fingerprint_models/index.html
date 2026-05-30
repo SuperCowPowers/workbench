@@ -2522,34 +2522,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/views/training_view/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    TrainingView
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../core_classes/views/inference_view/" class="md-nav__link">
         
   
@@ -3857,6 +3829,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../release_notes/0_8_357/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.8.357
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../release_notes/0_8_339/" class="md-nav__link">
         
   
@@ -4382,7 +4382,7 @@
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
 </span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="c1"># Create the endpoint for the model</span>
 </span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">end</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span>
-</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">end</span><span class="o">.</span><span class="n">auto_inference</span><span class="p">()</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="n">end</span><span class="o">.</span><span class="n">test_inference</span><span class="p">()</span>
 </span></code></pre></div>
 <h3 id="step-1-compute-fingerprints-and-create-a-featureset">Step 1: Compute Fingerprints and Create a FeatureSet</h3>
 <p>Run your data through the fingerprint endpoint, then create a FeatureSet and mark the fingerprint column as compressed:</p>
@@ -4420,7 +4420,7 @@
 </span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;aqsol&quot;</span><span class="p">,</span> <span class="s2">&quot;fingerprints&quot;</span><span class="p">,</span> <span class="s2">&quot;regression&quot;</span><span class="p">],</span>
 </span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="p">)</span>
 </span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="n">end</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;aqsol&quot;</span><span class="p">,</span> <span class="s2">&quot;fingerprints&quot;</span><span class="p">,</span> <span class="s2">&quot;regression&quot;</span><span class="p">])</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="n">end</span><span class="o">.</span><span class="n">auto_inference</span><span class="p">()</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="n">end</span><span class="o">.</span><span class="n">test_inference</span><span class="p">()</span>
 </span></code></pre></div>
 <h2 id="fingerprints-descriptors">Fingerprints + Descriptors</h2>
 <p>Combine fingerprints with RDKit molecular descriptors for richer feature sets:</p>

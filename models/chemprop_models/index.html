@@ -2622,34 +2622,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../core_classes/views/training_view/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    TrainingView
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../core_classes/views/inference_view/" class="md-nav__link">
         
   
@@ -3957,6 +3929,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../release_notes/0_8_357/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.8.357
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../release_notes/0_8_339/" class="md-nav__link">
         
   
@@ -4609,7 +4609,7 @@
 </span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
 </span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># Deploy and run inference</span>
 </span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">endpoint</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to_endpoint</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;chemprop&quot;</span><span class="p">,</span> <span class="s2">&quot;logd&quot;</span><span class="p">])</span>
-</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">endpoint</span><span class="o">.</span><span class="n">auto_inference</span><span class="p">()</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">endpoint</span><span class="o">.</span><span class="n">test_inference</span><span class="p">()</span>
 </span></code></pre></div>
 <p><strong>How it works:</strong> The MPNN reads the molecular graph directly — atoms are nodes, bonds are edges. Through multiple rounds of message passing, each atom aggregates information from its neighbors to build a learned molecular representation. This representation feeds into a feedforward network (FFN) that outputs the prediction.</p>
 <h3 id="classification">Classification</h3>

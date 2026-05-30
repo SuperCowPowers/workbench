@@ -2452,34 +2452,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../training_view/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    TrainingView
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../inference_view/" class="md-nav__link">
         
   
@@ -3787,6 +3759,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../release_notes/0_8_357/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.8.357
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../release_notes/0_8_339/" class="md-nav__link">
         
   
@@ -4225,7 +4225,6 @@
 <ul>
 <li><strong><a href="../display_view/">DisplayView</a>:</strong> The Display View is leveraged by the web views/components and allows fine tuning of the UI for the Workbench Dashboard.</li>
 <li><strong><a href="../computation_view/">ComputationView</a>:</strong> The Computation View controls which columns have descriptive stats, outliers, and correlation calculations. Typically the computation view is a superset of the display view.</li>
-<li><strong><a href="../training_view/">TrainingView</a>:</strong> The Training View will add a 'training' column to the data for model training, validation, and testing. Each row will have a 1 or 0 indicated whether is was used in the model training.</li>
 <li><strong><a href="../inference_view/">InferenceView</a>:</strong> The Inference View runs endpoint inference and computes residuals"""</li>
 </ul>
 <h2 id="examples">Examples</h2>
@@ -4236,7 +4235,7 @@
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Convert the Data Source to a Feature Set</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">test_data</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span><span class="s1">&#39;test_data&#39;</span><span class="p">)</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">test_data</span><span class="o">.</span><span class="n">views</span><span class="p">()</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">[</span><span class="s2">&quot;display&quot;</span><span class="p">,</span> <span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="s2">&quot;computation&quot;</span><span class="p">]</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">[</span><span class="s2">&quot;display&quot;</span><span class="p">,</span> <span class="s2">&quot;computation&quot;</span><span class="p">]</span>
 </span></code></pre></div>
 <p><strong>Getting a Particular View</strong></p>
 <div class="language-py highlight"><span class="filename">views.py</span><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">workbench.api.feature_set</span><span class="w"> </span><span class="kn">import</span> <span class="n">FeatureSet</span>
