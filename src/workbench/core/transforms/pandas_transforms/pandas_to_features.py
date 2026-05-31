@@ -365,17 +365,16 @@ class PandasToFeatures(Transform):
 
     @staticmethod
     def _ingest_settings():
-        """Return (max_workers, max_processes) based on platform.
+        """Return (max_workers, max_processes) based on multiprocessing mode.
 
-        macOS Tahoe 26+ / Python 3.13+ default to 'spawn' for multiprocessing. SageMaker V3's
-        _run_multi_process defines a local function (init_worker) that can't be pickled under
-        spawn, so any value > 1 crashes. On Linux (including AWS Batch) fork is the default
-        and multiprocessing works fine.
+        SageMaker V3's _run_multi_process defines a local function (init_worker) that can't be
+        pickled by spawn/forkserver workers, so any value > 1 crashes there. Fork workers inherit
+        the initializer in child memory, so multiprocessing can stay enabled on Linux/AWS Batch.
         See: https://github.com/aws/sagemaker-python-sdk/issues/5312
         """
-        import platform
+        import multiprocessing
 
-        if platform.system() == "Darwin":
+        if multiprocessing.get_start_method() != "fork":
             return 1, 1
         return 8, 4
 

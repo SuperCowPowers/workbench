@@ -16,13 +16,25 @@ import multiprocessing
 from workbench.core.transforms.pandas_transforms import PandasToFeatures
 
 
-def test_ingest_settings():
-    """_ingest_settings() enables multiprocess ingest only under the 'fork' start method."""
+def test_ingest_settings_enables_multiprocess_for_fork(monkeypatch):
+    """_ingest_settings() enables multiprocess ingest under the 'fork' start method."""
+    monkeypatch.setattr(multiprocessing, "get_start_method", lambda: "fork")
+
     max_workers, max_processes = PandasToFeatures._ingest_settings()
-    if multiprocessing.get_start_method() == "fork":
-        assert max_workers > 1 or max_processes > 1, "fork should use multiprocess ingest"
-    else:
-        assert max_workers == 1 and max_processes == 1, "spawn/forkserver should use single-process ingest"
+
+    assert max_workers > 1 or max_processes > 1, "fork should use multiprocess ingest"
+
+
+def test_ingest_settings_uses_single_process_for_spawn_and_forkserver(monkeypatch):
+    """_ingest_settings() avoids unpicklable SageMaker workers under spawn/forkserver."""
+    for start_method in ("spawn", "forkserver"):
+        monkeypatch.setattr(multiprocessing, "get_start_method", lambda start_method=start_method: start_method)
+
+        max_workers, max_processes = PandasToFeatures._ingest_settings()
+
+        assert (max_workers, max_processes) == (1, 1), (
+            f"{start_method} should use single-process ingest because SageMaker's Pool initializer is unpicklable"
+        )
 
 
 def test_sagemaker_pool_initializer_unpicklable():
