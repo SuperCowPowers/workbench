@@ -124,7 +124,12 @@ class Transform(ABC):
 
     @final
     def transform(self, **kwargs):
-        """Perform the Transformation from Input to Output with pre_transform() and post_transform() invocations"""
+        """Perform the Transformation from Input to Output with pre_transform() and post_transform() invocations.
+
+        The output artifact is created as a side effect and registered under output_name; this method
+        returns None. Retrieve the created artifact via its name (e.g. Model(output_name)), or use the
+        higher-level API (e.g. FeatureSet.to_model()), which returns the artifact object directly.
+        """
         self.pre_transform(**kwargs)
         self.transform_impl(**kwargs)
         self.post_transform(**kwargs)

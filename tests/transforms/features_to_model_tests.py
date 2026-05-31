@@ -3,7 +3,7 @@
 import pytest
 
 # Local Imports
-from workbench.api import FeatureSet, ModelFramework
+from workbench.api import FeatureSet, Model, ModelFramework
 from workbench.core.transforms.features_to_model.features_to_model import FeaturesToModel
 from workbench.core.artifacts.model_core import ModelType
 
@@ -18,9 +18,10 @@ def test():
     output_name = "abalone-regression-test"
     to_model = FeaturesToModel(input_name, output_name, ModelType.REGRESSOR, ModelFramework.XGBOOST)
     to_model.set_output_tags(["test", "abalone", "public"])
-    model = to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
+    to_model.transform(target_column="class_number_of_rings", description="Abalone Regression")
 
-    # Delete the model after creation to clean up
+    # Fetch the created model and delete it to clean up
+    model = Model(output_name)
     model.delete()
 
 

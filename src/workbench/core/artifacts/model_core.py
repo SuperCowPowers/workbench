@@ -410,7 +410,10 @@ class ModelCore(Artifact):
 
     def container_image(self) -> str:
         """Container Image for the Latest Model Package"""
-        return self.container_info()["Image"]
+        info = self.container_info()
+        if info is None:
+            raise ValueError(f"Model {self.model_name} has no registered packages — delete and recreate it")
+        return info["Image"]
 
     def aws_url(self):
         """The AWS URL for looking at/querying this model"""
