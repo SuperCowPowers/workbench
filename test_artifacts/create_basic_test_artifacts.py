@@ -21,7 +21,7 @@ import logging
 import pandas as pd
 from pathlib import Path
 from workbench.api import DataSource, FeatureSet, Model, ModelType, ModelFramework, Endpoint
-from workbench.utils.test_data_generator import TestDataGenerator
+from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 
 # Setup the logger
 log = logging.getLogger("workbench")
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # Create the test_data DataSource
     if recreate or not DataSource("test_data").exists():
         # Create a new Data Source from a dataframe of test data
-        test_data = TestDataGenerator()
+        test_data = SyntheticDataGenerator()
         df = test_data.person_data()
 
         # Create classification column
