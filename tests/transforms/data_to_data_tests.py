@@ -12,9 +12,9 @@ def test():
 
     # Create the class with inputs and outputs and invoke the transform
     input_name = "abalone_data"
-    output_name = "abalone_data_temp"
+    output_name = "abalone_data_test"
     data_to_data = DataToDataLight(input_name, output_name)
-    tags = ["temp", "test", "public"]
+    tags = ["test", "public"]
     data_to_data.set_output_tags(tags)
     data_to_data.transform()
 

@@ -14,9 +14,9 @@ def test():
 
     # Create the class with inputs and outputs and invoke the transform
     input_name = "abalone-regression"
-    output_name = "abalone-regression-temp"
+    output_name = "abalone-regression-endpoint-test"
     to_endpoint = ModelToEndpoint(input_name, output_name)
-    to_endpoint.set_output_tags(["temp", "abalone", "public"])
+    to_endpoint.set_output_tags(["test", "abalone", "public"])
     to_endpoint.transform()
 
     # Now run inference on the endpoint

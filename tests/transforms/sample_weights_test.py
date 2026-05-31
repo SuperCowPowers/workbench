@@ -25,13 +25,13 @@ def test_sample_weights_exclusion():
     sample_weights = {row_id: 0.0 for row_id in excluded_ids}
 
     # Create the model with those rows excluded from training
-    name = "abalone-regression-weights-temp"
+    name = "abalone-regression-weights-test"
     model = fs.to_model(
         name=name,
         model_type=ModelType.REGRESSOR,
         model_framework=ModelFramework.XGBOOST,
         target_column="class_number_of_rings",
-        tags=["temp", "abalone", "weights-test"],
+        tags=["test", "abalone", "weights-test"],
         description="Abalone Regression (sample-weight exclusion test)",
         sample_weights=sample_weights,
     )
@@ -46,7 +46,7 @@ def test_sample_weights_exclusion():
         assert all(row_id in training_ids for row_id in retained_sample)
 
         # The held-out rows should still be scorable via an inference run
-        endpoint = model.to_endpoint(name=name, tags=["temp", "abalone", "weights-test"])
+        endpoint = model.to_endpoint(name=name, tags=["test", "abalone", "weights-test"])
         try:
             held_out_df = full_df[full_df[id_column].isin(excluded_ids)]
             pred_df = endpoint.inference(held_out_df)
