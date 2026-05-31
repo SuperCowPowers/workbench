@@ -141,14 +141,7 @@ class View:
     def delete(self):
         """Delete the database view (and supplemental data) if it exists."""
 
-        # List any supplemental tables for this data source
-        supplemental_tables = list_supplemental_data_tables(self.base_table_name, self.database)
-        for table in supplemental_tables:
-            if self.view_name in table:
-                self.log.important(f"Deleting Supplemental Table {table}...")
-                delete_table(table, self.database, self.data_source.boto3_session)
-
-        # Now drop the view
+        # Drop the view first (it depends on the supplemental tables)
         self.log.important(f"Dropping View {self.table}...")
         drop_view_query = f'DROP VIEW "{self.table}"'
 
@@ -161,8 +154,15 @@ class View:
             else:
                 raise
 
-        # We want to do a small sleep so that AWS has time to catch up
-        self.log.info("Sleeping for 3 seconds after dropping view to allow AWS to catch up...")
+        # Now delete any supplemental tables the view was built on
+        supplemental_tables = list_supplemental_data_tables(self.base_table_name, self.database)
+        for table in supplemental_tables:
+            if self.view_name in table:
+                self.log.important(f"Deleting Supplemental Table {table}...")
+                delete_table(table, self.database, self.data_source.boto3_session)
+
+        # Small sleep so AWS catches up before any subsequent existence checks / recreates
+        self.log.info("Sleeping for 3 seconds after deletion to allow AWS to catch up...")
         time.sleep(3)
 
     def exists(self, skip_cache: bool = False) -> bool:
