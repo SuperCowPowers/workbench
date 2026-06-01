@@ -84,7 +84,7 @@ class FeatureSet(FeatureSetCore):
 
             name (str): The name of the Model to create
             model_type (ModelType): The type of model to create (See workbench.model.ModelType)
-            model_framework (ModelFramework): The framework (SKLEARN, XGBOOST, PYTORCH, CHEMPROP, TRANSFORMER, etc.)
+            model_framework (ModelFramework): The framework (SKLEARN, XGBOOST, LIGHTGBM, PYTORCH, CHEMPROP, etc.)
             tags (list, optional): Set the tags for the model.  If not given tags will be generated.
             description (str, optional): Set the description for the model. If not give a description is generated.
             feature_list (list, optional): Set the feature list for the model. If not given a feature list is generated.

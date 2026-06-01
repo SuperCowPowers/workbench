@@ -19,6 +19,26 @@ from pathlib import Path
 log = logging.getLogger("workbench")
 
 
+def _set_lightgbm_defaults(template_params: dict) -> None:
+    """Fill LightGBM class/import defaults for the scikit-style template."""
+    from workbench.api import ModelType  # Avoid circular import
+
+    model_type = template_params["model_type"]
+    if model_type == ModelType.CLASSIFIER:
+        default_class = "LGBMClassifier"
+    elif model_type == ModelType.REGRESSOR:
+        default_class = "LGBMRegressor"
+    else:
+        msg = f"LightGBM model generation does not support ModelType: {model_type}"
+        log.critical(msg)
+        raise ValueError(msg)
+
+    template_params["model_class"] = template_params.get("model_class") or default_class
+    template_params["model_imports"] = template_params.get("model_imports") or (
+        f"from lightgbm import {template_params['model_class']}"
+    )
+
+
 def fill_template(template_path: str, params: dict, output_script: str, output_dir: str = None) -> str:
     """
     Fill in the placeholders in the template with the values provided in params,
@@ -76,6 +96,7 @@ def generate_model_script(template_params: dict) -> str:
             - model_type (ModelType): The enumerated type of model to generate
             - model_framework (str): The enumerated model framework to use
             - model_class (str): The model class to use (e.g., "RandomForestRegressor")
+              LIGHTGBM sets this automatically when omitted.
             - target_column (str): Column name of the target variable
             - feature_list (list[str]): A list of columns for the features
             - model_metrics_s3_path (str): The S3 path to store the model metrics
@@ -88,24 +109,37 @@ def generate_model_script(template_params: dict) -> str:
     """
     from workbench.api import ModelType, ModelFramework  # Avoid circular import
 
-    # Determine which template to use based on model type
-    if template_params.get("model_class"):
+    template_params.setdefault("hyperparameters", {})
+
+    # Determine which template to use based on model framework/type
+    if template_params["model_framework"] == ModelFramework.LIGHTGBM:
+        _set_lightgbm_defaults(template_params)
         template_name = "scikit_learn.template"
+        template_dir_name = "scikit_learn"
+        model_script_dir_name = "lightgbm"
+    elif template_params.get("model_class"):
+        template_name = "scikit_learn.template"
+        template_dir_name = "scikit_learn"
         model_script_dir_name = "scikit_learn"
     elif template_params["model_framework"] == ModelFramework.PYTORCH:
         template_name = "pytorch.template"
+        template_dir_name = "pytorch_model"
         model_script_dir_name = "pytorch_model"
     elif template_params["model_framework"] == ModelFramework.CHEMPROP:
         template_name = "chemprop.template"
+        template_dir_name = "chemprop"
         model_script_dir_name = "chemprop"
     elif template_params["model_framework"] == ModelFramework.META:
         template_name = "meta_endpoint.template"
+        template_dir_name = "meta_endpoint"
         model_script_dir_name = "meta_endpoint"
     elif template_params["model_type"] in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.CLASSIFIER]:
         template_name = "xgb_model.template"
+        template_dir_name = "xgb_model"
         model_script_dir_name = "xgb_model"
     elif template_params["model_type"] == ModelType.ENSEMBLE_REGRESSOR:
         template_name = "ensemble_xgb.template"
+        template_dir_name = "ensemble_xgb"
         model_script_dir_name = "ensemble_xgb"
     else:
         msg = f"ModelType: {template_params['model_type']} needs to set custom_script argument"
@@ -118,7 +152,7 @@ def generate_model_script(template_params: dict) -> str:
     # Load the template from the package directory
     package_dir = Path(__file__).parent.absolute()
     source_script_dir = os.path.join(package_dir, model_script_dir_name)
-    template_path = os.path.join(source_script_dir, template_name)
+    template_path = os.path.join(package_dir, template_dir_name, template_name)
 
     # Create a temp directory for the generated script and supporting files
     # Note: This directory will be cleaned up by SageMaker after the training job

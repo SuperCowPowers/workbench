@@ -9,6 +9,7 @@ TEMPLATE_PARAMS = {
     "model_class": "{{model_class}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
     "train_all_data": "{{train_all_data}}",
+    "hyperparameters": "{{hyperparameters}}",
 }
 
 import awswrangler as wr
@@ -106,7 +107,7 @@ if __name__ == "__main__":
     check_dataframe(all_df, "training_df")
 
     # Initialize the model using the specified model class
-    model = model_class()
+    model = model_class(**(TEMPLATE_PARAMS["hyperparameters"] or {}))
 
     # Determine if standardization is needed based on the model type
     needs_standardization = model_type in ["clusterer", "projection"]
