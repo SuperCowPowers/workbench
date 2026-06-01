@@ -1,13 +1,15 @@
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from sklearn.neighbors import NearestNeighbors
-from typing import List, Optional
 import logging
+from typing import List, Optional
+
+import numpy as np
+import pandas as pd
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler
+
+from workbench.algorithms.dataframe.projection_2d import Projection2D
 
 # Workbench Imports
 from workbench.algorithms.dataframe.proximity import Proximity
-from workbench.algorithms.dataframe.projection_2d import Projection2D
 
 # Set up logging
 log = logging.getLogger("workbench")
@@ -49,21 +51,68 @@ class FeatureSpaceProximity(Proximity):
         )
 
     def _prepare_data(self) -> None:
-        """Filter out non-numeric features and drop NaN rows."""
+        """Filter unsupported features, encode categoricals, and drop NaN rows."""
         self.features = self._validate_features(self.df, self._raw_features)
+        self._numeric_features = [
+            feature for feature in self.features if pd.api.types.is_numeric_dtype(self.df[feature])
+        ]
+        self._categorical_features = [
+            feature for feature in self.features if self._is_categorical_feature(self.df[feature])
+        ]
         self.df = self.df.dropna(subset=self.features).copy()
+        self._encoded_reference = self._encode_feature_frame(self.df, fit=True)
 
     def _validate_features(self, df: pd.DataFrame, features: List[str]) -> List[str]:
-        """Remove non-numeric features and log warnings."""
-        non_numeric = [f for f in features if f not in df.select_dtypes(include=["number"]).columns]
-        if non_numeric:
-            log.warning(f"Non-numeric features {non_numeric} aren't currently supported, excluding them")
-        return [f for f in features if f not in non_numeric]
+        """Remove unsupported features and log warnings."""
+        supported = []
+        unsupported = []
+        missing = [feature for feature in features if feature not in df.columns]
+
+        for feature in features:
+            if feature not in df.columns:
+                continue
+            if pd.api.types.is_numeric_dtype(df[feature]) or self._is_categorical_feature(df[feature]):
+                supported.append(feature)
+            else:
+                unsupported.append(feature)
+
+        if missing:
+            log.warning(f"Features {missing} are missing from the DataFrame, excluding them")
+        if unsupported:
+            log.warning(f"Features {unsupported} have unsupported types, excluding them")
+        if not supported:
+            raise ValueError("No supported features remain for FeatureSpaceProximity")
+        return supported
+
+    @staticmethod
+    def _is_categorical_feature(series: pd.Series) -> bool:
+        """Return True for feature types that should be one-hot encoded."""
+        return (
+            str(series.dtype) == "category"
+            or pd.api.types.is_object_dtype(series)
+            or pd.api.types.is_string_dtype(series)
+            or pd.api.types.is_bool_dtype(series)
+        )
+
+    def _encode_feature_frame(self, df: pd.DataFrame, fit: bool = False) -> pd.DataFrame:
+        """Convert the original feature columns into the numeric matrix used by the NN model."""
+        missing = [feature for feature in self.features if feature not in df.columns]
+        if missing:
+            raise ValueError(f"Query DataFrame is missing proximity features: {missing}")
+
+        feature_df = df[self.features].copy()
+        if self._categorical_features:
+            feature_df = pd.get_dummies(feature_df, columns=self._categorical_features, dtype=float)
+
+        if fit:
+            self._encoded_features = feature_df.columns.tolist()
+            return feature_df
+        return feature_df.reindex(columns=self._encoded_features, fill_value=0.0)
 
     def _build_model(self) -> None:
         """Standardize features and fit Nearest Neighbors model."""
         self.scaler = StandardScaler()
-        X = self.scaler.fit_transform(self.df[self.features])
+        X = self.scaler.fit_transform(self._encoded_reference)
         self.nn = NearestNeighbors().fit(X)
 
     def _transform_features(self, df: pd.DataFrame) -> np.ndarray:
@@ -72,15 +121,19 @@ class FeatureSpaceProximity(Proximity):
         For novel-input queries via `neighbors_from_query_df`, the query DataFrame
         must contain the same feature columns this model was built with.
         """
-        return self.scaler.transform(df[self.features])
+        return self.scaler.transform(self._encode_feature_frame(df))
 
     def project_2d(self) -> pd.DataFrame:
         """Project the numeric features to 2D for visualization (UMAP).
 
         Returns the reference DataFrame with 'x' / 'y' columns added.
         """
-        if len(self.features) >= 2:
-            self.df = Projection2D().fit_transform(self.df, features=self.features)
+        if len(self._encoded_features) >= 2:
+            projection_df = self._encoded_reference.copy()
+            projection_df[self.id_column] = self.df[self.id_column].values
+            projection_df = Projection2D().fit_transform(projection_df, features=self._encoded_features)
+            self.df["x"] = projection_df["x"].values
+            self.df["y"] = projection_df["y"].values
         return self.df
 
 
