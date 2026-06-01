@@ -2,6 +2,7 @@
 
 import logging
 from functools import wraps
+
 from workbench.utils.workbench_cache import WorkbenchCache
 
 
@@ -15,6 +16,21 @@ class CachedArtifactMixin:
     # Class-level cache for artifact method results
     log = logging.getLogger("workbench")
     artifact_cache = WorkbenchCache(prefix="artifact_cache")
+    max_cached_result_bytes = 1024 * 1024
+
+    @classmethod
+    def _result_size_bytes(cls, result):
+        """Best-effort size estimate for deciding whether a result belongs in Redis."""
+        try:
+            if hasattr(result, "memory_usage"):
+                memory_usage = result.memory_usage(deep=True)
+                if hasattr(memory_usage, "sum"):
+                    return int(memory_usage.sum())
+                return int(memory_usage)
+            return len(str(result))
+        except Exception as e:
+            cls.log.warning(f"Cache: Could not estimate result size: {e}")
+            return None
 
     @classmethod
     def cache_result(cls, method):
@@ -44,7 +60,18 @@ class CachedArtifactMixin:
 
             # Stale or first access: fetch fresh data
             result = method(self, *args, **kwargs)
-            cls.artifact_cache.set(cache_key, {"_result": result, "_modified": current_modified})
+            result_size = cls._result_size_bytes(result)
+            if result_size is not None and result_size > cls.max_cached_result_bytes:
+                self.log.warning(
+                    "Cache: Skipping oversized cached result "
+                    f"({cache_key}: {result_size} bytes > {cls.max_cached_result_bytes})"
+                )
+                return result
+
+            try:
+                cls.artifact_cache.set(cache_key, {"_result": result, "_modified": current_modified})
+            except Exception as e:
+                self.log.warning(f"Cache: Skipping cached result for {cache_key} after cache write failed: {e}")
             return result
 
         return wrapper
@@ -71,6 +98,7 @@ class CachedArtifactMixin:
 # Example usage of CachedModel
 if __name__ == "__main__":
     from pprint import pprint
+
     from workbench.cached.cached_model import CachedModel
 
     my_model = CachedModel("abalone-regression")
