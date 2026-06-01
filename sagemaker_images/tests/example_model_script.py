@@ -39,7 +39,6 @@ TEMPLATE_PARAMS = {
         "auto_id",
     ],
     "model_metrics_s3_path": "s3://sandbox-sageworks-artifacts/models/training/abalone-regression",
-    "train_all_data": False,
 }
 
 
@@ -136,7 +135,6 @@ if __name__ == "__main__":
     feature_list = TEMPLATE_PARAMS["feature_list"]
     model_type = TEMPLATE_PARAMS["model_type"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
-    train_all_data = TEMPLATE_PARAMS["train_all_data"]
     validation_split = 0.2
 
     # Script arguments for input/output directories
@@ -162,14 +160,8 @@ if __name__ == "__main__":
     print(f"Target: {target}")
     print(f"Features: {str(feature_list)}")
 
-    # Do we want to train on all the data?
-    if train_all_data:
-        print("Training on ALL of the data")
-        df_train = all_df.copy()
-        df_val = all_df.copy()
-
     # Does the dataframe have a training column?
-    elif "training" in all_df.columns:
+    if "training" in all_df.columns:
         print("Found training column, splitting data based on training column")
         df_train = all_df[all_df["training"]].copy()
         df_val = all_df[~all_df["training"]].copy()

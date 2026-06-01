@@ -96,7 +96,6 @@ class FeaturesToModel(Transform):
         target_column: Union[str, list[str]],
         description: str = None,
         feature_list: list = None,
-        train_all_data=False,
         sample_weights: Union[dict, pd.DataFrame] = None,
         **kwargs,
     ):
@@ -106,7 +105,6 @@ class FeaturesToModel(Transform):
             target_column (str or list[str]): Column name(s) of the target variable(s)
             description (str): Description of the model (optional)
             feature_list (list[str]): A list of columns for the features (default None, will try to guess)
-            train_all_data (bool): Train on ALL (100%) of the data (default False)
             sample_weights (dict | pd.DataFrame): Sparse per-id sample weights as a
                 ``{id: weight}`` dict or a ``[id_column, "sample_weight"]`` DataFrame.
                 Any id not listed defaults to weight 1.0; rows with weight 0 are
@@ -197,7 +195,6 @@ class FeaturesToModel(Transform):
             "feature_list": self.model_feature_list,
             "compressed_features": feature_set.get_compressed_features(),
             "model_metrics_s3_path": self.model_training_root,
-            "train_all_data": train_all_data,
             "id_column": feature_set.id_column,
             "hyperparameters": kwargs.get("hyperparameters", {}),
         }
@@ -488,7 +485,7 @@ if __name__ == "__main__":
         model_type=ModelType.CLUSTERER,
     )
     to_model.set_output_tags(["wine", "clustering"])
-    to_model.transform(target_column=None, description="Wine Clustering", train_all_data=True)
+    to_model.transform(target_column=None, description="Wine Clustering")
 
     # Scikit-Learn HDBSCAN Clustering Model
     input_name = "wine_features"
@@ -501,7 +498,7 @@ if __name__ == "__main__":
         model_type=ModelType.CLUSTERER,
     )
     to_model.set_output_tags(["wine", "density-based clustering"])
-    to_model.transform(target_column=None, description="Wine Clustering with HDBSCAN", train_all_data=True)
+    to_model.transform(target_column=None, description="Wine Clustering with HDBSCAN")
 
     # Scikit-Learn 2D Projection Model using UMAP
     input_name = "wine_features"
@@ -514,7 +511,7 @@ if __name__ == "__main__":
         model_type=ModelType.PROJECTION,
     )
     to_model.set_output_tags(["wine", "2d-projection"])
-    to_model.transform(target_column=None, description="Wine 2D Projection", train_all_data=True)
+    to_model.transform(target_column=None, description="Wine 2D Projection")
 
     # Custom Script Models
     scripts_root = Path(__file__).resolve().parents[3] / "model_scripts"

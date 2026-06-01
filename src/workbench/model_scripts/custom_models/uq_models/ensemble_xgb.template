@@ -19,7 +19,6 @@ import pandas as pd
 TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
     "target": "{{target_column}}",
-    "train_all_data": "{{train_all_data}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
 }
 

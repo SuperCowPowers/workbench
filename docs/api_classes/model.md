@@ -77,7 +77,6 @@ my_model = my_features.to_model(
     name="abalone-knn-reg",
     description="Abalone KNN Regression",
     tags=["abalone", "knn"],
-    train_all_data=True,
 )
 pprint(my_model.details())
 ```

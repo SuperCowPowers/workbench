@@ -18,7 +18,6 @@ import pandas as pd
 TEMPLATE_PARAMS = {
     "features": "{{feature_list}}",
     "target": "{{target_column}}",
-    "train_all_data": "{{train_all_data}}",
 }
 
 
@@ -71,7 +70,6 @@ if __name__ == "__main__":
     # Template Parameters
     features = TEMPLATE_PARAMS["features"]
     target = TEMPLATE_PARAMS["target"]
-    train_all_data = TEMPLATE_PARAMS["train_all_data"]
     validation_split = 0.2
 
     # Script arguments for input/output directories
@@ -93,16 +91,9 @@ if __name__ == "__main__":
     # Check if the DataFrame is empty
     check_dataframe(df, "training_df")
 
-    # Training data split logic
-    if train_all_data:
-        # Use all data for both training and validation
-        print("Training on all data...")
-        df_train = df.copy()
-        df_val = df.copy()
-    else:
-        # Perform a random split
-        print("Splitting data randomly...")
-        df_train, df_val = train_test_split(df, test_size=validation_split, random_state=42)
+    # Perform a random train/validation split
+    print("Splitting data randomly...")
+    df_train, df_val = train_test_split(df, test_size=validation_split, random_state=42)
 
     # We're using NGBoost for uncertainty quantification
     ngb_model = NGBRegressor()

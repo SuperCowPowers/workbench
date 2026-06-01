@@ -35,7 +35,6 @@ if __name__ == "__main__":
             tags=["abalone", "knn"],
             model_class="KNeighborsRegressor",
             model_import_str="from sklearn.neighbors import KNeighborsRegressor",
-            train_all_data=True,
         )
 
     # Create the Abalone KNN Regression Endpoint
@@ -82,7 +81,6 @@ if __name__ == "__main__":
             feature_list=features,
             description="AQSol KNN Regression",
             tags=["aqsol", "knn"],
-            train_all_data=True,
         )
 
     # Create the AQSol KNN Regression Endpoint

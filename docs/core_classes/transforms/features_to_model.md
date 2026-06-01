@@ -47,7 +47,7 @@ to_model = FeaturesToModel(
     model_type=ModelType.CLUSTERER,
 )
 to_model.set_output_tags(["wine", "clustering"])
-to_model.transform(target_column=None, description="Wine Clustering", train_all_data=True)
+to_model.transform(target_column=None, description="Wine Clustering")
 
 # Scikit-Learn HDBSCAN Clustering Model
 input_name = "wine_features"
@@ -60,7 +60,7 @@ to_model = FeaturesToModel(
     model_type=ModelType.CLUSTERER,
 )
 to_model.set_output_tags(["wine", "density-based clustering"])
-to_model.transform(target_column=None, description="Wine Clustering with HDBSCAN", train_all_data=True)
+to_model.transform(target_column=None, description="Wine Clustering with HDBSCAN")
 
 # Scikit-Learn 2D Projection Model using UMAP
 input_name = "wine_features"
@@ -73,7 +73,7 @@ to_model = FeaturesToModel(
     model_type=ModelType.PROJECTION,
 )
 to_model.set_output_tags(["wine", "2d-projection"])
-to_model.transform(target_column=None, description="Wine 2D Projection", train_all_data=True)
+to_model.transform(target_column=None, description="Wine 2D Projection")
 ```
     
 ## Custom Models

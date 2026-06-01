@@ -17,7 +17,6 @@ my_model = my_features.to_model(
     name="abalone-clusters",
     description="Abalone DBSCAN Clustering",
     tags=tags,
-    train_all_data=True,
 )
 pprint(my_model.details())
 my_model = Model("abalone-clusters")

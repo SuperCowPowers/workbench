@@ -79,7 +79,6 @@ def generate_model_script(template_params: dict) -> str:
             - target_column (str): Column name of the target variable
             - feature_list (list[str]): A list of columns for the features
             - model_metrics_s3_path (str): The S3 path to store the model metrics
-            - train_all_data (bool): Whether to train on all (100%) of the data
             - hyperparameters (dict, optional): Hyperparameters for the model (default: None)
             - endpoints (list[str], optional): For META models, list of endpoint names
 
@@ -177,7 +176,6 @@ if __name__ == "__main__":
             "proline",
         ],
         "model_metrics_s3_path": "s3://workbench-public-test-bucket/models/training/wine-classifier",
-        "train_all_data": True,
         "compressed_features": [],
         "hyperparameters": {},
     }
@@ -207,7 +205,6 @@ if __name__ == "__main__":
             "proline",
         ],
         "model_metrics_s3_path": "s3://workbench-public-test-bucket/models/training/wine-clusters",
-        "train_all_data": True,
     }
     my_model_script = generate_model_script(my_params)
     print(f"Generated script: {my_model_script}")

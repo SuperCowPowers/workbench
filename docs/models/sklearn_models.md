@@ -52,7 +52,6 @@ model = fs.to_model(
     target_column="class_number_of_rings",
     description="Abalone DBSCAN Clustering",
     tags=["abalone", "dbscan"],
-    train_all_data=True,
 )
 ```
 
@@ -88,9 +87,6 @@ Any scikit-learn class that follows the estimator API works. Common choices:
 | **Regression** | KNeighborsRegressor | `sklearn.neighbors` |
 | **Clustering** | KMeans | `sklearn.cluster` |
 | **Clustering** | DBSCAN | `sklearn.cluster` |
-
-!!! tip
-    Use `train_all_data=True` to train on the full dataset without a holdout split — useful for clustering or when you need maximum training data.
 
 !!! note "Examples"
     Full code listings: [`examples/models/random_forest.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/random_forest.py), [`examples/models/knn.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/knn.py), [`examples/models/dbscan.py`](https://github.com/SuperCowPowers/workbench/blob/main/examples/models/dbscan.py)

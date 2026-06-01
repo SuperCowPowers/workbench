@@ -8,7 +8,6 @@ TEMPLATE_PARAMS = {
     "feature_list": "{{feature_list}}",
     "model_class": "{{model_class}}",
     "model_metrics_s3_path": "{{model_metrics_s3_path}}",
-    "train_all_data": "{{train_all_data}}",
 }
 
 import awswrangler as wr
@@ -86,7 +85,6 @@ if __name__ == "__main__":
     feature_list = TEMPLATE_PARAMS["feature_list"]
     model_class = TEMPLATE_PARAMS["model_class"]
     model_metrics_s3_path = TEMPLATE_PARAMS["model_metrics_s3_path"]
-    train_all_data = TEMPLATE_PARAMS["train_all_data"]
     validation_split = 0.2
 
     # Script arguments for input/output directories
@@ -117,16 +115,9 @@ if __name__ == "__main__":
 
     # Handle logic based on the model_type
     if model_type in ["classifier", "regressor"]:
-        # Supervised Models: Prepare for training
-        if train_all_data:
-            # Use all data for both training and validation
-            print("Training on all data...")
-            df_train = all_df.copy()
-            df_val = all_df.copy()
-        else:
-            # Perform a random split
-            print("Splitting data randomly...")
-            df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
+        # Supervised Models: Perform a random train/validation split
+        print("Splitting data randomly...")
+        df_train, df_val = train_test_split(all_df, test_size=validation_split, random_state=42)
 
         # Encode the target variable if the model is a classifier
         label_encoder = None
