@@ -121,9 +121,9 @@ pip install workbench               # Default — API + REPL + orchestration.
 pip install 'workbench[ui]'         # + plotly, dash, dash-ag-grid,
                                     #   matplotlib. The Workbench Dashboard.
 
-pip install 'workbench[misc]'       # + networkx, cleanlab, datasets,
-                                    #   umap-learn. Specialized analysis libs
-                                    #   used by a handful of workflows.
+pip install 'workbench[misc]'       # + networkx, umap-learn. Specialized
+                                    #   analysis libs used by a handful of
+                                    #   workflows.
 
 pip install 'workbench[dev]'        # + pytest, pytest-xdist, coverage,
                                     #   flake8, black. Local development.
@@ -133,6 +133,9 @@ pip install 'workbench[all]'        # ui + misc + dev — full install for
 ```
 
 *Note: shells may interpret square brackets as globs, so the quotes are needed.*
+
+Cleanlab/Datalab workflows are optional and are not included in the Workbench
+extras. Install `cleanlab[datalab]>=2.8.0` before calling `cleanlab_model()`.
 
 #### Endpoint container surface
 

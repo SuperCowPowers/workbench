@@ -5,9 +5,9 @@ of its extras. Users who want to use :class:`CleanlabModels` (via
 :meth:`workbench.api.Model.cleanlab_model` or
 :meth:`workbench.api.FeatureSet.cleanlab_model`) must install it separately::
 
-    pip install 'cleanlab[datalab]' 'datasets<4.0.0'
+    pip install 'cleanlab[datalab]>=2.8.0'
 
-The ``datasets<4.0.0`` pin works around a Datalab bug:
+Cleanlab 2.8.0+ includes the Datalab fix for datasets 4.x:
 https://github.com/cleanlab/cleanlab/issues/1253
 
 This module imports cleanly even when cleanlab is not installed; the
@@ -24,17 +24,36 @@ from sklearn.preprocessing import LabelEncoder
 
 from workbench.core.artifacts.model_core import ModelType
 
+
+def _major_minor(version: str) -> tuple[int, int]:
+    parts = []
+    for raw_part in version.split(".")[:2]:
+        digits = ""
+        for char in raw_part:
+            if not char.isdigit():
+                break
+            digits += char
+        parts.append(int(digits or 0))
+    while len(parts) < 2:
+        parts.append(0)
+    return parts[0], parts[1]
+
+
+def _is_old_cleanlab_with_new_datasets(cleanlab_version: str, datasets_version: str) -> bool:
+    return _major_minor(cleanlab_version) < (2, 8) and _major_minor(datasets_version)[0] >= 4
+
+
 # Optional dependency check — see module docstring.
 _CLEANLAB_IMPORT_ERROR: Optional[str] = None
 try:
     import datasets
+    import cleanlab
 
-    _datasets_major = int(datasets.__version__.split(".")[0])
-    if _datasets_major >= 4:
+    if _is_old_cleanlab_with_new_datasets(cleanlab.__version__, datasets.__version__):
         raise ImportError(
-            "cleanlab's Datalab requires datasets<4.0.0 due to a known bug "
+            f"cleanlab {cleanlab.__version__} is incompatible with datasets {datasets.__version__} "
             "(https://github.com/cleanlab/cleanlab/issues/1253). "
-            "Fix: pip install 'datasets<4.0.0'"
+            "Fix: pip install 'cleanlab[datalab]>=2.8.0'"
         )
     from cleanlab.regression.learn import CleanLearning as CleanLearningRegressor
     from cleanlab.classification import CleanLearning as CleanLearningClassifier
@@ -49,7 +68,7 @@ except ImportError as _e:
     _CLEANLAB_IMPORT_ERROR = (
         f"{_e}. "
         "cleanlab is an optional workbench dependency — install with: "
-        "pip install 'cleanlab[datalab]' 'datasets<4.0.0'"
+        "pip install 'cleanlab[datalab]>=2.8.0'"
     )
 
 # Regressor types for convenience
