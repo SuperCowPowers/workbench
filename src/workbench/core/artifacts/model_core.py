@@ -23,7 +23,6 @@ from workbench.utils.aws_utils import newest_path, pull_s3_data
 from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
 from workbench.utils.s3_utils import compute_s3_object_hash
 from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
-from workbench.utils.deprecated_utils import deprecated
 from workbench.utils.model_utils import published_proximity_model, get_model_hyperparameters
 
 
@@ -903,36 +902,6 @@ class ModelCore(Artifact):
         meta = self.aws_meta()
         try:
             return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["ModelDataUrl"]
-        except (KeyError, IndexError, TypeError):
-            return None
-
-    @deprecated(version="0.9")
-    def source_dir_url(self) -> Optional[str]:
-        """Retrieve the model source directory from the model's AWS metadata.
-
-        Returns:
-            Optional[str]: The model source directory if available, otherwise None.
-        """
-        meta = self.aws_meta()
-        try:
-            return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["Environment"][
-                "SAGEMAKER_SUBMIT_DIRECTORY"
-            ]
-        except (KeyError, IndexError, TypeError):
-            return None
-
-    @deprecated(version="0.9")
-    def entry_point(self) -> Optional[str]:
-        """Retrieve the entry point from the model's AWS metadata.
-
-        Returns:
-            Optional[str]: The entry point if available, otherwise None.
-        """
-        meta = self.aws_meta()
-        try:
-            return meta["ModelPackageList"][0]["InferenceSpecification"]["Containers"][0]["Environment"][
-                "SAGEMAKER_PROGRAM"
-            ]
         except (KeyError, IndexError, TypeError):
             return None
 
