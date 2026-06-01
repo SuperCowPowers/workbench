@@ -1,13 +1,14 @@
 """AWSAccountClamp provides logic/functionality over a set of AWS IAM Services"""
 
+import logging
+
 import boto3
+from botocore.client import BaseClient
 from botocore.exceptions import (
     ClientError,
-    UnauthorizedSSOTokenError,
     TokenRetrievalError,
+    UnauthorizedSSOTokenError,
 )
-from botocore.client import BaseClient
-import logging
 from sagemaker.core.helper.session_helper import Session as SageSession
 
 # Workbench Imports
@@ -49,8 +50,16 @@ class AWSAccountClamp:
             self.account_id = boto3.client("sts").get_caller_identity()["Account"]
             self.region = boto3.session.Session().region_name
         except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
-            self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
-            raise FatalConfigError()
+            if self.aws_session.renew_sso_login():
+                try:
+                    self.account_id = boto3.client("sts").get_caller_identity()["Account"]
+                    self.region = boto3.session.Session().region_name
+                except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError):
+                    self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+                    raise FatalConfigError()
+            else:
+                self.log.critical("AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token...")
+                raise FatalConfigError()
 
         # Check our Assume Role
         self.log.info("Checking Workbench Assumed Role...")
@@ -77,6 +86,13 @@ class AWSAccountClamp:
             sts.get_caller_identity()
             return True
         except (ClientError, UnauthorizedSSOTokenError):
+            if self.aws_session.renew_sso_login():
+                try:
+                    sts = boto3.client("sts")
+                    sts.get_caller_identity()
+                    return True
+                except (ClientError, UnauthorizedSSOTokenError):
+                    pass
             msg = "AWS Identity Check Failure: Check AWS_PROFILE and/or Renew SSO Token..."
             self.log.critical(msg)
             raise RuntimeError(msg)

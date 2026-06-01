@@ -1,18 +1,19 @@
+import logging
 import os
+import re
+import shutil
+import subprocess
 import sys
 
 import boto3
-import re
-from botocore.exceptions import ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError
 from botocore.credentials import RefreshableCredentials
+from botocore.exceptions import ClientError, SSOTokenLoadError, TokenRetrievalError, UnauthorizedSSOTokenError
 from botocore.session import get_session
-import logging
 
 # Workbench Imports
 from workbench.utils.config_manager import ConfigManager
 from workbench.utils.execution_environment import running_as_service
-
-from workbench.utils.ipython_utils import is_running_in_ipython, display_error_and_raise
+from workbench.utils.ipython_utils import display_error_and_raise, is_running_in_ipython
 
 
 class AWSSession:
@@ -35,23 +36,59 @@ class AWSSession:
             self.workbench_role_name = self.cm.get_config("WORKBENCH_ROLE")
 
             # Grab the AWS Profile from the Config Manager
-            profile = self.cm.get_config("AWS_PROFILE")
-            if profile is not None:
-                os.environ["AWS_PROFILE"] = profile
+            self.profile = self.cm.get_config("AWS_PROFILE") or os.environ.get("AWS_PROFILE")
+            if self.profile is not None:
+                os.environ["AWS_PROFILE"] = self.profile
 
             # Grab our AWS Account Info
             try:
-                self.account_id = boto3.client("sts").get_caller_identity()["Account"]
-                self.region = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION"))
-                self.region = boto3.Session().region_name if self.region is None else self.region
+                self._set_account_info()
             except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError):
                 msg = "AWS SSO Token Failure: Check AWS_PROFILE and/or Renew SSO Token..."
                 self.log.critical(msg)
-                if is_running_in_ipython():
-                    display_error_and_raise(msg)
+                if self.renew_sso_login():
+                    try:
+                        self._set_account_info()
+                    except (ClientError, UnauthorizedSSOTokenError, TokenRetrievalError, SSOTokenLoadError):
+                        self._sso_failure_exit(msg)
                 else:
-                    sys.exit(1)
+                    self._sso_failure_exit(msg)
             self.initialized = True  # Mark as initialized to prevent reinitialization
+
+    def _set_account_info(self):
+        """Set AWS account and region information from the active caller identity."""
+        self.account_id = boto3.client("sts").get_caller_identity()["Account"]
+        self.region = os.environ.get("AWS_REGION", os.environ.get("AWS_DEFAULT_REGION"))
+        self.region = boto3.Session().region_name if self.region is None else self.region
+
+    def renew_sso_login(self) -> bool:
+        """Try to renew the configured AWS SSO profile through the AWS CLI."""
+        if running_as_service() or not self.profile:
+            return False
+
+        if shutil.which("aws") is None:
+            self.log.warning("AWS CLI not found; cannot open AWS SSO login automatically.")
+            return False
+
+        self.log.important(f"Opening AWS SSO login for profile '{self.profile}'...")
+        try:
+            result = subprocess.run(["aws", "sso", "login", "--profile", self.profile], check=False)
+        except OSError as err:
+            self.log.warning(f"Failed to launch AWS SSO login: {err}")
+            return False
+
+        if result.returncode != 0:
+            self.log.warning(f"AWS SSO login failed for profile '{self.profile}' with exit code {result.returncode}.")
+            return False
+        return True
+
+    @staticmethod
+    def _sso_failure_exit(msg: str):
+        """Exit or raise after SSO renewal has failed."""
+        if is_running_in_ipython():
+            display_error_and_raise(msg)
+        else:
+            sys.exit(1)
 
     @property
     def boto3_session(self):
