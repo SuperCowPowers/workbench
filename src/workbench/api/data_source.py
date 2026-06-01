@@ -5,17 +5,19 @@ techniques (data quality, distributions, stats, outliers, etc.) DataSources
 can be viewed and explored within the Workbench Dashboard UI."""
 
 import os
-import pandas as pd
 from typing import Union
+
+import pandas as pd
+
+from workbench.api.feature_set import FeatureSet
 
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
 from workbench.core.artifacts.athena_source import AthenaSource
 from workbench.core.transforms.data_loaders.light.csv_to_data_source import CSVToDataSource
 from workbench.core.transforms.data_loaders.light.s3_to_data_source_light import S3ToDataSourceLight
-from workbench.core.transforms.pandas_transforms.pandas_to_data import PandasToData
 from workbench.core.transforms.data_to_features.light.data_to_features_light import DataToFeaturesLight
-from workbench.api.feature_set import FeatureSet
+from workbench.core.transforms.pandas_transforms.pandas_to_data import PandasToData
 from workbench.utils.aws_utils import extract_data_source_basename
 
 
@@ -107,6 +109,18 @@ class DataSource(AthenaSource):
             df = df.drop(columns=aws_cols, errors="ignore")
         return df
 
+    def set_input(self, input_path: Union[str, os.PathLike]):
+        """Set the source path/reference recorded for this DataSource.
+
+        Args:
+            input_path (Union[str, os.PathLike]): Original local path, S3 URI, or other source reference.
+        """
+        input_reference = os.fspath(input_path)
+        if not input_reference:
+            raise ValueError("DataSource input path must not be empty")
+
+        super().set_input(input_reference)
+
     def to_features(
         self,
         name: str,
@@ -179,6 +193,7 @@ if __name__ == "__main__":
     import sys
     from pathlib import Path
     from pprint import pprint
+
     from workbench.utils.synthetic_data_generator import SyntheticDataGenerator
 
     # Test to Run
