@@ -3,6 +3,7 @@ import os
 import sys
 import logging
 import importlib
+import re
 import webbrowser
 import readline  # noqa: F401
 
@@ -16,7 +17,6 @@ import IPython
 from IPython import start_ipython
 from IPython.terminal.prompts import Prompts
 from IPython.terminal.ipapp import load_default_config
-from distutils.version import LooseVersion
 from pygments.token import Token
 import botocore
 import pandas as pd
@@ -102,6 +102,16 @@ prompt_styles = {
 # Note: Hack so the Prompt Class can access these variables
 aws_profile = ConfigManager().get_config("AWS_PROFILE")
 workbench_shell = None
+
+
+def _version_at_least(version: str, minimum: tuple[int, int, int]) -> bool:
+    """Compare dotted versions without importing deprecated version helpers."""
+    parts = []
+    for raw_part in str(version).split("."):
+        match = re.match(r"\d+", raw_part)
+        parts.append(int(match.group(0)) if match else 0)
+    parts = (parts + [0, 0, 0])[:3]
+    return tuple(parts) >= minimum
 
 
 class WorkbenchPrompt(Prompts):
@@ -205,7 +215,7 @@ class WorkbenchShell:
 
         # Start IPython with the config and commands in the namespace
         try:
-            if LooseVersion(IPython.__version__) >= LooseVersion("9.0.0"):
+            if _version_at_least(IPython.__version__, (9, 0, 0)):
                 ipython_argv = ["--no-tip", "--theme", "linux"]
             else:
                 ipython_argv = []
