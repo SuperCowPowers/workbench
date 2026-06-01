@@ -8,13 +8,14 @@ Endpoint code can instantiate ``ParameterStoreCore`` directly — it uses
 which short-circuits to the container's ambient IAM role in service envs.
 """
 
-from typing import Optional, Union
-import logging
-import json
-import zlib
-import time
 import base64
+import json
+import logging
+import time
+import zlib
 from datetime import datetime
+from typing import Optional, Union
+
 from botocore.exceptions import ClientError
 
 # Workbench Imports
@@ -139,7 +140,7 @@ class ParameterStoreCore:
         """
         try:
             # Convert to JSON and check if compression is needed
-            json_value = json.dumps(value, cls=CustomEncoder, precision=precision)
+            json_value = self._serialize_value(value, precision=precision)
             if len(json_value) <= 4096:
                 # Store normally if under 4KB
                 self._store_parameter(name, json_value)
@@ -150,20 +151,31 @@ class ParameterStoreCore:
                 f"Parameter {name} exceeds 4KB ({len(json_value)} bytes): compressing and reducing precision..."
             )
 
-            # Try compression with precision reduction
-            compressed_value = self._compress_value(value)
+            # Try compression with progressive precision reduction before clipping.
+            compressed_value = self._compress_value(value, precision=precision)
 
             if len(compressed_value) <= 4096:
                 self._store_parameter(name, compressed_value)
                 return
 
+            for reduced_precision in self._reduced_precision_steps(precision):
+                compressed_value = self._compress_value(value, precision=reduced_precision)
+                if len(compressed_value) <= 4096:
+                    self.log.warning(
+                        f"Parameter {name} stored with float precision={reduced_precision} "
+                        f"to stay within 4KB ({len(compressed_value)} bytes)"
+                    )
+                    self._store_parameter(name, compressed_value)
+                    return
+
             # Try clipping the data
             clipped_value = self._clip_data(value)
-            compressed_clipped = self._compress_value(clipped_value)
+            compressed_clipped = self._compress_value(clipped_value, precision=0)
 
             if len(compressed_clipped) <= 4096:
                 self.log.warning(
-                    f"Parameter {name} data clipped to 100 items/elements: ({len(compressed_clipped)} bytes)"
+                    f"Parameter {name} data clipped to 100 items/elements after precision reduction: "
+                    f"({len(compressed_clipped)} bytes)"
                 )
                 self._store_parameter(name, compressed_clipped)
                 return
@@ -191,11 +203,25 @@ class ParameterStoreCore:
                     raise
 
     @staticmethod
-    def _compress_value(value) -> str:
+    def _serialize_value(value, precision: int = None) -> str:
+        """Serialize values compactly for Parameter Store's 4KB limit."""
+        return json.dumps(value, cls=CustomEncoder, precision=precision, separators=(",", ":"))
+
+    @classmethod
+    def _compress_value(cls, value, precision: int = 3) -> str:
         """Compress a value with precision reduction."""
-        json_value = json.dumps(value, cls=CustomEncoder, precision=3)
+        json_value = cls._serialize_value(value, precision=precision)
         compressed = zlib.compress(json_value.encode("utf-8"), level=9)
         return "COMPRESSED:" + base64.b64encode(compressed).decode("utf-8")
+
+    @staticmethod
+    def _reduced_precision_steps(precision: int):
+        """Return lower precision candidates, avoiding duplicates."""
+        try:
+            precision = int(precision)
+        except (TypeError, ValueError):
+            precision = 3
+        return range(max(precision - 1, 0), -1, -1)
 
     @staticmethod
     def _clip_data(value):

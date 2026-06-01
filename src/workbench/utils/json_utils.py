@@ -1,14 +1,18 @@
 """JSON Utilities"""
 
 import json
+import logging
+from datetime import date, datetime
 from io import StringIO
+
 import numpy as np
 import pandas as pd
-import logging
-from datetime import datetime, date
 
 # Local Imports
-from workbench.utils.datetime_utils import datetime_to_iso8601, iso8601_to_datetime
+from workbench.utils.datetime_utils import (
+    datetime_to_iso8601,
+    iso8601_to_datetime,
+)
 
 log = logging.getLogger("workbench")
 
@@ -47,10 +51,10 @@ class CustomEncoder(json.JSONEncoder):
             return super().default(obj)
 
     def encode(self, obj):
-        return super().encode(self._reduce_precision(obj) if self.precision else obj)
+        return super().encode(self._reduce_precision(obj) if self.precision is not None else obj)
 
     def _reduce_precision(self, obj):
-        if isinstance(obj, float):
+        if isinstance(obj, (float, np.floating)):
             return round(obj, self.precision)
         elif isinstance(obj, dict):
             return {k: self._reduce_precision(v) for k, v in obj.items()}
