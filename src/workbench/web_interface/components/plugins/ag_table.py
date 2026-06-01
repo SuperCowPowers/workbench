@@ -1,12 +1,12 @@
 """An Example Table plugin component using AG Grid"""
 
 import logging
+
 import pandas as pd
 from dash_ag_grid import AgGrid
 
-# Workbench Imports
-from workbench.web_interface.components.plugin_interface import PluginInterface, PluginPage, PluginInputType
 from workbench.utils.symbols import tag_symbols
+from workbench.web_interface.components.plugin_interface import PluginInputType, PluginInterface, PluginPage
 
 # Get the Workbench logger
 log = logging.getLogger("workbench")
@@ -20,6 +20,7 @@ class AGTable(PluginInterface):
     plugin_input_type = PluginInputType.DATAFRAME
     max_height = 500
     header_height = 36
+    floating_filter_height = 36
     row_height = 25
     # Thin columns: small by default (auto-size cap) but user can drag wider
     thin_columns = {"Health": 100, "Owner": 100}
@@ -44,7 +45,8 @@ class AGTable(PluginInterface):
             "rowSelection": row_selection,
             "suppressCellFocus": True,
             "rowHeight": self.row_height,
-            "defaultColDef": {"sortable": True, "filter": True, "resizable": True},
+            "defaultColDef": {"sortable": True, "filter": True, "floatingFilter": True, "resizable": True},
+            "floatingFiltersHeight": self.floating_filter_height,
             "autoSizeStrategy": {
                 "type": "fitCellContents",
                 "defaultMaxWidth": 400,
@@ -96,7 +98,8 @@ class AGTable(PluginInterface):
 
         # Dynamically adjust height based on row count
         row_count = len(table_df)
-        computed_height = min(self.header_height + self.row_height * row_count, self.max_height) + 2
+        table_header_height = self.header_height + self.floating_filter_height
+        computed_height = min(table_header_height + self.row_height * row_count, self.max_height) + 2
         style = {"height": f"{computed_height}px", "overflow": "auto"}
 
         # Return the column definitions, table data, and style (must match the plugin properties)
