@@ -87,6 +87,8 @@ class EndpointCore(Artifact):
 
         # Grab an Cloud Metadata object and pull information for Endpoints
         self.endpoint_name = endpoint_name
+        self._model_core = None
+        self._model_core_name = None
         self.endpoint_meta = self.meta.endpoint(self.endpoint_name)
 
         # Sanity check that we found the endpoint
@@ -108,7 +110,7 @@ class EndpointCore(Artifact):
         self.endpoint_monitoring_path = f"{base_endpoint_path}/monitoring"
 
         # Set the Model Name
-        self.model_name = self.get_input()
+        self._set_model_name(self.get_input())
 
         # This is for endpoint error handling later
         self.endpoint_return_columns = None
@@ -118,6 +120,24 @@ class EndpointCore(Artifact):
 
         # All done
         self.log.info(f"EndpointCore Initialized: {self.endpoint_name}")
+
+    def _set_model_name(self, model_name: str):
+        """Set the endpoint model name and invalidate the cached ModelCore if needed."""
+        if getattr(self, "model_name", None) != model_name:
+            self._model_core = None
+            self._model_core_name = None
+        self.model_name = model_name
+
+    def _model(self) -> ModelCore:
+        """Return a cached ModelCore for this endpoint's current model."""
+        model_name = getattr(self, "model_name", None)
+        if model_name is None:
+            model_name = self.get_input()
+            self._set_model_name(model_name)
+        if self._model_core is None or self._model_core_name != model_name:
+            self._model_core = ModelCore(model_name)
+            self._model_core_name = model_name
+        return self._model_core
 
     def refresh_meta(self):
         """Refresh the Artifact's metadata"""
@@ -364,7 +384,7 @@ class EndpointCore(Artifact):
         self.set_status("onboarding")
 
         self.upsert_workbench_meta({"workbench_input": input_model})
-        self.model_name = input_model
+        self._set_model_name(input_model)
 
         # Remove the needs_onboard tag
         self.remove_health_tag("needs_onboard")
@@ -392,7 +412,7 @@ class EndpointCore(Artifact):
         """
 
         # Sanity Check that we have a model
-        model = ModelCore(self.get_input())
+        model = self._model()
         if not model.exists():
             self.log.error("No model found for this endpoint. Returning empty DataFrame.")
             return pd.DataFrame()
@@ -411,7 +431,7 @@ class EndpointCore(Artifact):
         """Run inference on the endpoint using all the data from the model training view"""
 
         # Sanity Check that we have a model
-        model = ModelCore(self.get_input())
+        model = self._model()
         if not model.exists():
             self.log.error("No model found for this endpoint. Returning empty DataFrame.")
             return pd.DataFrame()
@@ -456,7 +476,7 @@ class EndpointCore(Artifact):
             return self.fast_inference(eval_df)
 
         # Grab the model features and target column
-        model = ModelCore(self.model_name)
+        model = self._model()
         features = model.features()
         targets = model.target()  # Note: We have multi-target models (so this could be a list)
 
@@ -582,7 +602,7 @@ class EndpointCore(Artifact):
         """
 
         # Grab our model
-        model = ModelCore(self.model_name)
+        model = self._model()
 
         # Compute CrossFold (Metrics and Prediction Dataframe)
         # For PyTorch and ChemProp, pull pre-computed CV results from training
@@ -749,7 +769,7 @@ class EndpointCore(Artifact):
         exclude_set = set(exclude_ids)
 
         # Backtrace to the FeatureSet: Endpoint -> Model -> FeatureSet
-        model = ModelCore(self.model_name)
+        model = self._model()
         fs = FeatureSetCore(model.get_input())
 
         # Pull all data and compute the temporal split
@@ -1181,7 +1201,7 @@ class EndpointCore(Artifact):
             pd.DataFrame: DataFrame with the performance metrics
         """
         # Get class labels from the model (metrics_utils will infer if None)
-        class_labels = ModelCore(self.model_name).class_labels()
+        class_labels = self._model().class_labels()
         return compute_classification_metrics(prediction_df, target_column, class_labels, prediction_col)
 
     def generate_confusion_matrix(self, target_column: str, prediction_df: pd.DataFrame) -> pd.DataFrame:
@@ -1210,7 +1230,7 @@ class EndpointCore(Artifact):
         y_pred = prediction_df["prediction"]
 
         # Get model class labels
-        model_class_labels = ModelCore(self.model_name).class_labels()
+        model_class_labels = self._model().class_labels()
 
         # Use model labels if available, otherwise infer from data
         if model_class_labels:
@@ -1247,6 +1267,7 @@ class EndpointCore(Artifact):
         self.log.important(f"{self.name}: Setting input to {input}...")
         self.log.important("Be careful with this! It breaks automatic provenance of the artifact!")
         self.upsert_workbench_meta({"workbench_input": input})
+        self._set_model_name(input)
 
     def delete(self):
         """Delete an existing Endpoint: Underlying Models, Configuration, and Endpoint"""
@@ -1255,7 +1276,7 @@ class EndpointCore(Artifact):
 
         # Remove this endpoint from the list of registered endpoints
         self.log.info(f"Removing {self.name} from the list of registered endpoints...")
-        ModelCore(self.model_name).remove_endpoint(self.name)
+        self._model().remove_endpoint(self.name)
 
         # Call the Class Method to delete the Endpoint
         EndpointCore.managed_delete(endpoint_name=self.name)
