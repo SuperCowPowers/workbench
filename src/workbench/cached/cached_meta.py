@@ -2,10 +2,11 @@
 
 import logging
 import time
-import pandas as pd
 from datetime import datetime, timezone
 from functools import wraps
 from typing import TYPE_CHECKING, Optional
+
+import pandas as pd
 
 # Workbench Imports
 from workbench.core.cloud_platform.cloud_meta import CloudMeta
@@ -335,6 +336,8 @@ class CachedMeta(CloudMeta):
 
         # Step 3: If no cached details, fetch everything
         if cached_df is None or not isinstance(cached_df, pd.DataFrame) or cached_df.empty:
+            if list_method == "models":
+                return super().models(details=True)
             rows = [detail_method(name) for name in lightweight_df[name_col]]
             df = pd.DataFrame(rows).convert_dtypes()
             if not df.empty:

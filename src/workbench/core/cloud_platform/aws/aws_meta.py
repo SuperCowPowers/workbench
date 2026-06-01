@@ -4,16 +4,17 @@ AWS Artifacts, such as Data Sources, Feature Sets, Models, and Endpoints.
 """
 
 import logging
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Union
-import pandas as pd
+
 import awswrangler as wr
-from collections import defaultdict
+import pandas as pd
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.aws_account_clamp import AWSAccountClamp
+from workbench.utils.aws_utils import aws_tags_to_dict, aws_throttle, not_found_returns_none
 from workbench.utils.config_manager import ConfigManager
-from workbench.utils.aws_utils import not_found_returns_none, aws_throttle, aws_tags_to_dict
 
 
 def to_utc(dt):
@@ -238,7 +239,7 @@ class AWSMeta:
         for page in paginator.paginate():
             for group in page["ModelPackageGroupSummaryList"]:
                 if details:
-                    model_summary.append(self._model_detail_row(group["ModelPackageGroupName"]))
+                    model_summary.append(self._model_detail_row(group["ModelPackageGroupName"], group_info=group))
                 else:
                     name = group["ModelPackageGroupName"]
                     created = to_utc(group["CreationTime"])
@@ -266,30 +267,31 @@ class AWSMeta:
             df.sort_values(by="Created", ascending=False, inplace=True)
         return df
 
-    def _model_detail_row(self, name: str) -> dict:
+    def _model_detail_row(self, name: str, group_info: Union[dict, None] = None) -> dict:
         """Fetch a detail summary row for a single Model.
 
         Args:
             name (str): The model package group name.
+            group_info (dict, optional): Existing ModelPackageGroup summary/detail.
 
         Returns:
             dict: A summary row dict with all detail fields populated.
         """
-        group_info = self.sm_client.describe_model_package_group(ModelPackageGroupName=name)
+        if group_info is None:
+            group_info = self.sm_client.describe_model_package_group(ModelPackageGroupName=name)
+
         created = to_utc(group_info["CreationTime"])
         description = group_info.get("ModelPackageGroupDescription", "-")
 
-        model_details = {}
         aws_tags = {}
         status = "Unknown"
         health_tags = ""
 
         latest_model = self.get_latest_model_package_info(name)
         if latest_model:
-            model_details = self.sm_client.describe_model_package(ModelPackageName=latest_model["ModelPackageArn"])
-            aws_tags = self.get_aws_tags(group_info["ModelPackageGroupArn"])
+            aws_tags = self.get_aws_tags(group_info.get("ModelPackageGroupArn")) or {}
             health_tags = aws_tags.get("workbench_health_tags", "")
-            status = model_details.get("ModelPackageStatus", "Unknown")
+            status = latest_model.get("ModelPackageStatus", "Unknown")
         else:
             health_tags = "model_not_found"
             status = "No Models"
@@ -302,7 +304,7 @@ class AWSMeta:
             "Framework": aws_tags.get("workbench_model_framework", "-"),
             "Created": created,
             "Modified": created,
-            "Ver": model_details.get("ModelPackageVersion", "-"),
+            "Ver": latest_model.get("ModelPackageVersion", "-") if latest_model else "-",
             "Input": aws_tags.get("workbench_input", "-"),
             "Status": status,
             "Description": description,
