@@ -3,14 +3,15 @@
 from dash import register_page
 
 # Workbench Imports
-from workbench.web_interface.components import violin_plots, correlation_matrix
+from workbench.web_interface.components import correlation_matrix, violin_plots
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.web_interface.components.plugins.data_details import DataDetails
 from workbench.web_interface.page_views.data_sources_page_view import DataSourcesPageView
 
+from . import callbacks
+
 # Local Imports
 from .layout import data_sources_layout
-from . import callbacks
 
 register_page(
     __name__,
@@ -59,6 +60,7 @@ callbacks.on_page_load()
 callbacks.data_sources_refresh(data_source_view, data_sources_table)
 
 # Callbacks for when a data source is selected
+callbacks.show_waiting_for_data_on_row_selection()
 callbacks.update_data_source_details(data_details)
 callbacks.update_data_source_sample_rows(samples_table)
 

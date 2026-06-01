@@ -1,19 +1,27 @@
 """Callbacks for the FeatureSets Subpage Web User Interface"""
 
-import dash
-from dash import callback, Input, Output, State
-from dash.exceptions import PreventUpdate
-import plotly.graph_objects as go
-import pandas as pd
 import logging
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
+
+import dash
+import pandas as pd
+import plotly.graph_objects as go
+from dash import Input, Output, State, callback
+from dash.exceptions import PreventUpdate
+
+from workbench.cached.cached_feature_set import CachedFeatureSet
+from workbench.web_interface.components import correlation_matrix, violin_plots
+from workbench.web_interface.components.loading_state import (
+    WAITING_HEADER,
+    WAITING_MARKDOWN,
+    waiting_figure,
+    waiting_table,
+)
+from workbench.web_interface.components.plugins.ag_table import AGTable
+from workbench.web_interface.components.plugins.data_details import DataDetails
 
 # Workbench Imports
 from workbench.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
-from workbench.web_interface.components import violin_plots, correlation_matrix
-from workbench.web_interface.components.plugins.ag_table import AGTable
-from workbench.web_interface.components.plugins.data_details import DataDetails
-from workbench.cached.cached_feature_set import CachedFeatureSet
 
 # Set up logging
 log = logging.getLogger("workbench")
@@ -66,6 +74,37 @@ def feature_sets_refresh(page_view: FeatureSetsPageView, fs_table: AGTable):
         feature_sets["name"] = feature_sets["Feature Group"]
         feature_sets["id"] = range(len(feature_sets))
         return fs_table.update_properties(feature_sets)
+
+
+def show_waiting_for_data_on_row_selection():
+    @callback(
+        [
+            Output("feature_set_details-header", "children", allow_duplicate=True),
+            Output("feature_set_details-details", "children", allow_duplicate=True),
+            Output("feature_sample_rows_header", "children", allow_duplicate=True),
+            Output("feature_set_sample_rows", "columnDefs", allow_duplicate=True),
+            Output("feature_set_sample_rows", "rowData", allow_duplicate=True),
+            Output("feature_set_violin_plot", "figure", allow_duplicate=True),
+            Output("feature_set_correlation_matrix", "figure", allow_duplicate=True),
+        ],
+        Input("feature_sets_table", "selectedRows"),
+        prevent_initial_call=True,
+    )
+    def _show_waiting_for_data(selected_rows):
+        if not selected_rows or selected_rows[0] is None:
+            raise PreventUpdate
+
+        column_defs, row_data = waiting_table()
+        figure = waiting_figure()
+        return [
+            WAITING_HEADER,
+            WAITING_MARKDOWN,
+            "Sample/Outlier Rows: Waiting for data...",
+            column_defs,
+            row_data,
+            figure,
+            figure,
+        ]
 
 
 # Updates the feature set details and correlation matrix when a new FeatureSet is selected

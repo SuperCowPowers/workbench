@@ -3,14 +3,15 @@
 from dash import register_page
 
 # Workbench Imports
-from workbench.web_interface.components import violin_plots, correlation_matrix
+from workbench.web_interface.components import correlation_matrix, violin_plots
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.web_interface.components.plugins.data_details import DataDetails
 from workbench.web_interface.page_views.feature_sets_page_view import FeatureSetsPageView
 
+from . import callbacks
+
 # Local Imports
 from .layout import feature_sets_layout
-from . import callbacks
 
 register_page(__name__, path="/feature_sets", name="Workbench - Feature Sets")
 
@@ -55,6 +56,7 @@ callbacks.on_page_load()
 callbacks.feature_sets_refresh(feature_set_view, feature_sets_table)
 
 # Callbacks for when a feature set is selected
+callbacks.show_waiting_for_data_on_row_selection()
 callbacks.update_feature_set_details(feature_details)
 callbacks.update_feature_set_sample_rows(samples_table)
 
