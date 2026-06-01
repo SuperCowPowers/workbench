@@ -1,30 +1,33 @@
 """ModelCore: Workbench ModelCore Class"""
 
 import time
-from datetime import datetime
 import urllib.parse
-from typing import Union, Optional, List, Dict, Tuple
+from datetime import datetime
 from enum import Enum
-import botocore
-from botocore.exceptions import ClientError
-
-import pandas as pd
-import awswrangler as wr
+from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
+
+import awswrangler as wr
+import botocore
+import pandas as pd
 from awswrangler.exceptions import NoFilesFound
+from botocore.exceptions import ClientError
 from sagemaker.core.resources import (
-    TrainingJob,
     ModelPackageGroup,
+    TrainingJob,
 )
 
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
 from workbench.utils.aws_utils import newest_path, pull_s3_data
-from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
-from workbench.utils.s3_utils import compute_s3_object_hash
-from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
-from workbench.utils.model_utils import published_proximity_model, get_model_hyperparameters
+from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
+from workbench.utils.model_utils import get_model_hyperparameters, published_proximity_model
+from workbench.utils.s3_utils import compute_s3_object_hash
+from workbench.utils.shap_utils import get_shap_feature_values, get_shap_importance, get_shap_values
+
+CLASS_LABELS_META_KEY = "workbench_model_labels"
+LEGACY_CLASS_LABELS_META_KEY = "class_labels"
 
 
 class ModelType(Enum):
@@ -556,11 +559,20 @@ class ModelCore(Artifact):
             list[str]: List of class labels
         """
         if self.model_type == ModelType.CLASSIFIER:
-            return self.workbench_meta().get("class_labels")  # Returns None if not found
+            metadata = self.workbench_meta()
+            labels = metadata.get(CLASS_LABELS_META_KEY)
+            return labels if labels is not None else metadata.get(LEGACY_CLASS_LABELS_META_KEY)
         else:
             return None
 
-    def set_class_labels(self, labels: list[str]):
+    def labels(self) -> Union[list[str], None]:
+        """Return the class labels for this Model.
+
+        This is the public shorthand API for retrieving classification labels.
+        """
+        return self.class_labels()
+
+    def set_class_labels(self, labels: Optional[list[str]]):
         """Set the class labels for this Model (if it's a classifier)
 
         Also reorders existing inference artifacts (confusion matrix and inference
@@ -575,7 +587,10 @@ class ModelCore(Artifact):
             self.log.error(f"Model {self.model_name} is not a classifier!")
             return
 
-        self.upsert_workbench_meta({"class_labels": labels})
+        labels = list(labels) if labels else None
+        self.upsert_workbench_meta({CLASS_LABELS_META_KEY: labels, LEGACY_CLASS_LABELS_META_KEY: labels})
+        if labels is None:
+            return
         self._reorder_class_artifacts(labels)
 
     def _reorder_class_artifacts(self, labels: list[str]):
@@ -679,6 +694,7 @@ class ModelCore(Artifact):
         details = self.summary()
         details["pipeline"] = self.get_pipeline()
         details["model_type"] = self.model_type.value
+        details["labels"] = self.labels()
         details["model_package_group_arn"] = self.group_arn()
         details["model_package_arn"] = self.model_package_arn()
 
