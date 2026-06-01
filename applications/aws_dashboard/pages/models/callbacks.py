@@ -3,12 +3,13 @@
 import logging
 from dash import callback, Input, Output, State
 from dash.exceptions import PreventUpdate
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 # Workbench Imports
 from workbench.web_interface.page_views.models_page_view import ModelsPageView
 from workbench.web_interface.components.plugins.ag_table import AGTable
 from workbench.cached.cached_model import CachedModel
+from .navigation import selected_model_url
 
 # Get the Workbench logger
 log = logging.getLogger("workbench")
@@ -60,6 +61,20 @@ def model_table_refresh(page_view: ModelsPageView, table: AGTable):
         models["name"] = models["Model Group"]
         models["id"] = range(len(models))
         return table.update_properties(models)
+
+
+def sync_selected_model_to_url():
+    @callback(
+        Output("url", "href", allow_duplicate=True),
+        Input("models_table", "selectedRows"),
+        State("url", "href"),
+        prevent_initial_call=True,
+    )
+    def _sync_selected_model_to_url(selected_rows, href):
+        updated_url = selected_model_url(selected_rows, href)
+        if updated_url is None:
+            raise PreventUpdate
+        return updated_url
 
 
 def setup_plugin_callbacks(plugins, model_details_plugin):

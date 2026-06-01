@@ -49,6 +49,7 @@ model_view = ModelsPageView()
 
 # Callback for anything we want to happen on page load
 callbacks.on_page_load()
+callbacks.sync_selected_model_to_url()
 
 # Setup our callbacks/connections
 callbacks.model_table_refresh(model_view, models_table)
