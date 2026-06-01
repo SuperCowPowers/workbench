@@ -1,30 +1,30 @@
 """ModelCore: Workbench ModelCore Class"""
 
 import time
-from datetime import datetime
 import urllib.parse
-from typing import Union, Optional, List, Dict, Tuple
+from datetime import datetime
 from enum import Enum
-import botocore
-from botocore.exceptions import ClientError
-
-import pandas as pd
-import awswrangler as wr
+from typing import Dict, List, Optional, Tuple, Union
 from urllib.parse import urlparse
+
+import awswrangler as wr
+import botocore
+import pandas as pd
 from awswrangler.exceptions import NoFilesFound
+from botocore.exceptions import ClientError
 from sagemaker.core.resources import (
-    TrainingJob,
     ModelPackageGroup,
+    TrainingJob,
 )
 
 # Workbench Imports
 from workbench.core.artifacts.artifact import Artifact
 from workbench.utils.aws_utils import newest_path, pull_s3_data
-from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
-from workbench.utils.s3_utils import compute_s3_object_hash
-from workbench.utils.shap_utils import get_shap_importance, get_shap_values, get_shap_feature_values
 from workbench.utils.deprecated_utils import deprecated
-from workbench.utils.model_utils import published_proximity_model, get_model_hyperparameters
+from workbench.utils.metrics_utils import reorder_cm_df, reorder_metrics_df
+from workbench.utils.model_utils import get_model_hyperparameters, published_proximity_model
+from workbench.utils.s3_utils import compute_s3_object_hash
+from workbench.utils.shap_utils import get_shap_feature_values, get_shap_importance, get_shap_values
 
 
 class ModelType(Enum):
@@ -100,6 +100,29 @@ class ModelCore(Artifact):
         my_model.details()
         ```
     """
+
+    @staticmethod
+    def _is_flat_training_metrics(metrics: dict) -> bool:
+        """Return True when training metrics are stored as a simple metric/value mapping."""
+        return (
+            isinstance(metrics, dict)
+            and bool(metrics)
+            and all(not isinstance(value, dict) for value in metrics.values())
+        )
+
+    @staticmethod
+    def _training_metrics_from_metadata(metrics: dict) -> pd.DataFrame:
+        """Convert model-training metrics metadata into the public DataFrame shape."""
+        if ModelCore._is_flat_training_metrics(metrics):
+            return pd.DataFrame([metrics])
+        return pd.DataFrame.from_dict(metrics)
+
+    @staticmethod
+    def _regression_training_metrics_metadata(metrics_df: pd.DataFrame) -> dict:
+        """Serialize regression training metrics as a compact metric/value mapping."""
+        if {"metric_name", "value"}.issubset(metrics_df.columns):
+            return dict(zip(metrics_df["metric_name"], metrics_df["value"]))
+        return metrics_df.to_dict()
 
     def __init__(self, model_name: str, **kwargs):
         """ModelCore Initialization
@@ -319,7 +342,7 @@ class ModelCore(Artifact):
                 raise ValueError(error_msg)
 
             metrics = self.workbench_meta().get("workbench_training_metrics")
-            return pd.DataFrame.from_dict(metrics) if metrics else None
+            return self._training_metrics_from_metadata(metrics) if metrics else None
 
         else:  # Specific capture_name (could return None)
             s3_path = f"{self.endpoint_inference_path}/{capture_name}/inference_metrics.csv"
@@ -649,8 +672,8 @@ class ModelCore(Artifact):
                 self.log.warning("Skipping training CM reorder: labels do not match new label set")
 
         metrics_dict = meta.get("workbench_training_metrics")
-        if metrics_dict:
-            metrics = pd.DataFrame.from_dict(metrics_dict)
+        if metrics_dict and not self._is_flat_training_metrics(metrics_dict):
+            metrics = self._training_metrics_from_metadata(metrics_dict)
             reordered = reorder_metrics_df(metrics, labels)
             if reordered is not None:
                 self.upsert_workbench_meta({"workbench_training_metrics": reordered.to_dict()})
@@ -1154,16 +1177,8 @@ class ModelCore(Artifact):
                 self.upsert_workbench_meta({"workbench_training_metrics": None, "workbench_training_cm": None})
                 return
             if self.model_type in [ModelType.REGRESSOR, ModelType.UQ_REGRESSOR, ModelType.ENSEMBLE_REGRESSOR]:
-                if "timestamp" in df.columns:
-                    df = df.drop(columns=["timestamp"])
-
-                # We're going to pivot the DataFrame to get the desired structure
-                reg_metrics_df = df.set_index("metric_name").T
-
-                # Store and return the metrics in the Workbench Metadata
-                self.upsert_workbench_meta(
-                    {"workbench_training_metrics": reg_metrics_df.to_dict(), "workbench_training_cm": None}
-                )
+                reg_metrics = self._regression_training_metrics_metadata(df)
+                self.upsert_workbench_meta({"workbench_training_metrics": reg_metrics, "workbench_training_cm": None})
                 return
 
         except (KeyError, botocore.exceptions.ClientError):
