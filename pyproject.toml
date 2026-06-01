@@ -43,6 +43,8 @@ dependencies = [
     # Data / ML
     "pandas >= 2.2.1, < 3.0",
     "scikit-learn >= 1.5.2",
+    # XGBoost source builds invoke CMake when no wheel matches the platform.
+    "cmake >= 3.18",
     "xgboost >= 3.0.3",
     "joblib >= 1.3.2",
     # Cheminformatics
