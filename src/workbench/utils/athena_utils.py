@@ -2,8 +2,9 @@ import os
 import logging
 import boto3
 import time
-import pandas as pd
+
 import awswrangler as wr
+import pandas as pd
 
 # Workbench imports
 from workbench.utils.performance_utils import performance
@@ -11,6 +12,19 @@ from workbench.core.cloud_platform.aws.boto_session import get_boto3_session
 from workbench.core.parameter_store_core import ParameterStoreCore as ParameterStore
 
 log = logging.getLogger("workbench")
+
+
+def athena_output_s3_path(workbench_bucket: str = None) -> str:
+    """Get the S3 output path for Athena query results."""
+    if workbench_bucket is None:
+        param_key = "/workbench/config/workbench_bucket"
+        workbench_bucket = ParameterStore().get(param_key)
+        if workbench_bucket is None:
+            workbench_bucket = os.environ.get("WORKBENCH_BUCKET")
+            if workbench_bucket is None:
+                raise ValueError(f"Set '{param_key}' in Parameter Store or set WORKBENCH_BUCKET ENV variable.")
+
+    return f"s3://{workbench_bucket}/temp/athena_output"
 
 
 def table_s3_path(database: str, table_name: str) -> str:

@@ -15,7 +15,7 @@ from workbench.utils.datetime_utils import convert_all_to_iso8601
 from workbench.algorithms import sql
 from workbench.utils.json_utils import CustomEncoder
 from workbench.utils.aws_utils import decode_value
-from workbench.utils.athena_utils import compute_athena_table_hash
+from workbench.utils.athena_utils import athena_output_s3_path, compute_athena_table_hash
 from workbench.utils.s3_utils import compute_parquet_hash
 from workbench.core.cloud_platform.aws.cache_dataframe import cache_dataframe
 
@@ -181,7 +181,7 @@ class AthenaSource(DataSourceAbstract):
 
     def table_hash(self) -> str:
         """Get the table hash for this AthenaSource"""
-        s3_scratch = f"s3://{self.workbench_bucket}/temp/athena_output"
+        s3_scratch = athena_output_s3_path(self.workbench_bucket)
         return compute_athena_table_hash(self.database, self.table, self.boto3_session, s3_scratch)
 
     def num_rows(self) -> int:
@@ -234,6 +234,7 @@ class AthenaSource(DataSourceAbstract):
                 database=database,
                 ctas_approach=False,
                 boto3_session=cls.boto3_session,
+                s3_output=athena_output_s3_path(cls.workbench_bucket),
             )
             scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
             if scanned_bytes > 0:
@@ -260,6 +261,7 @@ class AthenaSource(DataSourceAbstract):
                     sql=query,
                     database=self.database,
                     boto3_session=self.boto3_session,
+                    s3_output=athena_output_s3_path(self.workbench_bucket),
                 )
                 self.log.debug(f"QueryExecutionId: {query_execution_id}")
 
@@ -299,6 +301,7 @@ class AthenaSource(DataSourceAbstract):
             database=self.database,
             ctas_approach=False,
             boto3_session=self.boto3_session,
+            s3_output=athena_output_s3_path(self.workbench_bucket),
         )
         scanned_bytes = df.query_metadata["Statistics"]["DataScannedInBytes"]
         self.log.info(f"Athena TEST Query successful (scanned bytes: {scanned_bytes})")
@@ -483,7 +486,10 @@ class AthenaSource(DataSourceAbstract):
         # Compute our AWS URL
         query = f'select * from "{self.database}.{self.table}" limit 10'
         query_exec_id = wr.athena.start_query_execution(
-            sql=query, database=self.database, boto3_session=self.boto3_session
+            sql=query,
+            database=self.database,
+            boto3_session=self.boto3_session,
+            s3_output=athena_output_s3_path(self.workbench_bucket),
         )
         base_url = "https://console.aws.amazon.com/athena/home"
         details["aws_url"] = f"{base_url}?region={self.aws_region}#query/history/{query_exec_id}"

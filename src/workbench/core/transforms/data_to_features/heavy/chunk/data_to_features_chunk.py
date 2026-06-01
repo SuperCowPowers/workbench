@@ -8,6 +8,7 @@ from workbench.core.transforms.pandas_transforms.pandas_to_features_chunked impo
     PandasToFeaturesChunked,
 )
 from workbench.core.artifacts.data_source_factory import DataSourceFactory
+from workbench.utils.athena_utils import athena_output_s3_path
 
 
 class DataToFeaturesChunk(Transform):
@@ -83,6 +84,7 @@ class DataToFeaturesChunk(Transform):
             ctas_approach=False,
             chunksize=self.chunk_size,
             boto3_session=self.boto3_session,
+            s3_output=athena_output_s3_path(self.workbench_bucket),
         ):
             # Hand off each chunk of data
             self.chunked_to_features.add_chunk(chunk)

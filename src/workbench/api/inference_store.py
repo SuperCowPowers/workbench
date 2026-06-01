@@ -2,12 +2,14 @@
 
 import logging
 import time
+
 import pandas as pd
 import awswrangler as wr
 
 # Workbench Imports
 from workbench.core.cloud_platform.aws.boto_session import get_boto3_session
 from workbench.utils.athena_utils import (
+    athena_output_s3_path,
     dataframe_to_table,
     table_s3_path,
     delete_table,
@@ -120,6 +122,7 @@ class InferenceStore:
                 database=self.catalog_db,
                 ctas_approach=False,
                 boto3_session=self.boto3_session,
+                s3_output=athena_output_s3_path(),
             )
             execution_time = time.time() - start_time
             self.log.info(f"Query completed in {execution_time:.2f} seconds")
