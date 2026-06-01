@@ -35,6 +35,6 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # workbench-bridges==0.2.10 is retained for backward compatibility with
 # existing deployed-endpoint model bundles; drop in a future image rev once
 # no production endpoint references workbench_bridges.
-ARG WORKBENCH_VERSION=0.8.358
+ARG WORKBENCH_VERSION=0.8.359
 RUN pip install --no-deps "workbench==${WORKBENCH_VERSION}" && \
     pip install --no-deps "workbench-bridges==0.2.10"
