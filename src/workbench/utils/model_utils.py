@@ -217,7 +217,7 @@ def uq_model_local(
     refresh_proximity: bool = False,
     radius: int = 2,
     n_bits: int = 2048,
-):
+) -> "UQModelV0 | UQModelV1 | UQModelV2":  # noqa: F821
     """Load the fitted UQModel (V0, V1, or V2) from this Model's artifact.
 
     Pairs with the existing `fp_prox_model()` / `proximity_model()` factory pattern:
@@ -237,8 +237,8 @@ def uq_model_local(
             reference set used to fit the residual estimator, reproducible, no
             fingerprint recomputation. If True, build a fresh FingerprintProximity
             from the current source FeatureSet. Ignored for V0 (no proximity).
-        radius / n_bits: Morgan fingerprint parameters (only used for V1/V2 when
-            refresh_proximity=True).
+        radius: Morgan fingerprint radius (only used for V1/V2 when refresh_proximity=True).
+        n_bits: Morgan fingerprint bit width (only used for V1/V2 when refresh_proximity=True).
 
     Returns:
         A ready-to-use UQModelV0, UQModelV1, or UQModelV2 instance.
@@ -327,11 +327,10 @@ def cleanlab_model_local(model: Model) -> CleanlabModels:
         model (Model): The Model used to create the cleanlab models
 
     Returns:
-        CleanlabModels: Factory providing access to CleanLearning and Datalab models.
-            - clean_learning(): CleanLearning model with enhanced get_label_issues()
-            - datalab(): Datalab instance with report(), get_issues()
+        CleanlabModels: Label-quality analysis with helpers like label_issues(),
+            epistemic_uncertainty(), and the native clean_learning()/datalab() objects.
     """
-    from workbench.algorithms.models.cleanlab_model import create_cleanlab_model  # noqa: F401 (avoid circular import)
+    from workbench.algorithms.models.cleanlab_model import CleanlabModels  # noqa: F401 (avoid circular import)
     from workbench.api import Model, FeatureSet  # noqa: F401 (avoid circular import)
 
     # Get Feature and Target Columns from the existing given Model
@@ -346,8 +345,8 @@ def cleanlab_model_local(model: Model) -> CleanlabModels:
     # Get the full FeatureSet data
     full_df = fs.pull_dataframe()
 
-    # Create and return the CleanLearning model
-    return create_cleanlab_model(full_df, id_column, features, target, model_type=model_type)
+    # Create and return the CleanlabModels instance
+    return CleanlabModels(full_df, id_column, features, target, model_type=model_type)
 
 
 def published_proximity_model(model: Model, prox_model_name: str, include_all_columns: bool = False) -> Model:

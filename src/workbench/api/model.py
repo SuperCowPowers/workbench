@@ -174,7 +174,7 @@ class Model(ModelCore):
         refresh_proximity: bool = False,
         radius: int = 2,
         n_bits: int = 2048,
-    ):
+    ) -> "UQModelV0 | UQModelV1":  # noqa: F821
         """Load this model's fitted UQ model (V0 or V1) for uncertainty-quantified inference.
 
         Usage:

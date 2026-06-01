@@ -212,8 +212,8 @@ class FeatureSet(FeatureSetCore):
         target: str,
         features: list,
         model_type: ModelType = ModelType.REGRESSOR,
-    ) -> "CleanLearning":  # noqa: F821
-        """Create a CleanLearning model for detecting label issues in this FeatureSet
+    ) -> "CleanlabModels":  # noqa: F821
+        """Create a CleanlabModels instance for label-quality analysis of this FeatureSet
 
         Args:
            target (str): The target column name
@@ -221,16 +221,17 @@ class FeatureSet(FeatureSetCore):
            model_type (ModelType): The model type (REGRESSOR or CLASSIFIER). Defaults to REGRESSOR.
 
         Returns:
-           CleanLearning: A fitted cleanlab model. Use get_label_issues() to get
-           a DataFrame with id_column, label_quality, predicted_label, given_label, is_label_issue.
+           CleanlabModels: Label-quality analysis with helpers like label_issues()
+           (a DataFrame keyed by id_column, sorted by label_quality) and the native
+           clean_learning()/datalab() objects.
         """
-        from workbench.algorithms.models.cleanlab_model import create_cleanlab_model  # noqa: F401
+        from workbench.algorithms.models.cleanlab_model import CleanlabModels  # noqa: F401
 
         # Get the full FeatureSet dataframe
         full_df = self.pull_dataframe()
 
-        # Create and return the CleanLearning model
-        return create_cleanlab_model(full_df, self.id_column, features, target, model_type=model_type)
+        # Create and return the CleanlabModels instance
+        return CleanlabModels(full_df, self.id_column, features, target, model_type=model_type)
 
 
 if __name__ == "__main__":

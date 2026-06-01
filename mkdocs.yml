@@ -11,6 +11,7 @@ nav:
     - PyTorch: models/pytorch_models.md
     - Fingerprint: models/fingerprint_models.md
     - ChemProp: models/chemprop_models.md
+    - Cleanlab: models/cleanlab_models.md
     - Meta Endpoints: models/meta_endpoints.md
   - API Classes: 
     - OverView: api_classes/overview.md

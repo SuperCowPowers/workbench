@@ -3,7 +3,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from sklearn.metrics import pairwise_distances
 from sklearn.neighbors import NearestNeighbors
-from typing import Optional, Union
+from typing import List, Optional, Union
 import logging
 
 # Cross-module imports: try the workbench package path first (Jupyter / library use);
@@ -353,7 +353,7 @@ class FingerprintProximity(Proximity):
 
     def neighbors(
         self,
-        id_or_ids,
+        id_or_ids: Union[str, int, List[Union[str, int]]],
         n_neighbors: Optional[int] = 5,
         min_similarity: Optional[float] = None,
         include_self: bool = True,

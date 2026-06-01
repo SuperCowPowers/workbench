@@ -5,9 +5,9 @@ of its extras. Users who want to use :class:`CleanlabModels` (via
 :meth:`workbench.api.Model.cleanlab_model` or
 :meth:`workbench.api.FeatureSet.cleanlab_model`) must install it separately::
 
-    pip install 'cleanlab[datalab]' 'datasets<4.0.0'
+    pip install 'cleanlab[datalab]>=2.8.0'
 
-The ``datasets<4.0.0`` pin works around a Datalab bug:
+Cleanlab 2.8.0+ resolves the earlier Datalab/datasets 4.x incompatibility:
 https://github.com/cleanlab/cleanlab/issues/1253
 
 This module imports cleanly even when cleanlab is not installed; the
@@ -27,15 +27,6 @@ from workbench.core.artifacts.model_core import ModelType
 # Optional dependency check — see module docstring.
 _CLEANLAB_IMPORT_ERROR: Optional[str] = None
 try:
-    import datasets
-
-    _datasets_major = int(datasets.__version__.split(".")[0])
-    if _datasets_major >= 4:
-        raise ImportError(
-            "cleanlab's Datalab requires datasets<4.0.0 due to a known bug "
-            "(https://github.com/cleanlab/cleanlab/issues/1253). "
-            "Fix: pip install 'datasets<4.0.0'"
-        )
     from cleanlab.regression.learn import CleanLearning as CleanLearningRegressor
     from cleanlab.classification import CleanLearning as CleanLearningClassifier
     from cleanlab import Datalab
@@ -49,7 +40,7 @@ except ImportError as _e:
     _CLEANLAB_IMPORT_ERROR = (
         f"{_e}. "
         "cleanlab is an optional workbench dependency — install with: "
-        "pip install 'cleanlab[datalab]' 'datasets<4.0.0'"
+        "pip install 'cleanlab[datalab]>=2.8.0'"
     )
 
 # Regressor types for convenience
@@ -60,29 +51,34 @@ log = logging.getLogger("workbench")
 
 
 class CleanlabModels:
-    """Factory class for cleanlab models with shared data preparation.
+    """Cleanlab label-quality and data-quality analysis with shared data prep.
 
-    This class handles data preparation once and provides lazy-loaded access
-    to both CleanLearning and Datalab models. Each model is only created
-    when first requested, and the prepared data is shared between them.
+    Prepares the data once, then provides access to the underlying cleanlab
+    objects along with workbench helpers that join results back to the ID column.
 
-    Attributes:
-        id_column: Name of the ID column in the data.
-        features: List of feature column names.
-        target: Name of the target column.
-        model_type: ModelType (REGRESSOR, CLASSIFIER, etc.).
+    The cleanlab objects are exposed directly and unmodified — use them with
+    cleanlab's own API (see https://docs.cleanlab.ai):
+
+        - ``clean_learning()`` → cleanlab ``CleanLearning`` (fitted)
+        - ``datalab()`` → cleanlab ``Datalab`` (with ``find_issues`` already run)
+
+    The workbench helpers below are the recommended surface for most uses; they
+    return DataFrames keyed by the ID column (or a scalar, for aleatoric):
+
+        - ``label_issues()`` → DataFrame, worst label quality first
+        - ``epistemic_uncertainty()`` → DataFrame, highest model uncertainty first (regression)
+        - ``aleatoric_uncertainty()`` → float, dataset-level irreducible noise (regression)
 
     Example:
         ```python
         cleanlab = CleanlabModels(df, "id", features, "target", ModelType.REGRESSOR)
 
-        # Get CleanLearning model for label issues and uncertainty
-        cl = cleanlab.clean_learning()
-        issues = cl.get_label_issues()
+        # Workbench helpers (ID-joined results)
+        issues = cleanlab.label_issues()
+        uncertainty = cleanlab.epistemic_uncertainty()
 
-        # Get Datalab for comprehensive data quality report
-        lab = cleanlab.datalab()
-        lab.report()
+        # Or work with the native cleanlab objects directly
+        cleanlab.datalab().report()
         ```
     """
 
@@ -136,16 +132,14 @@ class CleanlabModels:
         self._datalab = None
 
     def clean_learning(self):
-        """Get the CleanLearning model (fitted, with label issues computed).
+        """Get the native cleanlab CleanLearning model (fitted, lazily built).
 
-        Returns the cleanlab CleanLearning model with enhanced get_label_issues()
-        that includes the ID column, sorts by label quality, and decodes labels.
+        The returned object is the unmodified cleanlab model — use it with
+        cleanlab's own API. For ID-joined results, prefer the workbench helpers
+        (``label_issues()``, ``epistemic_uncertainty()``, ``aleatoric_uncertainty()``).
 
         Returns:
-            CleanLearning: Fitted cleanlab model with methods like:
-                - get_label_issues(): DataFrame with id_column, sorted by label_quality
-                - predict(X): Make predictions
-                - For regression: get_epistemic_uncertainty(), get_aleatoric_uncertainty()
+            CleanLearning: Fitted cleanlab model.
         """
         if self._clean_learning is not None:
             return self._clean_learning
@@ -162,71 +156,20 @@ class CleanlabModels:
             cl_model = CleanLearningRegressor(HistGradientBoostingRegressor())
             cl_model.fit(self._X, self._y)
 
-        # Enhance get_label_issues to include id column, sort, and decode labels
-        original_get_label_issues = cl_model.get_label_issues
-        id_column = self.id_column
-        clean_df = self._clean_df
-        model_type = self.model_type
-        label_encoder = self._label_encoder
-
-        def get_label_issues_enhanced():
-            issues = original_get_label_issues().copy()
-            issues.insert(0, id_column, clean_df[id_column].values)
-            if model_type == ModelType.CLASSIFIER and label_encoder is not None:
-                for col in ["given_label", "predicted_label"]:
-                    if col in issues.columns:
-                        issues[col] = label_encoder.inverse_transform(issues[col])
-            return issues.sort_values("label_quality").reset_index(drop=True)
-
-        cl_model.get_label_issues = get_label_issues_enhanced
-
-        # For regression, enhance uncertainty methods to use stored data and return DataFrames
-        if model_type != ModelType.CLASSIFIER:
-            X = self._X
-            y = self._y
-            original_get_aleatoric = cl_model.get_aleatoric_uncertainty
-            original_get_epistemic = cl_model.get_epistemic_uncertainty
-
-            def get_aleatoric_uncertainty_enhanced():
-                residual = cl_model.predict(X) - y
-                return original_get_aleatoric(X, residual)
-
-            def get_epistemic_uncertainty_enhanced():
-                values = original_get_epistemic(X, y)
-                return (
-                    pd.DataFrame(
-                        {
-                            id_column: clean_df[id_column].values,
-                            "epistemic_uncertainty": values,
-                        }
-                    )
-                    .sort_values("epistemic_uncertainty", ascending=False)
-                    .reset_index(drop=True)
-                )
-
-            cl_model.get_aleatoric_uncertainty = get_aleatoric_uncertainty_enhanced
-            cl_model.get_epistemic_uncertainty = get_epistemic_uncertainty_enhanced
-
-        n_issues = original_get_label_issues()["is_label_issue"].sum()
-        log.info(f"CleanLearning: {n_issues} potential label issues out of {len(self._clean_df)} samples")
-
         self._clean_learning = cl_model
         return cl_model
 
     def datalab(self):
-        """Get the Datalab instance (with find_issues already called).
+        """Get the native cleanlab Datalab instance (with find_issues already run).
 
-        Returns the native cleanlab Datalab for comprehensive data quality
-        analysis. Issues have already been detected.
+        The returned object is the unmodified cleanlab Datalab — use it with
+        cleanlab's own API (e.g. ``report()``, ``get_issues()``, ``get_issue_summary()``).
 
-        Note: For classification, this will build the CleanLearning model first
-        (if not already built) to reuse its classifier for pred_probs.
+        Note: For classification, this builds the CleanLearning model first (if
+        not already built) to reuse its classifier for pred_probs.
 
         Returns:
-            Datalab: Cleanlab Datalab instance with methods like:
-                - report(): Print comprehensive data quality report
-                - get_issues(): DataFrame with all detected issues
-                - get_issue_summary(): Summary statistics
+            Datalab: Cleanlab Datalab instance.
         """
         if self._datalab is not None:
             return self._datalab
@@ -250,44 +193,70 @@ class CleanlabModels:
         self._datalab = lab
         return lab
 
+    def label_issues(self) -> pd.DataFrame:
+        """Detected label issues, keyed by ID column and worst quality first.
 
-# Keep the old function for backwards compatibility
-def create_cleanlab_model(
-    df: pd.DataFrame,
-    id_column: str,
-    features: List[str],
-    target: str,
-    model_type: ModelType = ModelType.REGRESSOR,
-):
-    """Create a CleanlabModels instance for label quality detection.
+        Returns:
+            pd.DataFrame: One row per sample with the ID column inserted first,
+                sorted ascending by ``label_quality``. For classification,
+                ``given_label`` and ``predicted_label`` are decoded back to the
+                original labels.
+        """
+        cl = self.clean_learning()
+        issues = cl.get_label_issues().copy()
+        issues.insert(0, self.id_column, self._clean_df[self.id_column].values)
 
-    Args:
-        df: DataFrame containing data for label quality detection.
-        id_column: Name of the column used as the identifier.
-        features: List of feature column names.
-        target: Name of the target column.
-        model_type: ModelType (REGRESSOR, CLASSIFIER, etc.).
+        if self.model_type == ModelType.CLASSIFIER and self._label_encoder is not None:
+            for col in ["given_label", "predicted_label"]:
+                if col in issues.columns:
+                    issues[col] = self._label_encoder.inverse_transform(issues[col])
 
-    Returns:
-        CleanlabModels: Factory providing access to CleanLearning and Datalab models.
+        n_issues = int(issues["is_label_issue"].sum())
+        log.info(f"CleanLearning: {n_issues} potential label issues out of {len(self._clean_df)} samples")
+        return issues.sort_values("label_quality").reset_index(drop=True)
 
-    Example:
-        ```python
-        cleanlab = create_cleanlab_model(df, "id", features, "target")
+    def epistemic_uncertainty(self) -> pd.DataFrame:
+        """Per-sample epistemic (model) uncertainty, keyed by ID column.
 
-        # Get CleanLearning model and label issues
-        cl = cleanlab.clean_learning()
-        issues = cl.get_label_issues()  # Includes ID column, sorted by quality
+        Epistemic uncertainty is the reducible component — high values flag
+        samples the model is unsure about. Regression models only.
 
-        # Get Datalab for comprehensive data quality report
-        lab = cleanlab.datalab()
-        lab.report()
-        ```
+        Returns:
+            pd.DataFrame: One row per sample with the ID column and an
+                ``epistemic_uncertainty`` column, sorted descending.
+        """
+        self._require_regression("epistemic_uncertainty")
+        cl = self.clean_learning()
+        values = cl.get_epistemic_uncertainty(self._X, self._y)
+        return (
+            pd.DataFrame(
+                {
+                    self.id_column: self._clean_df[self.id_column].values,
+                    "epistemic_uncertainty": values,
+                }
+            )
+            .sort_values("epistemic_uncertainty", ascending=False)
+            .reset_index(drop=True)
+        )
 
-    References:
-        cleanlab: https://github.com/cleanlab/cleanlab
-    """
-    return CleanlabModels(df, id_column, features, target, model_type)
+    def aleatoric_uncertainty(self) -> float:
+        """Dataset-level aleatoric (irreducible) noise estimate.
+
+        Aleatoric uncertainty is the irreducible component — inherent noise in
+        the data that more modeling can't remove. Regression models only.
+
+        Returns:
+            float: Single dataset-level aleatoric uncertainty estimate.
+        """
+        self._require_regression("aleatoric_uncertainty")
+        cl = self.clean_learning()
+        residual = cl.predict(self._X) - self._y
+        return cl.get_aleatoric_uncertainty(self._X, residual)
+
+    def _require_regression(self, method_name: str):
+        """Raise a clear error if a regression-only method is called on a classifier."""
+        if self.model_type == ModelType.CLASSIFIER:
+            raise TypeError(f"{method_name}() is only available for regression models")
 
 
 if __name__ == "__main__":
@@ -322,19 +291,14 @@ if __name__ == "__main__":
     print("Testing CleanlabModels with synthetic data...")
     print("=" * 80)
 
-    # Create CleanlabModels instance
-    cleanlab_models = create_cleanlab_model(
+    cleanlab_models = CleanlabModels(
         df,
         id_column="ID",
         features=["Feature1", "Feature2"],
         target="target",
     )
 
-    # Get CleanLearning model and test get_label_issues
-    cl = cleanlab_models.clean_learning()
-    print(f"CleanLearning type: {type(cl)}")
-
-    label_issues = cl.get_label_issues()
+    label_issues = cleanlab_models.label_issues()
     print("\nLabel issues (worst first, with ID column):")
     print(label_issues.head(10))
 
@@ -344,7 +308,7 @@ if __name__ == "__main__":
     detected = worst_10[worst_10["ID"].isin(noisy_ids)]
     print(f"\nOf 10 noisy samples, {len(detected)} appear in worst 10")
 
-    # Test Datalab
+    # Native Datalab object
     print("\n" + "=" * 80)
     print("Testing Datalab...")
     print("=" * 80)
@@ -363,16 +327,14 @@ if __name__ == "__main__":
     features = model.features()
     target = model.target()
 
-    cleanlab_models = create_cleanlab_model(
+    cleanlab_models = CleanlabModels(
         df,
         id_column=fs.id_column,
         features=features,
         target=target,
     )
 
-    # Get CleanLearning and label issues
-    cl = cleanlab_models.clean_learning()
-    label_issues = cl.get_label_issues()
+    label_issues = cleanlab_models.label_issues()
     print("\nLabel issues summary:")
     print(f"Total samples: {len(label_issues)}")
     print(f"Flagged as issues: {label_issues['is_label_issue'].sum()}")
@@ -383,14 +345,15 @@ if __name__ == "__main__":
     print("\nLabel quality distribution:")
     print(label_issues["label_quality"].describe())
 
-    # Test uncertainty estimates (regression only)
+    # Uncertainty estimates (regression only)
     print("\nTesting uncertainty estimates...")
-    aleatoric = cl.get_aleatoric_uncertainty(cleanlab_models._X, cl.predict(cleanlab_models._X) - cleanlab_models._y)
+    aleatoric = cleanlab_models.aleatoric_uncertainty()
     print(f"Aleatoric: Data noise (irreducible) = {aleatoric}")
-    epistemic = cl.get_epistemic_uncertainty(cleanlab_models._X, cleanlab_models._y)
-    print(f"Epistemic: Model uncertainty (reducible) = {epistemic[:10]} ...")
+    epistemic = cleanlab_models.epistemic_uncertainty()
+    print("Epistemic: Model uncertainty (reducible), highest first:")
+    print(epistemic.head(10))
 
-    # Test Datalab report
+    # Native Datalab report
     print("\n" + "=" * 80)
     print("Testing Datalab report (regression)...")
     print("=" * 80)
