@@ -38,25 +38,16 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int =
 
     Returns:
         pd.DataFrame: Input DataFrame with 'fingerprint' column added.
-                      Values are comma-separated uint8 counts.
+                      Values are comma-separated uint8 counts. Rows whose
+                      SMILES cannot be fingerprinted are preserved with
+                      pandas missing values in the fingerprint column.
 
     Note:
         Count fingerprints outperform binary for ADMET prediction.
         See: https://pubs.acs.org/doi/10.1021/acs.est.3c02198
 
-    Future Me:
-        This silently drops rows whose SMILES RDKit can't parse, so the output
-        has fewer rows than the input. Callers downstream (FingerprintProximity,
-        residual_features, UQModelV1) currently work around this by pre-validating
-        SMILES at their own layer — which means MolFromSmiles runs twice per
-        SMILES on the inference path. The cleaner fix is one of:
-          (a) preserve the input's DataFrame index when dropping rows so
-              callers can derive a survivor mask via `df_out.index`, or
-          (b) keep all rows and put NaN in the fingerprint column for failures
-              (more pandas/sklearn-idiomatic).
-        Either would let `FingerprintProximity.neighbors_from_query_df` drop
-        its redundant pre-validate. Deferred — see the workaround in
-        fingerprint_proximity.py.
+        Invalid or unsupported SMILES keep their input row. This avoids endpoint
+        response shape mismatches when a batch contains one bad compound.
     """
     delete_mol_column = False
 
@@ -76,37 +67,52 @@ def compute_morgan_fingerprints(df: pd.DataFrame, radius: int = 2, n_bits: int =
         delete_mol_column = True
 
         def _safe_mol_from_smiles(smi):
-            if smi is None or pd.isna(smi) or not isinstance(smi, str) or not smi:
+            if smi is None or pd.isna(smi) or not isinstance(smi, str) or not smi.strip():
                 return None
-            return Chem.MolFromSmiles(smi)
+            try:
+                return Chem.MolFromSmiles(smi.strip())
+            except Exception as e:
+                log.warning(f"Failed to parse SMILES {smi!r}: {e}")
+                return None
 
         df["molecule"] = df[smiles_column].apply(_safe_mol_from_smiles)
-        # Make sure our molecules are not None
         failed_smiles = df[df["molecule"].isnull()][smiles_column].tolist()
         if failed_smiles:
             log.warning(f"Failed to convert {len(failed_smiles)} SMILES to molecules ({failed_smiles})")
-        df = df.dropna(subset=["molecule"]).copy()
 
     # If we have fragments in our compounds, get the largest fragment before computing fingerprints
-    largest_frags = df["molecule"].apply(
-        lambda mol: rdMolStandardize.LargestFragmentChooser().choose(mol) if mol else None
-    )
+    fragment_chooser = rdMolStandardize.LargestFragmentChooser()
+
+    def _largest_fragment(mol):
+        if mol is None:
+            return None
+        try:
+            return fragment_chooser.choose(mol)
+        except Exception as e:
+            log.warning(f"Failed to choose largest fragment: {e}")
+            return None
+
+    largest_frags = df["molecule"].apply(_largest_fragment)
 
     def mol_to_count_string(mol):
         """Convert molecule to comma-separated count fingerprint string."""
         if mol is None:
             return pd.NA
 
-        # Get hashed Morgan fingerprint with counts
-        fp = AllChem.GetHashedMorganFingerprint(mol, radius, nBits=n_bits)
+        try:
+            # Get hashed Morgan fingerprint with counts
+            fp = AllChem.GetHashedMorganFingerprint(mol, radius, nBits=n_bits)
 
-        # Initialize array and populate with counts (clamped to uint8 range)
-        counts = np.zeros(n_bits, dtype=np.uint8)
-        for idx, count in fp.GetNonzeroElements().items():
-            counts[idx] = min(count, 255)
+            # Initialize array and populate with counts (clamped to uint8 range)
+            counts = np.zeros(n_bits, dtype=np.uint8)
+            for idx, count in fp.GetNonzeroElements().items():
+                counts[idx] = min(count, 255)
 
-        # Return as comma-separated string
-        return ",".join(map(str, counts))
+            # Return as comma-separated string
+            return ",".join(map(str, counts))
+        except Exception as e:
+            log.warning(f"Failed to compute Morgan fingerprint: {e}")
+            return pd.NA
 
     # Compute Morgan count fingerprints
     fingerprints = largest_frags.apply(mol_to_count_string)
