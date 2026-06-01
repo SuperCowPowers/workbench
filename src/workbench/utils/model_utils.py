@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+from copy import deepcopy
+from functools import lru_cache
 import pandas as pd
 import numpy as np
 from scipy.stats import spearmanr
@@ -435,7 +437,12 @@ def load_category_mappings_from_s3(model_artifact_uri: str) -> Optional[dict]:
     return category_mappings
 
 
-def load_hyperparameters_from_s3(model_artifact_uri: str) -> Optional[dict]:
+@lru_cache(maxsize=128)
+def _load_hyperparameters_from_s3_cached(model_artifact_uri: str) -> Optional[dict]:
+    return _load_hyperparameters_from_s3_uncached(model_artifact_uri)
+
+
+def _load_hyperparameters_from_s3_uncached(model_artifact_uri: str) -> Optional[dict]:
     """
     Download and extract hyperparameters from a model artifact in S3.
 
@@ -467,6 +474,16 @@ def load_hyperparameters_from_s3(model_artifact_uri: str) -> Optional[dict]:
                 log.warning(f"Failed to load hyperparameters from {hyperparameters_path}: {e}")
 
     return hyperparameters
+
+
+def load_hyperparameters_from_s3(model_artifact_uri: str) -> Optional[dict]:
+    """
+    Download and extract hyperparameters from a model artifact in S3.
+
+    Results are cached by model artifact URI so repeated model summary/details
+    calls do not download and extract the same immutable artifact more than once.
+    """
+    return deepcopy(_load_hyperparameters_from_s3_cached(model_artifact_uri))
 
 
 def get_model_hyperparameters(workbench_model: Any) -> Optional[dict]:
