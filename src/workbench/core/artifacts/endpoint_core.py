@@ -1253,16 +1253,18 @@ class EndpointCore(Artifact):
         if not self.exists():
             self.log.warning(f"Trying to delete an Endpoint that doesn't exist: {self.name}")
 
-        # Remove this endpoint from the list of registered endpoints
-        self.log.info(f"Removing {self.name} from the list of registered endpoints...")
-        ModelCore(self.model_name).remove_endpoint(self.name)
-
         # Call the Class Method to delete the Endpoint
-        EndpointCore.managed_delete(endpoint_name=self.name)
+        EndpointCore.managed_delete(endpoint_name=self.name, model_name=self.model_name)
 
     @classmethod
-    def managed_delete(cls, endpoint_name: str):
+    def managed_delete(cls, endpoint_name: str, model_name: Optional[str] = None):
         """Delete the Endpoint and associated resources if it exists"""
+
+        # If the caller already has the Workbench input model, deregister
+        # before touching AWS so stale endpoint records are cleaned up too.
+        have_model_name = model_name not in [None, "", "-", "unknown"]
+        if have_model_name:
+            cls._remove_model_endpoint_registration(endpoint_name, model_name)
 
         # Check if the endpoint exists using V3 SDK
         try:
@@ -1272,6 +1274,10 @@ class EndpointCore(Artifact):
                 cls.log.info(f"Endpoint {endpoint_name} not found!")
                 return
             raise  # Re-raise unexpected errors
+
+        if not have_model_name:
+            model_name = cls._model_name_from_endpoint_tags(endpoint_name)
+            cls._remove_model_endpoint_registration(endpoint_name, model_name)
 
         # Async endpoints carry auto-scaling policies + alarms that AWS won't
         # clean up for us — deregister them first so we don't orphan stale
@@ -1334,6 +1340,47 @@ class EndpointCore(Artifact):
             raise e
 
         time.sleep(10)  # Final sleep for AWS to fully register deletions
+
+    @classmethod
+    def _model_name_from_endpoint_tags(cls, endpoint_name: str) -> Optional[str]:
+        """Find the Workbench model registered as this endpoint's input."""
+        try:
+            endpoint_details = cls.sm_client.describe_endpoint(EndpointName=endpoint_name)
+            endpoint_arn = endpoint_details.get("EndpointArn")
+        except ClientError as e:
+            cls.log.warning(f"Could not describe Endpoint {endpoint_name} for model deregistration: {e}")
+            return None
+
+        if not endpoint_arn:
+            cls.log.info(f"Endpoint {endpoint_name} has no ARN; skipping model deregistration")
+            return None
+
+        try:
+            from sagemaker.core.common_utils import list_tags as sm_list_tags
+
+            tags = sm_list_tags(cls.sm_session, endpoint_arn)
+        except Exception as e:
+            cls.log.warning(f"Could not read Endpoint {endpoint_name} tags for model deregistration: {e}")
+            return None
+
+        tag_map = {tag.get("Key"): tag.get("Value") for tag in tags}
+        model_name = tag_map.get("workbench_input")
+        if model_name in [None, "", "-", "unknown"]:
+            cls.log.info(f"Endpoint {endpoint_name} has no registered Workbench model tag")
+            return None
+        return model_name
+
+    @classmethod
+    def _remove_model_endpoint_registration(cls, endpoint_name: str, model_name: Optional[str]):
+        """Remove endpoint_name from the source model's registered endpoint list."""
+        if model_name in [None, "", "-", "unknown"]:
+            return
+
+        cls.log.info(f"Removing {endpoint_name} from the list of registered endpoints for {model_name}...")
+        try:
+            ModelCore(model_name).remove_endpoint(endpoint_name)
+        except Exception as e:
+            cls.log.warning(f"Could not deregister Endpoint {endpoint_name} from Model {model_name}: {e}")
 
     @classmethod
     def delete_endpoint_models(cls, endpoint_name: str):
