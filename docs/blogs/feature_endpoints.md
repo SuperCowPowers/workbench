@@ -34,9 +34,12 @@ feature_endpoint = Endpoint("smiles-to-2d-v1")
 df_features = feature_endpoint.inference(df)
 
 # Create a FeatureSet and deploy a model that uses those features
-to_features = PandasToFeatures("open_admet_mppb")
-to_features.set_input(df_features, id_column="molecule_name")
-to_features.set_output_tags(["open_admet", assay])
+to_features = PandasToFeatures(
+    "open_admet_mppb",
+    input_df=df_features,
+    id_column="molecule_name",
+    tags=["open_admet", assay],
+)
 to_features.transform()
     
 # Now use the features to train a model as usual

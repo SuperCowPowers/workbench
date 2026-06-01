@@ -24,18 +24,34 @@ class PandasToFeatures(Transform):
 
     Common Usage:
         ```python
-        to_features = PandasToFeatures(output_name)
-        to_features.set_output_tags(["my", "awesome", "data"])
-        to_features.set_input(df, id_column="my_id")
+        to_features = PandasToFeatures(
+            output_name,
+            input_df=df,
+            id_column="my_id",
+            tags=["my", "awesome", "data"],
+        )
         to_features.transform()
         ```
     """
 
-    def __init__(self, output_name: str):
+    def __init__(
+        self,
+        output_name: str,
+        input_df: pd.DataFrame = None,
+        id_column=None,
+        tags=None,
+        event_time_column=None,
+        one_hot_columns=None,
+    ):
         """PandasToFeatures Initialization
 
         Args:
             output_name (str): The Name of the FeatureSet to create
+            input_df (pd.DataFrame, optional): The input DataFrame to prepare.
+            id_column (str, optional): The ID column for the input DataFrame.
+            tags (list | str, optional): Output tags to associate with the FeatureSet.
+            event_time_column (str, optional): The event time column for the input DataFrame.
+            one_hot_columns (list, optional): Columns to one-hot encode before ingest.
         """
 
         # Make sure the output_name is a valid name
@@ -58,6 +74,21 @@ class PandasToFeatures(Transform):
         self.output_feature_group = None
         self.output_feature_set = None
         self.expected_rows = 0
+
+        if tags is not None:
+            self.set_output_tags(tags)
+
+        input_options_provided = id_column is not None or event_time_column is not None or one_hot_columns is not None
+        if input_df is None and input_options_provided:
+            raise ValueError("input_df is required when id_column, event_time_column, or one_hot_columns are provided")
+
+        if input_df is not None:
+            self.set_input(
+                input_df,
+                id_column=id_column,
+                event_time_column=event_time_column,
+                one_hot_columns=one_hot_columns,
+            )
 
     def set_input(self, input_df: pd.DataFrame, id_column=None, event_time_column=None, one_hot_columns=None):
         """Set the Input DataFrame for this Transform
