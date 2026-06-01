@@ -32,9 +32,10 @@ def test_ingest_settings_uses_single_process_for_spawn_and_forkserver(monkeypatc
 
         max_workers, max_processes = PandasToFeatures._ingest_settings()
 
-        assert (max_workers, max_processes) == (1, 1), (
-            f"{start_method} should use single-process ingest because SageMaker's Pool initializer is unpicklable"
-        )
+        assert (max_workers, max_processes) == (
+            1,
+            1,
+        ), f"{start_method} should use single-process ingest because SageMaker's Pool initializer is unpicklable"
 
 
 def test_sagemaker_pool_initializer_unpicklable():
