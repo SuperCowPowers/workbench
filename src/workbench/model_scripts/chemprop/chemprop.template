@@ -613,8 +613,11 @@ if __name__ == "__main__":
     if model_type == "classifier":
         if n_targets > 1:
             raise ValueError(
-                "Multi-task classification is not yet supported in workbench (planned for a future release). "
-                "Chemprop itself supports it via BinaryClassificationFFN(n_tasks=N)."
+                f"Multi-task classification (got {n_targets} target columns) is not implemented in "
+                "workbench's chemprop wrapper. This is a workbench limitation, not a chemprop one: "
+                "chemprop supports it via BinaryClassificationFFN(n_tasks=N) and "
+                "MulticlassClassificationFFN(n_classes=C, n_tasks=N). Workarounds: use a single target "
+                "column, or train one single-task classifier per target."
             )
         label_encoder = LabelEncoder()
         all_df[target_columns[0]] = label_encoder.fit_transform(all_df[target_columns[0]])
